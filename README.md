@@ -32,25 +32,6 @@ Add the Voodflow repository to your Laravel app `composer.json`:
 }
 ```
 
-If you use a custom SSH host alias (for example `voodflow-git` in `~/.ssh/config`):
-
-```json
-{
-    "type": "vcs",
-    "url": "git@voodflow-git:voodflow/vpress.git"
-}
-```
-
-Example SSH config:
-
-```
-Host voodflow-git
-    Hostname github.com
-    User git
-    IdentityFile ~/.ssh/voodgit
-    ForwardAgent yes
-```
-
 Then run:
 
 ```bash
