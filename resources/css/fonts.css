@@ -1,0 +1,9 @@
+/**
+ * Self-hosted Vpress fonts (bundled via Vite — no CDN at runtime).
+ * Requires host app devDependencies:
+ *   @fontsource-variable/inter
+ *   @fontsource/jetbrains-mono
+ */
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
