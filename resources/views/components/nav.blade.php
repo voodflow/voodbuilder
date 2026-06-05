@@ -15,7 +15,7 @@
     <div class="VPNavBar">
         <div class="wrap">
             <div class="VPNavBarStart">
-                <a href="{{ route('home') }}" class="VPNavBarTitle" aria-label="{{ $siteTitle }}">
+                <a href="{{ route('home') }}" @class(['VPNavBarTitle', 'has-sidebar' => $hasDocSidebar ?? false]) aria-label="{{ $siteTitle }}">
                     @if ($logoUrl)
                         <img src="{{ $logoUrl }}" alt="" class="VPNavBarLogo">
                     @endif
@@ -23,7 +23,9 @@
                         <span class="VPNavBarTitleText">{{ $brandName }}</span>
                     @endif
                 </a>
+            </div>
 
+            <div class="VPNavBarContent">
                 <x-vpress::menu menu="main" class="VPNavBarMenu VPNavBarMenu--desktop" />
             </div>
 

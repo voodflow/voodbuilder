@@ -19,7 +19,7 @@
     @livewireStyles
     @stack('head')
 </head>
-<body class="vpress min-h-screen flex flex-col">
+<body class="vpress min-h-screen flex flex-col @yield('body_class')">
     <x-vpress::nav />
 
     <main class="flex-1">

@@ -139,7 +139,36 @@ body.vpress {
     align-items: center;
     gap: 1.5rem;
     min-width: 0;
+    flex-shrink: 0;
+}
+
+.VPNavBarContent {
+    display: none;
+    align-items: center;
+    min-width: 0;
     flex: 1;
+}
+
+@media (min-width: 768px) {
+    .VPNavBarContent {
+        display: flex;
+    }
+}
+
+@media (min-width: 960px) {
+    body.vpress-has-doc-sidebar .VPNavBarTitle.has-sidebar {
+        width: calc(var(--vp-layout-sidebar-width) - 64px);
+        padding-left: 32px;
+        margin-left: -32px;
+    }
+
+    body.vpress-has-doc-sidebar .VPNavBar {
+        background: linear-gradient(
+            to right,
+            var(--vp-c-bg-alt) var(--vp-layout-sidebar-width),
+            var(--vp-c-bg) var(--vp-layout-sidebar-width)
+        );
+    }
 }
 
 .VPNavBarTitle {
@@ -610,7 +639,169 @@ body.VPNavMobileOpen {
     }
 }
 
-/* ── Left doc sidebar (matches right aside rail) ── */
+/* ── Fixed left sidebar (VitePress VPSidebar) ── */
+body.vpress-has-doc-sidebar {
+    --vp-layout-sidebar-width: 272px;
+}
+
+.VPSidebar {
+    display: none;
+}
+
+@media (min-width: 960px) {
+    body.vpress-has-doc-sidebar .VPSidebar {
+        display: block;
+        position: fixed;
+        top: var(--vp-nav-height);
+        bottom: 0;
+        left: 0;
+        z-index: 10;
+        width: var(--vp-layout-sidebar-width);
+        background: var(--vp-c-bg-alt);
+        border-right: 1px solid var(--vp-c-divider);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 32px 32px 96px;
+        scrollbar-width: thin;
+    }
+
+    body.vpress-has-doc-sidebar .VPContent.has-sidebar {
+        padding-left: var(--vp-layout-sidebar-width);
+    }
+
+    body.vpress-has-doc-sidebar .VPDoc.has-sidebar .container {
+        max-width: calc(var(--vp-layout-max-width) - var(--vp-layout-sidebar-width));
+    }
+}
+
+.VPSidebarGroup + .VPSidebarGroup {
+    margin-top: 24px;
+}
+
+.VPSidebarGroupTitle {
+    padding: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vp-c-text-2);
+    letter-spacing: 0.02em;
+}
+
+.VPSidebarGroupItems {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.VPSidebarLink {
+    display: block;
+    padding: 4px 0;
+    line-height: 1.4;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--vp-c-text-1);
+    transition: color 0.2s ease;
+}
+
+.VPSidebarLink:hover {
+    color: var(--vp-c-brand-1);
+}
+
+.VPSidebarLink.active {
+    color: var(--vp-c-brand-1);
+    font-weight: 600;
+}
+
+.VPDocAsideOutlineLink.is-active {
+    color: var(--vp-c-brand-1);
+    font-weight: 600;
+}
+
+.VPDoc .container {
+    display: flex;
+    align-items: flex-start;
+    gap: 48px;
+}
+
+.VPDoc.has-sidebar .sidebar {
+    display: none;
+}
+
+.VPDocMobileRail {
+    display: block;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 1280px) {
+    .VPDocMobileRail {
+        display: none;
+    }
+}
+
+.VPHomeContent {
+    max-width: var(--vp-content-max-width-wide);
+    margin: 0 auto;
+}
+
+.VPFeatures {
+    max-width: 1152px;
+    margin: 0 auto 64px;
+    padding: 0 24px;
+}
+
+.VPFeaturesGrid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .VPFeaturesGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 960px) {
+    .VPFeaturesGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.VPFeature {
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--vp-c-divider);
+    background: var(--vp-c-bg-soft);
+    height: 100%;
+}
+
+.VPFeatureIcon {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.VPFeatureTitle {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--vp-c-text-1);
+}
+
+.VPFeatureText {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--vp-c-text-2);
+}
+
+.VPHeroImage {
+    display: block;
+    max-width: 320px;
+    width: 100%;
+    margin: 32px auto 0;
+}
+
+/* ── Left doc sidebar (legacy in-flow; hidden when VPSidebar is used) ── */
 .VPDoc .sidebar:has(.VPSidebarNav) {
     width: 300px;
 }
@@ -1092,6 +1283,25 @@ body.VPNavMobileOpen {
 .VPHero {
     text-align: center;
     padding: 48px 0 64px;
+}
+
+@media (min-width: 960px) {
+    .VPHero.has-image {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 48px;
+        align-items: center;
+        text-align: left;
+    }
+
+    .VPHero.has-image .actions {
+        justify-content: flex-start;
+    }
+
+    .VPHero.has-image .VPHeroImage {
+        margin: 0;
+        max-width: none;
+    }
 }
 
 .VPHero .name {
