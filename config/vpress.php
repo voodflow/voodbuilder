@@ -45,6 +45,13 @@ return [
         ],
     ],
 
+    'auth' => [
+        'enabled' => true,
+        'registration_enabled' => true,
+        'redirect_after_login' => 'vpress.account',
+        'registered_role' => 'registered',
+    ],
+
     'footer' => [
         'enabled' => true,
     ],
@@ -76,7 +83,7 @@ return [
             'title' => null,
             'description' => null,
         ],
-        'default_content_callback' => null,
+        'default_content_callback' => [\Voodflow\Vpress\Support\DefaultHomeContent::class, 'content'],
     ],
 
     'pages' => [

@@ -32,10 +32,22 @@ final class Navigation
         return $items;
     }
 
+    /** @return list<string> */
+    public static function slugAliases(string $menuSlug): array
+    {
+        return match ($menuSlug) {
+            'header_extra' => ['header_extra', 'header-extra'],
+            'header-extra' => ['header_extra', 'header-extra'],
+            default => [$menuSlug],
+        };
+    }
+
     public static function clearCache(?string $menuSlug = null): void
     {
         if ($menuSlug !== null) {
-            Cache::forget("vpress.menu.{$menuSlug}");
+            foreach (static::slugAliases($menuSlug) as $slug) {
+                Cache::forget("vpress.menu.{$slug}");
+            }
 
             return;
         }
@@ -52,13 +64,15 @@ final class Navigation
     /** @return Collection<int, NavigationMenuItem> */
     protected static function loadItems(string $menuSlug): Collection
     {
-        $menu = NavigationMenu::query()->where('slug', $menuSlug)->first();
+        foreach (static::slugAliases($menuSlug) as $slug) {
+            $menu = NavigationMenu::query()->where('slug', $slug)->first();
 
-        if ($menu === null) {
-            return collect();
+            if ($menu !== null) {
+                return $menu->items;
+            }
         }
 
-        return $menu->items;
+        return collect();
     }
 
     /**

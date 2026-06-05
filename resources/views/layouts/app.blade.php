@@ -35,6 +35,7 @@
 
     @stack('scripts-before-livewire')
     @livewireScripts
+    <x-vpress::site-scripts />
     @stack('scripts')
 </body>
 </html>

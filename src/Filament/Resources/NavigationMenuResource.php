@@ -17,7 +17,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 use Voodflow\Vpress\Enums\MenuItemType;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
@@ -124,24 +123,18 @@ class NavigationMenuResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function (Get $get, callable $set, ?string $state, ?string $old, ?NavigationMenu $record): void {
-                                if ($record !== null) {
-                                    return;
-                                }
-
-                                if (filled($get('slug'))) {
-                                    return;
-                                }
-
-                                $set('slug', Str::slug((string) $state));
-                            }),
-                        TextInput::make('slug')
+                            ->maxLength(255),
+                        Select::make('slug')
+                            ->label(__('Menu placement'))
+                            ->options([
+                                'main' => __('Main navigation — center of the header'),
+                                'header_extra' => __('Header extras — right side (before language / theme / account)'),
+                                'footer' => __('Footer links'),
+                            ])
                             ->required()
-                            ->maxLength(255)
                             ->unique(ignoreRecord: true)
-                            ->helperText(__('Used in templates: main, header_extra, footer')),
+                            ->native(false)
+                            ->helperText(__('Use header_extra for Shop, Blog, or other links on the right side of the navbar.')),
                     ]),
                 Section::make(__('Menu items'))
                     ->schema([

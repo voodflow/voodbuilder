@@ -18,7 +18,6 @@
                         $linkClass,
                         'active' => $item->isActive(),
                         'VPNavBarMenuLink--extra' => $extra,
-                        'hidden sm:inline-flex' => $extra,
                     ])
                     @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >
@@ -35,7 +34,6 @@
                         $linkClass,
                         'active' => $item->isActive(),
                         'VPNavBarMenuLink--extra' => $extra,
-                        'hidden sm:inline-flex' => $extra,
                     ])
                     @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >

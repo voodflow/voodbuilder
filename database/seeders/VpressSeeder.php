@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Route;
 use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Voodflow\Vpress\Enums\MenuItemType;
 use Voodflow\Vpress\Models\NavigationMenu;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\DefaultHomeContent;
 use Voodflow\Vpress\Support\Navigation;
 
 class VpressSeeder extends Seeder
@@ -43,8 +45,30 @@ class VpressSeeder extends Seeder
             ],
         );
 
+        $this->seedHomePage();
+
         $this->seedMenus();
         $this->seedCookieConsentSettings();
+    }
+
+    protected function seedHomePage(): void
+    {
+        SitePage::query()
+            ->where('is_home', true)
+            ->where('slug', '!=', 'home')
+            ->update(['is_home' => false]);
+
+        SitePage::query()->updateOrCreate(
+            ['slug' => 'home'],
+            [
+                'title' => config('app.name', 'Cosmolab'),
+                'layout' => 'home',
+                'content' => DefaultHomeContent::content(),
+                'published' => true,
+                'published_at' => now(),
+                'is_home' => true,
+            ],
+        );
     }
 
     protected function seedMenus(): void
@@ -63,6 +87,7 @@ class VpressSeeder extends Seeder
                 'route_match' => 'home',
                 'sort_order' => 0,
             ],
+            ...$this->tutorialMenuItems(),
         ]);
 
         $footer = NavigationMenu::query()->updateOrCreate(
@@ -87,6 +112,24 @@ class VpressSeeder extends Seeder
         ]);
 
         Navigation::clearCache();
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function tutorialMenuItems(): array
+    {
+        if (! Route::has('tutorials.index')) {
+            return [];
+        }
+
+        return [
+            [
+                'label' => 'Tutorials',
+                'type' => MenuItemType::Route,
+                'link' => 'tutorials.index',
+                'route_match' => 'tutorials.*',
+                'sort_order' => 1,
+            ],
+        ];
     }
 
     protected function seedCookieConsentSettings(): void

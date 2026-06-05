@@ -15,7 +15,7 @@
     <div class="VPNavBar">
         <div class="wrap">
             <div class="VPNavBarStart">
-                <a href="{{ route('home') }}" @class(['VPNavBarTitle', 'has-sidebar' => $hasDocSidebar ?? false]) aria-label="{{ $siteTitle }}">
+                <a href="{{ \Voodflow\Vpress\Support\VpressUrls::home() }}" @class(['VPNavBarTitle', 'has-sidebar' => $hasDocSidebar ?? false]) aria-label="{{ $siteTitle }}">
                     @if ($logoUrl)
                         <img src="{{ $logoUrl }}" alt="" class="VPNavBarLogo">
                     @endif
@@ -69,9 +69,9 @@
                             class="VPNavBarAction VPNavBarAccount"
                             aria-label="{{ __('vpress::account.nav') }}"
                         >
-                            @if ($user?->getFilamentAvatarUrl())
+                            @if ($avatarUrl = \Voodflow\Vpress\Support\UserAvatar::url($user))
                                 <img
-                                    src="{{ $user->getFilamentAvatarUrl() }}"
+                                    src="{{ $avatarUrl }}"
                                     alt=""
                                     class="VPNavBarAvatar"
                                 >
@@ -87,12 +87,15 @@
                         <a href="{{ \Voodflow\Vpress\Support\AdminAccess::panelUrl() }}" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('Admin') }}</a>
                     @endif
 
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                    <form method="POST" action="{{ \Voodflow\Vpress\Support\VpressUrls::logout() }}" class="inline">
                         @csrf
-                        <button type="submit" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('Log out') }}</button>
+                        <button type="submit" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('vpress::auth.logout') }}</button>
                     </form>
                 @else
-                    <a href="{{ route('login') }}" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('Log in') }}</a>
+                    <a href="{{ \Voodflow\Vpress\Support\VpressUrls::login() }}" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('vpress::auth.login') }}</a>
+                    @if (config('vpress.auth.registration_enabled', true))
+                        <a href="{{ \Voodflow\Vpress\Support\VpressUrls::register() }}" class="VPNavBarMenuLink VPNavBarMenuLink--extra">{{ __('vpress::auth.register') }}</a>
+                    @endif
                 @endauth
             </div>
 

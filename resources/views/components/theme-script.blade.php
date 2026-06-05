@@ -8,6 +8,7 @@
 <script>
     (function () {
         const config = @json($config);
+        window.__vpressTheme = config;
         let stored = null;
 
         try {

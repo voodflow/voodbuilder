@@ -112,8 +112,8 @@
                         <li>
                             <a href="{{ route('vpress.account') }}" class="VPNavMobileLink VPNavMobileLink--account" data-mobile-nav-close>
                                 <span class="VPNavMobileAccountAvatar" aria-hidden="true">
-                                    @if ($user?->getFilamentAvatarUrl())
-                                        <img src="{{ $user->getFilamentAvatarUrl() }}" alt="">
+                                    @if ($avatarUrl = \Voodflow\Vpress\Support\UserAvatar::url($user))
+                                        <img src="{{ $avatarUrl }}" alt="">
                                     @else
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     @endif
@@ -132,10 +132,10 @@
                     @endif
 
                     <li>
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form method="POST" action="{{ \Voodflow\Vpress\Support\VpressUrls::logout() }}">
                             @csrf
                             <button type="submit" class="VPNavMobileLink VPNavMobileLink--secondary VPNavMobileLink--button">
-                                {{ __('Log out') }}
+                                {{ __('vpress::auth.logout') }}
                             </button>
                         </form>
                     </li>
@@ -143,10 +143,17 @@
             @else
                 <ul class="VPNavMobileList VPNavMobileList--account">
                     <li>
-                        <a href="{{ route('login') }}" class="VPNavMobileLink VPNavMobileLink--account" data-mobile-nav-close>
-                            {{ __('Log in') }}
+                        <a href="{{ \Voodflow\Vpress\Support\VpressUrls::login() }}" class="VPNavMobileLink VPNavMobileLink--account" data-mobile-nav-close>
+                            {{ __('vpress::auth.login') }}
                         </a>
                     </li>
+                    @if (config('vpress.auth.registration_enabled', true))
+                        <li>
+                            <a href="{{ \Voodflow\Vpress\Support\VpressUrls::register() }}" class="VPNavMobileLink VPNavMobileLink--account" data-mobile-nav-close>
+                                {{ __('vpress::auth.register') }}
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             @endauth
         </div>
