@@ -19,8 +19,8 @@
     @livewireStyles
     @stack('head')
 </head>
-<body class="vpress min-h-screen flex flex-col @yield('body_class')">
-    <x-vpress::nav />
+<body class="flex min-h-screen flex-col @yield('body_class')">
+    <x-vpress::nav :has-doc-sidebar="$vpressHasDocSidebar ?? false" />
 
     <main class="flex-1">
         @yield('content')

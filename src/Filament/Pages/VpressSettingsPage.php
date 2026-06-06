@@ -42,7 +42,7 @@ class VpressSettingsPage extends Page
 
     protected static ?string $title = 'Settings';
 
-    protected static ?string $slug = 'settings';
+    protected static ?string $slug = 'vpress/settings';
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];
@@ -163,6 +163,10 @@ class VpressSettingsPage extends Page
                         Toggle::make('show_account_link')
                             ->label(__('Show account link for logged-in users'))
                             ->default(true),
+                        Toggle::make('sticky_nav')
+                            ->label(__('Sticky navigation on standard pages'))
+                            ->helperText(__('Keeps the header visible while scrolling on home, CMS pages, and auth screens. Documentation pages with a sidebar always use a fixed header.'))
+                            ->default(false),
                         Toggle::make('show_language_switcher')
                             ->label(__('Show language switcher'))
                             ->helperText(__('Hidden automatically when only one content locale is configured.'))

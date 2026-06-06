@@ -32,6 +32,7 @@ class VpressSettings extends Model
             'show_theme_toggle' => true,
             'theme_mode' => 'system',
             'show_account_link' => true,
+            'sticky_nav' => false,
             'show_language_switcher' => true,
             'logo' => null,
             'favicon' => null,

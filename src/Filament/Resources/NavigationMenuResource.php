@@ -115,6 +115,8 @@ class NavigationMenuResource extends Resource
 
     protected static ?string $modelLabel = 'Menu';
 
+    protected static ?string $slug = 'vpress/navigation-menus';
+
     public static function form(Schema $schema): Schema
     {
         return $schema

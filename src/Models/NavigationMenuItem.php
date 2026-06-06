@@ -46,6 +46,11 @@ class NavigationMenuItem extends Model
         };
     }
 
+    public function isExternal(): bool
+    {
+        return $this->type === MenuItemType::Url || $this->open_in_new_tab;
+    }
+
     public function isActive(): bool
     {
         if ($this->type === MenuItemType::Page) {

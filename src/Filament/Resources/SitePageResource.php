@@ -42,6 +42,8 @@ class SitePageResource extends Resource
 
     protected static ?string $modelLabel = 'Page';
 
+    protected static ?string $slug = 'vpress/pages';
+
     public static function form(Schema $schema): Schema
     {
         return $schema

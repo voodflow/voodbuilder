@@ -1,7 +1,7 @@
 @props([
     'menu' => 'main',
-    'class' => 'VPNavBarMenu',
-    'linkClass' => 'VPNavBarMenuLink',
+    'class' => 'flex items-center',
+    'linkClass' => 'inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1',
     'extra' => false,
     'wrapped' => true,
 ])
@@ -16,28 +16,32 @@
                     href="{{ $item->resolveUrl() }}"
                     @class([
                         $linkClass,
-                        'active' => $item->isActive(),
-                        'VPNavBarMenuLink--extra' => $extra,
+                        'text-vp-brand-1' => $item->isActive(),
                     ])
                     @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >
-                    {{ __($item->label) }}
+                    <span>{{ __($item->label) }}</span>
+                    @if($item->isExternal())
+                        <x-vpress::external-link-icon />
+                    @endif
                 </a>
             @endforeach
         </nav>
     @else
-        <div {{ $attributes->class(['VPNavBarMenuInline']) }}>
+        <div {{ $attributes->class(['flex items-center']) }}>
             @foreach($items as $item)
                 <a
                     href="{{ $item->resolveUrl() }}"
                     @class([
                         $linkClass,
-                        'active' => $item->isActive(),
-                        'VPNavBarMenuLink--extra' => $extra,
+                        'text-vp-brand-1' => $item->isActive(),
                     ])
                     @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >
-                    {{ __($item->label) }}
+                    <span>{{ __($item->label) }}</span>
+                    @if($item->isExternal())
+                        <x-vpress::external-link-icon />
+                    @endif
                 </a>
             @endforeach
         </div>

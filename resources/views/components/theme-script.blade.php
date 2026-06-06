@@ -37,6 +37,12 @@
         document.documentElement.classList.toggle('dark', isDark);
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 
+        if (/Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent)) {
+            document.documentElement.classList.add('mac');
+        } else {
+            document.documentElement.classList.add('windows');
+        }
+
         if (config.locked) {
             document.documentElement.dataset.themeLocked = 'true';
         } else {

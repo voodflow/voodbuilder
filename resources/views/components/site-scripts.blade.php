@@ -52,7 +52,7 @@
             mobileNav.hidden = ! open;
             mobileNav.setAttribute('aria-hidden', open ? 'false' : 'true');
             mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.classList.toggle('VPNavMobileOpen', open);
+            document.body.classList.toggle('overflow-hidden', open);
 
             const labelOpen = mobileToggle.dataset.labelOpen || 'Open menu';
             const labelClose = mobileToggle.dataset.labelClose || 'Close menu';
@@ -69,27 +69,88 @@
 
         const article = document.querySelector('[data-tutorial-article], [data-doc-article]');
         const bar = document.querySelector('[data-reading-progress]');
-        const progressTrack = bar?.closest('.VPProgress');
+        const progressTrack = bar?.closest('[data-vpress-progress]');
 
-        if (! article || ! bar) {
-            return;
+        if (article && bar) {
+            const updateProgress = () => {
+                const rect = article.getBoundingClientRect();
+                const scrollTop = window.scrollY || document.documentElement.scrollTop;
+                const top = scrollTop + rect.top;
+                const height = article.offsetHeight;
+                const viewport = window.innerHeight;
+                const max = Math.max(height - viewport, 1);
+                const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+
+                bar.style.width = `${progress * 100}%`;
+                progressTrack?.classList.toggle('is-active', progress > 0.001);
+            };
+
+            updateProgress();
+            window.addEventListener('scroll', updateProgress, { passive: true });
+            window.addEventListener('resize', updateProgress);
         }
 
-        const updateProgress = () => {
-            const rect = article.getBoundingClientRect();
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const top = scrollTop + rect.top;
-            const height = article.offsetHeight;
-            const viewport = window.innerHeight;
-            const max = Math.max(height - viewport, 1);
-            const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+        const searchRoot = document.querySelector('[data-vpress-search]');
 
-            bar.style.width = `${progress * 100}%`;
-            progressTrack?.classList.toggle('is-active', progress > 0.001);
-        };
+        if (searchRoot) {
+            const searchDialog = searchRoot.querySelector('[data-vpress-search-dialog]');
+            const searchOpen = searchRoot.querySelector('[data-vpress-search-open]');
+            const searchInput = searchRoot.querySelector('[data-vpress-search-input]');
 
-        updateProgress();
-        window.addEventListener('scroll', updateProgress, { passive: true });
-        window.addEventListener('resize', updateProgress);
+            function setSearchOpen(open) {
+                if (! searchDialog || ! searchOpen) {
+                    return;
+                }
+
+                searchDialog.hidden = ! open;
+                searchDialog.classList.toggle('flex', open);
+                searchOpen.setAttribute('aria-expanded', open ? 'true' : 'false');
+                document.body.classList.toggle('overflow-hidden', open);
+
+                if (open) {
+                    window.setTimeout(() => searchInput?.focus(), 0);
+                }
+            }
+
+            searchOpen?.addEventListener('click', () => {
+                setSearchOpen(searchDialog.hidden);
+            });
+
+            searchRoot.querySelectorAll('[data-vpress-search-close]').forEach((element) => {
+                element.addEventListener('click', () => setSearchOpen(false));
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+                    event.preventDefault();
+                    setSearchOpen(true);
+                    return;
+                }
+
+                if (event.key === 'Escape' && searchDialog && ! searchDialog.hidden) {
+                    event.preventDefault();
+                    setSearchOpen(false);
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== '/' || (searchDialog && ! searchDialog.hidden)) {
+                    return;
+                }
+
+                const target = event.target;
+
+                if (
+                    target instanceof HTMLElement
+                    && (target.isContentEditable
+                        || ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName))
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                setSearchOpen(true);
+            });
+        }
     })();
 </script>
