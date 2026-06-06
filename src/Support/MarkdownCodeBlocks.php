@@ -26,30 +26,76 @@ final class MarkdownCodeBlocks
                 continue;
             }
 
+            if (preg_match('/^`{4,}\s*$/', $line)) {
+                $lines[$index] = '```';
+            }
+
             $inFence = false;
         }
 
         return implode("\n", $lines);
     }
 
-    public static function enhance(string $html): string
+    public static function enhance(string $html, ?string $markdown = null): string
     {
         if ($html === '') {
             return $html;
         }
 
-        $html = static::wrapFencedCodeTags($html);
-        $html = static::wrapShikiBlocks($html);
+        $languages = $markdown !== null ? static::extractFenceLanguages($markdown) : [];
+        $languageIndex = 0;
+
+        $html = static::wrapShikiBlocks($html, $languages, $languageIndex);
+        $html = static::wrapPlainCodeBlocks($html);
 
         return $html;
     }
 
-    protected static function wrapFencedCodeTags(string $html): string
+    /**
+     * @return list<string>
+     */
+    protected static function extractFenceLanguages(string $markdown): array
+    {
+        $languages = [];
+        $inFence = false;
+
+        foreach (preg_split('/\r?\n/', $markdown) ?: [] as $line) {
+            if (! preg_match('/^```/', $line)) {
+                continue;
+            }
+
+            if (! $inFence) {
+                $languages[] = preg_match('/^```([^\s`]+)/', $line, $matches)
+                    ? $matches[1]
+                    : 'text';
+
+                $inFence = true;
+
+                continue;
+            }
+
+            $inFence = false;
+        }
+
+        return $languages;
+    }
+
+    protected static function wrapPlainCodeBlocks(string $html): string
     {
         $html = (string) preg_replace_callback(
+            '/<pre><code class="language-([\w+#.-]+)">([\s\S]*?)<\/code><\/pre>/',
+            fn (array $matches): string => static::shell(
+                static::normalizeLanguage($matches[1]),
+                '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e(static::normalizeLanguage($matches[1])).'">'.$matches[2].'</code></pre>',
+                'raw',
+            ),
+            $html,
+        );
+
+        return (string) preg_replace_callback(
             '/<code class="language-([\w+#.-]+)">([\s\S]*?)<\/code>/',
             function (array $matches): string {
-                if (! str_contains($matches[2], "\n")) {
+                if (! str_contains($matches[2], "\n") || str_contains($matches[0], '<span class="line">')) {
                     return $matches[0];
                 }
 
@@ -61,38 +107,24 @@ final class MarkdownCodeBlocks
             },
             $html,
         );
-
-        return (string) preg_replace_callback(
-            '/<code>([\s\S]*?)<\/code>/',
-            function (array $matches): string {
-                if (! str_contains($matches[1], "\n")) {
-                    return $matches[0];
-                }
-
-                return static::shell('text', $matches[1], 'pre');
-            },
-            $html,
-        );
     }
 
-    protected static function wrapShikiBlocks(string $html): string
+    /**
+     * @param  list<string>  $languages
+     */
+    protected static function wrapShikiBlocks(string $html, array $languages, int &$languageIndex): string
     {
         return (string) preg_replace_callback(
             '/<pre class="shiki[^"]*"[^>]*>[\s\S]*?<\/pre>/',
-            function (array $matches): string {
+            function (array $matches) use ($languages, &$languageIndex): string {
                 if (str_contains($matches[0], 'data-code-block')) {
                     return $matches[0];
                 }
 
-                if (! preg_match('/class="language-([\w+#.-]+)"/', $matches[0], $language)) {
-                    return static::shell('code', $matches[0], 'raw');
-                }
+                $language = static::normalizeLanguage($languages[$languageIndex] ?? 'code');
+                $languageIndex++;
 
-                return static::shell(
-                    static::normalizeLanguage($language[1]),
-                    $matches[0],
-                    'raw',
-                );
+                return static::shell($language, $matches[0], 'raw');
             },
             $html,
         );
@@ -104,7 +136,8 @@ final class MarkdownCodeBlocks
             'c++', 'cxx' => 'cpp',
             'js' => 'javascript',
             'ts' => 'typescript',
-            'sh', 'zsh' => 'bash',
+            'sh', 'zsh', 'shell' => 'bash',
+            'cmd', 'bat' => 'batch',
             default => $language,
         };
     }
@@ -115,28 +148,15 @@ final class MarkdownCodeBlocks
 
         $content = $mode === 'raw'
             ? $body
-            : '<pre class="m-0 overflow-x-auto bg-transparent p-0 font-mono text-[13px] leading-relaxed"><code class="language-'.e($language).'">'.$body.'</code></pre>';
+            : '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$body.'</code></pre>';
 
         return <<<HTML
-<div class="my-4 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-alt shadow-sm" data-code-block>
-    <div class="flex items-center justify-between gap-3 border-b border-vp-divider bg-vp-gray-soft/60 px-3 py-2">
-        <div class="flex min-w-0 items-center gap-2">
-            <span class="hidden gap-1 sm:flex" aria-hidden="true">
-                <span class="h-2 w-2 rounded-full bg-[#ff5f57]"></span>
-                <span class="h-2 w-2 rounded-full bg-[#febc2e]"></span>
-                <span class="h-2 w-2 rounded-full bg-[#28c840]"></span>
-            </span>
-            <span class="truncate text-[11px] font-medium tracking-wide text-vp-text-3 uppercase">{$label}</span>
-        </div>
-        <button
-            type="button"
-            class="shrink-0 rounded-md border border-vp-divider bg-vp-bg px-2 py-1 text-[11px] font-medium text-vp-text-2 transition-colors hover:border-vp-brand-1/30 hover:text-vp-text-1"
-            data-code-copy
-        >
-            Copy
-        </button>
+<div class="vp-code-block" data-code-block data-line-numbers>
+    <div class="vp-code-block__header">
+        <span class="vp-code-block__lang">{$label}</span>
+        <button type="button" class="vp-code-block__copy" data-code-copy>Copy</button>
     </div>
-    <div class="overflow-x-auto p-4 text-vp-text-1">
+    <div class="vp-code-block__body">
         {$content}
     </div>
 </div>

@@ -1,15 +1,19 @@
 @props(['items' => [], 'title' => null])
 
 @if(count($items) > 0)
-    <nav class="VPDocAsideOutline" aria-labelledby="vpress-outline-title">
-        <div id="vpress-outline-title" class="VPDocAsideOutlineTitle">
+    <nav class="vp-outline" aria-labelledby="vpress-outline-title">
+        <div id="vpress-outline-title" class="vp-outline__title">
             {{ $title ?? __('On this page') }}
         </div>
-        <div class="VPDocAsideOutlineItems">
+        <div class="vp-outline__rail">
             @foreach($items as $item)
                 <a
                     href="#{{ $item['id'] }}"
-                    class="VPDocAsideOutlineLink level-{{ $item['level'] }}"
+                    @class([
+                        'vp-outline__link',
+                        'vp-outline__link--level-3' => ($item['level'] ?? 2) === 3,
+                        'vp-outline__link--level-4' => ($item['level'] ?? 2) >= 4,
+                    ])
                     data-outline-link
                 >
                     {{ $item['title'] }}

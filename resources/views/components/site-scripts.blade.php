@@ -199,6 +199,90 @@
             });
         }
 
+        const outlineLinks = [...document.querySelectorAll('[data-outline-link]')];
+
+        if (outlineLinks.length > 0) {
+            const outlineEntries = outlineLinks
+                .map((link) => {
+                    const id = link.getAttribute('href')?.slice(1);
+
+                    if (! id) {
+                        return null;
+                    }
+
+                    const heading = document.getElementById(id);
+
+                    return heading ? { link, heading, id } : null;
+                })
+                .filter(Boolean);
+
+            if (outlineEntries.length > 0) {
+                let activeId = '';
+
+                const setActiveOutline = (id) => {
+                    if (! id || id === activeId) {
+                        return;
+                    }
+
+                    activeId = id;
+
+                    outlineEntries.forEach(({ link, id: entryId }) => {
+                        const isActive = entryId === id;
+
+                        link.classList.toggle('is-active', isActive);
+                        link.classList.toggle('active', isActive);
+
+                        if (isActive) {
+                            link.setAttribute('aria-current', 'location');
+                        } else {
+                            link.removeAttribute('aria-current');
+                        }
+                    });
+                };
+
+                const outlineOffset = () => {
+                    const value = getComputedStyle(document.documentElement)
+                        .getPropertyValue('--spacing-vp-doc-offset')
+                        .trim();
+
+                    const parsed = Number.parseFloat(value);
+
+                    return Number.isFinite(parsed) && parsed > 0 ? parsed : 96;
+                };
+
+                const updateOutline = () => {
+                    const offset = outlineOffset();
+                    let current = outlineEntries[0].id;
+
+                    outlineEntries.forEach(({ heading, id }) => {
+                        if (heading.getBoundingClientRect().top <= offset) {
+                            current = id;
+                        }
+                    });
+
+                    setActiveOutline(current);
+                };
+
+                const hashId = window.location.hash.slice(1);
+
+                if (hashId && outlineEntries.some(({ id }) => id === hashId)) {
+                    setActiveOutline(hashId);
+                } else {
+                    updateOutline();
+                }
+
+                window.addEventListener('scroll', updateOutline, { passive: true });
+                window.addEventListener('resize', updateOutline);
+                window.addEventListener('hashchange', () => {
+                    const id = window.location.hash.slice(1);
+
+                    if (id && outlineEntries.some((entry) => entry.id === id)) {
+                        setActiveOutline(id);
+                    }
+                });
+            }
+        }
+
         document.querySelectorAll('[data-code-copy]').forEach((button) => {
             button.addEventListener('click', async () => {
                 const block = button.closest('[data-code-block]');
