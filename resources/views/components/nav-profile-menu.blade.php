@@ -1,30 +1,35 @@
 @php
     use Voodflow\Vpress\Models\VpressSettings;
+    use Voodflow\Vpress\Support\UserAvatar;
 
     $showThemeToggle = (bool) VpressSettings::get('show_theme_toggle', true);
     $showAccountLink = (bool) VpressSettings::get('show_account_link', true);
+    $accountEnabled = $showAccountLink && config('vpress.account.enabled', true) && Route::has('vpress.account');
     $user = auth()->user();
+    $avatarUrl = $user ? UserAvatar::url($user) : null;
 @endphp
 
 <div
-    class="relative hidden md:block"
+    class="relative"
     x-data="{ open: false }"
     @click.outside="open = false"
     @keydown.escape.window="open = false"
 >
     <button
         type="button"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-md text-vp-text-2 transition-colors hover:text-vp-text-1"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
         aria-haspopup="menu"
         :aria-expanded="open"
-        aria-label="{{ __('More options') }}"
+        aria-label="{{ __('vpress::nav.menu_aria') }}"
         @click="open = ! open"
     >
-        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="5" r="1.75"/>
-            <circle cx="12" cy="12" r="1.75"/>
-            <circle cx="12" cy="19" r="1.75"/>
-        </svg>
+        @if ($avatarUrl)
+            <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
+        @else
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+        @endif
     </button>
 
     <div
@@ -34,20 +39,27 @@
         role="menu"
         class="absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-[12rem] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
     >
-        @if(\Voodflow\Vpress\Support\Navigation::items('header_extra')->isNotEmpty())
-            <div class="px-2 pb-1">
-                <x-vpress::menu
-                    menu="header_extra"
-                    class="flex flex-col"
-                    link-class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
-                    :extra="true"
-                    :wrapped="false"
-                />
-            </div>
-            <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
-        @endif
+        @auth
+            @if ($accountEnabled)
+                <a
+                    href="{{ route('vpress.account') }}"
+                    role="menuitem"
+                    class="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
+                >
+                    @if ($avatarUrl)
+                        <img src="{{ $avatarUrl }}" alt="" class="h-6 w-6 rounded-full object-cover">
+                    @else
+                        <svg class="h-5 w-5 text-vp-text-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    @endif
+                    <span>{{ __('vpress::account.nav') }}</span>
+                </a>
+                <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+            @endif
+        @endauth
 
-        @if (class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class))
+        @if (class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class) && \Voodflow\Tutorials\Support\LocaleSwitcher::visible())
             <div class="px-3 py-2">
                 <div class="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">
                     {{ __('tutorials::language_switcher.label') }}

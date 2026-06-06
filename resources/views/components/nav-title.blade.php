@@ -4,6 +4,7 @@
     $siteTitle = VpressSettings::siteTitle();
     $brandName = VpressSettings::brandName();
     $logoUrl = VpressSettings::logoUrl();
+    $logoMobileUrl = VpressSettings::logoMobileUrl();
     $showBrandName = (bool) VpressSettings::get('show_site_title', true);
 @endphp
 
@@ -13,9 +14,28 @@
     aria-label="{{ $siteTitle }}"
 >
     @if ($logoUrl)
-        <img src="{{ $logoUrl }}" alt="" class="h-6 w-auto max-w-[120px] object-contain">
+        @if ($logoMobileUrl)
+            <img
+                src="{{ $logoMobileUrl }}"
+                alt=""
+                class="h-8 w-auto max-w-[120px] object-contain object-left md:hidden"
+            >
+            <img
+                src="{{ $logoUrl }}"
+                alt=""
+                class="hidden h-10 w-auto max-w-[220px] object-contain object-left md:block"
+            >
+        @else
+            <img
+                src="{{ $logoUrl }}"
+                alt=""
+                class="h-8 w-auto max-w-[160px] object-contain object-left md:h-10 md:max-w-[220px]"
+            >
+        @endif
     @endif
-    @if ($showBrandName)
+    @if ($showBrandName && ! $logoUrl)
         <span class="whitespace-nowrap">{{ $brandName }}</span>
+    @elseif ($showBrandName && $logoUrl)
+        <span class="sr-only">{{ $brandName }}</span>
     @endif
 </a>

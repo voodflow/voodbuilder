@@ -31,7 +31,9 @@
             @if ($showProgress ?? false) data-doc-article @endif
         >
             <div @class([
-                'mx-auto flex w-full max-w-[var(--width-vp-layout)] items-start gap-12',
+                'mx-auto flex w-full max-w-[var(--width-vp-layout)] gap-12',
+                'items-start' => ! ($hasAside ?? false),
+                'items-stretch' => $hasAside ?? false,
                 'justify-center' => ! ($hasAside ?? false),
             ])>
                 <div @class([
@@ -43,8 +45,12 @@
                 </div>
 
                 @if ($hasAside ?? false)
-                    <aside class="hidden w-[var(--spacing-vp-aside)] shrink-0 xl:block">
-                        <div class="sticky top-[calc(var(--spacing-vp-nav-total)+2rem)] text-[13px] [&>nav+nav]:mt-5 [&>nav+nav]:border-t [&>nav+nav]:border-vp-divider [&>nav+nav]:pt-5">
+                    <aside class="hidden w-[var(--spacing-vp-aside)] shrink-0 self-stretch xl:block">
+                        <div @class([
+                            'sticky self-start overflow-y-auto overscroll-contain text-[13px] [&>nav+nav]:mt-5 [&>nav+nav]:border-t [&>nav+nav]:border-vp-divider [&>nav+nav]:pt-5',
+                            'top-[var(--spacing-vp-doc-offset)] max-h-[calc(100vh-var(--spacing-vp-doc-offset)-1rem)]' => $hasSidebar ?? false,
+                            'top-24 max-h-[calc(100vh-7rem)]' => ! ($hasSidebar ?? false),
+                        ])>
                             @yield('aside')
                         </div>
                     </aside>

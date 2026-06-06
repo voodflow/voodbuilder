@@ -40,6 +40,30 @@
             });
         }
 
+        let scrollLockCount = 0;
+
+        function getScrollbarWidth() {
+            return Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+        }
+
+        function setScrollLocked(locked) {
+            const root = document.documentElement;
+            const isLocked = scrollLockCount + (locked ? 1 : -1) > 0;
+
+            if (locked && ! root.classList.contains('vp-scroll-locked')) {
+                root.style.setProperty('--vp-scrollbar-width', `${getScrollbarWidth()}px`);
+            }
+
+            scrollLockCount += locked ? 1 : -1;
+            scrollLockCount = Math.max(0, scrollLockCount);
+
+            root.classList.toggle('vp-scroll-locked', scrollLockCount > 0);
+
+            if (scrollLockCount === 0) {
+                root.style.removeProperty('--vp-scrollbar-width');
+            }
+        }
+
         const mobileNav = document.querySelector('[data-mobile-nav]');
         const mobileToggle = document.querySelector('[data-mobile-nav-toggle]');
 
@@ -48,23 +72,45 @@
                 return;
             }
 
-            mobileNav.classList.toggle('is-open', open);
-            mobileNav.hidden = ! open;
-            mobileNav.setAttribute('aria-hidden', open ? 'false' : 'true');
-            mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.classList.toggle('overflow-hidden', open);
+            if (open) {
+                mobileNav.hidden = false;
+                mobileNav.setAttribute('aria-hidden', 'false');
+                requestAnimationFrame(() => {
+                    mobileNav.classList.add('is-open');
+                });
+            } else {
+                mobileNav.classList.remove('is-open');
+                mobileNav.setAttribute('aria-hidden', 'true');
+                window.setTimeout(() => {
+                    if (! mobileNav.classList.contains('is-open')) {
+                        mobileNav.hidden = true;
+                    }
+                }, 300);
+            }
 
-            const labelOpen = mobileToggle.dataset.labelOpen || 'Open menu';
-            const labelClose = mobileToggle.dataset.labelClose || 'Close menu';
-            mobileToggle.setAttribute('aria-label', open ? labelClose : labelOpen);
+            mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.classList.toggle('vpress-mobile-nav-open', open);
+            setScrollLocked(open);
         }
 
         mobileToggle?.addEventListener('click', () => {
             setMobileNavOpen(! mobileNav.classList.contains('is-open'));
         });
 
-        document.querySelectorAll('[data-mobile-nav-close]').forEach((element) => {
-            element.addEventListener('click', () => setMobileNavOpen(false));
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element
+                ? event.target.closest('[data-mobile-nav-close]')
+                : null;
+
+            if (target) {
+                setMobileNavOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && mobileNav?.classList.contains('is-open')) {
+                setMobileNavOpen(false);
+            }
         });
 
         const article = document.querySelector('[data-tutorial-article], [data-doc-article]');
@@ -103,9 +149,9 @@
                 }
 
                 searchDialog.hidden = ! open;
+                searchDialog.classList.toggle('hidden', ! open);
                 searchDialog.classList.toggle('flex', open);
                 searchOpen.setAttribute('aria-expanded', open ? 'true' : 'false');
-                document.body.classList.toggle('overflow-hidden', open);
 
                 if (open) {
                     window.setTimeout(() => searchInput?.focus(), 0);

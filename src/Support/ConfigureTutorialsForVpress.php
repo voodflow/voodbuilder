@@ -35,11 +35,7 @@ final class ConfigureTutorialsForVpress
             $contents = str_replace(
                 "'fallback_url' => null",
                 <<<'PHP'
-'fallback_url' => fn (string $locale): string => $locale === config('tutorials.default_locale')
-                    ? route('home')
-                    : (Route::has('home.localized')
-                        ? route('home.localized', ['locale' => $locale])
-                        : url("/{$locale}"))
+'fallback_url' => fn (string $locale): string => route('home')
 PHP,
                 $contents,
             );

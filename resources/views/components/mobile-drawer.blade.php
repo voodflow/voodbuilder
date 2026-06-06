@@ -14,24 +14,30 @@
     $user = auth()->user();
 @endphp
 
-<div class="pointer-events-none fixed inset-0 z-50 hidden [[data-mobile-nav].is-open]:block" data-mobile-nav hidden aria-hidden="true">
-    <div class="absolute inset-0 bg-black/45" data-mobile-nav-close tabindex="-1" aria-hidden="true"></div>
+<div
+    class="fixed inset-0 z-50 [[data-mobile-nav].is-open]:pointer-events-auto"
+    data-mobile-nav
+    hidden
+    aria-hidden="true"
+>
+    <div
+        class="absolute inset-0 bg-black/45 opacity-0 transition-opacity duration-300 [[data-mobile-nav].is-open_&]:opacity-100"
+        data-mobile-nav-close
+        tabindex="-1"
+        aria-hidden="true"
+    ></div>
 
     <nav
         id="vpress-mobile-nav"
-        class="absolute top-0 right-0 flex h-full w-[min(100vw-3rem,320px)] translate-x-full flex-col bg-vp-bg shadow-xl transition-transform duration-300 [[data-mobile-nav].is-open_&]:translate-x-0"
+        class="pointer-events-auto absolute top-16 bottom-0 left-0 z-10 flex w-[min(100vw-3rem,320px)] -translate-x-full flex-col border-r border-vp-divider bg-vp-bg opacity-0 shadow-xl transition-[transform,opacity] duration-300 ease-out [[data-mobile-nav].is-open_&]:translate-x-0 [[data-mobile-nav].is-open_&]:opacity-100"
         aria-label="{{ __('Mobile navigation') }}"
         data-mobile-nav-panel
     >
-        <div class="flex items-center justify-between border-b border-vp-divider px-4 py-3">
-            @if ($hasDocSidebar)
-                <x-vpress::nav-title />
-            @else
-                <span class="text-sm font-semibold text-vp-text-1">{{ __('Menu') }}</span>
-            @endif
+        <div class="flex h-14 shrink-0 items-center justify-between border-b border-vp-divider px-4">
+            <span class="text-sm font-semibold text-vp-text-1">{{ __('Menu') }}</span>
             <button
                 type="button"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-md text-vp-text-2 hover:text-vp-text-1"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1"
                 data-mobile-nav-close
                 aria-label="{{ __('Close menu') }}"
             >

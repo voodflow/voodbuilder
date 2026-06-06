@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.2] - 2026-06-06
+
+### Added
+
+- Primary site language setting in Filament (no locale prefix for the primary language)
+- Optional mobile logo upload in site settings
+- Profile dropdown menu with language, theme, and account actions
+- English and Italian strings for nav and settings helpers
+
+### Changed
+
+- Mobile navigation drawer with in-panel close control and improved scroll lock
+- Sticky right-hand doc aside aligned with VitePress behaviour
+- Account, register, and account settings pages migrated to Tailwind (`vp-*` tokens)
+- Language switcher section hidden when the switcher is disabled in settings
+- Search modal no longer locks page scroll; logo sizing tuned for desktop and mobile
+- Home routes skip legacy `/{locale}` prefixes when tutorials use slug-based locales
+
+### Removed
+
+- Legacy “More” overflow menu in the header (replaced by profile menu)
+
+[0.0.2]: https://github.com/voodflow/vpress/releases/tag/0.0.2
+
 ## [0.0.1] - 2026-06-04
 
 ### Added

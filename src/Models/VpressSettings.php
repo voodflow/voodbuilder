@@ -34,7 +34,10 @@ class VpressSettings extends Model
             'show_account_link' => true,
             'sticky_nav' => false,
             'show_language_switcher' => true,
+            'primary_locale' => null,
+            'default_ui_locale' => null,
             'logo' => null,
+            'logo_mobile' => null,
             'favicon' => null,
             'seo_default_description' => null,
             'seo_default_image' => null,
@@ -66,8 +69,21 @@ class VpressSettings extends Model
                 return static::defaults();
             }
 
-            return array_merge(static::defaults(), $record->data ?? []);
+            return static::normalizeData(array_merge(static::defaults(), $record->data ?? []));
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected static function normalizeData(array $data): array
+    {
+        if (blank($data['primary_locale'] ?? null) && filled($data['default_ui_locale'] ?? null)) {
+            $data['primary_locale'] = $data['default_ui_locale'];
+        }
+
+        return $data;
     }
 
     public static function get(string $key, mixed $default = null): mixed
@@ -97,9 +113,44 @@ class VpressSettings extends Model
         return static::siteTitle();
     }
 
+    public static function primaryLocale(): string
+    {
+        $locale = static::get('primary_locale') ?? static::get('default_ui_locale');
+
+        if (is_string($locale) && $locale !== '') {
+            if (class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
+                if (\Voodflow\Tutorials\Support\Locales::isValid($locale)) {
+                    return $locale;
+                }
+            } else {
+                return $locale;
+            }
+        }
+
+        $configured = (string) config('tutorials.default_locale', config('app.locale', 'en'));
+
+        if (class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
+            return \Voodflow\Tutorials\Support\Locales::isValid($configured)
+                ? $configured
+                : \Voodflow\Tutorials\Support\Locales::codes()[0];
+        }
+
+        return $configured;
+    }
+
+    public static function defaultUiLocale(): string
+    {
+        return static::primaryLocale();
+    }
+
     public static function logoUrl(): ?string
     {
         return static::assetUrl('logo', config('vpress.logo'));
+    }
+
+    public static function logoMobileUrl(): ?string
+    {
+        return static::assetUrl('logo_mobile');
     }
 
     public static function assetUrl(string $key, mixed $fallback = null): ?string
@@ -115,7 +166,17 @@ class VpressSettings extends Model
             $data['theme_mode'] = 'light';
         }
 
-        foreach (['logo', 'favicon', 'seo_default_image', 'geo_organization_logo'] as $uploadKey) {
+        if (array_key_exists('primary_locale', $data) && class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
+            $locale = $data['primary_locale'];
+
+            if (! is_string($locale) || ! \Voodflow\Tutorials\Support\Locales::isValid($locale)) {
+                $data['primary_locale'] = \Voodflow\Tutorials\Support\Locales::codes()[0];
+            }
+
+            $data['default_ui_locale'] = $data['primary_locale'];
+        }
+
+        foreach (['logo', 'logo_mobile', 'favicon', 'seo_default_image', 'geo_organization_logo'] as $uploadKey) {
             if (array_key_exists($uploadKey, $data)) {
                 $data[$uploadKey] = static::normalizeUploadValue($data[$uploadKey]);
             }

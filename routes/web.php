@@ -15,7 +15,8 @@ if (class_exists(Locales::class) && config('tutorials.features.localization', fa
     $localeMiddleware[] = 'tutorials.locale';
 }
 
-$nonDefaultLocales = class_exists(Locales::class)
+$usesLocaleUrlPrefix = class_exists(Locales::class) && Locales::usesUrlPrefix();
+$nonDefaultLocales = $usesLocaleUrlPrefix && class_exists(Locales::class)
     ? Locales::nonDefaultCodes()
     : [];
 

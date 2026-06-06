@@ -23,6 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Throwable;
+use Voodflow\Tutorials\Support\Locales;
 use Voodflow\Vpress\Models\VpressSettings;
 
 /**
@@ -54,7 +55,13 @@ class VpressSettingsPage extends Page
 
     public function mount(): void
     {
-        $this->form->fill(VpressSettings::data());
+        $data = VpressSettings::data();
+
+        if (blank($data['primary_locale'] ?? null) && class_exists(Locales::class)) {
+            $data['primary_locale'] = VpressSettings::primaryLocale();
+        }
+
+        $this->form->fill($data);
     }
 
     public function save(): void
@@ -119,7 +126,17 @@ class VpressSettingsPage extends Page
                             ->acceptedFileTypes($imageTypes)
                             ->maxSize((int) config('vpress.uploads.max_size', 2048))
                             ->imagePreviewHeight('64')
-                            ->helperText(__('Upload a logo for the site header (PNG, JPG, WebP, or SVG).'))
+                            ->helperText(__('vpress::settings.logo_help'))
+                            ->nullable(),
+                        FileUpload::make('logo_mobile')
+                            ->label(__('vpress::settings.logo_mobile'))
+                            ->disk($uploadDisk)
+                            ->directory($uploadDirectory.'/mobile')
+                            ->visibility('public')
+                            ->acceptedFileTypes($imageTypes)
+                            ->maxSize((int) config('vpress.uploads.max_size', 2048))
+                            ->imagePreviewHeight('48')
+                            ->helperText(__('vpress::settings.logo_mobile_help'))
                             ->nullable(),
                         FileUpload::make('favicon')
                             ->label(__('Favicon'))
@@ -171,7 +188,16 @@ class VpressSettingsPage extends Page
                             ->label(__('Show language switcher'))
                             ->helperText(__('Hidden automatically when only one content locale is configured.'))
                             ->default(true)
+                            ->live()
                             ->visible(fn (): bool => class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class)
+                                && \Voodflow\Tutorials\Support\LocaleSwitcher::enabled()),
+                        Select::make('primary_locale')
+                            ->label(__('vpress::settings.primary_locale'))
+                            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
+                            ->default(fn (): string => VpressSettings::primaryLocale())
+                            ->helperText(__('vpress::settings.primary_locale_help'))
+                            ->visible(fn (): bool => class_exists(Locales::class)
+                                && class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class)
                                 && \Voodflow\Tutorials\Support\LocaleSwitcher::enabled()),
                     ]),
                 Section::make(__('SEO defaults'))

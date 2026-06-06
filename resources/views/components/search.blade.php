@@ -10,26 +10,21 @@
     <div class="flex items-center" data-vpress-search>
         <button
             type="button"
-            class="flex h-16 items-center gap-2 px-3.5 text-vp-text-2 transition-colors hover:text-vp-text-1 md:h-auto md:rounded-lg md:bg-vp-bg-alt md:px-3 md:py-2 md:text-sm"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
             data-vpress-search-open
             aria-haspopup="dialog"
             aria-controls="vpress-search-dialog"
             aria-expanded="false"
+            aria-label="{{ __('vpress::search.button') }}"
         >
-            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <span class="hidden text-[13px] font-medium md:inline">{{ __('vpress::search.button') }}</span>
-            <span class="hidden items-center gap-1 rounded border border-vp-divider px-1.5 py-1 text-xs md:flex" aria-hidden="true">
-                <kbd class="font-sans font-medium mac:hidden">Ctrl</kbd>
-                <kbd class="hidden font-sans font-medium mac:inline">⌘</kbd>
-                <kbd class="font-sans font-medium">K</kbd>
-            </span>
         </button>
 
         <div
             id="vpress-search-dialog"
-            class="fixed inset-0 z-[60] hidden items-start justify-center px-6 pt-24"
+            class="fixed inset-0 z-[60] items-start justify-center px-6 pt-24"
             data-vpress-search-dialog
             hidden
             role="dialog"
