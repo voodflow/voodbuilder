@@ -53,13 +53,10 @@ class VpressServiceProvider extends PackageServiceProvider
         Blade::componentNamespace('Voodflow\\Vpress\\Components', 'vpress');
 
         View::composer('vpress::layouts.app', function ($view): void {
-            $view->with(
-                'vpressHasDocSidebar',
-                str_contains(
-                    (string) $view->getFactory()->getSection('body_class', ''),
-                    'vpress-has-doc-sidebar'
-                )
-            );
+            $bodyClass = (string) $view->getFactory()->getSection('body_class', '');
+
+            $view->with('vpressHasDocSidebar', str_contains($bodyClass, 'vpress-has-doc-sidebar'));
+            $view->with('vpressShowReadingProgress', str_contains($bodyClass, 'vpress-has-reading-progress'));
         });
 
         Livewire::component('vpress.site-notification-bell', SiteNotificationBell::class);

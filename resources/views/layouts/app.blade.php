@@ -20,7 +20,10 @@
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col @yield('body_class')">
-    <x-vpress::nav :has-doc-sidebar="$vpressHasDocSidebar ?? false" />
+    <x-vpress::nav
+        :has-doc-sidebar="$vpressHasDocSidebar ?? false"
+        :show-reading-progress="$vpressShowReadingProgress ?? false"
+    />
 
     <main class="flex-1">
         @yield('content')

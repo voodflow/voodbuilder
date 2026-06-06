@@ -1,5 +1,6 @@
 @props([
     'hasDocSidebar' => false,
+    'showReadingProgress' => false,
 ])
 
 @php
@@ -81,14 +82,14 @@
             </div>
         </div>
 
-        @unless ($hasDocSidebar)
+        @unless ($hasDocSidebar || $showReadingProgress)
             <div class="pointer-events-none w-full">
                 <div class="h-px w-full bg-vp-divider"></div>
             </div>
         @endunless
     </div>
 
-    @if ($hasDocSidebar)
+    @if ($showReadingProgress)
         <div
             class="pointer-events-none relative h-[2px] w-full bg-vp-divider"
             data-vpress-progress

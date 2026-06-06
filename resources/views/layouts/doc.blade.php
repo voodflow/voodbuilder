@@ -1,8 +1,14 @@
 @extends(config('vpress.layouts.app', 'vpress::layouts.app'))
 
-@if ($hasSidebar ?? false)
+@php
+    $vpressBodyClasses = trim(implode(' ', array_filter([
+        ($hasSidebar ?? false) ? 'vpress-has-doc-sidebar' : null,
+        ($showProgress ?? false) ? 'vpress-has-reading-progress' : null,
+    ])));
+@endphp
+@if ($vpressBodyClasses !== '')
     @section('body_class')
-        vpress-has-doc-sidebar
+        {{ $vpressBodyClasses }}
     @endsection
 @endif
 
