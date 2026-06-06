@@ -90,4 +90,10 @@ return [
         'enabled' => true,
         'route_prefix' => 'pages',
     ],
+
+    'search' => [
+        'enabled' => true,
+        'route' => 'search',
+        'per_type' => 20,
+    ],
 ];

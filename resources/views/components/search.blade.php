@@ -1,9 +1,13 @@
 @php
     use Illuminate\Support\Facades\Route;
-    use Voodflow\Tutorials\Support\TutorialUrls;
+    use Voodflow\Vpress\Support\VpressUrls;
 
-    $enabled = Route::has('tutorials.index') || Route::has('tutorials.localized.index');
-    $searchUrl = $enabled ? TutorialUrls::index() : null;
+    $enabled = Route::has('vpress.search')
+        || Route::has('tutorials.index')
+        || Route::has('tutorials.localized.index');
+    $searchUrl = Route::has('vpress.search')
+        ? VpressUrls::search()
+        : null;
 @endphp
 
 @if ($enabled && $searchUrl)

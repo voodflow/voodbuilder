@@ -27,4 +27,13 @@ final class VpressUrls
     {
         return Route::has('logout') ? route('logout') : url('/logout');
     }
+
+    public static function search(array $query = []): string
+    {
+        if (! Route::has('vpress.search')) {
+            return url('/search');
+        }
+
+        return route('vpress.search', $query);
+    }
 }

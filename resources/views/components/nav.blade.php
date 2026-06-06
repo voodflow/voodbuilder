@@ -37,11 +37,14 @@
                     <x-vpress::nav-title />
                 </div>
 
-                <x-vpress::menu
-                    menu="main"
-                    class="hidden shrink-0 items-center vp:flex"
-                    link-class="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1"
-                />
+                <div class="hidden shrink-0 items-center gap-1 vp:flex">
+                    <x-vpress::menu
+                        menu="main"
+                        :wrapped="false"
+                        link-class="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1"
+                    />
+                    <x-vpress::docs-menu />
+                </div>
 
                 <div class="flex min-w-0 items-center justify-end gap-2 vp:gap-3">
                     <x-vpress::menu

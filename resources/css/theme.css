@@ -12,6 +12,7 @@
 @source '../views/**/*.blade.php';
 @source '../../../../../resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/tutorials/resources/views/**/*.blade.php';
+@source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
 
 @theme {
     --breakpoint-vp: 60rem;
@@ -131,5 +132,73 @@
         height: 2px;
         min-height: 2px;
         max-height: 2px;
+    }
+}
+
+@layer components {
+    .vp-doc {
+        @apply text-base leading-7 text-vp-text-1;
+    }
+
+    .vp-doc h1 {
+        @apply mb-4 border-b border-vp-divider pb-2 text-[28px] leading-10 font-semibold tracking-tight text-vp-text-1;
+    }
+
+    .vp-doc h2 {
+        @apply mt-12 mb-4 border-t border-vp-divider pt-6 text-2xl font-semibold tracking-tight text-vp-text-1;
+    }
+
+    .vp-doc h2:first-child {
+        @apply mt-0 border-t-0 pt-0;
+    }
+
+    .vp-doc h3 {
+        @apply mt-8 mb-2 text-xl font-semibold text-vp-text-1;
+    }
+
+    .vp-doc p {
+        @apply my-4;
+    }
+
+    .vp-doc a {
+        @apply font-medium text-vp-brand-1 no-underline hover:underline;
+    }
+
+    .vp-doc ul,
+    .vp-doc ol {
+        @apply my-4 pl-5;
+    }
+
+    .vp-doc li {
+        @apply my-2;
+    }
+
+    .vp-doc blockquote {
+        @apply my-4 rounded-r-lg border-l-4 border-vp-brand-1/30 bg-vp-bg-alt py-2 pl-4;
+    }
+
+    .vp-doc :not(pre) > code {
+        @apply rounded bg-vp-gray-soft px-1.5 py-0.5 font-mono text-sm text-vp-brand-1;
+    }
+
+    .vp-doc pre {
+        @apply my-4;
+    }
+
+    .vp-doc table {
+        @apply my-4 w-full border-collapse text-sm;
+    }
+
+    .vp-doc th,
+    .vp-doc td {
+        @apply border border-vp-divider px-3 py-2;
+    }
+
+    .vp-doc th {
+        @apply bg-vp-bg-alt font-semibold;
+    }
+
+    .vp-doc img {
+        @apply my-4 max-w-full rounded-lg;
     }
 }

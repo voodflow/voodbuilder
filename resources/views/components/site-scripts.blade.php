@@ -113,7 +113,7 @@
             }
         });
 
-        const article = document.querySelector('[data-tutorial-article], [data-doc-article]');
+        const article = document.querySelector('[data-tutorial-article], [data-doc-article], [data-vdocs-article]');
         const bar = document.querySelector('[data-reading-progress]');
         const progressTrack = bar?.closest('[data-vpress-progress]');
 
@@ -198,5 +198,35 @@
                 setSearchOpen(true);
             });
         }
+
+        document.querySelectorAll('[data-code-copy]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const block = button.closest('[data-code-block]');
+
+                if (! block) {
+                    return;
+                }
+
+                const code = block.querySelector('code')?.textContent?.trim() ?? '';
+
+                if (code === '') {
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(code);
+                    const original = button.textContent;
+                    button.textContent = 'Copied';
+                    window.setTimeout(() => {
+                        button.textContent = original;
+                    }, 1600);
+                } catch {
+                    button.textContent = 'Failed';
+                    window.setTimeout(() => {
+                        button.textContent = 'Copy';
+                    }, 1600);
+                }
+            });
+        });
     })();
 </script>

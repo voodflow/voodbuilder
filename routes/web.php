@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Vpress\Http\Controllers\AccountController;
 use Voodflow\Vpress\Http\Controllers\AuthController;
 use Voodflow\Vpress\Http\Controllers\HomeController;
+use Voodflow\Vpress\Http\Controllers\SearchController;
 use Voodflow\Vpress\Http\Controllers\SitePageController;
 use Voodflow\Tutorials\Support\Locales;
 
@@ -31,6 +32,13 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
                     Route::get('/', HomeController::class)->name('home.localized');
                 });
         }
+    }
+
+    if (config('vpress.search.enabled', true)) {
+        $searchRoute = trim((string) config('vpress.search.route', 'search'), '/');
+
+        Route::get('/'.$searchRoute, SearchController::class)
+            ->name('vpress.search');
     }
 
     if (config('vpress.pages.enabled', true)) {
