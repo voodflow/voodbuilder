@@ -23,7 +23,7 @@
 
     <div @class(['grid grid-cols-1 gap-5', $gridCols])>
         @forelse ($tutorials as $tutorial)
-            <x-vtuts::tutorial-card :tutorial="$tutorial" variant="grid" />
+            <x-vtuts::vtut-card :tutorial="$tutorial" variant="grid" />
         @empty
             <p class="text-sm text-vp-text-2">{{ __('vpress::home.no_vtuts') }}</p>
         @endforelse

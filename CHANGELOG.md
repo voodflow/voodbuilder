@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.6] - 2026-06-08
+
+### Fixed
+
+- `vpress:install` always runs with the English locale so Artisan output and default seeded content stay in English regardless of the host OS or app locale
+- Homepage `latest_vtuts` block uses `vtuts::vtut-card`
+
 ## [0.0.5] - 2026-06-08
 
 ### Fixed

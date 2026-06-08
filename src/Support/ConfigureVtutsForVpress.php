@@ -19,17 +19,14 @@ final class ConfigureVtutsForVpress
         $contents = File::get($path);
         $original = $contents;
 
-        $contents = str_replace(
-            "'layout' => 'vtuts::layouts.page'",
-            "'layout' => 'vpress::layouts.page'",
-            $contents,
-        );
+        $layoutReplacements = [
+            "'layout' => 'vtuts::layouts.page'" => "'layout' => 'vpress::layouts.page'",
+            "'doc_layout' => 'vtuts::layouts.doc'" => "'doc_layout' => 'vpress::layouts.doc'",
+        ];
 
-        $contents = str_replace(
-            "'doc_layout' => 'vtuts::layouts.doc'",
-            "'doc_layout' => 'vpress::layouts.doc'",
-            $contents,
-        );
+        foreach ($layoutReplacements as $search => $replace) {
+            $contents = str_replace($search, $replace, $contents);
+        }
 
         if ($force || str_contains($contents, "'fallback_url' => null")) {
             $contents = str_replace(

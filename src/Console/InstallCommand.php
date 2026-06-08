@@ -37,6 +37,22 @@ class InstallCommand extends Command
 
     public function handle(): int
     {
+        $previousLocale = app()->getLocale();
+        $previousFallbackLocale = app()->getFallbackLocale();
+
+        app()->setLocale('en');
+        app()->setFallbackLocale('en');
+
+        try {
+            return $this->runInstall();
+        } finally {
+            app()->setLocale($previousLocale);
+            app()->setFallbackLocale($previousFallbackLocale);
+        }
+    }
+
+    protected function runInstall(): int
+    {
         $this->components->info('Installing voodflow/vpress...');
 
         $publishOptions = array_filter([
