@@ -209,7 +209,7 @@ class InstallCommand extends Command
         $this->line('        # composer/artisan → container | npm → host Mac');
         $this->newLine();
 
-        $this->line('  3. Customize config/vpress.php and manage Site → Settings in Filament.');
+        $this->line('  3. Customize config/vpress.php and manage Vpress → Settings in Filament.');
         $this->newLine();
 
         $this->components->success('voodflow/vpress installed successfully.');

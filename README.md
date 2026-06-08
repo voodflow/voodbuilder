@@ -1,8 +1,8 @@
 # voodflow/vpress
 
-**Free & open source (MIT)** — VitePress-style public frontend for Laravel and Filament 5.
+**Free & open source (MIT)** — VitePress-style public frontend for Laravel with a **Filament 5** admin panel.
 
-Vpress is **not a full CMS**. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
+Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigation, and settings. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
 
 ## What it does
 

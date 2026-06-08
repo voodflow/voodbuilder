@@ -28,6 +28,15 @@
             "Voodflow\\Vpress\\Database\\Seeders\\": "database/seeders/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Voodflow\\Vpress\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0"
+    },
     "extra": {
         "laravel": {
             "providers": [

@@ -35,11 +35,17 @@ class VpressSettingsPage extends Page
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Site';
+    protected static ?int $navigationSort = 3;
 
-    protected static ?int $navigationSort = 10;
+    public static function getNavigationGroup(): ?string
+    {
+        return __('vpress::admin.navigation.group');
+    }
 
-    protected static ?string $navigationLabel = 'Settings';
+    public static function getNavigationLabel(): string
+    {
+        return __('vpress::admin.navigation.settings');
+    }
 
     protected static ?string $title = 'Settings';
 
@@ -47,11 +53,6 @@ class VpressSettingsPage extends Page
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];
-
-    public static function getNavigationLabel(): string
-    {
-        return __('Settings');
-    }
 
     public function mount(): void
     {

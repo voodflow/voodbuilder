@@ -107,11 +107,17 @@ class NavigationMenuResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Site';
+    protected static ?int $navigationSort = 1;
 
-    protected static ?int $navigationSort = 5;
+    public static function getNavigationGroup(): ?string
+    {
+        return __('vpress::admin.navigation.group');
+    }
 
-    protected static ?string $navigationLabel = 'Menus';
+    public static function getNavigationLabel(): string
+    {
+        return __('vpress::admin.navigation.menus');
+    }
 
     protected static ?string $modelLabel = 'Menu';
 
