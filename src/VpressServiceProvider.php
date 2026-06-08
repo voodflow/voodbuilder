@@ -18,6 +18,7 @@ use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
+use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\VpressSeo;
 
@@ -46,6 +47,8 @@ class VpressServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        RegisterFilamentCookieConsentTranslations::apply();
+
         View::replaceNamespace('cookie-consent', [
             __DIR__.'/../resources/views/cookie-consent',
         ]);

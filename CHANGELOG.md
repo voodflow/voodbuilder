@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.7] - 2026-06-08
+
+### Fixed
+
+- Load `filament-cookie-consent` translations when the package is excluded from Laravel auto-discovery (Filament settings labels no longer show raw translation keys)
+
 ## [0.0.6] - 2026-06-08
 
 ### Fixed
