@@ -59,10 +59,7 @@ return [
     'admin_panel_id' => 'admin',
 
     'assets' => [
-        'vite' => [
-            'packages/voodflow/vpress/resources/css/theme.css',
-            'resources/js/app.js',
-        ],
+        'vite' => \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries(),
     ],
 
     /*

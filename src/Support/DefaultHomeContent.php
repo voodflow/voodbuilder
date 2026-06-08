@@ -24,7 +24,7 @@ final class DefaultHomeContent
             ? (class_exists(VtutUrls::class)
                 ? VtutUrls::index($locale)
                 : route('vtuts.index'))
-            : url('/vtuts');
+            : url('/'.(class_exists(VtutUrls::class) ? VtutUrls::pathPrefix() : 'tutorials'));
 
         $content = [
             'type' => 'doc',

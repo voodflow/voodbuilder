@@ -6,8 +6,10 @@ namespace Voodflow\Vpress\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
+use Voodflow\Vpress\Support\ConfigureViteForVpress;
 use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
 use Voodflow\Vpress\Support\DisableFilamentCookieBanner;
+use Voodflow\Vpress\Support\VpressPaths;
 
 class InstallCommand extends Command
 {
@@ -67,6 +69,8 @@ class InstallCommand extends Command
         $this->publishNotificationsTableMigration();
 
         $this->configureVtutsIntegration();
+
+        $this->configureViteIntegration();
 
         $this->configureCookieConsentForFrontendOnly();
 
@@ -129,6 +133,21 @@ class InstallCommand extends Command
         }
     }
 
+    protected function configureViteIntegration(): void
+    {
+        if (! is_file(base_path('vite.config.js'))) {
+            $this->components->warn('vite.config.js not found — add the theme entry manually (see README).');
+
+            return;
+        }
+
+        if (ConfigureViteForVpress::apply($this->option('force'))) {
+            $this->components->info('Updated vite.config.js with '.VpressPaths::themeCssRelativePath());
+        } else {
+            $this->components->warn('vite.config.js already references vpress theme.css.');
+        }
+    }
+
     protected function configureCookieConsentForFrontendOnly(): void
     {
         if (! InstalledVersions::isInstalled('jeffersongoncalves/filament-cookie-consent')) {
@@ -187,6 +206,8 @@ class InstallCommand extends Command
             return $status;
         }
 
+        $themePath = VpressPaths::themeCssRelativePath();
+
         $this->newLine();
         $this->components->info('Complete these steps in your host app:');
         $this->newLine();
@@ -195,21 +216,16 @@ class InstallCommand extends Command
         $this->line('     ->plugins([\\Voodflow\\Vpress\\VpressPlugin::make()])');
         $this->newLine();
 
-        $this->line('  2. Frontend assets (Vite — due passi distinti):');
+        $this->line('  2. Build frontend assets (from your Laravel app root):');
+        $this->line('     npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite');
+        $this->line('     npm run build    # or: npm run dev');
         $this->newLine();
-        $this->line('     a) Terminale — installa dipendenze:');
-        $this->line('        npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite');
-        $this->newLine();
-        $this->line('     b) File vite.config.js — aggiungi theme.css all\'array input (NON eseguirlo in bash):');
-        $this->line("        'packages/voodflow/vpress/resources/css/theme.css'");
-        $this->line('        // stesso path anche in config/vpress.php → assets.vite');
-        $this->newLine();
-        $this->line('     c) Sul Mac (cartella app/) — NON nel container Docker:');
-        $this->line('        npm run build   # oppure npm run dev');
-        $this->line('        # composer/artisan → container | npm → host Mac');
+        $this->line('     vite.config.js should include:');
+        $this->line("     '{$themePath}'");
+        $this->line('     (vpress:install patches this automatically when possible.)');
         $this->newLine();
 
-        $this->line('  3. Customize config/vpress.php and manage Vpress → Settings in Filament.');
+        $this->line('  3. Customize config/vpress.php and manage Site → Settings in Filament.');
         $this->newLine();
 
         $this->components->success('voodflow/vpress installed successfully.');

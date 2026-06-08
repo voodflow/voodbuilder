@@ -138,7 +138,23 @@ Nav seeder adds a **Tutorials** link when `vtuts.index` exists.
 
 ## Vite & CSS
 
-Vpress does not ship pre-built CSS. Add the theme entry to **your** `vite.config.js`:
+Vpress does not ship pre-built CSS. `php artisan vpress:install` tries to add the theme entry to your `vite.config.js` automatically. The path depends on how the package is installed:
+
+| Install method | Theme CSS path |
+|----------------|----------------|
+| Composer (GitHub / Packagist) | `vendor/voodflow/vpress/resources/css/theme.css` |
+| Path repo / monorepo | `packages/voodflow/vpress/resources/css/theme.css` |
+
+`config/vpress.php` resolves this at runtime — you do not need to edit it manually.
+
+Add Tailwind and fonts, then build:
+
+```bash
+npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite
+npm run build
+```
+
+Your `vite.config.js` should look like this (path may differ):
 
 ```js
 import { defineConfig } from 'vite';
@@ -151,19 +167,13 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                'packages/voodflow/vpress/resources/css/theme.css',
+                'vendor/voodflow/vpress/resources/css/theme.css',
             ],
             refresh: true,
         }),
         tailwindcss(),
     ],
 });
-```
-
-Match paths in `config/vpress.php` → `assets.vite`. Then:
-
-```bash
-npm run build
 ```
 
 ## Custom RichEditor blocks

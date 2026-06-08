@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.4] - 2026-06-08
+
+### Fixed
+
+- `vpress:install` post-install instructions are in English again
+- Theme CSS path resolves automatically for Composer installs (`vendor/...`) and monorepo path repos (`packages/...`)
+- `vpress:install` patches `vite.config.js` when the theme entry is missing or still uses the legacy `packages/` path
+- Doc outline scroll-spy handles duplicate heading links and bottom-of-page active state
+- Default home CTA uses the configured vtuts URL prefix instead of a hardcoded `/vtuts` path
+
+### Changed
+
+- `config/vpress.php` uses `VpressPaths::defaultViteEntries()` so `@vite` always matches the install location
+
 ## [0.0.2] - 2026-06-06
 
 ### Added
@@ -23,6 +37,8 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - Legacy “More” overflow menu in the header (replaced by profile menu)
+
+[0.0.4]: https://github.com/voodflow/vpress/releases/tag/0.0.4
 
 [0.0.2]: https://github.com/voodflow/vpress/releases/tag/0.0.2
 

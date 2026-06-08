@@ -202,19 +202,29 @@
         const outlineLinks = [...document.querySelectorAll('[data-outline-link]')];
 
         if (outlineLinks.length > 0) {
-            const outlineEntries = outlineLinks
-                .map((link) => {
-                    const id = link.getAttribute('href')?.slice(1);
+            const entriesById = new Map();
 
-                    if (! id) {
-                        return null;
-                    }
+            outlineLinks.forEach((link) => {
+                const id = link.getAttribute('href')?.slice(1);
 
-                    const heading = document.getElementById(id);
+                if (! id) {
+                    return;
+                }
 
-                    return heading ? { link, heading, id } : null;
-                })
-                .filter(Boolean);
+                const heading = document.getElementById(id);
+
+                if (! heading) {
+                    return;
+                }
+
+                if (! entriesById.has(id)) {
+                    entriesById.set(id, { id, heading, links: [] });
+                }
+
+                entriesById.get(id).links.push(link);
+            });
+
+            const outlineEntries = [...entriesById.values()];
 
             if (outlineEntries.length > 0) {
                 let activeId = '';
@@ -226,17 +236,19 @@
 
                     activeId = id;
 
-                    outlineEntries.forEach(({ link, id: entryId }) => {
+                    outlineEntries.forEach(({ id: entryId, links }) => {
                         const isActive = entryId === id;
 
-                        link.classList.toggle('is-active', isActive);
-                        link.classList.toggle('active', isActive);
+                        links.forEach((link) => {
+                            link.classList.toggle('is-active', isActive);
+                            link.classList.toggle('active', isActive);
 
-                        if (isActive) {
-                            link.setAttribute('aria-current', 'location');
-                        } else {
-                            link.removeAttribute('aria-current');
-                        }
+                            if (isActive) {
+                                link.setAttribute('aria-current', 'location');
+                            } else {
+                                link.removeAttribute('aria-current');
+                            }
+                        });
                     });
                 };
 
@@ -250,22 +262,75 @@
                     return Number.isFinite(parsed) && parsed > 0 ? parsed : 96;
                 };
 
-                const updateOutline = () => {
-                    const offset = outlineOffset();
-                    let current = outlineEntries[0].id;
+                const sortByDocumentPosition = (items) => [...items].sort((a, b) => {
+                    if (a.heading === b.heading) {
+                        return 0;
+                    }
 
-                    outlineEntries.forEach(({ heading, id }) => {
+                    const position = a.heading.compareDocumentPosition(b.heading);
+
+                    if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+                        return -1;
+                    }
+
+                    if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+                        return 1;
+                    }
+
+                    return 0;
+                });
+
+                const resolveActiveOutlineId = (items, offset) => {
+                    const sorted = sortByDocumentPosition(items);
+
+                    if (sorted.length === 0) {
+                        return '';
+                    }
+
+                    const scrollEnd = window.scrollY + window.innerHeight;
+                    const pageEnd = document.documentElement.scrollHeight;
+
+                    if (pageEnd - scrollEnd < 80) {
+                        return sorted[sorted.length - 1].id;
+                    }
+
+                    for (let index = sorted.length - 1; index >= 0; index -= 1) {
+                        const { heading, id } = sorted[index];
+                        const { top, bottom } = heading.getBoundingClientRect();
+
+                        if (top <= offset && bottom > offset) {
+                            return id;
+                        }
+                    }
+
+                    const visible = sorted.filter(({ heading }) => {
+                        const { top, bottom } = heading.getBoundingClientRect();
+
+                        return bottom > offset && top < window.innerHeight;
+                    });
+
+                    if (visible.length > 0) {
+                        return visible[visible.length - 1].id;
+                    }
+
+                    let current = sorted[0].id;
+
+                    sorted.forEach(({ heading, id }) => {
                         if (heading.getBoundingClientRect().top <= offset) {
                             current = id;
                         }
                     });
 
-                    setActiveOutline(current);
+                    return current;
+                };
+
+                const updateOutline = () => {
+                    setActiveOutline(resolveActiveOutlineId(outlineEntries, outlineOffset()));
                 };
 
                 const hashId = window.location.hash.slice(1);
 
-                if (hashId && outlineEntries.some(({ id }) => id === hashId)) {
+                if (hashId && entriesById.has(hashId)) {
                     setActiveOutline(hashId);
                 } else {
                     updateOutline();
@@ -276,7 +341,7 @@
                 window.addEventListener('hashchange', () => {
                     const id = window.location.hash.slice(1);
 
-                    if (id && outlineEntries.some((entry) => entry.id === id)) {
+                    if (id && entriesById.has(id)) {
                         setActiveOutline(id);
                     }
                 });

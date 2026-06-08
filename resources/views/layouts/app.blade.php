@@ -15,7 +15,7 @@
 
     @include('cookie-consent::cookie-consent-head')
 
-    @vite(config('vpress.assets.vite', ['packages/voodflow/vpress/resources/css/theme.css', 'resources/js/app.js']))
+    @vite(config('vpress.assets.vite', \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries()))
     @livewireStyles
     @stack('head')
 </head>
