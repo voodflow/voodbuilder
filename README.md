@@ -68,7 +68,11 @@ php artisan vpress:install
 3. Run `migrate` (vpress tables, `notifications`, settings)
 4. Seed default navigation and cookie policy page
 5. Configure cookie-consent for **frontend only** (no banner in Filament)
-6. If `voodflow/vtuts` is installed — patch `config/vtuts.php` to use `vpress::layouts.*`
+6. Remove Laravel’s default `Route::get('/')` welcome route so vpress can serve the homepage
+7. Patch `vite.config.js` with the correct theme CSS path when possible
+8. If `voodflow/vtuts` is installed — patch `config/vtuts.php` to use `vpress::layouts.*`
+
+> **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the vpress `home` route and shows the default welcome page without the vpress theme. `vpress:install` removes that route automatically.
 
 > Vpress migrations load from the package automatically. Do not publish duplicate migration files.
 

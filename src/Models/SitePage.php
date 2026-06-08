@@ -16,6 +16,7 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
+use Voodflow\Vpress\Support\VpressUrls;
 
 class SitePage extends Model implements HasRichContent
 {
@@ -60,7 +61,7 @@ class SitePage extends Model implements HasRichContent
     public function getUrl(): string
     {
         if ($this->is_home) {
-            return route('home');
+            return VpressUrls::home();
         }
 
         return Route::has('vpress.pages.show')

@@ -35,7 +35,7 @@ final class ConfigureVtutsForVpress
             $contents = str_replace(
                 "'fallback_url' => null",
                 <<<'PHP'
-'fallback_url' => fn (string $locale): string => route('home')
+'fallback_url' => fn (string $locale): string => \Voodflow\Vpress\Support\VpressUrls::home()
 PHP,
                 $contents,
             );

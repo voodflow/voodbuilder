@@ -1,7 +1,7 @@
 {
     "name": "voodflow/vpress",
     "description": "Voodflow plugin — VitePress-style public frontend theme and Filament site pages for Laravel.",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "type": "library",
     "license": "MIT",
     "keywords": [

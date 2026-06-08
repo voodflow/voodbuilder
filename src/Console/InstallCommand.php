@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
+use Voodflow\Vpress\Support\ConfigureRoutesForVpress;
 use Voodflow\Vpress\Support\ConfigureViteForVpress;
 use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
 use Voodflow\Vpress\Support\DisableFilamentCookieBanner;
@@ -70,6 +71,8 @@ class InstallCommand extends Command
 
         $this->configureVtutsIntegration();
 
+        $this->configureRoutesIntegration();
+
         $this->configureViteIntegration();
 
         $this->configureCookieConsentForFrontendOnly();
@@ -130,6 +133,16 @@ class InstallCommand extends Command
             $this->components->info('Updated config/vtuts.php to use vpress layouts.');
         } else {
             $this->components->warn('config/vtuts.php already uses vpress layouts (or file missing).');
+        }
+    }
+
+    protected function configureRoutesIntegration(): void
+    {
+        if (ConfigureRoutesForVpress::apply($this->option('force'))) {
+            $this->components->info('Removed the default Laravel welcome route from routes/web.php.');
+            $this->components->warn('The public homepage is now served by voodflow/vpress (route name: home).');
+        } else {
+            $this->components->warn('routes/web.php already defers the homepage to vpress (or no welcome route was found).');
         }
     }
 

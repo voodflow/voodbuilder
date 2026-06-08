@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2026-06-08
+
+### Fixed
+
+- `SitePage::getUrl()` no longer throws when the `home` route is missing (uses `VpressUrls::home()`)
+- `vpress:install` removes Laravel’s default welcome route so vpress owns `/` and the public theme loads
+- vtuts locale fallback URL uses `VpressUrls::home()` instead of a hardcoded `route('home')`
+
 ## [0.0.4] - 2026-06-08
 
 ### Fixed
@@ -37,6 +45,8 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - Legacy “More” overflow menu in the header (replaced by profile menu)
+
+[0.0.5]: https://github.com/voodflow/vpress/releases/tag/0.0.5
 
 [0.0.4]: https://github.com/voodflow/vpress/releases/tag/0.0.4
 
