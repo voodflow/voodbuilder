@@ -23,6 +23,7 @@ use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\EditNavigati
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Vpress\Models\NavigationMenu;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\MenuRouteCatalog;
 use Voodflow\Vpress\Support\Navigation;
 
 class NavigationMenuResource extends Resource
@@ -69,10 +70,16 @@ class NavigationMenuResource extends Resource
                     }),
             ],
             MenuItemType::Route => [
-                TextInput::make('link')
-                    ->label(__('Route name'))
-                    ->helperText(__('e.g. vtuts.index, blog.index, home'))
-                    ->required(),
+                Select::make('link')
+                    ->label(__('vpress::admin.fields.menu_route'))
+                    ->options(fn (): array => MenuRouteCatalog::options())
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText(__('vpress::admin.helpers.menu_route'))
+                    ->afterStateUpdated(function (callable $set, ?string $state): void {
+                        $set('route_match', filled($state) ? MenuRouteCatalog::activePattern($state) : null);
+                    }),
             ],
             MenuItemType::Url => [
                 TextInput::make('link')
@@ -166,9 +173,9 @@ class NavigationMenuResource extends Resource
                                     ->schema(fn (Get $get): array => static::menuItemLinkFields($get))
                                     ->columnSpanFull(),
                                 TextInput::make('route_match')
-                                    ->label(__('Active route pattern'))
-                                    ->helperText(__('Optional. e.g. tutorials.* — not needed for site pages'))
-                                    ->visible(fn (Get $get): bool => ! static::isMenuItemType($get, MenuItemType::Page)),
+                                    ->label(__('vpress::admin.fields.menu_route_match'))
+                                    ->helperText(__('vpress::admin.helpers.menu_route_match'))
+                                    ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
                                 Toggle::make('open_in_new_tab')
                                     ->label(__('Open in new tab')),
                             ])

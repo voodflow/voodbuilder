@@ -93,4 +93,29 @@ return [
         'route' => 'search',
         'per_type' => 20,
     ],
+
+    /*
+    | Named routes offered when building navigation menu items (App route type).
+    | Wildcard patterns exclude admin, Livewire, and other non-public endpoints.
+    */
+    'menus' => [
+        'route_exclude_patterns' => [
+            'filament.*',
+            'livewire.*',
+            'debugbar.*',
+            'horizon.*',
+            'telescope.*',
+            'sanctum.*',
+            'storage.*',
+            'ignition.*',
+            'vapor*',
+            'cashier.*',
+            'stripe.*',
+            'password.*',
+            'verification.*',
+            'two-factor.*',
+            'profile.*',
+            'boost.*',
+        ],
+    ],
 ];

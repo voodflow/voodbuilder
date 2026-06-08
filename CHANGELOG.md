@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- `MenuRouteCatalog` for Filament navigation menus: searchable select of public GET routes with automatic `route_match` patterns
+- Configurable `menus.route_exclude_patterns` to hide admin and internal routes from the menu builder
+
 ## [0.0.7] - 2026-06-08
 
 ### Fixed
