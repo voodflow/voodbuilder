@@ -59,12 +59,12 @@
             @endif
         @endauth
 
-        @if (class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class) && \Voodflow\Tutorials\Support\LocaleSwitcher::visible())
+        @if (class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class) && \Voodflow\Vtuts\Support\LocaleSwitcher::visible())
             <div class="px-3 py-2">
                 <div class="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">
-                    {{ __('tutorials::language_switcher.label') }}
+                    {{ __('vtuts::language_switcher.label') }}
                 </div>
-                <x-tutorials::language-switcher variant="dropdown" />
+                <x-vtuts::language-switcher variant="dropdown" />
             </div>
             <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
         @endif

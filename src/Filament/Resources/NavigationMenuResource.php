@@ -71,7 +71,7 @@ class NavigationMenuResource extends Resource
             MenuItemType::Route => [
                 TextInput::make('link')
                     ->label(__('Route name'))
-                    ->helperText(__('e.g. tutorials.index, blog.index, home'))
+                    ->helperText(__('e.g. vtuts.index, blog.index, home'))
                     ->required(),
             ],
             MenuItemType::Url => [

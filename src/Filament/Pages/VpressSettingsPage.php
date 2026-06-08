@@ -23,7 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Throwable;
-use Voodflow\Tutorials\Support\Locales;
+use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vpress\Models\VpressSettings;
 
 /**
@@ -189,16 +189,16 @@ class VpressSettingsPage extends Page
                             ->helperText(__('Hidden automatically when only one content locale is configured.'))
                             ->default(true)
                             ->live()
-                            ->visible(fn (): bool => class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class)
-                                && \Voodflow\Tutorials\Support\LocaleSwitcher::enabled()),
+                            ->visible(fn (): bool => class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class)
+                                && \Voodflow\Vtuts\Support\LocaleSwitcher::enabled()),
                         Select::make('primary_locale')
                             ->label(__('vpress::settings.primary_locale'))
                             ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
                             ->default(fn (): string => VpressSettings::primaryLocale())
                             ->helperText(__('vpress::settings.primary_locale_help'))
                             ->visible(fn (): bool => class_exists(Locales::class)
-                                && class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class)
-                                && \Voodflow\Tutorials\Support\LocaleSwitcher::enabled()),
+                                && class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class)
+                                && \Voodflow\Vtuts\Support\LocaleSwitcher::enabled()),
                     ]),
                 Section::make(__('SEO defaults'))
                     ->description(__('Fallback metadata for pages without custom SEO (Open Graph, Twitter, search engines).'))

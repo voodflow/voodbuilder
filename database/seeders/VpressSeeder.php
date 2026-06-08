@@ -117,7 +117,7 @@ class VpressSeeder extends Seeder
     /** @return list<array<string, mixed>> */
     protected function tutorialMenuItems(): array
     {
-        if (! Route::has('tutorials.index')) {
+        if (! Route::has('vtuts.index')) {
             return [];
         }
 
@@ -125,8 +125,8 @@ class VpressSeeder extends Seeder
             [
                 'label' => 'Tutorials',
                 'type' => MenuItemType::Route,
-                'link' => 'tutorials.index',
-                'route_match' => 'tutorials.*',
+                'link' => 'vtuts.index',
+                'route_match' => 'vtuts.*',
                 'sort_order' => 1,
             ],
         ];

@@ -97,9 +97,9 @@
             <div class="mt-6 border-t border-vp-divider pt-4">
                 <span class="mb-2 block text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">{{ __('Preferences') }}</span>
 
-                @if (class_exists(\Voodflow\Tutorials\Support\LocaleSwitcher::class) && \Voodflow\Tutorials\Support\LocaleSwitcher::visible())
+                @if (class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class) && \Voodflow\Vtuts\Support\LocaleSwitcher::visible())
                     <div class="mb-2">
-                        <x-tutorials::language-switcher />
+                        <x-vtuts::language-switcher />
                     </div>
                 @endif
 

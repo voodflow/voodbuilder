@@ -8,12 +8,12 @@ use Voodflow\Vpress\Http\Controllers\AuthController;
 use Voodflow\Vpress\Http\Controllers\HomeController;
 use Voodflow\Vpress\Http\Controllers\SearchController;
 use Voodflow\Vpress\Http\Controllers\SitePageController;
-use Voodflow\Tutorials\Support\Locales;
+use Voodflow\Vtuts\Support\Locales;
 
 $localeMiddleware = [];
 
-if (class_exists(Locales::class) && config('tutorials.features.localization', false)) {
-    $localeMiddleware[] = 'tutorials.locale';
+if (class_exists(Locales::class) && config('vtuts.features.localization', false)) {
+    $localeMiddleware[] = 'vtuts.locale';
 }
 
 $usesLocaleUrlPrefix = class_exists(Locales::class) && Locales::usesUrlPrefix();

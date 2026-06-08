@@ -6,7 +6,7 @@ namespace Voodflow\Vpress\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
-use Voodflow\Vpress\Support\ConfigureTutorialsForVpress;
+use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
 use Voodflow\Vpress\Support\DisableFilamentCookieBanner;
 
 class InstallCommand extends Command
@@ -66,7 +66,7 @@ class InstallCommand extends Command
 
         $this->publishNotificationsTableMigration();
 
-        $this->configureTutorialsIntegration();
+        $this->configureVtutsIntegration();
 
         $this->configureCookieConsentForFrontendOnly();
 
@@ -116,16 +116,16 @@ class InstallCommand extends Command
         return false;
     }
 
-    protected function configureTutorialsIntegration(): void
+    protected function configureVtutsIntegration(): void
     {
-        if (! InstalledVersions::isInstalled('voodflow/tutorials')) {
+        if (! InstalledVersions::isInstalled('voodflow/vtuts')) {
             return;
         }
 
-        if (ConfigureTutorialsForVpress::apply($this->option('force'))) {
-            $this->components->info('Updated config/tutorials.php to use vpress layouts.');
+        if (ConfigureVtutsForVpress::apply($this->option('force'))) {
+            $this->components->info('Updated config/vtuts.php to use vpress layouts.');
         } else {
-            $this->components->warn('config/tutorials.php already uses vpress layouts (or file missing).');
+            $this->components->warn('config/vtuts.php already uses vpress layouts (or file missing).');
         }
     }
 

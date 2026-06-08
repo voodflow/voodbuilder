@@ -118,8 +118,8 @@ class VpressSettings extends Model
         $locale = static::get('primary_locale') ?? static::get('default_ui_locale');
 
         if (is_string($locale) && $locale !== '') {
-            if (class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
-                if (\Voodflow\Tutorials\Support\Locales::isValid($locale)) {
+            if (class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
+                if (\Voodflow\Vtuts\Support\Locales::isValid($locale)) {
                     return $locale;
                 }
             } else {
@@ -127,12 +127,12 @@ class VpressSettings extends Model
             }
         }
 
-        $configured = (string) config('tutorials.default_locale', config('app.locale', 'en'));
+        $configured = (string) config('vtuts.default_locale', config('app.locale', 'en'));
 
-        if (class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
-            return \Voodflow\Tutorials\Support\Locales::isValid($configured)
+        if (class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
+            return \Voodflow\Vtuts\Support\Locales::isValid($configured)
                 ? $configured
-                : \Voodflow\Tutorials\Support\Locales::codes()[0];
+                : \Voodflow\Vtuts\Support\Locales::codes()[0];
         }
 
         return $configured;
@@ -166,11 +166,11 @@ class VpressSettings extends Model
             $data['theme_mode'] = 'light';
         }
 
-        if (array_key_exists('primary_locale', $data) && class_exists(\Voodflow\Tutorials\Support\Locales::class)) {
+        if (array_key_exists('primary_locale', $data) && class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
             $locale = $data['primary_locale'];
 
-            if (! is_string($locale) || ! \Voodflow\Tutorials\Support\Locales::isValid($locale)) {
-                $data['primary_locale'] = \Voodflow\Tutorials\Support\Locales::codes()[0];
+            if (! is_string($locale) || ! \Voodflow\Vtuts\Support\Locales::isValid($locale)) {
+                $data['primary_locale'] = \Voodflow\Vtuts\Support\Locales::codes()[0];
             }
 
             $data['default_ui_locale'] = $data['primary_locale'];

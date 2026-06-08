@@ -11,7 +11,7 @@
 
 @source '../views/**/*.blade.php';
 @source '../../../../../resources/views/**/*.blade.php';
-@source '../../../../../packages/voodflow/tutorials/resources/views/**/*.blade.php';
+@source '../../../../../packages/voodflow/vtuts/resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
 
 @theme {

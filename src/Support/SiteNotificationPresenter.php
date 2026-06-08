@@ -10,8 +10,8 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
 use Relaticle\Comments\Notifications\CommentRepliedNotification;
 use Relaticle\Comments\Notifications\UserMentionedNotification;
-use Voodflow\Tutorials\Models\Tutorial;
-use Voodflow\Tutorials\Support\TutorialUrls;
+use Voodflow\Vtuts\Models\Vtut;
+use Voodflow\Vtuts\Support\VtutUrls;
 
 final class SiteNotificationPresenter
 {
@@ -99,8 +99,8 @@ final class SiteNotificationPresenter
 
     protected static function commentableUrl(Model $commentable): ?string
     {
-        if ($commentable instanceof Tutorial && class_exists(TutorialUrls::class)) {
-            return TutorialUrls::show($commentable);
+        if ($commentable instanceof Vtut && class_exists(VtutUrls::class)) {
+            return VtutUrls::show($commentable);
         }
 
         if (method_exists($commentable, 'getUrl')) {
@@ -122,7 +122,7 @@ final class SiteNotificationPresenter
         }
 
         return match (true) {
-            $commentable instanceof Tutorial => $commentable->title,
+            $commentable instanceof Vtut => $commentable->title,
             method_exists($commentable, 'getAttribute') => $commentable->getAttribute('title'),
             default => null,
         };

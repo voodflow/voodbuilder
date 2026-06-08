@@ -3,8 +3,8 @@
     use Voodflow\Vpress\Support\VpressUrls;
 
     $enabled = Route::has('vpress.search')
-        || Route::has('tutorials.index')
-        || Route::has('tutorials.localized.index');
+        || Route::has('vtuts.index')
+        || Route::has('vtuts.localized.index');
     $searchUrl = Route::has('vpress.search')
         ? VpressUrls::search()
         : null;

@@ -1,22 +1,44 @@
 # voodflow/vpress
 
-**Version 0.0.1**
+**Free & open source (MIT)** — VitePress-style public frontend for Laravel and Filament 5.
 
-VitePress-style public frontend for Laravel and Filament 5: managed site pages, navigation, SEO, theme (light/dark), mobile nav, and extensible RichEditor blocks.
+Vpress is **not a full CMS**. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
+
+## What it does
+
+| Area | What you get |
+|------|----------------|
+| **Public theme** | VitePress-like nav, doc sidebar, outline scroll-spy, reading progress, mobile drawer, dark/light mode |
+| **Site pages** | Home + static pages built with Filament RichEditor and custom blocks (hero, features grid, latest vtuts, …) |
+| **Navigation** | Main, header-extra, and footer menus — route names, URLs, or site pages |
+| **Settings (DB)** | Brand name, site title, logo, favicon, social image, theme default, locale, toggles (search, theme, language, bell) |
+| **SEO** | Integrates [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-seo); global defaults from Settings |
+| **Auth (Fortify)** | Optional public `/login` and `/register` using **Laravel Fortify** views styled like the theme |
+| **Account** | `/account` profile page (avatar, name) when enabled |
+| **Notifications** | Bell in the nav for logged-in users (DB `notifications` table); e.g. new comments on your content |
+| **Search** | `/search` across vtuts, vdocs, and site pages when routes exist |
+| **Cookie consent** | Public banner only (admin configures policy in Filament; banner is **not** shown in the panel) |
+
+Vpress does **not** ship blog posts, e-commerce, or arbitrary content types — pair it with **voodflow/vtuts**, **voodflow/vdocs**, or **Relaticle Ink** for that.
 
 ## Requirements
 
 - PHP 8.4+
 - Laravel 12+
 - Filament 5+
-- Vite (for theme CSS and JS)
+- Vite + Tailwind CSS v4 (theme CSS is bundled in **your** app build)
 - [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-seo)
+- [spatie/laravel-settings](https://github.com/spatie/laravel-settings) (site settings in DB)
+
+**Optional**
+
+- [laravel/fortify](https://github.com/laravel/fortify) — login/register on the public site
+- [voodflow/vtuts](https://github.com/voodflow/vtuts) — tutorials with doc layout
+- [voodflow/vdocs](https://github.com/voodflow/vdocs) — technical documentation
 
 ## Installation
 
 ### From GitHub (Composer)
-
-Add the Voodflow repository to your Laravel app `composer.json`:
 
 ```json
 {
@@ -27,38 +49,28 @@ Add the Voodflow repository to your Laravel app `composer.json`:
         }
     ],
     "require": {
-        "voodflow/vpress": "^0.0.1"
+        "voodflow/vpress": "^0.0.2"
     }
 }
 ```
-
-Then run:
 
 ```bash
 composer update voodflow/vpress
 php artisan vpress:install
 ```
 
-The install command publishes Spatie Settings (required for cookie consent), the Laravel **notifications** table (required for Filament + comment bell), SEO config/migrations, Vpress config, runs `migrate`, and seeds default navigation and cookie policy pages.
+`vpress:install` will:
 
-> **Note:** Vpress loads its own migrations from the package. You do not need to publish Vpress migrations manually — doing so creates duplicate migration files.
+1. Publish Spatie Settings (required for cookie consent + vpress settings)
+2. Publish SEO config/migrations if needed
+3. Run `migrate` (vpress tables, `notifications`, settings)
+4. Seed default navigation and cookie policy page
+5. Configure cookie-consent for **frontend only** (no banner in Filament)
+6. If `voodflow/vtuts` is installed — patch `config/vtuts.php` to use `vpress::layouts.*`
 
-### Local path (development)
+> Vpress migrations load from the package automatically. Do not publish duplicate migration files.
 
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "packages/voodflow/vpress" }
-    ],
-    "require": {
-        "voodflow/vpress": "*"
-    }
-}
-```
-
-## Filament
-
-Register the plugin in your panel provider:
+### Filament
 
 ```php
 use Voodflow\Vpress\VpressPlugin;
@@ -68,52 +80,63 @@ $panel->plugins([
 ]);
 ```
 
-Admin features:
+**Admin → Site**
 
-- **Site → Settings** — branding, SEO defaults, theme, header options
-- **Site → Pages** — home and static pages with RichEditor blocks
-- **Site → Navigation** — main, footer, and header menus
-- **Settings → Cookie consent** — configure the public-site banner (banner does **not** appear in admin)
+- **Settings** — branding, SEO, theme default, feature toggles, primary locale
+- **Pages** — home and static pages (RichEditor + blocks)
+- **Navigation** — menus linked to routes or pages
 
-## With voodflow/tutorials
+## How it works
 
-Install both packages, then:
+### Layouts
+
+| Layout | Use |
+|--------|-----|
+| `vpress::layouts.app` | Base shell: nav, footer, Vite assets, cookie banner |
+| `vpress::layouts.home` | Home page (full-width, no doc sidebar) |
+| `vpress::layouts.doc` | Doc/tutorial: fixed gray left sidebar, outline, progress bar |
+| `vpress::layouts.page` | Simple content page |
+
+Other Voodflow packages point their config at these layouts (e.g. `vtuts.doc_layout` → `vpress::layouts.doc`).
+
+### Login & registration (Fortify)
+
+When Fortify is installed and routes are registered, vpress serves themed `/login` and `/register` blades. Users created on the public site receive the **registered** role when Shield/vtuts integration is present. Subscriber-only content is enforced by **vtuts** visibility + SubKit, not by vpress alone.
+
+### Notifications
+
+Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notifications` table (`vpress:install` creates it). The bell Livewire component shows unread Filament/database notifications — useful for moderators when someone comments on a tutorial.
+
+### Settings vs config file
+
+- `config/vpress.php` — layouts, feature flags, Vite entry paths (committed)
+- **Database** (`VpressSettings`) — logo, titles, theme default, toggles (edited in Filament)
+
+`ApplyVpressSiteConfig` middleware applies DB settings on each web request (title, favicon, locale hints).
+
+### Search
+
+`/search?q=…` queries published **vtuts**, **vdocs** pages, and **site pages** when those packages/routes exist. Disable via settings if not needed.
+
+### With voodflow/vtuts
 
 ```bash
-php artisan vpress:install   # configures tutorials layouts + cookie consent + migrate
-php artisan tutorials:install
+php artisan vpress:install
+php artisan vtuts:install
 ```
 
-`vpress:install` sets in `config/tutorials.php`:
+`vpress:install` sets in `config/vtuts.php`:
 
 - `layout` → `vpress::layouts.page`
 - `doc_layout` → `vpress::layouts.doc`
-- `localization.fallback_url` for the language switcher
 
-Tutorial pages use the vpress shell (nav, footer, cookie banner, Vite theme). Tutorial-specific styles (comments, TOC, materials) still load from `tutorials.css`.
+Tutorial listing and doc pages use the vpress shell; vtuts-specific CSS (`vtuts.css`) loads for comments, TOC, materials.
 
-The main nav seeder adds a **Tutorials** link when `tutorials.index` exists.
+Nav seeder adds a **Tutorials** link when `vtuts.index` exists.
 
-### Cookie consent
+## Vite & CSS
 
-- **Public frontend** — banner in `vpress::layouts.app` (head + body includes)
-- **Filament admin** — settings page only; `vpress:install` adds `dont-discover` for `filament-cookie-consent` so the banner is not injected into the panel
-
-After install, run `composer dump-autoload` if the admin still shows the banner.
-
-## Vite, CSS e font
-
-Vpress non serve CSS precompilato: il tema va **bundlato con Vite** nell’app host, come `resources/css/app.css`. Il file `theme.css` del package è solo un **entry point** da registrare in configurazione — **non** un comando da eseguire nel terminale.
-
-### Passo 1 — dipendenze npm
-
-```bash
-npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite
-```
-
-### Passo 2 — entry in `vite.config.js`
-
-Apri `vite.config.js` e aggiungi il path del tema nell’array `input` del plugin Laravel (path repo locale **oppure** vendor dopo install Composer):
+Vpress does not ship pre-built CSS. Add the theme entry to **your** `vite.config.js`:
 
 ```js
 import { defineConfig } from 'vite';
@@ -126,112 +149,41 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                // Sviluppo con path repo:
                 'packages/voodflow/vpress/resources/css/theme.css',
-                // Oppure, se il package è solo in vendor:
-                // 'vendor/voodflow/vpress/resources/css/theme.css',
             ],
             refresh: true,
         }),
-        tailwindcss(), // richiesto: theme.css usa @import 'tailwindcss'
+        tailwindcss(),
     ],
 });
 ```
 
-| Cosa | Dove |
-|------|------|
-| `npm install …` | Terminale — comando bash |
-| `'packages/.../theme.css'` | `vite.config.js` → array `input` — **stringa**, non comando |
-| `npm run build` | Terminale — compila gli entry e scrive in `public/build/` |
-
-`config/vpress.php` elenca gli stessi path in `assets.vite` così il layout Blade sa cosa caricare con `@vite(...)` — devono coincidere con `vite.config.js`.
-
-### Passo 3 — build
+Match paths in `config/vpress.php` → `assets.vite`. Then:
 
 ```bash
 npm run build
 ```
-
-In sviluppo: `npm run dev` (Vite in watch).
-
-### Errore comune
-
-Se incolli solo la riga del path nel terminale:
-
-```bash
-'packages/voodflow/vpress/resources/css/theme.css'
-# bash: Permission denied  ← non è un eseguibile, va in vite.config.js
-```
-
-### Dove eseguire npm
-
-| Comando | Dove |
-|---------|------|
-| `composer`, `php artisan` | Container Docker (`docker compose exec app …`) |
-| `npm install`, `npm run build`, `npm run dev` | **Mac host** (cartella `app/`), non nel container PHP |
-
-Il container è Linux; Vite 8 installa binding nativi diversi da macOS (`darwin-arm64` vs `linux-arm64`). Il volume `./app` è condiviso: la build fatta sul Mac finisce in `public/build/` e il container la serve subito.
-
-### Rolldown / Vite 8 (solo su Mac)
-
-Se `npm run build` sul **Mac** fallisce con `@rolldown/binding-darwin-arm64`:
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-npm run build
-```
-
-Non aggiungere `@rolldown/binding-darwin-arm64` a `package.json`: rompe `npm install` dentro Docker/Linux.
-
-## Configuration
-
-Publish config:
-
-```bash
-php artisan vendor:publish --tag=vpress-config
-```
-
-Key options in `config/vpress.php`:
-
-| Key | Purpose |
-|-----|---------|
-| `site_title` | Fallback site title |
-| `layouts.*` | Blade layouts (app, doc, page, home) |
-| `home.route_enabled` | Register `/` route |
-| `home.fallback_view` | View when no home page exists in DB |
-| `assets.vite` | Vite entrypoints loaded by the layout |
-| `notifications.enabled` | Frontend notification bell (requires `notifications` DB table) |
-| `account.enabled` | Public `/account` profile page |
-
-Site-specific branding, favicon, logo, and theme defaults are stored in the database and managed from **Filament → Settings**.
 
 ## Custom RichEditor blocks
-
-Register blocks from your app or other Voodflow packages:
 
 ```php
 use Voodflow\Vpress\Vpress;
 
-Vpress::richContentBlock('Dynamic', LatestNewsBlock::class);
+Vpress::richContentBlock('Dynamic', YourBlock::class);
 ```
 
-Built-in blocks: Hero, Features grid, Partner banner.
-
-## Optional integrations
-
-Other Voodflow packages (for example `voodflow/tutorials`) can:
-
-- extend layouts via `config('vpress.layouts.doc')`
-- register dynamic blocks for the page editor
-- reuse nav, outline, and doc components (`<x-vpress::outline />`)
+Built-in: Hero, Features grid, Partner banner. **vtuts** registers `latest_vtuts`.
 
 ## Public routes
 
-- `/` — home (CMS page or fallback view)
-- `/pages/{slug}` — static site pages
-- `/account` — user profile (when enabled)
+| Route | Description |
+|-------|-------------|
+| `/` | Home (CMS page or fallback view) |
+| `/pages/{slug}` | Static site pages |
+| `/search` | Site search |
+| `/login`, `/register` | Fortify (when enabled) |
+| `/account` | User profile (when enabled) |
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+**MIT** — free for commercial and personal use. See [LICENSE](LICENSE).

@@ -7,7 +7,7 @@ namespace Voodflow\Vpress\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Voodflow\Tutorials\Support\LocaleSwitcher;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 use Voodflow\Vpress\Models\VpressSettings;
 
 class ApplyVpressSiteConfig

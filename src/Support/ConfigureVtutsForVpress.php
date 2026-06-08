@@ -6,11 +6,11 @@ namespace Voodflow\Vpress\Support;
 
 use Illuminate\Support\Facades\File;
 
-final class ConfigureTutorialsForVpress
+final class ConfigureVtutsForVpress
 {
     public static function apply(bool $force = false): bool
     {
-        $path = config_path('tutorials.php');
+        $path = config_path('vtuts.php');
 
         if (! is_file($path)) {
             return false;
@@ -20,13 +20,13 @@ final class ConfigureTutorialsForVpress
         $original = $contents;
 
         $contents = str_replace(
-            "'layout' => 'tutorials::layouts.page'",
+            "'layout' => 'vtuts::layouts.page'",
             "'layout' => 'vpress::layouts.page'",
             $contents,
         );
 
         $contents = str_replace(
-            "'doc_layout' => 'tutorials::layouts.doc'",
+            "'doc_layout' => 'vtuts::layouts.doc'",
             "'doc_layout' => 'vpress::layouts.doc'",
             $contents,
         );

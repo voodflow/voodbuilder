@@ -6,8 +6,8 @@ namespace Voodflow\Vpress\Support;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Route;
-use Voodflow\Tutorials\Models\Tutorial;
-use Voodflow\Tutorials\Support\TutorialUrls;
+use Voodflow\Vtuts\Models\Vtut;
+use Voodflow\Vtuts\Support\VtutUrls;
 use Voodflow\Vdocs\Models\DocPage;
 use Voodflow\Vdocs\Support\Locales as DocLocales;
 use Voodflow\Vpress\Models\SitePage;
@@ -58,7 +58,7 @@ final class SiteSearch
     {
         $types = [];
 
-        if (Route::has('tutorials.index') || Route::has('tutorials.localized.index')) {
+        if (Route::has('vtuts.index') || Route::has('vtuts.localized.index')) {
             $types[] = 'tutorials';
         }
 
@@ -76,13 +76,13 @@ final class SiteSearch
     /** @return Collection<int, Tutorial> */
     protected static function searchTutorials(string $term): Collection
     {
-        if ($term === '' || ! (Route::has('tutorials.index') || Route::has('tutorials.localized.index'))) {
+        if ($term === '' || ! (Route::has('vtuts.index') || Route::has('vtuts.localized.index'))) {
             return new Collection;
         }
 
-        return Tutorial::query()
+        return Vtut::query()
             ->with(['category', 'author'])
-            ->where('locale', TutorialUrls::locale())
+            ->where('locale', VtutUrls::locale())
             ->publiclyListed()
             ->search($term)
             ->latest('published_at')
