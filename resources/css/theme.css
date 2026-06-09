@@ -83,6 +83,12 @@
         @apply min-h-screen font-sans text-base antialiased bg-vp-bg text-vp-text-1;
     }
 
+    a[href],
+    button:not(:disabled),
+    summary {
+        cursor: pointer;
+    }
+
     *::-webkit-scrollbar {
         width: 10px;
         height: 10px;
@@ -169,7 +175,7 @@
     }
 
     .vp-doc a {
-        @apply font-medium text-vp-brand-1 no-underline hover:underline;
+        @apply cursor-pointer font-medium text-vp-brand-1 no-underline hover:underline;
     }
 
     .vp-doc ul,
@@ -365,6 +371,7 @@
         font-size: 13px;
         line-height: 1.5;
         color: var(--color-vp-text-3);
+        cursor: pointer;
         transition: color 0.2s, border-color 0.2s;
     }
 
@@ -400,4 +407,13 @@
         border-left-color: var(--color-vp-text-1);
         color: var(--color-vp-text-1);
     }
+}
+
+/* Unlayered: must load after @layer rules and beat vendor CSS (e.g. Filament). */
+a[href],
+button:not(:disabled):not([disabled]),
+summary,
+[role='link'],
+[role='button']:not(:disabled):not([disabled]) {
+    cursor: pointer;
 }

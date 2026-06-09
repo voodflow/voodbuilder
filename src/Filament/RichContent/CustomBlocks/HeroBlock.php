@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class HeroBlock extends RichContentCustomBlock
 {
@@ -51,9 +52,18 @@ class HeroBlock extends RichContentCustomBlock
             ]);
     }
 
+    public static function getPreviewLabel(array $config): string
+    {
+        $headline = $config['headline'] ?? null;
+
+        return filled($headline)
+            ? __('Hero: :headline', ['headline' => $headline])
+            : static::getLabel();
+    }
+
     public static function toPreviewHtml(array $config): string
     {
-        return view('vpress::blocks.hero', ['config' => $config])->render();
+        return RichContentBlockPreview::render('vpress::blocks.hero', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string

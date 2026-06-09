@@ -61,7 +61,7 @@ class VpressSeeder extends Seeder
         SitePage::query()->updateOrCreate(
             ['slug' => 'home'],
             [
-                'title' => config('app.name', 'Cosmolab'),
+                'title' => __('vpress::home.page_title'),
                 'layout' => 'home',
                 'content' => DefaultHomeContent::content(),
                 'published' => true,

@@ -2,12 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.8] - 2026-06-09
 
 ### Added
 
 - `MenuRouteCatalog` for Filament navigation menus: searchable select of public GET routes with automatic `route_match` patterns
 - Configurable `menus.route_exclude_patterns` to hide admin and internal routes from the menu builder
+- Rich editor **styled previews** for custom content blocks (`RichContentBlockPreview`, `rich-editor-block-previews.css`)
+- `vpress.packages.vtuts_url` and `vpress.packages.vdocs_url` for default home CTAs
+
+### Changed
+
+- Default seeded home page promotes **Vpress** with CTAs to vtuts and vdocs companion packages
+- Custom blocks use `getPreviewLabel()` and wrapped preview HTML in the editor
+
+### Fixed
+
+- TOC scroll-spy and outline click navigation (correct active heading, scroll offset)
+- Pointer cursor on frontend links and interactive elements
+
+[0.0.8]: https://github.com/voodflow/vpress/releases/tag/0.0.8
 
 ## [0.0.7] - 2026-06-08
 

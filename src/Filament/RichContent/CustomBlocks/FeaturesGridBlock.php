@@ -9,6 +9,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class FeaturesGridBlock extends RichContentCustomBlock
 {
@@ -49,9 +50,17 @@ class FeaturesGridBlock extends RichContentCustomBlock
             ]);
     }
 
+    public static function getPreviewLabel(array $config): string
+    {
+        $title = $config['title'] ?? static::getLabel();
+        $count = count($config['features'] ?? []);
+
+        return __(':title — :count features', ['title' => $title, 'count' => $count]);
+    }
+
     public static function toPreviewHtml(array $config): string
     {
-        return view('vpress::blocks.features-grid', ['config' => $config])->render();
+        return RichContentBlockPreview::render('vpress::blocks.features-grid', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string

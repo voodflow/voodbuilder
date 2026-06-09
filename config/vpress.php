@@ -73,6 +73,14 @@ return [
         'mono' => 'JetBrains Mono',
     ],
 
+    /*
+    | Purchase / product pages for companion packages (used by the default home seeder).
+    */
+    'packages' => [
+        'vtuts_url' => env('VPRESS_VTUTS_URL', 'https://github.com/voodflow/vtuts'),
+        'vdocs_url' => env('VPRESS_VDOCS_URL', 'https://github.com/voodflow/vdocs'),
+    ],
+
     'home' => [
         'route_enabled' => true,
         'fallback_view' => 'vpress::pages.welcome',

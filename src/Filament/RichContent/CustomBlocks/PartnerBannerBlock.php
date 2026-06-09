@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class PartnerBannerBlock extends RichContentCustomBlock
 {
@@ -38,9 +39,18 @@ class PartnerBannerBlock extends RichContentCustomBlock
             ]);
     }
 
+    public static function getPreviewLabel(array $config): string
+    {
+        $title = $config['title'] ?? null;
+
+        return filled($title)
+            ? __('Partner banner: :title', ['title' => $title])
+            : static::getLabel();
+    }
+
     public static function toPreviewHtml(array $config): string
     {
-        return view('vpress::blocks.partner-banner', ['config' => $config])->render();
+        return RichContentBlockPreview::render('vpress::blocks.partner-banner', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string
