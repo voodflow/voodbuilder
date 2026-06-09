@@ -73,7 +73,7 @@
     html {
         --vp-scrollbar-width: 0px;
         scroll-behavior: smooth;
-        scroll-padding-top: calc(var(--spacing-vp-nav) + 2rem);
+        scroll-padding-top: var(--spacing-vp-doc-offset);
         scrollbar-gutter: stable;
         scrollbar-width: thin;
         scrollbar-color: color-mix(in srgb, var(--color-vp-text-3) 55%, transparent) transparent;
@@ -152,6 +152,7 @@
 
     .vp-doc h2 {
         @apply mt-12 mb-4 border-t border-vp-divider pt-6 text-2xl font-semibold tracking-tight text-vp-text-1;
+        scroll-margin-top: var(--spacing-vp-doc-offset);
     }
 
     .vp-doc h2:first-child {
@@ -160,6 +161,7 @@
 
     .vp-doc h3 {
         @apply mt-8 mb-2 text-xl font-semibold text-vp-text-1;
+        scroll-margin-top: var(--spacing-vp-doc-offset);
     }
 
     .vp-doc p {

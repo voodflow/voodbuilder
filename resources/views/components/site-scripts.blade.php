@@ -201,7 +201,8 @@
 
         const outlineLinks = [...document.querySelectorAll('[data-outline-link]')];
 
-        if (outlineLinks.length > 0) {
+        if (outlineLinks.length > 0 && ! window.__vpOutlineScrollSpy) {
+            window.__vpOutlineScrollSpy = true;
             const entriesById = new Map();
 
             outlineLinks.forEach((link) => {
@@ -230,14 +231,14 @@
                 let activeId = '';
 
                 const setActiveOutline = (id) => {
-                    if (! id || id === activeId) {
+                    if (id === activeId) {
                         return;
                     }
 
                     activeId = id;
 
                     outlineEntries.forEach(({ id: entryId, links }) => {
-                        const isActive = entryId === id;
+                        const isActive = id !== '' && entryId === id;
 
                         links.forEach((link) => {
                             link.classList.toggle('is-active', isActive);
@@ -287,6 +288,17 @@
                         return '';
                     }
 
+                    if (window.scrollY < 32) {
+                        return sorted[0].id;
+                    }
+
+                    const readingLine = offset + 4;
+                    const firstHeadingTop = sorted[0].heading.getBoundingClientRect().top;
+
+                    if (firstHeadingTop > readingLine) {
+                        return sorted[0].id;
+                    }
+
                     const scrollEnd = window.scrollY + window.innerHeight;
                     const pageEnd = document.documentElement.scrollHeight;
 
@@ -294,55 +306,99 @@
                         return sorted[sorted.length - 1].id;
                     }
 
-                    for (let index = sorted.length - 1; index >= 0; index -= 1) {
-                        const { heading, id } = sorted[index];
-                        const { top, bottom } = heading.getBoundingClientRect();
-
-                        if (top <= offset && bottom > offset) {
-                            return id;
-                        }
-                    }
-
-                    const visible = sorted.filter(({ heading }) => {
-                        const { top, bottom } = heading.getBoundingClientRect();
-
-                        return bottom > offset && top < window.innerHeight;
-                    });
-
-                    if (visible.length > 0) {
-                        return visible[visible.length - 1].id;
-                    }
-
-                    let current = sorted[0].id;
+                    let active = sorted[0].id;
 
                     sorted.forEach(({ heading, id }) => {
-                        if (heading.getBoundingClientRect().top <= offset) {
-                            current = id;
+                        if (heading.getBoundingClientRect().top <= readingLine) {
+                            active = id;
                         }
                     });
 
-                    return current;
+                    return active;
                 };
 
-                const updateOutline = () => {
+                let outlineScrollLock = null;
+                let outlineScrollTimer = null;
+
+                const scrollToOutlineHeading = (heading, smooth = true) => {
+                    const offset = outlineOffset();
+                    const top = Math.max(0, heading.getBoundingClientRect().top + window.scrollY - offset);
+
+                    window.scrollTo({ top, behavior: smooth ? 'smooth' : 'instant' });
+                };
+
+                const lockOutlineTo = (id) => {
+                    outlineScrollLock = id;
+                    setActiveOutline(id);
+                };
+
+                const scheduleOutlineLockRelease = () => {
+                    clearTimeout(outlineScrollTimer);
+                    outlineScrollTimer = setTimeout(() => {
+                        outlineScrollLock = null;
+                        updateOutlineFromScroll();
+                    }, 150);
+                };
+
+                const updateOutlineFromScroll = () => {
                     setActiveOutline(resolveActiveOutlineId(outlineEntries, outlineOffset()));
                 };
+
+                const onOutlineScroll = () => {
+                    if (outlineScrollLock) {
+                        setActiveOutline(outlineScrollLock);
+                        scheduleOutlineLockRelease();
+
+                        return;
+                    }
+
+                    updateOutlineFromScroll();
+                };
+
+                const navigateOutlineTo = (id, smooth = true) => {
+                    if (! id || ! entriesById.has(id)) {
+                        return;
+                    }
+
+                    const { heading } = entriesById.get(id);
+
+                    lockOutlineTo(id);
+                    history.pushState(null, '', `#${id}`);
+                    scrollToOutlineHeading(heading, smooth);
+                };
+
+                outlineLinks.forEach((link) => {
+                    link.addEventListener('click', (event) => {
+                        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return;
+                        }
+
+                        const id = link.getAttribute('href')?.slice(1);
+
+                        if (! id || ! entriesById.has(id)) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        navigateOutlineTo(id);
+                    });
+                });
 
                 const hashId = window.location.hash.slice(1);
 
                 if (hashId && entriesById.has(hashId)) {
-                    setActiveOutline(hashId);
+                    navigateOutlineTo(hashId, false);
                 } else {
-                    updateOutline();
+                    updateOutlineFromScroll();
                 }
 
-                window.addEventListener('scroll', updateOutline, { passive: true });
-                window.addEventListener('resize', updateOutline);
+                window.addEventListener('scroll', onOutlineScroll, { passive: true });
+                window.addEventListener('resize', updateOutlineFromScroll);
                 window.addEventListener('hashchange', () => {
                     const id = window.location.hash.slice(1);
 
                     if (id && entriesById.has(id)) {
-                        setActiveOutline(id);
+                        navigateOutlineTo(id, false);
                     }
                 });
             }
