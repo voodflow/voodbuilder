@@ -113,6 +113,8 @@ return [
     | Purchase / product pages for companion packages (used by the default home seeder).
     */
     'packages' => [
+        'vpress_url' => env('VPRESS_URL', 'https://filamentphp.com/plugins/voodflow-vpress'),
+        'github_url' => env('VPRESS_GITHUB_URL', 'https://github.com/voodflow/vpress'),
         'vtuts_url' => env('VPRESS_VTUTS_URL', 'https://filamentphp.com/plugins/voodflow-vtuts'),
         'vdocs_url' => env('VPRESS_VDOCS_URL', 'https://filamentphp.com/plugins/voodflow-vdocs'),
         'voodflow_url' => env('VPRESS_VOODFLOW_URL', 'https://filamentphp.com/plugins/voodflow-voodflow'),

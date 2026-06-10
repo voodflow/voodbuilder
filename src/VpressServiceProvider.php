@@ -16,6 +16,7 @@ use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
+use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
@@ -89,6 +90,7 @@ class VpressServiceProvider extends PackageServiceProvider
             ->register('Layout', HeroBlock::class)
             ->register('Layout', FeaturesGridBlock::class)
             ->register('Layout', PartnerBannerBlock::class)
-            ->register('Layout', ProductPromoBlock::class);
+            ->register('Layout', ProductPromoBlock::class)
+            ->register('Layout', PackagePromosBlock::class);
     }
 }

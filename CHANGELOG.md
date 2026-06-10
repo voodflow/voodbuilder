@@ -7,12 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - `ProductPromoBlock` rich content block for product call-to-action banners
+- `PackagePromosBlock` for a three-column grid of package CTAs (Vdocs, Vtuts, Voodflow)
 - `vpress.packages.voodflow_url` and default home promo for **Voodflow**
 
 ### Changed
 
+- Default home focuses on **Vpress** capabilities: six feature cards plus optional companion plugins
+- Hero headline no longer references VitePress; killer **import full VitePress site** feature is highlighted in the features grid (with Vdocs)
+- Hero CTAs link to the Vpress Filament plugin page and GitHub repository
 - Default home CTAs for **Vtuts** and **Vdocs** point to Filament plugin marketplace pages
-- Home CTA button labels use product names (`Get Vtuts`, `Get Vdocs`)
 
 ## [0.0.9] - 2026-06-09
 
