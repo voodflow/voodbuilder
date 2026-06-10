@@ -92,6 +92,176 @@ $panel->plugins([
 - **Pages** — home and static pages (RichEditor + blocks)
 - **Navigation** — menus linked to routes or pages
 
+## Site pages
+
+Site pages are managed in **Admin → Site → Pages**. They are stored in the `vpress_pages` table and served by vpress public routes — no manual `routes/web.php` entry is required for each page.
+
+### Creating a page
+
+1. Open **Pages → Create**.
+2. Fill in **Title** — the slug is generated automatically from the title on first save (you can edit it before publishing).
+3. Write content in the **RichEditor** — use headings, lists, links, and **custom blocks** (Hero, Features grid, Partner banner, and blocks registered by other packages such as `latest_vtuts`).
+4. In the **Publish** sidebar:
+   - **Published** — must be enabled for the page to appear on the public site.
+   - **Published at** — optional schedule; leave empty or set a past date to publish immediately.
+   - **Layout** — `Standard page` or `Home (full width)` (see below).
+   - **Home page** — mark exactly one page as the site homepage (`/`).
+
+5. Save. Use the **View** action (eye icon) in the Publish panel to open the public URL in a new tab when the page is published.
+
+### Routing and public URLs
+
+| Page kind | Public URL | Laravel route | Notes |
+|-----------|------------|---------------|-------|
+| **Home page** | `/` | `home` | Set via **Home page** toggle; slug is fixed to `home` and cannot be changed |
+| **Static page** | `/pages/{slug}` | `vpress.pages.show` | Default prefix is `pages` (configurable) |
+
+Examples:
+
+- Home → `https://yoursite.test/`
+- About → `https://yoursite.test/pages/about`
+- Privacy Policy → `https://yoursite.test/pages/privacy-policy`
+
+If no published home page exists (or it has no content), `GET /` falls back to `vpress::pages.welcome` with SEO defaults from **Settings**.
+
+Configure the pages route in `config/vpress.php`:
+
+```php
+'pages' => [
+    'enabled' => true,           // set false to disable /pages/{slug}
+    'route_prefix' => 'pages',   // e.g. 'p' → /p/about
+],
+```
+
+Disable the home route separately:
+
+```php
+'home' => [
+    'route_enabled' => true,
+],
+```
+
+### Layouts per page
+
+| Layout (Filament) | Blade layout | Use for |
+|-------------------|--------------|---------|
+| **Home (full width)** | `vpress::layouts.home` | Homepage hero, feature grids, marketing sections |
+| **Standard page** | `vpress::layouts.page` | Legal pages, about, simple content |
+
+The home page always uses the **Home** layout. Other pages default to **Standard page**. Both render through `vpress::pages.site-page`, which outputs the RichEditor HTML and custom blocks.
+
+### SEO
+
+Each page uses [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-seo) via the `HasSEO` trait. Title comes from the page title; the meta description is derived from the rendered content excerpt. Global defaults (site title, default description, social image) are set in **Settings**.
+
+### Drafts and the home page
+
+- Unpublished pages are not reachable on the public site (`published()` scope).
+- The home page cannot be deleted from the list; you can replace its content or unpublish it.
+- Only one page can have **Home page** enabled at a time.
+
+## Navigation menus
+
+Menus are managed in **Admin → Site → Navigation**. Each menu record has a **placement** (`slug`) that tells the theme where to render it, and an ordered list of **items**.
+
+### Menu placements
+
+Create one menu per placement (the `slug` field is unique):
+
+| Placement (`slug`) | Where it appears |
+|--------------------|------------------|
+| `main` | Center of the header navbar (desktop and mobile drawer) |
+| `header_extra` | Right side of the header, before language switcher / theme toggle / account / search |
+| `footer` | Footer link row above the copyright line |
+
+`vpress:install` seeds a **Main navigation** menu (Home + Tutorials when vtuts is installed) and a **Footer** menu (Privacy Policy, Cookie Policy).
+
+> Use **header_extra** for secondary links such as Shop, Blog, or Pricing that should sit on the right side of the navbar.
+
+### Menu items
+
+Each item has:
+
+| Field | Description |
+|-------|-------------|
+| **Label** | Text shown in the nav |
+| **Type** | How the link target is resolved (see below) |
+| **Link** | Page slug, route name, or URL depending on type |
+| **Active route pattern** | Wildcard pattern for highlight state (auto-filled for pages and app routes) |
+| **Open in new tab** | Adds `target="_blank"` |
+
+Drag items in the repeater to reorder them (`sort_order`).
+
+### Item types
+
+#### 1. Site page
+
+Links to a vpress page by slug.
+
+- Select the page from a searchable dropdown (draft pages are listed with a “Draft” suffix).
+- The URL is resolved at render time from the published page (`/` for home, `/pages/{slug}` otherwise).
+- **Active route pattern** is set automatically: `home` for the home page, or left empty for static pages (active state matches `vpress.pages.show` + slug).
+
+#### 2. App route
+
+Links to a named Laravel route registered in your application (e.g. `vtuts.index`, `vdocs.index`, `home`).
+
+- Choose from a **searchable select** of public **GET** routes (`MenuRouteCatalog`).
+- Admin, Livewire, Filament, and other internal routes are excluded via `config('vpress.menus.route_exclude_patterns')`.
+- **Active route pattern** is filled automatically when you pick a route, e.g.:
+  - `vtuts.index` → `vtuts.*` (highlights on all tutorial pages)
+  - `vtuts.series.lesson` → `vtuts.series.*`
+  - `home` → `home`
+
+You can add or remove exclude patterns in `config/vpress.php`:
+
+```php
+'menus' => [
+    'route_exclude_patterns' => [
+        'filament.*',
+        'livewire.*',
+        // …
+    ],
+],
+```
+
+#### 3. External URL
+
+Links to an absolute URL (`https://…`) or a site path (`/docs/`, `/shop`).
+
+- Enter the URL manually in the **Link** field.
+- **Active route pattern** is shown only for this type — use it when you need a custom highlight rule for external targets (optional; usually leave empty).
+
+### Active (current) link highlighting
+
+The theme compares the current request against each item’s `route_match` (or page slug for site pages) and applies an active CSS class. This keeps parent items highlighted on child routes — e.g. **Tutorials** stays active on `/tutorials/my-post` when `route_match` is `vtuts.*`.
+
+### Example menus
+
+**Main navigation — Tutorials (vtuts installed)**
+
+| Label | Type | Link | route_match |
+|-------|------|------|-------------|
+| Home | App route | `home` | `home` |
+| Tutorials | App route | `vtuts.index` | `vtuts.*` |
+
+**Footer — legal pages**
+
+| Label | Type | Link |
+|-------|------|------|
+| Privacy Policy | Site page | `privacy-policy` |
+| Cookie Policy | Site page | `cookie-policy` |
+
+**Header extras — external shop**
+
+| Label | Type | Link | Open in new tab |
+|-------|------|------|-----------------|
+| Shop | External URL | `https://shop.example.com` | Yes |
+
+### Cache
+
+Menu items are cached for one hour per placement (`vpress.menu.{slug}`). The cache is cleared when menus are saved in Filament.
+
 ## How it works
 
 ### Layouts

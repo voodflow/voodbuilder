@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.9] - 2026-06-09
+
+### Changed
+
+- README: document site page creation, routing (`/` vs `/pages/{slug}`), layouts, publishing, and SEO
+- README: document navigation menus in detail (placements, item types, active route patterns, examples)
+
+[0.0.9]: https://github.com/voodflow/vpress/releases/tag/0.0.9
+
 ## [0.0.8] - 2026-06-09
 
 ### Added
