@@ -18,28 +18,6 @@
 
         applyTheme(root.classList.contains('dark'));
 
-        if (! config.locked && config.showToggle) {
-            document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-                if (button.dataset.themeBound === 'true') {
-                    return;
-                }
-
-                button.dataset.themeBound = 'true';
-
-                button.addEventListener('click', () => {
-                    const nextIsDark = ! root.classList.contains('dark');
-
-                    try {
-                        localStorage.setItem('theme', nextIsDark ? 'dark' : 'light');
-                    } catch (error) {
-                        // Ignore storage errors (private mode, etc.).
-                    }
-
-                    applyTheme(nextIsDark);
-                });
-            });
-        }
-
         let scrollLockCount = 0;
 
         function getScrollbarWidth() {

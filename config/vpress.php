@@ -13,6 +13,40 @@ return [
     ],
 
     /*
+    | Visual sub-themes (distinct from light/dark mode).
+    | Assign a default in Admin → Site → Settings, or per page in Pages.
+    | Register custom themes with Vpress::subTheme() or php artisan vpress:make-subtheme.
+    */
+    'sub_themes' => [
+        'default' => [
+            'label' => 'Documentation',
+            'description' => 'VitePress-style layout for docs and marketing pages.',
+        ],
+        'blog' => [
+            'label' => 'Blog',
+            'description' => 'Ghost-inspired centered blog with serif headlines.',
+            'layouts' => [
+                'home' => 'vpress::sub-themes.blog.layouts.home',
+                'page' => 'vpress::sub-themes.blog.layouts.page',
+                'section_index' => 'vpress::sub-themes.blog.layouts.section-index',
+                'article' => 'vpress::sub-themes.blog.layouts.article',
+            ],
+            'css' => 'sub-themes/blog.css',
+        ],
+        'news' => [
+            'label' => 'News',
+            'description' => 'Editorial news layout with bold headlines and wider columns.',
+            'layouts' => [
+                'home' => 'vpress::sub-themes.news.layouts.home',
+                'page' => 'vpress::sub-themes.news.layouts.page',
+                'section_index' => 'vpress::sub-themes.news.layouts.section-index',
+                'article' => 'vpress::sub-themes.news.layouts.article',
+            ],
+            'css' => 'sub-themes/news.css',
+        ],
+    ],
+
+    /*
     | Fallback logo path (relative to the public disk) or absolute URL.
     | Prefer uploading the logo in Admin → Site → Settings.
     */
@@ -100,6 +134,22 @@ return [
         'enabled' => true,
         'route' => 'search',
         'per_type' => 20,
+    ],
+
+    /*
+    | External content systems (blog, news, shop, …) register here or via Vpress::contentChannel().
+    | Each channel can define route patterns (menu highlight + sub-theme) and optional search.
+    |
+    | Example:
+    | 'blog' => [
+    |     'label' => 'Blog',
+    |     'routes' => ['blog.*'],
+    |     'sub_theme' => 'blog',
+    |     'search' => \App\Models\BlogPost::class, // static vpressSearch($term, $limit) method
+    | ],
+    */
+    'content_channels' => [
+        //
     ],
 
     /*

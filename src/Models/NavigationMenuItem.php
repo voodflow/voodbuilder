@@ -76,6 +76,14 @@ class NavigationMenuItem extends Model
             return request()->routeIs('home');
         }
 
+        if ($page?->isSectionHome() && filled($page->section)) {
+            return request()->routeIs('vpress.pages.show')
+                && SitePage::query()
+                    ->where('slug', request()->route('slug'))
+                    ->where('section', $page->section)
+                    ->exists();
+        }
+
         return request()->routeIs('vpress.pages.show')
             && request()->route('slug') === $this->link;
     }

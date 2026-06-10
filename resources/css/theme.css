@@ -5,6 +5,9 @@
 
 @import './fonts.css';
 @import 'tailwindcss';
+@import './mobile-nav.css';
+@import './sub-themes/blog.css';
+@import './sub-themes/news.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));

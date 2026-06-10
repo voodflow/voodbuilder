@@ -12,6 +12,7 @@ use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Vpress\Console\InstallCommand;
+use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
@@ -19,7 +20,9 @@ use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
+use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
+use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\VpressSeo;
 
 class VpressServiceProvider extends PackageServiceProvider
@@ -37,17 +40,23 @@ class VpressServiceProvider extends PackageServiceProvider
             ->discoversMigrations()
             ->runsMigrations()
             ->hasRoutes('web')
-            ->hasCommand(InstallCommand::class);
+            ->hasCommand(InstallCommand::class)
+            ->hasCommand(MakeSubThemeCommand::class);
     }
 
     public function packageRegistered(): void
     {
         $this->app->singleton(RichContentBlockRegistry::class);
+        $this->app->singleton(SubThemeRegistry::class);
+        $this->app->singleton(ContentChannelRegistry::class);
     }
 
     public function packageBooted(): void
     {
         RegisterFilamentCookieConsentTranslations::apply();
+
+        $this->app->make(SubThemeRegistry::class)->bootFromConfig();
+        $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
 
         View::replaceNamespace('cookie-consent', [
             __DIR__.'/../resources/views/cookie-consent',

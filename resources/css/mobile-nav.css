@@ -1,0 +1,163 @@
+/**
+ * Mobile navigation — fixed chrome, identical on every sub-theme.
+ */
+
+.vpress-mobile-nav {
+    --vpress-mobile-bg: #ffffff;
+    --vpress-mobile-bg-muted: #f6f6f7;
+    --vpress-mobile-text: #3c3c43;
+    --vpress-mobile-text-muted: #67676c;
+    --vpress-mobile-border: #e2e2e3;
+    --vpress-mobile-accent: #3451b2;
+    --vpress-mobile-overlay: rgb(15 15 20 / 0.52);
+    --vpress-mobile-width: min(100vw, 22rem);
+}
+
+.dark .vpress-mobile-nav {
+    --vpress-mobile-bg: #1b1b1f;
+    --vpress-mobile-bg-muted: #202127;
+    --vpress-mobile-text: #dfdfd6;
+    --vpress-mobile-text-muted: #98989f;
+    --vpress-mobile-border: #2e2e32;
+    --vpress-mobile-accent: #a8b1ff;
+    --vpress-mobile-overlay: rgb(0 0 0 / 0.62);
+}
+
+.vpress-mobile-nav {
+    @apply pointer-events-none fixed inset-0 z-50;
+}
+
+.vpress-mobile-nav.is-open {
+    @apply pointer-events-auto;
+}
+
+.vpress-mobile-nav__overlay {
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 ease-out;
+    background: var(--vpress-mobile-overlay);
+}
+
+.vpress-mobile-nav.is-open .vpress-mobile-nav__overlay {
+    @apply opacity-100;
+}
+
+.vpress-mobile-nav__panel {
+    @apply absolute top-0 right-0 flex h-full flex-col shadow-2xl transition-transform duration-300 ease-out;
+    width: var(--vpress-mobile-width);
+    background: var(--vpress-mobile-bg);
+    color: var(--vpress-mobile-text);
+    transform: translateX(100%);
+}
+
+.vpress-mobile-nav.is-open .vpress-mobile-nav__panel {
+    transform: translateX(0);
+}
+
+.vpress-mobile-nav__header {
+    @apply flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4;
+    border-color: var(--vpress-mobile-border);
+}
+
+.vpress-mobile-nav__brand {
+    @apply min-w-0 flex-1 text-base font-semibold;
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__brand a {
+    @apply inline-flex min-h-10 items-center gap-2 transition-opacity hover:opacity-80;
+    color: inherit;
+}
+
+.vpress-mobile-nav__close {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors;
+    color: var(--vpress-mobile-text-muted);
+}
+
+.vpress-mobile-nav__close:hover {
+    background: var(--vpress-mobile-bg-muted);
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__body {
+    @apply flex-1 overflow-y-auto px-3 py-4;
+}
+
+.vpress-mobile-nav__links {
+    @apply space-y-1;
+}
+
+.vpress-mobile-nav__link {
+    @apply flex min-h-11 items-center justify-between gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors;
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__link:hover {
+    background: var(--vpress-mobile-bg-muted);
+}
+
+.vpress-mobile-nav__link.is-active {
+    background: color-mix(in srgb, var(--vpress-mobile-accent) 12%, var(--vpress-mobile-bg));
+    color: var(--vpress-mobile-accent);
+}
+
+.vpress-mobile-nav__link--secondary {
+    @apply min-h-10 text-sm font-normal;
+    color: var(--vpress-mobile-text-muted);
+}
+
+.vpress-mobile-nav__section {
+    @apply mt-5 border-t pt-4 first:mt-0 first:border-t-0 first:pt-0;
+    border-color: var(--vpress-mobile-border);
+}
+
+.vpress-mobile-nav__section-label {
+    @apply mb-2 px-3 text-xs font-medium;
+    color: var(--vpress-mobile-text-muted);
+}
+
+.vpress-mobile-nav__footer {
+    @apply shrink-0 border-t px-3 py-3;
+    border-color: var(--vpress-mobile-border);
+    background: color-mix(in srgb, var(--vpress-mobile-bg-muted) 55%, var(--vpress-mobile-bg));
+}
+
+.vpress-mobile-nav__toolbar {
+    @apply mb-3 flex flex-wrap items-center gap-2;
+}
+
+.vpress-mobile-nav__tool {
+    @apply inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm transition-colors;
+    color: var(--vpress-mobile-text-muted);
+    background: var(--vpress-mobile-bg);
+    border: 1px solid var(--vpress-mobile-border);
+}
+
+.vpress-mobile-nav__tool:hover {
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__account {
+    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors;
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__account:hover {
+    background: var(--vpress-mobile-bg-muted);
+}
+
+.vpress-mobile-nav__account img {
+    @apply h-8 w-8 rounded-full object-cover;
+}
+
+.vpress-mobile-nav__actions {
+    @apply space-y-1;
+}
+
+.vpress-mobile-nav__action {
+    @apply flex min-h-10 w-full items-center rounded-xl px-3 text-left text-sm transition-colors;
+    color: var(--vpress-mobile-text-muted);
+}
+
+.vpress-mobile-nav__action:hover {
+    background: var(--vpress-mobile-bg-muted);
+    color: var(--vpress-mobile-text);
+}

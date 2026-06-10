@@ -19,7 +19,10 @@ class HomeController extends Controller
         if ($page && filled($page->content)) {
             seo()->for($page);
 
-            return view('vpress::pages.site-page', ['page' => $page]);
+            return view('vpress::pages.site-page', [
+                'page' => $page,
+                'vpressSubTheme' => $page->resolvedSubTheme(),
+            ]);
         }
 
         $fallbackTitle = config('vpress.home.fallback_seo.title')

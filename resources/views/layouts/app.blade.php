@@ -1,5 +1,14 @@
+@php
+    use Voodflow\Vpress\Support\SubThemeResolver;
+
+    $vpressSubTheme = $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+@endphp
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => \Voodflow\Vpress\Support\VpressTheme::serverInitialDark()])>
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    data-vpress-sub-theme="{{ $vpressSubTheme }}"
+    @class(['dark' => \Voodflow\Vpress\Support\VpressTheme::serverInitialDark()])
+>
 <head>
     <x-vpress::theme-script />
     <meta charset="utf-8">

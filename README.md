@@ -11,6 +11,7 @@ Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigat
 | Area | What you get |
 |------|----------------|
 | **Public theme** | VitePress-like nav, doc sidebar, outline scroll-spy, reading progress, mobile drawer, dark/light mode |
+| **Sub-themes** | Visual variants (documentation, blog, news, custom) — site default + per-page override |
 | **Site pages** | Home + static pages built with Filament RichEditor and custom blocks (hero, features grid, latest vtuts, …) |
 | **Navigation** | Main, header-extra, and footer menus — route names, URLs, or site pages |
 | **Settings (DB)** | Brand name, site title, logo, favicon, social image, theme default, locale, toggles (search, theme, language, bell) |
@@ -66,7 +67,7 @@ php artisan vpress:install
 1. Publish Spatie Settings (required for cookie consent + vpress settings)
 2. Publish SEO config/migrations if needed
 3. Run `migrate` (vpress tables, `notifications`, settings)
-4. Seed default navigation and cookie policy page
+4. Seed default navigation, demo pages (blog + news sub-themes), and cookie policy page
 5. Configure cookie-consent for **frontend only** (no banner in Filament)
 6. Remove Laravel’s default `Route::get('/')` welcome route so vpress can serve the homepage
 7. Patch `vite.config.js` with the correct theme CSS path when possible
@@ -88,8 +89,8 @@ $panel->plugins([
 
 **Admin → Site**
 
-- **Settings** — branding, SEO, theme default, feature toggles, primary locale
-- **Pages** — home and static pages (RichEditor + blocks)
+- **Settings** — branding, SEO, light/dark default, **site sub-theme**, feature toggles, primary locale
+- **Pages** — home and static pages (RichEditor + blocks, **per-page sub-theme**)
 - **Navigation** — menus linked to routes or pages
 
 ## Site pages
@@ -105,6 +106,7 @@ Site pages are managed in **Admin → Site → Pages**. They are stored in the `
    - **Published** — must be enabled for the page to appear on the public site.
    - **Published at** — optional schedule; leave empty or set a past date to publish immediately.
    - **Layout** — `Standard page` or `Home (full width)` (see below).
+   - **Sub-theme** — inherit the site default, or pick **Documentation**, **Blog**, **News**, or a custom theme.
    - **Home page** — mark exactly one page as the site homepage (`/`).
 
 5. Save. Use the **View** action (eye icon) in the Publish panel to open the public URL in a new tab when the page is published.
@@ -120,6 +122,8 @@ Examples:
 
 - Home → `https://yoursite.test/`
 - About → `https://yoursite.test/pages/about`
+- Blog (demo) → `https://yoursite.test/pages/blog`
+- News (demo) → `https://yoursite.test/pages/news`
 - Privacy Policy → `https://yoursite.test/pages/privacy-policy`
 
 If no published home page exists (or it has no content), `GET /` falls back to `vpress::pages.welcome` with SEO defaults from **Settings**.
@@ -174,7 +178,7 @@ Create one menu per placement (the `slug` field is unique):
 | `header_extra` | Right side of the header, before language switcher / theme toggle / account / search |
 | `footer` | Footer link row above the copyright line |
 
-`vpress:install` seeds a **Main navigation** menu (Home + Tutorials when vtuts is installed) and a **Footer** menu (Privacy Policy, Cookie Policy).
+`vpress:install` seeds a **Main navigation** menu (Home, Tutorials when vtuts is installed, **Blog**, **News**) and a **Footer** menu (Privacy Policy, Cookie Policy). Blog and News are demo pages that showcase the built-in sub-themes.
 
 > Use **header_extra** for secondary links such as Shop, Blog, or Pricing that should sit on the right side of the navbar.
 
@@ -262,6 +266,174 @@ The theme compares the current request against each item’s `route_match` (or p
 
 Menu items are cached for one hour per placement (`vpress.menu.{slug}`). The cache is cleared when menus are saved in Filament.
 
+## Sub-themes
+
+Sub-themes are **visual variants** of the public shell (layout, typography, colours). They are separate from **light/dark mode**, which is still controlled in **Settings → Header & appearance**.
+
+### Built-in sub-themes
+
+| ID | Label | Best for |
+|----|-------|----------|
+| `default` | Documentation | Marketing home, docs-style pages (VitePress layout) |
+| `blog` | Blog | Long-form articles, Ghost-inspired centered reading column |
+| `news` | News | Editorial / magazine headlines and wider columns |
+
+After `vpress:install`, open the main menu and visit:
+
+| Menu item | URL | Sub-theme | What you see |
+|-----------|-----|-----------|--------------|
+| Home | `/` | Documentation | Marketing home with hero + features |
+| Blog | `/pages/blog` | Blog | Section index — 5 posts, left nav + right sidebar |
+| News | `/pages/news` | News | News desk — lead story + grid, editorial sidebars |
+
+Each section ships **five navigable articles** seeded under `/pages/blog-*` and `/pages/news-*`. Article pages reuse the section sidebars, breadcrumb, and sibling navigation.
+
+**Blog articles (demo)**
+
+| Slug | URL |
+|------|-----|
+| `blog-welcome` | `/pages/blog-welcome` |
+| `blog-shipping-shell` | `/pages/blog-shipping-shell` |
+| `blog-sub-themes` | `/pages/blog-sub-themes` |
+| `blog-content-blocks` | `/pages/blog-content-blocks` |
+| `blog-pairing-vtuts` | `/pages/blog-pairing-vtuts` |
+
+**News articles (demo)**
+
+| Slug | URL |
+|------|-----|
+| `news-morning-briefing` | `/pages/news-morning-briefing` |
+| `news-sub-themes-release` | `/pages/news-sub-themes-release` |
+| `news-editorial-workflow` | `/pages/news-editorial-workflow` |
+| `news-community-notes` | `/pages/news-community-notes` |
+| `news-roadmap` | `/pages/news-roadmap` |
+
+Re-seed demo content anytime:
+
+```bash
+php artisan migrate
+php artisan db:seed --class="Voodflow\Vpress\Database\Seeders\VpressSeeder"
+npm run build
+```
+
+### Site default vs per-page
+
+| Where | Field | Behaviour |
+|-------|-------|-----------|
+| **Settings** | Sub-theme | Default for the whole public site |
+| **Pages → Publish** | Sub-theme | Override for that page only (`Site default` inherits from Settings) |
+
+Use per-page sub-themes to run different **sections** under one menu — e.g. documentation on `/`, a blog area on `/pages/blog`, and a news desk on `/pages/news`.
+
+### Section pages (blog / news)
+
+Group related pages with the **Section** field in **Pages**:
+
+| Field | Purpose |
+|-------|---------|
+| **Section** | `blog` or `news` — groups pages for sidebar navigation |
+| **Section home** | Index page that lists all articles in the section |
+| **Excerpt** | Card summary on section indexes and for SEO |
+
+Section home pages render a multi-column layout (sidebar left, main feed, sidebar right). Article pages keep the same sidebars plus a breadcrumb back to the section home. The main menu highlights **Blog** or **News** while you browse any page in that section.
+
+> **Demo vs real CMS:** the seeded blog/news sections are **Site Pages grouped by `section`** — fine for marketing demos, not a full post archive. For a real blog or news product, use a dedicated package and register a **content channel** (below).
+
+### Mobile navigation
+
+The mobile drawer is **theme-agnostic** (`resources/css/mobile-nav.css`): same slide-in panel, colours, and footer toolbar on every sub-theme. It slides in from the right with logo, main links, optional extras, then search / language / theme / account in a sticky footer.
+
+### Integrating external blog, news, or other content
+
+Vpress is a **site shell**, not a post CMS. Third-party or custom packages integrate via **content channels**:
+
+| Piece | What you register |
+|-------|-------------------|
+| **Routes** | Your package owns `/blog`, `/blog/{slug}`, etc. |
+| **Menu** | Filament → Navigation → **App route** `blog.index` with active pattern `blog.*` |
+| **Sub-theme** | Channel `sub_theme` → `blog` so layouts/CSS match the section |
+| **Search** | Optional `search` callback or model with `vpressSearch()` |
+| **Admin** | Your Filament resources — not Site Pages |
+
+**Config** (`config/vpress.php`):
+
+```php
+'content_channels' => [
+    'blog' => [
+        'label' => 'Blog',
+        'routes' => ['blog.*'],
+        'sub_theme' => 'blog',
+        'search' => \App\Models\BlogPost::class,
+    ],
+],
+```
+
+**Or in `AppServiceProvider`:**
+
+```php
+use Voodflow\Vpress\Vpress;
+
+Vpress::contentChannel('blog', [
+    'label' => 'Blog',
+    'routes' => ['blog.*'],
+    'sub_theme' => 'blog',
+    'search' => fn (string $term, int $limit) => BlogPost::query()
+        ->where('title', 'like', "%{$term}%")
+        ->limit($limit)
+        ->get()
+        ->map(fn ($post) => [
+            'title' => $post->title,
+            'url' => route('blog.show', $post),
+            'excerpt' => $post->excerpt,
+        ]),
+]);
+```
+
+**Search model contract** (optional):
+
+```php
+public static function vpressSearch(string $term, int $limit): \Illuminate\Support\Collection
+{
+    // return items with title, url, optional excerpt
+}
+```
+
+Your package typically:
+
+1. Ships models + migrations + public controllers.
+2. Points views at `vpress::layouts.app` or a sub-theme layout (`article`, `section_index`).
+3. Registers the channel so menu highlighting and sub-theme follow the active route.
+
+Same pattern as **vtuts** / **vdocs**: companion package + shared vpress chrome, not duplicated Site Pages.
+
+### Custom sub-themes
+
+Scaffold a theme in your application:
+
+```bash
+php artisan vpress:make-subtheme magazine --label="Magazine"
+```
+
+This creates `resources/vpress/themes/magazine/theme.css`, Blade layouts under `resources/views/vpress/themes/magazine/`, registers the theme in `config/vpress.php`, and tries to add the CSS entry to `vite.config.js`. Then run `npm run build`.
+
+Register themes programmatically:
+
+```php
+use Voodflow\Vpress\Vpress;
+
+Vpress::subTheme('magazine', [
+    'label' => 'Magazine',
+    'description' => 'Custom editorial layout.',
+    'layouts' => [
+        'home' => 'vpress.themes.magazine.layouts.home',
+        'page' => 'vpress.themes.magazine.layouts.page',
+    ],
+    'css' => 'resources/vpress/themes/magazine/theme.css',
+]);
+```
+
+Built-in themes are declared in `config/vpress.php` under `sub_themes`. Each theme may override `home` and `page` layouts and ship extra CSS scoped with `html[data-vpress-sub-theme="…"]`.
+
 ## How it works
 
 ### Layouts
@@ -285,8 +457,8 @@ Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notific
 
 ### Settings vs config file
 
-- `config/vpress.php` — layouts, feature flags, Vite entry paths (committed)
-- **Database** (`VpressSettings`) — logo, titles, theme default, toggles (edited in Filament)
+- `config/vpress.php` — layouts, sub-theme registry, feature flags, Vite entry paths (committed)
+- **Database** (`VpressSettings`) — logo, titles, light/dark default, site sub-theme, toggles (edited in Filament)
 
 `ApplyVpressSiteConfig` middleware applies DB settings on each web request (title, favicon, locale hints).
 

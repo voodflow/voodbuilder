@@ -1,0 +1,12 @@
+/**
+ * {{ name }} sub-theme — customize CSS variables and typography.
+ */
+
+html[data-vpress-sub-theme='{{ id }}'] {
+    --width-vp-content: 43rem;
+    --width-vp-layout: 90rem;
+}
+
+html[data-vpress-sub-theme='{{ id }}'] .vpress-{{ id }}-content {
+    @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24;
+}

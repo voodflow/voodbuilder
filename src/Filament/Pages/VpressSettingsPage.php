@@ -25,6 +25,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Throwable;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\SubThemeRegistry;
 
 /**
  * @property-read Schema $form
@@ -181,6 +182,12 @@ class VpressSettingsPage extends Page
                         Toggle::make('show_account_link')
                             ->label(__('Show account link for logged-in users'))
                             ->default(true),
+                        Select::make('sub_theme')
+                            ->label(__('vpress::admin.fields.sub_theme'))
+                            ->options(fn (): array => app(SubThemeRegistry::class)->options())
+                            ->default('default')
+                            ->native(false)
+                            ->helperText(__('vpress::admin.helpers.sub_theme_site')),
                         Toggle::make('sticky_nav')
                             ->label(__('Sticky navigation on standard pages'))
                             ->helperText(__('Keeps the header visible while scrolling on home, CMS pages, and auth screens. Documentation pages with a sidebar always use a fixed header.'))

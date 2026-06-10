@@ -20,6 +20,20 @@ class SitePageController extends Controller
 
         seo()->for($page);
 
-        return view('vpress::pages.site-page', ['page' => $page]);
+        $data = [
+            'page' => $page,
+            'vpressSubTheme' => $page->resolvedSubTheme(),
+        ];
+
+        if (filled($page->section)) {
+            $data['sectionHome'] = SitePage::sectionHomePage($page->section);
+            $data['sectionPosts'] = SitePage::sectionArticles($page->section);
+        }
+
+        if ($page->isSectionHome()) {
+            return view('vpress::pages.section-index', $data);
+        }
+
+        return view('vpress::pages.site-page', $data);
     }
 }

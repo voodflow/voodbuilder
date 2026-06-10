@@ -12,7 +12,9 @@ use Voodflow\Vpress\Models\NavigationMenu;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\DefaultHomeContent;
+use Voodflow\Vpress\Support\DemoSubThemeContent;
 use Voodflow\Vpress\Support\Navigation;
+use Voodflow\Vpress\Support\SitePageSection;
 
 class VpressSeeder extends Seeder
 {
@@ -46,6 +48,7 @@ class VpressSeeder extends Seeder
         );
 
         $this->seedHomePage();
+        $this->seedThemeDemoPages();
 
         $this->seedMenus();
         $this->seedCookieConsentSettings();
@@ -63,12 +66,104 @@ class VpressSeeder extends Seeder
             [
                 'title' => __('vpress::home.page_title'),
                 'layout' => 'home',
+                'sub_theme' => 'default',
                 'content' => DefaultHomeContent::content(),
                 'published' => true,
                 'published_at' => now(),
                 'is_home' => true,
             ],
         );
+    }
+
+    protected function seedThemeDemoPages(): void
+    {
+        if (! Route::has('blog.index')) {
+            $this->seedBlogSection();
+        }
+
+        $this->seedNewsSection();
+    }
+
+    protected function seedBlogSection(): void
+    {
+        $index = DemoSubThemeContent::blogIndexMeta();
+
+        SitePage::query()->updateOrCreate(
+            ['slug' => 'blog'],
+            [
+                'title' => $index['title'],
+                'excerpt' => $index['excerpt'],
+                'layout' => 'page',
+                'sub_theme' => SitePageSection::BLOG,
+                'section' => SitePageSection::BLOG,
+                'section_home' => true,
+                'content' => null,
+                'published' => true,
+                'published_at' => now(),
+                'is_home' => false,
+            ],
+        );
+
+        foreach (DemoSubThemeContent::blogPostDefinitions() as $definition) {
+            $post = DemoSubThemeContent::blogPost($definition['key']);
+
+            SitePage::query()->updateOrCreate(
+                ['slug' => $definition['slug']],
+                [
+                    'title' => $post['title'],
+                    'excerpt' => $post['excerpt'],
+                    'layout' => 'page',
+                    'sub_theme' => SitePageSection::BLOG,
+                    'section' => SitePageSection::BLOG,
+                    'section_home' => false,
+                    'content' => $post['content'],
+                    'published' => true,
+                    'published_at' => now()->subDays($definition['days_ago']),
+                    'is_home' => false,
+                ],
+            );
+        }
+    }
+
+    protected function seedNewsSection(): void
+    {
+        $index = DemoSubThemeContent::newsIndexMeta();
+
+        SitePage::query()->updateOrCreate(
+            ['slug' => 'news'],
+            [
+                'title' => $index['title'],
+                'excerpt' => $index['excerpt'],
+                'layout' => 'page',
+                'sub_theme' => SitePageSection::NEWS,
+                'section' => SitePageSection::NEWS,
+                'section_home' => true,
+                'content' => null,
+                'published' => true,
+                'published_at' => now(),
+                'is_home' => false,
+            ],
+        );
+
+        foreach (DemoSubThemeContent::newsArticleDefinitions() as $definition) {
+            $article = DemoSubThemeContent::newsArticle($definition['key']);
+
+            SitePage::query()->updateOrCreate(
+                ['slug' => $definition['slug']],
+                [
+                    'title' => $article['title'],
+                    'excerpt' => $article['excerpt'],
+                    'layout' => 'page',
+                    'sub_theme' => SitePageSection::NEWS,
+                    'section' => SitePageSection::NEWS,
+                    'section_home' => false,
+                    'content' => $article['content'],
+                    'published' => true,
+                    'published_at' => now()->subDays($definition['days_ago']),
+                    'is_home' => false,
+                ],
+            );
+        }
     }
 
     protected function seedMenus(): void
@@ -88,6 +183,7 @@ class VpressSeeder extends Seeder
                 'sort_order' => 0,
             ],
             ...$this->tutorialMenuItems(),
+            ...$this->themeDemoMenuItems(),
         ]);
 
         $footer = NavigationMenu::query()->updateOrCreate(
@@ -127,7 +223,36 @@ class VpressSeeder extends Seeder
                 'type' => MenuItemType::Route,
                 'link' => 'vtuts.index',
                 'route_match' => 'vtuts.*',
-                'sort_order' => 1,
+                'sort_order' => 10,
+            ],
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function themeDemoMenuItems(): array
+    {
+        $blogItem = Route::has('blog.index')
+            ? [
+                'label' => __('vpress::demo.blog.title'),
+                'type' => MenuItemType::Route,
+                'link' => 'blog.index',
+                'route_match' => 'blog.*',
+                'sort_order' => 20,
+            ]
+            : [
+                'label' => __('vpress::demo.blog.title'),
+                'type' => MenuItemType::Page,
+                'link' => 'blog',
+                'sort_order' => 20,
+            ];
+
+        return [
+            $blogItem,
+            [
+                'label' => __('vpress::demo.news.title'),
+                'type' => MenuItemType::Page,
+                'link' => 'news',
+                'sort_order' => 30,
             ],
         ];
     }

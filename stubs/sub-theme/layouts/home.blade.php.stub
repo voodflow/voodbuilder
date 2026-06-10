@@ -1,0 +1,13 @@
+@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+
+@section('body_class')
+    vpress-sub-theme-{{ id }}
+@endsection
+
+@section('content')
+    <div class="vpress-{{ id }}-shell">
+        <div class="vpress-{{ id }}-content">
+            @yield('home')
+        </div>
+    </div>
+@endsection

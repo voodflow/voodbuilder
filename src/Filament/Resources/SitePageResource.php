@@ -12,11 +12,13 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -27,6 +29,8 @@ use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
+use Voodflow\Vpress\Support\SitePageSection;
+use Voodflow\Vpress\Support\SubThemeRegistry;
 
 class SitePageResource extends Resource
 {
@@ -68,6 +72,13 @@ class SitePageResource extends Resource
                                     ->maxLength(255)
                                     ->unique(ignoreRecord: true)
                                     ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
+
+                                Textarea::make('excerpt')
+                                    ->label(__('vpress::admin.fields.excerpt'))
+                                    ->rows(3)
+                                    ->maxLength(500)
+                                    ->helperText(__('vpress::admin.helpers.excerpt'))
+                                    ->columnSpanFull(),
 
                                 RichEditor::make('content')
                                     ->label(__('Page content'))
@@ -115,6 +126,33 @@ class SitePageResource extends Resource
                                     ->default('page')
                                     ->native(false)
                                     ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
+
+                                Select::make('sub_theme')
+                                    ->label(__('vpress::admin.fields.sub_theme'))
+                                    ->options(fn (): array => [
+                                        '' => __('vpress::admin.fields.sub_theme_inherit'),
+                                        ...app(SubThemeRegistry::class)->options(),
+                                    ])
+                                    ->default(null)
+                                    ->nullable()
+                                    ->native(false)
+                                    ->helperText(__('vpress::admin.helpers.sub_theme_page')),
+
+                                Select::make('section')
+                                    ->label(__('vpress::admin.fields.section'))
+                                    ->options(fn (): array => [
+                                        '' => __('vpress::admin.fields.section_none'),
+                                        SitePageSection::BLOG => __('vpress::demo.blog.title'),
+                                        SitePageSection::NEWS => __('vpress::demo.news.title'),
+                                    ])
+                                    ->nullable()
+                                    ->native(false)
+                                    ->live(),
+
+                                Toggle::make('section_home')
+                                    ->label(__('vpress::admin.fields.section_home'))
+                                    ->helperText(__('vpress::admin.helpers.section_home'))
+                                    ->visible(fn (Get $get): bool => filled($get('section'))),
                             ]),
                     ])
                     ->columnSpan(['lg' => 1]),
@@ -128,6 +166,13 @@ class SitePageResource extends Resource
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('slug')->searchable(),
                 TextColumn::make('layout')->badge(),
+                TextColumn::make('sub_theme')
+                    ->label(__('vpress::admin.fields.sub_theme'))
+                    ->formatStateUsing(fn (?string $state): string => filled($state)
+                        ? app(SubThemeRegistry::class)->label($state)
+                        : __('vpress::admin.fields.sub_theme_inherit'))
+                    ->badge()
+                    ->color(fn (?string $state): string => filled($state) ? 'info' : 'gray'),
                 IconColumn::make('is_home')->label(__('Home'))->boolean(),
                 IconColumn::make('published')->boolean(),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
