@@ -78,3 +78,52 @@
     color: var(--color-vp-brand-2, #3a5ccc);
     text-decoration: underline;
 }
+
+.VPProductPromo {
+    padding: 2rem 1.5rem;
+    margin-top: 2rem;
+    border-radius: 0.875rem;
+    border: 1px solid var(--color-vp-divider, #e2e2e3);
+    background: linear-gradient(
+        135deg,
+        var(--color-vp-bg-alt, #f6f6f7) 0%,
+        color-mix(in srgb, var(--color-vp-brand-3, #3451b2) 8%, var(--color-vp-bg-alt, #f6f6f7)) 100%
+    );
+    text-align: center;
+}
+
+.VPProductPromoTitle {
+    margin: 0 0 0.75rem;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-vp-text-1, #3c3c43);
+}
+
+.VPProductPromoText {
+    margin: 0 auto 1.25rem;
+    max-width: 42rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-vp-text-2, #67676c);
+}
+
+.VPProductPromoButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    text-decoration: none;
+    background: var(--color-vp-brand-3, #3451b2);
+    transition: background-color 0.15s ease;
+}
+
+.VPProductPromoButton:hover {
+    background: var(--color-vp-brand-2, #3a5ccc);
+    color: #fff;
+}

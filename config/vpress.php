@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Voodflow\Vpress\Support\DefaultHomeContent;
+use Voodflow\Vpress\Support\VpressPaths;
 
 return [
     'site_title' => env('APP_NAME', 'Laravel'),
@@ -93,7 +95,7 @@ return [
     'admin_panel_id' => 'admin',
 
     'assets' => [
-        'vite' => \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries(),
+        'vite' => VpressPaths::defaultViteEntries(),
     ],
 
     /*
@@ -111,8 +113,9 @@ return [
     | Purchase / product pages for companion packages (used by the default home seeder).
     */
     'packages' => [
-        'vtuts_url' => env('VPRESS_VTUTS_URL', 'https://github.com/voodflow/vtuts'),
-        'vdocs_url' => env('VPRESS_VDOCS_URL', 'https://github.com/voodflow/vdocs'),
+        'vtuts_url' => env('VPRESS_VTUTS_URL', 'https://filamentphp.com/plugins/voodflow-vtuts'),
+        'vdocs_url' => env('VPRESS_VDOCS_URL', 'https://filamentphp.com/plugins/voodflow-vdocs'),
+        'voodflow_url' => env('VPRESS_VOODFLOW_URL', 'https://filamentphp.com/plugins/voodflow-voodflow'),
     ],
 
     'home' => [
@@ -122,7 +125,7 @@ return [
             'title' => null,
             'description' => null,
         ],
-        'default_content_callback' => [\Voodflow\Vpress\Support\DefaultHomeContent::class, 'content'],
+        'default_content_callback' => [DefaultHomeContent::class, 'content'],
     ],
 
     'pages' => [

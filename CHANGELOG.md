@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- `ProductPromoBlock` rich content block for product call-to-action banners
+- `vpress.packages.voodflow_url` and default home promo for **Voodflow**
+
+### Changed
+
+- Default home CTAs for **Vtuts** and **Vdocs** point to Filament plugin marketplace pages
+- Home CTA button labels use product names (`Get Vtuts`, `Get Vdocs`)
+
 ## [0.0.9] - 2026-06-09
 
 ### Changed

@@ -21,7 +21,7 @@ final class DefaultHomeContent
         $content = [
             'type' => 'doc',
             'content' => [
-                static::customBlock('hero', [
+                self::customBlock('hero', [
                     'name' => __('vpress::home.brand'),
                     'headline' => __('vpress::home.headline'),
                     'tagline' => __('vpress::home.tagline'),
@@ -30,7 +30,7 @@ final class DefaultHomeContent
                     'secondary_label' => __('vpress::home.cta_vdocs'),
                     'secondary_url' => (string) config('vpress.packages.vdocs_url'),
                 ]),
-                static::customBlock('features_grid', [
+                self::customBlock('features_grid', [
                     'title' => __('vpress::home.why_title'),
                     'features' => [
                         [
@@ -49,6 +49,12 @@ final class DefaultHomeContent
                             'text' => __('vpress::home.feature_3_text'),
                         ],
                     ],
+                ]),
+                self::customBlock('product_promo', [
+                    'title' => __('vpress::home.voodflow_title'),
+                    'text' => __('vpress::home.voodflow_text'),
+                    'button_label' => __('vpress::home.voodflow_cta'),
+                    'button_url' => (string) config('vpress.packages.voodflow_url'),
                 ]),
             ],
         ];

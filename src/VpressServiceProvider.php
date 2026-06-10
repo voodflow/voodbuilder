@@ -16,11 +16,12 @@ use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
+use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
-use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
+use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\VpressSeo;
@@ -87,6 +88,7 @@ class VpressServiceProvider extends PackageServiceProvider
         $registry
             ->register('Layout', HeroBlock::class)
             ->register('Layout', FeaturesGridBlock::class)
-            ->register('Layout', PartnerBannerBlock::class);
+            ->register('Layout', PartnerBannerBlock::class)
+            ->register('Layout', ProductPromoBlock::class);
     }
 }
