@@ -31,7 +31,7 @@ html.dark[data-vpress-sub-theme='news'] {
 }
 
 html[data-vpress-sub-theme='news'] .vpress-news-shell {
-    @apply border-t-4 border-vp-brand-1 bg-vp-bg;
+    @apply bg-vp-bg;
 }
 
 html[data-vpress-sub-theme='news'] .vpress-news-content {

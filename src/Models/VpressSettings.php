@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Voodflow\Vpress\Support\ThemePalette;
 
 class VpressSettings extends Model
 {
@@ -58,6 +59,7 @@ class VpressSettings extends Model
             'google_analytics_id' => null,
             'monitoring_head_code' => null,
             'monitoring_body_code' => null,
+            'sub_theme_colors' => [],
         ];
     }
 
@@ -83,6 +85,8 @@ class VpressSettings extends Model
         if (blank($data['primary_locale'] ?? null) && filled($data['default_ui_locale'] ?? null)) {
             $data['primary_locale'] = $data['default_ui_locale'];
         }
+
+        $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
 
         return $data;
     }
@@ -181,6 +185,10 @@ class VpressSettings extends Model
             if (array_key_exists($uploadKey, $data)) {
                 $data[$uploadKey] = static::normalizeUploadValue($data[$uploadKey]);
             }
+        }
+
+        if (array_key_exists('sub_theme_colors', $data)) {
+            $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
         }
 
         $record = static::query()->firstOrNew(['id' => 1]);

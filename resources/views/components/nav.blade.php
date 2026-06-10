@@ -7,7 +7,7 @@
     use Voodflow\Vpress\Models\VpressSettings;
 
     $showNotificationBell = (bool) VpressSettings::get('show_notification_bell', true);
-    $stickyNav = ! $hasDocSidebar && (bool) VpressSettings::get('sticky_nav', false);
+    $stickyNav = ! $hasDocSidebar && ($showReadingProgress || (bool) VpressSettings::get('sticky_nav', false));
 @endphp
 
 <header @class([
@@ -85,8 +85,8 @@
             </div>
         </div>
 
-        @unless ($hasDocSidebar || $showReadingProgress)
-            <div class="pointer-events-none w-full">
+        @unless ($hasDocSidebar)
+            <div class="pointer-events-none w-full" data-vpress-header-divider>
                 <div class="h-px w-full bg-vp-divider"></div>
             </div>
         @endunless
@@ -94,7 +94,7 @@
 
     @if ($showReadingProgress)
         <div
-            class="pointer-events-none relative h-[2px] w-full bg-vp-divider"
+            class="pointer-events-none relative w-full bg-vp-divider"
             data-vpress-progress
             aria-hidden="true"
         >

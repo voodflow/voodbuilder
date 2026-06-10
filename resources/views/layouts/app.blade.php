@@ -2,6 +2,9 @@
     use Voodflow\Vpress\Support\SubThemeResolver;
 
     $vpressSubTheme = $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+    $vpressBodyClass = trim((string) $__env->yieldContent('body_class'));
+    $vpressHasDocSidebar = str_contains($vpressBodyClass, 'vpress-has-doc-sidebar');
+    $vpressShowReadingProgress = str_contains($vpressBodyClass, 'vpress-has-reading-progress');
 @endphp
 <!doctype html>
 <html
@@ -25,13 +28,14 @@
     @include('cookie-consent::cookie-consent-head')
 
     @vite(config('vpress.assets.vite', \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries()))
+    <x-vpress::theme-vars />
     @livewireStyles
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col @yield('body_class')">
     <x-vpress::nav
-        :has-doc-sidebar="$vpressHasDocSidebar ?? false"
-        :show-reading-progress="$vpressShowReadingProgress ?? false"
+        :has-doc-sidebar="$vpressHasDocSidebar"
+        :show-reading-progress="$vpressShowReadingProgress"
     />
 
     <main class="flex-1">

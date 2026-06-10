@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-06-10
+
 ### Added
 
 - `ProductPromoBlock` rich content block for product call-to-action banners
 - `PackagePromosBlock` for a three-column grid of package CTAs (Vdocs, Vtuts, Voodflow)
 - `vpress.packages.voodflow_url` and default home promo for **Voodflow**
+- Filament settings: tabbed UI (Site, Appearance, Theme, SEO, GEO & AI, Analytics)
+- Per sub-theme brand color overrides via `ThemePalette` and `theme-vars` component
+- `ThemePaletteTest` unit test
 
 ### Changed
 
@@ -16,6 +21,17 @@ All notable changes to this project will be documented in this file.
 - Hero headline no longer references VitePress; killer **import full VitePress site** feature is highlighted in the features grid (with Vdocs)
 - Hero CTAs link to the Vpress Filament plugin page and GitHub repository
 - Default home CTAs for **Vtuts** and **Vdocs** point to Filament plugin marketplace pages
+- Reading progress bar on doc/tutorial and sub-theme article shells; hidden when content is not scrollable
+- Doc/tutorial header: no divider under nav; blog keeps divider without progress; news keeps progress without divider
+- Outline links use `data-toc-link`; active styles scoped to `nav.vp-outline`
+
+### Fixed
+
+- TOC scroll-spy: single handler, correct `--spacing-vp-doc-offset`, no scroll-lock jump on smooth scroll
+- `body_class` yield in app layout (progress bar on blog Ink shell)
+- Sticky/fixed nav coordination with reading progress track
+
+[0.0.10]: https://github.com/voodflow/vpress/releases/tag/0.0.10
 
 ## [0.0.9] - 2026-06-09
 

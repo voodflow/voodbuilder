@@ -14,7 +14,7 @@
                         'vp-outline__link--level-3' => ($item['level'] ?? 2) === 3,
                         'vp-outline__link--level-4' => ($item['level'] ?? 2) >= 4,
                     ])
-                    data-outline-link
+                    data-toc-link
                 >
                     {{ $item['title'] }}
                 </a>

@@ -91,12 +91,56 @@
             }
         });
 
-        const article = document.querySelector('[data-tutorial-article], [data-doc-article], [data-vdocs-article]');
+        const article = document.querySelector(
+            '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-vpress-article]',
+        );
         const bar = document.querySelector('[data-reading-progress]');
         const progressTrack = bar?.closest('[data-vpress-progress]');
+        const isPageScrollable = () => document.documentElement.scrollHeight > window.innerHeight + 2;
 
-        if (article && bar) {
+        const getOutlineScrollOffset = () => {
+            const parsed = Number.parseFloat(
+                getComputedStyle(root).getPropertyValue('--spacing-vp-doc-offset'),
+            );
+
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 96;
+        };
+
+        const getOutlineSpyOffset = () => getOutlineScrollOffset();
+
+        let progressScrollable = null;
+
+        const syncProgressLayout = (scrollable) => {
+            if (! progressTrack) {
+                return;
+            }
+
+            if (progressScrollable === scrollable) {
+                return;
+            }
+
+            progressScrollable = scrollable;
+            root.style.setProperty('--spacing-vp-progress', scrollable ? '2px' : '0px');
+            progressTrack.hidden = ! scrollable;
+            progressTrack.toggleAttribute('data-inactive', ! scrollable);
+
+            if (! scrollable) {
+                bar.style.width = '0%';
+            }
+
+            window.dispatchEvent(new Event('resize'));
+        };
+
+        if (article && bar && progressTrack) {
             const updateProgress = () => {
+                const scrollable = isPageScrollable();
+
+                syncProgressLayout(scrollable);
+
+                if (! scrollable) {
+                    return;
+                }
+
                 const rect = article.getBoundingClientRect();
                 const scrollTop = window.scrollY || document.documentElement.scrollTop;
                 const top = scrollTop + rect.top;
@@ -106,12 +150,13 @@
                 const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
 
                 bar.style.width = `${progress * 100}%`;
-                progressTrack?.classList.toggle('is-active', progress > 0.001);
+                progressTrack.classList.toggle('is-active', progress > 0.001);
             };
 
             updateProgress();
             window.addEventListener('scroll', updateProgress, { passive: true });
             window.addEventListener('resize', updateProgress);
+            window.addEventListener('load', updateProgress);
         }
 
         const searchRoot = document.querySelector('[data-vpress-search]');
@@ -177,10 +222,15 @@
             });
         }
 
-        const outlineLinks = [...document.querySelectorAll('[data-outline-link]')];
+        document.querySelectorAll('.vp-aside-anchor.is-active, .vp-aside-anchor.active').forEach((link) => {
+            link.classList.remove('is-active', 'active');
+            link.removeAttribute('aria-current');
+        });
+
+        const outlineLinks = [...document.querySelectorAll('[data-toc-link]')];
 
         if (outlineLinks.length > 0 && ! window.__vpOutlineScrollSpy) {
-            window.__vpOutlineScrollSpy = true;
+            window.__vpOutlineScrollSpy = 'vpress';
             const entriesById = new Map();
 
             outlineLinks.forEach((link) => {
@@ -215,30 +265,25 @@
 
                     activeId = id;
 
-                    outlineEntries.forEach(({ id: entryId, links }) => {
-                        const isActive = id !== '' && entryId === id;
-
-                        links.forEach((link) => {
-                            link.classList.toggle('is-active', isActive);
-                            link.classList.toggle('active', isActive);
-
-                            if (isActive) {
-                                link.setAttribute('aria-current', 'location');
-                            } else {
-                                link.removeAttribute('aria-current');
-                            }
-                        });
+                    outlineLinks.forEach((link) => {
+                        link.classList.remove('is-active', 'active');
+                        link.removeAttribute('aria-current');
                     });
-                };
 
-                const outlineOffset = () => {
-                    const value = getComputedStyle(document.documentElement)
-                        .getPropertyValue('--spacing-vp-doc-offset')
-                        .trim();
+                    if (id === '') {
+                        return;
+                    }
 
-                    const parsed = Number.parseFloat(value);
+                    const entry = entriesById.get(id);
 
-                    return Number.isFinite(parsed) && parsed > 0 ? parsed : 96;
+                    if (! entry) {
+                        return;
+                    }
+
+                    entry.links.forEach((link) => {
+                        link.classList.add('is-active', 'active');
+                        link.setAttribute('aria-current', 'location');
+                    });
                 };
 
                 const sortByDocumentPosition = (items) => [...items].sort((a, b) => {
@@ -259,35 +304,25 @@
                     return 0;
                 });
 
-                const resolveActiveOutlineId = (items, offset) => {
+                const resolveActiveOutlineId = (items, spyOffset) => {
                     const sorted = sortByDocumentPosition(items);
 
                     if (sorted.length === 0) {
                         return '';
                     }
 
-                    if (window.scrollY < 32) {
-                        return sorted[0].id;
-                    }
-
-                    const readingLine = offset + 4;
-                    const firstHeadingTop = sorted[0].heading.getBoundingClientRect().top;
-
-                    if (firstHeadingTop > readingLine) {
-                        return sorted[0].id;
-                    }
-
-                    const scrollEnd = window.scrollY + window.innerHeight;
+                    const scrollY = window.scrollY || document.documentElement.scrollTop;
+                    const scrollBottom = scrollY + window.innerHeight;
                     const pageEnd = document.documentElement.scrollHeight;
 
-                    if (pageEnd - scrollEnd < 80) {
+                    if (pageEnd - scrollBottom < 80) {
                         return sorted[sorted.length - 1].id;
                     }
 
                     let active = sorted[0].id;
 
                     sorted.forEach(({ heading, id }) => {
-                        if (heading.getBoundingClientRect().top <= readingLine) {
+                        if (heading.getBoundingClientRect().top <= spyOffset + 1) {
                             active = id;
                         }
                     });
@@ -295,42 +330,30 @@
                     return active;
                 };
 
-                let outlineScrollLock = null;
-                let outlineScrollTimer = null;
-
                 const scrollToOutlineHeading = (heading, smooth = true) => {
-                    const offset = outlineOffset();
+                    const offset = getOutlineScrollOffset();
                     const top = Math.max(0, heading.getBoundingClientRect().top + window.scrollY - offset);
 
                     window.scrollTo({ top, behavior: smooth ? 'smooth' : 'instant' });
                 };
 
-                const lockOutlineTo = (id) => {
-                    outlineScrollLock = id;
-                    setActiveOutline(id);
-                };
-
-                const scheduleOutlineLockRelease = () => {
-                    clearTimeout(outlineScrollTimer);
-                    outlineScrollTimer = setTimeout(() => {
-                        outlineScrollLock = null;
-                        updateOutlineFromScroll();
-                    }, 150);
-                };
-
                 const updateOutlineFromScroll = () => {
-                    setActiveOutline(resolveActiveOutlineId(outlineEntries, outlineOffset()));
+                    setActiveOutline(resolveActiveOutlineId(outlineEntries, getOutlineSpyOffset()));
                 };
+
+                let outlineTicking = false;
 
                 const onOutlineScroll = () => {
-                    if (outlineScrollLock) {
-                        setActiveOutline(outlineScrollLock);
-                        scheduleOutlineLockRelease();
-
+                    if (outlineTicking) {
                         return;
                     }
 
-                    updateOutlineFromScroll();
+                    outlineTicking = true;
+
+                    requestAnimationFrame(() => {
+                        outlineTicking = false;
+                        updateOutlineFromScroll();
+                    });
                 };
 
                 const navigateOutlineTo = (id, smooth = true) => {
@@ -340,7 +363,7 @@
 
                     const { heading } = entriesById.get(id);
 
-                    lockOutlineTo(id);
+                    setActiveOutline(id);
                     history.pushState(null, '', `#${id}`);
                     scrollToOutlineHeading(heading, smooth);
                 };
@@ -372,6 +395,7 @@
 
                 window.addEventListener('scroll', onOutlineScroll, { passive: true });
                 window.addEventListener('resize', updateOutlineFromScroll);
+                window.addEventListener('load', updateOutlineFromScroll);
                 window.addEventListener('hashchange', () => {
                     const id = window.location.hash.slice(1);
 
@@ -379,6 +403,19 @@
                         navigateOutlineTo(id, false);
                     }
                 });
+
+                const outlineWatchTarget = document.querySelector(
+                    '[data-doc-article], [data-vdocs-article], [data-vpress-article], .vp-doc',
+                );
+
+                if (outlineWatchTarget && typeof ResizeObserver !== 'undefined') {
+                    let outlineResizeTimer = null;
+
+                    new ResizeObserver(() => {
+                        clearTimeout(outlineResizeTimer);
+                        outlineResizeTimer = setTimeout(updateOutlineFromScroll, 100);
+                    }).observe(outlineWatchTarget);
+                }
             }
         }
 
