@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Filament\Resources;
 
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -21,6 +22,7 @@ use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\CreateNaviga
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Vpress\Models\NavigationMenu;
+use Voodflow\Vpress\Models\NavigationMenuItem;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\MenuRouteCatalog;
 use Voodflow\Vpress\Support\MenuRouteParameterField;
@@ -142,14 +144,19 @@ class NavigationMenuResource extends Resource
                                     ->mutateRelationshipDataBeforeFillUsing(
                                         fn (array $data): array => MenuRouteParameterField::expandForFill($data),
                                     )
-                                    ->mutateRelationshipDataBeforeCreateUsing(
-                                        fn (array $data): array => MenuRouteParameterField::compressForSave($data),
-                                    )
+                                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data, NavigationMenuItem $record): array {
+                                        $data = MenuRouteParameterField::compressForSave($data);
+                                        $data['menu_id'] = $record->menu_id;
+
+                                        return $data;
+                                    })
                                     ->mutateRelationshipDataBeforeSaveUsing(
                                         fn (array $data): array => MenuRouteParameterField::compressForSave($data),
                                     )
                                     ->schema(static::menuItemFields(isChild: true))
                                     ->reorderable()
+                                    ->reorderableWithDragAndDrop()
+                                    ->reorderableWithButtons(false)
                                     ->orderColumn('sort_order')
                                     ->collapsible()
                                     ->collapsed()
@@ -157,6 +164,8 @@ class NavigationMenuResource extends Resource
                                     ->defaultItems(0),
                             ])
                             ->reorderable()
+                            ->reorderableWithDragAndDrop()
+                            ->reorderableWithButtons(false)
                             ->orderColumn('sort_order')
                             ->collapsible()
                             ->collapsed()
@@ -166,7 +175,7 @@ class NavigationMenuResource extends Resource
             ]);
     }
 
-    /** @return array<int, \Filament\Forms\Components\Component> */
+    /** @return array<int, Component> */
     protected static function menuItemFields(bool $isChild): array
     {
         return [

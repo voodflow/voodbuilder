@@ -38,6 +38,17 @@ class NavigationMenuItem extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (NavigationMenuItem $item): void {
+            if (filled($item->parent_id) && blank($item->menu_id)) {
+                $item->menu_id = static::query()
+                    ->whereKey($item->parent_id)
+                    ->value('menu_id');
+            }
+        });
+    }
+
     public function menu(): BelongsTo
     {
         return $this->belongsTo(NavigationMenu::class, 'menu_id');
