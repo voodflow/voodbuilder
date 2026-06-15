@@ -12,6 +12,14 @@
 
     $mainItems = Navigation::items('main');
     $extraItems = Navigation::items('header_extra');
+    $docSections = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
+        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && Route::has('vdocs.index')
+        ? \Voodflow\Vdocs\Support\DocNavigation::sections()
+        : collect();
+    $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
+        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && \Voodflow\Vdocs\Support\DocNavigation::isActive();
     $showNotificationBell = (bool) VpressSettings::get('show_notification_bell', true);
     $showThemeToggle = (bool) VpressSettings::get('show_theme_toggle', true);
     $showAccountLink = (bool) VpressSettings::get('show_account_link', true);
@@ -89,10 +97,8 @@
                 </div>
             @endif
 
-            @if (class_exists(\Voodflow\Vdocs\Support\DocNavigation::class) && \Voodflow\Vdocs\Support\DocNavigation::enabled() && Route::has('vdocs.index'))
-                @php($docSections = \Voodflow\Vdocs\Support\DocNavigation::sections())
-                @if ($docSections->isNotEmpty())
-                    <div class="vpress-mobile-nav__section" x-data="{ open: {{ \Voodflow\Vdocs\Support\DocNavigation::isActive() ? 'true' : 'false' }} }">
+            @if ($docSections->isNotEmpty())
+                <div class="vpress-mobile-nav__section" x-data="{ open: {{ $docsNavActive ? 'true' : 'false' }} }">
                         <button
                             type="button"
                             class="vpress-mobile-nav__link w-full"
@@ -148,7 +154,6 @@
                             @endforeach
                         </ul>
                     </div>
-                @endif
             @endif
         </div>
 

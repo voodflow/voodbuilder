@@ -66,7 +66,7 @@ class NavigationMenuResource extends Resource
             ->all();
     }
 
-    /** @return array<int, MenuItemType> */
+    /** @return array<string, string> */
     protected static function menuItemTypeOptions(bool $isChild): array
     {
         $types = collect(MenuItemType::cases());
@@ -75,7 +75,9 @@ class NavigationMenuResource extends Resource
             $types = $types->reject(fn (MenuItemType $type): bool => $type === MenuItemType::Group);
         }
 
-        return $types->all();
+        return $types
+            ->mapWithKeys(fn (MenuItemType $type): array => [$type->value => $type->getLabel()])
+            ->all();
     }
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
