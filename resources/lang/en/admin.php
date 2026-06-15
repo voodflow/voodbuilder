@@ -19,11 +19,13 @@ return [
         'section' => 'Section',
         'section_none' => 'None',
         'section_home' => 'Section home',
+        'sub_items' => 'Sub-items',
     ],
 
     'helpers' => [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
+        'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'sub_theme_site' => 'Default visual style for the public site. Individual pages can override this.',
         'sub_theme_page' => 'Override the site sub-theme for this page — useful for blog or news sections linked from the menu.',
         'excerpt' => 'Short summary for section listings, cards, and SEO.',

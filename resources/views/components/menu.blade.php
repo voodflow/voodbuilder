@@ -10,39 +10,15 @@
 
 @if($items->isNotEmpty())
     @if($wrapped)
-        <nav {{ $attributes->class([$class]) }} aria-label="{{ __('Navigation') }}">
+        <nav {{ $attributes->class([$class, 'gap-1']) }} aria-label="{{ __('Navigation') }}">
             @foreach($items as $item)
-                <a
-                    href="{{ $item->resolveUrl() }}"
-                    @class([
-                        $linkClass,
-                        'text-vp-brand-1' => $item->isActive(),
-                    ])
-                    @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                >
-                    <span>{{ __($item->label) }}</span>
-                    @if($item->isExternal())
-                        <x-vpress::external-link-icon />
-                    @endif
-                </a>
+                <x-vpress::menu-nav-item :item="$item" :link-class="$linkClass" />
             @endforeach
         </nav>
     @else
-        <div {{ $attributes->class(['flex items-center']) }}>
+        <div {{ $attributes->class(['flex items-center gap-1']) }}>
             @foreach($items as $item)
-                <a
-                    href="{{ $item->resolveUrl() }}"
-                    @class([
-                        $linkClass,
-                        'text-vp-brand-1' => $item->isActive(),
-                    ])
-                    @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                >
-                    <span>{{ __($item->label) }}</span>
-                    @if($item->isExternal())
-                        <x-vpress::external-link-icon />
-                    @endif
-                </a>
+                <x-vpress::menu-nav-item :item="$item" :link-class="$linkClass" />
             @endforeach
         </div>
     @endif

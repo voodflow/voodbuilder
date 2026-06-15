@@ -68,7 +68,7 @@ final class Navigation
             $menu = NavigationMenu::query()->where('slug', $slug)->first();
 
             if ($menu !== null) {
-                return $menu->items;
+                return $menu->rootItems()->with('children')->get();
             }
         }
 
@@ -81,7 +81,16 @@ final class Navigation
      */
     protected static function dehydrateItems(Collection $items): array
     {
-        return $items->map(fn (NavigationMenuItem $item): array => [
+        return $items
+            ->map(fn (NavigationMenuItem $item): array => static::dehydrateItem($item))
+            ->values()
+            ->all();
+    }
+
+    /** @return array<string, mixed> */
+    protected static function dehydrateItem(NavigationMenuItem $item): array
+    {
+        return [
             'label' => $item->label,
             'type' => $item->type->value,
             'link' => $item->link,
@@ -89,7 +98,8 @@ final class Navigation
             'route_match' => $item->route_match,
             'open_in_new_tab' => $item->open_in_new_tab,
             'sort_order' => $item->sort_order,
-        ])->values()->all();
+            'children' => static::dehydrateItems($item->children),
+        ];
     }
 
     /**
@@ -98,6 +108,20 @@ final class Navigation
      */
     protected static function hydrateItems(array $items): Collection
     {
-        return collect($items)->map(fn (array $item): NavigationMenuItem => new NavigationMenuItem($item));
+        return collect($items)->map(fn (array $item): NavigationMenuItem => static::hydrateItem($item));
+    }
+
+    /** @param  array<string, mixed>  $item */
+    protected static function hydrateItem(array $item): NavigationMenuItem
+    {
+        $children = collect($item['children'] ?? [])
+            ->map(fn (array $child): NavigationMenuItem => static::hydrateItem($child));
+
+        unset($item['children']);
+
+        $model = new NavigationMenuItem($item);
+        $model->setRelation('children', $children);
+
+        return $model;
     }
 }

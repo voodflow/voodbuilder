@@ -66,6 +66,18 @@ class NavigationMenuResource extends Resource
             ->all();
     }
 
+    /** @return array<int, MenuItemType> */
+    protected static function menuItemTypeOptions(bool $isChild): array
+    {
+        $types = collect(MenuItemType::cases());
+
+        if ($isChild) {
+            $types = $types->reject(fn (MenuItemType $type): bool => $type === MenuItemType::Group);
+        }
+
+        return $types->all();
+    }
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
 
     protected static ?int $navigationSort = 1;
@@ -107,8 +119,9 @@ class NavigationMenuResource extends Resource
                     ]),
                 Section::make(__('Menu items'))
                     ->schema([
-                        Repeater::make('items')
-                            ->relationship()
+                        Repeater::make('rootItems')
+                            ->label(__('Menu items'))
+                            ->relationship('rootItems')
                             ->mutateRelationshipDataBeforeFillUsing(
                                 fn (array $data): array => MenuRouteParameterField::expandForFill($data),
                             )
@@ -119,91 +132,27 @@ class NavigationMenuResource extends Resource
                                 fn (array $data): array => MenuRouteParameterField::compressForSave($data),
                             )
                             ->schema([
-                                TextInput::make('label')
-                                    ->required()
-                                    ->maxLength(255),
-                                Select::make('type')
-                                    ->options(MenuItemType::class)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (callable $set, mixed $state, mixed $old, Get $get): void {
-                                        if ($state !== $old) {
-                                            $set('link', null);
-                                            $set('route_parameters', null);
-                                            $set('route_match', null);
-
-                                            foreach (MenuRouteParameterField::parameterNames() as $parameterName) {
-                                                $set(MenuRouteParameterField::flatKey($parameterName), null);
-                                            }
-                                        }
-                                    }),
-                                Select::make('link')
-                                    ->key('menu_item_link_page')
-                                    ->label(__('Page'))
-                                    ->options(fn (): array => static::sitePageOptions())
-                                    ->searchable()
-                                    ->preload()
-                                    ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
-                                    ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
-                                    ->afterStateUpdated(function (callable $set, ?string $state): void {
-                                        if (blank($state)) {
-                                            $set('route_match', null);
-
-                                            return;
-                                        }
-
-                                        $page = SitePage::query()->where('slug', $state)->first();
-
-                                        $set('route_match', $page?->is_home ? 'home' : null);
-                                    }),
-                                Select::make('link')
-                                    ->key('menu_item_link_route')
-                                    ->label(__('vpress::admin.fields.menu_route'))
-                                    ->options(fn (): array => MenuRouteCatalog::options())
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
-                                    ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
-                                    ->helperText(__('vpress::admin.helpers.menu_route'))
-                                    ->afterStateUpdated(function (callable $set, ?string $state, Get $get): void {
-                                        $required = filled($state)
-                                            ? MenuRouteCatalog::requiredParameterNames($state)
-                                            : [];
-
-                                        foreach (MenuRouteParameterField::parameterNames() as $parameterName) {
-                                            $flatKey = MenuRouteParameterField::flatKey($parameterName);
-
-                                            if (! in_array($parameterName, $required, true)) {
-                                                $set($flatKey, null);
-
-                                                continue;
-                                            }
-
-                                            if (blank($get($flatKey))) {
-                                                $default = MenuRouteParameterField::defaultValue($state, $parameterName);
-
-                                                if (filled($default)) {
-                                                    $set($flatKey, $default);
-                                                }
-                                            }
-                                        }
-
-                                        $set('route_match', filled($state) ? MenuRouteCatalog::activePattern($state) : null);
-                                    }),
-                                TextInput::make('link')
-                                    ->key('menu_item_link_url')
-                                    ->label(__('URL'))
-                                    ->helperText(__('Absolute URL (https://…) or site path (/docs/)'))
-                                    ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url))
-                                    ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
-                                ...MenuRouteParameterField::components(),
-                                TextInput::make('route_match')
-                                    ->label(__('vpress::admin.fields.menu_route_match'))
-                                    ->helperText(__('vpress::admin.helpers.menu_route_match'))
-                                    ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
-                                Toggle::make('open_in_new_tab')
-                                    ->label(__('Open in new tab')),
+                                ...static::menuItemFields(isChild: false),
+                                Repeater::make('children')
+                                    ->label(__('vpress::admin.fields.sub_items'))
+                                    ->relationship('children')
+                                    ->helperText(__('vpress::admin.helpers.menu_sub_items'))
+                                    ->mutateRelationshipDataBeforeFillUsing(
+                                        fn (array $data): array => MenuRouteParameterField::expandForFill($data),
+                                    )
+                                    ->mutateRelationshipDataBeforeCreateUsing(
+                                        fn (array $data): array => MenuRouteParameterField::compressForSave($data),
+                                    )
+                                    ->mutateRelationshipDataBeforeSaveUsing(
+                                        fn (array $data): array => MenuRouteParameterField::compressForSave($data),
+                                    )
+                                    ->schema(static::menuItemFields(isChild: true))
+                                    ->reorderable()
+                                    ->orderColumn('sort_order')
+                                    ->collapsible()
+                                    ->collapsed()
+                                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
+                                    ->defaultItems(0),
                             ])
                             ->reorderable()
                             ->orderColumn('sort_order')
@@ -215,13 +164,106 @@ class NavigationMenuResource extends Resource
             ]);
     }
 
+    /** @return array<int, \Filament\Forms\Components\Component> */
+    protected static function menuItemFields(bool $isChild): array
+    {
+        return [
+            TextInput::make('label')
+                ->required()
+                ->maxLength(255),
+            Select::make('type')
+                ->options(static::menuItemTypeOptions($isChild))
+                ->required()
+                ->live()
+                ->afterStateUpdated(function (callable $set, mixed $state, mixed $old): void {
+                    if ($state !== $old) {
+                        $set('link', null);
+                        $set('route_parameters', null);
+                        $set('route_match', null);
+
+                        foreach (MenuRouteParameterField::parameterNames() as $parameterName) {
+                            $set(MenuRouteParameterField::flatKey($parameterName), null);
+                        }
+                    }
+                }),
+            Select::make('link')
+                ->key($isChild ? 'menu_child_link_page' : 'menu_item_link_page')
+                ->label(__('Page'))
+                ->options(fn (): array => static::sitePageOptions())
+                ->searchable()
+                ->preload()
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
+                ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
+                ->afterStateUpdated(function (callable $set, ?string $state): void {
+                    if (blank($state)) {
+                        $set('route_match', null);
+
+                        return;
+                    }
+
+                    $page = SitePage::query()->where('slug', $state)->first();
+
+                    $set('route_match', $page?->is_home ? 'home' : null);
+                }),
+            Select::make('link')
+                ->key($isChild ? 'menu_child_link_route' : 'menu_item_link_route')
+                ->label(__('vpress::admin.fields.menu_route'))
+                ->options(fn (): array => MenuRouteCatalog::options())
+                ->searchable()
+                ->preload()
+                ->live()
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
+                ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
+                ->helperText(__('vpress::admin.helpers.menu_route'))
+                ->afterStateUpdated(function (callable $set, ?string $state, Get $get): void {
+                    $required = filled($state)
+                        ? MenuRouteCatalog::requiredParameterNames($state)
+                        : [];
+
+                    foreach (MenuRouteParameterField::parameterNames() as $parameterName) {
+                        $flatKey = MenuRouteParameterField::flatKey($parameterName);
+
+                        if (! in_array($parameterName, $required, true)) {
+                            $set($flatKey, null);
+
+                            continue;
+                        }
+
+                        if (blank($get($flatKey))) {
+                            $default = MenuRouteParameterField::defaultValue($state, $parameterName);
+
+                            if (filled($default)) {
+                                $set($flatKey, $default);
+                            }
+                        }
+                    }
+
+                    $set('route_match', filled($state) ? MenuRouteCatalog::activePattern($state) : null);
+                }),
+            TextInput::make('link')
+                ->key($isChild ? 'menu_child_link_url' : 'menu_item_link_url')
+                ->label(__('URL'))
+                ->helperText(__('Absolute URL (https://…) or site path (/docs/)'))
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url))
+                ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
+            ...MenuRouteParameterField::components(),
+            TextInput::make('route_match')
+                ->label(__('vpress::admin.fields.menu_route_match'))
+                ->helperText(__('vpress::admin.helpers.menu_route_match'))
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
+            Toggle::make('open_in_new_tab')
+                ->label(__('Open in new tab'))
+                ->visible(fn (Get $get): bool => ! static::isMenuItemType($get, MenuItemType::Group)),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('slug')->badge(),
-                TextColumn::make('items_count')->counts('items')->label(__('Items')),
+                TextColumn::make('root_items_count')->counts('rootItems')->label(__('Items')),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->recordActions([

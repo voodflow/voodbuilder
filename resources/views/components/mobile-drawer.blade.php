@@ -74,22 +74,7 @@
             @if ($mainItems->isNotEmpty())
                 <ul class="vpress-mobile-nav__links">
                     @foreach ($mainItems as $item)
-                        <li>
-                            <a
-                                href="{{ $item->resolveUrl() }}"
-                                @class([
-                                    'vpress-mobile-nav__link',
-                                    'is-active' => $item->isActive(),
-                                ])
-                                @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                                data-mobile-nav-close
-                            >
-                                <span>{{ __($item->label) }}</span>
-                                @if ($item->isExternal())
-                                    <x-vpress::external-link-icon />
-                                @endif
-                            </a>
-                        </li>
+                        <x-vpress::menu-nav-item :item="$item" :mobile="true" />
                     @endforeach
                 </ul>
             @endif
@@ -98,25 +83,72 @@
                 <div class="vpress-mobile-nav__section">
                     <ul class="vpress-mobile-nav__links">
                         @foreach ($extraItems as $item)
-                            <li>
-                                <a
-                                    href="{{ $item->resolveUrl() }}"
-                                    @class([
-                                        'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
-                                        'is-active' => $item->isActive(),
-                                    ])
-                                    @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                                    data-mobile-nav-close
-                                >
-                                    <span>{{ __($item->label) }}</span>
-                                    @if ($item->isExternal())
-                                        <x-vpress::external-link-icon />
-                                    @endif
-                                </a>
-                            </li>
+                            <x-vpress::menu-nav-item :item="$item" :mobile="true" />
                         @endforeach
                     </ul>
                 </div>
+            @endif
+
+            @if (class_exists(\Voodflow\Vdocs\Support\DocNavigation::class) && \Voodflow\Vdocs\Support\DocNavigation::enabled() && Route::has('vdocs.index'))
+                @php($docSections = \Voodflow\Vdocs\Support\DocNavigation::sections())
+                @if ($docSections->isNotEmpty())
+                    <div class="vpress-mobile-nav__section" x-data="{ open: {{ \Voodflow\Vdocs\Support\DocNavigation::isActive() ? 'true' : 'false' }} }">
+                        <button
+                            type="button"
+                            class="vpress-mobile-nav__link w-full"
+                            @click="open = ! open"
+                            :aria-expanded="open"
+                        >
+                            <span>{{ __('vdocs::nav.label') }}</span>
+                            <svg
+                                class="h-4 w-4 shrink-0 transition-transform"
+                                :class="{ 'rotate-180': open }"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <ul x-show="open" x-cloak class="mt-1 space-y-1 pl-3">
+                            <li>
+                                <a
+                                    href="{{ \Voodflow\Vdocs\Support\DocNavigation::indexUrl() }}"
+                                    @class([
+                                        'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                                        'is-active' => request()->routeIs('vdocs.index'),
+                                    ])
+                                    data-mobile-nav-close
+                                >
+                                    {{ __('vdocs::nav.overview') }}
+                                </a>
+                            </li>
+                            @foreach ($docSections as $section)
+                                @php
+                                    $isActiveSection = request()->routeIs('vdocs.show', 'vdocs.segment')
+                                        && in_array($section->slug, [
+                                            (string) request()->route('section'),
+                                            (string) request()->route('segment'),
+                                        ], true);
+                                @endphp
+                                <li>
+                                    <a
+                                        href="{{ \Voodflow\Vdocs\Support\DocNavigation::sectionUrl($section) }}"
+                                        @class([
+                                            'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                                            'is-active' => $isActiveSection,
+                                        ])
+                                        data-mobile-nav-close
+                                    >
+                                        {{ $section->title }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             @endif
         </div>
 

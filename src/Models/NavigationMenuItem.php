@@ -6,6 +6,8 @@ namespace Voodflow\Vpress\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Vpress\Enums\MenuItemType;
 
@@ -15,6 +17,7 @@ class NavigationMenuItem extends Model
 
     protected $fillable = [
         'menu_id',
+        'parent_id',
         'label',
         'type',
         'link',
@@ -31,6 +34,7 @@ class NavigationMenuItem extends Model
             'route_parameters' => 'array',
             'open_in_new_tab' => 'boolean',
             'sort_order' => 'integer',
+            'parent_id' => 'integer',
         ];
     }
 
@@ -39,18 +43,52 @@ class NavigationMenuItem extends Model
         return $this->belongsTo(NavigationMenu::class, 'menu_id');
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /** @return HasMany<NavigationMenuItem, $this> */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')
+            ->orderBy('sort_order');
+    }
+
+    public function hasChildren(): bool
+    {
+        if ($this->relationLoaded('children')) {
+            return $this->children->isNotEmpty();
+        }
+
+        return $this->children()->exists();
+    }
+
     public function resolveUrl(): string
     {
+        if ($this->type === MenuItemType::Group) {
+            return '#';
+        }
+
         return match ($this->type) {
             MenuItemType::Page => $this->resolvePageUrl(),
             MenuItemType::Route => $this->resolveRouteUrl(),
-            MenuItemType::Url => $this->link,
+            MenuItemType::Url => (string) ($this->link ?? '#'),
         };
+    }
+
+    public function hasResolvableLink(): bool
+    {
+        if ($this->type === MenuItemType::Group) {
+            return false;
+        }
+
+        return $this->resolveUrl() !== '#';
     }
 
     protected function resolveRouteUrl(): string
     {
-        if (! Route::has($this->link)) {
+        if (blank($this->link) || ! Route::has($this->link)) {
             return '#';
         }
 
@@ -77,6 +115,19 @@ class NavigationMenuItem extends Model
 
     public function isActive(): bool
     {
+        if ($this->isSelfActive()) {
+            return true;
+        }
+
+        return $this->loadedChildren()->contains(fn (NavigationMenuItem $child): bool => $child->isActive());
+    }
+
+    public function isSelfActive(): bool
+    {
+        if ($this->type === MenuItemType::Group) {
+            return false;
+        }
+
         if ($this->type === MenuItemType::Page) {
             return $this->isActivePageLink();
         }
@@ -120,5 +171,11 @@ class NavigationMenuItem extends Model
             ->first();
 
         return $page?->getUrl() ?? '#';
+    }
+
+    /** @return Collection<int, NavigationMenuItem> */
+    protected function loadedChildren(): Collection
+    {
+        return $this->relationLoaded('children') ? $this->children : collect();
     }
 }
