@@ -35,6 +35,21 @@ class MenuRouteCatalogTest extends TestCase
 
         $this->assertArrayHasKey('home', $options);
         $this->assertArrayHasKey('vtuts.index', $options);
+        $this->assertArrayHasKey('vtuts.show', $options);
         $this->assertArrayNotHasKey('filament.admin.pages.dashboard', $options);
+    }
+
+    public function test_lists_required_route_parameters(): void
+    {
+        $this->assertSame(['slug'], MenuRouteCatalog::requiredParameterNames('vtuts.show'));
+        $this->assertSame(['seriesSlug', 'vtutSlug'], MenuRouteCatalog::requiredParameterNames('vtuts.series.lesson'));
+        $this->assertSame([], MenuRouteCatalog::requiredParameterNames('home'));
+    }
+
+    public function test_builds_active_patterns_for_event_routes(): void
+    {
+        Route::get('/events/{slug}/report', fn () => 'report')->name('vevents.report');
+
+        $this->assertSame('vevents.*', MenuRouteCatalog::activePattern('vevents.report'));
     }
 }

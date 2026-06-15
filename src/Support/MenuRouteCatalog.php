@@ -4,12 +4,25 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
+use Closure;
+use Filament\Forms\Components\Field;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Str;
 
 final class MenuRouteCatalog
 {
+    /** @var Closure(string, string): (Field|null)|null */
+    protected static ?Closure $parameterFieldResolver = null;
+
+    /**
+     * @param  Closure(string, string): (Field|null)  $resolver
+     */
+    public static function parameterFieldUsing(Closure $resolver): void
+    {
+        static::$parameterFieldResolver = $resolver;
+    }
+
     /** @return array<string, string> */
     public static function options(): array
     {
@@ -38,6 +51,55 @@ final class MenuRouteCatalog
         return $options;
     }
 
+    /** @return list<string> */
+    public static function requiredParameterNames(string $routeName): array
+    {
+        $route = RouteFacade::getRoutes()->getByName($routeName);
+
+        if (! $route instanceof Route) {
+            return [];
+        }
+
+        $required = [];
+
+        if (preg_match_all('/\{([^}?]+)(\??)\}/', $route->uri(), $matches, PREG_SET_ORDER) !== false) {
+            foreach ($matches as $match) {
+                if (($match[2] ?? '') === '') {
+                    $required[] = $match[1];
+                }
+            }
+        }
+
+        return $required;
+    }
+
+    /** @return list<string> */
+    public static function allRequiredParameterNames(): array
+    {
+        $names = [];
+
+        foreach (array_keys(static::options()) as $routeName) {
+            foreach (static::requiredParameterNames($routeName) as $parameterName) {
+                $names[$parameterName] = true;
+            }
+        }
+
+        return array_keys($names);
+    }
+
+    public static function parameterField(string $routeName, string $parameterName): ?Field
+    {
+        if (static::$parameterFieldResolver !== null) {
+            $field = (static::$parameterFieldResolver)($routeName, $parameterName);
+
+            if ($field instanceof Field) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
     public static function activePattern(string $routeName): string
     {
         if (! str_contains($routeName, '.')) {
@@ -45,7 +107,7 @@ final class MenuRouteCatalog
         }
 
         $withoutAction = preg_replace(
-            '/\.(index|show|create|edit|store|update|destroy)$/',
+            '/\.(index|show|create|edit|store|update|destroy|report|program|editions)$/',
             '',
             $routeName,
         );
@@ -116,6 +178,11 @@ final class MenuRouteCatalog
     protected static function formatLabel(string $name, Route $route): string
     {
         $uri = '/'.ltrim($route->uri(), '/');
+        $requiredParameters = static::requiredParameterNames($name);
+
+        if ($requiredParameters !== []) {
+            $uri .= ' ['.implode(', ', $requiredParameters).']';
+        }
 
         return "{$name} ({$uri})";
     }

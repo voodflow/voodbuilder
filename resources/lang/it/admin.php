@@ -22,7 +22,7 @@ return [
     ],
 
     'helpers' => [
-        'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente.',
+        'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente. Se la route richiede parametri, compila i campi mostrati sotto.',
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'sub_theme_site' => 'Stile visivo predefinito del sito pubblico. Le singole pagine possono sovrascriverlo.',
         'sub_theme_page' => 'Sovrascrive il sotto-tema del sito per questa pagina — utile per sezioni blog o news nel menu.',

@@ -85,6 +85,7 @@ final class Navigation
             'label' => $item->label,
             'type' => $item->type->value,
             'link' => $item->link,
+            'route_parameters' => $item->route_parameters,
             'route_match' => $item->route_match,
             'open_in_new_tab' => $item->open_in_new_tab,
             'sort_order' => $item->sort_order,

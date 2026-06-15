@@ -18,6 +18,7 @@ class NavigationMenuItem extends Model
         'label',
         'type',
         'link',
+        'route_parameters',
         'route_match',
         'open_in_new_tab',
         'sort_order',
@@ -27,6 +28,7 @@ class NavigationMenuItem extends Model
     {
         return [
             'type' => MenuItemType::class,
+            'route_parameters' => 'array',
             'open_in_new_tab' => 'boolean',
             'sort_order' => 'integer',
         ];
@@ -41,9 +43,31 @@ class NavigationMenuItem extends Model
     {
         return match ($this->type) {
             MenuItemType::Page => $this->resolvePageUrl(),
-            MenuItemType::Route => Route::has($this->link) ? route($this->link) : '#',
+            MenuItemType::Route => $this->resolveRouteUrl(),
             MenuItemType::Url => $this->link,
         };
+    }
+
+    protected function resolveRouteUrl(): string
+    {
+        if (! Route::has($this->link)) {
+            return '#';
+        }
+
+        try {
+            return route($this->link, $this->routeParameters());
+        } catch (\Throwable) {
+            return '#';
+        }
+    }
+
+    /** @return array<string, mixed> */
+    protected function routeParameters(): array
+    {
+        return array_filter(
+            $this->route_parameters ?? [],
+            fn (mixed $value): bool => filled($value),
+        );
     }
 
     public function isExternal(): bool
