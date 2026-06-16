@@ -68,7 +68,7 @@ final class MenuRouteParameterField
         }
 
         usort($names, static function (string $left, string $right): int {
-            $priority = ['slug' => 0, 'section' => 1, 'seriesSlug' => 2, 'vtutSlug' => 3, 'locale' => 4];
+            $priority = ['slug' => 0, 'eventSlug' => 1, 'section' => 2, 'seriesSlug' => 3, 'vtutSlug' => 4, 'locale' => 5];
 
             return ($priority[$left] ?? 99) <=> ($priority[$right] ?? 99) ?: strcmp($left, $right);
         });

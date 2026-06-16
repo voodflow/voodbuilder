@@ -24,7 +24,7 @@ class SitePageSectionTest extends TestCase
         ]);
 
         $this->assertSame(
-            'vpress::sub-themes.blog.layouts.section-index',
+            'vpress::themes.blog.layouts.section-index',
             $page->layoutView(),
         );
     }
@@ -42,7 +42,7 @@ class SitePageSectionTest extends TestCase
         ]);
 
         $this->assertSame(
-            'vpress::sub-themes.blog.layouts.article',
+            'vpress::themes.blog.layouts.article',
             $page->layoutView(),
         );
     }

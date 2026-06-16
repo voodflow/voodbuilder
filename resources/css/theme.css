@@ -6,8 +6,9 @@
 @import './fonts.css';
 @import 'tailwindcss';
 @import './mobile-nav.css';
-@import './sub-themes/blog.css';
-@import './sub-themes/news.css';
+@import '../themes/blog/theme.css';
+@import '../themes/news/theme.css';
+@import '../themes/events/theme.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -18,6 +19,9 @@
 @source '../../../../../packages/voodflow/vtuts/resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vdocs/resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
+@source '../../../../../packages/voodflow/vexhibitors/resources/views/**/*.blade.php';
+@source '../../../../../vendor/voodflow/vexhibitors/resources/views/**/*.blade.php';
+@source '../views/themes/**/*.blade.php';
 
 @theme {
     --breakpoint-vp: 60rem;

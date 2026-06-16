@@ -8,6 +8,7 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Vpress\Filament\Livewire\AdminDatabaseNotifications;
+use Voodflow\Vpress\Filament\Pages\VpressContentChannelsPage;
 use Voodflow\Vpress\Filament\Pages\VpressSettingsPage;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
 use Voodflow\Vpress\Filament\Resources\SitePageResource;
@@ -36,6 +37,7 @@ class VpressPlugin implements Plugin
             ->resources($resources)
             ->pages([
                 VpressSettingsPage::class,
+                VpressContentChannelsPage::class,
             ])
             ->databaseNotifications(livewireComponent: AdminDatabaseNotifications::class);
 

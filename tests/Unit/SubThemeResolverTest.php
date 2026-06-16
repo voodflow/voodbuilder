@@ -49,7 +49,7 @@ class SubThemeResolverTest extends TestCase
         ]);
 
         $this->assertSame('blog', SubThemeResolver::forPage($page));
-        $this->assertSame('vpress::sub-themes.blog.layouts.page', $page->layoutView());
+        $this->assertSame('vpress::themes.blog.layouts.page', $page->layoutView());
     }
 
     public function test_invalid_sub_theme_falls_back_to_default(): void

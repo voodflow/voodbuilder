@@ -11,7 +11,7 @@ Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigat
 | Area | What you get |
 |------|----------------|
 | **Public theme** | VitePress-like nav, doc sidebar, outline scroll-spy, reading progress, mobile drawer, dark/light mode |
-| **Sub-themes** | Visual variants (documentation, blog, news, custom) — site default + per-page override |
+| **Sub-themes** | Visual variants (documentation, blog, news, events, custom) — site default, per-page override, or per content channel |
 | **Site pages** | Home + static pages built with Filament RichEditor and custom blocks (hero, features grid, latest vtuts, …) |
 | **Navigation** | Main, header-extra, and footer menus — route names, URLs, or site pages |
 | **Settings (DB)** | Brand name, site title, logo, favicon, social image, theme default, locale, toggles (search, theme, language, bell) |
@@ -293,6 +293,7 @@ Sub-themes are **visual variants** of the public shell (layout, typography, colo
 | `default` | Documentation | Marketing home, docs-style pages (VitePress layout) |
 | `blog` | Blog | Long-form articles, Ghost-inspired centered reading column |
 | `news` | News | Editorial / magazine headlines and wider columns |
+| `events` | Events | Trade show layout — dark header, exhibitor cards, session galleries |
 
 After `vpress:install`, open the main menu and visit:
 
@@ -332,14 +333,114 @@ php artisan db:seed --class="Voodflow\Vpress\Database\Seeders\VpressSeeder"
 npm run build
 ```
 
-### Site default vs per-page
+### Site default vs per-page vs per-section
 
-| Where | Field | Behaviour |
-|-------|-------|-----------|
-| **Settings** | Sub-theme | Default for the whole public site |
-| **Pages → Publish** | Sub-theme | Override for that page only (`Site default` inherits from Settings) |
+| Where (Filament) | Field | Behaviour |
+|------------------|-------|-----------|
+| **Settings → Theme** | Sub-theme | Default for the whole public site when nothing more specific applies |
+| **Pages → Publish** | Sub-theme | Override for that Site Page only (`Site default` inherits from Settings) |
+| **Site sections** | Visual sub-theme | Override for a **content channel** (events, exhibitors, tutorials, …) without changing package code |
 
-Use per-page sub-themes to run different **sections** under one menu — e.g. documentation on `/`, a blog area on `/pages/blog`, and a news desk on `/pages/news`.
+Use per-page sub-themes for **Site Pages** grouped as blog/news demos. Use **Site sections** when a whole package area (e.g. `vevents.*`) should look different from the rest of the site.
+
+### Sub-themes: registry vs files on disk
+
+A **sub-theme** is a named visual skin. It sets `data-vpress-sub-theme="…"` on `<html>` and may ship extra CSS and layout Blade overrides. It is **not** light/dark mode (that is separate).
+
+**Only registered sub-themes appear in admin** (Settings, Pages, Site sections). Registration happens at boot from:
+
+1. **`config/vpress.php` → `sub_themes`** — bundled themes shipped with vpress (`default`, `blog`, `news`, `events`, …)
+2. **`php artisan vpress:make-subtheme`** — scaffolds app themes in the same convention and registers them in `config/vpress.php`
+3. **`Vpress::subTheme()`** in a ServiceProvider — optional programmatic registration (typically for app-only themes)
+
+**Plugins do not ship themes.** Route packages (vevents, vexhibitors, vtuts, vdocs) register **content channels** only; their default visual theme comes from `config/vpress.php` → `content_channel_defaults`.
+
+See `Voodflow\Vpress\Support\ThemeConvention` for paths and layout namespaces.
+
+| Sub-theme ID | Origin | Views | CSS |
+|--------------|--------|-------|-----|
+| `default` | `config/vpress.php` | Base `vpress::layouts.*` (no extra folder) | `resources/css/theme.css` |
+| `blog`, `news`, `events` | `config/vpress.php` | `vpress::themes.{id}.*` → package `resources/views/themes/{id}/` | package `resources/themes/{id}/theme.css` |
+| *(custom)* | `vpress:make-subtheme` or `Vpress::subTheme()` | `vpress.themes.{id}.*` → `resources/views/vpress/themes/{id}/` in the app | `resources/vpress/themes/{id}/theme.css` (auto `@import` into the vpress bundle) |
+
+**vtuts** and **vdocs** use the **doc layout** (`vpress::layouts.doc`). Their channels default to the `default` sub-theme via `content_channel_defaults`; override in Admin → **Site sections** or register a dedicated skin with `vpress:make-subtheme`.
+
+After adding or changing sub-themes, run `npm run build` so Vite picks up new CSS `@import`s.
+
+### Content channels
+
+A **content channel** connects **route name patterns** to optional **search** and a **default sub-theme**. Channels are how route-based areas (not Site Pages) join the vpress shell.
+
+**A channel only appears in Admin → Site sections if something registers it** — usually the package `ServiceProvider`:
+
+```php
+// vevents
+Vpress::contentChannel('events', new EventsContentChannel);
+
+// vexhibitors, vtuts, vdocs — same pattern
+```
+
+vpress itself registers `pages` → `vpress.pages.*` (no default sub-theme; individual Site Pages carry their own).
+
+Alternatively, register from config:
+
+```php
+// config/vpress.php
+'content_channels' => [
+    'blog' => [
+        'label' => 'Blog',
+        'routes' => ['blog.*'],
+        'search' => \App\Models\BlogPost::class,
+    ],
+],
+
+'content_channel_defaults' => [
+    'blog' => 'blog',
+],
+```
+
+| Piece | Who defines it |
+|-------|----------------|
+| **Routes** | Your package / `routes/*.php` |
+| **Channel + default sub-theme** | `config/vpress.php` → `content_channel_defaults` |
+| **Override sub-theme** | Admin → **Site sections** (DB, no deploy) |
+| **Menu link + active state** | Admin → **Navigation** → App route + `route_match` (e.g. `vevents.*`) |
+| **Search** | Channel `search` callback or model `vpressSearch()` |
+
+**Search model contract** (optional):
+
+```php
+public static function vpressSearch(string $term, int $limit): \Illuminate\Support\Collection
+{
+    // return items with title, url, optional excerpt
+}
+```
+
+Packages typically:
+
+1. Ship models, migrations, and public controllers.
+2. Point views at `vpress::layouts.app`, `vpress::layouts.doc`, or a sub-theme layout.
+3. Register a content channel so menu highlighting, search, and sub-theme resolution follow the active route.
+
+Same pattern as **vtuts** / **vdocs** / **vevents** / **vexhibitors**: companion package + shared vpress chrome, not duplicated Site Pages.
+
+### How the active sub-theme is chosen
+
+On each public request, `SubThemeResolver::forCurrentRoute()` runs from `vpress::layouts.app`:
+
+```
+Current route
+    │
+    ├─ Matches a content channel? (e.g. vevents.*)
+    │       ├─ Admin override in Site sections? → use that sub-theme
+    │       └─ Else `content_channel_defaults` in config (e.g. events) → use that
+    │
+    ├─ Site Page route with page.sub_theme set? → use page override
+    │
+    └─ Else → Settings → default sub-theme (usually default / Documentation)
+```
+
+Invalid or unknown sub-theme IDs fall back to `default`.
 
 ### Section pages (blog / news)
 
@@ -359,69 +460,6 @@ Section home pages render a multi-column layout (sidebar left, main feed, sideba
 
 The mobile drawer is **theme-agnostic** (`resources/css/mobile-nav.css`): same slide-in panel, colours, and footer toolbar on every sub-theme. It slides in from the right with logo, main links, optional extras, then search / language / theme / account in a sticky footer.
 
-### Integrating external blog, news, or other content
-
-Vpress is a **site shell**, not a post CMS. Third-party or custom packages integrate via **content channels**:
-
-| Piece | What you register |
-|-------|-------------------|
-| **Routes** | Your package owns `/blog`, `/blog/{slug}`, etc. |
-| **Menu** | Filament → Navigation → **App route** `blog.index` with active pattern `blog.*` |
-| **Sub-theme** | Channel `sub_theme` → `blog` so layouts/CSS match the section |
-| **Search** | Optional `search` callback or model with `vpressSearch()` |
-| **Admin** | Your Filament resources — not Site Pages |
-
-**Config** (`config/vpress.php`):
-
-```php
-'content_channels' => [
-    'blog' => [
-        'label' => 'Blog',
-        'routes' => ['blog.*'],
-        'sub_theme' => 'blog',
-        'search' => \App\Models\BlogPost::class,
-    ],
-],
-```
-
-**Or in `AppServiceProvider`:**
-
-```php
-use Voodflow\Vpress\Vpress;
-
-Vpress::contentChannel('blog', [
-    'label' => 'Blog',
-    'routes' => ['blog.*'],
-    'sub_theme' => 'blog',
-    'search' => fn (string $term, int $limit) => BlogPost::query()
-        ->where('title', 'like', "%{$term}%")
-        ->limit($limit)
-        ->get()
-        ->map(fn ($post) => [
-            'title' => $post->title,
-            'url' => route('blog.show', $post),
-            'excerpt' => $post->excerpt,
-        ]),
-]);
-```
-
-**Search model contract** (optional):
-
-```php
-public static function vpressSearch(string $term, int $limit): \Illuminate\Support\Collection
-{
-    // return items with title, url, optional excerpt
-}
-```
-
-Your package typically:
-
-1. Ships models + migrations + public controllers.
-2. Points views at `vpress::layouts.app` or a sub-theme layout (`article`, `section_index`).
-3. Registers the channel so menu highlighting and sub-theme follow the active route.
-
-Same pattern as **vtuts** / **vdocs**: companion package + shared vpress chrome, not duplicated Site Pages.
-
 ### Custom sub-themes
 
 Scaffold a theme in your application:
@@ -430,7 +468,7 @@ Scaffold a theme in your application:
 php artisan vpress:make-subtheme magazine --label="Magazine"
 ```
 
-This creates `resources/vpress/themes/magazine/theme.css`, Blade layouts under `resources/views/vpress/themes/magazine/`, registers the theme in `config/vpress.php`, and tries to add the CSS entry to `vite.config.js`. Then run `npm run build`.
+This creates `resources/vpress/themes/magazine/theme.css`, Blade layouts under `resources/views/vpress/themes/magazine/`, registers the theme in `config/vpress.php`, and appends an `@import` to the vpress theme bundle. Then run `npm run build`.
 
 Register themes programmatically:
 
@@ -448,7 +486,9 @@ Vpress::subTheme('magazine', [
 ]);
 ```
 
-Built-in themes are declared in `config/vpress.php` under `sub_themes`. Each theme may override `home` and `page` layouts and ship extra CSS scoped with `html[data-vpress-sub-theme="…"]`.
+Bundled **blog**, **news**, and **events** themes live under `packages/voodflow/vpress/resources/themes/` and `resources/views/themes/`. App-specific themes from the CLI use the same structure under `resources/vpress/themes/` and `resources/views/vpress/themes/` in your Laravel app.
+
+Each sub-theme may override `home` and `page` layouts and ship extra CSS scoped with `html[data-vpress-sub-theme="…"]`.
 
 ## How it works
 
@@ -473,8 +513,8 @@ Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notific
 
 ### Settings vs config file
 
-- `config/vpress.php` — layouts, sub-theme registry, feature flags, Vite entry paths (committed)
-- **Database** (`VpressSettings`) — logo, titles, light/dark default, site sub-theme, toggles (edited in Filament)
+- `config/vpress.php` — layouts, built-in sub-theme registry (`default`, `blog`, `news`), feature flags, Vite entry paths (committed)
+- **Database** (`VpressSettings`) — logo, titles, light/dark default, site sub-theme, **per-channel sub-theme overrides**, toggles (edited in Filament)
 
 `ApplyVpressSiteConfig` middleware applies DB settings on each web request (title, favicon, locale hints).
 

@@ -7,7 +7,7 @@
 @section('content')
     <div class="vpress-blog-shell" data-vpress-article>
         <div class="vpress-blog-layout">
-            @include('vpress::sub-themes.blog.partials.sidebar-left', [
+            @include('vpress::themes.blog.partials.sidebar-left', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? $page,
                 'sectionPosts' => $sectionPosts ?? collect(),
@@ -17,7 +17,7 @@
                 @yield('section_index')
             </div>
 
-            @include('vpress::sub-themes.blog.partials.sidebar-right', [
+            @include('vpress::themes.blog.partials.sidebar-right', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? $page,
                 'sectionPosts' => $sectionPosts ?? collect(),

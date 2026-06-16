@@ -15,9 +15,10 @@ return [
     ],
 
     /*
-    | Visual sub-themes (distinct from light/dark mode).
-    | Assign a default in Admin → Site → Settings, or per page in Pages.
-    | Register custom themes with Vpress::subTheme() or php artisan vpress:make-subtheme.
+    | Visual themes (distinct from light/dark mode).
+    | Bundled themes live in packages/voodflow/vpress/resources/themes/{id}/.
+    | App themes from `php artisan vpress:make-subtheme` live in resources/vpress/themes/{id}/.
+    | See Voodflow\Vpress\Support\ThemeConvention.
     */
     'sub_themes' => [
         'default' => [
@@ -28,24 +29,45 @@ return [
             'label' => 'Blog',
             'description' => 'Ghost-inspired centered blog with serif headlines.',
             'layouts' => [
-                'home' => 'vpress::sub-themes.blog.layouts.home',
-                'page' => 'vpress::sub-themes.blog.layouts.page',
-                'section_index' => 'vpress::sub-themes.blog.layouts.section-index',
-                'article' => 'vpress::sub-themes.blog.layouts.article',
+                'home' => 'vpress::themes.blog.layouts.home',
+                'page' => 'vpress::themes.blog.layouts.page',
+                'section_index' => 'vpress::themes.blog.layouts.section-index',
+                'article' => 'vpress::themes.blog.layouts.article',
             ],
-            'css' => 'sub-themes/blog.css',
+            'css' => 'themes/blog/theme.css',
         ],
         'news' => [
             'label' => 'News',
             'description' => 'Editorial news layout with bold headlines and wider columns.',
             'layouts' => [
-                'home' => 'vpress::sub-themes.news.layouts.home',
-                'page' => 'vpress::sub-themes.news.layouts.page',
-                'section_index' => 'vpress::sub-themes.news.layouts.section-index',
-                'article' => 'vpress::sub-themes.news.layouts.article',
+                'home' => 'vpress::themes.news.layouts.home',
+                'page' => 'vpress::themes.news.layouts.page',
+                'section_index' => 'vpress::themes.news.layouts.section-index',
+                'article' => 'vpress::themes.news.layouts.article',
             ],
-            'css' => 'sub-themes/news.css',
+            'css' => 'themes/news/theme.css',
         ],
+        'events' => [
+            'label' => 'Events',
+            'description' => 'Trade show layout — dark header, exhibitor cards, and session galleries.',
+            'layouts' => [
+                'home' => 'vpress::themes.events.layouts.home',
+                'page' => 'vpress::themes.events.layouts.page',
+            ],
+            'css' => 'themes/events/theme.css',
+        ],
+    ],
+
+    /*
+    | Default visual theme per content channel (route package area).
+    | Overridable in Admin → Site sections. Plugins do not ship themes.
+    */
+    'content_channel_defaults' => [
+        'events' => 'events',
+        'exhibitors' => 'events',
+        'tutorials' => 'default',
+        'docs' => 'default',
+        'blog' => 'blog',
     ],
 
     /*
@@ -149,9 +171,9 @@ return [
     | 'blog' => [
     |     'label' => 'Blog',
     |     'routes' => ['blog.*'],
-    |     'sub_theme' => 'blog',
     |     'search' => \App\Models\BlogPost::class, // static vpressSearch($term, $limit) method
     | ],
+    | Default visual theme per channel: content_channel_defaults (not on the channel array).
     */
     'content_channels' => [
         //

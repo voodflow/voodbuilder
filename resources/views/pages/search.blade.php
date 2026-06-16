@@ -45,7 +45,7 @@
                     href="{{ \Voodflow\Vpress\Support\VpressUrls::search(['q' => $query, 'type' => $availableType]) }}"
                     class="inline-flex items-center rounded-full border px-3 py-1 text-sm transition-colors {{ $type === $availableType ? 'border-vp-brand-1 bg-vp-brand-1/10 text-vp-brand-1' : 'border-vp-divider text-vp-text-2 hover:border-vp-brand-1/30 hover:text-vp-text-1' }}"
                 >
-                    {{ __('vpress::search.filters.'.$availableType) }}
+                    {{ $typeLabels[$availableType] ?? $availableType }}
                 </a>
             @endforeach
         </div>
@@ -56,65 +56,28 @@
     @elseif ($total === 0)
         <p class="text-sm text-vp-text-2">{{ __('vpress::search.no_results', ['query' => $query]) }}</p>
     @else
-        @if ($results['tutorials']->isNotEmpty())
+        @foreach ($results as $channelId => $items)
             <section class="mb-10">
-                <h2 class="mb-4 text-lg font-semibold text-vp-text-1">{{ __('vpress::search.sections.tutorials') }}</h2>
+                <h2 class="mb-4 text-lg font-semibold text-vp-text-1">
+                    {{ $typeLabels[$channelId] ?? $channelId }}
+                </h2>
                 <div class="divide-y divide-vp-divider rounded-lg border border-vp-divider">
-                    @foreach ($results['tutorials'] as $tutorial)
+                    @foreach ($items as $item)
                         <article class="px-4 py-4">
-                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-vp-text-3">{{ __('vpress::search.filters.tutorials') }}</p>
                             <h3 class="text-base font-semibold">
-                                <a href="{{ $tutorial->getUrl() }}" class="text-vp-text-1 transition-colors hover:text-vp-brand-1">
-                                    {{ $tutorial->title }}
+                                <a href="{{ $item['url'] }}" class="text-vp-text-1 transition-colors hover:text-vp-brand-1">
+                                    {{ $item['title'] }}
                                 </a>
                             </h3>
-                            @if ($tutorial->excerpt || $tutorial->introduction)
+                            @if (! empty($item['excerpt']))
                                 <p class="mt-1 line-clamp-2 text-sm text-vp-text-2">
-                                    {{ $tutorial->excerpt ?? $tutorial->introduction }}
+                                    {{ $item['excerpt'] }}
                                 </p>
                             @endif
                         </article>
                     @endforeach
                 </div>
             </section>
-        @endif
-
-        @if ($results['docs']->isNotEmpty())
-            <section class="mb-10">
-                <h2 class="mb-4 text-lg font-semibold text-vp-text-1">{{ __('vpress::search.sections.docs') }}</h2>
-                <div class="divide-y divide-vp-divider rounded-lg border border-vp-divider">
-                    @foreach ($results['docs'] as $doc)
-                        <article class="px-4 py-4">
-                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-vp-text-3">
-                                {{ $doc->section?->title ?? __('vpress::search.filters.docs') }}
-                            </p>
-                            <h3 class="text-base font-semibold">
-                                <a href="{{ $doc->getUrl() }}" class="text-vp-text-1 transition-colors hover:text-vp-brand-1">
-                                    {{ $doc->title }}
-                                </a>
-                            </h3>
-                        </article>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        @if ($results['pages']->isNotEmpty())
-            <section class="mb-10">
-                <h2 class="mb-4 text-lg font-semibold text-vp-text-1">{{ __('vpress::search.sections.pages') }}</h2>
-                <div class="divide-y divide-vp-divider rounded-lg border border-vp-divider">
-                    @foreach ($results['pages'] as $page)
-                        <article class="px-4 py-4">
-                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-vp-text-3">{{ __('vpress::search.filters.pages') }}</p>
-                            <h3 class="text-base font-semibold">
-                                <a href="{{ $page->getUrl() }}" class="text-vp-text-1 transition-colors hover:text-vp-brand-1">
-                                    {{ $page->title }}
-                                </a>
-                            </h3>
-                        </article>
-                    @endforeach
-                </div>
-            </section>
-        @endif
+        @endforeach
     @endif
 @endsection

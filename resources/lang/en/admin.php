@@ -8,6 +8,7 @@ return [
         'menus' => 'Menus',
         'pages' => 'Pages',
         'settings' => 'Settings',
+        'content_channels' => 'Site sections',
     ],
 
     'fields' => [

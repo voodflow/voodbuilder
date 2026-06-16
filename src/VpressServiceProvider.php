@@ -24,8 +24,10 @@ use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
+use Voodflow\Vpress\Support\SitePagesContentChannel;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\VpressSeo;
+use Voodflow\Vpress\Vpress;
 
 class VpressServiceProvider extends PackageServiceProvider
 {
@@ -59,6 +61,10 @@ class VpressServiceProvider extends PackageServiceProvider
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
+
+        if (config('vpress.pages.enabled', true)) {
+            Vpress::contentChannel('pages', new SitePagesContentChannel);
+        }
 
         View::replaceNamespace('cookie-consent', [
             __DIR__.'/../resources/views/cookie-consent',

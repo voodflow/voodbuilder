@@ -7,8 +7,9 @@ namespace Voodflow\Vpress\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Voodflow\Vpress\Support\AppendThemeStylesheetImport;
 use Voodflow\Vpress\Support\ConfigureSubThemesForVpress;
-use Voodflow\Vpress\Support\ConfigureViteForSubTheme;
+use Voodflow\Vpress\Support\ThemeConvention;
 
 class MakeSubThemeCommand extends Command
 {
@@ -36,9 +37,9 @@ class MakeSubThemeCommand extends Command
         }
 
         $label = (string) ($this->option('label') ?: str($id)->headline());
-        $themeRoot = resource_path("vpress/themes/{$id}");
-        $viewsRoot = resource_path("views/vpress/themes/{$id}/layouts");
-        $cssPath = "{$themeRoot}/theme.css";
+        $themeRoot = dirname(ThemeConvention::appCssPath($id));
+        $viewsRoot = ThemeConvention::appViewsPath($id).'/layouts';
+        $cssPath = ThemeConvention::appCssPath($id);
         $force = (bool) $this->option('force');
 
         if (File::isDirectory($themeRoot) && ! $force) {
@@ -60,13 +61,13 @@ class MakeSubThemeCommand extends Command
         $this->writeStub('layouts/page.blade.php.stub', "{$viewsRoot}/page.blade.php", $replacements, $force);
         $this->writeStub('layouts/home.blade.php.stub', "{$viewsRoot}/home.blade.php", $replacements, $force);
 
-        $cssRelative = "resources/vpress/themes/{$id}/theme.css";
+        $cssRelative = ThemeConvention::appCssRelativePath($id);
         $definition = [
             'label' => $label,
             'description' => "Custom {$label} sub-theme.",
             'layouts' => [
-                'home' => "vpress.themes.{$id}.layouts.home",
-                'page' => "vpress.themes.{$id}.layouts.page",
+                'home' => ThemeConvention::appLayoutView($id, 'home'),
+                'page' => ThemeConvention::appLayoutView($id, 'page'),
             ],
             'css' => $cssRelative,
         ];
@@ -77,10 +78,10 @@ class MakeSubThemeCommand extends Command
             $this->components->warn('Could not update config/vpress.php automatically — add the theme manually.');
         }
 
-        if (ConfigureViteForSubTheme::appendCssEntry($cssRelative)) {
-            $this->components->info("Added {$cssRelative} to vite.config.js.");
+        if (AppendThemeStylesheetImport::append($cssPath)) {
+            $this->components->info('Added @import to the vpress theme bundle (packages/voodflow/vpress/resources/css/theme.css).');
         } else {
-            $this->components->warn("Add {$cssRelative} to your Vite input array, then run npm run build.");
+            $this->components->warn('Could not append @import automatically — add your theme CSS to the vpress bundle, then run npm run build.');
         }
 
         $this->newLine();

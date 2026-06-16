@@ -24,7 +24,7 @@ class SubThemeRegistryTest extends TestCase
         $registry = app(SubThemeRegistry::class);
 
         $this->assertSame(
-            'vpress::sub-themes.blog.layouts.page',
+            'vpress::themes.blog.layouts.page',
             $registry->layout('blog', 'page'),
         );
 

@@ -7,7 +7,7 @@
 @section('content')
     <div class="vpress-news-shell" data-vpress-article>
         <div class="vpress-news-layout">
-            @include('vpress::sub-themes.news.partials.sidebar-left', [
+            @include('vpress::themes.news.partials.sidebar-left', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? null,
                 'sectionPosts' => $sectionPosts ?? collect(),
@@ -17,7 +17,7 @@
                 @yield('page')
             </div>
 
-            @include('vpress::sub-themes.news.partials.sidebar-right', [
+            @include('vpress::themes.news.partials.sidebar-right', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? null,
                 'sectionPosts' => $sectionPosts ?? collect(),

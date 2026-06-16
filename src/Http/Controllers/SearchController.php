@@ -41,6 +41,7 @@ class SearchController extends Controller
             'results' => $results,
             'total' => $total,
             'availableTypes' => SiteSearch::availableTypes(),
+            'typeLabels' => SiteSearch::typeLabels(),
             'searchUrl' => VpressUrls::search(),
         ]);
     }

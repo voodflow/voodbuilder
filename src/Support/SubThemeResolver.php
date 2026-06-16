@@ -44,8 +44,12 @@ final class SubThemeResolver
     {
         $channel = app(ContentChannelRegistry::class)->matchesCurrentRequest();
 
-        if ($channel !== null && filled($channel->subTheme())) {
-            return self::normalize($channel->subTheme());
+        if ($channel !== null) {
+            $theme = ContentChannelThemes::resolveForChannel($channel);
+
+            if ($theme !== null) {
+                return $theme;
+            }
         }
 
         return self::siteDefault();

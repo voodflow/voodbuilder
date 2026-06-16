@@ -84,6 +84,17 @@
         @endif
 
         @auth
+            @if(\Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::userCanAccess())
+                <a
+                    href="{{ \Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::panelUrl() }}"
+                    role="menuitem"
+                    class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
+                >
+                    Espositore
+                </a>
+                <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+            @endif
+
             @if(\Voodflow\Vpress\Support\AdminAccess::userCanAccessPanel())
                 <a
                     href="{{ \Voodflow\Vpress\Support\AdminAccess::panelUrl() }}"

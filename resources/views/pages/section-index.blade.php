@@ -13,13 +13,13 @@
             <p class="vpress-news-desk-intro">{{ $page->displayExcerpt() }}</p>
         </header>
 
-        @include('vpress::sub-themes.news.partials.story-grid', ['posts' => $posts])
+        @include('vpress::themes.news.partials.story-grid', ['posts' => $posts])
     @else
         <header class="vpress-blog-index-header">
             <h1 class="vpress-blog-index-title">{{ $page->title }}</h1>
             <p class="vpress-blog-index-intro">{{ $page->displayExcerpt() }}</p>
         </header>
 
-        @include('vpress::sub-themes.blog.partials.post-list', ['posts' => $posts])
+        @include('vpress::themes.blog.partials.post-list', ['posts' => $posts])
     @endif
 @endsection

@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Support\ThemePalette;
 
 class VpressSettings extends Model
@@ -60,6 +61,7 @@ class VpressSettings extends Model
             'monitoring_head_code' => null,
             'monitoring_body_code' => null,
             'sub_theme_colors' => [],
+            'content_channel_sub_themes' => [],
         ];
     }
 
@@ -87,6 +89,9 @@ class VpressSettings extends Model
         }
 
         $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
+        $data['content_channel_sub_themes'] = ContentChannelThemes::normalizeOverrides(
+            is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
+        );
 
         return $data;
     }
@@ -189,6 +194,12 @@ class VpressSettings extends Model
 
         if (array_key_exists('sub_theme_colors', $data)) {
             $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
+        }
+
+        if (array_key_exists('content_channel_sub_themes', $data)) {
+            $data['content_channel_sub_themes'] = ContentChannelThemes::normalizeOverrides(
+                is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
+            );
         }
 
         $record = static::query()->firstOrNew(['id' => 1]);
