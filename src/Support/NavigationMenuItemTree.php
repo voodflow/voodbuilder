@@ -44,14 +44,22 @@ class NavigationMenuItemTree
                     ->color('gray')
                     ->iconButton()
                     ->fillForm(
-                        fn (NavigationMenuItem $record): array => MenuRouteParameterField::expandForFill($record->toArray()),
+                        fn (mixed $record): array => $record instanceof NavigationMenuItem
+                            ? MenuRouteParameterField::expandForFill($record->toArray())
+                            : [],
                     )
                     ->schema(
-                        fn (Schema $schema, NavigationMenuItem $record): Schema => $schema->components(
-                            NavigationMenuResource::menuItemFormSchema(filled($record->parent_id)),
+                        fn (Schema $schema, mixed $record): Schema => $schema->components(
+                            NavigationMenuResource::menuItemFormSchema(
+                                $record instanceof NavigationMenuItem && filled($record->parent_id),
+                            ),
                         ),
                     )
-                    ->action(function (array $data, NavigationMenuItem $record) use ($menu): void {
+                    ->action(function (array $data, mixed $record) use ($menu): void {
+                        if (! $record instanceof NavigationMenuItem) {
+                            return;
+                        }
+
                         $record->update(MenuRouteParameterField::compressForSave($data));
                         Navigation::clearCache($menu->slug);
                     })

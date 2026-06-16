@@ -41,7 +41,29 @@ class EditNavigationMenu extends EditRecord
     public function getMountedAction(?int $actionNestingIndex = null): ?Action
     {
         $action = parent::getMountedAction($actionNestingIndex);
-        $this->injectNodeRecordIntoAction($action);
+        $arguments = $action?->getArguments() ?? [];
+        $treeKey = $arguments['treeKey'] ?? null;
+
+        /**
+         * Some action mounts may miss the `tree: true` argument depending on how the
+         * tree view renders/caches actions. If we have a node id, resolve the node
+         * record directly to avoid falling back to the page record (NavigationMenu).
+         */
+        $nodeId = $arguments['nodeId'] ?? null;
+
+        if ($action !== null && $nodeId !== null && method_exists($action, 'record')) {
+            $treeConfig = $treeKey !== null
+                ? $this->getCachedTreeByKey((string) $treeKey)
+                : $this->getCachedTree();
+
+            $nodeRecord = $treeConfig->getNodeRecord($nodeId);
+
+            if ($nodeRecord !== null) {
+                $action->record($nodeRecord);
+            }
+        } else {
+            $this->injectNodeRecordIntoAction($action, $treeKey !== null ? (string) $treeKey : null);
+        }
 
         return $action;
     }
