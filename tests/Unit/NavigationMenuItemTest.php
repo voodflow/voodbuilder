@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Tests\Unit;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Voodflow\Vpress\Enums\MenuItemType;
+use Voodflow\Vpress\Models\NavigationMenu;
 use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Vpress\Support\NavigationMenuItemTree;
 use Voodflow\Vpress\Tests\TestCase;
 
 class NavigationMenuItemTest extends TestCase
@@ -78,5 +81,79 @@ class NavigationMenuItemTest extends TestCase
 
         $this->assertTrue($child->isActive());
         $this->assertTrue($parent->isActive());
+    }
+
+    public function test_rejects_third_level_nesting(): void
+    {
+        $menu = NavigationMenu::query()->create([
+            'name' => 'Main',
+            'slug' => 'main',
+        ]);
+
+        $root = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'Docs',
+            'type' => MenuItemType::Group,
+            'sort_order' => 0,
+        ]);
+
+        $child = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'parent_id' => $root->id,
+            'label' => 'Soundmit 2026',
+            'type' => MenuItemType::Group,
+            'sort_order' => 0,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'parent_id' => $child->id,
+            'label' => 'Report',
+            'type' => MenuItemType::Route,
+            'link' => 'vevents.report',
+            'route_parameters' => ['slug' => 'soundmit-2026'],
+            'sort_order' => 0,
+        ]);
+    }
+
+    public function test_flattens_items_beyond_max_depth(): void
+    {
+        $menu = NavigationMenu::query()->create([
+            'name' => 'Main',
+            'slug' => 'main',
+        ]);
+
+        $root = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'Docs',
+            'type' => MenuItemType::Group,
+            'sort_order' => 0,
+        ]);
+
+        $child = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'parent_id' => $root->id,
+            'label' => 'Soundmit 2026',
+            'type' => MenuItemType::Group,
+            'sort_order' => 0,
+        ]);
+
+        $grandchild = NavigationMenuItem::withoutEvents(fn (): NavigationMenuItem => NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'parent_id' => $child->id,
+            'label' => 'Report',
+            'type' => MenuItemType::Route,
+            'link' => 'vevents.report',
+            'route_parameters' => ['slug' => 'soundmit-2026'],
+            'sort_order' => 0,
+        ]));
+
+        NavigationMenuItemTree::flattenItemsBeyondMaxDepth($menu);
+
+        $grandchild->refresh();
+
+        $this->assertSame($root->id, $grandchild->parent_id);
     }
 }

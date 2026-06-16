@@ -29,6 +29,7 @@
     $brandName = VpressSettings::brandName();
     $logoMobileUrl = VpressSettings::logoMobileUrl();
     $logoUrl = VpressSettings::logoUrl();
+    $cookieConsent = function_exists('cookie_consent_settings') ? cookie_consent_settings() : null;
 @endphp
 
 <div
@@ -88,7 +89,7 @@
             @endif
 
             @if ($extraItems->isNotEmpty())
-                <div class="vpress-mobile-nav__section">
+                <div @class(['vpress-mobile-nav__section' => $mainItems->isNotEmpty()])>
                     <ul class="vpress-mobile-nav__links">
                         @foreach ($extraItems as $item)
                             <x-vpress::menu-nav-item :item="$item" :mobile="true" />
@@ -98,62 +99,11 @@
             @endif
 
             @if ($docSections->isNotEmpty())
-                <div class="vpress-mobile-nav__section" x-data="{ open: {{ $docsNavActive ? 'true' : 'false' }} }">
-                        <button
-                            type="button"
-                            class="vpress-mobile-nav__link w-full"
-                            @click="open = ! open"
-                            :aria-expanded="open"
-                        >
-                            <span>{{ __('vdocs::nav.label') }}</span>
-                            <svg
-                                class="h-4 w-4 shrink-0 transition-transform"
-                                :class="{ 'rotate-180': open }"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-
-                        <ul x-show="open" x-cloak class="mt-1 space-y-1 pl-3">
-                            <li>
-                                <a
-                                    href="{{ \Voodflow\Vdocs\Support\DocNavigation::indexUrl() }}"
-                                    @class([
-                                        'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
-                                        'is-active' => request()->routeIs('vdocs.index'),
-                                    ])
-                                    data-mobile-nav-close
-                                >
-                                    {{ __('vdocs::nav.overview') }}
-                                </a>
-                            </li>
-                            @foreach ($docSections as $section)
-                                @php
-                                    $isActiveSection = request()->routeIs('vdocs.show', 'vdocs.segment')
-                                        && in_array($section->slug, [
-                                            (string) request()->route('section'),
-                                            (string) request()->route('segment'),
-                                        ], true);
-                                @endphp
-                                <li>
-                                    <a
-                                        href="{{ \Voodflow\Vdocs\Support\DocNavigation::sectionUrl($section) }}"
-                                        @class([
-                                            'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
-                                            'is-active' => $isActiveSection,
-                                        ])
-                                        data-mobile-nav-close
-                                    >
-                                        {{ $section->title }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
+                <div @class(['vpress-mobile-nav__section' => $mainItems->isNotEmpty() || $extraItems->isNotEmpty()])>
+                    <ul class="vpress-mobile-nav__links">
+                        <x-vpress::mobile-docs-nav :sections="$docSections" :active="$docsNavActive" />
+                    </ul>
+                </div>
             @endif
         </div>
 
@@ -235,6 +185,23 @@
                     @endif
                 </div>
             @endauth
+
+            @if ($cookieConsent && filled($cookieConsent->content_href))
+                <div class="vpress-mobile-nav__legal">
+                    <a
+                        href="{{ $cookieConsent->content_href }}"
+                        class="vpress-mobile-nav__cookie-link"
+                        @if (filled($cookieConsent->content_target)) target="{{ $cookieConsent->content_target }}" @endif
+                        data-mobile-nav-close
+                    >
+                        {{ $cookieConsent->content_policy }}
+                    </a>
+                    <span class="vpress-mobile-nav__legal-separator" aria-hidden="true">·</span>
+                    <button type="button" class="vpress-mobile-nav__cookie-link" data-cookie-preferences>
+                        {{ __('vpress::nav.cookie_settings') }}
+                    </button>
+                </div>
+            @endif
         </div>
     </nav>
 </div>

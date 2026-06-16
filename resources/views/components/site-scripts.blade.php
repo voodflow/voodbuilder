@@ -419,6 +419,16 @@
             }
         }
 
+        document.addEventListener('click', (event) => {
+            const trigger = event.target instanceof Element
+                ? event.target.closest('[data-cookie-preferences]')
+                : null;
+
+            if (trigger) {
+                document.querySelector('.cc-revoke')?.click();
+            }
+        });
+
         document.querySelectorAll('[data-code-copy]').forEach((button) => {
             button.addEventListener('click', async () => {
                 const block = button.closest('[data-code-block]');

@@ -29,4 +29,26 @@
         border-color: {{ $settings->highlight_border }} !important;
         color: {{ $settings->highlight_text }} !important;
     }
+
+    @media (max-width: 59.999rem) {
+        .cc-revoke {
+            display: none !important;
+        }
+
+        .cc-window.cc-floating {
+            left: 0.75rem !important;
+            right: 0.75rem !important;
+            bottom: 0.75rem !important;
+            width: auto !important;
+            max-width: none !important;
+            font-size: 0.8125rem !important;
+        }
+    }
+
+    body.vpress-mobile-nav-open .cc-window,
+    body.vpress-mobile-nav-open .cc-revoke {
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+    }
 </style>

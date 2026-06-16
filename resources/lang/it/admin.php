@@ -22,10 +22,15 @@ return [
         'sub_items' => 'Sotto-voci',
     ],
 
+    'validation' => [
+        'menu_max_depth' => 'Il menu supporta al massimo :max livelli (voce principale e sotto-voci). Sposta la voce sotto una voce di primo livello.',
+    ],
+
     'helpers' => [
         'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente. Se la route richiede parametri, compila i campi mostrati sotto.',
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
+        'menu_tree' => 'Trascina per riordinare o rilascia una voce su un’altra per creare un sottomenu. Massimo 2 livelli (principale + sotto-voci). Usa "Gruppo dropdown" per etichette senza link.',
         'sub_theme_site' => 'Stile visivo predefinito del sito pubblico. Le singole pagine possono sovrascriverlo.',
         'sub_theme_page' => 'Sovrascrive il sotto-tema del sito per questa pagina — utile per sezioni blog o news nel menu.',
         'excerpt' => 'Breve riassunto per elenchi di sezione, card e SEO.',

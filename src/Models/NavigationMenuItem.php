@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Voodflow\Vpress\Enums\MenuItemType;
+use Voodflow\Vpress\Support\NavigationMenuItemTree;
 
 class NavigationMenuItem extends Model
 {
@@ -47,6 +49,29 @@ class NavigationMenuItem extends Model
                     ->value('menu_id');
             }
         });
+
+        static::saving(function (NavigationMenuItem $item): void {
+            static::assertValidNestingDepth($item);
+        });
+    }
+
+    public static function assertValidNestingDepth(NavigationMenuItem $item): void
+    {
+        if (! filled($item->parent_id)) {
+            return;
+        }
+
+        $parent = $item->relationLoaded('parent')
+            ? $item->parent
+            : static::query()->find($item->parent_id);
+
+        if ($parent?->parent_id !== null) {
+            throw ValidationException::withMessages([
+                'parent_id' => __('vpress::admin.validation.menu_max_depth', [
+                    'max' => NavigationMenuItemTree::MAX_DEPTH,
+                ]),
+            ]);
+        }
     }
 
     public function menu(): BelongsTo

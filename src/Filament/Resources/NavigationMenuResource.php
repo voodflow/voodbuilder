@@ -7,7 +7,6 @@ namespace Voodflow\Vpress\Filament\Resources;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -22,7 +21,6 @@ use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\CreateNaviga
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\MenuRouteCatalog;
 use Voodflow\Vpress\Support\MenuRouteParameterField;
@@ -121,58 +119,13 @@ class NavigationMenuResource extends Resource
                             ->native(false)
                             ->helperText(__('Use header_extra for Shop, Blog, or other links on the right side of the navbar.')),
                     ]),
-                Section::make(__('Menu items'))
-                    ->schema([
-                        Repeater::make('rootItems')
-                            ->label(__('Menu items'))
-                            ->relationship('rootItems')
-                            ->mutateRelationshipDataBeforeFillUsing(
-                                fn (array $data): array => MenuRouteParameterField::expandForFill($data),
-                            )
-                            ->mutateRelationshipDataBeforeCreateUsing(
-                                fn (array $data): array => MenuRouteParameterField::compressForSave($data),
-                            )
-                            ->mutateRelationshipDataBeforeSaveUsing(
-                                fn (array $data): array => MenuRouteParameterField::compressForSave($data),
-                            )
-                            ->schema([
-                                ...static::menuItemFields(isChild: false),
-                                Repeater::make('children')
-                                    ->label(__('vpress::admin.fields.sub_items'))
-                                    ->relationship('children')
-                                    ->helperText(__('vpress::admin.helpers.menu_sub_items'))
-                                    ->mutateRelationshipDataBeforeFillUsing(
-                                        fn (array $data): array => MenuRouteParameterField::expandForFill($data),
-                                    )
-                                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data, NavigationMenuItem $record): array {
-                                        $data = MenuRouteParameterField::compressForSave($data);
-                                        $data['menu_id'] = $record->menu_id;
-
-                                        return $data;
-                                    })
-                                    ->mutateRelationshipDataBeforeSaveUsing(
-                                        fn (array $data): array => MenuRouteParameterField::compressForSave($data),
-                                    )
-                                    ->schema(static::menuItemFields(isChild: true))
-                                    ->reorderable()
-                                    ->reorderableWithDragAndDrop()
-                                    ->reorderableWithButtons(false)
-                                    ->orderColumn('sort_order')
-                                    ->collapsible()
-                                    ->collapsed()
-                                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
-                                    ->defaultItems(0),
-                            ])
-                            ->reorderable()
-                            ->reorderableWithDragAndDrop()
-                            ->reorderableWithButtons(false)
-                            ->orderColumn('sort_order')
-                            ->collapsible()
-                            ->collapsed()
-                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
-                            ->defaultItems(0),
-                    ]),
             ]);
+    }
+
+    /** @return array<int, Component> */
+    public static function menuItemFormSchema(bool $isChild): array
+    {
+        return static::menuItemFields($isChild);
     }
 
     /** @return array<int, Component> */

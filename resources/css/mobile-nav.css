@@ -161,3 +161,22 @@
     background: var(--vpress-mobile-bg-muted);
     color: var(--vpress-mobile-text);
 }
+
+.vpress-mobile-nav__legal {
+    @apply mt-3 flex items-center justify-center gap-2 border-t pt-3;
+    border-color: var(--vpress-mobile-border);
+}
+
+.vpress-mobile-nav__cookie-link {
+    @apply text-xs transition-colors;
+    color: var(--vpress-mobile-text-muted);
+}
+
+.vpress-mobile-nav__cookie-link:hover {
+    color: var(--vpress-mobile-text);
+}
+
+.vpress-mobile-nav__legal-separator {
+    @apply text-xs;
+    color: var(--vpress-mobile-text-muted);
+}

@@ -168,6 +168,15 @@ Each page uses [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-se
 
 Menus are managed in **Admin → Site → Navigation**. Each menu record has a **placement** (`slug`) that tells the theme where to render it, and an ordered list of **items**.
 
+### Nesting (sub-menus)
+
+Vpress supports **2 levels maximum**:
+
+- **Level 1**: top-level navigation items
+- **Level 2**: sub-items shown in a dropdown (desktop) / collapsible list (mobile)
+
+The admin UI uses a **drag & drop tree** to reorder items and create sub-menus. If an item is nested deeper than level 2 (e.g. legacy data), it is **flattened automatically** back to level 2 on save / reload so the public UI always stays consistent.
+
 ### Menu placements
 
 Create one menu per placement (the `slug` field is unique):
@@ -194,7 +203,14 @@ Each item has:
 | **Active route pattern** | Wildcard pattern for highlight state (auto-filled for pages and app routes) |
 | **Open in new tab** | Adds `target="_blank"` |
 
-Drag items in the repeater to reorder them (`sort_order`).
+Drag items in the tree to reorder them (`sort_order`) or drop them onto another item to create a sub-menu.
+
+#### Dropdown group (label-only item)
+
+To create a menu section title / container **without its own link**, set the item type to **Dropdown group**.
+
+- Dropdown groups are useful for containers like **Docs** where the clickable links live in the sub-items.
+- A dropdown group can have sub-items, but it does not resolve to a URL on its own.
 
 ### Item types
 

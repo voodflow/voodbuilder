@@ -27,7 +27,7 @@
             >
                 <span>{{ __($item->label) }}</span>
                 <svg
-                    class="h-4 w-4 shrink-0 transition-transform"
+                    class="h-4 w-4 shrink-0 transition-transform duration-300 ease-out"
                     :class="{ 'rotate-180': open }"
                     fill="none"
                     stroke="currentColor"
@@ -38,7 +38,8 @@
                 </svg>
             </button>
 
-            <ul x-show="open" x-cloak class="mt-1 space-y-1 pl-3">
+            <div x-show="open" x-collapse.duration.300ms x-cloak>
+                <ul class="mt-1 space-y-1 pl-3">
                 @if ($hasParentLink)
                     <li>
                         <a
@@ -73,7 +74,8 @@
                         </a>
                     </li>
                 @endforeach
-            </ul>
+                </ul>
+            </div>
         </li>
     @else
         <div

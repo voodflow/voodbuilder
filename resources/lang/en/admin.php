@@ -22,10 +22,15 @@ return [
         'sub_items' => 'Sub-items',
     ],
 
+    'validation' => [
+        'menu_max_depth' => 'Menus support at most :max levels (top-level item and sub-items). Move the item under a top-level entry instead.',
+    ],
+
     'helpers' => [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
+        'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
         'sub_theme_site' => 'Default visual style for the public site. Individual pages can override this.',
         'sub_theme_page' => 'Override the site sub-theme for this page — useful for blog or news sections linked from the menu.',
         'excerpt' => 'Short summary for section listings, cards, and SEO.',
