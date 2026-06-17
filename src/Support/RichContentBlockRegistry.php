@@ -11,12 +11,25 @@ class RichContentBlockRegistry
     /** @var array<string, array<class-string<RichContentCustomBlock>>> */
     protected array $groups = [];
 
+    /** @var list<class-string<RichContentCustomBlock>> */
+    protected array $rendererAliases = [];
+
     /**
      * @param  class-string<RichContentCustomBlock>  $blockClass
      */
     public function register(string $group, string $blockClass): static
     {
         $this->groups[$group][] = $blockClass;
+
+        return $this;
+    }
+
+    /**
+     * @param  class-string<RichContentCustomBlock>  $blockClass
+     */
+    public function registerRendererAlias(string $blockClass): static
+    {
+        $this->rendererAliases[] = $blockClass;
 
         return $this;
     }
@@ -42,6 +55,6 @@ class RichContentBlockRegistry
             }
         }
 
-        return $blocks;
+        return array_values(array_unique([...$blocks, ...$this->rendererAliases]));
     }
 }

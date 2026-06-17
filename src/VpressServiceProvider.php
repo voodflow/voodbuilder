@@ -26,6 +26,7 @@ use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\VpressLandingBlocks;
 use Voodflow\Vpress\Support\VpressSeo;
 use Voodflow\Vpress\Vpress;
 
@@ -91,5 +92,9 @@ class VpressServiceProvider extends PackageServiceProvider
             ->register('Layout', PartnerBannerBlock::class)
             ->register('Layout', ProductPromoBlock::class)
             ->register('Layout', PackagePromosBlock::class);
+
+        foreach (VpressLandingBlocks::blockClasses() as $blockClass) {
+            $registry->register('Landing', $blockClass);
+        }
     }
 }

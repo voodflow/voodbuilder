@@ -9,6 +9,7 @@
 @import '../themes/blog/theme.css';
 @import '../themes/news/theme.css';
 @import '../themes/events/theme.css';
+@import './landing.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -21,6 +22,9 @@
 @source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/vexhibitors/resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vexhibitors/resources/views/**/*.blade.php';
+@source '../../../../../packages/voodflow/vevents/resources/views/**/*.blade.php';
+@source '../../../../../vendor/voodflow/vevents/resources/views/**/*.blade.php';
+@source '../views/blocks/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
 
 @theme {
