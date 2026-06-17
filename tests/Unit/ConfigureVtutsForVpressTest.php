@@ -39,6 +39,6 @@ PHP);
 
         $this->assertStringContainsString("'layout' => 'vpress::layouts.page'", $contents);
         $this->assertStringContainsString("'doc_layout' => 'vpress::layouts.doc'", $contents);
-        $this->assertStringContainsString('VpressUrls::home()', $contents);
+        $this->assertStringContainsString('LocaleSwitcher::currentPageUrlWithLocale', $contents);
     }
 }

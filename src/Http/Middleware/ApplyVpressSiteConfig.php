@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
+use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vpress\Models\VpressSettings;
 
 class ApplyVpressSiteConfig
@@ -18,10 +19,33 @@ class ApplyVpressSiteConfig
             'seo.canonical_link' => (bool) VpressSettings::get('seo_canonical_enabled', true),
         ]);
 
-        if (class_exists(LocaleSwitcher::class)) {
-            app()->setLocale(VpressSettings::primaryLocale());
+        if (class_exists(Locales::class)) {
+            app()->setLocale($this->resolveLocale($request));
         }
 
         return $next($request);
+    }
+
+    protected function resolveLocale(Request $request): string
+    {
+        $queryLocale = $request->query('locale');
+
+        if (is_string($queryLocale) && Locales::isValid($queryLocale)) {
+            if ($queryLocale === Locales::default()) {
+                $request->session()->forget(LocaleSwitcher::SESSION_LOCALE_KEY);
+            } else {
+                $request->session()->put(LocaleSwitcher::SESSION_LOCALE_KEY, $queryLocale);
+            }
+
+            return $queryLocale;
+        }
+
+        $sessionLocale = $request->session()->get(LocaleSwitcher::SESSION_LOCALE_KEY);
+
+        if (is_string($sessionLocale) && Locales::isValid($sessionLocale)) {
+            return $sessionLocale;
+        }
+
+        return VpressSettings::primaryLocale();
     }
 }

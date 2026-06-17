@@ -32,7 +32,7 @@ final class ConfigureVtutsForVpress
             $contents = str_replace(
                 "'fallback_url' => null",
                 <<<'PHP'
-'fallback_url' => fn (string $locale): string => \Voodflow\Vpress\Support\VpressUrls::home()
+'fallback_url' => fn (string $locale): string => \Voodflow\Vtuts\Support\LocaleSwitcher::currentPageUrlWithLocale($locale)
 PHP,
                 $contents,
             );
