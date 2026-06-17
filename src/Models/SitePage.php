@@ -16,6 +16,7 @@ use RalphJSmit\Laravel\SEO\Support\HasSEO;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\SubThemeResolver;
@@ -32,6 +33,7 @@ class SitePage extends Model implements HasRichContent
         'slug',
         'content',
         'layout',
+        'hide_site_footer',
         'sub_theme',
         'section',
         'excerpt',
@@ -46,6 +48,7 @@ class SitePage extends Model implements HasRichContent
         return [
             'content' => 'array',
             'is_home' => 'boolean',
+            'hide_site_footer' => 'boolean',
             'section_home' => 'boolean',
             'published' => 'boolean',
             'published_at' => 'datetime',
@@ -83,9 +86,34 @@ class SitePage extends Model implements HasRichContent
             return '';
         }
 
-        return RichContentRenderer::make($this->content)
+        $content = $this->content;
+
+        if (class_exists(EventRichContentContext::class)) {
+            $eventId = EventRichContentContext::resolveEventIdForPageSlug((string) $this->slug);
+
+            if ($eventId !== null) {
+                $content = EventRichContentContext::injectEventId($content, $eventId);
+            }
+        }
+
+        return RichContentRenderer::make($content)
             ->customBlocks(app(RichContentBlockRegistry::class)->rendererBlocks())
             ->toHtml();
+    }
+
+    public function isLandingLayout(): bool
+    {
+        return $this->layout === 'landing' || $this->layout === 'home';
+    }
+
+    public function shouldHideSiteFooter(): bool
+    {
+        return (bool) $this->hide_site_footer;
+    }
+
+    public function usesLandingCanvas(): bool
+    {
+        return $this->isLandingLayout();
     }
 
     public function resolvedSubTheme(): string
@@ -139,6 +167,7 @@ class SitePage extends Model implements HasRichContent
         $layoutKey = match (true) {
             $this->isSectionHome() => 'section_index',
             $this->isSectionArticle() => 'article',
+            $this->layout === 'landing' => 'landing',
             $this->layout === 'home' => 'home',
             $this->layout === 'doc' => 'doc',
             default => 'page',
@@ -152,6 +181,7 @@ class SitePage extends Model implements HasRichContent
 
         return match ($layoutKey) {
             'home' => config('vpress.layouts.home', 'vpress::layouts.home'),
+            'landing' => config('vpress.layouts.landing', 'vpress::layouts.landing'),
             'doc' => config('vpress.layouts.doc', 'vpress::layouts.doc'),
             default => config('vpress.layouts.page', 'vpress::layouts.page'),
         };
@@ -161,6 +191,7 @@ class SitePage extends Model implements HasRichContent
     {
         return match ($this->layout) {
             'home' => 'home',
+            'landing' => 'landing',
             default => 'page',
         };
     }

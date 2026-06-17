@@ -1,0 +1,63 @@
+/**
+ * Landing page layout and rich-content blocks (full-bleed sections, contained content).
+ */
+
+.vpress-landing-shell {
+    @apply w-full;
+}
+
+.VPRichPage--landing {
+    @apply w-full;
+}
+
+.VPRichPage--landing > .vp-landing-section--bleed {
+    @apply relative left-1/2 w-screen max-w-none -translate-x-1/2;
+}
+
+.VPRichPage--landing > .vp-landing-section--full {
+    @apply w-full max-w-none px-0;
+}
+
+.VPRichPage--landing > .vp-landing-section--contained {
+    @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 md:px-8;
+}
+
+.VPRichPage--landing > .vp-landing-section--narrow {
+    @apply mx-auto w-full max-w-3xl px-6 md:px-8;
+}
+
+.VPRichPage--landing > .vp-landing-section--padding-none {
+    @apply py-0;
+}
+
+.VPRichPage--landing > .vp-landing-section--padding-default {
+    @apply py-10 md:py-14;
+}
+
+.VPRichPage--landing > .vp-landing-section--padding-large {
+    @apply py-16 md:py-24;
+}
+
+.vp-landing-hero {
+    @apply flex flex-col justify-center;
+}
+
+.vp-landing-video__frame {
+    @apply relative aspect-video w-full overflow-hidden rounded-2xl border border-vp-divider bg-vp-bg-alt shadow-lg;
+}
+
+.vp-landing-video__frame iframe {
+    @apply absolute inset-0 h-full w-full border-0;
+}
+
+.vp-landing-video__placeholder {
+    @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
+}
+
+html[data-vpress-sub-theme='events'] .vpress-events-shell:has(.VPRichPage--landing) {
+    @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
+}
+
+html[data-vpress-sub-theme='events'] .vpress-landing-shell:has(.VPRichPage--landing) {
+    @apply max-w-none p-0;
+}

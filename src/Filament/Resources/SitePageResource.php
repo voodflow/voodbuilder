@@ -120,12 +120,22 @@ class SitePageResource extends Resource
 
                                 Select::make('layout')
                                     ->options([
+                                        'landing' => __('vpress::landing.layouts.landing'),
                                         'home' => __('Home (full width)'),
                                         'page' => __('Standard page'),
                                     ])
                                     ->default('page')
                                     ->native(false)
+                                    ->helperText(fn (Get $get): ?string => $get('layout') === 'landing'
+                                        ? __('vpress::landing.layouts.landing_help')
+                                        : null)
+                                    ->live()
                                     ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
+
+                                Toggle::make('hide_site_footer')
+                                    ->label(__('vpress::landing.layouts.hide_site_footer'))
+                                    ->helperText(__('vpress::landing.layouts.hide_site_footer_help'))
+                                    ->visible(fn (Get $get): bool => in_array($get('layout'), ['landing', 'home'], true)),
 
                                 Select::make('sub_theme')
                                     ->label(__('vpress::admin.fields.sub_theme'))

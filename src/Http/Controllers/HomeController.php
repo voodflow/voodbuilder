@@ -22,6 +22,7 @@ class HomeController extends Controller
             return view('vpress::pages.site-page', [
                 'page' => $page,
                 'vpressSubTheme' => $page->resolvedSubTheme(),
+                'hideSiteFooter' => $page->shouldHideSiteFooter(),
             ]);
         }
 

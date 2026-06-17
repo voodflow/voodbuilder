@@ -42,7 +42,7 @@
         @yield('content')
     </main>
 
-    @if(config('vpress.footer.enabled', true))
+    @if(config('vpress.footer.enabled', true) && ! ($hideSiteFooter ?? false))
         <x-vpress::footer />
     @endif
 

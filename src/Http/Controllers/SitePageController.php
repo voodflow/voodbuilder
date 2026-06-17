@@ -23,6 +23,7 @@ class SitePageController extends Controller
         $data = [
             'page' => $page,
             'vpressSubTheme' => $page->resolvedSubTheme(),
+            'hideSiteFooter' => $page->shouldHideSiteFooter(),
         ];
 
         if (filled($page->section)) {

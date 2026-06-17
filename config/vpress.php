@@ -11,6 +11,7 @@ return [
         'app' => 'vpress::layouts.app',
         'doc' => 'vpress::layouts.doc',
         'home' => 'vpress::layouts.home',
+        'landing' => 'vpress::layouts.landing',
         'page' => 'vpress::layouts.page',
     ],
 
@@ -52,6 +53,7 @@ return [
             'description' => 'Trade show layout — dark header, exhibitor cards, and session galleries.',
             'layouts' => [
                 'home' => 'vpress::themes.events.layouts.home',
+                'landing' => 'vpress::themes.events.layouts.landing',
                 'page' => 'vpress::themes.events.layouts.page',
             ],
             'css' => 'themes/events/theme.css',

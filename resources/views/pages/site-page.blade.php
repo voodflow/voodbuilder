@@ -5,7 +5,7 @@
 @extends($page->layoutView())
 
 @section($page->contentSection())
-    @if ($page->isSectionArticle() && $sectionHome)
+    @if ($page->isSectionArticle() && ($sectionHome ?? null))
         <nav class="vpress-section-breadcrumb" aria-label="{{ __('Breadcrumb') }}">
             <a href="{{ $sectionHome->getUrl() }}" class="vpress-section-breadcrumb-link">
                 {{ $sectionHome->title }}
@@ -23,7 +23,7 @@
         </header>
     @endif
 
-    <div class="VPRichPage">
+    <div @class(['VPRichPage', 'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events'])>
         {!! $page->renderedContent() !!}
     </div>
 @endsection
