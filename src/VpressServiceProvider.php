@@ -12,6 +12,7 @@ use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Voodflow\Vpress\Console\BuildTailblocksCommand;
 use Voodflow\Vpress\Console\InstallCommand;
 use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
@@ -27,6 +28,7 @@ use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
@@ -50,7 +52,8 @@ class VpressServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasRoutes('web')
             ->hasCommand(InstallCommand::class)
-            ->hasCommand(MakeSubThemeCommand::class);
+            ->hasCommand(MakeSubThemeCommand::class)
+            ->hasCommand(BuildTailblocksCommand::class);
     }
 
     public function packageRegistered(): void
@@ -83,7 +86,7 @@ class VpressServiceProvider extends PackageServiceProvider
 
         if (config('vpress.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
-            DefaultGrapesJsBlocks::register($this->app->make(GrapesJsBlockRegistry::class));
+            $this->registerGrapesJsBlocks();
         }
 
         SEOManager::SEODataTransformer(static function ($seoData) {
@@ -117,5 +120,18 @@ class VpressServiceProvider extends PackageServiceProvider
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
             });
+    }
+
+    protected function registerGrapesJsBlocks(): void
+    {
+        $registry = $this->app->make(GrapesJsBlockRegistry::class);
+
+        if (config('vpress.grapesjs.tailblocks.enabled', true)) {
+            TailblocksGrapesJsBlocks::register($registry);
+        }
+
+        if (config('vpress.grapesjs.include_vpress_blocks', true)) {
+            DefaultGrapesJsBlocks::register($registry);
+        }
     }
 }

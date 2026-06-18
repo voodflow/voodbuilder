@@ -38,6 +38,28 @@ export function initVpressGrapesJs(container, options = {}) {
         blockManager: {
             appendTo: options.blocksAppendTo ?? undefined,
         },
+        layerManager: {
+            showWrapper: true,
+        },
+        styleManager: {
+            sectors: [
+                {
+                    name: 'Typography',
+                    open: true,
+                    buildProps: ['font-family', 'font-size', 'font-weight', 'color', 'line-height', 'text-align'],
+                },
+                {
+                    name: 'Spacing',
+                    open: false,
+                    buildProps: ['width', 'height', 'padding', 'margin'],
+                },
+                {
+                    name: 'Decorations',
+                    open: false,
+                    buildProps: ['background-color', 'border-radius', 'border', 'box-shadow'],
+                },
+            ],
+        },
         panels: options.panels ?? undefined,
     });
 

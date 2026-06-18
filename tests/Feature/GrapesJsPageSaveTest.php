@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Tests\Feature;
 
 use Filament\Facades\Filament;
+use Filament\FilamentServiceProvider;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
@@ -26,7 +27,7 @@ class GrapesJsPageSaveTest extends TestCase
     {
         return [
             ...parent::getPackageProviders($app),
-            \Filament\FilamentServiceProvider::class,
+            FilamentServiceProvider::class,
         ];
     }
 

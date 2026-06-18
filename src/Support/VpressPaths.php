@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
+use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
+
 final class VpressPaths
 {
     public static function packagePath(): string
@@ -42,9 +44,15 @@ final class VpressPaths
      */
     public static function grapesJsCanvasStyleEntries(): array
     {
-        return [
+        $entries = [
             self::themeCssRelativePath(),
         ];
+
+        if (TailblocksGrapesJsBlocks::isAvailable()) {
+            $entries[] = TailblocksGrapesJsBlocks::utilitiesCssEntry();
+        }
+
+        return $entries;
     }
 
     public static function isVendorInstall(): bool

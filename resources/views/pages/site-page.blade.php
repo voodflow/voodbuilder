@@ -9,6 +9,9 @@
         @vite([
             config('vpress.grapesjs.vite'),
             'packages/voodflow/vpress/resources/css/grapesjs/editor.css',
+            ...(\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::isAvailable()
+                ? [\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::utilitiesCssEntry()]
+                : []),
         ])
     @endpush
 
@@ -57,8 +60,14 @@
                 'grapesJsConfig' => $grapesJsConfig,
             ])
         @else
-            @if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
-                <style>{!! $page->renderedStyles() !!}</style>
+            @if ($page->usesGrapesJsBuilder())
+                @if (\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::isAvailable())
+                    @vite(\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::utilitiesCssEntry())
+                @endif
+
+                @if (filled($page->renderedStyles()))
+                    <style>{!! $page->renderedStyles() !!}</style>
+                @endif
             @endif
 
             {!! $page->renderedContent() !!}
