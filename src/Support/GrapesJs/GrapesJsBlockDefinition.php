@@ -14,6 +14,7 @@ final class GrapesJsBlockDefinition
         public readonly string $label,
         public readonly string $category,
         public readonly string $content,
+        public readonly ?string $preview = null,
         public readonly array $attributes = [],
     ) {}
 
@@ -22,12 +23,13 @@ final class GrapesJsBlockDefinition
      */
     public function toEditorArray(): array
     {
-        return [
+        return array_filter([
             'id' => $this->id,
             'label' => $this->label,
             'category' => $this->category,
             'content' => $this->content,
+            'preview' => $this->preview,
             'attributes' => $this->attributes,
-        ];
+        ], static fn (mixed $value): bool => $value !== null && $value !== []);
     }
 }

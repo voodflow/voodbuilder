@@ -1,6 +1,7 @@
 /**
  * Export Tailblocks (MIT) React components to GrapesJS-ready JSON.
  * @see https://github.com/mertJF/tailblocks
+ * @see https://tailblocks.cc/
  */
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -18,6 +19,33 @@ const outJson = path.join(packageRoot, 'resources', 'grapesjs', 'tailblocks-bloc
 const outCatalog = path.join(packageRoot, 'resources', 'grapesjs', 'tailblocks-catalog.html');
 
 const theme = process.env.TAILBLOCKS_THEME ?? 'indigo';
+
+const TAILWIND_V4_REPLACEMENTS = {
+    'flex-grow': 'grow',
+    'flex-shrink-0': 'shrink-0',
+    'flex-shrink': 'shrink',
+    'overflow-ellipsis': 'text-ellipsis',
+};
+
+function migrateToTailwindV4(html) {
+    let migrated = html;
+
+    for (const [from, to] of Object.entries(TAILWIND_V4_REPLACEMENTS)) {
+        migrated = migrated.replace(new RegExp(`\\b${from}\\b`, 'g'), to);
+    }
+
+    return migrated;
+}
+
+function formatBlockLabel(category, variant, mode) {
+    const spaced = variant.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+    return `${spaced} · ${mode}`;
+}
+
+function buildPreview(html) {
+    return `<div class="vpress-gjs-block-preview"><div class="vpress-gjs-block-preview__scale">${html}</div></div>`;
+}
 
 if (! fs.existsSync(cacheDir)) {
     fs.mkdirSync(path.dirname(cacheDir), { recursive: true });
@@ -54,7 +82,7 @@ await esbuild.build({
 
 const { default: getBlock } = await import(bundlePath);
 
-/** @type {Array<{id:string,label:string,category:string,content:string,mode:string}>} */
+/** @type {Array<{id:string,label:string,category:string,content:string,preview:string,mode:string}>} */
 const definitions = [];
 
 for (const darkMode of [false, true]) {
@@ -68,15 +96,17 @@ for (const darkMode of [false, true]) {
                 continue;
             }
 
-            const html = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
+            const rawHtml = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
+            const html = migrateToTailwindV4(rawHtml);
             const mode = darkMode ? 'dark' : 'light';
             const id = `tailblocks-${category.toLowerCase()}-${variant.toLowerCase()}-${mode}`;
 
             definitions.push({
                 id,
-                label: `${variant} (${mode})`,
+                label: formatBlockLabel(category, variant, mode),
                 category: `Tailblocks / ${category}`,
                 content: html,
+                preview: buildPreview(html),
                 mode,
             });
         }
@@ -89,4 +119,4 @@ fs.writeFileSync(outJson, JSON.stringify(definitions, null, 2));
 const catalog = definitions.map((block) => block.content).join('\n');
 fs.writeFileSync(outCatalog, `<!doctype html><html><body>${catalog}</body></html>`);
 
-console.log(`Exported ${definitions.length} Tailblocks to ${outJson}`);
+console.log(`Exported ${definitions.length} Tailblocks (Tailwind v4 migrated) to ${outJson}`);

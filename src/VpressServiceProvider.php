@@ -15,6 +15,7 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Vpress\Console\BuildTailblocksCommand;
 use Voodflow\Vpress\Console\InstallCommand;
 use Voodflow\Vpress\Console\MakeSubThemeCommand;
+use Voodflow\Vpress\Console\SeedSoundmitGrapesLandingCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
@@ -53,7 +54,8 @@ class VpressServiceProvider extends PackageServiceProvider
             ->hasRoutes('web')
             ->hasCommand(InstallCommand::class)
             ->hasCommand(MakeSubThemeCommand::class)
-            ->hasCommand(BuildTailblocksCommand::class);
+            ->hasCommand(BuildTailblocksCommand::class)
+            ->hasCommand(SeedSoundmitGrapesLandingCommand::class);
     }
 
     public function packageRegistered(): void
@@ -113,7 +115,7 @@ class VpressServiceProvider extends PackageServiceProvider
 
     protected function registerGrapesJsRoutes(): void
     {
-        Route::middleware(['web', 'auth'])
+        Route::middleware(['web', 'auth', 'throttle:60,1'])
             ->prefix('vpress/grapesjs')
             ->name('vpress.grapesjs.')
             ->group(function (): void {

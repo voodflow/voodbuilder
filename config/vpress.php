@@ -201,6 +201,11 @@ return [
             'theme' => env('VPRESS_TAILBLOCKS_THEME', 'indigo'),
             'modes' => ['light', 'dark'],
         ],
+        'payload' => [
+            'max_html_bytes' => 500_000,
+            'max_css_bytes' => 100_000,
+            'max_project_bytes' => 2_000_000,
+        ],
     ],
 
     /*

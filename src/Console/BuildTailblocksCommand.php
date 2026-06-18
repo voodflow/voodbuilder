@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Console;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
+use Voodflow\Vpress\Support\GrapesJs\SoundmitGrapesJsLanding;
 use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
 use Voodflow\Vpress\Support\VpressPaths;
 
@@ -53,6 +54,7 @@ class BuildTailblocksCommand extends Command
         }
 
         $this->components->info('Tailblocks catalog ready at: '.TailblocksGrapesJsBlocks::catalogPath());
+        SoundmitGrapesJsLanding::writeUtilitiesCatalog();
         $this->components->warn('Run `npm run build` so tailblocks-utilities.css is compiled for the canvas.');
 
         return self::SUCCESS;

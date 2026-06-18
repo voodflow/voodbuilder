@@ -102,4 +102,68 @@ class GrapesJsPageSaveTest extends TestCase
             'html' => '<section>Nope</section>',
         ])->assertUnauthorized();
     }
+
+    public function test_cannot_save_non_grapesjs_page(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-rich@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Rich page',
+            'slug' => 'rich-page',
+            'builder' => PageBuilder::RichEditor,
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+            'html' => '<section>Nope</section>',
+        ])->assertForbidden();
+    }
+
+    public function test_rejects_oversized_html_payload(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-big@example.com',
+        ])->save();
+
+        config(['vpress.grapesjs.payload.max_html_bytes' => 10]);
+
+        $page = SitePage::query()->create([
+            'title' => 'Grapes page big',
+            'slug' => 'grapes-page-big',
+            'builder' => PageBuilder::GrapesJs,
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+            'html' => str_repeat('a', 20),
+        ])->assertUnprocessable();
+    }
 }

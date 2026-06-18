@@ -5,6 +5,10 @@
 @extends($page->layoutView())
 
 @if ($grapesJsEditor ?? false)
+    @section('body_class_extra')
+        vpress-grapesjs-editing
+    @endsection
+
     @push('head')
         @vite([
             config('vpress.grapesjs.vite'),

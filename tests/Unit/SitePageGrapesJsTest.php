@@ -58,7 +58,6 @@ class SitePageGrapesJsTest extends TestCase
                 'label' => 'Demo',
                 'category' => 'Test',
                 'content' => '<div>Demo</div>',
-                'attributes' => [],
             ],
         ], $registry->toEditorBlocks());
     }

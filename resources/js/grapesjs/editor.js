@@ -41,6 +41,9 @@ export function initVpressGrapesJs(container, options = {}) {
         layerManager: {
             showWrapper: true,
         },
+        selectorManager: {
+            componentFirst: true,
+        },
         styleManager: {
             sectors: [
                 {
@@ -68,6 +71,7 @@ export function initVpressGrapesJs(container, options = {}) {
             label: block.label,
             category: block.category,
             content: block.content,
+            media: block.preview ?? block.media ?? `<div class="vpress-gjs-block-fallback">${block.label}</div>`,
             attributes: block.attributes ?? {},
         });
     }
@@ -127,7 +131,7 @@ function mountFrontendEditor() {
     }
 
     const editor = initVpressGrapesJs(canvas, {
-        height: 'calc(100vh - 3.5rem)',
+        height: 'calc(100dvh - var(--vpress-grapesjs-chrome-height, 8rem))',
         noticeOnUnload: true,
         initial: config.initial ?? {},
         blocks: config.blocks ?? [],
