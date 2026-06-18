@@ -43,8 +43,7 @@ final class VpressPaths
     public static function grapesJsCanvasStyleEntries(): array
     {
         return [
-            self::relativeToBasePath(self::packagePath().'/resources/css/theme.css'),
-            self::relativeToBasePath(self::packagePath().'/resources/css/landing.css'),
+            self::themeCssRelativePath(),
         ];
     }
 
