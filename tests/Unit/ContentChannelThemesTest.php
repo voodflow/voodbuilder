@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Tests\Unit;
 
+use Illuminate\Support\Collection;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Tests\TestCase;
-use Illuminate\Support\Collection;
 
 class ContentChannelThemesTest extends TestCase
 {

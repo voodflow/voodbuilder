@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Filament\Forms;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Voodflow\Vevents\Models\Organizer;
 use Voodflow\Vpress\Models\NavigationMenu;
 
 final class LandingFooterForm
@@ -26,10 +27,10 @@ final class LandingFooterForm
                 ->label(__('vpress::landing.footer.brand_name'))
                 ->helperText(__('vpress::landing.footer.brand_name_help'))
                 ->maxLength(120),
-            ...static::organizerFields(),
+            ...self::organizerFields(),
             Select::make('menu_slug')
                 ->label(__('vpress::landing.footer.menu_placement'))
-                ->options(fn (): array => static::menuPlacementOptions())
+                ->options(fn (): array => self::menuPlacementOptions())
                 ->default('landing_footer')
                 ->native(false)
                 ->helperText(__('vpress::landing.footer.menu_placement_help')),
@@ -54,14 +55,14 @@ final class LandingFooterForm
     /** @return array<int, mixed> */
     protected static function organizerFields(): array
     {
-        if (class_exists(\Voodflow\Vevents\Models\Organizer::class)) {
+        if (class_exists(Organizer::class)) {
             return [
                 Select::make('organizer_id')
                     ->label(__('vpress::landing.footer.organizer'))
-                    ->options(fn (): array => \Voodflow\Vevents\Models\Organizer::query()
+                    ->options(fn (): array => Organizer::query()
                         ->orderBy('name')
                         ->get()
-                        ->mapWithKeys(fn (\Voodflow\Vevents\Models\Organizer $organizer): array => [
+                        ->mapWithKeys(fn (Organizer $organizer): array => [
                             $organizer->getKey() => $organizer->getTranslation('name', app()->getLocale()) ?? (string) $organizer->getKey(),
                         ])
                         ->all())

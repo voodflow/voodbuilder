@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress;
 
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
@@ -15,20 +18,23 @@ use Voodflow\Vpress\Console\InstallCommand;
 use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
-use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
+use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
+use Voodflow\Vpress\Http\Controllers\GrapesJsAssetController;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
+use Voodflow\Vpress\Livewire\GrapesJsPageBuilder;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
+use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\VpressLandingBlocks;
 use Voodflow\Vpress\Support\VpressSeo;
-use Voodflow\Vpress\Vpress;
 
 class VpressServiceProvider extends PackageServiceProvider
 {
@@ -52,6 +58,7 @@ class VpressServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton(RichContentBlockRegistry::class);
+        $this->app->singleton(GrapesJsBlockRegistry::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
     }
@@ -75,6 +82,13 @@ class VpressServiceProvider extends PackageServiceProvider
 
         Livewire::component('vpress.site-notification-bell', SiteNotificationBell::class);
         Livewire::component('vpress.account-settings', AccountSettings::class);
+        Livewire::component('vpress.grapesjs-page-builder', GrapesJsPageBuilder::class);
+
+        if (config('vpress.grapesjs.enabled', true)) {
+            $this->registerGrapesJsRoutes();
+            $this->registerGrapesJsFilamentAssets();
+            DefaultGrapesJsBlocks::register($this->app->make(GrapesJsBlockRegistry::class));
+        }
 
         SEOManager::SEODataTransformer(static function ($seoData) {
             return VpressSeo::applyDefaults($seoData);
@@ -96,5 +110,29 @@ class VpressServiceProvider extends PackageServiceProvider
         foreach (VpressLandingBlocks::blockClasses() as $blockClass) {
             $registry->register('Landing', $blockClass);
         }
+    }
+
+    protected function registerGrapesJsRoutes(): void
+    {
+        Route::middleware(['web', 'auth'])
+            ->prefix('vpress/grapesjs')
+            ->name('vpress.grapesjs.')
+            ->group(function (): void {
+                Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
+            });
+    }
+
+    protected function registerGrapesJsFilamentAssets(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            function (): ?string {
+                if (! request()->routeIs('filament.*.resources.vpress.pages.*')) {
+                    return null;
+                }
+
+                return view('vpress::filament.hooks.grapesjs-assets')->render();
+            },
+        );
     }
 }

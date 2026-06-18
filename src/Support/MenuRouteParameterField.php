@@ -31,7 +31,7 @@ final class MenuRouteParameterField
      */
     public static function optionsUsing(Closure $resolver): void
     {
-        static::$optionsResolvers[] = $resolver;
+        self::$optionsResolvers[] = $resolver;
     }
 
     /**
@@ -39,7 +39,7 @@ final class MenuRouteParameterField
      */
     public static function labelUsing(Closure $resolver): void
     {
-        static::$labelResolvers[] = $resolver;
+        self::$labelResolvers[] = $resolver;
     }
 
     /**
@@ -47,7 +47,7 @@ final class MenuRouteParameterField
      */
     public static function defaultValueUsing(Closure $resolver): void
     {
-        static::$defaultValueResolvers[] = $resolver;
+        self::$defaultValueResolvers[] = $resolver;
     }
 
     /**
@@ -55,7 +55,7 @@ final class MenuRouteParameterField
      */
     public static function beforeCompressUsing(Closure $resolver): void
     {
-        static::$beforeCompressResolvers[] = $resolver;
+        self::$beforeCompressResolvers[] = $resolver;
     }
 
     /** @return list<string> */
@@ -82,7 +82,7 @@ final class MenuRouteParameterField
             return null;
         }
 
-        foreach (static::$defaultValueResolvers as $resolver) {
+        foreach (self::$defaultValueResolvers as $resolver) {
             $value = $resolver($routeName, $parameterName);
 
             if (filled($value)) {
@@ -100,7 +100,7 @@ final class MenuRouteParameterField
             return [];
         }
 
-        foreach (static::$optionsResolvers as $resolver) {
+        foreach (self::$optionsResolvers as $resolver) {
             $options = $resolver($routeName, $parameterName, $get);
 
             if ($options !== []) {
@@ -114,7 +114,7 @@ final class MenuRouteParameterField
     public static function label(?string $routeName, string $parameterName): string
     {
         if (is_string($routeName) && $routeName !== '') {
-            foreach (static::$labelResolvers as $resolver) {
+            foreach (self::$labelResolvers as $resolver) {
                 $label = $resolver($routeName, $parameterName);
 
                 if (filled($label)) {
@@ -148,7 +148,7 @@ final class MenuRouteParameterField
                 continue;
             }
 
-            $data[static::flatKey($parameterName)] = $value;
+            $data[self::flatKey($parameterName)] = $value;
         }
 
         return $data;
@@ -160,7 +160,7 @@ final class MenuRouteParameterField
      */
     public static function compressForSave(array $data): array
     {
-        foreach (static::$beforeCompressResolvers as $resolver) {
+        foreach (self::$beforeCompressResolvers as $resolver) {
             $data = $resolver($data);
         }
 
@@ -168,8 +168,8 @@ final class MenuRouteParameterField
             ? $data['route_parameters']
             : [];
 
-        foreach (static::parameterNames() as $parameterName) {
-            $flatKey = static::flatKey($parameterName);
+        foreach (self::parameterNames() as $parameterName) {
+            $flatKey = self::flatKey($parameterName);
 
             if (! array_key_exists($flatKey, $data)) {
                 continue;
@@ -212,24 +212,24 @@ final class MenuRouteParameterField
     {
         $fields = [];
 
-        foreach (static::parameterNames() as $parameterName) {
-            $flatKey = static::flatKey($parameterName);
+        foreach (self::parameterNames() as $parameterName) {
+            $flatKey = self::flatKey($parameterName);
 
             $fields[] = Select::make($flatKey)
                 ->key("menu_{$flatKey}_select")
-                ->label(fn (Get $get): string => static::label($get('link'), $parameterName))
-                ->options(fn (Get $get): array => static::options($get('link'), $parameterName, $get))
+                ->label(fn (Get $get): string => self::label($get('link'), $parameterName))
+                ->options(fn (Get $get): array => self::options($get('link'), $parameterName, $get))
                 ->searchable()
                 ->preload()
                 ->live()
-                ->hidden(fn (Get $get): bool => ! static::isVisible($get, $parameterName) || static::options($get('link'), $parameterName, $get) === [])
-                ->required(fn (Get $get): bool => static::isVisible($get, $parameterName) && static::options($get('link'), $parameterName, $get) !== []);
+                ->hidden(fn (Get $get): bool => ! self::isVisible($get, $parameterName) || self::options($get('link'), $parameterName, $get) === [])
+                ->required(fn (Get $get): bool => self::isVisible($get, $parameterName) && self::options($get('link'), $parameterName, $get) !== []);
 
             $fields[] = TextInput::make($flatKey)
                 ->key("menu_{$flatKey}_text")
-                ->label(fn (Get $get): string => static::label($get('link'), $parameterName))
-                ->hidden(fn (Get $get): bool => ! static::isVisible($get, $parameterName) || static::options($get('link'), $parameterName, $get) !== [])
-                ->required(fn (Get $get): bool => static::isVisible($get, $parameterName) && static::options($get('link'), $parameterName, $get) === []);
+                ->label(fn (Get $get): string => self::label($get('link'), $parameterName))
+                ->hidden(fn (Get $get): bool => ! self::isVisible($get, $parameterName) || self::options($get('link'), $parameterName, $get) !== [])
+                ->required(fn (Get $get): bool => self::isVisible($get, $parameterName) && self::options($get('link'), $parameterName, $get) === []);
         }
 
         return $fields;

@@ -7,6 +7,8 @@ namespace Voodflow\Vpress;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockDefinition;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 
@@ -47,5 +49,21 @@ class Vpress
         }
 
         $registry->registerFromArray($id, $definition);
+    }
+
+    public static function grapesJsBlock(
+        string $id,
+        string $label,
+        string $category,
+        string $content,
+        array $attributes = [],
+    ): void {
+        app(GrapesJsBlockRegistry::class)->register(new GrapesJsBlockDefinition(
+            id: $id,
+            label: $label,
+            category: $category,
+            content: $content,
+            attributes: $attributes,
+        ));
     }
 }

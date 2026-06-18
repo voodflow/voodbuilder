@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Filament\Livewire;
 
+use Filament\Actions\Action;
 use Filament\Notifications\Livewire\DatabaseNotifications as BaseDatabaseNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,7 @@ use Voodflow\Vpress\Support\SiteNotificationPresenter;
 
 class AdminDatabaseNotifications extends BaseDatabaseNotifications
 {
-    public function getNotificationsQuery(): Builder | Relation
+    public function getNotificationsQuery(): Builder|Relation
     {
         $user = $this->getUser();
 
@@ -42,7 +43,7 @@ class AdminDatabaseNotifications extends BaseDatabaseNotifications
 
             if (filled($presented['url'])) {
                 $filamentNotification->actions([
-                    \Filament\Actions\Action::make('view')
+                    Action::make('view')
                         ->label(__('vpress::notifications.view'))
                         ->url($presented['url'])
                         ->openUrlInNewTab(),

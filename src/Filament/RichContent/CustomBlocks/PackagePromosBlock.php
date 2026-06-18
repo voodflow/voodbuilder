@@ -7,8 +7,8 @@ namespace Voodflow\Vpress\Filament\RichContent\CustomBlocks;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class PackagePromosBlock extends RichContentCustomBlock

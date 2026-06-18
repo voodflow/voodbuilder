@@ -17,6 +17,8 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
+use Voodflow\Vpress\Enums\PageBuilder;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsRenderer;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\SubThemeResolver;
@@ -32,6 +34,8 @@ class SitePage extends Model implements HasRichContent
         'title',
         'slug',
         'content',
+        'builder',
+        'builder_payload',
         'layout',
         'hide_site_footer',
         'sub_theme',
@@ -47,6 +51,8 @@ class SitePage extends Model implements HasRichContent
     {
         return [
             'content' => 'array',
+            'builder' => PageBuilder::class,
+            'builder_payload' => 'array',
             'is_home' => 'boolean',
             'hide_site_footer' => 'boolean',
             'section_home' => 'boolean',
@@ -80,8 +86,17 @@ class SitePage extends Model implements HasRichContent
             : url('/pages/'.$this->slug);
     }
 
+    public function usesGrapesJsBuilder(): bool
+    {
+        return ($this->builder ?? PageBuilder::RichEditor) === PageBuilder::GrapesJs;
+    }
+
     public function renderedContent(): string
     {
+        if ($this->usesGrapesJsBuilder()) {
+            return app(GrapesJsRenderer::class)->render($this);
+        }
+
         if (blank($this->content)) {
             return '';
         }
@@ -99,6 +114,15 @@ class SitePage extends Model implements HasRichContent
         return RichContentRenderer::make($content)
             ->customBlocks(app(RichContentBlockRegistry::class)->rendererBlocks())
             ->toHtml();
+    }
+
+    public function renderedStyles(): ?string
+    {
+        if (! $this->usesGrapesJsBuilder()) {
+            return null;
+        }
+
+        return app(GrapesJsRenderer::class)->css($this);
     }
 
     public function isLandingLayout(): bool

@@ -10,6 +10,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\LivewireField;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -24,9 +25,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\CreateSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
+use Voodflow\Vpress\Livewire\GrapesJsPageBuilder;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePageSection;
@@ -80,6 +83,15 @@ class SitePageResource extends Resource
                                     ->helperText(__('vpress::admin.helpers.excerpt'))
                                     ->columnSpanFull(),
 
+                                Select::make('builder')
+                                    ->label(__('vpress::pro.fields.builder'))
+                                    ->options(PageBuilder::class)
+                                    ->default(PageBuilder::RichEditor)
+                                    ->native(false)
+                                    ->live()
+                                    ->helperText(__('vpress::pro.helpers.builder'))
+                                    ->columnSpanFull(),
+
                                 RichEditor::make('content')
                                     ->label(__('Page content'))
                                     ->customBlocks(app(RichContentBlockRegistry::class)->editorGroups())
@@ -88,6 +100,13 @@ class SitePageResource extends Resource
                                         ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
                                         ['customBlocks'],
                                     ])
+                                    ->visible(fn (Get $get): bool => ($get('builder') ?? PageBuilder::RichEditor->value) === PageBuilder::RichEditor->value)
+                                    ->columnSpanFull(),
+
+                                LivewireField::make('builder_payload')
+                                    ->component(GrapesJsPageBuilder::class)
+                                    ->visible(fn (Get $get): bool => ($get('builder') ?? PageBuilder::RichEditor->value) === PageBuilder::GrapesJs->value)
+                                    ->helperText(__('vpress::pro.helpers.grapesjs_assets'))
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
@@ -175,6 +194,12 @@ class SitePageResource extends Resource
             ->columns([
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('slug')->searchable(),
+                TextColumn::make('builder')
+                    ->label(__('vpress::pro.fields.builder'))
+                    ->badge()
+                    ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
+                        ? $state->label()
+                        : PageBuilder::tryFrom((string) $state)?->label() ?? (string) $state),
                 TextColumn::make('layout')->badge(),
                 TextColumn::make('sub_theme')
                     ->label(__('vpress::admin.fields.sub_theme'))

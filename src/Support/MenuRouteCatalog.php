@@ -20,7 +20,7 @@ final class MenuRouteCatalog
      */
     public static function parameterFieldUsing(Closure $resolver): void
     {
-        static::$parameterFieldResolver = $resolver;
+        self::$parameterFieldResolver = $resolver;
     }
 
     /** @return array<string, string> */
@@ -39,11 +39,11 @@ final class MenuRouteCatalog
                 continue;
             }
 
-            if (! static::isSelectable($name, $route)) {
+            if (! self::isSelectable($name, $route)) {
                 continue;
             }
 
-            $options[$name] = static::formatLabel($name, $route);
+            $options[$name] = self::formatLabel($name, $route);
         }
 
         ksort($options);
@@ -78,8 +78,8 @@ final class MenuRouteCatalog
     {
         $names = [];
 
-        foreach (array_keys(static::options()) as $routeName) {
-            foreach (static::requiredParameterNames($routeName) as $parameterName) {
+        foreach (array_keys(self::options()) as $routeName) {
+            foreach (self::requiredParameterNames($routeName) as $parameterName) {
                 $names[$parameterName] = true;
             }
         }
@@ -89,8 +89,8 @@ final class MenuRouteCatalog
 
     public static function parameterField(string $routeName, string $parameterName): ?Field
     {
-        if (static::$parameterFieldResolver !== null) {
-            $field = (static::$parameterFieldResolver)($routeName, $parameterName);
+        if (self::$parameterFieldResolver !== null) {
+            $field = (self::$parameterFieldResolver)($routeName, $parameterName);
 
             if ($field instanceof Field) {
                 return $field;
@@ -129,11 +129,11 @@ final class MenuRouteCatalog
 
     protected static function isSelectable(string $name, Route $route): bool
     {
-        if (! static::acceptsHttpMethod($route)) {
+        if (! self::acceptsHttpMethod($route)) {
             return false;
         }
 
-        foreach (static::excludePatterns() as $pattern) {
+        foreach (self::excludePatterns() as $pattern) {
             if (Str::is($pattern, $name)) {
                 return false;
             }
@@ -178,7 +178,7 @@ final class MenuRouteCatalog
     protected static function formatLabel(string $name, Route $route): string
     {
         $uri = '/'.ltrim($route->uri(), '/');
-        $requiredParameters = static::requiredParameterNames($name);
+        $requiredParameters = self::requiredParameterNames($name);
 
         if ($requiredParameters !== []) {
             $uri .= ' ['.implode(', ', $requiredParameters).']';

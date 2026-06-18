@@ -28,7 +28,7 @@ final class SubThemeResolver
             }
         }
 
-        return static::siteDefault();
+        return self::siteDefault();
     }
 
     public static function normalize(?string $theme): string

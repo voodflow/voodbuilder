@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
+use Voodflow\Vpress\Database\Seeders\VpressSeeder;
 use Voodflow\Vpress\Support\ConfigureRoutesForVpress;
 use Voodflow\Vpress\Support\ConfigureViteForVpress;
 use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
@@ -114,9 +115,9 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        if (! $this->option('skip-seed') && class_exists(\Voodflow\Vpress\Database\Seeders\VpressSeeder::class)) {
+        if (! $this->option('skip-seed') && class_exists(VpressSeeder::class)) {
             $this->components->info('Seeding default Vpress data...');
-            $this->call('db:seed', ['--class' => \Voodflow\Vpress\Database\Seeders\VpressSeeder::class]);
+            $this->call('db:seed', ['--class' => VpressSeeder::class]);
         }
 
         return $this->finish(self::SUCCESS);

@@ -62,7 +62,7 @@ final class VpressSeo
             }
         }
 
-        $seoData->schema = static::mergeOrganizationSchema($seoData);
+        $seoData->schema = self::mergeOrganizationSchema($seoData);
 
         return $seoData;
     }

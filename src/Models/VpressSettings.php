@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Support\ThemePalette;
+use Voodflow\Vtuts\Support\Locales;
 
 class VpressSettings extends Model
 {
@@ -128,8 +129,8 @@ class VpressSettings extends Model
         $locale = static::get('primary_locale') ?? static::get('default_ui_locale');
 
         if (is_string($locale) && $locale !== '') {
-            if (class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
-                if (\Voodflow\Vtuts\Support\Locales::isValid($locale)) {
+            if (class_exists(Locales::class)) {
+                if (Locales::isValid($locale)) {
                     return $locale;
                 }
             } else {
@@ -139,10 +140,10 @@ class VpressSettings extends Model
 
         $configured = (string) config('vtuts.default_locale', config('app.locale', 'en'));
 
-        if (class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
-            return \Voodflow\Vtuts\Support\Locales::isValid($configured)
+        if (class_exists(Locales::class)) {
+            return Locales::isValid($configured)
                 ? $configured
-                : \Voodflow\Vtuts\Support\Locales::codes()[0];
+                : Locales::codes()[0];
         }
 
         return $configured;
@@ -176,11 +177,11 @@ class VpressSettings extends Model
             $data['theme_mode'] = 'light';
         }
 
-        if (array_key_exists('primary_locale', $data) && class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
+        if (array_key_exists('primary_locale', $data) && class_exists(Locales::class)) {
             $locale = $data['primary_locale'];
 
-            if (! is_string($locale) || ! \Voodflow\Vtuts\Support\Locales::isValid($locale)) {
-                $data['primary_locale'] = \Voodflow\Vtuts\Support\Locales::codes()[0];
+            if (! is_string($locale) || ! Locales::isValid($locale)) {
+                $data['primary_locale'] = Locales::codes()[0];
             }
 
             $data['default_ui_locale'] = $data['primary_locale'];

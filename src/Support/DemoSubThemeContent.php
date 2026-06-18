@@ -35,7 +35,7 @@ final class DemoSubThemeContent
     /** @return array{title: string, excerpt: string} */
     public static function blogIndexMeta(?string $locale = null): array
     {
-        return static::withLocale($locale, fn (): array => [
+        return self::withLocale($locale, fn (): array => [
             'title' => __('vpress::demo.blog.index_title'),
             'excerpt' => __('vpress::demo.blog.index_excerpt'),
         ]);
@@ -44,7 +44,7 @@ final class DemoSubThemeContent
     /** @return array{title: string, excerpt: string} */
     public static function newsIndexMeta(?string $locale = null): array
     {
-        return static::withLocale($locale, fn (): array => [
+        return self::withLocale($locale, fn (): array => [
             'title' => __('vpress::demo.news.index_title'),
             'excerpt' => __('vpress::demo.news.index_excerpt'),
         ]);
@@ -53,7 +53,7 @@ final class DemoSubThemeContent
     /** @return array{title: string, excerpt: string, content: array<string, mixed>} */
     public static function blogPost(string $key, ?string $locale = null): array
     {
-        return static::withLocale($locale, function () use ($key): array {
+        return self::withLocale($locale, function () use ($key): array {
             $prefix = "vpress::demo.blog.posts.{$key}";
 
             return [
@@ -71,7 +71,7 @@ final class DemoSubThemeContent
     /** @return array{title: string, excerpt: string, content: array<string, mixed>} */
     public static function newsArticle(string $key, ?string $locale = null): array
     {
-        return static::withLocale($locale, function () use ($key): array {
+        return self::withLocale($locale, function () use ($key): array {
             $prefix = "vpress::demo.news.articles.{$key}";
 
             return [
@@ -96,11 +96,11 @@ final class DemoSubThemeContent
 
         foreach ($blocks as [$type, $text]) {
             $content[] = match ($type) {
-                'h1' => static::heading(1, $text),
-                'h2' => static::heading(2, $text),
-                'h3' => static::heading(3, $text),
-                'blockquote' => static::blockquote($text),
-                default => static::paragraph($text),
+                'h1' => self::heading(1, $text),
+                'h2' => self::heading(2, $text),
+                'h3' => self::heading(3, $text),
+                'blockquote' => self::blockquote($text),
+                default => self::paragraph($text),
             };
         }
 

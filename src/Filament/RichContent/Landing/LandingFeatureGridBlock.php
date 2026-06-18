@@ -32,39 +32,39 @@ class LandingFeatureGridBlock extends RichContentCustomBlock
         return $action
             ->schema([
                 TextInput::make('heading')
-                ->label(__('vpress::landing.fields.heading'))
-                ->maxLength(255),
-            TextInput::make('subheading')
-                ->label(__('vpress::landing.fields.subheading'))
-                ->maxLength(500),
-            Select::make('columns')
-                ->label(__('vpress::landing.fields.columns'))
-                ->options(['2' => '2', '3' => '3', '4' => '4'])
-                ->default('3'),
-            Repeater::make('items')
-                ->label(__('vpress::landing.fields.features'))
-                ->schema([
-                    TextInput::make('icon')
-                        ->label(__('vpress::landing.fields.icon'))
-                        ->helperText(__('vpress::landing.helpers.icon'))
-                        ->maxLength(8),
-                    TextInput::make('title')
-                        ->label(__('vpress::landing.fields.title'))
-                        ->required()
-                        ->maxLength(120),
-                    Textarea::make('description')
-                        ->label(__('vpress::landing.fields.description'))
-                        ->rows(3),
-                    TextInput::make('link_label')
-                        ->label(__('vpress::landing.fields.link_label'))
-                        ->maxLength(80),
-                    ...ResolvableLinkForm::fields('link', [
-                        'type_label' => __('vpress::landing.fields.link_url'),
-                    ]),
-                ])
-                ->defaultItems(3)
-                ->minItems(1)
-                ->columnSpanFull(),
+                    ->label(__('vpress::landing.fields.heading'))
+                    ->maxLength(255),
+                TextInput::make('subheading')
+                    ->label(__('vpress::landing.fields.subheading'))
+                    ->maxLength(500),
+                Select::make('columns')
+                    ->label(__('vpress::landing.fields.columns'))
+                    ->options(['2' => '2', '3' => '3', '4' => '4'])
+                    ->default('3'),
+                Repeater::make('items')
+                    ->label(__('vpress::landing.fields.features'))
+                    ->schema([
+                        TextInput::make('icon')
+                            ->label(__('vpress::landing.fields.icon'))
+                            ->helperText(__('vpress::landing.helpers.icon'))
+                            ->maxLength(8),
+                        TextInput::make('title')
+                            ->label(__('vpress::landing.fields.title'))
+                            ->required()
+                            ->maxLength(120),
+                        Textarea::make('description')
+                            ->label(__('vpress::landing.fields.description'))
+                            ->rows(3),
+                        TextInput::make('link_label')
+                            ->label(__('vpress::landing.fields.link_label'))
+                            ->maxLength(80),
+                        ...ResolvableLinkForm::fields('link', [
+                            'type_label' => __('vpress::landing.fields.link_url'),
+                        ]),
+                    ])
+                    ->defaultItems(3)
+                    ->minItems(1)
+                    ->columnSpanFull(),
                 ...LandingBlockForm::sectionLayoutFields(),
             ])
             ->fillForm(function (array $arguments): array {

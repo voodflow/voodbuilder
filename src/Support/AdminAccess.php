@@ -18,7 +18,7 @@ final class AdminAccess
             return false;
         }
 
-        $panel = static::resolvePanel($panelId);
+        $panel = self::resolvePanel($panelId);
 
         if (! $panel instanceof Panel) {
             return false;
@@ -29,7 +29,7 @@ final class AdminAccess
 
     public static function panelUrl(?string $panelId = null): ?string
     {
-        return static::resolvePanel($panelId)?->getUrl();
+        return self::resolvePanel($panelId)?->getUrl();
     }
 
     protected static function resolvePanel(?string $panelId): ?Panel

@@ -22,8 +22,8 @@ final class VpressTheme
 
     public static function resolveIsDark(?string $storedPreference, bool $prefersDark = false): bool
     {
-        $showToggle = static::showToggle();
-        $defaultMode = static::defaultMode();
+        $showToggle = self::showToggle();
+        $defaultMode = self::defaultMode();
 
         if (! $showToggle) {
             return $defaultMode === 'dark';
@@ -37,7 +37,7 @@ final class VpressTheme
             return false;
         }
 
-        return static::modeToDark($defaultMode, $prefersDark);
+        return self::modeToDark($defaultMode, $prefersDark);
     }
 
     /**
@@ -45,17 +45,17 @@ final class VpressTheme
      */
     public static function serverInitialDark(): bool
     {
-        return static::resolveIsDark(null, false);
+        return self::resolveIsDark(null, false);
     }
 
     /** @return array{showToggle: bool, defaultMode: string, locked: bool} */
     public static function clientConfig(): array
     {
-        $showToggle = static::showToggle();
+        $showToggle = self::showToggle();
 
         return [
             'showToggle' => $showToggle,
-            'defaultMode' => static::defaultMode(),
+            'defaultMode' => self::defaultMode(),
             'locked' => ! $showToggle,
         ];
     }

@@ -1,0 +1,13 @@
+@import 'grapesjs/dist/css/grapes.min.css';
+
+.vpress-grapesjs-field .gjs-one-bg {
+    background-color: var(--gray-50, #f9fafb);
+}
+
+.dark .vpress-grapesjs-field .gjs-one-bg {
+    background-color: var(--gray-900, #111827);
+}
+
+.vpress-grapesjs-canvas .gjs-editor {
+    border: 0;
+}

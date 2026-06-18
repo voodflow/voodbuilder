@@ -32,6 +32,22 @@ final class VpressPaths
         ];
     }
 
+    public static function grapesJsViteEntry(): string
+    {
+        return self::relativeToBasePath(self::packagePath().'/resources/js/grapesjs/editor.js');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function grapesJsCanvasStyleEntries(): array
+    {
+        return [
+            self::relativeToBasePath(self::packagePath().'/resources/css/theme.css'),
+            self::relativeToBasePath(self::packagePath().'/resources/css/landing.css'),
+        ];
+    }
+
     public static function isVendorInstall(): bool
     {
         return str_contains(str_replace('\\', '/', self::packagePath()), '/vendor/voodflow/vpress');

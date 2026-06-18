@@ -28,9 +28,10 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use Throwable;
-use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vtuts\Support\Locales;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * @property-read Schema $form
@@ -205,16 +206,16 @@ class VpressSettingsPage extends Page
                                             ->helperText(__('Hidden automatically when only one content locale is configured.'))
                                             ->default(true)
                                             ->live()
-                                            ->visible(fn (): bool => class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class)
-                                                && \Voodflow\Vtuts\Support\LocaleSwitcher::enabled()),
+                                            ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
+                                                && LocaleSwitcher::enabled()),
                                         Select::make('primary_locale')
                                             ->label(__('vpress::settings.primary_locale'))
                                             ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
                                             ->default(fn (): string => VpressSettings::primaryLocale())
                                             ->helperText(__('vpress::settings.primary_locale_help'))
                                             ->visible(fn (): bool => class_exists(Locales::class)
-                                                && class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class)
-                                                && \Voodflow\Vtuts\Support\LocaleSwitcher::enabled()),
+                                                && class_exists(LocaleSwitcher::class)
+                                                && LocaleSwitcher::enabled()),
                                     ]),
                             ]),
                         Tab::make(__('vpress::settings.tabs.theme'))

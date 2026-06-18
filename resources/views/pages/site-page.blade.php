@@ -24,6 +24,10 @@
     @endif
 
     <div @class(['VPRichPage', 'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events'])>
+        @if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
+            <style>{!! $page->renderedStyles() !!}</style>
+        @endif
+
         {!! $page->renderedContent() !!}
     </div>
 @endsection

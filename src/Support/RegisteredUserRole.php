@@ -21,7 +21,7 @@ final class RegisteredUserRole
             return;
         }
 
-        if (Role::query()->where('name', $role)->where('guard_name', static::guardName())->doesntExist()) {
+        if (Role::query()->where('name', $role)->where('guard_name', self::guardName())->doesntExist()) {
             return;
         }
 

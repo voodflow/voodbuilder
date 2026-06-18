@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Tests\Unit;
 
 use Voodflow\Vpress\Support\LandingBlockSupport;
+use Voodflow\Vpress\Support\YoutubeEmbed;
 use Voodflow\Vpress\Tests\TestCase;
 
 class LandingBlockSupportTest extends TestCase
@@ -22,7 +23,7 @@ class LandingBlockSupportTest extends TestCase
 
     public function test_youtube_embed_normalizes_watch_url(): void
     {
-        $url = \Voodflow\Vpress\Support\YoutubeEmbed::normalize('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        $url = YoutubeEmbed::normalize('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
         $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0', $url);
     }

@@ -182,6 +182,22 @@ return [
     ],
 
     /*
+    | GrapesJS visual page builder (vpress-pro).
+    | Requires npm packages in the host app: grapesjs, grapesjs-blocks-basic.
+    | Add VpressPaths::grapesJsViteEntry() to vite.config.js input, then npm run build.
+    */
+    'grapesjs' => [
+        'enabled' => env('VPRESS_GRAPESJS_ENABLED', true),
+        'vite' => VpressPaths::grapesJsViteEntry(),
+        'canvas_styles' => VpressPaths::grapesJsCanvasStyleEntries(),
+        'upload' => [
+            'disk' => 'public',
+            'directory' => 'vpress/grapesjs',
+            'max_size' => 4096,
+        ],
+    ],
+
+    /*
     | Named routes offered when building navigation menu items (App route type).
     | Wildcard patterns exclude admin, Livewire, and other non-public endpoints.
     */

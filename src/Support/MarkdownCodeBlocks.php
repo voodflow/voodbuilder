@@ -42,11 +42,11 @@ final class MarkdownCodeBlocks
             return $html;
         }
 
-        $languages = $markdown !== null ? static::extractFenceLanguages($markdown) : [];
+        $languages = $markdown !== null ? self::extractFenceLanguages($markdown) : [];
         $languageIndex = 0;
 
-        $html = static::wrapShikiBlocks($html, $languages, $languageIndex);
-        $html = static::wrapPlainCodeBlocks($html);
+        $html = self::wrapShikiBlocks($html, $languages, $languageIndex);
+        $html = self::wrapPlainCodeBlocks($html);
 
         return $html;
     }
@@ -84,9 +84,9 @@ final class MarkdownCodeBlocks
     {
         $html = (string) preg_replace_callback(
             '/<pre><code class="language-([\w+#.-]+)">([\s\S]*?)<\/code><\/pre>/',
-            fn (array $matches): string => static::shell(
-                static::normalizeLanguage($matches[1]),
-                '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e(static::normalizeLanguage($matches[1])).'">'.$matches[2].'</code></pre>',
+            fn (array $matches): string => self::shell(
+                self::normalizeLanguage($matches[1]),
+                '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e(self::normalizeLanguage($matches[1])).'">'.$matches[2].'</code></pre>',
                 'raw',
             ),
             $html,

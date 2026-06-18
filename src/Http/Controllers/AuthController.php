@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -65,7 +66,7 @@ class AuthController extends Controller
 
         $userClass = config('auth.providers.users.model');
 
-        /** @var \Illuminate\Foundation\Auth\User $user */
+        /** @var User $user */
         $user = $userClass::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],

@@ -10,7 +10,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
-use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
 use Voodflow\Vpress\Support\LandingBlockContent;
 use Voodflow\Vpress\Support\LandingBlockMedia;
 use Voodflow\Vpress\Support\LandingBlockSupport;

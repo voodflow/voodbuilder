@@ -9,8 +9,8 @@ use Voodflow\Vpress\Filament\Pages\VpressContentChannelsPage;
 use Voodflow\Vpress\Filament\Pages\VpressSettingsPage;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
 use Voodflow\Vpress\Filament\Resources\SitePageResource;
-use Voodflow\Vpress\VpressPlugin;
 use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Vpress\VpressPlugin;
 
 class VpressPluginTest extends TestCase
 {

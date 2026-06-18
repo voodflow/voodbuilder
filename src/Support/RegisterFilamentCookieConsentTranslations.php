@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support;
 
 use Illuminate\Support\Facades\Lang;
+use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 
 /**
  * vpress:install disables auto-discovery for filament-cookie-consent so the banner
@@ -15,7 +16,7 @@ final class RegisterFilamentCookieConsentTranslations
 {
     public static function apply(): void
     {
-        if (! class_exists(\JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin::class)) {
+        if (! class_exists(CookieConsentPlugin::class)) {
             return;
         }
 

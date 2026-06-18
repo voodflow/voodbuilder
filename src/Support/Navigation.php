@@ -26,12 +26,12 @@ final class Navigation
         $cached = Cache::get("vpress.menu.{$menuSlug}");
 
         if (is_array($cached)) {
-            return static::hydrateItems($cached);
+            return self::hydrateItems($cached);
         }
 
-        $items = static::loadItems($menuSlug);
+        $items = self::loadItems($menuSlug);
 
-        Cache::put("vpress.menu.{$menuSlug}", static::dehydrateItems($items), 3600);
+        Cache::put("vpress.menu.{$menuSlug}", self::dehydrateItems($items), 3600);
 
         return $items;
     }
@@ -49,7 +49,7 @@ final class Navigation
     public static function clearCache(?string $menuSlug = null): void
     {
         if ($menuSlug !== null) {
-            foreach (static::slugAliases($menuSlug) as $slug) {
+            foreach (self::slugAliases($menuSlug) as $slug) {
                 Cache::forget("vpress.menu.{$slug}");
             }
 
@@ -68,7 +68,7 @@ final class Navigation
     /** @return Collection<int, NavigationMenuItem> */
     protected static function loadItems(string $menuSlug): Collection
     {
-        foreach (static::slugAliases($menuSlug) as $slug) {
+        foreach (self::slugAliases($menuSlug) as $slug) {
             $menu = NavigationMenu::query()->where('slug', $slug)->first();
 
             if ($menu !== null) {
@@ -86,7 +86,7 @@ final class Navigation
     protected static function dehydrateItems(Collection $items): array
     {
         return $items
-            ->map(fn (NavigationMenuItem $item): array => static::dehydrateItem($item))
+            ->map(fn (NavigationMenuItem $item): array => self::dehydrateItem($item))
             ->values()
             ->all();
     }
@@ -102,7 +102,7 @@ final class Navigation
             'route_match' => $item->route_match,
             'open_in_new_tab' => $item->open_in_new_tab,
             'sort_order' => $item->sort_order,
-            'children' => static::dehydrateItems($item->children),
+            'children' => self::dehydrateItems($item->children),
         ];
     }
 
@@ -112,14 +112,14 @@ final class Navigation
      */
     protected static function hydrateItems(array $items): Collection
     {
-        return collect($items)->map(fn (array $item): NavigationMenuItem => static::hydrateItem($item));
+        return collect($items)->map(fn (array $item): NavigationMenuItem => self::hydrateItem($item));
     }
 
     /** @param  array<string, mixed>  $item */
     protected static function hydrateItem(array $item): NavigationMenuItem
     {
         $children = collect($item['children'] ?? [])
-            ->map(fn (array $child): NavigationMenuItem => static::hydrateItem($child));
+            ->map(fn (array $child): NavigationMenuItem => self::hydrateItem($child));
 
         unset($item['children']);
 

@@ -24,20 +24,20 @@ final class SiteNotificationPresenter
         $data = $notification->data;
 
         return match ($type) {
-            CommentRepliedNotification::class => static::presentCommentNotification(
+            CommentRepliedNotification::class => self::presentCommentNotification(
                 title: __('vpress::notifications.reply_title'),
                 message: __('vpress::notifications.reply_body', [
                     'name' => $data['commenter_name'] ?? __('vpress::notifications.someone'),
-                    'excerpt' => static::plainExcerpt($data['body'] ?? ''),
+                    'excerpt' => self::plainExcerpt($data['body'] ?? ''),
                 ]),
                 data: $data,
                 icon: 'reply',
             ),
-            UserMentionedNotification::class => static::presentCommentNotification(
+            UserMentionedNotification::class => self::presentCommentNotification(
                 title: __('vpress::notifications.mention_title'),
                 message: __('vpress::notifications.mention_body', [
                     'name' => $data['mentioner_name'] ?? __('vpress::notifications.someone'),
-                    'excerpt' => static::plainExcerpt($data['body'] ?? ''),
+                    'excerpt' => self::plainExcerpt($data['body'] ?? ''),
                 ]),
                 data: $data,
                 icon: 'mention',
@@ -57,14 +57,14 @@ final class SiteNotificationPresenter
      */
     protected static function presentCommentNotification(string $title, string $message, array $data, string $icon): array
     {
-        $context = static::commentableTitle($data);
+        $context = self::commentableTitle($data);
 
         return [
             'title' => $title,
             'body' => $context
                 ? $message.' '.__('vpress::notifications.on_tutorial', ['title' => $context])
                 : $message,
-            'url' => static::commentUrl($data),
+            'url' => self::commentUrl($data),
             'icon' => $icon,
         ];
     }
@@ -78,13 +78,13 @@ final class SiteNotificationPresenter
         $commentableId = $data['commentable_id'] ?? null;
         $commentId = $data['comment_id'] ?? null;
 
-        $commentable = static::resolveCommentable($commentableType, $commentableId);
+        $commentable = self::resolveCommentable($commentableType, $commentableId);
 
         if ($commentable === null) {
             return null;
         }
 
-        $baseUrl = static::commentableUrl($commentable);
+        $baseUrl = self::commentableUrl($commentable);
 
         if ($baseUrl === null) {
             return null;
@@ -115,7 +115,7 @@ final class SiteNotificationPresenter
         $commentableType = $data['commentable_type'] ?? null;
         $commentableId = $data['commentable_id'] ?? null;
 
-        $commentable = static::resolveCommentable($commentableType, $commentableId);
+        $commentable = self::resolveCommentable($commentableType, $commentableId);
 
         if ($commentable === null) {
             return null;
