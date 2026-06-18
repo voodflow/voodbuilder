@@ -1,5 +1,6 @@
 @php
     use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Vpress\Support\ResolvableLinkSupport;
 
     $items = $config['items'] ?? [];
     $columns = (int) ($config['columns'] ?? 3);
@@ -36,8 +37,9 @@
                     @if (! empty($item['description']))
                         <p class="mt-2 text-sm leading-relaxed text-vp-text-2">{{ $item['description'] }}</p>
                     @endif
-                    @if (! empty($item['link_url']))
-                        <a href="{{ $item['link_url'] }}" class="mt-4 inline-flex text-sm font-semibold text-vp-brand-1 hover:underline">
+                    @php($itemUrl = ResolvableLinkSupport::resolve($item, 'link', 'link_url'))
+                    @if (filled($itemUrl))
+                        <a href="{{ $itemUrl }}" class="mt-4 inline-flex text-sm font-semibold text-vp-brand-1 hover:underline" @if (ResolvableLinkSupport::opensInNewTab($item, 'link')) target="_blank" rel="noopener noreferrer" @endif>
                             {{ $item['link_label'] ?? __('vpress::landing.learn_more') }}
                         </a>
                     @endif

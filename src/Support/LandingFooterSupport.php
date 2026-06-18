@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
-final class LandingFooterSupport
+use Voodflow\Vpress\Enums\MenuItemType;
+use Voodflow\Vpress\Models\NavigationMenuItem;
+
+class LandingFooterSupport
 {
     /**
      * @param  array<string, mixed>  $config
@@ -12,7 +15,7 @@ final class LandingFooterSupport
      */
     public static function organizerColumn(array $config): array
     {
-        $logoUrl = filled($config['logo_url'] ?? null) ? (string) $config['logo_url'] : null;
+        $logoUrl = LandingBlockMedia::publicUrl($config['logo_path'] ?? $config['logo_url'] ?? null);
         $brandName = filled($config['brand_name'] ?? null) ? (string) $config['brand_name'] : null;
         $lines = [];
 
@@ -39,6 +42,66 @@ final class LandingFooterSupport
      * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
      */
     public static function menuColumns(array $config): array
+    {
+        $fromMenu = self::menuColumnsFromNavigation(
+            filled($config['menu_slug'] ?? null) ? (string) $config['menu_slug'] : 'landing_footer',
+        );
+
+        if ($fromMenu !== []) {
+            return $fromMenu;
+        }
+
+        return self::menuColumnsFromRepeater($config);
+    }
+
+    /**
+     * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
+     */
+    public static function menuColumnsFromNavigation(string $menuSlug): array
+    {
+        $columns = [];
+
+        foreach (Navigation::items($menuSlug) as $item) {
+            if (! $item instanceof NavigationMenuItem || $item->type !== MenuItemType::Group) {
+                continue;
+            }
+
+            $links = [];
+
+            foreach ($item->children as $child) {
+                if (! $child instanceof NavigationMenuItem || ! $child->hasResolvableLink()) {
+                    continue;
+                }
+
+                $links[] = [
+                    'label' => (string) $child->label,
+                    'url' => $child->resolveUrl(),
+                    'open_in_new_tab' => (bool) $child->open_in_new_tab,
+                ];
+            }
+
+            if ($links === []) {
+                continue;
+            }
+
+            $columns[] = [
+                'title' => (string) $item->label,
+                'links' => $links,
+            ];
+
+            if (count($columns) >= 4) {
+                break;
+            }
+        }
+
+        return $columns;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
+     */
+    protected static function menuColumnsFromRepeater(array $config): array
     {
         $columns = [];
 
@@ -131,7 +194,7 @@ final class LandingFooterSupport
     /**
      * @return array{label: string, url: ?string, is_email: bool}
      */
-    private static function line(string $label, ?string $url = null, bool $isEmail = false): array
+    protected static function line(string $label, ?string $url = null, bool $isEmail = false): array
     {
         return [
             'label' => $label,

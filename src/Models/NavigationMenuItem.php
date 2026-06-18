@@ -110,6 +110,7 @@ class NavigationMenuItem extends Model
             MenuItemType::Page => $this->resolvePageUrl(),
             MenuItemType::Route => $this->resolveRouteUrl(),
             MenuItemType::Url => (string) ($this->link ?? '#'),
+            MenuItemType::Mail => $this->resolveMailUrl(),
         };
     }
 
@@ -146,7 +147,7 @@ class NavigationMenuItem extends Model
 
     public function isExternal(): bool
     {
-        return $this->type === MenuItemType::Url || $this->open_in_new_tab;
+        return in_array($this->type, [MenuItemType::Url, MenuItemType::Mail], true) || $this->open_in_new_tab;
     }
 
     public function isActive(): bool
@@ -207,6 +208,17 @@ class NavigationMenuItem extends Model
             ->first();
 
         return $page?->getUrl() ?? '#';
+    }
+
+    protected function resolveMailUrl(): string
+    {
+        $email = (string) ($this->link ?? '');
+
+        if ($email === '') {
+            return '#';
+        }
+
+        return str_starts_with($email, 'mailto:') ? $email : 'mailto:'.$email;
     }
 
     /** @return Collection<int, NavigationMenuItem> */

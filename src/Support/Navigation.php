@@ -15,6 +15,10 @@ final class Navigation
     /** @return Collection<int, NavigationMenuItem> */
     public static function items(string $menuSlug): Collection
     {
+        if (! function_exists('app') || ! app()->bound('db')) {
+            return collect();
+        }
+
         if (! Schema::hasTable('vpress_menus')) {
             return collect();
         }

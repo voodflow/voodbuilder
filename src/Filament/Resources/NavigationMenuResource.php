@@ -113,6 +113,7 @@ class NavigationMenuResource extends Resource
                                 'main' => __('Main navigation — center of the header'),
                                 'header_extra' => __('Header extras — right side (before language / theme / account)'),
                                 'footer' => __('Footer links'),
+                                'landing_footer' => __('Landing footer columns'),
                             ])
                             ->required()
                             ->unique(ignoreRecord: true)
@@ -210,6 +211,12 @@ class NavigationMenuResource extends Resource
                 ->helperText(__('Absolute URL (https://…) or site path (/docs/)'))
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
+            TextInput::make('link')
+                ->key($isChild ? 'menu_child_link_mail' : 'menu_item_link_mail')
+                ->label(__('Email'))
+                ->email()
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Mail))
+                ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Mail)),
             ...MenuRouteParameterField::components(),
             TextInput::make('route_match')
                 ->label(__('vpress::admin.fields.menu_route_match'))

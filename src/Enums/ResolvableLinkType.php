@@ -6,9 +6,8 @@ namespace Voodflow\Vpress\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 
-enum MenuItemType: string implements HasLabel
+enum ResolvableLinkType: string implements HasLabel
 {
-    case Group = 'group';
     case Page = 'page';
     case Route = 'route';
     case Url = 'url';
@@ -17,7 +16,6 @@ enum MenuItemType: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Group => __('Dropdown group'),
             self::Page => __('Site page'),
             self::Route => __('App route'),
             self::Url => __('External URL'),

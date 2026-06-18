@@ -9,7 +9,6 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Support\LandingBlockSupport;
 use Voodflow\Vpress\Support\RichContentBlockPreview;
 use Voodflow\Vpress\Support\SocialShareSupport;
 
@@ -46,10 +45,7 @@ class LandingSocialShareBlock extends RichContentCustomBlock
                 ->multiple()
                 ->default(SocialShareSupport::defaultNetworks()),
             ...LandingBlockForm::textAlignField(),
-            Select::make('background_tone')
-                ->label(__('vpress::landing.fields.background_tone'))
-                ->options(LandingBlockSupport::backgroundToneOptions())
-                ->default('light'),
+            ...LandingBlockForm::backgroundToneFields('light'),
             ...LandingBlockForm::sectionLayoutFields('contained'),
         ]);
     }

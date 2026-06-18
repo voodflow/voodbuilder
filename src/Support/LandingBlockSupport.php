@@ -13,6 +13,7 @@ final class LandingBlockSupport
             'brand' => __('vpress::landing.tones.brand'),
             'dark' => __('vpress::landing.tones.dark'),
             'light' => __('vpress::landing.tones.light'),
+            'custom' => __('vpress::landing.tones.custom'),
         ];
     }
 
@@ -82,9 +83,7 @@ final class LandingBlockSupport
     {
         $style = (string) ($config['background_style'] ?? 'solid');
         $tone = (string) ($config['background_tone'] ?? $defaultTone);
-        $imageUrl = filled($config['background_image_url'] ?? null)
-            ? (string) $config['background_image_url']
-            : null;
+        $imageUrl = LandingBlockContent::backgroundImageUrl($config);
 
         if ($style === 'image' && $imageUrl !== null) {
             $opacity = max(0, min(100, (int) ($config['overlay_opacity'] ?? 55))) / 100;
@@ -92,6 +91,17 @@ final class LandingBlockSupport
             return [
                 'class' => 'relative overflow-hidden text-white',
                 'style' => "background-image: linear-gradient(rgba(15,23,42,{$opacity}), rgba(15,23,42,{$opacity})), url('".e($imageUrl)."'); background-size: cover; background-position: center;",
+                'overlay' => false,
+            ];
+        }
+
+        if ($tone === 'custom') {
+            $color = self::normalizeHexColor($config['background_color'] ?? null) ?? '#111827';
+            $onDark = self::isDarkColor($color);
+
+            return [
+                'class' => $onDark ? 'text-white' : 'text-vp-text-1',
+                'style' => 'background-color: '.e($color).';',
                 'overlay' => false,
             ];
         }
@@ -105,6 +115,13 @@ final class LandingBlockSupport
             'style' => '',
             'overlay' => false,
         ];
+    }
+
+    public static function sectionCornerClass(array $config, array $defaults = []): string
+    {
+        $width = (string) ($config['section_width'] ?? $defaults['section_width'] ?? 'contained');
+
+        return $width === 'bleed' ? '' : 'rounded-2xl';
     }
 
     /**
@@ -163,7 +180,56 @@ final class LandingBlockSupport
 
     public static function onDarkBackground(array $config): bool
     {
-        return ($config['background_style'] ?? 'solid') === 'image'
-            || ($config['background_tone'] ?? 'brand') !== 'light';
+        if (($config['background_style'] ?? 'solid') === 'image') {
+            return true;
+        }
+
+        $tone = (string) ($config['background_tone'] ?? 'brand');
+
+        if ($tone === 'custom') {
+            $color = self::normalizeHexColor($config['background_color'] ?? null) ?? '#111827';
+
+            return self::isDarkColor($color);
+        }
+
+        return $tone !== 'light';
+    }
+
+    public static function isDarkColor(string $color): bool
+    {
+        $hex = self::normalizeHexColor($color);
+
+        if ($hex === null) {
+            return true;
+        }
+
+        $red = hexdec(substr($hex, 1, 2));
+        $green = hexdec(substr($hex, 3, 2));
+        $blue = hexdec(substr($hex, 5, 2));
+        $luminance = (0.2126 * $red + 0.7152 * $green + 0.0722 * $blue) / 255;
+
+        return $luminance < 0.55;
+    }
+
+    public static function normalizeHexColor(mixed $color): ?string
+    {
+        if (! is_string($color) || $color === '') {
+            return null;
+        }
+
+        $color = trim($color);
+
+        if (! preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color, $matches)) {
+            return null;
+        }
+
+        if (strlen($matches[1]) === 3) {
+            $color = '#'.implode('', array_map(
+                fn (string $char): string => $char.$char,
+                str_split($matches[1]),
+            ));
+        }
+
+        return strtoupper($color);
     }
 }

@@ -19,6 +19,7 @@ return [
         'video' => 'Video (YouTube)',
         'social_share' => 'Social share',
         'footer' => 'Landing footer',
+        'contact_cta' => 'Contact CTA',
     ],
 
     'fields' => [
@@ -32,6 +33,8 @@ return [
         'body' => 'Body',
         'background_style' => 'Background style',
         'background_tone' => 'Background color',
+        'background_color' => 'Custom color',
+        'background_image' => 'Background image',
         'background_image_url' => 'Background image URL',
         'overlay_opacity' => 'Overlay opacity (%)',
         'text_align' => 'Text alignment',
@@ -42,6 +45,7 @@ return [
         'secondary_button_url' => 'Secondary button URL',
         'button_style' => 'Button style',
         'image_url' => 'Image URL',
+        'image' => 'Image',
         'image_position' => 'Image position',
         'features' => 'Features',
         'icon' => 'Icon / emoji',
@@ -61,6 +65,7 @@ return [
         'section_padding' => 'Section padding',
         'logos' => 'Logos',
         'logo_name' => 'Name (alt text)',
+        'logo_image' => 'Logo image',
         'logo_image_url' => 'Logo image URL',
         'logo_grayscale' => 'Grayscale logos until hover',
     ],
@@ -69,12 +74,16 @@ return [
         'icon' => 'Optional emoji or short symbol shown above the title.',
         'youtube_url' => 'Paste a YouTube watch, share, or embed URL.',
         'section_width' => 'Bleed spans the full viewport width; contained keeps content centered.',
+        'background_color' => 'Used when background color is set to Custom.',
+        'background_image' => 'Upload a wide image for full-bleed hero sections.',
+        'content_image' => 'Upload a photo or illustration for this section.',
     ],
 
     'tones' => [
         'brand' => 'Brand color',
         'dark' => 'Dark',
         'light' => 'Light',
+        'custom' => 'Custom',
     ],
 
     'background_styles' => [
@@ -135,8 +144,16 @@ return [
     ],
 
     'footer' => [
-        'logo_url' => 'Logo URL',
+        'logo' => 'Footer logo',
+        'logo_help' => 'Upload a white or light logo for dark landing footers.',
         'brand_name' => 'Brand name',
+        'brand_name_help' => 'Shown when no logo is uploaded.',
+        'organizer' => 'Organizer',
+        'organizer_help' => 'Pulls contact lines from the selected organizer. On event pages the current event organizer is used when empty.',
+        'organizer_legal' => 'Legal / VAT line',
+        'menu_placement' => 'Footer menu',
+        'menu_placement_help' => 'Manage columns in Admin → Menus with placement “Landing footer columns”. Each top-level group becomes a column.',
+        'default_menu' => 'Landing footer columns',
         'organizer_line_1' => 'Contact line 1',
         'organizer_line_2' => 'Contact line 2',
         'organizer_email' => 'Contact email',
@@ -151,6 +168,24 @@ return [
         'copyright_highlight_help' => 'Shown in brand accent color (e.g. partner name).',
         'copyright_links' => 'Inline copyright links',
         'link_highlight' => 'Accent color',
+    ],
+
+    'link' => [
+        'type' => 'Link type',
+    ],
+
+    'contact' => [
+        'intro' => 'Intro text',
+        'highlight_phrase' => 'Highlighted phrase',
+        'display_style' => 'Primary action',
+        'display_email' => 'Large email link',
+        'display_button' => 'Button',
+        'email' => 'Email address',
+        'link_type' => 'Link type',
+        'link_url' => 'URL',
+        'link_email' => 'Email',
+        'link_target' => 'Link target',
+        'link_target_help' => 'Full URL or email address depending on link type.',
     ],
 
     'layouts' => [

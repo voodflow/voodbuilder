@@ -11,6 +11,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
+use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
+use Voodflow\Vpress\Support\ResolvableLinkSupport;
 use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class LandingFeatureGridBlock extends RichContentCustomBlock
@@ -27,8 +29,9 @@ class LandingFeatureGridBlock extends RichContentCustomBlock
 
     public static function configureEditorAction(Action $action): Action
     {
-        return $action->schema([
-            TextInput::make('heading')
+        return $action
+            ->schema([
+                TextInput::make('heading')
                 ->label(__('vpress::landing.fields.heading'))
                 ->maxLength(255),
             TextInput::make('subheading')
@@ -55,15 +58,45 @@ class LandingFeatureGridBlock extends RichContentCustomBlock
                     TextInput::make('link_label')
                         ->label(__('vpress::landing.fields.link_label'))
                         ->maxLength(80),
-                    TextInput::make('link_url')
-                        ->label(__('vpress::landing.fields.link_url'))
-                        ->url(),
+                    ...ResolvableLinkForm::fields('link', [
+                        'type_label' => __('vpress::landing.fields.link_url'),
+                    ]),
                 ])
                 ->defaultItems(3)
                 ->minItems(1)
                 ->columnSpanFull(),
-            ...LandingBlockForm::sectionLayoutFields(),
-        ]);
+                ...LandingBlockForm::sectionLayoutFields(),
+            ])
+            ->fillForm(function (array $arguments): array {
+                $config = $arguments['config'] ?? [];
+
+                if (! is_array($config) || ! isset($config['items']) || ! is_array($config['items'])) {
+                    return is_array($config) ? $config : [];
+                }
+
+                $config['items'] = array_map(
+                    fn (mixed $item): mixed => is_array($item)
+                        ? ResolvableLinkSupport::expandPrefix($item, 'link')
+                        : $item,
+                    $config['items'],
+                );
+
+                return $config;
+            })
+            ->mutateFormDataUsing(function (array $data): array {
+                if (! isset($data['items']) || ! is_array($data['items'])) {
+                    return $data;
+                }
+
+                $data['items'] = array_map(
+                    fn (mixed $item): mixed => is_array($item)
+                        ? ResolvableLinkSupport::compressPrefix($item, 'link')
+                        : $item,
+                    $data['items'],
+                );
+
+                return $data;
+            });
     }
 
     public static function toPreviewHtml(array $config): string

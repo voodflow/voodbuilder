@@ -10,6 +10,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
+use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
+use Voodflow\Vpress\Support\LandingBlockContent;
 use Voodflow\Vpress\Support\LandingBlockSupport;
 use Voodflow\Vpress\Support\RichContentBlockPreview;
 
@@ -27,32 +29,37 @@ class LandingSplitBlock extends RichContentCustomBlock
 
     public static function configureEditorAction(Action $action): Action
     {
-        return $action->schema([
-            TextInput::make('eyebrow')
-                ->label(__('vpress::landing.fields.eyebrow'))
-                ->maxLength(120),
-            TextInput::make('heading')
-                ->label(__('vpress::landing.fields.heading'))
-                ->required()
-                ->maxLength(255),
-            Textarea::make('body')
-                ->label(__('vpress::landing.fields.body'))
-                ->rows(5)
-                ->columnSpanFull(),
-            TextInput::make('image_url')
-                ->label(__('vpress::landing.fields.image_url'))
-                ->url(),
-            Select::make('image_position')
-                ->label(__('vpress::landing.fields.image_position'))
-                ->options(LandingBlockSupport::imagePositionOptions())
-                ->default('left'),
-            TextInput::make('button_label')
-                ->label(__('vpress::landing.fields.primary_button_label')),
-            TextInput::make('button_url')
-                ->label(__('vpress::landing.fields.primary_button_url'))
-                ->url(),
-            ...LandingBlockForm::sectionLayoutFields(),
-        ]);
+        return ResolvableLinkForm::configureAction(
+            $action->schema([
+                TextInput::make('eyebrow')
+                    ->label(__('vpress::landing.fields.eyebrow'))
+                    ->maxLength(120),
+                TextInput::make('heading')
+                    ->label(__('vpress::landing.fields.heading'))
+                    ->required()
+                    ->maxLength(255),
+                Textarea::make('body')
+                    ->label(__('vpress::landing.fields.body'))
+                    ->rows(5)
+                    ->columnSpanFull(),
+                LandingBlockForm::imageUpload(
+                    LandingBlockContent::FIELD_IMAGE,
+                    __('vpress::landing.fields.image'),
+                    ['helper' => __('vpress::landing.helpers.content_image')],
+                ),
+                Select::make('image_position')
+                    ->label(__('vpress::landing.fields.image_position'))
+                    ->options(LandingBlockSupport::imagePositionOptions())
+                    ->default('left'),
+                TextInput::make('button_label')
+                    ->label(__('vpress::landing.fields.primary_button_label')),
+                ...ResolvableLinkForm::fields('button', [
+                    'type_label' => __('vpress::landing.fields.primary_button_url'),
+                ]),
+                ...LandingBlockForm::sectionLayoutFields(),
+            ]),
+            ['button'],
+        );
     }
 
     public static function toPreviewHtml(array $config): string

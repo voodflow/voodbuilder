@@ -10,6 +10,7 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
+use Voodflow\Vpress\Support\LandingBlockContent;
 use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class LandingLogoRowBlock extends RichContentCustomBlock
@@ -39,10 +40,11 @@ class LandingLogoRowBlock extends RichContentCustomBlock
                     TextInput::make('name')
                         ->label(__('vpress::landing.fields.logo_name'))
                         ->maxLength(120),
-                    TextInput::make('image_url')
-                        ->label(__('vpress::landing.fields.logo_image_url'))
-                        ->url()
-                        ->required(),
+                    LandingBlockForm::imageUpload(
+                        LandingBlockContent::FIELD_LOGO_IMAGE,
+                        __('vpress::landing.fields.logo_image'),
+                        ['required' => true, 'preview_height' => '48'],
+                    ),
                     TextInput::make('url')
                         ->label(__('vpress::landing.fields.link_url'))
                         ->url(),

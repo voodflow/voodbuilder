@@ -1,18 +1,22 @@
 @php
+    use Voodflow\Vpress\Support\LandingBlockContent;
     use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Vpress\Support\ResolvableLinkSupport;
 
-    $appearance = LandingBlockSupport::sectionAppearance($config, 'brand');
-    $align = LandingBlockSupport::textAlignClass((string) ($config['text_align'] ?? 'center'));
-    $onDark = LandingBlockSupport::onDarkBackground($config);
-    $minHeight = ($config['tall'] ?? false) ? 'min-h-[28rem]' : 'min-h-[20rem]';
-    $shell = LandingBlockSupport::sectionShellClass($config, [
+    $section = LandingBlockContent::section($config, [
         'section_width' => 'bleed',
         'section_padding' => 'large',
     ]);
+    $minHeight = ($config['tall'] ?? false) ? 'min-h-[28rem]' : 'min-h-[20rem]';
+    $primaryUrl = ResolvableLinkSupport::resolve($config, 'primary_button', 'primary_button_url');
+    $secondaryUrl = ResolvableLinkSupport::resolve($config, 'secondary_button', 'secondary_button_url');
 @endphp
 
-<section class="vp-landing-hero {{ $shell }} {{ $appearance['class'] }} {{ $minHeight }} flex flex-col justify-center px-6 md:px-10" @if ($appearance['style'] !== '') style="{{ $appearance['style'] }}" @endif>
-    <div class="mx-auto flex w-full {{ LandingBlockSupport::innerWidthClass($config) }} flex-col gap-6 {{ $align }}">
+<section
+    class="vp-landing-hero {{ $section['shell'] }} {{ $section['appearance']['class'] }} {{ $minHeight }} flex flex-col justify-center px-6 md:px-10"
+    @if ($section['appearance']['style'] !== '') style="{{ $section['appearance']['style'] }}" @endif
+>
+    <div class="mx-auto flex w-full {{ LandingBlockSupport::innerWidthClass($config) }} flex-col gap-6 {{ $section['align'] }}">
         @if (! empty($config['eyebrow']))
             <p class="text-sm font-semibold uppercase tracking-[0.2em] opacity-80">{{ $config['eyebrow'] }}</p>
         @endif
@@ -25,17 +29,19 @@
             <p class="max-w-3xl text-lg opacity-90 md:text-xl">{{ $config['subheading'] }}</p>
         @endif
 
-        @if (! empty($config['primary_button_url']) || ! empty($config['secondary_button_url']))
+        @if (filled($primaryUrl) || filled($secondaryUrl))
             <div class="mt-2 flex flex-wrap gap-3 {{ $config['text_align'] === 'left' ? 'justify-start' : 'justify-center' }}">
                 @include('vpress::blocks.landing.partials.button', [
                     'label' => $config['primary_button_label'] ?? null,
-                    'url' => $config['primary_button_url'] ?? null,
-                    'class' => LandingBlockSupport::primaryButtonClass((string) ($config['primary_button_style'] ?? 'solid'), $onDark),
+                    'url' => $primaryUrl,
+                    'class' => LandingBlockSupport::primaryButtonClass((string) ($config['primary_button_style'] ?? 'solid'), $section['onDark']),
+                    'open_in_new_tab' => ResolvableLinkSupport::opensInNewTab($config, 'primary_button'),
                 ])
                 @include('vpress::blocks.landing.partials.button', [
                     'label' => $config['secondary_button_label'] ?? null,
-                    'url' => $config['secondary_button_url'] ?? null,
-                    'class' => LandingBlockSupport::secondaryButtonClass($onDark),
+                    'url' => $secondaryUrl,
+                    'class' => LandingBlockSupport::secondaryButtonClass($section['onDark']),
+                    'open_in_new_tab' => ResolvableLinkSupport::opensInNewTab($config, 'secondary_button'),
                 ])
             </div>
         @endif

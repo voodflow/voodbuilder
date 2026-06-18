@@ -19,6 +19,7 @@ return [
         'video' => 'Video (YouTube)',
         'social_share' => 'Condividi sui social',
         'footer' => 'Footer landing',
+        'contact_cta' => 'CTA contatti',
     ],
 
     'fields' => [
@@ -32,6 +33,8 @@ return [
         'body' => 'Testo',
         'background_style' => 'Stile sfondo',
         'background_tone' => 'Colore sfondo',
+        'background_color' => 'Colore personalizzato',
+        'background_image' => 'Immagine di sfondo',
         'background_image_url' => 'URL immagine di sfondo',
         'overlay_opacity' => 'Opacità overlay (%)',
         'text_align' => 'Allineamento testo',
@@ -42,6 +45,7 @@ return [
         'secondary_button_url' => 'URL pulsante secondario',
         'button_style' => 'Stile pulsante',
         'image_url' => 'URL immagine',
+        'image' => 'Immagine',
         'image_position' => 'Posizione immagine',
         'features' => 'Funzionalità',
         'icon' => 'Icona / emoji',
@@ -61,6 +65,7 @@ return [
         'section_padding' => 'Spaziatura sezione',
         'logos' => 'Loghi',
         'logo_name' => 'Nome (testo alt)',
+        'logo_image' => 'Immagine logo',
         'logo_image_url' => 'URL logo',
         'logo_grayscale' => 'Loghi in scala di grigi fino al passaggio del mouse',
     ],
@@ -69,12 +74,16 @@ return [
         'icon' => 'Emoji o simbolo breve opzionale sopra il titolo.',
         'youtube_url' => 'Incolla un URL YouTube (watch, share o embed).',
         'section_width' => 'Bleed occupa tutta la larghezza; contained mantiene il contenuto centrato.',
+        'background_color' => 'Usato quando il colore sfondo è impostato su Personalizzato.',
+        'background_image' => 'Carica un\'immagine ampia per hero full-bleed.',
+        'content_image' => 'Carica una foto o illustrazione per questa sezione.',
     ],
 
     'tones' => [
         'brand' => 'Colore brand',
         'dark' => 'Scuro',
         'light' => 'Chiaro',
+        'custom' => 'Personalizzato',
     ],
 
     'background_styles' => [
@@ -135,8 +144,16 @@ return [
     ],
 
     'footer' => [
-        'logo_url' => 'URL logo',
+        'logo' => 'Logo footer',
+        'logo_help' => 'Carica un logo chiaro per footer landing su sfondo scuro.',
         'brand_name' => 'Nome brand',
+        'brand_name_help' => 'Mostrato quando non è caricato un logo.',
+        'organizer' => 'Organizzatore',
+        'organizer_help' => 'Recupera i dati di contatto dall\'organizzatore selezionato. Sulle pagine evento, se vuoto, usa l\'organizzatore dell\'evento corrente.',
+        'organizer_legal' => 'Riga legale / P.IVA',
+        'menu_placement' => 'Menu footer',
+        'menu_placement_help' => 'Gestisci le colonne in Admin → Menu con posizione "Colonne footer landing". Ogni gruppo di primo livello diventa una colonna.',
+        'default_menu' => 'Colonne footer landing',
         'organizer_line_1' => 'Riga contatto 1',
         'organizer_line_2' => 'Riga contatto 2',
         'organizer_email' => 'Email contatto',
@@ -151,6 +168,24 @@ return [
         'copyright_highlight_help' => 'Mostrato nel colore accent (es. nome partner).',
         'copyright_links' => 'Link inline nel copyright',
         'link_highlight' => 'Colore accent',
+    ],
+
+    'link' => [
+        'type' => 'Tipo link',
+    ],
+
+    'contact' => [
+        'intro' => 'Testo introduttivo',
+        'highlight_phrase' => 'Frase evidenziata',
+        'display_style' => 'Azione principale',
+        'display_email' => 'Email grande',
+        'display_button' => 'Pulsante',
+        'email' => 'Indirizzo email',
+        'link_type' => 'Tipo link',
+        'link_url' => 'URL',
+        'link_email' => 'Email',
+        'link_target' => 'Destinazione link',
+        'link_target_help' => 'URL completo o indirizzo email a seconda del tipo di link.',
     ],
 
     'layouts' => [

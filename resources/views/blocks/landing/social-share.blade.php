@@ -1,19 +1,15 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Vpress\Support\LandingBlockContent;
 
-    $tone = (string) ($config['background_tone'] ?? 'light');
-    $sectionClass = match ($tone) {
-        'dark' => 'bg-vp-text-1 text-white',
-        'brand' => 'bg-vp-brand-1 text-white',
-        default => 'border border-vp-divider bg-vp-bg-alt text-vp-text-1',
-    };
-    $align = LandingBlockSupport::textAlignClass((string) ($config['text_align'] ?? 'center'));
+    $section = LandingBlockContent::section($config, ['section_width' => 'contained'], 'light');
     $heading = $config['heading'] ?? __('vpress::landing.social.default_heading');
-    $shell = LandingBlockSupport::sectionShellClass($config, ['section_width' => 'contained']);
 @endphp
 
-<section class="vp-landing-social-share {{ $shell }} rounded-2xl {{ $sectionClass }}">
-    <div class="mx-auto flex max-w-4xl flex-col gap-4 px-6 py-8 md:px-10 {{ $align }}">
+<section
+    class="vp-landing-social-share {{ $section['shell'] }} {{ $section['corners'] }} {{ $section['appearance']['class'] }}"
+    @if ($section['appearance']['style'] !== '') style="{{ $section['appearance']['style'] }}" @endif
+>
+    <div class="mx-auto flex max-w-4xl flex-col gap-4 px-6 py-8 md:px-10 {{ $section['align'] }}">
         @if (filled($heading))
             <h2 class="text-sm font-bold uppercase tracking-[0.2em] opacity-80">{{ $heading }}</h2>
         @endif

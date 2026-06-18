@@ -7,6 +7,7 @@ namespace Voodflow\Vpress\Support;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingBannerCtaBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingFaqBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingFeatureGridBlock;
+use Voodflow\Vpress\Filament\RichContent\Landing\LandingContactCtaBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingFooterBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingHeroBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingLogoRowBlock;
@@ -34,6 +35,7 @@ final class VpressLandingBlocks
             LandingTextSectionBlock::class,
             LandingVideoBlock::class,
             LandingSocialShareBlock::class,
+            LandingContactCtaBlock::class,
             LandingFooterBlock::class,
         ];
     }

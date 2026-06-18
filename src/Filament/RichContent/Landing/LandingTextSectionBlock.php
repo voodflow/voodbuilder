@@ -52,6 +52,7 @@ class LandingTextSectionBlock extends RichContentCustomBlock
                     'narrow' => __('vpress::landing.content_width.narrow'),
                 ])
                 ->default('wide'),
+            ...LandingBlockForm::backgroundToneFields('light'),
             ...LandingBlockForm::sectionLayoutFields(),
         ]);
     }

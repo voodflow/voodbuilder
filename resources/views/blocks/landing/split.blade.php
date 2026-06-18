@@ -1,16 +1,20 @@
 @php
+    use Voodflow\Vpress\Support\LandingBlockContent;
     use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Vpress\Support\ResolvableLinkSupport;
 
     $imageLeft = ($config['image_position'] ?? 'left') === 'left';
-    $shell = LandingBlockSupport::sectionShellClass($config);
+    $section = LandingBlockContent::section($config);
+    $imageUrl = LandingBlockContent::imageUrl($config);
+    $buttonUrl = ResolvableLinkSupport::resolve($config, 'button', 'button_url');
 @endphp
 
-<section class="vp-landing-split {{ $shell }}">
+<section class="vp-landing-split {{ $section['shell'] }}">
     <div class="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 md:items-center">
         @if ($imageLeft)
             <div class="min-h-64 overflow-hidden rounded-2xl bg-vp-bg-alt">
-                @if (! empty($config['image_url']))
-                    <img src="{{ $config['image_url'] }}" alt="" class="h-full min-h-64 w-full object-cover" loading="lazy">
+                @if (filled($imageUrl))
+                    <img src="{{ $imageUrl }}" alt="" class="h-full min-h-64 w-full object-cover" loading="lazy">
                 @endif
             </div>
         @endif
@@ -25,19 +29,22 @@
             @if (! empty($config['body']))
                 <div class="text-base leading-relaxed text-vp-text-2">{!! nl2br(e($config['body'])) !!}</div>
             @endif
-            @if (! empty($config['button_url']))
+            @if (filled($buttonUrl))
                 <div>
-                    <a href="{{ $config['button_url'] }}" class="inline-flex rounded-lg bg-vp-brand-1 px-6 py-3 text-sm font-semibold text-white hover:opacity-90">
-                        {{ $config['button_label'] ?? __('vpress::landing.learn_more') }}
-                    </a>
+                    @include('vpress::blocks.landing.partials.button', [
+                        'label' => $config['button_label'] ?? __('vpress::landing.learn_more'),
+                        'url' => $buttonUrl,
+                        'class' => 'bg-vp-brand-1 text-white hover:opacity-90',
+                        'open_in_new_tab' => ResolvableLinkSupport::opensInNewTab($config, 'button'),
+                    ])
                 </div>
             @endif
         </div>
 
         @if (! $imageLeft)
             <div class="min-h-64 overflow-hidden rounded-2xl bg-vp-bg-alt">
-                @if (! empty($config['image_url']))
-                    <img src="{{ $config['image_url'] }}" alt="" class="h-full min-h-64 w-full object-cover" loading="lazy">
+                @if (filled($imageUrl))
+                    <img src="{{ $imageUrl }}" alt="" class="h-full min-h-64 w-full object-cover" loading="lazy">
                 @endif
             </div>
         @endif
