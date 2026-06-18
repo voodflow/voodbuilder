@@ -4,6 +4,30 @@
 
 @extends($page->layoutView())
 
+@if ($grapesJsEditor ?? false)
+    @push('head')
+        @vite([
+            config('vpress.grapesjs.vite'),
+            'packages/voodflow/vpress/resources/css/grapesjs/editor.css',
+        ])
+    @endpush
+
+    @push('scripts-before-livewire')
+        <style>
+            .vpress-grapesjs-mode .vpress-landing-shell,
+            .vpress-grapesjs-mode .vpress-events-shell {
+                max-width: none;
+                padding: 0;
+            }
+
+            .vpress-grapesjs-mode .VPRichPage--landing {
+                width: 100%;
+                max-width: none;
+            }
+        </style>
+    @endpush
+@endif
+
 @section($page->contentSection())
     @if ($page->isSectionArticle() && ($sectionHome ?? null))
         <nav class="vpress-section-breadcrumb" aria-label="{{ __('Breadcrumb') }}">
@@ -23,7 +47,11 @@
         </header>
     @endif
 
-    <div @class(['VPRichPage', 'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events'])>
+    <div @class([
+        'VPRichPage',
+        'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events',
+        'vpress-grapesjs-mode' => $grapesJsEditor ?? false,
+    ])>
         @if ($grapesJsEditor ?? false)
             @include('vpress::partials.grapesjs-frontend-editor', [
                 'grapesJsConfig' => $grapesJsConfig,

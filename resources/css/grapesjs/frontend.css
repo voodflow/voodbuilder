@@ -34,7 +34,12 @@
     gap: 0.75rem;
 }
 
-.vpress-grapesjs-frontend__status {
+.vpress-grapesjs-frontend__status[hidden] {
+    display: none;
+}
+
+.vpress-grapesjs-frontend__status:not([hidden]) {
+    display: inline;
     font-size: 0.875rem;
     color: #059669;
 }

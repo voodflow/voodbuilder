@@ -14,6 +14,7 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init({
         container,
         height: options.height ?? '640px',
+        width: options.width ?? 'auto',
         fromElement: false,
         storageManager: false,
         noticeOnUnload: options.noticeOnUnload ?? false,
@@ -75,68 +76,96 @@ export function initVpressGrapesJs(container, options = {}) {
     return editor;
 }
 
-document.addEventListener('alpine:init', () => {
-    Alpine.data('vpressGrapesJsFrontendEditor', (config) => ({
-        editor: null,
-        saving: false,
-        saved: false,
+function readConfig() {
+    const configNode = document.querySelector('[data-vpress-grapesjs-config]');
 
-        init() {
-            this.$nextTick(() => {
-                const host = this.$refs.editor;
+    if (! configNode) {
+        return null;
+    }
 
-                if (! host) {
-                    return;
-                }
+    try {
+        return JSON.parse(configNode.textContent ?? '');
+    } catch (error) {
+        console.error('Vpress GrapesJS: invalid config JSON.', error);
 
-                this.editor = initVpressGrapesJs(host, {
-                    height: 'calc(100vh - 3.5rem)',
-                    noticeOnUnload: true,
-                    initial: config.initial ?? {},
-                    blocks: config.blocks ?? [],
-                    canvasStyles: config.canvasStyles ?? [],
-                    uploadUrl: config.uploadUrl,
-                });
+        return null;
+    }
+}
+
+function mountFrontendEditor() {
+    const root = document.querySelector('[data-vpress-grapesjs-root]');
+    const canvas = document.querySelector('[data-vpress-grapesjs-canvas]');
+    const saveButton = document.querySelector('[data-vpress-grapesjs-save]');
+    const savedIndicator = document.querySelector('[data-vpress-grapesjs-saved]');
+    const saveLabel = document.querySelector('[data-vpress-grapesjs-save-label]');
+    const config = readConfig();
+
+    if (! root || ! canvas || ! config) {
+        return;
+    }
+
+    const editor = initVpressGrapesJs(canvas, {
+        height: 'calc(100vh - 3.5rem)',
+        noticeOnUnload: true,
+        initial: config.initial ?? {},
+        blocks: config.blocks ?? [],
+        canvasStyles: config.canvasStyles ?? [],
+        uploadUrl: config.uploadUrl,
+    });
+
+    if (! saveButton) {
+        return;
+    }
+
+    saveButton.addEventListener('click', async () => {
+        saveButton.disabled = true;
+
+        if (saveLabel) {
+            saveLabel.textContent = config.labels?.saving ?? 'Saving…';
+        }
+
+        if (savedIndicator) {
+            savedIndicator.hidden = true;
+        }
+
+        try {
+            const response = await fetch(config.saveUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': config.csrf,
+                },
+                body: JSON.stringify(buildPayload(editor)),
             });
-        },
 
-        async save() {
-            if (! this.editor) {
-                return;
+            if (! response.ok) {
+                throw new Error('Save failed');
             }
 
-            this.saving = true;
-            this.saved = false;
+            if (savedIndicator) {
+                savedIndicator.hidden = false;
+            }
 
-            try {
-                const response = await fetch(config.saveUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': config.csrf,
-                    },
-                    body: JSON.stringify(buildPayload(this.editor)),
-                });
-
-                if (! response.ok) {
-                    throw new Error('Save failed');
+            window.setTimeout(() => {
+                if (savedIndicator) {
+                    savedIndicator.hidden = true;
                 }
+            }, 2500);
+        } catch (error) {
+            window.alert(config.labels?.error ?? 'Could not save the page.');
+        } finally {
+            saveButton.disabled = false;
 
-                this.saved = true;
-
-                window.setTimeout(() => {
-                    this.saved = false;
-                }, 2500);
-            } catch (error) {
-                window.alert(config.labels?.error ?? 'Could not save the page.');
-            } finally {
-                this.saving = false;
+            if (saveLabel) {
+                saveLabel.textContent = config.labels?.save ?? 'Save';
             }
-        },
+        }
+    });
+}
 
-        destroy() {
-            this.editor?.destroy();
-        },
-    }));
-});
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountFrontendEditor);
+} else {
+    mountFrontendEditor();
+}
