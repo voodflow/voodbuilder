@@ -10,7 +10,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\LivewireField;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -25,11 +25,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\CreateSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
-use Voodflow\Vpress\Livewire\GrapesJsPageBuilder;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePageSection;
@@ -85,7 +85,7 @@ class SitePageResource extends Resource
 
                                 Select::make('builder')
                                     ->label(__('vpress::pro.fields.builder'))
-                                    ->options(PageBuilder::class)
+                                    ->options(PageBuilder::options())
                                     ->default(PageBuilder::RichEditor)
                                     ->native(false)
                                     ->live()
@@ -100,13 +100,26 @@ class SitePageResource extends Resource
                                         ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
                                         ['customBlocks'],
                                     ])
-                                    ->visible(fn (Get $get): bool => ($get('builder') ?? PageBuilder::RichEditor->value) === PageBuilder::RichEditor->value)
+                                    ->visible(fn (Get $get): bool => PageBuilder::matches($get('builder'), PageBuilder::RichEditor))
                                     ->columnSpanFull(),
 
-                                LivewireField::make('builder_payload')
-                                    ->component(GrapesJsPageBuilder::class)
-                                    ->visible(fn (Get $get): bool => ($get('builder') ?? PageBuilder::RichEditor->value) === PageBuilder::GrapesJs->value)
-                                    ->helperText(__('vpress::pro.helpers.grapesjs_assets'))
+                                Placeholder::make('grapesjs_frontend_hint')
+                                    ->label(__('vpress::pro.fields.grapesjs_edit'))
+                                    ->content(function (?SitePage $record): HtmlString {
+                                        if ($record === null) {
+                                            return new HtmlString(e(__('vpress::pro.helpers.grapesjs_save_first')));
+                                        }
+
+                                        $url = $record->getUrl();
+
+                                        return new HtmlString(
+                                            __('vpress::pro.helpers.grapesjs_frontend', ['url' => $url])
+                                            .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
+                                            .e(__('vpress::pro.actions.open_visual_editor'))
+                                            .'</a>'
+                                        );
+                                    })
+                                    ->visible(fn (Get $get): bool => PageBuilder::matches($get('builder'), PageBuilder::GrapesJs))
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),

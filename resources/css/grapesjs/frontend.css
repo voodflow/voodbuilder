@@ -1,0 +1,71 @@
+.vpress-grapesjs-frontend {
+    position: relative;
+    width: 100%;
+}
+
+.vpress-grapesjs-frontend__toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--color-vp-divider, #e5e7eb);
+    background: color-mix(in srgb, var(--color-vp-bg, #fff) 95%, transparent);
+    backdrop-filter: blur(8px);
+}
+
+.vpress-grapesjs-frontend__toolbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: var(--width-vp-layout, 72rem);
+    margin-inline: auto;
+    padding: 0.75rem 1rem;
+}
+
+.vpress-grapesjs-frontend__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-vp-text-1, #3c3c43);
+}
+
+.vpress-grapesjs-frontend__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.vpress-grapesjs-frontend__status {
+    font-size: 0.875rem;
+    color: #059669;
+}
+
+.vpress-grapesjs-frontend__button {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.15s ease;
+}
+
+.vpress-grapesjs-frontend__button--primary {
+    background: var(--color-vp-brand, #3451b2);
+    color: #fff;
+}
+
+.vpress-grapesjs-frontend__button--primary:hover {
+    opacity: 0.9;
+}
+
+.vpress-grapesjs-frontend__button--primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.vpress-grapesjs-frontend__canvas {
+    min-height: calc(100vh - 3.5rem);
+    width: 100%;
+}
+
+.vpress-grapesjs-frontend__canvas .gjs-editor {
+    border: 0;
+}

@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\SitePageViewData;
 
 class HomeController extends Controller
 {
@@ -16,14 +17,10 @@ class HomeController extends Controller
     {
         $page = SitePage::homePage();
 
-        if ($page && filled($page->content)) {
+        if ($page && ($page->usesGrapesJsBuilder() || filled($page->content))) {
             seo()->for($page);
 
-            return view('vpress::pages.site-page', [
-                'page' => $page,
-                'vpressSubTheme' => $page->resolvedSubTheme(),
-                'hideSiteFooter' => $page->shouldHideSiteFooter(),
-            ]);
+            return view('vpress::pages.site-page', SitePageViewData::make($page));
         }
 
         $fallbackTitle = config('vpress.home.fallback_seo.title')

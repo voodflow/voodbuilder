@@ -10,10 +10,24 @@ return [
 
     'fields' => [
         'builder' => 'Content builder',
+        'grapesjs_edit' => 'Visual editing',
+    ],
+
+    'actions' => [
+        'open_visual_editor' => 'Open visual editor',
     ],
 
     'helpers' => [
-        'builder' => 'Rich editor keeps TipTap blocks and docs-style content. GrapesJS is a drag-and-drop canvas inside the same vpress shell, menus, and sub-themes.',
-        'grapesjs_assets' => 'Install GrapesJS in the host app: npm install -D grapesjs grapesjs-blocks-basic, then add the vpress GrapesJS Vite entry and run npm run build.',
+        'builder' => 'Rich editor keeps TipTap blocks and docs-style content. GrapesJS opens a drag-and-drop editor on the public page when you are logged in as admin.',
+        'grapesjs_save_first' => 'Save the page first, then open it on the site to edit visually.',
+        'grapesjs_frontend' => 'Content is edited on the public page while logged in as admin. Open: ',
+    ],
+
+    'frontend' => [
+        'toolbar_title' => 'GrapesJS page editor',
+        'save' => 'Save',
+        'saving' => 'Saving…',
+        'saved' => 'Saved',
+        'error' => 'Could not save the page. Try again.',
     ],
 ];

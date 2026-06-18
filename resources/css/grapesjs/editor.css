@@ -1,4 +1,5 @@
 @import 'grapesjs/dist/css/grapes.min.css';
+@import './frontend.css';
 
 .vpress-grapesjs-field .gjs-one-bg {
     background-color: var(--gray-50, #f9fafb);

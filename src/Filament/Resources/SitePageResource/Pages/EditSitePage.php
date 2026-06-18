@@ -18,6 +18,13 @@ class EditSitePage extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('openVisualEditor')
+                ->label(__('vpress::pro.actions.open_visual_editor'))
+                ->icon('heroicon-o-paint-brush')
+                ->color('primary')
+                ->url(fn (): string => $this->record->getUrl())
+                ->openUrlInNewTab()
+                ->visible(fn (): bool => $this->record->usesGrapesJsBuilder()),
             Action::make('loadDefaultHome')
                 ->label(__('Load default home'))
                 ->icon('heroicon-o-sparkles')

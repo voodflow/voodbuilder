@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress;
 
-use Filament\Support\Facades\FilamentView;
-use Filament\View\PanelsRenderHook;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +20,9 @@ use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Controllers\GrapesJsAssetController;
+use Voodflow\Vpress\Http\Controllers\GrapesJsPageController;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
-use Voodflow\Vpress\Livewire\GrapesJsPageBuilder;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
@@ -82,11 +80,9 @@ class VpressServiceProvider extends PackageServiceProvider
 
         Livewire::component('vpress.site-notification-bell', SiteNotificationBell::class);
         Livewire::component('vpress.account-settings', AccountSettings::class);
-        Livewire::component('vpress.grapesjs-page-builder', GrapesJsPageBuilder::class);
 
         if (config('vpress.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
-            $this->registerGrapesJsFilamentAssets();
             DefaultGrapesJsBlocks::register($this->app->make(GrapesJsBlockRegistry::class));
         }
 
@@ -119,20 +115,7 @@ class VpressServiceProvider extends PackageServiceProvider
             ->name('vpress.grapesjs.')
             ->group(function (): void {
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
+                Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
             });
-    }
-
-    protected function registerGrapesJsFilamentAssets(): void
-    {
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::BODY_END,
-            function (): ?string {
-                if (! request()->routeIs('filament.*.resources.vpress.pages.*')) {
-                    return null;
-                }
-
-                return view('vpress::filament.hooks.grapesjs-assets')->render();
-            },
-        );
     }
 }

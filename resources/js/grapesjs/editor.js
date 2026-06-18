@@ -13,10 +13,10 @@ function buildPayload(editor) {
 export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init({
         container,
-        height: '640px',
+        height: options.height ?? '640px',
         fromElement: false,
         storageManager: false,
-        noticeOnUnload: false,
+        noticeOnUnload: options.noticeOnUnload ?? false,
         plugins: [grapesjsBlocksBasic],
         pluginsOpts: {
             [grapesjsBlocksBasic]: {
@@ -26,15 +26,18 @@ export function initVpressGrapesJs(container, options = {}) {
         canvas: {
             styles: options.canvasStyles ?? [],
         },
-        assetManager: {
-            upload: options.uploadUrl,
-            uploadName: 'file',
-            multiUpload: false,
-            autoAdd: true,
-        },
+        assetManager: options.uploadUrl
+            ? {
+                  upload: options.uploadUrl,
+                  uploadName: 'file',
+                  multiUpload: false,
+                  autoAdd: true,
+              }
+            : false,
         blockManager: {
-            appendTo: undefined,
+            appendTo: options.blocksAppendTo ?? undefined,
         },
+        panels: options.panels ?? undefined,
     });
 
     for (const block of options.blocks ?? []) {
@@ -60,23 +63,23 @@ export function initVpressGrapesJs(container, options = {}) {
         }
     }
 
-    const notify = () => {
-        if (typeof options.onUpdate === 'function') {
-            options.onUpdate(buildPayload(editor));
-        }
-    };
+    if (typeof options.onUpdate === 'function') {
+        const notify = () => options.onUpdate(buildPayload(editor));
 
-    editor.on('update', notify);
-    editor.on('component:add', notify);
-    editor.on('component:remove', notify);
-    editor.on('style:change', notify);
+        editor.on('update', notify);
+        editor.on('component:add', notify);
+        editor.on('component:remove', notify);
+        editor.on('style:change', notify);
+    }
 
     return editor;
 }
 
 document.addEventListener('alpine:init', () => {
-    Alpine.data('vpressGrapesJsBuilder', (config) => ({
+    Alpine.data('vpressGrapesJsFrontendEditor', (config) => ({
         editor: null,
+        saving: false,
+        saved: false,
 
         init() {
             this.$nextTick(() => {
@@ -87,15 +90,48 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 this.editor = initVpressGrapesJs(host, {
-                    ...config,
-                    onUpdate: (payload) => this.syncToLivewire(payload),
+                    height: 'calc(100vh - 3.5rem)',
+                    noticeOnUnload: true,
+                    initial: config.initial ?? {},
+                    blocks: config.blocks ?? [],
+                    canvasStyles: config.canvasStyles ?? [],
+                    uploadUrl: config.uploadUrl,
                 });
             });
         },
 
-        syncToLivewire(payload) {
-            if (this.$wire) {
-                this.$wire.set('builder_payload', payload, false);
+        async save() {
+            if (! this.editor) {
+                return;
+            }
+
+            this.saving = true;
+            this.saved = false;
+
+            try {
+                const response = await fetch(config.saveUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': config.csrf,
+                    },
+                    body: JSON.stringify(buildPayload(this.editor)),
+                });
+
+                if (! response.ok) {
+                    throw new Error('Save failed');
+                }
+
+                this.saved = true;
+
+                window.setTimeout(() => {
+                    this.saved = false;
+                }, 2500);
+            } catch (error) {
+                window.alert(config.labels?.error ?? 'Could not save the page.');
+            } finally {
+                this.saving = false;
             }
         },
 

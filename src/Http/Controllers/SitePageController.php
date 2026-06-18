@@ -7,24 +7,25 @@ namespace Voodflow\Vpress\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Routing\Controller;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\AdminAccess;
+use Voodflow\Vpress\Support\SitePageViewData;
 
 class SitePageController extends Controller
 {
     public function show(string $slug): View
     {
         $page = SitePage::query()
-            ->published()
             ->where('slug', $slug)
             ->where('is_home', false)
+            ->when(
+                ! AdminAccess::userCanAccessPanel(),
+                fn ($query) => $query->published(),
+            )
             ->firstOrFail();
 
         seo()->for($page);
 
-        $data = [
-            'page' => $page,
-            'vpressSubTheme' => $page->resolvedSubTheme(),
-            'hideSiteFooter' => $page->shouldHideSiteFooter(),
-        ];
+        $data = SitePageViewData::make($page);
 
         if (filled($page->section)) {
             $data['sectionHome'] = SitePage::sectionHomePage($page->section);

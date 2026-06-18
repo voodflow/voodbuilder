@@ -24,10 +24,16 @@
     @endif
 
     <div @class(['VPRichPage', 'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events'])>
-        @if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
-            <style>{!! $page->renderedStyles() !!}</style>
-        @endif
+        @if ($grapesJsEditor ?? false)
+            @include('vpress::partials.grapesjs-frontend-editor', [
+                'grapesJsConfig' => $grapesJsConfig,
+            ])
+        @else
+            @if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
+                <style>{!! $page->renderedStyles() !!}</style>
+            @endif
 
-        {!! $page->renderedContent() !!}
+            {!! $page->renderedContent() !!}
+        @endif
     </div>
 @endsection
