@@ -65,8 +65,9 @@ class MakeSubThemeCommand extends Command
         $cssRelative = ThemeConvention::appCssRelativePath($id);
         $definition = [
             'label' => $label,
-            'description' => "Custom {$label} marketing sub-theme.",
+            'description' => "Custom {$label} landing theme.",
             'type' => 'marketing',
+            'capabilities' => ['landing'],
             'layouts' => [
                 'home' => ThemeConvention::appLayoutView($id, 'home'),
                 'landing' => ThemeConvention::appLayoutView($id, 'landing'),
@@ -91,7 +92,7 @@ class MakeSubThemeCommand extends Command
         $this->components->info("Sub-theme \"{$id}\" created.");
         $this->line("  CSS:     {$cssPath}");
         $this->line("  Layouts: {$viewsRoot}/");
-        $this->line('Assign it in Admin → Settings (marketing default) or per page in Pages.');
+        $this->line('Assign it in Admin → Settings → Theme, or per page in Pages.');
 
         return self::SUCCESS;
     }

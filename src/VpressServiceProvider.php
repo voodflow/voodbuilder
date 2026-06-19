@@ -16,6 +16,7 @@ use Voodflow\Vpress\Console\BuildTailblocksCommand;
 use Voodflow\Vpress\Console\InstallCommand;
 use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Console\SeedSoundmitGrapesLandingCommand;
+use Voodflow\Vpress\Console\ThemePresetCommand;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
@@ -57,7 +58,8 @@ class VpressServiceProvider extends PackageServiceProvider
             ->hasCommand(InstallCommand::class)
             ->hasCommand(MakeSubThemeCommand::class)
             ->hasCommand(BuildTailblocksCommand::class)
-            ->hasCommand(SeedSoundmitGrapesLandingCommand::class);
+            ->hasCommand(SeedSoundmitGrapesLandingCommand::class)
+            ->hasCommand(ThemePresetCommand::class);
     }
 
     public function packageRegistered(): void

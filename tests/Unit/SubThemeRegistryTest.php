@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Tests\Unit;
 
+use Voodflow\Vpress\Enums\SubThemeCapability;
 use Voodflow\Vpress\Enums\SubThemeType;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Tests\TestCase;
@@ -18,6 +19,7 @@ class SubThemeRegistryTest extends TestCase
         $this->assertTrue($registry->exists('blog'));
         $this->assertTrue($registry->exists('news'));
         $this->assertSame('Blog', $registry->label('blog'));
+        $this->assertSame('Showcase', $registry->label('events'));
     }
 
     public function test_it_returns_layout_overrides_for_builtin_themes(): void
@@ -30,6 +32,15 @@ class SubThemeRegistryTest extends TestCase
         );
 
         $this->assertNull($registry->layout('default', 'page'));
+    }
+
+    public function test_it_exposes_theme_capabilities(): void
+    {
+        $registry = app(SubThemeRegistry::class);
+
+        $this->assertTrue($registry->supportsCapability('default', SubThemeCapability::Doc));
+        $this->assertTrue($registry->supportsCapability('events', SubThemeCapability::Landing));
+        $this->assertFalse($registry->supportsCapability('default', SubThemeCapability::Landing));
     }
 
     public function test_it_groups_sub_themes_by_type(): void
@@ -51,13 +62,13 @@ class SubThemeRegistryTest extends TestCase
 
         $registry->register('magazine', [
             'label' => 'Magazine',
-            'type' => 'marketing',
+            'capabilities' => ['landing'],
             'layouts' => [
                 'page' => 'vpress.themes.magazine.layouts.page',
             ],
         ]);
 
         $this->assertTrue($registry->exists('magazine'));
-        $this->assertSame('Magazine', $registry->marketingOptions()['magazine']);
+        $this->assertSame('Magazine', $registry->optionsForCapability(SubThemeCapability::Landing)['magazine']);
     }
 }

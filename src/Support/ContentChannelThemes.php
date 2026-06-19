@@ -62,9 +62,15 @@ final class ContentChannelThemes
                 continue;
             }
 
-            if ($registry->exists($theme)) {
-                $normalized[$channelId] = $theme;
+            if (! $registry->exists($theme)) {
+                continue;
             }
+
+            if (! ThemeBindings::isValidChannelBinding($channelId, $theme)) {
+                continue;
+            }
+
+            $normalized[$channelId] = $theme;
         }
 
         return $normalized;
@@ -73,16 +79,20 @@ final class ContentChannelThemes
     /**
      * @return array<string, string>
      */
-    public static function selectOptions(): array
+    public static function selectOptions(?string $channelId = null): array
     {
+        if ($channelId !== null) {
+            return ThemeBindings::selectOptionsForChannel($channelId);
+        }
+
         return [
-            '' => __('vpress::content_channels.inherit_package'),
-            ...app(SubThemeRegistry::class)->contentOptions(),
+            '' => __('vpress::theme_bindings.inherit_default'),
+            ...app(SubThemeRegistry::class)->options(),
         ];
     }
 
     public static function marketingSelectOptions(?string $includeId = null): array
     {
-        return app(SubThemeRegistry::class)->marketingOptions($includeId);
+        return ThemeBindings::sitePagesSelectOptions($includeId);
     }
 }

@@ -9,6 +9,7 @@ use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\ContentChannelThemes;
+use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Tests\TestCase;
 
 class ContentChannelThemesTest extends TestCase
@@ -16,6 +17,14 @@ class ContentChannelThemesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        app(SubThemeRegistry::class)->register('showcase-alt', [
+            'label' => 'Showcase alt',
+            'capabilities' => ['landing'],
+            'layouts' => [
+                'landing' => 'vpress::themes.events.layouts.landing',
+            ],
+        ]);
 
         app(ContentChannelRegistry::class)->register(new class implements PublicContentChannel
         {
@@ -59,7 +68,7 @@ class ContentChannelThemesTest extends TestCase
         VpressSettings::query()->create([
             'data' => array_merge(VpressSettings::defaults(), [
                 'content_channel_sub_themes' => [
-                    'events' => 'news',
+                    'events' => 'showcase-alt',
                 ],
             ]),
         ]);
@@ -68,7 +77,7 @@ class ContentChannelThemesTest extends TestCase
         $channel = app(ContentChannelRegistry::class)->get('events');
 
         $this->assertNotNull($channel);
-        $this->assertSame('news', ContentChannelThemes::resolveForChannel($channel));
+        $this->assertSame('showcase-alt', ContentChannelThemes::resolveForChannel($channel));
     }
 
     public function test_invalid_override_is_ignored(): void
@@ -88,14 +97,35 @@ class ContentChannelThemesTest extends TestCase
         $this->assertSame('events', ContentChannelThemes::resolveForChannel($channel));
     }
 
+    public function test_incompatible_override_is_ignored(): void
+    {
+        VpressSettings::query()->create([
+            'data' => array_merge(VpressSettings::defaults(), [
+                'content_channel_sub_themes' => [
+                    'events' => 'news',
+                ],
+            ]),
+        ]);
+        VpressSettings::clearCache();
+
+        $channel = app(ContentChannelRegistry::class)->get('events');
+
+        $this->assertNotNull($channel);
+        $this->assertSame('events', ContentChannelThemes::resolveForChannel($channel));
+    }
+
     public function test_normalize_overrides_strips_empty_and_invalid_values(): void
     {
         $normalized = ContentChannelThemes::normalizeOverrides([
-            'events' => 'news',
+            'events' => 'showcase-alt',
             'broken' => 'nope',
             'pages' => '',
+            'docs' => 'news',
         ]);
 
-        $this->assertSame(['events' => 'news'], $normalized);
+        $this->assertSame([
+            'events' => 'showcase-alt',
+            'docs' => 'news',
+        ], $normalized);
     }
 }

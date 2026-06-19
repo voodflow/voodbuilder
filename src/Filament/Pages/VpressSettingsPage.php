@@ -26,12 +26,17 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
-use Voodflow\Vpress\Enums\SubThemeType;
+use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\ThemeBindings;
+use Voodflow\Vpress\Support\ThemePresetManager;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
@@ -80,6 +85,7 @@ class VpressSettingsPage extends Page
             $this->beginDatabaseTransaction();
 
             $data = $this->form->getState();
+            $data['active_theme_preset_id'] = null;
 
             VpressSettings::saveData($data);
 
@@ -226,35 +232,41 @@ class VpressSettingsPage extends Page
                                 Placeholder::make('theme_scope_info')
                                     ->hiddenLabel()
                                     ->content(new HtmlString(__('vpress::settings.theme_scope_info'))),
-                                Section::make(__('vpress::settings.theme_default_section'))
-                                    ->description(__('vpress::settings.theme_marketing_default_help'))
+                                Section::make(__('vpress::theme_bindings.section_title'))
+                                    ->description(__('vpress::theme_bindings.section_help'))
                                     ->schema([
                                         Select::make('sub_theme')
-                                            ->label(__('vpress::admin.fields.sub_theme'))
-                                            ->options(fn (): array => ContentChannelThemes::marketingSelectOptions(
+                                            ->label(__('vpress::theme_bindings.site_pages'))
+                                            ->options(fn (): array => ThemeBindings::sitePagesSelectOptions(
                                                 VpressSettings::get('sub_theme'),
                                             ))
                                             ->default('events')
                                             ->native(false)
-                                            ->helperText(__('vpress::admin.helpers.sub_theme_site')),
+                                            ->helperText(__('vpress::theme_bindings.site_pages_help')),
+                                        ...$this->channelBindingFields(),
+                                    ]),
+                                Section::make(__('vpress::theme_presets.section_title'))
+                                    ->description(__('vpress::theme_presets.section_help'))
+                                    ->schema([
+                                        Placeholder::make('active_theme_preset')
+                                            ->label(__('vpress::theme_presets.active'))
+                                            ->content(fn (): string => filled(VpressSettings::get('active_theme_preset_id'))
+                                                ? (ThemePresetManager::find((string) VpressSettings::get('active_theme_preset_id'))?->label
+                                                    ?? (string) VpressSettings::get('active_theme_preset_id'))
+                                                : __('vpress::theme_presets.none')),
+                                        Placeholder::make('bundled_theme_presets')
+                                            ->label(__('vpress::theme_presets.bundled'))
+                                            ->content(fn (): string => ThemePresetManager::bundled()
+                                                ->map(fn ($preset): string => $preset->label.($preset->description ? " — {$preset->description}" : ''))
+                                                ->join("\n") ?: '—'),
                                     ]),
                                 Section::make(__('vpress::settings.theme_colors_section'))
                                     ->description(__('vpress::settings.theme_colors_help'))
                                     ->schema([
-                                        Section::make(__('vpress::settings.theme_colors_content'))
-                                            ->schema([
-                                                Tabs::make('ContentSubThemeColors')
-                                                    ->tabs($this->subThemeColorTabs(SubThemeType::Content))
-                                                    ->contained(false),
-                                            ])
-                                            ->visible(fn (): bool => $this->subThemeColorTabs(SubThemeType::Content) !== []),
-                                        Section::make(__('vpress::settings.theme_colors_marketing'))
-                                            ->schema([
-                                                Tabs::make('MarketingSubThemeColors')
-                                                    ->tabs($this->subThemeColorTabs(SubThemeType::Marketing))
-                                                    ->contained(false),
-                                            ])
-                                            ->visible(fn (): bool => $this->subThemeColorTabs(SubThemeType::Marketing) !== []),
+                                        Tabs::make('SubThemeColors')
+                                            ->tabs($this->subThemeColorTabs())
+                                            ->contained(false)
+                                            ->visible(fn (): bool => $this->subThemeColorTabs() !== []),
                                     ]),
                             ]),
                         Tab::make(__('vpress::settings.tabs.seo'))
@@ -369,15 +381,83 @@ class VpressSettingsPage extends Page
     }
 
     /**
+     * @return array<int, Component>
+     */
+    protected function channelBindingFields(): array
+    {
+        $channels = app(ContentChannelRegistry::class)->all();
+
+        if ($channels === []) {
+            return [
+                Placeholder::make('no_content_channels')
+                    ->hiddenLabel()
+                    ->content(new HtmlString(__('vpress::theme_bindings.no_channels'))),
+            ];
+        }
+
+        return collect($channels)
+            ->map(fn (PublicContentChannel $channel): Select => Select::make("content_channel_sub_themes.{$channel->id()}")
+                ->label($channel->label())
+                ->options(fn (): array => ThemeBindings::selectOptionsForChannel($channel->id()))
+                ->native(false)
+                ->helperText(__('vpress::theme_bindings.channel_help', [
+                    'capability' => ThemeBindings::requiredCapabilityForChannel($channel)->label(),
+                    'default' => ContentChannelThemes::configuredDefaultFor($channel->id())
+                        ? app(SubThemeRegistry::class)->label((string) ContentChannelThemes::configuredDefaultFor($channel->id()))
+                        : __('vpress::theme_bindings.no_package_default'),
+                ])))
+            ->all();
+    }
+
+    public function applyThemePreset(string $presetId): void
+    {
+        $preset = ThemePresetManager::find($presetId);
+
+        if ($preset === null) {
+            Notification::make()
+                ->title(__('vpress::theme_presets.not_found'))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $preset->apply();
+        $this->form->fill(VpressSettings::data());
+
+        Notification::make()
+            ->title(__('vpress::theme_presets.applied', ['label' => $preset->label]))
+            ->success()
+            ->send();
+    }
+
+    public function exportCurrentThemePreset(): StreamedResponse
+    {
+        $preset = ThemePresetManager::snapshotFromSettings(
+            'export-'.now()->format('Y-m-d-His'),
+            'Exported '.now()->toDateTimeString(),
+        );
+
+        $json = json_encode(ThemePresetManager::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        return response()->streamDownload(
+            static function () use ($json): void {
+                echo $json;
+            },
+            "{$preset->id}.json",
+            ['Content-Type' => 'application/json'],
+        );
+    }
+
+    /**
      * @return array<Tab>
      */
-    protected function subThemeColorTabs(?SubThemeType $type = null): array
+    protected function subThemeColorTabs(): array
     {
         $registry = app(SubThemeRegistry::class);
         $tabs = [];
-        $ids = $type === null ? $registry->ids() : $registry->idsByType($type);
 
-        foreach ($ids as $id) {
+        foreach ($registry->ids() as $id) {
             $description = $registry->description($id);
             $tabs[] = Tab::make($registry->label($id))
                 ->schema([
@@ -432,6 +512,70 @@ class VpressSettingsPage extends Page
             ->livewireSubmitHandler('save')
             ->footer([
                 Actions::make([
+                    Action::make('applyThemePreset')
+                        ->label(__('vpress::theme_presets.apply'))
+                        ->icon('heroicon-o-sparkles')
+                        ->schema([
+                            Select::make('preset_id')
+                                ->label(__('vpress::theme_presets.select'))
+                                ->options(fn (): array => ThemePresetManager::all()
+                                    ->mapWithKeys(fn ($preset): array => [$preset->id => $preset->label])
+                                    ->all())
+                                ->required()
+                                ->native(false),
+                        ])
+                        ->action(function (array $data): void {
+                            $this->applyThemePreset((string) $data['preset_id']);
+                        }),
+                    Action::make('exportThemePreset')
+                        ->label(__('vpress::theme_presets.export_current'))
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->action(fn (): StreamedResponse => $this->exportCurrentThemePreset()),
+                    Action::make('importThemePreset')
+                        ->label(__('vpress::theme_presets.import'))
+                        ->icon('heroicon-o-arrow-up-tray')
+                        ->schema([
+                            FileUpload::make('preset_file')
+                                ->label(__('vpress::theme_presets.file'))
+                                ->acceptedFileTypes(['application/json'])
+                                ->required(),
+                            Toggle::make('apply')
+                                ->label(__('vpress::theme_presets.import_apply'))
+                                ->default(true),
+                        ])
+                        ->action(function (array $data): void {
+                            $disk = config('vpress.uploads.disk', 'public');
+                            $relative = is_array($data['preset_file'] ?? null)
+                                ? ($data['preset_file'][0] ?? null)
+                                : ($data['preset_file'] ?? null);
+
+                            if (! is_string($relative) || ! Storage::disk($disk)->exists($relative)) {
+                                Notification::make()
+                                    ->title(__('vpress::theme_presets.import_failed'))
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            try {
+                                ThemePresetManager::importFromFile(
+                                    Storage::disk($disk)->path($relative),
+                                    apply: (bool) ($data['apply'] ?? true),
+                                );
+                                $this->form->fill(VpressSettings::data());
+
+                                Notification::make()
+                                    ->title(__('vpress::theme_presets.imported'))
+                                    ->success()
+                                    ->send();
+                            } catch (\Throwable) {
+                                Notification::make()
+                                    ->title(__('vpress::theme_presets.import_failed'))
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
                     Action::make('save')
                         ->label(__('Save settings'))
                         ->submit('save')

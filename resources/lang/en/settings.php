@@ -18,10 +18,10 @@ return [
         'analytics' => 'Analytics',
     ],
 
-    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Marketing vs content channels</strong><p class="mt-2"><strong>Marketing Site Pages</strong> (home, landing, CMS) use a <em>marketing</em> sub-theme — built with GrapesJS or the rich editor. <strong>Content channels</strong> (docs, tutorials, events, future blog plugin) use <em>content</em> sub-themes configured under Channel themes. Logo, SEO, cookies, and analytics apply everywhere.</p></div>',
+    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Visual themes</strong><p class="mt-2">A <em>theme</em> controls layout and styling (docs sidebar, blog article, landing pages). <strong>Theme bindings</strong> map each public area to a theme. Logo, SEO, cookies, and analytics stay global under Site and SEO tabs.</p></div>',
 
-    'theme_default_section' => 'Marketing default',
-    'theme_marketing_default_help' => 'Fallback sub-theme for Site Pages without a per-page override.',
+    'theme_default_section' => 'Site pages default',
+    'theme_marketing_default_help' => 'Fallback theme for Site Pages without a per-page override.',
     'theme_colors_section' => 'Brand colors',
     'theme_colors_content' => 'Content channel themes',
     'theme_colors_marketing' => 'Marketing themes',

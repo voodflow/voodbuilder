@@ -63,6 +63,8 @@ class VpressSettings extends Model
             'monitoring_body_code' => null,
             'sub_theme_colors' => [],
             'content_channel_sub_themes' => [],
+            'theme_presets' => [],
+            'active_theme_preset_id' => null,
         ];
     }
 

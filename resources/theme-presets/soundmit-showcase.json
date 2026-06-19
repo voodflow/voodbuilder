@@ -1,0 +1,15 @@
+{
+    "schema": "vpress-theme-preset/1",
+    "id": "soundmit-showcase",
+    "label": "Soundmit showcase",
+    "description": "Bold showcase theme for marketing pages, events, and exhibitor directories.",
+    "bundled": true,
+    "site_pages_theme": "events",
+    "channel_themes": {
+        "events": "events",
+        "exhibitors": "events",
+        "docs": "default",
+        "tutorials": "default"
+    },
+    "colors": {}
+}

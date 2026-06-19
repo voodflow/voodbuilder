@@ -33,6 +33,7 @@ use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\ThemeBindings;
 
 class SitePageResource extends Resource
 {
@@ -172,7 +173,7 @@ class SitePageResource extends Resource
                                     ->label(__('vpress::admin.fields.sub_theme'))
                                     ->options(fn (?SitePage $record): array => [
                                         '' => __('vpress::admin.fields.sub_theme_inherit'),
-                                        ...app(SubThemeRegistry::class)->marketingOptions($record?->sub_theme),
+                                        ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
                                     ])
                                     ->default(null)
                                     ->nullable()

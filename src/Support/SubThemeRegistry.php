@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
+use Voodflow\Vpress\Enums\SubThemeCapability;
 use Voodflow\Vpress\Enums\SubThemeType;
 
 final class SubThemeRegistry
 {
-    /** @var array<string, array{label: string, description?: string, type?: SubThemeType|string, layouts?: array<string, string>, css?: string}> */
+    /** @var array<string, array{label: string, description?: string, type?: SubThemeType, capabilities?: list<SubThemeCapability>, layouts?: array<string, string>, css?: string}> */
     private array $themes = [];
 
     public function bootFromConfig(): void
@@ -23,19 +24,24 @@ final class SubThemeRegistry
     }
 
     /**
-     * @param  array{label?: string, description?: string, type?: SubThemeType|string, layouts?: array<string, string>, css?: string}  $definition
+     * @param  array{label?: string, description?: string, type?: SubThemeType|string, capabilities?: list<string|SubThemeCapability>, layouts?: array<string, string>, css?: string}  $definition
      */
     public function register(string $id, array $definition): self
     {
+        $type = SubThemeType::fromDefinition($definition);
+        $capabilities = $this->resolveCapabilities($definition, $type);
+
         $merged = array_merge([
             'label' => str($id)->headline()->toString(),
             'description' => null,
-            'type' => SubThemeType::Marketing,
+            'type' => $type,
+            'capabilities' => $capabilities,
             'layouts' => [],
             'css' => null,
         ], $definition);
 
-        $merged['type'] = SubThemeType::fromDefinition($merged);
+        $merged['type'] = $type;
+        $merged['capabilities'] = $capabilities;
 
         $this->themes[$id] = $merged;
 
@@ -66,9 +72,26 @@ final class SubThemeRegistry
     /**
      * @return array<string, string>
      */
+    public function optionsForCapability(SubThemeCapability $capability, ?string $includeId = null): array
+    {
+        $ids = array_values(array_filter(
+            $this->ids(),
+            fn (string $id): bool => $this->supportsCapability($id, $capability),
+        ));
+
+        if ($includeId !== null && $includeId !== '' && $this->exists($includeId) && ! in_array($includeId, $ids, true)) {
+            $ids[] = $includeId;
+        }
+
+        return $this->optionsForIds($ids);
+    }
+
+    /**
+     * @return array<string, string>
+     */
     public function marketingOptions(?string $includeId = null): array
     {
-        return $this->optionsByTypeWithLegacy(SubThemeType::Marketing, $includeId);
+        return $this->optionsForCapability(SubThemeCapability::Landing, $includeId);
     }
 
     /**
@@ -76,7 +99,30 @@ final class SubThemeRegistry
      */
     public function contentOptions(?string $includeId = null): array
     {
-        return $this->optionsByTypeWithLegacy(SubThemeType::Content, $includeId);
+        $options = $this->optionsForCapability(SubThemeCapability::Doc, $includeId);
+
+        foreach ($this->optionsForCapability(SubThemeCapability::Article, $includeId) as $id => $label) {
+            $options[$id] ??= $label;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<SubThemeCapability>
+     */
+    public function capabilities(string $id): array
+    {
+        if (! $this->exists($id)) {
+            return [];
+        }
+
+        return $this->themes[$id]['capabilities'] ?? [];
+    }
+
+    public function supportsCapability(string $id, SubThemeCapability $capability): bool
+    {
+        return in_array($capability, $this->capabilities($id), true);
     }
 
     public function type(string $id): ?SubThemeType
@@ -167,16 +213,48 @@ final class SubThemeRegistry
     }
 
     /**
-     * @return array<string, string>
+     * @param  array{capabilities?: list<string|SubThemeCapability>, type?: SubThemeType|string, layouts?: array<string, string>}  $definition
+     * @return list<SubThemeCapability>
      */
-    private function optionsByTypeWithLegacy(SubThemeType $type, ?string $includeId): array
+    private function resolveCapabilities(array $definition, SubThemeType $type): array
     {
-        $options = $this->optionsByType($type);
+        if (isset($definition['capabilities']) && is_array($definition['capabilities'])) {
+            $parsed = SubThemeCapability::parseList($definition['capabilities']);
 
-        if ($includeId !== null && $includeId !== '' && $this->exists($includeId) && ! array_key_exists($includeId, $options)) {
-            $options[$includeId] = $this->label($includeId);
+            if ($parsed !== []) {
+                return $parsed;
+            }
         }
 
-        return $options;
+        $fromLayouts = $this->capabilitiesFromLayouts($definition['layouts'] ?? []);
+
+        if ($fromLayouts !== []) {
+            return $fromLayouts;
+        }
+
+        return SubThemeCapability::fromLegacyType($type);
+    }
+
+    /**
+     * @param  array<string, string>  $layouts
+     * @return list<SubThemeCapability>
+     */
+    private function capabilitiesFromLayouts(array $layouts): array
+    {
+        $capabilities = [];
+
+        if (array_key_exists('landing', $layouts) || array_key_exists('home', $layouts)) {
+            $capabilities[SubThemeCapability::Landing->value] = SubThemeCapability::Landing;
+        }
+
+        if (array_key_exists('article', $layouts) || array_key_exists('section_index', $layouts)) {
+            $capabilities[SubThemeCapability::Article->value] = SubThemeCapability::Article;
+        }
+
+        if ($layouts === [] || array_key_exists('page', $layouts)) {
+            $capabilities[SubThemeCapability::Doc->value] = SubThemeCapability::Doc;
+        }
+
+        return array_values($capabilities);
     }
 }

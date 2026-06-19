@@ -1,0 +1,13 @@
+{
+    "schema": "vpress-theme-preset/1",
+    "id": "documentation-only",
+    "label": "Documentation only",
+    "description": "Docs and tutorials with the default VitePress-style theme. No marketing showcase styling.",
+    "bundled": true,
+    "site_pages_theme": "default",
+    "channel_themes": {
+        "docs": "default",
+        "tutorials": "default"
+    },
+    "colors": {}
+}

@@ -26,11 +26,13 @@ return [
             'label' => 'Documentation',
             'description' => 'VitePress-style layout for docs and tutorials.',
             'type' => 'content',
+            'capabilities' => ['doc'],
         ],
         'blog' => [
             'label' => 'Blog',
             'description' => 'Ghost-inspired centered blog with serif headlines.',
             'type' => 'content',
+            'capabilities' => ['doc', 'article'],
             'layouts' => [
                 'home' => 'vpress::themes.blog.layouts.home',
                 'page' => 'vpress::themes.blog.layouts.page',
@@ -43,6 +45,7 @@ return [
             'label' => 'News',
             'description' => 'Editorial news layout with bold headlines and wider columns.',
             'type' => 'content',
+            'capabilities' => ['doc', 'article'],
             'layouts' => [
                 'home' => 'vpress::themes.news.layouts.home',
                 'page' => 'vpress::themes.news.layouts.page',
@@ -52,9 +55,10 @@ return [
             'css' => 'themes/news/theme.css',
         ],
         'events' => [
-            'label' => 'Events',
-            'description' => 'Trade show layout — dark header, exhibitor cards, and session galleries.',
+            'label' => 'Showcase',
+            'description' => 'Bold marketing layout with dark header, landing pages, and card grids.',
             'type' => 'marketing',
+            'capabilities' => ['landing'],
             'layouts' => [
                 'home' => 'vpress::themes.events.layouts.home',
                 'landing' => 'vpress::themes.events.layouts.landing',
@@ -65,8 +69,22 @@ return [
     ],
 
     /*
+    | Required visual capability per content channel (route package area).
+    | Used to filter compatible themes in Admin → Settings → Appearance.
+    */
+    'content_channel_capabilities' => [
+        'docs' => 'doc',
+        'tutorials' => 'doc',
+        'blog' => 'article',
+        'news' => 'article',
+        'events' => 'landing',
+        'exhibitors' => 'landing',
+        'pages' => 'landing',
+    ],
+
+    /*
     | Default visual theme per content channel (route package area).
-    | Overridable in Admin → Channel themes. Plugins do not ship themes.
+    | Overridable in Admin → Settings → Appearance. Plugins do not ship themes.
     */
     'content_channel_defaults' => [
         'events' => 'events',
