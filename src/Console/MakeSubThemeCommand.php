@@ -60,13 +60,16 @@ class MakeSubThemeCommand extends Command
         $this->writeStub('theme.css.stub', $cssPath, $replacements, $force);
         $this->writeStub('layouts/page.blade.php.stub', "{$viewsRoot}/page.blade.php", $replacements, $force);
         $this->writeStub('layouts/home.blade.php.stub', "{$viewsRoot}/home.blade.php", $replacements, $force);
+        $this->writeStub('layouts/landing.blade.php.stub', "{$viewsRoot}/landing.blade.php", $replacements, $force);
 
         $cssRelative = ThemeConvention::appCssRelativePath($id);
         $definition = [
             'label' => $label,
-            'description' => "Custom {$label} sub-theme.",
+            'description' => "Custom {$label} marketing sub-theme.",
+            'type' => 'marketing',
             'layouts' => [
                 'home' => ThemeConvention::appLayoutView($id, 'home'),
+                'landing' => ThemeConvention::appLayoutView($id, 'landing'),
                 'page' => ThemeConvention::appLayoutView($id, 'page'),
             ],
             'css' => $cssRelative,
@@ -88,7 +91,7 @@ class MakeSubThemeCommand extends Command
         $this->components->info("Sub-theme \"{$id}\" created.");
         $this->line("  CSS:     {$cssPath}");
         $this->line("  Layouts: {$viewsRoot}/");
-        $this->line('Assign it in Admin → Site → Settings (site default) or per page in Pages.');
+        $this->line('Assign it in Admin → Settings (marketing default) or per page in Pages.');
 
         return self::SUCCESS;
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Console;
 
 use Illuminate\Console\Command;
+use Voodflow\Vevents\Support\SoundmitLandingAssets;
 use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\GrapesJs\SoundmitGrapesJsLanding;
@@ -24,8 +25,8 @@ class SeedSoundmitGrapesLandingCommand extends Command
         $subTheme = (string) $this->option('sub-theme');
         $assets = [];
 
-        if ($this->option('install-assets') && class_exists(\Voodflow\Vevents\Support\SoundmitLandingAssets::class)) {
-            $assets = \Voodflow\Vevents\Support\SoundmitLandingAssets::install();
+        if ($this->option('install-assets') && class_exists(SoundmitLandingAssets::class)) {
+            $assets = SoundmitLandingAssets::install();
             $this->components->info('Soundmit landing assets installed.');
         }
 

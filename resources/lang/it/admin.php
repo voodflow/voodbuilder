@@ -8,7 +8,7 @@ return [
         'menus' => 'Menu',
         'pages' => 'Pagine',
         'settings' => 'Impostazioni',
-        'content_channels' => 'Sezioni sito',
+        'content_channels' => 'Temi canali',
     ],
 
     'fields' => [
@@ -32,8 +32,8 @@ return [
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_tree' => 'Trascina per riordinare o rilascia una voce su un’altra per creare un sottomenu. Massimo 2 livelli (principale + sotto-voci). Usa "Gruppo dropdown" per etichette senza link.',
-        'sub_theme_site' => 'Stile visivo predefinito del sito pubblico. Le singole pagine possono sovrascriverlo.',
-        'sub_theme_page' => 'Sovrascrive il sotto-tema del sito per questa pagina — utile per sezioni blog o news nel menu.',
+        'sub_theme_site' => 'Stile visivo predefinito per le Site Page marketing (home, landing, CMS). I contenuti dei package installati (docs, tutorial, eventi) usano invece Temi canali.',
+        'sub_theme_page' => 'Sovrascrive il predefinito del sito per questa pagina marketing. Usa GrapesJS o il rich editor per il contenuto.',
         'excerpt' => 'Breve riassunto per elenchi di sezione, card e SEO.',
         'section_home' => 'Contrassegna questa pagina come indice della sezione (elenca le pagine correlate nella sidebar).',
     ],

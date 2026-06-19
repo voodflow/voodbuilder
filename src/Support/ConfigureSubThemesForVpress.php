@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\File;
 final class ConfigureSubThemesForVpress
 {
     /**
-     * @param  array{label: string, description?: string, layouts?: array<string, string>, css?: string}  $definition
+     * @param  array{label: string, description?: string, type?: string, layouts?: array<string, string>, css?: string}  $definition
      */
     public static function registerInConfig(string $id, array $definition): bool
     {
@@ -28,16 +28,20 @@ final class ConfigureSubThemesForVpress
 
         $label = addslashes($definition['label']);
         $description = addslashes((string) ($definition['description'] ?? ''));
+        $type = addslashes((string) ($definition['type'] ?? 'marketing'));
         $pageLayout = $definition['layouts']['page'] ?? "vpress.themes.{$id}.layouts.page";
         $homeLayout = $definition['layouts']['home'] ?? "vpress.themes.{$id}.layouts.home";
+        $landingLayout = $definition['layouts']['landing'] ?? "vpress.themes.{$id}.layouts.landing";
         $css = $definition['css'] ?? "resources/vpress/themes/{$id}/theme.css";
 
         $entry = <<<PHP
         '{$id}' => [
             'label' => '{$label}',
             'description' => '{$description}',
+            'type' => '{$type}',
             'layouts' => [
                 'home' => '{$homeLayout}',
+                'landing' => '{$landingLayout}',
                 'page' => '{$pageLayout}',
             ],
             'css' => '{$css}',

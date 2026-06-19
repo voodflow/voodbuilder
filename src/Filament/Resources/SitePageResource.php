@@ -32,7 +32,6 @@ use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
-use Voodflow\Vpress\Support\SitePageSection;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 
 class SitePageResource extends Resource
@@ -171,30 +170,14 @@ class SitePageResource extends Resource
 
                                 Select::make('sub_theme')
                                     ->label(__('vpress::admin.fields.sub_theme'))
-                                    ->options(fn (): array => [
+                                    ->options(fn (?SitePage $record): array => [
                                         '' => __('vpress::admin.fields.sub_theme_inherit'),
-                                        ...app(SubThemeRegistry::class)->options(),
+                                        ...app(SubThemeRegistry::class)->marketingOptions($record?->sub_theme),
                                     ])
                                     ->default(null)
                                     ->nullable()
                                     ->native(false)
                                     ->helperText(__('vpress::admin.helpers.sub_theme_page')),
-
-                                Select::make('section')
-                                    ->label(__('vpress::admin.fields.section'))
-                                    ->options(fn (): array => [
-                                        '' => __('vpress::admin.fields.section_none'),
-                                        SitePageSection::BLOG => __('vpress::demo.blog.title'),
-                                        SitePageSection::NEWS => __('vpress::demo.news.title'),
-                                    ])
-                                    ->nullable()
-                                    ->native(false)
-                                    ->live(),
-
-                                Toggle::make('section_home')
-                                    ->label(__('vpress::admin.fields.section_home'))
-                                    ->helperText(__('vpress::admin.helpers.section_home'))
-                                    ->visible(fn (Get $get): bool => filled($get('section'))),
                             ]),
                     ])
                     ->columnSpan(['lg' => 1]),

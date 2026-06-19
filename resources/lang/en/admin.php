@@ -8,7 +8,7 @@ return [
         'menus' => 'Menus',
         'pages' => 'Pages',
         'settings' => 'Settings',
-        'content_channels' => 'Site sections',
+        'content_channels' => 'Channel themes',
     ],
 
     'fields' => [
@@ -32,8 +32,8 @@ return [
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
-        'sub_theme_site' => 'Default visual style for the public site. Individual pages can override this.',
-        'sub_theme_page' => 'Override the site sub-theme for this page — useful for blog or news sections linked from the menu.',
+        'sub_theme_site' => 'Default visual style for marketing Site Pages (home, landing, CMS). Content from installed packages (docs, tutorials, events) uses Channel themes instead.',
+        'sub_theme_page' => 'Override the site default for this marketing page. Use GrapesJS or the rich editor to build the content.',
         'excerpt' => 'Short summary for section listings, cards, and SEO.',
         'section_home' => 'Marks this page as the index for its section (lists sibling pages in the sidebar).',
     ],

@@ -77,7 +77,12 @@ final class ContentChannelThemes
     {
         return [
             '' => __('vpress::content_channels.inherit_package'),
-            ...app(SubThemeRegistry::class)->options(),
+            ...app(SubThemeRegistry::class)->contentOptions(),
         ];
+    }
+
+    public static function marketingSelectOptions(?string $includeId = null): array
+    {
+        return app(SubThemeRegistry::class)->marketingOptions($includeId);
     }
 }

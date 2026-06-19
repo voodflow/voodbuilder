@@ -34,7 +34,7 @@ class VpressSettings extends Model
             'show_notification_bell' => true,
             'show_theme_toggle' => true,
             'theme_mode' => 'system',
-            'sub_theme' => 'default',
+            'sub_theme' => 'events',
             'show_account_link' => true,
             'sticky_nav' => false,
             'show_language_switcher' => true,

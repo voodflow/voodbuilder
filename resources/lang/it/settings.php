@@ -18,9 +18,13 @@ return [
         'analytics' => 'Analytics',
     ],
 
-    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Globale vs sotto-tema</strong><p class="mt-2">Logo, SEO predefiniti, cookie bar, analytics, navigazione e lingua si applicano a <strong>tutti</strong> i sotto-temi. I sotto-temi cambiano solo layout e stile visivo (tipografia, colonne, accenti). Ogni pagina può sovrascrivere il sotto-tema predefinito del sito.</p></div>',
+    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Marketing vs canali contenuti</strong><p class="mt-2">Le <strong>Site Page marketing</strong> (home, landing, CMS) usano un sotto-tema <em>marketing</em> — costruite con GrapesJS o il rich editor. I <strong>canali contenuti</strong> (docs, tutorial, eventi, futuro blog) usano sotto-temi <em>contenuti</em> configurati in Temi canali. Logo, SEO, cookie e analytics valgono ovunque.</p></div>',
 
-    'theme_default_section' => 'Sotto-tema predefinito',
+    'theme_default_section' => 'Predefinito marketing',
+    'theme_marketing_default_help' => 'Sotto-tema di fallback per le Site Page senza override per pagina.',
+    'theme_colors_section' => 'Colori brand',
+    'theme_colors_content' => 'Temi canali contenuti',
+    'theme_colors_marketing' => 'Temi marketing',
     'theme_colors_section' => 'Colori brand',
     'theme_colors_help' => 'Override opzionali per ogni sotto-tema. Se disattivato, si usa la palette integrata nel foglio di stile del tema.',
     'theme_customize' => 'Personalizza colori brand',

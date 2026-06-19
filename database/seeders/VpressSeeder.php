@@ -78,6 +78,10 @@ class VpressSeeder extends Seeder
 
     protected function seedThemeDemoPages(): void
     {
+        if (! (bool) config('vpress.demo_site_sections', false)) {
+            return;
+        }
+
         if (! Route::has('blog.index')) {
             $this->seedBlogSection();
         }
@@ -263,6 +267,10 @@ class VpressSeeder extends Seeder
     /** @return list<array<string, mixed>> */
     protected function themeDemoMenuItems(): array
     {
+        if (! (bool) config('vpress.demo_site_sections', false)) {
+            return [];
+        }
+
         $blogItem = Route::has('blog.index')
             ? [
                 'label' => __('vpress::demo.blog.title'),

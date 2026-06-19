@@ -28,7 +28,9 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use Throwable;
+use Voodflow\Vpress\Enums\SubThemeType;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
@@ -225,20 +227,34 @@ class VpressSettingsPage extends Page
                                     ->hiddenLabel()
                                     ->content(new HtmlString(__('vpress::settings.theme_scope_info'))),
                                 Section::make(__('vpress::settings.theme_default_section'))
+                                    ->description(__('vpress::settings.theme_marketing_default_help'))
                                     ->schema([
                                         Select::make('sub_theme')
                                             ->label(__('vpress::admin.fields.sub_theme'))
-                                            ->options(fn (): array => app(SubThemeRegistry::class)->options())
-                                            ->default('default')
+                                            ->options(fn (): array => ContentChannelThemes::marketingSelectOptions(
+                                                VpressSettings::get('sub_theme'),
+                                            ))
+                                            ->default('events')
                                             ->native(false)
                                             ->helperText(__('vpress::admin.helpers.sub_theme_site')),
                                     ]),
                                 Section::make(__('vpress::settings.theme_colors_section'))
                                     ->description(__('vpress::settings.theme_colors_help'))
                                     ->schema([
-                                        Tabs::make('SubThemeColors')
-                                            ->tabs($this->subThemeColorTabs())
-                                            ->contained(false),
+                                        Section::make(__('vpress::settings.theme_colors_content'))
+                                            ->schema([
+                                                Tabs::make('ContentSubThemeColors')
+                                                    ->tabs($this->subThemeColorTabs(SubThemeType::Content))
+                                                    ->contained(false),
+                                            ])
+                                            ->visible(fn (): bool => $this->subThemeColorTabs(SubThemeType::Content) !== []),
+                                        Section::make(__('vpress::settings.theme_colors_marketing'))
+                                            ->schema([
+                                                Tabs::make('MarketingSubThemeColors')
+                                                    ->tabs($this->subThemeColorTabs(SubThemeType::Marketing))
+                                                    ->contained(false),
+                                            ])
+                                            ->visible(fn (): bool => $this->subThemeColorTabs(SubThemeType::Marketing) !== []),
                                     ]),
                             ]),
                         Tab::make(__('vpress::settings.tabs.seo'))
@@ -355,12 +371,13 @@ class VpressSettingsPage extends Page
     /**
      * @return array<Tab>
      */
-    protected function subThemeColorTabs(): array
+    protected function subThemeColorTabs(?SubThemeType $type = null): array
     {
         $registry = app(SubThemeRegistry::class);
         $tabs = [];
+        $ids = $type === null ? $registry->ids() : $registry->idsByType($type);
 
-        foreach ($registry->ids() as $id) {
+        foreach ($ids as $id) {
             $description = $registry->description($id);
             $tabs[] = Tab::make($registry->label($id))
                 ->schema([

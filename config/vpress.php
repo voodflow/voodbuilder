@@ -24,11 +24,13 @@ return [
     'sub_themes' => [
         'default' => [
             'label' => 'Documentation',
-            'description' => 'VitePress-style layout for docs and marketing pages.',
+            'description' => 'VitePress-style layout for docs and tutorials.',
+            'type' => 'content',
         ],
         'blog' => [
             'label' => 'Blog',
             'description' => 'Ghost-inspired centered blog with serif headlines.',
+            'type' => 'content',
             'layouts' => [
                 'home' => 'vpress::themes.blog.layouts.home',
                 'page' => 'vpress::themes.blog.layouts.page',
@@ -40,6 +42,7 @@ return [
         'news' => [
             'label' => 'News',
             'description' => 'Editorial news layout with bold headlines and wider columns.',
+            'type' => 'content',
             'layouts' => [
                 'home' => 'vpress::themes.news.layouts.home',
                 'page' => 'vpress::themes.news.layouts.page',
@@ -51,6 +54,7 @@ return [
         'events' => [
             'label' => 'Events',
             'description' => 'Trade show layout — dark header, exhibitor cards, and session galleries.',
+            'type' => 'marketing',
             'layouts' => [
                 'home' => 'vpress::themes.events.layouts.home',
                 'landing' => 'vpress::themes.events.layouts.landing',
@@ -62,7 +66,7 @@ return [
 
     /*
     | Default visual theme per content channel (route package area).
-    | Overridable in Admin → Site sections. Plugins do not ship themes.
+    | Overridable in Admin → Channel themes. Plugins do not ship themes.
     */
     'content_channel_defaults' => [
         'events' => 'events',
@@ -71,6 +75,12 @@ return [
         'docs' => 'default',
         'blog' => 'blog',
     ],
+
+    /*
+    | Legacy blog/news Site Page demos (section field). Disabled by default.
+    | Real blog content should come from a dedicated package (e.g. vblog).
+    */
+    'demo_site_sections' => (bool) env('VPRESS_DEMO_SITE_SECTIONS', false),
 
     /*
     | Fallback logo path (relative to the public disk) or absolute URL.

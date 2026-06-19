@@ -28,6 +28,7 @@
 @source '../views/themes/**/*.blade.php';
 @source '../grapesjs/tailblocks-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
+@source '../grapesjs/vpress-home-landing-catalog.html';
 
 @theme {
     --breakpoint-vp: 60rem;
@@ -466,5 +467,39 @@ summary,
     .vpress-grapesjs-edit-launch {
         right: 1.5rem;
         bottom: 1.5rem;
+    }
+}
+
+/*
+ * Late-loaded Tailwind bundles (e.g. Filament admin CSS) can redefine `.hidden`
+ * after this theme and break `hidden vp:block` / `hidden xl:block` doc layout.
+ */
+@media (width >= 60rem) {
+    .vp\:block {
+        display: block !important;
+    }
+
+    .vp\:flex {
+        display: flex !important;
+    }
+
+    .vp\:inline-flex {
+        display: inline-flex !important;
+    }
+}
+
+@media (width < 60rem) {
+    .max-vp\:flex {
+        display: flex !important;
+    }
+
+    .max-vp\:inline-flex {
+        display: inline-flex !important;
+    }
+}
+
+@media (width >= 80rem) {
+    .xl\:block {
+        display: block !important;
     }
 }

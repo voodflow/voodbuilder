@@ -6,6 +6,7 @@
 
 @source '../grapesjs/tailblocks-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
+@source '../grapesjs/vpress-home-landing-catalog.html';
 
 @theme {
     --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;

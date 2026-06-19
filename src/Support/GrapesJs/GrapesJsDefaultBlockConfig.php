@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
-use Voodflow\Vevents\Models\Event;
 use Illuminate\Support\Facades\Schema;
+use Voodflow\Vevents\Models\Event;
 
 final class GrapesJsDefaultBlockConfig
 {

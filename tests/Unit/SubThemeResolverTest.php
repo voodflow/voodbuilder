@@ -52,8 +52,13 @@ class SubThemeResolverTest extends TestCase
         $this->assertSame('vpress::themes.blog.layouts.page', $page->layoutView());
     }
 
-    public function test_invalid_sub_theme_falls_back_to_default(): void
+    public function test_invalid_sub_theme_falls_back_to_site_default(): void
     {
+        VpressSettings::query()->create([
+            'data' => VpressSettings::defaults(),
+        ]);
+        VpressSettings::clearCache();
+
         $page = SitePage::query()->create([
             'title' => 'Broken',
             'slug' => 'broken',
@@ -64,6 +69,6 @@ class SubThemeResolverTest extends TestCase
             'published' => true,
         ]);
 
-        $this->assertSame('default', SubThemeResolver::forPage($page));
+        $this->assertSame('events', SubThemeResolver::forPage($page));
     }
 }
