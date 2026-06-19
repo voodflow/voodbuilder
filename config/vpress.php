@@ -118,6 +118,15 @@ return [
 
     'admin_panel_id' => 'admin',
 
+    /*
+    | Spatie permission for frontend GrapesJS editing without Filament admin access.
+    | Seeded by VpressSeeder when spatie/laravel-permission is installed.
+    */
+    'permissions' => [
+        'page_builder' => 'builder',
+        'page_builder_roles' => ['editor', 'super_admin'],
+    ],
+
     'assets' => [
         'vite' => VpressPaths::defaultViteEntries(),
     ],

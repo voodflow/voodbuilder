@@ -9,6 +9,7 @@ use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 
@@ -65,5 +66,13 @@ class Vpress
             content: $content,
             attributes: $attributes,
         ));
+    }
+
+    /**
+     * @param  class-string<RichContentCustomBlock>  $blockClass
+     */
+    public static function grapesJsRichContentBlock(string $category, string $blockClass): void
+    {
+        app(GrapesJsDynamicBlockRegistry::class)->register($category, $blockClass);
     }
 }

@@ -7,7 +7,7 @@ namespace Voodflow\Vpress\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Routing\Controller;
 use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\AdminAccess;
+use Voodflow\Vpress\Support\PageBuilderAccess;
 use Voodflow\Vpress\Support\SitePageViewData;
 
 class SitePageController extends Controller
@@ -18,7 +18,7 @@ class SitePageController extends Controller
             ->where('slug', $slug)
             ->where('is_home', false)
             ->when(
-                ! AdminAccess::userCanAccessPanel(),
+                ! PageBuilderAccess::userCanUsePageBuilder(),
                 fn ($query) => $query->published(),
             )
             ->firstOrFail();

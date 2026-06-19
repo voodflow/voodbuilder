@@ -15,12 +15,14 @@ final class SitePageViewData
      */
     public static function make(SitePage $page, array $extra = []): array
     {
-        $grapesJsEditor = GrapesJsEditorGate::canEdit($page);
+        $canEditGrapesJs = GrapesJsEditorGate::canEdit($page);
+        $grapesJsEditor = GrapesJsEditorGate::isEditing($page);
 
         return array_merge([
             'page' => $page,
             'vpressSubTheme' => $page->resolvedSubTheme(),
-            'hideSiteFooter' => $page->shouldHideSiteFooter(),
+            'hideSiteFooter' => $page->shouldHideSiteFooter() || $grapesJsEditor,
+            'canEditGrapesJs' => $canEditGrapesJs,
             'grapesJsEditor' => $grapesJsEditor,
             'grapesJsConfig' => $grapesJsEditor ? GrapesJsEditorGate::config($page) : null,
         ], $extra);

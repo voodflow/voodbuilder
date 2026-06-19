@@ -9,16 +9,6 @@
         vpress-grapesjs-editing
     @endsection
 
-    @push('head')
-        @vite([
-            config('vpress.grapesjs.vite'),
-            'packages/voodflow/vpress/resources/css/grapesjs/editor.css',
-            ...(\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::isAvailable()
-                ? [\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::utilitiesCssEntry()]
-                : []),
-        ])
-    @endpush
-
     @push('scripts-before-livewire')
         <style>
             .vpress-grapesjs-mode .vpress-landing-shell,
@@ -65,10 +55,6 @@
             ])
         @else
             @if ($page->usesGrapesJsBuilder())
-                @if (\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::isAvailable())
-                    @vite(\Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks::utilitiesCssEntry())
-                @endif
-
                 @if (filled($page->renderedStyles()))
                     <style>{!! $page->renderedStyles() !!}</style>
                 @endif
@@ -78,3 +64,9 @@
         @endif
     </div>
 @endsection
+
+@if (($canEditGrapesJs ?? false) && ! ($grapesJsEditor ?? false))
+    @push('overlays')
+        @include('vpress::partials.grapesjs-edit-launch')
+    @endpush
+@endif

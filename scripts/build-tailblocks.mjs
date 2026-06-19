@@ -37,6 +37,14 @@ function migrateToTailwindV4(html) {
     return migrated;
 }
 
+function fixGrapesJsSrcUri(value) {
+    return value.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
+}
+
+function sanitizeGrapesJsHtml(html) {
+    return html.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`);
+}
+
 function formatBlockLabel(category, variant, mode) {
     const spaced = variant.replace(/([a-z])([A-Z])/g, '$1 $2');
 
@@ -97,7 +105,7 @@ for (const darkMode of [false, true]) {
             }
 
             const rawHtml = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
-            const html = migrateToTailwindV4(rawHtml);
+            const html = sanitizeGrapesJsHtml(migrateToTailwindV4(rawHtml));
             const mode = darkMode ? 'dark' : 'light';
             const id = `tailblocks-${category.toLowerCase()}-${variant.toLowerCase()}-${mode}`;
 

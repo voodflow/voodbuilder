@@ -1,12 +1,18 @@
 .vpress-grapesjs-frontend {
     position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
     width: 100%;
+    min-height: 0;
+    height: calc(100dvh - var(--vpress-grapesjs-site-header-height, 4rem));
 }
 
 .vpress-grapesjs-frontend__toolbar {
     position: sticky;
-    top: 0;
+    top: var(--vpress-grapesjs-site-header-height, 4rem);
     z-index: 50;
+    flex-shrink: 0;
     border-bottom: 1px solid var(--color-vp-divider, #e5e7eb);
     background: color-mix(in srgb, var(--color-vp-bg, #fff) 95%, transparent);
     backdrop-filter: blur(8px);
@@ -67,13 +73,17 @@
 }
 
 .vpress-grapesjs-frontend__canvas {
-    min-height: calc(100dvh - var(--vpress-grapesjs-chrome-height, 8rem));
+    position: relative;
+    flex: 1 1 auto;
     width: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
+/* GrapesJS uses absolute positioning for the canvas; only set height on the root editor. */
 .vpress-grapesjs-frontend__canvas .gjs-editor {
-    position: relative !important;
-    border: 0;
+    height: 100% !important;
+    min-height: 0;
 }
 
 .vpress-gjs-block-preview {
@@ -90,11 +100,7 @@
     width: 560%;
 }
 
-.gjs-block .vpress-gjs-block-preview {
-    width: 100%;
-}
-
-.gjs-block .vpress-gjs-block-fallback {
+.vpress-gjs-block-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -106,40 +112,48 @@
     color: #64748b;
 }
 
+.vpress-gjs-dynamic {
+    position: relative;
+    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand, #3451b2) 35%, transparent);
+    outline-offset: 2px;
+}
+
 body.vpress-grapesjs-editing {
-    --vpress-grapesjs-chrome-height: calc(4rem + 3.5rem);
+    --vpress-grapesjs-site-header-height: 4rem;
+    --vpress-grapesjs-toolbar-height: 3.25rem;
+    --vpress-grapesjs-chrome-height: calc(
+        var(--vpress-grapesjs-site-header-height) + var(--vpress-grapesjs-toolbar-height)
+    );
+}
+
+body.vpress-grapesjs-editing main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+body.vpress-grapesjs-editing .vpress-events-shell,
+body.vpress-grapesjs-editing .vpress-landing-shell,
+body.vpress-grapesjs-editing .VPRichPage--landing,
+body.vpress-grapesjs-editing .vpress-grapesjs-mode {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
 }
 
 body.vpress-grapesjs-editing header[role='banner'] {
     position: sticky;
     top: 0;
-    z-index: 60;
+    z-index: 70;
+    flex-shrink: 0;
 }
 
 body.vpress-grapesjs-editing .vpress-grapesjs-frontend__toolbar {
-    z-index: 55;
+    z-index: 60;
 }
 
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-editor-cont,
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-cv-canvas {
-    position: relative !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: auto !important;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-editor {
-    position: relative !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: auto !important;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-pn-panel.gjs-pn-views-container,
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-pn-panel.gjs-pn-options {
-    top: auto !important;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend .gjs-pn-panels {
-    position: relative !important;
+html[data-vpress-sub-theme='events'] body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas {
+    background-color: var(--color-vp-bg, #f4f5f7);
 }

@@ -53,5 +53,6 @@
     @livewireScripts
     <x-vpress::site-scripts />
     @stack('scripts')
+    @stack('overlays')
 </body>
 </html>

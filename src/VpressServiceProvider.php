@@ -22,6 +22,7 @@ use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Controllers\GrapesJsAssetController;
+use Voodflow\Vpress\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsPageController;
 use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
@@ -29,6 +30,7 @@ use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
@@ -62,6 +64,7 @@ class VpressServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(RichContentBlockRegistry::class);
         $this->app->singleton(GrapesJsBlockRegistry::class);
+        $this->app->singleton(GrapesJsDynamicBlockRegistry::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
     }
@@ -119,6 +122,7 @@ class VpressServiceProvider extends PackageServiceProvider
             ->prefix('vpress/grapesjs')
             ->name('vpress.grapesjs.')
             ->group(function (): void {
+                Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
             });
@@ -126,14 +130,18 @@ class VpressServiceProvider extends PackageServiceProvider
 
     protected function registerGrapesJsBlocks(): void
     {
-        $registry = $this->app->make(GrapesJsBlockRegistry::class);
+        $this->app->booted(function (): void {
+            $registry = $this->app->make(GrapesJsBlockRegistry::class);
 
-        if (config('vpress.grapesjs.tailblocks.enabled', true)) {
-            TailblocksGrapesJsBlocks::register($registry);
-        }
+            if (config('vpress.grapesjs.tailblocks.enabled', true)) {
+                TailblocksGrapesJsBlocks::register($registry);
+            }
 
-        if (config('vpress.grapesjs.include_vpress_blocks', true)) {
-            DefaultGrapesJsBlocks::register($registry);
-        }
+            if (config('vpress.grapesjs.include_vpress_blocks', true)) {
+                DefaultGrapesJsBlocks::register($registry);
+            }
+
+            $this->app->make(GrapesJsDynamicBlockRegistry::class)->registerEditorBlocks($registry);
+        });
     }
 }

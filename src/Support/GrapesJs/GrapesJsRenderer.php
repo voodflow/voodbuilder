@@ -24,6 +24,6 @@ final class GrapesJsRenderer
 
     public function render(SitePage $page): string
     {
-        return $this->html($page);
+        return app(GrapesJsDynamicBlockRenderer::class)->render($this->html($page), $page);
     }
 }

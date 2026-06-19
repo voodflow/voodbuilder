@@ -26,6 +26,8 @@
 @source '../../../../../vendor/voodflow/vevents/resources/views/**/*.blade.php';
 @source '../views/blocks/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
+@source '../grapesjs/tailblocks-catalog.html';
+@source '../grapesjs/soundmit-landing-catalog.html';
 
 @theme {
     --breakpoint-vp: 60rem;
@@ -433,4 +435,36 @@ summary,
 [role='link'],
 [role='button']:not(:disabled):not([disabled]) {
     cursor: pointer;
+}
+
+.vpress-grapesjs-edit-launch {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 55;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    border-radius: 9999px;
+    background: var(--color-vp-brand-1);
+    padding: 0.75rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.vpress-grapesjs-edit-launch:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+@media (min-width: 768px) {
+    .vpress-grapesjs-edit-launch {
+        right: 1.5rem;
+        bottom: 1.5rem;
+    }
 }

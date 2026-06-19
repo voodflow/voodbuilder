@@ -49,6 +49,7 @@ class VpressSeeder extends Seeder
 
         $this->seedHomePage();
         $this->seedThemeDemoPages();
+        $this->seedPermissions();
 
         $this->seedMenus();
         $this->seedCookieConsentSettings();
@@ -163,6 +164,37 @@ class VpressSeeder extends Seeder
                     'is_home' => false,
                 ],
             );
+        }
+    }
+
+    protected function seedPermissions(): void
+    {
+        if (! class_exists(\Spatie\Permission\Models\Permission::class)) {
+            return;
+        }
+
+        $permissionName = (string) config('vpress.permissions.page_builder', 'builder');
+        $guard = (string) config('auth.defaults.guard', 'web');
+
+        if ($permissionName === '') {
+            return;
+        }
+
+        $permission = \Spatie\Permission\Models\Permission::findOrCreate($permissionName, $guard);
+
+        if (! class_exists(\Spatie\Permission\Models\Role::class)) {
+            return;
+        }
+
+        foreach ((array) config('vpress.permissions.page_builder_roles', ['editor', 'super_admin']) as $roleName) {
+            $role = \Spatie\Permission\Models\Role::query()
+                ->where('name', $roleName)
+                ->where('guard_name', $guard)
+                ->first();
+
+            if ($role !== null && ! $role->hasPermissionTo($permission)) {
+                $role->givePermissionTo($permission);
+            }
         }
     }
 

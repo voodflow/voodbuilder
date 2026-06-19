@@ -37,6 +37,35 @@ final class GrapesJsCanvas
             ->all();
     }
 
+    public static function pageBackgroundColor(string $subTheme): string
+    {
+        return match ($subTheme) {
+            'events' => '#f4f5f7',
+            default => '#ffffff',
+        };
+    }
+
+    public static function frameStyle(string $subTheme): string
+    {
+        $background = self::pageBackgroundColor($subTheme);
+
+        return <<<CSS
+        body {
+            margin: 0;
+            background-color: {$background};
+        }
+
+        [data-gjs-type="wrapper"] {
+            background-color: {$background};
+            min-height: 100vh;
+        }
+
+        * ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1) }
+        * ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2) }
+        * ::-webkit-scrollbar { width: 10px }
+        CSS;
+    }
+
     protected static function hasBuiltAsset(string $entry): bool
     {
         $manifest = public_path('build/manifest.json');

@@ -36,12 +36,16 @@ final class TailblocksGrapesJsBlocks
                 continue;
             }
 
-            $content = TailwindV4ClassMigrator::migrateHtml(
-                self::applyThemeToHtml((string) ($definition['content'] ?? ''), $preferredTheme),
+            $content = GrapesJsHtmlSanitizer::sanitize(
+                TailwindV4ClassMigrator::migrateHtml(
+                    self::applyThemeToHtml((string) ($definition['content'] ?? ''), $preferredTheme),
+                ),
             );
 
             $preview = isset($definition['preview'])
-                ? TailwindV4ClassMigrator::migrateHtml(self::applyThemeToHtml((string) $definition['preview'], $preferredTheme))
+                ? GrapesJsHtmlSanitizer::sanitize(
+                    TailwindV4ClassMigrator::migrateHtml(self::applyThemeToHtml((string) $definition['preview'], $preferredTheme)),
+                )
                 : null;
 
             $registry->register(new GrapesJsBlockDefinition(

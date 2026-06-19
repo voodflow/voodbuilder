@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Vpress\Support\GrapesJs;
+
+use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+
+final class GrapesJsRichContentBlockAdapter
+{
+    /**
+     * @param  class-string<RichContentCustomBlock>  $blockClass
+     */
+    public static function toDefinition(
+        string $blockClass,
+        string $category,
+        ?int $eventId = null,
+    ): GrapesJsBlockDefinition {
+        $blockId = $blockClass::getId();
+        $config = GrapesJsDefaultBlockConfig::for($blockClass, $eventId);
+        $editorInner = self::editorPreviewHtml($blockClass, $config);
+
+        return new GrapesJsBlockDefinition(
+            id: 'vpress-'.$blockId,
+            label: $blockClass::getLabel(),
+            category: $category,
+            content: self::wrap($blockId, $config, $editorInner),
+            preview: self::previewMedia($editorInner, $blockClass::getLabel()),
+            attributes: [
+                'class' => 'vpress-gjs-dynamic',
+            ],
+        );
+    }
+
+    /**
+     * @param  class-string<RichContentCustomBlock>  $blockClass
+     * @param  array<string, mixed>  $config
+     */
+    public static function editorPreviewHtml(string $blockClass, array $config): string
+    {
+        if (method_exists($blockClass, 'toPreviewHtml')) {
+            return $blockClass::toPreviewHtml($config);
+        }
+
+        return self::fallbackEditorHtml($blockClass::getLabel());
+    }
+
+    public static function fallbackEditorHtml(string $label): string
+    {
+        $safeLabel = htmlspecialchars($label, ENT_QUOTES | ENT_HTML5);
+
+        return '<div class="vpress-gjs-dynamic-placeholder rounded-lg border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-sm text-vp-text-2">'.$safeLabel.'</div>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    public static function wrap(string $blockId, array $config, string $innerHtml): string
+    {
+        $encodedConfig = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            ENT_QUOTES | ENT_HTML5,
+        );
+
+        return <<<HTML
+<div data-vpress-block="{$blockId}" data-vpress-config="{$encodedConfig}" class="vpress-gjs-dynamic">
+{$innerHtml}
+</div>
+HTML;
+    }
+
+    public static function previewMedia(string $html, string $label): string
+    {
+        $migrated = TailwindV4ClassMigrator::migrateHtml($html);
+
+        return '<div class="vpress-gjs-block-preview"><div class="vpress-gjs-block-preview__scale">'.$migrated.'</div></div>';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function renderData(?int $eventId = null): array
+    {
+        return array_filter([
+            'event_id' => $eventId,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+}

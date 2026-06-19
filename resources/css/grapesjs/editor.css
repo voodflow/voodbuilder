@@ -8,7 +8,3 @@
 .dark .vpress-grapesjs-field .gjs-one-bg {
     background-color: var(--gray-900, #111827);
 }
-
-.vpress-grapesjs-canvas .gjs-editor {
-    border: 0;
-}
