@@ -22,18 +22,21 @@ class TailblocksGrapesJsBlocksTest extends TestCase
 
         $blocks = $registry->toEditorBlocks();
 
-        $this->assertGreaterThan(60, count($blocks));
+        $this->assertGreaterThan(30, count($blocks));
 
         $ids = array_column($blocks, 'id');
 
         $this->assertTrue(
-            collect($ids)->contains(fn (string $id): bool => str_contains($id, 'tailblocks-hero-heroa-light')),
+            collect($ids)->contains(fn (string $id): bool => str_contains($id, 'tailblocks-hero-heroa')),
         );
 
-        $contactA = collect($blocks)->firstWhere('id', 'tailblocks-contact-contacta-light');
+        $contactA = collect($blocks)->first(
+            fn (array $block): bool => str_starts_with((string) ($block['id'] ?? ''), 'tailblocks-contact-contacta'),
+        );
 
         $this->assertIsArray($contactA);
-        $this->assertSame('Contact A · light', $contactA['label']);
+        $this->assertStringNotContainsString('· dark', (string) ($contactA['label'] ?? ''));
+        $this->assertStringContainsString('bg-vp-bg-elv', (string) ($contactA['content'] ?? ''));
         $this->assertArrayHasKey('preview', $contactA);
         $this->assertStringContainsString('vpress-gjs-block-preview', (string) $contactA['preview']);
     }

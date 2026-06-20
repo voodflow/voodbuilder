@@ -45,10 +45,8 @@ function sanitizeGrapesJsHtml(html) {
     return html.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`);
 }
 
-function formatBlockLabel(category, variant, mode) {
-    const spaced = variant.replace(/([a-z])([A-Z])/g, '$1 $2');
-
-    return `${spaced} · ${mode}`;
+function formatBlockLabel(category, variant) {
+    return variant.replace(/([a-z])([A-Z])/g, '$1 $2');
 }
 
 function buildPreview(html) {
@@ -93,7 +91,7 @@ const { default: getBlock } = await import(bundlePath);
 /** @type {Array<{id:string,label:string,category:string,content:string,preview:string,mode:string}>} */
 const definitions = [];
 
-for (const darkMode of [false, true]) {
+for (const darkMode of [false]) {
     const blocks = getBlock({ theme, darkMode });
 
     for (const [category, variants] of Object.entries(blocks)) {
@@ -106,16 +104,15 @@ for (const darkMode of [false, true]) {
 
             const rawHtml = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
             const html = sanitizeGrapesJsHtml(migrateToTailwindV4(rawHtml));
-            const mode = darkMode ? 'dark' : 'light';
-            const id = `tailblocks-${category.toLowerCase()}-${variant.toLowerCase()}-${mode}`;
+            const id = `tailblocks-${category.toLowerCase()}-${variant.toLowerCase()}`;
 
             definitions.push({
                 id,
-                label: formatBlockLabel(category, variant, mode),
+                label: formatBlockLabel(category, variant),
                 category: `Tailblocks / ${category}`,
                 content: html,
                 preview: buildPreview(html),
-                mode,
+                mode: 'adaptive',
             });
         }
     }

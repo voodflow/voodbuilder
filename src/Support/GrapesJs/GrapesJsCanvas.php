@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
+use Voodflow\Vpress\Support\ThemePalette;
 use Voodflow\Vpress\Support\VpressPaths;
 
 final class GrapesJsCanvas
@@ -47,22 +48,24 @@ final class GrapesJsCanvas
 
     public static function frameStyle(string $subTheme): string
     {
-        $background = self::pageBackgroundColor($subTheme);
+        $paletteCss = ThemePalette::css();
 
         return <<<CSS
         body {
             margin: 0;
-            background-color: {$background};
+            background-color: var(--color-vp-bg, #ffffff);
+            color: var(--color-vp-text-1, #3c3c43);
         }
 
         [data-gjs-type="wrapper"] {
-            background-color: {$background};
+            background-color: var(--color-vp-bg, #ffffff);
             min-height: 100vh;
         }
 
         * ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1) }
         * ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2) }
         * ::-webkit-scrollbar { width: 10px }
+        {$paletteCss}
         CSS;
     }
 

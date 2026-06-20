@@ -236,7 +236,7 @@ return [
         'tailblocks' => [
             'enabled' => env('VPRESS_TAILBLOCKS_ENABLED', true),
             'theme' => env('VPRESS_TAILBLOCKS_THEME', 'indigo'),
-            'modes' => ['light', 'dark'],
+            'modes' => ['adaptive'],
         ],
         'payload' => [
             'max_html_bytes' => 500_000,

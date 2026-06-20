@@ -178,6 +178,7 @@ class InstallCommand extends Command
         }
 
         $this->components->warn('Install GrapesJS npm packages if needed: npm install grapesjs grapesjs-blocks-basic --save-dev');
+        $this->components->warn('For Tailblocks export: npm install -D esbuild react react-dom prop-types');
         $this->components->warn('Then build assets: npm run build');
     }
 

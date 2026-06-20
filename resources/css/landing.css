@@ -3,7 +3,7 @@
  */
 
 .body-font {
-    @apply font-sans text-gray-600 antialiased;
+    @apply font-sans text-vp-text-2 antialiased;
 }
 
 .title-font {
@@ -68,4 +68,12 @@ html[data-vpress-sub-theme='events'] .vpress-events-shell:has(.VPRichPage--landi
 
 html[data-vpress-sub-theme='events'] .vpress-landing-shell:has(.VPRichPage--landing) {
     @apply max-w-none p-0;
+}
+
+.VPRichPage--landing .vpress-gjs-section {
+    @apply bg-vp-bg text-vp-text-2;
+}
+
+.VPRichPage--landing .vpress-gjs-section :is(h1, h2, h3, h4, .title-font) {
+    @apply text-vp-text-1;
 }

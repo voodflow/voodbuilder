@@ -27,6 +27,14 @@ class BuildTailblocksCommand extends Command
             return self::FAILURE;
         }
 
+        if (! $this->tailblocksDependenciesAreInstalled()) {
+            $this->components->error('Missing npm packages for Tailblocks export.');
+            $this->line('  Run from the Laravel app root:');
+            $this->line('  npm install -D esbuild react react-dom prop-types');
+
+            return self::FAILURE;
+        }
+
         $theme = (string) $this->option('theme');
 
         $process = new Process(
@@ -42,7 +50,9 @@ class BuildTailblocksCommand extends Command
         });
 
         if (! $process->isSuccessful()) {
-            $this->components->error('Tailblocks export failed. Run `npm install -D esbuild` in the host app.');
+            $this->components->error('Tailblocks export failed.');
+            $this->line('  Ensure these dev dependencies are installed in the host app:');
+            $this->line('  npm install -D esbuild react react-dom prop-types');
 
             return self::FAILURE;
         }
@@ -58,5 +68,16 @@ class BuildTailblocksCommand extends Command
         $this->components->warn('Run `npm run build` so tailblocks-utilities.css is compiled for the canvas.');
 
         return self::SUCCESS;
+    }
+
+    protected function tailblocksDependenciesAreInstalled(): bool
+    {
+        foreach (['esbuild', 'react', 'react-dom', 'prop-types'] as $package) {
+            if (! is_dir(base_path('node_modules/'.$package))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

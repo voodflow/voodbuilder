@@ -90,7 +90,7 @@ function applyCanvasDocumentTheme(editor, subTheme) {
         return;
     }
 
-    const apply = () => {
+    const apply = (isDark = null) => {
         const doc = editor.Canvas.getDocument();
 
         if (! doc) {
@@ -99,14 +99,16 @@ function applyCanvasDocumentTheme(editor, subTheme) {
 
         doc.documentElement.setAttribute('data-vpress-sub-theme', subTheme);
 
-        if (document.documentElement.classList.contains('dark')) {
+        const useDark = isDark ?? document.documentElement.classList.contains('dark');
+
+        if (useDark) {
             doc.documentElement.classList.add('dark');
         } else {
             doc.documentElement.classList.remove('dark');
         }
     };
 
-    editor.on('canvas:frame:load', apply);
+    editor.on('canvas:frame:load', () => apply());
     window.addEventListener('vpress:theme-changed', (event) => {
         apply(event?.detail?.isDark);
     });

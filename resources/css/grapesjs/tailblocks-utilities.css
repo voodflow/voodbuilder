@@ -1,20 +1,16 @@
 /**
  * Tailwind CSS v4 utilities for Tailblocks in GrapesJS canvas and published pages.
- * @see https://tailwindcss.com/
+ * Uses Vpress theme tokens so blocks adapt to light/dark mode automatically.
  */
-@import 'tailwindcss';
+@import '../theme.css';
 
 @source '../grapesjs/tailblocks-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/vpress-home-landing-catalog.html';
 
-@theme {
-    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
-}
-
 @layer components {
     .body-font {
-        @apply font-sans text-gray-600 antialiased;
+        @apply font-sans text-vp-text-2 antialiased;
     }
 
     .title-font {

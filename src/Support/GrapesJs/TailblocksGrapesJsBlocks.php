@@ -22,35 +22,24 @@ final class TailblocksGrapesJsBlocks
             return;
         }
 
-        $preferredTheme = $theme ?? (string) config('vpress.grapesjs.tailblocks.theme', 'indigo');
-        $modes = (array) config('vpress.grapesjs.tailblocks.modes', ['light', 'dark']);
-
         foreach ($decoded as $definition) {
             if (! is_array($definition)) {
                 continue;
             }
 
-            $mode = (string) ($definition['mode'] ?? 'light');
-
-            if (! in_array($mode, $modes, true)) {
+            if (! self::shouldRegisterBlock($definition)) {
                 continue;
             }
 
-            $content = GrapesJsHtmlSanitizer::sanitize(
-                TailwindV4ClassMigrator::migrateHtml(
-                    self::applyThemeToHtml((string) ($definition['content'] ?? ''), $preferredTheme),
-                ),
-            );
+            $content = self::prepareBlockHtml((string) ($definition['content'] ?? ''));
 
             $preview = isset($definition['preview'])
-                ? GrapesJsHtmlSanitizer::sanitize(
-                    TailwindV4ClassMigrator::migrateHtml(self::applyThemeToHtml((string) $definition['preview'], $preferredTheme)),
-                )
+                ? self::prepareBlockHtml((string) $definition['preview'])
                 : null;
 
             $registry->register(new GrapesJsBlockDefinition(
                 id: (string) ($definition['id'] ?? uniqid('tailblocks-', true)),
-                label: (string) ($definition['label'] ?? 'Block'),
+                label: self::blockLabel($definition),
                 category: (string) ($definition['category'] ?? 'Tailblocks'),
                 content: $content,
                 preview: $preview,
@@ -75,18 +64,41 @@ final class TailblocksGrapesJsBlocks
         return is_file(self::catalogPath());
     }
 
-    protected static function applyThemeToHtml(string $html, string $theme): string
+    /**
+     * @param  array<string, mixed>  $definition
+     */
+    protected static function shouldRegisterBlock(array $definition): bool
     {
-        $allowedThemes = ['indigo', 'yellow', 'red', 'purple', 'pink', 'blue', 'green'];
+        $mode = (string) ($definition['mode'] ?? 'light');
+        $modes = (array) config('vpress.grapesjs.tailblocks.modes', ['adaptive']);
 
-        if (! in_array($theme, $allowedThemes, true)) {
-            return $html;
+        if (in_array('adaptive', $modes, true)) {
+            return $mode !== 'dark';
         }
 
-        return preg_replace(
-            '/\b(bg|text|border|ring|from|to|via)-(indigo|yellow|red|purple|pink|blue|green)-/i',
-            '$1-'.$theme.'-',
-            $html,
-        ) ?? $html;
+        return in_array($mode, $modes, true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     */
+    protected static function blockLabel(array $definition): string
+    {
+        $label = (string) ($definition['label'] ?? 'Block');
+
+        if ((string) ($definition['mode'] ?? '') === 'light') {
+            $label = preg_replace('/\s*·\s*light$/i', '', $label) ?? $label;
+        }
+
+        return $label;
+    }
+
+    protected static function prepareBlockHtml(string $html): string
+    {
+        return GrapesJsHtmlSanitizer::sanitize(
+            TailblocksThemeTokenMigrator::migrateHtml(
+                TailwindV4ClassMigrator::migrateHtml($html),
+            ),
+        );
     }
 }

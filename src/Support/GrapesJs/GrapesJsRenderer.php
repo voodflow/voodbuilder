@@ -11,15 +11,26 @@ final class GrapesJsRenderer
     public function html(SitePage $page): string
     {
         $payload = $page->builder_payload ?? [];
+        $html = (string) ($payload['html'] ?? '');
 
-        return (string) ($payload['html'] ?? '');
+        if ($html === '') {
+            return '';
+        }
+
+        return TailblocksThemeTokenMigrator::migrateHtml(
+            GrapesJsHtmlSanitizer::sanitize($html),
+        );
     }
 
     public function css(SitePage $page): ?string
     {
         $css = $page->builder_payload['css'] ?? null;
 
-        return filled($css) ? (string) $css : null;
+        if (! filled($css)) {
+            return null;
+        }
+
+        return TailblocksThemeTokenMigrator::migrateCss((string) $css);
     }
 
     public function render(SitePage $page): string

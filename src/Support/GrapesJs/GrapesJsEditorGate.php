@@ -87,7 +87,9 @@ final class GrapesJsEditorGate
         }
 
         return [
-            'html' => GrapesJsHtmlSanitizer::sanitize($html),
+            'html' => TailblocksThemeTokenMigrator::migrateHtml(
+                GrapesJsHtmlSanitizer::sanitize($html),
+            ),
             'css' => $css,
             'project' => $project,
             'pageManager' => $pageManager,
