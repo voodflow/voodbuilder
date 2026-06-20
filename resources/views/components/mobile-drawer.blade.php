@@ -160,11 +160,11 @@
                         </a>
                     @endif
 
-                    @if(\Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::userCanAccess())
-                        <a href="{{ \Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::panelUrl() }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
-                            Espositore
+                    @foreach (\Voodflow\Vpress\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
+                        <a href="{{ $profileMenuLink['url'] }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
+                            {{ $profileMenuLink['label'] }}
                         </a>
-                    @endif
+                    @endforeach
 
                     @if (AdminAccess::userCanAccessPanel())
                         <a href="{{ AdminAccess::panelUrl() }}" class="vpress-mobile-nav__action" data-mobile-nav-close>

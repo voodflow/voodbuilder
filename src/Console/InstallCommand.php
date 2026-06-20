@@ -172,10 +172,13 @@ class InstallCommand extends Command
         }
 
         if (ConfigureViteForVpress::apply($this->option('force'))) {
-            $this->components->info('Updated vite.config.js with '.VpressPaths::themeCssRelativePath());
+            $this->components->info('Updated vite.config.js with vpress theme and GrapesJS entries.');
         } else {
-            $this->components->warn('vite.config.js already references vpress theme.css.');
+            $this->components->warn('vite.config.js already references vpress Vite entries (or file could not be updated).');
         }
+
+        $this->components->warn('Install GrapesJS npm packages if needed: npm install grapesjs grapesjs-blocks-basic --save-dev');
+        $this->components->warn('Then build assets: npm run build');
     }
 
     protected function configureCookieConsentForFrontendOnly(): void

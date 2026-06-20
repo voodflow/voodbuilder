@@ -107,6 +107,9 @@ function applyCanvasDocumentTheme(editor, subTheme) {
     };
 
     editor.on('canvas:frame:load', apply);
+    window.addEventListener('vpress:theme-changed', (event) => {
+        apply(event?.detail?.isDark);
+    });
     apply();
 }
 

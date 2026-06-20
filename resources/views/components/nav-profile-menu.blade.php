@@ -10,7 +10,7 @@
 @endphp
 
 <div
-    class="relative"
+    class="vpress-nav-profile-menu relative"
     x-data="{ open: false }"
     @click.outside="open = false"
     @keydown.escape.window="open = false"
@@ -37,7 +37,7 @@
         x-cloak
         x-transition
         role="menu"
-        class="absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-[12rem] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+        class="vpress-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
     >
         @auth
             @if ($accountEnabled)
@@ -84,16 +84,16 @@
         @endif
 
         @auth
-            @if(\Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::userCanAccess())
+            @foreach (\Voodflow\Vpress\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
                 <a
-                    href="{{ \Voodflow\Vexhibitors\Support\ExhibitorPortalAccess::panelUrl() }}"
+                    href="{{ $profileMenuLink['url'] }}"
                     role="menuitem"
                     class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
                 >
-                    Espositore
+                    {{ $profileMenuLink['label'] }}
                 </a>
                 <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
-            @endif
+            @endforeach
 
             @if(\Voodflow\Vpress\Support\AdminAccess::userCanAccessPanel())
                 <a

@@ -35,8 +35,12 @@
 </div>
 
 @push('scripts')
-    @vite([
-        config('vpress.grapesjs.vite'),
-        'packages/voodflow/vpress/resources/css/grapesjs/editor.css',
-    ])
+    @if (\Voodflow\Vpress\Support\GrapesJs\GrapesJsAssets::isBuilt())
+        @vite(\Voodflow\Vpress\Support\GrapesJs\GrapesJsAssets::viteEntries())
+    @else
+        <div class="vpress-grapesjs-frontend__notice" role="alert">
+            <p>{{ __('vpress::pro.frontend.assets_missing') }}</p>
+            <p><code>{{ \Voodflow\Vpress\Support\GrapesJs\GrapesJsAssets::buildInstructions() }}</code></p>
+        </div>
+    @endif
 @endpush

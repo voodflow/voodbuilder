@@ -14,9 +14,85 @@
             document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
                 button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
             });
+
+            window.dispatchEvent(new CustomEvent('vpress:theme-changed', {
+                detail: {
+                    isDark,
+                },
+            }));
         }
 
         applyTheme(root.classList.contains('dark'));
+
+        function readStoredTheme() {
+            try {
+                return localStorage.getItem('theme');
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function persistTheme(mode) {
+            try {
+                if (mode === null) {
+                    localStorage.removeItem('theme');
+                } else {
+                    localStorage.setItem('theme', mode);
+                }
+            } catch (error) {
+                // Ignore storage failures and keep the current in-memory theme.
+            }
+        }
+
+        function resolvePreferredDark(storedMode = readStoredTheme()) {
+            if (config.locked) {
+                return config.defaultMode === 'dark';
+            }
+
+            if (storedMode === 'dark') {
+                return true;
+            }
+
+            if (storedMode === 'light') {
+                return false;
+            }
+
+            if (config.defaultMode === 'dark') {
+                return true;
+            }
+
+            if (config.defaultMode === 'light') {
+                return false;
+            }
+
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        function toggleTheme() {
+            if (config.locked) {
+                return;
+            }
+
+            const nextDark = ! root.classList.contains('dark');
+            persistTheme(nextDark ? 'dark' : 'light');
+            applyTheme(nextDark);
+        }
+
+        document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+                toggleTheme();
+            });
+        });
+
+        const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        colorSchemeQuery.addEventListener('change', (event) => {
+            if (readStoredTheme() !== null || config.locked) {
+                return;
+            }
+
+            applyTheme(event.matches);
+        });
 
         let scrollLockCount = 0;
 

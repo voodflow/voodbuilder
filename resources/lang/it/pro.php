@@ -30,5 +30,6 @@ return [
         'saving' => 'Salvataggio…',
         'saved' => 'Salvato',
         'error' => 'Impossibile salvare la pagina. Riprova.',
+        'assets_missing' => 'Gli asset frontend di GrapesJS non sono ancora stati compilati.',
     ],
 ];

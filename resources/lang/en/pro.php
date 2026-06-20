@@ -30,5 +30,6 @@ return [
         'saving' => 'Saving…',
         'saved' => 'Saved',
         'error' => 'Could not save the page. Try again.',
+        'assets_missing' => 'GrapesJS frontend assets are not built yet.',
     ],
 ];

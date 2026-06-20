@@ -1,7 +1,7 @@
 @extends(config('vpress.layouts.app', 'vpress::layouts.app'))
 
 @section('body_class')
-    vpress-sub-theme-events
+    vpress-sub-theme-events @yield('body_class_extra')
 @endsection
 
 @section('content')

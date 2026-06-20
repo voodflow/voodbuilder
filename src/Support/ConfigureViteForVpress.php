@@ -18,14 +18,15 @@ final class ConfigureViteForVpress
             return false;
         }
 
-        $themePath = VpressPaths::themeCssRelativePath();
         $contents = File::get($viteConfigPath);
         $original = $contents;
 
-        $contents = str_replace(self::LEGACY_THEME_PATH, $themePath, $contents);
+        $contents = str_replace(self::LEGACY_THEME_PATH, VpressPaths::themeCssRelativePath(), $contents);
 
-        if (! str_contains($contents, $themePath)) {
-            $contents = self::appendThemeEntry($contents, $themePath);
+        foreach (VpressPaths::viteInputEntries() as $entry) {
+            if (! str_contains($contents, $entry)) {
+                $contents = self::appendInputEntry($contents, $entry);
+            }
         }
 
         if (! $force && $contents === $original) {
@@ -41,13 +42,13 @@ final class ConfigureViteForVpress
         return true;
     }
 
-    private static function appendThemeEntry(string $contents, string $themePath): string
+    private static function appendInputEntry(string $contents, string $entry): string
     {
         if (preg_match("/input:\s*\[(.*?)\]/s", $contents, $matches) !== 1) {
             return $contents;
         }
 
-        $replacement = "input: [{$matches[1]}, '{$themePath}']";
+        $replacement = "input: [{$matches[1]}, '{$entry}']";
 
         return preg_replace("/input:\s*\[(.*?)\]/s", $replacement, $contents, 1) ?? $contents;
     }

@@ -39,6 +39,23 @@ final class VpressPaths
         return self::relativeToBasePath(self::packagePath().'/resources/js/grapesjs/editor.js');
     }
 
+    public static function grapesJsEditorCssEntry(): string
+    {
+        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/editor.css');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function viteInputEntries(): array
+    {
+        return [
+            self::themeCssRelativePath(),
+            self::grapesJsViteEntry(),
+            self::grapesJsEditorCssEntry(),
+        ];
+    }
+
     /**
      * @return list<string>
      */

@@ -146,12 +146,21 @@ body.vpress-grapesjs-editing .vpress-grapesjs-mode {
 body.vpress-grapesjs-editing header[role='banner'] {
     position: sticky;
     top: 0;
-    z-index: 70;
+    z-index: 1000;
     flex-shrink: 0;
+}
+
+body.vpress-grapesjs-editing header[role='banner'] .vpress-nav-profile-menu__dropdown,
+body.vpress-grapesjs-editing header[role='banner'] [role='menu'] {
+    z-index: 1001;
 }
 
 body.vpress-grapesjs-editing .vpress-grapesjs-frontend__toolbar {
     z-index: 60;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend {
+    z-index: 1;
 }
 
 html[data-vpress-sub-theme='events'] body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas {

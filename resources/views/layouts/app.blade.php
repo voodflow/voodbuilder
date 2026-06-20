@@ -32,7 +32,7 @@
     @livewireStyles
     @stack('head')
 </head>
-<body class="flex min-h-screen flex-col @yield('body_class')">
+<body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
     <x-vpress::nav
         :has-doc-sidebar="$vpressHasDocSidebar"
         :show-reading-progress="$vpressShowReadingProgress"
