@@ -53,6 +53,9 @@ final class GrapesJsEditorGate
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => route('vpress.grapesjs.blocks'),
+            'blocksRenderUrl' => route('vpress.grapesjs.blocks.render'),
+            'formSubmitUrl' => route('vpress.grapesjs.forms.submit', $page),
+            'plugins' => config('vpress.grapesjs.plugins', []),
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
             'subTheme' => $subTheme,
@@ -81,25 +84,41 @@ final class GrapesJsEditorGate
 
         $html = $normalized['html'];
         $css = $normalized['css'];
-        $project = $normalized['project'];
 
-        $pageManager = null;
+        $pageManager = self::pageManagerFromHtml($html, $css);
 
-        if (! self::hasPersistedProject($project) && filled($html)) {
-            $pageManager = [
-                'pages' => [[
-                    'id' => 'main',
-                    'component' => $html,
-                    'styles' => $css,
-                ]],
+        if ($pageManager === null && self::hasPersistedProject($normalized['project'] ?? null)) {
+            return [
+                'html' => $html,
+                'css' => $css,
+                'project' => $normalized['project'],
+                'pageManager' => null,
             ];
         }
 
         return [
             'html' => $html,
             'css' => $css,
-            'project' => $project,
+            'project' => null,
             'pageManager' => $pageManager,
+        ];
+    }
+
+    /**
+     * @return array{pages: list<array{id: string, component: string, styles: string}>}|null
+     */
+    private static function pageManagerFromHtml(string $html, string $css): ?array
+    {
+        if (! filled($html)) {
+            return null;
+        }
+
+        return [
+            'pages' => [[
+                'id' => 'main',
+                'component' => $html,
+                'styles' => $css,
+            ]],
         ];
     }
 
@@ -110,6 +129,8 @@ final class GrapesJsEditorGate
     public static function normalizePayload(array $payload): array
     {
         $html = GrapesJsHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
+        $html = GrapesJsDynamicBlockAttributeNormalizer::normalize($html);
+        $html = GrapesJsCustomCodeSanitizer::sanitize($html);
         $css = (string) ($payload['css'] ?? '');
         $project = $payload['project'] ?? null;
 

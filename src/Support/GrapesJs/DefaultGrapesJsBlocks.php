@@ -20,6 +20,8 @@ final class DefaultGrapesJsBlocks
   <a href="#" style="display: inline-block; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: #111827; color: #fff; text-decoration: none;">Call to action</a>
 </section>
 HTML,
+                preview: GrapesJsBlockThumbnail::forBlockId('vpress-hero'),
+                attributes: ['title' => 'Hero'],
             ))
             ->register(new GrapesJsBlockDefinition(
                 id: 'vpress-section',
@@ -31,6 +33,8 @@ HTML,
   <p style="line-height: 1.7;">Add paragraphs, images, and columns inside this section.</p>
 </section>
 HTML,
+                preview: GrapesJsBlockThumbnail::forBlockId('vpress-section'),
+                attributes: ['title' => 'Content section'],
             ))
             ->register(new GrapesJsBlockDefinition(
                 id: 'vpress-cta-banner',
@@ -43,6 +47,8 @@ HTML,
   <a href="#" style="display: inline-block; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: #fff; color: #111827; text-decoration: none;">Contact us</a>
 </section>
 HTML,
+                preview: GrapesJsBlockThumbnail::forBlockId('vpress-cta-banner'),
+                attributes: ['title' => 'CTA banner'],
             ));
     }
 }

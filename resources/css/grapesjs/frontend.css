@@ -5,7 +5,7 @@
     flex-direction: column;
     width: 100%;
     min-height: 0;
-    height: calc(100dvh - var(--vpress-grapesjs-site-header-height, 4rem));
+    height: calc(100dvh - var(--vpress-grapesjs-chrome-height, 7.25rem));
 }
 
 .vpress-grapesjs-frontend__toolbar {
@@ -86,6 +86,24 @@
     min-height: 0;
 }
 
+.vpress-gjs-block-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 4.5rem;
+    overflow: hidden;
+    border-radius: 0.375rem;
+    background: #f8fafc;
+    pointer-events: none;
+}
+
+.vpress-gjs-block-thumb svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 .vpress-gjs-block-preview {
     height: 4.5rem;
     overflow: hidden;
@@ -118,14 +136,68 @@
     outline-offset: 2px;
 }
 
+footer.vpress-gjs-dynamic,
+footer.vpress-gjs-footer,
+.vpress-gjs-footer {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+footer.vpress-gjs-dynamic {
+    outline-offset: -2px;
+}
+
+footer.vpress-gjs-dynamic [data-vpress-menu] ul,
+footer.vpress-gjs-dynamic [data-vpress-menu] li {
+    margin: 0;
+    padding: 0;
+}
+
+footer.vpress-gjs-dynamic [data-vpress-menu] li + li {
+    margin-top: 0.5rem;
+}
+
 body.vpress-grapesjs-editing {
-    --vpress-grapesjs-site-header-height: 4rem;
+    --vpress-grapesjs-site-header-height: 0px;
     --vpress-grapesjs-toolbar-height: 3.25rem;
-    --vpress-grapesjs-chrome-height: calc(
-        var(--vpress-grapesjs-site-header-height) + var(--vpress-grapesjs-toolbar-height)
-    );
+    --vpress-grapesjs-chrome-height: var(--vpress-grapesjs-toolbar-height);
     overflow: hidden;
     height: 100dvh;
+}
+
+/* Site chrome must not compete with the editor viewport */
+body.vpress-grapesjs-editing > footer,
+body.vpress-grapesjs-editing .cc-window,
+body.vpress-grapesjs-editing .cc-revoke,
+body.vpress-grapesjs-editing .cc-overlay {
+    display: none !important;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend {
+    height: calc(100dvh - var(--vpress-grapesjs-toolbar-height));
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-editor {
+    display: flex;
+    height: 100% !important;
+    min-height: 0;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-pn-panels {
+    min-height: 0;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-blocks-c {
+    min-width: 14rem;
 }
 
 body.vpress-grapesjs-editing .vpress-polito-content,
@@ -165,10 +237,7 @@ body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-frame-wrappe
 }
 
 body.vpress-grapesjs-editing header[role='banner'] {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    flex-shrink: 0;
+    display: none;
 }
 
 body.vpress-grapesjs-editing header[role='banner'] .vpress-nav-profile-menu__dropdown,
@@ -177,6 +246,7 @@ body.vpress-grapesjs-editing header[role='banner'] [role='menu'] {
 }
 
 body.vpress-grapesjs-editing .vpress-grapesjs-frontend__toolbar {
+    top: 0;
     z-index: 60;
 }
 

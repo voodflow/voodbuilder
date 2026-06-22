@@ -43,6 +43,9 @@ final class TailblocksGrapesJsBlocks
                 category: (string) ($definition['category'] ?? 'Tailblocks'),
                 content: $content,
                 preview: $preview,
+                attributes: [
+                    'title' => self::blockLabel($definition),
+                ],
             ));
         }
     }
@@ -69,6 +72,14 @@ final class TailblocksGrapesJsBlocks
      */
     protected static function shouldRegisterBlock(array $definition): bool
     {
+        if (config('vpress.grapesjs.vpress_footers.enabled', true)) {
+            $label = (string) ($definition['label'] ?? '');
+
+            if (str_starts_with($label, 'Footer ')) {
+                return false;
+            }
+        }
+
         $mode = (string) ($definition['mode'] ?? 'light');
         $modes = (array) config('vpress.grapesjs.tailblocks.modes', ['adaptive']);
 

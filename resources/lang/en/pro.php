@@ -32,4 +32,27 @@ return [
         'error' => 'Could not save the page. Try again.',
         'assets_missing' => 'GrapesJS frontend assets are not built yet.',
     ],
+
+    'grapesjs' => [
+        'blocks' => [
+            'site_header' => 'Site header (menu)',
+            'site_footer' => 'Site footer — column menus',
+            'site_footer_a' => 'Footer A — brand + columns',
+            'site_footer_b' => 'Footer B — columns + brand',
+            'site_footer_c' => 'Footer C — columns only',
+            'site_footer_d' => 'Footer D — compact bar',
+            'site_footer_e' => 'Footer E — four columns',
+            'site_header_preview' => 'Live menu from Admin → Menus',
+            'site_footer_preview' => 'Edit titles, tagline and copyright in the canvas. Brand and links stay dynamic.',
+            'site_footer_help' => 'Uses Admin → Menus → Footer column 1–4. Logo and brand name from site settings.',
+            'site_header_help' => 'Uses Admin → Menus → Main navigation and Header extras.',
+            'site_footer_empty' => 'No items in “:menu”. Add links in Admin → Menus.',
+            'footer_menu_empty' => 'No links in :menu yet',
+            'footer_default_tagline' => 'Short description for your brand.',
+            'footer_col_1_title' => 'CATEGORIES',
+            'footer_col_2_title' => 'RESOURCES',
+            'footer_col_3_title' => 'COMPANY',
+            'footer_col_4_title' => 'LEGAL',
+        ],
+    ],
 ];

@@ -243,7 +243,54 @@ class VpressSeeder extends Seeder
             ],
         ]);
 
+        $this->seedFooterColumnMenus();
+
         Navigation::clearCache();
+    }
+
+    protected function seedFooterColumnMenus(): void
+    {
+        $columns = [
+            1 => [
+                [
+                    'label' => 'Home',
+                    'type' => MenuItemType::Route,
+                    'link' => 'home',
+                    'route_match' => 'home',
+                    'sort_order' => 0,
+                ],
+                ...$this->tutorialMenuItems(),
+            ],
+            2 => [],
+            3 => [],
+            4 => [
+                [
+                    'label' => 'Privacy Policy',
+                    'type' => MenuItemType::Page,
+                    'link' => 'privacy-policy',
+                    'sort_order' => 0,
+                ],
+                [
+                    'label' => 'Cookie Policy',
+                    'type' => MenuItemType::Page,
+                    'link' => 'cookie-policy',
+                    'sort_order' => 1,
+                ],
+            ],
+        ];
+
+        foreach ($columns as $index => $items) {
+            $menu = NavigationMenu::query()->updateOrCreate(
+                ['slug' => 'footer_col_'.$index],
+                ['name' => 'Footer column '.$index],
+            );
+
+            $menu->items()->delete();
+
+            if ($items !== []) {
+                $menu->items()->createMany($items);
+            }
+        }
     }
 
     /** @return list<array<string, mixed>> */

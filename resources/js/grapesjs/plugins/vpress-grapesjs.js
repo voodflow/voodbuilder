@@ -4,7 +4,11 @@
  */
 
 import { configureEditorChrome } from '../editor-chrome.js';
-import { isClearedBackground, stripBackgroundClasses } from '../theme-tokens.js';
+import { encodeVpressConfig, parseVpressConfig } from '../vpress-dynamic-config.js';
+
+function isSiteFooterBlock(blockId) {
+    return blockId === 'site_footer' || (typeof blockId === 'string' && blockId.startsWith('site_footer_'));
+}
 
 const SECTION_PADDING_CLASSES = ['py-0', 'py-8', 'py-12', 'py-16', 'py-20', 'py-24'];
 
@@ -144,271 +148,243 @@ function applySectionPadding(section, pyClass) {
     applySectionPaddingToElement(container, pyClass);
 }
 
-function openImageAssetManager(editor, component) {
-    if (! component?.is?.('image')) {
+function syncVpressDynamicAttributes(component) {
+    const attributes = component.getAttributes();
+    const blockId = attributes['data-vpress-block'] ?? '';
+    const config = parseVpressConfig(attributes['data-vpress-config']);
+
+    component.set('vpressConfig', config, { silent: true });
+    component.set('name', blockId ? `Vpress: ${blockId}` : 'Vpress block');
+    component.setAttributes({
+        'data-vpress-block': blockId,
+        'data-vpress-config': encodeVpressConfig(config),
+        class: attributes.class ?? 'vpress-gjs-dynamic',
+    });
+}
+
+function lockComponentTree(component) {
+    component.set({
+        removable: false,
+        draggable: false,
+        copyable: false,
+        selectable: false,
+        hoverable: false,
+        layerable: false,
+    });
+
+    component.components().forEach((child) => {
+        lockComponentTree(child);
+    });
+}
+
+function lockDynamicPreviewContent(component) {
+    const blockId = component.getAttributes()['data-vpress-block'];
+
+    if (isSiteFooterBlock(blockId)) {
+        component.find('[data-vpress-menu], [data-vpress-brand]').forEach((slot) => {
+            lockComponentTree(slot);
+        });
+
         return;
     }
 
-    const am = editor.AssetManager;
-
-    am.open({
-        select: (asset, complete) => {
-            component.set({ src: asset.getSrc() });
-            complete && am.close();
-        },
-        target: component,
-        types: ['image'],
-        accept: 'image/*',
+    component.components().forEach((child) => {
+        lockComponentTree(child);
     });
 }
 
-function imageTraits() {
-    return [
-        {
-            type: 'text',
-            label: 'Image URL',
-            name: 'src',
-            changeProp: 1,
-            placeholder: 'https://…',
-        },
-        {
-            type: 'button',
-            label: 'Media library',
-            text: 'Choose or upload…',
-            full: true,
-            command: (editor, trait) => {
-                const component = trait?.target ?? editor.getSelected();
+function applySiteFooterColumns(component, columns) {
+    const count = Math.max(1, Math.min(4, Number(columns) || 4));
 
-                openImageAssetManager(editor, component);
-            },
-        },
-        {
-            type: 'text',
-            label: 'Alt text',
-            name: 'alt',
-        },
-    ];
-}
+    component.find('[data-vpress-footer-col]').forEach((column) => {
+        const index = Number(column.getAttributes()['data-vpress-footer-col'] ?? 0);
+        const classes = column
+            .getClasses()
+            .filter((className) => className !== 'hidden');
 
-function isHeroBackgroundImage(component) {
-    const classes = component.getClasses?.() ?? [];
-
-    return classes.includes('absolute') && classes.includes('inset-0');
-}
-
-function registerImageComponentEnhancements(editor) {
-    editor.DomComponents.addType('image', {
-        extend: 'image',
-        model: {
-            defaults: {
-                editable: true,
-                traits: imageTraits(),
-            },
-            init() {
-                if (isHeroBackgroundImage(this)) {
-                    this.set('name', 'Hero background');
-                }
-            },
-        },
-    });
-
-    editor.on('component:selected', (component) => {
-        if (component?.is?.('image')) {
-            editor.runCommand('open-tm');
+        if (index > count) {
+            classes.push('hidden');
         }
+
+        column.setClass(classes);
     });
 
-    editor.on('load', () => {
-        const wrapper = editor.getWrapper?.();
+    component.addAttributes({ 'data-vpress-footer-columns': String(count) });
 
-        if (! wrapper) {
+    const config = {
+        ...(component.get('vpressConfig') ?? {}),
+        columns: count,
+    };
+
+    component.set('vpressConfig', config, { silent: true });
+    component.set('vpressFooterColumns', String(count), { silent: true });
+    component.addAttributes({
+        'data-vpress-config': encodeVpressConfig(config),
+    });
+}
+
+function configureSiteFooterTraits(component) {
+    const blockId = component.getAttributes()['data-vpress-block'];
+
+    if (blockId === 'site_footer_d' || component.find('[data-vpress-footer-col]').length === 0) {
+        component.set('traits', []);
+
+        return;
+    }
+
+    component.set('traits', [
+        {
+            type: 'select',
+            label: 'Columns',
+            name: 'vpressFooterColumns',
+            changeProp: true,
+            options: [
+                { id: '1', name: '1 column' },
+                { id: '2', name: '2 columns' },
+                { id: '3', name: '3 columns' },
+                { id: '4', name: '4 columns' },
+            ],
+        },
+    ]);
+
+    const columns = String(component.get('vpressConfig')?.columns ?? 4);
+
+    component.set('vpressFooterColumns', columns, { silent: true });
+    applySiteFooterColumns(component, columns);
+
+    component.on('change:vpressFooterColumns', () => {
+        applySiteFooterColumns(component, component.get('vpressFooterColumns'));
+    });
+}
+
+function findVpressDynamicAncestor(component) {
+    let parent = component?.parent?.();
+
+    while (parent) {
+        if (parent.get('type') === 'vpress-dynamic') {
+            return parent;
+        }
+
+        parent = parent.parent();
+    }
+
+    return null;
+}
+
+function isInsideProtectedSlot(component) {
+    let current = component;
+
+    while (current) {
+        const attributes = current.getAttributes?.() ?? {};
+
+        if (attributes['data-vpress-menu'] || attributes['data-vpress-brand']) {
+            return true;
+        }
+
+        if (current.get('type') === 'vpress-dynamic') {
+            return false;
+        }
+
+        current = current.parent();
+    }
+
+    return false;
+}
+
+function registerDynamicBlockGuards(editor) {
+    editor.on('component:remove', (removed) => {
+        if (removed.get('type') === 'vpress-dynamic') {
             return;
         }
 
-        wrapper.find('img').forEach((component) => {
-            if (component.get('type') !== 'image') {
-                component.set('type', 'image');
-            }
+        const dynamic = findVpressDynamicAncestor(removed);
 
-            component.set({
-                editable: true,
-                traits: imageTraits(),
-            });
+        if (! dynamic?.parent()) {
+            return;
+        }
 
-            if (isHeroBackgroundImage(component)) {
-                component.set('name', 'Hero background');
+        if (isSiteFooterBlock(dynamic.getAttributes()['data-vpress-block']) && ! isInsideProtectedSlot(removed)) {
+            return;
+        }
+
+        window.queueMicrotask(() => {
+            if (dynamic.parent()) {
+                dynamic.remove();
             }
         });
+    });
+}
+
+function pruneEmptyDynamicBlocks(editor) {
+    editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
+        const blockId = component.getAttributes()['data-vpress-block'];
+
+        if (isSiteFooterBlock(blockId)) {
+            return;
+        }
+
+        if (component.components().length === 0) {
+            component.remove();
+        }
+    });
+}
+
+function refreshDynamicSlots(component, freshRoot) {
+    for (const selector of ['[data-vpress-menu]', '[data-vpress-brand]']) {
+        const freshSlots = [...freshRoot.querySelectorAll(selector)];
+        const componentSlots = component.find(selector);
+
+        freshSlots.forEach((freshSlot, index) => {
+            const target = componentSlots[index];
+
+            if (! target) {
+                return;
+            }
+
+            target.components(freshSlot.innerHTML);
+            lockComponentTree(target);
+        });
+    }
+}
+
+function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
+    component.set('vpressConfig', freshConfig, { silent: true });
+    component.addAttributes({
+        'data-vpress-block': fresh.getAttribute('data-vpress-block') ?? blockId,
+        'data-vpress-config': fresh.getAttribute('data-vpress-config') ?? encodeVpressConfig(freshConfig),
+        class: fresh.getAttribute('class') ?? 'vpress-gjs-dynamic vpress-gjs-footer w-full',
+        'data-vpress-hydrate-slots': '1',
     });
 }
 
 function registerDynamicBlockType(editor) {
-    const parseVpressConfig = (component) => {
-        const raw = component.getAttributes()['data-vpress-config'];
-
-        if (! raw) {
-            return {};
-        }
-
-        try {
-            return JSON.parse(raw);
-        } catch {
-            return {};
-        }
-    };
-
-    const writeVpressConfig = (component, config) => {
-        component.addAttributes({
-            'data-vpress-config': JSON.stringify(config),
-        });
-    };
-
-    const landingFooterTraits = () => {
-        const traits = [
-            {
-                type: 'select',
-                label: 'Layout',
-                name: 'vpressVariant',
-                options: [
-                    { id: 'a', name: 'Footer A' },
-                    { id: 'b', name: 'Footer B' },
-                    { id: 'c', name: 'Footer C' },
-                    { id: 'd', name: 'Footer D' },
-                    { id: 'e', name: 'Footer E' },
-                ],
-            },
-        ];
-
-        for (let index = 1; index <= 4; index += 1) {
-            traits.push({
-                type: 'text',
-                label: `Column ${index} title`,
-                name: `vpressColumn${index}Title`,
-            });
-        }
-
-        return traits;
-    };
-
-    const landingNavbarTraits = () => [
-        {
-            type: 'select',
-            label: 'Layout',
-            name: 'vpressVariant',
-            options: [
-                { id: 'a', name: 'Header A' },
-                { id: 'b', name: 'Header B' },
-                { id: 'c', name: 'Header C' },
-                { id: 'd', name: 'Header D' },
-            ],
-        },
-        {
-            type: 'text',
-            label: 'Brand name',
-            name: 'vpressBrandName',
-        },
-        {
-            type: 'text',
-            label: 'CTA label',
-            name: 'vpressCtaLabel',
-        },
-        {
-            type: 'text',
-            label: 'CTA URL',
-            name: 'vpressCtaUrl',
-        },
-    ];
-
-    const syncTraitsFromConfig = (component) => {
-        const blockId = component.getAttributes()['data-vpress-block'];
-        const config = parseVpressConfig(component);
-
-        if (blockId === 'landing_footer') {
-            component.set('vpressVariant', config.variant ?? 'a', { silent: true });
-
-            for (let index = 1; index <= 4; index += 1) {
-                component.set(`vpressColumn${index}Title`, config[`column_${index}_title`] ?? '', { silent: true });
-            }
-
-            return;
-        }
-
-        if (blockId === 'landing_navbar') {
-            component.set('vpressVariant', config.variant ?? 'a', { silent: true });
-            component.set('vpressBrandName', config.brand_name ?? '', { silent: true });
-            component.set('vpressCtaLabel', config.cta_label ?? '', { silent: true });
-            component.set('vpressCtaUrl', config.cta_url ?? '', { silent: true });
-        }
-    };
-
-    const syncConfigFromTraits = (component) => {
-        const blockId = component.getAttributes()['data-vpress-block'];
-        const config = parseVpressConfig(component);
-
-        if (blockId === 'landing_footer') {
-            config.variant = component.get('vpressVariant') ?? config.variant ?? 'a';
-
-            for (let index = 1; index <= 4; index += 1) {
-                const title = component.get(`vpressColumn${index}Title`);
-
-                if (title) {
-                    config[`column_${index}_title`] = title;
-                } else {
-                    delete config[`column_${index}_title`];
-                }
-            }
-
-            writeVpressConfig(component, config);
-
-            return;
-        }
-
-        if (blockId === 'landing_navbar') {
-            config.variant = component.get('vpressVariant') ?? config.variant ?? 'a';
-
-            const brandName = component.get('vpressBrandName');
-            const ctaLabel = component.get('vpressCtaLabel');
-            const ctaUrl = component.get('vpressCtaUrl');
-
-            if (brandName) {
-                config.brand_name = brandName;
-            }
-
-            if (ctaLabel) {
-                config.cta_label = ctaLabel;
-            }
-
-            if (ctaUrl) {
-                config.cta_url = ctaUrl;
-            }
-
-            writeVpressConfig(component, config);
-        }
-    };
-
-    const applyDynamicTraits = (component) => {
-        const blockId = component.getAttributes()['data-vpress-block'];
-
-        if (blockId === 'landing_footer') {
-            component.set('traits', landingFooterTraits());
-            syncTraitsFromConfig(component);
-
-            return;
-        }
-
-        if (blockId === 'landing_navbar') {
-            component.set('traits', landingNavbarTraits());
-            syncTraitsFromConfig(component);
-        }
-    };
-
     editor.DomComponents.addType('vpress-dynamic', {
         isComponent: (element) => {
-            if (element?.getAttribute?.('data-vpress-block')) {
-                return { type: 'vpress-dynamic' };
+            const blockId = element?.getAttribute?.('data-vpress-block');
+
+            if (! blockId) {
+                return false;
             }
 
-            return false;
+            const config = parseVpressConfig(element.getAttribute('data-vpress-config') ?? '{}');
+            const isFooter = element?.tagName === 'FOOTER' && isSiteFooterBlock(blockId);
+            const defaultClass = isFooter
+                ? 'vpress-gjs-dynamic vpress-gjs-footer w-full border-t border-vp-divider bg-vp-bg'
+                : (element.getAttribute('class') ?? 'vpress-gjs-dynamic');
+
+            return {
+                type: 'vpress-dynamic',
+                tagName: isFooter ? 'footer' : (element.tagName?.toLowerCase() ?? 'div'),
+                vpressConfig: config,
+                attributes: {
+                    'data-vpress-block': blockId,
+                    'data-vpress-config': encodeVpressConfig(config),
+                    class: defaultClass,
+                    ...(element.hasAttribute('data-vpress-hydrate-slots')
+                        ? { 'data-vpress-hydrate-slots': '1' }
+                        : {}),
+                },
+            };
         },
         model: {
             defaults: {
@@ -418,65 +394,30 @@ function registerDynamicBlockType(editor) {
                 droppable: false,
                 editable: false,
                 copyable: true,
+                removable: true,
                 stylable: false,
                 layerable: true,
                 highlightable: true,
+                vpressConfig: {},
                 attributes: {
                     class: 'vpress-gjs-dynamic',
+                    'data-vpress-block': '',
+                    'data-vpress-config': encodeVpressConfig({}),
                 },
-                traits: [
-                    {
-                        type: 'text',
-                        label: 'Block ID',
-                        name: 'data-vpress-block',
-                    },
-                    {
-                        type: 'text',
-                        label: 'Config (JSON)',
-                        name: 'data-vpress-config',
-                    },
-                ],
+                traits: [],
             },
             init() {
-                applyDynamicTraits(this);
+                syncVpressDynamicAttributes(this);
 
-                const traitNames = [
-                    'vpressVariant',
-                    'vpressBrandName',
-                    'vpressCtaLabel',
-                    'vpressCtaUrl',
-                    'vpressColumn1Title',
-                    'vpressColumn2Title',
-                    'vpressColumn3Title',
-                    'vpressColumn4Title',
-                ];
+                if (isSiteFooterBlock(this.getAttributes()['data-vpress-block'])) {
+                    configureSiteFooterTraits(this);
+                }
 
-                traitNames.forEach((traitName) => {
-                    this.on(`change:${traitName}`, () => syncConfigFromTraits(this));
+                this.on('change:attributes:data-vpress-config', () => {
+                    syncVpressDynamicAttributes(this);
                 });
             },
         },
-    });
-
-    editor.on('component:selected', (component) => {
-        if (component?.getAttributes?.()['data-vpress-block']) {
-            applyDynamicTraits(component);
-        }
-    });
-}
-
-function registerBackgroundClearSupport(editor) {
-    editor.on('component:styleUpdate', (component, property) => {
-        if (property !== 'background-color' && property !== 'background') {
-            return;
-        }
-
-        const style = component.getStyle?.() ?? {};
-        const background = style['background-color'] ?? style.background;
-
-        if (isClearedBackground(background)) {
-            stripBackgroundClasses(component);
-        }
     });
 }
 
@@ -486,24 +427,60 @@ function registerBlocks(editor, blocks = []) {
             ? sanitizeBlockHtml(block.content)
             : block.content;
 
+        const blockAttributes = {
+            ...(block.attributes ?? {}),
+            title: block.attributes?.title ?? block.label,
+        };
+
         editor.BlockManager.add(block.id, {
             label: block.label,
             category: block.category,
             content,
             media: block.preview ?? block.media ?? `<div class="vpress-gjs-block-fallback">${block.label}</div>`,
-            attributes: block.attributes ?? {},
+            attributes: blockAttributes,
         });
     }
 }
 
-export { registerBlocks, sanitizeBlockHtml };
+function prioritizeBlockCategories(editor) {
+    const categories = editor.BlockManager.getCategories?.();
+
+    if (! categories?.each) {
+        return;
+    }
+
+    categories.each((category) => {
+        const id = String(category.get('id') ?? category.get('label') ?? '');
+
+        if (id === 'Vpress' || id === 'Dynamic') {
+            category.set('order', -100);
+            category.set('open', true);
+        } else if (id.startsWith('Tailblocks')) {
+            category.set('order', 100);
+        }
+    });
+}
+
+export {
+    registerBlocks,
+    sanitizeBlockHtml,
+    syncVpressDynamicAttributes,
+    lockDynamicPreviewContent,
+    registerDynamicBlockGuards,
+    pruneEmptyDynamicBlocks,
+    applySiteFooterColumns,
+    refreshDynamicSlots,
+    isSiteFooterBlock,
+    applyFreshFooterAttributes,
+    prioritizeBlockCategories,
+};
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
     registerTailblocksSectionType(editor);
-    registerImageComponentEnhancements(editor);
     registerSpacingStyleSync(editor);
-    registerBackgroundClearSupport(editor);
+    registerDynamicBlockGuards(editor);
     configureEditorChrome(editor);
     registerBlocks(editor, options.blocks ?? []);
+    prioritizeBlockCategories(editor);
 }

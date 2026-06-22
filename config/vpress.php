@@ -252,6 +252,15 @@ return [
             'max_css_bytes' => 100_000,
             'max_project_bytes' => 2_000_000,
         ],
+        'plugins' => [
+            'forms' => env('VPRESS_GRAPESJS_FORMS', true),
+            'style_bg' => env('VPRESS_GRAPESJS_STYLE_BG', true),
+            'tabs' => env('VPRESS_GRAPESJS_TABS', true),
+            'custom_code' => env('VPRESS_GRAPESJS_CUSTOM_CODE', true),
+        ],
+        'forms' => [
+            'success_message' => 'Thank you. Your message has been received.',
+        ],
     ],
 
     /*

@@ -25,9 +25,10 @@ final class GrapesJsRichContentBlockAdapter
             label: $blockClass::getLabel(),
             category: $category,
             content: self::wrap($blockId, $config, $editorInner),
-            preview: self::previewMedia($editorInner, $blockClass::getLabel()),
+            preview: GrapesJsBlockThumbnail::forBlockId($blockId),
             attributes: [
                 'class' => 'vpress-gjs-dynamic',
+                'title' => $blockClass::getLabel(),
             ],
         );
     }
@@ -62,8 +63,10 @@ final class GrapesJsRichContentBlockAdapter
             ENT_QUOTES | ENT_HTML5,
         );
 
+        $hydrateSlots = SiteFooterBlocks::isFooterBlockId($blockId) ? ' data-vpress-hydrate-slots="1"' : '';
+
         return <<<HTML
-<div data-vpress-block="{$blockId}" data-vpress-config="{$encodedConfig}" class="vpress-gjs-dynamic">
+<div data-vpress-block="{$blockId}" data-vpress-config="{$encodedConfig}"{$hydrateSlots} class="vpress-gjs-dynamic">
 {$innerHtml}
 </div>
 HTML;

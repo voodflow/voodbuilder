@@ -48,6 +48,19 @@ final class GrapesJsDefaultBlockConfig
     }
 
     /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>
+     */
+    public static function mergeEventId(array $config, string $blockId, ?int $eventId): array
+    {
+        if ($eventId > 0 && self::needsEventId($blockId) && empty($config['event_id'])) {
+            $config['event_id'] = $eventId;
+        }
+
+        return $config;
+    }
+
+    /**
      * @return array<string, array<string, mixed>>
      */
     public static function defaults(): array

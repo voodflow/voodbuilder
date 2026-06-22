@@ -8,8 +8,21 @@ import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
 
-import vpressGrapesJsPlugin, { registerBlocks, sanitizeBlockHtml } from './plugins/vpress-grapesjs.js';
-import { migrateEditorComponent, migrateEditorComponents, purgeLegacyEditorStyles } from './theme-tokens.js';
+import vpressGrapesJsPlugin, {
+    applyFreshFooterAttributes,
+    applySiteFooterColumns,
+    isSiteFooterBlock,
+    lockDynamicPreviewContent,
+    prioritizeBlockCategories,
+    pruneEmptyDynamicBlocks,
+    refreshDynamicSlots,
+    registerBlocks,
+    sanitizeBlockHtml,
+    syncVpressDynamicAttributes,
+} from './plugins/vpress-grapesjs.js';
+import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './vpress-dynamic-config.js';
+import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
+import { migrateEditorComponents } from './theme-tokens.js';
 import { editorChromeInitOptions } from './editor-chrome.js';
 
 function hasProjectData(project) {
@@ -32,11 +45,19 @@ function hasProjectData(project) {
     return true;
 }
 
+function normalizeVpressDynamicComponents(editor) {
+    editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
+        syncVpressDynamicAttributes(component);
+    });
+}
+
 function buildPayload(editor) {
+    normalizeVpressDynamicComponents(editor);
+    pruneEmptyDynamicBlocks(editor);
+
     return {
         html: editor.getHtml(),
         css: editor.getCss(),
-        project: editor.getProjectData(),
     };
 }
 
@@ -81,7 +102,7 @@ function applyInitialContent(editor, initial) {
 }
 
 function ensureInitialContent(editor, initial) {
-    if (hasProjectData(initial.project) || ! initial.html?.trim()) {
+    if (initial.pageManager || hasProjectData(initial.project) || ! initial.html?.trim()) {
         return;
     }
 
@@ -93,59 +114,10 @@ function ensureInitialContent(editor, initial) {
     window.setTimeout(apply, 100);
 }
 
-function applyLandingCanvasWrapper(editor, landingCanvas) {
-    if (! landingCanvas) {
-        return;
-    }
-
-    const apply = () => {
-        const wrapper = editor.getWrapper?.();
-
-        if (! wrapper) {
-            return;
-        }
-
-        wrapper.addClass(['VPRichPage', 'VPRichPage--landing']);
-    };
-
-    editor.on('load', apply);
-    editor.on('canvas:frame:load', apply);
-}
-
-function setupCanvasThemePalette(editor, paletteCss) {
-    if (! paletteCss) {
-        return () => {};
-    }
-
-    const inject = () => {
-        const doc = editor.Canvas.getDocument();
-
-        if (! doc) {
-            return;
-        }
-
-        let style = doc.getElementById('vpress-canvas-theme-palette');
-
-        if (! style) {
-            style = doc.createElement('style');
-            style.id = 'vpress-canvas-theme-palette';
-            doc.head.appendChild(style);
-        }
-
-        style.textContent = paletteCss;
-    };
-
-    editor.on('canvas:frame:load', inject);
-
-    return inject;
-}
-
-function applyCanvasDocumentTheme(editor, subTheme, themePaletteCss) {
+function applyCanvasDocumentTheme(editor, subTheme) {
     if (! subTheme) {
         return;
     }
-
-    const injectPalette = setupCanvasThemePalette(editor, themePaletteCss);
 
     const apply = (isDark = null) => {
         const doc = editor.Canvas.getDocument();
@@ -163,8 +135,6 @@ function applyCanvasDocumentTheme(editor, subTheme, themePaletteCss) {
         } else {
             doc.documentElement.classList.remove('dark');
         }
-
-        injectPalette();
     };
 
     editor.on('canvas:frame:load', () => apply());
@@ -177,6 +147,7 @@ function applyCanvasDocumentTheme(editor, subTheme, themePaletteCss) {
 export function initVpressGrapesJs(container, options = {}) {
     const initial = options.initial ?? {};
     const chromeOptions = editorChromeInitOptions();
+    const pluginBundle = resolveGrapesJsPlugins(options.plugins ?? {});
     const editorOptions = {
         container,
         height: options.height ?? '640px',
@@ -186,11 +157,12 @@ export function initVpressGrapesJs(container, options = {}) {
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
-        plugins: [grapesjsBlocksBasic, vpressGrapesJsPlugin],
+        plugins: [grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
         pluginsOpts: {
             [grapesjsBlocksBasic]: {
                 flexGrid: true,
             },
+            ...pluginBundle.pluginsOpts,
             [vpressGrapesJsPlugin]: {
                 blocks: options.blocks ?? [],
             },
@@ -199,25 +171,23 @@ export function initVpressGrapesJs(container, options = {}) {
             styles: options.canvasStyles ?? [],
             frameStyle: options.canvasFrameStyle,
         },
-        assetManager: {
-            multiUpload: false,
-            autoAdd: true,
-            ...(options.uploadUrl
-                ? {
-                      upload: options.uploadUrl,
-                      uploadName: 'file',
-                      credentials: 'same-origin',
-                      headers: options.csrf
-                          ? {
-                                'X-CSRF-TOKEN': options.csrf,
-                                Accept: 'application/json',
-                            }
-                          : {
-                                Accept: 'application/json',
-                            },
-                  }
-                : {}),
-        },
+        assetManager: options.uploadUrl
+            ? {
+                  upload: options.uploadUrl,
+                  uploadName: 'file',
+                  multiUpload: false,
+                  autoAdd: true,
+                  credentials: 'same-origin',
+                  headers: options.csrf
+                      ? {
+                            'X-CSRF-TOKEN': options.csrf,
+                            Accept: 'application/json',
+                        }
+                      : {
+                            Accept: 'application/json',
+                        },
+              }
+            : false,
         blockManager: {
             appendTo: options.blocksAppendTo ?? undefined,
         },
@@ -231,7 +201,9 @@ export function initVpressGrapesJs(container, options = {}) {
         panels: options.panels ?? undefined,
     };
 
-    if (hasProjectData(initial.project)) {
+    if (initial.pageManager && typeof initial.pageManager === 'object') {
+        editorOptions.pageManager = initial.pageManager;
+    } else if (hasProjectData(initial.project)) {
         editorOptions.projectData = initial.project;
     } else {
         const pageManager = resolvePageManager(initial);
@@ -243,17 +215,26 @@ export function initVpressGrapesJs(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
-    applyCanvasDocumentTheme(editor, options.subTheme, options.themePaletteCss);
-    applyLandingCanvasWrapper(editor, options.landingCanvas ?? false);
+    configureGrapesJsPlugins(editor, {
+        formSubmitUrl: options.formSubmitUrl,
+        csrf: options.csrf,
+        plugins: options.plugins ?? {},
+    });
+
+    applyCanvasDocumentTheme(editor, options.subTheme);
     ensureInitialContent(editor, initial);
 
     editor.on('load', () => {
-        purgeLegacyEditorStyles(editor);
         migrateEditorComponents(editor);
-    });
+        void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
+            editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
+                lockDynamicPreviewContent(component);
 
-    editor.on('component:add', (component) => {
-        migrateEditorComponent(component);
+                if (isSiteFooterBlock(component.getAttributes()['data-vpress-block'])) {
+                    applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                }
+            });
+        });
     });
 
     if (typeof options.onUpdate === 'function') {
@@ -266,6 +247,101 @@ export function initVpressGrapesJs(container, options = {}) {
     }
 
     return editor;
+}
+
+async function refreshDynamicBlocks(editor, renderUrl) {
+    if (! renderUrl) {
+        return;
+    }
+
+    const components = editor.getWrapper().find('[data-vpress-block]');
+
+    for (const component of components) {
+        const attributes = component.getAttributes();
+        const blockId = attributes['data-vpress-block'];
+
+        if (! blockId) {
+            continue;
+        }
+
+        const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-vpress-config']);
+        const params = new URLSearchParams({
+            block: blockId,
+            config: serializeVpressConfig(config),
+        });
+
+        try {
+            const response = await fetch(`${renderUrl}?${params.toString()}`, {
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (! response.ok) {
+                continue;
+            }
+
+            const payload = await response.json();
+            const html = payload.html;
+
+            if (typeof html !== 'string' || html === '') {
+                continue;
+            }
+
+            const temp = document.createElement('div');
+
+            temp.innerHTML = sanitizeBlockHtml(html);
+            const fresh = temp.firstElementChild;
+
+            if (! fresh) {
+                continue;
+            }
+
+            const freshConfig = parseVpressConfig(
+                fresh.getAttribute('data-vpress-config') ?? serializeVpressConfig(config),
+            );
+
+            const footerBlock = isSiteFooterBlock(blockId);
+
+            if (footerBlock && fresh.tagName === 'FOOTER') {
+                applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
+
+                if (component.find('[data-vpress-menu], [data-vpress-brand]').length > 0) {
+                    refreshDynamicSlots(component, fresh);
+                } else {
+                    component.components(fresh.innerHTML);
+                }
+            } else {
+                component.set('vpressConfig', freshConfig, { silent: true });
+                component.setAttributes({
+                    'data-vpress-block': fresh.getAttribute('data-vpress-block') ?? blockId,
+                    'data-vpress-config': fresh.getAttribute('data-vpress-config') ?? encodeVpressConfig(freshConfig),
+                    class: fresh.getAttribute('class') ?? 'vpress-gjs-dynamic',
+                    ...(fresh.hasAttribute('data-vpress-hydrate-slots')
+                        ? { 'data-vpress-hydrate-slots': '1' }
+                        : {}),
+                });
+
+                const hydratesSlots = fresh.hasAttribute('data-vpress-hydrate-slots')
+                    && component.find('[data-vpress-menu], [data-vpress-brand]').length > 0;
+
+                if (hydratesSlots) {
+                    refreshDynamicSlots(component, fresh);
+                } else {
+                    component.components(fresh.innerHTML);
+                }
+            }
+
+            lockDynamicPreviewContent(component);
+
+            if (footerBlock) {
+                applySiteFooterColumns(component, freshConfig.columns ?? 4);
+            }
+        } catch (error) {
+            console.error('Vpress GrapesJS: could not refresh dynamic block.', blockId, error);
+        }
+    }
 }
 
 async function loadBlocks(editor, blocksUrl) {
@@ -283,25 +359,13 @@ async function loadBlocks(editor, blocksUrl) {
 
         const payload = await response.json();
         registerBlocks(editor, payload.blocks ?? []);
+        prioritizeBlockCategories(editor);
     } catch (error) {
         console.error('Vpress GrapesJS: could not load block catalog.', error);
     }
 }
 
-function computeEditorHeight() {
-    const header = document.querySelector('header[role="banner"]');
-    const toolbar = document.querySelector('.vpress-grapesjs-frontend__toolbar');
-    const headerHeight = header?.getBoundingClientRect().height ?? 64;
-    const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 52;
-
-    return Math.max(Math.round(window.innerHeight - headerHeight - toolbarHeight), 320);
-}
-
-function syncEditorCanvasHeight(canvas, editor = null) {
-    const height = computeEditorHeight();
-
-    canvas.style.height = `${height}px`;
-
+function refreshEditorLayout(editor) {
     if (editor) {
         editor.refresh();
     }
@@ -335,8 +399,6 @@ function mountFrontendEditor() {
         return;
     }
 
-    syncEditorCanvasHeight(canvas);
-
     const editor = initVpressGrapesJs(canvas, {
         height: '100%',
         noticeOnUnload: true,
@@ -344,13 +406,14 @@ function mountFrontendEditor() {
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
         subTheme: config.subTheme,
-        landingCanvas: config.landingCanvas ?? false,
-        themePaletteCss: config.themePaletteCss ?? '',
         uploadUrl: config.uploadUrl,
         csrf: config.csrf,
+        formSubmitUrl: config.formSubmitUrl,
+        plugins: config.plugins ?? {},
+        blocksRenderUrl: config.blocksRenderUrl,
     });
 
-    const onResize = () => syncEditorCanvasHeight(canvas, editor);
+    const onResize = () => refreshEditorLayout(editor);
 
     window.addEventListener('resize', onResize);
     editor.on('load', onResize);
@@ -359,6 +422,7 @@ function mountFrontendEditor() {
         void loadBlocks(editor, config.blocksUrl);
     } else if (Array.isArray(config.blocks) && config.blocks.length > 0) {
         registerBlocks(editor, config.blocks);
+        prioritizeBlockCategories(editor);
     }
 
     if (! saveButton) {
@@ -379,6 +443,7 @@ function mountFrontendEditor() {
         try {
             const response = await fetch(config.saveUrl, {
                 method: 'PUT',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',

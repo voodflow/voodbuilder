@@ -17,16 +17,14 @@ Vpress Pro ships a **frontend GrapesJS editor** for Site Pages. Editors with per
 Install npm dependencies (host app):
 
 ```bash
-php artisan vpress:install --with-npm-build
-```
-
-Or, if you already ran install without build:
-
-```bash
+npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code
+npm install -D esbuild react react-dom prop-types   # only for vpress:build-tailblocks
 npm run build
 ```
 
-`php artisan vpress:install` patches `package.json`, `vite.config.js`, and runs `npm install` when Node is available.
+Optional GrapesJS plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/vpress.php` → `grapesjs.plugins`.
+
+`php artisan vpress:install` patches `vite.config.js` with GrapesJS entries when possible.
 
 ---
 
@@ -37,9 +35,11 @@ Blocks appear in the GrapesJS sidebar when editing.
 | Source | Category | Notes |
 |--------|----------|-------|
 | **Tailblocks** | `Tailblocks / …` | 60+ marketing sections; adaptive to light/dark via theme tokens |
-| **Vpress** | `Vpress` | Hero, content section, CTA banner |
+| **Vpress** | `Vpress` | Hero, content section, CTA, **site header/footer** (live menus) |
 | **RichEditor blocks** | Per package | Dynamic server-rendered blocks (e.g. latest posts) |
-| **Custom** | Your category | Registered in a ServiceProvider |
+| **Server blocks** | Per package | Third-party packages without Filament RichEditor |
+| **Custom** | Your category | Static HTML registered in a ServiceProvider |
+| **Forms / Tabs / …** | GrapesJS plugins | Optional npm plugins (see below) |
 
 ### Tailblocks catalog
 
@@ -107,6 +107,116 @@ Vpress::grapesJsRichContentBlock('Dynamic', LatestBlogPostsBlock::class);
 The block class must implement the RichEditor custom block contract. GrapesJS stores a placeholder; the server renders HTML on publish/view.
 
 Use this for **latest posts**, **news lists**, **event cards**, etc.
+
+When the block already exists for Filament RichEditor (with `configureEditorAction()`), register it once for both editors:
+
+```php
+Vpress::richContentBlock('News', LatestNewsBlock::class);
+Vpress::grapesJsRichContentBlock('UltiNews', LatestNewsBlock::class);
+```
+
+---
+
+## Register server blocks (third-party packages)
+
+For packages that **do not** use Filament RichEditor — e.g. a standalone UltiNews widget or a Filament Form rendered as HTML — implement `GrapesJsServerBlock` and register in `boot()`:
+
+```php
+use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Vpress\Vpress;
+
+final class LatestNewsGrapesJsBlock implements GrapesJsServerBlock
+{
+    public static function getId(): string
+    {
+        return 'ultinews_latest';
+    }
+
+    public static function getLabel(): string
+    {
+        return 'Latest news';
+    }
+
+    public static function defaultConfig(): array
+    {
+        return ['limit' => 6, 'category' => null];
+    }
+
+    public static function toHtml(array $config, array $context): string
+    {
+        return view('ultinews::grapesjs.latest', compact('config'))->render();
+    }
+
+    public static function toPreviewHtml(array $config, array $context): string
+    {
+        return static::toHtml($config, $context);
+    }
+}
+
+// UltiNewsServiceProvider::boot()
+Vpress::grapesJsServerBlock('UltiNews', LatestNewsGrapesJsBlock::class);
+```
+
+GrapesJS stores only a placeholder (`data-vpress-block`, `data-vpress-config`). HTML is rendered on every page view — same pipeline as RichEditor blocks.
+
+### Which API to choose?
+
+| Need | API |
+|------|-----|
+| Static HTML snippet | `Vpress::grapesJsBlock()` |
+| Block with Filament modal config in RichEditor | `Vpress::grapesJsRichContentBlock()` + `RichContentCustomBlock` |
+| Third-party package, server render only | `Vpress::grapesJsServerBlock()` + `GrapesJsServerBlock` |
+| Filament Form on the page | `GrapesJsServerBlock` that renders a Blade view with `@livewire` or `{{ $form }}` |
+
+**Do not** patch `node_modules/grapesjs`. Extend via ServiceProvider registration only.
+
+---
+
+## Site chrome (header / footer)
+
+Landing pages can:
+
+1. Toggle **Hide site header** / **Hide site footer** in Admin → Site → Pages (layout Home/Landing).
+2. Drop **Site header (menu)** / **Site footer (menu)** blocks in GrapesJS — they render real items from Admin → Menus.
+
+While editing (`?edit=1`), the global nav/footer are hidden so the canvas matches the published layout.
+
+---
+
+## Optional GrapesJS npm plugins
+
+Config (`config/vpress.php`):
+
+```php
+'grapesjs' => [
+    'plugins' => [
+        'forms' => true,
+        'style_bg' => true,
+        'tabs' => true,
+        'custom_code' => true,
+    ],
+    'forms' => [
+        'success_message' => 'Thank you. Your message has been received.',
+    ],
+],
+```
+
+| Plugin | Purpose |
+|--------|---------|
+| `grapesjs-plugin-forms` | Form/input blocks; submits to `POST /vpress/grapesjs/forms/{page}` with CSRF |
+| `grapesjs-style-bg` | Background images / gradients in Style Manager |
+| `grapesjs-tabs` | Tab component (not in Tailblocks) |
+| `grapesjs-custom-code` | Custom HTML embed; stripped of `<script>` on save |
+
+Listen for form submissions in the host app:
+
+```php
+use Voodflow\Vpress\Events\GrapesJsFormSubmitted;
+
+Event::listen(GrapesJsFormSubmitted::class, function (GrapesJsFormSubmitted $event) {
+    // $event->page, $event->payload (name, email, message, …)
+});
+```
 
 ---
 

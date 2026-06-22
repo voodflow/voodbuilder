@@ -8,7 +8,7 @@ use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
 use Voodflow\Vpress\Tests\TestCase;
 
@@ -33,7 +33,7 @@ class GrapesJsDynamicBlockRendererTest extends TestCase
             'builder_payload' => ['html' => $wrapped],
         ]);
 
-        $renderer = new GrapesJsDynamicBlockRenderer($registry);
+        $renderer = new GrapesJsDynamicBlockRenderer($registry, new GrapesJsServerBlockRegistry);
         $html = $renderer->render($wrapped, $page);
 
         $this->assertStringNotContainsString('data-vpress-block', $html);

@@ -15,6 +15,7 @@ final class GrapesJsDynamicBlockRenderer
 {
     public function __construct(
         protected GrapesJsDynamicBlockRegistry $registry,
+        protected GrapesJsServerBlockRegistry $serverRegistry,
     ) {}
 
     public function render(string $html, SitePage $page): string
@@ -89,19 +90,24 @@ final class GrapesJsDynamicBlockRenderer
         array $renderData,
     ): void {
         $blockId = (string) $node->getAttribute('data-vpress-block');
-        $blockClass = $this->registry->resolve($blockId);
-
-        if ($blockClass === null) {
-            return;
-        }
-
         $config = $this->decodeConfig((string) $node->getAttribute('data-vpress-config'));
 
         if ($eventId !== null && GrapesJsDefaultBlockConfig::needsEventId($blockId) && empty($config['event_id'])) {
             $config['event_id'] = $eventId;
         }
 
-        $rendered = $this->renderBlock($blockClass, $config, $renderData);
+        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->hasDynamicSlots($node)) {
+            GrapesJsSlotHydrator::hydrateSubtree($document, $node, false);
+
+            return;
+        }
+
+        $rendered = $this->renderBlockId($blockId, $config, $renderData);
+
+        if ($rendered === null) {
+            return;
+        }
+
         $parent = $node->parentNode;
 
         if ($parent === null) {
@@ -131,13 +137,26 @@ final class GrapesJsDynamicBlockRenderer
     }
 
     /**
-     * @param  class-string<RichContentCustomBlock>  $blockClass
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $data
      */
-    protected function renderBlock(string $blockClass, array $config, array $data): string
+    protected function renderBlockId(string $blockId, array $config, array $data): ?string
     {
-        return TailwindV4ClassMigrator::migrateHtml($blockClass::toHtml($config, $data));
+        $richBlockClass = $this->registry->resolve($blockId);
+
+        if ($richBlockClass !== null) {
+            return TailwindV4ClassMigrator::migrateHtml($richBlockClass::toHtml($config, $data));
+        }
+
+        $serverBlockClass = $this->serverRegistry->resolve($blockId);
+
+        if ($serverBlockClass !== null) {
+            $mergedConfig = $config !== [] ? $config : $serverBlockClass::defaultConfig();
+
+            return TailwindV4ClassMigrator::migrateHtml($serverBlockClass::toHtml($mergedConfig, $data));
+        }
+
+        return null;
     }
 
     /**
@@ -149,9 +168,21 @@ final class GrapesJsDynamicBlockRenderer
             return [];
         }
 
-        $decoded = json_decode(html_entity_decode($raw, ENT_QUOTES | ENT_HTML5), true);
+        return GrapesJsDynamicBlockAttributeNormalizer::decodeConfig($raw);
+    }
 
-        return is_array($decoded) ? $decoded : [];
+    protected function hasDynamicSlots(DOMElement $node): bool
+    {
+        foreach ($node->getElementsByTagName('*') as $element) {
+            if ($element instanceof DOMElement && (
+                $element->hasAttribute('data-vpress-menu')
+                || $element->hasAttribute('data-vpress-brand')
+            )) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function extractBodyHtml(DOMDocument $document): ?string

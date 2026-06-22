@@ -1,4 +1,5 @@
 @php($settings = cookie_consent_settings())
+@if (! request()->boolean('edit'))
 <script src="{{ $settings->js_url }}" data-cfasync="false"></script>
 <script>
     window.cookieconsent.initialise({
@@ -36,3 +37,4 @@
         },
     });
 </script>
+@endif

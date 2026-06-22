@@ -10,6 +10,7 @@ use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 
@@ -74,5 +75,13 @@ class Vpress
     public static function grapesJsRichContentBlock(string $category, string $blockClass): void
     {
         app(GrapesJsDynamicBlockRegistry::class)->register($category, $blockClass);
+    }
+
+    /**
+     * @param  class-string<\Voodflow\Vpress\Contracts\GrapesJsServerBlock>  $blockClass
+     */
+    public static function grapesJsServerBlock(string $category, string $blockClass): void
+    {
+        app(GrapesJsServerBlockRegistry::class)->register($category, $blockClass);
     }
 }
