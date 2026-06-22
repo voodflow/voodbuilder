@@ -6,6 +6,16 @@ Companion plugins [voodflow/vtuts](https://github.com/voodflow/vtuts) and [voodf
 
 Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigation, and settings. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
 
+## Documentation
+
+| Guide | Topics |
+|-------|--------|
+| [**docs/VISUAL_THEMES.md**](docs/VISUAL_THEMES.md) | Mental model, admin “theme bindings” & presets, common site setups, create custom themes |
+| [**docs/GRAPESJS.md**](docs/GRAPESJS.md) | Page builder, Tailblocks, custom blocks, dynamic blocks |
+| [**docs/BUILD.md**](docs/BUILD.md) | `npm run build`, Vite entries, when to recompile |
+
+**Quick mental model:** *Visual theme* = layout + colours per area (marketing vs docs). *Light/dark* = global toggle. *Preset* = shortcut that fills the theme dropdowns — not a separate system.
+
 ## What it does
 
 | Area | What you get |
@@ -284,7 +294,20 @@ Menu items are cached for one hour per placement (`vpress.menu.{slug}`). The cac
 
 ## Sub-themes
 
-Sub-themes are **visual variants** of the public shell (layout, typography, colours). They are separate from **light/dark mode**, which is still controlled in **Settings → Header & appearance**.
+Sub-themes are **visual variants** of the public shell (layout, typography, colours). They are separate from **light/dark mode**, which is still controlled in **Settings → Appearance**.
+
+> **Admin UI:** Settings → Theme → **Visual themes by area** (which layout each part of the site uses) and **Quick setups** (presets). See [docs/VISUAL_THEMES.md](docs/VISUAL_THEMES.md) for common site patterns and a simpler explanation.
+
+### Common site setups
+
+| Goal | Start with | Marketing pages | Docs / tutorials |
+|------|------------|-----------------|------------------|
+| Docs/tutorials only | Preset *Documentation only* | Documentation | Documentation |
+| GrapesJS landing only | Showcase + GrapesJS home page | Showcase | — |
+| Landing + docs/tutorials | Preset *Cosmolab public site* | Showcase | Documentation |
+| GrapesJS home + blog/news | Showcase home + Blog/News channel | Showcase | Blog or News for articles |
+
+Global settings (logo, menus, SEO, dark/light, analytics) are unchanged. See [docs/GRAPESJS.md](docs/GRAPESJS.md) for the page builder.
 
 ### Built-in sub-themes
 
@@ -293,7 +316,7 @@ Sub-themes are **visual variants** of the public shell (layout, typography, colo
 | `default` | Documentation | Marketing home, docs-style pages (VitePress layout) |
 | `blog` | Blog | Long-form articles, Ghost-inspired centered reading column |
 | `news` | News | Editorial / magazine headlines and wider columns |
-| `events` | Events | Trade show layout — dark header, exhibitor cards, session galleries |
+| `events` | Showcase | Trade show / marketing layout — dark header, landing canvas, card grids |
 
 After `vpress:install`, open the main menu and visit:
 
@@ -333,15 +356,25 @@ php artisan db:seed --class="Voodflow\Vpress\Database\Seeders\VpressSeeder"
 npm run build
 ```
 
-### Site default vs per-page vs per-section
+### Site default vs per-page vs per-channel
 
 | Where (Filament) | Field | Behaviour |
 |------------------|-------|-----------|
-| **Settings → Theme** | Sub-theme | Default for the whole public site when nothing more specific applies |
-| **Pages → Publish** | Sub-theme | Override for that Site Page only (`Site default` inherits from Settings) |
-| **Site sections** | Visual sub-theme | Override for a **content channel** (events, exhibitors, tutorials, …) without changing package code |
+| **Settings → Theme → Marketing pages** | Sub-theme | Default for Site Pages (home, `/pages/*`) |
+| **Settings → Theme →** *(channel row)* | Sub-theme | Override for route packages (docs, tutorials, blog, events, …) |
+| **Pages → Publish** | Sub-theme | Override for that Site Page only |
 
-Use per-page sub-themes for **Site Pages** grouped as blog/news demos. Use **Site sections** when a whole package area (e.g. `vevents.*`) should look different from the rest of the site.
+Use per-page overrides for individual landings. Use channel rows when a whole package area (e.g. `vtuts.*`) should use a different layout than marketing pages.
+
+### Create a custom theme
+
+```bash
+php artisan vpress:make-subtheme polito --label="Politecnico di Torino"
+# edit resources/vpress/themes/polito/theme.css and layouts/
+npm run build
+```
+
+Full guide: [docs/VISUAL_THEMES.md](docs/VISUAL_THEMES.md).
 
 ### Sub-themes: registry vs files on disk
 
@@ -363,7 +396,7 @@ See `Voodflow\Vpress\Support\ThemeConvention` for paths and layout namespaces.
 | `blog`, `news`, `events` | `config/vpress.php` | `vpress::themes.{id}.*` → package `resources/views/themes/{id}/` | package `resources/themes/{id}/theme.css` |
 | *(custom)* | `vpress:make-subtheme` or `Vpress::subTheme()` | `vpress.themes.{id}.*` → `resources/views/vpress/themes/{id}/` in the app | `resources/vpress/themes/{id}/theme.css` (auto `@import` into the vpress bundle) |
 
-**vtuts** and **vdocs** use the **doc layout** (`vpress::layouts.doc`). Their channels default to the `default` sub-theme via `content_channel_defaults`; override in Admin → **Site sections** or register a dedicated skin with `vpress:make-subtheme`.
+**vtuts** and **vdocs** use the **doc layout** (`vpress::layouts.doc`). Their channels default to the `default` sub-theme via `content_channel_defaults`; override in **Settings → Theme** (channel row) or register a dedicated skin with `vpress:make-subtheme`.
 
 After adding or changing sub-themes, run `npm run build` so Vite picks up new CSS `@import`s.
 
@@ -371,7 +404,7 @@ After adding or changing sub-themes, run `npm run build` so Vite picks up new CS
 
 A **content channel** connects **route name patterns** to optional **search** and a **default sub-theme**. Channels are how route-based areas (not Site Pages) join the vpress shell.
 
-**A channel only appears in Admin → Site sections if something registers it** — usually the package `ServiceProvider`:
+**A channel only appears in Settings → Theme if something registers it** — usually the package `ServiceProvider`:
 
 ```php
 // vevents
@@ -403,7 +436,7 @@ Alternatively, register from config:
 |-------|----------------|
 | **Routes** | Your package / `routes/*.php` |
 | **Channel + default sub-theme** | `config/vpress.php` → `content_channel_defaults` |
-| **Override sub-theme** | Admin → **Site sections** (DB, no deploy) |
+| **Override sub-theme** | Settings → Theme (channel row, DB) |
 | **Menu link + active state** | Admin → **Navigation** → App route + `route_match` (e.g. `vevents.*`) |
 | **Search** | Channel `search` callback or model `vpressSearch()` |
 

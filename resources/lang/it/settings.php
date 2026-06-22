@@ -12,7 +12,7 @@ return [
     'tabs' => [
         'site' => 'Sito',
         'appearance' => 'Aspetto',
-        'theme' => 'Tema',
+        'theme' => 'Layout',
         'seo' => 'SEO',
         'geo_ai' => 'GEO & AI',
         'analytics' => 'Analytics',

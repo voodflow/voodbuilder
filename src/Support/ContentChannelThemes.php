@@ -85,10 +85,7 @@ final class ContentChannelThemes
             return ThemeBindings::selectOptionsForChannel($channelId);
         }
 
-        return [
-            '' => __('vpress::theme_bindings.inherit_default'),
-            ...app(SubThemeRegistry::class)->options(),
-        ];
+        return app(SubThemeRegistry::class)->options();
     }
 
     public static function marketingSelectOptions(?string $includeId = null): array

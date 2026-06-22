@@ -33,9 +33,9 @@
             >
         @endif
     @endif
-    @if ($showBrandName && ! $logoUrl)
+    @if ($showBrandName)
         <span class="whitespace-nowrap">{{ $brandName }}</span>
-    @elseif ($showBrandName && $logoUrl)
+    @elseif ($logoUrl)
         <span class="sr-only">{{ $brandName }}</span>
     @endif
 </a>

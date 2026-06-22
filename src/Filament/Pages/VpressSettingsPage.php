@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -26,17 +27,13 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
-use Voodflow\Vpress\Support\ContentChannelThemes;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\ThemeBindings;
-use Voodflow\Vpress\Support\ThemePresetManager;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
@@ -76,6 +73,11 @@ class VpressSettingsPage extends Page
             $data['primary_locale'] = VpressSettings::primaryLocale();
         }
 
+        $channelThemes = is_array($data['content_channel_sub_themes'] ?? null)
+            ? $data['content_channel_sub_themes']
+            : [];
+        $data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm($channelThemes);
+
         $this->form->fill($data);
     }
 
@@ -85,7 +87,6 @@ class VpressSettingsPage extends Page
             $this->beginDatabaseTransaction();
 
             $data = $this->form->getState();
-            $data['active_theme_preset_id'] = null;
 
             VpressSettings::saveData($data);
 
@@ -139,36 +140,36 @@ class VpressSettingsPage extends Page
                                             ->label(__('Show brand name next to logo'))
                                             ->helperText(__('Disable to show only the logo in the header.'))
                                             ->default(true),
-                                        FileUpload::make('logo')
-                                            ->label(__('Logo'))
-                                            ->disk($uploadDisk)
-                                            ->directory($uploadDirectory)
-                                            ->visibility('public')
-                                            ->acceptedFileTypes($imageTypes)
-                                            ->maxSize((int) config('vpress.uploads.max_size', 2048))
-                                            ->imagePreviewHeight('64')
-                                            ->helperText(__('vpress::settings.logo_help'))
-                                            ->nullable(),
-                                        FileUpload::make('logo_mobile')
-                                            ->label(__('vpress::settings.logo_mobile'))
-                                            ->disk($uploadDisk)
-                                            ->directory($uploadDirectory.'/mobile')
-                                            ->visibility('public')
-                                            ->acceptedFileTypes($imageTypes)
-                                            ->maxSize((int) config('vpress.uploads.max_size', 2048))
-                                            ->imagePreviewHeight('48')
-                                            ->helperText(__('vpress::settings.logo_mobile_help'))
-                                            ->nullable(),
-                                        FileUpload::make('favicon')
-                                            ->label(__('Favicon'))
-                                            ->disk($uploadDisk)
-                                            ->directory($uploadDirectory.'/favicons')
-                                            ->visibility('public')
-                                            ->acceptedFileTypes($faviconTypes)
-                                            ->maxSize(512)
-                                            ->imagePreviewHeight('32')
-                                            ->helperText(__('Used when pages do not define their own favicon.'))
-                                            ->nullable(),
+                                        $this->configurePublicBrandingUpload(
+                                            FileUpload::make('logo')
+                                                ->label(__('Logo'))
+                                                ->disk($uploadDisk)
+                                                ->directory($uploadDirectory)
+                                                ->visibility('public')
+                                                ->acceptedFileTypes($imageTypes)
+                                                ->maxSize((int) config('vpress.uploads.max_size', 2048))
+                                                ->helperText(__('vpress::settings.logo_help')),
+                                        ),
+                                        $this->configurePublicBrandingUpload(
+                                            FileUpload::make('logo_mobile')
+                                                ->label(__('vpress::settings.logo_mobile'))
+                                                ->disk($uploadDisk)
+                                                ->directory($uploadDirectory.'/mobile')
+                                                ->visibility('public')
+                                                ->acceptedFileTypes($imageTypes)
+                                                ->maxSize((int) config('vpress.uploads.max_size', 2048))
+                                                ->helperText(__('vpress::settings.logo_mobile_help')),
+                                        ),
+                                        $this->configurePublicBrandingUpload(
+                                            FileUpload::make('favicon')
+                                                ->label(__('Favicon'))
+                                                ->disk($uploadDisk)
+                                                ->directory($uploadDirectory.'/favicons')
+                                                ->visibility('public')
+                                                ->acceptedFileTypes($faviconTypes)
+                                                ->maxSize(512)
+                                                ->helperText(__('Used when pages do not define their own favicon.')),
+                                        ),
                                     ]),
                             ]),
                         Tab::make(__('vpress::settings.tabs.appearance'))
@@ -225,49 +226,20 @@ class VpressSettingsPage extends Page
                                                 && class_exists(LocaleSwitcher::class)
                                                 && LocaleSwitcher::enabled()),
                                     ]),
-                            ]),
-                        Tab::make(__('vpress::settings.tabs.theme'))
-                            ->icon('heroicon-o-paint-brush')
-                            ->schema([
-                                Placeholder::make('theme_scope_info')
-                                    ->hiddenLabel()
-                                    ->content(new HtmlString(__('vpress::settings.theme_scope_info'))),
-                                Section::make(__('vpress::theme_bindings.section_title'))
-                                    ->description(__('vpress::theme_bindings.section_help'))
-                                    ->schema([
-                                        Select::make('sub_theme')
-                                            ->label(__('vpress::theme_bindings.site_pages'))
-                                            ->options(fn (): array => ThemeBindings::sitePagesSelectOptions(
-                                                VpressSettings::get('sub_theme'),
-                                            ))
-                                            ->default('events')
-                                            ->native(false)
-                                            ->helperText(__('vpress::theme_bindings.site_pages_help')),
-                                        ...$this->channelBindingFields(),
-                                    ]),
-                                Section::make(__('vpress::theme_presets.section_title'))
-                                    ->description(__('vpress::theme_presets.section_help'))
-                                    ->schema([
-                                        Placeholder::make('active_theme_preset')
-                                            ->label(__('vpress::theme_presets.active'))
-                                            ->content(fn (): string => filled(VpressSettings::get('active_theme_preset_id'))
-                                                ? (ThemePresetManager::find((string) VpressSettings::get('active_theme_preset_id'))?->label
-                                                    ?? (string) VpressSettings::get('active_theme_preset_id'))
-                                                : __('vpress::theme_presets.none')),
-                                        Placeholder::make('bundled_theme_presets')
-                                            ->label(__('vpress::theme_presets.bundled'))
-                                            ->content(fn (): string => ThemePresetManager::bundled()
-                                                ->map(fn ($preset): string => $preset->label.($preset->description ? " — {$preset->description}" : ''))
-                                                ->join("\n") ?: '—'),
-                                    ]),
                                 Section::make(__('vpress::settings.theme_colors_section'))
                                     ->description(__('vpress::settings.theme_colors_help'))
+                                    ->collapsed()
                                     ->schema([
                                         Tabs::make('SubThemeColors')
                                             ->tabs($this->subThemeColorTabs())
                                             ->contained(false)
                                             ->visible(fn (): bool => $this->subThemeColorTabs() !== []),
                                     ]),
+                            ]),
+                        Tab::make(__('vpress::settings.tabs.theme'))
+                            ->icon('heroicon-o-paint-brush')
+                            ->schema([
+                                $this->layoutBindingsSection(),
                             ]),
                         Tab::make(__('vpress::settings.tabs.seo'))
                             ->icon('heroicon-o-magnifying-glass')
@@ -323,15 +295,15 @@ class VpressSettingsPage extends Page
                                         TextInput::make('geo_organization_name')
                                             ->label(__('Organization name'))
                                             ->maxLength(255),
-                                        FileUpload::make('geo_organization_logo')
-                                            ->label(__('Organization logo'))
-                                            ->disk($uploadDisk)
-                                            ->directory($uploadDirectory.'/organization')
-                                            ->visibility('public')
-                                            ->acceptedFileTypes($imageTypes)
-                                            ->maxSize((int) config('vpress.uploads.max_size', 2048))
-                                            ->imagePreviewHeight('64')
-                                            ->nullable(),
+                                        $this->configurePublicBrandingUpload(
+                                            FileUpload::make('geo_organization_logo')
+                                                ->label(__('Organization logo'))
+                                                ->disk($uploadDisk)
+                                                ->directory($uploadDirectory.'/organization')
+                                                ->visibility('public')
+                                                ->acceptedFileTypes($imageTypes)
+                                                ->maxSize((int) config('vpress.uploads.max_size', 2048)),
+                                        ),
                                         TextInput::make('geo_region')
                                             ->label(__('GEO region'))
                                             ->placeholder('IT-62')
@@ -381,13 +353,91 @@ class VpressSettingsPage extends Page
     }
 
     /**
-     * @return array<int, Component>
+     * Logo/favicon uploads accept SVG; FilePond image preview hangs on "Waiting for size".
+     * Show the filename with an open link instead, and use a relative /storage URL so Docker port
+     * mapping does not break when APP_URL differs from the browser URL.
      */
-    protected function channelBindingFields(): array
+    protected function configurePublicBrandingUpload(FileUpload $field): FileUpload
     {
-        $channels = app(ContentChannelRegistry::class)->all();
+        return $field
+            ->nullable()
+            ->previewable(false)
+            ->openable()
+            ->getUploadedFileUsing(function (FileUpload $component, string $file, string | array | null $storedFileNames): ?array {
+                $uploaded = $component->getUploadedFile($file, $storedFileNames);
 
-        if ($channels === []) {
+                if ($uploaded === null || $component->getDiskName() !== 'public') {
+                    return $uploaded;
+                }
+
+                $uploaded['url'] = '/storage/'.ltrim($file, '/');
+
+                return $uploaded;
+            });
+    }
+
+    protected function layoutBindingsSection(): Section
+    {
+        $schema = [
+            Placeholder::make('layout_bindings_columns')
+                ->hiddenLabel()
+                ->content(new HtmlString(
+                    '<div class="hidden md:grid md:grid-cols-2 gap-x-6 gap-y-1 pb-2 mb-1 border-b border-gray-200 dark:border-white/10">'
+                    .'<span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">'.e(__('Area')).'</span>'
+                    .'<span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">'.e(__('vpress::theme_bindings.layout_column')).'</span>'
+                    .'</div>',
+                )),
+            $this->layoutBindingRow(
+                key: 'site_pages',
+                title: __('vpress::theme_bindings.site_pages'),
+                description: __('vpress::theme_bindings.site_pages_description'),
+                field: Select::make('sub_theme')
+                    ->hiddenLabel()
+                    ->options(fn (): array => ThemeBindings::sitePagesSelectOptions(
+                        VpressSettings::get('sub_theme'),
+                    ))
+                    ->default('events')
+                    ->native(false)
+                    ->required(),
+            ),
+            ...$this->channelLayoutBindingRows(),
+            Placeholder::make('layout_bindings_fallback')
+                ->hiddenLabel()
+                ->content(new HtmlString(
+                    '<p class="text-sm text-gray-600 dark:text-gray-400">'.e(__('vpress::theme_bindings.unregistered_fallback')).'</p>',
+                )),
+        ];
+
+        return Section::make(__('vpress::theme_bindings.section_title'))
+            ->description(__('vpress::theme_bindings.section_help'))
+            ->schema($schema);
+    }
+
+    protected function layoutBindingRow(string $key, string $title, string $description, Select $field): Grid
+    {
+        return Grid::make(['default' => 1, 'md' => 2])
+            ->schema([
+                Placeholder::make("layout_binding_{$key}_area")
+                    ->hiddenLabel()
+                    ->content(new HtmlString(
+                        '<div class="py-1">'
+                        .'<p class="text-sm font-medium text-gray-950 dark:text-white">'.e($title).'</p>'
+                        .'<p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">'.e($description).'</p>'
+                        .'</div>',
+                    )),
+                $field,
+            ]);
+    }
+
+    /**
+     * @return array<int, Grid>
+     */
+    protected function channelLayoutBindingRows(): array
+    {
+        $channels = collect(app(ContentChannelRegistry::class)->all())
+            ->filter(fn (PublicContentChannel $channel): bool => ThemeBindings::shouldShowChannelBinding($channel));
+
+        if ($channels->isEmpty()) {
             return [
                 Placeholder::make('no_content_channels')
                     ->hiddenLabel()
@@ -395,58 +445,18 @@ class VpressSettingsPage extends Page
             ];
         }
 
-        return collect($channels)
-            ->map(fn (PublicContentChannel $channel): Select => Select::make("content_channel_sub_themes.{$channel->id()}")
-                ->label($channel->label())
-                ->options(fn (): array => ThemeBindings::selectOptionsForChannel($channel->id()))
-                ->native(false)
-                ->helperText(__('vpress::theme_bindings.channel_help', [
-                    'capability' => ThemeBindings::requiredCapabilityForChannel($channel)->label(),
-                    'default' => ContentChannelThemes::configuredDefaultFor($channel->id())
-                        ? app(SubThemeRegistry::class)->label((string) ContentChannelThemes::configuredDefaultFor($channel->id()))
-                        : __('vpress::theme_bindings.no_package_default'),
-                ])))
+        return $channels
+            ->map(fn (PublicContentChannel $channel): Grid => $this->layoutBindingRow(
+                key: 'channel_'.$channel->id(),
+                title: $channel->label(),
+                description: ThemeBindings::channelAreaDescription($channel),
+                field: Select::make("content_channel_sub_themes.{$channel->id()}")
+                    ->hiddenLabel()
+                    ->options(fn (): array => ThemeBindings::selectOptionsForChannel($channel->id()))
+                    ->native(false)
+                    ->required(),
+            ))
             ->all();
-    }
-
-    public function applyThemePreset(string $presetId): void
-    {
-        $preset = ThemePresetManager::find($presetId);
-
-        if ($preset === null) {
-            Notification::make()
-                ->title(__('vpress::theme_presets.not_found'))
-                ->danger()
-                ->send();
-
-            return;
-        }
-
-        $preset->apply();
-        $this->form->fill(VpressSettings::data());
-
-        Notification::make()
-            ->title(__('vpress::theme_presets.applied', ['label' => $preset->label]))
-            ->success()
-            ->send();
-    }
-
-    public function exportCurrentThemePreset(): StreamedResponse
-    {
-        $preset = ThemePresetManager::snapshotFromSettings(
-            'export-'.now()->format('Y-m-d-His'),
-            'Exported '.now()->toDateTimeString(),
-        );
-
-        $json = json_encode(ThemePresetManager::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        return response()->streamDownload(
-            static function () use ($json): void {
-                echo $json;
-            },
-            "{$preset->id}.json",
-            ['Content-Type' => 'application/json'],
-        );
     }
 
     /**
@@ -512,70 +522,6 @@ class VpressSettingsPage extends Page
             ->livewireSubmitHandler('save')
             ->footer([
                 Actions::make([
-                    Action::make('applyThemePreset')
-                        ->label(__('vpress::theme_presets.apply'))
-                        ->icon('heroicon-o-sparkles')
-                        ->schema([
-                            Select::make('preset_id')
-                                ->label(__('vpress::theme_presets.select'))
-                                ->options(fn (): array => ThemePresetManager::all()
-                                    ->mapWithKeys(fn ($preset): array => [$preset->id => $preset->label])
-                                    ->all())
-                                ->required()
-                                ->native(false),
-                        ])
-                        ->action(function (array $data): void {
-                            $this->applyThemePreset((string) $data['preset_id']);
-                        }),
-                    Action::make('exportThemePreset')
-                        ->label(__('vpress::theme_presets.export_current'))
-                        ->icon('heroicon-o-arrow-down-tray')
-                        ->action(fn (): StreamedResponse => $this->exportCurrentThemePreset()),
-                    Action::make('importThemePreset')
-                        ->label(__('vpress::theme_presets.import'))
-                        ->icon('heroicon-o-arrow-up-tray')
-                        ->schema([
-                            FileUpload::make('preset_file')
-                                ->label(__('vpress::theme_presets.file'))
-                                ->acceptedFileTypes(['application/json'])
-                                ->required(),
-                            Toggle::make('apply')
-                                ->label(__('vpress::theme_presets.import_apply'))
-                                ->default(true),
-                        ])
-                        ->action(function (array $data): void {
-                            $disk = config('vpress.uploads.disk', 'public');
-                            $relative = is_array($data['preset_file'] ?? null)
-                                ? ($data['preset_file'][0] ?? null)
-                                : ($data['preset_file'] ?? null);
-
-                            if (! is_string($relative) || ! Storage::disk($disk)->exists($relative)) {
-                                Notification::make()
-                                    ->title(__('vpress::theme_presets.import_failed'))
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            try {
-                                ThemePresetManager::importFromFile(
-                                    Storage::disk($disk)->path($relative),
-                                    apply: (bool) ($data['apply'] ?? true),
-                                );
-                                $this->form->fill(VpressSettings::data());
-
-                                Notification::make()
-                                    ->title(__('vpress::theme_presets.imported'))
-                                    ->success()
-                                    ->send();
-                            } catch (\Throwable) {
-                                Notification::make()
-                                    ->title(__('vpress::theme_presets.import_failed'))
-                                    ->danger()
-                                    ->send();
-                            }
-                        }),
                     Action::make('save')
                         ->label(__('Save settings'))
                         ->submit('save')

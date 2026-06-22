@@ -4,36 +4,77 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Tests\Unit;
 
-use Voodflow\Vpress\Enums\SubThemeCapability;
-use Voodflow\Vpress\Support\SubThemeRegistry;
+use Illuminate\Support\Collection;
+use Voodflow\Vpress\Contracts\PublicContentChannel;
+use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\ThemeBindings;
 use Voodflow\Vpress\Tests\TestCase;
 
 class ThemeBindingsTest extends TestCase
 {
-    public function test_site_pages_require_landing_capability(): void
+    protected function setUp(): void
     {
-        $this->assertSame(SubThemeCapability::Landing, ThemeBindings::sitePagesCapability());
-        $this->assertTrue(ThemeBindings::themeSupportsCapability('events', SubThemeCapability::Landing));
-        $this->assertFalse(ThemeBindings::themeSupportsCapability('default', SubThemeCapability::Landing));
+        parent::setUp();
+
+        app(ContentChannelRegistry::class)->register(new class implements PublicContentChannel
+        {
+            public function id(): string
+            {
+                return 'docs';
+            }
+
+            public function label(): string
+            {
+                return 'Documentation';
+            }
+
+            public function routePatterns(): array
+            {
+                return ['vdocs.*'];
+            }
+
+            public function subTheme(): ?string
+            {
+                return null;
+            }
+
+            public function search(string $term, int $limit = 20): Collection
+            {
+                return collect();
+            }
+        });
     }
 
-    public function test_channel_binding_rejects_incompatible_theme(): void
+    public function test_effective_theme_uses_package_default(): void
     {
-        $this->assertFalse(ThemeBindings::isValidChannelBinding('events', 'news'));
-        $this->assertTrue(ThemeBindings::isValidChannelBinding('events', 'events'));
+        $this->assertSame('default', ThemeBindings::effectiveThemeForChannelId('docs'));
     }
 
-    public function test_custom_landing_theme_can_bind_to_events_channel(): void
+    public function test_effective_theme_falls_back_to_site_pages_layout_without_package_default(): void
     {
-        app(SubThemeRegistry::class)->register('showcase-alt', [
-            'label' => 'Showcase alt',
-            'capabilities' => ['landing'],
-            'layouts' => [
-                'landing' => 'vpress::themes.events.layouts.landing',
-            ],
+        VpressSettings::query()->create([
+            'data' => array_merge(VpressSettings::defaults(), [
+                'sub_theme' => 'events',
+            ]),
         ]);
+        VpressSettings::clearCache();
 
-        $this->assertTrue(ThemeBindings::isValidChannelBinding('events', 'showcase-alt'));
+        $this->assertSame('events', ThemeBindings::effectiveThemeForChannelId('unknown-channel'));
+    }
+
+    public function test_expand_channel_themes_fills_missing_overrides(): void
+    {
+        $expanded = ThemeBindings::expandChannelThemesForForm([]);
+
+        $this->assertSame('default', $expanded['docs'] ?? null);
+    }
+
+    public function test_select_options_for_channel_has_no_automatic_entry(): void
+    {
+        $options = ThemeBindings::selectOptionsForChannel('docs');
+
+        $this->assertArrayNotHasKey('', $options);
+        $this->assertArrayHasKey('default', $options);
     }
 }

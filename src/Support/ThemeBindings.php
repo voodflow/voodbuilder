@@ -67,12 +67,69 @@ final class ThemeBindings
      */
     public static function selectOptionsForChannel(string $channelId): array
     {
-        return [
-            '' => __('vpress::theme_bindings.inherit_default'),
-            ...app(SubThemeRegistry::class)->optionsForCapability(
-                self::requiredCapabilityForChannelId($channelId),
-            ),
-        ];
+        return app(SubThemeRegistry::class)->optionsForCapability(
+            self::requiredCapabilityForChannelId($channelId),
+        );
+    }
+
+    public static function effectiveThemeForChannelId(string $channelId): string
+    {
+        $override = ContentChannelThemes::overrideFor($channelId);
+
+        if ($override !== null) {
+            return $override;
+        }
+
+        $configured = ContentChannelThemes::configuredDefaultFor($channelId);
+
+        if ($configured !== null) {
+            return $configured;
+        }
+
+        return SubThemeResolver::siteDefault();
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, string>
+     */
+    public static function expandChannelThemesForForm(array $overrides): array
+    {
+        $expanded = [];
+
+        foreach ($overrides as $channelId => $theme) {
+            if (is_string($channelId) && is_string($theme) && filled($theme)) {
+                $expanded[$channelId] = $theme;
+            }
+        }
+
+        foreach (app(ContentChannelRegistry::class)->all() as $channel) {
+            if (! self::shouldShowChannelBinding($channel)) {
+                continue;
+            }
+
+            $channelId = $channel->id();
+
+            if (! filled($expanded[$channelId] ?? null)) {
+                $expanded[$channelId] = self::effectiveThemeForChannelId($channelId);
+            }
+        }
+
+        return $expanded;
+    }
+
+    public static function channelAreaDescription(PublicContentChannel $channel): string
+    {
+        $key = 'vpress::theme_bindings.channels.'.$channel->id();
+        $translation = __($key);
+
+        if ($translation !== $key) {
+            return $translation;
+        }
+
+        return __('vpress::theme_bindings.channel_generic', [
+            'label' => $channel->label(),
+        ]);
     }
 
     /**
@@ -84,5 +141,22 @@ final class ThemeBindings
             self::sitePagesCapability(),
             $includeId,
         );
+    }
+
+    public static function channelRoutesSummary(PublicContentChannel $channel): string
+    {
+        $patterns = $channel->routePatterns();
+
+        if ($patterns === []) {
+            return '';
+        }
+
+        return implode(', ', $patterns);
+    }
+
+    public static function shouldShowChannelBinding(PublicContentChannel $channel): bool
+    {
+        // Site Pages use `sub_theme` above; the pages channel is for search/routing only.
+        return $channel->id() !== 'pages';
     }
 }

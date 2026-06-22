@@ -12,13 +12,13 @@ return [
     'tabs' => [
         'site' => 'Site',
         'appearance' => 'Appearance',
-        'theme' => 'Theme',
+        'theme' => 'Layouts',
         'seo' => 'SEO',
         'geo_ai' => 'GEO & AI',
         'analytics' => 'Analytics',
     ],
 
-    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Visual themes</strong><p class="mt-2">A <em>theme</em> controls layout and styling (docs sidebar, blog article, landing pages). <strong>Theme bindings</strong> map each public area to a theme. Logo, SEO, cookies, and analytics stay global under Site and SEO tabs.</p></div>',
+    'theme_scope_info' => '<div class="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-100"><strong class="font-medium">Visual themes</strong><p class="mt-2">Choose <strong>layout per area</strong> below (marketing vs docs vs blog). <strong>Light/dark</strong>, logo, menus, and SEO are under Appearance and Site tabs. <strong>Quick setups</strong> are optional shortcuts — see <code>docs/VISUAL_THEMES.md</code> in the package.</p></div>',
 
     'theme_default_section' => 'Site pages default',
     'theme_marketing_default_help' => 'Fallback theme for Site Pages without a per-page override.',
