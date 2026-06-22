@@ -187,3 +187,11 @@ body.vpress-grapesjs-editing .vpress-grapesjs-frontend {
 html[data-vpress-sub-theme='site'] body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas {
     background-color: var(--color-vp-bg, #f4f5f7);
 }
+
+body.vpress-grapesjs-editing .gjs-pn-commands .gjs-pn-buttons {
+    gap: 0.15rem;
+}
+
+body.vpress-grapesjs-editing .gjs-pn-commands .gjs-pn-btn[id*='vpress-device'] svg {
+    display: block;
+}

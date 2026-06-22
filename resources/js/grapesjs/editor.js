@@ -1,9 +1,16 @@
+/**
+ * Vpress GrapesJS bootstrap — integration layer only.
+ *
+ * Customise behaviour via init options, events, and plugins (vpress-grapesjs.js).
+ * Never patch node_modules/grapesjs: changes there are lost on npm update.
+ */
 import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
 
 import vpressGrapesJsPlugin, { registerBlocks, sanitizeBlockHtml } from './plugins/vpress-grapesjs.js';
 import { migrateEditorComponents } from './theme-tokens.js';
+import { editorChromeInitOptions } from './editor-chrome.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -118,6 +125,7 @@ function applyCanvasDocumentTheme(editor, subTheme) {
 
 export function initVpressGrapesJs(container, options = {}) {
     const initial = options.initial ?? {};
+    const chromeOptions = editorChromeInitOptions();
     const editorOptions = {
         container,
         height: options.height ?? '640px',
@@ -125,6 +133,8 @@ export function initVpressGrapesJs(container, options = {}) {
         fromElement: false,
         storageManager: false,
         noticeOnUnload: options.noticeOnUnload ?? false,
+        showDevices: chromeOptions.showDevices,
+        deviceManager: chromeOptions.deviceManager,
         plugins: [grapesjsBlocksBasic, vpressGrapesJsPlugin],
         pluginsOpts: {
             [grapesjsBlocksBasic]: {
@@ -144,6 +154,15 @@ export function initVpressGrapesJs(container, options = {}) {
                   uploadName: 'file',
                   multiUpload: false,
                   autoAdd: true,
+                  credentials: 'same-origin',
+                  headers: options.csrf
+                      ? {
+                            'X-CSRF-TOKEN': options.csrf,
+                            Accept: 'application/json',
+                        }
+                      : {
+                            Accept: 'application/json',
+                        },
               }
             : false,
         blockManager: {
@@ -155,25 +174,7 @@ export function initVpressGrapesJs(container, options = {}) {
         selectorManager: {
             componentFirst: true,
         },
-        styleManager: {
-            sectors: [
-                {
-                    name: 'Typography',
-                    open: true,
-                    buildProps: ['font-family', 'font-size', 'font-weight', 'color', 'line-height', 'text-align'],
-                },
-                {
-                    name: 'Spacing',
-                    open: true,
-                    buildProps: ['padding', 'margin', 'width', 'height'],
-                },
-                {
-                    name: 'Decorations',
-                    open: false,
-                    buildProps: ['background-color', 'border-radius', 'border', 'box-shadow'],
-                },
-            ],
-        },
+        styleManager: chromeOptions.styleManager,
         panels: options.panels ?? undefined,
     };
 
@@ -285,6 +286,7 @@ function mountFrontendEditor() {
         canvasFrameStyle: config.canvasFrameStyle,
         subTheme: config.subTheme,
         uploadUrl: config.uploadUrl,
+        csrf: config.csrf,
     });
 
     const onResize = () => syncEditorCanvasHeight(canvas, editor);

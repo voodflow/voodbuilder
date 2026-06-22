@@ -7,7 +7,7 @@ namespace Voodflow\Vpress\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Storage;
+use Voodflow\Vpress\Support\PublicDiskUrl;
 
 class GrapesJsAssetController extends Controller
 {
@@ -20,10 +20,11 @@ class GrapesJsAssetController extends Controller
         ]);
 
         $disk = (string) config('vpress.grapesjs.upload.disk', 'public');
-        $directory = (string) config('vpress.grapesjs.upload.directory', 'vpress/grapesjs');
+        $directory = trim((string) config('vpress.grapesjs.upload.directory', 'vpress/grapesjs'), '/');
+        $file = $validated['file'];
 
-        $path = $validated['file']->store($directory, $disk);
-        $url = Storage::disk($disk)->url($path);
+        $path = $file->storePubliclyAs($directory, $file->hashName(), $disk);
+        $url = PublicDiskUrl::fromPath($path);
 
         return response()->json([
             'data' => [$url],

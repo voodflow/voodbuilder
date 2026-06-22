@@ -3,6 +3,8 @@
  * @see https://grapesjs.com/docs/modules/Plugins.html
  */
 
+import { configureEditorChrome } from '../editor-chrome.js';
+
 const SECTION_PADDING_CLASSES = ['py-0', 'py-8', 'py-12', 'py-16', 'py-20', 'py-24'];
 
 const TAILWIND_SPACING_CLASS = /^(?:md:)?(?:[pm][xytblr]?|gap(?:-[xy])?)-/;
@@ -203,5 +205,6 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
     registerTailblocksSectionType(editor);
     registerSpacingStyleSync(editor);
+    configureEditorChrome(editor);
     registerBlocks(editor, options.blocks ?? []);
 }
