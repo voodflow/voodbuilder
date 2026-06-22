@@ -33,7 +33,7 @@ return [
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_tree' => 'Trascina per riordinare o rilascia una voce su un’altra per creare un sottomenu. Massimo 2 livelli (principale + sotto-voci). Usa "Gruppo dropdown" per etichette senza link.',
         'sub_theme_site' => 'Tema visivo predefinito per le Site Page (home, landing, CMS). Configura le assegnazioni per area sotto.',
-        'sub_theme_page' => 'Sovrascrive il predefinito del sito per questa pagina. Usa GrapesJS o il rich editor per il contenuto.',
+        'sub_theme_page' => 'Sovrascrive il layout globale (Settings → Layouts). Per ereditare Politecnico o altro tema globale, scegli “Predefinito sito”.',
         'excerpt' => 'Breve riassunto per elenchi di sezione, card e SEO.',
         'section_home' => 'Contrassegna questa pagina come indice della sezione (elenca le pagine correlate nella sidebar).',
     ],

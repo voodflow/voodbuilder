@@ -11,21 +11,34 @@ final class SubThemeResolver
 {
     public const DEFAULT = 'default';
 
+    public const SITE = 'site';
+
+    /** @var array<string, string> */
+    private const LEGACY_IDS = [
+        'events' => self::SITE,
+        'blog' => self::DEFAULT,
+        'news' => self::DEFAULT,
+    ];
+
     public static function siteDefault(): string
     {
-        $theme = (string) VpressSettings::get('sub_theme', self::DEFAULT);
+        $theme = self::resolveId((string) VpressSettings::get('sub_theme', self::SITE));
 
-        return app(SubThemeRegistry::class)->exists($theme) ? $theme : self::DEFAULT;
+        return $theme ?? self::SITE;
     }
 
     public static function forPage(SitePage $page): string
     {
-        if (filled($page->sub_theme)) {
-            $theme = (string) $page->sub_theme;
+        $raw = is_string($page->sub_theme) ? trim($page->sub_theme) : null;
 
-            if (app(SubThemeRegistry::class)->exists($theme)) {
-                return $theme;
-            }
+        if ($raw === '') {
+            $raw = null;
+        }
+
+        $theme = self::resolveId($raw);
+
+        if ($theme !== null) {
+            return $theme;
         }
 
         return self::siteDefault();
@@ -33,11 +46,7 @@ final class SubThemeResolver
 
     public static function normalize(?string $theme): string
     {
-        if (filled($theme) && app(SubThemeRegistry::class)->exists($theme)) {
-            return $theme;
-        }
-
-        return self::DEFAULT;
+        return self::resolveId($theme) ?? self::DEFAULT;
     }
 
     public static function forCurrentRoute(): string
@@ -48,10 +57,22 @@ final class SubThemeResolver
             $theme = ContentChannelThemes::resolveForChannel($channel);
 
             if ($theme !== null) {
-                return $theme;
+                return self::normalize($theme);
             }
         }
 
         return self::siteDefault();
+    }
+
+    public static function resolveId(?string $theme): ?string
+    {
+        if (! filled($theme)) {
+            return null;
+        }
+
+        $theme = (string) $theme;
+        $theme = self::LEGACY_IDS[$theme] ?? $theme;
+
+        return app(SubThemeRegistry::class)->exists($theme) ? $theme : null;
     }
 }

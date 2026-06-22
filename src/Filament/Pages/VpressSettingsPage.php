@@ -33,6 +33,7 @@ use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\SubThemeScaffolder;
 use Voodflow\Vpress\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
@@ -226,20 +227,12 @@ class VpressSettingsPage extends Page
                                                 && class_exists(LocaleSwitcher::class)
                                                 && LocaleSwitcher::enabled()),
                                     ]),
-                                Section::make(__('vpress::settings.theme_colors_section'))
-                                    ->description(__('vpress::settings.theme_colors_help'))
-                                    ->collapsed()
-                                    ->schema([
-                                        Tabs::make('SubThemeColors')
-                                            ->tabs($this->subThemeColorTabs())
-                                            ->contained(false)
-                                            ->visible(fn (): bool => $this->subThemeColorTabs() !== []),
-                                    ]),
                             ]),
                         Tab::make(__('vpress::settings.tabs.theme'))
                             ->icon('heroicon-o-paint-brush')
                             ->schema([
                                 $this->layoutBindingsSection(),
+                                $this->themeAppearanceSection(),
                             ]),
                         Tab::make(__('vpress::settings.tabs.seo'))
                             ->icon('heroicon-o-magnifying-glass')
@@ -396,7 +389,7 @@ class VpressSettingsPage extends Page
                     ->options(fn (): array => ThemeBindings::sitePagesSelectOptions(
                         VpressSettings::get('sub_theme'),
                     ))
-                    ->default('events')
+                    ->default('site')
                     ->native(false)
                     ->required(),
             ),
@@ -452,11 +445,82 @@ class VpressSettingsPage extends Page
                 description: ThemeBindings::channelAreaDescription($channel),
                 field: Select::make("content_channel_sub_themes.{$channel->id()}")
                     ->hiddenLabel()
-                    ->options(fn (): array => ThemeBindings::selectOptionsForChannel($channel->id()))
+                    ->options(fn (Get $get): array => ThemeBindings::selectOptionsForChannel(
+                        $channel->id(),
+                        $get("content_channel_sub_themes.{$channel->id()}"),
+                    ))
                     ->native(false)
                     ->required(),
             ))
             ->all();
+    }
+
+    protected function themeAppearanceSection(): Section
+    {
+        return Section::make(__('vpress::settings.theme_colors_section'))
+            ->description(__('vpress::settings.theme_colors_help'))
+            ->schema([
+                Tabs::make('SubThemeColors')
+                    ->tabs($this->subThemeColorTabs())
+                    ->contained(false)
+                    ->visible(fn (): bool => $this->subThemeColorTabs() !== []),
+            ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->createSubThemeAction(),
+        ];
+    }
+
+    public function createSubThemeAction(): Action
+    {
+        return Action::make('createSubTheme')
+            ->label(__('vpress::settings.create_theme'))
+            ->icon('heroicon-o-plus')
+            ->modalHeading(__('vpress::settings.create_theme'))
+            ->modalDescription(__('vpress::settings.create_theme_help'))
+            ->form([
+                TextInput::make('theme_id')
+                    ->label(__('vpress::settings.create_theme_id'))
+                    ->required()
+                    ->maxLength(48)
+                    ->regex('/^[a-z][a-z0-9-]*$/')
+                    ->helperText(__('vpress::settings.create_theme_id_help')),
+                TextInput::make('theme_label')
+                    ->label(__('vpress::settings.create_theme_label'))
+                    ->required()
+                    ->maxLength(100),
+            ])
+            ->action(function (array $data): void {
+                $result = SubThemeScaffolder::create(
+                    (string) $data['theme_id'],
+                    (string) $data['theme_label'],
+                );
+
+                if (! $result->success) {
+                    Notification::make()
+                        ->title(__('vpress::settings.create_theme_failed'))
+                        ->body($result->error)
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                $body = __('vpress::settings.create_theme_success', ['label' => $data['theme_label']]);
+
+                if (! $result->importAppended) {
+                    $body .= ' '.__('vpress::settings.create_theme_build_hint');
+                }
+
+                Notification::make()
+                    ->title(__('vpress::settings.create_theme_created'))
+                    ->body($body)
+                    ->success()
+                    ->send();
+            });
     }
 
     /**
@@ -476,36 +540,51 @@ class VpressSettingsPage extends Page
                             ->hiddenLabel()
                             ->content(new HtmlString('<p class="text-sm text-gray-500 dark:text-gray-400">'.e($description).'</p>')),
                     ] : []),
-                    Toggle::make("sub_theme_colors.{$id}.custom")
-                        ->label(__('vpress::settings.theme_customize'))
-                        ->helperText(__('vpress::settings.theme_customize_help'))
-                        ->live(),
                     Section::make(__('vpress::settings.theme_light_mode'))
-                        ->schema([
-                            ColorPicker::make("sub_theme_colors.{$id}.light.primary")
-                                ->label(__('vpress::settings.theme_primary'))
-                                ->helperText(__('vpress::settings.theme_primary_help')),
-                            ColorPicker::make("sub_theme_colors.{$id}.light.secondary")
-                                ->label(__('vpress::settings.theme_secondary'))
-                                ->helperText(__('vpress::settings.theme_secondary_help')),
-                        ])
-                        ->columns(2)
-                        ->visible(fn (Get $get): bool => (bool) $get("sub_theme_colors.{$id}.custom")),
+                        ->schema($this->themeColorFields($id, 'light'))
+                        ->columns(3),
                     Section::make(__('vpress::settings.theme_dark_mode'))
-                        ->schema([
-                            ColorPicker::make("sub_theme_colors.{$id}.dark.primary")
-                                ->label(__('vpress::settings.theme_primary'))
-                                ->helperText(__('vpress::settings.theme_dark_primary_help')),
-                            ColorPicker::make("sub_theme_colors.{$id}.dark.secondary")
-                                ->label(__('vpress::settings.theme_secondary'))
-                                ->helperText(__('vpress::settings.theme_dark_secondary_help')),
-                        ])
-                        ->columns(2)
-                        ->visible(fn (Get $get): bool => (bool) $get("sub_theme_colors.{$id}.custom")),
+                        ->schema($this->themeColorFields($id, 'dark'))
+                        ->columns(3),
                 ]);
         }
 
         return $tabs;
+    }
+
+    /**
+     * @return array<int, ColorPicker>
+     */
+    protected function themeColorFields(string $themeId, string $mode): array
+    {
+        $prefix = "sub_theme_colors.{$themeId}.{$mode}";
+
+        return [
+            ColorPicker::make("{$prefix}.primary")
+                ->label(__('vpress::settings.theme_primary'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_primary_help')),
+            ColorPicker::make("{$prefix}.secondary")
+                ->label(__('vpress::settings.theme_secondary'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_secondary_help')),
+            ColorPicker::make("{$prefix}.header_bg")
+                ->label(__('vpress::settings.theme_header_bg'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_header_bg_help')),
+            ColorPicker::make("{$prefix}.header_text")
+                ->label(__('vpress::settings.theme_header_text'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_header_text_help')),
+            ColorPicker::make("{$prefix}.body_bg")
+                ->label(__('vpress::settings.theme_body_bg'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_body_bg_help')),
+            ColorPicker::make("{$prefix}.text")
+                ->label(__('vpress::settings.theme_body_text'))
+                ->hex()
+                ->helperText(__('vpress::settings.theme_body_text_help')),
+        ];
     }
 
     public function content(Schema $schema): Schema

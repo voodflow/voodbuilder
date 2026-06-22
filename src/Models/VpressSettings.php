@@ -7,6 +7,7 @@ namespace Voodflow\Vpress\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Voodflow\Vpress\Support\ContentChannelThemes;
+use Voodflow\Vpress\Support\SubThemeResolver;
 use Voodflow\Vpress\Support\ThemePalette;
 use Voodflow\Vtuts\Support\Locales;
 
@@ -34,7 +35,7 @@ class VpressSettings extends Model
             'show_notification_bell' => true,
             'show_theme_toggle' => true,
             'theme_mode' => 'system',
-            'sub_theme' => 'events',
+            'sub_theme' => 'site',
             'show_account_link' => true,
             'sticky_nav' => false,
             'show_language_switcher' => true,
@@ -92,11 +93,42 @@ class VpressSettings extends Model
         }
 
         $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
+        $data['sub_theme_colors'] = self::migrateLegacyThemeColorKeys($data['sub_theme_colors']);
         $data['content_channel_sub_themes'] = ContentChannelThemes::normalizeOverrides(
             is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
         );
+        $data['sub_theme'] = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
+            ?? SubThemeResolver::SITE;
+
+        foreach ($data['content_channel_sub_themes'] as $channelId => $themeId) {
+            $data['content_channel_sub_themes'][$channelId] = SubThemeResolver::normalize((string) $themeId);
+        }
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $colors
+     * @return array<string, mixed>
+     */
+    protected static function migrateLegacyThemeColorKeys(array $colors): array
+    {
+        $legacyMap = [
+            'events' => SubThemeResolver::SITE,
+            'blog' => SubThemeResolver::DEFAULT,
+            'news' => SubThemeResolver::DEFAULT,
+        ];
+
+        foreach ($legacyMap as $from => $to) {
+            if (! isset($colors[$from]) || isset($colors[$to])) {
+                continue;
+            }
+
+            $colors[$to] = $colors[$from];
+            unset($colors[$from]);
+        }
+
+        return $colors;
     }
 
     public static function get(string $key, mixed $default = null): mixed
@@ -197,6 +229,11 @@ class VpressSettings extends Model
 
         if (array_key_exists('sub_theme_colors', $data)) {
             $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
+        }
+
+        if (array_key_exists('sub_theme', $data)) {
+            $data['sub_theme'] = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
+                ?? SubThemeResolver::SITE;
         }
 
         if (array_key_exists('content_channel_sub_themes', $data)) {

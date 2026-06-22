@@ -28,43 +28,17 @@ return [
             'type' => 'content',
             'capabilities' => ['doc'],
         ],
-        'blog' => [
-            'label' => 'Blog',
-            'description' => 'Ghost-inspired centered blog with serif headlines.',
-            'type' => 'content',
-            'capabilities' => ['doc', 'article'],
-            'layouts' => [
-                'home' => 'vpress::themes.blog.layouts.home',
-                'page' => 'vpress::themes.blog.layouts.page',
-                'section_index' => 'vpress::themes.blog.layouts.section-index',
-                'article' => 'vpress::themes.blog.layouts.article',
-            ],
-            'css' => 'themes/blog/theme.css',
-        ],
-        'news' => [
-            'label' => 'News',
-            'description' => 'Editorial news layout with bold headlines and wider columns.',
-            'type' => 'content',
-            'capabilities' => ['doc', 'article'],
-            'layouts' => [
-                'home' => 'vpress::themes.news.layouts.home',
-                'page' => 'vpress::themes.news.layouts.page',
-                'section_index' => 'vpress::themes.news.layouts.section-index',
-                'article' => 'vpress::themes.news.layouts.article',
-            ],
-            'css' => 'themes/news/theme.css',
-        ],
-        'events' => [
-            'label' => 'Showcase',
-            'description' => 'Bold marketing layout with dark header, landing pages, and card grids.',
+        'site' => [
+            'label' => 'Site',
+            'description' => 'Public site layout with optional dark header, landing pages, and card grids.',
             'type' => 'marketing',
             'capabilities' => ['landing'],
             'layouts' => [
-                'home' => 'vpress::themes.events.layouts.home',
-                'landing' => 'vpress::themes.events.layouts.landing',
-                'page' => 'vpress::themes.events.layouts.page',
+                'home' => 'vpress::themes.site.layouts.home',
+                'landing' => 'vpress::themes.site.layouts.landing',
+                'page' => 'vpress::themes.site.layouts.page',
             ],
-            'css' => 'themes/events/theme.css',
+            'css' => 'themes/site/theme.css',
         ],
     ],
 
@@ -87,11 +61,10 @@ return [
     | Overridable in Admin → Settings → Appearance. Plugins do not ship themes.
     */
     'content_channel_defaults' => [
-        'events' => 'events',
-        'exhibitors' => 'events',
+        'events' => 'site',
+        'exhibitors' => 'site',
         'tutorials' => 'default',
         'docs' => 'default',
-        'blog' => 'blog',
     ],
 
     /*

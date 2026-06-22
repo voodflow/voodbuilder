@@ -1,8 +1,8 @@
 /**
- * Events sub-theme — NAMM / MapYourShow inspired trade show layout.
+ * Site sub-theme — public marketing layout with optional dark header.
  */
 
-html[data-vpress-sub-theme='events'] {
+html[data-vpress-sub-theme='site'] {
     --width-vp-content: 48rem;
     --width-vp-layout: 80rem;
 
@@ -29,7 +29,7 @@ html[data-vpress-sub-theme='events'] {
     --vx-header-muted: #cbd5e1;
 }
 
-html.dark[data-vpress-sub-theme='events'] {
+html.dark[data-vpress-sub-theme='site'] {
     --color-vp-bg: #0b1220;
     --color-vp-bg-alt: #111827;
     --color-vp-bg-elv: #1f2937;
@@ -53,65 +53,65 @@ html.dark[data-vpress-sub-theme='events'] {
     --vx-header-muted: #94a3b8;
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] .bg-vp-bg,
-html[data-vpress-sub-theme='events'] header[role='banner'] .bg-vp-bg-alt {
+html[data-vpress-sub-theme='site'] header[role='banner'] .bg-vp-bg,
+html[data-vpress-sub-theme='site'] header[role='banner'] .bg-vp-bg-alt {
     background-color: var(--vx-header-bg) !important;
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] {
+html[data-vpress-sub-theme='site'] header[role='banner'] {
     border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text) 12%, transparent);
 }
 
 /* Header nav uses light text; exclude dropdown panels (light surface, dark text). */
-html[data-vpress-sub-theme='events'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *)) {
+html[data-vpress-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *)) {
     color: var(--vx-header-text);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *)) {
+html[data-vpress-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *)) {
     color: #ffffff;
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *)) {
+html[data-vpress-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *)) {
     color: #fca5a5;
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] {
     color: var(--color-vp-text-1);
     background-color: var(--color-vp-bg-elv);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] [role='menuitem'] {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'] {
     color: var(--color-vp-text-2);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] .text-vp-text-1,
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] [role='menuitem'].font-medium {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-1,
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'].font-medium {
     color: var(--color-vp-text-1);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] .text-vp-text-3 {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-3 {
     color: var(--color-vp-text-3);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] .text-vp-brand-1 {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-brand-1 {
     color: var(--color-vp-brand-1);
 }
 
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] [role='menuitem']:hover,
-html[data-vpress-sub-theme='events'] header[role='banner'] [role='menu'] button[role='menuitem']:hover {
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem']:hover,
+html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] button[role='menuitem']:hover {
     color: var(--color-vp-brand-1);
     background-color: var(--color-vp-gray-soft);
 }
 
-html[data-vpress-sub-theme='events'] .vpress-events-shell {
+html[data-vpress-sub-theme='site'] .vpress-site-shell {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
 
-html[data-vpress-sub-theme='events'] .vpress-events-content {
+html[data-vpress-sub-theme='site'] .vpress-site-content {
     @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-10 md:px-8 md:py-14;
 }
 
-html[data-vpress-sub-theme='events'] .vx-page-header {
+html[data-vpress-sub-theme='site'] .vx-page-header {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
@@ -122,7 +122,7 @@ html[data-vpress-sub-theme='events'] .vx-page-header {
     border-bottom: 2px solid var(--vx-accent);
 }
 
-html[data-vpress-sub-theme='events'] .vx-page-header__title {
+html[data-vpress-sub-theme='site'] .vx-page-header__title {
     margin: 0 0 0.35rem;
     font-size: clamp(1.75rem, 3vw, 2.25rem);
     font-weight: 800;
@@ -130,7 +130,7 @@ html[data-vpress-sub-theme='events'] .vx-page-header__title {
     color: var(--vx-text);
 }
 
-html[data-vpress-sub-theme='events'] .vx-page-header__description {
+html[data-vpress-sub-theme='site'] .vx-page-header__description {
     margin: 0;
     max-width: 42rem;
     color: var(--vx-muted);
@@ -138,22 +138,22 @@ html[data-vpress-sub-theme='events'] .vx-page-header__description {
     line-height: 1.55;
 }
 
-html[data-vpress-sub-theme='events'] .vx-page-header__nav a {
+html[data-vpress-sub-theme='site'] .vx-page-header__nav a {
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--vx-accent);
     text-decoration: none;
 }
 
-html[data-vpress-sub-theme='events'] .vx-page-header__nav a:hover {
+html[data-vpress-sub-theme='site'] .vx-page-header__nav a:hover {
     text-decoration: underline;
 }
 
-html[data-vpress-sub-theme='events'] .vx-layout--stacked {
+html[data-vpress-sub-theme='site'] .vx-layout--stacked {
     display: block;
 }
 
-html[data-vpress-sub-theme='events'] .vx-layout--with-sidebar {
+html[data-vpress-sub-theme='site'] .vx-layout--with-sidebar {
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 1.5rem;
@@ -161,12 +161,12 @@ html[data-vpress-sub-theme='events'] .vx-layout--with-sidebar {
 }
 
 @media (max-width: 900px) {
-    html[data-vpress-sub-theme='events'] .vx-layout--with-sidebar {
+    html[data-vpress-sub-theme='site'] .vx-layout--with-sidebar {
         grid-template-columns: 1fr;
     }
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar {
+html[data-vpress-sub-theme='site'] .vx-filter-bar {
     margin-bottom: 1.5rem;
     padding: 1.25rem;
     border: 1px solid var(--vx-border);
@@ -175,27 +175,27 @@ html[data-vpress-sub-theme='events'] .vx-filter-bar {
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__form {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__form {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     align-items: flex-end;
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__field {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__field {
     flex: 1 1 12rem;
     min-width: 10rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__field--search {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__field--search {
     flex: 2 1 16rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__field--actions {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__field--actions {
     flex: 0 0 auto;
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__label {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__label {
     display: block;
     margin-bottom: 0.35rem;
     font-size: 0.75rem;
@@ -205,8 +205,8 @@ html[data-vpress-sub-theme='events'] .vx-filter-bar__label {
     color: var(--vx-muted);
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__input,
-html[data-vpress-sub-theme='events'] .vx-filters__input {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__input,
+html[data-vpress-sub-theme='site'] .vx-filters__input {
     width: 100%;
     padding: 0.625rem 0.75rem;
     border: 1px solid var(--vx-border);
@@ -216,20 +216,20 @@ html[data-vpress-sub-theme='events'] .vx-filters__input {
     background: var(--vx-surface);
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__input:focus,
-html[data-vpress-sub-theme='events'] .vx-filters__input:focus {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__input:focus,
+html[data-vpress-sub-theme='site'] .vx-filters__input:focus {
     outline: 2px solid color-mix(in srgb, var(--vx-accent) 35%, transparent);
     border-color: var(--vx-accent);
 }
 
-html[data-vpress-sub-theme='events'] .vx-filter-bar__actions,
-html[data-vpress-sub-theme='events'] .vx-filters__actions {
+html[data-vpress-sub-theme='site'] .vx-filter-bar__actions,
+html[data-vpress-sub-theme='site'] .vx-filters__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-btn {
+html[data-vpress-sub-theme='site'] .vx-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -243,35 +243,35 @@ html[data-vpress-sub-theme='events'] .vx-btn {
     transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 
-html[data-vpress-sub-theme='events'] .vx-btn--primary {
+html[data-vpress-sub-theme='site'] .vx-btn--primary {
     background: var(--vx-accent);
     color: #ffffff;
 }
 
-html[data-vpress-sub-theme='events'] .vx-btn--primary:hover {
+html[data-vpress-sub-theme='site'] .vx-btn--primary:hover {
     filter: brightness(0.95);
 }
 
-html[data-vpress-sub-theme='events'] .vx-btn--ghost {
+html[data-vpress-sub-theme='site'] .vx-btn--ghost {
     background: transparent;
     border-color: var(--vx-border);
     color: var(--vx-muted);
 }
 
-html[data-vpress-sub-theme='events'] .vx-results-count {
+html[data-vpress-sub-theme='site'] .vx-results-count {
     margin: 0 0 1rem;
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--vx-muted);
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-grid {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.25rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card {
     position: relative;
     background: var(--vx-surface);
     border: 1px solid var(--vx-border);
@@ -283,13 +283,13 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card {
     transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card:hover {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card:hover {
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--vx-accent) 45%, var(--vx-border));
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__featured {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__featured {
     position: absolute;
     top: 0.85rem;
     right: 0.85rem;
@@ -303,7 +303,7 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card__featured {
     border-radius: 999px;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__logo-wrap {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__logo-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -312,13 +312,13 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card__logo-wrap {
     text-decoration: none;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__logo {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__logo {
     max-width: 100%;
     max-height: 100px;
     object-fit: contain;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__logo-placeholder {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__logo-placeholder {
     width: 72px;
     height: 72px;
     border-radius: 0.75rem;
@@ -331,30 +331,30 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card__logo-placeholder {
     color: var(--vx-muted);
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__title {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__title {
     margin: 0 0 0.35rem;
     font-size: 1.05rem;
     font-weight: 800;
     line-height: 1.3;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__title a {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__title a {
     color: var(--vx-text);
     text-decoration: none;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__title a:hover {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__title a:hover {
     color: var(--vx-accent);
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__booth,
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__sector {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__booth,
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__sector {
     margin: 0 0 0.25rem;
     font-size: 0.82rem;
     color: var(--vx-muted);
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__excerpt {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__excerpt {
     margin: 0 0 auto;
     font-size: 0.88rem;
     color: var(--vx-muted);
@@ -365,7 +365,7 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card__excerpt {
     overflow: hidden;
 }
 
-html[data-vpress-sub-theme='events'] .vx-exhibitor-card__link {
+html[data-vpress-sub-theme='site'] .vx-exhibitor-card__link {
     margin-top: 1rem;
     font-size: 0.85rem;
     font-weight: 800;
@@ -374,27 +374,27 @@ html[data-vpress-sub-theme='events'] .vx-exhibitor-card__link {
     letter-spacing: 0.03em;
 }
 
-html[data-vpress-sub-theme='events'] .vx-hero,
-html[data-vpress-sub-theme='events'] .vx-card,
-html[data-vpress-sub-theme='events'] .vx-sidebar,
-html[data-vpress-sub-theme='events'] .vx-filters {
+html[data-vpress-sub-theme='site'] .vx-hero,
+html[data-vpress-sub-theme='site'] .vx-card,
+html[data-vpress-sub-theme='site'] .vx-sidebar,
+html[data-vpress-sub-theme='site'] .vx-filters {
     background: var(--vx-surface);
     border: 1px solid var(--vx-border);
     border-radius: 0.875rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-hero {
+html[data-vpress-sub-theme='site'] .vx-hero {
     padding: 1.75rem;
     margin-bottom: 1.5rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-card,
-html[data-vpress-sub-theme='events'] .vx-sidebar,
-html[data-vpress-sub-theme='events'] .vx-filters {
+html[data-vpress-sub-theme='site'] .vx-card,
+html[data-vpress-sub-theme='site'] .vx-sidebar,
+html[data-vpress-sub-theme='site'] .vx-filters {
     padding: 1.25rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-profile-layout {
+html[data-vpress-sub-theme='site'] .vx-profile-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 320px;
     gap: 1.5rem;
@@ -402,12 +402,12 @@ html[data-vpress-sub-theme='events'] .vx-profile-layout {
 }
 
 @media (max-width: 900px) {
-    html[data-vpress-sub-theme='events'] .vx-profile-layout {
+    html[data-vpress-sub-theme='site'] .vx-profile-layout {
         grid-template-columns: 1fr;
     }
 }
 
-html[data-vpress-sub-theme='events'] .vx-hero__title {
+html[data-vpress-sub-theme='site'] .vx-hero__title {
     margin: 0;
     font-size: clamp(1.75rem, 3vw, 2.35rem);
     font-weight: 800;
@@ -415,22 +415,22 @@ html[data-vpress-sub-theme='events'] .vx-hero__title {
     color: var(--vx-text);
 }
 
-html[data-vpress-sub-theme='events'] .vx-section-title,
-html[data-vpress-sub-theme='events'] .vx-schedule__title {
+html[data-vpress-sub-theme='site'] .vx-section-title,
+html[data-vpress-sub-theme='site'] .vx-schedule__title {
     margin: 0 0 1rem;
     font-size: 1.15rem;
     font-weight: 800;
     letter-spacing: -0.01em;
 }
 
-html[data-vpress-sub-theme='events'] .vx-gallery {
+html[data-vpress-sub-theme='site'] .vx-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 0.85rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-gallery img,
-html[data-vpress-sub-theme='events'] .vx-gallery__thumb img {
+html[data-vpress-sub-theme='site'] .vx-gallery img,
+html[data-vpress-sub-theme='site'] .vx-gallery__thumb img {
     width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
@@ -438,12 +438,12 @@ html[data-vpress-sub-theme='events'] .vx-gallery__thumb img {
     border: 1px solid var(--vx-border);
 }
 
-html[data-vpress-sub-theme='events'] .vx-schedule__list {
+html[data-vpress-sub-theme='site'] .vx-schedule__list {
     display: grid;
     gap: 1rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-schedule__item {
+html[data-vpress-sub-theme='site'] .vx-schedule__item {
     display: grid;
     grid-template-columns: 150px 1fr;
     gap: 1rem;
@@ -454,12 +454,12 @@ html[data-vpress-sub-theme='events'] .vx-schedule__item {
 }
 
 @media (max-width: 640px) {
-    html[data-vpress-sub-theme='events'] .vx-schedule__item {
+    html[data-vpress-sub-theme='site'] .vx-schedule__item {
         grid-template-columns: 1fr;
     }
 }
 
-html[data-vpress-sub-theme='events'] .vx-schedule__type {
+html[data-vpress-sub-theme='site'] .vx-schedule__type {
     font-size: 0.7rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -467,34 +467,34 @@ html[data-vpress-sub-theme='events'] .vx-schedule__type {
     color: var(--vx-accent);
 }
 
-html[data-vpress-sub-theme='events'] .vx-breadcrumb a,
-html[data-vpress-sub-theme='events'] .vx-social-links a,
-html[data-vpress-sub-theme='events'] .ve-landing-social-share .ve-share-copy,
-html[data-vpress-sub-theme='events'] .vx-schedule__program-link {
+html[data-vpress-sub-theme='site'] .vx-breadcrumb a,
+html[data-vpress-sub-theme='site'] .vx-social-links a,
+html[data-vpress-sub-theme='site'] .ve-landing-social-share .ve-share-copy,
+html[data-vpress-sub-theme='site'] .vx-schedule__program-link {
     color: var(--vx-accent);
     font-weight: 700;
 }
 
-html[data-vpress-sub-theme='events'] .ve-landing-social-share .vx-social-links a:hover,
-html[data-vpress-sub-theme='events'] .ve-landing-social-share .ve-share-copy:hover {
+html[data-vpress-sub-theme='site'] .ve-landing-social-share .vx-social-links a:hover,
+html[data-vpress-sub-theme='site'] .ve-landing-social-share .ve-share-copy:hover {
     color: var(--vx-header-text);
 }
 
-html[data-vpress-sub-theme='events'] .ve-landing-footer a:hover {
+html[data-vpress-sub-theme='site'] .ve-landing-footer a:hover {
     color: var(--vx-header-text);
 }
 
-html[data-vpress-sub-theme='events'] .vx-muted {
+html[data-vpress-sub-theme='site'] .vx-muted {
     color: var(--vx-muted);
     font-size: 0.9rem;
 }
 
-html[data-vpress-sub-theme='events'] .vx-empty {
+html[data-vpress-sub-theme='site'] .vx-empty {
     padding: 2.5rem 1.25rem;
     text-align: center;
 }
 
-html[data-vpress-sub-theme='events'] .vx-badge {
+html[data-vpress-sub-theme='site'] .vx-badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;
     border-radius: 999px;
@@ -505,24 +505,24 @@ html[data-vpress-sub-theme='events'] .vx-badge {
 }
 
 /* Landing pages built with vevents rich-content blocks */
-html[data-vpress-sub-theme='events'] .vpress-events-content:has(.VPRichPage--landing) {
+html[data-vpress-sub-theme='site'] .vpress-site-content:has(.VPRichPage--landing) {
     max-width: none;
     padding: 0;
 }
 
-html[data-vpress-sub-theme='events'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
+html[data-vpress-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
 }
 
 @media (min-width: 768px) {
-    html[data-vpress-sub-theme='events'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
+    html[data-vpress-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
 }
 
-html[data-vpress-sub-theme='events'] .VPRichPage--landing .ve-landing-hero {
+html[data-vpress-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
     width: 100vw;
     max-width: 100vw;
     position: relative;
@@ -532,7 +532,7 @@ html[data-vpress-sub-theme='events'] .VPRichPage--landing .ve-landing-hero {
     margin-bottom: 0;
 }
 
-html[data-vpress-sub-theme='events'] .ve-landing-video__frame {
+html[data-vpress-sub-theme='site'] .ve-landing-video__frame {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -543,7 +543,7 @@ html[data-vpress-sub-theme='events'] .ve-landing-video__frame {
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
-html[data-vpress-sub-theme='events'] .ve-landing-video__frame iframe {
+html[data-vpress-sub-theme='site'] .ve-landing-video__frame iframe {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -551,7 +551,7 @@ html[data-vpress-sub-theme='events'] .ve-landing-video__frame iframe {
     border: 0;
 }
 
-html[data-vpress-sub-theme='events'] .ve-landing-video__placeholder {
+html[data-vpress-sub-theme='site'] .ve-landing-video__placeholder {
     display: flex;
     align-items: center;
     justify-content: center;

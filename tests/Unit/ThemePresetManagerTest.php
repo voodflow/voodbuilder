@@ -34,7 +34,7 @@ class ThemePresetManagerTest extends TestCase
     public function test_export_and_import_roundtrip(): void
     {
         VpressSettings::saveData([
-            'sub_theme' => 'events',
+            'sub_theme' => 'site',
             'content_channel_sub_themes' => [
                 'docs' => 'default',
             ],
@@ -53,7 +53,7 @@ class ThemePresetManagerTest extends TestCase
 
         ThemePresetManager::importFromFile($path, apply: true, saveCustom: true);
 
-        $this->assertSame('events', VpressSettings::get('sub_theme'));
+        $this->assertSame('site', VpressSettings::get('sub_theme'));
         $this->assertSame('default', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
         $this->assertNotNull(ThemePresetManager::find('roundtrip'));
     }

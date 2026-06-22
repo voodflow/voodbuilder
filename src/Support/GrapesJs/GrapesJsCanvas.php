@@ -41,7 +41,7 @@ final class GrapesJsCanvas
     public static function pageBackgroundColor(string $subTheme): string
     {
         return match ($subTheme) {
-            'events' => '#f4f5f7',
+            'site', 'events' => '#f4f5f7',
             default => '#ffffff',
         };
     }
@@ -60,6 +60,15 @@ final class GrapesJsCanvas
         [data-gjs-type="wrapper"] {
             background-color: var(--color-vp-bg, #ffffff);
             min-height: 100vh;
+        }
+
+        html {
+            scroll-padding-top: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
         }
 
         * ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1) }

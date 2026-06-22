@@ -65,4 +65,41 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $this->assertSame('text-white', TailblocksThemeTokenMigrator::migrateToken('text-white'));
         $this->assertSame('rounded-lg', TailblocksThemeTokenMigrator::migrateToken('rounded-lg'));
     }
+
+    public function test_migrates_brand_hex_in_css_without_touching_custom_colors(): void
+    {
+        $css = '#btn { background-color: #6366f1; } .custom { background-color: #002b49; }';
+
+        $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
+
+        $this->assertStringContainsString('background-color: var(--color-vp-brand-1)', $migrated);
+        $this->assertStringContainsString('background-color: #002b49', $migrated);
+    }
+
+    public function test_migrates_grapesjs_project_component_classes(): void
+    {
+        $project = [
+            'pages' => [[
+                'id' => 'main',
+                'frames' => [[
+                    'component' => [
+                        'type' => 'wrapper',
+                        'components' => [[
+                            'tagName' => 'a',
+                            'attributes' => [
+                                'class' => 'inline-flex bg-indigo-500 text-white',
+                            ],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ];
+
+        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $class = $migrated['pages'][0]['frames'][0]['component']['components'][0]['attributes']['class'];
+
+        $this->assertStringContainsString('bg-vp-brand-1', $class);
+        $this->assertStringNotContainsString('bg-indigo-500', $class);
+        $this->assertSame('text-white', TailblocksThemeTokenMigrator::migrateToken('text-white'));
+    }
 }

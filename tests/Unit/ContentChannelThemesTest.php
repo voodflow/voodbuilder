@@ -22,7 +22,7 @@ class ContentChannelThemesTest extends TestCase
             'label' => 'Showcase alt',
             'capabilities' => ['landing'],
             'layouts' => [
-                'landing' => 'vpress::themes.events.layouts.landing',
+                'landing' => 'vpress::themes.site.layouts.landing',
             ],
         ]);
 
@@ -60,7 +60,7 @@ class ContentChannelThemesTest extends TestCase
         $channel = app(ContentChannelRegistry::class)->get('events');
 
         $this->assertNotNull($channel);
-        $this->assertSame('events', ContentChannelThemes::resolveForChannel($channel));
+        $this->assertSame('site', ContentChannelThemes::resolveForChannel($channel));
     }
 
     public function test_admin_override_takes_precedence_over_package_default(): void
@@ -94,7 +94,7 @@ class ContentChannelThemesTest extends TestCase
         $channel = app(ContentChannelRegistry::class)->get('events');
 
         $this->assertNotNull($channel);
-        $this->assertSame('events', ContentChannelThemes::resolveForChannel($channel));
+        $this->assertSame('site', ContentChannelThemes::resolveForChannel($channel));
     }
 
     public function test_incompatible_override_is_ignored(): void
@@ -102,7 +102,7 @@ class ContentChannelThemesTest extends TestCase
         VpressSettings::query()->create([
             'data' => array_merge(VpressSettings::defaults(), [
                 'content_channel_sub_themes' => [
-                    'events' => 'news',
+                    'events' => 'default',
                 ],
             ]),
         ]);
@@ -111,7 +111,7 @@ class ContentChannelThemesTest extends TestCase
         $channel = app(ContentChannelRegistry::class)->get('events');
 
         $this->assertNotNull($channel);
-        $this->assertSame('events', ContentChannelThemes::resolveForChannel($channel));
+        $this->assertSame('site', ContentChannelThemes::resolveForChannel($channel));
     }
 
     public function test_normalize_overrides_strips_empty_and_invalid_values(): void
@@ -120,12 +120,12 @@ class ContentChannelThemesTest extends TestCase
             'events' => 'showcase-alt',
             'broken' => 'nope',
             'pages' => '',
-            'docs' => 'news',
+            'docs' => 'default',
         ]);
 
         $this->assertSame([
             'events' => 'showcase-alt',
-            'docs' => 'news',
+            'docs' => 'default',
         ], $normalized);
     }
 }

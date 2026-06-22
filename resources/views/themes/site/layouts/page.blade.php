@@ -5,9 +5,9 @@
 @endsection
 
 @section('content')
-    <div class="vpress-events-shell">
-        <div class="vpress-landing-shell">
-            @yield('landing')
+    <div class="vpress-site-shell">
+        <div class="vpress-site-content">
+            @yield('page')
         </div>
     </div>
 @endsection

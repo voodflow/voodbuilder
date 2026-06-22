@@ -2,13 +2,12 @@
     "schema": "vpress-theme-preset/1",
     "id": "cosmolab-public",
     "label": "Cosmolab public site",
-    "description": "Showcase marketing home with documentation-style docs and tutorials, plus blog article layout.",
+    "description": "Site marketing home with documentation-style docs and tutorials.",
     "bundled": true,
-    "site_pages_theme": "events",
+    "site_pages_theme": "site",
     "channel_themes": {
         "docs": "default",
-        "tutorials": "default",
-        "blog": "blog"
+        "tutorials": "default"
     },
     "colors": {}
 }

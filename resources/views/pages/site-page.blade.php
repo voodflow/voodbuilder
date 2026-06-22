@@ -12,7 +12,8 @@
     @push('scripts-before-livewire')
         <style>
             .vpress-grapesjs-mode .vpress-landing-shell,
-            .vpress-grapesjs-mode .vpress-events-shell {
+            .vpress-grapesjs-mode .vpress-site-shell,
+            .vpress-grapesjs-mode .vpress-polito-content {
                 max-width: none;
                 padding: 0;
             }
@@ -46,7 +47,7 @@
 
     <div @class([
         'VPRichPage',
-        'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'events',
+        'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'site',
         'vpress-grapesjs-mode' => $grapesJsEditor ?? false,
     ])>
         @if ($grapesJsEditor ?? false)

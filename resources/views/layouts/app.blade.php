@@ -28,7 +28,6 @@
     @include('cookie-consent::cookie-consent-head')
 
     @vite(config('vpress.assets.vite', \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries()))
-    <x-vpress::theme-vars />
     @livewireStyles
     @stack('head')
 </head>
@@ -51,6 +50,7 @@
 
     @stack('scripts-before-livewire')
     @livewireScripts
+    <x-vpress::theme-vars />
     <x-vpress::site-scripts />
     @stack('scripts')
     @stack('overlays')

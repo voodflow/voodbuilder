@@ -58,7 +58,7 @@ class GrapesJsEditorGateTest extends TestCase
 
         $config = GrapesJsEditorGate::config($page);
 
-        $this->assertSame('<section>Hero</section>', $config['initial']['html']);
+        $this->assertSame('<section class="vpress-gjs-section bg-vp-bg">Hero</section>', $config['initial']['html']);
         $this->assertArrayHasKey('pageManager', $config['initial']);
         $this->assertArrayHasKey('blocksUrl', $config);
         $this->assertArrayNotHasKey('blocks', $config);

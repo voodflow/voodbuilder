@@ -65,10 +65,11 @@ final class ThemeBindings
     /**
      * @return array<string, string>
      */
-    public static function selectOptionsForChannel(string $channelId): array
+    public static function selectOptionsForChannel(string $channelId, ?string $includeId = null): array
     {
         return app(SubThemeRegistry::class)->optionsForCapability(
             self::requiredCapabilityForChannelId($channelId),
+            $includeId,
         );
     }
 

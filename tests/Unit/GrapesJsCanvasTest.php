@@ -11,7 +11,7 @@ class GrapesJsCanvasTest extends TestCase
 {
     public function test_events_sub_theme_uses_gray_canvas_background(): void
     {
-        $this->assertSame('#f4f5f7', GrapesJsCanvas::pageBackgroundColor('events'));
-        $this->assertStringContainsString('background-color: #f4f5f7', GrapesJsCanvas::frameStyle('events'));
+        $this->assertSame('#f4f5f7', GrapesJsCanvas::pageBackgroundColor('site'));
+        $this->assertStringContainsString('background-color: #f4f5f7', GrapesJsCanvas::frameStyle('site'));
     }
 }

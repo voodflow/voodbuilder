@@ -28,7 +28,13 @@ class GrapesJsPageController extends Controller
             'project' => ['nullable', 'array'],
         ]);
 
-        $project = $validated['project'] ?? null;
+        $normalized = GrapesJsEditorGate::normalizePayload([
+            'html' => $validated['html'] ?? '',
+            'css' => $validated['css'] ?? '',
+            'project' => $validated['project'] ?? null,
+        ]);
+
+        $project = $normalized['project'];
 
         if (is_array($project)) {
             $encoded = json_encode($project);
@@ -43,8 +49,8 @@ class GrapesJsPageController extends Controller
         $sitePage->update([
             'builder' => PageBuilder::GrapesJs,
             'builder_payload' => [
-                'html' => $validated['html'] ?? '',
-                'css' => $validated['css'] ?? '',
+                'html' => $normalized['html'],
+                'css' => $normalized['css'],
                 'project' => $project,
             ],
         ]);

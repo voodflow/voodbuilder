@@ -89,6 +89,45 @@ class GrapesJsPageSaveTest extends TestCase
         $this->assertSame('.updated { color: red; }', $page->builder_payload['css']);
     }
 
+    public function test_save_migrates_tailblocks_brand_classes(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-migrate@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Grapes migrate',
+            'slug' => 'grapes-migrate',
+            'builder' => PageBuilder::GrapesJs,
+            'layout' => 'landing',
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+            'html' => '<a class="bg-indigo-500 text-white">Button</a>',
+            'css' => '.btn { background-color: #6366f1; }',
+            'project' => ['pages' => []],
+        ])->assertOk();
+
+        $page->refresh();
+
+        $this->assertStringContainsString('bg-vp-brand-1', $page->builder_payload['html']);
+        $this->assertStringContainsString('var(--color-vp-brand-1)', $page->builder_payload['css']);
+    }
+
     public function test_guest_cannot_save_grapesjs_payload(): void
     {
         $page = SitePage::query()->create([

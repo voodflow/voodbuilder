@@ -34,6 +34,37 @@ final class TailblocksThemeTokenMigrator
         'green',
     ];
 
+    /**
+     * Default Tailwind palette hex values (not theme-specific overrides).
+     * Used to replace hardcoded block colors with CSS variables while preserving
+     * deliberate custom picks from the style manager.
+     *
+     * @var list<string>
+     */
+    private const BRAND_LIGHT_SURFACE_HEX = [
+        '#eef2ff', '#e0e7ff', '#c7d2fe', '#eff6ff', '#dbeafe', '#bfdbfe',
+        '#fefce8', '#fef9c3', '#fef2f2', '#fee2e2', '#faf5ff', '#f3e8ff',
+        '#fdf2f8', '#fce7f3', '#f0fdf4', '#dcfce7',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const BRAND_MID_SURFACE_HEX = [
+        '#a5b4fc', '#818cf8', '#6366f1', '#93c5fd', '#60a5fa', '#3b82f6',
+        '#eab308', '#facc15', '#ef4444', '#f87171', '#a855f7', '#c084fc',
+        '#ec4899', '#f472b6', '#22c55e', '#4ade80',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const BRAND_DARK_SURFACE_HEX = [
+        '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#2563eb', '#1d4ed8',
+        '#1e40af', '#ca8a04', '#a16207', '#dc2626', '#b91c1c', '#9333ea',
+        '#7e22ce', '#db2777', '#be185d', '#16a34a', '#15803d',
+    ];
+
     public static function migrateHtml(string $html): string
     {
         $html = self::migrateSectionElements($html);
@@ -60,6 +91,7 @@ final class TailblocksThemeTokenMigrator
         }
 
         $css = self::replaceFixedBackgroundColors($css);
+        $css = self::replaceFixedBrandBackgroundColors($css);
 
         return preg_replace_callback(
             '/\bcolor:\s*([^;}{]+)/',
@@ -74,6 +106,32 @@ final class TailblocksThemeTokenMigrator
             },
             $css,
         ) ?? $css;
+    }
+
+    /**
+     * @param  array<string, mixed>  $project
+     * @return array<string, mixed>
+     */
+    public static function migrateProject(array $project): array
+    {
+        if (isset($project['styles']) && is_array($project['styles'])) {
+            $project['styles'] = array_map(
+                static function (mixed $styleRule): mixed {
+                    if (! is_array($styleRule)) {
+                        return $styleRule;
+                    }
+
+                    if (isset($styleRule['style']) && is_array($styleRule['style'])) {
+                        $styleRule['style'] = self::migrateStyleObject($styleRule['style']);
+                    }
+
+                    return $styleRule;
+                },
+                $project['styles'],
+            );
+        }
+
+        return self::migrateProjectNode($project);
     }
 
     public static function migrateClassList(string $classList): string
@@ -125,7 +183,7 @@ final class TailblocksThemeTokenMigrator
             }
 
             if ($shade >= 600) {
-                return 'bg-vp-brand-2';
+                return 'bg-vp-brand-3';
             }
 
             return 'bg-vp-brand-1';
@@ -221,7 +279,121 @@ final class TailblocksThemeTokenMigrator
 
     private static function migrateStyleDeclaration(string $style): string
     {
-        return self::replaceFixedBackgroundColors($style);
+        $style = self::replaceFixedBackgroundColors($style);
+
+        return self::replaceFixedBrandBackgroundColors($style);
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>
+     */
+    private static function migrateProjectNode(array $node): array
+    {
+        if (isset($node['component']) && is_string($node['component'])) {
+            $node['component'] = self::migrateHtml($node['component']);
+        }
+
+        if (isset($node['styles']) && is_string($node['styles'])) {
+            $node['styles'] = self::migrateCss($node['styles']);
+        }
+
+        if (isset($node['attributes']) && is_array($node['attributes'])) {
+            $node['attributes'] = self::migrateComponentAttributes($node['attributes']);
+        }
+
+        if (isset($node['classes']) && is_array($node['classes'])) {
+            $node['classes'] = self::migrateComponentClassesArray($node['classes']);
+        }
+
+        foreach ($node as $key => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            if (in_array($key, ['attributes', 'classes', 'style'], true)) {
+                continue;
+            }
+
+            if (self::isListArray($value)) {
+                $node[$key] = array_map(
+                    static fn (mixed $item): mixed => is_array($item) ? self::migrateProjectNode($item) : $item,
+                    $value,
+                );
+            } else {
+                $node[$key] = self::migrateProjectNode($value);
+            }
+        }
+
+        return $node;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attrs
+     * @return array<string, mixed>
+     */
+    private static function migrateComponentAttributes(array $attrs): array
+    {
+        if (isset($attrs['class']) && is_string($attrs['class'])) {
+            $attrs['class'] = self::migrateClassList($attrs['class']);
+        }
+
+        if (isset($attrs['style']) && is_string($attrs['style'])) {
+            $attrs['style'] = self::migrateStyleDeclaration($attrs['style']);
+        }
+
+        return $attrs;
+    }
+
+    /**
+     * @param  list<mixed>  $classes
+     * @return list<mixed>
+     */
+    private static function migrateComponentClassesArray(array $classes): array
+    {
+        return array_map(
+            static function (mixed $item): mixed {
+                if (! is_array($item) || ! isset($item['name']) || ! is_string($item['name'])) {
+                    return $item;
+                }
+
+                $item['name'] = self::migrateToken($item['name']);
+
+                return $item;
+            },
+            $classes,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $style
+     * @return array<string, mixed>
+     */
+    private static function migrateStyleObject(array $style): array
+    {
+        foreach ($style as $property => $value) {
+            if (! is_string($value)) {
+                continue;
+            }
+
+            $normalized = strtolower(trim($value));
+
+            if (preg_match('/^background(?:-color)?$/i', (string) $property) === 1) {
+                $replacement = self::brandBackgroundVariableForHex($normalized);
+
+                if ($replacement !== null) {
+                    $style[$property] = $replacement;
+                }
+
+                continue;
+            }
+
+            if ((string) $property === 'color' && self::isFixedDarkTextColor($normalized)) {
+                $style[$property] = 'var(--color-vp-text-1)';
+            }
+        }
+
+        return $style;
     }
 
     private static function replaceFixedBackgroundColors(string $value): string
@@ -237,6 +409,73 @@ final class TailblocksThemeTokenMigrator
             'background-color: var(--color-vp-bg-alt)$1',
             $value,
         ) ?? $value;
+    }
+
+    private static function replaceFixedBrandBackgroundColors(string $value): string
+    {
+        return preg_replace_callback(
+            '/background(?:-color)?:\s*(#[0-9a-f]{3,8})\b/i',
+            static function (array $matches): string {
+                $replacement = self::brandBackgroundVariableForHex(strtolower($matches[1]));
+
+                if ($replacement === null) {
+                    return $matches[0];
+                }
+
+                return 'background-color: '.$replacement;
+            },
+            $value,
+        ) ?? $value;
+    }
+
+    private static function brandBackgroundVariableForHex(string $hex): ?string
+    {
+        $expanded = self::expandHex($hex);
+
+        if ($expanded === null) {
+            return null;
+        }
+
+        if (in_array($expanded, self::BRAND_LIGHT_SURFACE_HEX, true)) {
+            return 'var(--color-vp-gray-soft)';
+        }
+
+        if (in_array($expanded, self::BRAND_DARK_SURFACE_HEX, true)) {
+            return 'var(--color-vp-brand-3)';
+        }
+
+        if (in_array($expanded, self::BRAND_MID_SURFACE_HEX, true)) {
+            return 'var(--color-vp-brand-1)';
+        }
+
+        return null;
+    }
+
+    private static function expandHex(string $hex): ?string
+    {
+        if (preg_match('/^#([0-9a-f]{3})$/', $hex, $matches) === 1) {
+            $chars = str_split($matches[1]);
+
+            return '#'.$chars[0].$chars[0].$chars[1].$chars[1].$chars[2].$chars[2];
+        }
+
+        if (preg_match('/^#([0-9a-f]{6})$/', $hex) === 1) {
+            return $hex;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<mixed>  $array
+     */
+    private static function isListArray(array $array): bool
+    {
+        if ($array === []) {
+            return true;
+        }
+
+        return array_keys($array) === range(0, count($array) - 1);
     }
 
     private static function isFixedDarkTextColor(string $value): bool

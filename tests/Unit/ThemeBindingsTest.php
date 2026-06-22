@@ -55,12 +55,12 @@ class ThemeBindingsTest extends TestCase
     {
         VpressSettings::query()->create([
             'data' => array_merge(VpressSettings::defaults(), [
-                'sub_theme' => 'events',
+                'sub_theme' => 'site',
             ]),
         ]);
         VpressSettings::clearCache();
 
-        $this->assertSame('events', ThemeBindings::effectiveThemeForChannelId('unknown-channel'));
+        $this->assertSame('site', ThemeBindings::effectiveThemeForChannelId('unknown-channel'));
     }
 
     public function test_expand_channel_themes_fills_missing_overrides(): void

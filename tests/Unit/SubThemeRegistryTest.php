@@ -16,10 +16,10 @@ class SubThemeRegistryTest extends TestCase
         $registry = app(SubThemeRegistry::class);
 
         $this->assertTrue($registry->exists('default'));
-        $this->assertTrue($registry->exists('blog'));
-        $this->assertTrue($registry->exists('news'));
-        $this->assertSame('Blog', $registry->label('blog'));
-        $this->assertSame('Showcase', $registry->label('events'));
+        $this->assertTrue($registry->exists('site'));
+        $this->assertSame('Site', $registry->label('site'));
+        $this->assertFalse($registry->exists('blog'));
+        $this->assertFalse($registry->exists('news'));
     }
 
     public function test_it_returns_layout_overrides_for_builtin_themes(): void
@@ -27,8 +27,8 @@ class SubThemeRegistryTest extends TestCase
         $registry = app(SubThemeRegistry::class);
 
         $this->assertSame(
-            'vpress::themes.blog.layouts.page',
-            $registry->layout('blog', 'page'),
+            'vpress::themes.site.layouts.page',
+            $registry->layout('site', 'page'),
         );
 
         $this->assertNull($registry->layout('default', 'page'));
@@ -39,7 +39,7 @@ class SubThemeRegistryTest extends TestCase
         $registry = app(SubThemeRegistry::class);
 
         $this->assertTrue($registry->supportsCapability('default', SubThemeCapability::Doc));
-        $this->assertTrue($registry->supportsCapability('events', SubThemeCapability::Landing));
+        $this->assertTrue($registry->supportsCapability('site', SubThemeCapability::Landing));
         $this->assertFalse($registry->supportsCapability('default', SubThemeCapability::Landing));
     }
 
@@ -47,12 +47,9 @@ class SubThemeRegistryTest extends TestCase
     {
         $registry = app(SubThemeRegistry::class);
 
-        $this->assertSame(
-            ['default', 'blog', 'news'],
-            $registry->idsByType(SubThemeType::Content),
-        );
-        $this->assertSame(['events'], $registry->idsByType(SubThemeType::Marketing));
-        $this->assertSame(['events'], array_keys($registry->marketingOptions()));
+        $this->assertSame(['default'], $registry->idsByType(SubThemeType::Content));
+        $this->assertSame(['site'], $registry->idsByType(SubThemeType::Marketing));
+        $this->assertSame(['site'], array_keys($registry->marketingOptions()));
         $this->assertArrayHasKey('default', $registry->contentOptions());
     }
 
@@ -70,5 +67,23 @@ class SubThemeRegistryTest extends TestCase
 
         $this->assertTrue($registry->exists('magazine'));
         $this->assertSame('Magazine', $registry->optionsForCapability(SubThemeCapability::Landing)['magazine']);
+    }
+
+    public function test_app_sub_themes_merge_with_bundled_defaults(): void
+    {
+        config()->set('vpress.sub_themes', [
+            'polito' => [
+                'label' => 'Politecnico',
+                'capabilities' => ['landing'],
+            ],
+        ]);
+
+        $registry = new SubThemeRegistry;
+        $registry->bootFromConfig();
+
+        $this->assertTrue($registry->exists('default'));
+        $this->assertTrue($registry->exists('site'));
+        $this->assertTrue($registry->exists('polito'));
+        $this->assertArrayHasKey('default', $registry->optionsForCapability(SubThemeCapability::Doc));
     }
 }

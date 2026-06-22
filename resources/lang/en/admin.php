@@ -33,7 +33,7 @@ return [
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
         'sub_theme_site' => 'Default visual theme for Site Pages (home, landing, CMS). Configure per-area bindings below.',
-        'sub_theme_page' => 'Override the site default for this page. Use GrapesJS or the rich editor for the content.',
+        'sub_theme_page' => 'Overrides the global layout (Settings → Layouts). Choose “Site default” to inherit Politecnico or whatever is set globally.',
         'excerpt' => 'Short summary for section listings, cards, and SEO.',
         'section_home' => 'Marks this page as the index for its section (lists sibling pages in the sidebar).',
     ],

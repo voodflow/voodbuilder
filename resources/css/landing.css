@@ -62,11 +62,11 @@
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
-html[data-vpress-sub-theme='events'] .vpress-events-shell:has(.VPRichPage--landing) {
+html[data-vpress-sub-theme='site'] .vpress-events-shell:has(.VPRichPage--landing) {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
 
-html[data-vpress-sub-theme='events'] .vpress-landing-shell:has(.VPRichPage--landing) {
+html[data-vpress-sub-theme='site'] .vpress-landing-shell:has(.VPRichPage--landing) {
     @apply max-w-none p-0;
 }
 

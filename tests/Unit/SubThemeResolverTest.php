@@ -14,7 +14,7 @@ class SubThemeResolverTest extends TestCase
     public function test_page_inherits_site_default_when_sub_theme_is_empty(): void
     {
         VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), ['sub_theme' => 'news']),
+            'data' => array_merge(VpressSettings::defaults(), ['sub_theme' => 'site']),
         ]);
         VpressSettings::clearCache();
 
@@ -28,7 +28,7 @@ class SubThemeResolverTest extends TestCase
             'published' => true,
         ]);
 
-        $this->assertSame('news', SubThemeResolver::forPage($page));
+        $this->assertSame('site', SubThemeResolver::forPage($page));
     }
 
     public function test_page_override_takes_precedence_over_site_default(): void
@@ -43,13 +43,13 @@ class SubThemeResolverTest extends TestCase
             'slug' => 'journal',
             'content' => [],
             'layout' => 'page',
-            'sub_theme' => 'blog',
+            'sub_theme' => 'site',
             'is_home' => false,
             'published' => true,
         ]);
 
-        $this->assertSame('blog', SubThemeResolver::forPage($page));
-        $this->assertSame('vpress::themes.blog.layouts.page', $page->layoutView());
+        $this->assertSame('site', SubThemeResolver::forPage($page));
+        $this->assertSame('vpress::themes.site.layouts.page', $page->layoutView());
     }
 
     public function test_invalid_sub_theme_falls_back_to_site_default(): void
@@ -69,6 +69,6 @@ class SubThemeResolverTest extends TestCase
             'published' => true,
         ]);
 
-        $this->assertSame('events', SubThemeResolver::forPage($page));
+        $this->assertSame('site', SubThemeResolver::forPage($page));
     }
 }

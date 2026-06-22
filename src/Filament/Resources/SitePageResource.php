@@ -177,6 +177,7 @@ class SitePageResource extends Resource
                                     ])
                                     ->default(null)
                                     ->nullable()
+                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
                                     ->native(false)
                                     ->helperText(__('vpress::admin.helpers.sub_theme_page')),
                             ]),

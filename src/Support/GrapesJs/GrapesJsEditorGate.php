@@ -70,9 +70,15 @@ final class GrapesJsEditorGate
     public static function initialPayload(SitePage $page): array
     {
         $payload = $page->builder_payload ?? [];
-        $html = (string) ($payload['html'] ?? '');
-        $css = (string) ($payload['css'] ?? '');
-        $project = $payload['project'] ?? null;
+        $normalized = self::normalizePayload([
+            'html' => $payload['html'] ?? '',
+            'css' => $payload['css'] ?? '',
+            'project' => $payload['project'] ?? null,
+        ]);
+
+        $html = $normalized['html'];
+        $css = $normalized['css'];
+        $project = $normalized['project'];
 
         $pageManager = null;
 
@@ -87,12 +93,29 @@ final class GrapesJsEditorGate
         }
 
         return [
-            'html' => TailblocksThemeTokenMigrator::migrateHtml(
-                GrapesJsHtmlSanitizer::sanitize($html),
-            ),
+            'html' => $html,
             'css' => $css,
             'project' => $project,
             'pageManager' => $pageManager,
+        ];
+    }
+
+    /**
+     * @param  array{html?: string, css?: string, project?: mixed}  $payload
+     * @return array{html: string, css: string, project: mixed}
+     */
+    public static function normalizePayload(array $payload): array
+    {
+        $html = GrapesJsHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
+        $css = (string) ($payload['css'] ?? '');
+        $project = $payload['project'] ?? null;
+
+        return [
+            'html' => TailblocksThemeTokenMigrator::migrateHtml($html),
+            'css' => TailblocksThemeTokenMigrator::migrateCss($css),
+            'project' => is_array($project)
+                ? TailblocksThemeTokenMigrator::migrateProject($project)
+                : $project,
         ];
     }
 

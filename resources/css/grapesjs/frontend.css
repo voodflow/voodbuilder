@@ -124,6 +124,17 @@ body.vpress-grapesjs-editing {
     --vpress-grapesjs-chrome-height: calc(
         var(--vpress-grapesjs-site-header-height) + var(--vpress-grapesjs-toolbar-height)
     );
+    overflow: hidden;
+    height: 100dvh;
+}
+
+body.vpress-grapesjs-editing .vpress-polito-content,
+body.vpress-grapesjs-editing .vpress-site-content,
+body.vpress-grapesjs-editing .vpress-landing-shell,
+body.vpress-grapesjs-editing .vpress-site-shell {
+    max-width: none;
+    padding: 0 !important;
+    margin: 0;
 }
 
 body.vpress-grapesjs-editing main {
@@ -133,7 +144,7 @@ body.vpress-grapesjs-editing main {
     min-height: 0;
 }
 
-body.vpress-grapesjs-editing .vpress-events-shell,
+body.vpress-grapesjs-editing .vpress-site-shell,
 body.vpress-grapesjs-editing .vpress-landing-shell,
 body.vpress-grapesjs-editing .VPRichPage--landing,
 body.vpress-grapesjs-editing .vpress-grapesjs-mode {
@@ -141,6 +152,16 @@ body.vpress-grapesjs-editing .vpress-grapesjs-mode {
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas,
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas__frames {
+    top: 0 !important;
+    height: 100% !important;
+}
+
+body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-frame-wrapper {
+    top: 0 !important;
 }
 
 body.vpress-grapesjs-editing header[role='banner'] {
@@ -163,6 +184,6 @@ body.vpress-grapesjs-editing .vpress-grapesjs-frontend {
     z-index: 1;
 }
 
-html[data-vpress-sub-theme='events'] body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas {
+html[data-vpress-sub-theme='site'] body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas {
     background-color: var(--color-vp-bg, #f4f5f7);
 }

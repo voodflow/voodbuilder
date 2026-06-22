@@ -3,6 +3,7 @@ import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
 
 import vpressGrapesJsPlugin, { registerBlocks, sanitizeBlockHtml } from './plugins/vpress-grapesjs.js';
+import { migrateEditorComponents } from './theme-tokens.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -163,8 +164,8 @@ export function initVpressGrapesJs(container, options = {}) {
                 },
                 {
                     name: 'Spacing',
-                    open: false,
-                    buildProps: ['width', 'height', 'padding', 'margin'],
+                    open: true,
+                    buildProps: ['padding', 'margin', 'width', 'height'],
                 },
                 {
                     name: 'Decorations',
@@ -190,6 +191,10 @@ export function initVpressGrapesJs(container, options = {}) {
 
     applyCanvasDocumentTheme(editor, options.subTheme);
     ensureInitialContent(editor, initial);
+
+    editor.on('load', () => {
+        migrateEditorComponents(editor);
+    });
 
     if (typeof options.onUpdate === 'function') {
         const notify = () => options.onUpdate(buildPayload(editor));
