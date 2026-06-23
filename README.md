@@ -69,25 +69,40 @@ Vpress does **not** ship blog posts, e-commerce, or arbitrary content types — 
 
 ```bash
 composer update voodflow/vpress
-php artisan vpress:install
+php artisan vpress:install --with-npm-build
 ```
 
-`vpress:install` will:
+That is usually enough for a fresh Laravel app with Vite. The install command publishes configs, runs migrations, seeds demo data, patches `package.json` and `vite.config.js`, runs `npm install`, and (with `--with-npm-build`) compiles assets.
 
-1. Publish Spatie Settings (required for cookie consent + vpress settings)
-2. Publish SEO config/migrations if needed
-3. Run `migrate` (vpress tables, `notifications`, settings)
-4. Seed default navigation, demo pages (blog + news sub-themes), and cookie policy page
-5. Configure cookie-consent for **frontend only** (no banner in Filament)
-6. Remove Laravel’s default `Route::get('/')` welcome route so vpress can serve the homepage
-7. Patch `vite.config.js` with the correct theme CSS path when possible
-8. If `voodflow/vtuts` is installed — patch `config/vtuts.php` to use `vpress::layouts.*`
+### What `vpress:install` does automatically
 
-> **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the vpress `home` route and shows the default welcome page without the vpress theme. `vpress:install` removes that route automatically.
+| Step | Action |
+|------|--------|
+| Publish | Spatie Settings, SEO, vpress config |
+| Database | `migrate` + default navigation/pages seed |
+| `routes/web.php` | Removes Laravel’s default `GET /` welcome route |
+| `package.json` | Adds Tailwind, fonts, GrapesJS npm packages |
+| `package.json` scripts | Sets `build` to run `vpress:sync-theme-imports` before Vite when safe |
+| `vite.config.js` | Adds theme CSS, GrapesJS editor JS/CSS, Tailblocks utilities |
+| npm | Runs `npm install` when `npm` is on PATH |
+| Cookie consent | Disables Filament auto-discovery for the public banner package |
+| vtuts (optional) | Patches `config/vtuts.php` layouts when the package is installed |
 
-> Vpress migrations load from the package automatically. Do not publish duplicate migration files.
+**CLI flags**
 
-### Filament
+| Flag | Use when |
+|------|----------|
+| `--with-npm-build` | Compile theme + GrapesJS in the same step (recommended on first install) |
+| `--skip-npm` | You manage Node dependencies yourself (CI, monorepo tooling) |
+| `--skip-seed` | No demo menus/pages |
+| `--skip-migrate` | Publish only; run `php artisan migrate` later |
+| `--force` | Re-publish configs and re-patch frontend files |
+
+### Manual steps (host app only)
+
+These cannot be automated safely — do them once in **your** Laravel project:
+
+1. **Filament plugin** — register in your panel provider:
 
 ```php
 use Voodflow\Vpress\VpressPlugin;
@@ -96,6 +111,25 @@ $panel->plugins([
     VpressPlugin::make(),
 ]);
 ```
+
+2. **`vite.config.js` — Tailwind plugin** — if your app does not use Tailwind v4 yet, add the plugin (vpress only patches the `input` array):
+
+```js
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+    plugins: [
+        laravel({ /* … */ }),
+        tailwindcss(),
+    ],
+});
+```
+
+3. **Custom `resources/js/app.js`** — if you ship your own dark-mode toggle, defer to vpress when the public layout is active (`window.__vpressTheme`). See [docs/BUILD.md](docs/BUILD.md).
+
+> **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the vpress `home` route. `vpress:install` removes that route automatically.
+
+> Vpress migrations load from the package automatically. Do not publish duplicate migration files.
 
 **Admin → Site**
 
@@ -573,43 +607,38 @@ Nav seeder adds a **Tutorials** link when `vtuts.index` exists.
 
 ## Vite & CSS
 
-Vpress does not ship pre-built CSS. `php artisan vpress:install` tries to add the theme entry to your `vite.config.js` automatically. The path depends on how the package is installed:
+Vpress does not ship pre-built CSS. `php artisan vpress:install --with-npm-build` patches `package.json` and `vite.config.js`, installs npm packages, and can compile assets in one step.
+
+The theme CSS path depends on how the package is installed:
 
 | Install method | Theme CSS path |
 |----------------|----------------|
 | Composer (GitHub / Packagist) | `vendor/voodflow/vpress/resources/css/theme.css` |
 | Path repo / monorepo | `packages/voodflow/vpress/resources/css/theme.css` |
 
-`config/vpress.php` resolves this at runtime — you do not need to edit it manually.
+`config/vpress.php` resolves paths at runtime — you do not edit it for Vite entries.
 
-Add Tailwind and fonts, then build:
+If you skipped the build during install:
 
 ```bash
-npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite
-npm run build
+npm run build    # or: npm run dev
 ```
 
-Your `vite.config.js` should look like this (path may differ):
+**Tailwind plugin** — vpress patches the `input` array only. Your `vite.config.js` must still include `@tailwindcss/vite` (see Installation → manual steps).
+
+Example `input` entries after install (paths may differ):
 
 ```js
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import tailwindcss from '@tailwindcss/vite';
-
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: [
-                'resources/css/app.css',
-                'resources/js/app.js',
-                'vendor/voodflow/vpress/resources/css/theme.css',
-            ],
-            refresh: true,
-        }),
-        tailwindcss(),
-    ],
-});
+input: [
+    'resources/js/app.js',
+    'vendor/voodflow/vpress/resources/css/theme.css',
+    'vendor/voodflow/vpress/resources/js/grapesjs/editor.js',
+    'vendor/voodflow/vpress/resources/css/grapesjs/editor.css',
+    'vendor/voodflow/vpress/resources/css/grapesjs/tailblocks-utilities.css',
+],
 ```
+
+Full build guide: [docs/BUILD.md](docs/BUILD.md).
 
 ## Custom RichEditor blocks
 

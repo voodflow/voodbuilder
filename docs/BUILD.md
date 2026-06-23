@@ -7,23 +7,46 @@ Vpress ships **source CSS/JS** in the package. Your Laravel app compiles them wi
 ## First-time setup
 
 ```bash
-php artisan vpress:install
-
-npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite
-npm install grapesjs grapesjs-blocks-basic
-npm install -D esbuild react react-dom prop-types   # Tailblocks export only
-npm run build
+php artisan vpress:install --with-npm-build
 ```
+
+That command:
+
+1. Patches `package.json` with Tailwind, fonts, and GrapesJS dependencies
+2. Patches `vite.config.js` with vpress Vite entries
+3. Runs `npm install`
+4. Runs `npm run build` (includes `vpress:sync-theme-imports`)
+
+Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
+
+### Manual file edits (only when needed)
+
+| File | When you must edit it |
+|------|------------------------|
+| Filament panel provider | Register `VpressPlugin::make()` once |
+| `vite.config.js` | Add `tailwindcss()` plugin if your app does not use Tailwind v4 yet |
+| `resources/js/app.js` | Only if you have a custom dark-mode toggle that conflicts with vpress |
 
 `vpress:install` patches `vite.config.js` to include:
 
 | Vite input | Purpose |
 |------------|---------|
-| `packages/voodflow/vpress/resources/css/theme.css` | Public site + all sub-themes |
+| `…/resources/css/theme.css` | Public site + all sub-themes |
 | `…/resources/js/grapesjs/editor.js` | GrapesJS frontend editor |
 | `…/resources/css/grapesjs/editor.css` | Editor chrome styles |
+| `…/resources/css/grapesjs/tailblocks-utilities.css` | Tailblocks classes in the canvas |
 
 Paths differ for `vendor/voodflow/vpress` installs — `VpressPaths` resolves them.
+
+### Regenerating Tailblocks (optional)
+
+Only needed when you run `php artisan vpress:build-tailblocks`:
+
+```bash
+npm install -D esbuild react react-dom prop-types
+php artisan vpress:build-tailblocks
+npm run build
+```
 
 ---
 
@@ -75,6 +98,20 @@ npm run build
 ```
 
 Requires `esbuild`, `react`, `react-dom`, `prop-types` in the host app `node_modules`.
+
+---
+
+## Host app.js and theme toggle
+
+Vpress public layouts expose `window.__vpressTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
+
+```js
+if (window.__vpressTheme) {
+    return;
+}
+```
+
+Otherwise both scripts fight and the toggle appears broken on vpress pages.
 
 ---
 

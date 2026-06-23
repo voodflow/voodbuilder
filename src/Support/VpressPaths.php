@@ -49,11 +49,17 @@ final class VpressPaths
      */
     public static function viteInputEntries(): array
     {
-        return [
+        $entries = [
             self::themeCssRelativePath(),
             self::grapesJsViteEntry(),
             self::grapesJsEditorCssEntry(),
         ];
+
+        if (TailblocksGrapesJsBlocks::isAvailable()) {
+            $entries[] = TailblocksGrapesJsBlocks::utilitiesCssEntry();
+        }
+
+        return $entries;
     }
 
     /**

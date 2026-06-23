@@ -6,19 +6,22 @@ namespace Voodflow\Vpress\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Process;
 use Voodflow\Vpress\Database\Seeders\VpressSeeder;
+use Voodflow\Vpress\Support\ConfigureNpmForVpress;
 use Voodflow\Vpress\Support\ConfigureRoutesForVpress;
 use Voodflow\Vpress\Support\ConfigureViteForVpress;
 use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
 use Voodflow\Vpress\Support\DisableFilamentCookieBanner;
-use Voodflow\Vpress\Support\VpressPaths;
 
 class InstallCommand extends Command
 {
     protected $signature = 'vpress:install
                             {--force : Overwrite already published files}
                             {--skip-migrate : Publish configs and migrations without running migrate}
-                            {--skip-seed : Skip seeding default Vpress data}';
+                            {--skip-seed : Skip seeding default Vpress data}
+                            {--skip-npm : Do not patch package.json or run npm install}
+                            {--with-npm-build : Run npm run build after npm install}';
 
     protected $description = 'Publish Vpress and dependency configs/migrations, then run migrate and seed';
 
@@ -91,6 +94,8 @@ class InstallCommand extends Command
         $this->configureRoutesIntegration();
 
         $this->configureViteIntegration();
+
+        $this->configureNpmIntegration();
 
         $this->configureCookieConsentForFrontendOnly();
 
@@ -166,7 +171,7 @@ class InstallCommand extends Command
     protected function configureViteIntegration(): void
     {
         if (! is_file(base_path('vite.config.js'))) {
-            $this->components->warn('vite.config.js not found — add the theme entry manually (see README).');
+            $this->components->warn('vite.config.js not found — add Vpress Vite entries manually (see README → Vite & CSS).');
 
             return;
         }
@@ -176,10 +181,79 @@ class InstallCommand extends Command
         } else {
             $this->components->warn('vite.config.js already references vpress Vite entries (or file could not be updated).');
         }
+    }
 
-        $this->components->warn('Install GrapesJS npm packages if needed: npm install grapesjs grapesjs-blocks-basic --save-dev');
-        $this->components->warn('For Tailblocks export: npm install -D esbuild react react-dom prop-types');
-        $this->components->warn('Then build assets: npm run build');
+    protected function configureNpmIntegration(): void
+    {
+        if ($this->option('skip-npm')) {
+            $this->components->info('Skipped npm setup (--skip-npm).');
+
+            return;
+        }
+
+        if (! is_file(base_path('package.json'))) {
+            $this->components->warn('package.json not found — create it with `npm init` or copy from a Laravel app, then re-run vpress:install.');
+
+            return;
+        }
+
+        $added = ConfigureNpmForVpress::apply($this->option('force'));
+
+        if ($added !== []) {
+            $this->components->info('Updated package.json with npm packages: '.implode(', ', $added));
+        } else {
+            $this->components->warn('package.json already includes required vpress npm packages.');
+        }
+
+        if (! $this->npmIsAvailable()) {
+            $this->components->warn('npm not found on PATH — run `npm install` and `npm run build` manually when Node.js is available.');
+
+            return;
+        }
+
+        $this->components->info('Running npm install...');
+
+        $install = Process::path(base_path())
+            ->timeout(600)
+            ->run('npm install');
+
+        if (! $install->successful()) {
+            $this->components->error('npm install failed.');
+            $this->line($install->errorOutput());
+
+            return;
+        }
+
+        $this->components->info('npm install completed.');
+
+        if (! $this->option('with-npm-build')) {
+            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and GrapesJS editor.');
+            $this->components->warn('Tip: pass `--with-npm-build` to compile assets during install.');
+
+            return;
+        }
+
+        $this->components->info('Running npm run build...');
+
+        $build = Process::path(base_path())
+            ->timeout(600)
+            ->run('npm run build');
+
+        if (! $build->successful()) {
+            $this->components->error('npm run build failed.');
+            $this->line($build->errorOutput());
+
+            return;
+        }
+
+        $this->components->info('Frontend assets built successfully.');
+    }
+
+    protected function npmIsAvailable(): bool
+    {
+        $result = Process::run('npm --version');
+
+        return $result->successful();
     }
 
     protected function configureCookieConsentForFrontendOnly(): void
@@ -240,26 +314,33 @@ class InstallCommand extends Command
             return $status;
         }
 
-        $themePath = VpressPaths::themeCssRelativePath();
-
         $this->newLine();
-        $this->components->info('Complete these steps in your host app:');
+        $this->components->info('Host app checklist (manual steps only):');
         $this->newLine();
 
-        $this->line('  1. Register the Filament plugin (if not already):');
+        $this->line('  1. Filament panel — register the plugin once in your Panel provider:');
         $this->line('     ->plugins([\\Voodflow\\Vpress\\VpressPlugin::make()])');
         $this->newLine();
 
-        $this->line('  2. Build frontend assets (from your Laravel app root):');
-        $this->line('     npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono tailwindcss @tailwindcss/vite');
-        $this->line('     npm run build    # or: npm run dev');
-        $this->newLine();
-        $this->line('     vite.config.js should include:');
-        $this->line("     '{$themePath}'");
-        $this->line('     (vpress:install patches this automatically when possible.)');
-        $this->newLine();
+        if ($this->option('skip-npm') || ! $this->npmIsAvailable()) {
+            $this->line('  2. Frontend assets — from your Laravel app root:');
+            $this->line('     php artisan vpress:install --with-npm-build');
+            $this->line('     (or: npm install && npm run build)');
+            $this->newLine();
+        } elseif (! $this->option('with-npm-build')) {
+            $this->line('  2. Frontend assets — compile if you skipped the build step:');
+            $this->line('     npm run build    # or: npm run dev');
+            $this->newLine();
+        }
 
         $this->line('  3. Customize config/vpress.php and manage Site → Settings in Filament.');
+        $this->newLine();
+
+        $this->line('  Automatic setup already handled by vpress:install:');
+        $this->line('  - package.json npm dependencies (GrapesJS, Tailwind, fonts)');
+        $this->line('  - vite.config.js theme + GrapesJS entries');
+        $this->line('  - routes/web.php welcome route removal');
+        $this->line('  - migrations, seed data, cookie-consent panel exclusion');
         $this->newLine();
 
         $this->components->success('voodflow/vpress installed successfully.');

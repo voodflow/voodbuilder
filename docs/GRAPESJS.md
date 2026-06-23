@@ -17,12 +17,16 @@ Vpress Pro ships a **frontend GrapesJS editor** for Site Pages. Editors with per
 Install npm dependencies (host app):
 
 ```bash
-npm install grapesjs grapesjs-blocks-basic
-npm install -D esbuild react react-dom prop-types   # only for vpress:build-tailblocks
+php artisan vpress:install --with-npm-build
+```
+
+Or, if you already ran install without build:
+
+```bash
 npm run build
 ```
 
-`php artisan vpress:install` patches `vite.config.js` with GrapesJS entries when possible.
+`php artisan vpress:install` patches `package.json`, `vite.config.js`, and runs `npm install` when Node is available.
 
 ---
 
