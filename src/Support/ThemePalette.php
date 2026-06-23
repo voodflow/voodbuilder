@@ -76,6 +76,36 @@ CSS;
         return implode("\n", array_filter($rules));
     }
 
+    /**
+     * GrapesJS canvas iframe: apply the active sub-theme palette without relying on
+     * data-vpress-sub-theme being present before external stylesheets load.
+     */
+    public static function cssForCanvas(string $subThemeId): string
+    {
+        $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
+        $palette = $colors[$subThemeId] ?? null;
+
+        if ($palette === null) {
+            return '';
+        }
+
+        $rules = [];
+
+        $lightRule = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+
+        if ($lightRule !== null) {
+            $rules[] = $lightRule;
+        }
+
+        $darkRule = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+
+        if ($darkRule !== null) {
+            $rules[] = $darkRule;
+        }
+
+        return implode("\n", $rules);
+    }
+
     public static function headerChromeCss(): string
     {
         return self::HEADER_CHROME_CSS;
@@ -141,7 +171,7 @@ CSS;
     /**
      * @param  array<string, ?string>  $palette
      */
-    private static function buildRule(string $subThemeId, array $palette, bool $dark): ?string
+    private static function buildRule(string $subThemeId, array $palette, bool $dark, ?string $selector = null): ?string
     {
         if (! self::modeHasOverrides($palette)) {
             return null;
@@ -193,7 +223,7 @@ CSS;
             return null;
         }
 
-        $selector = $dark
+        $selector ??= $dark
             ? "html.dark[data-vpress-sub-theme='{$subThemeId}']"
             : "html[data-vpress-sub-theme='{$subThemeId}']:not(.dark)";
 

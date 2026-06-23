@@ -48,7 +48,7 @@ final class GrapesJsCanvas
 
     public static function frameStyle(string $subTheme): string
     {
-        $paletteCss = ThemePalette::css();
+        $paletteCss = ThemePalette::cssForCanvas($subTheme);
 
         return <<<CSS
         body {

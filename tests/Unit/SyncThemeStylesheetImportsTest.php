@@ -26,4 +26,37 @@ class SyncThemeStylesheetImportsTest extends TestCase
             File::put($bundlePath, $original);
         }
     }
+
+    public function test_it_preserves_tailwindcss_package_import(): void
+    {
+        $bundlePath = VpressPaths::themeCssAbsolutePath();
+        $original = File::get($bundlePath);
+
+        $withoutTailwind = preg_replace("/@import 'tailwindcss';\n?/", '', $original) ?? $original;
+        File::put($bundlePath, $withoutTailwind);
+
+        try {
+            $this->assertFalse(SyncThemeStylesheetImports::sync());
+            $this->assertStringNotContainsString("@import 'tailwindcss';", File::get($bundlePath));
+        } finally {
+            File::put($bundlePath, $original);
+        }
+
+        $withTailwind = str_contains($original, "@import 'tailwindcss';")
+            ? $original
+            : str_replace(
+                "@import './fonts.css';",
+                "@import './fonts.css';\n@import 'tailwindcss';",
+                $original,
+            );
+
+        File::put($bundlePath, $withTailwind);
+
+        try {
+            $this->assertFalse(SyncThemeStylesheetImports::sync());
+            $this->assertStringContainsString("@import 'tailwindcss';", File::get($bundlePath));
+        } finally {
+            File::put($bundlePath, $original);
+        }
+    }
 }

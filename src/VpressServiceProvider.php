@@ -34,6 +34,7 @@ use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
+use Voodflow\Vpress\Support\GrapesJs\VpressLandingGrapesJsBlocks;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
@@ -143,6 +144,10 @@ class VpressServiceProvider extends PackageServiceProvider
 
             if (config('vpress.grapesjs.include_vpress_blocks', true)) {
                 DefaultGrapesJsBlocks::register($registry);
+            }
+
+            if (config('vpress.grapesjs.include_landing_blocks', true)) {
+                VpressLandingGrapesJsBlocks::register();
             }
 
             $this->app->make(GrapesJsDynamicBlockRegistry::class)->registerEditorBlocks($registry);

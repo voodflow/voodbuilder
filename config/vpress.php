@@ -206,6 +206,7 @@ return [
             'max_size' => 4096,
         ],
         'include_vpress_blocks' => true,
+        'include_landing_blocks' => true,
         'tailblocks' => [
             'enabled' => env('VPRESS_TAILBLOCKS_ENABLED', true),
             'theme' => env('VPRESS_TAILBLOCKS_THEME', 'indigo'),

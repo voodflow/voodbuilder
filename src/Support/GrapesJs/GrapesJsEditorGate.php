@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\PageBuilderAccess;
+use Voodflow\Vpress\Support\ThemePalette;
 
 final class GrapesJsEditorGate
 {
@@ -55,6 +56,8 @@ final class GrapesJsEditorGate
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
             'subTheme' => $subTheme,
+            'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
+            'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
             'labels' => [
                 'save' => __('vpress::pro.frontend.save'),
                 'saving' => __('vpress::pro.frontend.saving'),

@@ -132,6 +132,7 @@ export function migrateToken(token) {
             return 'text-vp-text-2';
         case 'text-gray-400':
         case 'text-gray-300':
+        case 'text-gray-200':
             return 'text-vp-text-3';
         case 'border-gray-100':
         case 'border-gray-200':
@@ -153,10 +154,102 @@ export function migrateClassList(classList) {
         return classList;
     }
 
-    return tokens.map((token) => migrateToken(token)).join(' ');
+    const migrated = tokens.map((token) => migrateToken(token)).join(' ');
+
+    return migrateLegacyButtonClasses(migrated);
+}
+
+function migrateLegacyButtonClasses(classList) {
+    const tokens = classList.trim().split(/\s+/).filter(Boolean);
+
+    if (! tokens.includes('vpress-gjs-btn-primary')) {
+        return classList;
+    }
+
+    const next = tokens.filter((token) => token !== 'vpress-gjs-btn-primary');
+
+    for (const className of ['bg-vp-brand-1', 'text-white', 'hover:bg-vp-brand-2']) {
+        if (! next.includes(className)) {
+            next.push(className);
+        }
+    }
+
+    return next.join(' ');
+}
+
+const BACKGROUND_CLASS_PATTERN = /^(?:hover:|focus:|active:|group-hover:)?bg-/;
+
+export function isClearedBackground(value) {
+    if (value == null || value === '') {
+        return true;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+
+    return ['none', 'transparent', 'unset', 'initial'].includes(normalized);
+}
+
+export function stripBackgroundClasses(component) {
+    const classes = (component.getClasses?.() ?? []).filter((className) => {
+        return ! BACKGROUND_CLASS_PATTERN.test(className) && className !== 'vpress-gjs-btn-primary';
+    });
+
+    component.setClass(classes);
+}
+
+const LIBRARY_TEXT_COLORS = new Set([
+    '#ffffff',
+    '#fff',
+    'white',
+    '#f3f4f6',
+    '#e5e7eb',
+    '#d1d5db',
+    '#9ca3af',
+    '#a5b4fc',
+    '#818cf8',
+    '#6366f1',
+    '#c7d2fe',
+    '#93c5fd',
+]);
+
+function hasBackgroundClass(classes) {
+    return classes.some((className) => /^bg-(?!opacity|blend|clip|origin|size|position|repeat|none|auto)/.test(className));
+}
+
+function ensureLandingSectionClasses(component) {
+    if (component.get?.('tagName') !== 'section') {
+        return;
+    }
+
+    const classes = component.getClasses?.() ?? [];
+
+    if (! classes.includes('vpress-gjs-section')) {
+        component.addClass('vpress-gjs-section');
+    }
+
+    if (! hasBackgroundClass(classes)) {
+        component.addClass('bg-vp-bg');
+    }
+}
+
+function migrateComponentInlineThemeStyles(component) {
+    const style = component.getStyle?.() ?? {};
+    const color = typeof style.color === 'string' ? style.color.trim().toLowerCase() : null;
+
+    if (! color || ! LIBRARY_TEXT_COLORS.has(color)) {
+        return;
+    }
+
+    const nextStyle = { ...style };
+
+    delete nextStyle.color;
+    component.setStyle(nextStyle);
 }
 
 function migrateComponentTree(component) {
+    ensureLandingSectionClasses(component);
+    migrateComponentInlineThemeStyles(component);
+
     const classes = component.getClasses?.() ?? [];
 
     if (classes.length > 0) {
@@ -170,7 +263,7 @@ function migrateComponentTree(component) {
     const style = component.getStyle?.() ?? {};
     const background = style['background-color'] ?? style.background;
 
-    if (typeof background === 'string') {
+    if (typeof background === 'string' && ! isClearedBackground(background.trim())) {
         const replacement = brandBackgroundVariableForHex(background.trim());
 
         if (replacement) {
@@ -179,6 +272,30 @@ function migrateComponentTree(component) {
     }
 
     component.components?.().forEach(migrateComponentTree);
+}
+
+export function migrateEditorComponent(component) {
+    migrateComponentTree(component);
+}
+
+export function purgeLegacyEditorStyles(editor) {
+    const cssComposer = editor.Css;
+
+    if (! cssComposer?.getAll) {
+        return;
+    }
+
+    const legacyRules = cssComposer.getAll().filter((rule) => {
+        const selectors = rule.get('selectors') ?? [];
+
+        return selectors.some((selector) => {
+            const name = selector?.get?.('name') ?? selector?.name ?? selector;
+
+            return String(name).includes('vpress-gjs-btn-primary');
+        });
+    });
+
+    legacyRules.forEach((rule) => cssComposer.remove(rule));
 }
 
 export function migrateEditorComponents(editor) {

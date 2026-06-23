@@ -34,6 +34,12 @@ final class SyncThemeStylesheetImports
                 continue;
             }
 
+            if (self::isPackageImport($importPath)) {
+                $kept[] = $line;
+
+                continue;
+            }
+
             $absolute = self::resolveImportAbsolute($bundlePath, $importPath);
 
             if ($absolute === null || ! is_file($absolute)) {
@@ -94,6 +100,12 @@ final class SyncThemeStylesheetImports
         }
 
         return $paths;
+    }
+
+    private static function isPackageImport(string $importPath): bool
+    {
+        return ! str_starts_with($importPath, '.')
+            && ! str_starts_with($importPath, '/');
     }
 
     private static function parseImportPath(string $line): ?string

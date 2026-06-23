@@ -9,7 +9,7 @@ import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
 
 import vpressGrapesJsPlugin, { registerBlocks, sanitizeBlockHtml } from './plugins/vpress-grapesjs.js';
-import { migrateEditorComponents } from './theme-tokens.js';
+import { migrateEditorComponent, migrateEditorComponents, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { editorChromeInitOptions } from './editor-chrome.js';
 
 function hasProjectData(project) {
@@ -93,10 +93,59 @@ function ensureInitialContent(editor, initial) {
     window.setTimeout(apply, 100);
 }
 
-function applyCanvasDocumentTheme(editor, subTheme) {
+function applyLandingCanvasWrapper(editor, landingCanvas) {
+    if (! landingCanvas) {
+        return;
+    }
+
+    const apply = () => {
+        const wrapper = editor.getWrapper?.();
+
+        if (! wrapper) {
+            return;
+        }
+
+        wrapper.addClass(['VPRichPage', 'VPRichPage--landing']);
+    };
+
+    editor.on('load', apply);
+    editor.on('canvas:frame:load', apply);
+}
+
+function setupCanvasThemePalette(editor, paletteCss) {
+    if (! paletteCss) {
+        return () => {};
+    }
+
+    const inject = () => {
+        const doc = editor.Canvas.getDocument();
+
+        if (! doc) {
+            return;
+        }
+
+        let style = doc.getElementById('vpress-canvas-theme-palette');
+
+        if (! style) {
+            style = doc.createElement('style');
+            style.id = 'vpress-canvas-theme-palette';
+            doc.head.appendChild(style);
+        }
+
+        style.textContent = paletteCss;
+    };
+
+    editor.on('canvas:frame:load', inject);
+
+    return inject;
+}
+
+function applyCanvasDocumentTheme(editor, subTheme, themePaletteCss) {
     if (! subTheme) {
         return;
     }
+
+    const injectPalette = setupCanvasThemePalette(editor, themePaletteCss);
 
     const apply = (isDark = null) => {
         const doc = editor.Canvas.getDocument();
@@ -114,6 +163,8 @@ function applyCanvasDocumentTheme(editor, subTheme) {
         } else {
             doc.documentElement.classList.remove('dark');
         }
+
+        injectPalette();
     };
 
     editor.on('canvas:frame:load', () => apply());
@@ -148,23 +199,25 @@ export function initVpressGrapesJs(container, options = {}) {
             styles: options.canvasStyles ?? [],
             frameStyle: options.canvasFrameStyle,
         },
-        assetManager: options.uploadUrl
-            ? {
-                  upload: options.uploadUrl,
-                  uploadName: 'file',
-                  multiUpload: false,
-                  autoAdd: true,
-                  credentials: 'same-origin',
-                  headers: options.csrf
-                      ? {
-                            'X-CSRF-TOKEN': options.csrf,
-                            Accept: 'application/json',
-                        }
-                      : {
-                            Accept: 'application/json',
-                        },
-              }
-            : false,
+        assetManager: {
+            multiUpload: false,
+            autoAdd: true,
+            ...(options.uploadUrl
+                ? {
+                      upload: options.uploadUrl,
+                      uploadName: 'file',
+                      credentials: 'same-origin',
+                      headers: options.csrf
+                          ? {
+                                'X-CSRF-TOKEN': options.csrf,
+                                Accept: 'application/json',
+                            }
+                          : {
+                                Accept: 'application/json',
+                            },
+                  }
+                : {}),
+        },
         blockManager: {
             appendTo: options.blocksAppendTo ?? undefined,
         },
@@ -190,11 +243,17 @@ export function initVpressGrapesJs(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
-    applyCanvasDocumentTheme(editor, options.subTheme);
+    applyCanvasDocumentTheme(editor, options.subTheme, options.themePaletteCss);
+    applyLandingCanvasWrapper(editor, options.landingCanvas ?? false);
     ensureInitialContent(editor, initial);
 
     editor.on('load', () => {
+        purgeLegacyEditorStyles(editor);
         migrateEditorComponents(editor);
+    });
+
+    editor.on('component:add', (component) => {
+        migrateEditorComponent(component);
     });
 
     if (typeof options.onUpdate === 'function') {
@@ -285,6 +344,8 @@ function mountFrontendEditor() {
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
         subTheme: config.subTheme,
+        landingCanvas: config.landingCanvas ?? false,
+        themePaletteCss: config.themePaletteCss ?? '',
         uploadUrl: config.uploadUrl,
         csrf: config.csrf,
     });

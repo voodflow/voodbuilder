@@ -92,6 +92,19 @@ final class TailblocksThemeTokenMigrator
 
         $css = self::replaceFixedBackgroundColors($css);
         $css = self::replaceFixedBrandBackgroundColors($css);
+        $css = self::stripLegacyButtonCss($css);
+
+        $css = str_replace(
+            [
+                'background-color: #6366f1',
+                'background-color: #4f46e5',
+            ],
+            [
+                'background-color: var(--color-vp-brand-1)',
+                'background-color: var(--color-vp-brand-2)',
+            ],
+            $css,
+        );
 
         return preg_replace_callback(
             '/\bcolor:\s*([^;}{]+)/',
@@ -115,20 +128,29 @@ final class TailblocksThemeTokenMigrator
     public static function migrateProject(array $project): array
     {
         if (isset($project['styles']) && is_array($project['styles'])) {
-            $project['styles'] = array_map(
-                static function (mixed $styleRule): mixed {
-                    if (! is_array($styleRule)) {
+            $project['styles'] = array_values(array_filter(
+                array_map(
+                    static function (mixed $styleRule): mixed {
+                        if (! is_array($styleRule)) {
+                            return $styleRule;
+                        }
+
+                        if (isset($styleRule['style']) && is_array($styleRule['style'])) {
+                            $styleRule['style'] = self::migrateStyleObject($styleRule['style']);
+                        }
+
                         return $styleRule;
+                    },
+                    $project['styles'],
+                ),
+                static function (mixed $styleRule): bool {
+                    if (! is_array($styleRule)) {
+                        return true;
                     }
 
-                    if (isset($styleRule['style']) && is_array($styleRule['style'])) {
-                        $styleRule['style'] = self::migrateStyleObject($styleRule['style']);
-                    }
-
-                    return $styleRule;
+                    return ! self::styleRuleTargetsLegacyButton($styleRule);
                 },
-                $project['styles'],
-            );
+            ));
         }
 
         return self::migrateProjectNode($project);
@@ -144,7 +166,30 @@ final class TailblocksThemeTokenMigrator
 
         $migrated = array_map(static fn (string $token): string => self::migrateToken($token), $tokens);
 
-        return implode(' ', $migrated);
+        return self::migrateLegacyButtonClasses($migrated);
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     */
+    public static function migrateLegacyButtonClasses(array $tokens): string
+    {
+        if (! in_array('vpress-gjs-btn-primary', $tokens, true)) {
+            return implode(' ', $tokens);
+        }
+
+        $tokens = array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => $token !== 'vpress-gjs-btn-primary',
+        ));
+
+        foreach (['bg-vp-brand-1', 'text-white', 'hover:bg-vp-brand-2'] as $className) {
+            if (! in_array($className, $tokens, true)) {
+                $tokens[] = $className;
+            }
+        }
+
+        return implode(' ', $tokens);
     }
 
     public static function migrateToken(string $token): string
@@ -161,7 +206,7 @@ final class TailblocksThemeTokenMigrator
             'bg-gray-200', 'bg-gray-300' => 'bg-vp-gray-soft',
             'text-gray-900', 'text-gray-800', 'text-gray-700' => 'text-vp-text-1',
             'text-gray-600', 'text-gray-500' => 'text-vp-text-2',
-            'text-gray-400', 'text-gray-300' => 'text-vp-text-3',
+            'text-gray-400', 'text-gray-300', 'text-gray-200' => 'text-vp-text-3',
             'border-gray-100', 'border-gray-200', 'border-gray-300' => 'border-vp-divider',
             'divide-gray-100', 'divide-gray-200', 'divide-gray-300' => 'divide-vp-divider',
             default => self::migrateBrandToken($token) ?? $token,
@@ -302,8 +347,12 @@ final class TailblocksThemeTokenMigrator
             $node['attributes'] = self::migrateComponentAttributes($node['attributes']);
         }
 
+        if (isset($node['style']) && is_array($node['style'])) {
+            $node['style'] = self::migrateStyleObject($node['style']);
+        }
+
         if (isset($node['classes']) && is_array($node['classes'])) {
-            $node['classes'] = self::migrateComponentClassesArray($node['classes']);
+            $node['classes'] = self::migrateComponentClasses($node['classes']);
         }
 
         foreach ($node as $key => $value) {
@@ -349,6 +398,28 @@ final class TailblocksThemeTokenMigrator
      * @param  list<mixed>  $classes
      * @return list<mixed>
      */
+    private static function migrateComponentClasses(array $classes): array
+    {
+        if ($classes === []) {
+            return $classes;
+        }
+
+        if (is_string($classes[0] ?? null)) {
+            $tokens = array_map(
+                static fn (string $token): string => self::migrateToken($token),
+                array_values(array_filter($classes, 'is_string')),
+            );
+
+            return array_values(array_filter(explode(' ', self::migrateLegacyButtonClasses($tokens))));
+        }
+
+        return self::migrateComponentClassesArray($classes);
+    }
+
+    /**
+     * @param  list<mixed>  $classes
+     * @return list<mixed>
+     */
     private static function migrateComponentClassesArray(array $classes): array
     {
         return array_map(
@@ -379,7 +450,7 @@ final class TailblocksThemeTokenMigrator
             $normalized = strtolower(trim($value));
 
             if (preg_match('/^background(?:-color)?$/i', (string) $property) === 1) {
-                $replacement = self::brandBackgroundVariableForHex($normalized);
+                $replacement = self::brandBackgroundVariableForColor($normalized);
 
                 if ($replacement !== null) {
                     $style[$property] = $replacement;
@@ -390,10 +461,93 @@ final class TailblocksThemeTokenMigrator
 
             if ((string) $property === 'color' && self::isFixedDarkTextColor($normalized)) {
                 $style[$property] = 'var(--color-vp-text-1)';
+
+                continue;
+            }
+
+            if ((string) $property === 'color' && self::isLibraryLightTextColor($normalized)) {
+                unset($style[$property]);
             }
         }
 
         return $style;
+    }
+
+    private static function isLibraryLightTextColor(string $value): bool
+    {
+        if (in_array($value, ['white', '#fff', '#ffffff'], true)) {
+            return true;
+        }
+
+        $expanded = self::expandHex($value);
+
+        if ($expanded === null) {
+            return false;
+        }
+
+        return in_array($expanded, [
+            '#f3f4f6', '#e5e7eb', '#d1d5db', '#9ca3af',
+            '#a5b4fc', '#818cf8', '#6366f1', '#c7d2fe', '#93c5fd',
+        ], true);
+    }
+
+    private static function styleRuleTargetsLegacyButton(array $styleRule): bool
+    {
+        $selectors = $styleRule['selectors'] ?? [];
+
+        if (! is_array($selectors)) {
+            return false;
+        }
+
+        foreach ($selectors as $selector) {
+            if (is_string($selector) && str_contains($selector, 'vpress-gjs-btn-primary')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function brandBackgroundVariableForColor(string $value): ?string
+    {
+        $hex = self::normalizeColorToHex($value);
+
+        if ($hex === null) {
+            return null;
+        }
+
+        return self::brandBackgroundVariableForHex($hex);
+    }
+
+    private static function normalizeColorToHex(string $value): ?string
+    {
+        $value = strtolower(trim($value));
+
+        $expanded = self::expandHex($value);
+
+        if ($expanded !== null) {
+            return $expanded;
+        }
+
+        if (preg_match('/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/', $value, $matches) === 1) {
+            return sprintf(
+                '#%02x%02x%02x',
+                min(255, (int) $matches[1]),
+                min(255, (int) $matches[2]),
+                min(255, (int) $matches[3]),
+            );
+        }
+
+        return null;
+    }
+
+    private static function stripLegacyButtonCss(string $css): string
+    {
+        return preg_replace(
+            '/\.vpress-gjs-btn-primary(?::hover)?\s*\{[^}]*\}\s*/',
+            '',
+            $css,
+        ) ?? $css;
     }
 
     private static function replaceFixedBackgroundColors(string $value): string

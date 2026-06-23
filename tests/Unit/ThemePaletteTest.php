@@ -53,6 +53,33 @@ class ThemePaletteTest extends TestCase
     }
 
     #[Test]
+    public function it_builds_canvas_css_without_sub_theme_attribute_selector(): void
+    {
+        config()->set('vpress.sub_themes', [
+            'site' => ['label' => 'Site'],
+        ]);
+
+        \Voodflow\Vpress\Models\VpressSettings::query()->create([
+            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::defaults(), [
+                'sub_theme_colors' => [
+                    'site' => [
+                        'light' => [
+                            'primary' => '#47cc49',
+                            'secondary' => '#d68527',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        \Voodflow\Vpress\Models\VpressSettings::clearCache();
+
+        $css = ThemePalette::cssForCanvas('site');
+
+        $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
+        $this->assertStringNotContainsString("data-vpress-sub-theme='site'", $css);
+    }
+
+    #[Test]
     public function it_builds_css_for_semantic_theme_colors(): void
     {
         config()->set('vpress.sub_themes', [

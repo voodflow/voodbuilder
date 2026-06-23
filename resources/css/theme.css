@@ -4,6 +4,7 @@
  */
 
 @import './fonts.css';
+@import 'tailwindcss';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
 @import './landing.css';

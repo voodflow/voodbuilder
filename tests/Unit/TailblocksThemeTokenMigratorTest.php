@@ -55,9 +55,28 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     {
         $token = TailblocksThemeTokenMigrator::migrateToken('hover:bg-indigo-600');
 
-        $this->assertSame('hover:bg-vp-brand-2', $token);
+        $this->assertSame('hover:bg-vp-brand-3', $token);
         $this->assertSame('text-vp-brand-1', TailblocksThemeTokenMigrator::migrateToken('text-indigo-500'));
         $this->assertSame('bg-vp-gray-soft', TailblocksThemeTokenMigrator::migrateToken('bg-indigo-50'));
+    }
+
+    public function test_migrates_legacy_button_class_to_theme_utilities(): void
+    {
+        $classes = TailblocksThemeTokenMigrator::migrateClassList('vpress-gjs-btn-primary inline-flex text-white');
+
+        $this->assertStringNotContainsString('vpress-gjs-btn-primary', $classes);
+        $this->assertStringContainsString('bg-vp-brand-1', $classes);
+        $this->assertStringContainsString('hover:bg-vp-brand-2', $classes);
+    }
+
+    public function test_strips_legacy_button_css_rules(): void
+    {
+        $css = '.vpress-gjs-btn-primary { background-color: #6366f1; } .vpress-gjs-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
+
+        $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
+
+        $this->assertStringNotContainsString('vpress-gjs-btn-primary', $migrated);
+        $this->assertStringContainsString('.safe { color: red; }', $migrated);
     }
 
     public function test_preserves_non_theme_utilities(): void
@@ -101,5 +120,45 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('bg-vp-brand-1', $class);
         $this->assertStringNotContainsString('bg-indigo-500', $class);
         $this->assertSame('text-white', TailblocksThemeTokenMigrator::migrateToken('text-white'));
+    }
+
+    public function test_migrates_grapesjs_project_string_classes_and_removes_legacy_button_styles(): void
+    {
+        $project = [
+            'styles' => [
+                [
+                    'selectors' => ['vpress-gjs-btn-primary'],
+                    'style' => [
+                        'background-color' => 'rgb(99, 102, 241)',
+                        'color' => 'rgb(255, 255, 255)',
+                    ],
+                ],
+            ],
+            'pages' => [[
+                'id' => 'main',
+                'frames' => [[
+                    'component' => [
+                        'type' => 'wrapper',
+                        'components' => [[
+                            'tagName' => 'a',
+                            'classes' => [
+                                'vpress-gjs-btn-primary',
+                                'inline-flex',
+                                'text-white',
+                                'hover:bg-vp-brand-3',
+                            ],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ];
+
+        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $classes = $migrated['pages'][0]['frames'][0]['component']['components'][0]['classes'];
+
+        $this->assertSame([], $migrated['styles']);
+        $this->assertNotContains('vpress-gjs-btn-primary', $classes);
+        $this->assertContains('bg-vp-brand-1', $classes);
+        $this->assertContains('hover:bg-vp-brand-2', $classes);
     }
 }

@@ -4,6 +4,7 @@
  */
 
 import { configureEditorChrome } from '../editor-chrome.js';
+import { isClearedBackground, stripBackgroundClasses } from '../theme-tokens.js';
 
 const SECTION_PADDING_CLASSES = ['py-0', 'py-8', 'py-12', 'py-16', 'py-20', 'py-24'];
 
@@ -143,6 +144,104 @@ function applySectionPadding(section, pyClass) {
     applySectionPaddingToElement(container, pyClass);
 }
 
+function openImageAssetManager(editor, component) {
+    if (! component?.is?.('image')) {
+        return;
+    }
+
+    const am = editor.AssetManager;
+
+    am.open({
+        select: (asset, complete) => {
+            component.set({ src: asset.getSrc() });
+            complete && am.close();
+        },
+        target: component,
+        types: ['image'],
+        accept: 'image/*',
+    });
+}
+
+function imageTraits() {
+    return [
+        {
+            type: 'text',
+            label: 'Image URL',
+            name: 'src',
+            changeProp: 1,
+            placeholder: 'https://…',
+        },
+        {
+            type: 'button',
+            label: 'Media library',
+            text: 'Choose or upload…',
+            full: true,
+            command: (editor, trait) => {
+                const component = trait?.target ?? editor.getSelected();
+
+                openImageAssetManager(editor, component);
+            },
+        },
+        {
+            type: 'text',
+            label: 'Alt text',
+            name: 'alt',
+        },
+    ];
+}
+
+function isHeroBackgroundImage(component) {
+    const classes = component.getClasses?.() ?? [];
+
+    return classes.includes('absolute') && classes.includes('inset-0');
+}
+
+function registerImageComponentEnhancements(editor) {
+    editor.DomComponents.addType('image', {
+        extend: 'image',
+        model: {
+            defaults: {
+                editable: true,
+                traits: imageTraits(),
+            },
+            init() {
+                if (isHeroBackgroundImage(this)) {
+                    this.set('name', 'Hero background');
+                }
+            },
+        },
+    });
+
+    editor.on('component:selected', (component) => {
+        if (component?.is?.('image')) {
+            editor.runCommand('open-tm');
+        }
+    });
+
+    editor.on('load', () => {
+        const wrapper = editor.getWrapper?.();
+
+        if (! wrapper) {
+            return;
+        }
+
+        wrapper.find('img').forEach((component) => {
+            if (component.get('type') !== 'image') {
+                component.set('type', 'image');
+            }
+
+            component.set({
+                editable: true,
+                traits: imageTraits(),
+            });
+
+            if (isHeroBackgroundImage(component)) {
+                component.set('name', 'Hero background');
+            }
+        });
+    });
+}
+
 function registerDynamicBlockType(editor) {
     editor.DomComponents.addType('vpress-dynamic', {
         isComponent: (element) => {
@@ -183,6 +282,21 @@ function registerDynamicBlockType(editor) {
     });
 }
 
+function registerBackgroundClearSupport(editor) {
+    editor.on('component:styleUpdate', (component, property) => {
+        if (property !== 'background-color' && property !== 'background') {
+            return;
+        }
+
+        const style = component.getStyle?.() ?? {};
+        const background = style['background-color'] ?? style.background;
+
+        if (isClearedBackground(background)) {
+            stripBackgroundClasses(component);
+        }
+    });
+}
+
 function registerBlocks(editor, blocks = []) {
     for (const block of blocks) {
         const content = typeof block.content === 'string'
@@ -204,7 +318,9 @@ export { registerBlocks, sanitizeBlockHtml };
 export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
     registerTailblocksSectionType(editor);
+    registerImageComponentEnhancements(editor);
     registerSpacingStyleSync(editor);
+    registerBackgroundClearSupport(editor);
     configureEditorChrome(editor);
     registerBlocks(editor, options.blocks ?? []);
 }

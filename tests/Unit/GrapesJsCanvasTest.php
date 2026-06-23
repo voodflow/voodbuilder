@@ -9,9 +9,11 @@ use Voodflow\Vpress\Tests\TestCase;
 
 class GrapesJsCanvasTest extends TestCase
 {
-    public function test_events_sub_theme_uses_gray_canvas_background(): void
+    public function test_events_sub_theme_uses_theme_background_variables(): void
     {
-        $this->assertSame('#f4f5f7', GrapesJsCanvas::pageBackgroundColor('site'));
-        $this->assertStringContainsString('background-color: #f4f5f7', GrapesJsCanvas::frameStyle('site'));
+        $frameStyle = GrapesJsCanvas::frameStyle('site');
+
+        $this->assertStringContainsString('var(--color-vp-bg', $frameStyle);
+        $this->assertStringContainsString('var(--color-vp-text-1', $frameStyle);
     }
 }
