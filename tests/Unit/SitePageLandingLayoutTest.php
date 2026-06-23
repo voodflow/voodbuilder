@@ -14,10 +14,12 @@ class SitePageLandingLayoutTest extends TestCase
         $page = new SitePage([
             'layout' => 'landing',
             'hide_site_footer' => true,
+            'hide_site_nav' => true,
         ]);
 
         $this->assertTrue($page->isLandingLayout());
         $this->assertTrue($page->shouldHideSiteFooter());
+        $this->assertTrue($page->shouldHideSiteNav());
         $this->assertSame('landing', $page->contentSection());
         $this->assertStringContainsString('landing', $page->layoutView());
     }

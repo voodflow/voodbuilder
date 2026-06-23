@@ -243,6 +243,165 @@ function registerImageComponentEnhancements(editor) {
 }
 
 function registerDynamicBlockType(editor) {
+    const parseVpressConfig = (component) => {
+        const raw = component.getAttributes()['data-vpress-config'];
+
+        if (! raw) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return {};
+        }
+    };
+
+    const writeVpressConfig = (component, config) => {
+        component.addAttributes({
+            'data-vpress-config': JSON.stringify(config),
+        });
+    };
+
+    const landingFooterTraits = () => {
+        const traits = [
+            {
+                type: 'select',
+                label: 'Layout',
+                name: 'vpressVariant',
+                options: [
+                    { id: 'a', name: 'Footer A' },
+                    { id: 'b', name: 'Footer B' },
+                    { id: 'c', name: 'Footer C' },
+                    { id: 'd', name: 'Footer D' },
+                    { id: 'e', name: 'Footer E' },
+                ],
+            },
+        ];
+
+        for (let index = 1; index <= 4; index += 1) {
+            traits.push({
+                type: 'text',
+                label: `Column ${index} title`,
+                name: `vpressColumn${index}Title`,
+            });
+        }
+
+        return traits;
+    };
+
+    const landingNavbarTraits = () => [
+        {
+            type: 'select',
+            label: 'Layout',
+            name: 'vpressVariant',
+            options: [
+                { id: 'a', name: 'Header A' },
+                { id: 'b', name: 'Header B' },
+                { id: 'c', name: 'Header C' },
+                { id: 'd', name: 'Header D' },
+            ],
+        },
+        {
+            type: 'text',
+            label: 'Brand name',
+            name: 'vpressBrandName',
+        },
+        {
+            type: 'text',
+            label: 'CTA label',
+            name: 'vpressCtaLabel',
+        },
+        {
+            type: 'text',
+            label: 'CTA URL',
+            name: 'vpressCtaUrl',
+        },
+    ];
+
+    const syncTraitsFromConfig = (component) => {
+        const blockId = component.getAttributes()['data-vpress-block'];
+        const config = parseVpressConfig(component);
+
+        if (blockId === 'landing_footer') {
+            component.set('vpressVariant', config.variant ?? 'a', { silent: true });
+
+            for (let index = 1; index <= 4; index += 1) {
+                component.set(`vpressColumn${index}Title`, config[`column_${index}_title`] ?? '', { silent: true });
+            }
+
+            return;
+        }
+
+        if (blockId === 'landing_navbar') {
+            component.set('vpressVariant', config.variant ?? 'a', { silent: true });
+            component.set('vpressBrandName', config.brand_name ?? '', { silent: true });
+            component.set('vpressCtaLabel', config.cta_label ?? '', { silent: true });
+            component.set('vpressCtaUrl', config.cta_url ?? '', { silent: true });
+        }
+    };
+
+    const syncConfigFromTraits = (component) => {
+        const blockId = component.getAttributes()['data-vpress-block'];
+        const config = parseVpressConfig(component);
+
+        if (blockId === 'landing_footer') {
+            config.variant = component.get('vpressVariant') ?? config.variant ?? 'a';
+
+            for (let index = 1; index <= 4; index += 1) {
+                const title = component.get(`vpressColumn${index}Title`);
+
+                if (title) {
+                    config[`column_${index}_title`] = title;
+                } else {
+                    delete config[`column_${index}_title`];
+                }
+            }
+
+            writeVpressConfig(component, config);
+
+            return;
+        }
+
+        if (blockId === 'landing_navbar') {
+            config.variant = component.get('vpressVariant') ?? config.variant ?? 'a';
+
+            const brandName = component.get('vpressBrandName');
+            const ctaLabel = component.get('vpressCtaLabel');
+            const ctaUrl = component.get('vpressCtaUrl');
+
+            if (brandName) {
+                config.brand_name = brandName;
+            }
+
+            if (ctaLabel) {
+                config.cta_label = ctaLabel;
+            }
+
+            if (ctaUrl) {
+                config.cta_url = ctaUrl;
+            }
+
+            writeVpressConfig(component, config);
+        }
+    };
+
+    const applyDynamicTraits = (component) => {
+        const blockId = component.getAttributes()['data-vpress-block'];
+
+        if (blockId === 'landing_footer') {
+            component.set('traits', landingFooterTraits());
+            syncTraitsFromConfig(component);
+
+            return;
+        }
+
+        if (blockId === 'landing_navbar') {
+            component.set('traits', landingNavbarTraits());
+            syncTraitsFromConfig(component);
+        }
+    };
+
     editor.DomComponents.addType('vpress-dynamic', {
         isComponent: (element) => {
             if (element?.getAttribute?.('data-vpress-block')) {
@@ -278,7 +437,31 @@ function registerDynamicBlockType(editor) {
                     },
                 ],
             },
+            init() {
+                applyDynamicTraits(this);
+
+                const traitNames = [
+                    'vpressVariant',
+                    'vpressBrandName',
+                    'vpressCtaLabel',
+                    'vpressCtaUrl',
+                    'vpressColumn1Title',
+                    'vpressColumn2Title',
+                    'vpressColumn3Title',
+                    'vpressColumn4Title',
+                ];
+
+                traitNames.forEach((traitName) => {
+                    this.on(`change:${traitName}`, () => syncConfigFromTraits(this));
+                });
+            },
         },
+    });
+
+    editor.on('component:selected', (component) => {
+        if (component?.getAttributes?.()['data-vpress-block']) {
+            applyDynamicTraits(component);
+        }
     });
 }
 

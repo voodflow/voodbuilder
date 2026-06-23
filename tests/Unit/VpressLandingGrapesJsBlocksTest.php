@@ -36,7 +36,7 @@ class VpressLandingGrapesJsBlocksTest extends TestCase
     {
         VpressLandingGrapesJsBlocks::register();
 
-        $registry = new GrapesJsBlockRegistry;
+        $registry = $this->app->make(GrapesJsBlockRegistry::class);
         $this->app->make(GrapesJsDynamicBlockRegistry::class)->registerEditorBlocks($registry);
 
         $blocks = $registry->toEditorBlocks();
@@ -45,5 +45,11 @@ class VpressLandingGrapesJsBlocksTest extends TestCase
         $this->assertNotNull($footer);
         $this->assertSame('Vpress / Landing', $footer['category']);
         $this->assertStringContainsString('data-vpress-block="landing_footer"', $footer['content']);
+
+        $footerVariant = collect($blocks)->firstWhere('id', 'vpress-landing_footer-a');
+
+        $this->assertNotNull($footerVariant);
+        $this->assertSame('Vpress / Landing Footer', $footerVariant['category']);
+        $this->assertStringContainsString('"variant":"a"', html_entity_decode($footerVariant['content']));
     }
 }

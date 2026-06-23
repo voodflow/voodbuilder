@@ -169,6 +169,11 @@ class SitePageResource extends Resource
                                     ->helperText(__('vpress::landing.layouts.hide_site_footer_help'))
                                     ->visible(fn (Get $get): bool => in_array($get('layout'), ['landing', 'home'], true)),
 
+                                Toggle::make('hide_site_nav')
+                                    ->label(__('vpress::landing.layouts.hide_site_nav'))
+                                    ->helperText(__('vpress::landing.layouts.hide_site_nav_help'))
+                                    ->visible(fn (Get $get): bool => in_array($get('layout'), ['landing', 'home'], true)),
+
                                 Select::make('sub_theme')
                                     ->label(__('vpress::admin.fields.sub_theme'))
                                     ->options(fn (?SitePage $record): array => [

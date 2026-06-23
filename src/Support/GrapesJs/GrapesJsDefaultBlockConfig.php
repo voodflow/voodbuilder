@@ -212,8 +212,17 @@ final class GrapesJsDefaultBlockConfig
                 'section_padding' => 'default',
             ],
             'landing_footer' => [
-                'heading' => __('Stay in touch'),
-                'section_width' => 'contained',
+                'variant' => 'a',
+                'brand_name' => __('Tailblocks'),
+                'brand_tagline' => __('Air plant banjo lyft occupy retro adaptogen indego'),
+                'copyright_brand' => 'Tailblocks',
+                'copyright_year' => now()->year,
+            ],
+            'landing_navbar' => [
+                'variant' => 'a',
+                'brand_name' => __('Tailblocks'),
+                'cta_label' => __('Button'),
+                'cta_url' => '#',
             ],
             'event_landing_footer' => [
                 'heading' => __('Stay in touch'),

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'section_title' => 'Layouts',
-    'section_help' => 'Choose which visual layout each area of your site uses. Packages you install can add rows automatically. Anything without its own row uses the Home & site pages layout.',
+    'section_title' => 'Where themes are used',
+    'section_help' => 'Assign a visual theme to each public area. Per-page overrides remain available under Site → Pages.',
     'layout_column' => 'Layout',
     'site_pages' => 'Home & site pages',
     'site_pages_description' => 'Home, auth screens, and CMS pages from Site → Pages. Override one page under Pages → Publish.',

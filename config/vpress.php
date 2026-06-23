@@ -39,6 +39,10 @@ return [
                 'page' => 'vpress::themes.site.layouts.page',
             ],
             'css' => 'themes/site/theme.css',
+            'chrome' => [
+                'hide_site_nav' => false,
+                'hide_site_footer' => false,
+            ],
         ],
     ],
 

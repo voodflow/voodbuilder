@@ -11,6 +11,7 @@ use Voodflow\Vpress\Filament\RichContent\Landing\LandingFeatureGridBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingFooterBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingHeroBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingLogoRowBlock;
+use Voodflow\Vpress\Filament\RichContent\Landing\LandingNavbarBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingSocialShareBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingSplitBlock;
 use Voodflow\Vpress\Filament\RichContent\Landing\LandingStatsBlock;
@@ -24,6 +25,7 @@ final class VpressLandingBlocks
     public static function blockClasses(): array
     {
         return [
+            LandingNavbarBlock::class,
             LandingHeroBlock::class,
             LandingBannerCtaBlock::class,
             LandingSplitBlock::class,

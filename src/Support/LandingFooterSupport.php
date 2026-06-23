@@ -43,6 +43,16 @@ class LandingFooterSupport
      */
     public static function menuColumns(array $config): array
     {
+        $fromPlacements = LandingMenuColumnsSupport::columnsFromPlacements(
+            $config,
+            'landing_footer',
+            LandingMenuPlacements::FOOTER_COLUMN_COUNT,
+        );
+
+        if ($fromPlacements !== []) {
+            return $fromPlacements;
+        }
+
         $fromMenu = self::menuColumnsFromNavigation(
             filled($config['menu_slug'] ?? null) ? (string) $config['menu_slug'] : 'landing_footer',
         );
@@ -57,6 +67,32 @@ class LandingFooterSupport
     /**
      * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
      */
+    /** @var list<string> */
+    public const TAILBLOCKS_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
+
+    public static function resolveVariant(array $config): string
+    {
+        $variant = strtolower((string) ($config['variant'] ?? 'a'));
+
+        if ($variant === 'legacy') {
+            return 'legacy';
+        }
+
+        return in_array($variant, self::TAILBLOCKS_VARIANTS, true) ? $variant : 'a';
+    }
+
+    /** @return array<string, string> */
+    public static function tailblocksVariantOptions(): array
+    {
+        return [
+            'a' => __('vpress::landing.footer.variants.a'),
+            'b' => __('vpress::landing.footer.variants.b'),
+            'c' => __('vpress::landing.footer.variants.c'),
+            'd' => __('vpress::landing.footer.variants.d'),
+            'e' => __('vpress::landing.footer.variants.e'),
+        ];
+    }
+
     public static function menuColumnsFromNavigation(string $menuSlug): array
     {
         $columns = [];

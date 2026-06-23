@@ -78,6 +78,11 @@ final class SubThemeRegistry
         return $this;
     }
 
+    public function unregister(string $id): void
+    {
+        unset($this->themes[$id]);
+    }
+
     public function exists(string $id): bool
     {
         return array_key_exists($id, $this->themes);
@@ -213,6 +218,20 @@ final class SubThemeRegistry
         $css = $this->themes[$themeId]['css'] ?? null;
 
         return is_string($css) && $css !== '' ? $css : null;
+    }
+
+    /**
+     * @return array{hide_site_nav?: bool, hide_site_footer?: bool}
+     */
+    public function chrome(string $id): array
+    {
+        if (! $this->exists($id)) {
+            return [];
+        }
+
+        $chrome = $this->themes[$id]['chrome'] ?? [];
+
+        return is_array($chrome) ? $chrome : [];
     }
 
     /**

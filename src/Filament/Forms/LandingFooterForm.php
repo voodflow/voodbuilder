@@ -6,8 +6,9 @@ namespace Voodflow\Vpress\Filament\Forms;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vevents\Models\Organizer;
 use Voodflow\Vpress\Models\NavigationMenu;
+use Voodflow\Vpress\Support\LandingFooterSupport;
+use Voodflow\Vpress\Support\LandingMenuPlacements;
 
 final class LandingFooterForm
 {
@@ -15,6 +16,11 @@ final class LandingFooterForm
     public static function fields(): array
     {
         return [
+            Select::make('variant')
+                ->label(__('vpress::landing.footer.variant'))
+                ->options(LandingFooterSupport::tailblocksVariantOptions())
+                ->default('a')
+                ->native(false),
             LandingBlockForm::imageUpload(
                 'logo_path',
                 __('vpress::landing.footer.logo'),
@@ -27,13 +33,17 @@ final class LandingFooterForm
                 ->label(__('vpress::landing.footer.brand_name'))
                 ->helperText(__('vpress::landing.footer.brand_name_help'))
                 ->maxLength(120),
+            TextInput::make('brand_tagline')
+                ->label(__('vpress::landing.footer.brand_tagline'))
+                ->maxLength(255),
             ...self::organizerFields(),
+            ...self::columnTitleFields(),
             Select::make('menu_slug')
-                ->label(__('vpress::landing.footer.menu_placement'))
+                ->label(__('vpress::landing.footer.legacy_menu_placement'))
                 ->options(fn (): array => self::menuPlacementOptions())
                 ->default('landing_footer')
                 ->native(false)
-                ->helperText(__('vpress::landing.footer.menu_placement_help')),
+                ->helperText(__('vpress::landing.footer.legacy_menu_placement_help')),
             TextInput::make('copyright_year')
                 ->label(__('vpress::landing.footer.copyright_year'))
                 ->numeric()
@@ -53,16 +63,33 @@ final class LandingFooterForm
     }
 
     /** @return array<int, mixed> */
+    protected static function columnTitleFields(): array
+    {
+        $fields = [];
+
+        for ($index = 1; $index <= LandingMenuPlacements::FOOTER_COLUMN_COUNT; $index++) {
+            $fields[] = TextInput::make("column_{$index}_title")
+                ->label(__('vpress::landing.footer.column_title', ['number' => $index]))
+                ->helperText(__('vpress::landing.footer.column_title_help', [
+                    'placement' => LandingMenuPlacements::footerColumnSlug($index),
+                ]))
+                ->maxLength(120);
+        }
+
+        return $fields;
+    }
+
+    /** @return array<int, mixed> */
     protected static function organizerFields(): array
     {
-        if (class_exists(Organizer::class)) {
+        if (class_exists(\Voodflow\Vevents\Models\Organizer::class)) {
             return [
                 Select::make('organizer_id')
                     ->label(__('vpress::landing.footer.organizer'))
-                    ->options(fn (): array => Organizer::query()
+                    ->options(fn (): array => \Voodflow\Vevents\Models\Organizer::query()
                         ->orderBy('name')
                         ->get()
-                        ->mapWithKeys(fn (Organizer $organizer): array => [
+                        ->mapWithKeys(fn (\Voodflow\Vevents\Models\Organizer $organizer): array => [
                             $organizer->getKey() => $organizer->getTranslation('name', app()->getLocale()) ?? (string) $organizer->getKey(),
                         ])
                         ->all())

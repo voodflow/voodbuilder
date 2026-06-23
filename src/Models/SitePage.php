@@ -38,6 +38,7 @@ class SitePage extends Model implements HasRichContent
         'builder_payload',
         'layout',
         'hide_site_footer',
+        'hide_site_nav',
         'sub_theme',
         'section',
         'excerpt',
@@ -55,6 +56,7 @@ class SitePage extends Model implements HasRichContent
             'builder_payload' => 'array',
             'is_home' => 'boolean',
             'hide_site_footer' => 'boolean',
+            'hide_site_nav' => 'boolean',
             'section_home' => 'boolean',
             'published' => 'boolean',
             'published_at' => 'datetime',
@@ -133,6 +135,11 @@ class SitePage extends Model implements HasRichContent
     public function shouldHideSiteFooter(): bool
     {
         return (bool) $this->hide_site_footer;
+    }
+
+    public function shouldHideSiteNav(): bool
+    {
+        return (bool) $this->hide_site_nav;
     }
 
     public function usesLandingCanvas(): bool

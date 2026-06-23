@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'section_title' => 'Layout',
-    'section_help' => 'Scegli quale layout visivo usare per ogni area del sito. I package installati possono aggiungere righe in automatico. Tutto ciò che non ha una riga dedicata usa il layout Home e pagine sito.',
+    'section_title' => 'Dove si usano i temi',
+    'section_help' => 'Assegna un tema visivo a ogni area pubblica. Gli override per singola pagina restano in Sito → Pagine.',
     'layout_column' => 'Layout',
     'site_pages' => 'Home e pagine sito',
     'site_pages_description' => 'Home, schermate di accesso e pagine CMS da Sito → Pagine. Per una singola pagina: Pagine → Pubblica.',

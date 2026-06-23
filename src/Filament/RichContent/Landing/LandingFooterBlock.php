@@ -8,7 +8,6 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vpress\Filament\Forms\LandingFooterForm;
 use Voodflow\Vpress\Support\LandingFooterSupport;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
 
 class LandingFooterBlock extends RichContentCustomBlock
 {
@@ -29,25 +28,47 @@ class LandingFooterBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.preview-placeholder', [
-            'title' => $config['brand_name'] ?? static::getLabel(),
-        ]);
+        return static::toHtml($config, []);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.landing.footer', static::viewData($config))->render();
+        $variant = LandingFooterSupport::resolveVariant($config);
+
+        $view = $variant === 'legacy'
+            ? 'vpress::blocks.landing.footer'
+            : 'vpress::blocks.landing.footer-tailblocks.'.$variant;
+
+        return view($view, static::viewData($config))->render();
     }
 
     /** @return array<string, mixed> */
-    protected static function viewData(array $config): array
+    public static function viewData(array $config): array
     {
+        $organizer = static::footerSupport()::organizerColumn($config);
+
         return [
             'config' => $config,
-            'organizer' => static::footerSupport()::organizerColumn($config),
+            'organizer' => $organizer,
+            'brandTagline' => static::brandTagline($config, $organizer),
             'menuColumns' => static::footerSupport()::menuColumns($config),
             'copyrightSegments' => static::footerSupport()::copyrightSegments($config),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @param  array{logo_url: ?string, brand_name: ?string, lines: list<array{label: string, url: ?string, is_email: bool}>}  $organizer
+     */
+    protected static function brandTagline(array $config, array $organizer): ?string
+    {
+        if (filled($config['brand_tagline'] ?? null)) {
+            return (string) $config['brand_tagline'];
+        }
+
+        $firstLine = $organizer['lines'][0]['label'] ?? null;
+
+        return is_string($firstLine) && $firstLine !== '' ? $firstLine : null;
     }
 
     /** @return class-string */

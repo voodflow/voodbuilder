@@ -113,7 +113,9 @@ class NavigationMenuResource extends Resource
                                 'main' => __('Main navigation — center of the header'),
                                 'header_extra' => __('Header extras — right side (before language / theme / account)'),
                                 'footer' => __('Footer links'),
-                                'landing_footer' => __('Landing footer columns'),
+                                'landing_nav' => __('Landing navbar links'),
+                                'landing_footer' => __('Landing footer columns (legacy groups)'),
+                                ...\Voodflow\Vpress\Support\LandingMenuPlacements::footerColumnPlacementLabels(),
                             ])
                             ->required()
                             ->unique(ignoreRecord: true)

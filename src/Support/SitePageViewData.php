@@ -21,7 +21,8 @@ final class SitePageViewData
         return array_merge([
             'page' => $page,
             'vpressSubTheme' => $page->resolvedSubTheme(),
-            'hideSiteFooter' => $page->shouldHideSiteFooter() || $grapesJsEditor,
+            'hideSiteNav' => SiteChrome::shouldHideNav($page, $grapesJsEditor),
+            'hideSiteFooter' => SiteChrome::shouldHideFooter($page, $grapesJsEditor),
             'canEditGrapesJs' => $canEditGrapesJs,
             'grapesJsEditor' => $grapesJsEditor,
             'grapesJsConfig' => $grapesJsEditor ? GrapesJsEditorGate::config($page) : null,
