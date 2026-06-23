@@ -160,5 +160,74 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $this->assertNotContains('vpress-gjs-btn-primary', $classes);
         $this->assertContains('bg-vp-brand-1', $classes);
         $this->assertContains('hover:bg-vp-brand-2', $classes);
+        $this->assertNotContains('hover:bg-vp-brand-3', $classes);
+        $this->assertNotContains('hover:bg-vp-brand-1', $classes);
+    }
+
+    public function test_dedupes_conflicting_hover_brand_classes_from_indigo_migration(): void
+    {
+        $classes = TailblocksThemeTokenMigrator::migrateClassList(
+            'inline-flex bg-indigo-500 hover:bg-indigo-600 hover:bg-indigo-500 text-white',
+        );
+
+        $hoverClasses = array_values(array_filter(
+            preg_split('/\s+/', $classes) ?: [],
+            static fn (string $token): bool => str_starts_with($token, 'hover:bg-vp-brand'),
+        ));
+
+        $this->assertCount(1, $hoverClasses);
+        $this->assertSame('hover:bg-vp-brand-1', $hoverClasses[0]);
+    }
+
+    public function test_dedupes_conflicting_hover_brand_classes_after_legacy_button_migration(): void
+    {
+        $classes = TailblocksThemeTokenMigrator::migrateClassList(
+            'vpress-gjs-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
+        );
+
+        $hoverClasses = array_values(array_filter(
+            preg_split('/\s+/', $classes) ?: [],
+            static fn (string $token): bool => str_starts_with($token, 'hover:bg-vp-brand'),
+        ));
+
+        $this->assertCount(1, $hoverClasses);
+        $this->assertSame('hover:bg-vp-brand-2', $hoverClasses[0]);
+    }
+
+    public function test_strips_inline_dark_text_color_when_text_white_class_is_present(): void
+    {
+        $html = '<h1 class="title-font text-4xl text-white" style="color: rgb(60, 60, 67);">Vpress</h1>';
+
+        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('text-white', $migrated);
+        $this->assertStringNotContainsString('color:', $migrated);
+    }
+
+    public function test_migrates_project_inline_color_without_overriding_text_white_class(): void
+    {
+        $project = [
+            'pages' => [[
+                'id' => 'main',
+                'frames' => [[
+                    'component' => [
+                        'type' => 'wrapper',
+                        'components' => [[
+                            'tagName' => 'h1',
+                            'classes' => ['title-font', 'text-4xl', 'text-white'],
+                            'style' => [
+                                'color' => 'rgb(60, 60, 67)',
+                            ],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ];
+
+        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $heading = $migrated['pages'][0]['frames'][0]['component']['components'][0];
+
+        $this->assertContains('text-white', $heading['classes']);
+        $this->assertArrayNotHasKey('color', $heading['style']);
     }
 }

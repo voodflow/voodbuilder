@@ -68,6 +68,7 @@ final class TailblocksThemeTokenMigrator
     public static function migrateHtml(string $html): string
     {
         $html = self::migrateSectionElements($html);
+        $html = self::stripConflictingInlineTextColors($html);
         $html = self::migrateInlineStyles($html);
 
         $html = preg_replace_callback(
@@ -156,6 +157,92 @@ final class TailblocksThemeTokenMigrator
         return self::migrateProjectNode($project);
     }
 
+    public static function hasExplicitTextColorClass(string $classList): bool
+    {
+        $tokens = preg_split('/\s+/', trim($classList), -1, PREG_SPLIT_NO_EMPTY);
+
+        if ($tokens === false) {
+            return false;
+        }
+
+        foreach ($tokens as $token) {
+            if (preg_match('/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|left|center|right|justify|start|end)$/', $token) === 1) {
+                continue;
+            }
+
+            if (str_starts_with($token, 'text-')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function stripConflictingInlineTextColors(string $html): string
+    {
+        return preg_replace_callback(
+            '/<([a-z][\w:.-]*)\b([^>]*?)>/i',
+            static function (array $matches): string {
+                $attrs = $matches[2];
+
+                if (preg_match('/\bclass=(["\'])(.*?)\1/i', $attrs, $classMatch) !== 1) {
+                    return $matches[0];
+                }
+
+                if (! self::hasExplicitTextColorClass($classMatch[2])) {
+                    return $matches[0];
+                }
+
+                if (preg_match('/\bstyle=(["\'])(.*?)\1/i', $attrs, $styleMatch) !== 1) {
+                    return $matches[0];
+                }
+
+                $newStyle = self::removeColorFromStyleDeclaration($styleMatch[2]);
+
+                if ($newStyle === trim($styleMatch[2])) {
+                    return $matches[0];
+                }
+
+                if ($newStyle === '') {
+                    $attrs = preg_replace('/\s*\bstyle=(["\'])(.*?)\1/i', '', $attrs) ?? $attrs;
+                } else {
+                    $attrs = preg_replace(
+                        '/\bstyle=(["\'])(.*?)\1/i',
+                        'style='.$styleMatch[1].$newStyle.$styleMatch[1],
+                        $attrs,
+                        1,
+                    ) ?? $attrs;
+                }
+
+                return '<'.$matches[1].$attrs.'>';
+            },
+            $html,
+        ) ?? $html;
+    }
+
+    private static function removeColorFromStyleDeclaration(string $style): string
+    {
+        $style = preg_replace('/\bcolor\s*:\s*[^;]+;?/i', '', $style) ?? $style;
+
+        return trim($style, " \t\n\r\0\x0B;");
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    private static function classListFromNode(array $node): ?string
+    {
+        if (isset($node['attributes']['class']) && is_string($node['attributes']['class'])) {
+            return $node['attributes']['class'];
+        }
+
+        if (isset($node['classes']) && is_array($node['classes']) && is_string($node['classes'][0] ?? null)) {
+            return implode(' ', $node['classes']);
+        }
+
+        return null;
+    }
+
     public static function migrateClassList(string $classList): string
     {
         $tokens = preg_split('/\s+/', trim($classList), -1, PREG_SPLIT_NO_EMPTY);
@@ -164,18 +251,88 @@ final class TailblocksThemeTokenMigrator
             return $classList;
         }
 
-        $migrated = array_map(static fn (string $token): string => self::migrateToken($token), $tokens);
+        $tokens = array_map(static fn (string $token): string => self::migrateToken($token), $tokens);
+        $tokens = self::migrateLegacyButtonClassesArray($tokens);
+        $tokens = self::normalizeBrandBackgroundClasses($tokens);
 
-        return self::migrateLegacyButtonClasses($migrated);
+        return implode(' ', $tokens);
     }
 
     /**
      * @param  list<string>  $tokens
+     * @return list<string>
      */
-    public static function migrateLegacyButtonClasses(array $tokens): string
+    public static function normalizeBrandBackgroundClasses(array $tokens): array
+    {
+        foreach (array_merge([''], self::VARIANT_PREFIXES) as $prefix) {
+            $tokens = self::dedupeBrandBackgroundSlot($tokens, $prefix);
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function dedupeBrandBackgroundSlot(array $tokens, string $prefix): array
+    {
+        $pattern = '/^'.preg_quote($prefix, '/').'bg-vp-brand-\d+/';
+
+        $matches = array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => preg_match($pattern, $token) === 1,
+        ));
+
+        if (count($matches) <= 1) {
+            return $tokens;
+        }
+
+        $keep = self::preferredBrandBackgroundClass($prefix, $matches);
+
+        return array_values(array_filter(
+            $tokens,
+            static function (string $token) use ($pattern, $keep): bool {
+                if (preg_match($pattern, $token) !== 1) {
+                    return true;
+                }
+
+                return $token === $keep;
+            },
+        ));
+    }
+
+    /**
+     * @param  list<string>  $candidates
+     */
+    private static function preferredBrandBackgroundClass(string $prefix, array $candidates): string
+    {
+        $priorities = match ($prefix) {
+            'hover:' => ['hover:bg-vp-brand-2', 'hover:bg-vp-brand-1', 'hover:bg-vp-brand-3'],
+            'focus:' => ['focus:bg-vp-brand-2', 'focus:bg-vp-brand-1', 'focus:bg-vp-brand-3'],
+            'active:' => ['active:bg-vp-brand-2', 'active:bg-vp-brand-1', 'active:bg-vp-brand-3'],
+            'group-hover:' => ['group-hover:bg-vp-brand-2', 'group-hover:bg-vp-brand-1', 'group-hover:bg-vp-brand-3'],
+            'focus-within:' => ['focus-within:bg-vp-brand-2', 'focus-within:bg-vp-brand-1', 'focus-within:bg-vp-brand-3'],
+            default => ['bg-vp-brand-1', 'bg-vp-brand-2', 'bg-vp-brand-3'],
+        };
+
+        foreach ($priorities as $preferred) {
+            if (in_array($preferred, $candidates, true)) {
+                return $preferred;
+            }
+        }
+
+        return $candidates[0];
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    public static function migrateLegacyButtonClassesArray(array $tokens): array
     {
         if (! in_array('vpress-gjs-btn-primary', $tokens, true)) {
-            return implode(' ', $tokens);
+            return $tokens;
         }
 
         $tokens = array_values(array_filter(
@@ -189,7 +346,15 @@ final class TailblocksThemeTokenMigrator
             }
         }
 
-        return implode(' ', $tokens);
+        return $tokens;
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     */
+    public static function migrateLegacyButtonClasses(array $tokens): string
+    {
+        return implode(' ', self::migrateLegacyButtonClassesArray($tokens));
     }
 
     public static function migrateToken(string $token): string
@@ -322,8 +487,12 @@ final class TailblocksThemeTokenMigrator
         ) ?? $html;
     }
 
-    private static function migrateStyleDeclaration(string $style): string
+    private static function migrateStyleDeclaration(string $style, ?string $classList = null): string
     {
+        if ($classList !== null && self::hasExplicitTextColorClass($classList)) {
+            $style = self::removeColorFromStyleDeclaration($style);
+        }
+
         $style = self::replaceFixedBackgroundColors($style);
 
         return self::replaceFixedBrandBackgroundColors($style);
@@ -347,12 +516,12 @@ final class TailblocksThemeTokenMigrator
             $node['attributes'] = self::migrateComponentAttributes($node['attributes']);
         }
 
-        if (isset($node['style']) && is_array($node['style'])) {
-            $node['style'] = self::migrateStyleObject($node['style']);
-        }
-
         if (isset($node['classes']) && is_array($node['classes'])) {
             $node['classes'] = self::migrateComponentClasses($node['classes']);
+        }
+
+        if (isset($node['style']) && is_array($node['style'])) {
+            $node['style'] = self::migrateStyleObject($node['style'], self::classListFromNode($node));
         }
 
         foreach ($node as $key => $value) {
@@ -383,12 +552,15 @@ final class TailblocksThemeTokenMigrator
      */
     private static function migrateComponentAttributes(array $attrs): array
     {
+        $classList = null;
+
         if (isset($attrs['class']) && is_string($attrs['class'])) {
-            $attrs['class'] = self::migrateClassList($attrs['class']);
+            $classList = self::migrateClassList($attrs['class']);
+            $attrs['class'] = $classList;
         }
 
         if (isset($attrs['style']) && is_string($attrs['style'])) {
-            $attrs['style'] = self::migrateStyleDeclaration($attrs['style']);
+            $attrs['style'] = self::migrateStyleDeclaration($attrs['style'], $classList);
         }
 
         return $attrs;
@@ -410,7 +582,10 @@ final class TailblocksThemeTokenMigrator
                 array_values(array_filter($classes, 'is_string')),
             );
 
-            return array_values(array_filter(explode(' ', self::migrateLegacyButtonClasses($tokens))));
+            $tokens = self::migrateLegacyButtonClassesArray($tokens);
+            $tokens = self::normalizeBrandBackgroundClasses($tokens);
+
+            return $tokens;
         }
 
         return self::migrateComponentClassesArray($classes);
@@ -422,25 +597,29 @@ final class TailblocksThemeTokenMigrator
      */
     private static function migrateComponentClassesArray(array $classes): array
     {
-        return array_map(
-            static function (mixed $item): mixed {
+        $names = array_map(
+            static function (mixed $item): ?string {
                 if (! is_array($item) || ! isset($item['name']) || ! is_string($item['name'])) {
-                    return $item;
+                    return null;
                 }
 
-                $item['name'] = self::migrateToken($item['name']);
-
-                return $item;
+                return self::migrateToken($item['name']);
             },
             $classes,
         );
+
+        $names = array_values(array_filter($names, 'is_string'));
+        $names = self::migrateLegacyButtonClassesArray($names);
+        $names = self::normalizeBrandBackgroundClasses($names);
+
+        return $names;
     }
 
     /**
      * @param  array<string, mixed>  $style
      * @return array<string, mixed>
      */
-    private static function migrateStyleObject(array $style): array
+    private static function migrateStyleObject(array $style, ?string $classList = null): array
     {
         foreach ($style as $property => $value) {
             if (! is_string($value)) {
@@ -459,14 +638,22 @@ final class TailblocksThemeTokenMigrator
                 continue;
             }
 
-            if ((string) $property === 'color' && self::isFixedDarkTextColor($normalized)) {
-                $style[$property] = 'var(--color-vp-text-1)';
+            if ((string) $property === 'color') {
+                if ($classList !== null && self::hasExplicitTextColorClass($classList)) {
+                    unset($style[$property]);
 
-                continue;
-            }
+                    continue;
+                }
 
-            if ((string) $property === 'color' && self::isLibraryLightTextColor($normalized)) {
-                unset($style[$property]);
+                if (self::isFixedDarkTextColor($normalized)) {
+                    $style[$property] = 'var(--color-vp-text-1)';
+
+                    continue;
+                }
+
+                if (self::isLibraryLightTextColor($normalized)) {
+                    unset($style[$property]);
+                }
             }
         }
 

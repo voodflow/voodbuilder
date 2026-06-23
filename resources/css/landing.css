@@ -71,10 +71,10 @@ html[data-vpress-sub-theme='site'] .vpress-landing-shell:has(.VPRichPage--landin
     @apply max-w-none p-0;
 }
 
-.VPRichPage--landing .vpress-gjs-section {
-    @apply bg-vp-bg text-vp-text-2;
+.VPRichPage--landing .vpress-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
+    @apply text-vp-text-2;
 }
 
-.VPRichPage--landing .vpress-gjs-section :is(h1, h2, h3, h4, .title-font) {
+.VPRichPage--landing .vpress-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
     @apply text-vp-text-1;
 }

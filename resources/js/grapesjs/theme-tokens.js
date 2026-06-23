@@ -154,16 +154,66 @@ export function migrateClassList(classList) {
         return classList;
     }
 
-    const migrated = tokens.map((token) => migrateToken(token)).join(' ');
+    const migrated = tokens.map((token) => migrateToken(token));
 
-    return migrateLegacyButtonClasses(migrated);
+    return normalizeBrandBackgroundClasses(migrateLegacyButtonClassesArray(migrated)).join(' ');
 }
 
-function migrateLegacyButtonClasses(classList) {
-    const tokens = classList.trim().split(/\s+/).filter(Boolean);
+const BRAND_BG_VARIANT_PREFIXES = ['', ...VARIANT_PREFIXES];
 
+const BRAND_BG_PRIORITIES = {
+    '': ['bg-vp-brand-1', 'bg-vp-brand-2', 'bg-vp-brand-3'],
+    'hover:': ['hover:bg-vp-brand-2', 'hover:bg-vp-brand-1', 'hover:bg-vp-brand-3'],
+    'focus:': ['focus:bg-vp-brand-2', 'focus:bg-vp-brand-1', 'focus:bg-vp-brand-3'],
+    'active:': ['active:bg-vp-brand-2', 'active:bg-vp-brand-1', 'active:bg-vp-brand-3'],
+    'group-hover:': ['group-hover:bg-vp-brand-2', 'group-hover:bg-vp-brand-1', 'group-hover:bg-vp-brand-3'],
+    'focus-within:': ['focus-within:bg-vp-brand-2', 'focus-within:bg-vp-brand-1', 'focus-within:bg-vp-brand-3'],
+};
+
+function brandBackgroundPattern(prefix) {
+    const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    return new RegExp(`^${escaped}bg-vp-brand-\\d+`);
+}
+
+function preferredBrandBackgroundClass(prefix, candidates) {
+    const priorities = BRAND_BG_PRIORITIES[prefix] ?? BRAND_BG_PRIORITIES[''];
+
+    for (const preferred of priorities) {
+        if (candidates.includes(preferred)) {
+            return preferred;
+        }
+    }
+
+    return candidates[0];
+}
+
+function dedupeBrandBackgroundSlot(tokens, prefix) {
+    const pattern = brandBackgroundPattern(prefix);
+    const matches = tokens.filter((token) => pattern.test(token));
+
+    if (matches.length <= 1) {
+        return tokens;
+    }
+
+    const keep = preferredBrandBackgroundClass(prefix, matches);
+
+    return tokens.filter((token) => ! pattern.test(token) || token === keep);
+}
+
+export function normalizeBrandBackgroundClasses(tokens) {
+    let next = [...tokens];
+
+    for (const prefix of BRAND_BG_VARIANT_PREFIXES) {
+        next = dedupeBrandBackgroundSlot(next, prefix);
+    }
+
+    return next;
+}
+
+function migrateLegacyButtonClassesArray(tokens) {
     if (! tokens.includes('vpress-gjs-btn-primary')) {
-        return classList;
+        return tokens;
     }
 
     const next = tokens.filter((token) => token !== 'vpress-gjs-btn-primary');
@@ -174,7 +224,13 @@ function migrateLegacyButtonClasses(classList) {
         }
     }
 
-    return next.join(' ');
+    return next;
+}
+
+function migrateLegacyButtonClasses(classList) {
+    const tokens = classList.trim().split(/\s+/).filter(Boolean);
+
+    return migrateLegacyButtonClassesArray(tokens).join(' ');
 }
 
 const BACKGROUND_CLASS_PATTERN = /^(?:hover:|focus:|active:|group-hover:)?bg-/;
@@ -212,6 +268,32 @@ const LIBRARY_TEXT_COLORS = new Set([
     '#93c5fd',
 ]);
 
+const TEXT_LAYOUT_UTILITIES = /^text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|left|center|right|justify|start|end)$/;
+
+export function hasExplicitTextColorClass(classes) {
+    return classes.some((className) => className.startsWith('text-') && ! TEXT_LAYOUT_UTILITIES.test(className));
+}
+
+function isDarkEditorTextColor(color) {
+    if (['black', '#000', '#000000'].includes(color)) {
+        return true;
+    }
+
+    if (color.startsWith('var(--color-vp-text')) {
+        return true;
+    }
+
+    const rgbMatch = color.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+
+    if (! rgbMatch) {
+        return false;
+    }
+
+    const average = (Number.parseInt(rgbMatch[1], 10) + Number.parseInt(rgbMatch[2], 10) + Number.parseInt(rgbMatch[3], 10)) / 3;
+
+    return average < 128;
+}
+
 function hasBackgroundClass(classes) {
     return classes.some((className) => /^bg-(?!opacity|blend|clip|origin|size|position|repeat|none|auto)/.test(className));
 }
@@ -233,10 +315,19 @@ function ensureLandingSectionClasses(component) {
 }
 
 function migrateComponentInlineThemeStyles(component) {
+    const classes = component.getClasses?.() ?? [];
     const style = component.getStyle?.() ?? {};
     const color = typeof style.color === 'string' ? style.color.trim().toLowerCase() : null;
+    const hasTextColorClass = hasExplicitTextColorClass(classes);
 
-    if (! color || ! LIBRARY_TEXT_COLORS.has(color)) {
+    if (! color) {
+        return;
+    }
+
+    const shouldStripLibraryColor = LIBRARY_TEXT_COLORS.has(color) && hasTextColorClass;
+    const shouldStripDarkColor = hasTextColorClass && isDarkEditorTextColor(color);
+
+    if (! shouldStripLibraryColor && ! shouldStripDarkColor) {
         return;
     }
 
@@ -253,11 +344,11 @@ function migrateComponentTree(component) {
     const classes = component.getClasses?.() ?? [];
 
     if (classes.length > 0) {
-        component.setClass(
-            migrateClassList(classes.join(' '))
-                .split(/\s+/)
-                .filter(Boolean),
-        );
+        const migrated = migrateClassList(classes.join(' '))
+            .split(/\s+/)
+            .filter(Boolean);
+
+        component.setClass(migrated);
     }
 
     const style = component.getStyle?.() ?? {};
