@@ -1,6 +1,7 @@
 /**
  * Site sub-theme — public marketing layout with optional dark header.
  */
+@reference "tailwindcss";
 
 html[data-vpress-sub-theme='site'] {
     --width-vp-content: 48rem;

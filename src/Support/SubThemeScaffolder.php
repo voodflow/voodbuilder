@@ -66,6 +66,7 @@ final class SubThemeScaffolder
 
         $configRegistered = ConfigureSubThemesForVpress::registerInConfig($id, $definition);
         $importAppended = AppendThemeStylesheetImport::append($cssPath);
+        SyncThemeStylesheetImports::sync();
 
         app(SubThemeRegistry::class)->register($id, $definition);
 

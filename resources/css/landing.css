@@ -1,6 +1,7 @@
 /**
  * Landing page layout and rich-content blocks (full-bleed sections, contained content).
  */
+@reference "tailwindcss";
 
 .body-font {
     @apply font-sans text-vp-text-2 antialiased;

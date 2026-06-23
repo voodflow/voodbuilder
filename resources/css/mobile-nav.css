@@ -1,6 +1,7 @@
 /**
  * Mobile navigation — fixed chrome, identical on every sub-theme.
  */
+@reference "tailwindcss";
 
 .vpress-mobile-nav {
     --vpress-mobile-bg: #ffffff;

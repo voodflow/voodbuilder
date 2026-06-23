@@ -4,7 +4,6 @@
  */
 
 @import './fonts.css';
-@import 'tailwindcss';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
 @import './landing.css';
@@ -542,5 +541,3 @@ html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *)) {
     color: var(--vx-header-text) !important;
 }
-
-@import '../../../../../resources/vpress/themes/polito/theme.css';
