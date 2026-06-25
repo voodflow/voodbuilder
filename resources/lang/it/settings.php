@@ -96,7 +96,7 @@ return [
     'theme_light_mode' => 'Modalità chiara',
     'theme_dark_mode' => 'Modalità scura',
     'theme_primary' => 'Accento',
-    'theme_primary_help' => 'Pulsanti pieni e accenti principali (--color-vp-brand-1).',
+    'theme_primary_help' => 'Link, voce sidebar attiva, etichette categoria, pulsanti filtro e accenti nel codice (--color-vp-brand-1).',
     'theme_secondary' => 'Accento 2',
     'theme_secondary_help' => 'Accenti secondari e stati hover (--color-vp-brand-2/3). Non viene mescolato con Accento 1.',
     'theme_header_bg' => 'Sfondo header',
@@ -106,7 +106,7 @@ return [
     'theme_body_bg' => 'Sfondo pagina',
     'theme_body_bg_help' => 'Area contenuti principale.',
     'theme_body_text' => 'Testo corpo',
-    'theme_body_text_help' => 'Colore predefinito di paragrafi e titoli.',
+    'theme_body_text_help' => 'Colore predefinito di paragrafi e titoli. I titoli in elenco lo usano; l’hover dei link usa Accento.',
     'theme_dark_primary_help' => 'Accento con modalità scura attiva.',
     'theme_dark_secondary_help' => 'Accento secondario con modalità scura attiva.',
 ];

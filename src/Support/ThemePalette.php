@@ -12,8 +12,18 @@ final class ThemePalette
 html[data-vpress-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
 html[data-vpress-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-muted)!important}
 html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *)):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
-html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--color-vp-brand-2)!important}
+html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--color-vp-brand-1)!important}
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
+html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
+html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button:hover{color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
+CSS;
+
+    /**
+     * vtuts/vdocs ship their own --vp-c-* tokens in an inline stylesheet loaded in <head>.
+     * Re-map them on <html> after all bundles so admin palette overrides win.
+     */
+    private const TOKEN_BRIDGE_CSS = <<<'CSS'
+html[data-vpress-sub-theme]{--vp-c-brand-1:var(--color-vp-brand-1);--vp-c-brand-2:var(--color-vp-brand-2);--vp-c-brand-3:var(--color-vp-brand-3);--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);--vp-c-bg:var(--color-vp-bg);--vp-c-bg-alt:var(--color-vp-bg-alt);--vp-c-bg-soft:var(--color-vp-bg-alt);--vp-c-bg-elv:var(--color-vp-bg-elv);--vp-c-text-1:var(--color-vp-text-1);--vp-c-text-2:var(--color-vp-text-2);--vp-c-text-3:var(--color-vp-text-3)}
 CSS;
 
     /** @var list<string> */
@@ -53,7 +63,7 @@ CSS;
     public static function css(): string
     {
         $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
-        $rules = [self::HEADER_CHROME_CSS];
+        $rules = [self::HEADER_CHROME_CSS, self::TOKEN_BRIDGE_CSS];
 
         foreach ($colors as $subThemeId => $palette) {
             $lightRule = self::buildRule((string) $subThemeId, $palette['light'], false);
@@ -204,10 +214,17 @@ CSS;
 
         if (($bodyBg = $palette['body_bg'] ?? null) !== null) {
             $properties['--color-vp-bg'] = $bodyBg;
+            $properties['--color-vp-bg-alt'] = $dark
+                ? "color-mix(in srgb, {$bodyBg} 88%, #ffffff)"
+                : "color-mix(in srgb, {$bodyBg} 94%, #000000)";
+            $properties['--color-vp-bg-elv'] = $bodyBg;
         }
 
         if (($text = $palette['text'] ?? null) !== null) {
+            $mixBase = $bodyBg ?? ($dark ? '#1b1b1f' : '#ffffff');
             $properties['--color-vp-text-1'] = $text;
+            $properties['--color-vp-text-2'] = "color-mix(in srgb, {$text} 72%, {$mixBase})";
+            $properties['--color-vp-text-3'] = "color-mix(in srgb, {$text} 52%, {$mixBase})";
         }
 
         if (($headerBg = $palette['header_bg'] ?? null) !== null) {

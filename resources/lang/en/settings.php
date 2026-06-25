@@ -96,7 +96,7 @@ return [
     'theme_light_mode' => 'Light mode',
     'theme_dark_mode' => 'Dark mode',
     'theme_primary' => 'Accent',
-    'theme_primary_help' => 'Solid buttons and main brand accents (maps to --color-vp-brand-1).',
+    'theme_primary_help' => 'Links, active sidebar items, category labels, filter buttons, and inline code accents (maps to --color-vp-brand-1).',
     'theme_secondary' => 'Accent 2',
     'theme_secondary_help' => 'Secondary accents and hover states (maps to --color-vp-brand-2/3). Not mixed with Accent 1.',
     'theme_header_bg' => 'Header background',
@@ -106,7 +106,7 @@ return [
     'theme_body_bg' => 'Page background',
     'theme_body_bg_help' => 'Main content area behind pages.',
     'theme_body_text' => 'Body text',
-    'theme_body_text_help' => 'Default paragraph and heading color.',
+    'theme_body_text_help' => 'Default paragraph and heading color. List titles use this; link hover uses Accent.',
     'theme_dark_primary_help' => 'Accent when dark mode is active.',
     'theme_dark_secondary_help' => 'Secondary accent when dark mode is active.',
 ];

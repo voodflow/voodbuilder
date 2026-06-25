@@ -33,6 +33,7 @@ class ThemePaletteTest extends TestCase
 
         $this->assertStringContainsString('header[role=\'banner\']', $css);
         $this->assertStringContainsString('--vx-header-text', $css);
+        $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
 
         $normalized = ThemePalette::normalize([
             'default' => [
@@ -108,6 +109,7 @@ class ThemePaletteTest extends TestCase
 
         $this->assertStringContainsString("--vx-header-bg:#002b49", $css);
         $this->assertStringContainsString("--color-vp-bg:#ffffff", $css);
+        $this->assertStringContainsString("--color-vp-text-2:color-mix", $css);
         $this->assertStringContainsString("html[data-vpress-sub-theme='site']:not(.dark)", $css);
     }
 }
