@@ -156,7 +156,7 @@
     }
 
     html[data-vpress-sub-theme] header[role='banner'] [role='menu'] {
-        color: var(--color-vp-text-1);
+        color: var(--vx-menu-text, var(--color-vp-text-1));
         background-color: var(--color-vp-bg-elv);
     }
 

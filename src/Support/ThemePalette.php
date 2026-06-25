@@ -16,6 +16,12 @@ html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
 html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
 html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button:hover{color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-1,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .font-medium,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']{color:var(--vx-menu-text,var(--color-vp-text-1))!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-2{color:var(--vx-menu-text-muted,var(--color-vp-text-2))!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-3{color:var(--vx-menu-text-subtle,var(--color-vp-text-3))!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-brand-1{color:var(--color-vp-brand-1)!important}
+html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] a:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] button[role='menuitem']:hover{color:var(--color-vp-brand-1)!important}
 CSS;
 
     /**
@@ -225,6 +231,10 @@ CSS;
             $properties['--color-vp-text-1'] = $text;
             $properties['--color-vp-text-2'] = "color-mix(in srgb, {$text} 72%, {$mixBase})";
             $properties['--color-vp-text-3'] = "color-mix(in srgb, {$text} 52%, {$mixBase})";
+
+            foreach (self::defaultSurfaceTextTokens($dark) as $token => $value) {
+                $properties[$token] = $value;
+            }
         }
 
         if (($headerBg = $palette['header_bg'] ?? null) !== null) {
@@ -251,5 +261,23 @@ CSS;
         }
 
         return "{$selector}{".implode(';', $declarations).'}';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function defaultSurfaceTextTokens(bool $dark): array
+    {
+        return $dark
+            ? [
+                '--vx-menu-text' => '#dfdfd6',
+                '--vx-menu-text-muted' => '#98989f',
+                '--vx-menu-text-subtle' => '#6a6a71',
+            ]
+            : [
+                '--vx-menu-text' => '#3c3c43',
+                '--vx-menu-text-muted' => '#67676c',
+                '--vx-menu-text-subtle' => '#929295',
+            ];
     }
 }
