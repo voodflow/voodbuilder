@@ -42,6 +42,21 @@ final class SubThemeLocator
         return null;
     }
 
+    public static function originFor(string $id): string
+    {
+        $location = self::resolve($id);
+
+        if ($location !== null) {
+            return $location->origin;
+        }
+
+        if (array_key_exists($id, SubThemeRegistry::packageSubThemeDefinitions())) {
+            return 'package';
+        }
+
+        return 'unknown';
+    }
+
     /**
      * @return Collection<int, SubThemeLocation>
      */

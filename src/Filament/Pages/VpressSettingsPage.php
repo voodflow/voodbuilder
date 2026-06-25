@@ -42,6 +42,7 @@ use Voodflow\Vpress\Support\SubThemeManager;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\SubThemeScaffolder;
 use Voodflow\Vpress\Support\ThemeBindings;
+use Voodflow\Vpress\Support\ThemePalette;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
@@ -422,6 +423,11 @@ class VpressSettingsPage extends Page
                     ->description(__('vpress::settings.theme_colors_help'))
                     ->visible(fn (Get $get): bool => filled($get('editing_theme_id')))
                     ->schema([
+                        Actions::make([
+                            $this->resetThemeColorsAction(),
+                        ])
+                            ->alignEnd()
+                            ->columnSpanFull(),
                         Section::make(__('vpress::settings.theme_light_mode'))
                             ->schema(fn (Get $get): array => $this->themeColorFields((string) $get('editing_theme_id'), 'light'))
                             ->columns(3)
@@ -496,14 +502,11 @@ class VpressSettingsPage extends Page
     protected function themeWorkspaceCardHtml(string $themeId): string
     {
         $registry = app(SubThemeRegistry::class);
-        $location = SubThemeLocator::resolve($themeId);
         $label = e($registry->label($themeId));
         $id = e($themeId);
         $description = $registry->description($themeId);
-        $origin = $location !== null
-            ? __("vpress::settings.theme_origin_{$location->origin}")
-            : __('vpress::settings.theme_origin_unknown');
-        $originKey = $location?->origin ?? 'unknown';
+        $originKey = SubThemeLocator::originFor($themeId);
+        $origin = __("vpress::settings.theme_origin_{$originKey}");
         $originClass = $originKey === 'app'
             ? 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-300 dark:ring-primary-400/30'
             : 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10';
@@ -642,6 +645,36 @@ class VpressSettingsPage extends Page
     protected function getHeaderActions(): array
     {
         return [];
+    }
+
+    public function resetThemeColorsAction(): Action
+    {
+        return Action::make('resetThemeColors')
+            ->label(__('vpress::settings.reset_theme_colors'))
+            ->icon('heroicon-o-arrow-path')
+            ->color('gray')
+            ->button()
+            ->requiresConfirmation()
+            ->modalHeading(__('vpress::settings.reset_theme_colors'))
+            ->modalDescription(__('vpress::settings.reset_theme_colors_help'))
+            ->visible(fn (): bool => filled($this->data['editing_theme_id'] ?? null)
+                && ThemePalette::themeHasCustomColors((string) $this->data['editing_theme_id']))
+            ->action(function (): void {
+                $themeId = (string) ($this->data['editing_theme_id'] ?? '');
+
+                if ($themeId === '') {
+                    return;
+                }
+
+                ThemePalette::resetForTheme($themeId);
+
+                Notification::make()
+                    ->title(__('vpress::settings.reset_theme_colors_success'))
+                    ->success()
+                    ->send();
+
+                $this->mount();
+            });
     }
 
     public function renameSubThemeAction(): Action

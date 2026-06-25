@@ -127,6 +127,33 @@ CSS;
         return self::HEADER_CHROME_CSS;
     }
 
+    public static function resetForTheme(string $themeId): void
+    {
+        if (! app(SubThemeRegistry::class)->exists($themeId)) {
+            return;
+        }
+
+        $colors = VpressSettings::get('sub_theme_colors', []);
+
+        if (! is_array($colors)) {
+            $colors = [];
+        }
+
+        unset($colors[$themeId]);
+
+        VpressSettings::saveData([
+            'sub_theme_colors' => self::normalize($colors),
+        ]);
+    }
+
+    public static function themeHasCustomColors(string $themeId): bool
+    {
+        $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
+        $palette = $colors[$themeId] ?? null;
+
+        return is_array($palette) && ($palette['custom'] ?? false);
+    }
+
     public static function sanitizeColor(mixed $color): ?string
     {
         if (! is_string($color) || $color === '') {
