@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Filament\Livewire;
 
 use Filament\Notifications\Notification;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -16,7 +17,7 @@ use Voodflow\Vpress\Support\SubThemeExporter;
 use Voodflow\Vpress\Support\SubThemeImporter;
 use Voodflow\Vpress\Support\SubThemeManager;
 use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\SubThemeScaffolder;
+use Voodflow\Vpress\Support\ThemeAssetCompiler;
 use Voodflow\Vpress\Support\ThemePalette;
 use Voodflow\Vpress\Support\ThemePaletteGenerator;
 use Voodflow\Vpress\Support\ThemePresenter;
@@ -50,12 +51,6 @@ class ThemesWorkspace extends Component
     public string $colorKey = 'primary';
 
     public string $colorValue = '#3451b2';
-
-    public bool $showCreateModal = false;
-
-    public string $newThemeId = '';
-
-    public string $newThemeLabel = '';
 
     public bool $showGenerateModal = false;
 
@@ -210,8 +205,11 @@ class ThemesWorkspace extends Component
             return;
         }
 
-        $settings = VpressSettings::data();
-        $colors = is_array($settings['sub_theme_colors'] ?? null) ? $settings['sub_theme_colors'] : [];
+        $colors = VpressSettings::get('sub_theme_colors', []);
+
+        if (! is_array($colors)) {
+            $colors = [];
+        }
 
         $colors[$this->selectedId] = [
             'custom' => true,
@@ -219,8 +217,9 @@ class ThemesWorkspace extends Component
             'dark' => array_filter($this->dark, static fn (?string $v): bool => filled($v)),
         ];
 
-        $settings['sub_theme_colors'] = ThemePalette::normalize($colors);
-        VpressSettings::saveData($settings);
+        VpressSettings::saveData([
+            'sub_theme_colors' => ThemePalette::normalize($colors),
+        ]);
 
         $this->dispatch('vpress-theme-colors-updated');
     }
@@ -298,30 +297,6 @@ class ThemesWorkspace extends Component
         Notification::make()->title(__('vpress::settings.reset_theme_colors_success'))->success()->send();
     }
 
-    public function createTheme(): void
-    {
-        $result = SubThemeScaffolder::create($this->newThemeId, $this->newThemeLabel);
-
-        if (! $result->success) {
-            Notification::make()->title(__('vpress::settings.create_theme_failed'))->body($result->error)->danger()->send();
-
-            return;
-        }
-
-        $this->showCreateModal = false;
-        $this->newThemeId = '';
-        $this->newThemeLabel = '';
-        $this->selectTheme($result->id);
-
-        $palette = ThemePaletteGenerator::fromThemeId($result->id);
-        $this->light = array_merge($this->light, $palette['light']);
-        $this->dark = array_merge($this->dark, $palette['dark']);
-        $this->persistColors();
-
-        Notification::make()->title(__('vpress::settings.create_theme_created'))->success()->send();
-        $this->dispatch('vpress-themes-changed');
-    }
-
     public function openCloneModal(string $sourceId): void
     {
         $this->cloneSourceId = $sourceId;
@@ -348,7 +323,19 @@ class ThemesWorkspace extends Component
         $this->showCloneModal = false;
         $this->selectTheme($result->id);
 
-        Notification::make()->title(__('vpress::settings.clone_theme_created'))->success()->send();
+        $compiled = ThemeAssetCompiler::compile();
+
+        $notification = Notification::make()->title(__('vpress::settings.clone_theme_created'));
+
+        if ($compiled) {
+            $notification->success()->send();
+        } else {
+            $notification
+                ->warning()
+                ->body(__('vpress::settings.clone_theme_compile_failed'))
+                ->send();
+        }
+
         $this->dispatch('vpress-themes-changed');
     }
 
@@ -414,7 +401,19 @@ class ThemesWorkspace extends Component
         $this->importArchive = null;
         $this->selectTheme($result->id);
 
-        Notification::make()->title(__('vpress::settings.import_theme_imported'))->success()->send();
+        $compiled = ThemeAssetCompiler::compile();
+
+        $notification = Notification::make()->title(__('vpress::settings.import_theme_imported'));
+
+        if ($compiled) {
+            $notification->success()->send();
+        } else {
+            $notification
+                ->warning()
+                ->body(__('vpress::settings.clone_theme_compile_failed'))
+                ->send();
+        }
+
         $this->dispatch('vpress-themes-changed');
     }
 
@@ -431,7 +430,7 @@ class ThemesWorkspace extends Component
         $this->confirmDelete();
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('vpress::filament.themes-workspace', [
             'groups' => ThemePresenter::groupedCards(),

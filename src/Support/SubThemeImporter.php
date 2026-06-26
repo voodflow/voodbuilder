@@ -115,7 +115,11 @@ final class SubThemeImporter
                 );
             }
 
-            self::writeThemeFiles($temporaryDirectory, $id);
+            self::writeThemeFiles(
+                sourceDirectory: $temporaryDirectory,
+                id: $id,
+                rewriteFromId: self::resolveRewriteFromId($manifest, $id),
+            );
 
             $definition = self::normalizeDefinition($id, $manifest['definition'] ?? [], $label, $renamedFrom);
             $appCssPath = ThemeConvention::appCssPath($id);
@@ -207,7 +211,7 @@ final class SubThemeImporter
         return Str::kebab((string) $manifest['id']);
     }
 
-    protected static function writeThemeFiles(string $sourceDirectory, string $id): void
+    protected static function writeThemeFiles(string $sourceDirectory, string $id, ?string $rewriteFromId = null): void
     {
         $cssTarget = ThemeConvention::appCssPath($id);
         $themeRoot = dirname($cssTarget);
@@ -241,6 +245,25 @@ final class SubThemeImporter
                 File::copy($file->getPathname(), $target);
             }
         }
+
+        if (filled($rewriteFromId) && $rewriteFromId !== $id) {
+            ThemeConvention::rewriteThemeIdInDirectory($themeRoot, $rewriteFromId, $id);
+            ThemeConvention::rewriteThemeIdInDirectory($viewsRoot, $rewriteFromId, $id);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
+    protected static function resolveRewriteFromId(array $manifest, string $targetId): ?string
+    {
+        $sourceId = Str::kebab((string) ($manifest['id'] ?? ''));
+
+        if ($sourceId === '' || $sourceId === $targetId) {
+            return null;
+        }
+
+        return $sourceId;
     }
 
     /**

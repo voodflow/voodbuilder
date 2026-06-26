@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import {
     ReactFlow,
     ReactFlowProvider,
@@ -15,14 +15,69 @@ import '@xyflow/react/dist/style.css';
 
 const THEME_COLUMN_X = 48;
 const AREA_COLUMN_X = 360;
-const ROW_GAP = 96;
 const START_Y = 16;
-const NODE_WIDTH = 200;
+const THEME_ROW_GAP = 76;
+const AREA_ROW_GAP = 24;
+const THEME_NODE_HEIGHT = 54;
+const CANVAS_PADDING_BOTTOM = 40;
+const AREA_NODE_WIDTH = 200;
 
-const positionsStore = new Map();
+function estimateAreaNodeHeight(area) {
+    const padding = 24;
+    const titleHeight = 18;
+    const badgeReserve = 22;
+    let height = padding + titleHeight + badgeReserve;
 
-function columnOffset(count, rowCount) {
-    return Math.max(0, ((rowCount - count) * ROW_GAP) / 2);
+    if (area.description) {
+        const charsPerLine = Math.floor(AREA_NODE_WIDTH / 6.2);
+        const lines = Math.max(1, Math.ceil(area.description.length / charsPerLine));
+        height += lines * 12 + 2;
+    }
+
+    return Math.max(100, height + 10);
+}
+
+function buildAreaLayouts(areas) {
+    let currentY = START_Y;
+    const layouts = [];
+
+    for (const area of areas) {
+        const height = estimateAreaNodeHeight(area);
+
+        layouts.push({
+            area,
+            y: currentY,
+            height,
+        });
+
+        currentY += height + AREA_ROW_GAP;
+    }
+
+    const totalHeight = layouts.length > 0
+        ? currentY - AREA_ROW_GAP + CANVAS_PADDING_BOTTOM
+        : 280;
+
+    return { layouts, totalHeight };
+}
+
+function buildThemeLayouts(themes, areaTotalHeight) {
+    const themeCount = themes.length;
+    const themeBlockHeight = themeCount > 0
+        ? (themeCount - 1) * THEME_ROW_GAP + THEME_NODE_HEIGHT
+        : 0;
+    const areaContentHeight = Math.max(themeBlockHeight, areaTotalHeight - CANVAS_PADDING_BOTTOM - START_Y);
+    const offsetY = START_Y + Math.max(0, (areaContentHeight - themeBlockHeight) / 2);
+
+    return themes.map((theme, index) => ({
+        theme,
+        y: offsetY + index * THEME_ROW_GAP,
+    }));
+}
+
+function canvasHeightFor(payload) {
+    const { totalHeight } = buildAreaLayouts(payload.areas ?? []);
+
+    return Math.max(320, totalHeight);
 }
 
 function ThemeNode({ data }) {
@@ -122,51 +177,40 @@ function FitViewOnce() {
     return null;
 }
 
-function buildNodes(payload, savedPositions) {
+function buildNodes(payload) {
     const themeById = Object.fromEntries((payload.themes ?? []).map((theme) => [theme.id, theme]));
     const areaThemeMap = Object.fromEntries((payload.edges ?? []).map((edge) => [edge.area_id, edge.theme_id]));
-    const themeCount = (payload.themes ?? []).length;
-    const areaCount = (payload.areas ?? []).length;
-    const rowCount = Math.max(themeCount, areaCount, 1);
-    const themeOffset = columnOffset(themeCount, rowCount);
-    const areaOffset = columnOffset(areaCount, rowCount);
+    const { layouts: areaLayouts } = buildAreaLayouts(payload.areas ?? []);
+    const themeLayouts = buildThemeLayouts(payload.themes ?? [], canvasHeightFor(payload));
 
-    const themeNodes = (payload.themes ?? []).map((theme, index) => {
-        const id = `theme:${theme.id}`;
-        const fallback = { x: THEME_COLUMN_X, y: START_Y + themeOffset + index * ROW_GAP };
-        const position = savedPositions.get(id) ?? fallback;
+    const themeNodes = themeLayouts.map(({ theme, y }) => ({
+        id: `theme:${theme.id}`,
+        type: 'theme',
+        position: { x: THEME_COLUMN_X, y },
+        data: {
+            ...theme,
+        },
+        draggable: true,
+        selectable: false,
+        connectable: true,
+    }));
 
-        return {
-            id,
-            type: 'theme',
-            position,
-            data: {
-                ...theme,
-            },
-            draggable: true,
-            selectable: false,
-            connectable: true,
-        };
-    });
-
-    const areaNodes = (payload.areas ?? []).map((area, index) => {
+    const areaNodes = areaLayouts.map(({ area, y }) => {
         const themeId = areaThemeMap[area.id] ?? area.theme_id;
         const theme = themeById[themeId] ?? {};
-        const id = `area:${area.id}`;
-        const fallback = { x: AREA_COLUMN_X, y: START_Y + areaOffset + index * ROW_GAP };
-        const position = savedPositions.get(id) ?? fallback;
+        const edge = (payload.edges ?? []).find((item) => item.area_id === area.id);
 
         return {
-            id,
+            id: `area:${area.id}`,
             type: 'area',
-            position,
+            position: { x: AREA_COLUMN_X, y },
             data: {
                 id: area.id,
                 label: area.label,
                 description: area.description,
                 preview: theme.preview ?? '#64748b',
                 surface: theme.surface ?? 'rgb(248 250 252)',
-                inherited: area.source !== 'site' && area.source !== 'override',
+                inherited: edge?.inherited ?? edgeInherited(area.id, themeId, payload, payload.channel_overrides ?? {}),
                 inheritedLabel: payload.i18n?.inherited ?? 'Inherited',
             },
             draggable: true,
@@ -214,12 +258,12 @@ function assignmentsFromEdges(edges) {
 
 function resetThemeForArea(areaId, payload) {
     if (areaId === 'site_pages') {
-        return 'site';
+        return payload.default_sub_theme ?? 'site';
     }
 
     const area = payload.areas?.find((item) => item.id === areaId);
 
-    return area?.inherited_theme_id ?? payload.sub_theme ?? 'site';
+    return area?.inherited_theme_id ?? payload.sub_theme ?? payload.default_sub_theme ?? 'site';
 }
 
 function inheritedThemeForArea(areaId, payload) {
@@ -227,8 +271,12 @@ function inheritedThemeForArea(areaId, payload) {
 }
 
 function edgeInherited(areaId, themeId, payload, channelOverrides) {
+    const defaultSiteTheme = payload.default_sub_theme ?? 'site';
+
     if (areaId === 'site_pages') {
-        return false;
+        const activeSiteTheme = payload.sub_theme ?? defaultSiteTheme;
+
+        return themeId === defaultSiteTheme && activeSiteTheme === defaultSiteTheme;
     }
 
     const inheritedId = inheritedThemeForArea(areaId, payload);
@@ -236,23 +284,45 @@ function edgeInherited(areaId, themeId, payload, channelOverrides) {
     return themeId === inheritedId && !channelOverrides?.[areaId];
 }
 
+function withInheritedEdgeData(nextEdges, payload, channelOverrides) {
+    const themeById = Object.fromEntries((payload.themes ?? []).map((theme) => [theme.id, theme]));
+
+    return nextEdges.map((edge) => {
+        const areaId = edge.target.replace('area:', '');
+        const themeId = edge.source.replace('theme:', '');
+
+        return {
+            ...edge,
+            type: 'inherited',
+            selectable: true,
+            focusable: true,
+            deletable: true,
+            data: {
+                ...edge.data,
+                areaId,
+                themePreview: themeById[themeId]?.preview,
+                inherited: edgeInherited(areaId, themeId, payload, channelOverrides),
+            },
+        };
+    });
+}
+
 function ThemeMapCanvas({ payload, onAssignmentsChange }) {
     const payloadRef = useRef(payload);
     const channelOverridesRef = useRef(payload.channel_overrides ?? {});
-    const savedPositions = useRef(positionsStore);
 
     payloadRef.current = payload;
     channelOverridesRef.current = payload.channel_overrides ?? {};
 
-    const initialNodes = useMemo(
-        () => buildNodes(payload, savedPositions.current),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [],
-    );
-    const initialEdges = useMemo(() => buildEdges(payload), []);
+    const [nodes, setNodes] = useNodesState(() => buildNodes(payload));
+    const [edges, setEdges, onEdgesChange] = useEdgesState(() => buildEdges(payload));
 
-    const [nodes, setNodes] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    useEffect(() => {
+        payloadRef.current = payload;
+        channelOverridesRef.current = payload.channel_overrides ?? {};
+        setNodes(buildNodes(payload));
+        setEdges(buildEdges(payload));
+    }, [payload, setEdges, setNodes]);
 
     const syncAssignments = useCallback(
         (nextEdges) => {
@@ -262,75 +332,56 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
         [onAssignmentsChange],
     );
 
-    const updateAreaVisuals = useCallback((nextEdges) => {
-        const themeById = Object.fromEntries(
-            (payloadRef.current.themes ?? []).map((theme) => [theme.id, theme]),
-        );
+    const applyEdgeState = useCallback(
+        (nextEdges) => {
+            const themeById = Object.fromEntries(
+                (payloadRef.current.themes ?? []).map((theme) => [theme.id, theme]),
+            );
+            const finalizedEdges = withInheritedEdgeData(
+                nextEdges,
+                payloadRef.current,
+                channelOverridesRef.current,
+            );
 
-        setNodes((current) =>
-            current.map((node) => {
-                if (!node.id.startsWith('area:')) {
-                    return node;
-                }
+            setNodes((current) =>
+                current.map((node) => {
+                    if (!node.id.startsWith('area:')) {
+                        return node;
+                    }
 
-                const areaId = node.id.replace('area:', '');
-                const edge = nextEdges.find((item) => item.target === node.id);
-                const themeId = edge?.source?.replace('theme:', '') ?? '';
-                const theme = themeById[themeId] ?? {};
-                const inherited = edgeInherited(
-                    areaId,
-                    themeId,
-                    payloadRef.current,
-                    channelOverridesRef.current,
-                );
+                    const areaId = node.id.replace('area:', '');
+                    const edge = finalizedEdges.find((item) => item.target === node.id);
+                    const themeId = edge?.source?.replace('theme:', '') ?? '';
+                    const theme = themeById[themeId] ?? {};
 
-                return {
-                    ...node,
-                    data: {
-                        ...node.data,
-                        preview: theme.preview ?? '#64748b',
-                        surface: theme.surface ?? 'rgb(248 250 252)',
-                        inherited,
-                    },
-                };
-            }),
-        );
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            preview: theme.preview ?? '#64748b',
+                            surface: theme.surface ?? 'rgb(248 250 252)',
+                            inherited: edge?.data?.inherited ?? false,
+                        },
+                    };
+                }),
+            );
 
-        setEdges(
-            nextEdges.map((edge) => {
-                const areaId = edge.target.replace('area:', '');
-                const themeId = edge.source.replace('theme:', '');
+            setEdges(finalizedEdges);
+            syncAssignments(finalizedEdges);
+        },
+        [setEdges, setNodes, syncAssignments],
+    );
 
-                return {
-                    ...edge,
-                    data: {
-                        ...edge.data,
-                        areaId,
-                        inherited: edgeInherited(
-                            areaId,
-                            themeId,
-                            payloadRef.current,
-                            channelOverridesRef.current,
-                        ),
-                    },
-                };
-            }),
-        );
-    }, [setEdges, setNodes]);
+    const updateAreaVisuals = useCallback(
+        (nextEdges) => {
+            applyEdgeState(nextEdges);
+        },
+        [applyEdgeState],
+    );
 
     const onNodesChange = useCallback(
         (changes) => {
-            setNodes((current) => {
-                const next = applyNodeChanges(changes, current);
-
-                for (const change of changes) {
-                    if (change.type === 'position' && change.position && change.id) {
-                        savedPositions.current.set(change.id, change.position);
-                    }
-                }
-
-                return next;
-            });
+            setNodes((current) => applyNodeChanges(changes, current));
         },
         [setNodes],
     );
@@ -346,6 +397,18 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
 
             const areaId = areaNodeId.replace('area:', '');
             const themeId = themeNodeId.replace('theme:', '');
+
+            const area = payloadRef.current.areas?.find((item) => item.id === areaId);
+            const allowed = area?.allowed_theme_ids ?? [];
+
+            if (allowed.length > 0 && !allowed.includes(themeId)) {
+                window.alert(
+                    payloadRef.current.i18n?.invalid_binding
+                        ?? 'That theme cannot be applied to this area.',
+                );
+
+                return;
+            }
 
             const nextEdges = [
                 ...edges.filter((edge) => edge.target !== areaNodeId),
@@ -384,38 +447,82 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
 
     const onEdgesDelete = useCallback(
         (deleted) => {
-            let nextEdges = edges.filter((edge) => !deleted.some((item) => item.id === edge.id));
-
             for (const edge of deleted) {
                 const areaId = edge.target.replace('area:', '');
                 const fallbackTheme = resetThemeForArea(areaId, payloadRef.current);
 
                 if (areaId === 'site_pages') {
-                    payloadRef.current = { ...payloadRef.current, sub_theme: fallbackTheme };
+                    payloadRef.current = {
+                        ...payloadRef.current,
+                        sub_theme: fallbackTheme,
+                    };
                 } else {
                     delete channelOverridesRef.current[areaId];
                 }
-
-                nextEdges.push({
-                    id: `edge:${areaId}`,
-                    source: `theme:${fallbackTheme}`,
-                    target: `area:${areaId}`,
-                    type: 'inherited',
-                    selectable: true,
-                    focusable: true,
-                    deletable: true,
-                    data: { areaId, inherited: true },
-                });
             }
 
-            updateAreaVisuals(nextEdges);
-            syncAssignments(nextEdges);
+            setEdges((currentEdges) => {
+                let nextEdges = currentEdges.filter(
+                    (edge) => !deleted.some((item) => item.id === edge.id),
+                );
+
+                for (const edge of deleted) {
+                    const areaId = edge.target.replace('area:', '');
+                    const fallbackTheme = resetThemeForArea(areaId, payloadRef.current);
+
+                    nextEdges.push({
+                        id: `edge:${areaId}`,
+                        source: `theme:${fallbackTheme}`,
+                        target: edge.target,
+                        type: 'inherited',
+                        selectable: true,
+                        focusable: true,
+                        deletable: true,
+                        data: { areaId },
+                    });
+                }
+
+                const finalizedEdges = withInheritedEdgeData(
+                    nextEdges,
+                    payloadRef.current,
+                    channelOverridesRef.current,
+                );
+                const themeById = Object.fromEntries(
+                    (payloadRef.current.themes ?? []).map((theme) => [theme.id, theme]),
+                );
+
+                setNodes((current) =>
+                    current.map((node) => {
+                        if (!node.id.startsWith('area:')) {
+                            return node;
+                        }
+
+                        const areaId = node.id.replace('area:', '');
+                        const edge = finalizedEdges.find((item) => item.target === node.id);
+                        const themeId = edge?.source?.replace('theme:', '') ?? '';
+                        const theme = themeById[themeId] ?? {};
+
+                        return {
+                            ...node,
+                            data: {
+                                ...node.data,
+                                preview: theme.preview ?? '#64748b',
+                                surface: theme.surface ?? 'rgb(248 250 252)',
+                                inherited: edge?.data?.inherited ?? false,
+                            },
+                        };
+                    }),
+                );
+
+                syncAssignments(finalizedEdges);
+
+                return finalizedEdges;
+            });
         },
-        [edges, syncAssignments, updateAreaVisuals],
+        [setEdges, setNodes, syncAssignments],
     );
 
-    const rowCount = Math.max((payload.themes ?? []).length, (payload.areas ?? []).length, 1);
-    const canvasHeight = Math.max(280, rowCount * ROW_GAP + 56);
+    const canvasHeight = canvasHeightFor(payload);
 
     return (
         <div className="vpress-tm">

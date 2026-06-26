@@ -63,6 +63,22 @@ final class ThemeBindings
     }
 
     /**
+     * @return list<string>
+     */
+    public static function allowedThemeIdsForArea(string $areaId): array
+    {
+        $registry = app(SubThemeRegistry::class);
+
+        if ($areaId === 'site_pages') {
+            return array_keys(self::sitePagesSelectOptions());
+        }
+
+        $options = self::selectOptionsForChannel($areaId);
+
+        return array_keys($options);
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function selectOptionsForChannel(string $channelId, ?string $includeId = null): array

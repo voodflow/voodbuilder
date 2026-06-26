@@ -61,6 +61,7 @@ class ThemeMapBridge extends Component
         }
 
         $normalized = [];
+        $rejected = [];
 
         foreach ($channelOverrides as $channelId => $themeId) {
             if (! is_string($channelId) || ! is_string($themeId) || ! filled($themeId)) {
@@ -68,6 +69,8 @@ class ThemeMapBridge extends Component
             }
 
             if (! ThemeBindings::isValidChannelBinding($channelId, $themeId)) {
+                $rejected[] = $channelId;
+
                 continue;
             }
 
@@ -78,14 +81,35 @@ class ThemeMapBridge extends Component
             }
         }
 
+        if ($rejected !== []) {
+            Notification::make()
+                ->title(__('vpress::settings.theme_map_invalid_binding'))
+                ->body(__('vpress::settings.theme_map_rejected_bindings'))
+                ->warning()
+                ->send();
+        }
+
         $this->subTheme = $resolvedSiteTheme;
         $this->channelThemes = $normalized;
+
+        $this->refreshPayload();
 
         $this->dispatch(
             'vpress-theme-map-sync',
             subTheme: $this->subTheme,
             channelThemes: $this->channelThemes,
         );
+    }
+
+    /**
+     * @param  array<string, string>  $channelThemes
+     */
+    #[On('vpress-theme-map-settings-saved')]
+    public function syncFromSaved(string $subTheme, array $channelThemes): void
+    {
+        $this->subTheme = SubThemeResolver::resolveId($subTheme) ?? SubThemeResolver::SITE;
+        $this->channelThemes = ThemeBindings::expandChannelThemesForForm($channelThemes);
+        $this->refreshPayload();
     }
 
     public function selectThemeInEditor(string $themeId): void

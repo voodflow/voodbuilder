@@ -29,6 +29,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Livewire\Attributes\On;
 use Throwable;
 use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Vpress\Support\SubThemeResolver;
 use Voodflow\Vpress\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
@@ -74,6 +75,7 @@ class VpressSettingsPage extends Page
             : [];
         $data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm($channelThemes);
 
+        $this->data = $data;
         $this->form->fill($data);
     }
 
@@ -95,9 +97,30 @@ class VpressSettingsPage extends Page
 
             $data = $this->form->getState();
 
+            // Theme map updates Livewire state directly; ensure it wins over the hidden fields.
+            if (isset($this->data['sub_theme'])) {
+                $data['sub_theme'] = $this->data['sub_theme'];
+            }
+
+            if (isset($this->data['content_channel_sub_themes']) && is_array($this->data['content_channel_sub_themes'])) {
+                $data['content_channel_sub_themes'] = $this->data['content_channel_sub_themes'];
+            }
+
             VpressSettings::saveData($data);
 
             $this->commitDatabaseTransaction();
+
+            $saved = VpressSettings::data();
+            $this->data['sub_theme'] = (string) ($saved['sub_theme'] ?? SubThemeResolver::SITE);
+            $this->data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm(
+                is_array($saved['content_channel_sub_themes'] ?? null) ? $saved['content_channel_sub_themes'] : [],
+            );
+
+            $this->dispatch(
+                'vpress-theme-map-settings-saved',
+                subTheme: $this->data['sub_theme'],
+                channelThemes: $this->data['content_channel_sub_themes'],
+            );
 
             Notification::make()
                 ->title(__('Settings saved'))

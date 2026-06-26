@@ -13,12 +13,15 @@ use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Vpress\Console\BuildTailblocksCommand;
+use Voodflow\Vpress\Console\CompileThemeAssetsCommand;
 use Voodflow\Vpress\Console\InstallCommand;
 use Voodflow\Vpress\Console\MakeSubThemeCommand;
 use Voodflow\Vpress\Console\SeedSoundmitGrapesLandingCommand;
 use Voodflow\Vpress\Console\SubThemeCommand;
 use Voodflow\Vpress\Console\SyncThemeStylesheetImportsCommand;
 use Voodflow\Vpress\Console\ThemePresetCommand;
+use Voodflow\Vpress\Filament\Livewire\ThemeMapBridge;
+use Voodflow\Vpress\Filament\Livewire\ThemesWorkspace;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
@@ -65,7 +68,8 @@ class VpressServiceProvider extends PackageServiceProvider
             ->hasCommand(SeedSoundmitGrapesLandingCommand::class)
             ->hasCommand(ThemePresetCommand::class)
             ->hasCommand(SubThemeCommand::class)
-            ->hasCommand(SyncThemeStylesheetImportsCommand::class);
+            ->hasCommand(SyncThemeStylesheetImportsCommand::class)
+            ->hasCommand(CompileThemeAssetsCommand::class);
     }
 
     public function packageRegistered(): void
@@ -96,8 +100,8 @@ class VpressServiceProvider extends PackageServiceProvider
 
         Livewire::component('vpress.site-notification-bell', SiteNotificationBell::class);
         Livewire::component('vpress.account-settings', AccountSettings::class);
-        Livewire::component('vpress.themes-workspace', \Voodflow\Vpress\Filament\Livewire\ThemesWorkspace::class);
-        Livewire::component('vpress.theme-map-bridge', \Voodflow\Vpress\Filament\Livewire\ThemeMapBridge::class);
+        Livewire::component('vpress.themes-workspace', ThemesWorkspace::class);
+        Livewire::component('vpress.theme-map-bridge', ThemeMapBridge::class);
 
         ThemeMapAssets::register();
 

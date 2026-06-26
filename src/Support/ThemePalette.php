@@ -9,11 +9,11 @@ use Voodflow\Vpress\Models\VpressSettings;
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'
-html[data-vpress-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
-html[data-vpress-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-muted)!important}
-html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *)):not(.vpress-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
-html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--color-vp-brand-1)!important}
-html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
+html[data-vpress-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-text)!important}
+html[data-vpress-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-muted)!important}
+html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)):not(.vpress-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--color-vp-brand-1)!important}
+html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-text)!important}
 html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
 html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
@@ -147,6 +147,32 @@ CSS;
         return is_array($palette) && ($palette['custom'] ?? false);
     }
 
+    /**
+     * @return array{custom: bool, light: array<string, ?string>, dark: array<string, ?string>}|null
+     */
+    public static function paletteFromBundledCss(string $themeId): ?array
+    {
+        $cssPath = self::resolveSubThemeCssFile($themeId);
+
+        if ($cssPath === null || ! is_readable($cssPath)) {
+            return null;
+        }
+
+        $css = (string) file_get_contents($cssPath);
+        $light = self::cssVariablesToPaletteMode(self::parseSubThemeVariableBlock($css, $themeId, dark: false));
+        $dark = self::cssVariablesToPaletteMode(self::parseSubThemeVariableBlock($css, $themeId, dark: true));
+
+        if (! self::modeHasOverrides($light) && ! self::modeHasOverrides($dark)) {
+            return null;
+        }
+
+        return [
+            'custom' => true,
+            'light' => $light,
+            'dark' => $dark,
+        ];
+    }
+
     public static function sanitizeColor(mixed $color): ?string
     {
         if (! is_string($color) || $color === '') {
@@ -173,6 +199,22 @@ CSS;
         }
 
         return $color;
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     * @return array<string, ?string>
+     */
+    private static function cssVariablesToPaletteMode(array $variables): array
+    {
+        return self::normalizeMode([
+            'primary' => $variables['--color-vp-brand-1'] ?? null,
+            'secondary' => $variables['--color-vp-brand-2'] ?? null,
+            'header_bg' => $variables['--vx-header-bg'] ?? null,
+            'header_text' => $variables['--vx-header-text'] ?? null,
+            'body_bg' => $variables['--color-vp-bg'] ?? null,
+            'text' => $variables['--color-vp-text-1'] ?? null,
+        ]);
     }
 
     /**

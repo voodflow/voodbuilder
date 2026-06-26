@@ -17,7 +17,42 @@ final class ContentChannelThemes
             return $override;
         }
 
+        $peerTheme = self::peerLandingThemeFor($channel->id());
+
+        if ($peerTheme !== null) {
+            return $peerTheme;
+        }
+
         return self::configuredDefaultFor($channel->id());
+    }
+
+    /**
+     * Events and exhibitors often share the same visual theme (e.g. Soundmit).
+     * When one landing channel has an explicit override, the other can inherit it.
+     */
+    public static function peerLandingThemeFor(string $channelId): ?string
+    {
+        $peerId = match ($channelId) {
+            'events' => 'exhibitors',
+            'exhibitors' => 'events',
+            default => null,
+        };
+
+        if ($peerId === null) {
+            return null;
+        }
+
+        $peerTheme = self::overrideFor($peerId);
+
+        if ($peerTheme === null) {
+            return null;
+        }
+
+        if (! ThemeBindings::isValidChannelBinding($channelId, $peerTheme)) {
+            return null;
+        }
+
+        return $peerTheme;
     }
 
     public static function configuredDefaultFor(string $channelId): ?string

@@ -25,19 +25,52 @@ return [
     'sub_themes' => [
         'docs' => [
             'label' => 'Documentation',
-            'description' => 'Included in vpress for documentation sites and tutorials.',
+            'description' => 'Clean reading layout for documentation and tutorials.',
             'type' => 'content',
             'capabilities' => ['doc'],
         ],
         'site' => [
             'label' => 'Landing page',
-            'description' => 'Included in vpress for marketing pages, home, and site sections.',
+            'description' => 'Marketing pages, home, and site sections with hero blocks.',
             'type' => 'marketing',
             'capabilities' => ['landing'],
             'css' => 'themes/site/theme.css',
+            'layouts' => [
+                'home' => 'vpress::themes.site.layouts.home',
+                'landing' => 'vpress::themes.site.layouts.landing',
+                'page' => 'vpress::themes.site.layouts.page',
+            ],
             'chrome' => [
                 'hide_site_nav' => false,
                 'hide_site_footer' => false,
+            ],
+        ],
+        'blog' => [
+            'label' => 'Blog',
+            'description' => 'Ghost-inspired reading layout for blog archives and posts.',
+            'type' => 'content',
+            'capabilities' => ['article'],
+            'css' => 'themes/blog/theme.css',
+            'layouts' => [
+                'home' => 'vpress::themes.blog.layouts.home',
+                'landing' => 'vpress::themes.blog.layouts.landing',
+                'page' => 'vpress::themes.blog.layouts.page',
+                'article' => 'vpress::themes.blog.layouts.article',
+                'section_index' => 'vpress::themes.blog.layouts.section-index',
+            ],
+        ],
+        'news' => [
+            'label' => 'News',
+            'description' => 'Editorial magazine layout with story grids and sidebars.',
+            'type' => 'content',
+            'capabilities' => ['article'],
+            'css' => 'themes/news/theme.css',
+            'layouts' => [
+                'home' => 'vpress::themes.news.layouts.home',
+                'landing' => 'vpress::themes.news.layouts.landing',
+                'page' => 'vpress::themes.news.layouts.page',
+                'article' => 'vpress::themes.news.layouts.article',
+                'section_index' => 'vpress::themes.news.layouts.section-index',
             ],
         ],
     ],
@@ -49,8 +82,8 @@ return [
     'content_channel_capabilities' => [
         'docs' => 'doc',
         'tutorials' => 'doc',
-        'blog' => 'landing',
-        'news' => 'landing',
+        'blog' => 'article',
+        'news' => 'article',
         'events' => 'landing',
         'exhibitors' => 'landing',
         'pages' => 'landing',
@@ -65,6 +98,8 @@ return [
         'exhibitors' => 'site',
         'tutorials' => 'docs',
         'docs' => 'docs',
+        'blog' => 'blog',
+        'news' => 'news',
     ],
 
     /*

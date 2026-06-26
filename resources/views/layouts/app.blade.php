@@ -1,7 +1,9 @@
 @php
+    use Voodflow\Vpress\Support\ContentChannelRegistry;
     use Voodflow\Vpress\Support\SubThemeResolver;
 
     $vpressSubTheme = $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+    $vpressContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $vpressBodyClass = trim((string) $__env->yieldContent('body_class'));
     $vpressHasDocSidebar = str_contains($vpressBodyClass, 'vpress-has-doc-sidebar');
     $vpressShowReadingProgress = str_contains($vpressBodyClass, 'vpress-has-reading-progress');
@@ -10,6 +12,9 @@
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     data-vpress-sub-theme="{{ $vpressSubTheme }}"
+    @if (filled($vpressContentChannel))
+        data-vpress-content-channel="{{ $vpressContentChannel }}"
+    @endif
     @class(['dark' => \Voodflow\Vpress\Support\VpressTheme::serverInitialDark()])
 >
 <head>

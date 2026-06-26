@@ -72,14 +72,19 @@ class VpressSettings extends Model
     public static function data(): array
     {
         return Cache::rememberForever('vpress.settings', function (): array {
-            $record = static::query()->first();
+            $record = static::canonicalRecord();
 
             if ($record === null) {
                 return static::defaults();
             }
 
-            return static::normalizeData(array_merge(static::defaults(), $record->data ?? []));
+            return static::normalizeData(static::mergedPayloadFor($record));
         });
+    }
+
+    public static function canonicalRecord(): ?self
+    {
+        return static::query()->orderBy('id')->first();
     }
 
     /**
@@ -116,8 +121,6 @@ class VpressSettings extends Model
         $legacyMap = [
             'default' => SubThemeResolver::DEFAULT,
             'events' => SubThemeResolver::SITE,
-            'blog' => SubThemeResolver::DEFAULT,
-            'news' => SubThemeResolver::DEFAULT,
         ];
 
         foreach ($legacyMap as $from => $to) {
@@ -243,11 +246,35 @@ class VpressSettings extends Model
             );
         }
 
-        $record = static::query()->firstOrNew(['id' => 1]);
-        $record->data = array_merge(static::data(), $data);
+        $record = static::canonicalRecord() ?? static::query()->create([
+            'data' => static::defaults(),
+        ]);
+
+        $record->data = static::normalizeData(array_merge(static::mergedPayloadFor($record), $data));
         $record->save();
 
+        static::deleteOrphanRecords($record);
+
         Cache::forget('vpress.settings');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function mergedPayloadFor(self $canonical): array
+    {
+        $merged = array_merge(static::defaults(), $canonical->data ?? []);
+
+        foreach (static::query()->whereKeyNot($canonical->getKey())->orderBy('id')->get() as $orphan) {
+            $merged = array_merge($merged, $orphan->data ?? []);
+        }
+
+        return $merged;
+    }
+
+    protected static function deleteOrphanRecords(self $canonical): void
+    {
+        static::query()->whereKeyNot($canonical->getKey())->delete();
     }
 
     public static function normalizeLogoValue(mixed $logo): ?string

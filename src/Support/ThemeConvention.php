@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
+use Illuminate\Support\Facades\File;
+
 /**
  * Single convention for vpress visual themes (package-bundled and app-scaffolded).
  *
@@ -81,6 +83,47 @@ final class ThemeConvention
         $relativePath = self::relativePath($fromBundle, dirname($toTheme)).'/theme.css';
 
         return $relativePath !== '/theme.css' ? $relativePath : null;
+    }
+
+    public static function rewriteThemeId(string $contents, string $fromId, string $toId): string
+    {
+        if ($fromId === $toId || $fromId === '') {
+            return $contents;
+        }
+
+        $pairs = [
+            "data-vpress-sub-theme='{$fromId}'" => "data-vpress-sub-theme='{$toId}'",
+            'data-vpress-sub-theme="'.$fromId.'"' => 'data-vpress-sub-theme="'.$toId.'"',
+            "vpress-sub-theme-{$fromId}" => "vpress-sub-theme-{$toId}",
+        ];
+
+        return str_replace(array_keys($pairs), array_values($pairs), $contents);
+    }
+
+    /**
+     * @param  list<string>  $extensions
+     */
+    public static function rewriteThemeIdInDirectory(string $directory, string $fromId, string $toId, array $extensions = ['css', 'blade.php']): void
+    {
+        if ($fromId === $toId || ! is_dir($directory)) {
+            return;
+        }
+
+        foreach (File::allFiles($directory) as $file) {
+            $extension = $file->getExtension();
+
+            if (! in_array($extension, $extensions, true)) {
+                continue;
+            }
+
+            $path = $file->getPathname();
+            $contents = File::get($path);
+            $rewritten = self::rewriteThemeId($contents, $fromId, $toId);
+
+            if ($rewritten !== $contents) {
+                File::put($path, $rewritten);
+            }
+        }
     }
 
     private static function relativePath(string $from, string $to): string

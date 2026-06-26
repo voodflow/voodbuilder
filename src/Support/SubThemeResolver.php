@@ -17,8 +17,6 @@ final class SubThemeResolver
     private const LEGACY_IDS = [
         'default' => self::DEFAULT,
         'events' => self::SITE,
-        'blog' => self::DEFAULT,
-        'news' => self::DEFAULT,
     ];
 
     public static function siteDefault(): string

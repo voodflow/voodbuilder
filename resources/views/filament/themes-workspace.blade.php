@@ -40,10 +40,6 @@
             color: rgb(148 163 184);
         }
 
-        .vpress-themes-ws__catalog-column-spacer {
-            min-height: 1.25rem;
-        }
-
         .vpress-themes-ws__grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -151,6 +147,15 @@
             box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
         }
 
+        .vpress-themes-ws__card--bundled {
+            cursor: default;
+        }
+
+        .vpress-themes-ws__card--bundled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         .vpress-themes-ws__card-strip {
             display: flex;
             height: 0.5rem;
@@ -210,6 +215,45 @@
         .vpress-themes-ws__icon-btn:hover {
             background: rgb(15 23 42 / 0.06);
             color: rgb(30 41 59);
+        }
+
+        .vpress-themes-ws__clone-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            height: 1.625rem;
+            padding: 0 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid rgb(203 213 225 / 0.9);
+            background: rgb(255 255 255 / 0.85);
+            color: rgb(51 65 85);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .vpress-themes-ws__clone-btn:hover {
+            background: rgb(248 250 252);
+            border-color: rgb(148 163 184);
+            color: rgb(15 23 42);
+        }
+
+        .dark .vpress-themes-ws__clone-btn {
+            border-color: rgb(71 85 105 / 0.7);
+            background: rgb(30 41 59 / 0.5);
+            color: rgb(226 232 240);
+        }
+
+        .dark .vpress-themes-ws__clone-btn:hover {
+            background: rgb(51 65 85 / 0.6);
+            border-color: rgb(100 116 139);
+            color: rgb(248 250 252);
+        }
+
+        .vpress-themes-ws__card--bundled .vpress-themes-ws__card-actions {
+            padding-top: 0.125rem;
         }
 
         .dark .vpress-themes-ws__icon-btn:hover {
@@ -468,10 +512,6 @@
     </style>
 
     <div class="vpress-themes-ws__header">
-        <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--primary" wire:click="$set('showCreateModal', true)">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            {{ __('vpress::settings.theme_workspace_new') }}
-        </button>
         <label class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost vpress-themes-ws__import-label">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-7.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
             {{ __('vpress::settings.theme_workspace_import') }}
@@ -485,6 +525,17 @@
         <p class="vpress-themes-ws__catalog-note">{{ __('vpress::settings.theme_workspace_bundled_note') }}</p>
 
         <div class="vpress-themes-ws__catalog-column">
+            <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_plugin_themes') }}</h3>
+            @if ($groups['plugin'] !== [])
+                <div class="vpress-themes-ws__grid">
+                    @foreach ($groups['plugin'] as $card)
+                        @include('vpress::filament.partials.theme-card', ['card' => $card])
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <div class="vpress-themes-ws__catalog-column">
             <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_your_themes') }}</h3>
             @if ($groups['custom'] !== [])
                 <div class="vpress-themes-ws__grid">
@@ -494,18 +545,6 @@
                 </div>
             @else
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('vpress::settings.theme_workspace_no_custom') }}</p>
-            @endif
-        </div>
-
-        <div class="vpress-themes-ws__catalog-column">
-            <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_plugin_themes') }}</h3>
-            <div class="vpress-themes-ws__catalog-column-spacer" aria-hidden="true"></div>
-            @if ($groups['plugin'] !== [])
-                <div class="vpress-themes-ws__grid">
-                    @foreach ($groups['plugin'] as $card)
-                        @include('vpress::filament.partials.theme-card', ['card' => $card])
-                    @endforeach
-                </div>
             @endif
         </div>
     </div>
@@ -614,27 +653,6 @@
                     <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--primary" wire:click="closeColorModal">
                         {{ __('vpress::settings.theme_workspace_done') }}
                     </button>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    @if ($showCreateModal)
-        <div class="vpress-themes-ws__modal-backdrop" wire:click.self="$set('showCreateModal', false)">
-            <div class="vpress-themes-ws__modal" wire:click.stop>
-                <h3>{{ __('vpress::settings.create_theme') }}</h3>
-                <p class="vpress-themes-ws__modal-subtitle">{{ __('vpress::settings.create_theme_base_help') }}</p>
-                <div class="vpress-themes-ws__field mb-3">
-                    <label>{{ __('vpress::settings.create_theme_id') }}</label>
-                    <input type="text" wire:model="newThemeId" pattern="[a-z][a-z0-9-]*" />
-                </div>
-                <div class="vpress-themes-ws__field mb-4">
-                    <label>{{ __('vpress::settings.create_theme_label') }}</label>
-                    <input type="text" wire:model="newThemeLabel" />
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost" wire:click="$set('showCreateModal', false)">{{ __('Cancel') }}</button>
-                    <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--primary" wire:click="createTheme">{{ __('vpress::settings.create_theme') }}</button>
                 </div>
             </div>
         </div>

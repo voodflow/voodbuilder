@@ -145,10 +145,10 @@ final class SubThemeLocator
     {
         $colors = \Voodflow\Vpress\Models\VpressSettings::get('sub_theme_colors', []);
 
-        if (! is_array($colors) || ! is_array($colors[$id] ?? null)) {
-            return null;
+        if (is_array($colors[$id] ?? null) && ThemePalette::themeHasCustomColors($id)) {
+            return $colors[$id];
         }
 
-        return $colors[$id];
+        return ThemePalette::paletteFromBundledCss($id);
     }
 }

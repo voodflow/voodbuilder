@@ -83,6 +83,10 @@ class SubThemeExporterImporterTest extends TestCase
         $this->assertTrue($result->success);
         $this->assertSame('cloned-demo', $result->id);
         $this->assertFileExists(ThemeConvention::appCssPath('cloned-demo'));
+        $this->assertStringContainsString(
+            "data-vpress-sub-theme='cloned-demo'",
+            File::get(ThemeConvention::appCssPath('cloned-demo')),
+        );
 
         File::deleteDirectory(resource_path('vpress/themes/cloned-demo'));
         File::deleteDirectory(resource_path('views/vpress/themes/cloned-demo'));

@@ -114,6 +114,23 @@ class ContentChannelThemesTest extends TestCase
         $this->assertSame('site', ContentChannelThemes::resolveForChannel($channel));
     }
 
+    public function test_events_inherits_landing_theme_from_exhibitors_peer_override(): void
+    {
+        VpressSettings::query()->create([
+            'data' => array_merge(VpressSettings::defaults(), [
+                'content_channel_sub_themes' => [
+                    'exhibitors' => 'showcase-alt',
+                ],
+            ]),
+        ]);
+        VpressSettings::clearCache();
+
+        $channel = app(ContentChannelRegistry::class)->get('events');
+
+        $this->assertNotNull($channel);
+        $this->assertSame('showcase-alt', ContentChannelThemes::resolveForChannel($channel));
+    }
+
     public function test_normalize_overrides_strips_empty_and_invalid_values(): void
     {
         $normalized = ContentChannelThemes::normalizeOverrides([

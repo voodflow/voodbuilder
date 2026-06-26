@@ -51,7 +51,7 @@ final class ThemeMapPayload
                 ? (string) __('vpress::theme_bindings.site_pages_description')
                 : self::channelDescription($areaId);
 
-            $allowedThemeIds = app(SubThemeRegistry::class)->ids();
+            $allowedThemeIds = ThemeBindings::allowedThemeIdsForArea($areaId);
 
             $areas[] = [
                 'id' => $areaId,
@@ -60,7 +60,7 @@ final class ThemeMapPayload
                 'routes' => $areaId === 'site_pages' ? '' : self::channelRoutes($areaId),
                 'theme_id' => $row['theme_id'],
                 'source' => $row['source'],
-                'allowed_theme_ids' => array_values($allowedThemeIds),
+                'allowed_theme_ids' => $allowedThemeIds,
                 'inherited_theme_id' => $areaId === 'site_pages'
                     ? $subTheme
                     : self::inheritedThemeForChannel($areaId, $subTheme),
@@ -69,7 +69,7 @@ final class ThemeMapPayload
             $edges[] = [
                 'theme_id' => $row['theme_id'],
                 'area_id' => $areaId,
-                'inherited' => ! in_array($row['source'], ['site', 'override'], true),
+                'inherited' => self::edgeIsInherited($areaId, $row['source'], $row['theme_id']),
             ];
         }
 
@@ -78,6 +78,7 @@ final class ThemeMapPayload
             'areas' => $areas,
             'edges' => $edges,
             'sub_theme' => $subTheme,
+            'default_sub_theme' => SubThemeResolver::SITE,
             'channel_overrides' => $overrides,
             'i18n' => [
                 'hint' => (string) __('vpress::settings.theme_map_hint'),
@@ -108,6 +109,15 @@ final class ThemeMapPayload
         $inherited = self::inheritedThemeForChannel($channelId, $siteTheme);
 
         return $themeId === $inherited ? null : $themeId;
+    }
+
+    public static function edgeIsInherited(string $areaId, string $source, string $themeId): bool
+    {
+        if ($areaId === 'site_pages') {
+            return $themeId === SubThemeResolver::SITE;
+        }
+
+        return $source !== 'override';
     }
 
     protected static function channelDescription(string $channelId): string
