@@ -8,16 +8,22 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Voodflow\Vpress\Filament\Actions\CreateSitePageTranslationAction;
+use Voodflow\Vpress\Filament\Concerns\ConfirmsSitePageHomeTakeover;
 use Voodflow\Vpress\Filament\Resources\SitePageResource;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\SitePageHome;
 
 class EditSitePage extends EditRecord
 {
+    use ConfirmsSitePageHomeTakeover;
+
     protected static string $resource = SitePageResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            CreateSitePageTranslationAction::make(),
             Action::make('openVisualEditor')
                 ->label(__('vpress::pro.actions.open_visual_editor'))
                 ->icon('heroicon-o-paint-brush')
@@ -62,19 +68,38 @@ class EditSitePage extends EditRecord
                     && $this->resolveDefaultHomeContent() !== null),
             DeleteAction::make()
                 ->hidden(fn (SitePage $record): bool => $record->is_home),
+            $this->confirmHomeTakeoverAction(),
         ];
+    }
+
+    protected function beforeSave(): void
+    {
+        $this->ensureHomeTakeoverConfirmed();
     }
 
     protected function afterSave(): void
     {
         /** @var SitePage $record */
-        $record = $this->record;
+        $record = $this->record->refresh();
 
-        if ($record->is_home) {
-            SitePage::query()
-                ->where('id', '!=', $record->id)
-                ->update(['is_home' => false]);
+        if (! $record->is_home) {
+            return;
         }
+
+        $demoted = SitePageHome::assignHome($record);
+
+        if ($demoted > 0) {
+            Notification::make()
+                ->title(__('vpress::admin.notifications.home_reassigned'))
+                ->body(__('vpress::admin.notifications.home_reassigned_body', ['count' => $demoted]))
+                ->info()
+                ->send();
+        }
+    }
+
+    protected function proceedAfterHomeTakeoverConfirmation(): void
+    {
+        $this->save();
     }
 
     /** @return array<string, mixed>|null */

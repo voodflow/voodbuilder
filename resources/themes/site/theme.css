@@ -505,7 +505,13 @@ html[data-vpress-sub-theme='site'] .vx-badge {
     font-weight: 700;
 }
 
-/* Landing pages built with vevents rich-content blocks */
+/* Landing / home pages built with GrapesJS or rich-content blocks */
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode) {
+    max-width: none;
+    padding: 0;
+}
+
 html[data-vpress-sub-theme='site'] .vpress-site-content:has(.VPRichPage--landing) {
     max-width: none;
     padding: 0;

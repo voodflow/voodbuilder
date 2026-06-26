@@ -5,12 +5,49 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support;
 
 use Illuminate\Support\Facades\Route;
+use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
+use Voodflow\Vtuts\Support\Locales;
 
 final class VpressUrls
 {
-    public static function home(): string
+    public static function home(?string $locale = null): string
     {
-        return Route::has('home') ? route('home') : url('/');
+        $locale ??= SitePageResolver::preferredLocale();
+
+        if (
+            class_exists(Locales::class)
+            && Locales::usesUrlPrefix()
+            && $locale !== Locales::default()
+            && Route::has('home.localized')
+        ) {
+            return route('home.localized', ['locale' => $locale]);
+        }
+
+        $url = Route::has('home') ? route('home') : url('/');
+
+        if (
+            class_exists(Locales::class)
+            && SitePageResolver::localizationEnabled()
+            && ! Locales::usesUrlPrefix()
+        ) {
+            return LocaleSwitcher::appendLocaleQuery($url, $locale);
+        }
+
+        return $url;
+    }
+
+    public static function page(SitePage $page): string
+    {
+        if ($page->is_home) {
+            return self::home($page->locale);
+        }
+
+        if (! Route::has('vpress.pages.show')) {
+            return url('/pages/'.$page->slug);
+        }
+
+        return route('vpress.pages.show', ['slug' => $page->slug]);
     }
 
     public static function login(): string

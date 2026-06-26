@@ -1,0 +1,8 @@
+/**
+ * {{ name }} — documentation / tutorial theme.
+ * Uses the shared doc layout; customize colors in Settings → Themes.
+ */
+
+html[data-vpress-sub-theme='{{ id }}'] {
+    --width-vp-content: 48rem;
+}

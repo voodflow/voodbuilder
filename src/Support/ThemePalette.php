@@ -11,25 +11,17 @@ final class ThemePalette
     private const HEADER_CHROME_CSS = <<<'CSS'
 html[data-vpress-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
 html[data-vpress-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-muted)!important}
-html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *)):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *)):not(.vpress-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--color-vp-brand-1)!important}
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *)){color:var(--vx-header-text)!important}
-html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
-html[data-vpress-sub-theme] header[role='banner'] [data-vpress-search] button:hover{color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
+html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
+html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-1,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .font-medium,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']{color:var(--vx-menu-text,var(--color-vp-text-1))!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-2{color:var(--vx-menu-text-muted,var(--color-vp-text-2))!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-3{color:var(--vx-menu-text-subtle,var(--color-vp-text-3))!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-brand-1{color:var(--color-vp-brand-1)!important}
 html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] a:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] button[role='menuitem']:hover{color:var(--color-vp-brand-1)!important}
-CSS;
-
-    /**
-     * vtuts/vdocs ship their own --vp-c-* tokens in an inline stylesheet loaded in <head>.
-     * Re-map them on <html> after all bundles so admin palette overrides win.
-     */
-    private const TOKEN_BRIDGE_CSS = <<<'CSS'
-html[data-vpress-sub-theme]{--vp-c-brand-1:var(--color-vp-brand-1);--vp-c-brand-2:var(--color-vp-brand-2);--vp-c-brand-3:var(--color-vp-brand-3);--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);--vp-c-bg:var(--color-vp-bg);--vp-c-bg-alt:var(--color-vp-bg-alt);--vp-c-bg-soft:var(--color-vp-bg-alt);--vp-c-bg-elv:var(--color-vp-bg-elv);--vp-c-text-1:var(--color-vp-text-1);--vp-c-text-2:var(--color-vp-text-2);--vp-c-text-3:var(--color-vp-text-3)}
 CSS;
 
     /** @var list<string> */
@@ -69,7 +61,7 @@ CSS;
     public static function css(): string
     {
         $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
-        $rules = [self::HEADER_CHROME_CSS, self::TOKEN_BRIDGE_CSS];
+        $rules = [self::HEADER_CHROME_CSS, self::tokenBridgeCss('html[data-vpress-sub-theme]')];
 
         foreach ($colors as $subThemeId => $palette) {
             $lightRule = self::buildRule((string) $subThemeId, $palette['light'], false);
@@ -93,33 +85,34 @@ CSS;
     }
 
     /**
-     * GrapesJS canvas iframe: apply the active sub-theme palette without relying on
-     * data-vpress-sub-theme being present before external stylesheets load.
+     * GrapesJS canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
+     * Does not rely on data-vpress-sub-theme being present before external stylesheets load.
      */
     public static function cssForCanvas(string $subThemeId): string
     {
+        $rules = [
+            self::tokenBridgeCss('html'),
+            ...self::builtinSubThemeRulesForCanvas($subThemeId),
+        ];
+
         $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
         $palette = $colors[$subThemeId] ?? null;
 
-        if ($palette === null) {
-            return '';
+        if (is_array($palette)) {
+            $lightRule = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+
+            if ($lightRule !== null) {
+                $rules[] = $lightRule;
+            }
+
+            $darkRule = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+
+            if ($darkRule !== null) {
+                $rules[] = $darkRule;
+            }
         }
 
-        $rules = [];
-
-        $lightRule = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
-
-        if ($lightRule !== null) {
-            $rules[] = $lightRule;
-        }
-
-        $darkRule = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
-
-        if ($darkRule !== null) {
-            $rules[] = $darkRule;
-        }
-
-        return implode("\n", $rules);
+        return implode("\n", array_filter($rules));
     }
 
     public static function headerChromeCss(): string
@@ -306,5 +299,120 @@ CSS;
                 '--vx-menu-text-muted' => '#67676c',
                 '--vx-menu-text-subtle' => '#929295',
             ];
+    }
+
+    private static function tokenBridgeCss(string $selector): string
+    {
+        return $selector.'{--vp-c-brand-1:var(--color-vp-brand-1);--vp-c-brand-2:var(--color-vp-brand-2);--vp-c-brand-3:var(--color-vp-brand-3);--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);--vp-c-bg:var(--color-vp-bg);--vp-c-bg-alt:var(--color-vp-bg-alt);--vp-c-bg-soft:var(--color-vp-bg-alt);--vp-c-bg-elv:var(--color-vp-bg-elv);--vp-c-text-1:var(--color-vp-text-1);--vp-c-text-2:var(--color-vp-text-2);--vp-c-text-3:var(--color-vp-text-3)}';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function builtinSubThemeRulesForCanvas(string $subThemeId): array
+    {
+        $cssPath = self::resolveSubThemeCssFile($subThemeId);
+
+        if ($cssPath === null || ! is_readable($cssPath)) {
+            return [];
+        }
+
+        $css = (string) file_get_contents($cssPath);
+        $rules = [];
+
+        $lightRule = self::variablesToCanvasRule(
+            'html:not(.dark)',
+            self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+        );
+
+        if ($lightRule !== null) {
+            $rules[] = $lightRule;
+        }
+
+        $darkRule = self::variablesToCanvasRule(
+            'html.dark',
+            self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+        );
+
+        if ($darkRule !== null) {
+            $rules[] = $darkRule;
+        }
+
+        return $rules;
+    }
+
+    private static function resolveSubThemeCssFile(string $subThemeId): ?string
+    {
+        $cssPath = app(SubThemeRegistry::class)->cssPath($subThemeId);
+
+        if (! is_string($cssPath) || $cssPath === '') {
+            return null;
+        }
+
+        if (str_starts_with($cssPath, 'themes/')) {
+            return VpressPaths::packagePath().'/resources/'.$cssPath;
+        }
+
+        if (str_starts_with($cssPath, 'resources/')) {
+            return base_path($cssPath);
+        }
+
+        $absolute = base_path($cssPath);
+
+        return is_file($absolute) ? $absolute : null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function parseSubThemeVariableBlock(string $css, string $subThemeId, bool $dark): array
+    {
+        $quotedId = preg_quote($subThemeId, '/');
+        $patterns = $dark
+            ? [
+                "/html\\.dark\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
+                "/html\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\.dark\\s*\\{([^}]+)\\}/s",
+            ]
+            : [
+                "/html\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
+            ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $css, $matches) !== 1) {
+                continue;
+            }
+
+            $variables = [];
+
+            if (preg_match_all('/--([\w-]+)\s*:\s*([^;]+);/', $matches[1], $declarations, PREG_SET_ORDER) !== false) {
+                foreach ($declarations as $declaration) {
+                    $variables['--'.$declaration[1]] = trim($declaration[2]);
+                }
+            }
+
+            if ($variables !== []) {
+                return $variables;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     */
+    private static function variablesToCanvasRule(string $selector, array $variables): ?string
+    {
+        if ($variables === []) {
+            return null;
+        }
+
+        $declarations = [];
+
+        foreach ($variables as $property => $value) {
+            $declarations[] = "{$property}:{$value}!important";
+        }
+
+        return "{$selector}{".implode(';', $declarations).'}';
     }
 }

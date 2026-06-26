@@ -2,5 +2,6 @@
 /storage/tailblocks-extract-entry.mjs
 /storage/tailblocks-extract.bundle.mjs
 /vendor/
+/node_modules/
 composer.lock
 .phpunit.result.cache

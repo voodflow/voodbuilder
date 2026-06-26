@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build:theme-map": "node bin/build-theme-map.js",
+        "dev:theme-map": "node bin/build-theme-map.js --dev"
+    },
+    "dependencies": {
+        "@xyflow/react": "^12.11.1",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.0"
+    }
+}

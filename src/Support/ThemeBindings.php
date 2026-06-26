@@ -67,10 +67,26 @@ final class ThemeBindings
      */
     public static function selectOptionsForChannel(string $channelId, ?string $includeId = null): array
     {
-        return app(SubThemeRegistry::class)->optionsForCapability(
-            self::requiredCapabilityForChannelId($channelId),
-            $includeId,
-        );
+        $registry = app(SubThemeRegistry::class);
+        $capability = self::requiredCapabilityForChannelId($channelId);
+        $options = $registry->optionsForCapability($capability, $includeId);
+
+        if ($options !== []) {
+            return $options;
+        }
+
+        $options = $registry->marketingOptions($includeId);
+
+        if ($options !== []) {
+            return $options;
+        }
+
+        return $registry->contentOptions($includeId);
+    }
+
+    public static function siteThemeLabel(): string
+    {
+        return app(SubThemeRegistry::class)->label(SubThemeResolver::siteDefault());
     }
 
     public static function effectiveThemeForChannelId(string $channelId): string
@@ -101,18 +117,6 @@ final class ThemeBindings
         foreach ($overrides as $channelId => $theme) {
             if (is_string($channelId) && is_string($theme) && filled($theme)) {
                 $expanded[$channelId] = $theme;
-            }
-        }
-
-        foreach (app(ContentChannelRegistry::class)->all() as $channel) {
-            if (! self::shouldShowChannelBinding($channel)) {
-                continue;
-            }
-
-            $channelId = $channel->id();
-
-            if (! filled($expanded[$channelId] ?? null)) {
-                $expanded[$channelId] = self::effectiveThemeForChannelId($channelId);
             }
         }
 

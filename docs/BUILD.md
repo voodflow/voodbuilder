@@ -58,6 +58,7 @@ npm run build
 | `vpress:make-subtheme` (adds `@import`) | **Yes** |
 | Edit `theme.css`, landing.css, events/blog/news CSS | **Yes** |
 | Edit GrapesJS `editor.js` | **Yes** |
+| Edit theme-map React (`resources/js/theme-map/`) | **Yes** — see below |
 | `vpress:build-tailblocks` | **Yes** (regenerates catalog + utilities scan) |
 | Blade layout only (no new Tailwind classes) | Usually no |
 | New Tailwind classes in Blade | **Yes** (Tailwind scans `@source` paths) |
@@ -67,6 +68,24 @@ Development:
 ```bash
 npm run dev
 ```
+
+### Theme map (Filament Settings → Themes)
+
+The theme assignment UI is a **standalone React Flow bundle** inside vpress. It does **not** use voodflow or the host app Vite entries.
+
+```bash
+cd packages/voodflow/vpress   # or vendor/voodflow/vpress
+npm install
+npm run build:theme-map       # output: resources/dist/theme-map.js
+```
+
+Watch mode during development:
+
+```bash
+npm run dev:theme-map
+```
+
+Commit `resources/dist/theme-map.js` when shipping the package, or run the build in CI before deploy.
 
 ---
 

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Voodflow\Vpress\Enums\MenuItemType;
 use Voodflow\Vpress\Support\NavigationMenuItemTree;
+use Voodflow\Vpress\Support\SitePageResolver;
 
 class NavigationMenuItem extends Model
 {
@@ -185,27 +186,26 @@ class NavigationMenuItem extends Model
         $page = SitePage::query()->where('slug', $this->link)->first();
 
         if ($page?->is_home) {
-            return request()->routeIs('home');
+            return request()->routeIs('home', 'home.localized');
         }
 
         if ($page?->isSectionHome() && filled($page->section)) {
+            $resolved = SitePageResolver::publishedForMenu((string) request()->route('slug'));
+
             return request()->routeIs('vpress.pages.show')
-                && SitePage::query()
-                    ->where('slug', request()->route('slug'))
-                    ->where('section', $page->section)
-                    ->exists();
+                && $resolved !== null
+                && $resolved->section === $page->section
+                && $resolved->section_home;
         }
 
         return request()->routeIs('vpress.pages.show')
-            && request()->route('slug') === $this->link;
+            && SitePageResolver::publishedForMenu((string) $this->link)?->getKey()
+                === SitePageResolver::publishedForMenu((string) request()->route('slug'))?->getKey();
     }
 
     protected function resolvePageUrl(): string
     {
-        $page = SitePage::query()
-            ->published()
-            ->where('slug', $this->link)
-            ->first();
+        $page = SitePageResolver::publishedForMenu((string) $this->link);
 
         return $page?->getUrl() ?? '#';
     }

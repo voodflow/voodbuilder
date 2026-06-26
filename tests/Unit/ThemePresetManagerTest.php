@@ -26,9 +26,9 @@ class ThemePresetManagerTest extends TestCase
 
         $preset->apply();
 
-        $this->assertSame('default', VpressSettings::get('sub_theme'));
+        $this->assertSame('docs', VpressSettings::get('sub_theme'));
         $this->assertSame('documentation-only', VpressSettings::get('active_theme_preset_id'));
-        $this->assertSame('default', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
+        $this->assertSame('docs', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
     }
 
     public function test_export_and_import_roundtrip(): void
@@ -36,7 +36,7 @@ class ThemePresetManagerTest extends TestCase
         VpressSettings::saveData([
             'sub_theme' => 'site',
             'content_channel_sub_themes' => [
-                'docs' => 'default',
+                'docs' => 'docs',
             ],
             'sub_theme_colors' => [],
         ]);
@@ -47,14 +47,14 @@ class ThemePresetManagerTest extends TestCase
         ThemePresetManager::exportToFile($snapshot, $path);
 
         VpressSettings::saveData([
-            'sub_theme' => 'default',
+            'sub_theme' => 'docs',
             'content_channel_sub_themes' => [],
         ]);
 
         ThemePresetManager::importFromFile($path, apply: true, saveCustom: true);
 
         $this->assertSame('site', VpressSettings::get('sub_theme'));
-        $this->assertSame('default', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
+        $this->assertSame('docs', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
         $this->assertNotNull(ThemePresetManager::find('roundtrip'));
     }
 }

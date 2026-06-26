@@ -1,0 +1,258 @@
+.vpress-tm {
+    --vp-tm-radius: 0.75rem;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.vpress-tm__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: rgb(100 116 139);
+    max-width: 44rem;
+}
+
+.dark .vpress-tm__hint {
+    color: rgb(148 163 184);
+}
+
+.vpress-tm__canvas {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 300px;
+    border-radius: var(--vp-tm-radius);
+    overflow: hidden;
+    border: 1px solid rgb(226 232 240);
+    background: linear-gradient(135deg, rgb(248 250 252) 0%, rgb(241 245 249) 100%);
+}
+
+.vpress-tm__canvas .react-flow {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+}
+
+.vpress-tm__canvas .react-flow__viewport {
+    width: 100%;
+    height: 100%;
+}
+
+.dark .vpress-tm__canvas {
+    border-color: rgb(51 65 85);
+    background: linear-gradient(135deg, rgb(15 23 42) 0%, rgb(30 41 59) 100%);
+}
+
+.vpress-tm .react-flow__pane {
+    cursor: grab;
+}
+
+.vpress-tm .react-flow__pane:active {
+    cursor: grabbing;
+}
+
+.vpress-tm .react-flow__node {
+    cursor: grab;
+}
+
+.vpress-tm .react-flow__node.dragging {
+    cursor: grabbing;
+}
+
+.vpress-tm-node {
+    width: 200px;
+    border-radius: 0.625rem;
+    border: 1px solid rgb(226 232 240);
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px rgb(15 23 42 / 0.04);
+    overflow: hidden;
+}
+
+.dark .vpress-tm-node {
+    border-color: rgb(71 85 105);
+    background: rgb(30 41 59);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.vpress-tm-node--theme {
+    border-top: 3px solid var(--vp-tm-accent, #ea580c);
+}
+
+.vpress-tm-node--area {
+    border-left: 3px solid var(--vp-tm-accent, #64748b);
+    background: color-mix(in srgb, var(--vp-tm-surface, #f8fafc) 88%, white);
+}
+
+.dark .vpress-tm-node--area {
+    background: color-mix(in srgb, var(--vp-tm-surface, #1e293b) 70%, rgb(30 41 59));
+}
+
+.vpress-tm-node__strip {
+    display: flex;
+    height: 4px;
+}
+
+.vpress-tm-node__strip span {
+    flex: 1;
+}
+
+.vpress-tm-node__body {
+    padding: 0.625rem 0.75rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.vpress-tm-node__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+    line-height: 1.3;
+}
+
+.dark .vpress-tm-node__title {
+    color: rgb(248 250 252);
+}
+
+.vpress-tm-node__meta,
+.vpress-tm-node__routes {
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: rgb(100 116 139);
+}
+
+.dark .vpress-tm-node__meta,
+.dark .vpress-tm-node__routes {
+    color: rgb(148 163 184);
+}
+
+.vpress-tm-node__routes {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    opacity: 0.9;
+}
+
+.vpress-tm-node__badge {
+    display: inline-flex;
+    align-self: flex-start;
+    margin-top: 0.15rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: rgb(100 116 139);
+    background: rgb(241 245 249);
+}
+
+.dark .vpress-tm-node__badge {
+    color: rgb(203 213 225);
+    background: rgb(51 65 85);
+}
+
+.vpress-tm-node__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.15rem;
+}
+
+.vpress-tm-node__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: rgb(100 116 139);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.vpress-tm-node__action:hover {
+    background: rgb(241 245 249);
+    color: rgb(51 65 85);
+}
+
+.dark .vpress-tm-node__action:hover {
+    background: rgb(51 65 85);
+    color: rgb(226 232 240);
+}
+
+.vpress-tm-node__action svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.vpress-tm-handle {
+    width: 0.5rem !important;
+    height: 0.5rem !important;
+    border: 2px solid #fff !important;
+    background: var(--vp-tm-accent, #ea580c) !important;
+    box-shadow: 0 0 0 1px rgb(148 163 184 / 0.5);
+}
+
+.vpress-tm-edge__path {
+    stroke: rgb(51 65 85);
+    stroke-width: 2;
+}
+
+.dark .vpress-tm-edge__path {
+    stroke: rgb(203 213 225);
+}
+
+.vpress-tm-edge__path--inherited {
+    stroke-dasharray: 6 5;
+    stroke: rgb(148 163 184);
+    stroke-width: 1.75;
+}
+
+.vpress-tm-edge__path--selected {
+    stroke: #ea580c;
+    stroke-width: 2.5;
+}
+
+.vpress-tm__legend-item--hint {
+    margin-left: auto;
+    opacity: 0.85;
+}
+
+.vpress-tm__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin-top: 0;
+    font-size: 0.6875rem;
+    color: rgb(100 116 139);
+}
+
+.dark .vpress-tm__legend {
+    color: rgb(148 163 184);
+}
+
+.vpress-tm__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.vpress-tm__legend-line {
+    display: inline-block;
+    width: 1.5rem;
+    height: 0;
+    border-top: 2px solid rgb(51 65 85);
+}
+
+.vpress-tm__legend-line--inherited {
+    border-top-style: dashed;
+    border-color: rgb(148 163 184);
+}
+
+.dark .vpress-tm__legend-line {
+    border-color: rgb(203 213 225);
+}

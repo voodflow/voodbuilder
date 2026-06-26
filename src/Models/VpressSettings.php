@@ -114,6 +114,7 @@ class VpressSettings extends Model
     protected static function migrateLegacyThemeColorKeys(array $colors): array
     {
         $legacyMap = [
+            'default' => SubThemeResolver::DEFAULT,
             'events' => SubThemeResolver::SITE,
             'blog' => SubThemeResolver::DEFAULT,
             'news' => SubThemeResolver::DEFAULT,

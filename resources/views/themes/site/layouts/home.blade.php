@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="vpress-site-shell">
-        <div class="vpress-site-content">
+        <div class="vpress-home-shell vpress-landing-shell">
             @yield('home')
         </div>
     </div>

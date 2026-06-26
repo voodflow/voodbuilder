@@ -13,6 +13,8 @@ use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\MenuRouteCatalog;
 use Voodflow\Vpress\Support\MenuRouteParameterField;
 use Voodflow\Vpress\Support\ResolvableLinkSupport;
+use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Vtuts\Support\Locales;
 
 final class ResolvableLinkForm
 {
@@ -136,10 +138,15 @@ final class ResolvableLinkForm
     {
         return SitePage::query()
             ->orderByDesc('is_home')
+            ->orderBy('locale')
             ->orderBy('title')
             ->get()
             ->mapWithKeys(function (SitePage $page): array {
                 $label = $page->title;
+
+                if (SitePageResolver::localizationEnabled()) {
+                    $label .= ' ('.strtoupper((string) $page->locale).')';
+                }
 
                 if ($page->is_home) {
                     $label .= ' ('.__('Home').')';

@@ -40,6 +40,7 @@ use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\ThemeMapAssets;
 use Voodflow\Vpress\Support\VpressLandingBlocks;
 use Voodflow\Vpress\Support\VpressSeo;
 
@@ -95,6 +96,10 @@ class VpressServiceProvider extends PackageServiceProvider
 
         Livewire::component('vpress.site-notification-bell', SiteNotificationBell::class);
         Livewire::component('vpress.account-settings', AccountSettings::class);
+        Livewire::component('vpress.themes-workspace', \Voodflow\Vpress\Filament\Livewire\ThemesWorkspace::class);
+        Livewire::component('vpress.theme-map-bridge', \Voodflow\Vpress\Filament\Livewire\ThemeMapBridge::class);
+
+        ThemeMapAssets::register();
 
         if (config('vpress.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();

@@ -48,7 +48,7 @@ class ThemeBindingsTest extends TestCase
 
     public function test_effective_theme_uses_package_default(): void
     {
-        $this->assertSame('default', ThemeBindings::effectiveThemeForChannelId('docs'));
+        $this->assertSame('docs', ThemeBindings::effectiveThemeForChannelId('docs'));
     }
 
     public function test_effective_theme_falls_back_to_site_pages_layout_without_package_default(): void
@@ -67,7 +67,7 @@ class ThemeBindingsTest extends TestCase
     {
         $expanded = ThemeBindings::expandChannelThemesForForm([]);
 
-        $this->assertSame('default', $expanded['docs'] ?? null);
+        $this->assertSame('docs', $expanded['docs'] ?? null);
     }
 
     public function test_select_options_for_channel_has_no_automatic_entry(): void
@@ -75,6 +75,6 @@ class ThemeBindingsTest extends TestCase
         $options = ThemeBindings::selectOptionsForChannel('docs');
 
         $this->assertArrayNotHasKey('', $options);
-        $this->assertArrayHasKey('default', $options);
+        $this->assertArrayHasKey('docs', $options);
     }
 }

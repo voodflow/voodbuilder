@@ -183,6 +183,14 @@
 }
 
 @layer components {
+    .vpress-header-icon-btn {
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1;
+    }
+
+    .vpress-header-icon-btn svg {
+        @apply h-5 w-5;
+    }
+
     .vp-doc {
         @apply text-base leading-7 text-vp-text-1;
     }
@@ -542,3 +550,6 @@ html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *)) {
     color: var(--vx-header-text) !important;
 }
+@import '../../../../../resources/vpress/themes/documenti/theme.css';
+@import '../../../../../resources/vpress/themes/landing-custom/theme.css';
+@import '../../../../../resources/vpress/themes/tutorials/theme.css';

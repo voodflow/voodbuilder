@@ -31,7 +31,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Voodflow\\Vpress\\Tests\\": "tests/"
+            "Voodflow\\Vpress\\Tests\\": "tests/",
+            "Voodflow\\Vtuts\\": "../vtuts/src/"
         }
     },
     "require-dev": {

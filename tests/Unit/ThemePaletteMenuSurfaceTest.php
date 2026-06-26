@@ -13,13 +13,13 @@ class ThemePaletteMenuSurfaceTest extends TestCase
     public function test_it_preserves_readable_menu_text_when_body_text_is_light(): void
     {
         config()->set('vpress.sub_themes', [
-            'default' => ['label' => 'Documentation'],
+            'docs' => ['label' => 'Documentation'],
         ]);
 
         VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+            'data' => array_merge(VpressSettings::docss(), [
                 'sub_theme_colors' => [
-                    'default' => [
+                    'docs' => [
                         'light' => [
                             'text' => '#ffffff',
                             'body_bg' => '#d9d9d9',

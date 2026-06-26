@@ -1,7 +1,11 @@
 @extends(config('vpress.layouts.app', 'vpress::layouts.app'))
 
+@section('body_class')
+    @yield('body_class_extra')
+@endsection
+
 @section('content')
-    <div class="mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24">
+    <div class="vpress-home-shell vpress-landing-shell vpress-full-width-shell">
         @yield('home')
     </div>
 @endsection

@@ -22,7 +22,7 @@ final class SubThemeCloner
         $sourceId = Str::kebab($sourceId);
         $targetId = Str::kebab($targetId);
 
-        if ($targetId === '' || $targetId === 'default' || ! preg_match('/^[a-z][a-z0-9-]*$/', $targetId)) {
+        if ($targetId === '' || in_array($targetId, ['default', 'docs'], true) || ! preg_match('/^[a-z][a-z0-9-]*$/', $targetId)) {
             return new SubThemeImportResult(false, $targetId, 'Invalid theme id.');
         }
 
@@ -35,11 +35,15 @@ final class SubThemeCloner
         }
 
         if (SubThemeLocator::resolve($sourceId) === null) {
-            return new SubThemeImportResult(
-                false,
-                $targetId,
-                "Source theme \"{$sourceId}\" has no exportable files.",
-            );
+            if (! app(SubThemeRegistry::class)->exists($sourceId)) {
+                return new SubThemeImportResult(
+                    false,
+                    $targetId,
+                    "Source theme \"{$sourceId}\" was not found.",
+                );
+            }
+
+            return self::cloneFromDefinition($sourceId, $targetId, $label, $importColors);
         }
 
         $archivePath = storage_path('app/vpress-theme-exports/.clone-'.uniqid('', true).'.zip');
@@ -81,5 +85,43 @@ final class SubThemeCloner
                 unlink($archivePath);
             }
         }
+    }
+
+    protected static function cloneFromDefinition(
+        string $sourceId,
+        string $targetId,
+        ?string $label,
+        bool $importColors,
+    ): SubThemeImportResult {
+        $definition = SubThemeLocator::definitionFor($sourceId);
+        $resolvedLabel = filled($label)
+            ? trim((string) $label)
+            : (($definition['label'] ?? $sourceId).' copy');
+
+        $scaffold = SubThemeScaffolder::createFromDefinition($targetId, $resolvedLabel, $definition);
+
+        if (! $scaffold->success) {
+            return new SubThemeImportResult(false, $targetId, $scaffold->error);
+        }
+
+        $colorsImported = false;
+
+        if ($importColors) {
+            $sourceColors = SubThemeLocator::appearanceColorsFor($sourceId);
+
+            if ($sourceColors !== null) {
+                SubThemeImporter::importAppearanceColorsFor($scaffold->id, $sourceColors);
+                $colorsImported = true;
+            }
+        }
+
+        return new SubThemeImportResult(
+            success: true,
+            id: $scaffold->id,
+            configRegistered: $scaffold->configRegistered,
+            importAppended: $scaffold->importAppended,
+            colorsImported: $colorsImported,
+            cssPath: $scaffold->cssPath,
+        );
     }
 }

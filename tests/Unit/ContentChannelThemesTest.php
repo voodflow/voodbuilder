@@ -102,7 +102,7 @@ class ContentChannelThemesTest extends TestCase
         VpressSettings::query()->create([
             'data' => array_merge(VpressSettings::defaults(), [
                 'content_channel_sub_themes' => [
-                    'events' => 'default',
+                    'events' => 'docs',
                 ],
             ]),
         ]);
@@ -120,12 +120,23 @@ class ContentChannelThemesTest extends TestCase
             'events' => 'showcase-alt',
             'broken' => 'nope',
             'pages' => '',
-            'docs' => 'default',
+            'docs' => 'docs',
         ]);
 
         $this->assertSame([
             'events' => 'showcase-alt',
-            'docs' => 'default',
+            'docs' => 'docs',
         ], $normalized);
+    }
+
+    public function test_it_falls_back_to_package_channel_defaults_when_app_config_omits_them(): void
+    {
+        config()->set('vpress.content_channel_defaults', [
+            'blog' => 'site',
+        ]);
+
+        $this->assertSame('docs', ContentChannelThemes::configuredDefaultFor('docs'));
+        $this->assertSame('docs', ContentChannelThemes::configuredDefaultFor('tutorials'));
+        $this->assertNull(ContentChannelThemes::configuredDefaultFor('blog'));
     }
 }

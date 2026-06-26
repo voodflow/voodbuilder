@@ -13,8 +13,8 @@ final class SubThemeScaffolder
     {
         $id = Str::kebab($name);
 
-        if ($id === '' || $id === 'default') {
-            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "default".');
+        if ($id === '' || in_array($id, ['default', 'docs'], true)) {
+            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs".');
         }
 
         if (! preg_match('/^[a-z][a-z0-9-]*$/', $id)) {
@@ -77,6 +77,79 @@ final class SubThemeScaffolder
             importAppended: $importAppended,
             cssPath: $cssPath,
         );
+    }
+
+    public static function createDoc(string $name, string $label, bool $force = false): SubThemeScaffoldResult
+    {
+        $id = Str::kebab($name);
+
+        if ($id === '' || in_array($id, ['default', 'docs'], true)) {
+            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs".');
+        }
+
+        if (! preg_match('/^[a-z][a-z0-9-]*$/', $id)) {
+            return new SubThemeScaffoldResult(false, $id, 'Use lowercase letters, numbers, and hyphens only.');
+        }
+
+        if (app(SubThemeRegistry::class)->exists($id) && ! $force) {
+            return new SubThemeScaffoldResult(false, $id, "Theme \"{$id}\" already exists.");
+        }
+
+        $label = trim($label) !== '' ? trim($label) : str($id)->headline()->toString();
+        $themeRoot = dirname(ThemeConvention::appCssPath($id));
+        $cssPath = ThemeConvention::appCssPath($id);
+
+        if (File::isDirectory($themeRoot) && ! $force) {
+            return new SubThemeScaffoldResult(
+                false,
+                $id,
+                "Theme directory already exists: {$themeRoot}",
+            );
+        }
+
+        File::ensureDirectoryExists($themeRoot);
+
+        $replacements = [
+            '{{ id }}' => $id,
+            '{{ name }}' => $label,
+        ];
+
+        self::writeStub('theme-doc.css.stub', $cssPath, $replacements, $force);
+
+        $definition = [
+            'label' => $label,
+            'description' => "Custom {$label} documentation theme.",
+            'type' => 'content',
+            'capabilities' => ['doc'],
+            'css' => ThemeConvention::appCssRelativePath($id),
+        ];
+
+        $configRegistered = ConfigureSubThemesForVpress::registerInConfig($id, $definition);
+        $importAppended = AppendThemeStylesheetImport::append($cssPath);
+        SyncThemeStylesheetImports::sync();
+
+        app(SubThemeRegistry::class)->register($id, $definition);
+
+        return new SubThemeScaffoldResult(
+            success: true,
+            id: $id,
+            configRegistered: $configRegistered,
+            importAppended: $importAppended,
+            cssPath: $cssPath,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     */
+    public static function createFromDefinition(string $id, string $label, array $definition, bool $force = false): SubThemeScaffoldResult
+    {
+        $capabilities = is_array($definition['capabilities'] ?? null) ? $definition['capabilities'] : [];
+        $isDoc = in_array('doc', $capabilities, true);
+
+        return $isDoc
+            ? self::createDoc($id, $label, $force)
+            : self::create($id, $label, $force);
     }
 
     /**

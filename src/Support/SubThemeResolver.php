@@ -9,12 +9,13 @@ use Voodflow\Vpress\Models\VpressSettings;
 
 final class SubThemeResolver
 {
-    public const DEFAULT = 'default';
+    public const DEFAULT = 'docs';
 
     public const SITE = 'site';
 
     /** @var array<string, string> */
     private const LEGACY_IDS = [
+        'default' => self::DEFAULT,
         'events' => self::SITE,
         'blog' => self::DEFAULT,
         'news' => self::DEFAULT,

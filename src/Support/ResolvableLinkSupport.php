@@ -7,6 +7,7 @@ namespace Voodflow\Vpress\Support;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Vpress\Enums\ResolvableLinkType;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\SitePageResolver;
 
 final class ResolvableLinkSupport
 {
@@ -242,10 +243,7 @@ final class ResolvableLinkSupport
 
     protected static function resolvePageUrl(string $slug): ?string
     {
-        $page = SitePage::query()
-            ->published()
-            ->where('slug', $slug)
-            ->first();
+        $page = SitePageResolver::publishedForMenu($slug);
 
         $url = $page?->getUrl();
 

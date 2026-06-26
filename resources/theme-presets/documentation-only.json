@@ -4,10 +4,10 @@
     "label": "Documentation only",
     "description": "Docs and tutorials with the default VitePress-style theme. No marketing showcase styling.",
     "bundled": true,
-    "site_pages_theme": "default",
+    "site_pages_theme": "docs",
     "channel_themes": {
-        "docs": "default",
-        "tutorials": "default"
+        "docs": "docs",
+        "tutorials": "docs"
     },
     "colors": {}
 }

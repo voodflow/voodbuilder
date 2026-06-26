@@ -25,10 +25,52 @@ final class ContentChannelThemes
         $default = config("vpress.content_channel_defaults.{$channelId}");
 
         if (! is_string($default) || ! filled($default)) {
+            $default = self::packageChannelDefaults()[$channelId] ?? null;
+        }
+
+        if (! is_string($default) || ! filled($default)) {
             return null;
         }
 
         return SubThemeResolver::normalize($default);
+    }
+
+    /**
+     * Package defaults survive when the host app's published config replaces the
+     * merged `content_channel_defaults` array (Laravel array_merge is not recursive).
+     *
+     * @return array<string, string>
+     */
+    public static function packageChannelDefaults(): array
+    {
+        static $defaults = null;
+
+        if (is_array($defaults)) {
+            return $defaults;
+        }
+
+        $path = VpressPaths::packagePath().'/config/vpress.php';
+
+        if (! is_file($path)) {
+            $defaults = [];
+
+            return $defaults;
+        }
+
+        /** @var array<string, mixed> $config */
+        $config = require $path;
+        $raw = $config['content_channel_defaults'] ?? [];
+        $defaults = [];
+
+        if (is_array($raw)) {
+            foreach ($raw as $channelId => $themeId) {
+                if (is_string($channelId) && is_string($themeId) && filled($themeId)) {
+                    $defaults[$channelId] = $themeId;
+                }
+            }
+        }
+
+        return $defaults;
     }
 
     public static function overrideFor(string $channelId): ?string

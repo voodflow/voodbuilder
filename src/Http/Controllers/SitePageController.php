@@ -8,20 +8,24 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Routing\Controller;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\PageBuilderAccess;
+use Voodflow\Vpress\Support\SitePageResolver;
 use Voodflow\Vpress\Support\SitePageViewData;
 
 class SitePageController extends Controller
 {
     public function show(string $slug): View
     {
-        $page = SitePage::query()
-            ->where('slug', $slug)
-            ->where('is_home', false)
-            ->when(
-                ! PageBuilderAccess::userCanUsePageBuilder(),
-                fn ($query) => $query->published(),
-            )
-            ->firstOrFail();
+        $page = SitePageResolver::publishedFromSlug($slug);
+
+        if ($page->is_home) {
+            abort(404);
+        }
+
+        if (! PageBuilderAccess::userCanUsePageBuilder() && ! $page->published) {
+            abort(404);
+        }
+
+        app()->setLocale($page->locale);
 
         seo()->for($page);
 

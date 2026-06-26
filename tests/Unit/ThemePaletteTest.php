@@ -26,7 +26,7 @@ class ThemePaletteTest extends TestCase
     public function it_builds_css_for_custom_sub_theme_colors(): void
     {
         config()->set('vpress.sub_themes', [
-            'default' => ['label' => 'Default'],
+            'docs' => ['label' => 'Default'],
         ]);
 
         $css = ThemePalette::css();
@@ -36,7 +36,7 @@ class ThemePaletteTest extends TestCase
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
 
         $normalized = ThemePalette::normalize([
-            'default' => [
+            'docs' => [
                 'custom' => true,
                 'light' => [
                     'primary' => '#111111',
@@ -49,8 +49,8 @@ class ThemePaletteTest extends TestCase
             ],
         ]);
 
-        $this->assertTrue($normalized['default']['custom']);
-        $this->assertSame('#111111', $normalized['default']['light']['primary']);
+        $this->assertTrue($normalized['docs']['custom']);
+        $this->assertSame('#111111', $normalized['docs']['light']['primary']);
     }
 
     #[Test]
@@ -61,7 +61,7 @@ class ThemePaletteTest extends TestCase
         ]);
 
         \Voodflow\Vpress\Models\VpressSettings::query()->create([
-            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::defaults(), [
+            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -77,7 +77,24 @@ class ThemePaletteTest extends TestCase
         $css = ThemePalette::cssForCanvas('site');
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
+        $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
         $this->assertStringNotContainsString("data-vpress-sub-theme='site'", $css);
+    }
+
+    #[Test]
+    public function it_includes_builtin_sub_theme_tokens_in_canvas_css_without_admin_overrides(): void
+    {
+        config()->set('vpress.sub_themes', [
+            'site' => [
+                'label' => 'Site',
+                'css' => 'themes/site/theme.css',
+            ],
+        ]);
+
+        $css = ThemePalette::cssForCanvas('site');
+
+        $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#c8102e!important', $css);
+        $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
     }
 
     #[Test]
@@ -88,7 +105,7 @@ class ThemePaletteTest extends TestCase
         ]);
 
         \Voodflow\Vpress\Models\VpressSettings::query()->create([
-            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::defaults(), [
+            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [

@@ -7,6 +7,8 @@ namespace Voodflow\Vpress\Support;
 use Illuminate\Support\Collection;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Vtuts\Support\Locales;
 
 final class SitePagesContentChannel implements PublicContentChannel
 {
@@ -42,6 +44,10 @@ final class SitePagesContentChannel implements PublicContentChannel
 
         return SitePage::query()
             ->published()
+            ->when(
+                class_exists(Locales::class),
+                fn ($query) => $query->where('locale', SitePageResolver::preferredLocale()),
+            )
             ->where(function ($query) use ($like): void {
                 $query->where('title', 'like', $like)
                     ->orWhere('slug', 'like', $like);

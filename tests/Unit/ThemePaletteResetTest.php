@@ -14,13 +14,13 @@ class ThemePaletteResetTest extends TestCase
     public function test_it_resets_custom_colors_for_a_theme(): void
     {
         config()->set('vpress.sub_themes', [
-            'default' => ['label' => 'Documentation'],
+            'docs' => ['label' => 'Documentation'],
         ]);
 
         VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+            'data' => array_merge(VpressSettings::docss(), [
                 'sub_theme_colors' => [
-                    'default' => [
+                    'docs' => [
                         'light' => [
                             'primary' => '#111111',
                             'text' => '#ffffff',
@@ -31,16 +31,16 @@ class ThemePaletteResetTest extends TestCase
         ]);
         VpressSettings::clearCache();
 
-        $this->assertTrue(ThemePalette::themeHasCustomColors('default'));
+        $this->assertTrue(ThemePalette::themeHasCustomColors('docs'));
 
-        ThemePalette::resetForTheme('default');
+        ThemePalette::resetForTheme('docs');
 
-        $this->assertFalse(ThemePalette::themeHasCustomColors('default'));
+        $this->assertFalse(ThemePalette::themeHasCustomColors('docs'));
         $this->assertStringNotContainsString('--color-vp-text-1:#ffffff', ThemePalette::css());
     }
 
     public function test_it_labels_bundled_themes_without_a_separate_css_file(): void
     {
-        $this->assertSame('package', SubThemeLocator::originFor('default'));
+        $this->assertSame('package', SubThemeLocator::originFor('docs'));
     }
 }

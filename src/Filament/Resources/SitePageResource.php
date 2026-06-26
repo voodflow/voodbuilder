@@ -23,17 +23,23 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\Rules\Unique;
 use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\CreateSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
+use Voodflow\Vpress\Support\SitePageResolver;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\SubThemeResolver;
 use Voodflow\Vpress\Support\ThemeBindings;
+use Voodflow\Vtuts\Support\Locales;
 
 class SitePageResource extends Resource
 {
@@ -73,7 +79,13 @@ class SitePageResource extends Resource
 
                                 TextInput::make('slug')
                                     ->maxLength(255)
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(
+                                        ignoreRecord: true,
+                                        modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
+                                            'locale',
+                                            $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
+                                        ),
+                                    )
                                     ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
 
                                 Textarea::make('excerpt')
@@ -146,45 +158,122 @@ class SitePageResource extends Resource
 
                                 Toggle::make('is_home')
                                     ->label(__('Home page'))
-                                    ->helperText(__('Only one page can be the home page.'))
-                                    ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home)
-                                    ->dehydrated(),
+                                    ->helperText(__('vpress::admin.helpers.home_page_locale'))
+                                    ->live(),
 
-                                Select::make('layout')
-                                    ->options([
-                                        'landing' => __('vpress::landing.layouts.landing'),
-                                        'home' => __('Home (full width)'),
-                                        'page' => __('Standard page'),
-                                    ])
-                                    ->default('page')
+                                Select::make('locale')
+                                    ->label(__('vpress::admin.fields.language'))
+                                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
+                                    ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                                    ->required()
                                     ->native(false)
-                                    ->helperText(fn (Get $get): ?string => $get('layout') === 'landing'
-                                        ? __('vpress::landing.layouts.landing_help')
-                                        : null)
                                     ->live()
-                                    ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
+                                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
 
-                                Toggle::make('hide_site_footer')
-                                    ->label(__('vpress::landing.layouts.hide_site_footer'))
-                                    ->helperText(__('vpress::landing.layouts.hide_site_footer_help'))
-                                    ->visible(fn (Get $get): bool => in_array($get('layout'), ['landing', 'home'], true)),
+                                Placeholder::make('translation_links')
+                                    ->label(__('vpress::admin.fields.translations'))
+                                    ->content(function (?SitePage $record): HtmlString|string {
+                                        if ($record === null || blank($record->translation_group_id)) {
+                                            return __('vpress::admin.translation.none_yet');
+                                        }
 
-                                Toggle::make('hide_site_nav')
-                                    ->label(__('vpress::landing.layouts.hide_site_nav'))
-                                    ->helperText(__('vpress::landing.layouts.hide_site_nav_help'))
-                                    ->visible(fn (Get $get): bool => in_array($get('layout'), ['landing', 'home'], true)),
+                                        $siblings = SitePage::query()
+                                            ->where('translation_group_id', $record->translation_group_id)
+                                            ->whereKeyNot($record->getKey())
+                                            ->orderBy('locale')
+                                            ->get();
 
-                                Select::make('sub_theme')
-                                    ->label(__('vpress::admin.fields.sub_theme'))
-                                    ->options(fn (?SitePage $record): array => [
-                                        '' => __('vpress::admin.fields.sub_theme_inherit'),
-                                        ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
-                                    ])
-                                    ->default(null)
-                                    ->nullable()
-                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
-                                    ->native(false)
-                                    ->helperText(__('vpress::admin.helpers.sub_theme_page')),
+                                        if ($siblings->isEmpty()) {
+                                            return __('vpress::admin.translation.none_yet');
+                                        }
+
+                                        $links = $siblings
+                                            ->map(function (SitePage $page): string {
+                                                $label = class_exists(Locales::class)
+                                                    ? (Locales::options()[$page->locale] ?? $page->locale)
+                                                    : $page->locale;
+                                                $url = static::getUrl('edit', ['record' => $page]);
+
+                                                return '<a href="'.e($url).'" class="text-primary-600 hover:underline">'.e($label).'</a>';
+                                            })
+                                            ->implode(' · ');
+
+                                        return new HtmlString($links);
+                                    })
+                                    ->visibleOn('edit')
+                                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+
+                                Section::make(__('vpress::admin.sections.appearance'))
+                                    ->collapsed()
+                                    ->schema([
+                                        Select::make('layout')
+                                            ->options([
+                                                'page' => __('Standard page'),
+                                                'full_width' => __('vpress::landing.layouts.full_width'),
+                                            ])
+                                            ->default('page')
+                                            ->native(false)
+                                            ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
+                                                static::formUsesFullWidthLayout($get, $record) => __('vpress::landing.layouts.full_width_help'),
+                                                (bool) $record?->is_home => __('vpress::admin.helpers.home_page_layout'),
+                                                default => null,
+                                            })
+                                            ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
+                                                if ($record !== null && in_array($record->layout, ['home', 'landing', 'full_width'], true)) {
+                                                    $component->state('full_width');
+                                                }
+                                            })
+                                            ->dehydrateStateUsing(function (?string $state, Get $get, ?SitePage $record): string {
+                                                if ($state !== 'full_width') {
+                                                    return $state ?? 'page';
+                                                }
+
+                                                if ($record?->is_home || (bool) $get('is_home')) {
+                                                    return 'home';
+                                                }
+
+                                                return 'full_width';
+                                            })
+                                            ->live(),
+
+                                        Toggle::make('hide_site_footer')
+                                            ->label(__('vpress::landing.layouts.hide_site_footer'))
+                                            ->helperText(__('vpress::landing.layouts.hide_site_footer_help'))
+                                            ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
+
+                                        Toggle::make('hide_site_nav')
+                                            ->label(__('vpress::landing.layouts.hide_site_nav'))
+                                            ->helperText(__('vpress::landing.layouts.hide_site_nav_help'))
+                                            ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
+
+                                        Select::make('sub_theme')
+                                            ->label(__('vpress::admin.fields.sub_theme'))
+                                            ->options(fn (?SitePage $record): array => [
+                                                '' => __('vpress::admin.fields.sub_theme_inherit'),
+                                                ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
+                                            ])
+                                            ->default(null)
+                                            ->nullable()
+                                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
+                                            ->native(false)
+                                            ->helperText(function (Get $get, ?SitePage $record): string {
+                                                $siteTheme = ThemeBindings::siteThemeLabel();
+                                                $message = __('vpress::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
+
+                                                $subTheme = filled($get('sub_theme'))
+                                                    ? (string) $get('sub_theme')
+                                                    : SubThemeResolver::siteDefault();
+
+                                                if (
+                                                    static::formUsesFullWidthLayout($get, $record)
+                                                    && $subTheme === SubThemeResolver::DEFAULT
+                                                ) {
+                                                    return $message.' '.__('vpress::admin.helpers.sub_theme_marketing_recommended');
+                                                }
+
+                                                return $message;
+                                            }),
+                                    ]),
                             ]),
                     ])
                     ->columnSpan(['lg' => 1]),
@@ -196,7 +285,22 @@ class SitePageResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('slug')->searchable(),
+                TextColumn::make('slug')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('locale')
+                    ->label(__('vpress::admin.fields.language'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => class_exists(Locales::class) && is_string($state)
+                        ? (Locales::options()[$state] ?? strtoupper($state))
+                        : (string) $state)
+                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                TextColumn::make('translations')
+                    ->label(__('vpress::admin.fields.translations'))
+                    ->badge()
+                    ->state(fn (SitePage $record): array => $record->otherTranslationLocaleCodes())
+                    ->placeholder('—')
+                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
                 TextColumn::make('builder')
                     ->label(__('vpress::pro.fields.builder'))
                     ->badge()
@@ -213,7 +317,10 @@ class SitePageResource extends Resource
                     ->color(fn (?string $state): string => filled($state) ? 'info' : 'gray'),
                 IconColumn::make('is_home')->label(__('Home'))->boolean(),
                 IconColumn::make('published')->boolean(),
-                TextColumn::make('updated_at')->dateTime()->sortable(),
+                TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -224,6 +331,66 @@ class SitePageResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
+            ->filters([
+                TernaryFilter::make('is_home')
+                    ->label(__('vpress::admin.filters.is_home'))
+                    ->trueLabel(__('vpress::admin.filters.yes'))
+                    ->falseLabel(__('vpress::admin.filters.no'))
+                    ->placeholder(__('vpress::admin.filters.any')),
+                TernaryFilter::make('published')
+                    ->label(__('vpress::admin.filters.published'))
+                    ->trueLabel(__('vpress::admin.filters.yes'))
+                    ->falseLabel(__('vpress::admin.filters.no'))
+                    ->placeholder(__('vpress::admin.filters.any')),
+                SelectFilter::make('builder')
+                    ->label(__('vpress::admin.filters.builder'))
+                    ->options(PageBuilder::options()),
+                SelectFilter::make('layout')
+                    ->label(__('vpress::admin.filters.layout'))
+                    ->options([
+                        'page' => __('Standard page'),
+                        'full_width' => __('vpress::landing.layouts.full_width'),
+                        'home' => __('Home'),
+                        'landing' => __('vpress::landing.layouts.landing'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
+                        if (blank($value)) {
+                            return $query;
+                        }
+
+                        if ($value === 'full_width') {
+                            return $query->whereIn('layout', ['home', 'landing', 'full_width']);
+                        }
+
+                        return $query->where('layout', $value);
+                    }),
+                SelectFilter::make('sub_theme')
+                    ->label(__('vpress::admin.filters.sub_theme'))
+                    ->options(fn (): array => [
+                        '__inherit__' => __('vpress::admin.filters.sub_theme_inherit'),
+                        ...app(SubThemeRegistry::class)->options(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
+                        if (blank($value)) {
+                            return $query;
+                        }
+
+                        if ($value === '__inherit__') {
+                            return $query->whereNull('sub_theme');
+                        }
+
+                        return $query->where('sub_theme', $value);
+                    }),
+                SelectFilter::make('locale')
+                    ->label(__('vpress::admin.fields.language'))
+                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
+                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+            ])
+            ->filtersFormColumns(2)
             ->defaultSort('title');
     }
 
@@ -239,5 +406,14 @@ class SitePageResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
+    }
+
+    protected static function formUsesFullWidthLayout(Get $get, ?SitePage $record): bool
+    {
+        if ($get('layout') === 'full_width') {
+            return true;
+        }
+
+        return $record?->usesFullWidthLayout() ?? false;
     }
 }

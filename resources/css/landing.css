@@ -15,6 +15,19 @@
     @apply w-full;
 }
 
+.vpress-home-shell {
+    @apply w-full;
+}
+
+.vpress-home-shell:not(:has(.VPRichPage--landing)):not(:has(.vpress-grapesjs-mode)) {
+    @apply mx-auto max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24;
+}
+
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode) {
+    @apply max-w-none p-0;
+}
+
 .VPRichPage--landing {
     @apply w-full;
 }

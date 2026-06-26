@@ -24,6 +24,16 @@ class SiteChromeTest extends TestCase
         $this->assertTrue(SiteChrome::shouldHideFooter($page));
     }
 
+    public function test_grapesjs_editor_keeps_site_navigation_visible(): void
+    {
+        $page = new SitePage([
+            'layout' => 'home',
+            'sub_theme' => 'site',
+        ]);
+
+        $this->assertFalse(SiteChrome::shouldHideNav($page, grapesJsEditor: true));
+    }
+
     public function test_sub_theme_chrome_defaults_apply_on_landing_layout(): void
     {
         $this->app->make(SubThemeRegistry::class)->register('chrome-demo', [

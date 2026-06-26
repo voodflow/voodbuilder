@@ -17,7 +17,7 @@
 >
     <button
         type="button"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
+        class="vpress-header-icon-btn"
         aria-haspopup="menu"
         :aria-expanded="open"
         aria-label="{{ __('vpress::nav.menu_aria') }}"
@@ -26,7 +26,7 @@
         @if ($avatarUrl)
             <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
         @else
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
         @endif

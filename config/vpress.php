@@ -10,6 +10,7 @@ return [
     'layouts' => [
         'app' => 'vpress::layouts.app',
         'doc' => 'vpress::layouts.doc',
+        'full_width' => 'vpress::layouts.full-width',
         'home' => 'vpress::layouts.home',
         'landing' => 'vpress::layouts.landing',
         'page' => 'vpress::layouts.page',
@@ -22,22 +23,17 @@ return [
     | See Voodflow\Vpress\Support\ThemeConvention.
     */
     'sub_themes' => [
-        'default' => [
+        'docs' => [
             'label' => 'Documentation',
-            'description' => 'VitePress-style layout for docs and tutorials.',
+            'description' => 'Included in vpress for documentation sites and tutorials.',
             'type' => 'content',
             'capabilities' => ['doc'],
         ],
         'site' => [
-            'label' => 'Site',
-            'description' => 'Public site layout with optional dark header, landing pages, and card grids.',
+            'label' => 'Landing page',
+            'description' => 'Included in vpress for marketing pages, home, and site sections.',
             'type' => 'marketing',
             'capabilities' => ['landing'],
-            'layouts' => [
-                'home' => 'vpress::themes.site.layouts.home',
-                'landing' => 'vpress::themes.site.layouts.landing',
-                'page' => 'vpress::themes.site.layouts.page',
-            ],
             'css' => 'themes/site/theme.css',
             'chrome' => [
                 'hide_site_nav' => false,
@@ -53,8 +49,8 @@ return [
     'content_channel_capabilities' => [
         'docs' => 'doc',
         'tutorials' => 'doc',
-        'blog' => 'article',
-        'news' => 'article',
+        'blog' => 'landing',
+        'news' => 'landing',
         'events' => 'landing',
         'exhibitors' => 'landing',
         'pages' => 'landing',
@@ -67,8 +63,8 @@ return [
     'content_channel_defaults' => [
         'events' => 'site',
         'exhibitors' => 'site',
-        'tutorials' => 'default',
-        'docs' => 'default',
+        'tutorials' => 'docs',
+        'docs' => 'docs',
     ],
 
     /*

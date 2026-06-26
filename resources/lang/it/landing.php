@@ -205,6 +205,8 @@ return [
     ],
 
     'layouts' => [
+        'full_width' => 'Tutta larghezza (marketing)',
+        'full_width_help' => 'Canvas a tutta larghezza per GrapesJS e blocchi landing. Nascondi nav/footer del sito se la pagina ha il proprio chrome.',
         'landing' => 'Landing (senza margini)',
         'landing_help' => 'Canvas a tutta larghezza per i blocchi landing. Nascondi il footer del sito se usi un blocco footer landing.',
         'hide_site_footer' => 'Nascondi footer del sito',

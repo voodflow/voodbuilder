@@ -14,14 +14,14 @@
     <div class="flex items-center" data-vpress-search>
         <button
             type="button"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
+            class="vpress-header-icon-btn"
             data-vpress-search-open
             aria-haspopup="dialog"
             aria-controls="vpress-search-dialog"
             aria-expanded="false"
             aria-label="{{ __('vpress::search.button') }}"
         >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
         </button>

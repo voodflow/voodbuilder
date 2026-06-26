@@ -10,10 +10,6 @@ final class SiteChrome
 {
     public static function shouldHideNav(?SitePage $page = null, bool $grapesJsEditor = false): bool
     {
-        if ($grapesJsEditor) {
-            return true;
-        }
-
         if ($page?->shouldHideSiteNav()) {
             return true;
         }

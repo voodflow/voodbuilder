@@ -1,0 +1,1 @@
+<livewire:vpress.themes-workspace />
