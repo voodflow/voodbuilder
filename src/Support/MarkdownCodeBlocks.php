@@ -36,6 +36,15 @@ final class MarkdownCodeBlocks
         return implode("\n", $lines);
     }
 
+    public static function fromPlainCode(string $language, string $code): string
+    {
+        $language = self::normalizeLanguage($language);
+        $escaped = e($code);
+        $body = '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$escaped.'</code></pre>';
+
+        return self::shell($language, $body, 'raw');
+    }
+
     public static function enhance(string $html, ?string $markdown = null): string
     {
         if ($html === '') {

@@ -276,6 +276,31 @@ After CSS changes: `npm run build`.
 
 ---
 
+## Editor UI (Vpress shell)
+
+The frontend builder uses a **custom 3-column shell** on top of GrapesJS — no patches to `node_modules`:
+
+| Column | Content |
+|--------|---------|
+| **Left** | Block library + search |
+| **Center** | Device toolbar + canvas |
+| **Right** | Inspector tabs: Content / Style / Dynamic / Layers |
+
+Implementation lives in `resources/js/grapesjs/editor-layout.js`, `resources/css/grapesjs/editor-theme.css`, and `resources/js/grapesjs/editor-icons.js`.
+
+Toolbar icons use [Lucide](https://lucide.dev) (ISC License — commercial-friendly), inlined to avoid extra npm dependencies in distributions.
+
+The theme remaps GrapesJS `--gjs-*` variables to Vpress tokens (`--color-vp-*`, `--vx-*`), replacing the default brown UI.
+
+### Surviving GrapesJS upgrades
+
+1. Pin `grapesjs` in `package.json` (semver range, not `*`)
+2. Never edit files inside `node_modules/grapesjs`
+3. Customise only via public APIs: `Panels`, `Commands`, `appendTo`, events
+4. After `npm update`, smoke-test: open `?edit=1`, drag a block, bind a field, save, reload
+
+---
+
 ## Saving and rendering
 
 Saved payload: `html`, `css`, `project` (GrapesJS JSON) on the Site Page record.

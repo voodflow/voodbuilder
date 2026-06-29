@@ -18,6 +18,13 @@ final class BindingRegistry
         return $this;
     }
 
+    public function forget(string $sourceId): self
+    {
+        unset($this->sources[$sourceId]);
+
+        return $this;
+    }
+
     public function has(string $sourceId): bool
     {
         return array_key_exists($sourceId, $this->sources);
@@ -70,6 +77,10 @@ final class BindingRegistry
 
     public function resolve(string $bindingKey, BindingContext $context): ?string
     {
+        if ($context->repeatItem !== null && str_contains($bindingKey, '.latest.')) {
+            $bindingKey = str_replace('.latest.', '.item.', $bindingKey);
+        }
+
         $parsed = BindingKey::tryParse($bindingKey, $this);
 
         if ($parsed === null) {

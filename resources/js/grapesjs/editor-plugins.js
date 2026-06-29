@@ -23,6 +23,27 @@ export function resolveGrapesJsPlugins(enabled = {}) {
         }
 
         plugins.push(plugin);
+
+        if (plugin === grapesjsTabs) {
+            pluginsOpts[plugin] = {
+                tabsBlock: {
+                    label: 'Tabs section',
+                    category: 'Sections · Content',
+                },
+            };
+
+            continue;
+        }
+
+        if (plugin === grapesjsCustomCode) {
+            // Keep component type for legacy pages; block lives under Sections · Content.
+            pluginsOpts[plugin] = {
+                blockCustomCode: false,
+            };
+
+            continue;
+        }
+
         pluginsOpts[plugin] = {};
     }
 

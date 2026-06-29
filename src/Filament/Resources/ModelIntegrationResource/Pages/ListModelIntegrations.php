@@ -1,0 +1,19 @@
+<?php
+
+namespace Voodflow\Vpress\Filament\Resources\ModelIntegrationResource\Pages;
+
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
+use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource;
+
+class ListModelIntegrations extends ListRecords
+{
+    protected static string $resource = ModelIntegrationResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()->slideOver(),
+        ];
+    }
+}

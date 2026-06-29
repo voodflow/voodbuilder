@@ -240,10 +240,27 @@ return [
             'directory' => 'vpress/grapesjs',
             'max_size' => 4096,
         ],
-        'include_vpress_blocks' => true,
-        'include_landing_blocks' => true,
+        'include_vpress_blocks' => false,
+        'include_landing_blocks' => false,
+        'site_blocks' => [
+            'header_footer' => true,
+            'hide_section_chrome' => true,
+        ],
+        'vpress_footers' => [
+            'enabled' => true,
+        ],
+        'sections' => [
+            'enabled' => env('VPRESS_SECTIONS_ENABLED', true),
+            'modes' => ['adaptive'],
+        ],
+        'builder' => [
+            'brand' => env('VPRESS_BUILDER_BRAND', 'VoodBuilder'),
+        ],
+        'model_integrations' => [
+            'excluded_models' => [],
+        ],
         'tailblocks' => [
-            'enabled' => env('VPRESS_TAILBLOCKS_ENABLED', true),
+            'enabled' => false,
             'theme' => env('VPRESS_TAILBLOCKS_THEME', 'indigo'),
             'modes' => ['adaptive'],
         ],

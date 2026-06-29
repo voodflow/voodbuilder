@@ -41,7 +41,7 @@ main > :where(.mx-auto, .vpress-site-shell, .vpress-home-shell, .vpress-landing-
 }
 
 .VPRichPage--landing > section.vpress-gjs-section:empty {
-    @apply min-h-[min(50vh,32rem)];
+    @apply hidden m-0 min-h-0 p-0;
 }
 
 /* Escape nested .container wrappers when blocks were dropped inside footer columns. */

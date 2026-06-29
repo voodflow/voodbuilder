@@ -3,21 +3,11 @@
  * Uses only the public GrapesJS API (Panels, Commands, Devices).
  */
 
+import { lucideIcon } from './editor-icons.js';
+
 const CMD_DEVICE_DESKTOP = 'vpress-set-device-desktop';
 const CMD_DEVICE_TABLET = 'vpress-set-device-tablet';
 const CMD_DEVICE_MOBILE = 'vpress-set-device-mobile';
-
-const ICON_STYLE = 'style="display:block;max-width:22px"';
-
-const DEVICE_DESKTOP_ICON = `<svg ${ICON_STYLE} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/></svg>`;
-
-const DEVICE_TABLET_ICON = `<svg ${ICON_STYLE} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18 0H6a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM6 2h12v16H6V2z"/></svg>`;
-
-const DEVICE_MOBILE_ICON = `<svg ${ICON_STYLE} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 1H8a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H8V5h8v14z"/></svg>`;
-
-const UNDO_ICON = `<svg ${ICON_STYLE} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
-
-const REDO_ICON = `<svg ${ICON_STYLE} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>`;
 
 export const STYLE_MANAGER_SECTORS = [
     {
@@ -81,18 +71,18 @@ export function editorChromeInitOptions() {
                 {
                     id: 'desktop',
                     name: 'Desktop',
-                    width: '',
+                    width: '100%',
                 },
                 {
                     id: 'tablet',
                     name: 'Tablet',
-                    width: '768px',
-                    widthMedia: '992px',
+                    width: '834px',
+                    widthMedia: '1024px',
                 },
                 {
                     id: 'mobilePortrait',
                     name: 'Mobile',
-                    width: '375px',
+                    width: '390px',
                     widthMedia: '480px',
                 },
             ],
@@ -138,28 +128,37 @@ function syncDeviceButtons(editor) {
     }
 }
 
-function addToolbarButtons(editor) {
+function syncDeviceShellAttribute(editor, shellRoot) {
+    if (! shellRoot) {
+        return;
+    }
+
+    const deviceId = editor.Devices.getSelected()?.get('id') ?? 'desktop';
+    shellRoot.dataset.vpressDevice = deviceId;
+}
+
+function addToolbarButtons(editor, labels = {}) {
     const { Panels } = editor;
 
     const deviceButtons = [
         {
             id: 'vpress-device-desktop',
             command: CMD_DEVICE_DESKTOP,
-            label: DEVICE_DESKTOP_ICON,
-            title: 'Desktop',
+            label: lucideIcon('monitor'),
+            title: labels.deviceDesktop ?? 'Desktop',
             active: true,
         },
         {
             id: 'vpress-device-tablet',
             command: CMD_DEVICE_TABLET,
-            label: DEVICE_TABLET_ICON,
-            title: 'Tablet',
+            label: lucideIcon('tablet'),
+            title: labels.deviceTablet ?? 'Tablet',
         },
         {
             id: 'vpress-device-mobile',
             command: CMD_DEVICE_MOBILE,
-            label: DEVICE_MOBILE_ICON,
-            title: 'Mobile',
+            label: lucideIcon('smartphone'),
+            title: labels.deviceMobile ?? 'Mobile',
         },
     ];
 
@@ -168,6 +167,7 @@ function addToolbarButtons(editor) {
             id: button.id,
             command: button.command,
             label: button.label,
+            className: 'vpress-gjs-pn-btn',
             togglable: true,
             active: button.active ?? false,
             attributes: { title: button.title },
@@ -176,24 +176,49 @@ function addToolbarButtons(editor) {
 
     Panels.addButton('options', {
         id: 'undo',
-        label: UNDO_ICON,
+        label: lucideIcon('undo-2'),
+        className: 'vpress-gjs-pn-btn',
         command: 'core:undo',
-        attributes: { title: 'Undo (Ctrl/Cmd+Z)' },
+        attributes: { title: labels.undo ?? 'Undo (Ctrl/Cmd+Z)' },
     });
 
     Panels.addButton('options', {
         id: 'redo',
-        label: REDO_ICON,
+        label: lucideIcon('redo-2'),
+        className: 'vpress-gjs-pn-btn',
         command: 'core:redo',
-        attributes: { title: 'Redo (Ctrl/Cmd+Shift+Z)' },
+        attributes: { title: labels.redo ?? 'Redo (Ctrl/Cmd+Shift+Z)' },
+    });
+
+    Panels.addButton('options', {
+        id: 'sw-visibility',
+        label: lucideIcon('box-select'),
+        className: 'vpress-gjs-pn-btn',
+        command: 'core:component-outline',
+        context: 'sw-visibility',
+        attributes: { title: labels.outline ?? 'Show element outlines' },
+    });
+
+    Panels.addButton('options', {
+        id: 'preview',
+        label: lucideIcon('eye'),
+        className: 'vpress-gjs-pn-btn',
+        command: 'preview',
+        context: 'preview',
+        attributes: { title: labels.preview ?? 'Preview' },
     });
 }
 
-export function configureEditorChrome(editor) {
+export function configureEditorChrome(editor, options = {}) {
     registerDeviceCommands(editor);
-    addToolbarButtons(editor);
+    addToolbarButtons(editor, options.labels ?? {});
 
-    const sync = () => syncDeviceButtons(editor);
+    const shellRoot = options.shellRoot ?? null;
+    const sync = () => {
+        syncDeviceButtons(editor);
+        syncDeviceShellAttribute(editor, shellRoot);
+        window.requestAnimationFrame(() => editor.refresh());
+    };
 
     editor.on('load', sync);
     editor.on('device:select', sync);

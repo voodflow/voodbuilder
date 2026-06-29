@@ -9,6 +9,7 @@ use Filament\Panel;
 use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Vpress\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Vpress\Filament\Pages\VpressSettingsPage;
+use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource;
 use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
 use Voodflow\Vpress\Filament\Resources\SitePageResource;
 
@@ -26,7 +27,10 @@ class VpressPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $resources = [NavigationMenuResource::class];
+        $resources = [
+            NavigationMenuResource::class,
+            ModelIntegrationResource::class,
+        ];
 
         if (config('vpress.pages.enabled', true)) {
             $resources[] = SitePageResource::class;

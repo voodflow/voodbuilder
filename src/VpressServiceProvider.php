@@ -38,17 +38,23 @@ use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
 use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Vpress\Support\GrapesJs\Bindings\BuiltinBindingSources;
-use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\SiteFooterBlocks;
 use Voodflow\Vpress\Support\GrapesJs\SiteHeaderGrapesJsBlock;
-use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
-use Voodflow\Vpress\Support\GrapesJs\VpressLandingGrapesJsBlocks;
+use Voodflow\Vpress\Support\GrapesJs\VpressSectionGrapesJsBlocks;
+use Illuminate\Support\Facades\Gate;
+use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Vpress\Policies\ModelIntegrationPolicy;
 use Voodflow\Vpress\Support\RegisterFilamentCookieConsentTranslations;
+use Voodflow\Vpress\Support\ModelRegistry;
+use Voodflow\Vpress\Support\ReverseRelationRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
 use Voodflow\Vpress\Support\SitePagesContentChannel;
 use Voodflow\Vpress\Support\SubThemeRegistry;
@@ -88,6 +94,11 @@ class VpressServiceProvider extends PackageServiceProvider
         $this->app->singleton(GrapesJsDynamicBlockRegistry::class);
         $this->app->singleton(GrapesJsServerBlockRegistry::class);
         $this->app->singleton(BindingRegistry::class);
+        $this->app->singleton(ModelRegistry::class);
+        $this->app->singleton(ReverseRelationRegistry::class);
+        $this->app->singleton(ModelIntegrationRegistry::class);
+        $this->app->singleton(ModelIntegrationListResolver::class);
+        $this->app->singleton(ModelIntegrationBindingRegistrar::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
     }
@@ -95,6 +106,8 @@ class VpressServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         RegisterFilamentCookieConsentTranslations::apply();
+
+        Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
@@ -171,27 +184,19 @@ class VpressServiceProvider extends PackageServiceProvider
         $this->app->booted(function (): void {
             $registry = $this->app->make(GrapesJsBlockRegistry::class);
 
-            if (config('vpress.grapesjs.include_vpress_blocks', true)) {
-                DefaultGrapesJsBlocks::register($registry);
+            if (config('vpress.grapesjs.site_blocks.header_footer', true)) {
+                $serverRegistry = $this->app->make(GrapesJsServerBlockRegistry::class);
+                $serverRegistry->register('Site', SiteHeaderGrapesJsBlock::class);
+
+                foreach (SiteFooterBlocks::blockClasses() as $footerBlockClass) {
+                    $serverRegistry->register('Site', $footerBlockClass);
+                }
+
+                $serverRegistry->registerEditorBlocks($registry);
             }
 
-            $serverRegistry = $this->app->make(GrapesJsServerBlockRegistry::class);
-            $serverRegistry->register('Vpress', SiteHeaderGrapesJsBlock::class);
-
-            foreach (SiteFooterBlocks::blockClasses() as $footerBlockClass) {
-                $serverRegistry->register('Vpress', $footerBlockClass);
-            }
-
-            $serverRegistry->registerEditorBlocks($registry);
-
-            $this->app->make(GrapesJsDynamicBlockRegistry::class)->registerEditorBlocks($registry);
-
-            if (config('vpress.grapesjs.include_landing_blocks', true)) {
-                VpressLandingGrapesJsBlocks::register();
-            }
-
-            if (config('vpress.grapesjs.tailblocks.enabled', true)) {
-                TailblocksGrapesJsBlocks::register($registry);
+            if (config('vpress.grapesjs.sections.enabled', true)) {
+                VpressSectionGrapesJsBlocks::register($registry);
             }
         });
     }
@@ -199,7 +204,10 @@ class VpressServiceProvider extends PackageServiceProvider
     protected function registerGrapesJsBindings(): void
     {
         $this->app->booted(function (): void {
-            BuiltinBindingSources::register($this->app->make(BindingRegistry::class));
+            $registry = $this->app->make(BindingRegistry::class);
+
+            BuiltinBindingSources::register($registry);
+            $this->app->make(ModelIntegrationBindingRegistrar::class)->refreshFromDatabase();
         });
     }
 }

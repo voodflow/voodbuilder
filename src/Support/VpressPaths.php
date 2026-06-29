@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Support;
 
-use Voodflow\Vpress\Support\GrapesJs\TailblocksGrapesJsBlocks;
+use Voodflow\Vpress\Support\GrapesJs\VpressSectionGrapesJsBlocks;
 
 final class VpressPaths
 {
@@ -55,8 +55,8 @@ final class VpressPaths
             self::grapesJsEditorCssEntry(),
         ];
 
-        if (TailblocksGrapesJsBlocks::isAvailable()) {
-            $entries[] = TailblocksGrapesJsBlocks::utilitiesCssEntry();
+        if (VpressSectionGrapesJsBlocks::isAvailable()) {
+            $entries[] = VpressSectionGrapesJsBlocks::utilitiesCssEntry();
         }
 
         return $entries;
@@ -71,8 +71,8 @@ final class VpressPaths
             self::themeCssRelativePath(),
         ];
 
-        if (TailblocksGrapesJsBlocks::isAvailable()) {
-            $entries[] = TailblocksGrapesJsBlocks::utilitiesCssEntry();
+        if (VpressSectionGrapesJsBlocks::isAvailable()) {
+            $entries[] = VpressSectionGrapesJsBlocks::utilitiesCssEntry();
         }
 
         return $entries;

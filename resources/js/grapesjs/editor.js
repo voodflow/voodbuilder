@@ -11,10 +11,12 @@ import 'grapesjs/dist/css/grapes.min.css';
 import vpressGrapesJsPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
+    ensureTailblocksSectionTraits,
     isSiteFooterBlock,
     lockDynamicPreviewContent,
     prioritizeBlockCategories,
     pruneEmptyDynamicBlocks,
+    pruneEmptySections,
     refreshDynamicSlots,
     registerBlocks,
     sanitizeBlockHtml,
@@ -22,9 +24,12 @@ import vpressGrapesJsPlugin, {
 } from './plugins/vpress-grapesjs.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './vpress-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
+import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { registerBindingsUi } from './bindings-ui.js';
-import { editorChromeInitOptions } from './editor-chrome.js';
+import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
+import { buildEditorShell, collapseBlockCategories, configureEditorLayout, editorLayoutInitOptions } from './editor-layout.js';
+import { applyLightBlockPreviews } from './editor-block-previews.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -147,16 +152,24 @@ function applyCanvasDocumentTheme(editor, subTheme) {
 
 export function initVpressGrapesJs(container, options = {}) {
     const initial = options.initial ?? {};
+    const labels = options.labels ?? {};
+    const useLayout = options.layout !== false;
+    const shell = useLayout ? buildEditorShell(container, labels, {
+        exitUrl: options.exitUrl,
+        brand: options.builderBrand ?? 'VoodBuilder',
+    }) : null;
+    const layoutOptions = shell ? editorLayoutInitOptions(shell.mounts) : {};
+    const editorContainer = shell?.mounts.canvas ?? container;
     const chromeOptions = editorChromeInitOptions();
     const pluginBundle = resolveGrapesJsPlugins(options.plugins ?? {});
     const editorOptions = {
-        container,
+        container: editorContainer,
         height: options.height ?? '640px',
         width: options.width ?? 'auto',
         fromElement: false,
         storageManager: false,
         noticeOnUnload: options.noticeOnUnload ?? false,
-        showDevices: chromeOptions.showDevices,
+        showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
         plugins: [grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
         pluginsOpts: {
@@ -190,16 +203,22 @@ export function initVpressGrapesJs(container, options = {}) {
               }
             : false,
         blockManager: {
-            appendTo: options.blocksAppendTo ?? undefined,
+            ...(layoutOptions.blockManager ?? {}),
+            appendTo: options.blocksAppendTo ?? layoutOptions.blockManager?.appendTo ?? undefined,
         },
         layerManager: {
             showWrapper: true,
+            ...(layoutOptions.layerManager ?? {}),
         },
+        traitManager: layoutOptions.traitManager ?? undefined,
         selectorManager: {
             componentFirst: true,
+            ...(layoutOptions.selectorManager ?? {}),
         },
-        styleManager: chromeOptions.styleManager,
-        panels: options.panels ?? undefined,
+        styleManager: {
+            ...(layoutOptions.styleManager ?? chromeOptions.styleManager),
+        },
+        panels: options.panels ?? layoutOptions.panels ?? undefined,
     };
 
     if (initial.pageManager && typeof initial.pageManager === 'object') {
@@ -216,11 +235,22 @@ export function initVpressGrapesJs(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
+    if (shell) {
+        configureEditorLayout(editor, shell, labels);
+    }
+
+    configureEditorChrome(editor, {
+        labels,
+        shellRoot: shell?.shell ?? null,
+    });
+
     configureGrapesJsPlugins(editor, {
         formSubmitUrl: options.formSubmitUrl,
         csrf: options.csrf,
         plugins: options.plugins ?? {},
     });
+
+    configureVpressCodeBlock(editor);
 
     applyCanvasDocumentTheme(editor, options.subTheme);
     ensureInitialContent(editor, initial);
@@ -229,11 +259,15 @@ export function initVpressGrapesJs(container, options = {}) {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
+        ensureTailblocksSectionTraits(editor);
+        pruneEmptySections(editor);
+        applyLightBlockPreviews(editor);
 
         void registerBindingsUi(editor, {
             bindingsUrl: options.bindingsUrl,
             bindingsPreviewUrl: options.bindingsPreviewUrl,
-            labels: options.bindingLabels ?? {},
+            labels: options.bindingLabels ?? labels,
+            dynamicMount: shell?.mounts?.dynamic ?? null,
         });
 
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
@@ -246,6 +280,10 @@ export function initVpressGrapesJs(container, options = {}) {
                 }
             });
         });
+    });
+
+    editor.on('component:add', () => {
+        window.requestAnimationFrame(() => pruneEmptySections(editor));
     });
 
     if (typeof options.onUpdate === 'function') {
@@ -371,6 +409,8 @@ async function loadBlocks(editor, blocksUrl) {
         const payload = await response.json();
         registerBlocks(editor, payload.blocks ?? []);
         prioritizeBlockCategories(editor);
+        collapseBlockCategories(editor);
+        applyLightBlockPreviews(editor);
     } catch (error) {
         console.error('Vpress GrapesJS: could not load block catalog.', error);
     }
@@ -401,9 +441,6 @@ function readConfig() {
 function mountFrontendEditor() {
     const root = document.querySelector('[data-vpress-grapesjs-root]');
     const canvas = document.querySelector('[data-vpress-grapesjs-canvas]');
-    const saveButton = document.querySelector('[data-vpress-grapesjs-save]');
-    const savedIndicator = document.querySelector('[data-vpress-grapesjs-saved]');
-    const saveLabel = document.querySelector('[data-vpress-grapesjs-save-label]');
     const config = readConfig();
 
     if (! root || ! canvas || ! config) {
@@ -413,6 +450,7 @@ function mountFrontendEditor() {
     const editor = initVpressGrapesJs(canvas, {
         height: '100%',
         noticeOnUnload: true,
+        exitUrl: config.exitUrl,
         initial: config.initial ?? {},
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
@@ -422,7 +460,9 @@ function mountFrontendEditor() {
         formSubmitUrl: config.formSubmitUrl,
         bindingsUrl: config.bindingsUrl,
         bindingsPreviewUrl: config.bindingsPreviewUrl,
+        labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
+        builderBrand: config.builderBrand ?? 'VoodBuilder',
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
     });
@@ -437,7 +477,13 @@ function mountFrontendEditor() {
     } else if (Array.isArray(config.blocks) && config.blocks.length > 0) {
         registerBlocks(editor, config.blocks);
         prioritizeBlockCategories(editor);
+        collapseBlockCategories(editor);
+        applyLightBlockPreviews(editor);
     }
+
+    const saveButton = document.querySelector('[data-vpress-grapesjs-save]');
+    const savedIndicator = document.querySelector('[data-vpress-grapesjs-saved]');
+    const saveLabel = document.querySelector('[data-vpress-grapesjs-save-label]');
 
     if (! saveButton) {
         return;

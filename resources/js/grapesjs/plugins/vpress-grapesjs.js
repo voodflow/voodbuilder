@@ -3,7 +3,6 @@
  * @see https://grapesjs.com/docs/modules/Plugins.html
  */
 
-import { configureEditorChrome } from '../editor-chrome.js';
 import { encodeVpressConfig, parseVpressConfig } from '../vpress-dynamic-config.js';
 
 function isSiteFooterBlock(blockId) {
@@ -471,12 +470,81 @@ function prioritizeBlockCategories(editor) {
     categories.each((category) => {
         const id = String(category.get('id') ?? category.get('label') ?? '');
 
-        if (id === 'Vpress' || id === 'Dynamic') {
+        category.set('open', false);
+
+        if (id === 'Site' || id.startsWith('Sections')) {
+            category.set('order', -80);
+        } else if (id === 'Vpress' || id === 'Dynamic') {
             category.set('order', -100);
-            category.set('open', true);
         } else if (id.startsWith('Tailblocks')) {
             category.set('order', 100);
+        } else if (id === 'Extra' || id === 'Basic' || id === 'Forms') {
+            category.set('order', 120);
         }
+    });
+}
+
+function pruneEmptySections(editor) {
+    editor.getWrapper().find('section').forEach((section) => {
+        if (section === editor.getWrapper()) {
+            return;
+        }
+
+        const hasMeaningfulChild = section.find('img, h1, h2, h3, h4, h5, h6, p, a, button, ul, ol, table, form, svg').length > 0;
+
+        if (! hasMeaningfulChild && section.components().length === 0) {
+            section.remove();
+        }
+    });
+}
+
+function ensureTailblocksSectionTraits(editor) {
+    editor.getWrapper().find('section').forEach((section) => {
+        if (! section.getClasses().includes('body-font')) {
+            return;
+        }
+
+        if (section.get('type') === 'default') {
+            section.set('type', 'vpress-tailblocks-section');
+        }
+
+        if (section.get('_vpressTraitsBound')) {
+            return;
+        }
+
+        section.set('_vpressTraitsBound', true);
+
+        const container = sectionPaddingTarget(section);
+
+        if (container && ! section.get('vpressSectionPy')) {
+            section.set('vpressSectionPy', readSectionPadding(container), { silent: true });
+        }
+
+        section.on('change:vpressSectionPy', () => {
+            applySectionPadding(section, section.get('vpressSectionPy'));
+        });
+    });
+
+    editor.getWrapper().find('div.container').forEach((container) => {
+        const parentSection = container.parent();
+
+        if (! parentSection || ! parentSection.getClasses().includes('body-font')) {
+            return;
+        }
+
+        if (container.get('_vpressTraitsBound')) {
+            return;
+        }
+
+        container.set('_vpressTraitsBound', true);
+
+        if (! container.get('vpressSectionPy')) {
+            container.set('vpressSectionPy', readSectionPadding(container), { silent: true });
+        }
+
+        container.on('change:vpressSectionPy', () => {
+            applySectionPaddingToElement(container, container.get('vpressSectionPy'));
+        });
     });
 }
 
@@ -492,6 +560,8 @@ export {
     isSiteFooterBlock,
     applyFreshFooterAttributes,
     prioritizeBlockCategories,
+    ensureTailblocksSectionTraits,
+    pruneEmptySections,
 };
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
@@ -499,7 +569,6 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerTailblocksSectionType(editor);
     registerSpacingStyleSync(editor);
     registerDynamicBlockGuards(editor);
-    configureEditorChrome(editor);
     registerBlocks(editor, options.blocks ?? []);
     prioritizeBlockCategories(editor);
 }

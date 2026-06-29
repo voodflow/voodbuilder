@@ -14,13 +14,21 @@ final class GrapesJsBindingRenderer
         private readonly BindingRegistry $registry,
     ) {}
 
-    public function render(string $html, ?SitePage $page = null): string
+    public function render(string $html, ?SitePage $page = null, mixed $repeatItem = null): string
     {
-        if ($html === '' || ! str_contains($html, 'data-vpress-bind')) {
+        if ($html === '' || (! str_contains($html, 'data-vpress-bind') && ! self::containsRepeatAttribute($html))) {
             return $html;
         }
 
-        $context = BindingContext::forPage($page);
+        if ($repeatItem === null && self::containsRepeatAttribute($html)) {
+            $html = app(GrapesJsRepeatRenderer::class)->render($html, $page);
+        }
+
+        if (! str_contains($html, 'data-vpress-bind')) {
+            return $html;
+        }
+
+        $context = BindingContext::forPage($page, $repeatItem);
         $document = $this->loadDocument($html);
 
         foreach ($this->boundElements($document) as $element) {
@@ -156,5 +164,10 @@ final class GrapesJsBindingRenderer
         }
 
         return $output;
+    }
+
+    private static function containsRepeatAttribute(string $html): bool
+    {
+        return (bool) preg_match('/\bdata-vpress-repeat\s*=/', $html);
     }
 }

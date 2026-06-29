@@ -51,6 +51,7 @@ final class GrapesJsEditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => route('vpress.grapesjs.pages.update', $page),
+            'exitUrl' => request()->url(),
             'uploadUrl' => route('vpress.grapesjs.upload'),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
@@ -65,6 +66,7 @@ final class GrapesJsEditorGate
             'subTheme' => $subTheme,
             'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
+            'builderBrand' => config('vpress.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => [
                 'save' => __('vpress::pro.frontend.save'),
                 'saving' => __('vpress::pro.frontend.saving'),
@@ -79,6 +81,37 @@ final class GrapesJsEditorGate
                 'modalCancel' => __('vpress::pro.bindings.modal_cancel'),
                 'selectComponent' => __('vpress::pro.bindings.select_component'),
                 'noSources' => __('vpress::pro.bindings.no_sources'),
+                'inspectorHint' => __('vpress::pro.bindings.inspector_hint'),
+                'currentBinding' => __('vpress::pro.bindings.current_binding'),
+                'repeatSource' => __('vpress::pro.bindings.repeat_source'),
+                'repeatLimit' => __('vpress::pro.bindings.repeat_limit'),
+                'repeatSort' => __('vpress::pro.bindings.repeat_sort'),
+                'repeatSortDir' => __('vpress::pro.bindings.repeat_sort_dir'),
+                'repeatSortAsc' => __('vpress::pro.bindings.repeat_sort_asc'),
+                'repeatSortDesc' => __('vpress::pro.bindings.repeat_sort_desc'),
+                'applyRepeat' => __('vpress::pro.bindings.apply_repeat'),
+                'clearRepeat' => __('vpress::pro.bindings.clear_repeat'),
+                'currentRepeat' => __('vpress::pro.bindings.current_repeat'),
+                'repeatList' => __('vpress::pro.bindings.repeat_list'),
+                'repeatContainerHint' => __('vpress::pro.bindings.repeat_container_hint'),
+                'bindingNeedsLeaf' => __('vpress::pro.bindings.binding_needs_leaf'),
+                'repeatContainerNoBind' => __('vpress::pro.bindings.repeat_container_no_bind'),
+                'repeatListNotField' => __('vpress::pro.bindings.repeat_list_not_field'),
+                'panelBlocks' => __('vpress::pro.editor_ui.panel_blocks'),
+                'panelInspector' => __('vpress::pro.editor_ui.panel_inspector'),
+                'blockSearch' => __('vpress::pro.editor_ui.block_search'),
+                'tabContent' => __('vpress::pro.editor_ui.tab_content'),
+                'tabStyle' => __('vpress::pro.editor_ui.tab_style'),
+                'tabDynamic' => __('vpress::pro.editor_ui.tab_dynamic'),
+                'tabLayers' => __('vpress::pro.editor_ui.tab_layers'),
+                'exitEditor' => __('vpress::pro.frontend.exit_editor'),
+                'deviceDesktop' => __('vpress::pro.editor_ui.device_desktop'),
+                'deviceTablet' => __('vpress::pro.editor_ui.device_tablet'),
+                'deviceMobile' => __('vpress::pro.editor_ui.device_mobile'),
+                'undo' => __('vpress::pro.editor_ui.undo'),
+                'redo' => __('vpress::pro.editor_ui.redo'),
+                'outline' => __('vpress::pro.editor_ui.outline'),
+                'preview' => __('vpress::pro.editor_ui.preview'),
             ],
         ];
     }
@@ -148,6 +181,7 @@ final class GrapesJsEditorGate
         $html = GrapesJsHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
         $html = GrapesJsDynamicBlockAttributeNormalizer::normalize($html);
         $html = GrapesJsCustomCodeSanitizer::sanitize($html);
+        $html = GrapesJsCodeBlockNormalizer::normalize($html);
         $css = (string) ($payload['css'] ?? '');
         $project = $payload['project'] ?? null;
 
