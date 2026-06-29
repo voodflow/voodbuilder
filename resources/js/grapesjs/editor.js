@@ -23,6 +23,7 @@ import vpressGrapesJsPlugin, {
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './vpress-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
+import { registerBindingsUi } from './bindings-ui.js';
 import { editorChromeInitOptions } from './editor-chrome.js';
 
 function hasProjectData(project) {
@@ -228,6 +229,10 @@ export function initVpressGrapesJs(container, options = {}) {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
+        void registerBindingsUi(editor, {
+            bindingsUrl: options.bindingsUrl,
+            labels: options.bindingLabels ?? {},
+        });
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
             migrateEditorComponents(editor);
             editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
@@ -412,6 +417,8 @@ function mountFrontendEditor() {
         uploadUrl: config.uploadUrl,
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,
+        bindingsUrl: config.bindingsUrl,
+        bindingLabels: config.labels ?? {},
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
     });

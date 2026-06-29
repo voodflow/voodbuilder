@@ -33,6 +33,18 @@ return [
         'assets_missing' => 'Gli asset frontend di GrapesJS non sono ancora stati compilati.',
     ],
 
+    'bindings' => [
+        'make_dynamic' => 'Rendi dinamico',
+        'clear_dynamic' => 'Rimuovi collegamento dinamico',
+        'modal_title' => 'Collega a dati live',
+        'modal_source' => 'Sorgente dati',
+        'modal_field' => 'Campo',
+        'modal_apply' => 'Applica',
+        'modal_cancel' => 'Annulla',
+        'select_component' => 'Seleziona prima un elemento nel canvas.',
+        'no_sources' => 'Nessuna sorgente dati dinamica registrata.',
+    ],
+
     'grapesjs' => [
         'blocks' => [
             'site_header' => 'Header sito (menu Admin)',

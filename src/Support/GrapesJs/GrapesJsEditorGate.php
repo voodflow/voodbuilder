@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
 use Voodflow\Vpress\Support\PageBuilderAccess;
 use Voodflow\Vpress\Support\ThemePalette;
 
@@ -53,6 +54,7 @@ final class GrapesJsEditorGate
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => route('vpress.grapesjs.blocks'),
+            'bindingsUrl' => route('vpress.grapesjs.bindings'),
             'blocksRenderUrl' => route('vpress.grapesjs.blocks.render'),
             'formSubmitUrl' => route('vpress.grapesjs.forms.submit', $page),
             'plugins' => config('vpress.grapesjs.plugins', []),
@@ -66,6 +68,15 @@ final class GrapesJsEditorGate
                 'saving' => __('vpress::pro.frontend.saving'),
                 'saved' => __('vpress::pro.frontend.saved'),
                 'error' => __('vpress::pro.frontend.error'),
+                'makeDynamic' => __('vpress::pro.bindings.make_dynamic'),
+                'clearDynamic' => __('vpress::pro.bindings.clear_dynamic'),
+                'modalTitle' => __('vpress::pro.bindings.modal_title'),
+                'modalSource' => __('vpress::pro.bindings.modal_source'),
+                'modalField' => __('vpress::pro.bindings.modal_field'),
+                'modalApply' => __('vpress::pro.bindings.modal_apply'),
+                'modalCancel' => __('vpress::pro.bindings.modal_cancel'),
+                'selectComponent' => __('vpress::pro.bindings.select_component'),
+                'noSources' => __('vpress::pro.bindings.no_sources'),
             ],
         ];
     }
@@ -135,8 +146,10 @@ final class GrapesJsEditorGate
         $project = $payload['project'] ?? null;
 
         return [
-            'html' => GrapesJsPlaceholderNormalizer::normalizeHtml(
-                TailblocksThemeTokenMigrator::migrateHtml($html),
+            'html' => app(GrapesJsBindingNormalizer::class)->normalizeHtml(
+                GrapesJsPlaceholderNormalizer::normalizeHtml(
+                    TailblocksThemeTokenMigrator::migrateHtml($html),
+                ),
             ),
             'css' => GrapesJsCssSanitizer::sanitize(
                 TailblocksThemeTokenMigrator::migrateCss($css),

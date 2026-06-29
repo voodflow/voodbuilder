@@ -1,0 +1,150 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+
+use DOMDocument;
+use DOMElement;
+use Voodflow\Vpress\Models\SitePage;
+
+final class GrapesJsBindingRenderer
+{
+    public function __construct(
+        private readonly BindingRegistry $registry,
+    ) {}
+
+    public function render(string $html, ?SitePage $page = null): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-vpress-bind')) {
+            return $html;
+        }
+
+        $context = BindingContext::forPage($page);
+        $document = $this->loadDocument($html);
+
+        foreach ($this->boundElements($document) as $element) {
+            $this->applyBinding($element, $context);
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    protected function loadDocument(string $html): DOMDocument
+    {
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return $document;
+    }
+
+    /**
+     * @return list<DOMElement>
+     */
+    protected function boundElements(DOMDocument $document): array
+    {
+        $elements = [];
+
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-bind')) {
+                $elements[] = $element;
+            }
+        }
+
+        return $elements;
+    }
+
+    protected function applyBinding(DOMElement $element, BindingContext $context): void
+    {
+        $bindingKey = trim($element->getAttribute('data-vpress-bind'));
+
+        $parsed = BindingKey::tryParse($bindingKey, $this->registry);
+
+        if ($parsed === null) {
+            return;
+        }
+
+        $field = $this->registry->field($parsed->sourceId, $parsed->fieldId);
+
+        if ($field === null) {
+            return;
+        }
+
+        $value = $this->registry->resolve($bindingKey, $context);
+
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $tag = strtolower($element->tagName);
+
+        match ($field->type) {
+            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped),
+            BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
+            default => $this->applyTextBinding($element, $escaped, $tag),
+        };
+    }
+
+    protected function applyImageBinding(DOMElement $element, string $url): void
+    {
+        if (strtolower($element->tagName) !== 'img') {
+            return;
+        }
+
+        $element->setAttribute('src', html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        if (! $element->hasAttribute('alt') || trim($element->getAttribute('alt')) === '') {
+            $element->setAttribute('alt', '');
+        }
+    }
+
+    protected function applyUrlBinding(DOMElement $element, string $url): void
+    {
+        if (strtolower($element->tagName) !== 'a') {
+            return;
+        }
+
+        $element->setAttribute('href', html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
+    protected function applyTextBinding(DOMElement $element, string $text, string $tag): void
+    {
+        if ($tag === 'img') {
+            $element->setAttribute('alt', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+            return;
+        }
+
+        while ($element->firstChild !== null) {
+            $element->removeChild($element->firstChild);
+        }
+
+        $element->appendChild($element->ownerDocument->createTextNode(html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    }
+
+    protected function extractBodyHtml(DOMDocument $document): ?string
+    {
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return null;
+        }
+
+        $output = '';
+
+        foreach ($body->childNodes as $child) {
+            $output .= $document->saveHTML($child);
+        }
+
+        return $output;
+    }
+}

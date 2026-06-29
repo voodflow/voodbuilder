@@ -28,6 +28,7 @@ use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Controllers\GrapesJsAssetController;
+use Voodflow\Vpress\Http\Controllers\GrapesJsBindingsController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsFormController;
@@ -36,6 +37,8 @@ use Voodflow\Vpress\Http\Middleware\ApplyVpressSiteConfig;
 use Voodflow\Vpress\Livewire\AccountSettings;
 use Voodflow\Vpress\Livewire\SiteNotificationBell;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\BuiltinBindingSources;
 use Voodflow\Vpress\Support\GrapesJs\DefaultGrapesJsBlocks;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
@@ -83,6 +86,7 @@ class VpressServiceProvider extends PackageServiceProvider
         $this->app->singleton(GrapesJsBlockRegistry::class);
         $this->app->singleton(GrapesJsDynamicBlockRegistry::class);
         $this->app->singleton(GrapesJsServerBlockRegistry::class);
+        $this->app->singleton(BindingRegistry::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
     }
@@ -114,6 +118,7 @@ class VpressServiceProvider extends PackageServiceProvider
         if (config('vpress.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
             $this->registerGrapesJsBlocks();
+            $this->registerGrapesJsBindings();
         }
 
         SEOManager::SEODataTransformer(static function ($seoData) {
@@ -152,6 +157,7 @@ class VpressServiceProvider extends PackageServiceProvider
             ->name('vpress.grapesjs.')
             ->group(function (): void {
                 Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
+                Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
@@ -185,6 +191,13 @@ class VpressServiceProvider extends PackageServiceProvider
             if (config('vpress.grapesjs.tailblocks.enabled', true)) {
                 TailblocksGrapesJsBlocks::register($registry);
             }
+        });
+    }
+
+    protected function registerGrapesJsBindings(): void
+    {
+        $this->app->booted(function (): void {
+            BuiltinBindingSources::register($this->app->make(BindingRegistry::class));
         });
     }
 }

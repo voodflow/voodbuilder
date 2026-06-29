@@ -8,7 +8,8 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockDefinition;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Vpress\Support\RichContentBlockRegistry;
@@ -83,5 +84,10 @@ class Vpress
     public static function grapesJsServerBlock(string $category, string $blockClass): void
     {
         app(GrapesJsServerBlockRegistry::class)->register($category, $blockClass);
+    }
+
+    public static function grapesJsBindingSource(GrapesJsBindingSource $source): void
+    {
+        app(BindingRegistry::class)->register($source);
     }
 }

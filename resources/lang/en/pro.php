@@ -33,6 +33,18 @@ return [
         'assets_missing' => 'GrapesJS frontend assets are not built yet.',
     ],
 
+    'bindings' => [
+        'make_dynamic' => 'Make dynamic',
+        'clear_dynamic' => 'Clear dynamic binding',
+        'modal_title' => 'Connect to live data',
+        'modal_source' => 'Data source',
+        'modal_field' => 'Field',
+        'modal_apply' => 'Apply',
+        'modal_cancel' => 'Cancel',
+        'select_component' => 'Select an element on the canvas first.',
+        'no_sources' => 'No dynamic data sources are registered yet.',
+    ],
+
     'grapesjs' => [
         'blocks' => [
             'site_header' => 'Site header (menu)',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 
 final class GrapesJsRenderer
 {
@@ -39,6 +40,8 @@ final class GrapesJsRenderer
 
     public function render(SitePage $page): string
     {
-        return app(GrapesJsDynamicBlockRenderer::class)->render($this->html($page), $page);
+        $html = app(GrapesJsBindingRenderer::class)->render($this->html($page), $page);
+
+        return app(GrapesJsDynamicBlockRenderer::class)->render($html, $page);
     }
 }
