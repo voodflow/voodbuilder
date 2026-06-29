@@ -14,7 +14,7 @@ use Voodflow\Vpress\Tests\TestCase;
 
 class GrapesJsBindingRendererTest extends TestCase
 {
-    public function test_replaces_text_and_link_bindings(): void
+    public function test_replaces_text_link_and_button_bindings(): void
     {
         $registry = new BindingRegistry;
         $registry->register(new FakeLatestBindingSource);
@@ -22,12 +22,15 @@ class GrapesJsBindingRendererTest extends TestCase
         $html = '<section>'
             .'<h1 data-vpress-bind="demo.latest.title">Placeholder</h1>'
             .'<a href="#" data-vpress-bind="demo.latest.url">Read</a>'
+            .'<button type="button" data-vpress-bind="demo.latest.url">Go</button>'
             .'</section>';
 
         $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
 
         $this->assertStringContainsString('>Hello world<', $rendered);
         $this->assertStringContainsString('href="https://example.test/tutorial"', $rendered);
+        $this->assertStringContainsString('onclick="window.location.href=', $rendered);
+        $this->assertStringContainsString('https://example.test/tutorial', $rendered);
     }
 
     public function test_parses_dotted_source_ids(): void

@@ -29,6 +29,7 @@ use Voodflow\Vpress\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Vpress\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Vpress\Http\Controllers\GrapesJsAssetController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsBindingsController;
+use Voodflow\Vpress\Http\Controllers\GrapesJsBindingsPreviewController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Vpress\Http\Controllers\GrapesJsFormController;
@@ -158,6 +159,7 @@ class VpressServiceProvider extends PackageServiceProvider
             ->group(function (): void {
                 Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
                 Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
+                Route::get('bindings/preview/{sitePage}', GrapesJsBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');

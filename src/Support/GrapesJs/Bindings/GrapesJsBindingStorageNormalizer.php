@@ -6,25 +6,23 @@ namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
 
 use DOMDocument;
 use DOMElement;
-use Voodflow\Vpress\Models\SitePage;
 
-final class GrapesJsBindingRenderer
+final class GrapesJsBindingStorageNormalizer
 {
     public function __construct(
         private readonly BindingRegistry $registry,
     ) {}
 
-    public function render(string $html, ?SitePage $page = null): string
+    public function normalizeHtml(string $html): string
     {
         if ($html === '' || ! str_contains($html, 'data-vpress-bind')) {
             return $html;
         }
 
-        $context = BindingContext::forPage($page);
         $document = $this->loadDocument($html);
 
         foreach ($this->boundElements($document) as $element) {
-            $this->applyBinding($element, $context);
+            $this->resetElementForStorage($element);
         }
 
         return $this->extractBodyHtml($document) ?? $html;
@@ -62,10 +60,9 @@ final class GrapesJsBindingRenderer
         return $elements;
     }
 
-    protected function applyBinding(DOMElement $element, BindingContext $context): void
+    protected function resetElementForStorage(DOMElement $element): void
     {
         $bindingKey = trim($element->getAttribute('data-vpress-bind'));
-
         $parsed = BindingKey::tryParse($bindingKey, $this->registry);
 
         if ($parsed === null) {
@@ -78,58 +75,47 @@ final class GrapesJsBindingRenderer
             return;
         }
 
-        $value = $this->registry->resolve($bindingKey, $context);
-
-        if ($value === null || $value === '') {
-            return;
-        }
-
-        $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $source = $this->registry->source($parsed->sourceId);
+        $sourceLabel = $source?->label() ?? 'Dynamic';
         $tag = strtolower($element->tagName);
 
         match ($field->type) {
-            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped),
-            BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
-            default => $this->applyTextBinding($element, $escaped, $tag),
+            BindingField::TYPE_IMAGE => $this->resetImageElement($element),
+            BindingField::TYPE_URL => $this->resetUrlElement($element, $tag),
+            default => $this->resetTextElement($element, $sourceLabel, $field->label, $tag),
         };
     }
 
-    protected function applyImageBinding(DOMElement $element, string $url): void
+    protected function resetImageElement(DOMElement $element): void
     {
         if (strtolower($element->tagName) !== 'img') {
             return;
         }
 
-        $element->setAttribute('src', html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $element->setAttribute('src', BindingPlaceholders::imageDataUri());
 
         if (! $element->hasAttribute('alt') || trim($element->getAttribute('alt')) === '') {
-            $element->setAttribute('alt', '');
+            $element->setAttribute('alt', 'Dynamic image');
         }
     }
 
-    protected function applyUrlBinding(DOMElement $element, string $url): void
+    protected function resetUrlElement(DOMElement $element, string $tag): void
     {
-        $decoded = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $tag = strtolower($element->tagName);
-
         if ($tag === 'a') {
-            $element->setAttribute('href', $decoded);
+            $element->setAttribute('href', '#');
 
             return;
         }
 
         if ($tag === 'button') {
-            $element->setAttribute(
-                'onclick',
-                'window.location.href='.json_encode($decoded, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP),
-            );
+            $element->removeAttribute('onclick');
         }
     }
 
-    protected function applyTextBinding(DOMElement $element, string $text, string $tag): void
+    protected function resetTextElement(DOMElement $element, string $sourceLabel, string $fieldLabel, string $tag): void
     {
         if ($tag === 'img') {
-            $element->setAttribute('alt', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $element->setAttribute('alt', BindingPlaceholders::text($sourceLabel, $fieldLabel));
 
             return;
         }
@@ -138,7 +124,9 @@ final class GrapesJsBindingRenderer
             $element->removeChild($element->firstChild);
         }
 
-        $element->appendChild($element->ownerDocument->createTextNode(html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        $element->appendChild($element->ownerDocument->createTextNode(
+            BindingPlaceholders::text($sourceLabel, $fieldLabel),
+        ));
     }
 
     protected function extractBodyHtml(DOMDocument $document): ?string

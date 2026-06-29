@@ -8,6 +8,7 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vpress\Contracts\PublicContentChannel;
 use Voodflow\Vpress\Support\ContentChannelRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockDefinition;
+use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
 use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;

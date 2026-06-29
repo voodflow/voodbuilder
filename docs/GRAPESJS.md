@@ -177,7 +177,7 @@ GrapesJS stores only a placeholder (`data-vpress-block`, `data-vpress-config`). 
 Editors can connect any selected element (title, image, link, …) to **live data** from installed packages — without writing PHP.
 
 1. Build or paste your layout in the canvas (Tailblocks, copied HTML, etc.).
-2. Select an element (`h1`, `p`, `img`, `a`, …).
+2. Select an element (`h1`, `p`, `img`, `a`, `button`, …).
 3. Click **Make dynamic** (🔗) in the GrapesJS toolbar.
 4. Choose **Data source** (e.g. *Latest tutorial* from Vtuts) and **Field** (Title, URL, Image, …).
 5. Save the page.
@@ -187,9 +187,12 @@ Saved HTML stores `data-vpress-bind="vtuts.latest.title"` (or similar). The serv
 | Concern | Detail |
 |---------|--------|
 | Remove binding | Select element → **Clear dynamic binding** (✕) |
+| URL on `button` / `a` | Only the link is dynamic; **button/link label stays editable** |
 | Plugin API | `Vpress::grapesJsBindingSource($source)` implementing `GrapesJsBindingSource` |
+| Full guide | [BINDINGS.md](./BINDINGS.md) — contract, field types, Vtuts fields, plugin tutorial |
 | Catalog API | `GET /vpress/grapesjs/bindings` (auth + page-builder permission) |
-| Vtuts | Registers `vtuts.latest` with title, excerpt, url, image, category |
+| Preview API | `GET /vpress/grapesjs/bindings/preview/{sitePage}` |
+| Vtuts | Registers `vtuts.latest` (title, introduction, url, image, category, author, dates, tags, …) |
 
 ---
 

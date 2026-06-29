@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Voodflow\Vpress\Enums\PageBuilder;
 use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Vpress\Support\GrapesJs\GrapesJsEditorGate;
 
 class GrapesJsPageController extends Controller
@@ -31,6 +32,8 @@ class GrapesJsPageController extends Controller
             'css' => $validated['css'] ?? '',
             'project' => null,
         ]);
+
+        $normalized['html'] = app(GrapesJsBindingStorageNormalizer::class)->normalizeHtml($normalized['html']);
 
         $sitePage->update([
             'builder' => PageBuilder::GrapesJs,

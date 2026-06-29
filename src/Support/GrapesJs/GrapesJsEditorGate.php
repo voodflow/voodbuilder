@@ -6,6 +6,7 @@ namespace Voodflow\Vpress\Support\GrapesJs;
 
 use Voodflow\Vpress\Models\SitePage;
 use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
+use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Vpress\Support\PageBuilderAccess;
 use Voodflow\Vpress\Support\ThemePalette;
 
@@ -55,6 +56,7 @@ final class GrapesJsEditorGate
             'initial' => self::initialPayload($page),
             'blocksUrl' => route('vpress.grapesjs.blocks'),
             'bindingsUrl' => route('vpress.grapesjs.bindings'),
+            'bindingsPreviewUrl' => route('vpress.grapesjs.bindings.preview', $page),
             'blocksRenderUrl' => route('vpress.grapesjs.blocks.render'),
             'formSubmitUrl' => route('vpress.grapesjs.forms.submit', $page),
             'plugins' => config('vpress.grapesjs.plugins', []),
@@ -95,6 +97,10 @@ final class GrapesJsEditorGate
 
         $html = $normalized['html'];
         $css = $normalized['css'];
+
+        if (self::isEditing($page)) {
+            $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
+        }
 
         $pageManager = self::pageManagerFromHtml($html, $css);
 

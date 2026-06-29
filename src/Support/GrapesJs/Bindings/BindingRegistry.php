@@ -23,11 +23,28 @@ final class BindingRegistry
         return array_key_exists($sourceId, $this->sources);
     }
 
+    public function source(string $sourceId): ?GrapesJsBindingSource
+    {
+        return $this->sources[$sourceId] ?? null;
+    }
+
     public function hasField(string $sourceId, string $fieldId): bool
     {
-        $field = $this->field($sourceId, $fieldId);
+        if ($this->field($sourceId, $fieldId) !== null) {
+            return true;
+        }
 
-        return $field !== null;
+        $source = $this->source($sourceId);
+
+        if ($source === null) {
+            return false;
+        }
+
+        if (method_exists($source, 'legacyFieldIds')) {
+            return in_array($fieldId, $source->legacyFieldIds(), true);
+        }
+
+        return false;
     }
 
     public function field(string $sourceId, string $fieldId): ?BindingField
@@ -36,6 +53,10 @@ final class BindingRegistry
 
         if ($source === null) {
             return null;
+        }
+
+        if (method_exists($source, 'legacyFieldIds') && in_array($fieldId, $source->legacyFieldIds(), true)) {
+            $fieldId = 'introduction';
         }
 
         foreach ($source->fields() as $field) {

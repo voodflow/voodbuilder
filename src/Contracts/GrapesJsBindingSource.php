@@ -9,6 +9,11 @@ use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField;
 
 /**
  * Server-side data source for GrapesJS field bindings (data-vpress-bind).
+ *
+ * Register with {@see \Voodflow\Vpress\Vpress::grapesJsBindingSource()} in your
+ * package ServiceProvider. See docs/BINDINGS.md for the full plugin guide.
+ *
+ * Optional: implement legacyFieldIds() to keep old field keys valid after renames.
  */
 interface GrapesJsBindingSource
 {
