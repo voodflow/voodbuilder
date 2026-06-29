@@ -308,10 +308,6 @@ function ensureLandingSectionClasses(component) {
     if (! classes.includes('vpress-gjs-section')) {
         component.addClass('vpress-gjs-section');
     }
-
-    if (! hasBackgroundClass(classes)) {
-        component.addClass('bg-vp-bg');
-    }
 }
 
 function migrateComponentInlineThemeStyles(component) {
@@ -367,6 +363,42 @@ function migrateComponentTree(component) {
 
 export function migrateEditorComponent(component) {
     migrateComponentTree(component);
+}
+
+export function purgeBroadSectionBackgroundRules(editor) {
+    const cssComposer = editor.Css;
+
+    if (! cssComposer?.getAll) {
+        return;
+    }
+
+    const broadRules = cssComposer.getAll().filter((rule) => {
+        const selectors = rule.get('selectors') ?? [];
+        const style = rule.getStyle?.() ?? {};
+        const hasBackgroundImage = Object.entries(style).some(([property, value]) => {
+            if (! /background/i.test(property)) {
+                return false;
+            }
+
+            return typeof value === 'string' && value.includes('url(');
+        });
+
+        if (! hasBackgroundImage) {
+            return false;
+        }
+
+        return selectors.length > 0 && selectors.every((selector) => {
+            const name = String(selector?.get?.('name') ?? selector?.name ?? selector ?? '');
+
+            if (name.includes('#')) {
+                return false;
+            }
+
+            return name.includes('vpress-gjs-section') || name.includes('body-font');
+        });
+    });
+
+    broadRules.forEach((rule) => cssComposer.remove(rule));
 }
 
 export function purgeLegacyEditorStyles(editor) {

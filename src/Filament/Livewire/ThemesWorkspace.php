@@ -18,7 +18,9 @@ use Voodflow\Vpress\Support\SubThemeExporter;
 use Voodflow\Vpress\Support\SubThemeImporter;
 use Voodflow\Vpress\Support\SubThemeManager;
 use Voodflow\Vpress\Support\SubThemeRegistry;
+use Voodflow\Vpress\Support\SubThemeResolver;
 use Voodflow\Vpress\Support\ThemeAssetCompiler;
+use Voodflow\Vpress\Support\ThemeBindings;
 use Voodflow\Vpress\Support\ThemePalette;
 use Voodflow\Vpress\Support\ThemePaletteGenerator;
 use Voodflow\Vpress\Support\ThemePresenter;
@@ -361,7 +363,16 @@ class ThemesWorkspace extends Component
         }
 
         $this->showDeleteModal = true;
-        $this->deleteFallbackId = (string) (VpressSettings::get('sub_theme') ?: 'site');
+
+        $siteTheme = (string) (VpressSettings::get('sub_theme') ?: SubThemeResolver::SITE);
+        $deleteId = $this->selectedId;
+
+        if ($siteTheme === $deleteId) {
+            $this->deleteFallbackId = collect(app(SubThemeRegistry::class)->ids())
+                ->first(static fn (string $id): bool => $id !== $deleteId) ?? SubThemeResolver::SITE;
+        } else {
+            $this->deleteFallbackId = $siteTheme;
+        }
     }
 
     public function deleteTheme(): void
@@ -385,6 +396,15 @@ class ThemesWorkspace extends Component
 
         $this->notify(
             Notification::make()->title(__('vpress::settings.delete_theme_success'))->success(),
+        );
+
+        $saved = VpressSettings::data();
+        $this->dispatch(
+            'vpress-theme-map-settings-saved',
+            subTheme: (string) ($saved['sub_theme'] ?? SubThemeResolver::SITE),
+            channelThemes: ThemeBindings::expandChannelThemesForForm(
+                is_array($saved['content_channel_sub_themes'] ?? null) ? $saved['content_channel_sub_themes'] : [],
+            ),
         );
         $this->dispatch('vpress-themes-changed');
     }
@@ -497,7 +517,9 @@ class ThemesWorkspace extends Component
         return view('vpress::filament.themes-workspace', [
             'groups' => $this->groups,
             'colorKeys' => ThemePresenter::COLOR_KEYS,
-            'fallbackOptions' => app(SubThemeRegistry::class)->options(),
+            'fallbackOptions' => collect(app(SubThemeRegistry::class)->options())
+                ->reject(fn (string $label, string $id): bool => $this->showDeleteModal && $id === $this->selectedId)
+                ->all(),
             'colorKeyLabel' => ThemePresenter::colorLabel($this->colorKey),
         ]);
     }

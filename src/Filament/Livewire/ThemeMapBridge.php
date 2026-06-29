@@ -7,6 +7,7 @@ namespace Voodflow\Vpress\Filament\Livewire;
 use Filament\Notifications\Notification;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Voodflow\Vpress\Models\VpressSettings;
 use Voodflow\Vpress\Support\SubThemeRegistry;
 use Voodflow\Vpress\Support\SubThemeResolver;
 use Voodflow\Vpress\Support\ThemeBindings;
@@ -37,6 +38,25 @@ class ThemeMapBridge extends Component
     }
 
     #[On('vpress-themes-changed')]
+    public function reloadFromSettings(): void
+    {
+        $data = VpressSettings::data();
+
+        $this->subTheme = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
+            ?? SubThemeResolver::SITE;
+        $this->channelThemes = ThemeBindings::expandChannelThemesForForm(
+            is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
+        );
+
+        $this->refreshPayload();
+
+        $this->dispatch(
+            'vpress-theme-map-sync',
+            subTheme: $this->subTheme,
+            channelThemes: $this->channelThemes,
+        );
+    }
+
     public function refreshPayload(): void
     {
         $this->payload = ThemeMapPayload::build($this->subTheme, $this->channelThemes);

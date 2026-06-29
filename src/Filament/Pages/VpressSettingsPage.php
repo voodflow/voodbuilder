@@ -90,6 +90,19 @@ class VpressSettingsPage extends Page
         $this->form->fill($this->data);
     }
 
+    #[On('vpress-themes-changed')]
+    public function reloadThemeMapFromSettings(): void
+    {
+        $data = VpressSettings::data();
+
+        $this->data['sub_theme'] = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
+            ?? SubThemeResolver::SITE;
+        $this->data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm(
+            is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
+        );
+        $this->form->fill($this->data);
+    }
+
     public function save(): void
     {
         try {

@@ -456,10 +456,6 @@ final class TailblocksThemeTokenMigrator
             $tokens[] = 'vpress-gjs-section';
         }
 
-        if (! self::hasBackgroundClass($tokens)) {
-            $tokens[] = 'bg-vp-bg';
-        }
-
         return implode(' ', $tokens);
     }
 

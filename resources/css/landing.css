@@ -19,17 +19,41 @@
     @apply w-full;
 }
 
-.vpress-home-shell:not(:has(.VPRichPage--landing)):not(:has(.vpress-grapesjs-mode)) {
-    @apply mx-auto max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24;
+.vpress-full-width-shell,
+.vpress-site-shell:has(.VPRichPage--landing),
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
+:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode),
+main > :where(.mx-auto, .vpress-site-shell, .vpress-home-shell, .vpress-landing-shell):has(.VPRichPage--landing) {
+    @apply max-w-none w-full p-0;
 }
 
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode) {
-    @apply max-w-none p-0;
+.VPRichPage--landing > :is(section, .vpress-gjs-hero, .vpress-gjs-cta, .vpress-gjs-section, .vpress-gjs-footer):first-child {
+    @apply pt-0;
 }
 
 .VPRichPage--landing {
-    @apply w-full;
+    @apply w-full max-w-none;
+}
+
+/* Root GrapesJS sections are full-bleed; inner copy stays padded via px-* on the block. */
+.VPRichPage--landing > section.vpress-gjs-section {
+    @apply mx-0 w-full max-w-none;
+}
+
+.VPRichPage--landing > section.vpress-gjs-section:empty {
+    @apply min-h-[min(50vh,32rem)];
+}
+
+/* Escape nested .container wrappers when blocks were dropped inside footer columns. */
+.VPRichPage--landing :is(.vpress-gjs-hero, .vpress-gjs-cta, .vp-landing-hero) {
+    @apply relative w-full max-w-none;
+    width: 100vw;
+    max-width: 100vw;
+    margin-inline: calc(50% - 50vw);
+}
+
+.VPRichPage--landing .vpress-gjs-footer > .container:has(> .vpress-gjs-hero, > section.vpress-gjs-hero) {
+    @apply max-w-none px-0 pt-0;
 }
 
 .VPRichPage--landing > .vp-landing-section--bleed {

@@ -209,6 +209,22 @@ final class SubThemeRegistry
         return is_string($view) && $view !== '' ? $view : null;
     }
 
+    /**
+     * @param  list<string>  $alternates
+     */
+    public function resolveLayout(string $themeId, string $layout, array $alternates = []): ?string
+    {
+        foreach ([$layout, ...$alternates] as $candidate) {
+            $view = $this->layout($themeId, $candidate);
+
+            if ($view !== null && view()->exists($view)) {
+                return $view;
+            }
+        }
+
+        return null;
+    }
+
     public function cssPath(string $themeId): ?string
     {
         if (! $this->exists($themeId)) {

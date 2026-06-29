@@ -63,6 +63,8 @@ class SitePageResource extends Resource
 
     protected static ?string $slug = 'vpress/pages';
 
+    public const LAYOUT_AUTO = SitePage::LAYOUT_AUTO;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -207,32 +209,50 @@ class SitePageResource extends Resource
                                     ->collapsed()
                                     ->schema([
                                         Select::make('layout')
+                                            ->label(__('vpress::admin.filters.layout'))
                                             ->options([
-                                                'page' => __('Standard page'),
-                                                'full_width' => __('vpress::landing.layouts.full_width'),
+                                                self::LAYOUT_AUTO => __('vpress::admin.fields.layout_auto'),
+                                                'page' => __('vpress::admin.fields.layout_standard'),
+                                                'full_width' => __('vpress::admin.fields.layout_full_width'),
                                             ])
-                                            ->default('page')
+                                            ->default(self::LAYOUT_AUTO)
                                             ->native(false)
                                             ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
+                                                ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
+                                                    && ($record?->is_home || (bool) $get('is_home')) => __('vpress::admin.helpers.layout_auto_home'),
+                                                $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('vpress::admin.helpers.layout_auto_page'),
                                                 static::formUsesFullWidthLayout($get, $record) => __('vpress::landing.layouts.full_width_help'),
-                                                (bool) $record?->is_home => __('vpress::admin.helpers.home_page_layout'),
                                                 default => null,
                                             })
                                             ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
-                                                if ($record !== null && in_array($record->layout, ['home', 'landing', 'full_width'], true)) {
+                                                if ($record === null) {
+                                                    return;
+                                                }
+
+                                                if (in_array($record->layout, ['home', 'landing', 'full_width'], true)) {
                                                     $component->state('full_width');
+
+                                                    return;
+                                                }
+
+                                                if ($record->usesAutomaticLayout()) {
+                                                    $component->state(self::LAYOUT_AUTO);
+
+                                                    return;
                                                 }
                                             })
                                             ->dehydrateStateUsing(function (?string $state, Get $get, ?SitePage $record): string {
+                                                if ($state === self::LAYOUT_AUTO || ! filled($state)) {
+                                                    return self::LAYOUT_AUTO;
+                                                }
+
+                                                $isHome = $record?->is_home || (bool) $get('is_home');
+
                                                 if ($state !== 'full_width') {
-                                                    return $state ?? 'page';
+                                                    return $state;
                                                 }
 
-                                                if ($record?->is_home || (bool) $get('is_home')) {
-                                                    return 'home';
-                                                }
-
-                                                return 'full_width';
+                                                return $isHome ? 'home' : 'full_width';
                                             })
                                             ->live(),
 
@@ -307,7 +327,13 @@ class SitePageResource extends Resource
                     ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
                         ? $state->label()
                         : PageBuilder::tryFrom((string) $state)?->label() ?? (string) $state),
-                TextColumn::make('layout')->badge(),
+                TextColumn::make('layout')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        SitePage::LAYOUT_AUTO => __('vpress::admin.fields.layout_auto'),
+                        'home', 'landing', 'full_width' => __('vpress::admin.fields.layout_full_width'),
+                        default => __('vpress::admin.fields.layout_standard'),
+                    }),
                 TextColumn::make('sub_theme')
                     ->label(__('vpress::admin.fields.sub_theme'))
                     ->formatStateUsing(fn (?string $state): string => filled($state)
@@ -410,8 +436,14 @@ class SitePageResource extends Resource
 
     protected static function formUsesFullWidthLayout(Get $get, ?SitePage $record): bool
     {
-        if ($get('layout') === 'full_width') {
+        $layout = $get('layout');
+
+        if ($layout === 'full_width') {
             return true;
+        }
+
+        if ($layout === self::LAYOUT_AUTO || blank($layout)) {
+            return ($record?->is_home || (bool) $get('is_home')) && $layout !== 'page';
         }
 
         return $record?->usesFullWidthLayout() ?? false;

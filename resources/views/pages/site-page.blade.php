@@ -47,7 +47,7 @@
 
     <div @class([
         'VPRichPage',
-        'VPRichPage--landing' => $page->usesLandingCanvas() || $vpressSubTheme === 'site',
+        'VPRichPage--landing' => $page->usesFullWidthLayout(),
         'vpress-grapesjs-mode' => $grapesJsEditor ?? false,
     ])>
         @if ($grapesJsEditor ?? false)

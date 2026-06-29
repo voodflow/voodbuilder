@@ -32,7 +32,9 @@ final class GrapesJsRenderer
             return null;
         }
 
-        return TailblocksThemeTokenMigrator::migrateCss((string) $css);
+        return GrapesJsCssSanitizer::sanitize(
+            TailblocksThemeTokenMigrator::migrateCss((string) $css),
+        );
     }
 
     public function render(SitePage $page): string

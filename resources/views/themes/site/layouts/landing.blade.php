@@ -5,9 +5,9 @@
 @endsection
 
 @section('content')
-    <div class="vpress-site-shell">
+    <div class="vpress-site-shell vpress-full-width-shell">
         <div class="vpress-landing-shell">
-            @yield('landing')
+            @yield('full_width')
         </div>
     </div>
 @endsection

@@ -37,7 +37,7 @@ final class GrapesJsPlaceholderNormalizer
 
         $html = preg_replace(
             '#\bbackground-image\s*:\s*url\((["\']?)(https?://'.$hostPattern.')\1\)\s*;?#i',
-            '',
+            'background-image: url('.$placeholder.');',
             $html,
         ) ?? $html;
 

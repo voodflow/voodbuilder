@@ -22,7 +22,7 @@ import vpressGrapesJsPlugin, {
 } from './plugins/vpress-grapesjs.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './vpress-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
-import { migrateEditorComponents } from './theme-tokens.js';
+import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { editorChromeInitOptions } from './editor-chrome.js';
 
 function hasProjectData(project) {
@@ -225,6 +225,8 @@ export function initVpressGrapesJs(container, options = {}) {
     ensureInitialContent(editor, initial);
 
     editor.on('load', () => {
+        purgeLegacyEditorStyles(editor);
+        purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
             migrateEditorComponents(editor);

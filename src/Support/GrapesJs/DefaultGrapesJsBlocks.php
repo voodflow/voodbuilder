@@ -14,7 +14,7 @@ final class DefaultGrapesJsBlocks
                 label: 'Hero',
                 category: 'Vpress',
                 content: <<<'HTML'
-<section class="vpress-gjs-hero px-6 py-16 text-center">
+<section class="vpress-gjs-hero w-full px-6 pt-0 pb-16 text-center">
   <h1 class="mb-4 text-4xl font-bold text-vp-text-1 md:text-5xl">Headline</h1>
   <p class="mx-auto mb-6 max-w-2xl text-lg text-vp-text-2">Supporting copy for your landing page.</p>
   <a href="#" class="inline-flex items-center rounded-lg bg-vp-brand-3 px-6 py-3 text-sm font-medium text-white no-underline transition-colors hover:bg-vp-brand-2">Call to action</a>

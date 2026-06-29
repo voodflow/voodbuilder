@@ -267,7 +267,7 @@ final class SubThemeManager
 
         SitePage::query()
             ->where('sub_theme', $id)
-            ->update(['sub_theme' => null]);
+            ->update(['sub_theme' => $fallbackId]);
     }
 
     protected static function migrateThemeReferences(string $fromId, string $toId): void

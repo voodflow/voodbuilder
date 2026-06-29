@@ -34,6 +34,8 @@ class SitePage extends Model implements HasRichContent
     use HasSlug;
     use InteractsWithRichContent;
 
+    public const LAYOUT_AUTO = 'auto';
+
     protected $fillable = [
         'title',
         'slug',
@@ -207,8 +209,17 @@ class SitePage extends Model implements HasRichContent
         return app(GrapesJsRenderer::class)->css($this);
     }
 
+    public function usesAutomaticLayout(): bool
+    {
+        return $this->layout === self::LAYOUT_AUTO || blank($this->layout);
+    }
+
     public function usesFullWidthLayout(): bool
     {
+        if ($this->is_home && $this->layout !== 'page') {
+            return true;
+        }
+
         return in_array($this->layout, ['home', 'landing', 'full_width'], true);
     }
 
@@ -286,30 +297,80 @@ class SitePage extends Model implements HasRichContent
 
     public function layoutView(): string
     {
-        $layoutKey = match (true) {
+        if ($this->usesFullWidthLayout()) {
+            $subThemeLayout = app(SubThemeRegistry::class)->resolveLayout(
+                $this->resolvedSubTheme(),
+                'full_width',
+                ['landing', 'home'],
+            );
+
+            if ($subThemeLayout !== null) {
+                return $subThemeLayout;
+            }
+
+            return config('vpress.layouts.full_width', 'vpress::layouts.full-width');
+        }
+
+        $layoutKey = $this->resolvedLayoutKey();
+
+        $subThemeLayout = app(SubThemeRegistry::class)->resolveLayout(
+            $this->resolvedSubTheme(),
+            $layoutKey,
+            $this->layoutKeyAlternates($layoutKey),
+        );
+
+        if ($subThemeLayout !== null) {
+            return $subThemeLayout;
+        }
+
+        return $this->fallbackLayoutView($layoutKey);
+    }
+
+    public function contentSection(): string
+    {
+        return $this->usesFullWidthLayout() ? 'full_width' : 'page';
+    }
+
+    protected function resolvedLayoutKey(): string
+    {
+        return match (true) {
             $this->isSectionHome() => 'section_index',
             $this->isSectionArticle() => 'article',
             $this->usesFullWidthLayout() => 'full_width',
             $this->layout === 'doc' => 'doc',
             default => 'page',
         };
+    }
 
-        $subThemeLayout = app(SubThemeRegistry::class)->layout($this->resolvedSubTheme(), $layoutKey);
-
-        if ($subThemeLayout !== null) {
-            return $subThemeLayout;
+    protected function storedLayoutKey(): string
+    {
+        if ($this->usesAutomaticLayout()) {
+            return $this->is_home ? 'home' : 'page';
         }
 
+        return (string) $this->layout;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function layoutKeyAlternates(string $layoutKey): array
+    {
         return match ($layoutKey) {
-            'full_width' => config('vpress.layouts.full_width', 'vpress::layouts.full-width'),
-            'doc' => config('vpress.layouts.doc', 'vpress::layouts.doc'),
-            default => config('vpress.layouts.page', 'vpress::layouts.page'),
+            'full_width' => ['landing', 'home'],
+            'home' => ['landing', 'full_width'],
+            'page' => ['landing', 'full_width'],
+            default => [],
         };
     }
 
-    public function contentSection(): string
+    protected function fallbackLayoutView(string $layoutKey): string
     {
-        return $this->usesFullWidthLayout() ? 'full_width' : 'page';
+        return match ($layoutKey) {
+            'full_width', 'home', 'landing' => config('vpress.layouts.full_width', 'vpress::layouts.full-width'),
+            'doc' => config('vpress.layouts.doc', 'vpress::layouts.doc'),
+            default => config('vpress.layouts.page', 'vpress::layouts.page'),
+        };
     }
 
     public function getDynamicSEOData(): SEOData

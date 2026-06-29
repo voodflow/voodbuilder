@@ -6,6 +6,6 @@
 
 @section('content')
     <div class="vpress-home-shell vpress-landing-shell vpress-full-width-shell">
-        @yield('home')
+        @yield('full_width')
     </div>
 @endsection

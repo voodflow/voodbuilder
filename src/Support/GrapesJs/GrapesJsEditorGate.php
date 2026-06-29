@@ -138,7 +138,9 @@ final class GrapesJsEditorGate
             'html' => GrapesJsPlaceholderNormalizer::normalizeHtml(
                 TailblocksThemeTokenMigrator::migrateHtml($html),
             ),
-            'css' => TailblocksThemeTokenMigrator::migrateCss($css),
+            'css' => GrapesJsCssSanitizer::sanitize(
+                TailblocksThemeTokenMigrator::migrateCss($css),
+            ),
             'project' => is_array($project)
                 ? TailblocksThemeTokenMigrator::migrateProject($project)
                 : $project,
