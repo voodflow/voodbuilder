@@ -145,7 +145,7 @@ final class GrapesJsDynamicBlockRenderer
         $richBlockClass = $this->registry->resolve($blockId);
 
         if ($richBlockClass !== null) {
-            return TailwindV4ClassMigrator::migrateHtml($richBlockClass::toHtml($config, $data));
+            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($richBlockClass::toHtml($config, $data));
         }
 
         $serverBlockClass = $this->serverRegistry->resolve($blockId);
@@ -153,7 +153,7 @@ final class GrapesJsDynamicBlockRenderer
         if ($serverBlockClass !== null) {
             $mergedConfig = $config !== [] ? $config : $serverBlockClass::defaultConfig();
 
-            return TailwindV4ClassMigrator::migrateHtml($serverBlockClass::toHtml($mergedConfig, $data));
+            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($serverBlockClass::toHtml($mergedConfig, $data));
         }
 
         return null;

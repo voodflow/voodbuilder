@@ -27,7 +27,7 @@ final class GrapesJsBlockDefinition
             'id' => $this->id,
             'label' => $this->label,
             'category' => $this->category,
-            'content' => $this->content,
+            'content' => GrapesJsRichContentBlockAdapter::prepareBlockHtml($this->content),
             'preview' => $this->preview,
             'attributes' => $this->attributes,
         ], static fn (mixed $value): bool => $value !== null && $value !== []);

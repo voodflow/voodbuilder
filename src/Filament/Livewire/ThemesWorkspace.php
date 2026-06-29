@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Vpress\Filament\Livewire;
 
+use Filament\Livewire\Notifications as FilamentNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
@@ -74,6 +75,23 @@ class ThemesWorkspace extends Component
 
     /** @var TemporaryUploadedFile|null */
     public $importArchive = null;
+
+    /** @var array{custom: list<array<string, mixed>>, plugin: list<array<string, mixed>>} */
+    public array $groups = [
+        'custom' => [],
+        'plugin' => [],
+    ];
+
+    public function mount(): void
+    {
+        $this->syncThemeGroups();
+    }
+
+    #[On('vpress-themes-changed')]
+    public function refreshThemeCatalog(): void
+    {
+        $this->syncThemeGroups();
+    }
 
     public function closeEditor(): void
     {
@@ -322,19 +340,16 @@ class ThemesWorkspace extends Component
 
         $this->showCloneModal = false;
         $this->selectTheme($result->id);
+        $this->syncThemeGroups();
 
-        $compiled = ThemeAssetCompiler::compile();
+        ThemeAssetCompiler::scheduleCompile();
 
-        $notification = Notification::make()->title(__('vpress::settings.clone_theme_created'));
-
-        if ($compiled) {
-            $notification->success()->send();
-        } else {
-            $notification
-                ->warning()
-                ->body(__('vpress::settings.clone_theme_compile_failed'))
-                ->send();
-        }
+        $this->notify(
+            Notification::make()
+                ->title(__('vpress::settings.clone_theme_created'))
+                ->body(__('vpress::settings.theme_assets_rebuilding'))
+                ->success(),
+        );
 
         $this->dispatch('vpress-themes-changed');
     }
@@ -366,8 +381,11 @@ class ThemesWorkspace extends Component
 
         $this->showDeleteModal = false;
         $this->selectedId = null;
+        $this->syncThemeGroups();
 
-        Notification::make()->title(__('vpress::settings.delete_theme_success'))->success()->send();
+        $this->notify(
+            Notification::make()->title(__('vpress::settings.delete_theme_success'))->success(),
+        );
         $this->dispatch('vpress-themes-changed');
     }
 
@@ -381,47 +399,91 @@ class ThemesWorkspace extends Component
     public function importTheme(): void
     {
         if ($this->importArchive === null) {
+            $this->notify(
+                Notification::make()
+                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->body(__('vpress::settings.import_theme_missing_archive'))
+                    ->danger(),
+            );
+
             return;
         }
 
-        $path = $this->importArchive->getRealPath();
+        $path = SubThemeImporter::resolveArchiveUploadPath($this->importArchive);
 
-        if (! is_string($path)) {
+        if ($path === null) {
+            $this->notify(
+                Notification::make()
+                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->body(__('vpress::settings.import_theme_missing_archive'))
+                    ->danger(),
+            );
+            $this->importArchive = null;
+
+            return;
+        }
+
+        try {
+            $this->validate([
+                'importArchive' => ['required', 'file', 'mimes:zip', 'max:51200'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->notify(
+                Notification::make()
+                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->body($exception->validator->errors()->first('importArchive'))
+                    ->danger(),
+            );
+            $this->importArchive = null;
+
             return;
         }
 
         $result = SubThemeImporter::import($path);
 
         if (! $result->success) {
-            Notification::make()->title(__('vpress::settings.import_theme_failed'))->body($result->error)->danger()->send();
+            $this->notify(
+                Notification::make()
+                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->body($result->error)
+                    ->danger(),
+            );
+            $this->importArchive = null;
 
             return;
         }
 
         $this->importArchive = null;
+        $this->syncThemeGroups();
         $this->selectTheme($result->id);
 
-        $compiled = ThemeAssetCompiler::compile();
+        ThemeAssetCompiler::scheduleCompile();
 
-        $notification = Notification::make()->title(__('vpress::settings.import_theme_imported'));
+        $body = filled($result->renamedFrom)
+            ? __('vpress::settings.import_theme_renamed', ['from' => $result->renamedFrom, 'id' => $result->id])
+            : __('vpress::settings.import_theme_success', ['id' => $result->id]);
 
-        if ($compiled) {
-            $notification->success()->send();
-        } else {
-            $notification
-                ->warning()
-                ->body(__('vpress::settings.clone_theme_compile_failed'))
-                ->send();
-        }
+        $this->notify(
+            Notification::make()
+                ->title(__('vpress::settings.import_theme_imported'))
+                ->body(trim($body.' '.__('vpress::settings.theme_assets_rebuilding')))
+                ->success(),
+        );
 
         $this->dispatch('vpress-themes-changed');
     }
 
     public function updatedImportArchive(): void
     {
-        if ($this->importArchive !== null) {
-            $this->importTheme();
+        if ($this->importArchive === null) {
+            return;
         }
+
+        if (SubThemeImporter::resolveArchiveUploadPath($this->importArchive) === null) {
+            return;
+        }
+
+        $this->importTheme();
     }
 
     public function prepareDelete(string $id): void
@@ -433,10 +495,28 @@ class ThemesWorkspace extends Component
     public function render(): View
     {
         return view('vpress::filament.themes-workspace', [
-            'groups' => ThemePresenter::groupedCards(),
+            'groups' => $this->groups,
             'colorKeys' => ThemePresenter::COLOR_KEYS,
             'fallbackOptions' => app(SubThemeRegistry::class)->options(),
             'colorKeyLabel' => ThemePresenter::colorLabel($this->colorKey),
         ]);
+    }
+
+    private function syncThemeGroups(): void
+    {
+        $this->groups = ThemePresenter::groupedCards();
+    }
+
+    private function notify(Notification $notification): void
+    {
+        $notification->send();
+
+        $payload = $notification->toArray();
+
+        $this->dispatch('notificationSent', notification: $payload)
+            ->to(FilamentNotifications::class);
+
+        $this->dispatch('notificationsSent')
+            ->to(FilamentNotifications::class);
     }
 }

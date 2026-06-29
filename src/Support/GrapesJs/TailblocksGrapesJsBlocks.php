@@ -107,8 +107,10 @@ final class TailblocksGrapesJsBlocks
     protected static function prepareBlockHtml(string $html): string
     {
         return GrapesJsHtmlSanitizer::sanitize(
-            TailblocksThemeTokenMigrator::migrateHtml(
-                TailwindV4ClassMigrator::migrateHtml($html),
+            GrapesJsPlaceholderNormalizer::normalizeHtml(
+                TailblocksThemeTokenMigrator::migrateHtml(
+                    TailwindV4ClassMigrator::migrateHtml($html),
+                ),
             ),
         );
     }

@@ -405,7 +405,6 @@ class VpressSettingsPage extends Page
     protected function areaThemesSection(): Section
     {
         return Section::make(__('vpress::settings.area_themes_section'))
-            ->description(__('vpress::settings.area_themes_section_help_v2'))
             ->contained(false)
             ->compact()
             ->schema([

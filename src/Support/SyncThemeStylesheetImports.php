@@ -65,6 +65,22 @@ final class SyncThemeStylesheetImports
             $changed = true;
         }
 
+        foreach (self::optionalChannelCssPaths() as $absoluteCssPath) {
+            $importPath = ThemeConvention::cssImportPathFromBundle($absoluteCssPath);
+
+            if ($importPath === null || isset($presentImports[$importPath])) {
+                continue;
+            }
+
+            $insertAt = self::landingImportInsertIndex($kept);
+
+            array_splice($kept, $insertAt, 0, [
+                "@import '{$importPath}';",
+            ]);
+            $presentImports[$importPath] = true;
+            $changed = true;
+        }
+
         if (! $changed) {
             return false;
         }
@@ -100,6 +116,45 @@ final class SyncThemeStylesheetImports
         }
 
         return $paths;
+    }
+
+    /**
+     * Optional vpress channel stylesheets shipped by other voodflow packages.
+     *
+     * @return list<string>
+     */
+    private static function optionalChannelCssPaths(): array
+    {
+        $paths = [];
+
+        foreach (['vexhibitors', 'vevents'] as $package) {
+            foreach ([
+                base_path("packages/voodflow/{$package}/resources/css/vpress-channel.css"),
+                base_path("vendor/voodflow/{$package}/resources/css/vpress-channel.css"),
+            ] as $candidate) {
+                if (is_file($candidate)) {
+                    $paths[] = $candidate;
+
+                    break;
+                }
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * @param  list<string>  $lines
+     */
+    private static function landingImportInsertIndex(array $lines): int
+    {
+        foreach ($lines as $index => $line) {
+            if (str_contains($line, "@import './landing.css'")) {
+                return $index + 1;
+            }
+        }
+
+        return count($lines);
     }
 
     private static function isPackageImport(string $importPath): bool

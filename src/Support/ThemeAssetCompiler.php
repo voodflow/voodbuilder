@@ -30,4 +30,13 @@ final class ThemeAssetCompiler
 
         return $process->isSuccessful();
     }
+
+    public static function scheduleCompile(?string $workingDirectory = null): void
+    {
+        $workingDirectory ??= base_path();
+
+        dispatch(static function () use ($workingDirectory): void {
+            self::compile($workingDirectory);
+        })->afterResponse();
+    }
 }

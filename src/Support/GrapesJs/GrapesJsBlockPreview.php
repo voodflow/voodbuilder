@@ -62,7 +62,7 @@ final class GrapesJsBlockPreview
         $html = $blockClass::toPreviewHtml($mergedConfig, $context);
 
         if (SiteFooterBlocks::isFooterBlockId($blockId)) {
-            return $html;
+            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($html);
         }
 
         return GrapesJsRichContentBlockAdapter::wrap($blockId, $mergedConfig, $html);

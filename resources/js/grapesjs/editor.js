@@ -227,6 +227,7 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.on('load', () => {
         migrateEditorComponents(editor);
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
+            migrateEditorComponents(editor);
             editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
                 lockDynamicPreviewContent(component);
 

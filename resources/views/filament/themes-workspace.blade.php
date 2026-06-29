@@ -26,6 +26,8 @@
 
         .vpress-themes-ws__catalog-column {
             min-width: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .vpress-themes-ws__catalog-note {
@@ -63,28 +65,130 @@
             position: relative;
             width: 100%;
             flex-shrink: 0;
+            min-height: 6.25rem;
             border-radius: var(--vp-ws-radius);
             overflow: hidden;
             cursor: pointer;
             transition: box-shadow 0.15s ease, transform 0.15s ease;
             box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
-        }
-
-        .vpress-themes-ws__intro {
-            font-size: 0.8125rem;
-            line-height: 1.45;
-            color: rgb(100 116 139);
-            margin: 0 0 1rem;
-            max-width: 42rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .vpress-themes-ws__header {
+            margin-bottom: 1rem;
+        }
+
+        .vpress-themes-ws__header-hint {
+            margin: 0;
+            font-size: 0.8125rem;
+            line-height: 1.45;
+            color: rgb(100 116 139);
+            max-width: 42rem;
+        }
+
+        .dark .vpress-themes-ws__header-hint {
+            color: rgb(148 163 184);
+        }
+
+        .vpress-themes-ws__catalog-column-header {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            justify-content: flex-end;
-            gap: 0.5rem;
-            margin-bottom: 1.25rem;
+            gap: 0.375rem;
+            min-height: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .vpress-themes-ws__card--import.is-importing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .vpress-themes-ws__import-loading {
+            display: none;
+            margin-top: 0.25rem;
+            min-height: 1.125rem;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            line-height: 1.125rem;
+            color: rgb(100 116 139);
+        }
+
+        .vpress-themes-ws__import-loading[wire\:loading][wire\:target="importArchive"] {
+            display: block;
+        }
+
+        .vpress-themes-ws__card--import .vpress-themes-ws__card-badge[wire\:loading][wire\:target="importArchive"] {
+            display: none;
+        }
+
+        .vpress-themes-ws__card--import {
+            border: 1px dashed rgb(203 213 225);
+            background: rgb(248 250 252 / 0.45);
+            box-shadow: none;
+            cursor: pointer;
+        }
+
+        .vpress-themes-ws__card--import:hover {
+            border-color: rgb(148 163 184);
+            background: rgb(248 250 252 / 0.85);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgb(15 23 42 / 0.06);
+        }
+
+        .vpress-themes-ws__card-strip--import span {
+            background: rgb(226 232 240);
+        }
+
+        .vpress-themes-ws__card--import .vpress-themes-ws__card-name {
+            color: rgb(71 85 105);
+        }
+
+        .vpress-themes-ws__card--import .vpress-themes-ws__card-badge {
+            color: rgb(100 116 139);
+        }
+
+        .dark .vpress-themes-ws__card--import {
+            border-color: rgb(71 85 105);
+            background: rgb(15 23 42 / 0.35);
+        }
+
+        .dark .vpress-themes-ws__card--import:hover {
+            border-color: rgb(100 116 139);
+            background: rgb(30 41 59 / 0.55);
+        }
+
+        .dark .vpress-themes-ws__card-strip--import span {
+            background: rgb(51 65 85);
+        }
+
+        .dark .vpress-themes-ws__card--import .vpress-themes-ws__card-name {
+            color: rgb(226 232 240);
+        }
+
+        .vpress-themes-ws__card--import:hover .vpress-themes-ws__card-icon {
+            color: color-mix(in srgb, var(--vp-ws-accent) 75%, rgb(71 85 105));
+        }
+
+        .vpress-themes-ws__import-label {
+            position: relative;
+            display: block;
+            margin: 0;
+        }
+
+        .vpress-themes-ws__import-label input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dark .vpress-themes-ws__empty-card {
+            border-color: rgb(71 85 105);
+            background: rgb(15 23 42 / 0.35);
+            color: rgb(148 163 184);
         }
 
         .vpress-themes-ws__btn {
@@ -132,7 +236,7 @@
         .vpress-themes-ws__section-title {
             font-size: 0.875rem;
             font-weight: 600;
-            margin: 0 0 0.5rem;
+            margin: 0;
             color: rgb(100 116 139);
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -148,12 +252,7 @@
         }
 
         .vpress-themes-ws__card--bundled {
-            cursor: default;
-        }
-
-        .vpress-themes-ws__card--bundled:hover {
-            transform: none;
-            box-shadow: none;
+            cursor: pointer;
         }
 
         .vpress-themes-ws__card-strip {
@@ -167,7 +266,46 @@
         }
 
         .vpress-themes-ws__card-body {
-            padding: 0.625rem 0.75rem 0.375rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 0.625rem 0.75rem 1.75rem;
+            min-height: 3.75rem;
+        }
+
+        .vpress-themes-ws__card-icon {
+            position: absolute;
+            right: 0.5rem;
+            bottom: 0.4375rem;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            color: color-mix(in srgb, rgb(51 65 85) 42%, transparent);
+            pointer-events: none;
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+
+        .vpress-themes-ws__card-icon svg {
+            width: 0.8125rem;
+            height: 0.8125rem;
+        }
+
+        .vpress-themes-ws__card:hover .vpress-themes-ws__card-icon {
+            color: color-mix(in srgb, var(--vp-card-accent, rgb(51 65 85)) 72%, rgb(51 65 85));
+        }
+
+        .dark .vpress-themes-ws__card-icon {
+            color: color-mix(in srgb, rgb(226 232 240) 45%, transparent);
+        }
+
+        .dark .vpress-themes-ws__card:hover .vpress-themes-ws__card-icon {
+            color: color-mix(in srgb, var(--vp-card-accent, rgb(226 232 240)) 80%, rgb(226 232 240));
         }
 
         .vpress-themes-ws__card-name {
@@ -184,81 +322,23 @@
         }
 
         .vpress-themes-ws__card-badge {
-            display: inline-block;
+            display: block;
             margin-top: 0.25rem;
+            min-height: 1.125rem;
             font-size: 0.6875rem;
             font-weight: 500;
+            line-height: 1.125rem;
             color: rgb(100 116 139);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .vpress-themes-ws__card-actions {
+        .vpress-themes-ws__editor-actions {
             display: flex;
-            gap: 0.125rem;
-            justify-content: flex-end;
-            padding: 0 0.5rem 0.5rem;
-        }
-
-        .vpress-themes-ws__icon-btn {
-            width: 1.625rem;
-            height: 1.625rem;
-            border-radius: 0.375rem;
-            border: none;
-            background: transparent;
-            color: rgb(100 116 139);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.15s, color 0.15s;
-        }
-
-        .vpress-themes-ws__icon-btn:hover {
-            background: rgb(15 23 42 / 0.06);
-            color: rgb(30 41 59);
-        }
-
-        .vpress-themes-ws__clone-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            height: 1.625rem;
-            padding: 0 0.5rem;
-            border-radius: 0.375rem;
-            border: 1px solid rgb(203 213 225 / 0.9);
-            background: rgb(255 255 255 / 0.85);
-            color: rgb(51 65 85);
-            font-size: 0.6875rem;
-            font-weight: 600;
-            line-height: 1;
-            cursor: pointer;
-            transition: background 0.15s, border-color 0.15s, color 0.15s;
-        }
-
-        .vpress-themes-ws__clone-btn:hover {
-            background: rgb(248 250 252);
-            border-color: rgb(148 163 184);
-            color: rgb(15 23 42);
-        }
-
-        .dark .vpress-themes-ws__clone-btn {
-            border-color: rgb(71 85 105 / 0.7);
-            background: rgb(30 41 59 / 0.5);
-            color: rgb(226 232 240);
-        }
-
-        .dark .vpress-themes-ws__clone-btn:hover {
-            background: rgb(51 65 85 / 0.6);
-            border-color: rgb(100 116 139);
-            color: rgb(248 250 252);
-        }
-
-        .vpress-themes-ws__card--bundled .vpress-themes-ws__card-actions {
-            padding-top: 0.125rem;
-        }
-
-        .dark .vpress-themes-ws__icon-btn:hover {
-            background: rgb(255 255 255 / 0.08);
-            color: rgb(248 250 252);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .vpress-themes-ws__editor {
@@ -331,6 +411,25 @@
             color: rgb(15 23 42);
         }
 
+        .vpress-themes-ws__field select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 2rem;
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1rem 1rem;
+            box-shadow: none;
+        }
+
+        .vpress-themes-ws__field select:focus {
+            outline: 2px solid color-mix(in srgb, var(--vp-ws-accent) 35%, transparent);
+            outline-offset: 1px;
+            border-color: rgb(148 163 184);
+        }
+
         .vpress-themes-ws__field input:disabled {
             background: rgb(248 250 252);
             color: rgb(100 116 139);
@@ -345,9 +444,13 @@
         .dark .vpress-themes-ws__field input,
         .dark .vpress-themes-ws__field textarea,
         .dark .vpress-themes-ws__field select {
-            background: rgb(15 23 42);
+            background-color: rgb(15 23 42);
             border-color: rgb(71 85 105);
             color: #fff;
+        }
+
+        .dark .vpress-themes-ws__field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
         }
 
         .vpress-themes-ws__palette-block {
@@ -497,55 +600,42 @@
         .vpress-themes-ws__seed-row input[type="text"] {
             flex: 1;
         }
-
-        .vpress-themes-ws__import-label {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .vpress-themes-ws__import-label input[type="file"] {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
     </style>
 
     <div class="vpress-themes-ws__header">
-        <label class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost vpress-themes-ws__import-label">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-7.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-            {{ __('vpress::settings.theme_workspace_import') }}
-            <input type="file" wire:model="importArchive" accept=".zip,application/zip" />
-        </label>
+        <p class="vpress-themes-ws__header-hint">{{ __('vpress::settings.themes_library_intro') }}</p>
     </div>
 
-    <p class="vpress-themes-ws__intro">{{ __('vpress::settings.themes_library_intro') }}</p>
-
     <div class="vpress-themes-ws__catalog">
-        <p class="vpress-themes-ws__catalog-note">{{ __('vpress::settings.theme_workspace_bundled_note') }}</p>
-
         <div class="vpress-themes-ws__catalog-column">
-            <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_plugin_themes') }}</h3>
+            <div class="vpress-themes-ws__catalog-column-header">
+                <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_plugin_themes') }}</h3>
+            </div>
             @if ($groups['plugin'] !== [])
-                <div class="vpress-themes-ws__grid">
+                <div class="vpress-themes-ws__grid" wire:key="plugin-themes-grid">
                     @foreach ($groups['plugin'] as $card)
-                        @include('vpress::filament.partials.theme-card', ['card' => $card])
+                        <div wire:key="plugin-theme-{{ $card['id'] }}">
+                            @include('vpress::filament.partials.theme-card', ['card' => $card, 'selectedId' => $selectedId])
+                        </div>
                     @endforeach
                 </div>
             @endif
         </div>
 
         <div class="vpress-themes-ws__catalog-column">
-            <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_your_themes') }}</h3>
-            @if ($groups['custom'] !== [])
-                <div class="vpress-themes-ws__grid">
-                    @foreach ($groups['custom'] as $card)
-                        @include('vpress::filament.partials.theme-card', ['card' => $card])
-                    @endforeach
+            <div class="vpress-themes-ws__catalog-column-header">
+                <h3 class="vpress-themes-ws__section-title">{{ __('vpress::settings.theme_workspace_your_themes') }}</h3>
+            </div>
+            <div class="vpress-themes-ws__grid" wire:key="custom-themes-grid">
+                @foreach ($groups['custom'] as $card)
+                    <div wire:key="custom-theme-{{ $card['id'] }}">
+                        @include('vpress::filament.partials.theme-card', ['card' => $card, 'selectedId' => $selectedId])
+                    </div>
+                @endforeach
+                <div wire:key="import-theme-card">
+                    @include('vpress::filament.partials.theme-import-card')
                 </div>
-            @else
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('vpress::settings.theme_workspace_no_custom') }}</p>
-            @endif
+            </div>
         </div>
     </div>
 
@@ -559,6 +649,25 @@
                     {{ __('vpress::settings.theme_workspace_close') }}
                 </button>
             </div>
+
+            @if ($metaEditable || $canEditColors)
+                <div class="vpress-themes-ws__editor-actions">
+                    <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost" wire:click="openCloneModal('{{ $selectedId }}')">
+                        {{ __('vpress::settings.clone_theme') }}
+                    </button>
+                    <button type="button" class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost" wire:click="exportTheme('{{ $selectedId }}')">
+                        {{ __('vpress::settings.export_theme') }}
+                    </button>
+                    <button
+                        type="button"
+                        class="vpress-themes-ws__btn vpress-themes-ws__btn--ghost"
+                        style="color:#b91c1c;border-color:#fecaca"
+                        wire:click="confirmDelete"
+                    >
+                        {{ __('vpress::settings.delete_theme') }}
+                    </button>
+                </div>
+            @endif
 
             <div class="vpress-themes-ws__fields">
                 <div class="vpress-themes-ws__field">

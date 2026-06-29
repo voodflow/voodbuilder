@@ -46,6 +46,15 @@ final class GrapesJsRichContentBlockAdapter
         return self::fallbackEditorHtml($blockClass::getLabel());
     }
 
+    public static function prepareBlockHtml(string $html): string
+    {
+        return GrapesJsPlaceholderNormalizer::normalizeHtml(
+            TailblocksThemeTokenMigrator::migrateHtml(
+                TailwindV4ClassMigrator::migrateHtml($html),
+            ),
+        );
+    }
+
     public static function fallbackEditorHtml(string $label): string
     {
         $safeLabel = htmlspecialchars($label, ENT_QUOTES | ENT_HTML5);
@@ -58,6 +67,8 @@ final class GrapesJsRichContentBlockAdapter
      */
     public static function wrap(string $blockId, array $config, string $innerHtml): string
     {
+        $innerHtml = self::prepareBlockHtml($innerHtml);
+
         $encodedConfig = htmlspecialchars(
             json_encode($config, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             ENT_QUOTES | ENT_HTML5,
@@ -74,7 +85,7 @@ HTML;
 
     public static function previewMedia(string $html, string $label): string
     {
-        $migrated = TailwindV4ClassMigrator::migrateHtml($html);
+        $migrated = self::prepareBlockHtml($html);
 
         return '<div class="vpress-gjs-block-preview"><div class="vpress-gjs-block-preview__scale">'.$migrated.'</div></div>';
     }

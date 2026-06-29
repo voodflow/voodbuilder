@@ -63,6 +63,7 @@ final class TailblocksThemeTokenMigrator
         '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#2563eb', '#1d4ed8',
         '#1e40af', '#ca8a04', '#a16207', '#dc2626', '#b91c1c', '#9333ea',
         '#7e22ce', '#db2777', '#be185d', '#16a34a', '#15803d',
+        '#111827', '#1f2937', '#0f172a', '#374151', '#172554',
     ];
 
     public static function migrateHtml(string $html): string
@@ -494,6 +495,20 @@ final class TailblocksThemeTokenMigrator
         }
 
         $style = self::replaceFixedBackgroundColors($style);
+
+        $style = preg_replace_callback(
+            '/\bcolor:\s*([^;]+)/i',
+            static function (array $matches): string {
+                $value = strtolower(trim($matches[1]));
+
+                if (self::isFixedDarkTextColor($value)) {
+                    return 'color: var(--color-vp-text-1)';
+                }
+
+                return $matches[0];
+            },
+            $style,
+        ) ?? $style;
 
         return self::replaceFixedBrandBackgroundColors($style);
     }

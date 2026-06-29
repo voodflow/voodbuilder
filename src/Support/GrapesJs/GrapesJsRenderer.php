@@ -17,8 +17,10 @@ final class GrapesJsRenderer
             return '';
         }
 
-        return TailblocksThemeTokenMigrator::migrateHtml(
-            GrapesJsHtmlSanitizer::sanitize($html),
+        return GrapesJsPlaceholderNormalizer::normalizeHtml(
+            TailblocksThemeTokenMigrator::migrateHtml(
+                GrapesJsHtmlSanitizer::sanitize($html),
+            ),
         );
     }
 

@@ -135,7 +135,9 @@ final class GrapesJsEditorGate
         $project = $payload['project'] ?? null;
 
         return [
-            'html' => TailblocksThemeTokenMigrator::migrateHtml($html),
+            'html' => GrapesJsPlaceholderNormalizer::normalizeHtml(
+                TailblocksThemeTokenMigrator::migrateHtml($html),
+            ),
             'css' => TailblocksThemeTokenMigrator::migrateCss($css),
             'project' => is_array($project)
                 ? TailblocksThemeTokenMigrator::migrateProject($project)

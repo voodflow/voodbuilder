@@ -7,7 +7,6 @@
 @import 'tailwindcss';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
-@import '../../../../../packages/voodflow/vexhibitors/resources/css/vpress-channel.css';
 @import '../themes/blog/theme.css';
 @import '../themes/news/theme.css';
 @import './landing.css';
@@ -21,10 +20,6 @@
 @source '../../../../../packages/voodflow/vtuts/resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vdocs/resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
-@source '../../../../../packages/voodflow/vexhibitors/resources/views/**/*.blade.php';
-@source '../../../../../vendor/voodflow/vexhibitors/resources/views/**/*.blade.php';
-@source '../../../../../packages/voodflow/vevents/resources/views/**/*.blade.php';
-@source '../../../../../vendor/voodflow/vevents/resources/views/**/*.blade.php';
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
@@ -554,9 +549,6 @@ html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:
 html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-vpress-search-dialog], [data-vpress-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
-@import '../../../../../resources/vpress/themes/documenti/theme.css';
-@import '../../../../../resources/vpress/themes/landing-custom/theme.css';
-@import '../../../../../resources/vpress/themes/tutorials/theme.css';
-@import '../../../../../resources/vpress/themes/blog-custom/theme.css';
-@import '../../vendor/orchestra/testbench-core/laravel/resources/vpress/themes/export-demo-2/theme.css';
-@import '../../../../../resources/vpress/themes/news-custom/theme.css';
+
+
+@import '../../../../../resources/vpress/themes/polito/theme.css';

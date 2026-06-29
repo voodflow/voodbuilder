@@ -59,7 +59,7 @@
 }
 
 .vpress-grapesjs-frontend__button--primary {
-    background: var(--color-vp-brand, #3451b2);
+    background: var(--color-vp-brand-1, #3451b2);
     color: #fff;
 }
 
@@ -132,7 +132,7 @@
 
 .vpress-gjs-dynamic {
     position: relative;
-    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand, #3451b2) 35%, transparent);
+    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 35%, transparent);
     outline-offset: 2px;
 }
 
@@ -186,16 +186,6 @@ body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas {
     height: auto !important;
 }
 
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-editor {
-    display: flex;
-    height: 100% !important;
-    min-height: 0;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-pn-panels {
-    min-height: 0;
-}
-
 body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-blocks-c {
     min-width: 14rem;
 }
@@ -224,16 +214,6 @@ body.vpress-grapesjs-editing .vpress-grapesjs-mode {
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas,
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-cv-canvas__frames {
-    top: 0 !important;
-    height: 100% !important;
-}
-
-body.vpress-grapesjs-editing .vpress-grapesjs-frontend__canvas .gjs-frame-wrapper {
-    top: 0 !important;
 }
 
 body.vpress-grapesjs-editing header[role='banner'] {
