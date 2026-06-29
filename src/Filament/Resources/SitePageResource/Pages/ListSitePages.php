@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\SitePageResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Voodflow\Vpress\Filament\Resources\SitePageResource;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
 class ListSitePages extends ListRecords
 {

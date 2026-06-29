@@ -1,5 +1,5 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 
     $embedUrl = $embedUrl ?? null;
     $shell = LandingBlockSupport::sectionShellClass($config);
@@ -24,7 +24,7 @@
             </div>
         @else
             <div class="vp-landing-video__placeholder">
-                <p>{{ __('vpress::landing.video_unavailable') }}</p>
+                <p>{{ __('voodbuilder::landing.video_unavailable') }}</p>
             </div>
         @endif
 

@@ -1,5 +1,5 @@
 /**
- * Optional GrapesJS community plugins — loaded based on vpress.grapesjs.plugins config.
+ * Optional GrapesJS community plugins — loaded based on voodbuilder.grapesjs.plugins config.
  */
 import grapesjsPluginForms from 'grapesjs-plugin-forms';
 import grapesjsStyleBg from 'grapesjs-style-bg';

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Support\ThemeMapPayload;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Support\ThemeMapPayload;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemeMapPayloadTest extends TestCase
 {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
-use Voodflow\Vpress\Support\PageBuilderAccess;
-use Voodflow\Vpress\Support\ThemePalette;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\ThemePalette;
 
 final class GrapesJsEditorGate
 {
@@ -31,7 +31,7 @@ final class GrapesJsEditorGate
 
     public static function userCanEdit(SitePage $page): bool
     {
-        return config('vpress.grapesjs.enabled', true)
+        return config('voodbuilder.grapesjs.enabled', true)
             && $page->usesGrapesJsBuilder()
             && PageBuilderAccess::userCanUsePageBuilder();
     }
@@ -50,68 +50,68 @@ final class GrapesJsEditorGate
 
         return [
             'pageId' => $page->getKey(),
-            'saveUrl' => route('vpress.grapesjs.pages.update', $page),
+            'saveUrl' => route('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => request()->url(),
-            'uploadUrl' => route('vpress.grapesjs.upload'),
+            'uploadUrl' => route('voodbuilder.grapesjs.upload'),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
-            'blocksUrl' => route('vpress.grapesjs.blocks'),
-            'bindingsUrl' => route('vpress.grapesjs.bindings'),
-            'bindingsPreviewUrl' => route('vpress.grapesjs.bindings.preview', $page),
-            'blocksRenderUrl' => route('vpress.grapesjs.blocks.render'),
-            'formSubmitUrl' => route('vpress.grapesjs.forms.submit', $page),
-            'plugins' => config('vpress.grapesjs.plugins', []),
+            'blocksUrl' => route('voodbuilder.grapesjs.blocks'),
+            'bindingsUrl' => route('voodbuilder.grapesjs.bindings'),
+            'bindingsPreviewUrl' => route('voodbuilder.grapesjs.bindings.preview', $page),
+            'blocksRenderUrl' => route('voodbuilder.grapesjs.blocks.render'),
+            'formSubmitUrl' => route('voodbuilder.grapesjs.forms.submit', $page),
+            'plugins' => config('voodbuilder.grapesjs.plugins', []),
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
             'subTheme' => $subTheme,
             'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
-            'builderBrand' => config('vpress.grapesjs.builder.brand', 'VoodBuilder'),
+            'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => [
-                'save' => __('vpress::pro.frontend.save'),
-                'saving' => __('vpress::pro.frontend.saving'),
-                'saved' => __('vpress::pro.frontend.saved'),
-                'error' => __('vpress::pro.frontend.error'),
-                'makeDynamic' => __('vpress::pro.bindings.make_dynamic'),
-                'clearDynamic' => __('vpress::pro.bindings.clear_dynamic'),
-                'modalTitle' => __('vpress::pro.bindings.modal_title'),
-                'modalSource' => __('vpress::pro.bindings.modal_source'),
-                'modalField' => __('vpress::pro.bindings.modal_field'),
-                'modalApply' => __('vpress::pro.bindings.modal_apply'),
-                'modalCancel' => __('vpress::pro.bindings.modal_cancel'),
-                'selectComponent' => __('vpress::pro.bindings.select_component'),
-                'noSources' => __('vpress::pro.bindings.no_sources'),
-                'inspectorHint' => __('vpress::pro.bindings.inspector_hint'),
-                'currentBinding' => __('vpress::pro.bindings.current_binding'),
-                'repeatSource' => __('vpress::pro.bindings.repeat_source'),
-                'repeatLimit' => __('vpress::pro.bindings.repeat_limit'),
-                'repeatSort' => __('vpress::pro.bindings.repeat_sort'),
-                'repeatSortDir' => __('vpress::pro.bindings.repeat_sort_dir'),
-                'repeatSortAsc' => __('vpress::pro.bindings.repeat_sort_asc'),
-                'repeatSortDesc' => __('vpress::pro.bindings.repeat_sort_desc'),
-                'applyRepeat' => __('vpress::pro.bindings.apply_repeat'),
-                'clearRepeat' => __('vpress::pro.bindings.clear_repeat'),
-                'currentRepeat' => __('vpress::pro.bindings.current_repeat'),
-                'repeatList' => __('vpress::pro.bindings.repeat_list'),
-                'repeatContainerHint' => __('vpress::pro.bindings.repeat_container_hint'),
-                'bindingNeedsLeaf' => __('vpress::pro.bindings.binding_needs_leaf'),
-                'repeatContainerNoBind' => __('vpress::pro.bindings.repeat_container_no_bind'),
-                'repeatListNotField' => __('vpress::pro.bindings.repeat_list_not_field'),
-                'panelBlocks' => __('vpress::pro.editor_ui.panel_blocks'),
-                'panelInspector' => __('vpress::pro.editor_ui.panel_inspector'),
-                'blockSearch' => __('vpress::pro.editor_ui.block_search'),
-                'tabContent' => __('vpress::pro.editor_ui.tab_content'),
-                'tabStyle' => __('vpress::pro.editor_ui.tab_style'),
-                'tabDynamic' => __('vpress::pro.editor_ui.tab_dynamic'),
-                'tabLayers' => __('vpress::pro.editor_ui.tab_layers'),
-                'exitEditor' => __('vpress::pro.frontend.exit_editor'),
-                'deviceDesktop' => __('vpress::pro.editor_ui.device_desktop'),
-                'deviceTablet' => __('vpress::pro.editor_ui.device_tablet'),
-                'deviceMobile' => __('vpress::pro.editor_ui.device_mobile'),
-                'undo' => __('vpress::pro.editor_ui.undo'),
-                'redo' => __('vpress::pro.editor_ui.redo'),
-                'outline' => __('vpress::pro.editor_ui.outline'),
-                'preview' => __('vpress::pro.editor_ui.preview'),
+                'save' => __('voodbuilder::pro.frontend.save'),
+                'saving' => __('voodbuilder::pro.frontend.saving'),
+                'saved' => __('voodbuilder::pro.frontend.saved'),
+                'error' => __('voodbuilder::pro.frontend.error'),
+                'makeDynamic' => __('voodbuilder::pro.bindings.make_dynamic'),
+                'clearDynamic' => __('voodbuilder::pro.bindings.clear_dynamic'),
+                'modalTitle' => __('voodbuilder::pro.bindings.modal_title'),
+                'modalSource' => __('voodbuilder::pro.bindings.modal_source'),
+                'modalField' => __('voodbuilder::pro.bindings.modal_field'),
+                'modalApply' => __('voodbuilder::pro.bindings.modal_apply'),
+                'modalCancel' => __('voodbuilder::pro.bindings.modal_cancel'),
+                'selectComponent' => __('voodbuilder::pro.bindings.select_component'),
+                'noSources' => __('voodbuilder::pro.bindings.no_sources'),
+                'inspectorHint' => __('voodbuilder::pro.bindings.inspector_hint'),
+                'currentBinding' => __('voodbuilder::pro.bindings.current_binding'),
+                'repeatSource' => __('voodbuilder::pro.bindings.repeat_source'),
+                'repeatLimit' => __('voodbuilder::pro.bindings.repeat_limit'),
+                'repeatSort' => __('voodbuilder::pro.bindings.repeat_sort'),
+                'repeatSortDir' => __('voodbuilder::pro.bindings.repeat_sort_dir'),
+                'repeatSortAsc' => __('voodbuilder::pro.bindings.repeat_sort_asc'),
+                'repeatSortDesc' => __('voodbuilder::pro.bindings.repeat_sort_desc'),
+                'applyRepeat' => __('voodbuilder::pro.bindings.apply_repeat'),
+                'clearRepeat' => __('voodbuilder::pro.bindings.clear_repeat'),
+                'currentRepeat' => __('voodbuilder::pro.bindings.current_repeat'),
+                'repeatList' => __('voodbuilder::pro.bindings.repeat_list'),
+                'repeatContainerHint' => __('voodbuilder::pro.bindings.repeat_container_hint'),
+                'bindingNeedsLeaf' => __('voodbuilder::pro.bindings.binding_needs_leaf'),
+                'repeatContainerNoBind' => __('voodbuilder::pro.bindings.repeat_container_no_bind'),
+                'repeatListNotField' => __('voodbuilder::pro.bindings.repeat_list_not_field'),
+                'panelBlocks' => __('voodbuilder::pro.editor_ui.panel_blocks'),
+                'panelInspector' => __('voodbuilder::pro.editor_ui.panel_inspector'),
+                'blockSearch' => __('voodbuilder::pro.editor_ui.block_search'),
+                'tabContent' => __('voodbuilder::pro.editor_ui.tab_content'),
+                'tabStyle' => __('voodbuilder::pro.editor_ui.tab_style'),
+                'tabDynamic' => __('voodbuilder::pro.editor_ui.tab_dynamic'),
+                'tabLayers' => __('voodbuilder::pro.editor_ui.tab_layers'),
+                'exitEditor' => __('voodbuilder::pro.frontend.exit_editor'),
+                'deviceDesktop' => __('voodbuilder::pro.editor_ui.device_desktop'),
+                'deviceTablet' => __('voodbuilder::pro.editor_ui.device_tablet'),
+                'deviceMobile' => __('voodbuilder::pro.editor_ui.device_mobile'),
+                'undo' => __('voodbuilder::pro.editor_ui.undo'),
+                'redo' => __('voodbuilder::pro.editor_ui.redo'),
+                'outline' => __('voodbuilder::pro.editor_ui.outline'),
+                'preview' => __('voodbuilder::pro.editor_ui.preview'),
             ],
         ];
     }

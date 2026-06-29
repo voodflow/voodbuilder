@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Policies;
+namespace Voodflow\Voodbuilder\Policies;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationPolicy
 {

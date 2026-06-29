@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class SocialShareSupport
 {
@@ -12,12 +12,12 @@ final class SocialShareSupport
     public static function networkOptions(): array
     {
         return [
-            'facebook' => __('vpress::landing.social.networks.facebook'),
-            'x' => __('vpress::landing.social.networks.x'),
-            'linkedin' => __('vpress::landing.social.networks.linkedin'),
-            'whatsapp' => __('vpress::landing.social.networks.whatsapp'),
-            'email' => __('vpress::landing.social.networks.email'),
-            'copy_link' => __('vpress::landing.social.networks.copy_link'),
+            'facebook' => __('voodbuilder::landing.social.networks.facebook'),
+            'x' => __('voodbuilder::landing.social.networks.x'),
+            'linkedin' => __('voodbuilder::landing.social.networks.linkedin'),
+            'whatsapp' => __('voodbuilder::landing.social.networks.whatsapp'),
+            'email' => __('voodbuilder::landing.social.networks.email'),
+            'copy_link' => __('voodbuilder::landing.social.networks.copy_link'),
         ];
     }
 
@@ -42,8 +42,8 @@ final class SocialShareSupport
             return $configuredTitle;
         }
 
-        if (class_exists(VpressSettings::class)) {
-            return VpressSettings::siteTitle();
+        if (class_exists(VoodbuilderSettings::class)) {
+            return VoodbuilderSettings::siteTitle();
         }
 
         return (string) config('app.name');

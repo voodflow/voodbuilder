@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 final class SiteFooterBlocks
 {

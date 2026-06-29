@@ -1,10 +1,10 @@
 <?php
 
-namespace Voodflow\Vpress\Filament\Resources\ModelIntegrationResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource\Pages;
 
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource;
+use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 
 class ListModelIntegrations extends ListRecords
 {

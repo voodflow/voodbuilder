@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 final class Navigation
 {
@@ -19,11 +19,11 @@ final class Navigation
             return collect();
         }
 
-        if (! Schema::hasTable('vpress_menus')) {
+        if (! Schema::hasTable('voodbuilder_menus')) {
             return collect();
         }
 
-        $cached = Cache::get("vpress.menu.{$menuSlug}");
+        $cached = Cache::get("voodbuilder.menu.{$menuSlug}");
 
         if (is_array($cached)) {
             return self::hydrateItems($cached);
@@ -31,7 +31,7 @@ final class Navigation
 
         $items = self::loadItems($menuSlug);
 
-        Cache::put("vpress.menu.{$menuSlug}", self::dehydrateItems($items), 3600);
+        Cache::put("voodbuilder.menu.{$menuSlug}", self::dehydrateItems($items), 3600);
 
         return $items;
     }
@@ -50,18 +50,18 @@ final class Navigation
     {
         if ($menuSlug !== null) {
             foreach (self::slugAliases($menuSlug) as $slug) {
-                Cache::forget("vpress.menu.{$slug}");
+                Cache::forget("voodbuilder.menu.{$slug}");
             }
 
             return;
         }
 
-        if (! Schema::hasTable('vpress_menus')) {
+        if (! Schema::hasTable('voodbuilder_menus')) {
             return;
         }
 
         NavigationMenu::query()->pluck('slug')->each(
-            fn (string $slug) => Cache::forget("vpress.menu.{$slug}")
+            fn (string $slug) => Cache::forget("voodbuilder.menu.{$slug}")
         );
     }
 

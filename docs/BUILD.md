@@ -1,21 +1,21 @@
 # Build and compile assets
 
-Vpress ships **source CSS/JS** in the package. Your Laravel app compiles them with Vite.
+Voodbuilder ships **source CSS/JS** in the package. Your Laravel app compiles them with Vite.
 
 ---
 
 ## First-time setup
 
 ```bash
-php artisan vpress:install --with-npm-build
+php artisan voodbuilder:install --with-npm-build
 ```
 
 That command:
 
 1. Patches `package.json` with Tailwind, fonts, and GrapesJS dependencies
-2. Patches `vite.config.js` with vpress Vite entries
+2. Patches `vite.config.js` with voodbuilder Vite entries
 3. Runs `npm install`
-4. Runs `npm run build` (includes `vpress:sync-theme-imports`)
+4. Runs `npm run build` (includes `voodbuilder:sync-theme-imports`)
 
 Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
 
@@ -23,11 +23,11 @@ Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
 
 | File | When you must edit it |
 |------|------------------------|
-| Filament panel provider | Register `VpressPlugin::make()` once |
+| Filament panel provider | Register `VoodbuilderPlugin::make()` once |
 | `vite.config.js` | Add `tailwindcss()` plugin if your app does not use Tailwind v4 yet |
-| `resources/js/app.js` | Only if you have a custom dark-mode toggle that conflicts with vpress |
+| `resources/js/app.js` | Only if you have a custom dark-mode toggle that conflicts with voodbuilder |
 
-`vpress:install` patches `vite.config.js` to include:
+`voodbuilder:install` patches `vite.config.js` to include:
 
 | Vite input | Purpose |
 |------------|---------|
@@ -36,15 +36,15 @@ Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
 | `…/resources/css/grapesjs/editor.css` | Editor chrome styles |
 | `…/resources/css/grapesjs/tailblocks-utilities.css` | Tailblocks classes in the canvas |
 
-Paths differ for `vendor/voodflow/vpress` installs — `VpressPaths` resolves them.
+Paths differ for `vendor/voodflow/voodbuilder` installs — `VoodbuilderPaths` resolves them.
 
 ### Regenerating Tailblocks (optional)
 
-Only needed when you run `php artisan vpress:build-tailblocks`:
+Only needed when you run `php artisan voodbuilder:build-tailblocks`:
 
 ```bash
 npm install -D esbuild react react-dom prop-types
-php artisan vpress:build-tailblocks
+php artisan voodbuilder:build-tailblocks
 npm run build
 ```
 
@@ -54,12 +54,12 @@ npm run build
 
 | Change | Rebuild? |
 |--------|----------|
-| Edit sub-theme CSS (`resources/vpress/themes/*/theme.css`) | **Yes** |
-| `vpress:make-subtheme` (adds `@import`) | **Yes** |
+| Edit sub-theme CSS (`resources/voodbuilder/themes/*/theme.css`) | **Yes** |
+| `voodbuilder:make-subtheme` (adds `@import`) | **Yes** |
 | Edit `theme.css`, landing.css, events/blog/news CSS | **Yes** |
 | Edit GrapesJS `editor.js` | **Yes** |
 | Edit theme-map React (`resources/js/theme-map/`) | **Yes** — see below |
-| `vpress:build-tailblocks` | **Yes** (regenerates catalog + utilities scan) |
+| `voodbuilder:build-tailblocks` | **Yes** (regenerates catalog + utilities scan) |
 | Blade layout only (no new Tailwind classes) | Usually no |
 | New Tailwind classes in Blade | **Yes** (Tailwind scans `@source` paths) |
 
@@ -71,10 +71,10 @@ npm run dev
 
 ### Theme map (Filament Settings → Themes)
 
-The theme assignment UI is a **standalone React Flow bundle** inside vpress. It does **not** use voodflow or the host app Vite entries.
+The theme assignment UI is a **standalone React Flow bundle** inside voodbuilder. It does **not** use voodflow or the host app Vite entries.
 
 ```bash
-cd packages/voodflow/vpress   # or vendor/voodflow/vpress
+cd packages/voodflow/voodbuilder   # or vendor/voodflow/voodbuilder
 npm install
 npm run build:theme-map       # output: resources/dist/theme-map.js
 ```
@@ -96,10 +96,10 @@ theme.css (package)
   @import blog/theme.css
   @import news/theme.css
   @import events/theme.css
-  @import ../../../../resources/vpress/themes/polito/theme.css   ← your theme
+  @import ../../../../resources/voodbuilder/themes/polito/theme.css   ← your theme
 ```
 
-`vpress:make-subtheme` appends the last line automatically.
+`voodbuilder:make-subtheme` appends the last line automatically.
 
 ---
 
@@ -112,7 +112,7 @@ theme.css (package)
 ## GrapesJS Tailblocks pipeline
 
 ```bash
-php artisan vpress:build-tailblocks [--theme=indigo]
+php artisan voodbuilder:build-tailblocks [--theme=indigo]
 npm run build
 ```
 
@@ -122,7 +122,7 @@ Requires `esbuild`, `react`, `react-dom`, `prop-types` in the host app `node_mod
 
 ## Host app.js and theme toggle
 
-Vpress public layouts expose `window.__vpressTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
+Voodbuilder public layouts expose `window.__vpressTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
 
 ```js
 if (window.__vpressTheme) {
@@ -130,7 +130,7 @@ if (window.__vpressTheme) {
 }
 ```
 
-Otherwise both scripts fight and the toggle appears broken on vpress pages.
+Otherwise both scripts fight and the toggle appears broken on voodbuilder pages.
 
 ---
 

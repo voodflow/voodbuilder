@@ -1,12 +1,12 @@
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('body_class')
-    vpress-sub-theme-events @yield('body_class_extra')
+    voodbuilder-sub-theme-events @yield('body_class_extra')
 @endsection
 
 @section('content')
-    <div class="vpress-site-shell vpress-full-width-shell">
-        <div class="vpress-home-shell vpress-landing-shell">
+    <div class="voodbuilder-site-shell voodbuilder-full-width-shell">
+        <div class="voodbuilder-home-shell voodbuilder-landing-shell">
             @yield('full_width')
         </div>
     </div>

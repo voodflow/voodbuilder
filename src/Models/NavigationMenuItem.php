@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Models;
+namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Support\NavigationMenuItemTree;
-use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 
 class NavigationMenuItem extends Model
 {
-    protected $table = 'vpress_menu_items';
+    protected $table = 'voodbuilder_menu_items';
 
     protected $fillable = [
         'menu_id',
@@ -68,7 +68,7 @@ class NavigationMenuItem extends Model
 
         if ($parent?->parent_id !== null) {
             throw ValidationException::withMessages([
-                'parent_id' => __('vpress::admin.validation.menu_max_depth', [
+                'parent_id' => __('voodbuilder::admin.validation.menu_max_depth', [
                     'max' => NavigationMenuItemTree::MAX_DEPTH,
                 ]),
             ]);
@@ -192,13 +192,13 @@ class NavigationMenuItem extends Model
         if ($page?->isSectionHome() && filled($page->section)) {
             $resolved = SitePageResolver::publishedForMenu((string) request()->route('slug'));
 
-            return request()->routeIs('vpress.pages.show')
+            return request()->routeIs('voodbuilder.pages.show')
                 && $resolved !== null
                 && $resolved->section === $page->section
                 && $resolved->section_home;
         }
 
-        return request()->routeIs('vpress.pages.show')
+        return request()->routeIs('voodbuilder.pages.show')
             && SitePageResolver::publishedForMenu((string) $this->link)?->getKey()
                 === SitePageResolver::publishedForMenu((string) request()->route('slug'))?->getKey();
     }

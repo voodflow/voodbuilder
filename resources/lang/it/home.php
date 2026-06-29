@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 return [
-    'page_title' => 'Vpress',
-    'brand' => 'Vpress',
+    'page_title' => 'Voodbuilder',
+    'brand' => 'Voodbuilder',
     'headline' => 'Il sito pubblico Laravel, gestito da Filament',
     'tagline' => 'Frontend open source e admin Filament per home, navigazione, SEO, sub-temi e layout pronti per la documentazione.',
-    'cta_primary' => 'Scopri Vpress',
+    'cta_primary' => 'Scopri Voodbuilder',
     'cta_secondary' => 'Vedi su GitHub',
-    'features_title' => 'Cosa offre Vpress',
+    'features_title' => 'Cosa offre Voodbuilder',
     'feature_1_title' => 'Gestione sito con Filament',
     'feature_1_text' => 'Modifica home e pagine statiche con blocchi rich content, menu riutilizzabili, branding e SEO dall’admin.',
     'feature_2_title' => 'Layout pronto per la documentazione',

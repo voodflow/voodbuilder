@@ -1,16 +1,16 @@
 /**
- * Styles for vpress rich-editor custom block previews (Filament admin).
+ * Styles for voodbuilder rich-editor custom block previews (Filament admin).
  * Loaded via resources/css/filament/admin/theme.css
  */
 
-.fi-fo-rich-editor-custom-block-preview .vpress-block-preview {
+.fi-fo-rich-editor-custom-block-preview .voodbuilder-block-preview {
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
 }
 
-.fi-fo-rich-editor-custom-block-preview .vpress-block-preview a {
+.fi-fo-rich-editor-custom-block-preview .voodbuilder-block-preview a {
     cursor: pointer;
 }
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Feature;
+namespace Voodflow\Voodbuilder\Tests\Feature;
 
 use Filament\Facades\Filament;
 use Filament\FilamentServiceProvider;
@@ -11,9 +11,9 @@ use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsEditorGate;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsAssetUploadTest extends TestCase
 {
@@ -68,7 +68,7 @@ class GrapesJsAssetUploadTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->post(route('vpress.grapesjs.upload'), [
+        $response = $this->post(route('voodbuilder.grapesjs.upload'), [
             'file' => UploadedFile::fake()->image('hero.jpg', 1200, 800),
         ], [
             'Accept' => 'application/json',
@@ -79,7 +79,7 @@ class GrapesJsAssetUploadTest extends TestCase
         $url = $response->json('data.0');
 
         $this->assertIsString($url);
-        $this->assertStringStartsWith('/storage/vpress/grapesjs/', $url);
+        $this->assertStringStartsWith('/storage/voodbuilder/grapesjs/', $url);
         $this->assertStringEndsWith('.jpg', $url);
         $this->assertStringNotContainsString('http://', $url);
 
@@ -88,7 +88,7 @@ class GrapesJsAssetUploadTest extends TestCase
 
     public function test_guest_cannot_upload_assets(): void
     {
-        $this->post(route('vpress.grapesjs.upload'), [
+        $this->post(route('voodbuilder.grapesjs.upload'), [
             'file' => UploadedFile::fake()->image('hero.jpg'),
         ])->assertUnauthorized();
     }

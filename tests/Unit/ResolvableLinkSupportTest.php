@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Voodflow\Vpress\Support\LandingBlockSupport;
-use Voodflow\Vpress\Support\ResolvableLinkSupport;
+use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
 
 class ResolvableLinkSupportTest extends TestCase
 {

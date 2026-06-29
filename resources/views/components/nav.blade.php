@@ -4,10 +4,10 @@
 ])
 
 @php
-    use Voodflow\Vpress\Models\VpressSettings;
+    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
-    $showNotificationBell = (bool) VpressSettings::get('show_notification_bell', true);
-    $stickyNav = ! $hasDocSidebar && ($showReadingProgress || (bool) VpressSettings::get('sticky_nav', false));
+    $showNotificationBell = (bool) VoodbuilderSettings::get('show_notification_bell', true);
+    $stickyNav = ! $hasDocSidebar && ($showReadingProgress || (bool) VoodbuilderSettings::get('sticky_nav', false));
 @endphp
 
 <header @class([
@@ -23,7 +23,7 @@
             'bg-vp-bg' => ! $hasDocSidebar,
         ])>
             <div class="ml-auto flex h-16 w-[var(--spacing-vp-sidebar)] shrink-0 items-center px-8">
-                <x-vpress::nav-title />
+                <x-voodbuilder::nav-title />
             </div>
         </div>
 
@@ -34,46 +34,46 @@
                 'vp:mx-0 vp:max-w-none vp:pl-[var(--vp-sidebar-outer-width)] vp:pr-8',
             ])>
                 <div class="hidden min-w-0 max-vp:flex max-vp:items-center">
-                    <x-vpress::nav-title />
+                    <x-voodbuilder::nav-title />
                 </div>
 
                 <div class="hidden shrink-0 items-center gap-1 vp:flex">
-                    <x-vpress::menu
+                    <x-voodbuilder::menu
                         menu="main"
                         :wrapped="false"
                         link-class="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1"
                     />
-                    <x-vpress::docs-menu />
+                    <x-voodbuilder::docs-menu />
                 </div>
 
                 <div class="flex min-w-0 items-center justify-end gap-2 vp:gap-3">
-                    <x-vpress::menu
+                    <x-voodbuilder::menu
                         menu="header_extra"
                         class="hidden shrink-0 items-center vp:flex"
                         link-class="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-2 transition-colors hover:text-vp-brand-1"
                     />
 
                     <div class="hidden vp:block">
-                        <x-vpress::search />
+                        <x-voodbuilder::search />
                     </div>
 
                     @auth
-                        @if (config('vpress.notifications.enabled', true) && $showNotificationBell)
+                        @if (config('voodbuilder.notifications.enabled', true) && $showNotificationBell)
                             <div class="hidden vp:block">
-                                <livewire:vpress.site-notification-bell wire:key="nav-bell-desktop" />
+                                <livewire:voodbuilder.site-notification-bell wire:key="nav-bell-desktop" />
                             </div>
                         @endif
                     @endauth
 
                     <div class="hidden vp:block">
-                        <x-vpress::nav-profile-menu />
+                        <x-voodbuilder::nav-profile-menu />
                     </div>
 
                     <button
                         type="button"
                         class="hidden h-9 w-9 max-vp:inline-flex items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1"
                         data-mobile-nav-toggle
-                        aria-controls="vpress-mobile-nav"
+                        aria-controls="voodbuilder-mobile-nav"
                         aria-expanded="false"
                         aria-label="{{ __('Open menu') }}"
                     >
@@ -86,7 +86,7 @@
         </div>
 
         @unless ($hasDocSidebar)
-            <div class="pointer-events-none w-full" data-vpress-header-divider>
+            <div class="pointer-events-none w-full" data-voodbuilder-header-divider>
                 <div class="h-px w-full bg-vp-divider"></div>
             </div>
         @endunless
@@ -95,7 +95,7 @@
     @if ($showReadingProgress)
         <div
             class="pointer-events-none relative w-full bg-vp-divider"
-            data-vpress-progress
+            data-voodbuilder-progress
             aria-hidden="true"
         >
             <div
@@ -106,5 +106,5 @@
         </div>
     @endif
 
-    <x-vpress::mobile-drawer :has-doc-sidebar="$hasDocSidebar" />
+    <x-voodbuilder::mobile-drawer :has-doc-sidebar="$hasDocSidebar" />
 </header>

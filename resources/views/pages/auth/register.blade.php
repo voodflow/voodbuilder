@@ -1,15 +1,15 @@
-@extends(config('vpress.layouts.page', 'vpress::layouts.page'))
+@extends(config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'))
 
 @section('page')
     <div class="mx-auto max-w-md">
-        <h1 class="mb-2 text-3xl font-bold text-vp-text-1">{{ __('vpress::auth.register_title') }}</h1>
-        <p class="mb-6 text-sm text-vp-text-2">{{ __('vpress::auth.register_lead') }}</p>
+        <h1 class="mb-2 text-3xl font-bold text-vp-text-1">{{ __('voodbuilder::auth.register_title') }}</h1>
+        <p class="mb-6 text-sm text-vp-text-2">{{ __('voodbuilder::auth.register_lead') }}</p>
 
         <form method="POST" action="{{ route('register') }}" class="space-y-4">
             @csrf
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-name">{{ __('vpress::auth.name') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-name">{{ __('voodbuilder::auth.name') }}</label>
                 <input
                     id="register-name"
                     type="text"
@@ -24,7 +24,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-email">{{ __('vpress::auth.email') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-email">{{ __('voodbuilder::auth.email') }}</label>
                 <input
                     id="register-email"
                     type="email"
@@ -38,7 +38,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-password">{{ __('vpress::auth.password') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-password">{{ __('voodbuilder::auth.password') }}</label>
                 <input
                     id="register-password"
                     type="password"
@@ -51,7 +51,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-password-confirmation">{{ __('vpress::auth.confirm_password') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="register-password-confirmation">{{ __('voodbuilder::auth.confirm_password') }}</label>
                 <input
                     id="register-password-confirmation"
                     type="password"
@@ -63,13 +63,13 @@
             </div>
 
             <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-vp-brand-3 px-5 text-sm font-medium text-white transition-colors hover:bg-vp-brand-2">
-                {{ __('vpress::auth.register') }}
+                {{ __('voodbuilder::auth.register') }}
             </button>
         </form>
 
         <p class="mt-6 text-center text-sm text-vp-text-2">
-            {{ __('vpress::auth.already_have_account') }}
-            <a href="{{ route('login') }}" class="font-medium text-vp-brand-1 hover:text-vp-brand-2">{{ __('vpress::auth.login') }}</a>
+            {{ __('voodbuilder::auth.already_have_account') }}
+            <a href="{{ route('login') }}" class="font-medium text-vp-brand-1 hover:text-vp-brand-2">{{ __('voodbuilder::auth.login') }}</a>
         </p>
     </div>
 @endsection

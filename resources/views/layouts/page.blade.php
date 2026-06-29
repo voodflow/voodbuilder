@@ -1,4 +1,4 @@
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('content')
     <div class="mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24">

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 
@@ -64,6 +64,6 @@ final class SiteSearch
 
     protected static function perType(): int
     {
-        return max(1, (int) config('vpress.search.per_type', 20));
+        return max(1, (int) config('voodbuilder.search.per_type', 20));
     }
 }

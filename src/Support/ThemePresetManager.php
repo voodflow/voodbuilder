@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class ThemePresetManager
 {
@@ -49,7 +49,7 @@ final class ThemePresetManager
      */
     public static function custom(): Collection
     {
-        $presets = VpressSettings::get('theme_presets', []);
+        $presets = VoodbuilderSettings::get('theme_presets', []);
 
         if (! is_array($presets)) {
             return collect();
@@ -68,7 +68,7 @@ final class ThemePresetManager
 
     public static function snapshotFromSettings(string $id, string $label, ?string $description = null): ThemePreset
     {
-        $data = VpressSettings::data();
+        $data = VoodbuilderSettings::data();
 
         return new ThemePreset(
             id: $id,
@@ -86,7 +86,7 @@ final class ThemePresetManager
     {
         $channelThemes = ContentChannelThemes::normalizeOverrides($preset->channelThemes);
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme' => SubThemeResolver::normalize($preset->sitePagesTheme),
             'content_channel_sub_themes' => $channelThemes,
             'sub_theme_colors' => ThemePalette::normalize($preset->colors),
@@ -100,7 +100,7 @@ final class ThemePresetManager
             return;
         }
 
-        $presets = collect(VpressSettings::get('theme_presets', []))
+        $presets = collect(VoodbuilderSettings::get('theme_presets', []))
             ->filter(fn ($item): bool => is_array($item))
             ->map(fn (array $item): array => $item)
             ->reject(fn (array $item): bool => ($item['id'] ?? null) === $preset->id)
@@ -109,7 +109,7 @@ final class ThemePresetManager
 
         $presets[] = $preset->toArray();
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'theme_presets' => $presets,
         ]);
     }
@@ -120,7 +120,7 @@ final class ThemePresetManager
             return false;
         }
 
-        $presets = collect(VpressSettings::get('theme_presets', []))
+        $presets = collect(VoodbuilderSettings::get('theme_presets', []))
             ->filter(fn ($item): bool => is_array($item))
             ->reject(fn (array $item): bool => ($item['id'] ?? null) === $id)
             ->values()
@@ -128,11 +128,11 @@ final class ThemePresetManager
 
         $payload = ['theme_presets' => $presets];
 
-        if (VpressSettings::get('active_theme_preset_id') === $id) {
+        if (VoodbuilderSettings::get('active_theme_preset_id') === $id) {
             $payload['active_theme_preset_id'] = null;
         }
 
-        VpressSettings::saveData($payload);
+        VoodbuilderSettings::saveData($payload);
 
         return true;
     }

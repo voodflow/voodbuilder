@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Vtuts\Support\Locales;
 
 final class SitePagesContentChannel implements PublicContentChannel
@@ -19,12 +19,12 @@ final class SitePagesContentChannel implements PublicContentChannel
 
     public function label(): string
     {
-        return __('vpress::search.filters.pages');
+        return __('voodbuilder::search.filters.pages');
     }
 
     public function routePatterns(): array
     {
-        return ['vpress.pages.*'];
+        return ['voodbuilder.pages.*'];
     }
 
     public function subTheme(): ?string
@@ -36,7 +36,7 @@ final class SitePagesContentChannel implements PublicContentChannel
     {
         $term = trim($term);
 
-        if ($term === '' || ! config('vpress.pages.enabled', true)) {
+        if ($term === '' || ! config('voodbuilder.pages.enabled', true)) {
             return collect();
         }
 

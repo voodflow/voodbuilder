@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Feature;
+namespace Voodflow\Voodbuilder\Tests\Feature;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageSection;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageSection;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SitePageSectionTest extends TestCase
 {
@@ -24,7 +24,7 @@ class SitePageSectionTest extends TestCase
         ]);
 
         $this->assertSame(
-            'vpress::themes.blog.layouts.section-index',
+            'voodbuilder::themes.blog.layouts.section-index',
             $page->layoutView(),
         );
     }
@@ -42,7 +42,7 @@ class SitePageSectionTest extends TestCase
         ]);
 
         $this->assertSame(
-            'vpress::themes.blog.layouts.article',
+            'voodbuilder::themes.blog.layouts.article',
             $page->layoutView(),
         );
     }

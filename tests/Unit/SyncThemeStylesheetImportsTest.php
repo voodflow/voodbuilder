@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Facades\File;
-use Voodflow\Vpress\Support\SyncThemeStylesheetImports;
-use Voodflow\Vpress\Support\VpressPaths;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\SyncThemeStylesheetImports;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SyncThemeStylesheetImportsTest extends TestCase
 {
     public function test_it_removes_imports_for_missing_app_themes(): void
     {
-        $bundlePath = VpressPaths::themeCssAbsolutePath();
+        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
         $original = File::get($bundlePath);
 
-        File::put($bundlePath, $original."\n@import '../../../../../resources/vpress/themes/missing/theme.css';\n");
+        File::put($bundlePath, $original."\n@import '../../../../../resources/voodbuilder/themes/missing/theme.css';\n");
 
         try {
             $this->assertTrue(SyncThemeStylesheetImports::sync());
@@ -29,7 +29,7 @@ class SyncThemeStylesheetImportsTest extends TestCase
 
     public function test_it_preserves_tailwindcss_package_import(): void
     {
-        $bundlePath = VpressPaths::themeCssAbsolutePath();
+        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
         $original = File::get($bundlePath);
 
         $withoutTailwind = preg_replace("/@import 'tailwindcss';\n?/", '', $original) ?? $original;

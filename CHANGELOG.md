@@ -10,16 +10,16 @@ All notable changes to this project will be documented in this file.
 
 - `ProductPromoBlock` rich content block for product call-to-action banners
 - `PackagePromosBlock` for a three-column grid of package CTAs (Vdocs, Vtuts, Voodflow)
-- `vpress.packages.voodflow_url` and default home promo for **Voodflow**
+- `voodbuilder.packages.voodflow_url` and default home promo for **Voodflow**
 - Filament settings: tabbed UI (Site, Appearance, Theme, SEO, GEO & AI, Analytics)
 - Per sub-theme brand color overrides via `ThemePalette` and `theme-vars` component
 - `ThemePaletteTest` unit test
 
 ### Changed
 
-- Default home focuses on **Vpress** capabilities: six feature cards plus optional companion plugins
+- Default home focuses on **Voodbuilder** capabilities: six feature cards plus optional companion plugins
 - Hero headline no longer references VitePress; killer **import full VitePress site** feature is highlighted in the features grid (with Vdocs)
-- Hero CTAs link to the Vpress Filament plugin page and GitHub repository
+- Hero CTAs link to the Voodbuilder Filament plugin page and GitHub repository
 - Default home CTAs for **Vtuts** and **Vdocs** point to Filament plugin marketplace pages
 - Reading progress bar on doc/tutorial and sub-theme article shells; hidden when content is not scrollable
 - Doc/tutorial header: no divider under nav; blog keeps divider without progress; news keeps progress without divider
@@ -31,7 +31,7 @@ All notable changes to this project will be documented in this file.
 - `body_class` yield in app layout (progress bar on blog Ink shell)
 - Sticky/fixed nav coordination with reading progress track
 
-[0.0.10]: https://github.com/voodflow/vpress/releases/tag/0.0.10
+[0.0.10]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.10
 
 ## [0.0.9] - 2026-06-09
 
@@ -40,7 +40,7 @@ All notable changes to this project will be documented in this file.
 - README: document site page creation, routing (`/` vs `/pages/{slug}`), layouts, publishing, and SEO
 - README: document navigation menus in detail (placements, item types, active route patterns, examples)
 
-[0.0.9]: https://github.com/voodflow/vpress/releases/tag/0.0.9
+[0.0.9]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.9
 
 ## [0.0.8] - 2026-06-09
 
@@ -49,11 +49,11 @@ All notable changes to this project will be documented in this file.
 - `MenuRouteCatalog` for Filament navigation menus: searchable select of public GET routes with automatic `route_match` patterns
 - Configurable `menus.route_exclude_patterns` to hide admin and internal routes from the menu builder
 - Rich editor **styled previews** for custom content blocks (`RichContentBlockPreview`, `rich-editor-block-previews.css`)
-- `vpress.packages.vtuts_url` and `vpress.packages.vdocs_url` for default home CTAs
+- `voodbuilder.packages.vtuts_url` and `voodbuilder.packages.vdocs_url` for default home CTAs
 
 ### Changed
 
-- Default seeded home page promotes **Vpress** with CTAs to vtuts and vdocs companion packages
+- Default seeded home page promotes **Voodbuilder** with CTAs to vtuts and vdocs companion packages
 - Custom blocks use `getPreviewLabel()` and wrapped preview HTML in the editor
 
 ### Fixed
@@ -61,7 +61,7 @@ All notable changes to this project will be documented in this file.
 - TOC scroll-spy and outline click navigation (correct active heading, scroll offset)
 - Pointer cursor on frontend links and interactive elements
 
-[0.0.8]: https://github.com/voodflow/vpress/releases/tag/0.0.8
+[0.0.8]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.8
 
 ## [0.0.7] - 2026-06-08
 
@@ -73,30 +73,30 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- `vpress:install` always runs with the English locale so Artisan output and default seeded content stay in English regardless of the host OS or app locale
+- `voodbuilder:install` always runs with the English locale so Artisan output and default seeded content stay in English regardless of the host OS or app locale
 - Homepage `latest_vtuts` block uses `vtuts::vtut-card`
 
 ## [0.0.5] - 2026-06-08
 
 ### Fixed
 
-- `SitePage::getUrl()` no longer throws when the `home` route is missing (uses `VpressUrls::home()`)
-- `vpress:install` removes Laravel’s default welcome route so vpress owns `/` and the public theme loads
-- vtuts locale fallback URL uses `VpressUrls::home()` instead of a hardcoded `route('home')`
+- `SitePage::getUrl()` no longer throws when the `home` route is missing (uses `VoodbuilderUrls::home()`)
+- `voodbuilder:install` removes Laravel’s default welcome route so voodbuilder owns `/` and the public theme loads
+- vtuts locale fallback URL uses `VoodbuilderUrls::home()` instead of a hardcoded `route('home')`
 
 ## [0.0.4] - 2026-06-08
 
 ### Fixed
 
-- `vpress:install` post-install instructions are in English again
+- `voodbuilder:install` post-install instructions are in English again
 - Theme CSS path resolves automatically for Composer installs (`vendor/...`) and monorepo path repos (`packages/...`)
-- `vpress:install` patches `vite.config.js` when the theme entry is missing or still uses the legacy `packages/` path
+- `voodbuilder:install` patches `vite.config.js` when the theme entry is missing or still uses the legacy `packages/` path
 - Doc outline scroll-spy handles duplicate heading links and bottom-of-page active state
 - Default home CTA uses the configured vtuts URL prefix instead of a hardcoded `/vtuts` path
 
 ### Changed
 
-- `config/vpress.php` uses `VpressPaths::defaultViteEntries()` so `@vite` always matches the install location
+- `config/voodbuilder.php` uses `VoodbuilderPaths::defaultViteEntries()` so `@vite` always matches the install location
 
 ## [0.0.2] - 2026-06-06
 
@@ -120,11 +120,11 @@ All notable changes to this project will be documented in this file.
 
 - Legacy “More” overflow menu in the header (replaced by profile menu)
 
-[0.0.5]: https://github.com/voodflow/vpress/releases/tag/0.0.5
+[0.0.5]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.5
 
-[0.0.4]: https://github.com/voodflow/vpress/releases/tag/0.0.4
+[0.0.4]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.4
 
-[0.0.2]: https://github.com/voodflow/vpress/releases/tag/0.0.2
+[0.0.2]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.2
 
 ## [0.0.1] - 2026-06-04
 
@@ -140,4 +140,4 @@ All notable changes to this project will be documented in this file.
 - Comment notification bell (frontend + Filament)
 - Extensible RichEditor custom blocks
 
-[0.0.1]: https://github.com/voodflow/vpress/releases/tag/0.0.1
+[0.0.1]: https://github.com/voodflow/voodbuilder/releases/tag/0.0.1

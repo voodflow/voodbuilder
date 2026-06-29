@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Str;
 
@@ -46,7 +46,7 @@ final class SubThemeCloner
             return self::cloneFromDefinition($sourceId, $targetId, $label, $importColors);
         }
 
-        $archivePath = storage_path('app/vpress-theme-exports/.clone-'.uniqid('', true).'.zip');
+        $archivePath = storage_path('app/voodbuilder-theme-exports/.clone-'.uniqid('', true).'.zip');
 
         try {
             SubThemeExporter::export($sourceId, $archivePath);

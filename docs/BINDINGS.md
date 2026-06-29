@@ -1,6 +1,6 @@
 # GrapesJS field bindings
 
-Connect any element in a GrapesJS layout to **live server data** using `data-vpress-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
+Connect any element in a GrapesJS layout to **live server data** using `data-voodbuilder-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
 
 ---
 
@@ -28,21 +28,21 @@ Remove a binding: select element → **Clear dynamic binding** (✕).
 Saved markup uses a single attribute:
 
 ```html
-<h1 data-vpress-bind="vtuts.latest.title">[Latest tutorial: Title]</h1>
-<a data-vpress-bind="vtuts.latest.url" href="#">Read more</a>
-<button type="button" data-vpress-bind="vtuts.latest.url">Start here</button>
-<img data-vpress-bind="vtuts.latest.image" src="…" alt="">
+<h1 data-voodbuilder-bind="vtuts.latest.title">[Latest tutorial: Title]</h1>
+<a data-voodbuilder-bind="vtuts.latest.url" href="#">Read more</a>
+<button type="button" data-voodbuilder-bind="vtuts.latest.url">Start here</button>
+<img data-voodbuilder-bind="vtuts.latest.image" src="…" alt="">
 ```
 
 Format: `{sourceId}.{fieldId}` — e.g. `vtuts.latest.introduction`.
 
-The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-vpress-bind` only.
+The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-voodbuilder-bind` only.
 
 ---
 
 ## Field types
 
-Defined in `Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField`:
+Defined in `Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField`:
 
 | Type | PHP constant | Use for |
 |------|--------------|---------|
@@ -63,11 +63,11 @@ Return `?string` from `resolve()`. Empty/null leaves the element unchanged on th
 
 declare(strict_types=1);
 
-namespace My\Package\Vpress;
+namespace My\Package\Voodbuilder;
 
-use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
 
 final class LatestItemBindingSource implements GrapesJsBindingSource
 {
@@ -127,15 +127,15 @@ final class LatestItemBindingSource implements GrapesJsBindingSource
 ### 2. Register in a ServiceProvider
 
 ```php
-use Voodflow\Vpress\Vpress;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 public function boot(): void
 {
-    if (! class_exists(Vpress::class)) {
+    if (! class_exists(Voodbuilder::class)) {
         return;
     }
 
-    Vpress::grapesJsBindingSource(new LatestItemBindingSource);
+    Voodbuilder::grapesJsBindingSource(new LatestItemBindingSource);
 }
 ```
 
@@ -178,8 +178,8 @@ Use it to scope queries (locale, site, channel).
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /vpress/grapesjs/bindings` | Catalog grouped by package (Make dynamic modal) |
-| `GET /vpress/grapesjs/bindings/preview/{sitePage}` | Live values for editor preview |
+| `GET /voodbuilder/grapesjs/bindings` | Catalog grouped by package (Make dynamic modal) |
+| `GET /voodbuilder/grapesjs/bindings/preview/{sitePage}` | Live values for editor preview |
 
 ---
 
@@ -188,7 +188,7 @@ Use it to scope queries (locale, site, channel).
 On public view and in the editor (`?edit=1` initial HTML):
 
 1. Load `builder_payload.html`
-2. `GrapesJsBindingRenderer` finds `data-vpress-bind`
+2. `GrapesJsBindingRenderer` finds `data-voodbuilder-bind`
 3. `BindingRegistry` resolves each key via your `GrapesJsBindingSource`
 4. DOM is updated (text / `href` / `src` / `onclick` on buttons)
 
@@ -235,16 +235,16 @@ Resolves the **latest publicly listed tutorial** for the current locale (`publis
 
 ```php
 $registry = app(BindingRegistry::class);
-$html = '<h1 data-vpress-bind="mypackage.latest.title">Placeholder</h1>';
+$html = '<h1 data-voodbuilder-bind="mypackage.latest.title">Placeholder</h1>';
 $rendered = app(GrapesJsBindingRenderer::class)->render($html, $page);
 ```
 
-Register your fake source on the registry in unit tests (see `GrapesJsBindingRendererTest` in vpress).
+Register your fake source on the registry in unit tests (see `GrapesJsBindingRendererTest` in voodbuilder).
 
 ---
 
 ## Related
 
 - [GRAPESJS.md](./GRAPESJS.md) — page builder setup, blocks, Tailblocks
-- `Vpress::grapesJsBindingSource()` — registration helper
-- `Vpress::grapesJsServerBlock()` — when you need full HTML widgets instead of single fields
+- `Voodbuilder::grapesJsBindingSource()` — registration helper
+- `Voodbuilder::grapesJsServerBlock()` — when you need full HTML widgets instead of single fields

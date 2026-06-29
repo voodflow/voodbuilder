@@ -1,12 +1,12 @@
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('body_class')
-    vpress-sub-theme-blog vpress-has-reading-progress
+    voodbuilder-sub-theme-blog voodbuilder-has-reading-progress
 @endsection
 
 @section('content')
-    <div class="vpress-blog-shell" data-vpress-article>
-        <div class="vpress-blog-content">
+    <div class="voodbuilder-blog-shell" data-voodbuilder-article>
+        <div class="voodbuilder-blog-content">
             @yield('home')
         </div>
     </div>

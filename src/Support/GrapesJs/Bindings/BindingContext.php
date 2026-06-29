@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
-use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Voodbuilder\Models\SitePage;
 
 final readonly class BindingContext
 {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 final class LandingMenuColumnsSupport
 {
@@ -38,7 +38,7 @@ final class LandingMenuColumnsSupport
             }
 
             $columns[] = [
-                'title' => $titleOverride ?? self::menuTitle($slug) ?? __('vpress::landing.footer.column_default', [
+                'title' => $titleOverride ?? self::menuTitle($slug) ?? __('voodbuilder::landing.footer.column_default', [
                     'number' => $index,
                 ]),
                 'links' => $links,

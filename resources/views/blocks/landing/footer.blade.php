@@ -1,4 +1,4 @@
-<footer class="vp-landing-footer {{ \Voodflow\Vpress\Support\LandingBlockSupport::sectionShellClass($config, ['section_width' => 'bleed', 'section_padding' => 'none']) }} bg-black text-white/70">
+<footer class="vp-landing-footer {{ \Voodflow\Voodbuilder\Support\LandingBlockSupport::sectionShellClass($config, ['section_width' => 'bleed', 'section_padding' => 'none']) }} bg-black text-white/70">
     <div class="mx-auto max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-16">
         <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
             <div class="lg:col-span-1">

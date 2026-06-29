@@ -1,5 +1,5 @@
 {
-    "schema": "vpress-theme-preset/1",
+    "schema": "voodbuilder-theme-preset/1",
     "id": "documentation-only",
     "label": "Documentation only",
     "description": "Docs and tutorials with the default VitePress-style theme. No marketing showcase styling.",

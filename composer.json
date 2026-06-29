@@ -1,5 +1,5 @@
 {
-    "name": "voodflow/vpress",
+    "name": "voodflow/voodbuilder",
     "description": "Voodflow plugin — VitePress-style public frontend theme and Filament site pages for Laravel.",
     "version": "0.0.10",
     "type": "library",
@@ -25,13 +25,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Voodflow\\Vpress\\": "src/",
-            "Voodflow\\Vpress\\Database\\Seeders\\": "database/seeders/"
+            "Voodflow\\Voodbuilder\\": "src/",
+            "Voodflow\\Voodbuilder\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Voodflow\\Vpress\\Tests\\": "tests/",
+            "Voodflow\\Voodbuilder\\Tests\\": "tests/",
             "Voodflow\\Vtuts\\": "../vtuts/src/"
         }
     },
@@ -42,7 +42,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Voodflow\\Vpress\\VpressServiceProvider"
+                "Voodflow\\Voodbuilder\\VoodbuilderServiceProvider"
             ]
         }
     },

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\LandingBlockSupport;
-use Voodflow\Vpress\Support\YoutubeEmbed;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+use Voodflow\Voodbuilder\Support\YoutubeEmbed;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class LandingBlockSupportTest extends TestCase
 {

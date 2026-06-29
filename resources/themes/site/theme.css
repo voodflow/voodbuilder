@@ -3,7 +3,7 @@
  */
 @reference "tailwindcss";
 
-html[data-vpress-sub-theme='site'] {
+html[data-voodbuilder-sub-theme='site'] {
     --width-vp-content: 48rem;
     --width-vp-layout: 80rem;
 
@@ -30,7 +30,7 @@ html[data-vpress-sub-theme='site'] {
     --vx-header-muted: #cbd5e1;
 }
 
-html.dark[data-vpress-sub-theme='site'] {
+html.dark[data-voodbuilder-sub-theme='site'] {
     --color-vp-bg: #0b1220;
     --color-vp-bg-alt: #111827;
     --color-vp-bg-elv: #1f2937;
@@ -54,90 +54,90 @@ html.dark[data-vpress-sub-theme='site'] {
     --vx-header-muted: #94a3b8;
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] .bg-vp-bg,
-html[data-vpress-sub-theme='site'] header[role='banner'] .bg-vp-bg-alt {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg,
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg-alt {
     background-color: var(--vx-header-bg) !important;
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] {
     border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text) 12%, transparent);
 }
 
 /* Header nav uses light text; exclude dropdown panels (light surface, dark text). */
-html[data-vpress-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-vpress-search-dialog], [data-vpress-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-vpress-search-dialog], [data-vpress-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: #ffffff;
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-vpress-search-dialog], [data-vpress-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: #fca5a5;
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] {
     color: var(--color-vp-text-1);
     background-color: var(--color-vp-bg-elv);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'] {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'] {
     color: var(--color-vp-text-2);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-1,
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'].font-medium {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-1,
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem'].font-medium {
     color: var(--color-vp-text-1);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-3 {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-text-3 {
     color: var(--color-vp-text-3);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-brand-1 {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] .text-vp-brand-1 {
     color: var(--color-vp-brand-1);
 }
 
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem']:hover,
-html[data-vpress-sub-theme='site'] header[role='banner'] [role='menu'] button[role='menuitem']:hover {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] [role='menuitem']:hover,
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] button[role='menuitem']:hover {
     color: var(--color-vp-brand-1);
     background-color: var(--color-vp-gray-soft);
 }
 
-html[data-vpress-sub-theme='site'] .vpress-site-shell {
+html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
 
-html[data-vpress-sub-theme='site'] .vpress-site-content {
+html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content {
     @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-10 md:px-8 md:py-14;
 }
 
 
 /* Landing / home pages built with GrapesJS or rich-content blocks */
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode) {
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode) {
     max-width: none;
     padding: 0;
 }
 
-html[data-vpress-sub-theme='site'] .vpress-site-content:has(.VPRichPage--landing) {
+html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content:has(.VPRichPage--landing) {
     max-width: none;
     padding: 0;
 }
 
-html[data-vpress-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
+html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
 }
 
 @media (min-width: 768px) {
-    html[data-vpress-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
+    html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
 }
 
-html[data-vpress-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
+html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
     width: 100vw;
     max-width: 100vw;
     position: relative;
@@ -147,7 +147,7 @@ html[data-vpress-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
     margin-bottom: 0;
 }
 
-html[data-vpress-sub-theme='site'] .ve-landing-video__frame {
+html[data-voodbuilder-sub-theme='site'] .ve-landing-video__frame {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -158,7 +158,7 @@ html[data-vpress-sub-theme='site'] .ve-landing-video__frame {
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
-html[data-vpress-sub-theme='site'] .ve-landing-video__frame iframe {
+html[data-voodbuilder-sub-theme='site'] .ve-landing-video__frame iframe {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -166,7 +166,7 @@ html[data-vpress-sub-theme='site'] .ve-landing-video__frame iframe {
     border: 0;
 }
 
-html[data-vpress-sub-theme='site'] .ve-landing-video__placeholder {
+html[data-voodbuilder-sub-theme='site'] .ve-landing-video__placeholder {
     display: flex;
     align-items: center;
     justify-content: center;

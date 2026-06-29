@@ -2,7 +2,7 @@
     'menu' => 'main',
 ])
 
-@php($items = \Voodflow\Vpress\Support\Navigation::items($menu))
+@php($items = \Voodflow\Voodbuilder\Support\Navigation::items($menu))
 
 @if($items->isNotEmpty())
     <nav class="mb-6" aria-label="{{ __('Navigation') }}">
@@ -18,7 +18,7 @@
                 >
                     <span>{{ __($item->label) }}</span>
                     @if($item->isExternal())
-                        <x-vpress::external-link-icon />
+                        <x-voodbuilder::external-link-icon />
                     @endif
                 </a>
             @endforeach

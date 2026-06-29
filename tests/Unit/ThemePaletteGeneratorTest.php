@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
-use Voodflow\Vpress\Support\ThemePaletteGenerator;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\ThemePaletteGenerator;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemePaletteGeneratorTest extends TestCase
 {

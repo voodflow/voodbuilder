@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 final class LandingNavbarSupport
 {
@@ -57,10 +57,10 @@ final class LandingNavbarSupport
     public static function variantOptions(): array
     {
         return [
-            'a' => __('vpress::landing.navbar.variants.a'),
-            'b' => __('vpress::landing.navbar.variants.b'),
-            'c' => __('vpress::landing.navbar.variants.c'),
-            'd' => __('vpress::landing.navbar.variants.d'),
+            'a' => __('voodbuilder::landing.navbar.variants.a'),
+            'b' => __('voodbuilder::landing.navbar.variants.b'),
+            'c' => __('voodbuilder::landing.navbar.variants.c'),
+            'd' => __('voodbuilder::landing.navbar.variants.d'),
         ];
     }
 

@@ -212,11 +212,11 @@ export function normalizeBrandBackgroundClasses(tokens) {
 }
 
 function migrateLegacyButtonClassesArray(tokens) {
-    if (! tokens.includes('vpress-gjs-btn-primary')) {
+    if (! tokens.includes('voodbuilder-gjs-btn-primary')) {
         return tokens;
     }
 
-    const next = tokens.filter((token) => token !== 'vpress-gjs-btn-primary');
+    const next = tokens.filter((token) => token !== 'voodbuilder-gjs-btn-primary');
 
     for (const className of ['bg-vp-brand-1', 'text-white', 'hover:bg-vp-brand-2']) {
         if (! next.includes(className)) {
@@ -247,7 +247,7 @@ export function isClearedBackground(value) {
 
 export function stripBackgroundClasses(component) {
     const classes = (component.getClasses?.() ?? []).filter((className) => {
-        return ! BACKGROUND_CLASS_PATTERN.test(className) && className !== 'vpress-gjs-btn-primary';
+        return ! BACKGROUND_CLASS_PATTERN.test(className) && className !== 'voodbuilder-gjs-btn-primary';
     });
 
     component.setClass(classes);
@@ -305,8 +305,8 @@ function ensureLandingSectionClasses(component) {
 
     const classes = component.getClasses?.() ?? [];
 
-    if (! classes.includes('vpress-gjs-section')) {
-        component.addClass('vpress-gjs-section');
+    if (! classes.includes('voodbuilder-gjs-section')) {
+        component.addClass('voodbuilder-gjs-section');
     }
 }
 
@@ -394,7 +394,7 @@ export function purgeBroadSectionBackgroundRules(editor) {
                 return false;
             }
 
-            return name.includes('vpress-gjs-section') || name.includes('body-font');
+            return name.includes('voodbuilder-gjs-section') || name.includes('body-font');
         });
     });
 
@@ -414,7 +414,7 @@ export function purgeLegacyEditorStyles(editor) {
         return selectors.some((selector) => {
             const name = selector?.get?.('name') ?? selector?.name ?? selector;
 
-            return String(name).includes('vpress-gjs-btn-primary');
+            return String(name).includes('voodbuilder-gjs-btn-primary');
         });
     });
 

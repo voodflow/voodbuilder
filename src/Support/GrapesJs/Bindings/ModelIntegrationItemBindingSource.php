@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,7 +15,7 @@ final class ModelIntegrationItemBindingSource extends AbstractModelIntegrationBi
 
     public function label(): string
     {
-        return $this->integration->name.' · '.__('vpress::model_integrations.bindings.list_item');
+        return $this->integration->name.' · '.__('voodbuilder::model_integrations.bindings.list_item');
     }
 
     public function fields(): array

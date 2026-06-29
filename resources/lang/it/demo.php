@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
     'blog' => [
         'title' => 'Blog',
-        'index_title' => 'Il diario Vpress',
+        'index_title' => 'Il diario Voodbuilder',
         'index_excerpt' => 'Appunti su gusci per siti, sotto-temi e frontend Laravel leggibili senza un CMS pesante.',
         'read_more' => 'Continua a leggere',
         'all_posts' => 'Tutti gli articoli',
@@ -26,7 +26,7 @@ return [
             'welcome' => [
                 'title' => 'Benvenuto nel diario',
                 'excerpt' => 'Perché separiamo documentazione, blog e news in sotto-temi distinti sotto un unico guscio Laravel.',
-                'p1' => 'Vpress è volutamente leggero: poche pagine, navigazione condivisa e layout per sezione. Il sotto-tema blog è per contenuti narrativi e lenti.',
+                'p1' => 'Voodbuilder è volutamente leggero: poche pagine, navigazione condivisa e layout per sezione. Il sotto-tema blog è per contenuti narrativi e lenti.',
                 'p2' => 'Usa la colonna sinistra per saltare tra gli articoli. Quella destra mostra post in evidenza e un placeholder newsletter sostituibile.',
             ],
             'shipping-shell' => [
@@ -39,18 +39,18 @@ return [
                 'title' => 'Progettare con i sotto-temi',
                 'excerpt' => 'Un’identità visiva per pagina con un solo menu e un solo pannello impostazioni.',
                 'p1' => 'I sotto-temi sovrascrivono layout Blade e variabili CSS. Il tema chiaro/scuro resta globale.',
-                'p2' => 'Crea varianti con php artisan vpress:make-subtheme o registrale in config/vpress.php.',
+                'p2' => 'Crea varianti con php artisan voodbuilder:make-subtheme o registrale in config/voodbuilder.php.',
             ],
             'content-blocks' => [
                 'title' => 'Blocchi di contenuto nella pratica',
                 'excerpt' => 'Hero, griglie feature e blocchi dei pacchetti sulla home documentazione.',
-                'p1' => 'Le pagine marketing possono mescolare prosa RichEditor e blocchi custom di vpress o pacchetti companion.',
+                'p1' => 'Le pagine marketing possono mescolare prosa RichEditor e blocchi custom di voodbuilder o pacchetti companion.',
                 'p2' => 'Gli articoli del blog restano tipografici — meno blocchi, più comfort di lettura.',
             ],
             'pairing-vtuts' => [
-                'title' => 'Abbinare vpress e vtuts',
+                'title' => 'Abbinare voodbuilder e vtuts',
                 'excerpt' => 'Layout condivisi per i tutorial mentre il blog mantiene le proprie colonne.',
-                'p1' => 'Le pagine doc dei tutorial usano vpress::layouts.doc per sidebar, outline e barra di avanzamento.',
+                'p1' => 'Le pagine doc dei tutorial usano voodbuilder::layouts.doc per sidebar, outline e barra di avanzamento.',
                 'p2' => 'Diario e news possono evolvere separatamente mentre i tutorial restano ottimizzati per l’apprendimento.',
             ],
         ],
@@ -82,10 +82,10 @@ return [
                 'p2' => 'Ogni articolo news è una site page con section=news, quindi gli editor usano lo stesso form Filament.',
             ],
             'release' => [
-                'title' => 'I sotto-temi Vpress nel seeder',
+                'title' => 'I sotto-temi Voodbuilder nel seeder',
                 'excerpt' => 'Blog e news integrati con layout multi-colonna e navigazione per sezione.',
                 'p1' => 'Le home di sezione elencano gli articoli; le pagine dettaglio aggiungono breadcrumb e sidebar.',
-                'p2' => 'I temi custom si creano ancora con vpress:make-subtheme quando superi i default.',
+                'p2' => 'I temi custom si creano ancora con voodbuilder:make-subtheme quando superi i default.',
             ],
             'workflow' => [
                 'title' => 'Il flusso editoriale resta in Filament',
@@ -103,7 +103,7 @@ return [
                 'title' => 'In roadmap',
                 'excerpt' => 'Prossimi hook tema per vtuts e vdocs per uno stile di sezione unificato.',
                 'p1' => 'Oggi i sotto-temi riguardano le site page. I pacchetti companion potranno usare lo stesso registry.',
-                'p2' => 'Fino ad allora, docs e tutorial restano sui layout dedicati mentre il marketing usa vpress.',
+                'p2' => 'Fino ad allora, docs e tutorial restano sui layout dedicati mentre il marketing usa voodbuilder.',
             ],
         ],
     ],

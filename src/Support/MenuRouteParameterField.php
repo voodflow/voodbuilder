@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Closure;
 use Filament\Forms\Components\Field;
@@ -10,7 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
 
 final class MenuRouteParameterField
 {

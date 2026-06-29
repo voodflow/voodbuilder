@@ -1,8 +1,8 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
 
     $section = LandingBlockContent::section($config, ['section_width' => 'contained'], 'light');
-    $heading = $config['heading'] ?? __('vpress::landing.social.default_heading');
+    $heading = $config['heading'] ?? __('voodbuilder::landing.social.default_heading');
 @endphp
 
 <section
@@ -25,7 +25,7 @@
                             type="button"
                             class="vp-share-copy inline-flex items-center rounded-md border border-current/20 px-4 py-2 text-sm font-semibold transition hover:border-current/40"
                             data-copy-url="{{ $shareUrl }}"
-                            data-copied-label="{{ __('vpress::landing.social.copied') }}"
+                            data-copied-label="{{ __('voodbuilder::landing.social.copied') }}"
                         >
                             {{ $link['label'] }}
                         </button>

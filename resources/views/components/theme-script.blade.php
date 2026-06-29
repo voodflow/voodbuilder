@@ -1,8 +1,8 @@
 @php
-    use Voodflow\Vpress\Support\VpressTheme;
+    use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 
-    $config = VpressTheme::clientConfig();
-    $initialDark = VpressTheme::serverInitialDark();
+    $config = VoodbuilderTheme::clientConfig();
+    $initialDark = VoodbuilderTheme::serverInitialDark();
 @endphp
 <meta name="color-scheme" content="{{ $initialDark ? 'dark' : 'light' }}">
 <script>

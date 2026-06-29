@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder;
+
+use Filament\Contracts\Plugin;
+use Filament\Panel;
+use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
+use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
+use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
+use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
+
+class VoodbuilderPlugin implements Plugin
+{
+    public static function make(): static
+    {
+        return app(static::class);
+    }
+
+    public function getId(): string
+    {
+        return 'voodbuilder';
+    }
+
+    public function register(Panel $panel): void
+    {
+        $resources = [
+            NavigationMenuResource::class,
+            ModelIntegrationResource::class,
+        ];
+
+        if (config('voodbuilder.pages.enabled', true)) {
+            $resources[] = SitePageResource::class;
+        }
+
+        $panel
+            ->resources($resources)
+            ->pages([
+                VoodbuilderSettingsPage::class,
+            ])
+            ->databaseNotifications(livewireComponent: AdminDatabaseNotifications::class);
+
+        CookieConsentPlugin::make()->register($panel);
+    }
+
+    public function boot(Panel $panel): void
+    {
+        CookieConsentPlugin::make()->boot($panel);
+    }
+}

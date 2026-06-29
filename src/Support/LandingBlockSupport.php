@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 final class LandingBlockSupport
 {
@@ -10,10 +10,10 @@ final class LandingBlockSupport
     public static function backgroundToneOptions(): array
     {
         return [
-            'brand' => __('vpress::landing.tones.brand'),
-            'dark' => __('vpress::landing.tones.dark'),
-            'light' => __('vpress::landing.tones.light'),
-            'custom' => __('vpress::landing.tones.custom'),
+            'brand' => __('voodbuilder::landing.tones.brand'),
+            'dark' => __('voodbuilder::landing.tones.dark'),
+            'light' => __('voodbuilder::landing.tones.light'),
+            'custom' => __('voodbuilder::landing.tones.custom'),
         ];
     }
 
@@ -21,8 +21,8 @@ final class LandingBlockSupport
     public static function backgroundStyleOptions(): array
     {
         return [
-            'solid' => __('vpress::landing.background_styles.solid'),
-            'image' => __('vpress::landing.background_styles.image'),
+            'solid' => __('voodbuilder::landing.background_styles.solid'),
+            'image' => __('voodbuilder::landing.background_styles.image'),
         ];
     }
 
@@ -30,8 +30,8 @@ final class LandingBlockSupport
     public static function textAlignOptions(): array
     {
         return [
-            'center' => __('vpress::landing.align.center'),
-            'left' => __('vpress::landing.align.left'),
+            'center' => __('voodbuilder::landing.align.center'),
+            'left' => __('voodbuilder::landing.align.left'),
         ];
     }
 
@@ -39,8 +39,8 @@ final class LandingBlockSupport
     public static function imagePositionOptions(): array
     {
         return [
-            'left' => __('vpress::landing.image_position.left'),
-            'right' => __('vpress::landing.image_position.right'),
+            'left' => __('voodbuilder::landing.image_position.left'),
+            'right' => __('voodbuilder::landing.image_position.right'),
         ];
     }
 
@@ -48,9 +48,9 @@ final class LandingBlockSupport
     public static function buttonStyleOptions(): array
     {
         return [
-            'solid' => __('vpress::landing.button_styles.solid'),
-            'outline' => __('vpress::landing.button_styles.outline'),
-            'ghost' => __('vpress::landing.button_styles.ghost'),
+            'solid' => __('voodbuilder::landing.button_styles.solid'),
+            'outline' => __('voodbuilder::landing.button_styles.outline'),
+            'ghost' => __('voodbuilder::landing.button_styles.ghost'),
         ];
     }
 
@@ -58,10 +58,10 @@ final class LandingBlockSupport
     public static function sectionWidthOptions(): array
     {
         return [
-            'bleed' => __('vpress::landing.section_width.bleed'),
-            'full' => __('vpress::landing.section_width.full'),
-            'contained' => __('vpress::landing.section_width.contained'),
-            'narrow' => __('vpress::landing.section_width.narrow'),
+            'bleed' => __('voodbuilder::landing.section_width.bleed'),
+            'full' => __('voodbuilder::landing.section_width.full'),
+            'contained' => __('voodbuilder::landing.section_width.contained'),
+            'narrow' => __('voodbuilder::landing.section_width.narrow'),
         ];
     }
 
@@ -69,9 +69,9 @@ final class LandingBlockSupport
     public static function sectionPaddingOptions(): array
     {
         return [
-            'default' => __('vpress::landing.section_padding.default'),
-            'large' => __('vpress::landing.section_padding.large'),
-            'none' => __('vpress::landing.section_padding.none'),
+            'default' => __('voodbuilder::landing.section_padding.default'),
+            'large' => __('voodbuilder::landing.section_padding.large'),
+            'none' => __('voodbuilder::landing.section_padding.none'),
         ];
     }
 

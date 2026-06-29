@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 
@@ -21,13 +21,13 @@ final class GrapesJsRichContentBlockAdapter
         $editorInner = self::editorPreviewHtml($blockClass, $config);
 
         return new GrapesJsBlockDefinition(
-            id: 'vpress-'.$blockId,
+            id: 'voodbuilder-'.$blockId,
             label: $blockClass::getLabel(),
             category: $category,
             content: self::wrap($blockId, $config, $editorInner),
             preview: GrapesJsBlockThumbnail::forBlockId($blockId),
             attributes: [
-                'class' => 'vpress-gjs-dynamic',
+                'class' => 'voodbuilder-gjs-dynamic',
                 'title' => $blockClass::getLabel(),
             ],
         );
@@ -59,7 +59,7 @@ final class GrapesJsRichContentBlockAdapter
     {
         $safeLabel = htmlspecialchars($label, ENT_QUOTES | ENT_HTML5);
 
-        return '<div class="vpress-gjs-dynamic-placeholder rounded-lg border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-sm text-vp-text-2">'.$safeLabel.'</div>';
+        return '<div class="voodbuilder-gjs-dynamic-placeholder rounded-lg border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-sm text-vp-text-2">'.$safeLabel.'</div>';
     }
 
     /**
@@ -74,10 +74,10 @@ final class GrapesJsRichContentBlockAdapter
             ENT_QUOTES | ENT_HTML5,
         );
 
-        $hydrateSlots = SiteFooterBlocks::isFooterBlockId($blockId) ? ' data-vpress-hydrate-slots="1"' : '';
+        $hydrateSlots = SiteFooterBlocks::isFooterBlockId($blockId) ? ' data-voodbuilder-hydrate-slots="1"' : '';
 
         return <<<HTML
-<div data-vpress-block="{$blockId}" data-vpress-config="{$encodedConfig}"{$hydrateSlots} class="vpress-gjs-dynamic">
+<div data-voodbuilder-block="{$blockId}" data-voodbuilder-config="{$encodedConfig}"{$hydrateSlots} class="voodbuilder-gjs-dynamic">
 {$innerHtml}
 </div>
 HTML;
@@ -87,7 +87,7 @@ HTML;
     {
         $migrated = self::prepareBlockHtml($html);
 
-        return '<div class="vpress-gjs-block-preview"><div class="vpress-gjs-block-preview__scale">'.$migrated.'</div></div>';
+        return '<div class="voodbuilder-gjs-block-preview"><div class="voodbuilder-gjs-block-preview__scale">'.$migrated.'</div></div>';
     }
 
     /**

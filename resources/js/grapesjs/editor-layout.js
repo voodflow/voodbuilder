@@ -1,5 +1,5 @@
 /**
- * Vpress GrapesJS shell — 3-column builder layout (blocks | canvas | inspector).
+ * Voodbuilder GrapesJS shell — 3-column builder layout (blocks | canvas | inspector).
  * Uses only public GrapesJS APIs: appendTo, Panels, BlockManager container.
  */
 
@@ -17,62 +17,62 @@ function escapeHtml(value) {
 }
 
 export function buildEditorShell(container, labels = {}, meta = {}) {
-    container.classList.add('vpress-gjs-root');
+    container.classList.add('voodbuilder-gjs-root');
     container.innerHTML = `
-        <div class="vpress-gjs-shell" data-vpress-device="desktop">
-            <header class="vpress-gjs-topbar">
-                <div class="vpress-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
-                <div class="vpress-gjs-topbar__tools"></div>
-                <div class="vpress-gjs-topbar__actions">
-                    <span class="vpress-gjs-topbar__saved" data-vpress-grapesjs-saved hidden>${escapeHtml(labels.saved ?? 'Saved')}</span>
+        <div class="voodbuilder-gjs-shell" data-voodbuilder-device="desktop">
+            <header class="voodbuilder-gjs-topbar">
+                <div class="voodbuilder-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
+                <div class="voodbuilder-gjs-topbar__tools"></div>
+                <div class="voodbuilder-gjs-topbar__actions">
+                    <span class="voodbuilder-gjs-topbar__saved" data-voodbuilder-grapesjs-saved hidden>${escapeHtml(labels.saved ?? 'Saved')}</span>
                     <a
                         href="${escapeHtml(meta.exitUrl ?? '#')}"
-                        class="vpress-gjs-topbar__btn vpress-gjs-topbar__btn--ghost"
+                        class="voodbuilder-gjs-topbar__btn voodbuilder-gjs-topbar__btn--ghost"
                     >${escapeHtml(labels.exitEditor ?? 'Exit editor')}</a>
                     <button
                         type="button"
-                        class="vpress-gjs-topbar__btn vpress-gjs-topbar__btn--primary"
-                        data-vpress-grapesjs-save
+                        class="voodbuilder-gjs-topbar__btn voodbuilder-gjs-topbar__btn--primary"
+                        data-voodbuilder-grapesjs-save
                     >
-                        <span data-vpress-grapesjs-save-label>${escapeHtml(labels.save ?? 'Save')}</span>
+                        <span data-voodbuilder-grapesjs-save-label>${escapeHtml(labels.save ?? 'Save')}</span>
                     </button>
                 </div>
             </header>
-            <div class="vpress-gjs-shell__workspace">
-                <aside class="vpress-gjs-shell__left" aria-label="${escapeHtml(labels.panelBlocks ?? 'Blocks')}">
-                    <div class="vpress-gjs-shell__panel-head">
-                        <span class="vpress-gjs-shell__panel-title">${escapeHtml(labels.panelBlocks ?? 'Blocks')}</span>
+            <div class="voodbuilder-gjs-shell__workspace">
+                <aside class="voodbuilder-gjs-shell__left" aria-label="${escapeHtml(labels.panelBlocks ?? 'Blocks')}">
+                    <div class="voodbuilder-gjs-shell__panel-head">
+                        <span class="voodbuilder-gjs-shell__panel-title">${escapeHtml(labels.panelBlocks ?? 'Blocks')}</span>
                     </div>
-                    <label class="vpress-gjs-blocks-search-wrap">
-                        <span class="vpress-gjs-blocks-search-icon">${lucideIcon('search', 16)}</span>
+                    <label class="voodbuilder-gjs-blocks-search-wrap">
+                        <span class="voodbuilder-gjs-blocks-search-icon">${lucideIcon('search', 16)}</span>
                         <input
                             type="search"
-                            class="vpress-gjs-blocks-search"
+                            class="voodbuilder-gjs-blocks-search"
                             placeholder="${escapeHtml(labels.blockSearch ?? 'Search blocks…')}"
                             autocomplete="off"
                             aria-label="${escapeHtml(labels.blockSearch ?? 'Search blocks')}"
                         />
                     </label>
-                    <div class="vpress-gjs-blocks-mount"></div>
+                    <div class="voodbuilder-gjs-blocks-mount"></div>
                 </aside>
-                <div class="vpress-gjs-shell__center">
-                    <div class="vpress-gjs-canvas-mount"></div>
+                <div class="voodbuilder-gjs-shell__center">
+                    <div class="voodbuilder-gjs-canvas-mount"></div>
                 </div>
-                <aside class="vpress-gjs-shell__right" aria-label="${escapeHtml(labels.panelInspector ?? 'Inspector')}">
-                    <div class="vpress-gjs-inspector-tabs" role="tablist"></div>
-                    <div class="vpress-gjs-inspector-panels">
-                        <div class="vpress-gjs-inspector-panel vpress-gjs-inspector-panel--active" data-vpress-inspector="content">
-                            <div class="vpress-gjs-traits-mount"></div>
+                <aside class="voodbuilder-gjs-shell__right" aria-label="${escapeHtml(labels.panelInspector ?? 'Inspector')}">
+                    <div class="voodbuilder-gjs-inspector-tabs" role="tablist"></div>
+                    <div class="voodbuilder-gjs-inspector-panels">
+                        <div class="voodbuilder-gjs-inspector-panel voodbuilder-gjs-inspector-panel--active" data-voodbuilder-inspector="content">
+                            <div class="voodbuilder-gjs-traits-mount"></div>
                         </div>
-                        <div class="vpress-gjs-inspector-panel" data-vpress-inspector="style">
-                            <div class="vpress-gjs-selectors-mount"></div>
-                            <div class="vpress-gjs-styles-mount"></div>
+                        <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="style">
+                            <div class="voodbuilder-gjs-selectors-mount"></div>
+                            <div class="voodbuilder-gjs-styles-mount"></div>
                         </div>
-                        <div class="vpress-gjs-inspector-panel" data-vpress-inspector="dynamic">
-                            <div class="vpress-gjs-dynamic-mount"></div>
+                        <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="dynamic">
+                            <div class="voodbuilder-gjs-dynamic-mount"></div>
                         </div>
-                        <div class="vpress-gjs-inspector-panel" data-vpress-inspector="layers">
-                            <div class="vpress-gjs-layers-mount"></div>
+                        <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="layers">
+                            <div class="voodbuilder-gjs-layers-mount"></div>
                         </div>
                     </div>
                 </aside>
@@ -87,12 +87,12 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         layers: labels.tabLayers ?? 'Layers',
     };
 
-    const tablist = container.querySelector('.vpress-gjs-inspector-tabs');
+    const tablist = container.querySelector('.voodbuilder-gjs-inspector-tabs');
 
     for (const tabId of INSPECTOR_TABS) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'vpress-gjs-inspector-tab';
+        button.className = 'voodbuilder-gjs-inspector-tab';
         button.dataset.vpressTab = tabId;
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-selected', tabId === 'content' ? 'true' : 'false');
@@ -100,25 +100,25 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         tablist.appendChild(button);
     }
 
-    const shell = container.querySelector('.vpress-gjs-shell');
+    const shell = container.querySelector('.voodbuilder-gjs-shell');
 
     return {
         shell,
         mounts: {
-            canvas: container.querySelector('.vpress-gjs-canvas-mount'),
-            canvasToolbar: container.querySelector('.vpress-gjs-topbar__tools'),
-            blocks: container.querySelector('.vpress-gjs-blocks-mount'),
-            layers: container.querySelector('.vpress-gjs-layers-mount'),
-            traits: container.querySelector('.vpress-gjs-traits-mount'),
-            selectors: container.querySelector('.vpress-gjs-selectors-mount'),
-            styles: container.querySelector('.vpress-gjs-styles-mount'),
-            dynamic: container.querySelector('.vpress-gjs-dynamic-mount'),
-            search: container.querySelector('.vpress-gjs-blocks-search'),
+            canvas: container.querySelector('.voodbuilder-gjs-canvas-mount'),
+            canvasToolbar: container.querySelector('.voodbuilder-gjs-topbar__tools'),
+            blocks: container.querySelector('.voodbuilder-gjs-blocks-mount'),
+            layers: container.querySelector('.voodbuilder-gjs-layers-mount'),
+            traits: container.querySelector('.voodbuilder-gjs-traits-mount'),
+            selectors: container.querySelector('.voodbuilder-gjs-selectors-mount'),
+            styles: container.querySelector('.voodbuilder-gjs-styles-mount'),
+            dynamic: container.querySelector('.voodbuilder-gjs-dynamic-mount'),
+            search: container.querySelector('.voodbuilder-gjs-blocks-search'),
             tablist,
-            panels: container.querySelector('.vpress-gjs-inspector-panels'),
-            saveButton: container.querySelector('[data-vpress-grapesjs-save]'),
-            saveLabel: container.querySelector('[data-vpress-grapesjs-save-label]'),
-            savedIndicator: container.querySelector('[data-vpress-grapesjs-saved]'),
+            panels: container.querySelector('.voodbuilder-gjs-inspector-panels'),
+            saveButton: container.querySelector('[data-voodbuilder-grapesjs-save]'),
+            saveLabel: container.querySelector('[data-voodbuilder-grapesjs-save-label]'),
+            savedIndicator: container.querySelector('[data-voodbuilder-grapesjs-saved]'),
         },
     };
 }
@@ -247,21 +247,21 @@ function setupInspectorTabs(mounts, editor) {
     const activateTab = (tabId) => {
         activeTab = tabId;
 
-        tablist.querySelectorAll('.vpress-gjs-inspector-tab').forEach((button) => {
+        tablist.querySelectorAll('.voodbuilder-gjs-inspector-tab').forEach((button) => {
             const active = button.dataset.vpressTab === tabId;
-            button.classList.toggle('vpress-gjs-inspector-tab--active', active);
+            button.classList.toggle('voodbuilder-gjs-inspector-tab--active', active);
             button.setAttribute('aria-selected', active ? 'true' : 'false');
         });
 
-        panels.querySelectorAll('[data-vpress-inspector]').forEach((panel) => {
-            panel.classList.toggle('vpress-gjs-inspector-panel--active', panel.dataset.vpressInspector === tabId);
+        panels.querySelectorAll('[data-voodbuilder-inspector]').forEach((panel) => {
+            panel.classList.toggle('voodbuilder-gjs-inspector-panel--active', panel.dataset.vpressInspector === tabId);
         });
 
         window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId));
     };
 
     tablist.addEventListener('click', (event) => {
-        const button = event.target.closest('.vpress-gjs-inspector-tab');
+        const button = event.target.closest('.voodbuilder-gjs-inspector-tab');
 
         if (! button?.dataset.vpressTab) {
             return;
@@ -273,7 +273,7 @@ function setupInspectorTabs(mounts, editor) {
     editor.on('component:selected', (component) => {
         syncInspectorManagers(editor, activeTab);
 
-        if (component?.getAttributes?.()['data-vpress-bind']) {
+        if (component?.getAttributes?.()['data-voodbuilder-bind']) {
             activateTab('dynamic');
         }
     });

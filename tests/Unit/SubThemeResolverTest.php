@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SubThemeResolverTest extends TestCase
 {
     public function test_page_inherits_site_default_when_sub_theme_is_empty(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), ['sub_theme' => 'site']),
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), ['sub_theme' => 'site']),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $page = SitePage::query()->create([
             'title' => 'About',
@@ -33,10 +33,10 @@ class SubThemeResolverTest extends TestCase
 
     public function test_page_override_takes_precedence_over_site_default(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), ['sub_theme' => 'default']),
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), ['sub_theme' => 'default']),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $page = SitePage::query()->create([
             'title' => 'Journal',
@@ -49,15 +49,15 @@ class SubThemeResolverTest extends TestCase
         ]);
 
         $this->assertSame('site', SubThemeResolver::forPage($page));
-        $this->assertSame('vpress::themes.site.layouts.page', $page->layoutView());
+        $this->assertSame('voodbuilder::themes.site.layouts.page', $page->layoutView());
     }
 
     public function test_invalid_sub_theme_falls_back_to_site_default(): void
     {
-        VpressSettings::query()->create([
-            'data' => VpressSettings::defaults(),
+        VoodbuilderSettings::query()->create([
+            'data' => VoodbuilderSettings::defaults(),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $page = SitePage::query()->create([
             'title' => 'Broken',

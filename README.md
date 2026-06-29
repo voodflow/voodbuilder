@@ -1,10 +1,10 @@
-# voodflow/vpress
+# voodflow/voodbuilder
 
 **Free & Open Source (MIT)** — VitePress-style public frontend for Laravel with a **Filament 5** admin panel.
 
 Companion plugins [voodflow/vtuts](https://github.com/voodflow/vtuts) and [voodflow/vdocs](https://github.com/voodflow/vdocs) are **paid, source-available** packages (not Open Source).
 
-Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigation, and settings. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
+Voodbuilder is **not a full CMS** and **requires Filament 5** for site pages, navigation, and settings. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
 
 ## Documentation
 
@@ -32,7 +32,7 @@ Vpress is **not a full CMS** and **requires Filament 5** for site pages, navigat
 | **Search** | `/search` across vtuts, vdocs, and site pages when routes exist |
 | **Cookie consent** | Public banner only (admin configures policy in Filament; banner is **not** shown in the panel) |
 
-Vpress does **not** ship blog posts, e-commerce, or arbitrary content types — pair it with **voodflow/vtuts**, **voodflow/vdocs**, or **Relaticle Ink** for that.
+Voodbuilder does **not** ship blog posts, e-commerce, or arbitrary content types — pair it with **voodflow/vtuts**, **voodflow/vdocs**, or **Relaticle Ink** for that.
 
 ## Requirements
 
@@ -58,31 +58,31 @@ Vpress does **not** ship blog posts, e-commerce, or arbitrary content types — 
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/voodflow/vpress.git"
+            "url": "https://github.com/voodflow/voodbuilder.git"
         }
     ],
     "require": {
-        "voodflow/vpress": "^0.0.2"
+        "voodflow/voodbuilder": "^0.0.2"
     }
 }
 ```
 
 ```bash
-composer update voodflow/vpress
-php artisan vpress:install --with-npm-build
+composer update voodflow/voodbuilder
+php artisan voodbuilder:install --with-npm-build
 ```
 
 That is usually enough for a fresh Laravel app with Vite. The install command publishes configs, runs migrations, seeds demo data, patches `package.json` and `vite.config.js`, runs `npm install`, and (with `--with-npm-build`) compiles assets.
 
-### What `vpress:install` does automatically
+### What `voodbuilder:install` does automatically
 
 | Step | Action |
 |------|--------|
-| Publish | Spatie Settings, SEO, vpress config |
+| Publish | Spatie Settings, SEO, voodbuilder config |
 | Database | `migrate` + default navigation/pages seed |
 | `routes/web.php` | Removes Laravel’s default `GET /` welcome route |
 | `package.json` | Adds Tailwind, fonts, GrapesJS npm packages |
-| `package.json` scripts | Sets `build` to run `vpress:sync-theme-imports` before Vite when safe |
+| `package.json` scripts | Sets `build` to run `voodbuilder:sync-theme-imports` before Vite when safe |
 | `vite.config.js` | Adds theme CSS, GrapesJS editor JS/CSS, Tailblocks utilities |
 | npm | Runs `npm install` when `npm` is on PATH |
 | Cookie consent | Disables Filament auto-discovery for the public banner package |
@@ -105,14 +105,14 @@ These cannot be automated safely — do them once in **your** Laravel project:
 1. **Filament plugin** — register in your panel provider:
 
 ```php
-use Voodflow\Vpress\VpressPlugin;
+use Voodflow\Voodbuilder\VoodbuilderPlugin;
 
 $panel->plugins([
-    VpressPlugin::make(),
+    VoodbuilderPlugin::make(),
 ]);
 ```
 
-2. **`vite.config.js` — Tailwind plugin** — if your app does not use Tailwind v4 yet, add the plugin (vpress only patches the `input` array):
+2. **`vite.config.js` — Tailwind plugin** — if your app does not use Tailwind v4 yet, add the plugin (voodbuilder only patches the `input` array):
 
 ```js
 import tailwindcss from '@tailwindcss/vite';
@@ -125,11 +125,11 @@ export default defineConfig({
 });
 ```
 
-3. **Custom `resources/js/app.js`** — if you ship your own dark-mode toggle, defer to vpress when the public layout is active (`window.__vpressTheme`). See [docs/BUILD.md](docs/BUILD.md).
+3. **Custom `resources/js/app.js`** — if you ship your own dark-mode toggle, defer to voodbuilder when the public layout is active (`window.__vpressTheme`). See [docs/BUILD.md](docs/BUILD.md).
 
-> **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the vpress `home` route. `vpress:install` removes that route automatically.
+> **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the voodbuilder `home` route. `voodbuilder:install` removes that route automatically.
 
-> Vpress migrations load from the package automatically. Do not publish duplicate migration files.
+> Voodbuilder migrations load from the package automatically. Do not publish duplicate migration files.
 
 **Admin → Site**
 
@@ -139,7 +139,7 @@ export default defineConfig({
 
 ## Site pages
 
-Site pages are managed in **Admin → Site → Pages**. They are stored in the `vpress_pages` table and served by vpress public routes — no manual `routes/web.php` entry is required for each page.
+Site pages are managed in **Admin → Site → Pages**. They are stored in the `voodbuilder_pages` table and served by voodbuilder public routes — no manual `routes/web.php` entry is required for each page.
 
 ### Creating a page
 
@@ -160,7 +160,7 @@ Site pages are managed in **Admin → Site → Pages**. They are stored in the `
 | Page kind | Public URL | Laravel route | Notes |
 |-----------|------------|---------------|-------|
 | **Home page** | `/` | `home` | Set via **Home page** toggle; slug is fixed to `home` and cannot be changed |
-| **Static page** | `/pages/{slug}` | `vpress.pages.show` | Default prefix is `pages` (configurable) |
+| **Static page** | `/pages/{slug}` | `voodbuilder.pages.show` | Default prefix is `pages` (configurable) |
 
 Examples:
 
@@ -170,9 +170,9 @@ Examples:
 - News (demo) → `https://yoursite.test/pages/news`
 - Privacy Policy → `https://yoursite.test/pages/privacy-policy`
 
-If no published home page exists (or it has no content), `GET /` falls back to `vpress::pages.welcome` with SEO defaults from **Settings**.
+If no published home page exists (or it has no content), `GET /` falls back to `voodbuilder::pages.welcome` with SEO defaults from **Settings**.
 
-Configure the pages route in `config/vpress.php`:
+Configure the pages route in `config/voodbuilder.php`:
 
 ```php
 'pages' => [
@@ -193,10 +193,10 @@ Disable the home route separately:
 
 | Layout (Filament) | Blade layout | Use for |
 |-------------------|--------------|---------|
-| **Home (full width)** | `vpress::layouts.home` | Homepage hero, feature grids, marketing sections |
-| **Standard page** | `vpress::layouts.page` | Legal pages, about, simple content |
+| **Home (full width)** | `voodbuilder::layouts.home` | Homepage hero, feature grids, marketing sections |
+| **Standard page** | `voodbuilder::layouts.page` | Legal pages, about, simple content |
 
-The home page always uses the **Home** layout. Other pages default to **Standard page**. Both render through `vpress::pages.site-page`, which outputs the RichEditor HTML and custom blocks.
+The home page always uses the **Home** layout. Other pages default to **Standard page**. Both render through `voodbuilder::pages.site-page`, which outputs the RichEditor HTML and custom blocks.
 
 ### SEO
 
@@ -214,7 +214,7 @@ Menus are managed in **Admin → Site → Navigation**. Each menu record has a *
 
 ### Nesting (sub-menus)
 
-Vpress supports **2 levels maximum**:
+Voodbuilder supports **2 levels maximum**:
 
 - **Level 1**: top-level navigation items
 - **Level 2**: sub-items shown in a dropdown (desktop) / collapsible list (mobile)
@@ -231,7 +231,7 @@ Create one menu per placement (the `slug` field is unique):
 | `header_extra` | Right side of the header, before language switcher / theme toggle / account / search |
 | `footer` | Footer link row above the copyright line |
 
-`vpress:install` seeds a **Main navigation** menu (Home, Tutorials when vtuts is installed, **Blog**, **News**) and a **Footer** menu (Privacy Policy, Cookie Policy). Blog and News are demo pages that showcase the built-in sub-themes.
+`voodbuilder:install` seeds a **Main navigation** menu (Home, Tutorials when vtuts is installed, **Blog**, **News**) and a **Footer** menu (Privacy Policy, Cookie Policy). Blog and News are demo pages that showcase the built-in sub-themes.
 
 > Use **header_extra** for secondary links such as Shop, Blog, or Pricing that should sit on the right side of the navbar.
 
@@ -260,24 +260,24 @@ To create a menu section title / container **without its own link**, set the ite
 
 #### 1. Site page
 
-Links to a vpress page by slug.
+Links to a voodbuilder page by slug.
 
 - Select the page from a searchable dropdown (draft pages are listed with a “Draft” suffix).
 - The URL is resolved at render time from the published page (`/` for home, `/pages/{slug}` otherwise).
-- **Active route pattern** is set automatically: `home` for the home page, or left empty for static pages (active state matches `vpress.pages.show` + slug).
+- **Active route pattern** is set automatically: `home` for the home page, or left empty for static pages (active state matches `voodbuilder.pages.show` + slug).
 
 #### 2. App route
 
 Links to a named Laravel route registered in your application (e.g. `vtuts.index`, `vdocs.index`, `home`).
 
 - Choose from a **searchable select** of public **GET** routes (`MenuRouteCatalog`).
-- Admin, Livewire, Filament, and other internal routes are excluded via `config('vpress.menus.route_exclude_patterns')`.
+- Admin, Livewire, Filament, and other internal routes are excluded via `config('voodbuilder.menus.route_exclude_patterns')`.
 - **Active route pattern** is filled automatically when you pick a route, e.g.:
   - `vtuts.index` → `vtuts.*` (highlights on all tutorial pages)
   - `vtuts.series.lesson` → `vtuts.series.*`
   - `home` → `home`
 
-You can add or remove exclude patterns in `config/vpress.php`:
+You can add or remove exclude patterns in `config/voodbuilder.php`:
 
 ```php
 'menus' => [
@@ -324,7 +324,7 @@ The theme compares the current request against each item’s `route_match` (or p
 
 ### Cache
 
-Menu items are cached for one hour per placement (`vpress.menu.{slug}`). The cache is cleared when menus are saved in Filament.
+Menu items are cached for one hour per placement (`voodbuilder.menu.{slug}`). The cache is cleared when menus are saved in Filament.
 
 ## Sub-themes
 
@@ -352,7 +352,7 @@ Global settings (logo, menus, SEO, dark/light, analytics) are unchanged. See [do
 | `news` | News | Editorial / magazine headlines and wider columns |
 | `events` | Showcase | Trade show / marketing layout — dark header, landing canvas, card grids |
 
-After `vpress:install`, open the main menu and visit:
+After `voodbuilder:install`, open the main menu and visit:
 
 | Menu item | URL | Sub-theme | What you see |
 |-----------|-----|-----------|--------------|
@@ -386,7 +386,7 @@ Re-seed demo content anytime:
 
 ```bash
 php artisan migrate
-php artisan db:seed --class="Voodflow\Vpress\Database\Seeders\VpressSeeder"
+php artisan db:seed --class="Voodflow\Voodbuilder\Database\Seeders\VoodbuilderSeeder"
 npm run build
 ```
 
@@ -403,8 +403,8 @@ Use per-page overrides for individual landings. Use channel rows when a whole pa
 ### Create a custom theme
 
 ```bash
-php artisan vpress:make-subtheme polito --label="Politecnico di Torino"
-# edit resources/vpress/themes/polito/theme.css and layouts/
+php artisan voodbuilder:make-subtheme polito --label="Politecnico di Torino"
+# edit resources/voodbuilder/themes/polito/theme.css and layouts/
 npm run build
 ```
 
@@ -412,47 +412,47 @@ Full guide: [docs/VISUAL_THEMES.md](docs/VISUAL_THEMES.md).
 
 ### Sub-themes: registry vs files on disk
 
-A **sub-theme** is a named visual skin. It sets `data-vpress-sub-theme="…"` on `<html>` and may ship extra CSS and layout Blade overrides. It is **not** light/dark mode (that is separate).
+A **sub-theme** is a named visual skin. It sets `data-voodbuilder-sub-theme="…"` on `<html>` and may ship extra CSS and layout Blade overrides. It is **not** light/dark mode (that is separate).
 
 **Only registered sub-themes appear in admin** (Settings, Pages, Site sections). Registration happens at boot from:
 
-1. **`config/vpress.php` → `sub_themes`** — bundled themes shipped with vpress (`default`, `blog`, `news`, `events`, …)
-2. **`php artisan vpress:make-subtheme`** — scaffolds app themes in the same convention and registers them in `config/vpress.php`
-3. **`Vpress::subTheme()`** in a ServiceProvider — optional programmatic registration (typically for app-only themes)
+1. **`config/voodbuilder.php` → `sub_themes`** — bundled themes shipped with voodbuilder (`default`, `blog`, `news`, `events`, …)
+2. **`php artisan voodbuilder:make-subtheme`** — scaffolds app themes in the same convention and registers them in `config/voodbuilder.php`
+3. **`Voodbuilder::subTheme()`** in a ServiceProvider — optional programmatic registration (typically for app-only themes)
 
-**Plugins do not ship themes.** Route packages (vevents, vexhibitors, vtuts, vdocs) register **content channels** only; their default visual theme comes from `config/vpress.php` → `content_channel_defaults`.
+**Plugins do not ship themes.** Route packages (vevents, vexhibitors, vtuts, vdocs) register **content channels** only; their default visual theme comes from `config/voodbuilder.php` → `content_channel_defaults`.
 
-See `Voodflow\Vpress\Support\ThemeConvention` for paths and layout namespaces.
+See `Voodflow\Voodbuilder\Support\ThemeConvention` for paths and layout namespaces.
 
 | Sub-theme ID | Origin | Views | CSS |
 |--------------|--------|-------|-----|
-| `default` | `config/vpress.php` | Base `vpress::layouts.*` (no extra folder) | `resources/css/theme.css` |
-| `blog`, `news`, `events` | `config/vpress.php` | `vpress::themes.{id}.*` → package `resources/views/themes/{id}/` | package `resources/themes/{id}/theme.css` |
-| *(custom)* | `vpress:make-subtheme` or `Vpress::subTheme()` | `vpress.themes.{id}.*` → `resources/views/vpress/themes/{id}/` in the app | `resources/vpress/themes/{id}/theme.css` (auto `@import` into the vpress bundle) |
+| `default` | `config/voodbuilder.php` | Base `voodbuilder::layouts.*` (no extra folder) | `resources/css/theme.css` |
+| `blog`, `news`, `events` | `config/voodbuilder.php` | `voodbuilder::themes.{id}.*` → package `resources/views/themes/{id}/` | package `resources/themes/{id}/theme.css` |
+| *(custom)* | `voodbuilder:make-subtheme` or `Voodbuilder::subTheme()` | `voodbuilder.themes.{id}.*` → `resources/views/voodbuilder/themes/{id}/` in the app | `resources/voodbuilder/themes/{id}/theme.css` (auto `@import` into the voodbuilder bundle) |
 
-**vtuts** and **vdocs** use the **doc layout** (`vpress::layouts.doc`). Their channels default to the `default` sub-theme via `content_channel_defaults`; override in **Settings → Theme** (channel row) or register a dedicated skin with `vpress:make-subtheme`.
+**vtuts** and **vdocs** use the **doc layout** (`voodbuilder::layouts.doc`). Their channels default to the `default` sub-theme via `content_channel_defaults`; override in **Settings → Theme** (channel row) or register a dedicated skin with `voodbuilder:make-subtheme`.
 
 After adding or changing sub-themes, run `npm run build` so Vite picks up new CSS `@import`s.
 
 ### Content channels
 
-A **content channel** connects **route name patterns** to optional **search** and a **default sub-theme**. Channels are how route-based areas (not Site Pages) join the vpress shell.
+A **content channel** connects **route name patterns** to optional **search** and a **default sub-theme**. Channels are how route-based areas (not Site Pages) join the voodbuilder shell.
 
 **A channel only appears in Settings → Theme if something registers it** — usually the package `ServiceProvider`:
 
 ```php
 // vevents
-Vpress::contentChannel('events', new EventsContentChannel);
+Voodbuilder::contentChannel('events', new EventsContentChannel);
 
 // vexhibitors, vtuts, vdocs — same pattern
 ```
 
-vpress itself registers `pages` → `vpress.pages.*` (no default sub-theme; individual Site Pages carry their own).
+voodbuilder itself registers `pages` → `voodbuilder.pages.*` (no default sub-theme; individual Site Pages carry their own).
 
 Alternatively, register from config:
 
 ```php
-// config/vpress.php
+// config/voodbuilder.php
 'content_channels' => [
     'blog' => [
         'label' => 'Blog',
@@ -469,7 +469,7 @@ Alternatively, register from config:
 | Piece | Who defines it |
 |-------|----------------|
 | **Routes** | Your package / `routes/*.php` |
-| **Channel + default sub-theme** | `config/vpress.php` → `content_channel_defaults` |
+| **Channel + default sub-theme** | `config/voodbuilder.php` → `content_channel_defaults` |
 | **Override sub-theme** | Settings → Theme (channel row, DB) |
 | **Menu link + active state** | Admin → **Navigation** → App route + `route_match` (e.g. `vevents.*`) |
 | **Search** | Channel `search` callback or model `vpressSearch()` |
@@ -486,14 +486,14 @@ public static function vpressSearch(string $term, int $limit): \Illuminate\Suppo
 Packages typically:
 
 1. Ship models, migrations, and public controllers.
-2. Point views at `vpress::layouts.app`, `vpress::layouts.doc`, or a sub-theme layout.
+2. Point views at `voodbuilder::layouts.app`, `voodbuilder::layouts.doc`, or a sub-theme layout.
 3. Register a content channel so menu highlighting, search, and sub-theme resolution follow the active route.
 
-Same pattern as **vtuts** / **vdocs** / **vevents** / **vexhibitors**: companion package + shared vpress chrome, not duplicated Site Pages.
+Same pattern as **vtuts** / **vdocs** / **vevents** / **vexhibitors**: companion package + shared voodbuilder chrome, not duplicated Site Pages.
 
 ### How the active sub-theme is chosen
 
-On each public request, `SubThemeResolver::forCurrentRoute()` runs from `vpress::layouts.app`:
+On each public request, `SubThemeResolver::forCurrentRoute()` runs from `voodbuilder::layouts.app`:
 
 ```
 Current route
@@ -532,30 +532,30 @@ The mobile drawer is **theme-agnostic** (`resources/css/mobile-nav.css`): same s
 Scaffold a theme in your application:
 
 ```bash
-php artisan vpress:make-subtheme magazine --label="Magazine"
+php artisan voodbuilder:make-subtheme magazine --label="Magazine"
 ```
 
-This creates `resources/vpress/themes/magazine/theme.css`, Blade layouts under `resources/views/vpress/themes/magazine/`, registers the theme in `config/vpress.php`, and appends an `@import` to the vpress theme bundle. Then run `npm run build`.
+This creates `resources/voodbuilder/themes/magazine/theme.css`, Blade layouts under `resources/views/voodbuilder/themes/magazine/`, registers the theme in `config/voodbuilder.php`, and appends an `@import` to the voodbuilder theme bundle. Then run `npm run build`.
 
 Register themes programmatically:
 
 ```php
-use Voodflow\Vpress\Vpress;
+use Voodflow\Voodbuilder\Voodbuilder;
 
-Vpress::subTheme('magazine', [
+Voodbuilder::subTheme('magazine', [
     'label' => 'Magazine',
     'description' => 'Custom editorial layout.',
     'layouts' => [
-        'home' => 'vpress.themes.magazine.layouts.home',
-        'page' => 'vpress.themes.magazine.layouts.page',
+        'home' => 'voodbuilder.themes.magazine.layouts.home',
+        'page' => 'voodbuilder.themes.magazine.layouts.page',
     ],
-    'css' => 'resources/vpress/themes/magazine/theme.css',
+    'css' => 'resources/voodbuilder/themes/magazine/theme.css',
 ]);
 ```
 
-Bundled **blog**, **news**, and **events** themes live under `packages/voodflow/vpress/resources/themes/` and `resources/views/themes/`. App-specific themes from the CLI use the same structure under `resources/vpress/themes/` and `resources/views/vpress/themes/` in your Laravel app.
+Bundled **blog**, **news**, and **events** themes live under `packages/voodflow/voodbuilder/resources/themes/` and `resources/views/themes/`. App-specific themes from the CLI use the same structure under `resources/voodbuilder/themes/` and `resources/views/voodbuilder/themes/` in your Laravel app.
 
-Each sub-theme may override `home` and `page` layouts and ship extra CSS scoped with `html[data-vpress-sub-theme="…"]`.
+Each sub-theme may override `home` and `page` layouts and ship extra CSS scoped with `html[data-voodbuilder-sub-theme="…"]`.
 
 ## How it works
 
@@ -563,27 +563,27 @@ Each sub-theme may override `home` and `page` layouts and ship extra CSS scoped 
 
 | Layout | Use |
 |--------|-----|
-| `vpress::layouts.app` | Base shell: nav, footer, Vite assets, cookie banner |
-| `vpress::layouts.home` | Home page (full-width, no doc sidebar) |
-| `vpress::layouts.doc` | Doc/tutorial: fixed gray left sidebar, outline, progress bar |
-| `vpress::layouts.page` | Simple content page |
+| `voodbuilder::layouts.app` | Base shell: nav, footer, Vite assets, cookie banner |
+| `voodbuilder::layouts.home` | Home page (full-width, no doc sidebar) |
+| `voodbuilder::layouts.doc` | Doc/tutorial: fixed gray left sidebar, outline, progress bar |
+| `voodbuilder::layouts.page` | Simple content page |
 
-Other Voodflow packages point their config at these layouts (e.g. `vtuts.doc_layout` → `vpress::layouts.doc`).
+Other Voodflow packages point their config at these layouts (e.g. `vtuts.doc_layout` → `voodbuilder::layouts.doc`).
 
 ### Login & registration (Fortify)
 
-When Fortify is installed and routes are registered, vpress serves themed `/login` and `/register` blades. Users created on the public site receive the **registered** role when Shield/vtuts integration is present. Subscriber-only content is enforced by **vtuts** visibility + SubKit, not by vpress alone.
+When Fortify is installed and routes are registered, voodbuilder serves themed `/login` and `/register` blades. Users created on the public site receive the **registered** role when Shield/vtuts integration is present. Subscriber-only content is enforced by **vtuts** visibility + SubKit, not by voodbuilder alone.
 
 ### Notifications
 
-Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notifications` table (`vpress:install` creates it). The bell Livewire component shows unread Filament/database notifications — useful for moderators when someone comments on a tutorial.
+Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notifications` table (`voodbuilder:install` creates it). The bell Livewire component shows unread Filament/database notifications — useful for moderators when someone comments on a tutorial.
 
 ### Settings vs config file
 
-- `config/vpress.php` — layouts, built-in sub-theme registry (`default`, `blog`, `news`), feature flags, Vite entry paths (committed)
-- **Database** (`VpressSettings`) — logo, titles, light/dark default, site sub-theme, **per-channel sub-theme overrides**, toggles (edited in Filament)
+- `config/voodbuilder.php` — layouts, built-in sub-theme registry (`default`, `blog`, `news`), feature flags, Vite entry paths (committed)
+- **Database** (`VoodbuilderSettings`) — logo, titles, light/dark default, site sub-theme, **per-channel sub-theme overrides**, toggles (edited in Filament)
 
-`ApplyVpressSiteConfig` middleware applies DB settings on each web request (title, favicon, locale hints).
+`ApplyVoodbuilderSiteConfig` middleware applies DB settings on each web request (title, favicon, locale hints).
 
 ### Search
 
@@ -592,31 +592,31 @@ Enable in **Settings** (`show_notification_bell`). Requires Laravel’s `notific
 ### With voodflow/vtuts
 
 ```bash
-php artisan vpress:install
+php artisan voodbuilder:install
 php artisan vtuts:install
 ```
 
-`vpress:install` sets in `config/vtuts.php`:
+`voodbuilder:install` sets in `config/vtuts.php`:
 
-- `layout` → `vpress::layouts.page`
-- `doc_layout` → `vpress::layouts.doc`
+- `layout` → `voodbuilder::layouts.page`
+- `doc_layout` → `voodbuilder::layouts.doc`
 
-Tutorial listing and doc pages use the vpress shell; vtuts-specific CSS (`vtuts.css`) loads for comments, TOC, materials.
+Tutorial listing and doc pages use the voodbuilder shell; vtuts-specific CSS (`vtuts.css`) loads for comments, TOC, materials.
 
 Nav seeder adds a **Tutorials** link when `vtuts.index` exists.
 
 ## Vite & CSS
 
-Vpress does not ship pre-built CSS. `php artisan vpress:install --with-npm-build` patches `package.json` and `vite.config.js`, installs npm packages, and can compile assets in one step.
+Voodbuilder does not ship pre-built CSS. `php artisan voodbuilder:install --with-npm-build` patches `package.json` and `vite.config.js`, installs npm packages, and can compile assets in one step.
 
 The theme CSS path depends on how the package is installed:
 
 | Install method | Theme CSS path |
 |----------------|----------------|
-| Composer (GitHub / Packagist) | `vendor/voodflow/vpress/resources/css/theme.css` |
-| Path repo / monorepo | `packages/voodflow/vpress/resources/css/theme.css` |
+| Composer (GitHub / Packagist) | `vendor/voodflow/voodbuilder/resources/css/theme.css` |
+| Path repo / monorepo | `packages/voodflow/voodbuilder/resources/css/theme.css` |
 
-`config/vpress.php` resolves paths at runtime — you do not edit it for Vite entries.
+`config/voodbuilder.php` resolves paths at runtime — you do not edit it for Vite entries.
 
 If you skipped the build during install:
 
@@ -624,17 +624,17 @@ If you skipped the build during install:
 npm run build    # or: npm run dev
 ```
 
-**Tailwind plugin** — vpress patches the `input` array only. Your `vite.config.js` must still include `@tailwindcss/vite` (see Installation → manual steps).
+**Tailwind plugin** — voodbuilder patches the `input` array only. Your `vite.config.js` must still include `@tailwindcss/vite` (see Installation → manual steps).
 
 Example `input` entries after install (paths may differ):
 
 ```js
 input: [
     'resources/js/app.js',
-    'vendor/voodflow/vpress/resources/css/theme.css',
-    'vendor/voodflow/vpress/resources/js/grapesjs/editor.js',
-    'vendor/voodflow/vpress/resources/css/grapesjs/editor.css',
-    'vendor/voodflow/vpress/resources/css/grapesjs/tailblocks-utilities.css',
+    'vendor/voodflow/voodbuilder/resources/css/theme.css',
+    'vendor/voodflow/voodbuilder/resources/js/grapesjs/editor.js',
+    'vendor/voodflow/voodbuilder/resources/css/grapesjs/editor.css',
+    'vendor/voodflow/voodbuilder/resources/css/grapesjs/tailblocks-utilities.css',
 ],
 ```
 
@@ -643,9 +643,9 @@ Full build guide: [docs/BUILD.md](docs/BUILD.md).
 ## Custom RichEditor blocks
 
 ```php
-use Voodflow\Vpress\Vpress;
+use Voodflow\Voodbuilder\Voodbuilder;
 
-Vpress::richContentBlock('Dynamic', YourBlock::class);
+Voodbuilder::richContentBlock('Dynamic', YourBlock::class);
 ```
 
 Built-in: Hero, Features grid, Partner banner. **vtuts** registers `latest_vtuts`.

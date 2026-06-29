@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Livewire;
+namespace Voodflow\Voodbuilder\Filament\Livewire;
 
 use Filament\Actions\Action;
 use Filament\Notifications\Livewire\DatabaseNotifications as BaseDatabaseNotifications;
@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Notifications\DatabaseNotification;
 use Relaticle\Comments\Notifications\CommentRepliedNotification;
 use Relaticle\Comments\Notifications\UserMentionedNotification;
-use Voodflow\Vpress\Support\SiteNotificationPresenter;
+use Voodflow\Voodbuilder\Support\SiteNotificationPresenter;
 
 class AdminDatabaseNotifications extends BaseDatabaseNotifications
 {
@@ -44,7 +44,7 @@ class AdminDatabaseNotifications extends BaseDatabaseNotifications
             if (filled($presented['url'])) {
                 $filamentNotification->actions([
                     Action::make('view')
-                        ->label(__('vpress::notifications.view'))
+                        ->label(__('voodbuilder::notifications.view'))
                         ->url($presented['url'])
                         ->openUrlInNewTab(),
                 ]);

@@ -1,17 +1,17 @@
 @php
-    use Voodflow\Vpress\Support\ArticleChannel;
+    use Voodflow\Voodbuilder\Support\ArticleChannel;
 
     $prefix = ArticleChannel::shellClassPrefix();
 @endphp
 
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('body_class')
     {{ ArticleChannel::bodyClass() }}
 @endsection
 
 @section('content')
-    <div class="{{ $prefix }}-shell" data-vpress-article>
+    <div class="{{ $prefix }}-shell" data-voodbuilder-article>
         <div class="{{ $prefix }}-layout">
             @include(ArticleChannel::inkPartial('sidebar-left'), [
                 'posts' => $sidebarPosts ?? collect(),

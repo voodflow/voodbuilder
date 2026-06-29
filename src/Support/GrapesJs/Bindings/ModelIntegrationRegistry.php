@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
-use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationRegistry
 {
@@ -50,7 +50,7 @@ final class ModelIntegrationRegistry
         foreach ($this->byAlias as $alias => $integration) {
             $items[] = [
                 'id' => $alias.'.list',
-                'label' => $integration->name.' · '.__('vpress::model_integrations.bindings.repeat_source'),
+                'label' => $integration->name.' · '.__('voodbuilder::model_integrations.bindings.repeat_source'),
                 'sortFields' => $sortFields->forIntegration($integration),
                 'defaultSort' => 'id',
                 'defaultDirection' => 'desc',

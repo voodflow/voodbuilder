@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Support\Navigation;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Support\Navigation;
 
 class CreateNavigationMenu extends CreateRecord
 {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Livewire;
+namespace Voodflow\Voodbuilder\Livewire;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Livewire\Component;
-use Voodflow\Vpress\Support\SiteNotificationPresenter;
+use Voodflow\Voodbuilder\Support\SiteNotificationPresenter;
 
 class SiteNotificationBell extends Component
 {
@@ -80,7 +80,7 @@ class SiteNotificationBell extends Component
 
     public function render(): View
     {
-        return view('vpress::livewire.site-notification-bell');
+        return view('voodbuilder::livewire.site-notification-bell');
     }
 
     protected function notificationQuery()

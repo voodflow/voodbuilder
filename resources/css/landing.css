@@ -11,23 +11,23 @@
     @apply font-sans tracking-tight;
 }
 
-.vpress-landing-shell {
+.voodbuilder-landing-shell {
     @apply w-full;
 }
 
-.vpress-home-shell {
+.voodbuilder-home-shell {
     @apply w-full;
 }
 
-.vpress-full-width-shell,
-.vpress-site-shell:has(.VPRichPage--landing),
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .VPRichPage--landing),
-:where(.vpress-site-content, .vpress-home-shell, .vpress-landing-shell):has(> .vpress-grapesjs-mode),
-main > :where(.mx-auto, .vpress-site-shell, .vpress-home-shell, .vpress-landing-shell):has(.VPRichPage--landing) {
+.voodbuilder-full-width-shell,
+.voodbuilder-site-shell:has(.VPRichPage--landing),
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode),
+main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(.VPRichPage--landing) {
     @apply max-w-none w-full p-0;
 }
 
-.VPRichPage--landing > :is(section, .vpress-gjs-hero, .vpress-gjs-cta, .vpress-gjs-section, .vpress-gjs-footer):first-child {
+.VPRichPage--landing > :is(section, .voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .voodbuilder-gjs-section, .voodbuilder-gjs-footer):first-child {
     @apply pt-0;
 }
 
@@ -36,23 +36,23 @@ main > :where(.mx-auto, .vpress-site-shell, .vpress-home-shell, .vpress-landing-
 }
 
 /* Root GrapesJS sections are full-bleed; inner copy stays padded via px-* on the block. */
-.VPRichPage--landing > section.vpress-gjs-section {
+.VPRichPage--landing > section.voodbuilder-gjs-section {
     @apply mx-0 w-full max-w-none;
 }
 
-.VPRichPage--landing > section.vpress-gjs-section:empty {
+.VPRichPage--landing > section.voodbuilder-gjs-section:empty {
     @apply hidden m-0 min-h-0 p-0;
 }
 
 /* Escape nested .container wrappers when blocks were dropped inside footer columns. */
-.VPRichPage--landing :is(.vpress-gjs-hero, .vpress-gjs-cta, .vp-landing-hero) {
+.VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
     @apply relative w-full max-w-none;
     width: 100vw;
     max-width: 100vw;
     margin-inline: calc(50% - 50vw);
 }
 
-.VPRichPage--landing .vpress-gjs-footer > .container:has(> .vpress-gjs-hero, > section.vpress-gjs-hero) {
+.VPRichPage--landing .voodbuilder-gjs-footer > .container:has(> .voodbuilder-gjs-hero, > section.voodbuilder-gjs-hero) {
     @apply max-w-none px-0 pt-0;
 }
 
@@ -100,18 +100,18 @@ main > :where(.mx-auto, .vpress-site-shell, .vpress-home-shell, .vpress-landing-
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
-html[data-vpress-sub-theme='site'] .vpress-events-shell:has(.VPRichPage--landing) {
+html[data-voodbuilder-sub-theme='site'] .voodbuilder-events-shell:has(.VPRichPage--landing) {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
 
-html[data-vpress-sub-theme='site'] .vpress-landing-shell:has(.VPRichPage--landing) {
+html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPage--landing) {
     @apply max-w-none p-0;
 }
 
-.VPRichPage--landing .vpress-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
+.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
     @apply text-vp-text-2;
 }
 
-.VPRichPage--landing .vpress-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
+.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
     @apply text-vp-text-1;
 }

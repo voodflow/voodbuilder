@@ -7,19 +7,19 @@
 
 @section('section_index')
     @if ($vpressSubTheme === 'news')
-        <header class="vpress-news-desk-header">
-            <p class="vpress-news-desk-kicker">{{ __('vpress::demo.news.desk_kicker') }}</p>
-            <h1 class="vpress-news-desk-title">{{ $page->title }}</h1>
-            <p class="vpress-news-desk-intro">{{ $page->displayExcerpt() }}</p>
+        <header class="voodbuilder-news-desk-header">
+            <p class="voodbuilder-news-desk-kicker">{{ __('voodbuilder::demo.news.desk_kicker') }}</p>
+            <h1 class="voodbuilder-news-desk-title">{{ $page->title }}</h1>
+            <p class="voodbuilder-news-desk-intro">{{ $page->displayExcerpt() }}</p>
         </header>
 
-        @include('vpress::themes.news.partials.story-grid', ['posts' => $posts])
+        @include('voodbuilder::themes.news.partials.story-grid', ['posts' => $posts])
     @else
-        <header class="vpress-blog-index-header">
-            <h1 class="vpress-blog-index-title">{{ $page->title }}</h1>
-            <p class="vpress-blog-index-intro">{{ $page->displayExcerpt() }}</p>
+        <header class="voodbuilder-blog-index-header">
+            <h1 class="voodbuilder-blog-index-title">{{ $page->title }}</h1>
+            <p class="voodbuilder-blog-index-intro">{{ $page->displayExcerpt() }}</p>
         </header>
 
-        @include('vpress::themes.blog.partials.post-list', ['posts' => $posts])
+        @include('voodbuilder::themes.blog.partials.post-list', ['posts' => $posts])
     @endif
 @endsection

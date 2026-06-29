@@ -1,6 +1,6 @@
 # GrapesJS page builder
 
-Vpress Pro ships a **frontend GrapesJS editor** for Site Pages. Editors with permission can open `?edit=1` on a published page and edit layout visually.
+Voodbuilder Pro ships a **frontend GrapesJS editor** for Site Pages. Editors with permission can open `?edit=1` on a published page and edit layout visually.
 
 ---
 
@@ -18,13 +18,13 @@ Install npm dependencies (host app):
 
 ```bash
 npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code
-npm install -D esbuild react react-dom prop-types   # only for vpress:build-tailblocks
+npm install -D esbuild react react-dom prop-types   # only for voodbuilder:build-tailblocks
 npm run build
 ```
 
-Optional GrapesJS plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/vpress.php` → `grapesjs.plugins`.
+Optional GrapesJS plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/voodbuilder.php` → `grapesjs.plugins`.
 
-`php artisan vpress:install` patches `vite.config.js` with GrapesJS entries when possible.
+`php artisan voodbuilder:install` patches `vite.config.js` with GrapesJS entries when possible.
 
 ---
 
@@ -35,7 +35,7 @@ Blocks appear in the GrapesJS sidebar when editing.
 | Source | Category | Notes |
 |--------|----------|-------|
 | **Tailblocks** | `Tailblocks / …` | 60+ marketing sections; adaptive to light/dark via theme tokens |
-| **Vpress** | `Vpress` | Hero, content section, CTA, **site header/footer** (live menus) |
+| **Voodbuilder** | `Voodbuilder` | Hero, content section, CTA, **site header/footer** (live menus) |
 | **RichEditor blocks** | Per package | Dynamic server-rendered blocks (e.g. latest posts) |
 | **Server blocks** | Per package | Third-party packages without Filament RichEditor |
 | **Custom** | Your category | Static HTML registered in a ServiceProvider |
@@ -48,13 +48,13 @@ Bundled JSON: `resources/grapesjs/tailblocks-blocks.json`
 Regenerate from upstream Tailblocks (optional):
 
 ```bash
-php artisan vpress:build-tailblocks --theme=indigo
+php artisan voodbuilder:build-tailblocks --theme=indigo
 npm run build
 ```
 
 Blocks use **theme tokens** (`bg-vp-bg`, `text-vp-text-1`, `text-vp-brand-1`) so they follow light/dark and admin brand colours.
 
-Config (`config/vpress.php`):
+Config (`config/voodbuilder.php`):
 
 ```php
 'grapesjs' => [
@@ -73,14 +73,14 @@ Config (`config/vpress.php`):
 In a ServiceProvider `boot()`:
 
 ```php
-use Voodflow\Vpress\Vpress;
+use Voodflow\Voodbuilder\Voodbuilder;
 
-Vpress::grapesJsBlock(
+Voodbuilder::grapesJsBlock(
     id: 'polito-hero',
     label: 'Polito hero',
     category: 'Politecnico',
     content: <<<'HTML'
-<section class="vpress-gjs-section bg-vp-bg text-vp-text-2 py-24">
+<section class="voodbuilder-gjs-section bg-vp-bg text-vp-text-2 py-24">
   <div class="container mx-auto px-6">
     <h1 class="title-font text-4xl font-bold text-vp-text-1">Titolo</h1>
     <p class="mt-4 max-w-2xl">Testo introduttivo.</p>
@@ -101,7 +101,7 @@ Blocks are **global** (all pages). Group by `category` (e.g. your theme name) fo
 Reuse Filament RichEditor custom blocks in GrapesJS:
 
 ```php
-Vpress::grapesJsRichContentBlock('Dynamic', LatestBlogPostsBlock::class);
+Voodbuilder::grapesJsRichContentBlock('Dynamic', LatestBlogPostsBlock::class);
 ```
 
 The block class must implement the RichEditor custom block contract. GrapesJS stores a placeholder; the server renders HTML on publish/view.
@@ -111,8 +111,8 @@ Use this for **latest posts**, **news lists**, **event cards**, etc.
 When the block already exists for Filament RichEditor (with `configureEditorAction()`), register it once for both editors:
 
 ```php
-Vpress::richContentBlock('News', LatestNewsBlock::class);
-Vpress::grapesJsRichContentBlock('UltiNews', LatestNewsBlock::class);
+Voodbuilder::richContentBlock('News', LatestNewsBlock::class);
+Voodbuilder::grapesJsRichContentBlock('UltiNews', LatestNewsBlock::class);
 ```
 
 ---
@@ -122,8 +122,8 @@ Vpress::grapesJsRichContentBlock('UltiNews', LatestNewsBlock::class);
 For packages that **do not** use Filament RichEditor — e.g. a standalone UltiNews widget or a Filament Form rendered as HTML — implement `GrapesJsServerBlock` and register in `boot()`:
 
 ```php
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
-use Voodflow\Vpress\Vpress;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 final class LatestNewsGrapesJsBlock implements GrapesJsServerBlock
 {
@@ -154,18 +154,18 @@ final class LatestNewsGrapesJsBlock implements GrapesJsServerBlock
 }
 
 // UltiNewsServiceProvider::boot()
-Vpress::grapesJsServerBlock('UltiNews', LatestNewsGrapesJsBlock::class);
+Voodbuilder::grapesJsServerBlock('UltiNews', LatestNewsGrapesJsBlock::class);
 ```
 
-GrapesJS stores only a placeholder (`data-vpress-block`, `data-vpress-config`). HTML is rendered on every page view — same pipeline as RichEditor blocks.
+GrapesJS stores only a placeholder (`data-voodbuilder-block`, `data-voodbuilder-config`). HTML is rendered on every page view — same pipeline as RichEditor blocks.
 
 ### Which API to choose?
 
 | Need | API |
 |------|-----|
-| Static HTML snippet | `Vpress::grapesJsBlock()` |
-| Block with Filament modal config in RichEditor | `Vpress::grapesJsRichContentBlock()` + `RichContentCustomBlock` |
-| Third-party package, server render only | `Vpress::grapesJsServerBlock()` + `GrapesJsServerBlock` |
+| Static HTML snippet | `Voodbuilder::grapesJsBlock()` |
+| Block with Filament modal config in RichEditor | `Voodbuilder::grapesJsRichContentBlock()` + `RichContentCustomBlock` |
+| Third-party package, server render only | `Voodbuilder::grapesJsServerBlock()` + `GrapesJsServerBlock` |
 | Filament Form on the page | `GrapesJsServerBlock` that renders a Blade view with `@livewire` or `{{ $form }}` |
 
 **Do not** patch `node_modules/grapesjs`. Extend via ServiceProvider registration only.
@@ -182,16 +182,16 @@ Editors can connect any selected element (title, image, link, …) to **live dat
 4. Choose **Data source** (e.g. *Latest tutorial* from Vtuts) and **Field** (Title, URL, Image, …).
 5. Save the page.
 
-Saved HTML stores `data-vpress-bind="vtuts.latest.title"` (or similar). The server resolves values on every page view.
+Saved HTML stores `data-voodbuilder-bind="vtuts.latest.title"` (or similar). The server resolves values on every page view.
 
 | Concern | Detail |
 |---------|--------|
 | Remove binding | Select element → **Clear dynamic binding** (✕) |
 | URL on `button` / `a` | Only the link is dynamic; **button/link label stays editable** |
-| Plugin API | `Vpress::grapesJsBindingSource($source)` implementing `GrapesJsBindingSource` |
+| Plugin API | `Voodbuilder::grapesJsBindingSource($source)` implementing `GrapesJsBindingSource` |
 | Full guide | [BINDINGS.md](./BINDINGS.md) — contract, field types, Vtuts fields, plugin tutorial |
-| Catalog API | `GET /vpress/grapesjs/bindings` (auth + page-builder permission) |
-| Preview API | `GET /vpress/grapesjs/bindings/preview/{sitePage}` |
+| Catalog API | `GET /voodbuilder/grapesjs/bindings` (auth + page-builder permission) |
+| Preview API | `GET /voodbuilder/grapesjs/bindings/preview/{sitePage}` |
 | Vtuts | Registers `vtuts.latest` (title, introduction, url, image, category, author, dates, tags, …) |
 
 ---
@@ -209,7 +209,7 @@ While editing (`?edit=1`), the global nav/footer are hidden so the canvas matche
 
 ## Optional GrapesJS npm plugins
 
-Config (`config/vpress.php`):
+Config (`config/voodbuilder.php`):
 
 ```php
 'grapesjs' => [
@@ -227,7 +227,7 @@ Config (`config/vpress.php`):
 
 | Plugin | Purpose |
 |--------|---------|
-| `grapesjs-plugin-forms` | Form/input blocks; submits to `POST /vpress/grapesjs/forms/{page}` with CSRF |
+| `grapesjs-plugin-forms` | Form/input blocks; submits to `POST /voodbuilder/grapesjs/forms/{page}` with CSRF |
 | `grapesjs-style-bg` | Background images / gradients in Style Manager |
 | `grapesjs-tabs` | Tab component (not in Tailblocks) |
 | `grapesjs-custom-code` | Custom HTML embed; stripped of `<script>` on save |
@@ -235,7 +235,7 @@ Config (`config/vpress.php`):
 Listen for form submissions in the host app:
 
 ```php
-use Voodflow\Vpress\Events\GrapesJsFormSubmitted;
+use Voodflow\Voodbuilder\Events\GrapesJsFormSubmitted;
 
 Event::listen(GrapesJsFormSubmitted::class, function (GrapesJsFormSubmitted $event) {
     // $event->page, $event->payload (name, email, message, …)
@@ -248,10 +248,10 @@ Event::listen(GrapesJsFormSubmitted::class, function (GrapesJsFormSubmitted $eve
 
 There is no per-theme block registry yet. Recommended pattern:
 
-1. Create theme with `vpress:make-subtheme polito`
+1. Create theme with `voodbuilder:make-subtheme polito`
 2. Register blocks under category `Politecnico`
-3. Use `vpress-gjs-section` + `bg-vp-bg` / `text-vp-text-*` classes
-4. Override `--color-vp-*` in `resources/vpress/themes/polito/theme.css`
+3. Use `voodbuilder-gjs-section` + `bg-vp-bg` / `text-vp-text-*` classes
+4. Override `--color-vp-*` in `resources/voodbuilder/themes/polito/theme.css`
 
 Pages using the Polito sub-theme will pick up those variables automatically.
 
@@ -259,7 +259,7 @@ Pages using the Polito sub-theme will pick up those variables automatically.
 
 ## Permissions
 
-`config/vpress.php` → `grapesjs` and `permissions.page_builder` / `page_builder_roles`.
+`config/voodbuilder.php` → `grapesjs` and `permissions.page_builder` / `page_builder_roles`.
 
 Users need page-builder permission to see **Edit page** and use `?edit=1`.
 
@@ -269,14 +269,14 @@ Users need page-builder permission to see **Edit page** and use `?edit=1`.
 
 The editor iframe loads compiled:
 
-- `theme.css` (full Vpress bundle including sub-themes)
+- `theme.css` (full Voodbuilder bundle including sub-themes)
 - `tailblocks-utilities.css` (when catalog exists)
 
 After CSS changes: `npm run build`.
 
 ---
 
-## Editor UI (Vpress shell)
+## Editor UI (Voodbuilder shell)
 
 The frontend builder uses a **custom 3-column shell** on top of GrapesJS — no patches to `node_modules`:
 
@@ -290,7 +290,7 @@ Implementation lives in `resources/js/grapesjs/editor-layout.js`, `resources/css
 
 Toolbar icons use [Lucide](https://lucide.dev) (ISC License — commercial-friendly), inlined to avoid extra npm dependencies in distributions.
 
-The theme remaps GrapesJS `--gjs-*` variables to Vpress tokens (`--color-vp-*`, `--vx-*`), replacing the default brown UI.
+The theme remaps GrapesJS `--gjs-*` variables to Voodbuilder tokens (`--color-vp-*`, `--vx-*`), replacing the default brown UI.
 
 ### Surviving GrapesJS upgrades
 

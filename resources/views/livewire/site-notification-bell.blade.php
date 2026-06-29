@@ -6,8 +6,8 @@
 >
     <button
         type="button"
-        class="vpress-header-icon-btn relative"
-        aria-label="{{ __('vpress::notifications.bell_label') }}"
+        class="voodbuilder-header-icon-btn relative"
+        aria-label="{{ __('voodbuilder::notifications.bell_label') }}"
         aria-expanded="{{ $open ? 'true' : 'false' }}"
         aria-haspopup="true"
         wire:click="toggle"
@@ -27,20 +27,20 @@
         x-cloak
         x-transition
         role="menu"
-        aria-label="{{ __('vpress::notifications.panel_label') }}"
+        aria-label="{{ __('voodbuilder::notifications.panel_label') }}"
         class="absolute top-[calc(100%+0.5rem)] right-0 z-50 w-80 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-lg"
     >
         <div class="flex items-center justify-between gap-2 border-b border-vp-divider px-4 py-3">
-            <span class="text-sm font-semibold text-vp-text-1">{{ __('vpress::notifications.panel_title') }}</span>
+            <span class="text-sm font-semibold text-vp-text-1">{{ __('voodbuilder::notifications.panel_title') }}</span>
             <div class="flex items-center gap-2">
                 @if ($this->unreadCount > 0)
                     <button type="button" class="text-xs text-vp-brand-1 hover:underline" wire:click="markAllAsRead">
-                        {{ __('vpress::notifications.mark_all_read') }}
+                        {{ __('voodbuilder::notifications.mark_all_read') }}
                     </button>
                 @endif
                 @if ($this->items->isNotEmpty())
                     <button type="button" class="text-xs text-vp-text-2 hover:text-vp-text-1 hover:underline" wire:click="clearAll">
-                        {{ __('vpress::notifications.clear_all') }}
+                        {{ __('voodbuilder::notifications.clear_all') }}
                     </button>
                 @endif
             </div>
@@ -79,7 +79,7 @@
                     <button
                         type="button"
                         class="absolute top-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-vp-text-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-vp-gray-soft hover:text-vp-text-1"
-                        aria-label="{{ __('vpress::notifications.delete') }}"
+                        aria-label="{{ __('voodbuilder::notifications.delete') }}"
                         wire:click.stop="deleteNotification('{{ $item['id'] }}')"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -88,7 +88,7 @@
                     </button>
                 </div>
             @empty
-                <p class="px-4 py-6 text-center text-sm text-vp-text-2">{{ __('vpress::notifications.empty') }}</p>
+                <p class="px-4 py-6 text-center text-sm text-vp-text-2">{{ __('voodbuilder::notifications.empty') }}</p>
             @endforelse
         </div>
     </div>

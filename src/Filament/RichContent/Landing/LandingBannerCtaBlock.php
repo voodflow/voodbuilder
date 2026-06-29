@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
-use Voodflow\Vpress\Support\LandingBlockSupport;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
+use Voodflow\Voodbuilder\Filament\Forms\ResolvableLinkForm;
+use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class LandingBannerCtaBlock extends RichContentCustomBlock
 {
@@ -22,7 +22,7 @@ class LandingBannerCtaBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.banner_cta');
+        return __('voodbuilder::landing.blocks.banner_cta');
     }
 
     public static function configureEditorAction(Action $action): Action
@@ -30,23 +30,23 @@ class LandingBannerCtaBlock extends RichContentCustomBlock
         return ResolvableLinkForm::configureAction(
             $action->schema([
                 TextInput::make('heading')
-                    ->label(__('vpress::landing.fields.heading'))
+                    ->label(__('voodbuilder::landing.fields.heading'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('subheading')
-                    ->label(__('vpress::landing.fields.subheading'))
+                    ->label(__('voodbuilder::landing.fields.subheading'))
                     ->maxLength(500),
                 ...LandingBlockForm::backgroundFields('brand'),
                 ...LandingBlockForm::textAlignField(),
                 TextInput::make('button_label')
-                    ->label(__('vpress::landing.fields.primary_button_label'))
+                    ->label(__('voodbuilder::landing.fields.primary_button_label'))
                     ->required(),
                 ...ResolvableLinkForm::fields('button', [
-                    'type_label' => __('vpress::landing.fields.primary_button_url'),
+                    'type_label' => __('voodbuilder::landing.fields.primary_button_url'),
                     'required' => true,
                 ]),
                 Select::make('button_style')
-                    ->label(__('vpress::landing.fields.button_style'))
+                    ->label(__('voodbuilder::landing.fields.button_style'))
                     ->options(LandingBlockSupport::buttonStyleOptions())
                     ->default('solid'),
                 ...LandingBlockForm::sectionLayoutFields('contained'),
@@ -57,13 +57,13 @@ class LandingBannerCtaBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.preview-placeholder', [
+        return RichContentBlockPreview::render('voodbuilder::blocks.preview-placeholder', [
             'title' => $config['heading'] ?? static::getLabel(),
         ]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.landing.banner-cta', ['config' => $config])->render();
+        return view('voodbuilder::blocks.landing.banner-cta', ['config' => $config])->render();
     }
 }

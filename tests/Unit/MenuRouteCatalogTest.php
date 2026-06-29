@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Facades\Route;
-use Voodflow\Vpress\Support\MenuRouteCatalog;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class MenuRouteCatalogTest extends TestCase
 {

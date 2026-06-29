@@ -5,9 +5,9 @@
 ])
 
 @php
-    use Voodflow\Vpress\Enums\MenuItemType;
+    use Voodflow\Voodbuilder\Enums\MenuItemType;
 
-    /** @var \Voodflow\Vpress\Models\NavigationMenuItem $item */
+    /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
     $hasChildren = $item->hasChildren();
     $isActive = $item->isActive();
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
@@ -19,7 +19,7 @@
             <button
                 type="button"
                 @class([
-                    'vpress-mobile-nav__link w-full',
+                    'voodbuilder-mobile-nav__link w-full',
                     'is-active' => $isActive,
                 ])
                 @click="open = ! open"
@@ -45,7 +45,7 @@
                         <a
                             href="{{ $item->resolveUrl() }}"
                             @class([
-                                'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
                                 'is-active' => $item->isSelfActive(),
                             ])
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
@@ -61,7 +61,7 @@
                         <a
                             href="{{ $child->resolveUrl() }}"
                             @class([
-                                'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
                                 'is-active' => $child->isActive(),
                             ])
                             @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
@@ -69,7 +69,7 @@
                         >
                             <span>{{ __($child->label) }}</span>
                             @if ($child->isExternal())
-                                <x-vpress::external-link-icon />
+                                <x-voodbuilder::external-link-icon />
                             @endif
                         </a>
                     </li>
@@ -147,7 +147,7 @@
             <a
                 href="{{ $item->resolveUrl() }}"
                 @class([
-                    'vpress-mobile-nav__link',
+                    'voodbuilder-mobile-nav__link',
                     'is-active' => $isActive,
                 ])
                 @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
@@ -155,7 +155,7 @@
             >
                 <span>{{ __($item->label) }}</span>
                 @if ($item->isExternal())
-                    <x-vpress::external-link-icon />
+                    <x-voodbuilder::external-link-icon />
                 @endif
             </a>
         </li>
@@ -170,7 +170,7 @@
         >
             <span>{{ __($item->label) }}</span>
             @if ($item->isExternal())
-                <x-vpress::external-link-icon />
+                <x-voodbuilder::external-link-icon />
             @endif
         </a>
     @endif

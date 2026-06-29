@@ -6,11 +6,11 @@
 const STROKE = 1.15;
 
 function previewSvg(paths, viewBox = '0 0 48 48') {
-    return `<svg class="vpress-gjs-block-icon" xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" fill="none" stroke="currentColor" stroke-width="${STROKE}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    return `<svg class="voodbuilder-gjs-block-icon" xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" fill="none" stroke="currentColor" stroke-width="${STROKE}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 }
 
 function thumbWrap(svg) {
-    return `<div class="vpress-gjs-block-thumb" aria-hidden="true">${svg}</div>`;
+    return `<div class="voodbuilder-gjs-block-thumb" aria-hidden="true">${svg}</div>`;
 }
 
 export const LIGHT_BLOCK_PREVIEWS = {

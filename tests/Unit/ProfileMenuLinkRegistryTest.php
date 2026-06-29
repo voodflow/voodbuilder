@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\ProfileMenuLinkRegistry;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\ProfileMenuLinkRegistry;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ProfileMenuLinkRegistryTest extends TestCase
 {

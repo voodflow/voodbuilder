@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Voodflow\Vevents\Vpress\RichContent\EventDetailsBlock;
 use Voodflow\Vevents\Vpress\UpcomingEventsBlock;
 use Voodflow\Vexhibitors\Vpress\RichContent\ExhibitorDirectoryBlock;
-use Voodflow\Vpress\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
+use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Vtuts\Vpress\LatestVtutsBlock;
 
 class GrapesJsRichContentBlockAdapterTest extends TestCase
@@ -19,8 +19,8 @@ class GrapesJsRichContentBlockAdapterTest extends TestCase
     {
         $html = GrapesJsRichContentBlockAdapter::wrap('event_details', ['event_id' => 1], '<p>Details</p>');
 
-        $this->assertStringContainsString('data-vpress-block="event_details"', $html);
-        $this->assertStringContainsString('data-vpress-config=', $html);
+        $this->assertStringContainsString('data-voodbuilder-block="event_details"', $html);
+        $this->assertStringContainsString('data-voodbuilder-config=', $html);
         $this->assertStringContainsString('<p>Details</p>', $html);
     }
 
@@ -28,11 +28,11 @@ class GrapesJsRichContentBlockAdapterTest extends TestCase
     {
         $definition = GrapesJsRichContentBlockAdapter::toDefinition(
             FeaturesGridBlock::class,
-            'Vpress',
+            'Voodbuilder',
         );
 
-        $this->assertSame('vpress-features_grid', $definition->id);
-        $this->assertStringContainsString('data-vpress-block="features_grid"', $definition->content);
+        $this->assertSame('voodbuilder-features_grid', $definition->id);
+        $this->assertStringContainsString('data-voodbuilder-block="features_grid"', $definition->content);
         $this->assertNotNull($definition->preview);
     }
 

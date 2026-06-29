@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Enums\SubThemeCapability;
-use Voodflow\Vpress\Enums\SubThemeType;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Enums\SubThemeCapability;
+use Voodflow\Voodbuilder\Enums\SubThemeType;
 
 final class ThemeBindings
 {
@@ -17,7 +17,7 @@ final class ThemeBindings
 
     public static function requiredCapabilityForChannel(PublicContentChannel $channel): SubThemeCapability
     {
-        $configured = config("vpress.content_channel_capabilities.{$channel->id()}");
+        $configured = config("voodbuilder.content_channel_capabilities.{$channel->id()}");
 
         if (is_string($configured)) {
             $capability = SubThemeCapability::tryFrom($configured);
@@ -32,7 +32,7 @@ final class ThemeBindings
 
     public static function requiredCapabilityForChannelId(string $channelId): SubThemeCapability
     {
-        $configured = config("vpress.content_channel_capabilities.{$channelId}");
+        $configured = config("voodbuilder.content_channel_capabilities.{$channelId}");
 
         if (is_string($configured)) {
             $capability = SubThemeCapability::tryFrom($configured);
@@ -141,14 +141,14 @@ final class ThemeBindings
 
     public static function channelAreaDescription(PublicContentChannel $channel): string
     {
-        $key = 'vpress::theme_bindings.channels.'.$channel->id();
+        $key = 'voodbuilder::theme_bindings.channels.'.$channel->id();
         $translation = __($key);
 
         if ($translation !== $key) {
             return $translation;
         }
 
-        return __('vpress::theme_bindings.channel_generic', [
+        return __('voodbuilder::theme_bindings.channel_generic', [
             'label' => $channel->label(),
         ]);
     }

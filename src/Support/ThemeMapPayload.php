@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class ThemeMapPayload
 {
@@ -15,12 +15,12 @@ final class ThemeMapPayload
      */
     public static function build(?string $subTheme = null, ?array $channelOverrides = null): array
     {
-        $subTheme = SubThemeResolver::resolveId((string) ($subTheme ?? VpressSettings::get('sub_theme')))
+        $subTheme = SubThemeResolver::resolveId((string) ($subTheme ?? VoodbuilderSettings::get('sub_theme')))
             ?? SubThemeResolver::SITE;
 
         $overrides = ThemeBindings::expandChannelThemesForForm(
-            $channelOverrides ?? (is_array(VpressSettings::get('content_channel_sub_themes'))
-                ? VpressSettings::get('content_channel_sub_themes')
+            $channelOverrides ?? (is_array(VoodbuilderSettings::get('content_channel_sub_themes'))
+                ? VoodbuilderSettings::get('content_channel_sub_themes')
                 : []),
         );
 
@@ -48,7 +48,7 @@ final class ThemeMapPayload
         foreach (ActiveThemeMap::assignments($data) as $row) {
             $areaId = $row['area_id'];
             $description = $areaId === 'site_pages'
-                ? (string) __('vpress::theme_bindings.site_pages_description')
+                ? (string) __('voodbuilder::theme_bindings.site_pages_description')
                 : self::channelDescription($areaId);
 
             $allowedThemeIds = ThemeBindings::allowedThemeIdsForArea($areaId);
@@ -81,13 +81,13 @@ final class ThemeMapPayload
             'default_sub_theme' => SubThemeResolver::SITE,
             'channel_overrides' => $overrides,
             'i18n' => [
-                'hint' => (string) __('vpress::settings.theme_map_hint'),
-                'inherited' => (string) __('vpress::settings.theme_map_inherited'),
-                'edit_theme' => (string) __('vpress::settings.theme_map_edit_theme'),
-                'invalid_binding' => (string) __('vpress::settings.theme_map_invalid_binding'),
-                'legend_explicit' => (string) __('vpress::settings.theme_map_legend_explicit'),
-                'legend_inherited' => (string) __('vpress::settings.theme_map_legend_inherited'),
-                'legend_controls' => (string) __('vpress::settings.theme_map_legend_controls'),
+                'hint' => (string) __('voodbuilder::settings.theme_map_hint'),
+                'inherited' => (string) __('voodbuilder::settings.theme_map_inherited'),
+                'edit_theme' => (string) __('voodbuilder::settings.theme_map_edit_theme'),
+                'invalid_binding' => (string) __('voodbuilder::settings.theme_map_invalid_binding'),
+                'legend_explicit' => (string) __('voodbuilder::settings.theme_map_legend_explicit'),
+                'legend_inherited' => (string) __('voodbuilder::settings.theme_map_legend_inherited'),
+                'legend_controls' => (string) __('voodbuilder::settings.theme_map_legend_controls'),
             ],
         ];
     }

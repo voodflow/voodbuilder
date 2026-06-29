@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Enums;
+namespace Voodflow\Voodbuilder\Enums;
 
 enum PageBuilder: string
 {
@@ -12,8 +12,8 @@ enum PageBuilder: string
     public function label(): string
     {
         return match ($this) {
-            self::RichEditor => __('vpress::pro.builders.rich_editor'),
-            self::GrapesJs => __('vpress::pro.builders.grapesjs'),
+            self::RichEditor => __('voodbuilder::pro.builders.rich_editor'),
+            self::GrapesJs => __('voodbuilder::pro.builders.grapesjs'),
         };
     }
 

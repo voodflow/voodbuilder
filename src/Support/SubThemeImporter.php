@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use ZipArchive;
 
 final class SubThemeImporter
@@ -87,7 +87,7 @@ final class SubThemeImporter
             return new SubThemeImportResult(false, $targetId ?? '', "Archive not found: {$archivePath}");
         }
 
-        $temporaryDirectory = storage_path('app/vpress-theme-imports/'.uniqid('import-', true));
+        $temporaryDirectory = storage_path('app/voodbuilder-theme-imports/'.uniqid('import-', true));
 
         try {
             self::extractArchive($archivePath, $temporaryDirectory);
@@ -123,7 +123,7 @@ final class SubThemeImporter
 
             $definition = self::normalizeDefinition($id, $manifest['definition'] ?? [], $label, $renamedFrom);
             $appCssPath = ThemeConvention::appCssPath($id);
-            $configRegistered = ConfigureSubThemesForVpress::upsertInConfig($id, $definition);
+            $configRegistered = ConfigureSubThemesForVoodbuilder::upsertInConfig($id, $definition);
             $importAppended = AppendThemeStylesheetImport::append($appCssPath);
             SyncThemeStylesheetImports::sync();
 
@@ -283,7 +283,7 @@ final class SubThemeImporter
                 : str($id)->headline()->toString());
 
         if ($renamedFrom !== null && $renamedFrom !== $id && $labelOverride === null) {
-            $label .= ' ('.__('vpress::settings.theme_copy_suffix').')';
+            $label .= ' ('.__('voodbuilder::settings.theme_copy_suffix').')';
         }
 
         $normalized = [
@@ -325,7 +325,7 @@ final class SubThemeImporter
             return false;
         }
 
-        $allColors = VpressSettings::get('sub_theme_colors', []);
+        $allColors = VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (! is_array($allColors)) {
             $allColors = [];
@@ -333,7 +333,7 @@ final class SubThemeImporter
 
         $allColors[$id] = $colors;
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme_colors' => ThemePalette::normalize($allColors),
         ]);
 

@@ -1,5 +1,5 @@
 {
-    "schema": "vpress-theme-preset/1",
+    "schema": "voodbuilder-theme-preset/1",
     "id": "cosmolab-public",
     "label": "Cosmolab public site",
     "description": "Site marketing home with documentation-style docs and tutorials.",

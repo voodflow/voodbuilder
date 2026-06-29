@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Enums;
+namespace Voodflow\Voodbuilder\Enums;
 
 enum SubThemeType: string
 {
@@ -12,8 +12,8 @@ enum SubThemeType: string
     public function label(): string
     {
         return match ($this) {
-            self::Content => __('vpress::sub_themes.types.content'),
-            self::Marketing => __('vpress::sub_themes.types.marketing'),
+            self::Content => __('voodbuilder::sub_themes.types.content'),
+            self::Marketing => __('voodbuilder::sub_themes.types.marketing'),
         };
     }
 

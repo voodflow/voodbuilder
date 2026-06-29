@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 use ZipArchive;
@@ -11,7 +11,7 @@ final class SubThemeExporter
 {
     public const MANIFEST_FILE = 'manifest.json';
 
-    public const FORMAT = 'vpress-sub-theme';
+    public const FORMAT = 'voodbuilder-sub-theme';
 
     public const VERSION = 1;
 
@@ -36,7 +36,7 @@ final class SubThemeExporter
     {
         $filename = $id.'-'.now()->format('Y-m-d-His').'.zip';
 
-        return storage_path('app/vpress-theme-exports/'.$filename);
+        return storage_path('app/voodbuilder-theme-exports/'.$filename);
     }
 
     /**
@@ -88,7 +88,7 @@ final class SubThemeExporter
      */
     protected static function stageArchive(SubThemeLocation $location, array $manifest): string
     {
-        $temporaryDirectory = storage_path('app/vpress-theme-exports/.staging-'.uniqid('', true));
+        $temporaryDirectory = storage_path('app/voodbuilder-theme-exports/.staging-'.uniqid('', true));
         File::ensureDirectoryExists($temporaryDirectory);
 
         File::put(

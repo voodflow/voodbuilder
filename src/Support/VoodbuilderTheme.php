@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support;
+
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+
+final class VoodbuilderTheme
+{
+    public static function showToggle(): bool
+    {
+        return (bool) VoodbuilderSettings::get('show_theme_toggle', true);
+    }
+
+    public static function defaultMode(): string
+    {
+        $mode = (string) VoodbuilderSettings::get('theme_mode', 'system');
+
+        return in_array($mode, ['system', 'light', 'dark'], true) ? $mode : 'system';
+    }
+
+    public static function resolveIsDark(?string $storedPreference, bool $prefersDark = false): bool
+    {
+        $showToggle = self::showToggle();
+        $defaultMode = self::defaultMode();
+
+        if (! $showToggle) {
+            return $defaultMode === 'dark';
+        }
+
+        if ($storedPreference === 'dark') {
+            return true;
+        }
+
+        if ($storedPreference === 'light') {
+            return false;
+        }
+
+        return self::modeToDark($defaultMode, $prefersDark);
+    }
+
+    /**
+     * HTML first paint before JavaScript (no localStorage / no matchMedia).
+     */
+    public static function serverInitialDark(): bool
+    {
+        return self::resolveIsDark(null, false);
+    }
+
+    /** @return array{showToggle: bool, defaultMode: string, locked: bool} */
+    public static function clientConfig(): array
+    {
+        $showToggle = self::showToggle();
+
+        return [
+            'showToggle' => $showToggle,
+            'defaultMode' => self::defaultMode(),
+            'locked' => ! $showToggle,
+        ];
+    }
+
+    private static function modeToDark(string $mode, bool $prefersDark): bool
+    {
+        return match ($mode) {
+            'dark' => true,
+            'light' => false,
+            default => $prefersDark,
+        };
+    }
+}

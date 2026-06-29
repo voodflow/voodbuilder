@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
 /**
  * The filament-cookie-consent package injects the public banner into every Filament panel.
- * Vpress shows the banner on the public frontend only (vpress::layouts.app).
+ * Voodbuilder shows the banner on the public frontend only (voodbuilder::layouts.app).
  */
 final class DisableFilamentCookieBanner
 {

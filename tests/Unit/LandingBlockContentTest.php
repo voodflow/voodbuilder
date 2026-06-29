@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Voodflow\Vpress\Support\LandingBlockContent;
+use Voodflow\Voodbuilder\Support\LandingBlockContent;
 
 class LandingBlockContentTest extends TestCase
 {

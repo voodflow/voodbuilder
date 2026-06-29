@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
@@ -38,7 +38,7 @@ final class AdminAccess
             return null;
         }
 
-        $panelId ??= (string) config('vpress.admin_panel_id', 'admin');
+        $panelId ??= (string) config('voodbuilder.admin_panel_id', 'admin');
 
         try {
             return Filament::getPanel($panelId);

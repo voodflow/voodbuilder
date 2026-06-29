@@ -4,9 +4,9 @@
 
 <a
     href="{{ $editUrl }}"
-    class="vpress-grapesjs-edit-launch"
-    data-vpress-grapesjs-edit-launch
-    aria-label="{{ __('vpress::pro.actions.open_visual_editor') }}"
+    class="voodbuilder-grapesjs-edit-launch"
+    data-voodbuilder-grapesjs-edit-launch
+    aria-label="{{ __('voodbuilder::pro.actions.open_visual_editor') }}"
 >
-    {{ __('vpress::pro.actions.open_visual_editor') }}
+    {{ __('voodbuilder::pro.actions.open_visual_editor') }}
 </a>

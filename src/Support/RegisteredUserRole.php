@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Spatie\Permission\Models\Role;
@@ -15,7 +15,7 @@ final class RegisteredUserRole
             return;
         }
 
-        $role = (string) config('vpress.auth.registered_role', 'registered');
+        $role = (string) config('voodbuilder.auth.registered_role', 'registered');
 
         if ($role === '' || ! class_exists(Role::class)) {
             return;

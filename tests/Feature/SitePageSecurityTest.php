@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Feature;
+namespace Voodflow\Voodbuilder\Tests\Feature;
 
-use Voodflow\Vpress\Http\Controllers\SitePageController;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SitePageSecurityTest extends TestCase
 {
     protected function defineWebRoutes($router): void
     {
-        $router->get('pages/{slug}', [SitePageController::class, 'show'])->name('vpress.pages.show');
+        $router->get('pages/{slug}', [SitePageController::class, 'show'])->name('voodbuilder.pages.show');
     }
 
     public function test_unpublished_site_pages_are_not_accessible(): void

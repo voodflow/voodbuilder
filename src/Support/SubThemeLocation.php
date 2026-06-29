@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 final readonly class SubThemeLocation
 {
@@ -39,7 +39,7 @@ final readonly class SubThemeLocation
             return null;
         }
 
-        $packageRoot = VpressPaths::packagePath();
+        $packageRoot = VoodbuilderPaths::packagePath();
 
         return new self(
             id: $id,

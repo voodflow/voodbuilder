@@ -1,1 +1,1 @@
-<livewire:vpress.themes-workspace />
+<livewire:voodbuilder.themes-workspace />

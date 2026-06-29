@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Actions;
+namespace Voodflow\Voodbuilder\Filament\Actions;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
-use Voodflow\Vpress\Filament\Resources\SitePageResource;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageResolver;
-use Voodflow\Vpress\Support\SitePageTranslation;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\SitePageTranslation;
 use Voodflow\Vtuts\Support\Locales;
 
 class CreateSitePageTranslationAction
@@ -18,17 +18,17 @@ class CreateSitePageTranslationAction
     public static function make(): Action
     {
         return Action::make('createSitePageTranslation')
-            ->label(__('vpress::admin.actions.translate_page'))
+            ->label(__('voodbuilder::admin.actions.translate_page'))
             ->icon('heroicon-o-language')
             ->color('gray')
             ->visible(fn (SitePage $record): bool => SitePageResolver::localizationEnabled()
                 && SitePageTranslation::availableTargetLocales($record) !== [])
-            ->tooltip(__('vpress::admin.translation.tooltip'))
-            ->modalHeading(__('vpress::admin.translation.modal_heading'))
-            ->modalDescription(__('vpress::admin.translation.modal_description'))
+            ->tooltip(__('voodbuilder::admin.translation.tooltip'))
+            ->modalHeading(__('voodbuilder::admin.translation.modal_heading'))
+            ->modalDescription(__('voodbuilder::admin.translation.modal_description'))
             ->schema(fn (SitePage $record): array => [
                 Select::make('locale')
-                    ->label(__('vpress::admin.fields.target_language'))
+                    ->label(__('voodbuilder::admin.fields.target_language'))
                     ->options(fn (): array => SitePageTranslation::availableTargetLocales($record))
                     ->required()
                     ->native(false),
@@ -37,8 +37,8 @@ class CreateSitePageTranslationAction
                 $translation = SitePageTranslation::createFrom($record, $data['locale']);
 
                 Notification::make()
-                    ->title(__('vpress::admin.notifications.translation_created'))
-                    ->body(__('vpress::admin.notifications.translation_created_body', [
+                    ->title(__('voodbuilder::admin.notifications.translation_created'))
+                    ->body(__('voodbuilder::admin.notifications.translation_created_body', [
                         'locale' => Locales::options()[$translation->locale] ?? $translation->locale,
                     ]))
                     ->success()

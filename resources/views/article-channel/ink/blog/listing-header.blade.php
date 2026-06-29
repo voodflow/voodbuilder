@@ -4,12 +4,12 @@
     'kicker' => null,
 ])
 
-<header class="vpress-blog-index-header">
+<header class="voodbuilder-blog-index-header">
     @if (filled($kicker))
-        <p class="vpress-blog-post-date">{{ $kicker }}</p>
+        <p class="voodbuilder-blog-post-date">{{ $kicker }}</p>
     @endif
-    <h1 class="vpress-blog-index-title">{{ $title ?? config('ink.feed.title', __('Blog')) }}</h1>
+    <h1 class="voodbuilder-blog-index-title">{{ $title ?? config('ink.feed.title', __('Blog')) }}</h1>
     @if (filled($intro))
-        <p class="vpress-blog-index-intro">{{ $intro }}</p>
+        <p class="voodbuilder-blog-index-intro">{{ $intro }}</p>
     @endif
 </header>

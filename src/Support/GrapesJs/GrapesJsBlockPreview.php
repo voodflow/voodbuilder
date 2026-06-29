@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 final class GrapesJsBlockPreview
 {

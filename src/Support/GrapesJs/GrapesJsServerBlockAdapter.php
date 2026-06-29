@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 final class GrapesJsServerBlockAdapter
 {
@@ -25,13 +25,13 @@ final class GrapesJsServerBlockAdapter
         }
 
         return new GrapesJsBlockDefinition(
-            id: 'vpress-'.$blockId,
+            id: 'voodbuilder-'.$blockId,
             label: $blockClass::getLabel(),
             category: $category,
             content: $content,
             preview: GrapesJsBlockThumbnail::forBlockId($blockId),
             attributes: [
-                'class' => 'vpress-gjs-dynamic',
+                'class' => 'voodbuilder-gjs-dynamic',
                 'title' => $blockClass::getLabel(),
             ],
         );

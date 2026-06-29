@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Livewire;
+namespace Voodflow\Voodbuilder\Filament\Livewire;
 
 use Filament\Livewire\Notifications as FilamentNotifications;
 use Filament\Notifications\Notification;
@@ -12,18 +12,18 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\SubThemeCloner;
-use Voodflow\Vpress\Support\SubThemeExporter;
-use Voodflow\Vpress\Support\SubThemeImporter;
-use Voodflow\Vpress\Support\SubThemeManager;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Support\ThemeAssetCompiler;
-use Voodflow\Vpress\Support\ThemeBindings;
-use Voodflow\Vpress\Support\ThemePalette;
-use Voodflow\Vpress\Support\ThemePaletteGenerator;
-use Voodflow\Vpress\Support\ThemePresenter;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SubThemeCloner;
+use Voodflow\Voodbuilder\Support\SubThemeExporter;
+use Voodflow\Voodbuilder\Support\SubThemeImporter;
+use Voodflow\Voodbuilder\Support\SubThemeManager;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Support\ThemeAssetCompiler;
+use Voodflow\Voodbuilder\Support\ThemeBindings;
+use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Support\ThemePaletteGenerator;
+use Voodflow\Voodbuilder\Support\ThemePresenter;
 
 class ThemesWorkspace extends Component
 {
@@ -89,7 +89,7 @@ class ThemesWorkspace extends Component
         $this->syncThemeGroups();
     }
 
-    #[On('vpress-themes-changed')]
+    #[On('voodbuilder-themes-changed')]
     public function refreshThemeCatalog(): void
     {
         $this->syncThemeGroups();
@@ -120,7 +120,7 @@ class ThemesWorkspace extends Component
         $this->seedHeaderBg = $this->light['header_bg'] ?? '';
     }
 
-    #[On('vpress-select-theme')]
+    #[On('voodbuilder-select-theme')]
     public function onSelectTheme(string $id): void
     {
         $this->selectTheme($id);
@@ -205,7 +205,7 @@ class ThemesWorkspace extends Component
         );
 
         if (! $result->success) {
-            Notification::make()->title(__('vpress::settings.theme_workspace_save_failed'))->body($result->error)->danger()->send();
+            Notification::make()->title(__('voodbuilder::settings.theme_workspace_save_failed'))->body($result->error)->danger()->send();
 
             return;
         }
@@ -213,10 +213,10 @@ class ThemesWorkspace extends Component
         if ($result->id !== $previousId) {
             $this->selectedId = $result->id;
             $this->themeSlug = $result->id;
-            $this->dispatch('vpress-themes-changed');
+            $this->dispatch('voodbuilder-themes-changed');
         }
 
-        Notification::make()->title(__('vpress::settings.theme_workspace_meta_saved'))->success()->send();
+        Notification::make()->title(__('voodbuilder::settings.theme_workspace_meta_saved'))->success()->send();
     }
 
     public function persistColors(): void
@@ -225,7 +225,7 @@ class ThemesWorkspace extends Component
             return;
         }
 
-        $colors = VpressSettings::get('sub_theme_colors', []);
+        $colors = VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (! is_array($colors)) {
             $colors = [];
@@ -237,11 +237,11 @@ class ThemesWorkspace extends Component
             'dark' => array_filter($this->dark, static fn (?string $v): bool => filled($v)),
         ];
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme_colors' => ThemePalette::normalize($colors),
         ]);
 
-        $this->dispatch('vpress-theme-colors-updated');
+        $this->dispatch('voodbuilder-theme-colors-updated');
     }
 
     public function openGenerateModal(): void
@@ -265,7 +265,7 @@ class ThemesWorkspace extends Component
                 filled($this->seedHeaderBg) ? $this->seedHeaderBg : null,
             );
         } catch (\InvalidArgumentException $exception) {
-            Notification::make()->title(__('vpress::settings.generate_theme_palette_failed'))->body($exception->getMessage())->danger()->send();
+            Notification::make()->title(__('voodbuilder::settings.generate_theme_palette_failed'))->body($exception->getMessage())->danger()->send();
 
             return;
         }
@@ -275,7 +275,7 @@ class ThemesWorkspace extends Component
         $this->showGenerateModal = false;
         $this->persistColors();
 
-        Notification::make()->title(__('vpress::settings.generate_theme_palette_success'))->success()->send();
+        Notification::make()->title(__('voodbuilder::settings.generate_theme_palette_success'))->success()->send();
     }
 
     public function syncDarkFromLight(): void
@@ -286,8 +286,8 @@ class ThemesWorkspace extends Component
 
         if (! filled($this->light['primary'] ?? null)) {
             Notification::make()
-                ->title(__('vpress::settings.sync_dark_theme_colors_failed'))
-                ->body(__('vpress::settings.sync_dark_theme_colors_missing_light'))
+                ->title(__('voodbuilder::settings.sync_dark_theme_colors_failed'))
+                ->body(__('voodbuilder::settings.sync_dark_theme_colors_missing_light'))
                 ->warning()
                 ->send();
 
@@ -301,7 +301,7 @@ class ThemesWorkspace extends Component
 
         $this->persistColors();
 
-        Notification::make()->title(__('vpress::settings.sync_dark_theme_colors_success'))->success()->send();
+        Notification::make()->title(__('voodbuilder::settings.sync_dark_theme_colors_success'))->success()->send();
     }
 
     public function resetColors(): void
@@ -314,7 +314,7 @@ class ThemesWorkspace extends Component
         $this->light = ThemePresenter::modeColors($this->selectedId, 'light');
         $this->dark = ThemePresenter::modeColors($this->selectedId, 'dark');
 
-        Notification::make()->title(__('vpress::settings.reset_theme_colors_success'))->success()->send();
+        Notification::make()->title(__('voodbuilder::settings.reset_theme_colors_success'))->success()->send();
     }
 
     public function openCloneModal(string $sourceId): void
@@ -335,7 +335,7 @@ class ThemesWorkspace extends Component
         );
 
         if (! $result->success) {
-            Notification::make()->title(__('vpress::settings.clone_theme_failed'))->body($result->error)->danger()->send();
+            Notification::make()->title(__('voodbuilder::settings.clone_theme_failed'))->body($result->error)->danger()->send();
 
             return;
         }
@@ -348,12 +348,12 @@ class ThemesWorkspace extends Component
 
         $this->notify(
             Notification::make()
-                ->title(__('vpress::settings.clone_theme_created'))
-                ->body(__('vpress::settings.theme_assets_rebuilding'))
+                ->title(__('voodbuilder::settings.clone_theme_created'))
+                ->body(__('voodbuilder::settings.theme_assets_rebuilding'))
                 ->success(),
         );
 
-        $this->dispatch('vpress-themes-changed');
+        $this->dispatch('voodbuilder-themes-changed');
     }
 
     public function confirmDelete(): void
@@ -364,7 +364,7 @@ class ThemesWorkspace extends Component
 
         $this->showDeleteModal = true;
 
-        $siteTheme = (string) (VpressSettings::get('sub_theme') ?: SubThemeResolver::SITE);
+        $siteTheme = (string) (VoodbuilderSettings::get('sub_theme') ?: SubThemeResolver::SITE);
         $deleteId = $this->selectedId;
 
         if ($siteTheme === $deleteId) {
@@ -385,7 +385,7 @@ class ThemesWorkspace extends Component
         $result = SubThemeManager::delete($id, $this->deleteFallbackId);
 
         if (! $result->success) {
-            Notification::make()->title(__('vpress::settings.delete_theme_failed'))->body($result->error)->danger()->send();
+            Notification::make()->title(__('voodbuilder::settings.delete_theme_failed'))->body($result->error)->danger()->send();
 
             return;
         }
@@ -395,18 +395,18 @@ class ThemesWorkspace extends Component
         $this->syncThemeGroups();
 
         $this->notify(
-            Notification::make()->title(__('vpress::settings.delete_theme_success'))->success(),
+            Notification::make()->title(__('voodbuilder::settings.delete_theme_success'))->success(),
         );
 
-        $saved = VpressSettings::data();
+        $saved = VoodbuilderSettings::data();
         $this->dispatch(
-            'vpress-theme-map-settings-saved',
+            'voodbuilder-theme-map-settings-saved',
             subTheme: (string) ($saved['sub_theme'] ?? SubThemeResolver::SITE),
             channelThemes: ThemeBindings::expandChannelThemesForForm(
                 is_array($saved['content_channel_sub_themes'] ?? null) ? $saved['content_channel_sub_themes'] : [],
             ),
         );
-        $this->dispatch('vpress-themes-changed');
+        $this->dispatch('voodbuilder-themes-changed');
     }
 
     public function exportTheme(string $id): BinaryFileResponse
@@ -421,8 +421,8 @@ class ThemesWorkspace extends Component
         if ($this->importArchive === null) {
             $this->notify(
                 Notification::make()
-                    ->title(__('vpress::settings.import_theme_failed'))
-                    ->body(__('vpress::settings.import_theme_missing_archive'))
+                    ->title(__('voodbuilder::settings.import_theme_failed'))
+                    ->body(__('voodbuilder::settings.import_theme_missing_archive'))
                     ->danger(),
             );
 
@@ -434,8 +434,8 @@ class ThemesWorkspace extends Component
         if ($path === null) {
             $this->notify(
                 Notification::make()
-                    ->title(__('vpress::settings.import_theme_failed'))
-                    ->body(__('vpress::settings.import_theme_missing_archive'))
+                    ->title(__('voodbuilder::settings.import_theme_failed'))
+                    ->body(__('voodbuilder::settings.import_theme_missing_archive'))
                     ->danger(),
             );
             $this->importArchive = null;
@@ -450,7 +450,7 @@ class ThemesWorkspace extends Component
         } catch (\Illuminate\Validation\ValidationException $exception) {
             $this->notify(
                 Notification::make()
-                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->title(__('voodbuilder::settings.import_theme_failed'))
                     ->body($exception->validator->errors()->first('importArchive'))
                     ->danger(),
             );
@@ -464,7 +464,7 @@ class ThemesWorkspace extends Component
         if (! $result->success) {
             $this->notify(
                 Notification::make()
-                    ->title(__('vpress::settings.import_theme_failed'))
+                    ->title(__('voodbuilder::settings.import_theme_failed'))
                     ->body($result->error)
                     ->danger(),
             );
@@ -480,17 +480,17 @@ class ThemesWorkspace extends Component
         ThemeAssetCompiler::scheduleCompile();
 
         $body = filled($result->renamedFrom)
-            ? __('vpress::settings.import_theme_renamed', ['from' => $result->renamedFrom, 'id' => $result->id])
-            : __('vpress::settings.import_theme_success', ['id' => $result->id]);
+            ? __('voodbuilder::settings.import_theme_renamed', ['from' => $result->renamedFrom, 'id' => $result->id])
+            : __('voodbuilder::settings.import_theme_success', ['id' => $result->id]);
 
         $this->notify(
             Notification::make()
-                ->title(__('vpress::settings.import_theme_imported'))
-                ->body(trim($body.' '.__('vpress::settings.theme_assets_rebuilding')))
+                ->title(__('voodbuilder::settings.import_theme_imported'))
+                ->body(trim($body.' '.__('voodbuilder::settings.theme_assets_rebuilding')))
                 ->success(),
         );
 
-        $this->dispatch('vpress-themes-changed');
+        $this->dispatch('voodbuilder-themes-changed');
     }
 
     public function updatedImportArchive(): void
@@ -514,7 +514,7 @@ class ThemesWorkspace extends Component
 
     public function render(): View
     {
-        return view('vpress::filament.themes-workspace', [
+        return view('voodbuilder::filament.themes-workspace', [
             'groups' => $this->groups,
             'colorKeys' => ThemePresenter::COLOR_KEYS,
             'fallbackOptions' => collect(app(SubThemeRegistry::class)->options())

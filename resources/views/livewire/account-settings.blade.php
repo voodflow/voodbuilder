@@ -9,7 +9,7 @@
     @endif
 
     <section class="rounded-xl border border-vp-divider bg-vp-bg-elv p-6 shadow-sm">
-        <h2 class="mb-5 text-lg font-semibold text-vp-text-1">{{ __('vpress::account.profile_section') }}</h2>
+        <h2 class="mb-5 text-lg font-semibold text-vp-text-1">{{ __('voodbuilder::account.profile_section') }}</h2>
 
         <form wire:submit="updateProfile" class="space-y-4">
             @if ($this->avatarsEnabled())
@@ -26,7 +26,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <label class="inline-flex h-9 cursor-pointer items-center justify-center rounded-full border border-vp-divider bg-vp-gray-soft px-4 text-sm font-medium text-vp-text-1 transition-colors hover:border-vp-brand-1 hover:text-vp-brand-1">
-                            {{ __('vpress::account.upload_avatar') }}
+                            {{ __('voodbuilder::account.upload_avatar') }}
                             <input type="file" wire:model="avatarUpload" accept="image/*" class="sr-only">
                         </label>
                         @if ($this->avatarUrl())
@@ -35,7 +35,7 @@
                                 class="inline-flex h-9 items-center justify-center rounded-full border border-vp-divider bg-vp-gray-soft px-4 text-sm font-medium text-vp-text-1 transition-colors hover:border-vp-brand-1 hover:text-vp-brand-1"
                                 wire:click="removeAvatar"
                             >
-                                {{ __('vpress::account.remove_avatar') }}
+                                {{ __('voodbuilder::account.remove_avatar') }}
                             </button>
                         @endif
                         @error('avatarUpload')<p class="w-full text-sm text-red-600">{{ $message }}</p>@enderror
@@ -44,7 +44,7 @@
             @endif
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-name">{{ __('vpress::account.name') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-name">{{ __('voodbuilder::account.name') }}</label>
                 <input
                     id="account-name"
                     type="text"
@@ -56,7 +56,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-email">{{ __('vpress::account.email') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-email">{{ __('voodbuilder::account.email') }}</label>
                 <input
                     id="account-email"
                     type="email"
@@ -71,17 +71,17 @@
                 type="submit"
                 class="inline-flex h-10 items-center justify-center rounded-full bg-vp-brand-3 px-5 text-sm font-medium text-white transition-colors hover:bg-vp-brand-2"
             >
-                {{ __('vpress::account.save_profile') }}
+                {{ __('voodbuilder::account.save_profile') }}
             </button>
         </form>
     </section>
 
     <section class="rounded-xl border border-vp-divider bg-vp-bg-elv p-6 shadow-sm">
-        <h2 class="mb-5 text-lg font-semibold text-vp-text-1">{{ __('vpress::account.password_section') }}</h2>
+        <h2 class="mb-5 text-lg font-semibold text-vp-text-1">{{ __('voodbuilder::account.password_section') }}</h2>
 
         <form wire:submit="updatePassword" class="space-y-4">
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-current-password">{{ __('vpress::account.current_password') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-current-password">{{ __('voodbuilder::account.current_password') }}</label>
                 <input
                     id="account-current-password"
                     type="password"
@@ -93,7 +93,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-password">{{ __('vpress::account.new_password') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-password">{{ __('voodbuilder::account.new_password') }}</label>
                 <input
                     id="account-password"
                     type="password"
@@ -105,7 +105,7 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-password-confirmation">{{ __('vpress::account.confirm_password') }}</label>
+                <label class="mb-1 block text-sm font-medium text-vp-text-1" for="account-password-confirmation">{{ __('voodbuilder::account.confirm_password') }}</label>
                 <input
                     id="account-password-confirmation"
                     type="password"
@@ -119,7 +119,7 @@
                 type="submit"
                 class="inline-flex h-10 items-center justify-center rounded-full bg-vp-brand-3 px-5 text-sm font-medium text-white transition-colors hover:bg-vp-brand-2"
             >
-                {{ __('vpress::account.save_password') }}
+                {{ __('voodbuilder::account.save_password') }}
             </button>
         </form>
     </section>

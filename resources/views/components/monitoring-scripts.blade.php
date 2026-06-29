@@ -1,11 +1,11 @@
 @php
-    use Voodflow\Vpress\Models\VpressSettings;
+    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
-    $pixelId = VpressSettings::get('facebook_pixel_id');
-    $gtmId = VpressSettings::get('google_tag_manager_id');
-    $gaId = VpressSettings::get('google_analytics_id');
-    $headCode = VpressSettings::get('monitoring_head_code');
-    $bodyCode = VpressSettings::get('monitoring_body_code');
+    $pixelId = VoodbuilderSettings::get('facebook_pixel_id');
+    $gtmId = VoodbuilderSettings::get('google_tag_manager_id');
+    $gaId = VoodbuilderSettings::get('google_analytics_id');
+    $headCode = VoodbuilderSettings::get('monitoring_head_code');
+    $bodyCode = VoodbuilderSettings::get('monitoring_body_code');
 
     $hasTracking = filled($pixelId) || filled($gtmId) || filled($gaId) || filled($headCode) || filled($bodyCode);
 @endphp

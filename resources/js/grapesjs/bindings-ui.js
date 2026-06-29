@@ -11,8 +11,8 @@ export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURICompon
     + '</svg>',
 );
 
-const CMD_MAKE_DYNAMIC = 'vpress-make-dynamic';
-const CMD_CLEAR_DYNAMIC = 'vpress-clear-dynamic';
+const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
+const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 
 let bindingsCatalog = null;
 let bindingsPreviewValues = null;
@@ -214,7 +214,7 @@ function hasStructuralChildren(component) {
 }
 
 function isRepeatContainer(component) {
-    return Boolean(component?.getAttributes?.()['data-vpress-repeat']);
+    return Boolean(component?.getAttributes?.()['data-voodbuilder-repeat']);
 }
 
 function isInsideRepeatTemplate(component) {
@@ -223,7 +223,7 @@ function isInsideRepeatTemplate(component) {
     while (current) {
         const attrs = current.getAttributes?.() ?? {};
 
-        if (attrs['data-vpress-repeat'] || attrs['data-vpress-repeat-item']) {
+        if (attrs['data-voodbuilder-repeat'] || attrs['data-voodbuilder-repeat-item']) {
             return true;
         }
 
@@ -289,7 +289,7 @@ function findLayoutRowDescendant(component) {
 }
 
 function migrateRepeatPlacement(component) {
-    const repeatKey = component.getAttributes?.()['data-vpress-repeat'];
+    const repeatKey = component.getAttributes?.()['data-voodbuilder-repeat'];
 
     if (! repeatKey) {
         return resolveRepeatTargetContainer(component);
@@ -302,34 +302,34 @@ function migrateRepeatPlacement(component) {
     }
 
     repeatTarget.addAttributes({
-        'data-vpress-repeat': repeatKey,
-        'data-vpress-repeat-limit': component.getAttributes()['data-vpress-repeat-limit'] ?? '3',
-        'data-vpress-repeat-sort': component.getAttributes()['data-vpress-repeat-sort'] ?? 'id',
-        'data-vpress-repeat-sort-dir': component.getAttributes()['data-vpress-repeat-sort-dir'] ?? 'desc',
+        'data-voodbuilder-repeat': repeatKey,
+        'data-voodbuilder-repeat-limit': component.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
+        'data-voodbuilder-repeat-sort': component.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
+        'data-voodbuilder-repeat-sort-dir': component.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
     });
-    repeatTarget.removeAttributes('data-vpress-repeat-item');
-    component.removeAttributes('data-vpress-repeat');
-    component.removeAttributes('data-vpress-repeat-limit');
-    component.removeAttributes('data-vpress-repeat-sort');
-    component.removeAttributes('data-vpress-repeat-sort-dir');
+    repeatTarget.removeAttributes('data-voodbuilder-repeat-item');
+    component.removeAttributes('data-voodbuilder-repeat');
+    component.removeAttributes('data-voodbuilder-repeat-limit');
+    component.removeAttributes('data-voodbuilder-repeat-sort');
+    component.removeAttributes('data-voodbuilder-repeat-sort-dir');
 
     return repeatTarget;
 }
 
 function clearRepeatAttributes(component) {
-    component.removeAttributes('data-vpress-repeat');
-    component.removeAttributes('data-vpress-repeat-limit');
-    component.removeAttributes('data-vpress-repeat-sort');
-    component.removeAttributes('data-vpress-repeat-sort-dir');
-    component.find('[data-vpress-repeat-item]').forEach((child) => {
-        child.removeAttributes('data-vpress-repeat-item');
+    component.removeAttributes('data-voodbuilder-repeat');
+    component.removeAttributes('data-voodbuilder-repeat-limit');
+    component.removeAttributes('data-voodbuilder-repeat-sort');
+    component.removeAttributes('data-voodbuilder-repeat-sort-dir');
+    component.find('[data-voodbuilder-repeat-item]').forEach((child) => {
+        child.removeAttributes('data-voodbuilder-repeat-item');
     });
 }
 
 function repeatSortFromContainer(container) {
     return {
-        sort: container?.getAttributes?.()['data-vpress-repeat-sort'] || 'id',
-        sortDir: container?.getAttributes?.()['data-vpress-repeat-sort-dir'] || 'desc',
+        sort: container?.getAttributes?.()['data-voodbuilder-repeat-sort'] || 'id',
+        sortDir: container?.getAttributes?.()['data-voodbuilder-repeat-sort-dir'] || 'desc',
     };
 }
 
@@ -354,9 +354,9 @@ function sortFieldsForRepeatSource(catalog, repeatSourceId) {
 function collectRepeatPreviewConfigs(editor) {
     const configs = new Map();
 
-    editor?.getWrapper?.().find('[data-vpress-repeat]').forEach((component) => {
+    editor?.getWrapper?.().find('[data-voodbuilder-repeat]').forEach((component) => {
         const repeatTarget = migrateRepeatPlacement(component);
-        const repeatKey = repeatTarget.getAttributes()['data-vpress-repeat'];
+        const repeatKey = repeatTarget.getAttributes()['data-voodbuilder-repeat'];
 
         if (! repeatKey) {
             return;
@@ -365,7 +365,7 @@ function collectRepeatPreviewConfigs(editor) {
         const { sort, sortDir } = repeatSortFromContainer(repeatTarget);
         const limit = Math.max(
             12,
-            Number(repeatTarget.getAttributes()['data-vpress-repeat-limit'] || 12),
+            Number(repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] || 12),
         );
         const cacheKey = repeatListValuesKey(repeatKey, sort, sortDir);
 
@@ -410,7 +410,7 @@ function defaultItemSourceId(component, catalog) {
     let current = component?.parent?.();
 
     while (current) {
-        const repeatKey = current.getAttributes?.()['data-vpress-repeat'];
+        const repeatKey = current.getAttributes?.()['data-voodbuilder-repeat'];
 
         if (repeatKey) {
             return repeatKey.replace(/\.list$/, '.item');
@@ -468,7 +468,7 @@ function repeatCardIndex(component) {
     let current = component?.parent?.();
 
     while (current) {
-        const repeatKey = current.getAttributes?.()['data-vpress-repeat'];
+        const repeatKey = current.getAttributes?.()['data-voodbuilder-repeat'];
 
         if (repeatKey) {
             const container = current;
@@ -496,7 +496,7 @@ function repeatCardIndex(component) {
     current = component;
 
     while (current) {
-        if (current.getAttributes?.()['data-vpress-repeat-item']) {
+        if (current.getAttributes?.()['data-voodbuilder-repeat-item']) {
             repeatItem = current;
             break;
         }
@@ -509,9 +509,9 @@ function repeatCardIndex(component) {
     }
 
     const container = repeatItem.parent();
-    const repeatKey = container.getAttributes()['data-vpress-repeat'] ?? null;
+    const repeatKey = container.getAttributes()['data-voodbuilder-repeat'] ?? null;
     const siblings = container.components().models.filter(
-        (child) => child.getAttributes()['data-vpress-repeat-item'],
+        (child) => child.getAttributes()['data-voodbuilder-repeat-item'],
     );
     const index = siblings.indexOf(repeatItem);
 
@@ -544,7 +544,7 @@ function collapseRepeatTemplate(container) {
     }
 
     const first = children.at(0);
-    first.addAttributes({ 'data-vpress-repeat-item': '1' });
+    first.addAttributes({ 'data-voodbuilder-repeat-item': '1' });
 
     while (target.components().length > 1) {
         target.components().at(target.components().length - 1)?.remove();
@@ -552,9 +552,9 @@ function collapseRepeatTemplate(container) {
 
     target.components().forEach((child, index) => {
         if (index === 0) {
-            child.addAttributes({ 'data-vpress-repeat-item': '1' });
+            child.addAttributes({ 'data-voodbuilder-repeat-item': '1' });
         } else {
-            child.removeAttributes('data-vpress-repeat-item');
+            child.removeAttributes('data-voodbuilder-repeat-item');
         }
     });
 
@@ -562,8 +562,8 @@ function collapseRepeatTemplate(container) {
 }
 
 function migrateBindingsInTree(editor, component, catalog) {
-    component?.find?.('[data-vpress-bind]')?.forEach((bound) => {
-        const bindingKey = bound.getAttributes()['data-vpress-bind'];
+    component?.find?.('[data-voodbuilder-bind]')?.forEach((bound) => {
+        const bindingKey = bound.getAttributes()['data-voodbuilder-bind'];
 
         if (! bindingKey?.includes('.latest.')) {
             return;
@@ -571,7 +571,7 @@ function migrateBindingsInTree(editor, component, catalog) {
 
         const migrated = migrateLatestToItemKey(bindingKey);
 
-        bound.addAttributes({ 'data-vpress-bind': migrated });
+        bound.addAttributes({ 'data-voodbuilder-bind': migrated });
         configureBoundComponent(editor, bound, catalog);
     });
 }
@@ -606,7 +606,7 @@ function resolvePreviewValue(bindingKey, component, values, listValues, catalog)
 }
 
 function normalizeRepeatContainers(editor, catalog) {
-    editor.getWrapper().find('[data-vpress-repeat]').forEach((container) => {
+    editor.getWrapper().find('[data-voodbuilder-repeat]').forEach((container) => {
         const repeatTarget = migrateRepeatPlacement(container);
         const template = collapseRepeatTemplate(repeatTarget);
 
@@ -617,7 +617,7 @@ function normalizeRepeatContainers(editor, catalog) {
 
     const seen = new Set();
 
-    editor.getWrapper().find('[data-vpress-repeat-item]').forEach((item) => {
+    editor.getWrapper().find('[data-voodbuilder-repeat-item]').forEach((item) => {
         const container = item.parent();
 
         if (! container || seen.has(container.cid)) {
@@ -625,7 +625,7 @@ function normalizeRepeatContainers(editor, catalog) {
         }
 
         const repeatItems = container.components().models.filter(
-            (child) => child.getAttributes()['data-vpress-repeat-item'],
+            (child) => child.getAttributes()['data-voodbuilder-repeat-item'],
         );
 
         if (repeatItems.length <= 1) {
@@ -636,16 +636,16 @@ function normalizeRepeatContainers(editor, catalog) {
 
         const repeatTarget = resolveRepeatTargetContainer(container);
 
-        if (! repeatTarget.getAttributes()['data-vpress-repeat']) {
-            const sampleBinding = repeatTarget.find('[data-vpress-bind]')[0]?.getAttributes?.()['data-vpress-bind'];
+        if (! repeatTarget.getAttributes()['data-voodbuilder-repeat']) {
+            const sampleBinding = repeatTarget.find('[data-voodbuilder-bind]')[0]?.getAttributes?.()['data-voodbuilder-bind'];
             const repeatKey = sampleBinding ? inferRepeatListKey(sampleBinding, catalog) : catalog?.repeatSources?.[0]?.id;
 
             if (repeatKey) {
                 repeatTarget.addAttributes({
-                    'data-vpress-repeat': repeatKey,
-                    'data-vpress-repeat-limit': repeatTarget.getAttributes()['data-vpress-repeat-limit'] ?? '3',
-                    'data-vpress-repeat-sort': repeatTarget.getAttributes()['data-vpress-repeat-sort'] ?? 'id',
-                    'data-vpress-repeat-sort-dir': repeatTarget.getAttributes()['data-vpress-repeat-sort-dir'] ?? 'desc',
+                    'data-voodbuilder-repeat': repeatKey,
+                    'data-voodbuilder-repeat-limit': repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
+                    'data-voodbuilder-repeat-sort': repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
+                    'data-voodbuilder-repeat-sort-dir': repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
                 });
             }
         }
@@ -728,7 +728,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     const sourceId = option?.source?.id ?? '';
     const placeholder = placeholderForBinding(sourceLabel, fieldLabel);
 
-    if (hasStructuralChildren(component) && component.getAttributes()['data-vpress-repeat']) {
+    if (hasStructuralChildren(component) && component.getAttributes()['data-voodbuilder-repeat']) {
         window.alert(labels.repeatContainerNoBind ?? 'List repeat containers cannot hold a field binding. Bind title, text and links inside the card template instead.');
 
         return;
@@ -759,9 +759,9 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     const effectiveTag = componentTag(component);
 
     component.addAttributes({
-        'data-vpress-bind': bindingKey,
+        'data-voodbuilder-bind': bindingKey,
     });
-    component.addClass('vpress-gjs-bound');
+    component.addClass('voodbuilder-gjs-bound');
 
     const urlOnInteractive = fieldType === 'url' && (effectiveTag === 'button' || effectiveTag === 'a');
 
@@ -796,14 +796,14 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
 }
 
 function clearBindingFromComponent(component) {
-    component.removeAttributes('data-vpress-bind');
+    component.removeAttributes('data-voodbuilder-bind');
     component.removeAttributes('onclick');
-    component.removeClass('vpress-gjs-bound');
+    component.removeClass('voodbuilder-gjs-bound');
     component.set({ editable: true });
 }
 
 function configureBoundComponent(editor, component, catalog) {
-    const bindingKey = component.getAttributes()['data-vpress-bind'];
+    const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
 
     if (! bindingKey) {
         return;
@@ -826,15 +826,15 @@ function configureBoundComponent(editor, component, catalog) {
         layerable: true,
         name: urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`,
     });
-    component.addClass('vpress-gjs-bound');
+    component.addClass('voodbuilder-gjs-bound');
 }
 
 export function registerBoundComponentType(editor) {
     const domComponents = editor.DomComponents;
 
     for (const [typeName, matcher] of [
-        ['vpress-repeat-host', (element) => element?.hasAttribute?.('data-vpress-repeat') === true],
-        ['vpress-repeat-item', (element) => element?.hasAttribute?.('data-vpress-repeat-item') === true],
+        ['voodbuilder-repeat-host', (element) => element?.hasAttribute?.('data-voodbuilder-repeat') === true],
+        ['voodbuilder-repeat-item', (element) => element?.hasAttribute?.('data-voodbuilder-repeat-item') === true],
     ]) {
         domComponents.addType(typeName, {
             isComponent: matcher,
@@ -852,9 +852,9 @@ export function registerBoundComponentType(editor) {
     const defaultType = domComponents.getType('default');
     const defaultModel = defaultType?.model;
 
-    domComponents.addType('vpress-bound', {
+    domComponents.addType('voodbuilder-bound', {
         extend: 'default',
-        isComponent: (element) => element?.hasAttribute?.('data-vpress-bind') === true,
+        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-bind') === true,
         model: {
             defaults: {
                 ...(defaultModel?.prototype?.defaults ?? {}),
@@ -872,28 +872,28 @@ export function registerBoundComponentType(editor) {
 
 function createModal(labels) {
     const overlay = document.createElement('div');
-    overlay.className = 'vpress-gjs-bindings-modal';
+    overlay.className = 'voodbuilder-gjs-bindings-modal';
     overlay.innerHTML = `
-        <div class="vpress-gjs-bindings-modal__dialog" role="dialog" aria-modal="true">
-            <h2 class="vpress-gjs-bindings-modal__title"></h2>
-            <label class="vpress-gjs-bindings-modal__label">
-                <span class="vpress-gjs-bindings-modal__label-text"></span>
-                <select class="vpress-gjs-bindings-modal__select" data-bind-source></select>
+        <div class="voodbuilder-gjs-bindings-modal__dialog" role="dialog" aria-modal="true">
+            <h2 class="voodbuilder-gjs-bindings-modal__title"></h2>
+            <label class="voodbuilder-gjs-bindings-modal__label">
+                <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                <select class="voodbuilder-gjs-bindings-modal__select" data-bind-source></select>
             </label>
-            <label class="vpress-gjs-bindings-modal__label">
-                <span class="vpress-gjs-bindings-modal__label-text"></span>
-                <select class="vpress-gjs-bindings-modal__select" data-bind-field disabled></select>
+            <label class="voodbuilder-gjs-bindings-modal__label">
+                <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                <select class="voodbuilder-gjs-bindings-modal__select" data-bind-field disabled></select>
             </label>
-            <div class="vpress-gjs-bindings-modal__actions">
-                <button type="button" class="vpress-gjs-bindings-modal__button" data-bind-cancel></button>
-                <button type="button" class="vpress-gjs-bindings-modal__button vpress-gjs-bindings-modal__button--primary" data-bind-apply disabled></button>
+            <div class="voodbuilder-gjs-bindings-modal__actions">
+                <button type="button" class="voodbuilder-gjs-bindings-modal__button" data-bind-cancel></button>
+                <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--primary" data-bind-apply disabled></button>
             </div>
         </div>
     `;
 
-    overlay.querySelector('.vpress-gjs-bindings-modal__title').textContent = labels.modalTitle;
-    overlay.querySelectorAll('.vpress-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
-    overlay.querySelectorAll('.vpress-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
+    overlay.querySelector('.voodbuilder-gjs-bindings-modal__title').textContent = labels.modalTitle;
+    overlay.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
+    overlay.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
     overlay.querySelector('[data-bind-cancel]').textContent = labels.modalCancel;
     overlay.querySelector('[data-bind-apply]').textContent = labels.modalApply;
 
@@ -923,53 +923,53 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
     if (! isModal) {
         host.innerHTML = `
-            <div class="vpress-gjs-dynamic-panel">
-                <p class="vpress-gjs-dynamic-panel__hint"></p>
-                <p class="vpress-gjs-dynamic-panel__current" hidden></p>
-                <div class="vpress-gjs-dynamic-panel__field-bind" data-field-bind-panel>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text"></span>
-                        <select class="vpress-gjs-bindings-modal__select" data-bind-source></select>
+            <div class="voodbuilder-gjs-dynamic-panel">
+                <p class="voodbuilder-gjs-dynamic-panel__hint"></p>
+                <p class="voodbuilder-gjs-dynamic-panel__current" hidden></p>
+                <div class="voodbuilder-gjs-dynamic-panel__field-bind" data-field-bind-panel>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                        <select class="voodbuilder-gjs-bindings-modal__select" data-bind-source></select>
                     </label>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text"></span>
-                        <select class="vpress-gjs-bindings-modal__select" data-bind-field disabled></select>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                        <select class="voodbuilder-gjs-bindings-modal__select" data-bind-field disabled></select>
                     </label>
-                    <div class="vpress-gjs-dynamic-panel__actions">
-                        <button type="button" class="vpress-gjs-bindings-modal__button vpress-gjs-bindings-modal__button--compact" data-bind-clear></button>
+                    <div class="voodbuilder-gjs-dynamic-panel__actions">
+                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-bind-clear></button>
                     </div>
                 </div>
-                <div class="vpress-gjs-dynamic-panel__repeat" data-repeat-panel hidden>
-                    <p class="vpress-gjs-dynamic-panel__repeat-title"></p>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text" data-repeat-source-label></span>
-                        <select class="vpress-gjs-bindings-modal__select" data-repeat-source></select>
+                <div class="voodbuilder-gjs-dynamic-panel__repeat" data-repeat-panel hidden>
+                    <p class="voodbuilder-gjs-dynamic-panel__repeat-title"></p>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-source-label></span>
+                        <select class="voodbuilder-gjs-bindings-modal__select" data-repeat-source></select>
                     </label>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text" data-repeat-limit-label></span>
-                        <input type="number" min="1" max="24" class="vpress-gjs-bindings-modal__input" data-repeat-limit value="3" />
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-limit-label></span>
+                        <input type="number" min="1" max="24" class="voodbuilder-gjs-bindings-modal__input" data-repeat-limit value="3" />
                     </label>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text" data-repeat-sort-label></span>
-                        <select class="vpress-gjs-bindings-modal__select" data-repeat-sort></select>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-sort-label></span>
+                        <select class="voodbuilder-gjs-bindings-modal__select" data-repeat-sort></select>
                     </label>
-                    <label class="vpress-gjs-bindings-modal__label">
-                        <span class="vpress-gjs-bindings-modal__label-text" data-repeat-sort-dir-label></span>
-                        <select class="vpress-gjs-bindings-modal__select" data-repeat-sort-dir>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-sort-dir-label></span>
+                        <select class="voodbuilder-gjs-bindings-modal__select" data-repeat-sort-dir>
                             <option value="desc"></option>
                             <option value="asc"></option>
                         </select>
                     </label>
-                    <div class="vpress-gjs-dynamic-panel__actions">
-                        <button type="button" class="vpress-gjs-bindings-modal__button vpress-gjs-bindings-modal__button--compact" data-repeat-apply></button>
-                        <button type="button" class="vpress-gjs-bindings-modal__button vpress-gjs-bindings-modal__button--compact" data-repeat-clear></button>
+                    <div class="voodbuilder-gjs-dynamic-panel__actions">
+                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-repeat-apply></button>
+                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-repeat-clear></button>
                     </div>
-                    <p class="vpress-gjs-dynamic-panel__current" data-repeat-current hidden></p>
+                    <p class="voodbuilder-gjs-dynamic-panel__current" data-repeat-current hidden></p>
                 </div>
             </div>
         `;
 
-        host.querySelector('.vpress-gjs-dynamic-panel__hint').textContent = isRepeatHost(component)
+        host.querySelector('.voodbuilder-gjs-dynamic-panel__hint').textContent = isRepeatHost(component)
             ? (labels.repeatContainerHint ?? labels.inspectorHint ?? 'Use List repeat on this container, then bind fields inside each card with “List item”.')
             : isInsideRepeatTemplate(component)
                 ? (labels.repeatItemHint ?? 'Choose List item and pick the field for this element (title, description, slug…).')
@@ -980,14 +980,14 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         if (fieldBindPanel && isRepeatHost(component)) {
             fieldBindPanel.hidden = true;
         }
-        host.querySelectorAll('.vpress-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
-        host.querySelectorAll('.vpress-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
+        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
+        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
         host.querySelector('[data-bind-clear]').textContent = labels.clearDynamic ?? 'Clear binding';
 
         const repeatPanel = host.querySelector('[data-repeat-panel]');
 
         if (repeatPanel) {
-            repeatPanel.querySelector('.vpress-gjs-dynamic-panel__repeat-title').textContent = labels.repeatList ?? 'List repeat';
+            repeatPanel.querySelector('.voodbuilder-gjs-dynamic-panel__repeat-title').textContent = labels.repeatList ?? 'List repeat';
             repeatPanel.querySelector('[data-repeat-source-label]').textContent = labels.repeatSource ?? 'Repeat list';
             repeatPanel.querySelector('[data-repeat-limit-label]').textContent = labels.repeatLimit ?? 'Items';
             repeatPanel.querySelector('[data-repeat-sort-label]').textContent = labels.repeatSort ?? 'Sort by';
@@ -1011,7 +1011,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const fieldSelect = host.querySelector('[data-bind-field]');
     const applyButton = host.querySelector('[data-bind-apply]');
     const clearButton = host.querySelector('[data-bind-clear]');
-    const currentEl = host.querySelector('.vpress-gjs-dynamic-panel__current');
+    const currentEl = host.querySelector('.voodbuilder-gjs-dynamic-panel__current');
 
     const close = () => {
         if (overlay) {
@@ -1100,7 +1100,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     sourceSelect.addEventListener('change', () => populateFields(! isModal));
     populateFields(false);
 
-    const existingBinding = component?.getAttributes?.()['data-vpress-bind'];
+    const existingBinding = component?.getAttributes?.()['data-voodbuilder-bind'];
     const parsedBinding = normalizeBindingKeyForUi(existingBinding, catalog);
 
     if (parsedBinding) {
@@ -1190,10 +1190,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 repeatSourceSelect.appendChild(option);
             }
 
-            const existingRepeat = repeatTarget.getAttributes()['data-vpress-repeat'];
-            const existingSort = repeatTarget.getAttributes()['data-vpress-repeat-sort'] || 'id';
-            const existingSortDir = repeatTarget.getAttributes()['data-vpress-repeat-sort-dir'] || 'desc';
-            const existingLimit = repeatTarget.getAttributes()['data-vpress-repeat-limit'];
+            const existingRepeat = repeatTarget.getAttributes()['data-voodbuilder-repeat'];
+            const existingSort = repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] || 'id';
+            const existingSortDir = repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] || 'desc';
+            const existingLimit = repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'];
 
             if (existingRepeat) {
                 repeatSourceSelect.value = existingRepeat;
@@ -1232,7 +1232,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 const sort = repeatSortSelect?.value || 'id';
                 const sortDir = repeatSortDirSelect?.value || 'desc';
 
-                if (component.getAttributes()['data-vpress-bind']) {
+                if (component.getAttributes()['data-voodbuilder-bind']) {
                     clearBindingFromComponent(component);
                 }
 
@@ -1241,10 +1241,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 }
 
                 repeatTarget.addAttributes({
-                    'data-vpress-repeat': repeatSourceSelect.value,
-                    'data-vpress-repeat-limit': String(limit),
-                    'data-vpress-repeat-sort': sort,
-                    'data-vpress-repeat-sort-dir': sortDir,
+                    'data-voodbuilder-repeat': repeatSourceSelect.value,
+                    'data-voodbuilder-repeat-limit': String(limit),
+                    'data-voodbuilder-repeat-sort': sort,
+                    'data-voodbuilder-repeat-sort-dir': sortDir,
                 });
 
                 const template = collapseRepeatTemplate(repeatTarget);
@@ -1323,7 +1323,7 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
 
         if (! selected) {
             const empty = document.createElement('p');
-            empty.className = 'vpress-gjs-dynamic-panel__empty';
+            empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
             empty.textContent = labels.selectComponent ?? 'Select an element on the canvas first.';
             mount.appendChild(empty);
 
@@ -1407,14 +1407,14 @@ export async function refreshBindingPreviews(editor, options = {}) {
         true,
         collectRepeatPreviewConfigs(editor),
     ).catch((error) => {
-        console.error('Vpress GrapesJS: could not load binding preview.', error);
+        console.error('Voodbuilder GrapesJS: could not load binding preview.', error);
 
         return {};
     });
     const listValues = bindingsPreviewListValues ?? {};
 
-    editor.getWrapper().find('[data-vpress-bind]').forEach((component) => {
-        const bindingKey = component.getAttributes()['data-vpress-bind'];
+    editor.getWrapper().find('[data-voodbuilder-bind]').forEach((component) => {
+        const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
 
         if (! bindingKey) {
             return;
@@ -1446,7 +1446,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
 }
 
 async function ensureBoundComponentVisible(component, options = {}) {
-    const bindingKey = component.getAttributes()['data-vpress-bind'];
+    const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
 
     if (! bindingKey) {
         return;
@@ -1494,7 +1494,7 @@ async function ensureBoundComponentVisible(component, options = {}) {
 export async function registerBindingsUi(editor, options = {}) {
     const labels = options.labels ?? {};
     const catalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
-        console.error('Vpress GrapesJS: could not load bindings catalog.', error);
+        console.error('Voodbuilder GrapesJS: could not load bindings catalog.', error);
 
         return { groups: [], sources: [] };
     });
@@ -1508,7 +1508,7 @@ export async function registerBindingsUi(editor, options = {}) {
 
     registerBoundComponentType(editor);
 
-    editor.getWrapper().find('[data-vpress-bind]').forEach((component) => {
+    editor.getWrapper().find('[data-voodbuilder-bind]').forEach((component) => {
         configureBoundComponent(editor, component, catalog);
     });
 
@@ -1550,16 +1550,16 @@ export async function registerBindingsUi(editor, options = {}) {
     });
 
     editor.Panels.addButton('options', {
-        id: 'vpress-make-dynamic',
-        className: 'vpress-gjs-pn-btn',
+        id: 'voodbuilder-make-dynamic',
+        className: 'voodbuilder-gjs-pn-btn',
         label: lucideIcon('link'),
         command: CMD_MAKE_DYNAMIC,
         attributes: { title: labels.makeDynamic ?? 'Make dynamic' },
     });
 
     editor.Panels.addButton('options', {
-        id: 'vpress-clear-dynamic',
-        className: 'vpress-gjs-pn-btn',
+        id: 'voodbuilder-clear-dynamic',
+        className: 'voodbuilder-gjs-pn-btn',
         label: lucideIcon('unlink'),
         command: CMD_CLEAR_DYNAMIC,
         attributes: { title: labels.clearDynamic ?? 'Clear dynamic binding' },

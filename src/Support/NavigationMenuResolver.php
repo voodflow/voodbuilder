@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 final class NavigationMenuResolver
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -25,25 +25,25 @@ final class SiteNotificationPresenter
 
         return match ($type) {
             CommentRepliedNotification::class => self::presentCommentNotification(
-                title: __('vpress::notifications.reply_title'),
-                message: __('vpress::notifications.reply_body', [
-                    'name' => $data['commenter_name'] ?? __('vpress::notifications.someone'),
+                title: __('voodbuilder::notifications.reply_title'),
+                message: __('voodbuilder::notifications.reply_body', [
+                    'name' => $data['commenter_name'] ?? __('voodbuilder::notifications.someone'),
                     'excerpt' => self::plainExcerpt($data['body'] ?? ''),
                 ]),
                 data: $data,
                 icon: 'reply',
             ),
             UserMentionedNotification::class => self::presentCommentNotification(
-                title: __('vpress::notifications.mention_title'),
-                message: __('vpress::notifications.mention_body', [
-                    'name' => $data['mentioner_name'] ?? __('vpress::notifications.someone'),
+                title: __('voodbuilder::notifications.mention_title'),
+                message: __('voodbuilder::notifications.mention_body', [
+                    'name' => $data['mentioner_name'] ?? __('voodbuilder::notifications.someone'),
                     'excerpt' => self::plainExcerpt($data['body'] ?? ''),
                 ]),
                 data: $data,
                 icon: 'mention',
             ),
             default => [
-                'title' => __('vpress::notifications.generic_title'),
+                'title' => __('voodbuilder::notifications.generic_title'),
                 'body' => Str::limit((string) json_encode($data), 120),
                 'url' => null,
                 'icon' => 'bell',
@@ -62,7 +62,7 @@ final class SiteNotificationPresenter
         return [
             'title' => $title,
             'body' => $context
-                ? $message.' '.__('vpress::notifications.on_tutorial', ['title' => $context])
+                ? $message.' '.__('voodbuilder::notifications.on_tutorial', ['title' => $context])
                 : $message,
             'url' => self::commentUrl($data),
             'icon' => $icon,

@@ -1,44 +1,44 @@
 @php
-    use Voodflow\Vpress\Support\ContentChannelRegistry;
-    use Voodflow\Vpress\Support\SubThemeResolver;
+    use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+    use Voodflow\Voodbuilder\Support\SubThemeResolver;
 
     $vpressSubTheme = $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
     $vpressContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $vpressBodyClass = trim((string) $__env->yieldContent('body_class'));
-    $vpressHasDocSidebar = str_contains($vpressBodyClass, 'vpress-has-doc-sidebar');
-    $vpressShowReadingProgress = str_contains($vpressBodyClass, 'vpress-has-reading-progress');
+    $vpressHasDocSidebar = str_contains($vpressBodyClass, 'voodbuilder-has-doc-sidebar');
+    $vpressShowReadingProgress = str_contains($vpressBodyClass, 'voodbuilder-has-reading-progress');
 @endphp
 <!doctype html>
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-    data-vpress-sub-theme="{{ $vpressSubTheme }}"
+    data-voodbuilder-sub-theme="{{ $vpressSubTheme }}"
     @if (filled($vpressContentChannel))
-        data-vpress-content-channel="{{ $vpressContentChannel }}"
+        data-voodbuilder-content-channel="{{ $vpressContentChannel }}"
     @endif
-    @class(['dark' => \Voodflow\Vpress\Support\VpressTheme::serverInitialDark()])
+    @class(['dark' => \Voodflow\Voodbuilder\Support\VoodbuilderTheme::serverInitialDark()])
 >
 <head>
-    <x-vpress::theme-script />
+    <x-voodbuilder::theme-script />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
-        use Voodflow\Vpress\Models\VpressSettings;
+        use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
     @endphp
-    <title>{{ $title ?? VpressSettings::siteTitle() }}</title>
+    <title>{{ $title ?? VoodbuilderSettings::siteTitle() }}</title>
 
     {!! seo() !!}
 
-    <x-vpress::geo-ai-meta />
+    <x-voodbuilder::geo-ai-meta />
 
     @include('cookie-consent::cookie-consent-head')
 
-    @vite(config('vpress.assets.vite', \Voodflow\Vpress\Support\VpressPaths::defaultViteEntries()))
+    @vite(config('voodbuilder.assets.vite', \Voodflow\Voodbuilder\Support\VoodbuilderPaths::defaultViteEntries()))
     @livewireStyles
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
     @unless ($hideSiteNav ?? false)
-        <x-vpress::nav
+        <x-voodbuilder::nav
             :has-doc-sidebar="$vpressHasDocSidebar"
             :show-reading-progress="$vpressShowReadingProgress"
         />
@@ -48,17 +48,17 @@
         @yield('content')
     </main>
 
-    @if(config('vpress.footer.enabled', true) && ! ($hideSiteFooter ?? false))
-        <x-vpress::footer />
+    @if(config('voodbuilder.footer.enabled', true) && ! ($hideSiteFooter ?? false))
+        <x-voodbuilder::footer />
     @endif
 
     @include('cookie-consent::cookie-consent-body')
-    <x-vpress::monitoring-scripts />
+    <x-voodbuilder::monitoring-scripts />
 
     @stack('scripts-before-livewire')
     @livewireScripts
-    <x-vpress::theme-vars />
-    <x-vpress::site-scripts />
+    <x-voodbuilder::theme-vars />
+    <x-voodbuilder::site-scripts />
     @stack('scripts')
     @stack('overlays')
 </body>

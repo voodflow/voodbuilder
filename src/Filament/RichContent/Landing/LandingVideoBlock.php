@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
-use Voodflow\Vpress\Support\YoutubeEmbed;
+use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Support\YoutubeEmbed;
 
 class LandingVideoBlock extends RichContentCustomBlock
 {
@@ -21,22 +21,22 @@ class LandingVideoBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.video');
+        return __('voodbuilder::landing.blocks.video');
     }
 
     public static function configureEditorAction(Action $action): Action
     {
         return $action->schema([
             TextInput::make('title')
-                ->label(__('vpress::landing.fields.title'))
+                ->label(__('voodbuilder::landing.fields.title'))
                 ->maxLength(255),
             TextInput::make('video_url')
-                ->label(__('vpress::landing.fields.video_url'))
-                ->helperText(__('vpress::landing.helpers.youtube_url'))
+                ->label(__('voodbuilder::landing.fields.video_url'))
+                ->helperText(__('voodbuilder::landing.helpers.youtube_url'))
                 ->url()
                 ->required(),
             Textarea::make('caption')
-                ->label(__('vpress::landing.fields.caption'))
+                ->label(__('voodbuilder::landing.fields.caption'))
                 ->rows(2),
             ...LandingBlockForm::sectionLayoutFields(),
         ]);
@@ -44,7 +44,7 @@ class LandingVideoBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.preview-placeholder', [
+        return RichContentBlockPreview::render('voodbuilder::blocks.preview-placeholder', [
             'title' => $config['title'] ?? static::getLabel(),
         ]);
     }
@@ -53,7 +53,7 @@ class LandingVideoBlock extends RichContentCustomBlock
     {
         $url = $config['video_url'] ?? $config['embed_url'] ?? null;
 
-        return view('vpress::blocks.landing.video', [
+        return view('voodbuilder::blocks.landing.video', [
             'config' => $config,
             'embedUrl' => YoutubeEmbed::normalize(is_string($url) ? $url : null),
         ])->render();

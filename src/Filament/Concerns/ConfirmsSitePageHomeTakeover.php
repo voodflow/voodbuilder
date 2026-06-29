@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Concerns;
+namespace Voodflow\Voodbuilder\Filament\Concerns;
 
 use Filament\Actions\Action;
 use Filament\Support\Exceptions\Halt;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageHome;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageHome;
 
 trait ConfirmsSitePageHomeTakeover
 {
@@ -16,11 +16,11 @@ trait ConfirmsSitePageHomeTakeover
     public function confirmHomeTakeoverAction(): Action
     {
         return Action::make('confirmHomeTakeover')
-            ->modalHeading(__('vpress::admin.home_takeover.heading'))
-            ->modalDescription(fn (): string => __('vpress::admin.home_takeover.description', [
+            ->modalHeading(__('voodbuilder::admin.home_takeover.heading'))
+            ->modalDescription(fn (): string => __('voodbuilder::admin.home_takeover.description', [
                 'pages' => SitePageHome::conflictSummary($this->homeTakeoverCandidate()),
             ]))
-            ->modalSubmitActionLabel(__('vpress::admin.home_takeover.confirm'))
+            ->modalSubmitActionLabel(__('voodbuilder::admin.home_takeover.confirm'))
             ->action(function (): void {
                 $this->homeTakeoverConfirmed = true;
                 $this->proceedAfterHomeTakeoverConfirmation();

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
-use Voodflow\Vpress\Support\ThemePalette;
+use Voodflow\Voodbuilder\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\ThemePalette;
 
 class ThemePaletteTest extends TestCase
 {
@@ -25,7 +25,7 @@ class ThemePaletteTest extends TestCase
     #[Test]
     public function it_builds_css_for_custom_sub_theme_colors(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'docs' => ['label' => 'Default'],
         ]);
 
@@ -56,12 +56,12 @@ class ThemePaletteTest extends TestCase
     #[Test]
     public function it_builds_canvas_css_without_sub_theme_attribute_selector(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'site' => ['label' => 'Site'],
         ]);
 
-        \Voodflow\Vpress\Models\VpressSettings::query()->create([
-            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::docss(), [
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
+            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -72,19 +72,19 @@ class ThemePaletteTest extends TestCase
                 ],
             ]),
         ]);
-        \Voodflow\Vpress\Models\VpressSettings::clearCache();
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::cssForCanvas('site');
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
-        $this->assertStringNotContainsString("data-vpress-sub-theme='site'", $css);
+        $this->assertStringNotContainsString("data-voodbuilder-sub-theme='site'", $css);
     }
 
     #[Test]
     public function it_includes_builtin_sub_theme_tokens_in_canvas_css_without_admin_overrides(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'site' => [
                 'label' => 'Site',
                 'css' => 'themes/site/theme.css',
@@ -100,12 +100,12 @@ class ThemePaletteTest extends TestCase
     #[Test]
     public function it_builds_css_for_semantic_theme_colors(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'site' => ['label' => 'Site'],
         ]);
 
-        \Voodflow\Vpress\Models\VpressSettings::query()->create([
-            'data' => array_merge(\Voodflow\Vpress\Models\VpressSettings::docss(), [
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
+            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -120,13 +120,13 @@ class ThemePaletteTest extends TestCase
                 ],
             ]),
         ]);
-        \Voodflow\Vpress\Models\VpressSettings::clearCache();
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::css();
 
         $this->assertStringContainsString("--vx-header-bg:#002b49", $css);
         $this->assertStringContainsString("--color-vp-bg:#ffffff", $css);
         $this->assertStringContainsString("--color-vp-text-2:color-mix", $css);
-        $this->assertStringContainsString("html[data-vpress-sub-theme='site']:not(.dark)", $css);
+        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
     }
 }

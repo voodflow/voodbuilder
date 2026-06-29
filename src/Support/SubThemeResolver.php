@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class SubThemeResolver
 {
@@ -21,7 +21,7 @@ final class SubThemeResolver
 
     public static function siteDefault(): string
     {
-        $theme = self::resolveId((string) VpressSettings::get('sub_theme', self::SITE));
+        $theme = self::resolveId((string) VoodbuilderSettings::get('sub_theme', self::SITE));
 
         return $theme ?? self::SITE;
     }

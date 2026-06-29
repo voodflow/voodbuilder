@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
-use Voodflow\Vpress\Support\ThemePalette;
-use Voodflow\Vpress\Support\VpressPaths;
+use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsCanvas
 {
@@ -15,7 +15,7 @@ final class GrapesJsCanvas
      */
     public static function styleUrls(): array
     {
-        $entries = config('vpress.grapesjs.canvas_styles', VpressPaths::grapesJsCanvasStyleEntries());
+        $entries = config('voodbuilder.grapesjs.canvas_styles', VoodbuilderPaths::grapesJsCanvasStyleEntries());
 
         return collect($entries)
             ->map(static function (string $entry): ?string {

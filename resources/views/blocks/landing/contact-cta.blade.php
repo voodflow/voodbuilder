@@ -1,5 +1,5 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
 
     $section = LandingBlockContent::section($config, [
         'section_width' => 'bleed',

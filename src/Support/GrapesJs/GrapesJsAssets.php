@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Support\VpressPaths;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
 {
     public static function editorScriptEntry(): string
     {
-        return (string) config('vpress.grapesjs.vite', VpressPaths::grapesJsViteEntry());
+        return (string) config('voodbuilder.grapesjs.vite', VoodbuilderPaths::grapesJsViteEntry());
     }
 
     public static function editorStyleEntry(): string
     {
-        return VpressPaths::grapesJsEditorCssEntry();
+        return VoodbuilderPaths::grapesJsEditorCssEntry();
     }
 
     /**

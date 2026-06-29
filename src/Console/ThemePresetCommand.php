@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
-use Voodflow\Vpress\Support\ThemePreset;
-use Voodflow\Vpress\Support\ThemePresetManager;
+use Voodflow\Voodbuilder\Support\ThemePreset;
+use Voodflow\Voodbuilder\Support\ThemePresetManager;
 
 class ThemePresetCommand extends Command
 {
-    protected $signature = 'vpress:theme
+    protected $signature = 'voodbuilder:theme
                             {action : list, export, or import}
                             {preset? : Preset id, or output basename for export}
                             {--output= : Output directory or file path for export}
                             {--apply : Apply preset after import}
                             {--no-save : Do not store imported preset in site settings}';
 
-    protected $description = 'List, export, or import Vpress theme presets';
+    protected $description = 'List, export, or import Voodbuilder theme presets';
 
     public function handle(): int
     {

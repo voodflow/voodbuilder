@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use DOMDocument;
 use DOMElement;
@@ -15,7 +15,7 @@ final class GrapesJsBindingStorageNormalizer
 
     public function normalizeHtml(string $html): string
     {
-        if ($html === '' || ! str_contains($html, 'data-vpress-bind')) {
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-bind')) {
             return $html;
         }
 
@@ -52,7 +52,7 @@ final class GrapesJsBindingStorageNormalizer
         $elements = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-bind')) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-bind')) {
                 $elements[] = $element;
             }
         }
@@ -62,7 +62,7 @@ final class GrapesJsBindingStorageNormalizer
 
     protected function resetElementForStorage(DOMElement $element): void
     {
-        $bindingKey = trim($element->getAttribute('data-vpress-bind'));
+        $bindingKey = trim($element->getAttribute('data-voodbuilder-bind'));
         $parsed = BindingKey::tryParse($bindingKey, $this->registry);
 
         if ($parsed === null) {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Route;
-use Voodflow\Vpress\Enums\ResolvableLinkType;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Enums\ResolvableLinkType;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 
 final class ResolvableLinkSupport
 {

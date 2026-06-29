@@ -12,12 +12,12 @@
 
 <section class="mt-16">
     <div class="mb-6 flex items-end justify-between gap-4">
-        <h2 class="text-2xl font-semibold text-vp-text-1">{{ __('vpress::home.latest_vtuts') }}</h2>
+        <h2 class="text-2xl font-semibold text-vp-text-1">{{ __('voodbuilder::home.latest_vtuts') }}</h2>
         <a
             href="{{ $tutorialsIndexUrl }}"
             class="shrink-0 text-sm font-medium text-vp-brand-1 transition-colors hover:text-vp-brand-2"
         >
-            {{ __('vpress::home.view_all') }} →
+            {{ __('voodbuilder::home.view_all') }} →
         </a>
     </div>
 
@@ -25,7 +25,7 @@
         @forelse ($tutorials as $tutorial)
             <x-vtuts::vtut-card :tutorial="$tutorial" variant="grid" />
         @empty
-            <p class="text-sm text-vp-text-2">{{ __('vpress::home.no_vtuts') }}</p>
+            <p class="text-sm text-vp-text-2">{{ __('voodbuilder::home.no_vtuts') }}</p>
         @endforelse
     </div>
 </section>

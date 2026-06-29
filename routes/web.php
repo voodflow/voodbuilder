@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Voodflow\Vpress\Http\Controllers\AccountController;
-use Voodflow\Vpress\Http\Controllers\AuthController;
-use Voodflow\Vpress\Http\Controllers\HomeController;
-use Voodflow\Vpress\Http\Controllers\SearchController;
-use Voodflow\Vpress\Http\Controllers\SitePageController;
+use Voodflow\Voodbuilder\Http\Controllers\AccountController;
+use Voodflow\Voodbuilder\Http\Controllers\AuthController;
+use Voodflow\Voodbuilder\Http\Controllers\HomeController;
+use Voodflow\Voodbuilder\Http\Controllers\SearchController;
+use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
 use Voodflow\Vtuts\Support\Locales;
 
 $localeMiddleware = [];
@@ -22,7 +22,7 @@ $nonDefaultLocales = $usesLocaleUrlPrefix && class_exists(Locales::class)
     : [];
 
 Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () use ($nonDefaultLocales): void {
-    if (config('vpress.home.route_enabled', true)) {
+    if (config('voodbuilder.home.route_enabled', true)) {
         Route::get('/', HomeController::class)->name('home');
 
         if ($nonDefaultLocales !== []) {
@@ -34,21 +34,21 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
         }
     }
 
-    if (config('vpress.search.enabled', true)) {
-        $searchRoute = trim((string) config('vpress.search.route', 'search'), '/');
+    if (config('voodbuilder.search.enabled', true)) {
+        $searchRoute = trim((string) config('voodbuilder.search.route', 'search'), '/');
 
         Route::get('/'.$searchRoute, SearchController::class)
-            ->name('vpress.search');
+            ->name('voodbuilder.search');
     }
 
-    if (config('vpress.pages.enabled', true)) {
-        $prefix = trim((string) config('vpress.pages.route_prefix', 'pages'), '/');
+    if (config('voodbuilder.pages.enabled', true)) {
+        $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
 
         Route::get('/'.$prefix.'/{slug}', [SitePageController::class, 'show'])
-            ->name('vpress.pages.show');
+            ->name('voodbuilder.pages.show');
     }
 
-    if (config('vpress.auth.enabled', true)) {
+    if (config('voodbuilder.auth.enabled', true)) {
         Route::middleware('guest')->group(function (): void {
             Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
             Route::post('/login', [AuthController::class, 'login']);
@@ -61,9 +61,9 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
             ->name('logout');
     }
 
-    if (config('vpress.account.enabled', true)) {
+    if (config('voodbuilder.account.enabled', true)) {
         Route::middleware('auth')
-            ->get('/'.trim((string) config('vpress.account.route', 'account'), '/'), AccountController::class)
-            ->name('vpress.account');
+            ->get('/'.trim((string) config('voodbuilder.account.route', 'account'), '/'), AccountController::class)
+            ->name('voodbuilder.account');
     }
 });

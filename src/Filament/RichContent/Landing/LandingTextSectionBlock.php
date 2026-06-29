@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Support\LandingBlockSupport;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
+use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class LandingTextSectionBlock extends RichContentCustomBlock
 {
@@ -22,34 +22,34 @@ class LandingTextSectionBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.text');
+        return __('voodbuilder::landing.blocks.text');
     }
 
     public static function configureEditorAction(Action $action): Action
     {
         return $action->schema([
             TextInput::make('eyebrow')
-                ->label(__('vpress::landing.fields.eyebrow'))
+                ->label(__('voodbuilder::landing.fields.eyebrow'))
                 ->maxLength(120),
             TextInput::make('heading')
-                ->label(__('vpress::landing.fields.heading'))
+                ->label(__('voodbuilder::landing.fields.heading'))
                 ->maxLength(255),
             TextInput::make('intro')
-                ->label(__('vpress::landing.fields.intro'))
+                ->label(__('voodbuilder::landing.fields.intro'))
                 ->maxLength(500),
             Textarea::make('body')
-                ->label(__('vpress::landing.fields.body'))
+                ->label(__('voodbuilder::landing.fields.body'))
                 ->rows(6)
                 ->columnSpanFull(),
             Select::make('text_align')
-                ->label(__('vpress::landing.fields.text_align'))
+                ->label(__('voodbuilder::landing.fields.text_align'))
                 ->options(LandingBlockSupport::textAlignOptions())
                 ->default('left'),
             Select::make('width')
-                ->label(__('vpress::landing.fields.content_width'))
+                ->label(__('voodbuilder::landing.fields.content_width'))
                 ->options([
-                    'wide' => __('vpress::landing.content_width.wide'),
-                    'narrow' => __('vpress::landing.content_width.narrow'),
+                    'wide' => __('voodbuilder::landing.content_width.wide'),
+                    'narrow' => __('voodbuilder::landing.content_width.narrow'),
                 ])
                 ->default('wide'),
             ...LandingBlockForm::backgroundToneFields('light'),
@@ -59,13 +59,13 @@ class LandingTextSectionBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.preview-placeholder', [
+        return RichContentBlockPreview::render('voodbuilder::blocks.preview-placeholder', [
             'title' => $config['heading'] ?? static::getLabel(),
         ]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.landing.text-section', ['config' => $config])->render();
+        return view('voodbuilder::blocks.landing.text-section', ['config' => $config])->render();
     }
 }

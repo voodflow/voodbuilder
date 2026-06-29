@@ -28,7 +28,7 @@ const options = {
 if (isDev) {
     const context = await esbuild.context(options);
     await context.watch();
-    console.log('Watching vpress theme-map…');
+    console.log('Watching voodbuilder theme-map…');
 } else {
     await esbuild.build(options);
 }

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\ContentChannelRegistry;
-use Voodflow\Vpress\Support\ContentChannelThemes;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\ContentChannelThemes;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ContentChannelThemesTest extends TestCase
 {
@@ -22,7 +22,7 @@ class ContentChannelThemesTest extends TestCase
             'label' => 'Showcase alt',
             'capabilities' => ['landing'],
             'layouts' => [
-                'landing' => 'vpress::themes.site.layouts.landing',
+                'landing' => 'voodbuilder::themes.site.layouts.landing',
             ],
         ]);
 
@@ -65,14 +65,14 @@ class ContentChannelThemesTest extends TestCase
 
     public function test_admin_override_takes_precedence_over_package_default(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), [
                 'content_channel_sub_themes' => [
                     'events' => 'showcase-alt',
                 ],
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $channel = app(ContentChannelRegistry::class)->get('events');
 
@@ -82,14 +82,14 @@ class ContentChannelThemesTest extends TestCase
 
     public function test_invalid_override_is_ignored(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), [
                 'content_channel_sub_themes' => [
                     'events' => 'does-not-exist',
                 ],
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $channel = app(ContentChannelRegistry::class)->get('events');
 
@@ -99,14 +99,14 @@ class ContentChannelThemesTest extends TestCase
 
     public function test_incompatible_override_is_ignored(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), [
                 'content_channel_sub_themes' => [
                     'events' => 'docs',
                 ],
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $channel = app(ContentChannelRegistry::class)->get('events');
 
@@ -116,14 +116,14 @@ class ContentChannelThemesTest extends TestCase
 
     public function test_events_inherits_landing_theme_from_exhibitors_peer_override(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), [
                 'content_channel_sub_themes' => [
                     'exhibitors' => 'showcase-alt',
                 ],
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $channel = app(ContentChannelRegistry::class)->get('events');
 
@@ -148,7 +148,7 @@ class ContentChannelThemesTest extends TestCase
 
     public function test_it_falls_back_to_package_channel_defaults_when_app_config_omits_them(): void
     {
-        config()->set('vpress.content_channel_defaults', [
+        config()->set('voodbuilder.content_channel_defaults', [
             'blog' => 'site',
         ]);
 

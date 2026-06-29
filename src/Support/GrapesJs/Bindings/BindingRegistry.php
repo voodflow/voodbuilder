@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
-use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
 
 final class BindingRegistry
 {

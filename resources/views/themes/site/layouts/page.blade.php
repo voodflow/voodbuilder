@@ -1,12 +1,12 @@
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('body_class')
-    vpress-sub-theme-events @yield('body_class_extra')
+    voodbuilder-sub-theme-events @yield('body_class_extra')
 @endsection
 
 @section('content')
-    <div class="vpress-site-shell">
-        <div class="vpress-site-content">
+    <div class="voodbuilder-site-shell">
+        <div class="voodbuilder-site-content">
             @yield('page')
         </div>
     </div>

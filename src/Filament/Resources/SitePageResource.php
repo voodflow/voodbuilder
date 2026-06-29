@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources;
+namespace Voodflow\Voodbuilder\Filament\Resources;
 
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -29,16 +29,16 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\CreateSitePage;
-use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\EditSitePage;
-use Voodflow\Vpress\Filament\Resources\SitePageResource\Pages\ListSitePages;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\RichContentBlockRegistry;
-use Voodflow\Vpress\Support\SitePageResolver;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Support\ThemeBindings;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePage;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
 
 class SitePageResource extends Resource
@@ -51,17 +51,17 @@ class SitePageResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('vpress::admin.navigation.group');
+        return __('voodbuilder::admin.navigation.group');
     }
 
     public static function getNavigationLabel(): string
     {
-        return __('vpress::admin.navigation.pages');
+        return __('voodbuilder::admin.navigation.pages');
     }
 
     protected static ?string $modelLabel = 'Page';
 
-    protected static ?string $slug = 'vpress/pages';
+    protected static ?string $slug = 'voodbuilder/pages';
 
     public const LAYOUT_AUTO = SitePage::LAYOUT_AUTO;
 
@@ -91,19 +91,19 @@ class SitePageResource extends Resource
                                     ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
 
                                 Textarea::make('excerpt')
-                                    ->label(__('vpress::admin.fields.excerpt'))
+                                    ->label(__('voodbuilder::admin.fields.excerpt'))
                                     ->rows(3)
                                     ->maxLength(500)
-                                    ->helperText(__('vpress::admin.helpers.excerpt'))
+                                    ->helperText(__('voodbuilder::admin.helpers.excerpt'))
                                     ->columnSpanFull(),
 
                                 Select::make('builder')
-                                    ->label(__('vpress::pro.fields.builder'))
+                                    ->label(__('voodbuilder::pro.fields.builder'))
                                     ->options(PageBuilder::options())
                                     ->default(PageBuilder::RichEditor)
                                     ->native(false)
                                     ->live()
-                                    ->helperText(__('vpress::pro.helpers.builder'))
+                                    ->helperText(__('voodbuilder::pro.helpers.builder'))
                                     ->columnSpanFull(),
 
                                 RichEditor::make('content')
@@ -118,18 +118,18 @@ class SitePageResource extends Resource
                                     ->columnSpanFull(),
 
                                 Placeholder::make('grapesjs_frontend_hint')
-                                    ->label(__('vpress::pro.fields.grapesjs_edit'))
+                                    ->label(__('voodbuilder::pro.fields.grapesjs_edit'))
                                     ->content(function (?SitePage $record): HtmlString {
                                         if ($record === null) {
-                                            return new HtmlString(e(__('vpress::pro.helpers.grapesjs_save_first')));
+                                            return new HtmlString(e(__('voodbuilder::pro.helpers.grapesjs_save_first')));
                                         }
 
                                         $url = $record->getUrl();
 
                                         return new HtmlString(
-                                            __('vpress::pro.helpers.grapesjs_frontend', ['url' => $url])
+                                            __('voodbuilder::pro.helpers.grapesjs_frontend', ['url' => $url])
                                             .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
-                                            .e(__('vpress::pro.actions.open_visual_editor'))
+                                            .e(__('voodbuilder::pro.actions.open_visual_editor'))
                                             .'</a>'
                                         );
                                     })
@@ -160,11 +160,11 @@ class SitePageResource extends Resource
 
                                 Toggle::make('is_home')
                                     ->label(__('Home page'))
-                                    ->helperText(__('vpress::admin.helpers.home_page_locale'))
+                                    ->helperText(__('voodbuilder::admin.helpers.home_page_locale'))
                                     ->live(),
 
                                 Select::make('locale')
-                                    ->label(__('vpress::admin.fields.language'))
+                                    ->label(__('voodbuilder::admin.fields.language'))
                                     ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
                                     ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
                                     ->required()
@@ -173,10 +173,10 @@ class SitePageResource extends Resource
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
 
                                 Placeholder::make('translation_links')
-                                    ->label(__('vpress::admin.fields.translations'))
+                                    ->label(__('voodbuilder::admin.fields.translations'))
                                     ->content(function (?SitePage $record): HtmlString|string {
                                         if ($record === null || blank($record->translation_group_id)) {
-                                            return __('vpress::admin.translation.none_yet');
+                                            return __('voodbuilder::admin.translation.none_yet');
                                         }
 
                                         $siblings = SitePage::query()
@@ -186,7 +186,7 @@ class SitePageResource extends Resource
                                             ->get();
 
                                         if ($siblings->isEmpty()) {
-                                            return __('vpress::admin.translation.none_yet');
+                                            return __('voodbuilder::admin.translation.none_yet');
                                         }
 
                                         $links = $siblings
@@ -205,23 +205,23 @@ class SitePageResource extends Resource
                                     ->visibleOn('edit')
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
 
-                                Section::make(__('vpress::admin.sections.appearance'))
+                                Section::make(__('voodbuilder::admin.sections.appearance'))
                                     ->collapsed()
                                     ->schema([
                                         Select::make('layout')
-                                            ->label(__('vpress::admin.filters.layout'))
+                                            ->label(__('voodbuilder::admin.filters.layout'))
                                             ->options([
-                                                self::LAYOUT_AUTO => __('vpress::admin.fields.layout_auto'),
-                                                'page' => __('vpress::admin.fields.layout_standard'),
-                                                'full_width' => __('vpress::admin.fields.layout_full_width'),
+                                                self::LAYOUT_AUTO => __('voodbuilder::admin.fields.layout_auto'),
+                                                'page' => __('voodbuilder::admin.fields.layout_standard'),
+                                                'full_width' => __('voodbuilder::admin.fields.layout_full_width'),
                                             ])
                                             ->default(self::LAYOUT_AUTO)
                                             ->native(false)
                                             ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
                                                 ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
-                                                    && ($record?->is_home || (bool) $get('is_home')) => __('vpress::admin.helpers.layout_auto_home'),
-                                                $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('vpress::admin.helpers.layout_auto_page'),
-                                                static::formUsesFullWidthLayout($get, $record) => __('vpress::landing.layouts.full_width_help'),
+                                                    && ($record?->is_home || (bool) $get('is_home')) => __('voodbuilder::admin.helpers.layout_auto_home'),
+                                                $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('voodbuilder::admin.helpers.layout_auto_page'),
+                                                static::formUsesFullWidthLayout($get, $record) => __('voodbuilder::landing.layouts.full_width_help'),
                                                 default => null,
                                             })
                                             ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
@@ -257,19 +257,19 @@ class SitePageResource extends Resource
                                             ->live(),
 
                                         Toggle::make('hide_site_footer')
-                                            ->label(__('vpress::landing.layouts.hide_site_footer'))
-                                            ->helperText(__('vpress::landing.layouts.hide_site_footer_help'))
+                                            ->label(__('voodbuilder::landing.layouts.hide_site_footer'))
+                                            ->helperText(__('voodbuilder::landing.layouts.hide_site_footer_help'))
                                             ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
 
                                         Toggle::make('hide_site_nav')
-                                            ->label(__('vpress::landing.layouts.hide_site_nav'))
-                                            ->helperText(__('vpress::landing.layouts.hide_site_nav_help'))
+                                            ->label(__('voodbuilder::landing.layouts.hide_site_nav'))
+                                            ->helperText(__('voodbuilder::landing.layouts.hide_site_nav_help'))
                                             ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
 
                                         Select::make('sub_theme')
-                                            ->label(__('vpress::admin.fields.sub_theme'))
+                                            ->label(__('voodbuilder::admin.fields.sub_theme'))
                                             ->options(fn (?SitePage $record): array => [
-                                                '' => __('vpress::admin.fields.sub_theme_inherit'),
+                                                '' => __('voodbuilder::admin.fields.sub_theme_inherit'),
                                                 ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
                                             ])
                                             ->default(null)
@@ -278,7 +278,7 @@ class SitePageResource extends Resource
                                             ->native(false)
                                             ->helperText(function (Get $get, ?SitePage $record): string {
                                                 $siteTheme = ThemeBindings::siteThemeLabel();
-                                                $message = __('vpress::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
+                                                $message = __('voodbuilder::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
 
                                                 $subTheme = filled($get('sub_theme'))
                                                     ? (string) $get('sub_theme')
@@ -288,7 +288,7 @@ class SitePageResource extends Resource
                                                     static::formUsesFullWidthLayout($get, $record)
                                                     && $subTheme === SubThemeResolver::DEFAULT
                                                 ) {
-                                                    return $message.' '.__('vpress::admin.helpers.sub_theme_marketing_recommended');
+                                                    return $message.' '.__('voodbuilder::admin.helpers.sub_theme_marketing_recommended');
                                                 }
 
                                                 return $message;
@@ -309,20 +309,20 @@ class SitePageResource extends Resource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('locale')
-                    ->label(__('vpress::admin.fields.language'))
+                    ->label(__('voodbuilder::admin.fields.language'))
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => class_exists(Locales::class) && is_string($state)
                         ? (Locales::options()[$state] ?? strtoupper($state))
                         : (string) $state)
                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
                 TextColumn::make('translations')
-                    ->label(__('vpress::admin.fields.translations'))
+                    ->label(__('voodbuilder::admin.fields.translations'))
                     ->badge()
                     ->state(fn (SitePage $record): array => $record->otherTranslationLocaleCodes())
                     ->placeholder('—')
                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
                 TextColumn::make('builder')
-                    ->label(__('vpress::pro.fields.builder'))
+                    ->label(__('voodbuilder::pro.fields.builder'))
                     ->badge()
                     ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
                         ? $state->label()
@@ -330,15 +330,15 @@ class SitePageResource extends Resource
                 TextColumn::make('layout')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        SitePage::LAYOUT_AUTO => __('vpress::admin.fields.layout_auto'),
-                        'home', 'landing', 'full_width' => __('vpress::admin.fields.layout_full_width'),
-                        default => __('vpress::admin.fields.layout_standard'),
+                        SitePage::LAYOUT_AUTO => __('voodbuilder::admin.fields.layout_auto'),
+                        'home', 'landing', 'full_width' => __('voodbuilder::admin.fields.layout_full_width'),
+                        default => __('voodbuilder::admin.fields.layout_standard'),
                     }),
                 TextColumn::make('sub_theme')
-                    ->label(__('vpress::admin.fields.sub_theme'))
+                    ->label(__('voodbuilder::admin.fields.sub_theme'))
                     ->formatStateUsing(fn (?string $state): string => filled($state)
                         ? app(SubThemeRegistry::class)->label($state)
-                        : __('vpress::admin.fields.sub_theme_inherit'))
+                        : __('voodbuilder::admin.fields.sub_theme_inherit'))
                     ->badge()
                     ->color(fn (?string $state): string => filled($state) ? 'info' : 'gray'),
                 IconColumn::make('is_home')->label(__('Home'))->boolean(),
@@ -359,25 +359,25 @@ class SitePageResource extends Resource
             ])
             ->filters([
                 TernaryFilter::make('is_home')
-                    ->label(__('vpress::admin.filters.is_home'))
-                    ->trueLabel(__('vpress::admin.filters.yes'))
-                    ->falseLabel(__('vpress::admin.filters.no'))
-                    ->placeholder(__('vpress::admin.filters.any')),
+                    ->label(__('voodbuilder::admin.filters.is_home'))
+                    ->trueLabel(__('voodbuilder::admin.filters.yes'))
+                    ->falseLabel(__('voodbuilder::admin.filters.no'))
+                    ->placeholder(__('voodbuilder::admin.filters.any')),
                 TernaryFilter::make('published')
-                    ->label(__('vpress::admin.filters.published'))
-                    ->trueLabel(__('vpress::admin.filters.yes'))
-                    ->falseLabel(__('vpress::admin.filters.no'))
-                    ->placeholder(__('vpress::admin.filters.any')),
+                    ->label(__('voodbuilder::admin.filters.published'))
+                    ->trueLabel(__('voodbuilder::admin.filters.yes'))
+                    ->falseLabel(__('voodbuilder::admin.filters.no'))
+                    ->placeholder(__('voodbuilder::admin.filters.any')),
                 SelectFilter::make('builder')
-                    ->label(__('vpress::admin.filters.builder'))
+                    ->label(__('voodbuilder::admin.filters.builder'))
                     ->options(PageBuilder::options()),
                 SelectFilter::make('layout')
-                    ->label(__('vpress::admin.filters.layout'))
+                    ->label(__('voodbuilder::admin.filters.layout'))
                     ->options([
                         'page' => __('Standard page'),
-                        'full_width' => __('vpress::landing.layouts.full_width'),
+                        'full_width' => __('voodbuilder::landing.layouts.full_width'),
                         'home' => __('Home'),
-                        'landing' => __('vpress::landing.layouts.landing'),
+                        'landing' => __('voodbuilder::landing.layouts.landing'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $value = $data['value'] ?? null;
@@ -393,9 +393,9 @@ class SitePageResource extends Resource
                         return $query->where('layout', $value);
                     }),
                 SelectFilter::make('sub_theme')
-                    ->label(__('vpress::admin.filters.sub_theme'))
+                    ->label(__('voodbuilder::admin.filters.sub_theme'))
                     ->options(fn (): array => [
-                        '__inherit__' => __('vpress::admin.filters.sub_theme_inherit'),
+                        '__inherit__' => __('voodbuilder::admin.filters.sub_theme_inherit'),
                         ...app(SubThemeRegistry::class)->options(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -412,7 +412,7 @@ class SitePageResource extends Resource
                         return $query->where('sub_theme', $value);
                     }),
                 SelectFilter::make('locale')
-                    ->label(__('vpress::admin.fields.language'))
+                    ->label(__('voodbuilder::admin.fields.language'))
                     ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
             ])

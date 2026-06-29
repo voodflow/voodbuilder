@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use DOMDocument;
 use DOMElement;
 use DOMNode;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class GrapesJsSlotHydrator
 {
@@ -19,7 +19,7 @@ final class GrapesJsSlotHydrator
 
     public static function hydrateHtml(string $html, bool $preview = false): string
     {
-        if ($html === '' || (! str_contains($html, 'data-vpress-menu') && ! str_contains($html, 'data-vpress-brand'))) {
+        if ($html === '' || (! str_contains($html, 'data-voodbuilder-menu') && ! str_contains($html, 'data-voodbuilder-brand'))) {
             return $html;
         }
 
@@ -33,16 +33,16 @@ final class GrapesJsSlotHydrator
 
     public static function renderBrand(bool $preview = false): string
     {
-        return view('vpress::grapesjs.blocks.partials.footer-brand', [
-            'brandName' => VpressSettings::brandName(),
-            'logoUrl' => VpressSettings::logoUrl(),
+        return view('voodbuilder::grapesjs.blocks.partials.footer-brand', [
+            'brandName' => VoodbuilderSettings::brandName(),
+            'logoUrl' => VoodbuilderSettings::logoUrl(),
             'preview' => $preview,
         ])->render();
     }
 
     public static function renderMenuList(string $menuSlug, bool $preview = false): string
     {
-        return view('vpress::grapesjs.blocks.partials.footer-menu-list-wrapper', [
+        return view('voodbuilder::grapesjs.blocks.partials.footer-menu-list-wrapper', [
             'menuSlug' => $menuSlug,
             'preview' => $preview,
         ])->render();
@@ -51,7 +51,7 @@ final class GrapesJsSlotHydrator
     protected static function hydrateBrands(DOMDocument $document, DOMElement $root, bool $preview): void
     {
         foreach ($root->getElementsByTagName('*') as $element) {
-            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-vpress-brand')) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-brand')) {
                 continue;
             }
 
@@ -62,11 +62,11 @@ final class GrapesJsSlotHydrator
     protected static function hydrateMenus(DOMDocument $document, DOMElement $root, bool $preview): void
     {
         foreach ($root->getElementsByTagName('*') as $element) {
-            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-vpress-menu')) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-menu')) {
                 continue;
             }
 
-            $menuSlug = (string) $element->getAttribute('data-vpress-menu');
+            $menuSlug = (string) $element->getAttribute('data-voodbuilder-menu');
 
             if ($menuSlug === '') {
                 continue;

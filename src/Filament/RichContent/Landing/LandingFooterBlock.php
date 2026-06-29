@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
-use Voodflow\Vpress\Filament\Forms\LandingFooterForm;
-use Voodflow\Vpress\Support\LandingFooterSupport;
+use Voodflow\Voodbuilder\Filament\Forms\LandingFooterForm;
+use Voodflow\Voodbuilder\Support\LandingFooterSupport;
 
 class LandingFooterBlock extends RichContentCustomBlock
 {
@@ -18,7 +18,7 @@ class LandingFooterBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.footer');
+        return __('voodbuilder::landing.blocks.footer');
     }
 
     public static function configureEditorAction(Action $action): Action
@@ -36,8 +36,8 @@ class LandingFooterBlock extends RichContentCustomBlock
         $variant = LandingFooterSupport::resolveVariant($config);
 
         $view = $variant === 'legacy'
-            ? 'vpress::blocks.landing.footer'
-            : 'vpress::blocks.landing.footer-tailblocks.'.$variant;
+            ? 'voodbuilder::blocks.landing.footer'
+            : 'voodbuilder::blocks.landing.footer-tailblocks.'.$variant;
 
         return view($view, static::viewData($config))->render();
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Storage;
 
@@ -22,7 +22,7 @@ final class LandingBlockMedia
             return $path;
         }
 
-        $disk = (string) config('vpress.uploads.disk', 'public');
+        $disk = (string) config('voodbuilder.uploads.disk', 'public');
 
         return Storage::disk($disk)->url($path);
     }
@@ -35,6 +35,6 @@ final class LandingBlockMedia
 
     public static function uploadDirectory(): string
     {
-        return trim((string) config('vpress.uploads.directory', 'vpress'), '/').'/landing';
+        return trim((string) config('voodbuilder.uploads.directory', 'voodbuilder'), '/').'/landing';
     }
 }

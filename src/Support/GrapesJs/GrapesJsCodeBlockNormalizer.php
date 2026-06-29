@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Support\MarkdownCodeBlocks;
+use Voodflow\Voodbuilder\Support\MarkdownCodeBlocks;
 
 /**
  * Ensures GrapesJS code snippets use the shared vp-code-block shell (vdocs / vtuts).

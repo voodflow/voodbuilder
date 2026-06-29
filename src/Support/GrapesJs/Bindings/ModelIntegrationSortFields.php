@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
-use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationSortFields
 {
@@ -25,7 +25,7 @@ final class ModelIntegrationSortFields
         foreach (self::SYSTEM_FIELDS as $fieldId => $labelKey) {
             $fields[] = [
                 'id' => $fieldId,
-                'label' => __('vpress::pro.bindings.'.$labelKey),
+                'label' => __('voodbuilder::pro.bindings.'.$labelKey),
             ];
             $seen[$fieldId] = true;
         }

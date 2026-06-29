@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Contracts;
+namespace Voodflow\Voodbuilder\Contracts;
 
 /**
  * Server-rendered GrapesJS block for third-party packages (no Filament RichEditor required).
  *
  * Register in your ServiceProvider:
- *   Vpress::grapesJsServerBlock('MyPackage', MyBlock::class);
+ *   Voodbuilder::grapesJsServerBlock('MyPackage', MyBlock::class);
  */
 interface GrapesJsServerBlock
 {

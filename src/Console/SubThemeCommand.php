@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
-use Voodflow\Vpress\Support\SubThemeCloner;
-use Voodflow\Vpress\Support\SubThemeExporter;
-use Voodflow\Vpress\Support\SubThemeImporter;
-use Voodflow\Vpress\Support\SubThemeLocator;
+use Voodflow\Voodbuilder\Support\SubThemeCloner;
+use Voodflow\Voodbuilder\Support\SubThemeExporter;
+use Voodflow\Voodbuilder\Support\SubThemeImporter;
+use Voodflow\Voodbuilder\Support\SubThemeLocator;
 
 class SubThemeCommand extends Command
 {
-    protected $signature = 'vpress:sub-theme
+    protected $signature = 'voodbuilder:sub-theme
                             {action : list, export, import, or clone}
                             {theme? : Theme id for export/clone, or archive path for import}
                             {--output= : Output .zip path for export}
@@ -22,7 +22,7 @@ class SubThemeCommand extends Command
                             {--no-colors : Skip admin color overrides}
                             {--no-rename : Fail on import if the theme id already exists}';
 
-    protected $description = 'Export or import Vpress visual sub-themes (CSS, layouts, config)';
+    protected $description = 'Export or import Voodbuilder visual sub-themes (CSS, layouts, config)';
 
     public function handle(): int
     {
@@ -120,7 +120,7 @@ class SubThemeCommand extends Command
         $this->components->info($message);
 
         if ($result->configRegistered) {
-            $this->components->info('Registered in config/vpress.php.');
+            $this->components->info('Registered in config/voodbuilder.php.');
         }
 
         if ($result->colorsImported) {

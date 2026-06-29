@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\SitePageResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use Voodflow\Vpress\Filament\Actions\CreateSitePageTranslationAction;
-use Voodflow\Vpress\Filament\Concerns\ConfirmsSitePageHomeTakeover;
-use Voodflow\Vpress\Filament\Resources\SitePageResource;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageHome;
+use Voodflow\Voodbuilder\Filament\Actions\CreateSitePageTranslationAction;
+use Voodflow\Voodbuilder\Filament\Concerns\ConfirmsSitePageHomeTakeover;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageHome;
 
 class EditSitePage extends EditRecord
 {
@@ -25,7 +25,7 @@ class EditSitePage extends EditRecord
         return [
             CreateSitePageTranslationAction::make(),
             Action::make('openVisualEditor')
-                ->label(__('vpress::pro.actions.open_visual_editor'))
+                ->label(__('voodbuilder::pro.actions.open_visual_editor'))
                 ->icon('heroicon-o-paint-brush')
                 ->color('primary')
                 ->url(fn (): string => $this->record->getUrl())
@@ -42,7 +42,7 @@ class EditSitePage extends EditRecord
                     if ($content === null) {
                         Notification::make()
                             ->title(__('No default home content configured'))
-                            ->body(__('Set vpress.home.default_content_callback in your app config.'))
+                            ->body(__('Set voodbuilder.home.default_content_callback in your app config.'))
                             ->warning()
                             ->send();
 
@@ -90,8 +90,8 @@ class EditSitePage extends EditRecord
 
         if ($demoted > 0) {
             Notification::make()
-                ->title(__('vpress::admin.notifications.home_reassigned'))
-                ->body(__('vpress::admin.notifications.home_reassigned_body', ['count' => $demoted]))
+                ->title(__('voodbuilder::admin.notifications.home_reassigned'))
+                ->body(__('voodbuilder::admin.notifications.home_reassigned_body', ['count' => $demoted]))
                 ->info()
                 ->send();
         }
@@ -105,7 +105,7 @@ class EditSitePage extends EditRecord
     /** @return array<string, mixed>|null */
     protected function resolveDefaultHomeContent(): ?array
     {
-        $callback = config('vpress.home.default_content_callback');
+        $callback = config('voodbuilder.home.default_content_callback');
 
         if (! is_array($callback) || count($callback) !== 2) {
             return null;

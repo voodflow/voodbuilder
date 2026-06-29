@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
-use Voodflow\Vpress\Support\NavigationMenuItemTree;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class NavigationMenuItemTest extends TestCase
 {

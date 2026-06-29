@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationListResolver
 {

@@ -1,13 +1,13 @@
 /**
- * GrapesJS toolbar and style-manager setup for Vpress.
+ * GrapesJS toolbar and style-manager setup for Voodbuilder.
  * Uses only the public GrapesJS API (Panels, Commands, Devices).
  */
 
 import { lucideIcon } from './editor-icons.js';
 
-const CMD_DEVICE_DESKTOP = 'vpress-set-device-desktop';
-const CMD_DEVICE_TABLET = 'vpress-set-device-tablet';
-const CMD_DEVICE_MOBILE = 'vpress-set-device-mobile';
+const CMD_DEVICE_DESKTOP = 'voodbuilder-set-device-desktop';
+const CMD_DEVICE_TABLET = 'voodbuilder-set-device-tablet';
+const CMD_DEVICE_MOBILE = 'voodbuilder-set-device-mobile';
 
 export const STYLE_MANAGER_SECTORS = [
     {
@@ -118,9 +118,9 @@ function registerDeviceCommands(editor) {
 function syncDeviceButtons(editor) {
     const selectedId = editor.Devices.getSelected()?.get('id');
     const buttons = [
-        ['vpress-device-desktop', 'desktop'],
-        ['vpress-device-tablet', 'tablet'],
-        ['vpress-device-mobile', 'mobilePortrait'],
+        ['voodbuilder-device-desktop', 'desktop'],
+        ['voodbuilder-device-tablet', 'tablet'],
+        ['voodbuilder-device-mobile', 'mobilePortrait'],
     ];
 
     for (const [buttonId, deviceId] of buttons) {
@@ -142,20 +142,20 @@ function addToolbarButtons(editor, labels = {}) {
 
     const deviceButtons = [
         {
-            id: 'vpress-device-desktop',
+            id: 'voodbuilder-device-desktop',
             command: CMD_DEVICE_DESKTOP,
             label: lucideIcon('monitor'),
             title: labels.deviceDesktop ?? 'Desktop',
             active: true,
         },
         {
-            id: 'vpress-device-tablet',
+            id: 'voodbuilder-device-tablet',
             command: CMD_DEVICE_TABLET,
             label: lucideIcon('tablet'),
             title: labels.deviceTablet ?? 'Tablet',
         },
         {
-            id: 'vpress-device-mobile',
+            id: 'voodbuilder-device-mobile',
             command: CMD_DEVICE_MOBILE,
             label: lucideIcon('smartphone'),
             title: labels.deviceMobile ?? 'Mobile',
@@ -167,7 +167,7 @@ function addToolbarButtons(editor, labels = {}) {
             id: button.id,
             command: button.command,
             label: button.label,
-            className: 'vpress-gjs-pn-btn',
+            className: 'voodbuilder-gjs-pn-btn',
             togglable: true,
             active: button.active ?? false,
             attributes: { title: button.title },
@@ -177,7 +177,7 @@ function addToolbarButtons(editor, labels = {}) {
     Panels.addButton('options', {
         id: 'undo',
         label: lucideIcon('undo-2'),
-        className: 'vpress-gjs-pn-btn',
+        className: 'voodbuilder-gjs-pn-btn',
         command: 'core:undo',
         attributes: { title: labels.undo ?? 'Undo (Ctrl/Cmd+Z)' },
     });
@@ -185,7 +185,7 @@ function addToolbarButtons(editor, labels = {}) {
     Panels.addButton('options', {
         id: 'redo',
         label: lucideIcon('redo-2'),
-        className: 'vpress-gjs-pn-btn',
+        className: 'voodbuilder-gjs-pn-btn',
         command: 'core:redo',
         attributes: { title: labels.redo ?? 'Redo (Ctrl/Cmd+Shift+Z)' },
     });
@@ -193,7 +193,7 @@ function addToolbarButtons(editor, labels = {}) {
     Panels.addButton('options', {
         id: 'sw-visibility',
         label: lucideIcon('box-select'),
-        className: 'vpress-gjs-pn-btn',
+        className: 'voodbuilder-gjs-pn-btn',
         command: 'core:component-outline',
         context: 'sw-visibility',
         attributes: { title: labels.outline ?? 'Show element outlines' },
@@ -202,7 +202,7 @@ function addToolbarButtons(editor, labels = {}) {
     Panels.addButton('options', {
         id: 'preview',
         label: lucideIcon('eye'),
-        className: 'vpress-gjs-pn-btn',
+        className: 'voodbuilder-gjs-pn-btn',
         command: 'preview',
         context: 'preview',
         attributes: { title: labels.preview ?? 'Preview' },

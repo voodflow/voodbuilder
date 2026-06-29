@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
 use Voodflow\Vevents\Support\SoundmitLandingAssets;
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\SoundmitGrapesJsLanding;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\SoundmitGrapesJsLanding;
 
 class SeedSoundmitGrapesLandingCommand extends Command
 {
-    protected $signature = 'vpress:seed-soundmit-grapes-landing
+    protected $signature = 'voodbuilder:seed-soundmit-grapes-landing
                             {--slug=landing-page : Site page slug to update or create}
                             {--sub-theme=events : Sub-theme slug (events, blog, news, or empty)}
                             {--install-assets : Download hero/split images when vevents is installed}';

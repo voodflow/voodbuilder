@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class PageBuilderTest extends TestCase
 {

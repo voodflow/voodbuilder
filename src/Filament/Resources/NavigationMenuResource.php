@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources;
+namespace Voodflow\Voodbuilder\Filament\Resources;
 
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -16,14 +16,14 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\MenuRouteCatalog;
-use Voodflow\Vpress\Support\MenuRouteParameterField;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
+use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 
 class NavigationMenuResource extends Resource
 {
@@ -86,17 +86,17 @@ class NavigationMenuResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('vpress::admin.navigation.group');
+        return __('voodbuilder::admin.navigation.group');
     }
 
     public static function getNavigationLabel(): string
     {
-        return __('vpress::admin.navigation.menus');
+        return __('voodbuilder::admin.navigation.menus');
     }
 
     protected static ?string $modelLabel = 'Menu';
 
-    protected static ?string $slug = 'vpress/navigation-menus';
+    protected static ?string $slug = 'voodbuilder/navigation-menus';
 
     public static function form(Schema $schema): Schema
     {
@@ -115,7 +115,7 @@ class NavigationMenuResource extends Resource
                                 'footer' => __('Footer links'),
                                 'landing_nav' => __('Landing navbar links'),
                                 'landing_footer' => __('Landing footer columns (legacy groups)'),
-                                ...\Voodflow\Vpress\Support\LandingMenuPlacements::footerColumnPlacementLabels(),
+                                ...\Voodflow\Voodbuilder\Support\LandingMenuPlacements::footerColumnPlacementLabels(),
                             ])
                             ->required()
                             ->unique(ignoreRecord: true)
@@ -174,14 +174,14 @@ class NavigationMenuResource extends Resource
                 }),
             Select::make('link')
                 ->key($isChild ? 'menu_child_link_route' : 'menu_item_link_route')
-                ->label(__('vpress::admin.fields.menu_route'))
+                ->label(__('voodbuilder::admin.fields.menu_route'))
                 ->options(fn (): array => MenuRouteCatalog::options())
                 ->searchable()
                 ->preload()
                 ->live()
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Route))
-                ->helperText(__('vpress::admin.helpers.menu_route'))
+                ->helperText(__('voodbuilder::admin.helpers.menu_route'))
                 ->afterStateUpdated(function (callable $set, ?string $state, Get $get): void {
                     $required = filled($state)
                         ? MenuRouteCatalog::requiredParameterNames($state)
@@ -221,8 +221,8 @@ class NavigationMenuResource extends Resource
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Mail)),
             ...MenuRouteParameterField::components(),
             TextInput::make('route_match')
-                ->label(__('vpress::admin.fields.menu_route_match'))
-                ->helperText(__('vpress::admin.helpers.menu_route_match'))
+                ->label(__('voodbuilder::admin.fields.menu_route_match'))
+                ->helperText(__('voodbuilder::admin.helpers.menu_route_match'))
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
             Toggle::make('open_in_new_tab')
                 ->label(__('Open in new tab'))

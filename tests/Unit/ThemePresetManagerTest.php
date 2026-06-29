@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\ThemePresetManager;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\ThemePresetManager;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemePresetManagerTest extends TestCase
 {
@@ -26,14 +26,14 @@ class ThemePresetManagerTest extends TestCase
 
         $preset->apply();
 
-        $this->assertSame('docs', VpressSettings::get('sub_theme'));
-        $this->assertSame('documentation-only', VpressSettings::get('active_theme_preset_id'));
-        $this->assertSame('docs', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
+        $this->assertSame('docs', VoodbuilderSettings::get('sub_theme'));
+        $this->assertSame('documentation-only', VoodbuilderSettings::get('active_theme_preset_id'));
+        $this->assertSame('docs', VoodbuilderSettings::get('content_channel_sub_themes')['docs'] ?? null);
     }
 
     public function test_export_and_import_roundtrip(): void
     {
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme' => 'site',
             'content_channel_sub_themes' => [
                 'docs' => 'docs',
@@ -42,19 +42,19 @@ class ThemePresetManagerTest extends TestCase
         ]);
 
         $snapshot = ThemePresetManager::snapshotFromSettings('roundtrip', 'Roundtrip preset');
-        $path = sys_get_temp_dir().'/vpress-theme-roundtrip.json';
+        $path = sys_get_temp_dir().'/voodbuilder-theme-roundtrip.json';
 
         ThemePresetManager::exportToFile($snapshot, $path);
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme' => 'docs',
             'content_channel_sub_themes' => [],
         ]);
 
         ThemePresetManager::importFromFile($path, apply: true, saveCustom: true);
 
-        $this->assertSame('site', VpressSettings::get('sub_theme'));
-        $this->assertSame('docs', VpressSettings::get('content_channel_sub_themes')['docs'] ?? null);
+        $this->assertSame('site', VoodbuilderSettings::get('sub_theme'));
+        $this->assertSame('docs', VoodbuilderSettings::get('content_channel_sub_themes')['docs'] ?? null);
         $this->assertNotNull(ThemePresetManager::find('roundtrip'));
     }
 }

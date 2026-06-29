@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
-use Voodflow\Vpress\Support\SiteSearch;
-use Voodflow\Vpress\Support\VpressUrls;
+use Voodflow\Voodbuilder\Support\SiteSearch;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
 class SearchController extends Controller
 {
@@ -26,23 +26,23 @@ class SearchController extends Controller
         $total = SiteSearch::totalCount($results);
 
         $seoTitle = $query !== ''
-            ? __('vpress::search.seo_title', ['query' => $query])
-            : __('vpress::search.title');
+            ? __('voodbuilder::search.seo_title', ['query' => $query])
+            : __('voodbuilder::search.title');
 
         seo()->for(new SEOData(
             title: $seoTitle,
-            description: __('vpress::search.description'),
+            description: __('voodbuilder::search.description'),
             robots: $query !== '' ? 'noindex, follow' : 'index, follow',
         ));
 
-        return view('vpress::pages.search', [
+        return view('voodbuilder::pages.search', [
             'query' => $query,
             'type' => $type,
             'results' => $results,
             'total' => $total,
             'availableTypes' => SiteSearch::availableTypes(),
             'typeLabels' => SiteSearch::typeLabels(),
-            'searchUrl' => VpressUrls::search(),
+            'searchUrl' => VoodbuilderUrls::search(),
         ]);
     }
 }

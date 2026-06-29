@@ -1,7 +1,7 @@
 /**
- * Vpress GrapesJS bootstrap — integration layer only.
+ * Voodbuilder GrapesJS bootstrap — integration layer only.
  *
- * Customise behaviour via init options, events, and plugins (vpress-grapesjs.js).
+ * Customise behaviour via init options, events, and plugins (voodbuilder-grapesjs.js).
  * Never patch node_modules/grapesjs: changes there are lost on npm update.
  */
 import grapesjs from 'grapesjs';
@@ -21,8 +21,8 @@ import vpressGrapesJsPlugin, {
     registerBlocks,
     sanitizeBlockHtml,
     syncVpressDynamicAttributes,
-} from './plugins/vpress-grapesjs.js';
-import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './vpress-dynamic-config.js';
+} from './plugins/voodbuilder-grapesjs.js';
+import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './voodbuilder-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
@@ -52,7 +52,7 @@ function hasProjectData(project) {
 }
 
 function normalizeVpressDynamicComponents(editor) {
-    editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
+    editor.getWrapper().find('[data-voodbuilder-block]').forEach((component) => {
         syncVpressDynamicAttributes(component);
     });
 }
@@ -132,7 +132,7 @@ function applyCanvasDocumentTheme(editor, subTheme) {
             return;
         }
 
-        doc.documentElement.setAttribute('data-vpress-sub-theme', subTheme);
+        doc.documentElement.setAttribute('data-voodbuilder-sub-theme', subTheme);
 
         const useDark = isDark ?? document.documentElement.classList.contains('dark');
 
@@ -144,7 +144,7 @@ function applyCanvasDocumentTheme(editor, subTheme) {
     };
 
     editor.on('canvas:frame:load', () => apply());
-    window.addEventListener('vpress:theme-changed', (event) => {
+    window.addEventListener('voodbuilder:theme-changed', (event) => {
         apply(event?.detail?.isDark);
     });
     apply();
@@ -272,10 +272,10 @@ export function initVpressGrapesJs(container, options = {}) {
 
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
             migrateEditorComponents(editor);
-            editor.getWrapper().find('[data-vpress-block]').forEach((component) => {
+            editor.getWrapper().find('[data-voodbuilder-block]').forEach((component) => {
                 lockDynamicPreviewContent(component);
 
-                if (isSiteFooterBlock(component.getAttributes()['data-vpress-block'])) {
+                if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
                     applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
                 }
             });
@@ -303,17 +303,17 @@ async function refreshDynamicBlocks(editor, renderUrl) {
         return;
     }
 
-    const components = editor.getWrapper().find('[data-vpress-block]');
+    const components = editor.getWrapper().find('[data-voodbuilder-block]');
 
     for (const component of components) {
         const attributes = component.getAttributes();
-        const blockId = attributes['data-vpress-block'];
+        const blockId = attributes['data-voodbuilder-block'];
 
         if (! blockId) {
             continue;
         }
 
-        const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-vpress-config']);
+        const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
         const params = new URLSearchParams({
             block: blockId,
             config: serializeVpressConfig(config),
@@ -348,7 +348,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
             }
 
             const freshConfig = parseVpressConfig(
-                fresh.getAttribute('data-vpress-config') ?? serializeVpressConfig(config),
+                fresh.getAttribute('data-voodbuilder-config') ?? serializeVpressConfig(config),
             );
 
             const footerBlock = isSiteFooterBlock(blockId);
@@ -356,7 +356,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
             if (footerBlock && fresh.tagName === 'FOOTER') {
                 applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
 
-                if (component.find('[data-vpress-menu], [data-vpress-brand]').length > 0) {
+                if (component.find('[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
                     refreshDynamicSlots(component, fresh);
                 } else {
                     component.components(fresh.innerHTML);
@@ -364,16 +364,16 @@ async function refreshDynamicBlocks(editor, renderUrl) {
             } else {
                 component.set('vpressConfig', freshConfig, { silent: true });
                 component.setAttributes({
-                    'data-vpress-block': fresh.getAttribute('data-vpress-block') ?? blockId,
-                    'data-vpress-config': fresh.getAttribute('data-vpress-config') ?? encodeVpressConfig(freshConfig),
-                    class: fresh.getAttribute('class') ?? 'vpress-gjs-dynamic',
-                    ...(fresh.hasAttribute('data-vpress-hydrate-slots')
-                        ? { 'data-vpress-hydrate-slots': '1' }
+                    'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
+                    'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+                    class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
+                    ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
+                        ? { 'data-voodbuilder-hydrate-slots': '1' }
                         : {}),
                 });
 
-                const hydratesSlots = fresh.hasAttribute('data-vpress-hydrate-slots')
-                    && component.find('[data-vpress-menu], [data-vpress-brand]').length > 0;
+                const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
+                    && component.find('[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
 
                 if (hydratesSlots) {
                     refreshDynamicSlots(component, fresh);
@@ -388,7 +388,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
                 applySiteFooterColumns(component, freshConfig.columns ?? 4);
             }
         } catch (error) {
-            console.error('Vpress GrapesJS: could not refresh dynamic block.', blockId, error);
+            console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, error);
         }
     }
 }
@@ -412,7 +412,7 @@ async function loadBlocks(editor, blocksUrl) {
         collapseBlockCategories(editor);
         applyLightBlockPreviews(editor);
     } catch (error) {
-        console.error('Vpress GrapesJS: could not load block catalog.', error);
+        console.error('Voodbuilder GrapesJS: could not load block catalog.', error);
     }
 }
 
@@ -423,7 +423,7 @@ function refreshEditorLayout(editor) {
 }
 
 function readConfig() {
-    const configNode = document.querySelector('[data-vpress-grapesjs-config]');
+    const configNode = document.querySelector('[data-voodbuilder-grapesjs-config]');
 
     if (! configNode) {
         return null;
@@ -432,15 +432,15 @@ function readConfig() {
     try {
         return JSON.parse(configNode.textContent ?? '');
     } catch (error) {
-        console.error('Vpress GrapesJS: invalid config JSON.', error);
+        console.error('Voodbuilder GrapesJS: invalid config JSON.', error);
 
         return null;
     }
 }
 
 function mountFrontendEditor() {
-    const root = document.querySelector('[data-vpress-grapesjs-root]');
-    const canvas = document.querySelector('[data-vpress-grapesjs-canvas]');
+    const root = document.querySelector('[data-voodbuilder-grapesjs-root]');
+    const canvas = document.querySelector('[data-voodbuilder-grapesjs-canvas]');
     const config = readConfig();
 
     if (! root || ! canvas || ! config) {
@@ -481,9 +481,9 @@ function mountFrontendEditor() {
         applyLightBlockPreviews(editor);
     }
 
-    const saveButton = document.querySelector('[data-vpress-grapesjs-save]');
-    const savedIndicator = document.querySelector('[data-vpress-grapesjs-saved]');
-    const saveLabel = document.querySelector('[data-vpress-grapesjs-save-label]');
+    const saveButton = document.querySelector('[data-voodbuilder-grapesjs-save]');
+    const savedIndicator = document.querySelector('[data-voodbuilder-grapesjs-saved]');
+    const saveLabel = document.querySelector('[data-voodbuilder-grapesjs-save-label]');
 
     if (! saveButton) {
         return;

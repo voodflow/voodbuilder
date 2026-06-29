@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Str;
 
 /**
- * Builds the Vpress section block catalog from the legacy source JSON.
+ * Builds the Voodbuilder section block catalog from the legacy source JSON.
  * Output blocks are renamed and use neutral placeholder copy (no third-party branding).
  */
 final class SectionBlocksCatalogBuilder

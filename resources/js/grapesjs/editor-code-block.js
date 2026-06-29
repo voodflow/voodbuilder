@@ -1,5 +1,5 @@
 /**
- * Vpress code snippet block — same vp-code-block shell as vdocs / vtuts.
+ * Voodbuilder code snippet block — same vp-code-block shell as vdocs / vtuts.
  */
 
 const CODE_PROP = 'vpressCodeContent';
@@ -150,7 +150,7 @@ function migrateLegacyCustomCode(editor) {
         }
 
         const replacement = editor.Components.createComponent({
-            type: 'vpress-code-block',
+            type: 'voodbuilder-code-block',
             [LANG_PROP]: guessLanguage(legacyCode),
             [CODE_PROP]: legacyCode.trim(),
         });
@@ -158,9 +158,9 @@ function migrateLegacyCustomCode(editor) {
         component.replaceWith(replacement);
     }
 
-    editor.getWrapper().find('[data-vpress-code]').forEach((component) => {
-        if (component.get('type') !== 'vpress-code-block') {
-            component.set('type', 'vpress-code-block');
+    editor.getWrapper().find('[data-voodbuilder-code]').forEach((component) => {
+        if (component.get('type') !== 'voodbuilder-code-block') {
+            component.set('type', 'voodbuilder-code-block');
         }
 
         if (! component.get(LANG_PROP)) {
@@ -178,13 +178,13 @@ function migrateLegacyCustomCode(editor) {
 export function configureVpressCodeBlock(editor) {
     const { DomComponents, BlockManager } = editor;
 
-    DomComponents.addType('vpress-code-block', {
+    DomComponents.addType('voodbuilder-code-block', {
         isComponent: (element) => {
             if (! element?.classList?.contains('vp-code-block')) {
                 return false;
             }
 
-            return element.hasAttribute('data-vpress-code') || element.hasAttribute('data-code-block');
+            return element.hasAttribute('data-voodbuilder-code') || element.hasAttribute('data-code-block');
         },
         model: {
             defaults: {
@@ -196,7 +196,7 @@ export function configureVpressCodeBlock(editor) {
                     class: 'vp-code-block',
                     'data-code-block': '',
                     'data-line-numbers': '',
-                    'data-vpress-code': '',
+                    'data-voodbuilder-code': '',
                 },
                 traits: [
                     {
@@ -243,15 +243,15 @@ export function configureVpressCodeBlock(editor) {
         },
     });
 
-    if (! BlockManager.get('vpress-code-block')) {
-        BlockManager.add('vpress-code-block', {
+    if (! BlockManager.get('voodbuilder-code-block')) {
+        BlockManager.add('voodbuilder-code-block', {
             label: 'Code snippet',
             category: 'Sections · Content',
             media: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
             </svg>`,
             content: {
-                type: 'vpress-code-block',
+                type: 'voodbuilder-code-block',
                 [LANG_PROP]: 'text',
                 [CODE_PROP]: '',
             },
@@ -268,7 +268,7 @@ export function configureVpressCodeBlock(editor) {
     });
 
     editor.on('component:add', (component) => {
-        if (component.get('type') === 'vpress-code-block') {
+        if (component.get('type') === 'voodbuilder-code-block') {
             renderCodeBlockComponent(component);
         }
     });

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Livewire;
+namespace Voodflow\Voodbuilder\Livewire;
 
 use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Contracts\View\View;
@@ -70,7 +70,7 @@ class AccountSettings extends Component
             $this->updateAvatar($user);
         }
 
-        session()->flash('account_status', __('vpress::account.profile_saved'));
+        session()->flash('account_status', __('voodbuilder::account.profile_saved'));
 
         $this->dispatch('account-saved');
     }
@@ -101,7 +101,7 @@ class AccountSettings extends Component
 
         $this->reset(['current_password', 'password', 'password_confirmation']);
 
-        session()->flash('account_status', __('vpress::account.password_saved'));
+        session()->flash('account_status', __('voodbuilder::account.password_saved'));
     }
 
     public function removeAvatar(): void
@@ -116,17 +116,17 @@ class AccountSettings extends Component
             return;
         }
 
-        $disk = (string) config('vpress.account.avatar.disk', 'public');
+        $disk = (string) config('voodbuilder.account.avatar.disk', 'public');
         Storage::disk($disk)->delete((string) $user->avatar);
 
         $user->forceFill(['avatar' => null])->save();
 
-        session()->flash('account_status', __('vpress::account.avatar_removed'));
+        session()->flash('account_status', __('voodbuilder::account.avatar_removed'));
     }
 
     public function avatarsEnabled(): bool
     {
-        return (bool) config('vpress.account.avatar.enabled', true)
+        return (bool) config('voodbuilder.account.avatar.enabled', true)
             && Schema::hasColumn('users', 'avatar');
     }
 
@@ -151,7 +151,7 @@ class AccountSettings extends Component
 
     public function render(): View
     {
-        return view('vpress::livewire.account-settings');
+        return view('voodbuilder::livewire.account-settings');
     }
 
     protected function updateAvatar(mixed $user): void
@@ -164,8 +164,8 @@ class AccountSettings extends Component
             'avatarUpload' => ['required', 'image', 'max:2048'],
         ]);
 
-        $disk = (string) config('vpress.account.avatar.disk', 'public');
-        $directory = (string) config('vpress.account.avatar.directory', 'avatars');
+        $disk = (string) config('voodbuilder.account.avatar.disk', 'public');
+        $directory = (string) config('voodbuilder.account.avatar.directory', 'avatars');
 
         if (filled($user->avatar ?? null)) {
             Storage::disk($disk)->delete((string) $user->avatar);

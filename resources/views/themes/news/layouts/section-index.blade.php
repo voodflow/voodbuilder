@@ -1,23 +1,23 @@
-@extends(config('vpress.layouts.app', 'vpress::layouts.app'))
+@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @section('body_class')
-    vpress-sub-theme-news vpress-has-reading-progress
+    voodbuilder-sub-theme-news voodbuilder-has-reading-progress
 @endsection
 
 @section('content')
-    <div class="vpress-news-shell" data-vpress-article>
-        <div class="vpress-news-layout">
-            @include('vpress::themes.news.partials.sidebar-left', [
+    <div class="voodbuilder-news-shell" data-voodbuilder-article>
+        <div class="voodbuilder-news-layout">
+            @include('voodbuilder::themes.news.partials.sidebar-left', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? $page,
                 'sectionPosts' => $sectionPosts ?? collect(),
             ])
 
-            <div class="vpress-news-main">
+            <div class="voodbuilder-news-main">
                 @yield('section_index')
             </div>
 
-            @include('vpress::themes.news.partials.sidebar-right', [
+            @include('voodbuilder::themes.news.partials.sidebar-right', [
                 'page' => $page,
                 'sectionHome' => $sectionHome ?? $page,
                 'sectionPosts' => $sectionPosts ?? collect(),

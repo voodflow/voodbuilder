@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\SitePageResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages;
 
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Voodflow\Vpress\Filament\Concerns\ConfirmsSitePageHomeTakeover;
-use Voodflow\Vpress\Filament\Resources\SitePageResource;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageHome;
+use Voodflow\Voodbuilder\Filament\Concerns\ConfirmsSitePageHomeTakeover;
+use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageHome;
 
 class CreateSitePage extends CreateRecord
 {
@@ -43,8 +43,8 @@ class CreateSitePage extends CreateRecord
 
         if ($demoted > 0) {
             Notification::make()
-                ->title(__('vpress::admin.notifications.home_reassigned'))
-                ->body(__('vpress::admin.notifications.home_reassigned_body', ['count' => $demoted]))
+                ->title(__('voodbuilder::admin.notifications.home_reassigned'))
+                ->body(__('voodbuilder::admin.notifications.home_reassigned_body', ['count' => $demoted]))
                 ->info()
                 ->send();
         }

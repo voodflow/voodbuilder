@@ -1,11 +1,11 @@
 /**
- * Vpress GrapesJS theme — overrides GrapesJS CSS variables only.
- * Never fork grapes.min.css; remap --gjs-* to Vpress design tokens.
+ * Voodbuilder GrapesJS theme — overrides GrapesJS CSS variables only.
+ * Never fork grapes.min.css; remap --gjs-* to Voodbuilder design tokens.
  */
 
-.vpress-gjs-root,
-.vpress-gjs-root .gjs-editor,
-.vpress-grapesjs-field .gjs-editor {
+.voodbuilder-gjs-root,
+.voodbuilder-gjs-root .gjs-editor,
+.voodbuilder-grapesjs-field .gjs-editor {
     --gjs-main-color: var(--color-vp-text-1, #0f172a);
     --gjs-primary-color: var(--vx-sidebar-bg, #f8fafc);
     --gjs-secondary-color: var(--color-vp-text-2, #64748b);
@@ -27,9 +27,9 @@
     --gjs-left-width: 17rem;
 }
 
-.dark .vpress-gjs-root,
-.dark .vpress-gjs-root .gjs-editor,
-.dark .vpress-grapesjs-field .gjs-editor {
+.dark .voodbuilder-gjs-root,
+.dark .voodbuilder-gjs-root .gjs-editor,
+.dark .voodbuilder-grapesjs-field .gjs-editor {
     --gjs-main-color: var(--color-vp-text-1, #f8fafc);
     --gjs-primary-color: var(--vx-sidebar-bg, #1e293b);
     --gjs-secondary-color: var(--color-vp-text-2, #cbd5e1);
@@ -44,29 +44,29 @@
 }
 
 /* Panels & chrome */
-.vpress-gjs-root .gjs-pn-panel {
+.voodbuilder-gjs-root .gjs-pn-panel {
     background: var(--color-vp-bg-elv, #fff);
     border-color: var(--color-vp-divider, #e2e8f0);
 }
 
-.vpress-gjs-root .gjs-pn-btn {
+.voodbuilder-gjs-root .gjs-pn-btn {
     border-radius: 0.375rem;
     color: var(--color-vp-text-2, #64748b);
     transition: background 0.15s ease, color 0.15s ease;
 }
 
-.vpress-gjs-root .gjs-pn-btn:hover {
+.voodbuilder-gjs-root .gjs-pn-btn:hover {
     background: var(--color-vp-gray-soft, rgba(15, 23, 42, 0.06));
     color: var(--color-vp-text-1, #0f172a);
 }
 
-.vpress-gjs-root .gjs-pn-btn.gjs-pn-active {
+.voodbuilder-gjs-root .gjs-pn-btn.gjs-pn-active {
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
     color: var(--color-vp-brand-1, #6366f1);
     box-shadow: none;
 }
 
-.vpress-gjs-root .gjs-block {
+.voodbuilder-gjs-root .gjs-block {
     border-radius: 0.4375rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
     background: var(--color-vp-bg-elv, #fff);
@@ -74,18 +74,18 @@
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.vpress-gjs-root .gjs-block:hover {
+.voodbuilder-gjs-root .gjs-block:hover {
     border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 28%, var(--color-vp-divider, #e2e8f0));
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 3%, var(--color-vp-bg-elv, #fff));
 }
 
-.vpress-gjs-root .gjs-block-label {
+.voodbuilder-gjs-root .gjs-block-label {
     color: var(--color-vp-text-2, #64748b);
     font-size: 0.625rem;
     font-weight: 500;
 }
 
-.vpress-gjs-root .gjs-block-category .gjs-title {
+.voodbuilder-gjs-root .gjs-block-category .gjs-title {
     background: transparent;
     border-bottom: none;
     color: var(--color-vp-text-3, #94a3b8);
@@ -95,112 +95,112 @@
     text-transform: uppercase;
 }
 
-.vpress-gjs-root .gjs-layer,
-.vpress-gjs-root .gjs-layer-title,
-.vpress-gjs-root .gjs-layer-name,
-.vpress-gjs-root .gjs-layer__name {
+.voodbuilder-gjs-root .gjs-layer,
+.voodbuilder-gjs-root .gjs-layer-title,
+.voodbuilder-gjs-root .gjs-layer-name,
+.voodbuilder-gjs-root .gjs-layer__name {
     font-size: 0.75rem;
     font-weight: 450;
     letter-spacing: 0.01em;
 }
 
-.vpress-gjs-root .gjs-layer-title {
+.voodbuilder-gjs-root .gjs-layer-title {
     font-weight: 500;
 }
 
-.vpress-gjs-root .gjs-sm-sector .gjs-sm-sector-title,
-.vpress-gjs-root .gjs-trt-header {
+.voodbuilder-gjs-root .gjs-sm-sector .gjs-sm-sector-title,
+.voodbuilder-gjs-root .gjs-trt-header {
     font-size: 0.6875rem;
     font-weight: 500;
 }
 
-.vpress-gjs-root .gjs-sm-label,
-.vpress-gjs-root .gjs-field,
-.vpress-gjs-root .gjs-trt-trait {
+.voodbuilder-gjs-root .gjs-sm-label,
+.voodbuilder-gjs-root .gjs-field,
+.voodbuilder-gjs-root .gjs-trt-trait {
     font-size: 0.75rem;
     font-weight: 450;
 }
 
-.vpress-gjs-root .gjs-field,
-.vpress-gjs-root .gjs-field input,
-.vpress-gjs-root .gjs-field select,
-.vpress-gjs-root .gjs-field textarea {
+.voodbuilder-gjs-root .gjs-field,
+.voodbuilder-gjs-root .gjs-field input,
+.voodbuilder-gjs-root .gjs-field select,
+.voodbuilder-gjs-root .gjs-field textarea {
     background: var(--color-vp-bg, #fff);
     border-color: var(--color-vp-divider, #e2e8f0);
     border-radius: 0.375rem;
     color: var(--color-vp-text-1, #0f172a);
 }
 
-.vpress-gjs-root .gjs-clm-tags .gjs-clm-tag {
+.voodbuilder-gjs-root .gjs-clm-tags .gjs-clm-tag {
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
     border-radius: 0.25rem;
     color: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-layer {
+.voodbuilder-gjs-root .gjs-layer {
     color: var(--color-vp-text-1, #0f172a);
 }
 
-.vpress-gjs-root .gjs-layer.gjs-selected {
+.voodbuilder-gjs-root .gjs-layer.gjs-selected {
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
 }
 
-.vpress-gjs-root .gjs-cv-canvas {
+.voodbuilder-gjs-root .gjs-cv-canvas {
     background: var(--color-vp-bg, #e2e8f0);
 }
 
-.vpress-gjs-root .gjs-frame-wrapper {
+.voodbuilder-gjs-root .gjs-frame-wrapper {
     border-radius: 0;
     box-shadow: none;
 }
 
-.vpress-gjs-shell[data-vpress-device='tablet'] .gjs-frame-wrapper,
-.vpress-gjs-shell[data-vpress-device='mobilePortrait'] .gjs-frame-wrapper {
+.voodbuilder-gjs-shell[data-voodbuilder-device='tablet'] .gjs-frame-wrapper,
+.voodbuilder-gjs-shell[data-voodbuilder-device='mobilePortrait'] .gjs-frame-wrapper {
     border-radius: 0.5rem;
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--color-vp-text-1, #0f172a) 5%, transparent),
         0 12px 40px rgba(15, 23, 42, 0.12);
 }
 
-.vpress-gjs-root .gjs-toolbar {
+.voodbuilder-gjs-root .gjs-toolbar {
     background: var(--color-vp-bg-elv, #fff);
     border-radius: 0.375rem;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
 }
 
-.vpress-gjs-root .gjs-toolbar-item {
+.voodbuilder-gjs-root .gjs-toolbar-item {
     color: var(--color-vp-text-2, #64748b);
 }
 
-.vpress-gjs-root .gjs-toolbar-item:hover {
+.voodbuilder-gjs-root .gjs-toolbar-item:hover {
     color: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-badge {
+.voodbuilder-gjs-root .gjs-badge {
     background: var(--color-vp-brand-1, #6366f1);
     font-size: 0.625rem;
 }
 
-.vpress-gjs-root .gjs-resizer-h {
+.voodbuilder-gjs-root .gjs-resizer-h {
     border-color: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-highlighter,
-.vpress-gjs-root .gjs-highlighter-sel {
+.voodbuilder-gjs-root .gjs-highlighter,
+.voodbuilder-gjs-root .gjs-highlighter-sel {
     outline-color: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-com-badge,
-.vpress-gjs-root .gjs-com-badge-red {
+.voodbuilder-gjs-root .gjs-com-badge,
+.voodbuilder-gjs-root .gjs-com-badge-red {
     background: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-placeholder {
+.voodbuilder-gjs-root .gjs-placeholder {
     border-color: var(--color-vp-brand-1, #6366f1);
 }
 
-.vpress-gjs-root .gjs-am-assets-cont,
-.vpress-gjs-root .gjs-am-file-uploader {
+.voodbuilder-gjs-root .gjs-am-assets-cont,
+.voodbuilder-gjs-root .gjs-am-file-uploader {
     background: var(--color-vp-bg-elv, #fff);
     color: var(--color-vp-text-1, #0f172a);
 }

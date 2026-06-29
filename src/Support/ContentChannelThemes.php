@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class ContentChannelThemes
 {
@@ -57,7 +57,7 @@ final class ContentChannelThemes
 
     public static function configuredDefaultFor(string $channelId): ?string
     {
-        $default = config("vpress.content_channel_defaults.{$channelId}");
+        $default = config("voodbuilder.content_channel_defaults.{$channelId}");
 
         if (! is_string($default) || ! filled($default)) {
             $default = self::packageChannelDefaults()[$channelId] ?? null;
@@ -84,7 +84,7 @@ final class ContentChannelThemes
             return $defaults;
         }
 
-        $path = VpressPaths::packagePath().'/config/vpress.php';
+        $path = VoodbuilderPaths::packagePath().'/config/voodbuilder.php';
 
         if (! is_file($path)) {
             $defaults = [];
@@ -110,7 +110,7 @@ final class ContentChannelThemes
 
     public static function overrideFor(string $channelId): ?string
     {
-        $overrides = VpressSettings::get('content_channel_sub_themes', []);
+        $overrides = VoodbuilderSettings::get('content_channel_sub_themes', []);
 
         if (! is_array($overrides)) {
             return null;

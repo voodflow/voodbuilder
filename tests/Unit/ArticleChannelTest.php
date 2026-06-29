@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\ArticleChannel;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\ArticleChannel;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ArticleChannelTest extends TestCase
 {
@@ -18,7 +18,7 @@ class ArticleChannelTest extends TestCase
             'label' => 'Magazine',
             'capabilities' => ['article'],
             'layouts' => [
-                'article' => 'vpress::themes.news.layouts.article',
+                'article' => 'voodbuilder::themes.news.layouts.article',
             ],
         ]);
     }
@@ -42,7 +42,7 @@ class ArticleChannelTest extends TestCase
     public function test_ink_partial_for_news_family(): void
     {
         $this->assertSame(
-            'vpress::article-channel.ink.news.post-list',
+            'voodbuilder::article-channel.ink.news.post-list',
             ArticleChannel::inkPartialFor('news', 'post-list'),
         );
     }
@@ -50,7 +50,7 @@ class ArticleChannelTest extends TestCase
     public function test_ink_partial_falls_back_to_blog_family(): void
     {
         $this->assertSame(
-            'vpress::article-channel.ink.blog.post-list',
+            'voodbuilder::article-channel.ink.blog.post-list',
             ArticleChannel::inkPartialFor('unknown', 'post-list'),
         );
     }

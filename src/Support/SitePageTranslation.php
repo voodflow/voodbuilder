@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageHome;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageHome;
 use Voodflow\Vtuts\Support\Locales;
 
 final class SitePageTranslation

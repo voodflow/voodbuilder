@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Support\ActiveThemeMap;
-use Voodflow\Vpress\Support\ContentChannelRegistry;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Support\ActiveThemeMap;
+use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ActiveThemeMapTest extends TestCase
 {
@@ -75,8 +75,8 @@ class ActiveThemeMapTest extends TestCase
 
     public function test_themes_in_use_lists_unique_themes_from_site_and_channels(): void
     {
-        config()->set('vpress.content_channel_docss.docs', 'docs');
-        config()->set('vpress.content_channel_docss.tutorials', 'docs');
+        config()->set('voodbuilder.content_channel_docss.docs', 'docs');
+        config()->set('voodbuilder.content_channel_docss.tutorials', 'docs');
 
         $options = ActiveThemeMap::themesInUseOptions([
             'sub_theme' => 'site',
@@ -90,7 +90,7 @@ class ActiveThemeMapTest extends TestCase
 
     public function test_assignments_mark_channel_override_source(): void
     {
-        config()->set('vpress.content_channel_docss.tutorials', 'docs');
+        config()->set('voodbuilder.content_channel_docss.tutorials', 'docs');
 
         $assignments = ActiveThemeMap::assignments([
             'sub_theme' => 'site',

@@ -1,6 +1,6 @@
 # Visual themes — mental model and admin guide
 
-Vpress separates **what you see** (visual themes / sub-themes) from **how you edit content** (RichEditor, GrapesJS, vdocs, vtuts) and from **global site settings** (logo, SEO, dark/light toggle, menus, analytics).
+Voodbuilder separates **what you see** (visual themes / sub-themes) from **how you edit content** (RichEditor, GrapesJS, vdocs, vtuts) and from **global site settings** (logo, SEO, dark/light toggle, menus, analytics).
 
 This guide explains the admin UI in plain language and maps it to real site setups.
 
@@ -31,7 +31,7 @@ This guide explains the admin UI in plain language and maps it to real site setu
 | **Tutorials** | `vtuts.*` routes (if vtuts installed) | Documentation (`default`) |
 | **Blog / News / Events / …** | Routes registered by companion packages | Blog layout for articles, Showcase for event marketing |
 
-**Package default** means: use the default from `config/vpress.php` → `content_channel_defaults` (code, not DB).
+**Package default** means: use the default from `config/voodbuilder.php` → `content_channel_defaults` (code, not DB).
 
 **Per-page override:** Admin → Pages → Publish → Sub-theme (only for that Site Page).
 
@@ -129,66 +129,66 @@ Light/dark is applied **on top** via `html.dark` and `ThemePalette` brand overri
 ### 1. Scaffold
 
 ```bash
-php artisan vpress:make-subtheme polito --label="Politecnico"
+php artisan voodbuilder:make-subtheme polito --label="Politecnico"
 ```
 
 This creates:
 
 ```
-resources/vpress/themes/polito/theme.css
-resources/views/vpress/themes/polito/layouts/
+resources/voodbuilder/themes/polito/theme.css
+resources/views/voodbuilder/themes/polito/layouts/
   home.blade.php
   landing.blade.php
   page.blade.php
 ```
 
-And registers `polito` in `config/vpress.php` → `sub_themes`.
+And registers `polito` in `config/voodbuilder.php` → `sub_themes`.
 
 ### 2. Define the look (CSS)
 
-Edit `resources/vpress/themes/polito/theme.css`. Scope rules with:
+Edit `resources/voodbuilder/themes/polito/theme.css`. Scope rules with:
 
 ```css
-html[data-vpress-sub-theme='polito'] {
+html[data-voodbuilder-sub-theme='polito'] {
     --color-vp-brand-1: #003366;
     --width-vp-layout: 80rem;
     /* … */
 }
 ```
 
-Use Vpress tokens (`--color-vp-bg`, `--color-vp-text-1`, `bg-vp-bg`, `text-vp-brand-1` in Tailwind) so **dark mode works automatically**.
+Use Voodbuilder tokens (`--color-vp-bg`, `--color-vp-text-1`, `bg-vp-bg`, `text-vp-brand-1` in Tailwind) so **dark mode works automatically**.
 
-`vpress:make-subtheme` also appends an `@import` to the main vpress `theme.css` bundle.
+`voodbuilder:make-subtheme` also appends an `@import` to the main voodbuilder `theme.css` bundle.
 
 ### 3. Change layouts (optional)
 
 Override Blade layouts when you need a different shell (header structure, grid, footer):
 
-- `resources/views/vpress/themes/polito/layouts/landing.blade.php` — full-width GrapesJS canvas  
+- `resources/views/voodbuilder/themes/polito/layouts/landing.blade.php` — full-width GrapesJS canvas  
 - `…/home.blade.php` — homepage wrapper  
 - `…/page.blade.php` — standard CMS pages  
 
-Extend `vpress::layouts.app` unless you replace the entire chrome.
+Extend `voodbuilder::layouts.app` unless you replace the entire chrome.
 
 ### 4. Register capabilities
 
 For a university marketing site + docs:
 
 ```php
-// config/vpress.php — after make-subtheme, adjust type/capabilities:
+// config/voodbuilder.php — after make-subtheme, adjust type/capabilities:
 'polito' => [
     'label' => 'Politecnico',
     'type' => 'marketing',           // or 'content' for doc-only
     'capabilities' => ['landing'],     // add 'doc', 'article' if needed
     'layouts' => [ /* … */ ],
-    'css' => 'resources/vpress/themes/polito/theme.css',
+    'css' => 'resources/voodbuilder/themes/polito/theme.css',
 ],
 ```
 
 Or register at runtime:
 
 ```php
-Vpress::subTheme('polito', [ /* … */ ]);
+Voodbuilder::subTheme('polito', [ /* … */ ]);
 ```
 
 ### 5. Assign in admin
@@ -209,11 +209,11 @@ Required after every CSS or `@import` change. See [BUILD.md](./BUILD.md).
 
 ## Theme presets — JSON format
 
-Schema: `vpress-theme-preset/1`
+Schema: `voodbuilder-theme-preset/1`
 
 ```json
 {
-    "schema": "vpress-theme-preset/1",
+    "schema": "voodbuilder-theme-preset/1",
     "id": "my-setup",
     "label": "My setup",
     "description": "Optional note",
@@ -229,9 +229,9 @@ Schema: `vpress-theme-preset/1`
 CLI:
 
 ```bash
-php artisan vpress:theme list
-php artisan vpress:theme export my-setup --output=./presets
-php artisan vpress:theme import ./my-setup.json --apply
+php artisan voodbuilder:theme list
+php artisan voodbuilder:theme export my-setup --output=./presets
+php artisan voodbuilder:theme import ./my-setup.json --apply
 ```
 
 Bundled presets live in `resources/theme-presets/` inside the package.

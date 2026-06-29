@@ -1,5 +1,5 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
 
     $logos = $config['logos'] ?? [];
     $section = LandingBlockContent::section($config, [

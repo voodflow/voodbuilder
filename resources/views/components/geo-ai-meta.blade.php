@@ -1,7 +1,7 @@
 @php
-    use Voodflow\Vpress\Support\VpressSeo;
+    use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 
-    $metaTags = VpressSeo::geoMetaTags();
+    $metaTags = VoodbuilderSeo::geoMetaTags();
 @endphp
 
 @foreach ($metaTags as $name => $content)

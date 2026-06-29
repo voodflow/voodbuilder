@@ -1,7 +1,7 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
-    use Voodflow\Vpress\Support\LandingBlockSupport;
-    use Voodflow\Vpress\Support\ResolvableLinkSupport;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+    use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
 
     $imageLeft = ($config['image_position'] ?? 'left') === 'left';
     $section = LandingBlockContent::section($config);
@@ -31,8 +31,8 @@
             @endif
             @if (filled($buttonUrl))
                 <div>
-                    @include('vpress::blocks.landing.partials.button', [
-                        'label' => $config['button_label'] ?? __('vpress::landing.learn_more'),
+                    @include('voodbuilder::blocks.landing.partials.button', [
+                        'label' => $config['button_label'] ?? __('voodbuilder::landing.learn_more'),
                         'url' => $buttonUrl,
                         'class' => 'bg-vp-brand-1 text-white hover:opacity-90',
                         'open_in_new_tab' => ResolvableLinkSupport::opensInNewTab($config, 'button'),

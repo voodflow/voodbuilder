@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use DOMDocument;
 use DOMElement;
-use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Voodbuilder\Models\SitePage;
 
 final class GrapesJsBindingRenderer
 {
@@ -16,7 +16,7 @@ final class GrapesJsBindingRenderer
 
     public function render(string $html, ?SitePage $page = null, mixed $repeatItem = null): string
     {
-        if ($html === '' || (! str_contains($html, 'data-vpress-bind') && ! self::containsRepeatAttribute($html))) {
+        if ($html === '' || (! str_contains($html, 'data-voodbuilder-bind') && ! self::containsRepeatAttribute($html))) {
             return $html;
         }
 
@@ -24,7 +24,7 @@ final class GrapesJsBindingRenderer
             $html = app(GrapesJsRepeatRenderer::class)->render($html, $page);
         }
 
-        if (! str_contains($html, 'data-vpress-bind')) {
+        if (! str_contains($html, 'data-voodbuilder-bind')) {
             return $html;
         }
 
@@ -62,7 +62,7 @@ final class GrapesJsBindingRenderer
         $elements = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-bind')) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-bind')) {
                 $elements[] = $element;
             }
         }
@@ -72,7 +72,7 @@ final class GrapesJsBindingRenderer
 
     protected function applyBinding(DOMElement $element, BindingContext $context): void
     {
-        $bindingKey = trim($element->getAttribute('data-vpress-bind'));
+        $bindingKey = trim($element->getAttribute('data-voodbuilder-bind'));
 
         $parsed = BindingKey::tryParse($bindingKey, $this->registry);
 
@@ -168,6 +168,6 @@ final class GrapesJsBindingRenderer
 
     private static function containsRepeatAttribute(string $html): bool
     {
-        return (bool) preg_match('/\bdata-vpress-repeat\s*=/', $html);
+        return (bool) preg_match('/\bdata-voodbuilder-repeat\s*=/', $html);
     }
 }

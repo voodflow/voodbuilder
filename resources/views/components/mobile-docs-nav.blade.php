@@ -11,7 +11,7 @@
     <button
         type="button"
         @class([
-            'vpress-mobile-nav__link w-full',
+            'voodbuilder-mobile-nav__link w-full',
             'is-active' => $active,
         ])
         @click="open = ! open"
@@ -36,7 +36,7 @@
                 <a
                     href="{{ DocNavigation::indexUrl() }}"
                     @class([
-                        'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                        'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
                         'is-active' => request()->routeIs('vdocs.index'),
                     ])
                     data-mobile-nav-close
@@ -56,7 +56,7 @@
                     <a
                         href="{{ DocNavigation::sectionUrl($section) }}"
                         @class([
-                            'vpress-mobile-nav__link vpress-mobile-nav__link--secondary',
+                            'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
                             'is-active' => $isActiveSection,
                         ])
                         data-mobile-nav-close

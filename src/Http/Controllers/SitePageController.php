@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Routing\Controller;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\PageBuilderAccess;
-use Voodflow\Vpress\Support\SitePageResolver;
-use Voodflow\Vpress\Support\SitePageViewData;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\SitePageViewData;
 
 class SitePageController extends Controller
 {
@@ -37,9 +37,9 @@ class SitePageController extends Controller
         }
 
         if ($page->isSectionHome()) {
-            return view('vpress::pages.section-index', $data);
+            return view('voodbuilder::pages.section-index', $data);
         }
 
-        return view('vpress::pages.site-page', $data);
+        return view('voodbuilder::pages.site-page', $data);
     }
 }

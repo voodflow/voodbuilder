@@ -1,10 +1,10 @@
 <?php
 
-namespace Voodflow\Vpress\Filament\Resources\ModelIntegrationResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource;
+use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 
 class EditModelIntegration extends EditRecord
 {

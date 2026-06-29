@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Enums;
+namespace Voodflow\Voodbuilder\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 

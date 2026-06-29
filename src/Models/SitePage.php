@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Models;
+namespace Voodflow\Voodbuilder\Models;
 
 use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
 use Filament\Forms\Components\RichEditor\Models\Contracts\HasRichContent;
@@ -19,13 +19,13 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsRenderer;
-use Voodflow\Vpress\Support\RichContentBlockRegistry;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Support\SitePageResolver;
-use Voodflow\Vpress\Support\VpressUrls;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
+use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
 class SitePage extends Model implements HasRichContent
@@ -167,7 +167,7 @@ class SitePage extends Model implements HasRichContent
 
     public function getUrl(): string
     {
-        return VpressUrls::page($this);
+        return VoodbuilderUrls::page($this);
     }
 
     public function usesGrapesJsBuilder(): bool
@@ -308,7 +308,7 @@ class SitePage extends Model implements HasRichContent
                 return $subThemeLayout;
             }
 
-            return config('vpress.layouts.full_width', 'vpress::layouts.full-width');
+            return config('voodbuilder.layouts.full_width', 'voodbuilder::layouts.full-width');
         }
 
         $layoutKey = $this->resolvedLayoutKey();
@@ -367,9 +367,9 @@ class SitePage extends Model implements HasRichContent
     protected function fallbackLayoutView(string $layoutKey): string
     {
         return match ($layoutKey) {
-            'full_width', 'home', 'landing' => config('vpress.layouts.full_width', 'vpress::layouts.full-width'),
-            'doc' => config('vpress.layouts.doc', 'vpress::layouts.doc'),
-            default => config('vpress.layouts.page', 'vpress::layouts.page'),
+            'full_width', 'home', 'landing' => config('voodbuilder.layouts.full_width', 'voodbuilder::layouts.full-width'),
+            'doc' => config('voodbuilder.layouts.doc', 'voodbuilder::layouts.doc'),
+            default => config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'),
         };
     }
 
@@ -397,7 +397,7 @@ class SitePage extends Model implements HasRichContent
             ->get() as $translation) {
             $alternates[] = new AlternateTag(
                 hreflang: (string) $translation->locale,
-                href: VpressUrls::page($translation),
+                href: VoodbuilderUrls::page($translation),
             );
         }
 

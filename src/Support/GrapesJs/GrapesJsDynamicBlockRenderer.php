@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use DOMDocument;
 use DOMElement;
 use DOMNode;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vevents\Support\EventRichContentContext;
-use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Voodbuilder\Models\SitePage;
 
 final class GrapesJsDynamicBlockRenderer
 {
@@ -20,7 +20,7 @@ final class GrapesJsDynamicBlockRenderer
 
     public function render(string $html, SitePage $page): string
     {
-        if (blank($html) || ! str_contains($html, 'data-vpress-block')) {
+        if (blank($html) || ! str_contains($html, 'data-voodbuilder-block')) {
             return $html;
         }
 
@@ -72,7 +72,7 @@ final class GrapesJsDynamicBlockRenderer
         $nodes = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-block')) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-block')) {
                 $nodes[] = $element;
             }
         }
@@ -89,8 +89,8 @@ final class GrapesJsDynamicBlockRenderer
         ?int $eventId,
         array $renderData,
     ): void {
-        $blockId = (string) $node->getAttribute('data-vpress-block');
-        $config = $this->decodeConfig((string) $node->getAttribute('data-vpress-config'));
+        $blockId = (string) $node->getAttribute('data-voodbuilder-block');
+        $config = $this->decodeConfig((string) $node->getAttribute('data-voodbuilder-config'));
 
         if ($eventId !== null && GrapesJsDefaultBlockConfig::needsEventId($blockId) && empty($config['event_id'])) {
             $config['event_id'] = $eventId;
@@ -175,8 +175,8 @@ final class GrapesJsDynamicBlockRenderer
     {
         foreach ($node->getElementsByTagName('*') as $element) {
             if ($element instanceof DOMElement && (
-                $element->hasAttribute('data-vpress-menu')
-                || $element->hasAttribute('data-vpress-brand')
+                $element->hasAttribute('data-voodbuilder-menu')
+                || $element->hasAttribute('data-voodbuilder-brand')
             )) {
                 return true;
             }

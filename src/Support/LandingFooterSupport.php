@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 class LandingFooterSupport
 {
@@ -85,11 +85,11 @@ class LandingFooterSupport
     public static function tailblocksVariantOptions(): array
     {
         return [
-            'a' => __('vpress::landing.footer.variants.a'),
-            'b' => __('vpress::landing.footer.variants.b'),
-            'c' => __('vpress::landing.footer.variants.c'),
-            'd' => __('vpress::landing.footer.variants.d'),
-            'e' => __('vpress::landing.footer.variants.e'),
+            'a' => __('voodbuilder::landing.footer.variants.a'),
+            'b' => __('voodbuilder::landing.footer.variants.b'),
+            'c' => __('voodbuilder::landing.footer.variants.c'),
+            'd' => __('voodbuilder::landing.footer.variants.d'),
+            'e' => __('voodbuilder::landing.footer.variants.e'),
         ];
     }
 

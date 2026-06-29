@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Vpress\Models\ModelIntegration;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationLatestBindingSource;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationLatestBindingSource;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ModelIntegrationBindingSourceTest extends TestCase
 {

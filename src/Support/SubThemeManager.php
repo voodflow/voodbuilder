@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class SubThemeManager
 {
@@ -36,8 +36,8 @@ final class SubThemeManager
         $definition = SubThemeLocator::definitionFor($id);
         $definition['label'] = $label;
 
-        if (! ConfigureSubThemesForVpress::upsertInConfig($id, $definition)) {
-            return new SubThemeOperationResult(false, $id, 'Could not update config/vpress.php.');
+        if (! ConfigureSubThemesForVoodbuilder::upsertInConfig($id, $definition)) {
+            return new SubThemeOperationResult(false, $id, 'Could not update config/voodbuilder.php.');
         }
 
         app(SubThemeRegistry::class)->register($id, $definition);
@@ -71,8 +71,8 @@ final class SubThemeManager
         $definition['label'] = $label;
         $definition['description'] = trim((string) $description);
 
-        if (! ConfigureSubThemesForVpress::upsertInConfig($id, $definition)) {
-            return new SubThemeOperationResult(false, $id, 'Could not update config/vpress.php.');
+        if (! ConfigureSubThemesForVoodbuilder::upsertInConfig($id, $definition)) {
+            return new SubThemeOperationResult(false, $id, 'Could not update config/voodbuilder.php.');
         }
 
         app(SubThemeRegistry::class)->register($id, $definition);
@@ -102,8 +102,8 @@ final class SubThemeManager
             return new SubThemeOperationResult(false, $id, "Fallback theme \"{$fallbackId}\" is not registered.");
         }
 
-        if (! ConfigureSubThemesForVpress::removeFromConfig($id)) {
-            return new SubThemeOperationResult(false, $id, 'Theme is not registered in config/vpress.php.');
+        if (! ConfigureSubThemesForVoodbuilder::removeFromConfig($id)) {
+            return new SubThemeOperationResult(false, $id, 'Theme is not registered in config/voodbuilder.php.');
         }
 
         if (is_dir($location->themeRoot)) {
@@ -207,8 +207,8 @@ final class SubThemeManager
             File::moveDirectory($location->viewsRoot, $newViewsDir);
         }
 
-        ConfigureSubThemesForVpress::removeFromConfig($fromId);
-        ConfigureSubThemesForVpress::upsertInConfig($toId, $definition);
+        ConfigureSubThemesForVoodbuilder::removeFromConfig($fromId);
+        ConfigureSubThemesForVoodbuilder::upsertInConfig($toId, $definition);
         SyncThemeStylesheetImports::sync();
         self::migrateThemeReferences($fromId, $toId);
 
@@ -232,7 +232,7 @@ final class SubThemeManager
 
     protected static function purgeThemeReferences(string $id, string $fallbackId): void
     {
-        $data = VpressSettings::data();
+        $data = VoodbuilderSettings::data();
 
         $updates = [];
 
@@ -262,7 +262,7 @@ final class SubThemeManager
         }
 
         if ($updates !== []) {
-            VpressSettings::saveData($updates);
+            VoodbuilderSettings::saveData($updates);
         }
 
         SitePage::query()
@@ -272,7 +272,7 @@ final class SubThemeManager
 
     protected static function migrateThemeReferences(string $fromId, string $toId): void
     {
-        $data = VpressSettings::data();
+        $data = VoodbuilderSettings::data();
         $updates = [];
 
         if (($data['sub_theme'] ?? null) === $fromId) {
@@ -302,7 +302,7 @@ final class SubThemeManager
         }
 
         if ($updates !== []) {
-            VpressSettings::saveData($updates);
+            VoodbuilderSettings::saveData($updates);
         }
 
         SitePage::query()

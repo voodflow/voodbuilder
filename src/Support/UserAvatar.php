@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -24,7 +24,7 @@ final class UserAvatar
             return null;
         }
 
-        $disk = (string) config('vpress.account.avatar.disk', 'public');
+        $disk = (string) config('voodbuilder.account.avatar.disk', 'public');
 
         return Storage::disk($disk)->url((string) $user->avatar);
     }

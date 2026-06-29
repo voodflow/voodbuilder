@@ -4,11 +4,11 @@
 
 @php
     use Illuminate\Support\Facades\Route;
-    use Voodflow\Vpress\Models\VpressSettings;
-    use Voodflow\Vpress\Support\AdminAccess;
-    use Voodflow\Vpress\Support\Navigation;
-    use Voodflow\Vpress\Support\UserAvatar;
-    use Voodflow\Vpress\Support\VpressUrls;
+    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\AdminAccess;
+    use Voodflow\Voodbuilder\Support\Navigation;
+    use Voodflow\Voodbuilder\Support\UserAvatar;
+    use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
     $mainItems = Navigation::items('main');
     $extraItems = Navigation::items('header_extra');
@@ -20,40 +20,40 @@
     $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
         && \Voodflow\Vdocs\Support\DocNavigation::enabled()
         && \Voodflow\Vdocs\Support\DocNavigation::isActive();
-    $showNotificationBell = (bool) VpressSettings::get('show_notification_bell', true);
-    $showThemeToggle = (bool) VpressSettings::get('show_theme_toggle', true);
-    $showAccountLink = (bool) VpressSettings::get('show_account_link', true);
-    $searchEnabled = Route::has('vpress.search');
+    $showNotificationBell = (bool) VoodbuilderSettings::get('show_notification_bell', true);
+    $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
+    $showAccountLink = (bool) VoodbuilderSettings::get('show_account_link', true);
+    $searchEnabled = Route::has('voodbuilder.search');
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
-    $brandName = VpressSettings::brandName();
-    $logoMobileUrl = VpressSettings::logoMobileUrl();
-    $logoUrl = VpressSettings::logoUrl();
+    $brandName = VoodbuilderSettings::brandName();
+    $logoMobileUrl = VoodbuilderSettings::logoMobileUrl();
+    $logoUrl = VoodbuilderSettings::logoUrl();
     $cookieConsent = function_exists('cookie_consent_settings') ? cookie_consent_settings() : null;
 @endphp
 
 <div
-    class="vpress-mobile-nav"
+    class="voodbuilder-mobile-nav"
     data-mobile-nav
     hidden
     aria-hidden="true"
 >
     <div
-        class="vpress-mobile-nav__overlay"
+        class="voodbuilder-mobile-nav__overlay"
         data-mobile-nav-close
         tabindex="-1"
         aria-hidden="true"
     ></div>
 
     <nav
-        id="vpress-mobile-nav"
-        class="vpress-mobile-nav__panel"
+        id="voodbuilder-mobile-nav"
+        class="voodbuilder-mobile-nav__panel"
         aria-label="{{ __('Mobile navigation') }}"
         data-mobile-nav-panel
     >
-        <div class="vpress-mobile-nav__header">
-            <div class="vpress-mobile-nav__brand">
-                <a href="{{ VpressUrls::home() }}" data-mobile-nav-close>
+        <div class="voodbuilder-mobile-nav__header">
+            <div class="voodbuilder-mobile-nav__brand">
+                <a href="{{ VoodbuilderUrls::home() }}" data-mobile-nav-close>
                     @if ($logoMobileUrl || $logoUrl)
                         <img
                             src="{{ $logoMobileUrl ?? $logoUrl }}"
@@ -69,7 +69,7 @@
 
             <button
                 type="button"
-                class="vpress-mobile-nav__close"
+                class="voodbuilder-mobile-nav__close"
                 data-mobile-nav-close
                 aria-label="{{ __('Close menu') }}"
             >
@@ -79,51 +79,51 @@
             </button>
         </div>
 
-        <div class="vpress-mobile-nav__body">
+        <div class="voodbuilder-mobile-nav__body">
             @if ($mainItems->isNotEmpty())
-                <ul class="vpress-mobile-nav__links">
+                <ul class="voodbuilder-mobile-nav__links">
                     @foreach ($mainItems as $item)
-                        <x-vpress::menu-nav-item :item="$item" :mobile="true" />
+                        <x-voodbuilder::menu-nav-item :item="$item" :mobile="true" />
                     @endforeach
                 </ul>
             @endif
 
             @if ($extraItems->isNotEmpty())
-                <div @class(['vpress-mobile-nav__section' => $mainItems->isNotEmpty()])>
-                    <ul class="vpress-mobile-nav__links">
+                <div @class(['voodbuilder-mobile-nav__section' => $mainItems->isNotEmpty()])>
+                    <ul class="voodbuilder-mobile-nav__links">
                         @foreach ($extraItems as $item)
-                            <x-vpress::menu-nav-item :item="$item" :mobile="true" />
+                            <x-voodbuilder::menu-nav-item :item="$item" :mobile="true" />
                         @endforeach
                     </ul>
                 </div>
             @endif
 
             @if ($docSections->isNotEmpty())
-                <div @class(['vpress-mobile-nav__section' => $mainItems->isNotEmpty() || $extraItems->isNotEmpty()])>
-                    <ul class="vpress-mobile-nav__links">
-                        <x-vpress::mobile-docs-nav :sections="$docSections" :active="$docsNavActive" />
+                <div @class(['voodbuilder-mobile-nav__section' => $mainItems->isNotEmpty() || $extraItems->isNotEmpty()])>
+                    <ul class="voodbuilder-mobile-nav__links">
+                        <x-voodbuilder::mobile-docs-nav :sections="$docSections" :active="$docsNavActive" />
                     </ul>
                 </div>
             @endif
         </div>
 
-        <div class="vpress-mobile-nav__footer">
-            <div class="vpress-mobile-nav__toolbar">
+        <div class="voodbuilder-mobile-nav__footer">
+            <div class="voodbuilder-mobile-nav__toolbar">
                 @if ($searchEnabled)
                     <a
-                        href="{{ VpressUrls::search() }}"
-                        class="vpress-mobile-nav__tool"
+                        href="{{ VoodbuilderUrls::search() }}"
+                        class="voodbuilder-mobile-nav__tool"
                         data-mobile-nav-close
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
-                        <span>{{ __('vpress::search.button') }}</span>
+                        <span>{{ __('voodbuilder::search.button') }}</span>
                     </a>
                 @endif
 
                 @if (class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class) && \Voodflow\Vtuts\Support\LocaleSwitcher::visible())
-                    <div class="vpress-mobile-nav__tool">
+                    <div class="voodbuilder-mobile-nav__tool">
                         <x-vtuts::language-switcher />
                     </div>
                 @endif
@@ -131,7 +131,7 @@
                 @if ($showThemeToggle)
                     <button
                         type="button"
-                        class="vpress-mobile-nav__tool"
+                        class="voodbuilder-mobile-nav__tool"
                         data-theme-toggle
                         aria-label="{{ __('Toggle appearance') }}"
                         aria-pressed="false"
@@ -144,67 +144,67 @@
             </div>
 
             @auth
-                @if (config('vpress.notifications.enabled', true) && $showNotificationBell)
-                    <div class="vpress-mobile-nav__section">
-                        <livewire:vpress.site-notification-bell wire:key="nav-bell-mobile" />
+                @if (config('voodbuilder.notifications.enabled', true) && $showNotificationBell)
+                    <div class="voodbuilder-mobile-nav__section">
+                        <livewire:voodbuilder.site-notification-bell wire:key="nav-bell-mobile" />
                     </div>
                 @endif
 
-                <div class="vpress-mobile-nav__actions">
-                    @if ($showAccountLink && config('vpress.account.enabled', true) && Route::has('vpress.account'))
-                        <a href="{{ route('vpress.account') }}" class="vpress-mobile-nav__account" data-mobile-nav-close>
+                <div class="voodbuilder-mobile-nav__actions">
+                    @if ($showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account'))
+                        <a href="{{ route('voodbuilder.account') }}" class="voodbuilder-mobile-nav__account" data-mobile-nav-close>
                             @if ($avatarUrl)
                                 <img src="{{ $avatarUrl }}" alt="">
                             @endif
-                            <span>{{ __('vpress::account.nav') }}</span>
+                            <span>{{ __('voodbuilder::account.nav') }}</span>
                         </a>
                     @endif
 
-                    @foreach (\Voodflow\Vpress\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
-                        <a href="{{ $profileMenuLink['url'] }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
+                    @foreach (\Voodflow\Voodbuilder\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
+                        <a href="{{ $profileMenuLink['url'] }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
                             {{ $profileMenuLink['label'] }}
                         </a>
                     @endforeach
 
                     @if (AdminAccess::userCanAccessPanel())
-                        <a href="{{ AdminAccess::panelUrl() }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
+                        <a href="{{ AdminAccess::panelUrl() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
                             {{ __('Admin') }}
                         </a>
                     @endif
 
-                    <form method="POST" action="{{ VpressUrls::logout() }}">
+                    <form method="POST" action="{{ VoodbuilderUrls::logout() }}">
                         @csrf
-                        <button type="submit" class="vpress-mobile-nav__action">
-                            {{ __('vpress::auth.logout') }}
+                        <button type="submit" class="voodbuilder-mobile-nav__action">
+                            {{ __('voodbuilder::auth.logout') }}
                         </button>
                     </form>
                 </div>
             @else
-                <div class="vpress-mobile-nav__actions">
-                    <a href="{{ VpressUrls::login() }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
-                        {{ __('vpress::auth.login') }}
+                <div class="voodbuilder-mobile-nav__actions">
+                    <a href="{{ VoodbuilderUrls::login() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                        {{ __('voodbuilder::auth.login') }}
                     </a>
-                    @if (config('vpress.auth.registration_enabled', true))
-                        <a href="{{ VpressUrls::register() }}" class="vpress-mobile-nav__action" data-mobile-nav-close>
-                            {{ __('vpress::auth.register') }}
+                    @if (config('voodbuilder.auth.registration_enabled', true))
+                        <a href="{{ VoodbuilderUrls::register() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                            {{ __('voodbuilder::auth.register') }}
                         </a>
                     @endif
                 </div>
             @endauth
 
             @if ($cookieConsent && filled($cookieConsent->content_href))
-                <div class="vpress-mobile-nav__legal">
+                <div class="voodbuilder-mobile-nav__legal">
                     <a
                         href="{{ $cookieConsent->content_href }}"
-                        class="vpress-mobile-nav__cookie-link"
+                        class="voodbuilder-mobile-nav__cookie-link"
                         @if (filled($cookieConsent->content_target)) target="{{ $cookieConsent->content_target }}" @endif
                         data-mobile-nav-close
                     >
                         {{ $cookieConsent->content_policy }}
                     </a>
-                    <span class="vpress-mobile-nav__legal-separator" aria-hidden="true">·</span>
-                    <button type="button" class="vpress-mobile-nav__cookie-link" data-cookie-preferences>
-                        {{ __('vpress::nav.cookie_settings') }}
+                    <span class="voodbuilder-mobile-nav__legal-separator" aria-hidden="true">·</span>
+                    <button type="button" class="voodbuilder-mobile-nav__cookie-link" data-cookie-preferences>
+                        {{ __('voodbuilder::nav.cookie_settings') }}
                     </button>
                 </div>
             @endif

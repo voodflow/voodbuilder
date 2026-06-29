@@ -1,26 +1,26 @@
 @php
-    use Voodflow\Vpress\Models\VpressSettings;
-    use Voodflow\Vpress\Support\UserAvatar;
+    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\UserAvatar;
 
-    $showThemeToggle = (bool) VpressSettings::get('show_theme_toggle', true);
-    $showAccountLink = (bool) VpressSettings::get('show_account_link', true);
-    $accountEnabled = $showAccountLink && config('vpress.account.enabled', true) && Route::has('vpress.account');
+    $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
+    $showAccountLink = (bool) VoodbuilderSettings::get('show_account_link', true);
+    $accountEnabled = $showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account');
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
 @endphp
 
 <div
-    class="vpress-nav-profile-menu relative"
+    class="voodbuilder-nav-profile-menu relative"
     x-data="{ open: false }"
     @click.outside="open = false"
     @keydown.escape.window="open = false"
 >
     <button
         type="button"
-        class="vpress-header-icon-btn"
+        class="voodbuilder-header-icon-btn"
         aria-haspopup="menu"
         :aria-expanded="open"
-        aria-label="{{ __('vpress::nav.menu_aria') }}"
+        aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
         @click="open = ! open"
     >
         @if ($avatarUrl)
@@ -37,12 +37,12 @@
         x-cloak
         x-transition
         role="menu"
-        class="vpress-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+        class="voodbuilder-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
     >
         @auth
             @if ($accountEnabled)
                 <a
-                    href="{{ route('vpress.account') }}"
+                    href="{{ route('voodbuilder.account') }}"
                     role="menuitem"
                     class="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
                 >
@@ -53,7 +53,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                     @endif
-                    <span>{{ __('vpress::account.nav') }}</span>
+                    <span>{{ __('voodbuilder::account.nav') }}</span>
                 </a>
                 <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
             @endif
@@ -84,7 +84,7 @@
         @endif
 
         @auth
-            @foreach (\Voodflow\Vpress\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
+            @foreach (\Voodflow\Voodbuilder\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
                 <a
                     href="{{ $profileMenuLink['url'] }}"
                     role="menuitem"
@@ -95,9 +95,9 @@
                 <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
             @endforeach
 
-            @if(\Voodflow\Vpress\Support\AdminAccess::userCanAccessPanel())
+            @if(\Voodflow\Voodbuilder\Support\AdminAccess::userCanAccessPanel())
                 <a
-                    href="{{ \Voodflow\Vpress\Support\AdminAccess::panelUrl() }}"
+                    href="{{ \Voodflow\Voodbuilder\Support\AdminAccess::panelUrl() }}"
                     role="menuitem"
                     class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
                 >
@@ -105,31 +105,31 @@
                 </a>
             @endif
 
-            <form method="POST" action="{{ \Voodflow\Vpress\Support\VpressUrls::logout() }}">
+            <form method="POST" action="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::logout() }}">
                 @csrf
                 <button
                     type="submit"
                     role="menuitem"
                     class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
                 >
-                    {{ __('vpress::auth.logout') }}
+                    {{ __('voodbuilder::auth.logout') }}
                 </button>
             </form>
         @else
             <a
-                href="{{ \Voodflow\Vpress\Support\VpressUrls::login() }}"
+                href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::login() }}"
                 role="menuitem"
                 class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
             >
-                {{ __('vpress::auth.login') }}
+                {{ __('voodbuilder::auth.login') }}
             </a>
-            @if (config('vpress.auth.registration_enabled', true))
+            @if (config('voodbuilder.auth.registration_enabled', true))
                 <a
-                    href="{{ \Voodflow\Vpress\Support\VpressUrls::register() }}"
+                    href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::register() }}"
                     role="menuitem"
                     class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
                 >
-                    {{ __('vpress::auth.register') }}
+                    {{ __('voodbuilder::auth.register') }}
                 </a>
             @endif
         @endauth

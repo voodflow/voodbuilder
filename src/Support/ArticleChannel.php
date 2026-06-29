@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\View;
 
@@ -50,12 +50,12 @@ final class ArticleChannel
 
     public static function shellClassPrefix(): string
     {
-        return 'vpress-'.self::presentationFamily();
+        return 'voodbuilder-'.self::presentationFamily();
     }
 
     public static function bodyClass(): string
     {
-        return 'vpress-sub-theme-'.self::presentationFamily().' vpress-has-reading-progress';
+        return 'voodbuilder-sub-theme-'.self::presentationFamily().' voodbuilder-has-reading-progress';
     }
 
     public static function layoutView(string $layoutKey): string
@@ -70,7 +70,7 @@ final class ArticleChannel
 
         $fallback = $registry->layout('blog', $layoutKey);
 
-        return $fallback ?? 'vpress::themes.blog.layouts.'.$layoutKey;
+        return $fallback ?? 'voodbuilder::themes.blog.layouts.'.$layoutKey;
     }
 
     public static function contentYieldName(string $layoutKey): string
@@ -89,12 +89,12 @@ final class ArticleChannel
 
     public static function inkPartialFor(string $family, string $name): string
     {
-        $candidate = "vpress::article-channel.ink.{$family}.{$name}";
+        $candidate = "voodbuilder::article-channel.ink.{$family}.{$name}";
 
         if (View::exists($candidate)) {
             return $candidate;
         }
 
-        return "vpress::article-channel.ink.blog.{$name}";
+        return "voodbuilder::article-channel.ink.blog.{$name}";
     }
 }

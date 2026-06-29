@@ -1,7 +1,7 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
-    use Voodflow\Vpress\Support\LandingBlockSupport;
-    use Voodflow\Vpress\Support\ResolvableLinkSupport;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockSupport;
+    use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
 
     $section = LandingBlockContent::section($config, ['section_width' => 'contained']);
     $buttonUrl = ResolvableLinkSupport::resolve($config, 'button', 'button_url');
@@ -22,8 +22,8 @@
 
         @if (filled($buttonUrl))
             <div class="mt-2 flex flex-wrap gap-3 {{ $config['text_align'] === 'left' ? 'justify-start' : 'justify-center' }}">
-                @include('vpress::blocks.landing.partials.button', [
-                    'label' => $config['button_label'] ?? __('vpress::landing.learn_more'),
+                @include('voodbuilder::blocks.landing.partials.button', [
+                    'label' => $config['button_label'] ?? __('voodbuilder::landing.learn_more'),
                     'url' => $buttonUrl,
                     'class' => LandingBlockSupport::primaryButtonClass((string) ($config['button_style'] ?? 'solid'), $section['onDark']),
                     'open_in_new_tab' => ResolvableLinkSupport::opensInNewTab($config, 'button'),

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\CustomBlocks;
+namespace Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class PackagePromosBlock extends RichContentCustomBlock
 {
@@ -63,11 +63,11 @@ class PackagePromosBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.package-promos', ['config' => $config]);
+        return RichContentBlockPreview::render('voodbuilder::blocks.package-promos', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.package-promos', ['config' => $config])->render();
+        return view('voodbuilder::blocks.package-promos', ['config' => $config])->render();
     }
 }

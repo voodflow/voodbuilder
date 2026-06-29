@@ -1,9 +1,9 @@
-@extends(config('vpress.layouts.page', 'vpress::layouts.page'))
+@extends(config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'))
 
 @section('page')
     <div class="mx-auto max-w-lg">
-        <h1 class="mb-2 text-3xl font-bold text-vp-text-1">{{ __('vpress::auth.forgot_password_title') }}</h1>
-        <p class="mb-8 text-vp-text-2">{{ __('vpress::auth.forgot_password_lead') }}</p>
+        <h1 class="mb-2 text-3xl font-bold text-vp-text-1">{{ __('voodbuilder::auth.forgot_password_title') }}</h1>
+        <p class="mb-8 text-vp-text-2">{{ __('voodbuilder::auth.forgot_password_lead') }}</p>
 
         @if (session('status'))
             <p
@@ -19,7 +19,7 @@
                 @csrf
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="forgot-email">{{ __('vpress::auth.email') }}</label>
+                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="forgot-email">{{ __('voodbuilder::auth.email') }}</label>
                     <input
                         id="forgot-email"
                         type="email"
@@ -34,13 +34,13 @@
                 </div>
 
                 <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-vp-brand-3 px-5 text-sm font-medium text-white transition-colors hover:bg-vp-brand-2">
-                    {{ __('vpress::auth.forgot_password_submit') }}
+                    {{ __('voodbuilder::auth.forgot_password_submit') }}
                 </button>
             </form>
         </section>
 
         <p class="mt-6 text-center text-sm text-vp-text-2">
-            <a href="{{ route('login') }}" class="font-medium text-vp-brand-1 hover:text-vp-brand-2">{{ __('vpress::auth.back_to_login') }}</a>
+            <a href="{{ route('login') }}" class="font-medium text-vp-brand-1 hover:text-vp-brand-2">{{ __('voodbuilder::auth.back_to_login') }}</a>
         </p>
     </div>
 @endsection

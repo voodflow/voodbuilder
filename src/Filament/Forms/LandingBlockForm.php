@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Forms;
+namespace Voodflow\Voodbuilder\Filament\Forms;
 
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
@@ -10,9 +10,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
-use Voodflow\Vpress\Support\LandingBlockContent;
-use Voodflow\Vpress\Support\LandingBlockMedia;
-use Voodflow\Vpress\Support\LandingBlockSupport;
+use Voodflow\Voodbuilder\Support\LandingBlockContent;
+use Voodflow\Voodbuilder\Support\LandingBlockMedia;
+use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 
 final class LandingBlockForm
 {
@@ -21,23 +21,23 @@ final class LandingBlockForm
     {
         return [
             Select::make('background_style')
-                ->label(__('vpress::landing.fields.background_style'))
+                ->label(__('voodbuilder::landing.fields.background_style'))
                 ->options(LandingBlockSupport::backgroundStyleOptions())
                 ->default('solid')
                 ->live(),
             ...self::backgroundToneFields($defaultTone, fn (Get $get): bool => $get('background_style') !== 'image'),
             self::imageUpload(
                 LandingBlockContent::FIELD_BACKGROUND_IMAGE,
-                __('vpress::landing.fields.background_image'),
+                __('voodbuilder::landing.fields.background_image'),
                 [
                     'visible' => fn (Get $get): bool => $get('background_style') === 'image',
                     'required' => fn (Get $get): bool => $get('background_style') === 'image',
                     'preview_height' => '120',
-                    'helper' => __('vpress::landing.helpers.background_image'),
+                    'helper' => __('voodbuilder::landing.helpers.background_image'),
                 ],
             ),
             TextInput::make('overlay_opacity')
-                ->label(__('vpress::landing.fields.overlay_opacity'))
+                ->label(__('voodbuilder::landing.fields.overlay_opacity'))
                 ->numeric()
                 ->default(55)
                 ->minValue(0)
@@ -54,14 +54,14 @@ final class LandingBlockForm
     {
         return [
             Select::make('background_tone')
-                ->label(__('vpress::landing.fields.background_tone'))
+                ->label(__('voodbuilder::landing.fields.background_tone'))
                 ->options(LandingBlockSupport::backgroundToneOptions())
                 ->default($defaultTone)
                 ->live()
                 ->visible($visible ?? true),
             ColorPicker::make('background_color')
-                ->label(__('vpress::landing.fields.background_color'))
-                ->helperText(__('vpress::landing.helpers.background_color'))
+                ->label(__('voodbuilder::landing.fields.background_color'))
+                ->helperText(__('voodbuilder::landing.helpers.background_color'))
                 ->visible(fn (Get $get): bool => ($visible === null || $visible($get)) && $get('background_tone') === 'custom')
                 ->required(fn (Get $get): bool => ($visible === null || $visible($get)) && $get('background_tone') === 'custom'),
         ];
@@ -72,7 +72,7 @@ final class LandingBlockForm
     {
         return [
             Select::make('text_align')
-                ->label(__('vpress::landing.fields.text_align'))
+                ->label(__('voodbuilder::landing.fields.text_align'))
                 ->options(LandingBlockSupport::textAlignOptions())
                 ->default('center'),
         ];
@@ -83,12 +83,12 @@ final class LandingBlockForm
     {
         return [
             Select::make('section_width')
-                ->label(__('vpress::landing.fields.section_width'))
+                ->label(__('voodbuilder::landing.fields.section_width'))
                 ->options(LandingBlockSupport::sectionWidthOptions())
                 ->default($defaultWidth)
-                ->helperText(__('vpress::landing.helpers.section_width')),
+                ->helperText(__('voodbuilder::landing.helpers.section_width')),
             Select::make('section_padding')
-                ->label(__('vpress::landing.fields.section_padding'))
+                ->label(__('voodbuilder::landing.fields.section_padding'))
                 ->options(LandingBlockSupport::sectionPaddingOptions())
                 ->default($defaultPadding),
         ];
@@ -99,10 +99,10 @@ final class LandingBlockForm
     {
         return [
             Select::make('content_width')
-                ->label(__('vpress::landing.fields.content_width'))
+                ->label(__('voodbuilder::landing.fields.content_width'))
                 ->options([
-                    'wide' => __('vpress::landing.content_width.wide'),
-                    'narrow' => __('vpress::landing.content_width.narrow'),
+                    'wide' => __('voodbuilder::landing.content_width.wide'),
+                    'narrow' => __('voodbuilder::landing.content_width.narrow'),
                 ])
                 ->default($default),
         ];
@@ -113,12 +113,12 @@ final class LandingBlockForm
     {
         return [
             TextInput::make('primary_button_label')
-                ->label(__('vpress::landing.fields.primary_button_label')),
+                ->label(__('voodbuilder::landing.fields.primary_button_label')),
             ...ResolvableLinkForm::fields('primary_button', [
-                'type_label' => __('vpress::landing.fields.primary_button_url'),
+                'type_label' => __('voodbuilder::landing.fields.primary_button_url'),
             ]),
             Select::make('primary_button_style')
-                ->label(__('vpress::landing.fields.button_style'))
+                ->label(__('voodbuilder::landing.fields.button_style'))
                 ->options(LandingBlockSupport::buttonStyleOptions())
                 ->default('solid'),
         ];
@@ -129,9 +129,9 @@ final class LandingBlockForm
     {
         return [
             TextInput::make('secondary_button_label')
-                ->label(__('vpress::landing.fields.secondary_button_label')),
+                ->label(__('voodbuilder::landing.fields.secondary_button_label')),
             ...ResolvableLinkForm::fields('secondary_button', [
-                'type_label' => __('vpress::landing.fields.secondary_button_url'),
+                'type_label' => __('voodbuilder::landing.fields.secondary_button_url'),
             ]),
         ];
     }
@@ -141,7 +141,7 @@ final class LandingBlockForm
     {
         return [
             Toggle::make('tall')
-                ->label(__('vpress::landing.fields.tall_hero')),
+                ->label(__('voodbuilder::landing.fields.tall_hero')),
         ];
     }
 
@@ -155,7 +155,7 @@ final class LandingBlockForm
      */
     public static function imageUpload(string $field, string $label, array $options = []): FileUpload
     {
-        $disk = (string) config('vpress.uploads.disk', 'public');
+        $disk = (string) config('voodbuilder.uploads.disk', 'public');
 
         $upload = FileUpload::make($field)
             ->label($label)
@@ -163,7 +163,7 @@ final class LandingBlockForm
             ->directory(LandingBlockMedia::uploadDirectory())
             ->visibility('public')
             ->acceptedFileTypes(LandingBlockMedia::imageMimeTypes())
-            ->maxSize((int) config('vpress.uploads.max_size', 2048))
+            ->maxSize((int) config('voodbuilder.uploads.max_size', 2048))
             ->imagePreviewHeight($options['preview_height'] ?? '150');
 
         if (isset($options['helper'])) {

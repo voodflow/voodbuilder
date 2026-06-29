@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 abstract class AbstractSiteFooterVariantBlock implements GrapesJsServerBlock
 {
@@ -19,7 +19,7 @@ abstract class AbstractSiteFooterVariantBlock implements GrapesJsServerBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::pro.grapesjs.blocks.site_footer_'.static::variant());
+        return __('voodbuilder::pro.grapesjs.blocks.site_footer_'.static::variant());
     }
 
     public static function defaultConfig(): array
@@ -44,7 +44,7 @@ abstract class AbstractSiteFooterVariantBlock implements GrapesJsServerBlock
      */
     protected static function renderShell(array $config, bool $preview): string
     {
-        $inner = view('vpress::grapesjs.blocks.footers.'.static::variant(), [
+        $inner = view('voodbuilder::grapesjs.blocks.footers.'.static::variant(), [
             'config' => $config,
             'preview' => $preview,
         ])->render();

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
-use Voodflow\Vpress\Models\ModelIntegration;
-use Voodflow\Vpress\Support\PublicDiskUrl;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Support\PublicDiskUrl;
 
 abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingSource
 {
@@ -23,7 +23,7 @@ abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingS
 
     public function packageLabel(): string
     {
-        return __('vpress::model_integrations.bindings.package');
+        return __('voodbuilder::model_integrations.bindings.package');
     }
 
     public function label(): string

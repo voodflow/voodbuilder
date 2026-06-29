@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
-use Voodflow\Vpress\Support\SyncThemeStylesheetImports;
+use Voodflow\Voodbuilder\Support\SyncThemeStylesheetImports;
 
 class SyncThemeStylesheetImportsCommand extends Command
 {
-    protected $signature = 'vpress:sync-theme-imports';
+    protected $signature = 'voodbuilder:sync-theme-imports';
 
-    protected $description = 'Prune missing app theme @imports from the vpress CSS bundle and add imports for existing app themes';
+    protected $description = 'Prune missing app theme @imports from the voodbuilder CSS bundle and add imports for existing app themes';
 
     public function handle(): int
     {

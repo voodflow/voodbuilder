@@ -15,7 +15,7 @@
                 button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
             });
 
-            window.dispatchEvent(new CustomEvent('vpress:theme-changed', {
+            window.dispatchEvent(new CustomEvent('voodbuilder:theme-changed', {
                 detail: {
                     isDark,
                 },
@@ -143,7 +143,7 @@
             }
 
             mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.classList.toggle('vpress-mobile-nav-open', open);
+            document.body.classList.toggle('voodbuilder-mobile-nav-open', open);
             setScrollLocked(open);
         }
 
@@ -168,10 +168,10 @@
         });
 
         const article = document.querySelector(
-            '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-vpress-article]',
+            '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-voodbuilder-article]',
         );
         const bar = document.querySelector('[data-reading-progress]');
-        const progressTrack = bar?.closest('[data-vpress-progress]');
+        const progressTrack = bar?.closest('[data-voodbuilder-progress]');
         const isPageScrollable = () => document.documentElement.scrollHeight > window.innerHeight + 2;
 
         const getOutlineScrollOffset = () => {
@@ -235,12 +235,12 @@
             window.addEventListener('load', updateProgress);
         }
 
-        const searchRoot = document.querySelector('[data-vpress-search]');
+        const searchRoot = document.querySelector('[data-voodbuilder-search]');
 
         if (searchRoot) {
-            const searchDialog = searchRoot.querySelector('[data-vpress-search-dialog]');
-            const searchOpen = searchRoot.querySelector('[data-vpress-search-open]');
-            const searchInput = searchRoot.querySelector('[data-vpress-search-input]');
+            const searchDialog = searchRoot.querySelector('[data-voodbuilder-search-dialog]');
+            const searchOpen = searchRoot.querySelector('[data-voodbuilder-search-open]');
+            const searchInput = searchRoot.querySelector('[data-voodbuilder-search-input]');
 
             function setSearchOpen(open) {
                 if (! searchDialog || ! searchOpen) {
@@ -261,7 +261,7 @@
                 setSearchOpen(searchDialog.hidden);
             });
 
-            searchRoot.querySelectorAll('[data-vpress-search-close]').forEach((element) => {
+            searchRoot.querySelectorAll('[data-voodbuilder-search-close]').forEach((element) => {
                 element.addEventListener('click', () => setSearchOpen(false));
             });
 
@@ -306,7 +306,7 @@
         const outlineLinks = [...document.querySelectorAll('[data-toc-link]')];
 
         if (outlineLinks.length > 0 && ! window.__vpOutlineScrollSpy) {
-            window.__vpOutlineScrollSpy = 'vpress';
+            window.__vpOutlineScrollSpy = 'voodbuilder';
             const entriesById = new Map();
 
             outlineLinks.forEach((link) => {
@@ -481,7 +481,7 @@
                 });
 
                 const outlineWatchTarget = document.querySelector(
-                    '[data-doc-article], [data-vdocs-article], [data-vpress-article], .vp-doc',
+                    '[data-doc-article], [data-vdocs-article], [data-voodbuilder-article], .vp-doc',
                 );
 
                 if (outlineWatchTarget && typeof ResizeObserver !== 'undefined') {

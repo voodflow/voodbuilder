@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\GrapesJs\TailblocksThemeTokenMigrator;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\GrapesJs\TailblocksThemeTokenMigrator;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class TailblocksThemeTokenMigratorTest extends TestCase
 {
@@ -15,7 +15,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
         $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('vpress-gjs-section', $migrated);
+        $this->assertStringContainsString('voodbuilder-gjs-section', $migrated);
         $this->assertStringContainsString('bg-vp-bg-elv', $migrated);
         $this->assertStringContainsString('text-vp-text-2', $migrated);
         $this->assertStringContainsString('text-vp-text-1', $migrated);
@@ -29,7 +29,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
         $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('vpress-gjs-section bg-vp-bg', $migrated);
+        $this->assertStringContainsString('voodbuilder-gjs-section bg-vp-bg', $migrated);
     }
 
     public function test_migrates_inline_light_background_to_theme_variable(): void
@@ -62,20 +62,20 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_migrates_legacy_button_class_to_theme_utilities(): void
     {
-        $classes = TailblocksThemeTokenMigrator::migrateClassList('vpress-gjs-btn-primary inline-flex text-white');
+        $classes = TailblocksThemeTokenMigrator::migrateClassList('voodbuilder-gjs-btn-primary inline-flex text-white');
 
-        $this->assertStringNotContainsString('vpress-gjs-btn-primary', $classes);
+        $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $classes);
         $this->assertStringContainsString('bg-vp-brand-1', $classes);
         $this->assertStringContainsString('hover:bg-vp-brand-2', $classes);
     }
 
     public function test_strips_legacy_button_css_rules(): void
     {
-        $css = '.vpress-gjs-btn-primary { background-color: #6366f1; } .vpress-gjs-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
+        $css = '.voodbuilder-gjs-btn-primary { background-color: #6366f1; } .voodbuilder-gjs-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
 
         $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
 
-        $this->assertStringNotContainsString('vpress-gjs-btn-primary', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $migrated);
         $this->assertStringContainsString('.safe { color: red; }', $migrated);
     }
 
@@ -127,7 +127,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $project = [
             'styles' => [
                 [
-                    'selectors' => ['vpress-gjs-btn-primary'],
+                    'selectors' => ['voodbuilder-gjs-btn-primary'],
                     'style' => [
                         'background-color' => 'rgb(99, 102, 241)',
                         'color' => 'rgb(255, 255, 255)',
@@ -142,7 +142,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
                         'components' => [[
                             'tagName' => 'a',
                             'classes' => [
-                                'vpress-gjs-btn-primary',
+                                'voodbuilder-gjs-btn-primary',
                                 'inline-flex',
                                 'text-white',
                                 'hover:bg-vp-brand-3',
@@ -157,7 +157,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $classes = $migrated['pages'][0]['frames'][0]['component']['components'][0]['classes'];
 
         $this->assertSame([], $migrated['styles']);
-        $this->assertNotContains('vpress-gjs-btn-primary', $classes);
+        $this->assertNotContains('voodbuilder-gjs-btn-primary', $classes);
         $this->assertContains('bg-vp-brand-1', $classes);
         $this->assertContains('hover:bg-vp-brand-2', $classes);
         $this->assertNotContains('hover:bg-vp-brand-3', $classes);
@@ -182,7 +182,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     public function test_dedupes_conflicting_hover_brand_classes_after_legacy_button_migration(): void
     {
         $classes = TailblocksThemeTokenMigrator::migrateClassList(
-            'vpress-gjs-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
+            'voodbuilder-gjs-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
         );
 
         $hoverClasses = array_values(array_filter(
@@ -196,7 +196,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_strips_inline_dark_text_color_when_text_white_class_is_present(): void
     {
-        $html = '<h1 class="title-font text-4xl text-white" style="color: rgb(60, 60, 67);">Vpress</h1>';
+        $html = '<h1 class="title-font text-4xl text-white" style="color: rgb(60, 60, 67);">Voodbuilder</h1>';
 
         $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
 

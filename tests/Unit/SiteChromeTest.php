@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Filament\RichContent\Landing\LandingFooterBlock;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SiteChrome;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Filament\RichContent\Landing\LandingFooterBlock;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SiteChrome;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SiteChromeTest extends TestCase
 {

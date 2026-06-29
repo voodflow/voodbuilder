@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
     'blog' => [
         'title' => 'Blog',
-        'index_title' => 'The Vpress Journal',
+        'index_title' => 'The Voodbuilder Journal',
         'index_excerpt' => 'Long-form notes on site shells, sub-themes, and building readable Laravel frontends without a heavyweight CMS.',
         'read_more' => 'Continue reading',
         'all_posts' => 'All posts',
@@ -26,7 +26,7 @@ return [
             'welcome' => [
                 'title' => 'Welcome to the journal',
                 'excerpt' => 'Why we split documentation, blog, and news into distinct sub-themes under one Laravel shell.',
-                'p1' => 'Vpress is intentionally small: a handful of pages, shared navigation, and layouts you can tune per section. The blog sub-theme is for slower, narrative content.',
+                'p1' => 'Voodbuilder is intentionally small: a handful of pages, shared navigation, and layouts you can tune per section. The blog sub-theme is for slower, narrative content.',
                 'p2' => 'Use the left column to jump between stories. The right column highlights featured posts and a newsletter placeholder you can replace later.',
             ],
             'shipping-shell' => [
@@ -39,18 +39,18 @@ return [
                 'title' => 'Designing with sub-themes',
                 'excerpt' => 'Assign a visual identity per page while keeping one nav and one settings panel.',
                 'p1' => 'Sub-themes override layout blades and CSS variables. Light and dark mode still come from the global theme toggle.',
-                'p2' => 'Create custom variants with php artisan vpress:make-subtheme or register them in config/vpress.php.',
+                'p2' => 'Create custom variants with php artisan voodbuilder:make-subtheme or register them in config/voodbuilder.php.',
             ],
             'content-blocks' => [
                 'title' => 'Rich content blocks in practice',
                 'excerpt' => 'Hero sections, feature grids, and package blocks on the documentation home.',
-                'p1' => 'Marketing pages can mix RichEditor prose with custom blocks registered by vpress or companion packages.',
+                'p1' => 'Marketing pages can mix RichEditor prose with custom blocks registered by voodbuilder or companion packages.',
                 'p2' => 'Blog articles stay typographic on purpose — fewer blocks, more reading comfort.',
             ],
             'pairing-vtuts' => [
-                'title' => 'Pairing vpress with vtuts',
+                'title' => 'Pairing voodbuilder with vtuts',
                 'excerpt' => 'Shared layouts for tutorials while the blog keeps its own column layout.',
-                'p1' => 'Tutorial doc pages reuse vpress::layouts.doc for sidebars, outlines, and reading progress.',
+                'p1' => 'Tutorial doc pages reuse voodbuilder::layouts.doc for sidebars, outlines, and reading progress.',
                 'p2' => 'Your journal and news desk can evolve independently while tutorials stay optimized for learning.',
             ],
         ],
@@ -82,10 +82,10 @@ return [
                 'p2' => 'Each news story is a regular site page with section=news, so editors use the same Filament form everywhere.',
             ],
             'release' => [
-                'title' => 'Vpress sub-themes reach the seeder',
+                'title' => 'Voodbuilder sub-themes reach the seeder',
                 'excerpt' => 'Built-in blog and news variants include multi-column layouts and section navigation.',
                 'p1' => 'Section home pages list every article; detail pages add breadcrumbs and sidebars.',
-                'p2' => 'Custom themes still scaffold with vpress:make-subtheme when you outgrow the defaults.',
+                'p2' => 'Custom themes still scaffold with voodbuilder:make-subtheme when you outgrow the defaults.',
             ],
             'workflow' => [
                 'title' => 'Editorial workflow stays in Filament',
@@ -103,7 +103,7 @@ return [
                 'title' => 'On the roadmap',
                 'excerpt' => 'Deeper vtuts and vdocs theme hooks are next for unified section styling.',
                 'p1' => 'Today, sub-themes focus on site pages. Companion packages can adopt the same registry over time.',
-                'p2' => 'Until then, route docs and tutorials through their dedicated layouts while marketing stays on vpress.',
+                'p2' => 'Until then, route docs and tutorials through their dedicated layouts while marketing stays on voodbuilder.',
             ],
         ],
     ],

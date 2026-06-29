@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Closure;
 use Filament\Forms\Components\Field;
@@ -153,7 +153,7 @@ final class MenuRouteCatalog
     protected static function excludePatterns(): array
     {
         /** @var list<string> $patterns */
-        $patterns = config('vpress.menus.route_exclude_patterns', [
+        $patterns = config('voodbuilder.menus.route_exclude_patterns', [
             'filament.*',
             'livewire.*',
             'debugbar.*',

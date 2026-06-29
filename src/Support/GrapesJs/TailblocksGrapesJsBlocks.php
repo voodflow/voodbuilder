@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Support\VpressPaths;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class TailblocksGrapesJsBlocks
 {
@@ -52,13 +52,13 @@ final class TailblocksGrapesJsBlocks
 
     public static function catalogPath(): string
     {
-        return VpressPaths::packagePath().'/resources/grapesjs/tailblocks-blocks.json';
+        return VoodbuilderPaths::packagePath().'/resources/grapesjs/tailblocks-blocks.json';
     }
 
     public static function utilitiesCssEntry(): string
     {
-        return VpressPaths::relativeToBasePath(
-            VpressPaths::packagePath().'/resources/css/grapesjs/tailblocks-utilities.css',
+        return VoodbuilderPaths::relativeToBasePath(
+            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/tailblocks-utilities.css',
         );
     }
 
@@ -72,7 +72,7 @@ final class TailblocksGrapesJsBlocks
      */
     protected static function shouldRegisterBlock(array $definition): bool
     {
-        if (config('vpress.grapesjs.vpress_footers.enabled', true)) {
+        if (config('voodbuilder.grapesjs.voodbuilder_footers.enabled', true)) {
             $label = (string) ($definition['label'] ?? '');
 
             if (str_starts_with($label, 'Footer ')) {
@@ -81,7 +81,7 @@ final class TailblocksGrapesJsBlocks
         }
 
         $mode = (string) ($definition['mode'] ?? 'light');
-        $modes = (array) config('vpress.grapesjs.tailblocks.modes', ['adaptive']);
+        $modes = (array) config('voodbuilder.grapesjs.tailblocks.modes', ['adaptive']);
 
         if (in_array('adaptive', $modes, true)) {
             return $mode !== 'dark';

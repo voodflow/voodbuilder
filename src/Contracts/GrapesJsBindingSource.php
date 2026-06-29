@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Contracts;
+namespace Voodflow\Voodbuilder\Contracts;
 
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
 
 /**
- * Server-side data source for GrapesJS field bindings (data-vpress-bind).
+ * Server-side data source for GrapesJS field bindings (data-voodbuilder-bind).
  *
- * Register with {@see \Voodflow\Vpress\Vpress::grapesJsBindingSource()} in your
+ * Register with {@see \Voodflow\Voodbuilder\Voodbuilder::grapesJsBindingSource()} in your
  * package ServiceProvider. See docs/BINDINGS.md for the full plugin guide.
  *
  * Optional: implement legacyFieldIds() to keep old field keys valid after renames.

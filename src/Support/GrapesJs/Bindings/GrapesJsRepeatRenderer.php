@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use DOMDocument;
 use DOMElement;
 use DOMNode;
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Voodbuilder\Models\SitePage;
 
 final class GrapesJsRepeatRenderer
 {
@@ -55,7 +55,7 @@ final class GrapesJsRepeatRenderer
         $elements = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-repeat')) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-repeat')) {
                 $elements[] = $element;
             }
         }
@@ -65,15 +65,15 @@ final class GrapesJsRepeatRenderer
 
     protected function expandRepeat(DOMElement $container, ?SitePage $page): void
     {
-        $repeatKey = trim($container->getAttribute('data-vpress-repeat'));
+        $repeatKey = trim($container->getAttribute('data-voodbuilder-repeat'));
 
         if ($repeatKey === '') {
             return;
         }
 
-        $limit = (int) ($container->getAttribute('data-vpress-repeat-limit') ?: 6);
-        $sort = $container->getAttribute('data-vpress-repeat-sort') ?: null;
-        $sortDir = $container->getAttribute('data-vpress-repeat-sort-dir') ?: null;
+        $limit = (int) ($container->getAttribute('data-voodbuilder-repeat-limit') ?: 6);
+        $sort = $container->getAttribute('data-voodbuilder-repeat-sort') ?: null;
+        $sortDir = $container->getAttribute('data-voodbuilder-repeat-sort-dir') ?: null;
         $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null);
 
         if ($records === []) {
@@ -112,24 +112,24 @@ final class GrapesJsRepeatRenderer
         }
 
         $insertHost->removeChild($template);
-        $container->removeAttribute('data-vpress-repeat');
-        $container->removeAttribute('data-vpress-repeat-limit');
-        $container->removeAttribute('data-vpress-repeat-sort');
-        $container->removeAttribute('data-vpress-repeat-sort-dir');
+        $container->removeAttribute('data-voodbuilder-repeat');
+        $container->removeAttribute('data-voodbuilder-repeat-limit');
+        $container->removeAttribute('data-voodbuilder-repeat-sort');
+        $container->removeAttribute('data-voodbuilder-repeat-sort-dir');
 
         if ($insertHost !== $container && $insertHost instanceof DOMElement) {
-            $insertHost->removeAttribute('data-vpress-repeat');
-            $insertHost->removeAttribute('data-vpress-repeat-limit');
-            $insertHost->removeAttribute('data-vpress-repeat-sort');
-            $insertHost->removeAttribute('data-vpress-repeat-sort-dir');
-            $insertHost->removeAttribute('data-vpress-repeat-item');
+            $insertHost->removeAttribute('data-voodbuilder-repeat');
+            $insertHost->removeAttribute('data-voodbuilder-repeat-limit');
+            $insertHost->removeAttribute('data-voodbuilder-repeat-sort');
+            $insertHost->removeAttribute('data-voodbuilder-repeat-sort-dir');
+            $insertHost->removeAttribute('data-voodbuilder-repeat-item');
         }
     }
 
     protected function resolveTemplateNode(DOMElement $container): ?DOMElement
     {
         foreach ($container->childNodes as $child) {
-            if ($child instanceof DOMElement && $child->hasAttribute('data-vpress-repeat-item')) {
+            if ($child instanceof DOMElement && $child->hasAttribute('data-voodbuilder-repeat-item')) {
                 return $this->normalizeRepeatTemplateNode($child);
             }
         }
@@ -215,6 +215,6 @@ final class GrapesJsRepeatRenderer
 
     private static function containsRepeatAttribute(string $html): bool
     {
-        return (bool) preg_match('/\bdata-vpress-repeat\s*=/', $html);
+        return (bool) preg_match('/\bdata-voodbuilder-repeat\s*=/', $html);
     }
 }

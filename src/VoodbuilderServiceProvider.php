@@ -1,0 +1,219 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder;
+
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
+use Livewire\Livewire;
+use RalphJSmit\Laravel\SEO\Facades\SEOManager;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Voodflow\Voodbuilder\Console\BuildTailblocksCommand;
+use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
+use Voodflow\Voodbuilder\Console\InstallCommand;
+use Voodflow\Voodbuilder\Console\MakeSubThemeCommand;
+use Voodflow\Voodbuilder\Console\SeedSoundmitGrapesLandingCommand;
+use Voodflow\Voodbuilder\Console\SubThemeCommand;
+use Voodflow\Voodbuilder\Console\SyncThemeStylesheetImportsCommand;
+use Voodflow\Voodbuilder\Console\ThemePresetCommand;
+use Voodflow\Voodbuilder\Filament\Livewire\ThemeMapBridge;
+use Voodflow\Voodbuilder\Filament\Livewire\ThemesWorkspace;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
+use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
+use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
+use Voodflow\Voodbuilder\Livewire\AccountSettings;
+use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
+use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteHeaderGrapesJsBlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
+use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
+use Voodflow\Voodbuilder\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
+use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\ThemeMapAssets;
+use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
+use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
+
+class VoodbuilderServiceProvider extends PackageServiceProvider
+{
+    public static string $name = 'voodbuilder';
+
+    public static string $viewNamespace = 'voodbuilder';
+
+    public function configurePackage(Package $package): void
+    {
+        $package->name(static::$name)
+            ->hasConfigFile()
+            ->hasViews(static::$viewNamespace)
+            ->hasTranslations()
+            ->discoversMigrations()
+            ->runsMigrations()
+            ->hasRoutes('web')
+            ->hasCommand(InstallCommand::class)
+            ->hasCommand(MakeSubThemeCommand::class)
+            ->hasCommand(BuildTailblocksCommand::class)
+            ->hasCommand(SeedSoundmitGrapesLandingCommand::class)
+            ->hasCommand(ThemePresetCommand::class)
+            ->hasCommand(SubThemeCommand::class)
+            ->hasCommand(SyncThemeStylesheetImportsCommand::class)
+            ->hasCommand(CompileThemeAssetsCommand::class);
+    }
+
+    public function packageRegistered(): void
+    {
+        $this->app->singleton(RichContentBlockRegistry::class);
+        $this->app->singleton(GrapesJsBlockRegistry::class);
+        $this->app->singleton(GrapesJsDynamicBlockRegistry::class);
+        $this->app->singleton(GrapesJsServerBlockRegistry::class);
+        $this->app->singleton(BindingRegistry::class);
+        $this->app->singleton(ModelRegistry::class);
+        $this->app->singleton(ReverseRelationRegistry::class);
+        $this->app->singleton(ModelIntegrationRegistry::class);
+        $this->app->singleton(ModelIntegrationListResolver::class);
+        $this->app->singleton(ModelIntegrationBindingRegistrar::class);
+        $this->app->singleton(SubThemeRegistry::class);
+        $this->app->singleton(ContentChannelRegistry::class);
+    }
+
+    public function packageBooted(): void
+    {
+        RegisterFilamentCookieConsentTranslations::apply();
+
+        Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
+
+        $this->app->make(SubThemeRegistry::class)->bootFromConfig();
+        $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
+
+        if (config('voodbuilder.pages.enabled', true)) {
+            Voodbuilder::contentChannel('pages', new SitePagesContentChannel);
+        }
+
+        View::replaceNamespace('cookie-consent', [
+            __DIR__.'/../resources/views/cookie-consent',
+        ]);
+
+        Blade::componentNamespace('Voodflow\\Voodbuilder\\Components', 'voodbuilder');
+
+        Livewire::component('voodbuilder.site-notification-bell', SiteNotificationBell::class);
+        Livewire::component('voodbuilder.account-settings', AccountSettings::class);
+        Livewire::component('voodbuilder.themes-workspace', ThemesWorkspace::class);
+        Livewire::component('voodbuilder.theme-map-bridge', ThemeMapBridge::class);
+
+        ThemeMapAssets::register();
+
+        if (config('voodbuilder.grapesjs.enabled', true)) {
+            $this->registerGrapesJsRoutes();
+            $this->registerGrapesJsBlocks();
+            $this->registerGrapesJsBindings();
+        }
+
+        SEOManager::SEODataTransformer(static function ($seoData) {
+            return VoodbuilderSeo::applyDefaults($seoData);
+        });
+
+        /** @var Router $router */
+        $router = $this->app->make(Router::class);
+        $router->pushMiddlewareToGroup('web', ApplyVoodbuilderSiteConfig::class);
+
+        $registry = $this->app->make(RichContentBlockRegistry::class);
+
+        $registry
+            ->register('Layout', HeroBlock::class)
+            ->register('Layout', FeaturesGridBlock::class)
+            ->register('Layout', PartnerBannerBlock::class)
+            ->register('Layout', ProductPromoBlock::class)
+            ->register('Layout', PackagePromosBlock::class);
+
+        foreach (VoodbuilderLandingBlocks::blockClasses() as $blockClass) {
+            $registry->register('Landing', $blockClass);
+        }
+    }
+
+    protected function registerGrapesJsRoutes(): void
+    {
+        Route::middleware(['web', 'throttle:20,1'])
+            ->prefix('voodbuilder/grapesjs')
+            ->name('voodbuilder.grapesjs.')
+            ->group(function (): void {
+                Route::post('forms/{sitePage}', GrapesJsFormController::class)->name('forms.submit');
+            });
+
+        Route::middleware(['web', 'auth', 'throttle:60,1'])
+            ->prefix('voodbuilder/grapesjs')
+            ->name('voodbuilder.grapesjs.')
+            ->group(function (): void {
+                Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
+                Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
+                Route::get('bindings/preview/{sitePage}', GrapesJsBindingsPreviewController::class)->name('bindings.preview');
+                Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
+                Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
+                Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
+            });
+    }
+
+    protected function registerGrapesJsBlocks(): void
+    {
+        $this->app->booted(function (): void {
+            $registry = $this->app->make(GrapesJsBlockRegistry::class);
+
+            if (config('voodbuilder.grapesjs.site_blocks.header_footer', true)) {
+                $serverRegistry = $this->app->make(GrapesJsServerBlockRegistry::class);
+                $serverRegistry->register('Site', SiteHeaderGrapesJsBlock::class);
+
+                foreach (SiteFooterBlocks::blockClasses() as $footerBlockClass) {
+                    $serverRegistry->register('Site', $footerBlockClass);
+                }
+
+                if (Schema::hasTable('voodbuilder_settings')) {
+                    $serverRegistry->registerEditorBlocks($registry);
+                }
+            }
+
+            if (config('voodbuilder.grapesjs.sections.enabled', true)) {
+                VoodbuilderSectionGrapesJsBlocks::register($registry);
+            }
+        });
+    }
+
+    protected function registerGrapesJsBindings(): void
+    {
+        $this->app->booted(function (): void {
+            $registry = $this->app->make(BindingRegistry::class);
+
+            BuiltinBindingSources::register($registry);
+
+            if (Schema::hasTable('voodbuilder_model_integrations')) {
+                $this->app->make(ModelIntegrationBindingRegistrar::class)->refreshFromDatabase();
+            }
+        });
+    }
+}

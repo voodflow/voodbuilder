@@ -1,9 +1,9 @@
 <?php
 
-namespace Voodflow\Vpress\Filament\Resources\ModelIntegrationResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource;
+use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 
 class CreateModelIntegration extends CreateRecord
 {

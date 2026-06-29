@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Models;
+namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
-use Voodflow\Vpress\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
+use Voodflow\Voodbuilder\Support\ModelRegistry;
 
 class ModelIntegration extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'vpress_model_integrations';
+    protected $table = 'voodbuilder_model_integrations';
 
     protected $fillable = [
         'name',

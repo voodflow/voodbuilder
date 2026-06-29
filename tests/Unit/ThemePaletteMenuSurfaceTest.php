@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\ThemePalette;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemePaletteMenuSurfaceTest extends TestCase
 {
     public function test_it_preserves_readable_menu_text_when_body_text_is_light(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'docs' => ['label' => 'Documentation'],
         ]);
 
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::docss(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'docs' => [
                         'light' => [
@@ -28,7 +28,7 @@ class ThemePaletteMenuSurfaceTest extends TestCase
                 ],
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::css();
 

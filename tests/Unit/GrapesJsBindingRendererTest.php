@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingKey;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingKey;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsBindingRendererTest extends TestCase
 {
@@ -20,9 +20,9 @@ class GrapesJsBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<section>'
-            .'<h1 data-vpress-bind="demo.latest.title">Placeholder</h1>'
-            .'<a href="#" data-vpress-bind="demo.latest.url">Read</a>'
-            .'<button type="button" data-vpress-bind="demo.latest.url">Go</button>'
+            .'<h1 data-voodbuilder-bind="demo.latest.title">Placeholder</h1>'
+            .'<a href="#" data-voodbuilder-bind="demo.latest.url">Read</a>'
+            .'<button type="button" data-voodbuilder-bind="demo.latest.url">Go</button>'
             .'</section>';
 
         $rendered = (new GrapesJsBindingRenderer($registry))->render($html);

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Forms;
+namespace Voodflow\Voodbuilder\Filament\Forms;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
-use Voodflow\Vpress\Enums\ResolvableLinkType;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\MenuRouteCatalog;
-use Voodflow\Vpress\Support\MenuRouteParameterField;
-use Voodflow\Vpress\Support\ResolvableLinkSupport;
-use Voodflow\Vpress\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Enums\ResolvableLinkType;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
+use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
+use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Vtuts\Support\Locales;
 
 final class ResolvableLinkForm
@@ -37,7 +37,7 @@ final class ResolvableLinkForm
 
         $fields = [
             Select::make($typeField)
-                ->label($options['type_label'] ?? __('vpress::landing.link.type'))
+                ->label($options['type_label'] ?? __('voodbuilder::landing.link.type'))
                 ->options($typeOptions)
                 ->default(ResolvableLinkType::Url->value)
                 ->live()
@@ -60,14 +60,14 @@ final class ResolvableLinkForm
                 ->required(fn (Get $get): bool => $required && self::isType($get, $prefix, ResolvableLinkType::Page)),
             Select::make($targetField)
                 ->key("{$prefix}_link_route")
-                ->label(__('vpress::admin.fields.menu_route'))
+                ->label(__('voodbuilder::admin.fields.menu_route'))
                 ->options(fn (): array => MenuRouteCatalog::options())
                 ->searchable()
                 ->preload()
                 ->live()
                 ->visible(fn (Get $get): bool => self::isType($get, $prefix, ResolvableLinkType::Route))
                 ->required(fn (Get $get): bool => $required && self::isType($get, $prefix, ResolvableLinkType::Route))
-                ->helperText(__('vpress::admin.helpers.menu_route'))
+                ->helperText(__('voodbuilder::admin.helpers.menu_route'))
                 ->afterStateUpdated(function (callable $set, ?string $state, Get $get) use ($prefix): void {
                     $requiredParameters = filled($state)
                         ? MenuRouteCatalog::requiredParameterNames($state)

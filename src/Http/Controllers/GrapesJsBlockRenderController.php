@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsBlockPreview;
-use Voodflow\Vpress\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockPreview;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsBlockRenderController extends Controller
 {

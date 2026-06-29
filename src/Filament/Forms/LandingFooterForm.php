@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Forms;
+namespace Voodflow\Voodbuilder\Filament\Forms;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Support\LandingFooterSupport;
-use Voodflow\Vpress\Support\LandingMenuPlacements;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Support\LandingFooterSupport;
+use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
 
 final class LandingFooterForm
 {
@@ -17,47 +17,47 @@ final class LandingFooterForm
     {
         return [
             Select::make('variant')
-                ->label(__('vpress::landing.footer.variant'))
+                ->label(__('voodbuilder::landing.footer.variant'))
                 ->options(LandingFooterSupport::tailblocksVariantOptions())
                 ->default('a')
                 ->native(false),
             LandingBlockForm::imageUpload(
                 'logo_path',
-                __('vpress::landing.footer.logo'),
+                __('voodbuilder::landing.footer.logo'),
                 [
                     'preview_height' => '64',
-                    'helper' => __('vpress::landing.footer.logo_help'),
+                    'helper' => __('voodbuilder::landing.footer.logo_help'),
                 ],
             ),
             TextInput::make('brand_name')
-                ->label(__('vpress::landing.footer.brand_name'))
-                ->helperText(__('vpress::landing.footer.brand_name_help'))
+                ->label(__('voodbuilder::landing.footer.brand_name'))
+                ->helperText(__('voodbuilder::landing.footer.brand_name_help'))
                 ->maxLength(120),
             TextInput::make('brand_tagline')
-                ->label(__('vpress::landing.footer.brand_tagline'))
+                ->label(__('voodbuilder::landing.footer.brand_tagline'))
                 ->maxLength(255),
             ...self::organizerFields(),
             ...self::columnTitleFields(),
             Select::make('menu_slug')
-                ->label(__('vpress::landing.footer.legacy_menu_placement'))
+                ->label(__('voodbuilder::landing.footer.legacy_menu_placement'))
                 ->options(fn (): array => self::menuPlacementOptions())
                 ->default('landing_footer')
                 ->native(false)
-                ->helperText(__('vpress::landing.footer.legacy_menu_placement_help')),
+                ->helperText(__('voodbuilder::landing.footer.legacy_menu_placement_help')),
             TextInput::make('copyright_year')
-                ->label(__('vpress::landing.footer.copyright_year'))
+                ->label(__('voodbuilder::landing.footer.copyright_year'))
                 ->numeric()
                 ->minValue(2000)
                 ->maxValue(2100),
             TextInput::make('copyright_brand')
-                ->label(__('vpress::landing.footer.copyright_brand'))
+                ->label(__('voodbuilder::landing.footer.copyright_brand'))
                 ->maxLength(120),
             TextInput::make('copyright_claim')
-                ->label(__('vpress::landing.footer.copyright_claim'))
+                ->label(__('voodbuilder::landing.footer.copyright_claim'))
                 ->maxLength(255),
             TextInput::make('copyright_highlight')
-                ->label(__('vpress::landing.footer.copyright_highlight'))
-                ->helperText(__('vpress::landing.footer.copyright_highlight_help'))
+                ->label(__('voodbuilder::landing.footer.copyright_highlight'))
+                ->helperText(__('voodbuilder::landing.footer.copyright_highlight_help'))
                 ->maxLength(120),
         ];
     }
@@ -69,8 +69,8 @@ final class LandingFooterForm
 
         for ($index = 1; $index <= LandingMenuPlacements::FOOTER_COLUMN_COUNT; $index++) {
             $fields[] = TextInput::make("column_{$index}_title")
-                ->label(__('vpress::landing.footer.column_title', ['number' => $index]))
-                ->helperText(__('vpress::landing.footer.column_title_help', [
+                ->label(__('voodbuilder::landing.footer.column_title', ['number' => $index]))
+                ->helperText(__('voodbuilder::landing.footer.column_title_help', [
                     'placement' => LandingMenuPlacements::footerColumnSlug($index),
                 ]))
                 ->maxLength(120);
@@ -85,7 +85,7 @@ final class LandingFooterForm
         if (class_exists(\Voodflow\Vevents\Models\Organizer::class)) {
             return [
                 Select::make('organizer_id')
-                    ->label(__('vpress::landing.footer.organizer'))
+                    ->label(__('voodbuilder::landing.footer.organizer'))
                     ->options(fn (): array => \Voodflow\Vevents\Models\Organizer::query()
                         ->orderBy('name')
                         ->get()
@@ -95,22 +95,22 @@ final class LandingFooterForm
                         ->all())
                     ->searchable()
                     ->preload()
-                    ->helperText(__('vpress::landing.footer.organizer_help')),
+                    ->helperText(__('voodbuilder::landing.footer.organizer_help')),
                 TextInput::make('organizer_legal')
-                    ->label(__('vpress::landing.footer.organizer_legal'))
+                    ->label(__('voodbuilder::landing.footer.organizer_legal'))
                     ->maxLength(255),
             ];
         }
 
         return [
             TextInput::make('organizer_line_1')
-                ->label(__('vpress::landing.footer.organizer_line_1'))
+                ->label(__('voodbuilder::landing.footer.organizer_line_1'))
                 ->maxLength(255),
             TextInput::make('organizer_line_2')
-                ->label(__('vpress::landing.footer.organizer_line_2'))
+                ->label(__('voodbuilder::landing.footer.organizer_line_2'))
                 ->maxLength(255),
             TextInput::make('organizer_email')
-                ->label(__('vpress::landing.footer.organizer_email'))
+                ->label(__('voodbuilder::landing.footer.organizer_email'))
                 ->email(),
         ];
     }
@@ -125,7 +125,7 @@ final class LandingFooterForm
 
         if ($options === []) {
             return [
-                'landing_footer' => __('vpress::landing.footer.default_menu'),
+                'landing_footer' => __('voodbuilder::landing.footer.default_menu'),
             ];
         }
 

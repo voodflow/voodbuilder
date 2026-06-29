@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Contracts\GrapesJsBindingSource;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingField;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsBindingStorageNormalizerTest extends TestCase
 {
@@ -19,10 +19,10 @@ class GrapesJsBindingStorageNormalizerTest extends TestCase
         $registry->register(new StorageFakeBindingSource);
 
         $html = '<section>'
-            .'<h1 data-vpress-bind="demo.latest.title">Hello world</h1>'
-            .'<a href="https://example.test/tutorial" data-vpress-bind="demo.latest.url">Read</a>'
-            .'<button data-vpress-bind="demo.latest.url">Button</button>'
-            .'<img src="https://cdn.test/hero.jpg" data-vpress-bind="demo.latest.image" alt="Hero"/>'
+            .'<h1 data-voodbuilder-bind="demo.latest.title">Hello world</h1>'
+            .'<a href="https://example.test/tutorial" data-voodbuilder-bind="demo.latest.url">Read</a>'
+            .'<button data-voodbuilder-bind="demo.latest.url">Button</button>'
+            .'<img src="https://cdn.test/hero.jpg" data-voodbuilder-bind="demo.latest.image" alt="Hero"/>'
             .'</section>';
 
         $normalized = (new GrapesJsBindingStorageNormalizer($registry))->normalizeHtml($html);

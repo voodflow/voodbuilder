@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 final class LandingMenuPlacements
 {
@@ -33,7 +33,7 @@ final class LandingMenuPlacements
         $labels = [];
 
         for ($index = 1; $index <= self::FOOTER_COLUMN_COUNT; $index++) {
-            $labels[self::footerColumnSlug($index)] = __('vpress::landing.footer.column_placement', [
+            $labels[self::footerColumnSlug($index)] = __('voodbuilder::landing.footer.column_placement', [
                 'number' => $index,
             ]);
         }

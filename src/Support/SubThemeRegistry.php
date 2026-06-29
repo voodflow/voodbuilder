@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Enums\SubThemeCapability;
-use Voodflow\Vpress\Enums\SubThemeType;
+use Voodflow\Voodbuilder\Enums\SubThemeCapability;
+use Voodflow\Voodbuilder\Enums\SubThemeType;
 
 final class SubThemeRegistry
 {
@@ -22,7 +22,7 @@ final class SubThemeRegistry
             $this->register($id, $definition);
         }
 
-        foreach (config('vpress.sub_themes', []) as $id => $definition) {
+        foreach (config('voodbuilder.sub_themes', []) as $id => $definition) {
             if (! is_string($id) || ! is_array($definition)) {
                 continue;
             }
@@ -33,14 +33,14 @@ final class SubThemeRegistry
 
     /**
      * Bundled themes from the package config. The host app's published
-     * `config/vpress.php` replaces merged config, so app `sub_themes` must not
+     * `config/voodbuilder.php` replaces merged config, so app `sub_themes` must not
      * be the only source — custom themes are merged on top of these defaults.
      *
      * @return array<string, array<string, mixed>>
      */
     public static function packageSubThemeDefinitions(): array
     {
-        $path = VpressPaths::packagePath().'/config/vpress.php';
+        $path = VoodbuilderPaths::packagePath().'/config/voodbuilder.php';
 
         if (! is_file($path)) {
             return [];

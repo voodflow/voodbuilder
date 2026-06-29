@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 
 class ListNavigationMenus extends ListRecords
 {

@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Voodflow\Vpress\Support\SubThemeScaffolder;
-use Voodflow\Vpress\Support\ThemeConvention;
+use Voodflow\Voodbuilder\Support\SubThemeScaffolder;
+use Voodflow\Voodbuilder\Support\ThemeConvention;
 
 class MakeSubThemeCommand extends Command
 {
-    protected $signature = 'vpress:make-subtheme
+    protected $signature = 'voodbuilder:make-subtheme
                             {name : Sub-theme identifier (kebab-case, e.g. magazine)}
                             {--label= : Human-readable label}
                             {--force : Overwrite existing theme files}';
 
-    protected $description = 'Scaffold a custom vpress sub-theme in the host application';
+    protected $description = 'Scaffold a custom voodbuilder sub-theme in the host application';
 
     public function handle(): int
     {
@@ -33,13 +33,13 @@ class MakeSubThemeCommand extends Command
         }
 
         if ($result->configRegistered) {
-            $this->components->info("Registered \"{$result->id}\" in config/vpress.php.");
+            $this->components->info("Registered \"{$result->id}\" in config/voodbuilder.php.");
         } else {
-            $this->components->warn('Could not update config/vpress.php automatically — add the theme manually.');
+            $this->components->warn('Could not update config/voodbuilder.php automatically — add the theme manually.');
         }
 
         if ($result->importAppended) {
-            $this->components->info('Added @import to the vpress theme bundle.');
+            $this->components->info('Added @import to the voodbuilder theme bundle.');
         } else {
             $this->components->warn('Could not append @import automatically — run npm run build after adding the import.');
         }

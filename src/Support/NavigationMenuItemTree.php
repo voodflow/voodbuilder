@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -11,9 +11,9 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use SolutionForest\FilamentNestableTree\Tree;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 class NavigationMenuItemTree
 {
@@ -179,7 +179,7 @@ class NavigationMenuItemTree
 
             if ($hadDeeperThanMaxDepth) {
                 Notification::make()
-                    ->title(__('vpress::admin.validation.menu_max_depth', ['max' => static::MAX_DEPTH]))
+                    ->title(__('voodbuilder::admin.validation.menu_max_depth', ['max' => static::MAX_DEPTH]))
                     ->warning()
                     ->send();
             }

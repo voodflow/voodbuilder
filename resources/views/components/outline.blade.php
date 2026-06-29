@@ -1,8 +1,8 @@
 @props(['items' => [], 'title' => null])
 
 @if(count($items) > 0)
-    <nav class="vp-outline" aria-labelledby="vpress-outline-title">
-        <div id="vpress-outline-title" class="vp-outline__title">
+    <nav class="vp-outline" aria-labelledby="voodbuilder-outline-title">
+        <div id="voodbuilder-outline-title" class="vp-outline__title">
             {{ $title ?? __('On this page') }}
         </div>
         <div class="vp-outline__rail">

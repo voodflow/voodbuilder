@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Enums\SubThemeCapability;
-use Voodflow\Vpress\Enums\SubThemeType;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\ThemeBindings;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\SubThemeCapability;
+use Voodflow\Voodbuilder\Enums\SubThemeType;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\ThemeBindings;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SubThemeRegistryTest extends TestCase
 {
@@ -28,7 +28,7 @@ class SubThemeRegistryTest extends TestCase
         $registry = app(SubThemeRegistry::class);
 
         $this->assertSame(
-            'vpress::themes.site.layouts.page',
+            'voodbuilder::themes.site.layouts.page',
             $registry->layout('site', 'page'),
         );
 
@@ -70,7 +70,7 @@ class SubThemeRegistryTest extends TestCase
             'label' => 'Magazine',
             'capabilities' => ['landing'],
             'layouts' => [
-                'page' => 'vpress.themes.magazine.layouts.page',
+                'page' => 'voodbuilder.themes.magazine.layouts.page',
             ],
         ]);
 
@@ -80,7 +80,7 @@ class SubThemeRegistryTest extends TestCase
 
     public function test_app_sub_themes_merge_with_bundled_docs(): void
     {
-        config()->set('vpress.sub_themes', [
+        config()->set('voodbuilder.sub_themes', [
             'polito' => [
                 'label' => 'Politecnico',
                 'capabilities' => ['landing'],

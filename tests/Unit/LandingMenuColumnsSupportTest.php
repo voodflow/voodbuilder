@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Enums\MenuItemType;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Models\NavigationMenuItem;
-use Voodflow\Vpress\Support\LandingMenuColumnsSupport;
-use Voodflow\Vpress\Support\LandingMenuPlacements;
-use Voodflow\Vpress\Support\Navigation;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Support\LandingMenuColumnsSupport;
+use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
+use Voodflow\Voodbuilder\Support\Navigation;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class LandingMenuColumnsSupportTest extends TestCase
 {

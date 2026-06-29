@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Resources\NavigationMenuResource\Pages;
+namespace Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages;
 
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
@@ -11,10 +11,10 @@ use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use SolutionForest\FilamentNestableTree\Concerns\InteractsWithTree;
 use SolutionForest\FilamentNestableTree\Tree;
-use Voodflow\Vpress\Filament\Resources\NavigationMenuResource;
-use Voodflow\Vpress\Models\NavigationMenu;
-use Voodflow\Vpress\Support\Navigation;
-use Voodflow\Vpress\Support\NavigationMenuItemTree;
+use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Support\Navigation;
+use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 
 class EditNavigationMenu extends EditRecord
 {
@@ -85,7 +85,7 @@ class EditNavigationMenu extends EditRecord
             ->components([
                 $this->getFormContentComponent(),
                 Section::make(__('Menu items'))
-                    ->description(__('vpress::admin.helpers.menu_tree'))
+                    ->description(__('voodbuilder::admin.helpers.menu_tree'))
                     ->schema([
                         View::make('filament-nestable-tree::livewire.components.tree')
                             ->viewData([

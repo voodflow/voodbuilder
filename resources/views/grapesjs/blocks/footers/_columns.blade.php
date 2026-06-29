@@ -1,10 +1,10 @@
 @php
     $columns = max(1, min(4, (int) ($config['columns'] ?? 4)));
     $defaultTitles = [
-        1 => __('vpress::pro.grapesjs.blocks.footer_col_1_title'),
-        2 => __('vpress::pro.grapesjs.blocks.footer_col_2_title'),
-        3 => __('vpress::pro.grapesjs.blocks.footer_col_3_title'),
-        4 => __('vpress::pro.grapesjs.blocks.footer_col_4_title'),
+        1 => __('voodbuilder::pro.grapesjs.blocks.footer_col_1_title'),
+        2 => __('voodbuilder::pro.grapesjs.blocks.footer_col_2_title'),
+        3 => __('voodbuilder::pro.grapesjs.blocks.footer_col_3_title'),
+        4 => __('voodbuilder::pro.grapesjs.blocks.footer_col_4_title'),
     ];
 @endphp
 
@@ -18,11 +18,11 @@
             'lg:w-1/4 md:w-1/2 w-full px-4 mb-10',
             'hidden' => $hidden,
         ])
-        data-vpress-footer-col="{{ $index }}"
+        data-voodbuilder-footer-col="{{ $index }}"
     >
-        <h2 class="title-font font-medium text-vp-text-1 tracking-widest text-sm mb-3" data-vpress-footer-title>
+        <h2 class="title-font font-medium text-vp-text-1 tracking-widest text-sm mb-3" data-voodbuilder-footer-title>
             {{ $defaultTitles[$index] }}
         </h2>
-        <nav class="list-none" data-vpress-menu="{{ $menuSlug }}" aria-label="{{ $defaultTitles[$index] }}"></nav>
+        <nav class="list-none" data-voodbuilder-menu="{{ $menuSlug }}" aria-label="{{ $defaultTitles[$index] }}"></nav>
     </div>
 @endfor

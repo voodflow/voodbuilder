@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Lang;
 use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 
 /**
- * vpress:install disables auto-discovery for filament-cookie-consent so the banner
+ * voodbuilder:install disables auto-discovery for filament-cookie-consent so the banner
  * is not injected into Filament panels. The Filament settings page is still registered
- * via VpressPlugin, so we must load package translations manually.
+ * via VoodbuilderPlugin, so we must load package translations manually.
  */
 final class RegisterFilamentCookieConsentTranslations
 {

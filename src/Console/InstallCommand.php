@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
-use Voodflow\Vpress\Database\Seeders\VpressSeeder;
-use Voodflow\Vpress\Support\ConfigureNpmForVpress;
-use Voodflow\Vpress\Support\ConfigureRoutesForVpress;
-use Voodflow\Vpress\Support\ConfigureViteForVpress;
-use Voodflow\Vpress\Support\ConfigureVtutsForVpress;
-use Voodflow\Vpress\Support\DisableFilamentCookieBanner;
+use Voodflow\Voodbuilder\Database\Seeders\VoodbuilderSeeder;
+use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
+use Voodflow\Voodbuilder\Support\ConfigureRoutesForVoodbuilder;
+use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
+use Voodflow\Voodbuilder\Support\ConfigureVtutsForVoodbuilder;
+use Voodflow\Voodbuilder\Support\DisableFilamentCookieBanner;
 
 class InstallCommand extends Command
 {
-    protected $signature = 'vpress:install
+    protected $signature = 'voodbuilder:install
                             {--force : Overwrite already published files}
                             {--skip-migrate : Publish configs and migrations without running migrate}
-                            {--skip-seed : Skip seeding default Vpress data}
+                            {--skip-seed : Skip seeding default Voodbuilder data}
                             {--skip-npm : Do not patch package.json or run npm install}
                             {--with-npm-build : Run npm run build after npm install}';
 
-    protected $description = 'Publish Vpress and dependency configs/migrations, then run migrate and seed';
+    protected $description = 'Publish Voodbuilder and dependency configs/migrations, then run migrate and seed';
 
     /**
      * Publish order matters: Spatie settings table must exist before cookie consent settings migrations run.
@@ -36,7 +36,7 @@ class InstallCommand extends Command
         'cookie-consent-settings-migrations' => 'jeffersongoncalves/laravel-cookie-consent',
         'seo-config' => 'ralphjsmit/laravel-seo',
         'seo-migrations' => 'ralphjsmit/laravel-seo',
-        'vpress-config' => 'voodflow/vpress',
+        'voodbuilder-config' => 'voodflow/voodbuilder',
     ];
 
     public function handle(): int
@@ -57,7 +57,7 @@ class InstallCommand extends Command
 
     protected function runInstall(): int
     {
-        $this->components->info('Installing voodflow/vpress...');
+        $this->components->info('Installing voodflow/voodbuilder...');
 
         $publishOptions = array_filter([
             '--force' => $this->option('force'),
@@ -120,9 +120,9 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        if (! $this->option('skip-seed') && class_exists(VpressSeeder::class)) {
-            $this->components->info('Seeding default Vpress data...');
-            $this->call('db:seed', ['--class' => VpressSeeder::class]);
+        if (! $this->option('skip-seed') && class_exists(VoodbuilderSeeder::class)) {
+            $this->components->info('Seeding default Voodbuilder data...');
+            $this->call('db:seed', ['--class' => VoodbuilderSeeder::class]);
         }
 
         return $this->finish(self::SUCCESS);
@@ -151,35 +151,35 @@ class InstallCommand extends Command
             return;
         }
 
-        if (ConfigureVtutsForVpress::apply($this->option('force'))) {
-            $this->components->info('Updated config/vtuts.php to use vpress layouts.');
+        if (ConfigureVtutsForVoodbuilder::apply($this->option('force'))) {
+            $this->components->info('Updated config/vtuts.php to use voodbuilder layouts.');
         } else {
-            $this->components->warn('config/vtuts.php already uses vpress layouts (or file missing).');
+            $this->components->warn('config/vtuts.php already uses voodbuilder layouts (or file missing).');
         }
     }
 
     protected function configureRoutesIntegration(): void
     {
-        if (ConfigureRoutesForVpress::apply($this->option('force'))) {
+        if (ConfigureRoutesForVoodbuilder::apply($this->option('force'))) {
             $this->components->info('Removed the default Laravel welcome route from routes/web.php.');
-            $this->components->warn('The public homepage is now served by voodflow/vpress (route name: home).');
+            $this->components->warn('The public homepage is now served by voodflow/voodbuilder (route name: home).');
         } else {
-            $this->components->warn('routes/web.php already defers the homepage to vpress (or no welcome route was found).');
+            $this->components->warn('routes/web.php already defers the homepage to voodbuilder (or no welcome route was found).');
         }
     }
 
     protected function configureViteIntegration(): void
     {
         if (! is_file(base_path('vite.config.js'))) {
-            $this->components->warn('vite.config.js not found — add Vpress Vite entries manually (see README → Vite & CSS).');
+            $this->components->warn('vite.config.js not found — add Voodbuilder Vite entries manually (see README → Vite & CSS).');
 
             return;
         }
 
-        if (ConfigureViteForVpress::apply($this->option('force'))) {
-            $this->components->info('Updated vite.config.js with vpress theme and GrapesJS entries.');
+        if (ConfigureViteForVoodbuilder::apply($this->option('force'))) {
+            $this->components->info('Updated vite.config.js with voodbuilder theme and GrapesJS entries.');
         } else {
-            $this->components->warn('vite.config.js already references vpress Vite entries (or file could not be updated).');
+            $this->components->warn('vite.config.js already references voodbuilder Vite entries (or file could not be updated).');
         }
     }
 
@@ -192,17 +192,17 @@ class InstallCommand extends Command
         }
 
         if (! is_file(base_path('package.json'))) {
-            $this->components->warn('package.json not found — create it with `npm init` or copy from a Laravel app, then re-run vpress:install.');
+            $this->components->warn('package.json not found — create it with `npm init` or copy from a Laravel app, then re-run voodbuilder:install.');
 
             return;
         }
 
-        $added = ConfigureNpmForVpress::apply($this->option('force'));
+        $added = ConfigureNpmForVoodbuilder::apply($this->option('force'));
 
         if ($added !== []) {
             $this->components->info('Updated package.json with npm packages: '.implode(', ', $added));
         } else {
-            $this->components->warn('package.json already includes required vpress npm packages.');
+            $this->components->warn('package.json already includes required voodbuilder npm packages.');
         }
 
         if (! $this->npmIsAvailable()) {
@@ -304,8 +304,8 @@ class InstallCommand extends Command
             return;
         }
 
-        $this->components->warn('Found published Vpress migrations in database/migrations.');
-        $this->components->warn('Vpress already loads migrations from the package — you can remove the published copies to avoid duplicates.');
+        $this->components->warn('Found published Voodbuilder migrations in database/migrations.');
+        $this->components->warn('Voodbuilder already loads migrations from the package — you can remove the published copies to avoid duplicates.');
     }
 
     protected function finish(int $status): int
@@ -319,12 +319,12 @@ class InstallCommand extends Command
         $this->newLine();
 
         $this->line('  1. Filament panel — register the plugin once in your Panel provider:');
-        $this->line('     ->plugins([\\Voodflow\\Vpress\\VpressPlugin::make()])');
+        $this->line('     ->plugins([\\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make()])');
         $this->newLine();
 
         if ($this->option('skip-npm') || ! $this->npmIsAvailable()) {
             $this->line('  2. Frontend assets — from your Laravel app root:');
-            $this->line('     php artisan vpress:install --with-npm-build');
+            $this->line('     php artisan voodbuilder:install --with-npm-build');
             $this->line('     (or: npm install && npm run build)');
             $this->newLine();
         } elseif (! $this->option('with-npm-build')) {
@@ -333,17 +333,17 @@ class InstallCommand extends Command
             $this->newLine();
         }
 
-        $this->line('  3. Customize config/vpress.php and manage Site → Settings in Filament.');
+        $this->line('  3. Customize config/voodbuilder.php and manage Site → Settings in Filament.');
         $this->newLine();
 
-        $this->line('  Automatic setup already handled by vpress:install:');
+        $this->line('  Automatic setup already handled by voodbuilder:install:');
         $this->line('  - package.json npm dependencies (GrapesJS, Tailwind, fonts)');
         $this->line('  - vite.config.js theme + GrapesJS entries');
         $this->line('  - routes/web.php welcome route removal');
         $this->line('  - migrations, seed data, cookie-consent panel exclusion');
         $this->newLine();
 
-        $this->components->success('voodflow/vpress installed successfully.');
+        $this->components->success('voodflow/voodbuilder installed successfully.');
 
         return self::SUCCESS;
     }

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\CustomBlocks;
+namespace Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class FeaturesGridBlock extends RichContentCustomBlock
 {
@@ -60,11 +60,11 @@ class FeaturesGridBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.features-grid', ['config' => $config]);
+        return RichContentBlockPreview::render('voodbuilder::blocks.features-grid', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.features-grid', ['config' => $config])->render();
+        return view('voodbuilder::blocks.features-grid', ['config' => $config])->render();
     }
 }

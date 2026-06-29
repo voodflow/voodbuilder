@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\TextInput;
-use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
+use Voodflow\Voodbuilder\Filament\Forms\ResolvableLinkForm;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class LandingHeroBlock extends RichContentCustomBlock
 {
@@ -20,7 +20,7 @@ class LandingHeroBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.hero');
+        return __('voodbuilder::landing.blocks.hero');
     }
 
     public static function configureEditorAction(Action $action): Action
@@ -28,14 +28,14 @@ class LandingHeroBlock extends RichContentCustomBlock
         return ResolvableLinkForm::configureAction(
             $action->schema([
                 TextInput::make('eyebrow')
-                    ->label(__('vpress::landing.fields.eyebrow'))
+                    ->label(__('voodbuilder::landing.fields.eyebrow'))
                     ->maxLength(120),
                 TextInput::make('heading')
-                    ->label(__('vpress::landing.fields.heading'))
+                    ->label(__('voodbuilder::landing.fields.heading'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('subheading')
-                    ->label(__('vpress::landing.fields.subheading'))
+                    ->label(__('voodbuilder::landing.fields.subheading'))
                     ->maxLength(500),
                 ...LandingBlockForm::backgroundFields(),
                 ...LandingBlockForm::textAlignField(),
@@ -54,17 +54,17 @@ class LandingHeroBlock extends RichContentCustomBlock
         $heading = $config['heading'] ?? null;
 
         return filled($heading)
-            ? __('vpress::landing.blocks.hero').': '.$heading
+            ? __('voodbuilder::landing.blocks.hero').': '.$heading
             : static::getLabel();
     }
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.landing.hero', ['config' => $config]);
+        return RichContentBlockPreview::render('voodbuilder::blocks.landing.hero', ['config' => $config]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.landing.hero', ['config' => $config])->render();
+        return view('voodbuilder::blocks.landing.hero', ['config' => $config])->render();
     }
 }

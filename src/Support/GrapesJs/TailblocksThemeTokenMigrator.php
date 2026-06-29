@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 /**
- * Maps Tailblocks hardcoded Tailwind colors to Vpress theme tokens so blocks
+ * Maps Tailblocks hardcoded Tailwind colors to Voodbuilder theme tokens so blocks
  * adapt automatically to light/dark mode and backend palette overrides.
  */
 final class TailblocksThemeTokenMigrator
@@ -332,13 +332,13 @@ final class TailblocksThemeTokenMigrator
      */
     public static function migrateLegacyButtonClassesArray(array $tokens): array
     {
-        if (! in_array('vpress-gjs-btn-primary', $tokens, true)) {
+        if (! in_array('voodbuilder-gjs-btn-primary', $tokens, true)) {
             return $tokens;
         }
 
         $tokens = array_values(array_filter(
             $tokens,
-            static fn (string $token): bool => $token !== 'vpress-gjs-btn-primary',
+            static fn (string $token): bool => $token !== 'voodbuilder-gjs-btn-primary',
         ));
 
         foreach (['bg-vp-brand-1', 'text-white', 'hover:bg-vp-brand-2'] as $className) {
@@ -439,7 +439,7 @@ final class TailblocksThemeTokenMigrator
                         1,
                     ) ?? $attrs;
                 } else {
-                    $attrs .= ' class="vpress-gjs-section bg-vp-bg"';
+                    $attrs .= ' class="voodbuilder-gjs-section bg-vp-bg"';
                 }
 
                 return '<section'.$attrs.'>';
@@ -452,8 +452,8 @@ final class TailblocksThemeTokenMigrator
     {
         $tokens = preg_split('/\s+/', trim($classes), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
-        if (! in_array('vpress-gjs-section', $tokens, true)) {
-            $tokens[] = 'vpress-gjs-section';
+        if (! in_array('voodbuilder-gjs-section', $tokens, true)) {
+            $tokens[] = 'voodbuilder-gjs-section';
         }
 
         return implode(' ', $tokens);
@@ -698,7 +698,7 @@ final class TailblocksThemeTokenMigrator
         }
 
         foreach ($selectors as $selector) {
-            if (is_string($selector) && str_contains($selector, 'vpress-gjs-btn-primary')) {
+            if (is_string($selector) && str_contains($selector, 'voodbuilder-gjs-btn-primary')) {
                 return true;
             }
         }
@@ -742,7 +742,7 @@ final class TailblocksThemeTokenMigrator
     private static function stripLegacyButtonCss(string $css): string
     {
         return preg_replace(
-            '/\.vpress-gjs-btn-primary(?::hover)?\s*\{[^}]*\}\s*/',
+            '/\.voodbuilder-gjs-btn-primary(?::hover)?\s*\{[^}]*\}\s*/',
             '',
             $css,
         ) ?? $css;

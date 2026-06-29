@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 class RichContentBlockPreview
 {
@@ -16,7 +16,7 @@ class RichContentBlockPreview
 
     public static function wrap(string $html): string
     {
-        return view('vpress::blocks.preview-shell', [
+        return view('voodbuilder::blocks.preview-shell', [
             'content' => $html,
         ])->render();
     }

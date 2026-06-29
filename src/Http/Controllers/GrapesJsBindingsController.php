@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Vpress\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
-use Voodflow\Vpress\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsBindingsController extends Controller
 {

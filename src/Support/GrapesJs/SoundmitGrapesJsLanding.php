@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Support\LandingBlockMedia;
-use Voodflow\Vpress\Support\VpressPaths;
+use Voodflow\Voodbuilder\Support\LandingBlockMedia;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 /**
  * GrapesJS HTML payload mirroring the Soundmit exhibitor landing (soundmit.com).
@@ -114,7 +114,7 @@ HTML;
 
     public static function writeUtilitiesCatalog(): void
     {
-        $path = VpressPaths::packagePath().'/resources/grapesjs/soundmit-landing-catalog.html';
+        $path = VoodbuilderPaths::packagePath().'/resources/grapesjs/soundmit-landing-catalog.html';
         $html = self::payload()['html'];
 
         file_put_contents(

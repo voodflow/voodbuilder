@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\User;
@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rules\Password;
-use Voodflow\Vpress\Support\RegisteredUserRole;
-use Voodflow\Vpress\Support\VpressUrls;
+use Voodflow\Voodbuilder\Support\RegisteredUserRole;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
 class AuthController extends Controller
 {
     public function showLogin(): View|RedirectResponse
     {
-        return view('vpress::pages.auth.login');
+        return view('voodbuilder::pages.auth.login');
     }
 
     public function login(Request $request): RedirectResponse
@@ -35,7 +35,7 @@ class AuthController extends Controller
         if (! Auth::attempt($credentials, $remember)) {
             return back()
                 ->withInput($request->only('email', 'remember'))
-                ->withErrors(['email' => __('vpress::auth.failed')]);
+                ->withErrors(['email' => __('voodbuilder::auth.failed')]);
         }
 
         $request->session()->regenerate();
@@ -45,16 +45,16 @@ class AuthController extends Controller
 
     public function showRegister(): View|RedirectResponse
     {
-        if (! config('vpress.auth.registration_enabled', true)) {
+        if (! config('voodbuilder.auth.registration_enabled', true)) {
             abort(404);
         }
 
-        return view('vpress::pages.auth.register');
+        return view('voodbuilder::pages.auth.register');
     }
 
     public function register(Request $request): RedirectResponse
     {
-        if (! config('vpress.auth.registration_enabled', true)) {
+        if (! config('voodbuilder.auth.registration_enabled', true)) {
             abort(404);
         }
 
@@ -89,13 +89,13 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect(VpressUrls::home());
+        return redirect(VoodbuilderUrls::home());
     }
 
     protected function redirectAfterAuth(): string
     {
-        $route = (string) config('vpress.auth.redirect_after_login', 'vpress.account');
+        $route = (string) config('voodbuilder.auth.redirect_after_login', 'voodbuilder.account');
 
-        return Route::has($route) ? route($route) : VpressUrls::home();
+        return Route::has($route) ? route($route) : VoodbuilderUrls::home();
     }
 }

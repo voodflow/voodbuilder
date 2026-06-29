@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -64,7 +64,7 @@ final class SubThemeScaffolder
             'css' => ThemeConvention::appCssRelativePath($id),
         ];
 
-        $configRegistered = ConfigureSubThemesForVpress::registerInConfig($id, $definition);
+        $configRegistered = ConfigureSubThemesForVoodbuilder::registerInConfig($id, $definition);
         $importAppended = AppendThemeStylesheetImport::append($cssPath);
         SyncThemeStylesheetImports::sync();
 
@@ -124,7 +124,7 @@ final class SubThemeScaffolder
             'css' => ThemeConvention::appCssRelativePath($id),
         ];
 
-        $configRegistered = ConfigureSubThemesForVpress::registerInConfig($id, $definition);
+        $configRegistered = ConfigureSubThemesForVoodbuilder::registerInConfig($id, $definition);
         $importAppended = AppendThemeStylesheetImport::append($cssPath);
         SyncThemeStylesheetImports::sync();
 

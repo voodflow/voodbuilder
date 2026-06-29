@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Voodflow\Vpress\Events\GrapesJsFormSubmitted;
-use Voodflow\Vpress\Models\SitePage;
+use Voodflow\Voodbuilder\Events\GrapesJsFormSubmitted;
+use Voodflow\Voodbuilder\Models\SitePage;
 
 class GrapesJsFormController extends Controller
 {
@@ -35,7 +35,7 @@ class GrapesJsFormController extends Controller
 
         return response()->json([
             'ok' => true,
-            'message' => config('vpress.grapesjs.forms.success_message'),
+            'message' => config('voodbuilder.grapesjs.forms.success_message'),
         ]);
     }
 }

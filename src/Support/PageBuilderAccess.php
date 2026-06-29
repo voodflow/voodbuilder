@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Spatie\Permission\Models\Permission;
@@ -49,7 +49,7 @@ final class PageBuilderAccess
 
     public static function permissionName(): string
     {
-        return (string) config('vpress.permissions.page_builder', 'builder');
+        return (string) config('voodbuilder.permissions.page_builder', 'builder');
     }
 
     public static function guardName(): string

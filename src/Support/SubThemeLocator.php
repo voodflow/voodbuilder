@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -35,7 +35,7 @@ final class SubThemeLocator
             return SubThemeLocation::package($id, $packageThemeId);
         }
 
-        if (str_starts_with($cssPath, 'resources/vpress/themes/')) {
+        if (str_starts_with($cssPath, 'resources/voodbuilder/themes/')) {
             return SubThemeLocation::app($id);
         }
 
@@ -72,8 +72,8 @@ final class SubThemeLocator
             }
         }
 
-        if (is_dir(resource_path('vpress/themes'))) {
-            foreach (File::directories(resource_path('vpress/themes')) as $directory) {
+        if (is_dir(resource_path('voodbuilder/themes'))) {
+            foreach (File::directories(resource_path('voodbuilder/themes')) as $directory) {
                 $id = basename($directory);
                 $location = SubThemeLocation::app($id);
 
@@ -143,7 +143,7 @@ final class SubThemeLocator
      */
     public static function appearanceColorsFor(string $id): ?array
     {
-        $colors = \Voodflow\Vpress\Models\VpressSettings::get('sub_theme_colors', []);
+        $colors = \Voodflow\Voodbuilder\Models\VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (is_array($colors[$id] ?? null) && ThemePalette::themeHasCustomColors($id)) {
             return $colors[$id];

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\DemoSubThemeContent;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\DemoSubThemeContent;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class DemoSubThemeContentTest extends TestCase
 {

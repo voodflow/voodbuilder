@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs\Bindings;
+namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Vpress\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationLatestBindingSource extends AbstractModelIntegrationBindingSource
 {
@@ -16,7 +16,7 @@ final class ModelIntegrationLatestBindingSource extends AbstractModelIntegration
 
     public function label(): string
     {
-        return $this->integration->name.' · '.__('vpress::model_integrations.bindings.latest');
+        return $this->integration->name.' · '.__('voodbuilder::model_integrations.bindings.latest');
     }
 
     public function fields(): array

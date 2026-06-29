@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Support\GrapesJs\TailwindV4ClassMigrator;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Support\GrapesJs\TailwindV4ClassMigrator;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class TailwindV4ClassMigratorTest extends TestCase
 {

@@ -1,4 +1,4 @@
-@extends(config('vpress.layouts.page', 'vpress::layouts.page'))
+@extends(config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'))
 
 @section('page')
     @php
@@ -7,10 +7,10 @@
 
     <div class="mx-auto max-w-lg">
         <h1 class="mb-2 text-3xl font-bold text-vp-text-1">
-            {{ $isInvite ? __('vpress::auth.invite_title') : __('vpress::auth.reset_password_title') }}
+            {{ $isInvite ? __('voodbuilder::auth.invite_title') : __('voodbuilder::auth.reset_password_title') }}
         </h1>
         <p class="mb-8 text-vp-text-2">
-            {{ $isInvite ? __('vpress::auth.invite_lead') : __('vpress::auth.reset_password_lead') }}
+            {{ $isInvite ? __('voodbuilder::auth.invite_lead') : __('voodbuilder::auth.reset_password_lead') }}
         </p>
 
         <section class="rounded-xl border border-vp-divider bg-vp-bg-elv p-6 shadow-sm">
@@ -20,7 +20,7 @@
                 <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-email">{{ __('vpress::auth.email') }}</label>
+                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-email">{{ __('voodbuilder::auth.email') }}</label>
                     <input
                         id="reset-email"
                         type="email"
@@ -35,7 +35,7 @@
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-password">{{ __('vpress::auth.password') }}</label>
+                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-password">{{ __('voodbuilder::auth.password') }}</label>
                     <input
                         id="reset-password"
                         type="password"
@@ -49,7 +49,7 @@
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-password-confirmation">{{ __('vpress::auth.confirm_password') }}</label>
+                    <label class="mb-1 block text-sm font-medium text-vp-text-1" for="reset-password-confirmation">{{ __('voodbuilder::auth.confirm_password') }}</label>
                     <input
                         id="reset-password-confirmation"
                         type="password"
@@ -61,7 +61,7 @@
                 </div>
 
                 <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-vp-brand-3 px-5 text-sm font-medium text-white transition-colors hover:bg-vp-brand-2">
-                    {{ $isInvite ? __('vpress::auth.invite_submit') : __('vpress::auth.reset_password_submit') }}
+                    {{ $isInvite ? __('voodbuilder::auth.invite_submit') : __('voodbuilder::auth.reset_password_submit') }}
                 </button>
             </form>
         </section>

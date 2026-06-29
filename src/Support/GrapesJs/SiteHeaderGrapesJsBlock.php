@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-use Voodflow\Vpress\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 final class SiteHeaderGrapesJsBlock implements GrapesJsServerBlock
 {
@@ -15,7 +15,7 @@ final class SiteHeaderGrapesJsBlock implements GrapesJsServerBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::pro.grapesjs.blocks.site_header');
+        return __('voodbuilder::pro.grapesjs.blocks.site_header');
     }
 
     public static function defaultConfig(): array
@@ -28,7 +28,7 @@ final class SiteHeaderGrapesJsBlock implements GrapesJsServerBlock
 
     public static function toHtml(array $config, array $context): string
     {
-        return view('vpress::grapesjs.blocks.site-header', [
+        return view('voodbuilder::grapesjs.blocks.site-header', [
             'config' => $config,
             'preview' => false,
         ])->render();
@@ -36,7 +36,7 @@ final class SiteHeaderGrapesJsBlock implements GrapesJsServerBlock
 
     public static function toPreviewHtml(array $config, array $context): string
     {
-        return view('vpress::grapesjs.blocks.site-header', [
+        return view('voodbuilder::grapesjs.blocks.site-header', [
             'config' => $config,
             'preview' => true,
         ])->render();

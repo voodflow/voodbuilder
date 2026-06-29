@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
@@ -11,20 +11,20 @@ use Illuminate\Support\Facades\File;
 
 final class ThemeMapAssets
 {
-    public const SCRIPT_ID = 'vpress-theme-map';
+    public const SCRIPT_ID = 'voodbuilder-theme-map';
 
-    public const STYLE_ID = 'vpress-theme-map';
+    public const STYLE_ID = 'voodbuilder-theme-map';
 
-    public const PACKAGE = 'vpress';
+    public const PACKAGE = 'voodbuilder';
 
     public static function distPath(): string
     {
-        return VpressPaths::packagePath().'/resources/dist/theme-map.js';
+        return VoodbuilderPaths::packagePath().'/resources/dist/theme-map.js';
     }
 
     public static function distCssPath(): string
     {
-        return VpressPaths::packagePath().'/resources/dist/theme-map.css';
+        return VoodbuilderPaths::packagePath().'/resources/dist/theme-map.css';
     }
 
     public static function isBuilt(): bool
@@ -126,7 +126,7 @@ final class ThemeMapAssets
                 const styleHref = {$encodedStyle};
                 const run = () => window.vpressMountThemeMap?.();
 
-                if (styleHref && ! document.querySelector('link[data-vpress-theme-map-style]')) {
+                if (styleHref && ! document.querySelector('link[data-voodbuilder-theme-map-style]')) {
                     const link = document.createElement('link');
                     link.rel = 'stylesheet';
                     link.href = styleHref;
@@ -139,7 +139,7 @@ final class ThemeMapAssets
                     return;
                 }
 
-                let script = document.querySelector('script[data-vpress-theme-map-script]');
+                let script = document.querySelector('script[data-voodbuilder-theme-map-script]');
 
                 if (! script) {
                     script = document.createElement('script');

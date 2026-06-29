@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Feature;
+namespace Voodflow\Voodbuilder\Tests\Feature;
 
-use Voodflow\Vpress\Http\Controllers\HomeController;
-use Voodflow\Vpress\Http\Controllers\SitePageController;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\SitePageResolver;
-use Voodflow\Vpress\Support\SitePageTranslation;
-use Voodflow\Vpress\Support\VpressUrls;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Http\Controllers\HomeController;
+use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\SitePageTranslation;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
+use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 use Voodflow\Vtuts\Support\Locales;
 use Illuminate\Support\Facades\Schema;
@@ -38,13 +38,13 @@ class SitePageTranslationTest extends TestCase
         ]);
         $app['config']->set('vtuts.default_locale', 'en');
         $app['config']->set('vtuts.features.localization', true);
-        $app['config']->set('vpress.home.route_enabled', true);
+        $app['config']->set('voodbuilder.home.route_enabled', true);
     }
 
     protected function defineWebRoutes($router): void
     {
         $router->get('/', HomeController::class)->name('home');
-        $router->get('pages/{slug}', [SitePageController::class, 'show'])->name('vpress.pages.show');
+        $router->get('pages/{slug}', [SitePageController::class, 'show'])->name('voodbuilder.pages.show');
     }
 
     public function test_it_creates_linked_translation_with_shared_group(): void
@@ -131,7 +131,7 @@ class SitePageTranslationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->get(route('vpress.pages.show', ['slug' => 'contact']));
+        $this->get(route('voodbuilder.pages.show', ['slug' => 'contact']));
 
         $url = LocaleSwitcher::urlFor('it');
 
@@ -141,8 +141,8 @@ class SitePageTranslationTest extends TestCase
 
     public function test_home_urls_carry_locale_query_for_non_default_language(): void
     {
-        $englishUrl = VpressUrls::home('en');
-        $italianUrl = VpressUrls::home('it');
+        $englishUrl = VoodbuilderUrls::home('en');
+        $italianUrl = VoodbuilderUrls::home('it');
 
         $this->assertStringContainsString('locale=en', $englishUrl);
         $this->assertStringContainsString('locale=it', $italianUrl);
@@ -181,7 +181,7 @@ class SitePageTranslationTest extends TestCase
         $url = LocaleSwitcher::urlFor('it');
 
         $this->assertStringContainsString('locale=it', $url);
-        $this->assertSame(VpressUrls::home('it'), $url);
+        $this->assertSame(VoodbuilderUrls::home('it'), $url);
     }
 
     /** @return array<string, mixed> */
@@ -289,7 +289,7 @@ class SitePageTranslationTest extends TestCase
 
         $response = $this->get('/?locale=it');
 
-        $response->assertRedirect(VpressUrls::home('en'));
+        $response->assertRedirect(VoodbuilderUrls::home('en'));
     }
 
     public function test_other_translation_locale_codes_exclude_current_language(): void
@@ -343,7 +343,7 @@ class SitePageTranslationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->get(route('vpress.pages.show', ['slug' => 'about']));
+        $this->get(route('voodbuilder.pages.show', ['slug' => 'about']));
 
         $this->assertTrue(LocaleSwitcher::isAvailableFor('en'));
         $this->assertFalse(LocaleSwitcher::isAvailableFor('it'));

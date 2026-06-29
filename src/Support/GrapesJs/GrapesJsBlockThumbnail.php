@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 final class GrapesJsBlockThumbnail
 {
     public static function wrap(string $innerSvg): string
     {
-        return '<div class="vpress-gjs-block-thumb" aria-hidden="true">'.$innerSvg.'</div>';
+        return '<div class="voodbuilder-gjs-block-thumb" aria-hidden="true">'.$innerSvg.'</div>';
     }
 
     public static function forBlockId(string $blockId): string
     {
-        if ($blockId === 'hero' || $blockId === 'vpress-hero') {
+        if ($blockId === 'hero' || $blockId === 'voodbuilder-hero') {
             return self::wrap(self::heroSvg());
         }
 
-        if ($blockId === 'section' || $blockId === 'vpress-section') {
+        if ($blockId === 'section' || $blockId === 'voodbuilder-section') {
             return self::wrap(self::sectionSvg());
         }
 
-        if (str_contains($blockId, 'cta') || $blockId === 'vpress-cta-banner') {
+        if (str_contains($blockId, 'cta') || $blockId === 'voodbuilder-cta-banner') {
             return self::wrap(self::ctaSvg());
         }
 

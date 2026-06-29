@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
@@ -16,7 +16,7 @@ final class AppendThemeStylesheetImport
             return false;
         }
 
-        $bundlePath = VpressPaths::themeCssAbsolutePath();
+        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
 
         if (! is_file($bundlePath)) {
             return false;

@@ -3,181 +3,181 @@
  */
 @reference "tailwindcss";
 
-.vpress-mobile-nav {
-    --vpress-mobile-bg: #ffffff;
-    --vpress-mobile-bg-muted: #f6f6f7;
-    --vpress-mobile-text: #3c3c43;
-    --vpress-mobile-text-muted: #67676c;
-    --vpress-mobile-border: #e2e2e3;
-    --vpress-mobile-accent: #3451b2;
-    --vpress-mobile-overlay: rgb(15 15 20 / 0.52);
-    --vpress-mobile-width: min(100vw, 22rem);
+.voodbuilder-mobile-nav {
+    --voodbuilder-mobile-bg: #ffffff;
+    --voodbuilder-mobile-bg-muted: #f6f6f7;
+    --voodbuilder-mobile-text: #3c3c43;
+    --voodbuilder-mobile-text-muted: #67676c;
+    --voodbuilder-mobile-border: #e2e2e3;
+    --voodbuilder-mobile-accent: #3451b2;
+    --voodbuilder-mobile-overlay: rgb(15 15 20 / 0.52);
+    --voodbuilder-mobile-width: min(100vw, 22rem);
 }
 
-.dark .vpress-mobile-nav {
-    --vpress-mobile-bg: #1b1b1f;
-    --vpress-mobile-bg-muted: #202127;
-    --vpress-mobile-text: #dfdfd6;
-    --vpress-mobile-text-muted: #98989f;
-    --vpress-mobile-border: #2e2e32;
-    --vpress-mobile-accent: #a8b1ff;
-    --vpress-mobile-overlay: rgb(0 0 0 / 0.62);
+.dark .voodbuilder-mobile-nav {
+    --voodbuilder-mobile-bg: #1b1b1f;
+    --voodbuilder-mobile-bg-muted: #202127;
+    --voodbuilder-mobile-text: #dfdfd6;
+    --voodbuilder-mobile-text-muted: #98989f;
+    --voodbuilder-mobile-border: #2e2e32;
+    --voodbuilder-mobile-accent: #a8b1ff;
+    --voodbuilder-mobile-overlay: rgb(0 0 0 / 0.62);
 }
 
-.vpress-mobile-nav {
+.voodbuilder-mobile-nav {
     @apply pointer-events-none fixed inset-0 z-50;
 }
 
-.vpress-mobile-nav.is-open {
+.voodbuilder-mobile-nav.is-open {
     @apply pointer-events-auto;
 }
 
-.vpress-mobile-nav__overlay {
+.voodbuilder-mobile-nav__overlay {
     @apply absolute inset-0 opacity-0 transition-opacity duration-300 ease-out;
-    background: var(--vpress-mobile-overlay);
+    background: var(--voodbuilder-mobile-overlay);
 }
 
-.vpress-mobile-nav.is-open .vpress-mobile-nav__overlay {
+.voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__overlay {
     @apply opacity-100;
 }
 
-.vpress-mobile-nav__panel {
+.voodbuilder-mobile-nav__panel {
     @apply absolute top-0 right-0 flex h-full flex-col shadow-2xl transition-transform duration-300 ease-out;
-    width: var(--vpress-mobile-width);
-    background: var(--vpress-mobile-bg);
-    color: var(--vpress-mobile-text);
+    width: var(--voodbuilder-mobile-width);
+    background: var(--voodbuilder-mobile-bg);
+    color: var(--voodbuilder-mobile-text);
     transform: translateX(100%);
 }
 
-.vpress-mobile-nav.is-open .vpress-mobile-nav__panel {
+.voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__panel {
     transform: translateX(0);
 }
 
-.vpress-mobile-nav__header {
+.voodbuilder-mobile-nav__header {
     @apply flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4;
-    border-color: var(--vpress-mobile-border);
+    border-color: var(--voodbuilder-mobile-border);
 }
 
-.vpress-mobile-nav__brand {
+.voodbuilder-mobile-nav__brand {
     @apply min-w-0 flex-1 text-base font-semibold;
-    color: var(--vpress-mobile-text);
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__brand a {
+.voodbuilder-mobile-nav__brand a {
     @apply inline-flex min-h-10 items-center gap-2 transition-opacity hover:opacity-80;
     color: inherit;
 }
 
-.vpress-mobile-nav__close {
+.voodbuilder-mobile-nav__close {
     @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }
 
-.vpress-mobile-nav__close:hover {
-    background: var(--vpress-mobile-bg-muted);
-    color: var(--vpress-mobile-text);
+.voodbuilder-mobile-nav__close:hover {
+    background: var(--voodbuilder-mobile-bg-muted);
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__body {
+.voodbuilder-mobile-nav__body {
     @apply flex-1 overflow-y-auto px-3 py-4;
 }
 
-.vpress-mobile-nav__links {
+.voodbuilder-mobile-nav__links {
     @apply space-y-1;
 }
 
-.vpress-mobile-nav__link {
+.voodbuilder-mobile-nav__link {
     @apply flex min-h-11 items-center justify-between gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors;
-    color: var(--vpress-mobile-text);
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__link:hover {
-    background: var(--vpress-mobile-bg-muted);
+.voodbuilder-mobile-nav__link:hover {
+    background: var(--voodbuilder-mobile-bg-muted);
 }
 
-.vpress-mobile-nav__link.is-active {
-    background: color-mix(in srgb, var(--vpress-mobile-accent) 12%, var(--vpress-mobile-bg));
-    color: var(--vpress-mobile-accent);
+.voodbuilder-mobile-nav__link.is-active {
+    background: color-mix(in srgb, var(--voodbuilder-mobile-accent) 12%, var(--voodbuilder-mobile-bg));
+    color: var(--voodbuilder-mobile-accent);
 }
 
-.vpress-mobile-nav__link--secondary {
+.voodbuilder-mobile-nav__link--secondary {
     @apply min-h-10 text-sm font-normal;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }
 
-.vpress-mobile-nav__section {
+.voodbuilder-mobile-nav__section {
     @apply mt-5 border-t pt-4 first:mt-0 first:border-t-0 first:pt-0;
-    border-color: var(--vpress-mobile-border);
+    border-color: var(--voodbuilder-mobile-border);
 }
 
-.vpress-mobile-nav__section-label {
+.voodbuilder-mobile-nav__section-label {
     @apply mb-2 px-3 text-xs font-medium;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }
 
-.vpress-mobile-nav__footer {
+.voodbuilder-mobile-nav__footer {
     @apply shrink-0 border-t px-3 py-3;
-    border-color: var(--vpress-mobile-border);
-    background: color-mix(in srgb, var(--vpress-mobile-bg-muted) 55%, var(--vpress-mobile-bg));
+    border-color: var(--voodbuilder-mobile-border);
+    background: color-mix(in srgb, var(--voodbuilder-mobile-bg-muted) 55%, var(--voodbuilder-mobile-bg));
 }
 
-.vpress-mobile-nav__toolbar {
+.voodbuilder-mobile-nav__toolbar {
     @apply mb-3 flex flex-wrap items-center gap-2;
 }
 
-.vpress-mobile-nav__tool {
+.voodbuilder-mobile-nav__tool {
     @apply inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm transition-colors;
-    color: var(--vpress-mobile-text-muted);
-    background: var(--vpress-mobile-bg);
-    border: 1px solid var(--vpress-mobile-border);
+    color: var(--voodbuilder-mobile-text-muted);
+    background: var(--voodbuilder-mobile-bg);
+    border: 1px solid var(--voodbuilder-mobile-border);
 }
 
-.vpress-mobile-nav__tool:hover {
-    color: var(--vpress-mobile-text);
+.voodbuilder-mobile-nav__tool:hover {
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__account {
+.voodbuilder-mobile-nav__account {
     @apply flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors;
-    color: var(--vpress-mobile-text);
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__account:hover {
-    background: var(--vpress-mobile-bg-muted);
+.voodbuilder-mobile-nav__account:hover {
+    background: var(--voodbuilder-mobile-bg-muted);
 }
 
-.vpress-mobile-nav__account img {
+.voodbuilder-mobile-nav__account img {
     @apply h-8 w-8 rounded-full object-cover;
 }
 
-.vpress-mobile-nav__actions {
+.voodbuilder-mobile-nav__actions {
     @apply space-y-1;
 }
 
-.vpress-mobile-nav__action {
+.voodbuilder-mobile-nav__action {
     @apply flex min-h-10 w-full items-center rounded-xl px-3 text-left text-sm transition-colors;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }
 
-.vpress-mobile-nav__action:hover {
-    background: var(--vpress-mobile-bg-muted);
-    color: var(--vpress-mobile-text);
+.voodbuilder-mobile-nav__action:hover {
+    background: var(--voodbuilder-mobile-bg-muted);
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__legal {
+.voodbuilder-mobile-nav__legal {
     @apply mt-3 flex items-center justify-center gap-2 border-t pt-3;
-    border-color: var(--vpress-mobile-border);
+    border-color: var(--voodbuilder-mobile-border);
 }
 
-.vpress-mobile-nav__cookie-link {
+.voodbuilder-mobile-nav__cookie-link {
     @apply text-xs transition-colors;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }
 
-.vpress-mobile-nav__cookie-link:hover {
-    color: var(--vpress-mobile-text);
+.voodbuilder-mobile-nav__cookie-link:hover {
+    color: var(--voodbuilder-mobile-text);
 }
 
-.vpress-mobile-nav__legal-separator {
+.voodbuilder-mobile-nav__legal-separator {
     @apply text-xs;
-    color: var(--vpress-mobile-text-muted);
+    color: var(--voodbuilder-mobile-text-muted);
 }

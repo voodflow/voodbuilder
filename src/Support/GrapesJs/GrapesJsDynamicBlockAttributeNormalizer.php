@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support\GrapesJs;
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use DOMDocument;
 use DOMElement;
@@ -12,26 +12,26 @@ final class GrapesJsDynamicBlockAttributeNormalizer
 {
     public static function normalize(string $html): string
     {
-        if ($html === '' || ! str_contains($html, 'data-vpress-block')) {
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-block')) {
             return $html;
         }
 
         $document = self::loadDocument($html);
 
         foreach (self::dynamicNodes($document) as $node) {
-            $blockId = trim((string) $node->getAttribute('data-vpress-block'));
+            $blockId = trim((string) $node->getAttribute('data-voodbuilder-block'));
 
             if ($blockId === '') {
                 continue;
             }
 
-            $config = self::decodeConfig((string) $node->getAttribute('data-vpress-config'));
+            $config = self::decodeConfig((string) $node->getAttribute('data-voodbuilder-config'));
 
             if ($config === []) {
                 $config = self::defaultConfigFor($blockId);
             }
 
-            $node->setAttribute('data-vpress-config', self::encodeConfig($config));
+            $node->setAttribute('data-voodbuilder-config', self::encodeConfig($config));
             self::pruneForeignAttributes($node);
         }
 
@@ -114,7 +114,7 @@ final class GrapesJsDynamicBlockAttributeNormalizer
         $nodes = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-vpress-block')) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-block')) {
                 $nodes[] = $element;
             }
         }
@@ -127,7 +127,7 @@ final class GrapesJsDynamicBlockAttributeNormalizer
      */
     protected static function pruneForeignAttributes(DOMElement $node): void
     {
-        $allowed = ['data-vpress-block', 'data-vpress-config', 'class', 'id'];
+        $allowed = ['data-voodbuilder-block', 'data-voodbuilder-config', 'class', 'id'];
         $remove = [];
 
         foreach ($node->attributes ?? [] as $attribute) {

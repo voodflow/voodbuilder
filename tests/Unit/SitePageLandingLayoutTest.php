@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SitePageLandingLayoutTest extends TestCase
 {

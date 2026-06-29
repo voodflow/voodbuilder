@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 
 final class SitePageViewData
 {

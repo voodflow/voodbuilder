@@ -1,6 +1,6 @@
 <?php
 
-namespace Voodflow\Vpress\Filament\Resources;
+namespace Voodflow\Voodbuilder\Filament\Resources;
 
 use App\Models\User;
 use BackedEnum;
@@ -28,10 +28,10 @@ use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionMethod;
-use Voodflow\Vpress\Filament\Resources\ModelIntegrationResource\Pages;
-use Voodflow\Vpress\Models\ModelIntegration;
-use Voodflow\Vpress\Support\ModelRegistry;
-use Voodflow\Vpress\Support\ReverseRelationRegistry;
+use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource\Pages;
+use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 
 class ModelIntegrationResource extends Resource
 {
@@ -40,7 +40,7 @@ class ModelIntegrationResource extends Resource
     /**
      * Avoid URL collisions with host app resources.
      */
-    protected static ?string $slug = 'vpress/model-integrations';
+    protected static ?string $slug = 'voodbuilder/model-integrations';
 
     protected static BackedEnum | string | null $navigationIcon = 'heroicon-o-link';
 
@@ -60,12 +60,12 @@ class ModelIntegrationResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('vpress::admin.navigation.group');
+        return __('voodbuilder::admin.navigation.group');
     }
 
     public static function getNavigationLabel(): string
     {
-        return __('vpress::model_integrations.navigation.label');
+        return __('voodbuilder::model_integrations.navigation.label');
     }
 
     public static function form(Schema $schema): Schema
@@ -74,15 +74,15 @@ class ModelIntegrationResource extends Resource
             ->columns(12)
             ->components([
                 Group::make([
-                    Section::make(__('vpress::model_integrations.sections.details'))
+                    Section::make(__('voodbuilder::model_integrations.sections.details'))
                         ->icon('heroicon-o-cube')
                         ->compact()
                         ->schema([
                             Forms\Components\TextInput::make('name')
-                                ->label(__('vpress::model_integrations.fields.name'))
+                                ->label(__('voodbuilder::model_integrations.fields.name'))
                                 ->required(),
                             Forms\Components\Select::make('model_class')
-                                ->label(__('vpress::model_integrations.fields.model_class'))
+                                ->label(__('voodbuilder::model_integrations.fields.model_class'))
                                 ->required()
                                 ->unique(ModelIntegration::class, 'model_class', ignoreRecord: true)
                                 ->searchable()
@@ -102,8 +102,8 @@ class ModelIntegrationResource extends Resource
                                     }
                                 }),
                             Forms\Components\TextInput::make('model_alias')
-                                ->label(__('vpress::model_integrations.fields.model_alias'))
-                                ->helperText(__('vpress::model_integrations.helpers.model_alias')),
+                                ->label(__('voodbuilder::model_integrations.fields.model_alias'))
+                                ->helperText(__('voodbuilder::model_integrations.helpers.model_alias')),
                         ])->columns(1),
                 ])->columnSpan(4),
                 Group::make([
@@ -112,26 +112,26 @@ class ModelIntegrationResource extends Resource
                         ->persistTabInQueryString()
                         ->tabs([
                             Tab::make('essential_fields')
-                                ->label(__('vpress::model_integrations.fields.essential_fields'))
+                                ->label(__('voodbuilder::model_integrations.fields.essential_fields'))
                                 ->icon('heroicon-o-list-bullet')
                                 ->schema([
                                     Forms\Components\CheckboxList::make('fields.essential')
-                                        ->label(__('vpress::model_integrations.fields.essential_fields'))
+                                        ->label(__('voodbuilder::model_integrations.fields.essential_fields'))
                                         ->options(fn (Get $get): array => static::getModelFieldOptions(static::resolveModelClass($get)))
                                         ->columns(3)
                                         ->searchable()
                                         ->bulkToggleable(),
                                 ]),
                             Tab::make('relations')
-                                ->label(__('vpress::model_integrations.fields.relations'))
+                                ->label(__('voodbuilder::model_integrations.fields.relations'))
                                 ->icon('heroicon-o-circle-stack')
                                 ->schema([
                                     Forms\Components\Repeater::make('fields.relations')
-                                        ->label(__('vpress::model_integrations.fields.relations'))
+                                        ->label(__('voodbuilder::model_integrations.fields.relations'))
                                         ->itemLabel(fn (array $state): ?string => ($state['name'] ?? ''))
                                         ->schema([
                                             Forms\Components\Select::make('name')
-                                                ->label(__('vpress::model_integrations.fields.relation_name'))
+                                                ->label(__('voodbuilder::model_integrations.fields.relation_name'))
                                                 ->options(fn (Get $get): array => static::getRelationOptions(static::resolveModelClass($get)))
                                                 ->searchable()
                                                 ->preload()
@@ -154,23 +154,23 @@ class ModelIntegrationResource extends Resource
                                             Forms\Components\Hidden::make('relation_mode')->default('direct'),
                                             Forms\Components\Hidden::make('relation_descriptor'),
                                             Forms\Components\TextInput::make('alias')
-                                                ->label(__('vpress::model_integrations.fields.relation_alias'))
+                                                ->label(__('voodbuilder::model_integrations.fields.relation_alias'))
                                                 ->placeholder('loans_sent')
-                                                ->helperText(__('vpress::model_integrations.helpers.relation_alias')),
+                                                ->helperText(__('voodbuilder::model_integrations.helpers.relation_alias')),
                                             Forms\Components\CheckboxList::make('fields')
-                                                ->label(__('vpress::model_integrations.fields.relation_fields'))
+                                                ->label(__('voodbuilder::model_integrations.fields.relation_fields'))
                                                 ->options(fn (Get $get): array => static::getRelationFieldOptions($get))
                                                 ->columns(3)
                                                 ->searchable()
                                                 ->bulkToggleable()
                                                 ->columnSpan(2),
                                             Forms\Components\Repeater::make('nested_relations')
-                                                ->label(__('vpress::model_integrations.fields.nested_relations'))
-                                                ->helperText(__('vpress::model_integrations.helpers.nested_relations'))
+                                                ->label(__('voodbuilder::model_integrations.fields.nested_relations'))
+                                                ->helperText(__('voodbuilder::model_integrations.helpers.nested_relations'))
                                                 ->itemLabel(fn (array $state): ?string => ($state['relation'] ?? '') . ' → ' . implode(', ', $state['fields'] ?? []))
                                                 ->schema([
                                                     Forms\Components\Select::make('relation')
-                                                        ->label(__('vpress::model_integrations.fields.expand_relation'))
+                                                        ->label(__('voodbuilder::model_integrations.fields.expand_relation'))
                                                         ->options(fn (Get $get): array => static::getRelationExpandOptions($get))
                                                         ->required()
                                                         ->searchable()
@@ -178,20 +178,20 @@ class ModelIntegrationResource extends Resource
                                                         ->reactive()
                                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
                                                     Forms\Components\CheckboxList::make('fields')
-                                                        ->label(__('vpress::model_integrations.fields.fields_to_load'))
-                                                        ->helperText(__('vpress::model_integrations.helpers.fields_optional'))
+                                                        ->label(__('voodbuilder::model_integrations.fields.fields_to_load'))
+                                                        ->helperText(__('voodbuilder::model_integrations.helpers.fields_optional'))
                                                         ->options(fn (Get $get): array => static::getExpandRelationFieldOptions($get))
                                                         ->columns(3),
                                                 ])
                                                 ->default([])
-                                                ->addActionLabel(__('vpress::model_integrations.actions.add_nested_relation'))
+                                                ->addActionLabel(__('voodbuilder::model_integrations.actions.add_nested_relation'))
                                                 ->reorderable()
                                                 ->collapsed()
                                                 ->columnSpanFull(),
                                         ])
                                         ->columns(2)
                                         ->default([])
-                                        ->addActionLabel(__('vpress::model_integrations.actions.add_relation'))
+                                        ->addActionLabel(__('voodbuilder::model_integrations.actions.add_relation'))
                                         ->reorderable()
                                         ->collapsed(),
                                 ]),
@@ -207,21 +207,21 @@ class ModelIntegrationResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label(__('vpress::model_integrations.fields.name'))
+                    ->label(__('voodbuilder::model_integrations.fields.name'))
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('model_class')
-                    ->label(__('vpress::model_integrations.fields.model_class'))
+                    ->label(__('voodbuilder::model_integrations.fields.model_class'))
                     ->copyable()
                     ->copyMessage(__('filament::components/copyable.messages.copied'))
                     ->copyMessageDuration(1500)
                     ->wrap()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('model_alias')
-                    ->label(__('vpress::model_integrations.fields.model_alias'))
+                    ->label(__('voodbuilder::model_integrations.fields.model_alias'))
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label(__('vpress::model_integrations.fields.updated_at'))
+                    ->label(__('voodbuilder::model_integrations.fields.updated_at'))
                     ->dateTime(),
             ])
             ->recordActions([
@@ -267,7 +267,7 @@ class ModelIntegrationResource extends Resource
 
         foreach (app(ReverseRelationRegistry::class)->for($modelClass) as $descriptor) {
             $key = 'reverse::' . $descriptor['key'];
-            $options[$key] = $descriptor['label'] . ' · ' . __('vpress::model_integrations.labels.reverse');
+            $options[$key] = $descriptor['label'] . ' · ' . __('voodbuilder::model_integrations.labels.reverse');
         }
 
         return $options;
@@ -853,7 +853,7 @@ class ModelIntegrationResource extends Resource
      */
     protected static function getAvailableModelOptions(?string $search = null): array
     {
-        $excludedModels = config('vpress.model_integrations.excluded_models', []);
+        $excludedModels = config('voodbuilder.model_integrations.excluded_models', []);
         $models = [];
 
         // 1. Filament resources on the current panel

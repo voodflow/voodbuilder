@@ -1,5 +1,5 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockContent;
+    use Voodflow\Voodbuilder\Support\LandingBlockContent;
 
     $narrow = ($config['width'] ?? 'wide') === 'narrow';
     $centered = ($config['text_align'] ?? 'left') === 'center';

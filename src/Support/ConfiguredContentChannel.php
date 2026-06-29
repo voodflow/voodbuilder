@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Closure;
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
 final class ConfiguredContentChannel implements PublicContentChannel
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class ThemePresenter
 {
@@ -74,7 +74,7 @@ final class ThemePresenter
     {
         $langKey = $key === 'text' ? 'theme_body_text' : 'theme_'.$key;
 
-        return (string) __('vpress::settings.'.$langKey);
+        return (string) __('voodbuilder::settings.'.$langKey);
     }
 
     /**
@@ -83,8 +83,8 @@ final class ThemePresenter
     public static function activeAreasFor(string $themeId): array
     {
         $data = [
-            'sub_theme' => VpressSettings::get('sub_theme'),
-            'content_channel_sub_themes' => VpressSettings::get('content_channel_sub_themes', []),
+            'sub_theme' => VoodbuilderSettings::get('sub_theme'),
+            'content_channel_sub_themes' => VoodbuilderSettings::get('content_channel_sub_themes', []),
         ];
 
         $areas = [];
@@ -107,7 +107,7 @@ final class ThemePresenter
 
     public static function previewColor(string $themeId): string
     {
-        $colors = ThemePalette::normalize(VpressSettings::get('sub_theme_colors', []));
+        $colors = ThemePalette::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $primary = ThemePalette::sanitizeColor($colors[$themeId]['light']['primary'] ?? null);
 
         if ($primary !== null) {
@@ -124,7 +124,7 @@ final class ThemePresenter
      */
     public static function modeColors(string $themeId, string $mode): array
     {
-        $colors = ThemePalette::normalize(VpressSettings::get('sub_theme_colors', []));
+        $colors = ThemePalette::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $theme = is_array($colors[$themeId] ?? null) ? $colors[$themeId] : [];
         $modeColors = is_array($theme[$mode] ?? null) ? $theme[$mode] : [];
         $resolved = [];

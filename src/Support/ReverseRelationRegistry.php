@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 /**
- * Reverse relation descriptors (optional). Vpress ships a no-op registry so the
+ * Reverse relation descriptors (optional). Voodbuilder ships a no-op registry so the
  * Model Integration UI stays compatible without requiring Voodflow.
  */
 final class ReverseRelationRegistry

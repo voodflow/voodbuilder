@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vpress\Models\VpressSettings;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'
-html[data-vpress-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-text)!important}
-html[data-vpress-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-muted)!important}
-html[data-vpress-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)):not(.vpress-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
-html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--color-vp-brand-1)!important}
-html[data-vpress-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-vpress-search-dialog],[data-vpress-search-dialog] *)){color:var(--vx-header-text)!important}
-html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
-html[data-vpress-sub-theme] header[role='banner'] .vpress-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-1,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .font-medium,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']{color:var(--vx-menu-text,var(--color-vp-text-1))!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-2{color:var(--vx-menu-text-muted,var(--color-vp-text-2))!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-3{color:var(--vx-menu-text-subtle,var(--color-vp-text-3))!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu'] .text-vp-brand-1{color:var(--color-vp-brand-1)!important}
-html[data-vpress-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] a:hover,html[data-vpress-sub-theme] header[role='banner'] [role='menu'] button[role='menuitem']:hover{color:var(--color-vp-brand-1)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-muted)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)):not(.voodbuilder-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--color-vp-brand-1)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-1,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .font-medium,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']{color:var(--vx-menu-text,var(--color-vp-text-1))!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-2{color:var(--vx-menu-text-muted,var(--color-vp-text-2))!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-3{color:var(--vx-menu-text-subtle,var(--color-vp-text-3))!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-brand-1{color:var(--color-vp-brand-1)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']:hover,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] a:hover,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] button[role='menuitem']:hover{color:var(--color-vp-brand-1)!important}
 CSS;
 
     /** @var list<string> */
@@ -60,8 +60,8 @@ CSS;
 
     public static function css(): string
     {
-        $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
-        $rules = [self::HEADER_CHROME_CSS, self::tokenBridgeCss('html[data-vpress-sub-theme]')];
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $rules = [self::HEADER_CHROME_CSS, self::tokenBridgeCss('html[data-voodbuilder-sub-theme]')];
 
         foreach ($colors as $subThemeId => $palette) {
             $lightRule = self::buildRule((string) $subThemeId, $palette['light'], false);
@@ -86,7 +86,7 @@ CSS;
 
     /**
      * GrapesJS canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
-     * Does not rely on data-vpress-sub-theme being present before external stylesheets load.
+     * Does not rely on data-voodbuilder-sub-theme being present before external stylesheets load.
      */
     public static function cssForCanvas(string $subThemeId): string
     {
@@ -95,7 +95,7 @@ CSS;
             ...self::builtinSubThemeRulesForCanvas($subThemeId),
         ];
 
-        $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $palette = $colors[$subThemeId] ?? null;
 
         if (is_array($palette)) {
@@ -126,7 +126,7 @@ CSS;
             return;
         }
 
-        $colors = VpressSettings::get('sub_theme_colors', []);
+        $colors = VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (! is_array($colors)) {
             $colors = [];
@@ -134,14 +134,14 @@ CSS;
 
         unset($colors[$themeId]);
 
-        VpressSettings::saveData([
+        VoodbuilderSettings::saveData([
             'sub_theme_colors' => self::normalize($colors),
         ]);
     }
 
     public static function themeHasCustomColors(string $themeId): bool
     {
-        $colors = self::normalize(VpressSettings::get('sub_theme_colors', []));
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $palette = $colors[$themeId] ?? null;
 
         return is_array($palette) && ($palette['custom'] ?? false);
@@ -313,8 +313,8 @@ CSS;
         }
 
         $selector ??= $dark
-            ? "html.dark[data-vpress-sub-theme='{$subThemeId}']"
-            : "html[data-vpress-sub-theme='{$subThemeId}']:not(.dark)";
+            ? "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']"
+            : "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)";
 
         $declarations = [];
 
@@ -392,7 +392,7 @@ CSS;
         }
 
         if (str_starts_with($cssPath, 'themes/')) {
-            return VpressPaths::packagePath().'/resources/'.$cssPath;
+            return VoodbuilderPaths::packagePath().'/resources/'.$cssPath;
         }
 
         if (str_starts_with($cssPath, 'resources/')) {
@@ -412,11 +412,11 @@ CSS;
         $quotedId = preg_quote($subThemeId, '/');
         $patterns = $dark
             ? [
-                "/html\\.dark\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
-                "/html\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\.dark\\s*\\{([^}]+)\\}/s",
+                "/html\\.dark\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
+                "/html\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\.dark\\s*\\{([^}]+)\\}/s",
             ]
             : [
-                "/html\\[data-vpress-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
+                "/html\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
             ];
 
         foreach ($patterns as $pattern) {

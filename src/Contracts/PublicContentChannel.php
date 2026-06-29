@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Contracts;
+namespace Voodflow\Voodbuilder\Contracts;
 
 use Illuminate\Support\Collection;
 

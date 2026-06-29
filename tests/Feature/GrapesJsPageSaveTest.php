@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Feature;
+namespace Voodflow\Voodbuilder\Tests\Feature;
 
 use Filament\Facades\Filament;
 use Filament\FilamentServiceProvider;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsEditorGate;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsPageSaveTest extends TestCase
 {
@@ -75,7 +75,7 @@ class GrapesJsPageSaveTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+        $response = $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
             'html' => '<section>Updated</section>',
             'css' => '.updated { color: red; }',
             'project' => ['pages' => []],
@@ -116,7 +116,7 @@ class GrapesJsPageSaveTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
             'html' => '<a class="bg-indigo-500 text-white">Button</a>',
             'css' => '.btn { background-color: #6366f1; }',
             'project' => ['pages' => []],
@@ -137,7 +137,7 @@ class GrapesJsPageSaveTest extends TestCase
             'published' => true,
         ]);
 
-        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
             'html' => '<section>Nope</section>',
         ])->assertUnauthorized();
     }
@@ -168,7 +168,7 @@ class GrapesJsPageSaveTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
             'html' => '<section>Nope</section>',
         ])->assertForbidden();
     }
@@ -190,7 +190,7 @@ class GrapesJsPageSaveTest extends TestCase
             'email' => 'admin-big@example.com',
         ])->save();
 
-        config(['vpress.grapesjs.payload.max_html_bytes' => 10]);
+        config(['voodbuilder.grapesjs.payload.max_html_bytes' => 10]);
 
         $page = SitePage::query()->create([
             'title' => 'Grapes page big',
@@ -201,7 +201,7 @@ class GrapesJsPageSaveTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->putJson(route('vpress.grapesjs.pages.update', $page), [
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
             'html' => str_repeat('a', 20),
         ])->assertUnprocessable();
     }

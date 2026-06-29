@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'navigation' => [
-        'group' => 'Vpress',
+        'group' => 'Voodbuilder',
         'menus' => 'Menus',
         'pages' => 'Pages',
         'settings' => 'Settings',

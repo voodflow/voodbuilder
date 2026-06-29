@@ -1,5 +1,5 @@
 @php
-    use Voodflow\Vpress\Support\LandingBlockSupport;
+    use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 
     $items = $config['items'] ?? [];
     $shell = LandingBlockSupport::sectionShellClass($config);

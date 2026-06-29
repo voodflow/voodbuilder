@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests;
+namespace Voodflow\Voodbuilder\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,7 +11,7 @@ use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
-use Voodflow\Vpress\VpressServiceProvider;
+use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -22,7 +22,7 @@ abstract class TestCase extends BaseTestCase
         return [
             LivewireServiceProvider::class,
             LaravelSEOServiceProvider::class,
-            VpressServiceProvider::class,
+            VoodbuilderServiceProvider::class,
         ];
     }
 
@@ -37,9 +37,9 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-        $app['config']->set('vpress.pages.enabled', true);
-        $app['config']->set('vpress.pages.prefix', 'pages');
-        $app['config']->set('vpress.home.route_enabled', false);
+        $app['config']->set('voodbuilder.pages.enabled', true);
+        $app['config']->set('voodbuilder.pages.prefix', 'pages');
+        $app['config']->set('voodbuilder.home.route_enabled', false);
 
         $app['config']->set('settings', [
             'settings' => [

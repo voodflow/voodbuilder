@@ -1,15 +1,15 @@
 @php
-    use Voodflow\Vpress\Models\VpressSettings;
+    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
-    $siteTitle = VpressSettings::siteTitle();
-    $brandName = VpressSettings::brandName();
-    $logoUrl = VpressSettings::logoUrl();
-    $logoMobileUrl = VpressSettings::logoMobileUrl();
-    $showBrandName = (bool) VpressSettings::get('show_site_title', true);
+    $siteTitle = VoodbuilderSettings::siteTitle();
+    $brandName = VoodbuilderSettings::brandName();
+    $logoUrl = VoodbuilderSettings::logoUrl();
+    $logoMobileUrl = VoodbuilderSettings::logoMobileUrl();
+    $showBrandName = (bool) VoodbuilderSettings::get('show_site_title', true);
 @endphp
 
 <a
-    href="{{ \Voodflow\Vpress\Support\VpressUrls::home() }}"
+    href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::home() }}"
     class="inline-flex h-16 w-full items-center gap-2.5 text-base font-semibold text-vp-text-1 transition-colors hover:text-vp-brand-1"
     aria-label="{{ $siteTitle }}"
 >

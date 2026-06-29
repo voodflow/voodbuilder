@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Console;
+namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
-use Voodflow\Vpress\Support\ThemeAssetCompiler;
+use Voodflow\Voodbuilder\Support\ThemeAssetCompiler;
 
 class CompileThemeAssetsCommand extends Command
 {
-    protected $signature = 'vpress:compile-theme-assets';
+    protected $signature = 'voodbuilder:compile-theme-assets';
 
     protected $description = 'Sync theme stylesheet imports and rebuild the public Vite bundle';
 

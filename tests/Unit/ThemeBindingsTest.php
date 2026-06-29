@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Collection;
-use Voodflow\Vpress\Contracts\PublicContentChannel;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\ContentChannelRegistry;
-use Voodflow\Vpress\Support\ThemeBindings;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\ThemeBindings;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemeBindingsTest extends TestCase
 {
@@ -53,12 +53,12 @@ class ThemeBindingsTest extends TestCase
 
     public function test_effective_theme_falls_back_to_site_pages_layout_without_package_default(): void
     {
-        VpressSettings::query()->create([
-            'data' => array_merge(VpressSettings::defaults(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::defaults(), [
                 'sub_theme' => 'site',
             ]),
         ]);
-        VpressSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $this->assertSame('site', ThemeBindings::effectiveThemeForChannelId('unknown-channel'));
     }

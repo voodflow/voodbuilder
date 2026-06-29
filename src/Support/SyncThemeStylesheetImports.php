@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
@@ -13,7 +13,7 @@ final class SyncThemeStylesheetImports
      */
     public static function sync(): bool
     {
-        $bundlePath = VpressPaths::themeCssAbsolutePath();
+        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
 
         if (! is_file($bundlePath)) {
             return false;
@@ -97,14 +97,14 @@ final class SyncThemeStylesheetImports
     {
         $paths = [];
 
-        foreach (config('vpress.sub_themes', []) as $definition) {
+        foreach (config('voodbuilder.sub_themes', []) as $definition) {
             if (! is_array($definition)) {
                 continue;
             }
 
             $css = $definition['css'] ?? null;
 
-            if (! is_string($css) || ! str_contains($css, 'resources/vpress/themes/')) {
+            if (! is_string($css) || ! str_contains($css, 'resources/voodbuilder/themes/')) {
                 continue;
             }
 
@@ -119,7 +119,7 @@ final class SyncThemeStylesheetImports
     }
 
     /**
-     * Optional vpress channel stylesheets shipped by other voodflow packages.
+     * Optional voodbuilder channel stylesheets shipped by other voodflow packages.
      *
      * @return list<string>
      */
@@ -129,8 +129,8 @@ final class SyncThemeStylesheetImports
 
         foreach (['vexhibitors', 'vevents'] as $package) {
             foreach ([
-                base_path("packages/voodflow/{$package}/resources/css/vpress-channel.css"),
-                base_path("vendor/voodflow/{$package}/resources/css/vpress-channel.css"),
+                base_path("packages/voodflow/{$package}/resources/css/voodbuilder-channel.css"),
+                base_path("vendor/voodflow/{$package}/resources/css/voodbuilder-channel.css"),
             ] as $candidate) {
                 if (is_file($candidate)) {
                     $paths[] = $candidate;

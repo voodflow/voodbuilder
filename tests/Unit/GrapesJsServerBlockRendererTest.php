@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Tests\Unit;
+namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Vpress\Enums\PageBuilder;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
-use Voodflow\Vpress\Support\GrapesJs\GrapesJsServerBlockRegistry;
-use Voodflow\Vpress\Support\GrapesJs\SiteFooterGrapesJsBlock;
-use Voodflow\Vpress\Tests\TestCase;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterABlock;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsServerBlockRendererTest extends TestCase
 {
@@ -19,11 +19,11 @@ class GrapesJsServerBlockRendererTest extends TestCase
     {
         $richRegistry = new GrapesJsDynamicBlockRegistry;
         $serverRegistry = new GrapesJsServerBlockRegistry;
-        $serverRegistry->register('Vpress', SiteFooterGrapesJsBlock::class);
+        $serverRegistry->register('Voodbuilder', SiteFooterABlock::class);
 
-        $config = SiteFooterGrapesJsBlock::defaultConfig();
+        $config = SiteFooterABlock::defaultConfig();
         $wrapped = GrapesJsRichContentBlockAdapter::wrap(
-            SiteFooterGrapesJsBlock::getId(),
+            SiteFooterABlock::getId(),
             $config,
             '<p>placeholder</p>',
         );
@@ -37,7 +37,7 @@ class GrapesJsServerBlockRendererTest extends TestCase
         $renderer = new GrapesJsDynamicBlockRenderer($richRegistry, $serverRegistry);
         $html = $renderer->render($wrapped, $page);
 
-        $this->assertStringNotContainsString('data-vpress-block', $html);
-        $this->assertStringContainsString('data-vpress-gjs-site-footer', $html);
+        $this->assertStringNotContainsString('data-voodbuilder-block', $html);
+        $this->assertStringContainsString('data-voodbuilder-gjs-site-footer', $html);
     }
 }

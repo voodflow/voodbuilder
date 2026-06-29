@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Http\Controllers;
+namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
-use Voodflow\Vpress\Models\SitePage;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\SitePageViewData;
-use Voodflow\Vpress\Support\VpressUrls;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SitePageViewData;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
 class HomeController extends Controller
@@ -25,7 +25,7 @@ class HomeController extends Controller
             $defaultHome = SitePage::homePage(Locales::default());
 
             if ($defaultHome !== null) {
-                return redirect(VpressUrls::home(Locales::default()));
+                return redirect(VoodbuilderUrls::home(Locales::default()));
             }
         }
 
@@ -34,22 +34,22 @@ class HomeController extends Controller
 
             app()->setLocale($page->locale);
 
-            return view('vpress::pages.site-page', SitePageViewData::make($page));
+            return view('voodbuilder::pages.site-page', SitePageViewData::make($page));
         }
 
-        $fallbackTitle = config('vpress.home.fallback_seo.title')
-            ?? VpressSettings::siteTitle();
-        $fallbackDescription = config('vpress.home.fallback_seo.description')
-            ?? VpressSettings::get('seo_default_description');
+        $fallbackTitle = config('voodbuilder.home.fallback_seo.title')
+            ?? VoodbuilderSettings::siteTitle();
+        $fallbackDescription = config('voodbuilder.home.fallback_seo.description')
+            ?? VoodbuilderSettings::get('seo_default_description');
 
         if ($fallbackTitle || $fallbackDescription) {
             seo()->for(new SEOData(
-                title: $fallbackTitle ?? VpressSettings::siteTitle(),
+                title: $fallbackTitle ?? VoodbuilderSettings::siteTitle(),
                 description: $fallbackDescription,
             ));
         }
 
-        return view(config('vpress.home.fallback_view', 'vpress::pages.welcome'));
+        return view(config('voodbuilder.home.fallback_view', 'voodbuilder::pages.welcome'));
     }
 
     protected function resolvedHomeLocale(): ?string
@@ -70,6 +70,6 @@ class HomeController extends Controller
             return $routeLocale;
         }
 
-        return \Voodflow\Vpress\Support\SitePageResolver::preferredLocale();
+        return \Voodflow\Voodbuilder\Support\SitePageResolver::preferredLocale();
     }
 }

@@ -1,25 +1,25 @@
 @php
     use Illuminate\Support\Facades\Route;
-    use Voodflow\Vpress\Support\VpressUrls;
+    use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
-    $enabled = Route::has('vpress.search')
+    $enabled = Route::has('voodbuilder.search')
         || Route::has('vtuts.index')
         || Route::has('vtuts.localized.index');
-    $searchUrl = Route::has('vpress.search')
-        ? VpressUrls::search()
+    $searchUrl = Route::has('voodbuilder.search')
+        ? VoodbuilderUrls::search()
         : null;
 @endphp
 
 @if ($enabled && $searchUrl)
-    <div class="flex items-center" data-vpress-search>
+    <div class="flex items-center" data-voodbuilder-search>
         <button
             type="button"
-            class="vpress-header-icon-btn"
-            data-vpress-search-open
+            class="voodbuilder-header-icon-btn"
+            data-voodbuilder-search-open
             aria-haspopup="dialog"
-            aria-controls="vpress-search-dialog"
+            aria-controls="voodbuilder-search-dialog"
             aria-expanded="false"
-            aria-label="{{ __('vpress::search.button') }}"
+            aria-label="{{ __('voodbuilder::search.button') }}"
         >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -27,40 +27,40 @@
         </button>
 
         <div
-            id="vpress-search-dialog"
+            id="voodbuilder-search-dialog"
             class="fixed inset-0 z-[60] items-start justify-center px-6 pt-24"
-            data-vpress-search-dialog
+            data-voodbuilder-search-dialog
             hidden
             role="dialog"
             aria-modal="true"
-            aria-label="{{ __('vpress::search.button') }}"
+            aria-label="{{ __('voodbuilder::search.button') }}"
         >
-            <div class="absolute inset-0 bg-black/60" data-vpress-search-close tabindex="-1"></div>
+            <div class="absolute inset-0 bg-black/60" data-voodbuilder-search-close tabindex="-1"></div>
             <div class="relative z-10 w-full max-w-[560px] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-xl">
-                <form action="{{ $searchUrl }}" method="get" class="flex items-center gap-2 border-b border-vp-divider px-4 py-3" data-vpress-search-form>
-                    <label class="sr-only" for="vpress-search-input">{{ __('vpress::search.button') }}</label>
+                <form action="{{ $searchUrl }}" method="get" class="flex items-center gap-2 border-b border-vp-divider px-4 py-3" data-voodbuilder-search-form>
+                    <label class="sr-only" for="voodbuilder-search-input">{{ __('voodbuilder::search.button') }}</label>
                     <span class="text-vp-text-3" aria-hidden="true">
                         <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </span>
                     <input
-                        id="vpress-search-input"
+                        id="voodbuilder-search-input"
                         type="search"
                         name="q"
                         class="min-w-0 flex-1 border-0 bg-transparent text-base text-vp-text-1 outline-none placeholder:text-vp-text-3"
-                        placeholder="{{ __('vpress::search.placeholder') }}"
+                        placeholder="{{ __('voodbuilder::search.placeholder') }}"
                         autocomplete="off"
                         spellcheck="false"
-                        data-vpress-search-input
+                        data-voodbuilder-search-input
                     >
-                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1" data-vpress-search-close aria-label="{{ __('vpress::search.close') }}">
+                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1" data-voodbuilder-search-close aria-label="{{ __('voodbuilder::search.close') }}">
                         <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </form>
-                <p class="px-4 py-3 text-[13px] text-vp-text-3">{{ __('vpress::search.hint') }}</p>
+                <p class="px-4 py-3 text-[13px] text-vp-text-3">{{ __('voodbuilder::search.hint') }}</p>
             </div>
         </div>
     </div>

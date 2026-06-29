@@ -45,8 +45,8 @@
         }
     }
 
-    body.vpress-mobile-nav-open .cc-window,
-    body.vpress-mobile-nav-open .cc-revoke {
+    body.voodbuilder-mobile-nav-open .cc-window,
+    body.voodbuilder-mobile-nav-open .cc-revoke {
         visibility: hidden !important;
         pointer-events: none !important;
         opacity: 0 !important;

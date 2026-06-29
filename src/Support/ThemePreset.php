@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 final class ThemePreset
 {
-    public const SCHEMA = 'vpress-theme-preset/1';
+    public const SCHEMA = 'voodbuilder-theme-preset/1';
 
     /**
      * @param  array<string, string>  $channelThemes

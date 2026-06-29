@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\RichContent\Landing;
+namespace Voodflow\Voodbuilder\Filament\RichContent\Landing;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
@@ -10,10 +10,10 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
-use Voodflow\Vpress\Filament\Forms\LandingBlockForm;
-use Voodflow\Vpress\Filament\Forms\ResolvableLinkForm;
-use Voodflow\Vpress\Support\ResolvableLinkSupport;
-use Voodflow\Vpress\Support\RichContentBlockPreview;
+use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
+use Voodflow\Voodbuilder\Filament\Forms\ResolvableLinkForm;
+use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
+use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
 class LandingContactCtaBlock extends RichContentCustomBlock
 {
@@ -24,7 +24,7 @@ class LandingContactCtaBlock extends RichContentCustomBlock
 
     public static function getLabel(): string
     {
-        return __('vpress::landing.blocks.contact_cta');
+        return __('voodbuilder::landing.blocks.contact_cta');
     }
 
     public static function configureEditorAction(Action $action): Action
@@ -32,29 +32,29 @@ class LandingContactCtaBlock extends RichContentCustomBlock
         return ResolvableLinkForm::configureAction(
             $action->schema([
                 Textarea::make('intro')
-                    ->label(__('vpress::landing.contact.intro'))
+                    ->label(__('voodbuilder::landing.contact.intro'))
                     ->rows(4)
                     ->columnSpanFull(),
                 TextInput::make('highlight_phrase')
-                    ->label(__('vpress::landing.contact.highlight_phrase'))
+                    ->label(__('voodbuilder::landing.contact.highlight_phrase'))
                     ->maxLength(120),
                 Select::make('display_style')
-                    ->label(__('vpress::landing.contact.display_style'))
+                    ->label(__('voodbuilder::landing.contact.display_style'))
                     ->options([
-                        'email' => __('vpress::landing.contact.display_email'),
-                        'button' => __('vpress::landing.contact.display_button'),
+                        'email' => __('voodbuilder::landing.contact.display_email'),
+                        'button' => __('voodbuilder::landing.contact.display_button'),
                     ])
                     ->default('email')
                     ->live(),
                 TextInput::make('contact_email')
-                    ->label(__('vpress::landing.contact.email'))
+                    ->label(__('voodbuilder::landing.contact.email'))
                     ->email()
                     ->visible(fn (callable $get): bool => $get('display_style') === 'email'),
                 TextInput::make('button_label')
-                    ->label(__('vpress::landing.fields.primary_button_label'))
+                    ->label(__('voodbuilder::landing.fields.primary_button_label'))
                     ->visible(fn (callable $get): bool => $get('display_style') === 'button'),
                 ...ResolvableLinkForm::fields('button', [
-                    'type_label' => __('vpress::landing.contact.link_target'),
+                    'type_label' => __('voodbuilder::landing.contact.link_target'),
                     'visible' => fn (Get $get): bool => $get('display_style') === 'button',
                 ]),
                 ...LandingBlockForm::backgroundFields('dark'),
@@ -66,14 +66,14 @@ class LandingContactCtaBlock extends RichContentCustomBlock
 
     public static function toPreviewHtml(array $config): string
     {
-        return RichContentBlockPreview::render('vpress::blocks.preview-placeholder', [
+        return RichContentBlockPreview::render('voodbuilder::blocks.preview-placeholder', [
             'title' => $config['contact_email'] ?? $config['button_label'] ?? static::getLabel(),
         ]);
     }
 
     public static function toHtml(array $config, array $data): string
     {
-        return view('vpress::blocks.landing.contact-cta', [
+        return view('voodbuilder::blocks.landing.contact-cta', [
             'config' => $config,
             'actionUrl' => self::resolveActionUrl($config),
             'actionLabel' => self::resolveActionLabel($config),
@@ -101,6 +101,6 @@ class LandingContactCtaBlock extends RichContentCustomBlock
 
         return filled($config['button_label'] ?? null)
             ? (string) $config['button_label']
-            : __('vpress::landing.learn_more');
+            : __('voodbuilder::landing.learn_more');
     }
 }

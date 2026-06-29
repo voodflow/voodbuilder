@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Filament\Livewire;
+namespace Voodflow\Voodbuilder\Filament\Livewire;
 
 use Filament\Notifications\Notification;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Voodflow\Vpress\Models\VpressSettings;
-use Voodflow\Vpress\Support\SubThemeRegistry;
-use Voodflow\Vpress\Support\SubThemeResolver;
-use Voodflow\Vpress\Support\ThemeBindings;
-use Voodflow\Vpress\Support\ThemeMapAssets;
-use Voodflow\Vpress\Support\ThemeMapPayload;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
+use Voodflow\Voodbuilder\Support\ThemeBindings;
+use Voodflow\Voodbuilder\Support\ThemeMapAssets;
+use Voodflow\Voodbuilder\Support\ThemeMapPayload;
 
 class ThemeMapBridge extends Component
 {
@@ -33,14 +33,14 @@ class ThemeMapBridge extends Component
         $this->channelThemes = ThemeBindings::expandChannelThemesForForm($channelThemes);
         $this->refreshPayload();
 
-        $this->dispatch('vpress-theme-map-refresh', payload: $this->payload);
+        $this->dispatch('voodbuilder-theme-map-refresh', payload: $this->payload);
         $this->js(ThemeMapAssets::mountJs());
     }
 
-    #[On('vpress-themes-changed')]
+    #[On('voodbuilder-themes-changed')]
     public function reloadFromSettings(): void
     {
-        $data = VpressSettings::data();
+        $data = VoodbuilderSettings::data();
 
         $this->subTheme = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
             ?? SubThemeResolver::SITE;
@@ -51,7 +51,7 @@ class ThemeMapBridge extends Component
         $this->refreshPayload();
 
         $this->dispatch(
-            'vpress-theme-map-sync',
+            'voodbuilder-theme-map-sync',
             subTheme: $this->subTheme,
             channelThemes: $this->channelThemes,
         );
@@ -60,7 +60,7 @@ class ThemeMapBridge extends Component
     public function refreshPayload(): void
     {
         $this->payload = ThemeMapPayload::build($this->subTheme, $this->channelThemes);
-        $this->dispatch('vpress-theme-map-refresh', payload: $this->payload);
+        $this->dispatch('voodbuilder-theme-map-refresh', payload: $this->payload);
         $this->js(ThemeMapAssets::mountJs());
     }
 
@@ -73,7 +73,7 @@ class ThemeMapBridge extends Component
 
         if (! app(SubThemeRegistry::class)->exists($resolvedSiteTheme)) {
             Notification::make()
-                ->title(__('vpress::settings.theme_map_invalid_binding'))
+                ->title(__('voodbuilder::settings.theme_map_invalid_binding'))
                 ->danger()
                 ->send();
 
@@ -103,8 +103,8 @@ class ThemeMapBridge extends Component
 
         if ($rejected !== []) {
             Notification::make()
-                ->title(__('vpress::settings.theme_map_invalid_binding'))
-                ->body(__('vpress::settings.theme_map_rejected_bindings'))
+                ->title(__('voodbuilder::settings.theme_map_invalid_binding'))
+                ->body(__('voodbuilder::settings.theme_map_rejected_bindings'))
                 ->warning()
                 ->send();
         }
@@ -115,7 +115,7 @@ class ThemeMapBridge extends Component
         $this->refreshPayload();
 
         $this->dispatch(
-            'vpress-theme-map-sync',
+            'voodbuilder-theme-map-sync',
             subTheme: $this->subTheme,
             channelThemes: $this->channelThemes,
         );
@@ -124,7 +124,7 @@ class ThemeMapBridge extends Component
     /**
      * @param  array<string, string>  $channelThemes
      */
-    #[On('vpress-theme-map-settings-saved')]
+    #[On('voodbuilder-theme-map-settings-saved')]
     public function syncFromSaved(string $subTheme, array $channelThemes): void
     {
         $this->subTheme = SubThemeResolver::resolveId($subTheme) ?? SubThemeResolver::SITE;
@@ -134,11 +134,11 @@ class ThemeMapBridge extends Component
 
     public function selectThemeInEditor(string $themeId): void
     {
-        $this->dispatch('vpress-select-theme', id: $themeId);
+        $this->dispatch('voodbuilder-select-theme', id: $themeId);
     }
 
     public function render(): \Illuminate\Contracts\View\View
     {
-        return view('vpress::filament.theme-map-bridge');
+        return view('voodbuilder::filament.theme-map-bridge');
     }
 }

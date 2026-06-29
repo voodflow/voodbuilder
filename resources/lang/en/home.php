@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 return [
-    'page_title' => 'Vpress',
-    'brand' => 'Vpress',
+    'page_title' => 'Voodbuilder',
+    'brand' => 'Voodbuilder',
     'headline' => 'Your Laravel public site, managed in Filament',
     'tagline' => 'Free, open-source frontend and Filament admin for home pages, navigation, SEO defaults, sub-themes, and documentation-ready layouts.',
-    'cta_primary' => 'Get Vpress',
+    'cta_primary' => 'Get Voodbuilder',
     'cta_secondary' => 'View on GitHub',
-    'features_title' => 'What Vpress gives you',
+    'features_title' => 'What Voodbuilder gives you',
     'feature_1_title' => 'Filament site management',
     'feature_1_text' => 'Edit the home page and static pages with rich content blocks, reusable menus, branding, and SEO defaults from the admin panel.',
     'feature_2_title' => 'Documentation-ready layout',

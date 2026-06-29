@@ -6,19 +6,19 @@
 
 @if ($grapesJsEditor ?? false)
     @section('body_class_extra')
-        vpress-grapesjs-editing
+        voodbuilder-grapesjs-editing
     @endsection
 
     @push('scripts-before-livewire')
         <style>
-            .vpress-grapesjs-mode .vpress-landing-shell,
-            .vpress-grapesjs-mode .vpress-site-shell,
-            .vpress-grapesjs-mode .vpress-polito-content {
+            .voodbuilder-grapesjs-mode .voodbuilder-landing-shell,
+            .voodbuilder-grapesjs-mode .voodbuilder-site-shell,
+            .voodbuilder-grapesjs-mode .voodbuilder-polito-content {
                 max-width: none;
                 padding: 0;
             }
 
-            .vpress-grapesjs-mode .VPRichPage--landing {
+            .voodbuilder-grapesjs-mode .VPRichPage--landing {
                 width: 100%;
                 max-width: none;
             }
@@ -28,18 +28,18 @@
 
 @section($page->contentSection())
     @if ($page->isSectionArticle() && ($sectionHome ?? null))
-        <nav class="vpress-section-breadcrumb" aria-label="{{ __('Breadcrumb') }}">
-            <a href="{{ $sectionHome->getUrl() }}" class="vpress-section-breadcrumb-link">
+        <nav class="voodbuilder-section-breadcrumb" aria-label="{{ __('Breadcrumb') }}">
+            <a href="{{ $sectionHome->getUrl() }}" class="voodbuilder-section-breadcrumb-link">
                 {{ $sectionHome->title }}
             </a>
-            <span class="vpress-section-breadcrumb-sep" aria-hidden="true">/</span>
-            <span class="vpress-section-breadcrumb-current">{{ $page->title }}</span>
+            <span class="voodbuilder-section-breadcrumb-sep" aria-hidden="true">/</span>
+            <span class="voodbuilder-section-breadcrumb-current">{{ $page->title }}</span>
         </nav>
     @endif
 
     @if ($page->isSectionArticle())
-        <header class="vpress-article-header">
-            <time class="vpress-article-date" datetime="{{ $page->published_at?->toDateString() }}">
+        <header class="voodbuilder-article-header">
+            <time class="voodbuilder-article-date" datetime="{{ $page->published_at?->toDateString() }}">
                 {{ $page->published_at?->translatedFormat('M j, Y') }}
             </time>
         </header>
@@ -48,10 +48,10 @@
     <div @class([
         'VPRichPage',
         'VPRichPage--landing' => $page->usesFullWidthLayout(),
-        'vpress-grapesjs-mode' => $grapesJsEditor ?? false,
+        'voodbuilder-grapesjs-mode' => $grapesJsEditor ?? false,
     ])>
         @if ($grapesJsEditor ?? false)
-            @include('vpress::partials.grapesjs-frontend-editor', [
+            @include('voodbuilder::partials.grapesjs-frontend-editor', [
                 'grapesJsConfig' => $grapesJsConfig,
             ])
         @else
@@ -68,6 +68,6 @@
 
 @if (($canEditGrapesJs ?? false) && ! ($grapesJsEditor ?? false))
     @push('overlays')
-        @include('vpress::partials.grapesjs-edit-launch')
+        @include('voodbuilder::partials.grapesjs-edit-launch')
     @endpush
 @endif

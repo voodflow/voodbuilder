@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Voodflow\Vpress\Support;
+namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Vtuts\Support\Locales;
 
@@ -36,8 +36,8 @@ final class DemoSubThemeContent
     public static function blogIndexMeta(?string $locale = null): array
     {
         return self::withLocale($locale, fn (): array => [
-            'title' => __('vpress::demo.blog.index_title'),
-            'excerpt' => __('vpress::demo.blog.index_excerpt'),
+            'title' => __('voodbuilder::demo.blog.index_title'),
+            'excerpt' => __('voodbuilder::demo.blog.index_excerpt'),
         ]);
     }
 
@@ -45,8 +45,8 @@ final class DemoSubThemeContent
     public static function newsIndexMeta(?string $locale = null): array
     {
         return self::withLocale($locale, fn (): array => [
-            'title' => __('vpress::demo.news.index_title'),
-            'excerpt' => __('vpress::demo.news.index_excerpt'),
+            'title' => __('voodbuilder::demo.news.index_title'),
+            'excerpt' => __('voodbuilder::demo.news.index_excerpt'),
         ]);
     }
 
@@ -54,7 +54,7 @@ final class DemoSubThemeContent
     public static function blogPost(string $key, ?string $locale = null): array
     {
         return self::withLocale($locale, function () use ($key): array {
-            $prefix = "vpress::demo.blog.posts.{$key}";
+            $prefix = "voodbuilder::demo.blog.posts.{$key}";
 
             return [
                 'title' => __($prefix.'.title'),
@@ -72,7 +72,7 @@ final class DemoSubThemeContent
     public static function newsArticle(string $key, ?string $locale = null): array
     {
         return self::withLocale($locale, function () use ($key): array {
-            $prefix = "vpress::demo.news.articles.{$key}";
+            $prefix = "voodbuilder::demo.news.articles.{$key}";
 
             return [
                 'title' => __($prefix.'.title'),
