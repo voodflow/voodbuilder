@@ -93,7 +93,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'voodbuilder-gjs-inspector-tab';
-        button.dataset.vpressTab = tabId;
+        button.dataset.voodbuilderTab = tabId;
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-selected', tabId === 'content' ? 'true' : 'false');
         button.textContent = tabLabels[tabId];
@@ -248,13 +248,13 @@ function setupInspectorTabs(mounts, editor) {
         activeTab = tabId;
 
         tablist.querySelectorAll('.voodbuilder-gjs-inspector-tab').forEach((button) => {
-            const active = button.dataset.vpressTab === tabId;
+            const active = button.dataset.voodbuilderTab === tabId;
             button.classList.toggle('voodbuilder-gjs-inspector-tab--active', active);
             button.setAttribute('aria-selected', active ? 'true' : 'false');
         });
 
         panels.querySelectorAll('[data-voodbuilder-inspector]').forEach((panel) => {
-            panel.classList.toggle('voodbuilder-gjs-inspector-panel--active', panel.dataset.vpressInspector === tabId);
+            panel.classList.toggle('voodbuilder-gjs-inspector-panel--active', panel.dataset.voodbuilderInspector === tabId);
         });
 
         window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId));
@@ -263,11 +263,11 @@ function setupInspectorTabs(mounts, editor) {
     tablist.addEventListener('click', (event) => {
         const button = event.target.closest('.voodbuilder-gjs-inspector-tab');
 
-        if (! button?.dataset.vpressTab) {
+        if (! button?.dataset.voodbuilderTab) {
             return;
         }
 
-        activateTab(button.dataset.vpressTab);
+        activateTab(button.dataset.voodbuilderTab);
     });
 
     editor.on('component:selected', (component) => {
