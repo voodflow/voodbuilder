@@ -122,10 +122,10 @@ Requires `esbuild`, `react`, `react-dom`, `prop-types` in the host app `node_mod
 
 ## Host app.js and theme toggle
 
-Voodbuilder public layouts expose `window.__vpressTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
+VoodBuilder public layouts expose `window.__voodbuilderTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
 
 ```js
-if (window.__vpressTheme) {
+if (window.__voodbuilderTheme || window.__vpressTheme) {
     return;
 }
 ```

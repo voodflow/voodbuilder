@@ -1,15 +1,15 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "Voodflow plugin — VitePress-style public frontend theme and Filament site pages for Laravel.",
+    "description": "VoodBuilder — commercial Filament plugin for public site themes, site pages, and GrapesJS page builder on Laravel.",
     "version": "0.0.10",
     "type": "library",
-    "license": "MIT",
+    "license": "proprietary",
     "keywords": [
         "laravel",
         "filament",
-        "vitepress",
+        "voodbuilder",
         "theme",
-        "cms",
+        "page-builder",
         "voodflow"
     ],
     "require": {

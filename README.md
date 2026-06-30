@@ -1,10 +1,28 @@
-# voodflow/voodbuilder
+# VoodBuilder (`voodflow/voodbuilder`)
 
-**Free & Open Source (MIT)** — VitePress-style public frontend for Laravel with a **Filament 5** admin panel.
+**Commercial Filament plugin** — public site shell, visual themes, and page builder for Laravel.
 
-Companion plugins [voodflow/vtuts](https://github.com/voodflow/vtuts) and [voodflow/vdocs](https://github.com/voodflow/vdocs) are **paid, source-available** packages (not Open Source).
+VoodBuilder is a **paid, proprietary** package from [Voodflow](https://voodflow.com). It is **not** open source and **not** the legacy **vpress** package (renamed and split into its own repository).
 
-Voodbuilder is **not a full CMS** and **requires Filament 5** for site pages, navigation, and settings. It is a **lightweight site shell**: a handful of managed pages, navigation, SEO defaults, theme (light/dark), optional auth, notifications, and layouts tuned for **documentation** (`vdocs`) and **tutorials** (`vtuts`). Think “VitePress chrome + Filament admin for site settings”, not WordPress.
+Companion plugins such as [voodflow/vtuts](https://github.com/voodflow/vtuts) and [voodflow/vdocs](https://github.com/voodflow/vdocs) are separate paid packages that integrate with VoodBuilder when installed.
+
+## What VoodBuilder does
+
+VoodBuilder is **not a full CMS**. It requires **Filament 5** and gives you a **lightweight public site layer** on top of Laravel:
+
+| Capability | Description |
+|------------|-------------|
+| **Public theme** | VitePress-inspired navigation, doc sidebar, reading progress, mobile drawer, light/dark mode |
+| **Visual themes** | Sub-themes (docs, blog, news, landing, custom) with a Filament theme map to assign layouts per site area |
+| **Site pages** | Home and static pages via Filament RichEditor, custom blocks, and optional **GrapesJS** frontend editor |
+| **Navigation** | Nestable menus (main, header extras, footer) linking to routes, URLs, or site pages |
+| **Settings** | Branding, SEO defaults, locale, feature toggles — stored in the database via Spatie Settings |
+| **Content channels** | Route-based areas (tutorials, docs, events, …) registered by companion plugins; theme overrides per channel |
+| **Search** | Unified `/search` across registered channels and site pages |
+| **Auth shell** | Optional Fortify login/register and `/account` profile styled like the public theme |
+| **Integrations** | SEO (ralphjsmit/laravel-seo), cookie consent on the public site, optional notifications bell |
+
+Pair VoodBuilder with **vtuts**, **vdocs**, **vevents**, **vexhibitors**, or your own packages for structured content. VoodBuilder provides the **chrome** (layout, nav, themes, SEO defaults), not blog posts or tutorials themselves.
 
 ## Documentation
 
@@ -15,24 +33,6 @@ Voodbuilder is **not a full CMS** and **requires Filament 5** for site pages, na
 | [**docs/BUILD.md**](docs/BUILD.md) | `npm run build`, Vite entries, when to recompile |
 
 **Quick mental model:** *Visual theme* = layout + colours per area (marketing vs docs). *Light/dark* = global toggle. *Preset* = shortcut that fills the theme dropdowns — not a separate system.
-
-## What it does
-
-| Area | What you get |
-|------|----------------|
-| **Public theme** | VitePress-like nav, doc sidebar, outline scroll-spy, reading progress, mobile drawer, dark/light mode |
-| **Sub-themes** | Visual variants (documentation, blog, news, events, custom) — site default, per-page override, or per content channel |
-| **Site pages** | Home + static pages built with Filament RichEditor and custom blocks (hero, features grid, latest vtuts, …) |
-| **Navigation** | Main, header-extra, and footer menus — route names, URLs, or site pages |
-| **Settings (DB)** | Brand name, site title, logo, favicon, social image, theme default, locale, toggles (search, theme, language, bell) |
-| **SEO** | Integrates [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-seo); global defaults from Settings |
-| **Auth (Fortify)** | Optional public `/login` and `/register` using **Laravel Fortify** views styled like the theme |
-| **Account** | `/account` profile page (avatar, name) when enabled |
-| **Notifications** | Bell in the nav for logged-in users (DB `notifications` table); e.g. new comments on your content |
-| **Search** | `/search` across vtuts, vdocs, and site pages when routes exist |
-| **Cookie consent** | Public banner only (admin configures policy in Filament; banner is **not** shown in the panel) |
-
-Voodbuilder does **not** ship blog posts, e-commerce, or arbitrary content types — pair it with **voodflow/vtuts**, **voodflow/vdocs**, or **Relaticle Ink** for that.
 
 ## Requirements
 
@@ -50,6 +50,8 @@ Voodbuilder does **not** ship blog posts, e-commerce, or arbitrary content types
 - [voodflow/vdocs](https://github.com/voodflow/vdocs) — technical documentation
 
 ## Installation
+
+A valid **Voodflow license** is required. Obtain the package through your Voodflow account or authorized distribution channel.
 
 ### From GitHub (Composer)
 
@@ -125,11 +127,11 @@ export default defineConfig({
 });
 ```
 
-3. **Custom `resources/js/app.js`** — if you ship your own dark-mode toggle, defer to voodbuilder when the public layout is active (`window.__vpressTheme`). See [docs/BUILD.md](docs/BUILD.md).
+3. **Custom `resources/js/app.js`** — if you ship your own dark-mode toggle, defer to VoodBuilder when the public layout is active (`window.__voodbuilderTheme`). See [docs/BUILD.md](docs/BUILD.md).
 
 > **Important:** A stock Laravel app defines `GET /` in `routes/web.php`, which overrides the voodbuilder `home` route. `voodbuilder:install` removes that route automatically.
 
-> Voodbuilder migrations load from the package automatically. Do not publish duplicate migration files.
+> VoodBuilder migrations load from the package automatically. Do not publish duplicate migration files.
 
 **Admin → Site**
 
@@ -472,12 +474,12 @@ Alternatively, register from config:
 | **Channel + default sub-theme** | `config/voodbuilder.php` → `content_channel_defaults` |
 | **Override sub-theme** | Settings → Theme (channel row, DB) |
 | **Menu link + active state** | Admin → **Navigation** → App route + `route_match` (e.g. `vevents.*`) |
-| **Search** | Channel `search` callback or model `vpressSearch()` |
+| **Search** | Channel `search` callback or model `voodbuilderSearch()` |
 
 **Search model contract** (optional):
 
 ```php
-public static function vpressSearch(string $term, int $limit): \Illuminate\Support\Collection
+public static function voodbuilderSearch(string $term, int $limit): \Illuminate\Support\Collection
 {
     // return items with title, url, optional excerpt
 }
@@ -676,4 +678,6 @@ Voodbuilder registers `site_page` automatically. If your app uses `Relation::enf
 
 ## License
 
-**MIT** — free for commercial and personal use. See [LICENSE](LICENSE).
+**Proprietary** — VoodBuilder is commercial software. Use requires a valid license from Voodflow. See [LICENSE](LICENSE).
+
+Redistribution, modification, or use without authorization is not permitted.
