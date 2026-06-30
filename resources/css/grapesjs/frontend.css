@@ -16,6 +16,10 @@
     overflow: hidden;
 }
 
+.voodbuilder-gjs-root--booting .voodbuilder-gjs-shell {
+    visibility: hidden;
+}
+
 /* GrapesJS uses absolute positioning for the canvas; only set height on the root editor. */
 .voodbuilder-grapesjs-frontend__canvas .gjs-editor {
     height: 100% !important;

@@ -85,6 +85,56 @@ CSS;
     }
 
     /**
+     * Inline palette for the active sub-theme in <head> to avoid a flash of default/bundled colors.
+     */
+    public static function criticalDocumentCss(string $subThemeId): string
+    {
+        $rules = [
+            self::HEADER_CHROME_CSS,
+            self::tokenBridgeCss("html[data-voodbuilder-sub-theme='{$subThemeId}']"),
+        ];
+
+        $subThemeCss = self::readSubThemeCss($subThemeId);
+
+        $lightBuiltin = self::variablesToCssRule(
+            "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false),
+        );
+
+        if ($lightBuiltin !== null) {
+            $rules[] = $lightBuiltin;
+        }
+
+        $darkBuiltin = self::variablesToCssRule(
+            "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
+            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true),
+        );
+
+        if ($darkBuiltin !== null) {
+            $rules[] = $darkBuiltin;
+        }
+
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $palette = $colors[$subThemeId] ?? null;
+
+        if (is_array($palette)) {
+            $lightRule = self::buildRule($subThemeId, $palette['light'], false);
+
+            if ($lightRule !== null) {
+                $rules[] = $lightRule;
+            }
+
+            $darkRule = self::buildRule($subThemeId, $palette['dark'], true);
+
+            if ($darkRule !== null) {
+                $rules[] = $darkRule;
+            }
+        }
+
+        return implode("\n", array_filter($rules));
+    }
+
+    /**
      * GrapesJS canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
      * Does not rely on data-voodbuilder-sub-theme being present before external stylesheets load.
      */
@@ -353,16 +403,15 @@ CSS;
      */
     private static function builtinSubThemeRulesForCanvas(string $subThemeId): array
     {
-        $cssPath = self::resolveSubThemeCssFile($subThemeId);
+        $css = self::readSubThemeCss($subThemeId);
 
-        if ($cssPath === null || ! is_readable($cssPath)) {
+        if ($css === '') {
             return [];
         }
 
-        $css = (string) file_get_contents($cssPath);
         $rules = [];
 
-        $lightRule = self::variablesToCanvasRule(
+        $lightRule = self::variablesToCssRule(
             'html:not(.dark)',
             self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
         );
@@ -371,7 +420,7 @@ CSS;
             $rules[] = $lightRule;
         }
 
-        $darkRule = self::variablesToCanvasRule(
+        $darkRule = self::variablesToCssRule(
             'html.dark',
             self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
         );
@@ -381,6 +430,17 @@ CSS;
         }
 
         return $rules;
+    }
+
+    private static function readSubThemeCss(string $subThemeId): string
+    {
+        $cssPath = self::resolveSubThemeCssFile($subThemeId);
+
+        if ($cssPath === null || ! is_readable($cssPath)) {
+            return '';
+        }
+
+        return (string) file_get_contents($cssPath);
     }
 
     private static function resolveSubThemeCssFile(string $subThemeId): ?string
@@ -443,7 +503,7 @@ CSS;
     /**
      * @param  array<string, string>  $variables
      */
-    private static function variablesToCanvasRule(string $selector, array $variables): ?string
+    private static function variablesToCssRule(string $selector, array $variables): ?string
     {
         if ($variables === []) {
             return null;

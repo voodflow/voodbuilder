@@ -2,23 +2,24 @@
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
     use Voodflow\Voodbuilder\Support\SubThemeResolver;
 
-    $vpressSubTheme = $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
-    $vpressContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
-    $vpressBodyClass = trim((string) $__env->yieldContent('body_class'));
-    $vpressHasDocSidebar = str_contains($vpressBodyClass, 'voodbuilder-has-doc-sidebar');
-    $vpressShowReadingProgress = str_contains($vpressBodyClass, 'voodbuilder-has-reading-progress');
+    $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+    $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
+    $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
+    $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
+    $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
 @endphp
 <!doctype html>
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-    data-voodbuilder-sub-theme="{{ $vpressSubTheme }}"
-    @if (filled($vpressContentChannel))
-        data-voodbuilder-content-channel="{{ $vpressContentChannel }}"
+    data-voodbuilder-sub-theme="{{ $voodbuilderSubTheme }}"
+    @if (filled($voodbuilderContentChannel))
+        data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
     @endif
     @class(['dark' => \Voodflow\Voodbuilder\Support\VoodbuilderTheme::serverInitialDark()])
 >
 <head>
     <x-voodbuilder::theme-script />
+    <x-voodbuilder::theme-vars :sub-theme="$voodbuilderSubTheme" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
@@ -39,8 +40,8 @@
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
     @unless ($hideSiteNav ?? false)
         <x-voodbuilder::nav
-            :has-doc-sidebar="$vpressHasDocSidebar"
-            :show-reading-progress="$vpressShowReadingProgress"
+            :has-doc-sidebar="$voodbuilderHasDocSidebar"
+            :show-reading-progress="$voodbuilderShowReadingProgress"
         />
     @endunless
 
@@ -57,7 +58,6 @@
 
     @stack('scripts-before-livewire')
     @livewireScripts
-    <x-voodbuilder::theme-vars />
     <x-voodbuilder::site-scripts />
     @stack('scripts')
     @stack('overlays')

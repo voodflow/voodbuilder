@@ -98,6 +98,35 @@ class ThemePaletteTest extends TestCase
     }
 
     #[Test]
+    public function it_builds_critical_document_css_for_active_sub_theme(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => [
+                'label' => 'Site',
+                'css' => 'themes/site/theme.css',
+            ],
+        ]);
+
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
+            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
+                'sub_theme_colors' => [
+                    'site' => [
+                        'light' => [
+                            'primary' => '#47cc49',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::criticalDocumentCss('site');
+
+        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#c8102e!important", $css);
+        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#47cc49!important", $css);
+    }
+
+    #[Test]
     public function it_builds_css_for_semantic_theme_colors(): void
     {
         config()->set('voodbuilder.sub_themes', [

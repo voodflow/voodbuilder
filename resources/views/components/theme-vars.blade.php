@@ -1,8 +1,15 @@
+@props([
+    'subTheme' => null,
+])
+
 @php
+    use Voodflow\Voodbuilder\Support\SubThemeResolver;
     use Voodflow\Voodbuilder\Support\ThemePalette;
 
-    $css = ThemePalette::css();
+    $resolvedSubTheme = $subTheme ?? SubThemeResolver::forCurrentRoute();
+    $css = ThemePalette::criticalDocumentCss($resolvedSubTheme);
 @endphp
+
 @if ($css !== '')
-<style id="voodbuilder-theme-palette">{!! $css !!}</style>
+    <style id="voodbuilder-theme-critical">{!! $css !!}</style>
 @endif

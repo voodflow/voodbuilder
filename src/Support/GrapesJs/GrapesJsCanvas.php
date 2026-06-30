@@ -71,6 +71,10 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
+        body:not(.voodbuilder-canvas-ready) {
+            visibility: hidden;
+        }
+
         * ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1) }
         * ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2) }
         * ::-webkit-scrollbar { width: 10px }
