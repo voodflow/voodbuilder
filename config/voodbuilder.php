@@ -218,7 +218,7 @@ return [
     | 'blog' => [
     |     'label' => 'Blog',
     |     'routes' => ['blog.*'],
-    |     'search' => \App\Models\BlogPost::class, // static vpressSearch($term, $limit) method
+    |     'search' => \App\Models\BlogPost::class, // static voodbuilderSearch($term, $limit) method
     | ],
     | Default visual theme per channel: content_channel_defaults (not on the channel array).
     */
@@ -267,6 +267,7 @@ return [
         'payload' => [
             'max_html_bytes' => 500_000,
             'max_css_bytes' => 100_000,
+            'max_js_bytes' => 100_000,
             'max_project_bytes' => 2_000_000,
         ],
         'plugins' => [

@@ -40,6 +40,17 @@ final class GrapesJsRenderer
         );
     }
 
+    public function js(SitePage $page): ?string
+    {
+        $js = $page->builder_payload['js'] ?? null;
+
+        if (! filled($js)) {
+            return null;
+        }
+
+        return GrapesJsJsSanitizer::sanitize((string) $js);
+    }
+
     public function render(SitePage $page): string
     {
         $html = app(GrapesJsBindingRenderer::class)->render($this->html($page), $page);

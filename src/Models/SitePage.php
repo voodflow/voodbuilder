@@ -209,6 +209,15 @@ class SitePage extends Model implements HasRichContent
         return app(GrapesJsRenderer::class)->css($this);
     }
 
+    public function renderedScripts(): ?string
+    {
+        if (! $this->usesGrapesJsBuilder()) {
+            return null;
+        }
+
+        return app(GrapesJsRenderer::class)->js($this);
+    }
+
     public function usesAutomaticLayout(): bool
     {
         return $this->layout === self::LAYOUT_AUTO || blank($this->layout);

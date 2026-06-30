@@ -63,8 +63,12 @@ function buildPayload(editor) {
     pruneEmptyDynamicBlocks(editor);
 
     return {
-        html: editor.getHtml(),
+        html: editor.getHtml({
+            cleanId: false,
+            withProps: true,
+        }),
         css: editor.getCss(),
+        js: editor.getJs(),
     };
 }
 
@@ -151,6 +155,58 @@ function applyCanvasDocumentTheme(editor, subTheme) {
     apply();
 }
 
+function waitForCanvasStyles(frameWindow) {
+    const doc = frameWindow?.document;
+
+    if (! doc) {
+        return Promise.resolve();
+    }
+
+    const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+
+    if (links.length === 0) {
+        doc.body?.classList.add('voodbuilder-canvas-ready');
+
+        return Promise.resolve();
+    }
+
+    return Promise.all(links.map((link) => {
+        if (link.sheet) {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve) => {
+            link.addEventListener('load', resolve, { once: true });
+            link.addEventListener('error', resolve, { once: true });
+        });
+    })).then(() => {
+        doc.body?.classList.add('voodbuilder-canvas-ready');
+    });
+}
+
+function registerCanvasBootGate(editor, shellRoot) {
+    if (! shellRoot) {
+        return;
+    }
+
+    shellRoot.classList.add('voodbuilder-gjs-root--booting');
+
+    const reveal = () => {
+        shellRoot.classList.remove('voodbuilder-gjs-root--booting');
+    };
+
+    const onFrameReady = () => {
+        const frameWindow = editor.Canvas.getWindow();
+
+        void waitForCanvasStyles(frameWindow).then(reveal);
+    };
+
+    editor.on('canvas:frame:load', onFrameReady);
+    editor.on('load', () => {
+        window.requestAnimationFrame(onFrameReady);
+    });
+}
+
 export function initVpressGrapesJs(container, options = {}) {
     const initial = options.initial ?? {};
     const labels = options.labels ?? {};
@@ -177,6 +233,7 @@ export function initVpressGrapesJs(container, options = {}) {
         fromElement: false,
         // Inline styles (with !important from Style Manager) override Tailwind utilities in the canvas.
         avoidInlineStyle: false,
+        jsInHtml: false,
         storageManager: false,
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
@@ -246,6 +303,7 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init(editorOptions);
 
     if (shell) {
+        registerCanvasBootGate(editor, shell.shell?.closest('.voodbuilder-gjs-root') ?? container);
         configureEditorLayout(editor, shell, labels);
     }
 

@@ -21,15 +21,18 @@ class GrapesJsPageController extends Controller
 
         $maxHtml = (int) config('voodbuilder.grapesjs.payload.max_html_bytes', 500_000);
         $maxCss = (int) config('voodbuilder.grapesjs.payload.max_css_bytes', 100_000);
+        $maxJs = (int) config('voodbuilder.grapesjs.payload.max_js_bytes', 100_000);
 
         $validated = $request->validate([
             'html' => ['nullable', 'string', 'max:'.$maxHtml],
             'css' => ['nullable', 'string', 'max:'.$maxCss],
+            'js' => ['nullable', 'string', 'max:'.$maxJs],
         ]);
 
         $normalized = GrapesJsEditorGate::normalizePayload([
             'html' => $validated['html'] ?? '',
             'css' => $validated['css'] ?? '',
+            'js' => $validated['js'] ?? '',
             'project' => null,
         ]);
 
@@ -40,6 +43,7 @@ class GrapesJsPageController extends Controller
             'builder_payload' => [
                 'html' => $normalized['html'],
                 'css' => $normalized['css'],
+                'js' => $normalized['js'],
                 // HTML/CSS are the source of truth for public render. Persisting
                 // GrapesJS project JSON caused desync (removed blocks reappearing).
                 'project' => null,

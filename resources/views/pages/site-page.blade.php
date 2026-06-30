@@ -1,5 +1,5 @@
 @php
-    $vpressSubTheme = $page->resolvedSubTheme();
+    $voodbuilderSubTheme = $voodbuilderSubTheme ?? $page->resolvedSubTheme();
 @endphp
 
 @extends($page->layoutView())
@@ -8,6 +8,12 @@
     @section('body_class_extra')
         voodbuilder-grapesjs-editing
     @endsection
+
+    @push('head')
+        @foreach ($grapesJsConfig['canvasStyles'] ?? [] as $canvasStyleUrl)
+            <link rel="preload" href="{{ $canvasStyleUrl }}" as="style">
+        @endforeach
+    @endpush
 
     @push('scripts-before-livewire')
         <style>
@@ -62,6 +68,10 @@
             @endif
 
             {!! $page->renderedContent() !!}
+
+            @if (filled($page->renderedScripts()))
+                <script>{!! $page->renderedScripts() !!}</script>
+            @endif
         @endif
     </div>
 @endsection

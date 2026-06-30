@@ -27,6 +27,21 @@ class SitePageGrapesJsTest extends TestCase
         $this->assertTrue($page->usesGrapesJsBuilder());
         $this->assertSame('<section class="hero">Hello Grapes</section>', $page->renderedContent());
         $this->assertSame('.hero { color: red; }', $page->renderedStyles());
+        $this->assertNull($page->renderedScripts());
+    }
+
+    public function test_grapesjs_builder_renders_saved_component_scripts(): void
+    {
+        $page = new SitePage([
+            'builder' => PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<div role="tablist"></div>',
+                'css' => '',
+                'js' => 'var items = document.querySelectorAll("#tabs");',
+            ],
+        ]);
+
+        $this->assertSame('var items = document.querySelectorAll("#tabs");', $page->renderedScripts());
     }
 
     public function test_rich_editor_builder_keeps_tip_tap_renderer_path(): void
@@ -73,5 +88,6 @@ class SitePageGrapesJsTest extends TestCase
 
         $this->assertSame('', $renderer->render($page));
         $this->assertNull($renderer->css($page));
+        $this->assertNull($renderer->js($page));
     }
 }

@@ -95,6 +95,8 @@ final class GrapesJsEditorGate
                 'repeatList' => __('voodbuilder::pro.bindings.repeat_list'),
                 'repeatContainerHint' => __('voodbuilder::pro.bindings.repeat_container_hint'),
                 'bindingNeedsLeaf' => __('voodbuilder::pro.bindings.binding_needs_leaf'),
+                'repeatListInstead' => __('voodbuilder::pro.bindings.repeat_list_instead'),
+                'repeatItemHint' => __('voodbuilder::pro.bindings.repeat_item_hint'),
                 'repeatContainerNoBind' => __('voodbuilder::pro.bindings.repeat_container_no_bind'),
                 'repeatListNotField' => __('voodbuilder::pro.bindings.repeat_list_not_field'),
                 'panelBlocks' => __('voodbuilder::pro.editor_ui.panel_blocks'),
@@ -117,7 +119,7 @@ final class GrapesJsEditorGate
     }
 
     /**
-     * @return array{html: string, css: string, project: mixed}
+     * @return array{html: string, css: string, js: string, project: mixed}
      */
     public static function initialPayload(SitePage $page): array
     {
@@ -125,6 +127,7 @@ final class GrapesJsEditorGate
         $normalized = self::normalizePayload([
             'html' => $payload['html'] ?? '',
             'css' => $payload['css'] ?? '',
+            'js' => $payload['js'] ?? '',
             'project' => $payload['project'] ?? null,
         ]);
 
@@ -173,8 +176,8 @@ final class GrapesJsEditorGate
     }
 
     /**
-     * @param  array{html?: string, css?: string, project?: mixed}  $payload
-     * @return array{html: string, css: string, project: mixed}
+     * @param  array{html?: string, css?: string, js?: string, project?: mixed}  $payload
+     * @return array{html: string, css: string, js: string, project: mixed}
      */
     public static function normalizePayload(array $payload): array
     {
@@ -183,6 +186,7 @@ final class GrapesJsEditorGate
         $html = GrapesJsCustomCodeSanitizer::sanitize($html);
         $html = GrapesJsCodeBlockNormalizer::normalize($html);
         $css = (string) ($payload['css'] ?? '');
+        $js = (string) ($payload['js'] ?? '');
         $project = $payload['project'] ?? null;
 
         return [
@@ -194,6 +198,7 @@ final class GrapesJsEditorGate
             'css' => GrapesJsCssSanitizer::sanitize(
                 TailblocksThemeTokenMigrator::migrateCss($css),
             ),
+            'js' => GrapesJsJsSanitizer::sanitize($js),
             'project' => is_array($project)
                 ? TailblocksThemeTokenMigrator::migrateProject($project)
                 : $project,

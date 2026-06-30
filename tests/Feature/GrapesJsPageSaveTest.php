@@ -87,6 +87,48 @@ class GrapesJsPageSaveTest extends TestCase
 
         $this->assertSame('<section>Updated</section>', $page->builder_payload['html']);
         $this->assertSame('.updated { color: red; }', $page->builder_payload['css']);
+        $this->assertSame('', $page->builder_payload['js']);
+    }
+
+    public function test_admin_can_save_grapesjs_component_scripts(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-js@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Grapes tabs',
+            'slug' => 'grapes-tabs',
+            'builder' => PageBuilder::GrapesJs,
+            'layout' => 'landing',
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $js = 'var items = document.querySelectorAll("#tabs");';
+
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
+            'html' => '<div id="tabs"></div>',
+            'css' => '',
+            'js' => $js,
+        ])->assertOk();
+
+        $page->refresh();
+
+        $this->assertSame($js, $page->builder_payload['js']);
+        $this->assertSame($js, $page->renderedScripts());
     }
 
     public function test_save_migrates_tailblocks_brand_classes(): void

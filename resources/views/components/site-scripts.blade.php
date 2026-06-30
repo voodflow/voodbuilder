@@ -1,7 +1,7 @@
 <script>
     (function () {
         const root = document.documentElement;
-        const config = window.__vpressTheme || {
+        const config = window.__voodbuilderTheme || window.__vpressTheme || {
             showToggle: true,
             defaultMode: 'system',
             locked: false,
@@ -533,6 +533,133 @@
                     }, 1600);
                 }
             });
+        });
+
+        function findTabsRoot(tablist) {
+            let node = tablist.parentElement;
+
+            while (node) {
+                if (node.querySelector('[role="tabpanel"]')) {
+                    return node;
+                }
+
+                node = node.parentElement;
+            }
+
+            return tablist.parentElement;
+        }
+
+        function initGrapesJsTabs(root) {
+            if (! root || root.dataset.voodbuilderTabsReady === '1') {
+                return;
+            }
+
+            root.dataset.voodbuilderTabsReady = '1';
+
+            const classTabActive = 'tab-active';
+            const selectorTab = 'aria-controls';
+            const roleTab = '[role="tab"]';
+            const roleTabContent = '[role="tabpanel"]';
+            const body = document.body;
+            const matches = body.matchesSelector
+                || body.webkitMatchesSelector
+                || body.mozMatchesSelector
+                || body.msMatchesSelector;
+
+            const each = (items, callback) => {
+                const list = items || [];
+
+                for (let index = 0; index < list.length; index += 1) {
+                    callback(list[index], index);
+                }
+            };
+
+            const hideContents = () => {
+                each(root.querySelectorAll(roleTabContent), (panel) => {
+                    panel.hidden = true;
+                });
+            };
+
+            const getTabId = (item) => item.getAttribute(selectorTab);
+            const query = (element, selector) => element.querySelector(selector);
+            const getAllTabs = () => root.querySelectorAll(roleTab);
+
+            const activeTab = (tabEl) => {
+                each(getAllTabs(), (item) => {
+                    item.className = item.className.replace(classTabActive, '').trim();
+                    item.setAttribute('aria-selected', 'false');
+                    item.tabIndex = -1;
+                });
+                hideContents();
+                tabEl.className += ` ${classTabActive}`;
+                tabEl.setAttribute('aria-selected', 'true');
+                tabEl.tabIndex = 0;
+                const tabContentId = getTabId(tabEl);
+                const tabContent = tabContentId && query(root, `#${tabContentId}`);
+
+                if (tabContent) {
+                    tabContent.hidden = false;
+                }
+            };
+
+            const getTabByHash = () => {
+                const hashId = (window.location.hash || '').replace('#', '');
+                const selector = `${roleTab}[${selectorTab}="${hashId}"]`;
+
+                return hashId ? query(root, selector) : null;
+            };
+
+            const getSelectedTab = (target) => {
+                let found = null;
+
+                each(getAllTabs(), (item) => {
+                    if (found) {
+                        return;
+                    }
+
+                    if (item.contains(target)) {
+                        found = item;
+                    }
+                });
+
+                return found;
+            };
+
+            let tabToActive = query(root, `.${classTabActive}${roleTab}`);
+            tabToActive = tabToActive || getTabByHash() || query(root, roleTab);
+
+            if (tabToActive) {
+                activeTab(tabToActive);
+            }
+
+            root.addEventListener('click', (event) => {
+                let { target } = event;
+                let found = matches.call(target, roleTab);
+
+                if (! found) {
+                    target = getSelectedTab(target);
+                    found = target ? 1 : 0;
+                }
+
+                if (found && ! event.__voodbuilderTabTrigger && target.className.indexOf(classTabActive) < 0) {
+                    event.preventDefault();
+                    event.__voodbuilderTabTrigger = 1;
+                    activeTab(target);
+                    const id = getTabId(target);
+
+                    try {
+                        if (window.history) {
+                            window.history.pushState(null, '', `#${id}`);
+                        }
+                    } catch {
+                        // Ignore history API failures.
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('[role="tablist"]').forEach((tablist) => {
+            initGrapesJsTabs(findTabsRoot(tablist));
         });
     })();
 </script>
