@@ -202,6 +202,15 @@ const SECTION_WIREFRAMES = {
             + '<path d="M15 20h18M15 25h14M15 30h10" />',
         );
     },
+    tabs() {
+        return previewSvg(
+            '<rect x="8" y="12" width="11" height="5" rx="2.5" fill="#0d94e6" />'
+            + '<rect x="22" y="12" width="11" height="5" rx="2.5" />'
+            + '<rect x="36" y="12" width="6" height="5" rx="2.5" />'
+            + '<rect x="8" y="22" width="32" height="12" rx="2" />'
+            + '<path d="M12 27h20M12 30h14" />',
+        );
+    },
     commerce() {
         return previewSvg(
             '<rect x="10" y="14" width="12" height="12" rx="1.5" />'

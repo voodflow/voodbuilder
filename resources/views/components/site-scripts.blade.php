@@ -556,7 +556,7 @@
 
             root.dataset.voodbuilderTabsReady = '1';
 
-            const classTabActive = 'tab-active';
+            const classTabActive = root.dataset.vbTabActiveClass || 'tab-active';
             const selectorTab = 'aria-controls';
             const roleTab = '[role="tab"]';
             const roleTabContent = '[role="tabpanel"]';

@@ -346,6 +346,78 @@ function findLayoutRowDescendant(component) {
     return null;
 }
 
+function repeatMetaFromAttributes(attrs = {}) {
+    const key = attrs['data-voodbuilder-repeat'];
+
+    if (! key) {
+        return null;
+    }
+
+    return {
+        key,
+        limit: attrs['data-voodbuilder-repeat-limit'] ?? '3',
+        sort: attrs['data-voodbuilder-repeat-sort'] ?? 'id',
+        sortDir: attrs['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
+    };
+}
+
+function applyRepeatMetaToComponent(component, meta) {
+    if (! component || ! meta?.key) {
+        return;
+    }
+
+    component.set('vpressRepeatMeta', meta, { silent: true });
+    component.addAttributes({
+        'data-voodbuilder-repeat': meta.key,
+        'data-voodbuilder-repeat-limit': String(meta.limit ?? '3'),
+        'data-voodbuilder-repeat-sort': meta.sort ?? 'id',
+        'data-voodbuilder-repeat-sort-dir': meta.sortDir ?? 'desc',
+    });
+}
+
+function syncRepeatMetaFromAttributes(component) {
+    const meta = repeatMetaFromAttributes(component.getAttributes?.() ?? {});
+
+    if (meta) {
+        component.set('vpressRepeatMeta', meta, { silent: true });
+    }
+}
+
+function restoreRepeatMetaOnComponent(component) {
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-repeat']) {
+        syncRepeatMetaFromAttributes(component);
+
+        return;
+    }
+
+    const meta = component.get('vpressRepeatMeta');
+
+    if (meta?.key) {
+        applyRepeatMetaToComponent(component, meta);
+    }
+}
+
+function syncRepeatAttributesToDom(component) {
+    const meta = repeatMetaFromAttributes(component.getAttributes?.() ?? {});
+
+    if (! meta) {
+        return;
+    }
+
+    const element = component.getView()?.el;
+
+    if (! element) {
+        return;
+    }
+
+    element.setAttribute('data-voodbuilder-repeat', meta.key);
+    element.setAttribute('data-voodbuilder-repeat-limit', String(meta.limit));
+    element.setAttribute('data-voodbuilder-repeat-sort', meta.sort);
+    element.setAttribute('data-voodbuilder-repeat-sort-dir', meta.sortDir);
+}
+
 function migrateRepeatPlacement(component) {
     const repeatKey = component.getAttributes?.()['data-voodbuilder-repeat'];
 
@@ -356,15 +428,16 @@ function migrateRepeatPlacement(component) {
     const repeatTarget = resolveRepeatTargetContainer(component);
 
     if (repeatTarget === component) {
+        syncRepeatMetaFromAttributes(repeatTarget);
+
         return repeatTarget;
     }
 
-    repeatTarget.addAttributes({
-        'data-voodbuilder-repeat': repeatKey,
-        'data-voodbuilder-repeat-limit': component.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
-        'data-voodbuilder-repeat-sort': component.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
-        'data-voodbuilder-repeat-sort-dir': component.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
-    });
+    const meta = repeatMetaFromAttributes(component.getAttributes?.() ?? {})
+        ?? component.get('vpressRepeatMeta')
+        ?? { key: repeatKey };
+
+    applyRepeatMetaToComponent(repeatTarget, meta);
     repeatTarget.removeAttributes('data-voodbuilder-repeat-item');
     component.removeAttributes('data-voodbuilder-repeat');
     component.removeAttributes('data-voodbuilder-repeat-limit');
@@ -413,12 +486,13 @@ function collectRepeatPreviewConfigs(editor) {
     const configs = new Map();
 
     editor?.getWrapper?.().find('[data-voodbuilder-repeat]').forEach((component) => {
-        const repeatTarget = migrateRepeatPlacement(component);
-        const repeatKey = repeatTarget.getAttributes()['data-voodbuilder-repeat'];
+        const repeatKey = component.getAttributes()['data-voodbuilder-repeat'];
 
         if (! repeatKey) {
             return;
         }
+
+        const repeatTarget = component;
 
         const { sort, sortDir } = repeatSortFromContainer(repeatTarget);
         const limit = Math.max(
@@ -663,14 +737,49 @@ function resolvePreviewValue(bindingKey, component, values, listValues, catalog)
         ?? (bindingKey === 'vtuts.latest.excerpt' ? values['vtuts.latest.introduction'] : undefined);
 }
 
-function normalizeRepeatContainers(editor, catalog) {
-    editor.getWrapper().find('[data-voodbuilder-repeat]').forEach((container) => {
-        const repeatTarget = migrateRepeatPlacement(container);
+function ensureRepeatContainers(editor, catalog) {
+    const processed = new Set();
+
+    const finalizeRepeatTarget = (repeatTarget) => {
+        if (! repeatTarget || processed.has(repeatTarget.cid)) {
+            return;
+        }
+
+        processed.add(repeatTarget.cid);
+        restoreRepeatMetaOnComponent(repeatTarget);
+        syncRepeatAttributesToDom(repeatTarget);
+
         const template = collapseRepeatTemplate(repeatTarget);
 
         if (template) {
             migrateBindingsInTree(editor, template, catalog);
         }
+    };
+
+    const restoreMissingRepeat = (repeatTarget) => {
+        if (repeatTarget.getAttributes()['data-voodbuilder-repeat']) {
+            return;
+        }
+
+        const storedMeta = repeatTarget.get('vpressRepeatMeta');
+        const sampleBinding = repeatTarget.find('[data-voodbuilder-bind]')[0]?.getAttributes?.()['data-voodbuilder-bind'];
+        const repeatKey = storedMeta?.key
+            ?? (sampleBinding ? inferRepeatListKey(sampleBinding, catalog) : catalog?.repeatSources?.[0]?.id);
+
+        if (! repeatKey) {
+            return;
+        }
+
+        applyRepeatMetaToComponent(repeatTarget, {
+            key: repeatKey,
+            limit: storedMeta?.limit ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
+            sort: storedMeta?.sort ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
+            sortDir: storedMeta?.sortDir ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
+        });
+    };
+
+    editor.getWrapper().find('[data-voodbuilder-repeat]').forEach((container) => {
+        finalizeRepeatTarget(migrateRepeatPlacement(container));
     });
 
     const seen = new Set();
@@ -682,6 +791,13 @@ function normalizeRepeatContainers(editor, catalog) {
             return;
         }
 
+        seen.add(container.cid);
+
+        const repeatTarget = resolveRepeatTargetContainer(container);
+
+        restoreMissingRepeat(repeatTarget);
+        finalizeRepeatTarget(repeatTarget);
+
         const repeatItems = container.components().models.filter(
             (child) => child.getAttributes()['data-voodbuilder-repeat-item'],
         );
@@ -690,30 +806,19 @@ function normalizeRepeatContainers(editor, catalog) {
             return;
         }
 
-        seen.add(container.cid);
-
-        const repeatTarget = resolveRepeatTargetContainer(container);
-
-        if (! repeatTarget.getAttributes()['data-voodbuilder-repeat']) {
-            const sampleBinding = repeatTarget.find('[data-voodbuilder-bind]')[0]?.getAttributes?.()['data-voodbuilder-bind'];
-            const repeatKey = sampleBinding ? inferRepeatListKey(sampleBinding, catalog) : catalog?.repeatSources?.[0]?.id;
-
-            if (repeatKey) {
-                repeatTarget.addAttributes({
-                    'data-voodbuilder-repeat': repeatKey,
-                    'data-voodbuilder-repeat-limit': repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
-                    'data-voodbuilder-repeat-sort': repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
-                    'data-voodbuilder-repeat-sort-dir': repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
-                });
-            }
-        }
-
-        const template = collapseRepeatTemplate(repeatTarget);
-
-        if (template) {
-            migrateBindingsInTree(editor, template, catalog);
-        }
+        collapseRepeatTemplate(repeatTarget);
+        finalizeRepeatTarget(repeatTarget);
     });
+}
+
+let repeatMaintainTimer = null;
+
+function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
+    window.clearTimeout(repeatMaintainTimer);
+    repeatMaintainTimer = window.setTimeout(() => {
+        ensureRepeatContainers(editor, catalog);
+        void refreshBindingPreviews(editor, previewOptions);
+    }, 120);
 }
 
 function paintPreviewOnElement(component, value, fieldType) {
@@ -902,6 +1007,21 @@ export function registerBoundComponentType(editor) {
                     droppable: true,
                     removable: true,
                     copyable: true,
+                },
+                init() {
+                    restoreRepeatMetaOnComponent(this);
+
+                    for (const attribute of [
+                        'data-voodbuilder-repeat',
+                        'data-voodbuilder-repeat-limit',
+                        'data-voodbuilder-repeat-sort',
+                        'data-voodbuilder-repeat-sort-dir',
+                    ]) {
+                        this.on(`change:attributes:${attribute}`, () => {
+                            syncRepeatMetaFromAttributes(this);
+                            syncRepeatAttributesToDom(this);
+                        });
+                    }
                 },
             },
         });
@@ -1304,6 +1424,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                     'data-voodbuilder-repeat-sort': sort,
                     'data-voodbuilder-repeat-sort-dir': sortDir,
                 });
+                applyRepeatMetaToComponent(repeatTarget, {
+                    key: repeatSourceSelect.value,
+                    limit: String(limit),
+                    sort,
+                    sortDir,
+                });
 
                 const template = collapseRepeatTemplate(repeatTarget);
 
@@ -1572,6 +1698,22 @@ export async function registerBindingsUi(editor, options = {}) {
 
     editor.on('component:add', (component) => {
         configureBoundComponent(editor, component, catalog);
+        scheduleRepeatMaintenance(editor, catalog, previewOptions);
+    });
+
+    editor.on('component:remove', () => {
+        scheduleRepeatMaintenance(editor, catalog, previewOptions);
+    });
+
+    editor.on('component:update', (component) => {
+        const attrs = component?.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-repeat']
+            || attrs['data-voodbuilder-repeat-item']
+            || attrs['data-voodbuilder-bind']
+            || (component?.find?.('[data-voodbuilder-repeat], [data-voodbuilder-repeat-item], [data-voodbuilder-bind]') ?? []).length > 0) {
+            scheduleRepeatMaintenance(editor, catalog, previewOptions);
+        }
     });
 
     editor.on('component:selected', (component) => {
@@ -1626,9 +1768,27 @@ export async function registerBindingsUi(editor, options = {}) {
     mountDynamicInspectorPanel(editor, options.dynamicMount, catalog, labels, previewOptions);
 
     editor.on('load', () => {
-        normalizeRepeatContainers(editor, catalog);
+        ensureRepeatContainers(editor, catalog);
         void refreshBindingPreviews(editor, previewOptions);
     });
 
     return catalog;
+}
+
+export function syncRepeatBindingsForExport(editor) {
+    if (! editor?.getWrapper) {
+        return;
+    }
+
+    editor.getWrapper().find('[data-voodbuilder-repeat]').forEach((component) => {
+        restoreRepeatMetaOnComponent(component);
+        syncRepeatAttributesToDom(component);
+    });
+
+    editor.getWrapper().find('[data-voodbuilder-repeat-item]').forEach((item) => {
+        const repeatTarget = resolveRepeatTargetContainer(item.parent?.() ?? item);
+
+        restoreRepeatMetaOnComponent(repeatTarget);
+        syncRepeatAttributesToDom(repeatTarget);
+    });
 }

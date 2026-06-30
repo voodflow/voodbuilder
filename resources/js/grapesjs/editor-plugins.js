@@ -5,6 +5,8 @@ import grapesjsPluginForms from 'grapesjs-plugin-forms';
 import grapesjsStyleBg from 'grapesjs-style-bg';
 import grapesjsTabs from 'grapesjs-tabs';
 import grapesjsCustomCode from 'grapesjs-custom-code';
+import { grapesJsTabsPluginOptions, registerVoodbuilderTabsBlocks } from './grapesjs-tabs-blocks.js';
+import { configureGrapesJsTabsCanvas } from './grapesjs-tabs-runtime.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
@@ -25,12 +27,7 @@ export function resolveGrapesJsPlugins(enabled = {}) {
         plugins.push(plugin);
 
         if (plugin === grapesjsTabs) {
-            pluginsOpts[plugin] = {
-                tabsBlock: {
-                    label: 'Tabs section',
-                    category: 'Sections · Content',
-                },
-            };
+            pluginsOpts[plugin] = grapesJsTabsPluginOptions();
 
             continue;
         }
@@ -75,6 +72,14 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
 
 export function configureGrapesJsPlugins(editor, options = {}) {
     const { formSubmitUrl, csrf, plugins: enabled = {} } = options;
+
+    if (enabled.tabs !== false) {
+        const registerTabs = () => registerVoodbuilderTabsBlocks(editor);
+
+        editor.on('load', registerTabs);
+        registerTabs();
+        configureGrapesJsTabsCanvas(editor);
+    }
 
     if (enabled.forms !== false && formSubmitUrl) {
         const applyToForms = (component) => patchFormComponent(component, formSubmitUrl, csrf);

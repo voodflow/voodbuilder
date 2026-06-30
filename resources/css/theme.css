@@ -526,49 +526,7 @@ summary,
     }
 }
 
-/*
- * grapesjs-tabs — default styles for tab blocks in builder pages.
- * Matches grapesjs-tabs plugin defaults; kept in theme.css for canvas + published pages.
- */
-.VPRichPage .tab {
-    display: inline-block;
-    margin-right: 0.625rem;
-    padding: 0.4375rem 0.875rem;
-    border-radius: 0.1875rem;
-    cursor: pointer;
-}
-
-.VPRichPage .tab:focus {
-    outline: none;
-}
-
-.VPRichPage .tab.tab-active {
-    background-color: var(--color-vp-brand-1, #0d94e6);
-    color: #ffffff;
-}
-
-.VPRichPage .tab-container {
-    display: inline-block;
-}
-
-.VPRichPage .tab-content {
-    animation: voodbuilder-tab-fade 0.35s ease;
-}
-
-.VPRichPage .tab-contents {
-    min-height: 6.25rem;
-    padding: 0.625rem;
-}
-
-@keyframes voodbuilder-tab-fade {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
+@import './grapesjs/tabs.css';
 
 /*
  * Header link/icon colors: nav uses Tailwind text-vp-text-* (utilities layer).

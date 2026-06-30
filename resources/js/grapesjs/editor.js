@@ -26,7 +26,7 @@ import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
-import { registerBindingsUi } from './bindings-ui.js';
+import { registerBindingsUi, syncRepeatBindingsForExport } from './bindings-ui.js';
 import { registerVisualStyleInspector, registerVisualStyleTarget } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
 import { buildEditorShell, collapseBlockCategories, configureEditorLayout, editorLayoutInitOptions } from './editor-layout.js';
@@ -61,6 +61,7 @@ function normalizeVpressDynamicComponents(editor) {
 function buildPayload(editor) {
     normalizeVpressDynamicComponents(editor);
     pruneEmptyDynamicBlocks(editor);
+    syncRepeatBindingsForExport(editor);
 
     return {
         html: editor.getHtml({
@@ -381,6 +382,14 @@ async function refreshDynamicBlocks(editor, renderUrl) {
         const blockId = attributes['data-voodbuilder-block'];
 
         if (! blockId) {
+            continue;
+        }
+
+        const hasDynamicBindings = component.find('[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
+
+        if (hasDynamicBindings) {
+            lockDynamicPreviewContent(component);
+
             continue;
         }
 

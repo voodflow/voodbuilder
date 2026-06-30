@@ -49,6 +49,7 @@ final class GrapesJsCanvas
     public static function frameStyle(string $subTheme): string
     {
         $paletteCss = ThemePalette::cssForCanvas($subTheme);
+        $tabsCss = self::readTabsCanvasCss();
 
         return <<<CSS
         body {
@@ -79,7 +80,19 @@ final class GrapesJsCanvas
         * ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2) }
         * ::-webkit-scrollbar { width: 10px }
         {$paletteCss}
+        {$tabsCss}
         CSS;
+    }
+
+    protected static function readTabsCanvasCss(): string
+    {
+        $path = dirname(__DIR__, 3).'/resources/css/grapesjs/tabs.css';
+
+        if (! is_readable($path)) {
+            return '';
+        }
+
+        return (string) file_get_contents($path);
     }
 
     protected static function hasBuiltAsset(string $entry): bool
