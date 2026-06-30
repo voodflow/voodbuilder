@@ -159,6 +159,13 @@ export function initVpressGrapesJs(container, options = {}) {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
     }) : null;
+
+    if (shell?.mounts) {
+        for (const key of ['blocks', 'layers', 'traits', 'selectors', 'styles', 'dynamic']) {
+            shell.mounts[key]?.replaceChildren?.();
+        }
+    }
+
     const layoutOptions = shell ? editorLayoutInitOptions(shell.mounts) : {};
     const editorContainer = shell?.mounts.canvas ?? container;
     const chromeOptions = editorChromeInitOptions();
@@ -449,9 +456,11 @@ function mountFrontendEditor() {
     const canvas = document.querySelector('[data-voodbuilder-grapesjs-canvas]');
     const config = readConfig();
 
-    if (! root || ! canvas || ! config) {
+    if (! root || ! canvas || ! config || root.dataset.voodbuilderGrapesjsMounted === 'true') {
         return;
     }
+
+    root.dataset.voodbuilderGrapesjsMounted = 'true';
 
     const editor = initVpressGrapesJs(canvas, {
         height: '100%',

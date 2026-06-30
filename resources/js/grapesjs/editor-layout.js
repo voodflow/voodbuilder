@@ -137,7 +137,6 @@ export function editorLayoutInitOptions(mounts) {
             appendTo: mounts.traits,
         },
         selectorManager: {
-            appendTo: mounts.selectors,
             componentFirst: true,
         },
         styleManager: {
@@ -285,6 +284,20 @@ function setupInspectorTabs(mounts, editor) {
     activateTab('content');
 }
 
+function mountSelectorManagerPanel(editor, mount) {
+    if (! mount) {
+        return;
+    }
+
+    mount.replaceChildren();
+
+    const panel = editor.SelectorManager.render();
+
+    if (panel) {
+        mount.appendChild(panel);
+    }
+}
+
 function getClassManagerPanels(root) {
     if (! root) {
         return [];
@@ -337,7 +350,9 @@ function setupStyleInspector(editor, mounts) {
     const dedupe = () => dedupeSelectorManagerPanels(mounts.selectors, mounts.styles);
 
     editor.on('load', () => {
+        mountSelectorManagerPanel(editor, mounts.selectors);
         observeSelectorManagerDedupe(mounts);
+        dedupe();
     });
     editor.on('component:selected', () => {
         window.requestAnimationFrame(() => {

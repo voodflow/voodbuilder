@@ -397,6 +397,8 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 /* GrapesJS 0.23+ uses .clm-tags for the class manager; keep a single block visible */
 .voodbuilder-gjs-styles-mount .clm-tags,
 .voodbuilder-gjs-styles-mount .gjs-clm,
+.voodbuilder-gjs-selectors-mount .clm-tags ~ .clm-tags,
+.voodbuilder-gjs-selectors-mount .gjs-clm ~ .gjs-clm,
 .voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector="style"] .clm-tags ~ .clm-tags,
 .voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector="style"] .gjs-clm ~ .gjs-clm {
     display: none !important;
