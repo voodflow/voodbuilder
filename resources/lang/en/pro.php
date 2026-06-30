@@ -60,6 +60,8 @@ return [
         'repeat_list' => 'List repeat',
         'repeat_container_hint' => 'Apply List repeat on this container. Then select the title, text or link inside the card and bind with “List item” — not “Latest record”.',
         'binding_needs_leaf' => 'Bind text and images on the inner element (h2, p, img, a), not on the grid container.',
+        'repeat_list_instead' => 'This looks like a list. Scroll to the List repeat section below, apply it to repeat items, then select the title or text inside each card and bind with “List item” — not “Latest record”.',
+        'repeat_item_hint' => 'Choose List item and pick the field for this element (title, description, slug…).',
         'repeat_container_no_bind' => 'List repeat containers cannot hold a field binding. Bind the fields inside the card template.',
         'repeat_list_not_field' => 'Repeat list is configured via the List repeat section below, not as a field binding.',
     ],

@@ -60,6 +60,8 @@ return [
         'repeat_list' => 'List repeat',
         'repeat_container_hint' => 'Applica List repeat su questo container. Poi seleziona titolo, testo o link dentro la card e collega con “List item” — non “Latest record”.',
         'binding_needs_leaf' => 'Collega testo e immagini sull\'elemento interno (h2, p, img, a), non sul container della griglia.',
+        'repeat_list_instead' => 'Sembra una lista. Scorri alla sezione List repeat qui sotto, applicala per ripetere gli elementi, poi seleziona titolo o testo dentro ogni card e collega con “List item” — non “Latest record”.',
+        'repeat_item_hint' => 'Scegli List item e il campo per questo elemento (titolo, descrizione, slug…).',
         'repeat_container_no_bind' => 'I container con list repeat non possono avere un binding di campo. Collega i campi dentro la card.',
         'repeat_list_not_field' => 'La repeat list si configura nella sezione List repeat, non come binding di campo.',
     ],

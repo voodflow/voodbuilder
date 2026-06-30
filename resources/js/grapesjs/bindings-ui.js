@@ -238,11 +238,7 @@ function isRepeatHost(component) {
         return false;
     }
 
-    if (isLayoutRow(component)) {
-        return true;
-    }
-
-    return component.components().some((child) => isLayoutRow(child));
+    return Boolean(findRepeatListContainer(component));
 }
 
 function componentClassNames(component) {
@@ -255,10 +251,62 @@ function componentClassNames(component) {
 function isLayoutRow(component) {
     const classes = componentClassNames(component);
 
-    return /\bflex-wrap\b/.test(classes) || /\bgrid\b/.test(classes);
+    return /\bflex-wrap\b/.test(classes)
+        || /\bgrid\b/.test(classes)
+        || /\bgrid-cols-/i.test(classes);
+}
+
+function listItemChildren(component) {
+    return (component?.components?.()?.models ?? []).filter((child) => ! isTextNodeComponent(child));
+}
+
+function isListRepeatContainer(component) {
+    const children = listItemChildren(component);
+
+    if (children.length < 2) {
+        return false;
+    }
+
+    if (isLayoutRow(component)) {
+        return true;
+    }
+
+    const classes = componentClassNames(component);
+
+    return /\bdivide-y\b/.test(classes) || /\bspace-y-/i.test(classes);
+}
+
+function findRepeatListContainer(component) {
+    if (! component) {
+        return null;
+    }
+
+    if (isListRepeatContainer(component)) {
+        return component;
+    }
+
+    if (isLayoutRow(component) && hasElementChildren(component)) {
+        return component;
+    }
+
+    for (const child of component.components?.()?.models ?? []) {
+        const found = findRepeatListContainer(child);
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return null;
 }
 
 function resolveRepeatTargetContainer(component) {
+    const listContainer = findRepeatListContainer(component);
+
+    if (listContainer) {
+        return listContainer;
+    }
+
     if (isLayoutRow(component)) {
         return component;
     }
@@ -270,6 +318,16 @@ function resolveRepeatTargetContainer(component) {
     }
 
     return component;
+}
+
+function bindingRejectionMessage(component, fieldType, labels) {
+    if (hasStructuralChildren(component) && (isRepeatHost(component) || findRepeatListContainer(component))) {
+        return labels.repeatListInstead
+            ?? 'This looks like a list. Use the List repeat section in the Dynamic tab, then bind title, text and links inside each card with “List item”.';
+    }
+
+    return labels.bindingNeedsLeaf
+        ?? 'Bind text and images on the inner element (h2, p, img, a) — not on the grid container.';
 }
 
 function findLayoutRowDescendant(component) {
@@ -741,13 +799,13 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     }
 
     if (! canAcceptFieldBinding(component, fieldType)) {
-        window.alert(labels.bindingNeedsLeaf ?? 'Bind text and images on the inner element (h2, p, img, a) — not on the grid container.');
+        window.alert(bindingRejectionMessage(component, fieldType, labels));
 
         return;
     }
 
     if (hasStructuralChildren(component) && ! isRepeatItemSource(sourceId) && fieldType === 'text') {
-        window.alert(labels.bindingNeedsLeaf ?? 'Bind text and images on the inner element (h2, p, img, a) — not on the grid container.');
+        window.alert(bindingRejectionMessage(component, fieldType, labels));
 
         return;
     }
