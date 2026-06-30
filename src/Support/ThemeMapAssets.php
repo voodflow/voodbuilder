@@ -130,7 +130,7 @@ final class ThemeMapAssets
                     const link = document.createElement('link');
                     link.rel = 'stylesheet';
                     link.href = styleHref;
-                    link.dataset.vpressThemeMapStyle = '1';
+                    link.dataset.voodbuilderThemeMapStyle = '1';
                     document.head.appendChild(link);
                 }
 
@@ -144,7 +144,7 @@ final class ThemeMapAssets
                 if (! script) {
                     script = document.createElement('script');
                     script.src = scriptSrc;
-                    script.dataset.vpressThemeMapScript = '1';
+                    script.dataset.voodbuilderThemeMapScript = '1';
                     script.addEventListener('load', () => {
                         script.dataset.loaded = '1';
                         run();

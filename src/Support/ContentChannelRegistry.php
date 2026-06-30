@@ -110,11 +110,19 @@ final class ContentChannelRegistry
         }
 
         return static function (string $term, int $limit) use ($search): Collection {
-            if (! class_exists($search) || ! method_exists($search, 'vpressSearch')) {
+            if (! class_exists($search)) {
                 return collect();
             }
 
-            return $search::vpressSearch($term, $limit);
+            if (method_exists($search, 'voodbuilderSearch')) {
+                return $search::voodbuilderSearch($term, $limit);
+            }
+
+            if (method_exists($search, 'vpressSearch')) {
+                return $search::vpressSearch($term, $limit);
+            }
+
+            return collect();
         };
     }
 }

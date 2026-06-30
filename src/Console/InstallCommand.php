@@ -298,9 +298,9 @@ class InstallCommand extends Command
 
     protected function warnAboutPublishedMigrations(): void
     {
-        $publishedVpress = glob(database_path('migrations/*site_pages_table.php')) ?: [];
+        $publishedLegacyMigrations = glob(database_path('migrations/*site_pages_table.php')) ?: [];
 
-        if ($publishedVpress === []) {
+        if ($publishedLegacyMigrations === []) {
             return;
         }
 

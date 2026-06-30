@@ -1,12 +1,12 @@
 @php
-    $vpressSubTheme = $page->resolvedSubTheme();
+    $voodbuilderSubTheme = $voodbuilderSubTheme ?? $page->resolvedSubTheme();
     $posts = $sectionPosts ?? collect();
 @endphp
 
 @extends($page->layoutView())
 
 @section('section_index')
-    @if ($vpressSubTheme === 'news')
+    @if ($voodbuilderSubTheme === 'news')
         <header class="voodbuilder-news-desk-header">
             <p class="voodbuilder-news-desk-kicker">{{ __('voodbuilder::demo.news.desk_kicker') }}</p>
             <h1 class="voodbuilder-news-desk-title">{{ $page->title }}</h1>

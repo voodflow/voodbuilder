@@ -1,14 +1,14 @@
 @extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
 
 @php
-    $vpressBodyClasses = trim(implode(' ', array_filter([
+    $voodbuilderBodyClasses = trim(implode(' ', array_filter([
         ($hasSidebar ?? false) ? 'voodbuilder-has-doc-sidebar' : null,
         ($showProgress ?? false) ? 'voodbuilder-has-reading-progress' : null,
     ])));
 @endphp
-@if ($vpressBodyClasses !== '')
+@if ($voodbuilderBodyClasses !== '')
     @section('body_class')
-        {{ $vpressBodyClasses }}
+        {{ $voodbuilderBodyClasses }}
     @endsection
 @endif
 
