@@ -5,7 +5,7 @@ import './theme-map.css';
 const roots = new WeakMap();
 
 function readPayloadElement() {
-    return document.getElementById('vpress-theme-map-payload');
+    return document.getElementById('voodbuilder-theme-map-payload');
 }
 
 function parsePayload(raw) {
@@ -28,7 +28,7 @@ function currentPayload() {
         return parsePayload(fromScript);
     }
 
-    const root = document.getElementById('vpress-theme-map-root');
+    const root = document.getElementById('voodbuilder-theme-map-root');
 
     return parsePayload(root?.dataset?.payload);
 }
@@ -42,7 +42,7 @@ function writePayload(payload) {
         return;
     }
 
-    const root = document.getElementById('vpress-theme-map-root');
+    const root = document.getElementById('voodbuilder-theme-map-root');
 
     if (root) {
         root.dataset.payload = JSON.stringify(payload);
@@ -84,8 +84,8 @@ function renderThemeMap(root, payload) {
     return true;
 }
 
-export function mountVpressThemeMap() {
-    const root = document.getElementById('vpress-theme-map-root');
+export function mountVoodbuilderThemeMap() {
+    const root = document.getElementById('voodbuilder-theme-map-root');
 
     if (!root) {
         return false;
@@ -97,24 +97,24 @@ export function mountVpressThemeMap() {
 }
 
 function scheduleMount() {
-    if (mountVpressThemeMap()) {
+    if (mountVoodbuilderThemeMap()) {
         return;
     }
 
     window.requestAnimationFrame(() => {
-        mountVpressThemeMap();
+        mountVoodbuilderThemeMap();
     });
 }
 
 function registerLivewireHooks() {
-    if (typeof window.Livewire === 'undefined' || window.__vpressThemeMapHooksRegistered) {
+    if (typeof window.Livewire === 'undefined' || window.__voodbuilderThemeMapHooksRegistered) {
         return;
     }
 
-    window.__vpressThemeMapHooksRegistered = true;
+    window.__voodbuilderThemeMapHooksRegistered = true;
 
-    window.Livewire.on('vpress-theme-map-refresh', ({ payload }) => {
-        const root = document.getElementById('vpress-theme-map-root');
+    window.Livewire.on('voodbuilder-theme-map-refresh', ({ payload }) => {
+        const root = document.getElementById('voodbuilder-theme-map-root');
 
         if (!root || !payload) {
             return;
@@ -125,7 +125,8 @@ function registerLivewireHooks() {
     });
 }
 
-window.vpressMountThemeMap = mountVpressThemeMap;
+window.voodbuilderMountThemeMap = mountVoodbuilderThemeMap;
+window.vpressMountThemeMap = mountVoodbuilderThemeMap;
 
 function boot() {
     registerLivewireHooks();

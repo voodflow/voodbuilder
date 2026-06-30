@@ -124,7 +124,7 @@ final class ThemeMapAssets
             (function () {
                 const scriptSrc = {$encodedScript};
                 const styleHref = {$encodedStyle};
-                const run = () => window.vpressMountThemeMap?.();
+                const run = () => window.voodbuilderMountThemeMap?.();
 
                 if (styleHref && ! document.querySelector('link[data-voodbuilder-theme-map-style]')) {
                     const link = document.createElement('link');
@@ -134,7 +134,7 @@ final class ThemeMapAssets
                     document.head.appendChild(link);
                 }
 
-                if (typeof window.vpressMountThemeMap === 'function') {
+                if (typeof window.voodbuilderMountThemeMap === 'function') {
                     run();
                     return;
                 }

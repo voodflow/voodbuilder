@@ -549,4 +549,4 @@ html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:h
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
-@import '../../../../../resources/voodbuilder/themes/docs-copy/theme.css';
+@import '../../../../../resources/voodbuilder/themes/seires/theme.css';

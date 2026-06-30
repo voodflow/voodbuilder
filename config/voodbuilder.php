@@ -284,6 +284,17 @@ return [
     | Named routes offered when building navigation menu items (App route type).
     | Wildcard patterns exclude admin, Livewire, and other non-public endpoints.
     */
+    /*
+    | Host-app rich content blocks for the Filament page editor.
+    | Plugins can also register blocks via Voodbuilder::richContentBlock() in their service provider.
+    |
+    | Example:
+    | ['group' => 'Dynamic', 'class' => \App\Ink\LatestNewsBlock::class],
+    */
+    'rich_content_blocks' => [
+        //
+    ],
+
     'menus' => [
         'route_exclude_patterns' => [
             'filament.*',

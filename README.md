@@ -642,6 +642,16 @@ Full build guide: [docs/BUILD.md](docs/BUILD.md).
 
 ## Custom RichEditor blocks
 
+Host-app blocks can be registered in `config/voodbuilder.php`:
+
+```php
+'rich_content_blocks' => [
+    ['group' => 'Dynamic', 'class' => \App\Ink\YourBlock::class],
+],
+```
+
+Or from a service provider / plugin:
+
 ```php
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -649,6 +659,10 @@ Voodbuilder::richContentBlock('Dynamic', YourBlock::class);
 ```
 
 Built-in: Hero, Features grid, Partner banner. **vtuts** registers `latest_vtuts`.
+
+## Morph map
+
+Voodbuilder registers `site_page` automatically. If your app uses `Relation::enforceMorphMap()` (Laravel merges maps by default), you do **not** need to add `site_page` in `AppServiceProvider`.
 
 ## Public routes
 

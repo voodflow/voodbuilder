@@ -21,6 +21,7 @@ const AREA_ROW_GAP = 24;
 const THEME_NODE_HEIGHT = 54;
 const CANVAS_PADDING_BOTTOM = 40;
 const AREA_NODE_WIDTH = 200;
+const THEME_MAP_MIN_CANVAS_HEIGHT = 520;
 
 function estimateAreaNodeHeight(area) {
     const padding = 24;
@@ -55,7 +56,7 @@ function buildAreaLayouts(areas) {
 
     const totalHeight = layouts.length > 0
         ? currentY - AREA_ROW_GAP + CANVAS_PADDING_BOTTOM
-        : 280;
+        : THEME_MAP_MIN_CANVAS_HEIGHT;
 
     return { layouts, totalHeight };
 }
@@ -77,24 +78,24 @@ function buildThemeLayouts(themes, areaTotalHeight) {
 function canvasHeightFor(payload) {
     const { totalHeight } = buildAreaLayouts(payload.areas ?? []);
 
-    return Math.max(320, totalHeight);
+    return Math.max(THEME_MAP_MIN_CANVAS_HEIGHT, totalHeight);
 }
 
 function ThemeNode({ data }) {
     return (
         <div
-            className="vpress-tm-node vpress-tm-node--theme"
+            className="voodbuilder-tm-node voodbuilder-tm-node--theme"
             style={{ '--vp-tm-accent': data.preview }}
         >
-            <div className="vpress-tm-node__strip">
+            <div className="voodbuilder-tm-node__strip">
                 {(data.strip ?? []).map((color) => (
                     <span key={color} style={{ background: color }} />
                 ))}
             </div>
-            <div className="vpress-tm-node__body">
-                <span className="vpress-tm-node__title">{data.label}</span>
+            <div className="voodbuilder-tm-node__body">
+                <span className="voodbuilder-tm-node__title">{data.label}</span>
             </div>
-            <Handle type="source" position={Position.Right} className="vpress-tm-handle" />
+            <Handle type="source" position={Position.Right} className="voodbuilder-tm-handle" />
         </div>
     );
 }
@@ -102,20 +103,20 @@ function ThemeNode({ data }) {
 function AreaNode({ data }) {
     return (
         <div
-            className="vpress-tm-node vpress-tm-node--area"
+            className="voodbuilder-tm-node voodbuilder-tm-node--area"
             style={{
                 '--vp-tm-accent': data.preview,
                 '--vp-tm-surface': data.surface,
             }}
         >
-            <Handle type="target" position={Position.Left} className="vpress-tm-handle" />
-            <div className="vpress-tm-node__body">
-                <span className="vpress-tm-node__title">{data.label}</span>
+            <Handle type="target" position={Position.Left} className="voodbuilder-tm-handle" />
+            <div className="voodbuilder-tm-node__body">
+                <span className="voodbuilder-tm-node__title">{data.label}</span>
                 {data.description ? (
-                    <span className="vpress-tm-node__meta">{data.description}</span>
+                    <span className="voodbuilder-tm-node__meta">{data.description}</span>
                 ) : null}
                 {data.inherited ? (
-                    <span className="vpress-tm-node__badge">{data.inheritedLabel}</span>
+                    <span className="voodbuilder-tm-node__badge">{data.inheritedLabel}</span>
                 ) : null}
             </div>
         </div>
@@ -138,13 +139,13 @@ function InheritedEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition,
     });
 
     return (
-        <g className="vpress-tm-edge">
+        <g className="voodbuilder-tm-edge">
             <path
                 id={id}
                 className={[
-                    'vpress-tm-edge__path',
-                    data?.inherited ? 'vpress-tm-edge__path--inherited' : '',
-                    selected ? 'vpress-tm-edge__path--selected' : '',
+                    'voodbuilder-tm-edge__path',
+                    data?.inherited ? 'voodbuilder-tm-edge__path--inherited' : '',
+                    selected ? 'voodbuilder-tm-edge__path--selected' : '',
                 ].filter(Boolean).join(' ')}
                 d={edgePath}
                 fill="none"
@@ -525,9 +526,9 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
     const canvasHeight = canvasHeightFor(payload);
 
     return (
-        <div className="vpress-tm">
-            <p className="vpress-tm__hint">{payload.i18n?.hint}</p>
-            <div className="vpress-tm__canvas" style={{ height: canvasHeight }}>
+        <div className="voodbuilder-tm">
+            <p className="voodbuilder-tm__hint">{payload.i18n?.hint}</p>
+            <div className="voodbuilder-tm__canvas" style={{ height: canvasHeight }}>
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -560,16 +561,16 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                     <Background gap={18} size={1} color="rgba(148, 163, 184, 0.2)" />
                 </ReactFlow>
             </div>
-            <div className="vpress-tm__legend">
-                <span className="vpress-tm__legend-item">
-                    <span className="vpress-tm__legend-line" />
+            <div className="voodbuilder-tm__legend">
+                <span className="voodbuilder-tm__legend-item">
+                    <span className="voodbuilder-tm__legend-line" />
                     {payload.i18n?.legend_explicit}
                 </span>
-                <span className="vpress-tm__legend-item">
-                    <span className="vpress-tm__legend-line vpress-tm__legend-line--inherited" />
+                <span className="voodbuilder-tm__legend-item">
+                    <span className="voodbuilder-tm__legend-line voodbuilder-tm__legend-line--inherited" />
                     {payload.i18n?.legend_inherited}
                 </span>
-                <span className="vpress-tm__legend-item vpress-tm__legend-item--hint">
+                <span className="voodbuilder-tm__legend-item voodbuilder-tm__legend-item--hint">
                     {payload.i18n?.legend_controls}
                 </span>
             </div>

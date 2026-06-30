@@ -49,7 +49,7 @@ final class GrapesJsAssets
         $script = self::editorScriptEntry();
         $style = self::editorStyleEntry();
 
-        return "Add `{$script}` and `{$style}` to vite.config.js input, run `npm install grapesjs grapesjs-blocks-basic`, then `npm run build`.";
+        return "Add `{$script}` and `{$style}` to vite.config.js input, run `npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code`, then `npm run build`.";
     }
 
     protected static function hasBuiltAsset(string $entry): bool

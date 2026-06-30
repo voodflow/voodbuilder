@@ -11,7 +11,7 @@
         }
 
         #voodbuilder-theme-map-root {
-            min-height: 320px;
+            min-height: 520px;
         }
     </style>
 

@@ -215,7 +215,7 @@ class InstallCommand extends Command
 
         $install = Process::path(base_path())
             ->timeout(600)
-            ->run('npm install');
+            ->run('npm install --legacy-peer-deps');
 
         if (! $install->successful()) {
             $this->components->error('npm install failed.');

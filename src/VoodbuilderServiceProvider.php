@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
@@ -108,6 +110,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
     {
         RegisterFilamentCookieConsentTranslations::apply();
 
+        Relation::morphMap([
+            'site_page' => SitePage::class,
+        ]);
+
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
@@ -155,6 +161,17 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         foreach (VoodbuilderLandingBlocks::blockClasses() as $blockClass) {
             $registry->register('Landing', $blockClass);
+        }
+
+        foreach (config('voodbuilder.rich_content_blocks', []) as $definition) {
+            $group = $definition['group'] ?? null;
+            $blockClass = $definition['class'] ?? null;
+
+            if (! is_string($group) || ! is_string($blockClass) || ! class_exists($blockClass)) {
+                continue;
+            }
+
+            $registry->register($group, $blockClass);
         }
     }
 
