@@ -27,6 +27,7 @@ import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugi
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { registerBindingsUi } from './bindings-ui.js';
+import { registerVisualStyleInspector, registerVisualStyleTarget } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
 import { buildEditorShell, collapseBlockCategories, configureEditorLayout, editorLayoutInitOptions } from './editor-layout.js';
 import { applyLightBlockPreviews } from './editor-block-previews.js';
@@ -167,6 +168,8 @@ export function initVpressGrapesJs(container, options = {}) {
         height: options.height ?? '640px',
         width: options.width ?? 'auto',
         fromElement: false,
+        // Inline styles (with !important from Style Manager) override Tailwind utilities in the canvas.
+        avoidInlineStyle: false,
         storageManager: false,
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
@@ -251,6 +254,9 @@ export function initVpressGrapesJs(container, options = {}) {
     });
 
     configureVpressCodeBlock(editor);
+
+    registerVisualStyleTarget(editor);
+    registerVisualStyleInspector(editor);
 
     applyCanvasDocumentTheme(editor, options.subTheme);
     ensureInitialContent(editor, initial);

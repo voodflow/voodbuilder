@@ -394,9 +394,11 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
 }
 
-/* GrapesJS may re-mount the class manager; keep a single Classes block visible */
+/* GrapesJS 0.23+ uses .clm-tags for the class manager; keep a single block visible */
+.voodbuilder-gjs-styles-mount .clm-tags,
 .voodbuilder-gjs-styles-mount .gjs-clm,
-.voodbuilder-gjs-selectors-mount .gjs-clm ~ .gjs-clm {
+.voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector="style"] .clm-tags ~ .clm-tags,
+.voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector="style"] .gjs-clm ~ .gjs-clm {
     display: none !important;
 }
 

@@ -285,16 +285,29 @@ function setupInspectorTabs(mounts, editor) {
     activateTab('content');
 }
 
-function dedupeSelectorManagerPanels(selectorsMount, stylesMount) {
-    if (stylesMount) {
-        stylesMount.querySelectorAll('.gjs-clm').forEach((panel) => panel.remove());
+function getClassManagerPanels(root) {
+    if (! root) {
+        return [];
     }
 
-    if (! selectorsMount) {
+    return [...root.querySelectorAll('.clm-tags, .gjs-clm')];
+}
+
+function dedupeSelectorManagerPanels(selectorsMount, stylesMount) {
+    const stylePanel = selectorsMount?.closest('[data-voodbuilder-inspector="style"]')
+        ?? stylesMount?.closest('[data-voodbuilder-inspector="style"]');
+
+    if (stylesMount) {
+        getClassManagerPanels(stylesMount).forEach((panel) => panel.remove());
+    }
+
+    const scope = stylePanel ?? selectorsMount;
+
+    if (! scope) {
         return;
     }
 
-    const classPanels = selectorsMount.querySelectorAll('.gjs-clm');
+    const classPanels = getClassManagerPanels(scope);
 
     for (let index = 1; index < classPanels.length; index += 1) {
         classPanels[index].remove();

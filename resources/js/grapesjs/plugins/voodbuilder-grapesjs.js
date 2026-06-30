@@ -4,6 +4,13 @@
  */
 
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
+import {
+    stripBackgroundClasses,
+    stripBorderColorClasses,
+    stripRoundedClasses,
+    stripTextColorClasses,
+} from '../theme-tokens.js';
+import { resolveVisualStyleTarget } from '../tailwind-visual-style.js';
 
 function isSiteFooterBlock(blockId) {
     return blockId === 'site_footer' || (typeof blockId === 'string' && blockId.startsWith('site_footer_'));
@@ -32,6 +39,42 @@ function registerSpacingStyleSync(editor) {
         }
 
         stripTailwindSpacingClasses(component);
+    });
+}
+
+function isBorderRadiusProperty(property) {
+    return typeof property === 'string' && /border-radius|border-top-left-radius|border-top-right-radius|border-bottom-left-radius|border-bottom-right-radius/.test(property);
+}
+
+function isBorderPaintProperty(property) {
+    return typeof property === 'string' && /^border(-color|-width|-style)?$/.test(property);
+}
+
+function registerTailwindStyleSync(editor) {
+    editor.on('component:styleUpdate', (component, property) => {
+        if (! property || ! component) {
+            return;
+        }
+
+        const target = resolveVisualStyleTarget(component);
+
+        if (property === 'background-color' || property === 'background') {
+            stripBackgroundClasses(target);
+        }
+
+        if (property === 'color') {
+            stripTextColorClasses(target);
+        }
+
+        if (isBorderRadiusProperty(property)) {
+            stripRoundedClasses(target);
+        }
+
+        if (isBorderPaintProperty(property)) {
+            stripBorderColorClasses(target);
+        }
+
+        target.view?.updateStyles?.();
     });
 }
 
@@ -181,13 +224,18 @@ function syncVpressDynamicAttributes(component) {
 }
 
 function lockComponentTree(component) {
+    const attributes = component.getAttributes?.() ?? {};
+    const protectedSlot = attributes['data-voodbuilder-menu'] || attributes['data-voodbuilder-brand'];
+
     component.set({
         removable: false,
         draggable: false,
         copyable: false,
-        selectable: false,
-        hoverable: false,
-        layerable: false,
+        selectable: ! protectedSlot,
+        hoverable: ! protectedSlot,
+        layerable: ! protectedSlot,
+        editable: false,
+        stylable: ! protectedSlot,
     });
 
     component.components().forEach((child) => {
@@ -413,7 +461,7 @@ function registerDynamicBlockType(editor) {
                 editable: false,
                 copyable: true,
                 removable: true,
-                stylable: false,
+                stylable: true,
                 layerable: true,
                 highlightable: true,
                 vpressConfig: {},
@@ -568,6 +616,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
     registerTailblocksSectionType(editor);
     registerSpacingStyleSync(editor);
+    registerTailwindStyleSync(editor);
     registerDynamicBlockGuards(editor);
     registerBlocks(editor, options.blocks ?? []);
     prioritizeBlockCategories(editor);

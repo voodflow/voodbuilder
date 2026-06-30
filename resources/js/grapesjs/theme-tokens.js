@@ -234,6 +234,7 @@ function migrateLegacyButtonClasses(classList) {
 }
 
 const BACKGROUND_CLASS_PATTERN = /^(?:hover:|focus:|active:|group-hover:)?bg-/;
+const BACKGROUND_OPACITY_CLASS_PATTERN = /^bg-opacity-/;
 
 export function isClearedBackground(value) {
     if (value == null || value === '') {
@@ -247,7 +248,51 @@ export function isClearedBackground(value) {
 
 export function stripBackgroundClasses(component) {
     const classes = (component.getClasses?.() ?? []).filter((className) => {
-        return ! BACKGROUND_CLASS_PATTERN.test(className) && className !== 'voodbuilder-gjs-btn-primary';
+        return ! BACKGROUND_CLASS_PATTERN.test(className)
+            && ! BACKGROUND_OPACITY_CLASS_PATTERN.test(className)
+            && className !== 'voodbuilder-gjs-btn-primary';
+    });
+
+    component.setClass(classes);
+}
+
+const ROUNDED_CLASS_PATTERN = /^rounded(?:-|$)/;
+
+export function stripRoundedClasses(component) {
+    const classes = (component.getClasses?.() ?? []).filter((className) => ! ROUNDED_CLASS_PATTERN.test(className));
+
+    component.setClass(classes);
+}
+
+export function stripTextColorClasses(component) {
+    const classes = (component.getClasses?.() ?? []).filter((className) => {
+        if (! className.startsWith('text-')) {
+            return true;
+        }
+
+        return TEXT_LAYOUT_UTILITIES.test(className);
+    });
+
+    component.setClass(classes);
+}
+
+const BORDER_WIDTH_CLASSES = new Set(['border', 'border-0', 'border-2', 'border-4', 'border-8']);
+
+export function stripBorderColorClasses(component) {
+    const classes = (component.getClasses?.() ?? []).filter((className) => {
+        if (! className.startsWith('border')) {
+            return true;
+        }
+
+        if (BORDER_WIDTH_CLASSES.has(className)) {
+            return true;
+        }
+
+        if (/^border-(?:[trblxy](?:-[0248])?|[xy](?:-[0248])?)$/.test(className)) {
+            return true;
+        }
+
+        return false;
     });
 
     component.setClass(classes);
