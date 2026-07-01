@@ -37,7 +37,7 @@ class LandingFooterBlock extends RichContentCustomBlock
 
         $view = $variant === 'legacy'
             ? 'voodbuilder::blocks.landing.footer'
-            : 'voodbuilder::blocks.landing.footer-tailblocks.'.$variant;
+            : 'voodbuilder::blocks.landing.footer-layout.'.$variant;
 
         return view($view, static::viewData($config))->render();
     }

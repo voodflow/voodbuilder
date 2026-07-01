@@ -35,7 +35,7 @@ class LandingNavbarBlock extends RichContentCustomBlock
     {
         $variant = LandingNavbarSupport::resolveVariant($config);
 
-        return view('voodbuilder::blocks.landing.navbar-tailblocks.'.$variant, [
+        return view('voodbuilder::blocks.landing.navbar-layout.'.$variant, [
             'config' => $config,
             'navbar' => LandingNavbarSupport::viewData($config),
         ])->render();

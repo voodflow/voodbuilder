@@ -100,6 +100,81 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
+/* GrapesJS layout video blocks (YouTube/Vimeo/HTML5) on published pages */
+:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"],
+.vb-video-host {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"] > :is(iframe, video, .gjs-no-pointer),
+:is(body.voodbuilder-canvas-ready, .VPRichPage) .vb-video-facade--fill {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    border: 0;
+}
+
+.VPRichPage :is(
+    video:not([data-gjs-type="video"] *),
+    iframe[src*='youtube']:not([data-gjs-type="video"] *),
+    iframe[src*='youtube-nocookie']:not([data-gjs-type="video"] *),
+    iframe[src*='vimeo']:not([data-gjs-type="video"] *)
+) {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    border: 0;
+}
+
+.vb-video-facade:not(.vb-video-facade--fill) {
+    @apply relative aspect-video w-full overflow-hidden rounded bg-vp-bg-alt;
+    cursor: pointer;
+}
+
+.vb-video-facade__poster {
+    @apply absolute inset-0 h-full w-full object-cover;
+}
+
+.vb-video-facade__poster--empty {
+    @apply bg-vp-bg-alt;
+}
+
+.vb-video-facade__play {
+    @apply pointer-events-none absolute inset-0 flex items-center justify-center;
+}
+
+.vb-video-facade__play::before {
+    content: '';
+    @apply h-14 w-14 rounded-full bg-black/55;
+    box-shadow: 0 8px 24px rgb(15 23 42 / 28%);
+}
+
+.vb-video-facade__play::after {
+    content: '';
+    @apply absolute h-0 w-0;
+    margin-left: 0.2rem;
+    border-top: 0.65rem solid transparent;
+    border-bottom: 0.65rem solid transparent;
+    border-left: 1rem solid #fff;
+}
+
+.vb-video-facade__iframe,
+.vb-video-facade iframe {
+    @apply absolute inset-0 h-full w-full border-0;
+}
+
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-events-shell:has(.VPRichPage--landing) {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
@@ -110,6 +185,17 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPa
 
 .VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
     @apply text-vp-text-2;
+}
+
+.VPRichPage .voodbuilder-gjs-component-instance {
+    position: relative;
+    min-height: 0;
+    overflow: visible;
+    outline: none;
+}
+
+.VPRichPage .voodbuilder-gjs-component-instance:has(.voodbuilder-pasted-component) {
+    min-height: 0;
 }
 
 .VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {

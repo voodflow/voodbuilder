@@ -68,7 +68,10 @@ class LandingFooterSupport
      * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
      */
     /** @var list<string> */
-    public const TAILBLOCKS_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
+    public const LAYOUT_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
+
+    /** @deprecated Use LAYOUT_VARIANTS */
+    public const TAILBLOCKS_VARIANTS = self::LAYOUT_VARIANTS;
 
     public static function resolveVariant(array $config): string
     {
@@ -78,11 +81,11 @@ class LandingFooterSupport
             return 'legacy';
         }
 
-        return in_array($variant, self::TAILBLOCKS_VARIANTS, true) ? $variant : 'a';
+        return in_array($variant, self::LAYOUT_VARIANTS, true) ? $variant : 'a';
     }
 
     /** @return array<string, string> */
-    public static function tailblocksVariantOptions(): array
+    public static function layoutVariantOptions(): array
     {
         return [
             'a' => __('voodbuilder::landing.footer.variants.a'),
@@ -91,6 +94,16 @@ class LandingFooterSupport
             'd' => __('voodbuilder::landing.footer.variants.d'),
             'e' => __('voodbuilder::landing.footer.variants.e'),
         ];
+    }
+
+    /**
+     * @deprecated Use layoutVariantOptions()
+     *
+     * @return array<string, string>
+     */
+    public static function tailblocksVariantOptions(): array
+    {
+        return self::layoutVariantOptions();
     }
 
     public static function menuColumnsFromNavigation(string $menuSlug): array

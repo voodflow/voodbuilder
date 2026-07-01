@@ -19,7 +19,7 @@ final class LandingFooterForm
         return [
             Select::make('variant')
                 ->label(__('voodbuilder::landing.footer.variant'))
-                ->options(LandingFooterSupport::tailblocksVariantOptions())
+                ->options(LandingFooterSupport::layoutVariantOptions())
                 ->default('a')
                 ->native(false),
             LandingBlockForm::imageUpload(
