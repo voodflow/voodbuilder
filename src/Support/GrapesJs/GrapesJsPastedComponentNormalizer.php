@@ -1,0 +1,321 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support\GrapesJs;
+
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
+
+final class GrapesJsPastedComponentNormalizer
+{
+    /**
+     * @return array{html: string, css: ?string}
+     */
+    public static function normalize(string $input): array
+    {
+        $input = trim($input);
+
+        if ($input === '') {
+            return ['html' => '', 'css' => null];
+        }
+
+        $cssParts = [];
+        $html = self::extractStyleTags($input, $cssParts);
+        $html = self::stripScripts($html);
+        $html = self::extractDocumentBody($html);
+        $html = self::stripDocumentShell($html);
+        $html = GrapesJsImportedTailwindSupport::prepareHtml($html);
+        $html = self::wrapMultipleRoots($html);
+        $html = self::uniquifySvgIds($html);
+        $html = self::stripEmbeddableMedia($html);
+        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $html = GrapesJsHtmlSanitizer::sanitize(trim($html));
+
+        $importedCss = self::compileTailwindCss($html);
+
+        if ($importedCss !== '') {
+            $importedCss = TailblocksThemeTokenMigrator::migrateCss($importedCss);
+            $cssParts[] = $importedCss;
+        }
+
+        $css = $cssParts !== [] ? trim(implode("\n\n", array_map(
+            static fn (string $chunk): string => TailblocksThemeTokenMigrator::migrateCss($chunk),
+            $cssParts,
+        ))) : null;
+
+        return [
+            'html' => $html,
+            'css' => $css !== '' ? $css : null,
+        ];
+    }
+
+    public static function compileTailwindCss(string $html): string
+    {
+        $compiled = GrapesJsComponentTailwindCompiler::compile($html);
+
+        if ($compiled === null) {
+            $compiled = GrapesJsImportedTailwindCssBuilder::build($html);
+        } else {
+            $base = GrapesJsImportedTailwindCssBuilder::baseStyles();
+            $compiled = $base !== '' ? trim($base."\n\n".$compiled) : $compiled;
+        }
+
+        return trim($compiled);
+    }
+
+    public static function mergeCss(?string $manualCss, ?string $autoCss): ?string
+    {
+        $manualCss = filled($manualCss) ? trim($manualCss) : '';
+        $autoCss = filled($autoCss) ? trim($autoCss) : '';
+
+        if ($manualCss === '') {
+            return $autoCss !== '' ? $autoCss : null;
+        }
+
+        if ($autoCss === '' || str_contains($manualCss, $autoCss)) {
+            return $manualCss;
+        }
+
+        return trim($manualCss."\n\n".$autoCss);
+    }
+
+    public static function resolvedCssForStoredHtml(string $html, ?string $storedCss): string
+    {
+        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+
+        if ($storedCss === '' || self::cssReferencesLegacyBrandUtilities($storedCss)) {
+            $compiled = self::compileTailwindCss($html);
+
+            if ($compiled !== '') {
+                return trim(TailblocksThemeTokenMigrator::migrateCss($compiled)."\n\n".self::componentThemeTokenBridgeCss());
+            }
+        }
+
+        if ($storedCss === '') {
+            return '';
+        }
+
+        return trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
+    }
+
+    public static function componentThemeTokenBridgeCss(): string
+    {
+        return <<<'CSS'
+.voodbuilder-gjs-component-instance .voodbuilder-pasted-component,
+.voodbuilder-pasted-component {
+    --color-vp-brand-1: inherit;
+    --color-vp-brand-2: inherit;
+    --color-vp-brand-3: inherit;
+    --color-vp-text-1: inherit;
+    --color-vp-text-2: inherit;
+    --color-vp-text-3: inherit;
+    --color-vp-bg: inherit;
+    --color-vp-bg-alt: inherit;
+    --color-vp-bg-elv: inherit;
+    --color-vp-divider: inherit;
+    --color-vp-gray-soft: inherit;
+}
+CSS;
+    }
+
+    public static function cssReferencesLegacyBrandUtilities(string $css): bool
+    {
+        return (bool) preg_match(
+            '/\.(?:[a-z0-9_-]+:)*-?(?:bg|text|border|ring|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+/i',
+            $css,
+        );
+    }
+
+    /**
+     * @param  list<string>  $cssParts
+     */
+    protected static function extractStyleTags(string $html, array &$cssParts): string
+    {
+        $result = preg_replace_callback(
+            '/<style\b[^>]*>(.*?)<\/style>/is',
+            static function (array $matches) use (&$cssParts): string {
+                $css = trim($matches[1]);
+
+                if ($css !== '') {
+                    $cssParts[] = $css;
+                }
+
+                return '';
+            },
+            $html,
+        );
+
+        return is_string($result) ? $result : $html;
+    }
+
+    protected static function stripScripts(string $html): string
+    {
+        $result = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
+
+        return is_string($result) ? $result : $html;
+    }
+
+    protected static function extractDocumentBody(string $html): string
+    {
+        if (preg_match('/<body\b[^>]*>(.*)<\/body>/is', $html, $matches) === 1) {
+            return trim($matches[1]);
+        }
+
+        return $html;
+    }
+
+    protected static function stripDocumentShell(string $html): string
+    {
+        $html = preg_replace('/<!DOCTYPE[^>]*>/i', '', $html) ?? $html;
+        $html = preg_replace('/<\/?html[^>]*>/i', '', $html) ?? $html;
+        $html = preg_replace('/<head\b[^>]*>.*?<\/head>/is', '', $html) ?? $html;
+
+        return trim($html);
+    }
+
+    protected static function wrapMultipleRoots(string $html): string
+    {
+        if ($html === '' || preg_match('/^<div[^>]*class="[^"]*voodbuilder-pasted-component/i', $html) === 1) {
+            return $html;
+        }
+
+        if (preg_match_all('/<(section|nav|header|footer|main|article)\b/i', $html, $matches) > 1) {
+            return '<div class="voodbuilder-pasted-component">'.$html.'</div>';
+        }
+
+        return $html;
+    }
+
+    protected static function uniquifySvgIds(string $html): string
+    {
+        if (! str_contains($html, 'id=') && ! str_contains($html, 'url(#')) {
+            return $html;
+        }
+
+        $suffix = bin2hex(random_bytes(4));
+        $idMap = [];
+
+        $html = preg_replace_callback(
+            '/\bid=(["\'])([^"\']+)\1/i',
+            static function (array $matches) use (&$idMap, $suffix): string {
+                $quote = $matches[1];
+                $original = $matches[2];
+                $mapped = $idMap[$original] ?? ($original.'-vb-'.$suffix);
+                $idMap[$original] = $mapped;
+
+                return 'id='.$quote.$mapped.$quote;
+            },
+            $html,
+        ) ?? $html;
+
+        foreach ($idMap as $original => $mapped) {
+            $html = str_replace('url(#'.$original.')', 'url(#'.$mapped.')', $html);
+            $html = str_replace('href="#'.$original.'"', 'href="#'.$mapped.'"', $html);
+        }
+
+        return $html;
+    }
+
+    protected static function stripEmbeddableMedia(string $html): string
+    {
+        if (! preg_match('/<(?:video|iframe)\b|data-gjs-type=(["\'])video\1/i', $html)) {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $xpath = new DOMXPath($document);
+        $nodesToReplace = [];
+
+        foreach ($document->getElementsByTagName('video') as $element) {
+            if ($element instanceof DOMElement) {
+                $nodesToReplace[] = $element;
+            }
+        }
+
+        foreach ($document->getElementsByTagName('iframe') as $element) {
+            if ($element instanceof DOMElement && self::isVideoEmbedSrc($element->getAttribute('src'))) {
+                $nodesToReplace[] = $element;
+            }
+        }
+
+        $xpathResult = $xpath->query('//*[@data-gjs-type="video"]');
+
+        if ($xpathResult !== false) {
+            foreach ($xpathResult as $element) {
+                if ($element instanceof DOMElement) {
+                    $nodesToReplace[] = $element;
+                }
+            }
+        }
+
+        $seen = [];
+
+        foreach ($nodesToReplace as $element) {
+            $hash = spl_object_hash($element);
+
+            if (isset($seen[$hash])) {
+                continue;
+            }
+
+            $seen[$hash] = true;
+            self::replaceWithMediaSlot($document, $element);
+        }
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
+    protected static function isVideoEmbedSrc(string $src): bool
+    {
+        $src = trim($src);
+
+        if ($src === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/(?:youtube(?:-nocookie)?\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/i', $src);
+    }
+
+    protected static function replaceWithMediaSlot(DOMDocument $document, DOMElement $element): void
+    {
+        $placeholder = $document->createElement('div');
+        $placeholder->setAttribute('class', 'voodbuilder-component-library-media-slot');
+        $placeholder->setAttribute('aria-hidden', 'true');
+        $element->parentNode?->replaceChild($placeholder, $element);
+    }
+
+    protected static function loadDocument(string $html): DOMDocument
+    {
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return $document;
+    }
+
+    protected static function extractBodyHtml(DOMDocument $document): ?string
+    {
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return null;
+        }
+
+        $html = '';
+
+        foreach ($body->childNodes as $child) {
+            $html .= $document->saveHTML($child);
+        }
+
+        return trim($html);
+    }
+}

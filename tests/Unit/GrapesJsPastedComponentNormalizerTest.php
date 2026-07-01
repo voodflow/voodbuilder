@@ -1,0 +1,155 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Tests\Unit;
+
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
+use Voodflow\Voodbuilder\Tests\TestCase;
+
+class GrapesJsPastedComponentNormalizerTest extends TestCase
+{
+    public function test_extracts_style_tags_and_strips_scripts(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <style>.hero { color: red; }</style>
+            <section class="hero"><h1>Hello</h1></section>
+            <script>alert(1)</script>
+        HTML);
+
+        $this->assertStringContainsString('voodbuilder-pasted-component relative', $result['html']);
+        $this->assertStringNotContainsString('<style', $result['html']);
+        $this->assertStringNotContainsString('<script', $result['html']);
+        $this->assertStringContainsString('.hero { color: red; }', $result['css']);
+        $this->assertStringContainsString('.voodbuilder-pasted-component { position: relative; }', $result['css']);
+    }
+
+    public function test_extracts_body_from_full_document(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <!DOCTYPE html>
+            <html><head><title>x</title></head>
+            <body><main>Content</main></body></html>
+        HTML);
+
+        $this->assertSame('<main class="voodbuilder-pasted-component relative">Content</main>', $result['html']);
+    }
+
+    public function test_wraps_multiple_root_sections(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <nav>Menu</nav>
+            <section>Hero</section>
+        HTML);
+
+        $this->assertStringStartsWith('<div class="voodbuilder-pasted-component relative">', $result['html']);
+        $this->assertStringContainsString('<nav>Menu</nav>', $result['html']);
+        $this->assertStringContainsString('<section class="voodbuilder-gjs-section bg-vp-bg">Hero</section>', $result['html']);
+    }
+
+    public function test_uniquifies_svg_gradient_ids(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <svg><defs><linearGradient id="paint0"></linearGradient></defs>
+            <rect fill="url(#paint0)"></rect></svg>
+        HTML);
+
+        $this->assertDoesNotMatchRegularExpression('/\bid="paint0"/', $result['html']);
+        $this->assertMatchesRegularExpression('/\bid="paint0-vb-[a-f0-9]+"/', $result['html']);
+        $this->assertMatchesRegularExpression('/url\(#paint0-vb-[a-f0-9]+\)/', $result['html']);
+    }
+
+    public function test_strips_video_and_embedded_players_from_saved_html(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <section class="hero">
+                <h1>Title</h1>
+                <video autoplay muted loop playsinline src="https://example.com/clip.mp4"></video>
+                <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"></iframe>
+                <div data-gjs-type="video" class="w-full aspect-video"></div>
+            </section>
+        HTML);
+
+        $this->assertStringContainsString('<h1>Title</h1>', $result['html']);
+        $this->assertStringNotContainsString('<video', $result['html']);
+        $this->assertStringNotContainsString('<iframe', $result['html']);
+        $this->assertStringNotContainsString('data-gjs-type="video"', $result['html']);
+        $this->assertStringContainsString('voodbuilder-component-library-media-slot', $result['html']);
+    }
+
+    public function test_normalizes_tailwind_plus_markup_and_generates_component_css(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <div class="bg-white">
+              <header class="absolute inset-x-0 top-0 z-50">
+                <el-dialog>
+                  <dialog id="mobile-menu" class="lg:hidden">
+                    <el-dialog-panel class="bg-white p-6"></el-dialog-panel>
+                  </dialog>
+                </el-dialog>
+              </header>
+              <div class="relative isolate px-6 pt-14">
+                <div class="bg-linear-to-tr from-[#ff80b5] to-[#9089fc] w-144.5 aspect-1155/678"></div>
+                <a href="#" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500">Get started</a>
+                <p class="text-sm/6 text-indigo-600 text-balance">Read more</p>
+              </div>
+            </div>
+        HTML);
+
+        $this->assertStringContainsString('voodbuilder-pasted-component', $result['html']);
+        $this->assertStringContainsString('bg-gradient-to-tr', $result['html']);
+        $this->assertStringContainsString('text-sm leading-6', $result['html']);
+        $this->assertStringContainsString('shadow-sm', $result['html']);
+        $this->assertStringNotContainsString('<el-dialog', $result['html']);
+        $this->assertStringContainsString('.voodbuilder-pasted-component { position: relative; }', (string) $result['css']);
+        $this->assertStringContainsString('.voodbuilder-pasted-component .bg-vp-brand-3', (string) $result['css']);
+    }
+
+    public function test_adds_dark_scope_for_mamba_style_dark_variant_classes(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <footer class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                <h2 class="text-violet-600 dark:text-violet-400">Accent</h2>
+            </footer>
+        HTML);
+
+        $this->assertStringContainsString('voodbuilder-pasted-component', $result['html']);
+        $this->assertMatchesRegularExpression('/\bclass="[^"]*\bdark\b[^"]*voodbuilder-pasted-component/', $result['html']);
+        $this->assertStringContainsString(':where(.dark', (string) $result['css']);
+        $this->assertStringNotContainsString('prefers-color-scheme: dark', (string) $result['css']);
+    }
+
+    public function test_detects_legacy_brand_utilities_in_component_css(): void
+    {
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::cssReferencesLegacyBrandUtilities(
+            '.voodbuilder-pasted-component .bg-indigo-600 { background: #4f46e5; }',
+        ));
+        $this->assertFalse(GrapesJsPastedComponentNormalizer::cssReferencesLegacyBrandUtilities(
+            '.voodbuilder-pasted-component .bg-vp-brand-1 { background: var(--color-vp-brand-1); }',
+        ));
+    }
+
+    public function test_resolved_css_recompiles_when_legacy_utilities_are_present(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><button class="bg-indigo-600 text-white">Go</button></div>';
+        $legacyCss = '.voodbuilder-pasted-component .bg-indigo-600 { background-color: #4f46e5; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $legacyCss);
+
+        $this->assertStringContainsString('.bg-vp-brand-3', $resolved);
+        $this->assertStringNotContainsString('.bg-indigo-600', $resolved);
+        $this->assertStringContainsString('var(--color-vp-brand', $resolved);
+        $this->assertStringContainsString('--color-vp-brand-1: inherit', $resolved);
+    }
+
+    public function test_resolved_css_strips_pinned_theme_token_overrides_from_stored_css(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><button class="bg-vp-brand-3 text-white">Go</button></div>';
+        $storedCss = '.voodbuilder-pasted-component { --color-vp-brand-3: #6366f1; } .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss);
+
+        $this->assertStringNotContainsString('#6366f1', $resolved);
+        $this->assertStringContainsString('--color-vp-brand-3: inherit', $resolved);
+    }
+}
