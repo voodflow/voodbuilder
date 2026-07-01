@@ -246,14 +246,52 @@ export function isClearedBackground(value) {
     return ['none', 'transparent', 'unset', 'initial'].includes(normalized);
 }
 
+const ORIGINAL_BACKGROUND_CLASSES_ATTR = 'data-vb-original-bg-classes';
+
 export function stripBackgroundClasses(component) {
-    const classes = (component.getClasses?.() ?? []).filter((className) => {
+    const current = component.getClasses?.() ?? [];
+    const stripped = current.filter((className) => {
+        return BACKGROUND_CLASS_PATTERN.test(className)
+            || BACKGROUND_OPACITY_CLASS_PATTERN.test(className)
+            || className === 'voodbuilder-gjs-btn-primary';
+    });
+
+    if (stripped.length > 0) {
+        const attrs = component.getAttributes?.() ?? {};
+        const existing = String(attrs[ORIGINAL_BACKGROUND_CLASSES_ATTR] ?? '').trim();
+
+        if (existing === '') {
+            component.addAttributes({
+                [ORIGINAL_BACKGROUND_CLASSES_ATTR]: stripped.join(' '),
+            });
+        }
+    }
+
+    const classes = current.filter((className) => {
         return ! BACKGROUND_CLASS_PATTERN.test(className)
             && ! BACKGROUND_OPACITY_CLASS_PATTERN.test(className)
             && className !== 'voodbuilder-gjs-btn-primary';
     });
 
     component.setClass(classes);
+}
+
+export function restoreBackgroundClasses(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const original = String(attrs[ORIGINAL_BACKGROUND_CLASSES_ATTR] ?? '').trim();
+
+    if (original === '') {
+        return;
+    }
+
+    const classes = new Set(component.getClasses?.() ?? []);
+
+    for (const className of original.split(/\s+/).filter(Boolean)) {
+        classes.add(className);
+    }
+
+    component.setClass([...classes]);
+    component.removeAttributes(ORIGINAL_BACKGROUND_CLASSES_ATTR);
 }
 
 const ROUNDED_CLASS_PATTERN = /^rounded(?:-|$)/;

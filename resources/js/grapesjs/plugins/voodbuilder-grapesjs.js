@@ -6,6 +6,8 @@
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import {
+    isClearedBackground,
+    restoreBackgroundClasses,
     stripBackgroundClasses,
     stripBorderColorClasses,
     stripRoundedClasses,
@@ -60,7 +62,16 @@ function registerTailwindStyleSync(editor) {
         const target = resolveVisualStyleTarget(component);
 
         if (property === 'background-color' || property === 'background') {
-            stripBackgroundClasses(target);
+            const style = component.getStyle?.() ?? {};
+            const background = style[property] ?? style['background-color'] ?? style.background;
+
+            if (isClearedBackground(background)) {
+                restoreBackgroundClasses(target);
+                target.removeStyle('background');
+                target.removeStyle('background-color');
+            } else {
+                stripBackgroundClasses(target);
+            }
         }
 
         if (property === 'color') {
@@ -120,7 +131,7 @@ function readSectionPadding(container) {
     return SECTION_PADDING_CLASSES.find((className) => classes.includes(className)) ?? 'py-24';
 }
 
-function registerTailblocksSectionType(editor) {
+function registerLayoutSectionType(editor) {
     const paddingTrait = {
         type: 'select',
         label: 'Vertical padding (Tailwind)',
@@ -133,13 +144,14 @@ function registerTailblocksSectionType(editor) {
         ],
     };
 
-    editor.DomComponents.addType('voodbuilder-tailblocks-section', {
+    const sectionTypeDefinition = {
         isComponent: (element) => {
             if (element?.tagName !== 'SECTION') {
                 return false;
             }
 
-            return element.classList.contains('body-font');
+            return Boolean(element.querySelector?.('.container'))
+                || element.classList.contains('body-font');
         },
         extend: 'default',
         model: {
@@ -160,9 +172,16 @@ function registerTailblocksSectionType(editor) {
                 });
             },
         },
+    };
+
+    editor.DomComponents.addType('voodbuilder-section', sectionTypeDefinition);
+
+    // Legacy alias: existing projects may reference this type id in saved JSON.
+    editor.DomComponents.addType('voodbuilder-tailblocks-section', {
+        extend: 'voodbuilder-section',
     });
 
-    editor.DomComponents.addType('voodbuilder-tailblocks-container', {
+    editor.DomComponents.addType('voodbuilder-container', {
         isComponent: (element) => {
             if (element?.tagName !== 'DIV') {
                 return false;
@@ -185,6 +204,10 @@ function registerTailblocksSectionType(editor) {
                 });
             },
         },
+    });
+
+    editor.DomComponents.addType('voodbuilder-tailblocks-container', {
+        extend: 'voodbuilder-container',
     });
 }
 
@@ -539,14 +562,18 @@ function pruneEmptySections(editor) {
     });
 }
 
-function ensureTailblocksSectionTraits(editor) {
+function ensureLayoutSectionTraits(editor) {
     editor.getWrapper().find('section').forEach((section) => {
-        if (! section.getClasses().includes('body-font')) {
+        const container = sectionPaddingTarget(section);
+
+        if (! container) {
             return;
         }
 
-        if (section.get('type') === 'default') {
-            section.set('type', 'voodbuilder-tailblocks-section');
+        const type = section.get('type');
+
+        if (type === 'default' || type === 'voodbuilder-tailblocks-section') {
+            section.set('type', 'voodbuilder-section');
         }
 
         if (section.get('_vpressTraitsBound')) {
@@ -555,9 +582,7 @@ function ensureTailblocksSectionTraits(editor) {
 
         section.set('_vpressTraitsBound', true);
 
-        const container = sectionPaddingTarget(section);
-
-        if (container && ! section.get('vpressSectionPy')) {
+        if (! section.get('vpressSectionPy')) {
             section.set('vpressSectionPy', readSectionPadding(container), { silent: true });
         }
 
@@ -569,7 +594,7 @@ function ensureTailblocksSectionTraits(editor) {
     editor.getWrapper().find('div.container').forEach((container) => {
         const parentSection = container.parent();
 
-        if (! parentSection || ! parentSection.getClasses().includes('body-font')) {
+        if (! parentSection || parentSection.get('tagName') !== 'section') {
             return;
         }
 
@@ -601,13 +626,14 @@ export {
     isSiteFooterBlock,
     applyFreshFooterAttributes,
     prioritizeBlockCategories,
-    ensureTailblocksSectionTraits,
+    ensureLayoutSectionTraits,
+    ensureLayoutSectionTraits as ensureTailblocksSectionTraits,
     pruneEmptySections,
 };
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
-    registerTailblocksSectionType(editor);
+    registerLayoutSectionType(editor);
     registerSpacingStyleSync(editor);
     registerTailwindStyleSync(editor);
     registerDynamicBlockGuards(editor);

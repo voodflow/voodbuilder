@@ -3,6 +3,8 @@
  * (rounded-lg, bg-gray-100). Forward decoration styles to that inner element.
  */
 
+import { isClearedBackground } from './theme-tokens.js';
+
 const VISUAL_SURFACE_PATTERN = /(?:^|-)(?:rounded|bg-|border-(?:gray|vp|indigo|slate|white|black|opacity)|shadow)/;
 
 function elementChildren(component) {
@@ -83,6 +85,15 @@ export function registerVisualStyleInspector(editor) {
     });
 }
 
+function clearForwardedStyle(target, property) {
+    target.removeStyle(property);
+
+    if (property === 'background' || property === 'background-color') {
+        target.removeStyle('background');
+        target.removeStyle('background-color');
+    }
+}
+
 export function registerVisualStyleTarget(editor) {
     editor.on('component:styleUpdate', (component, property) => {
         if (! component || ! shouldForwardStyleProperty(property)) {
@@ -97,8 +108,16 @@ export function registerVisualStyleTarget(editor) {
 
         const style = component.getStyle?.() ?? {};
         const value = style[property];
+        const isBackground = property === 'background' || property === 'background-color';
+        const shouldClear = value == null
+            || value === ''
+            || (isBackground && isClearedBackground(value));
 
-        if (value == null || value === '') {
+        if (shouldClear) {
+            component.removeStyle(property);
+            clearForwardedStyle(target, property);
+            target.view?.updateStyles?.();
+
             return;
         }
 

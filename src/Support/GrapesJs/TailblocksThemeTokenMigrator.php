@@ -29,6 +29,7 @@ final class TailblocksThemeTokenMigrator
         'yellow',
         'red',
         'purple',
+        'violet',
         'pink',
         'blue',
         'green',
@@ -92,6 +93,7 @@ final class TailblocksThemeTokenMigrator
             return $css;
         }
 
+        $css = self::stripScopedThemeTokenOverrides($css);
         $css = self::replaceFixedBackgroundColors($css);
         $css = self::replaceFixedBrandBackgroundColors($css);
         $css = self::stripLegacyButtonCss($css);
@@ -743,6 +745,18 @@ final class TailblocksThemeTokenMigrator
     {
         return preg_replace(
             '/\.voodbuilder-gjs-btn-primary(?::hover)?\s*\{[^}]*\}\s*/',
+            '',
+            $css,
+        ) ?? $css;
+    }
+
+    /**
+     * Pasted component CSS must not pin VitePress theme tokens; inherit from page/canvas theme.
+     */
+    private static function stripScopedThemeTokenOverrides(string $css): string
+    {
+        return preg_replace(
+            '/\s*--color-vp-(?:brand-\d|text-\d|bg(?:-alt|-elv)?|divider|gray-soft)\s*:[^;]+;/i',
             '',
             $css,
         ) ?? $css;
