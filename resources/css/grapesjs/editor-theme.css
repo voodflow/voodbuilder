@@ -144,9 +144,8 @@
     border-bottom: none;
 }
 
-/* ── Custom collapsible sectors (Classes, Global classes) ── */
+/* ── Custom collapsible sectors (Classes, Style, Global classes) ── */
 .voodbuilder-gjs-inspector-panel--active[data-voodbuilder-inspector='style'] {
-    display: flex;
     flex-direction: column;
     min-height: 0;
     padding: 0.75rem 1.125rem 1rem;

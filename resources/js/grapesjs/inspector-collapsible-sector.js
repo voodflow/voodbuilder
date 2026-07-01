@@ -48,6 +48,13 @@ export function setupStyleInspectorSectors(mounts, labels = {}) {
         });
     }
 
+    if (mounts?.styles) {
+        mountCollapsibleInspectorSector(mounts.styles, {
+            title: labels.tabStyle ?? 'Style',
+            open: true,
+        });
+    }
+
     if (mounts?.globalClasses) {
         mountCollapsibleInspectorSector(mounts.globalClasses, {
             title: labels.globalClassesTitle ?? 'Global classes',

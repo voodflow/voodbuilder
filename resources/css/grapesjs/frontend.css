@@ -1477,30 +1477,44 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
 }
 
 .voodbuilder-gjs-inspector-panels {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
 }
 
 .voodbuilder-gjs-inspector-panel {
-    display: none;
-    height: 100%;
+    grid-area: 1 / 1;
+    display: none !important;
+    min-height: 0;
     overflow: auto;
 }
 
 .voodbuilder-gjs-inspector-panel--active {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     min-height: 0;
 }
 
-.voodbuilder-gjs-inspector-panel--active[data-voodbuilder-inspector='style'] {
-    display: flex;
-    flex-direction: column;
+.voodbuilder-gjs-inspector-panel[hidden] {
+    display: none !important;
 }
 
-.voodbuilder-gjs-inspector-panel[hidden] {
-    display: none;
+/* Style manager must not stack below other inspector tabs */
+.voodbuilder-gjs-shell__right[data-voodbuilder-inspector-tab]:not([data-voodbuilder-inspector-tab='style'])
+    .voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector='style'],
+.voodbuilder-gjs-shell__right[data-voodbuilder-inspector-tab]:not([data-voodbuilder-inspector-tab='style'])
+    .voodbuilder-gjs-styles-mount,
+.voodbuilder-gjs-shell__right[data-voodbuilder-inspector-tab]:not([data-voodbuilder-inspector-tab='style'])
+    .voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector='style'] .gjs-sm-sector {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
 }
 
 .voodbuilder-gjs-dynamic-panel {

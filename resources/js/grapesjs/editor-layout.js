@@ -349,6 +349,7 @@ function syncInspectorManagers(editor, tabId) {
 
 function setupInspectorTabs(mounts, editor) {
     const { tablist, panels } = mounts;
+    const inspectorAside = panels?.closest('.voodbuilder-gjs-shell__right') ?? null;
     let activeTab = 'content';
 
     if (! tablist || ! panels) {
@@ -365,8 +366,16 @@ function setupInspectorTabs(mounts, editor) {
         });
 
         panels.querySelectorAll('[data-voodbuilder-inspector]').forEach((panel) => {
-            panel.classList.toggle('voodbuilder-gjs-inspector-panel--active', panel.dataset.voodbuilderInspector === tabId);
+            const active = panel.dataset.voodbuilderInspector === tabId;
+
+            panel.classList.toggle('voodbuilder-gjs-inspector-panel--active', active);
+            panel.toggleAttribute('hidden', ! active);
+            panel.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
+
+        if (inspectorAside) {
+            inspectorAside.setAttribute('data-voodbuilder-inspector-tab', tabId);
+        }
 
         window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId));
     };
