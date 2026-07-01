@@ -1377,7 +1377,9 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
 
 /* Hide GrapesJS built-in views panel (trait/style/layers) inside the canvas */
 .voodbuilder-gjs-canvas-mount .gjs-pn-views,
-.voodbuilder-gjs-canvas-mount .gjs-pn-views-container {
+.voodbuilder-gjs-canvas-mount .gjs-pn-views-container,
+.voodbuilder-gjs-canvas-mount .gjs-pn-commands,
+.voodbuilder-gjs-canvas-mount .gjs-pn-options {
     display: none !important;
     width: 0 !important;
     min-width: 0 !important;

@@ -508,10 +508,10 @@ function trimDefaultPanelButtons(editor) {
         }
     }
 
-    const viewsPanel = editor.Panels.getPanel('views');
-
-    if (viewsPanel) {
-        editor.Panels.removePanel('views');
+    for (const panelId of ['views', 'commands', 'options']) {
+        if (editor.Panels.getPanel(panelId)) {
+            editor.Panels.removePanel(panelId);
+        }
     }
 }
 
