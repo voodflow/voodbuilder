@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Filament\Livewire;
 
 use Filament\Notifications\Notification;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
@@ -137,7 +138,7 @@ class ThemeMapBridge extends Component
         $this->dispatch('voodbuilder-select-theme', id: $themeId);
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('voodbuilder::filament.theme-map-bridge');
     }

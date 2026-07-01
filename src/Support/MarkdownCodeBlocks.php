@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Spatie\LaravelMarkdown\MarkdownRenderer;
+
 final class MarkdownCodeBlocks
 {
     public static function normalizeFencedCodeBlocks(string $markdown): string
@@ -39,10 +41,25 @@ final class MarkdownCodeBlocks
     public static function fromPlainCode(string $language, string $code): string
     {
         $language = self::normalizeLanguage($language);
+
+        if (trim($code) !== '' && self::codeHighlightingEnabled()) {
+            return self::toHighlightedHtml($language, $code);
+        }
+
         $escaped = e($code);
         $body = '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$escaped.'</code></pre>';
 
         return self::shell($language, $body, 'raw');
+    }
+
+    public static function toHighlightedHtml(string $language, string $code): string
+    {
+        $language = self::normalizeLanguage($language);
+        $markdown = "```{$language}\n{$code}\n```";
+        $markdown = self::normalizeFencedCodeBlocks($markdown);
+        $html = app(MarkdownRenderer::class)->toHtml($markdown);
+
+        return self::enhance($html, $markdown);
     }
 
     public static function enhance(string $html, ?string $markdown = null): string
@@ -92,7 +109,7 @@ final class MarkdownCodeBlocks
     protected static function wrapPlainCodeBlocks(string $html): string
     {
         $html = (string) preg_replace_callback(
-            '/<pre><code class="language-([\w+#.-]+)">([\s\S]*?)<\/code><\/pre>/',
+            '/<pre(?:\s[^>]*)?><code class="language-([\w+#.-]+)">([\s\S]*?)<\/code><\/pre>/',
             fn (array $matches): string => self::shell(
                 self::normalizeLanguage($matches[1]),
                 '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e(self::normalizeLanguage($matches[1])).'">'.$matches[2].'</code></pre>',
@@ -149,6 +166,11 @@ final class MarkdownCodeBlocks
             'cmd', 'bat' => 'batch',
             default => $language,
         };
+    }
+
+    protected static function codeHighlightingEnabled(): bool
+    {
+        return (bool) config('markdown.code_highlighting.enabled', true);
     }
 
     protected static function shell(string $language, string $body, string $mode): string

@@ -3,15 +3,13 @@
  * Replaces heavy HTML previews and filled SVGs with thin-stroke wireframes.
  */
 
-const STROKE = 1.15;
-
-function previewSvg(paths, viewBox = '0 0 48 48') {
-    return `<svg class="voodbuilder-gjs-block-icon" xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" fill="none" stroke="currentColor" stroke-width="${STROKE}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-}
-
-function thumbWrap(svg) {
-    return `<div class="voodbuilder-gjs-block-thumb" aria-hidden="true">${svg}</div>`;
-}
+import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
+import {
+    BASIC_BLOCK_LABELS,
+    resolveBlockLabel,
+    resolveBlockWireframe,
+    unifyBlockCategories,
+} from './section-block-meta.js';
 
 export const LIGHT_BLOCK_PREVIEWS = {
     column1: previewSvg('<rect x="11" y="13" width="26" height="22" rx="2.5" />'),
@@ -266,8 +264,16 @@ function applyBasicBlockPreviews(blockManager) {
     for (const [blockId, media] of Object.entries(LIGHT_BLOCK_PREVIEWS)) {
         const block = blockManager.get(blockId);
 
-        if (block) {
-            block.set('media', media);
+        if (! block) {
+            continue;
+        }
+
+        block.set('media', media);
+
+        const label = BASIC_BLOCK_LABELS[blockId];
+
+        if (label) {
+            block.set('label', label);
         }
     }
 }
@@ -275,15 +281,47 @@ function applyBasicBlockPreviews(blockManager) {
 function applySectionBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
+        const customWireframe = resolveBlockWireframe(blockId);
 
-        if (! blockId.startsWith('vb-')) {
+        if (customWireframe) {
+            block.set('media', customWireframe);
+        } else if (blockId.startsWith('vb-')) {
+            const category = sectionCategoryKey(block.get('category'));
+            const variant = sectionVariant(block.get('label'));
+
+            block.set('media', sectionWireframe(category, variant));
+        }
+
+        const label = resolveBlockLabel(blockId, block.get('label'));
+
+        if (label && label !== block.get('label')) {
+            block.set('label', label);
+        }
+    });
+}
+
+function applyFormsBlockPreviews(blockManager) {
+    const formsCategoryIds = new Set(['Forms', 'forms']);
+
+    blockManager.getAll().forEach((block) => {
+        const blockId = String(block.get('id') ?? '');
+        const category = blockCategoryLabel(block.get('category'));
+
+        if (! formsCategoryIds.has(category) && ! blockId.startsWith('voodbuilder-form')) {
             return;
         }
 
-        const category = sectionCategoryKey(block.get('category'));
-        const variant = sectionVariant(block.get('label'));
+        const wireframe = resolveBlockWireframe(blockId);
 
-        block.set('media', sectionWireframe(category, variant));
+        if (wireframe) {
+            block.set('media', wireframe);
+        }
+
+        const label = resolveBlockLabel(blockId, block.get('label'));
+
+        if (label && label !== block.get('label')) {
+            block.set('label', label);
+        }
     });
 }
 
@@ -294,8 +332,10 @@ export function applyLightBlockPreviews(editor) {
         return;
     }
 
+    unifyBlockCategories(editor);
     applyBasicBlockPreviews(blockManager);
     applySectionBlockPreviews(blockManager);
+    applyFormsBlockPreviews(blockManager);
 
     if (blockManager.getContainer()) {
         blockManager.render();

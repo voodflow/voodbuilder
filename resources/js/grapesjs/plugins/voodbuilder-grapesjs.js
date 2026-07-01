@@ -4,6 +4,7 @@
  */
 
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
+import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import {
     stripBackgroundClasses,
     stripBorderColorClasses,
@@ -516,19 +517,11 @@ function prioritizeBlockCategories(editor) {
     }
 
     categories.each((category) => {
-        const id = String(category.get('id') ?? category.get('label') ?? '');
+        const id = normalizeCategoryLabel(String(category.get('id') ?? category.get('label') ?? ''));
 
+        category.set('label', id);
         category.set('open', false);
-
-        if (id === 'Site' || id.startsWith('Sections')) {
-            category.set('order', -80);
-        } else if (id === 'Voodbuilder' || id === 'Dynamic') {
-            category.set('order', -100);
-        } else if (id.startsWith('Tailblocks')) {
-            category.set('order', 100);
-        } else if (id === 'Extra' || id === 'Basic' || id === 'Forms') {
-            category.set('order', 120);
-        }
+        category.set('order', resolveCategoryOrder(id));
     });
 }
 

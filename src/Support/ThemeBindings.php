@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Enums\SubThemeCapability;
-use Voodflow\Voodbuilder\Enums\SubThemeType;
 
 final class ThemeBindings
 {

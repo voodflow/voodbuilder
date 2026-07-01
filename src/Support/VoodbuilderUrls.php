@@ -6,8 +6,8 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 use Voodflow\Vtuts\Support\Locales;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 final class VoodbuilderUrls
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
@@ -31,7 +32,7 @@ final class GrapesJsAssets
 
     public static function isBuilt(): bool
     {
-        if (class_exists(\Illuminate\Support\Facades\Vite::class) && \Illuminate\Support\Facades\Vite::isRunningHot()) {
+        if (class_exists(Vite::class) && Vite::isRunningHot()) {
             return true;
         }
 

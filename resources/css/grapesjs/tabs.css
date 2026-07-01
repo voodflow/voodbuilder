@@ -167,6 +167,52 @@
     display: none !important;
 }
 
+/* Step tabs (Tailblocks step B → interactive tabs) */
+.vb-step-tabs__bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+}
+
+.vb-step-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 2px solid var(--color-vp-divider, #e5e7eb);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--color-vp-text-2, #6b7280);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.vb-step-tabs__tab:hover {
+    color: var(--color-vp-text-1, #111827);
+}
+
+.vb-step-tabs__tab:focus {
+    outline: 2px solid color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    outline-offset: 2px;
+}
+
+.vb-step-tabs__tab--active {
+    border-bottom-color: var(--color-vp-brand-1, #6366f1);
+    background-color: color-mix(in srgb, var(--color-vp-bg-alt, #f3f4f6) 90%, transparent);
+    color: var(--color-vp-brand-1, #6366f1);
+}
+
+.vb-step-tabs__contents {
+    width: 100%;
+}
+
+.vb-step-tabs__panel {
+    animation: voodbuilder-tab-fade 0.35s ease;
+}
+
 @keyframes voodbuilder-tab-fade {
     from {
         opacity: 0;

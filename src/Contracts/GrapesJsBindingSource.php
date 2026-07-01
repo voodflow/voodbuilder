@@ -6,11 +6,12 @@ namespace Voodflow\Voodbuilder\Contracts;
 
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
  * Server-side data source for GrapesJS field bindings (data-voodbuilder-bind).
  *
- * Register with {@see \Voodflow\Voodbuilder\Voodbuilder::grapesJsBindingSource()} in your
+ * Register with {@see Voodbuilder::grapesJsBindingSource()} in your
  * package ServiceProvider. See docs/BINDINGS.md for the full plugin guide.
  *
  * Optional: implement legacyFieldIds() to keep old field keys valid after renames.

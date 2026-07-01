@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\SitePageHome;
 use Voodflow\Vtuts\Support\Locales;
 
 final class SitePageTranslation

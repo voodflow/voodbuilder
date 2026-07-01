@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Vtuts\Support\Locales;
 
 final class SitePagesContentChannel implements PublicContentChannel

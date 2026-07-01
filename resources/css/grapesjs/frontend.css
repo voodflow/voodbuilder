@@ -706,3 +706,80 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend {
 html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodbuilder-gjs-canvas-mount .gjs-cv-canvas {
     background-color: var(--color-vp-bg, #eef2f6);
 }
+
+.voodbuilder-code-editor-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: min(92vw, 42rem);
+}
+
+.voodbuilder-code-editor-modal__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gjs-font-color, #444);
+}
+
+.voodbuilder-code-editor-modal__select {
+    width: 100%;
+    border: 1px solid var(--gjs-main-dark-color, #ddd);
+    border-radius: 6px;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.8125rem;
+    background: #fff;
+}
+
+.voodbuilder-code-editor-modal__textarea {
+    width: 100%;
+    min-height: 16rem;
+    max-height: 60vh;
+    resize: vertical;
+    border: 1px solid var(--gjs-main-dark-color, #ddd);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    tab-size: 4;
+}
+
+.voodbuilder-code-editor-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.25rem;
+}
+
+.voodbuilder-code-editor-modal__save {
+    border: 0;
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    background: #0d94e6;
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.voodbuilder-code-editor-modal__save:hover {
+    background: #0b7ec4;
+}
+
+.voodbuilder-gjs-canvas-mount .voodbuilder-code-block,
+.voodbuilder-gjs-canvas-mount .vp-code-block.voodbuilder-code-block {
+    max-width: min(100%, 42rem);
+    margin-inline: auto;
+}
+
+.voodbuilder-gjs-canvas-mount .vp-code-block__body--empty {
+    min-height: 2.75rem;
+}
+
+.voodbuilder-gjs-canvas-mount .vp-code-block__placeholder {
+    color: var(--color-vp-text-3, #94a3b8);
+    font-style: italic;
+}
+
+.voodbuilder-gjs-canvas-mount .vp-code-block__copy:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}

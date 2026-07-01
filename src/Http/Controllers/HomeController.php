@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
@@ -54,22 +55,22 @@ class HomeController extends Controller
 
     protected function resolvedHomeLocale(): ?string
     {
-        if (! class_exists(\Voodflow\Vtuts\Support\Locales::class)) {
+        if (! class_exists(Locales::class)) {
             return null;
         }
 
         $queryLocale = request()->query('locale');
 
-        if (is_string($queryLocale) && \Voodflow\Vtuts\Support\Locales::isValid($queryLocale)) {
+        if (is_string($queryLocale) && Locales::isValid($queryLocale)) {
             return $queryLocale;
         }
 
         $routeLocale = request()->route('locale');
 
-        if (is_string($routeLocale) && \Voodflow\Vtuts\Support\Locales::isValid($routeLocale)) {
+        if (is_string($routeLocale) && Locales::isValid($routeLocale)) {
             return $routeLocale;
         }
 
-        return \Voodflow\Voodbuilder\Support\SitePageResolver::preferredLocale();
+        return SitePageResolver::preferredLocale();
     }
 }

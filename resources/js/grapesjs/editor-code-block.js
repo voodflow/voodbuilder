@@ -1,10 +1,17 @@
 /**
- * Voodbuilder code snippet block — same vp-code-block shell as vdocs / vtuts.
+ * Voodbuilder code block — same vp-code-block shell as vdocs / vtuts.
  */
+
+import {
+    CODE_BLOCK_CATEGORY,
+    resolveBlockLabel,
+    resolveBlockWireframe,
+} from './section-block-meta.js';
 
 const CODE_PROP = 'vpressCodeContent';
 const LANG_PROP = 'vpressCodeLang';
 const LEGACY_CODE_ATTR = 'custom-code-plugin__code';
+const EMPTY_PLACEHOLDER = 'Double-click to add code…';
 
 const LANGUAGE_OPTIONS = [
     { id: 'text', name: 'Plain text' },
@@ -45,16 +52,30 @@ function readCodeFromElement(element) {
     return codeEl?.textContent ?? '';
 }
 
+function languageLabel(language) {
+    const lang = language || 'text';
+
+    if (lang === 'text') {
+        return 'Code';
+    }
+
+    return lang.toUpperCase();
+}
+
 function buildCodeBlockHtml(language, code) {
     const lang = language || 'text';
-    const label = lang.toUpperCase();
-    const escaped = escapeHtml(code);
+    const label = languageLabel(lang);
+    const trimmed = String(code ?? '').trim();
+    const isEmpty = trimmed === '';
+    const escaped = isEmpty
+        ? `<span class="vp-code-block__placeholder">${EMPTY_PLACEHOLDER}</span>`
+        : escapeHtml(code);
 
     return `<div class="vp-code-block__header">
         <span class="vp-code-block__lang">${label}</span>
-        <button type="button" class="vp-code-block__copy" data-code-copy>Copy</button>
+        <button type="button" class="vp-code-block__copy" data-code-copy${isEmpty ? ' disabled' : ''}>Copy</button>
     </div>
-    <div class="vp-code-block__body">
+    <div class="vp-code-block__body${isEmpty ? ' vp-code-block__body--empty' : ''}">
         <pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-${lang}">${escaped}</code></pre>
     </div>`;
 }
@@ -103,11 +124,18 @@ function wireCodeCopyButtons(documentRoot) {
 
         button.dataset.vpressCodeCopyBound = '1';
 
-        button.addEventListener('click', async () => {
+        button.addEventListener('mousedown', (event) => {
+            event.stopPropagation();
+        });
+
+        button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
             const block = button.closest('[data-code-block]');
             const code = block?.querySelector('code')?.textContent?.trim() ?? '';
 
-            if (code === '') {
+            if (code === '' || code === EMPTY_PLACEHOLDER) {
                 return;
             }
 
@@ -128,14 +156,121 @@ function wireCodeCopyButtons(documentRoot) {
     });
 }
 
-function renderCodeBlockComponent(component) {
-    const language = component.get(LANG_PROP) || 'text';
-    const code = component.get(CODE_PROP) || '';
+function extractHighlightedInnerHtml(html) {
+    if (typeof DOMParser === 'undefined') {
+        return null;
+    }
 
-    component.components(buildCodeBlockHtml(language, code));
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const block = doc.querySelector('.vp-code-block');
+
+    return block?.innerHTML ?? null;
 }
 
-function migrateLegacyCustomCode(editor) {
+function renderCodeBlockComponent(component, options = {}) {
+    const language = component.get(LANG_PROP) || 'text';
+    const code = component.get(CODE_PROP) || '';
+    const token = (component._vpressCodeRenderToken ?? 0) + 1;
+    component._vpressCodeRenderToken = token;
+
+    component.components(buildCodeBlockHtml(language, code));
+
+    const viewEl = component.getView()?.el;
+
+    if (viewEl) {
+        wireCodeCopyButtons(viewEl);
+    }
+
+    const trimmed = String(code).trim();
+    const { codeHighlightUrl, csrf } = options;
+
+    if (! trimmed || ! codeHighlightUrl) {
+        return;
+    }
+
+    void fetch(codeHighlightUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
+        },
+        body: JSON.stringify({ language, code }),
+        credentials: 'same-origin',
+    })
+        .then(async (response) => {
+            if (! response.ok || component._vpressCodeRenderToken !== token) {
+                return null;
+            }
+
+            return response.json();
+        })
+        .then((payload) => {
+            if (! payload || component._vpressCodeRenderToken !== token) {
+                return;
+            }
+
+            const inner = extractHighlightedInnerHtml(payload.html ?? '');
+
+            if (! inner) {
+                return;
+            }
+
+            component.components(inner);
+
+            const highlightedEl = component.getView()?.el;
+
+            if (highlightedEl) {
+                wireCodeCopyButtons(highlightedEl);
+            }
+        })
+        .catch(() => {
+            // Keep plain fallback in the canvas.
+        });
+}
+
+function openCodeEditorModal(editor, component) {
+    const language = component.get(LANG_PROP) || 'text';
+    const code = component.get(CODE_PROP) || '';
+    const modal = editor.Modal;
+
+    modal.setTitle('Edit code');
+    modal.setContent(`
+        <div class="voodbuilder-code-editor-modal">
+            <label class="voodbuilder-code-editor-modal__label" for="voodbuilder-code-editor-lang">Language</label>
+            <select id="voodbuilder-code-editor-lang" class="voodbuilder-code-editor-modal__select">
+                ${LANGUAGE_OPTIONS.map((option) => `<option value="${option.id}"${option.id === language ? ' selected' : ''}>${option.name}</option>`).join('')}
+            </select>
+            <label class="voodbuilder-code-editor-modal__label" for="voodbuilder-code-editor-content">Source</label>
+            <textarea id="voodbuilder-code-editor-content" class="voodbuilder-code-editor-modal__textarea" spellcheck="false" placeholder="// Paste or type your code here">${escapeHtml(code)}</textarea>
+            <div class="voodbuilder-code-editor-modal__actions">
+                <button type="button" class="voodbuilder-code-editor-modal__save" data-voodbuilder-code-save>Apply</button>
+            </div>
+        </div>
+    `);
+
+    modal.open();
+
+    const textarea = modal.getContentEl()?.querySelector('#voodbuilder-code-editor-content');
+    const select = modal.getContentEl()?.querySelector('#voodbuilder-code-editor-lang');
+    const saveButton = modal.getContentEl()?.querySelector('[data-voodbuilder-code-save]');
+
+    textarea?.focus();
+
+    saveButton?.addEventListener('click', () => {
+        const nextCode = textarea?.value ?? '';
+        const nextLang = select?.value || guessLanguage(nextCode);
+
+        component.set({
+            [LANG_PROP]: nextLang,
+            [CODE_PROP]: nextCode,
+        });
+
+        modal.close();
+    });
+}
+
+function migrateLegacyCustomCode(editor, render) {
     const legacyComponents = [
         ...editor.getWrapper().find('[data-gjs-type=custom-code]'),
         ...editor.getWrapper().find('custom-code'),
@@ -171,12 +306,29 @@ function migrateLegacyCustomCode(editor) {
             component.set(CODE_PROP, readCodeFromElement(component.getEl()), { silent: true });
         }
 
-        renderCodeBlockComponent(component);
+        renderCodeBlockComponent(component, render.options);
     });
 }
 
-export function configureVpressCodeBlock(editor) {
+export function configureVpressCodeBlock(editor, options = {}) {
+    const renderOptions = {
+        codeHighlightUrl: options.codeHighlightUrl ?? '',
+        csrf: options.csrf ?? '',
+    };
+    const render = (component) => renderCodeBlockComponent(component, renderOptions);
+    render.options = renderOptions;
+
     const { DomComponents, BlockManager } = editor;
+
+    editor.Commands.add('voodbuilder:edit-code', {
+        run(ed) {
+            const component = ed.getSelected();
+
+            if (component?.get('type') === 'voodbuilder-code-block') {
+                openCodeEditorModal(ed, component);
+            }
+        },
+    });
 
     DomComponents.addType('voodbuilder-code-block', {
         isComponent: (element) => {
@@ -188,12 +340,12 @@ export function configureVpressCodeBlock(editor) {
         },
         model: {
             defaults: {
-                name: 'Code snippet',
+                name: 'Code block',
                 tagName: 'div',
                 droppable: false,
                 editable: false,
                 attributes: {
-                    class: 'vp-code-block',
+                    class: 'vp-code-block voodbuilder-code-block',
                     'data-code-block': '',
                     'data-line-numbers': '',
                     'data-voodbuilder-code': '',
@@ -206,18 +358,19 @@ export function configureVpressCodeBlock(editor) {
                         options: LANGUAGE_OPTIONS,
                     },
                     {
-                        type: 'textarea',
-                        label: 'Code',
-                        name: CODE_PROP,
-                        changeProp: true,
+                        type: 'button',
+                        label: 'Source',
+                        text: 'Edit code…',
+                        full: true,
+                        command: 'voodbuilder:edit-code',
                     },
                 ],
                 [LANG_PROP]: 'text',
                 [CODE_PROP]: '',
             },
             init() {
-                this.on(`change:${LANG_PROP}`, () => renderCodeBlockComponent(this));
-                this.on(`change:${CODE_PROP}`, () => renderCodeBlockComponent(this));
+                this.on(`change:${LANG_PROP}`, () => render(this));
+                this.on(`change:${CODE_PROP}`, () => render(this));
 
                 if (! this.get(CODE_PROP) && this.getEl()) {
                     this.set({
@@ -226,40 +379,36 @@ export function configureVpressCodeBlock(editor) {
                     }, { silent: true });
                 }
 
-                renderCodeBlockComponent(this);
+                render(this);
             },
         },
         view: {
             events: {
                 dblclick: 'onEdit',
             },
-            onEdit() {
-                const trait = this.model.getTrait(CODE_PROP);
-
-                if (trait) {
-                    trait.view?.el?.focus?.();
-                }
+            onEdit(event) {
+                event?.preventDefault?.();
+                event?.stopPropagation?.();
+                openCodeEditorModal(editor, this.model);
             },
         },
     });
 
     if (! BlockManager.get('voodbuilder-code-block')) {
         BlockManager.add('voodbuilder-code-block', {
-            label: 'Code snippet',
-            category: 'Sections · Content',
-            media: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
-            </svg>`,
+            label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
+            category: CODE_BLOCK_CATEGORY,
+            media: resolveBlockWireframe('voodbuilder-code-block'),
             content: {
                 type: 'voodbuilder-code-block',
-                [LANG_PROP]: 'text',
-                [CODE_PROP]: '',
+                [LANG_PROP]: 'php',
+                [CODE_PROP]: "<?php echo 'Hello';",
             },
         });
     }
 
     editor.on('load', () => {
-        migrateLegacyCustomCode(editor);
+        migrateLegacyCustomCode(editor, render);
         wireCodeCopyButtons(editor.Canvas.getDocument());
     });
 
@@ -269,7 +418,17 @@ export function configureVpressCodeBlock(editor) {
 
     editor.on('component:add', (component) => {
         if (component.get('type') === 'voodbuilder-code-block') {
-            renderCodeBlockComponent(component);
+            render(component);
+        }
+    });
+
+    editor.on('component:selected', (component) => {
+        if (component?.get('type') === 'voodbuilder-code-block') {
+            const viewEl = component.getView()?.el;
+
+            if (viewEl) {
+                wireCodeCopyButtons(viewEl);
+            }
         }
     });
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages;
 
-use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Voodflow\Voodbuilder\Filament\Concerns\ConfirmsSitePageHomeTakeover;

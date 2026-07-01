@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Voodbuilder\Models\ModelIntegration;
 
 final class ModelIntegrationListResolver
 {

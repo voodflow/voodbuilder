@@ -49,6 +49,11 @@ final class VoodbuilderPaths
         return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/tabs.css');
     }
 
+    public static function grapesJsFormsCssEntry(): string
+    {
+        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/forms.css');
+    }
+
     /**
      * @return list<string>
      */
@@ -75,6 +80,7 @@ final class VoodbuilderPaths
         $entries = [
             self::themeCssRelativePath(),
             self::grapesJsTabsCssEntry(),
+            self::grapesJsFormsCssEntry(),
         ];
 
         if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {

@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
-use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Models\SitePage;
 

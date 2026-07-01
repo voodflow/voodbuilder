@@ -2,7 +2,7 @@
  * VoodBuilder tab section presets — replaces the default grapesjs-tabs block.
  */
 
-export const TABS_BLOCK_CATEGORY = 'Sections · Tabs';
+export const TABS_BLOCK_CATEGORY = 'Tabs';
 
 const TAB_LABELS = ['Overview', 'Details', 'Resources'];
 

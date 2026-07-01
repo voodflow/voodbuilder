@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Filament\Livewire;
 use Filament\Livewire\Notifications as FilamentNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -447,7 +448,7 @@ class ThemesWorkspace extends Component
             $this->validate([
                 'importArchive' => ['required', 'file', 'mimes:zip', 'max:51200'],
             ]);
-        } catch (\Illuminate\Validation\ValidationException $exception) {
+        } catch (ValidationException $exception) {
             $this->notify(
                 Notification::make()
                     ->title(__('voodbuilder::settings.import_theme_failed'))

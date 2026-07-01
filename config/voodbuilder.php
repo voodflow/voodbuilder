@@ -274,7 +274,7 @@ return [
             'forms' => env('VOODBUILDER_GRAPESJS_FORMS', true),
             'style_bg' => env('VOODBUILDER_GRAPESJS_STYLE_BG', true),
             'tabs' => env('VOODBUILDER_GRAPESJS_TABS', true),
-            'custom_code' => env('VOODBUILDER_GRAPESJS_CUSTOM_CODE', true),
+            'custom_code' => env('VOODBUILDER_GRAPESJS_CUSTOM_CODE', false),
         ],
         'forms' => [
             'success_message' => 'Thank you. Your message has been received.',

@@ -19,9 +19,13 @@ final class GrapesJsRenderer
         }
 
         return GrapesJsPlaceholderNormalizer::normalizeHtml(
-            GrapesJsCodeBlockNormalizer::normalize(
-                TailblocksThemeTokenMigrator::migrateHtml(
-                    GrapesJsHtmlSanitizer::sanitize($html),
+            GrapesJsFormNormalizer::normalize(
+                GrapesJsStepTabsNormalizer::normalize(
+                    GrapesJsCodeBlockNormalizer::normalize(
+                        TailblocksThemeTokenMigrator::migrateHtml(
+                            GrapesJsHtmlSanitizer::sanitize($html),
+                        ),
+                    ),
                 ),
             ),
         );

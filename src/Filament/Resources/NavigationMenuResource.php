@@ -22,6 +22,7 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNav
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
 use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 
@@ -115,7 +116,7 @@ class NavigationMenuResource extends Resource
                                 'footer' => __('Footer links'),
                                 'landing_nav' => __('Landing navbar links'),
                                 'landing_footer' => __('Landing footer columns (legacy groups)'),
-                                ...\Voodflow\Voodbuilder\Support\LandingMenuPlacements::footerColumnPlacementLabels(),
+                                ...LandingMenuPlacements::footerColumnPlacementLabels(),
                             ])
                             ->required()
                             ->unique(ignoreRecord: true)

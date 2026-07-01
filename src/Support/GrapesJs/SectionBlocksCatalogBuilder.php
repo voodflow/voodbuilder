@@ -12,27 +12,39 @@ use Illuminate\Support\Str;
  */
 final class SectionBlocksCatalogBuilder
 {
+    /** @var array<int, string> */
+    private const VARIANT_NUMBERS = [
+        'A' => '1',
+        'B' => '2',
+        'C' => '3',
+        'D' => '4',
+        'E' => '5',
+        'F' => '6',
+        'G' => '7',
+        'H' => '8',
+    ];
+
     /** @var array<string, string> */
     private const CATEGORY_LABELS = [
-        'blog' => 'Sections · Articles',
-        'hero' => 'Sections · Hero',
-        'content' => 'Sections · Content',
-        'contact' => 'Sections · Contact',
-        'cta' => 'Sections · CTA',
-        'feature' => 'Sections · Features',
-        'features' => 'Sections · Features',
-        'gallery' => 'Sections · Gallery',
-        'header' => 'Sections · Header',
-        'footer' => 'Sections · Footer',
-        'pricing' => 'Sections · Pricing',
-        'statistics' => 'Sections · Stats',
-        'statistic' => 'Sections · Stats',
-        'steps' => 'Sections · Steps',
-        'step' => 'Sections · Steps',
-        'team' => 'Sections · Team',
-        'testimonial' => 'Sections · Testimonials',
-        'commerce' => 'Sections · Commerce',
-        'ecommerce' => 'Sections · Shop',
+        'blog' => 'Articles',
+        'hero' => 'Hero',
+        'content' => 'Content',
+        'contact' => 'Contact',
+        'cta' => 'CTA',
+        'feature' => 'Features',
+        'features' => 'Features',
+        'gallery' => 'Gallery',
+        'header' => 'Header',
+        'footer' => 'Footer',
+        'pricing' => 'Pricing',
+        'statistics' => 'Stats',
+        'statistic' => 'Stats',
+        'steps' => 'Steps',
+        'step' => 'Steps',
+        'team' => 'Team',
+        'testimonial' => 'Testimonials',
+        'commerce' => 'Commerce',
+        'ecommerce' => 'Shop',
     ];
 
     /** @var array<string, string> */
@@ -56,15 +68,6 @@ final class SectionBlocksCatalogBuilder
         'testimonial' => 'Testimonial',
         'commerce' => 'Product cards',
         'ecommerce' => 'Product showcase',
-    ];
-
-    /** @var array<int, string> */
-    private const VARIANT_NUMBERS = [
-        'A' => '1',
-        'B' => '2',
-        'C' => '3',
-        'D' => '4',
-        'E' => '5',
     ];
 
     public static function sourcePath(): string
@@ -154,13 +157,15 @@ final class SectionBlocksCatalogBuilder
      */
     protected function resolveVariant(array $definition): string
     {
-        $label = trim((string) ($definition['label'] ?? ''));
+        $id = (string) ($definition['id'] ?? '');
 
-        if (preg_match('/\b([A-E])$/i', $label, $matches)) {
+        if (preg_match('/([a-h])$/i', $id, $matches)) {
             return strtoupper($matches[1]);
         }
 
-        if (preg_match('/([a-e])$/i', (string) ($definition['id'] ?? ''), $matches)) {
+        $label = trim((string) ($definition['label'] ?? ''));
+
+        if (preg_match('/\b([A-H])$/i', $label, $matches)) {
             return strtoupper($matches[1]);
         }
 

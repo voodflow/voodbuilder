@@ -199,7 +199,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('logo_mobile')
                                                 ->label(__('voodbuilder::settings.logo_mobile'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory . '/mobile')
+                                                ->directory($uploadDirectory.'/mobile')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($imageTypes)
                                                 ->maxSize((int) config('voodbuilder.uploads.max_size', 2048))
@@ -209,7 +209,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('favicon')
                                                 ->label(__('Favicon'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory . '/favicons')
+                                                ->directory($uploadDirectory.'/favicons')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($faviconTypes)
                                                 ->maxSize(512)
@@ -232,10 +232,10 @@ class VoodbuilderSettingsPage extends Page
                                             ->default(true)
                                             ->live(),
                                         Select::make('theme_mode')
-                                            ->label(fn(Get $get): string => $get('show_theme_toggle')
+                                            ->label(fn (Get $get): string => $get('show_theme_toggle')
                                                 ? __('Default theme')
                                                 : __('Site theme'))
-                                            ->options(fn(Get $get): array => $get('show_theme_toggle')
+                                            ->options(fn (Get $get): array => $get('show_theme_toggle')
                                                 ? [
                                                     'system' => __('Follow system preference'),
                                                     'light' => __('Always light'),
@@ -246,7 +246,7 @@ class VoodbuilderSettingsPage extends Page
                                                     'dark' => __('Always dark'),
                                                 ])
                                             ->default('system')
-                                            ->helperText(fn(Get $get): string => $get('show_theme_toggle')
+                                            ->helperText(fn (Get $get): string => $get('show_theme_toggle')
                                                 ? __('Used on first visit and in private browsing when the visitor has not chosen a theme yet. “Follow system” uses the device setting.')
                                                 : __('Applied to all visitors; the theme toggle is hidden.')),
                                         Toggle::make('show_account_link')
@@ -261,14 +261,14 @@ class VoodbuilderSettingsPage extends Page
                                             ->helperText(__('Hidden automatically when only one content locale is configured.'))
                                             ->default(true)
                                             ->live()
-                                            ->visible(fn(): bool => class_exists(LocaleSwitcher::class)
+                                            ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
                                                 && LocaleSwitcher::enabled()),
                                         Select::make('primary_locale')
                                             ->label(__('voodbuilder::settings.primary_locale'))
-                                            ->options(fn(): array => class_exists(Locales::class) ? Locales::options() : [])
-                                            ->default(fn(): string => VoodbuilderSettings::primaryLocale())
+                                            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
+                                            ->default(fn (): string => VoodbuilderSettings::primaryLocale())
                                             ->helperText(__('voodbuilder::settings.primary_locale_help'))
-                                            ->visible(fn(): bool => class_exists(Locales::class)
+                                            ->visible(fn (): bool => class_exists(Locales::class)
                                                 && class_exists(LocaleSwitcher::class)
                                                 && LocaleSwitcher::enabled()),
                                     ]),
@@ -293,7 +293,7 @@ class VoodbuilderSettingsPage extends Page
                                         FileUpload::make('seo_default_image')
                                             ->label(__('Default social sharing image'))
                                             ->disk($uploadDisk)
-                                            ->directory($uploadDirectory . '/social')
+                                            ->directory($uploadDirectory.'/social')
                                             ->visibility('public')
                                             ->acceptedFileTypes($imageTypes)
                                             ->maxSize((int) config('voodbuilder.uploads.social_max_size', 4096))
@@ -338,7 +338,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('geo_organization_logo')
                                                 ->label(__('Organization logo'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory . '/organization')
+                                                ->directory($uploadDirectory.'/organization')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($imageTypes)
                                                 ->maxSize((int) config('voodbuilder.uploads.max_size', 2048)),
@@ -402,14 +402,14 @@ class VoodbuilderSettingsPage extends Page
             ->nullable()
             ->previewable(false)
             ->openable()
-            ->getUploadedFileUsing(function (FileUpload $component, string $file, string | array | null $storedFileNames): ?array {
+            ->getUploadedFileUsing(function (FileUpload $component, string $file, string|array|null $storedFileNames): ?array {
                 $uploaded = $component->getUploadedFile($file, $storedFileNames);
 
                 if ($uploaded === null || $component->getDiskName() !== 'public') {
                     return $uploaded;
                 }
 
-                $uploaded['url'] = '/storage/' . ltrim($file, '/');
+                $uploaded['url'] = '/storage/'.ltrim($file, '/');
 
                 return $uploaded;
             });

@@ -319,7 +319,10 @@ export function initVpressGrapesJs(container, options = {}) {
         plugins: options.plugins ?? {},
     });
 
-    configureVpressCodeBlock(editor);
+    configureVpressCodeBlock(editor, {
+        codeHighlightUrl: options.codeHighlightUrl,
+        csrf: options.csrf,
+    });
 
     registerVisualStyleTarget(editor);
     registerVisualStyleInspector(editor);

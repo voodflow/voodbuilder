@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use DOMDocument;
 use DOMElement;
-use DOMNode;
 
 final class GrapesJsDynamicBlockAttributeNormalizer
 {

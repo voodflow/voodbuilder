@@ -6,8 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\ResolvableLinkType;
-use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\SitePageResolver;
 
 final class ResolvableLinkSupport
 {

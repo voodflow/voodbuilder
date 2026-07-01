@@ -15,7 +15,7 @@ final class ThemePresetManager
      */
     public static function all(): Collection
     {
-        return static::bundled()->merge(static::custom());
+        return self::bundled()->merge(self::custom());
     }
 
     /**
@@ -63,7 +63,7 @@ final class ThemePresetManager
 
     public static function find(string $id): ?ThemePreset
     {
-        return static::all()->first(fn (ThemePreset $preset): bool => $preset->id === $id);
+        return self::all()->first(fn (ThemePreset $preset): bool => $preset->id === $id);
     }
 
     public static function snapshotFromSettings(string $id, string $label, ?string $description = null): ThemePreset
@@ -116,7 +116,7 @@ final class ThemePresetManager
 
     public static function deleteCustom(string $id): bool
     {
-        if (static::bundled()->contains(fn (ThemePreset $preset): bool => $preset->id === $id)) {
+        if (self::bundled()->contains(fn (ThemePreset $preset): bool => $preset->id === $id)) {
             return false;
         }
 
@@ -153,11 +153,11 @@ final class ThemePresetManager
         $preset = ThemePreset::fromArray($data);
 
         if ($saveCustom && ! $preset->bundled) {
-            static::saveCustom($preset);
+            self::saveCustom($preset);
         }
 
         if ($apply) {
-            static::apply($preset);
+            self::apply($preset);
         }
 
         return $preset;
@@ -172,12 +172,12 @@ final class ThemePresetManager
             throw new \InvalidArgumentException("Invalid theme preset file: {$path}");
         }
 
-        return static::import($data, $apply, $saveCustom);
+        return self::import($data, $apply, $saveCustom);
     }
 
     public static function exportToFile(ThemePreset $preset, string $path): void
     {
         File::ensureDirectoryExists(dirname($path));
-        File::put($path, json_encode(static::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        File::put($path, json_encode(self::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     }
 }

@@ -21,20 +21,11 @@ export function initTabsRoot(root) {
         return;
     }
 
-    const existingTabs = root.querySelectorAll('[role="tab"]');
-    const hasActiveState = [...existingTabs].some(
-        (tab) => tab.getAttribute('aria-selected') === 'true',
-    );
-
-    if (hasActiveState) {
-        root.dataset.voodbuilderTabsReady = '1';
-
-        return;
-    }
-
     root.dataset.voodbuilderTabsReady = '1';
 
-    const classTabActive = root.dataset.vbTabActiveClass || 'tab-active';
+    const classTabActive = root.dataset.vbTabActiveClass
+        || root.closest('[data-vb-tab-active-class]')?.dataset.vbTabActiveClass
+        || 'tab-active';
     const selectorTab = 'aria-controls';
     const roleTab = '[role="tab"]';
     const roleTabContent = '[role="tabpanel"]';

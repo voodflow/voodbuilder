@@ -4,15 +4,19 @@
 import grapesjsPluginForms from 'grapesjs-plugin-forms';
 import grapesjsStyleBg from 'grapesjs-style-bg';
 import grapesjsTabs from 'grapesjs-tabs';
-import grapesjsCustomCode from 'grapesjs-custom-code';
 import { grapesJsTabsPluginOptions, registerVoodbuilderTabsBlocks } from './grapesjs-tabs-blocks.js';
 import { configureGrapesJsTabsCanvas } from './grapesjs-tabs-runtime.js';
+import { configureGrapesJsStepTabsCanvas } from './grapesjs-step-tabs.js';
+import {
+    configureGrapesJsFormsCanvas,
+    grapesJsFormsPluginOptions,
+    registerVoodbuilderFormBlock,
+} from './grapesjs-forms-blocks.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
     style_bg: grapesjsStyleBg,
     tabs: grapesjsTabs,
-    custom_code: grapesjsCustomCode,
 };
 
 export function resolveGrapesJsPlugins(enabled = {}) {
@@ -32,11 +36,8 @@ export function resolveGrapesJsPlugins(enabled = {}) {
             continue;
         }
 
-        if (plugin === grapesjsCustomCode) {
-            // Keep component type for legacy pages; block lives under Sections · Content.
-            pluginsOpts[plugin] = {
-                blockCustomCode: false,
-            };
+        if (plugin === grapesjsPluginForms) {
+            pluginsOpts[plugin] = grapesJsFormsPluginOptions();
 
             continue;
         }
@@ -51,6 +52,8 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
     if (component.get('tagName') !== 'form') {
         return;
     }
+
+    component.addClass('vb-gjs-form');
 
     component.addAttributes({
         action: formSubmitUrl,
@@ -79,6 +82,15 @@ export function configureGrapesJsPlugins(editor, options = {}) {
         editor.on('load', registerTabs);
         registerTabs();
         configureGrapesJsTabsCanvas(editor);
+        configureGrapesJsStepTabsCanvas(editor);
+    }
+
+    if (enabled.forms !== false) {
+        const registerForms = () => registerVoodbuilderFormBlock(editor);
+
+        editor.on('load', registerForms);
+        registerForms();
+        configureGrapesJsFormsCanvas(editor);
     }
 
     if (enabled.forms !== false && formSubmitUrl) {

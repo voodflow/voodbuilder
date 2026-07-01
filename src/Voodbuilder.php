@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
+use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
@@ -80,7 +81,7 @@ class Voodbuilder
     }
 
     /**
-     * @param  class-string<\Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock>  $blockClass
+     * @param  class-string<GrapesJsServerBlock>  $blockClass
      */
     public static function grapesJsServerBlock(string $category, string $blockClass): void
     {

@@ -14,7 +14,6 @@ use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
-use Voodflow\Vtuts\Support\Locales;
 
 final class ResolvableLinkForm
 {

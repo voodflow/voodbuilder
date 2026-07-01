@@ -42,7 +42,7 @@ class ModelIntegrationResource extends Resource
      */
     protected static ?string $slug = 'voodbuilder/model-integrations';
 
-    protected static BackedEnum | string | null $navigationIcon = 'heroicon-o-link';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-link';
 
     protected static array $modelMetadataCache = [];
 
@@ -167,7 +167,7 @@ class ModelIntegrationResource extends Resource
                                             Forms\Components\Repeater::make('nested_relations')
                                                 ->label(__('voodbuilder::model_integrations.fields.nested_relations'))
                                                 ->helperText(__('voodbuilder::model_integrations.helpers.nested_relations'))
-                                                ->itemLabel(fn (array $state): ?string => ($state['relation'] ?? '') . ' → ' . implode(', ', $state['fields'] ?? []))
+                                                ->itemLabel(fn (array $state): ?string => ($state['relation'] ?? '').' → '.implode(', ', $state['fields'] ?? []))
                                                 ->schema([
                                                     Forms\Components\Select::make('relation')
                                                         ->label(__('voodbuilder::model_integrations.fields.expand_relation'))
@@ -259,15 +259,15 @@ class ModelIntegrationResource extends Resource
         foreach (self::analyzeModel($modelClass)['relations'] as $name => $relatedClass) {
             $label = Str::headline($name);
             if ($relatedClass) {
-                $label .= ' (' . class_basename($relatedClass) . ')';
+                $label .= ' ('.class_basename($relatedClass).')';
             }
 
             $options[$name] = $label;
         }
 
         foreach (app(ReverseRelationRegistry::class)->for($modelClass) as $descriptor) {
-            $key = 'reverse::' . $descriptor['key'];
-            $options[$key] = $descriptor['label'] . ' · ' . __('voodbuilder::model_integrations.labels.reverse');
+            $key = 'reverse::'.$descriptor['key'];
+            $options[$key] = $descriptor['label'].' · '.__('voodbuilder::model_integrations.labels.reverse');
         }
 
         return $options;
@@ -525,7 +525,7 @@ class ModelIntegrationResource extends Resource
             return Str::camel('reverse_relation');
         }
 
-        return Str::camel(class_basename($descriptor['source_model'] ?? 'relation') . '_' . ($descriptor['relation_name'] ?? 'related'));
+        return Str::camel(class_basename($descriptor['source_model'] ?? 'relation').'_'.($descriptor['relation_name'] ?? 'related'));
     }
 
     protected static function resolveRelationMode(Get $get): string
@@ -659,8 +659,8 @@ class ModelIntegrationResource extends Resource
 
         // Try common namespaces
         $possibleClasses = [
-            $namespace . '\\' . $className,
-            'App\\Models\\' . $className,
+            $namespace.'\\'.$className,
+            'App\\Models\\'.$className,
             // 'Detit\\FilamentLabOps\\Models\\' . $className,
         ];
 
@@ -902,8 +902,8 @@ class ModelIntegrationResource extends Resource
 
             $files = File::allFiles($path);
             foreach ($files as $file) {
-                $className = 'App\\Models\\' . str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
-                $className = str_replace('App\\Models\\' . basename($path) . '\\', 'App\\Models\\', $className);
+                $className = 'App\\Models\\'.str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
+                $className = str_replace('App\\Models\\'.basename($path).'\\', 'App\\Models\\', $className);
 
                 if (class_exists($className) && is_subclass_of($className, Model::class)) {
                     if (! static::isExcludedModelClass($className, $excludedModels)) {
@@ -920,21 +920,21 @@ class ModelIntegrationResource extends Resource
             foreach ($vendorDirs as $vendorDir) {
                 $packageDirs = File::directories($vendorDir);
                 foreach ($packageDirs as $packageDir) {
-                    $modelsPath = $packageDir . '/src/Models';
+                    $modelsPath = $packageDir.'/src/Models';
                     if (File::exists($modelsPath)) {
                         $files = File::allFiles($modelsPath);
                         foreach ($files as $file) {
-                            $relativePath = str_replace([$packageDir . '/src/', '.php'], ['', ''], $file->getPathname());
+                            $relativePath = str_replace([$packageDir.'/src/', '.php'], ['', ''], $file->getPathname());
                             $className = str_replace('/', '\\', $relativePath);
 
                             // Namespace from composer.json psr-4 when possible
-                            $composerPath = $packageDir . '/composer.json';
+                            $composerPath = $packageDir.'/composer.json';
                             if (File::exists($composerPath)) {
                                 $composer = json_decode(File::get($composerPath), true);
                                 if (isset($composer['autoload']['psr-4'])) {
                                     foreach ($composer['autoload']['psr-4'] as $namespace => $path) {
                                         if (strpos($relativePath, $path) === 0 || $path === 'src/') {
-                                            $className = rtrim($namespace, '\\') . '\\' . str_replace(['src/', '/'], ['', '\\'], $relativePath);
+                                            $className = rtrim($namespace, '\\').'\\'.str_replace(['src/', '/'], ['', '\\'], $relativePath);
 
                                             break;
                                         }
@@ -960,11 +960,11 @@ class ModelIntegrationResource extends Resource
             foreach ($vendorDirs as $vendorDir) {
                 $packageDirs = File::directories($vendorDir);
                 foreach ($packageDirs as $packageDir) {
-                    $modelsPath = $packageDir . '/src/Models';
+                    $modelsPath = $packageDir.'/src/Models';
                     if (File::exists($modelsPath)) {
                         $files = File::allFiles($modelsPath);
                         foreach ($files as $file) {
-                            $relativePath = str_replace([$packageDir . '/src/Models/', '.php'], ['', ''], $file->getRelativePathname());
+                            $relativePath = str_replace([$packageDir.'/src/Models/', '.php'], ['', ''], $file->getRelativePathname());
 
                             // Build FQCN from vendor/package folder names
                             $vendorName = basename($vendorDir);
@@ -978,7 +978,7 @@ class ModelIntegrationResource extends Resource
                             }
 
                             $modelName = ! empty($namespaceParts) ? end($namespaceParts) : '';
-                            $subNamespace = ! empty($namespaceParts) ? '\\' . implode('\\', array_slice($namespaceParts, 0, -1)) : '';
+                            $subNamespace = ! empty($namespaceParts) ? '\\'.implode('\\', array_slice($namespaceParts, 0, -1)) : '';
 
                             $className = "{$vendorName}\\{$packageName}\\Models{$subNamespace}\\{$modelName}";
 
@@ -1006,7 +1006,7 @@ class ModelIntegrationResource extends Resource
         $options = [];
         foreach ($models as $modelClass) {
             $basename = class_basename($modelClass);
-            $namespace = str_replace('\\' . $basename, '', $modelClass);
+            $namespace = str_replace('\\'.$basename, '', $modelClass);
 
             // Readable label with package hint
             $label = $basename;
@@ -1027,7 +1027,7 @@ class ModelIntegrationResource extends Resource
                     $packageName = ucfirst($packageName);
 
                     if ($packageName) {
-                        $label .= ' (' . $packageName . ')';
+                        $label .= ' ('.$packageName.')';
                     }
                 } elseif (count($namespaceParts) > 0) {
                     // Single segment: same cleanup
@@ -1036,7 +1036,7 @@ class ModelIntegrationResource extends Resource
                         $lastPart = str_replace('Filament', '', $lastPart);
                         $lastPart = ucfirst($lastPart);
                         if ($lastPart) {
-                            $label .= ' (' . $lastPart . ')';
+                            $label .= ' ('.$lastPart.')';
                         }
                     }
                 }

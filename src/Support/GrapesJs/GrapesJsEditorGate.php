@@ -59,6 +59,7 @@ final class GrapesJsEditorGate
             'bindingsUrl' => route('voodbuilder.grapesjs.bindings'),
             'bindingsPreviewUrl' => route('voodbuilder.grapesjs.bindings.preview', $page),
             'blocksRenderUrl' => route('voodbuilder.grapesjs.blocks.render'),
+            'codeHighlightUrl' => route('voodbuilder.grapesjs.code.highlight'),
             'formSubmitUrl' => route('voodbuilder.grapesjs.forms.submit', $page),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),
             'canvasStyles' => GrapesJsCanvas::styleUrls(),

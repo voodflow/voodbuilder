@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class SubThemeLocator
 {
@@ -143,7 +144,7 @@ final class SubThemeLocator
      */
     public static function appearanceColorsFor(string $id): ?array
     {
-        $colors = \Voodflow\Voodbuilder\Models\VoodbuilderSettings::get('sub_theme_colors', []);
+        $colors = VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (is_array($colors[$id] ?? null) && ThemePalette::themeHasCustomColors($id)) {
             return $colors[$id];

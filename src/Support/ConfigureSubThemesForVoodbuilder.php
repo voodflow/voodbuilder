@@ -225,7 +225,6 @@ final class ConfigureSubThemesForVoodbuilder
 
     /**
      * @param  array{label: string, description?: string, type?: string, capabilities?: list<string>, layouts?: array<string, string>, css?: string, chrome?: array<string, bool>}  $definition
-     *
      * @return array{label: string, description: string, type: string, capabilities: list<string>, layouts: array<string, string>, css: string, chrome?: array<string, bool>}
      */
     protected static function normalizeStoredDefinition(string $id, array $definition): array

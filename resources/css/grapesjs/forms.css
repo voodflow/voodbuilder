@@ -1,0 +1,166 @@
+/**
+ * GrapesJS form blocks — canvas + published pages (matches contact section fields).
+ */
+
+.vb-gjs-form,
+.VPRichPage form.vb-gjs-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 36rem;
+    margin-inline: auto;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-vp-divider, #e2e2e3);
+    background-color: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #3c3c43);
+}
+
+.vb-gjs-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.vb-gjs-form__field--inline {
+    gap: 0.5rem;
+}
+
+.vb-gjs-form__radio-group,
+.vb-gjs-form__checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+}
+
+.vb-gjs-form__choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-vp-text-2, #67676c);
+    cursor: pointer;
+}
+
+.vb-gjs-form > .vb-gjs-form__field > label:first-child,
+.vb-gjs-form__field > label:first-child {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.625;
+    font-weight: 500;
+    color: var(--color-vp-text-2, #67676c);
+}
+
+.vb-gjs-form input[type='text'],
+.vb-gjs-form input[type='email'],
+.vb-gjs-form input[type='password'],
+.vb-gjs-form input[type='number'],
+.vb-gjs-form input[type='tel'],
+.vb-gjs-form input[type='url'],
+.vb-gjs-form input[type='search'],
+.vb-gjs-form textarea,
+.vb-gjs-form select,
+.VPRichPage form.vb-gjs-form input:not([class]),
+.VPRichPage form.vb-gjs-form textarea:not([class]),
+.VPRichPage form.vb-gjs-form select:not([class]) {
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    background-color: var(--color-vp-bg, #fff);
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-vp-text-1, #3c3c43);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.vb-gjs-form textarea {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.vb-gjs-form input:focus,
+.vb-gjs-form textarea:focus,
+.vb-gjs-form select:focus,
+.VPRichPage form.vb-gjs-form input:not([class]):focus,
+.VPRichPage form.vb-gjs-form textarea:not([class]):focus,
+.VPRichPage form.vb-gjs-form select:not([class]):focus {
+    border-color: var(--color-vp-brand-2, #3a5ccc);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 18%, transparent);
+}
+
+.vb-gjs-form input[type='checkbox'],
+.vb-gjs-form input[type='radio'],
+.VPRichPage form.vb-gjs-form input[type='checkbox'],
+.VPRichPage form.vb-gjs-form input[type='radio'] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--color-vp-brand-2, #3a5ccc);
+    flex-shrink: 0;
+}
+
+.vb-gjs-form button,
+.vb-gjs-form input[type='submit'],
+.vb-gjs-form input[type='button'],
+.VPRichPage form.vb-gjs-form button,
+.VPRichPage form.vb-gjs-form input[type='submit'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    border: 0;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #fff;
+    background-color: var(--color-vp-brand-2, #3a5ccc);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.vb-gjs-form button:hover,
+.vb-gjs-form input[type='submit']:hover,
+.VPRichPage form.vb-gjs-form button:hover,
+.VPRichPage form.vb-gjs-form input[type='submit']:hover {
+    background-color: var(--color-vp-brand-1, #3451b2);
+}
+
+.vb-gjs-form button:focus-visible,
+.vb-gjs-form input[type='submit']:focus-visible {
+    outline: 2px solid var(--color-vp-brand-2, #3a5ccc);
+    outline-offset: 2px;
+}
+
+/* Legacy plugin markup: field rows without vb-gjs-form__field wrapper */
+.vb-gjs-form > div:not(.vb-gjs-form__field) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.vb-gjs-form > div:not(.vb-gjs-form__field):has(input[type='checkbox']),
+.vb-gjs-form > div:not(.vb-gjs-form__field):has(input[type='radio']) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.vb-gjs-form > div:not(.vb-gjs-form__field):has(input[type='checkbox']) > label:first-child,
+.vb-gjs-form > div:not(.vb-gjs-form__field):has(input[type='radio']) > label:first-child {
+    flex: 0 0 100%;
+}
+
+.vb-gjs-form > div:not(.vb-gjs-form__field) label:not(:first-child) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0;
+    font-weight: 400;
+}

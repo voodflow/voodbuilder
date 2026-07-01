@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Filament\Forms;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Voodflow\Vevents\Models\Organizer;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\LandingFooterSupport;
 use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
@@ -82,14 +83,14 @@ final class LandingFooterForm
     /** @return array<int, mixed> */
     protected static function organizerFields(): array
     {
-        if (class_exists(\Voodflow\Vevents\Models\Organizer::class)) {
+        if (class_exists(Organizer::class)) {
             return [
                 Select::make('organizer_id')
                     ->label(__('voodbuilder::landing.footer.organizer'))
-                    ->options(fn (): array => \Voodflow\Vevents\Models\Organizer::query()
+                    ->options(fn (): array => Organizer::query()
                         ->orderBy('name')
                         ->get()
-                        ->mapWithKeys(fn (\Voodflow\Vevents\Models\Organizer $organizer): array => [
+                        ->mapWithKeys(fn (Organizer $organizer): array => [
                             $organizer->getKey() => $organizer->getTranslation('name', app()->getLocale()) ?? (string) $organizer->getKey(),
                         ])
                         ->all())
