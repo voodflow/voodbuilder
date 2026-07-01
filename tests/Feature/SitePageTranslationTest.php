@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Feature;
 
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Voodflow\Voodbuilder\Http\Controllers\HomeController;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
 use Voodflow\Voodbuilder\Models\SitePage;
@@ -11,10 +13,8 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageTranslation;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Voodbuilder\Tests\TestCase;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 use Voodflow\Vtuts\Support\Locales;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\View;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 class SitePageTranslationTest extends TestCase
 {
@@ -28,6 +28,7 @@ class SitePageTranslationTest extends TestCase
             View::addNamespace('vtuts', $vtutsViews);
         }
     }
+
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

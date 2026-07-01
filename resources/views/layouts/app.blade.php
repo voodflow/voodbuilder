@@ -22,6 +22,7 @@
     <x-voodbuilder::theme-vars :sub-theme="$voodbuilderSubTheme" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
     @endphp

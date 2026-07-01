@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsCustomCodeSanitizer;
 use Voodflow\Voodbuilder\Tests\TestCase;
 

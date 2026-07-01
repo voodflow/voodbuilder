@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
-use Voodflow\Voodbuilder\Tests\TestCase;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ThemePaletteTest extends TestCase
 {
@@ -60,8 +61,8 @@ class ThemePaletteTest extends TestCase
             'site' => ['label' => 'Site'],
         ]);
 
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
-            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -72,7 +73,7 @@ class ThemePaletteTest extends TestCase
                 ],
             ]),
         ]);
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::cssForCanvas('site');
 
@@ -107,8 +108,8 @@ class ThemePaletteTest extends TestCase
             ],
         ]);
 
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
-            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -118,7 +119,7 @@ class ThemePaletteTest extends TestCase
                 ],
             ]),
         ]);
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::criticalDocumentCss('site');
 
@@ -133,8 +134,8 @@ class ThemePaletteTest extends TestCase
             'site' => ['label' => 'Site'],
         ]);
 
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::query()->create([
-            'data' => array_merge(\Voodflow\Voodbuilder\Models\VoodbuilderSettings::docss(), [
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
                 'sub_theme_colors' => [
                     'site' => [
                         'light' => [
@@ -149,13 +150,13 @@ class ThemePaletteTest extends TestCase
                 ],
             ]),
         ]);
-        \Voodflow\Voodbuilder\Models\VoodbuilderSettings::clearCache();
+        VoodbuilderSettings::clearCache();
 
         $css = ThemePalette::css();
 
-        $this->assertStringContainsString("--vx-header-bg:#002b49", $css);
-        $this->assertStringContainsString("--color-vp-bg:#ffffff", $css);
-        $this->assertStringContainsString("--color-vp-text-2:color-mix", $css);
+        $this->assertStringContainsString('--vx-header-bg:#002b49', $css);
+        $this->assertStringContainsString('--color-vp-bg:#ffffff', $css);
+        $this->assertStringContainsString('--color-vp-text-2:color-mix', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
     }
 }

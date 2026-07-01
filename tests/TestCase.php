@@ -11,6 +11,7 @@ use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
+use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 
 abstract class TestCase extends BaseTestCase
@@ -48,7 +49,7 @@ abstract class TestCase extends BaseTestCase
             'default_repository' => 'database',
             'repositories' => [
                 'database' => [
-                    'type' => \Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository::class,
+                    'type' => DatabaseSettingsRepository::class,
                     'model' => null,
                     'table' => 'settings',
                     'connection' => null,

@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
+use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
 
 final class GrapesJsRenderer
 {
@@ -33,15 +34,21 @@ final class GrapesJsRenderer
 
     public function css(SitePage $page): ?string
     {
-        $css = $page->builder_payload['css'] ?? null;
+        $globalCss = app(GrapesJsGlobalClassRenderer::class)->css();
+        $payload = $page->builder_payload ?? [];
+        $html = (string) ($payload['html'] ?? '');
+        $componentCss = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        $css = $payload['css'] ?? null;
 
-        if (! filled($css)) {
-            return null;
-        }
+        $pageCss = filled($css)
+            ? GrapesJsCssSanitizer::sanitize(
+                TailblocksThemeTokenMigrator::migrateCss((string) $css),
+            )
+            : '';
 
-        return GrapesJsCssSanitizer::sanitize(
-            TailblocksThemeTokenMigrator::migrateCss((string) $css),
-        );
+        $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
+
+        return $combined !== '' ? $combined : null;
     }
 
     public function js(SitePage $page): ?string
@@ -57,7 +64,10 @@ final class GrapesJsRenderer
 
     public function render(SitePage $page): string
     {
-        $html = app(GrapesJsBindingRenderer::class)->render($this->html($page), $page);
+        $html = $this->html($page);
+        $html = app(GrapesJsElementConditionRenderer::class)->render($html, $page);
+        $html = app(GrapesJsComponentRenderer::class)->render($html, $page);
+        $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
 
         return app(GrapesJsDynamicBlockRenderer::class)->render($html, $page);
     }

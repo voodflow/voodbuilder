@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+/**
+ * @deprecated Redundant with section blocks catalog (Hero, CTA, …). Do not register at runtime.
+ */
 final class DefaultGrapesJsBlocks
 {
     public static function register(GrapesJsBlockRegistry $registry): void

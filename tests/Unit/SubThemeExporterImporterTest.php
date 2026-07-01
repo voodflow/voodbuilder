@@ -6,9 +6,11 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Voodflow\Voodbuilder\Support\SubThemeCloner;
 use Voodflow\Voodbuilder\Support\SubThemeExporter;
 use Voodflow\Voodbuilder\Support\SubThemeImporter;
 use Voodflow\Voodbuilder\Support\SubThemeLocator;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\ThemeConvention;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -21,7 +23,7 @@ class SubThemeExporterImporterTest extends TestCase
         parent::setUp();
 
         $this->seedThemeFiles();
-        app(\Voodflow\Voodbuilder\Support\SubThemeRegistry::class)->register($this->themeId, [
+        app(SubThemeRegistry::class)->register($this->themeId, [
             'label' => 'Export Demo',
             'capabilities' => ['landing'],
             'layouts' => [
@@ -46,7 +48,7 @@ class SubThemeExporterImporterTest extends TestCase
         $relativePath = 'voodbuilder-theme-imports/demo.zip';
         Storage::disk('local')->put($relativePath, 'zip-content');
 
-        $resolved = \Voodflow\Voodbuilder\Support\SubThemeImporter::resolveArchiveUploadPath($relativePath);
+        $resolved = SubThemeImporter::resolveArchiveUploadPath($relativePath);
 
         $this->assertSame(Storage::disk('local')->path($relativePath), $resolved);
         $this->assertFileExists($resolved);
@@ -57,7 +59,7 @@ class SubThemeExporterImporterTest extends TestCase
         $exportPath = storage_path('app/voodbuilder-theme-exports/'.$this->themeId.'-rename-test.zip');
         SubThemeExporter::export($this->themeId, $exportPath);
 
-        $result = \Voodflow\Voodbuilder\Support\SubThemeImporter::import(
+        $result = SubThemeImporter::import(
             archivePath: $exportPath,
             renameOnConflict: true,
         );
@@ -74,7 +76,7 @@ class SubThemeExporterImporterTest extends TestCase
 
     public function test_it_clones_a_theme_with_new_id(): void
     {
-        $result = \Voodflow\Voodbuilder\Support\SubThemeCloner::clone(
+        $result = SubThemeCloner::clone(
             sourceId: $this->themeId,
             targetId: 'cloned-demo',
             label: 'Cloned Demo',

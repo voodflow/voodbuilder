@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * @deprecated Use VoodbuilderSectionGrapesJsBlocks — only kept for voodbuilder:build-sections intermediate export.
+ */
 final class TailblocksGrapesJsBlocks
 {
     public static function register(GrapesJsBlockRegistry $registry, ?string $theme = null): void

@@ -51,9 +51,13 @@ final class GrapesJsDynamicBlockRegistry
         foreach ($this->blocks as $blockId => $blockClass) {
             $category = $this->categories[$blockId] ?? 'Dynamic';
 
-            $registry->register(
-                GrapesJsRichContentBlockAdapter::toDefinition($blockClass, $category, $eventId),
-            );
+            try {
+                $registry->register(
+                    GrapesJsRichContentBlockAdapter::toDefinition($blockClass, $category, $eventId),
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
     }
 }

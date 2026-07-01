@@ -13,7 +13,7 @@ class TailblocksGrapesJsBlocksTest extends TestCase
     public function test_registers_tailblocks_when_catalog_exists(): void
     {
         if (! TailblocksGrapesJsBlocks::isAvailable()) {
-            $this->markTestSkipped('Tailblocks catalog not built. Run php artisan voodbuilder:build-tailblocks.');
+            $this->markTestSkipped('Intermediate catalog not built. Run php artisan voodbuilder:build-sections.');
         }
 
         $registry = new GrapesJsBlockRegistry;

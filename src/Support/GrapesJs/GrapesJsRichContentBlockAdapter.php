@@ -40,7 +40,11 @@ final class GrapesJsRichContentBlockAdapter
     public static function editorPreviewHtml(string $blockClass, array $config): string
     {
         if (method_exists($blockClass, 'toPreviewHtml')) {
-            return $blockClass::toPreviewHtml($config);
+            try {
+                return $blockClass::toPreviewHtml($config);
+            } catch (\Throwable) {
+                return self::fallbackEditorHtml($blockClass::getLabel());
+            }
         }
 
         return self::fallbackEditorHtml($blockClass::getLabel());

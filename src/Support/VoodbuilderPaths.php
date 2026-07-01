@@ -31,6 +31,7 @@ final class VoodbuilderPaths
         return [
             self::themeCssRelativePath(),
             'resources/js/app.js',
+            self::relativeToBasePath(self::packagePath().'/resources/js/site-runtime.js'),
         ];
     }
 

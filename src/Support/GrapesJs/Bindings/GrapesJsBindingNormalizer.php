@@ -23,7 +23,7 @@ final class GrapesJsBindingNormalizer
                 $key = trim(html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
                 if (BindingKey::tryParse($key, $this->registry) === null) {
-                    return '';
+                    return $matches[0];
                 }
 
                 return ' data-voodbuilder-bind='.$quote.htmlspecialchars($key, ENT_QUOTES | ENT_HTML5, 'UTF-8').$quote;

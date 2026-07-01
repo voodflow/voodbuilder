@@ -8,10 +8,11 @@ import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
 
+import { alertDialog } from './editor-dialog.js';
 import vpressGrapesJsPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
-    ensureTailblocksSectionTraits,
+    ensureLayoutSectionTraits,
     isSiteFooterBlock,
     lockDynamicPreviewContent,
     prioritizeBlockCategories,
@@ -24,13 +25,19 @@ import vpressGrapesJsPlugin, {
 } from './plugins/voodbuilder-grapesjs.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './voodbuilder-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
+import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtime.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
-import { registerBindingsUi, syncRepeatBindingsForExport } from './bindings-ui.js';
+import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from './bindings-ui.js';
+import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from './conditions-ui.js';
+import { registerComponentsUi, registerComponentInstanceType, syncComponentInstancesForExport } from './components-ui.js';
+import { registerGlobalClassesUi } from './global-classes-ui.js';
+import { registerRevisionsUi } from './revisions-ui.js';
 import { registerVisualStyleInspector, registerVisualStyleTarget } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
 import { buildEditorShell, collapseBlockCategories, configureEditorLayout, editorLayoutInitOptions } from './editor-layout.js';
 import { applyLightBlockPreviews } from './editor-block-previews.js';
+import { registerEditorVideoSafety, syncVideoComponentsForExport } from './editor-video.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -61,7 +68,11 @@ function normalizeVpressDynamicComponents(editor) {
 function buildPayload(editor) {
     normalizeVpressDynamicComponents(editor);
     pruneEmptyDynamicBlocks(editor);
+    syncBindingsForExport(editor);
+    syncComponentInstancesForExport(editor);
     syncRepeatBindingsForExport(editor);
+    syncConditionsForExport(editor);
+    syncVideoComponentsForExport(editor);
 
     return {
         html: editor.getHtml({
@@ -166,7 +177,7 @@ function waitForCanvasStyles(frameWindow) {
     const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
 
     if (links.length === 0) {
-        doc.body?.classList.add('voodbuilder-canvas-ready');
+        doc.body?.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
 
         return Promise.resolve();
     }
@@ -181,8 +192,26 @@ function waitForCanvasStyles(frameWindow) {
             link.addEventListener('error', resolve, { once: true });
         });
     })).then(() => {
-        doc.body?.classList.add('voodbuilder-canvas-ready');
+        doc.body?.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
     });
+}
+
+function configureLayoutBlocks(editor) {
+    const videoBlock = editor.BlockManager.get('video');
+
+    if (videoBlock) {
+        videoBlock.set('content', {
+            type: 'video',
+            provider: 'yt',
+            videoId: '',
+            classes: ['w-full', 'rounded', 'aspect-video'],
+            style: {
+                width: '100%',
+                'max-width': '100%',
+                height: 'auto',
+            },
+        });
+    }
 }
 
 function registerCanvasBootGate(editor, shellRoot) {
@@ -243,6 +272,8 @@ export function initVpressGrapesJs(container, options = {}) {
         pluginsOpts: {
             [grapesjsBlocksBasic]: {
                 flexGrid: true,
+                category: 'Layout',
+                blocks: ['column1', 'column2', 'column3', 'column3-7', 'image', 'video'],
             },
             ...pluginBundle.pluginsOpts,
             [vpressGrapesJsPlugin]: {
@@ -303,6 +334,10 @@ export function initVpressGrapesJs(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
+    registerEditorVideoSafety(editor);
+
+    registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
+
     if (shell) {
         registerCanvasBootGate(editor, shell.shell?.closest('.voodbuilder-gjs-root') ?? container);
         configureEditorLayout(editor, shell, labels);
@@ -311,6 +346,9 @@ export function initVpressGrapesJs(container, options = {}) {
     configureEditorChrome(editor, {
         labels,
         shellRoot: shell?.shell ?? null,
+        toolsMount: shell?.mounts?.canvasToolbar ?? null,
+        actionsMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
+        viewPageUrl: options.viewPageUrl ?? options.exitUrl ?? null,
     });
 
     configureGrapesJsPlugins(editor, {
@@ -334,15 +372,49 @@ export function initVpressGrapesJs(container, options = {}) {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
-        ensureTailblocksSectionTraits(editor);
+        ensureLayoutSectionTraits(editor);
         pruneEmptySections(editor);
         applyLightBlockPreviews(editor);
+        configureLayoutBlocks(editor);
 
         void registerBindingsUi(editor, {
             bindingsUrl: options.bindingsUrl,
             bindingsPreviewUrl: options.bindingsPreviewUrl,
             labels: options.bindingLabels ?? labels,
             dynamicMount: shell?.mounts?.dynamic ?? null,
+        });
+
+        registerConditionsUi(editor, {
+            mount: shell?.mounts?.conditions ?? null,
+            labels,
+            conditionOptions: options.conditionOptions ?? [],
+        });
+
+        registerConditionsPersistence(editor);
+
+        registerGlobalClassesUi(editor, {
+            globalClassesUrl: options.globalClassesUrl,
+            csrf: options.csrf,
+            labels,
+            mount: shell?.mounts?.globalClasses ?? null,
+        });
+
+        registerComponentsUi(editor, {
+            componentsUrl: options.componentsUrl,
+            csrf: options.csrf,
+            labels,
+            componentsMount: shell?.mounts?.components ?? null,
+            componentPropsMount: shell?.mounts?.componentProps ?? null,
+            canvasStyles: options.canvasStyles ?? [],
+            componentCategories: options.componentCategories ?? [],
+        });
+
+        registerRevisionsUi(editor, {
+            revisionsUrl: options.revisionsUrl,
+            revisionsRestoreUrl: options.revisionsRestoreUrl,
+            csrf: options.csrf,
+            labels,
+            toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
         });
 
         void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
@@ -355,6 +427,12 @@ export function initVpressGrapesJs(container, options = {}) {
                 }
             });
         });
+    });
+
+    editor.on('canvas:frame:load', () => {
+        initReadingTime();
+        initSocialShare();
+        initCarousels();
     });
 
     editor.on('component:add', () => {
@@ -536,6 +614,7 @@ function mountFrontendEditor() {
         height: '100%',
         noticeOnUnload: true,
         exitUrl: config.exitUrl,
+        viewPageUrl: config.viewPageUrl ?? config.exitUrl,
         initial: config.initial ?? {},
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
@@ -545,6 +624,12 @@ function mountFrontendEditor() {
         formSubmitUrl: config.formSubmitUrl,
         bindingsUrl: config.bindingsUrl,
         bindingsPreviewUrl: config.bindingsPreviewUrl,
+        conditionOptions: config.conditionOptions ?? [],
+        globalClassesUrl: config.globalClassesUrl,
+        componentsUrl: config.componentsUrl,
+        componentCategories: config.componentCategories ?? [],
+        revisionsUrl: config.revisionsUrl,
+        revisionsRestoreUrl: config.revisionsRestoreUrl,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',
@@ -611,7 +696,10 @@ function mountFrontendEditor() {
                 }
             }, 2500);
         } catch (error) {
-            window.alert(config.labels?.error ?? 'Could not save the page.');
+            await alertDialog({
+                message: config.labels?.error ?? 'Could not save the page.',
+                labels: config.labels ?? {},
+            });
         } finally {
             saveButton.disabled = false;
 

@@ -15,6 +15,7 @@ use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\BuildTailblocksCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
@@ -36,8 +37,11 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsComponentsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
@@ -55,6 +59,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteHeaderGrapesJsBlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
 use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
@@ -83,6 +88,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->hasRoutes('web')
             ->hasCommand(InstallCommand::class)
             ->hasCommand(MakeSubThemeCommand::class)
+            ->hasCommand(BuildSectionsCommand::class)
             ->hasCommand(BuildTailblocksCommand::class)
             ->hasCommand(SeedSoundmitGrapesLandingCommand::class)
             ->hasCommand(ThemePresetCommand::class)
@@ -196,6 +202,18 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
+                Route::get('pages/{sitePage}/revisions', [GrapesJsPageRevisionsController::class, 'index'])->name('pages.revisions.index');
+                Route::post('pages/{sitePage}/revisions/{revision}/restore', [GrapesJsPageRevisionsController::class, 'restore'])->name('pages.revisions.restore');
+                Route::get('global-classes', [GrapesJsGlobalClassesController::class, 'index'])->name('global-classes.index');
+                Route::post('global-classes', [GrapesJsGlobalClassesController::class, 'store'])->name('global-classes.store');
+                Route::put('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'update'])->name('global-classes.update');
+                Route::delete('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'destroy'])->name('global-classes.destroy');
+                Route::get('components', [GrapesJsComponentsController::class, 'index'])->name('components.index');
+                Route::post('components', [GrapesJsComponentsController::class, 'store'])->name('components.store');
+                Route::post('components/compile-css', [GrapesJsComponentsController::class, 'compileCss'])->name('components.compile-css');
+                Route::post('components/import', [GrapesJsComponentsController::class, 'import'])->name('components.import');
+                Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
+                Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
             });
     }
 
@@ -215,6 +233,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 if (Schema::hasTable('voodbuilder_settings')) {
                     $serverRegistry->registerEditorBlocks($registry);
                 }
+            }
+
+            if (config('voodbuilder.grapesjs.include_landing_blocks', false)) {
+                VoodbuilderLandingGrapesJsBlocks::register();
             }
 
             if (config('voodbuilder.grapesjs.sections.enabled', true)) {

@@ -2,6 +2,7 @@
  * GrapesJS "Make dynamic" UI — binds selected components to server data sources.
  */
 
+import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
@@ -892,25 +893,37 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     const placeholder = placeholderForBinding(sourceLabel, fieldLabel);
 
     if (hasStructuralChildren(component) && component.getAttributes()['data-voodbuilder-repeat']) {
-        window.alert(labels.repeatContainerNoBind ?? 'List repeat containers cannot hold a field binding. Bind title, text and links inside the card template instead.');
+        void alertDialog({
+            message: labels.repeatContainerNoBind ?? 'List repeat containers cannot hold a field binding. Bind title, text and links inside the card template instead.',
+            labels,
+        });
 
         return;
     }
 
     if (isRepeatListSource(sourceId)) {
-        window.alert(labels.repeatListNotField ?? 'Repeat list sources are for containers only. Use the List repeat section, or pick a list item field.');
+        void alertDialog({
+            message: labels.repeatListNotField ?? 'Repeat list sources are for containers only. Use the List repeat section, or pick a list item field.',
+            labels,
+        });
 
         return;
     }
 
     if (! canAcceptFieldBinding(component, fieldType)) {
-        window.alert(bindingRejectionMessage(component, fieldType, labels));
+        void alertDialog({
+            message: bindingRejectionMessage(component, fieldType, labels),
+            labels,
+        });
 
         return;
     }
 
     if (hasStructuralChildren(component) && ! isRepeatItemSource(sourceId) && fieldType === 'text') {
-        window.alert(bindingRejectionMessage(component, fieldType, labels));
+        void alertDialog({
+            message: bindingRejectionMessage(component, fieldType, labels),
+            labels,
+        });
 
         return;
     }
@@ -1086,7 +1099,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const groups = catalog?.groups ?? [];
 
     if (groups.length === 0) {
-        window.alert(labels.noSources);
+        void alertDialog({
+            message: labels.noSources,
+            labels,
+        });
 
         return null;
     }
@@ -1243,7 +1259,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const commitBinding = () => {
         if (! component) {
             if (isModal) {
-                window.alert(labels.selectComponent ?? 'Select an element on the canvas first.');
+                void alertDialog({
+                    message: labels.selectComponent ?? 'Select an element on the canvas first.',
+                    labels,
+                });
             }
 
             return;
@@ -1728,7 +1747,10 @@ export async function registerBindingsUi(editor, options = {}) {
             const selected = ed.getSelected();
 
             if (! selected) {
-                window.alert(labels.selectComponent ?? 'Select an element first.');
+                void alertDialog({
+                    message: labels.selectComponent ?? 'Select an element first.',
+                    labels,
+                });
 
                 return;
             }
@@ -1749,22 +1771,6 @@ export async function registerBindingsUi(editor, options = {}) {
         },
     });
 
-    editor.Panels.addButton('options', {
-        id: 'voodbuilder-make-dynamic',
-        className: 'voodbuilder-gjs-pn-btn',
-        label: lucideIcon('link'),
-        command: CMD_MAKE_DYNAMIC,
-        attributes: { title: labels.makeDynamic ?? 'Make dynamic' },
-    });
-
-    editor.Panels.addButton('options', {
-        id: 'voodbuilder-clear-dynamic',
-        className: 'voodbuilder-gjs-pn-btn',
-        label: lucideIcon('unlink'),
-        command: CMD_CLEAR_DYNAMIC,
-        attributes: { title: labels.clearDynamic ?? 'Clear dynamic binding' },
-    });
-
     mountDynamicInspectorPanel(editor, options.dynamicMount, catalog, labels, previewOptions);
 
     editor.on('load', () => {
@@ -1773,6 +1779,28 @@ export async function registerBindingsUi(editor, options = {}) {
     });
 
     return catalog;
+}
+
+export function syncBindingsForExport(editor) {
+    if (! editor?.getWrapper) {
+        return;
+    }
+
+    editor.getWrapper().find('[data-voodbuilder-bind]').forEach((component) => {
+        const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+
+        if (! bindingKey) {
+            return;
+        }
+
+        component.addAttributes({ 'data-voodbuilder-bind': bindingKey });
+
+        const element = component.getView()?.el;
+
+        if (element) {
+            element.setAttribute('data-voodbuilder-bind', bindingKey);
+        }
+    });
 }
 
 export function syncRepeatBindingsForExport(editor) {

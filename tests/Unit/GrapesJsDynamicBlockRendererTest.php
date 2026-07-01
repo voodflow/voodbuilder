@@ -8,9 +8,9 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsDynamicBlockRendererTest extends TestCase

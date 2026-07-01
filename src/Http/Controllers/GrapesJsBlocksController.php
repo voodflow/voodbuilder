@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsBlocksController extends Controller
@@ -15,8 +16,11 @@ class GrapesJsBlocksController extends Controller
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
 
+        $registry = app(GrapesJsBlockRegistry::class);
+        app(GrapesJsDynamicBlockRegistry::class)->registerEditorBlocks($registry);
+
         return response()->json([
-            'blocks' => app(GrapesJsBlockRegistry::class)->toEditorBlocks(),
+            'blocks' => $registry->toEditorBlocks(),
         ]);
     }
 }

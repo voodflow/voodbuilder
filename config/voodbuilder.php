@@ -279,6 +279,28 @@ return [
         'forms' => [
             'success_message' => 'Thank you. Your message has been received.',
         ],
+        'revisions' => [
+            'max_to_keep' => (int) env('VOODBUILDER_GRAPESJS_REVISIONS_MAX', 50),
+        ],
+        'component_categories' => [
+            'General',
+            'Hero',
+            'Content',
+            'Features',
+            'Articles',
+            'Gallery',
+            'Stats',
+            'Testimonials',
+            'Team',
+            'Steps',
+            'Pricing',
+            'CTA',
+            'Contact',
+            'Shop',
+            'Header',
+            'Footer',
+            'Code',
+        ],
     ],
 
     /*

@@ -23,5 +23,6 @@ class VoodbuilderPathsTest extends TestCase
 
         $this->assertSame(VoodbuilderPaths::themeCssRelativePath(), $entries[0]);
         $this->assertSame('resources/js/app.js', $entries[1]);
+        $this->assertStringEndsWith('voodflow/voodbuilder/resources/js/site-runtime.js', $entries[2]);
     }
 }

@@ -21,16 +21,16 @@ final class VoodbuilderLandingGrapesJsBlocks
             Voodbuilder::grapesJsRichContentBlock($category, $blockClass);
         }
 
-        self::registerTailblocksFooterVariants();
-        self::registerTailblocksNavbarVariants();
+        self::registerFooterLayoutVariants();
+        self::registerNavbarLayoutVariants();
     }
 
-    protected static function registerTailblocksFooterVariants(): void
+    protected static function registerFooterLayoutVariants(): void
     {
         $blockClass = LandingFooterBlock::class;
         $blockId = $blockClass::getId();
 
-        foreach (LandingFooterSupport::tailblocksVariantOptions() as $variant => $label) {
+        foreach (LandingFooterSupport::layoutVariantOptions() as $variant => $label) {
             $config = array_merge(
                 GrapesJsDefaultBlockConfig::for($blockClass),
                 ['variant' => $variant],
@@ -47,7 +47,7 @@ final class VoodbuilderLandingGrapesJsBlocks
         }
     }
 
-    protected static function registerTailblocksNavbarVariants(): void
+    protected static function registerNavbarLayoutVariants(): void
     {
         $blockClass = LandingNavbarBlock::class;
         $blockId = $blockClass::getId();

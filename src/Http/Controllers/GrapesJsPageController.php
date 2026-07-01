@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\GrapesJs\SitePageRevisionRecorder;
 
 class GrapesJsPageController extends Controller
 {
@@ -38,17 +39,20 @@ class GrapesJsPageController extends Controller
 
         $normalized['html'] = app(GrapesJsBindingStorageNormalizer::class)->normalizeHtml($normalized['html']);
 
+        $previousPayload = $sitePage->builder_payload ?? [];
+
         $sitePage->update([
             'builder' => PageBuilder::GrapesJs,
             'builder_payload' => [
                 'html' => $normalized['html'],
                 'css' => $normalized['css'],
                 'js' => $normalized['js'],
-                // HTML/CSS are the source of truth for public render. Persisting
-                // GrapesJS project JSON caused desync (removed blocks reappearing).
                 'project' => null,
             ],
         ]);
+
+        app(SitePageRevisionRecorder::class)
+            ->recordIfChanged($sitePage, $previousPayload);
 
         return response()->json([
             'saved' => true,

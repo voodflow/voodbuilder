@@ -53,7 +53,7 @@ class SiteChromeTest extends TestCase
         $this->assertTrue(SiteChrome::shouldHideFooter($page));
     }
 
-    public function test_tailblocks_footer_variant_renders_dynamic_markup(): void
+    public function test_footer_layout_variant_renders_dynamic_markup(): void
     {
         $html = LandingFooterBlock::toHtml([
             'variant' => 'a',
@@ -62,7 +62,7 @@ class SiteChromeTest extends TestCase
             'menu_columns' => [],
         ], []);
 
-        $this->assertStringContainsString('vp-landing-footer-tailblocks--a', $html);
+        $this->assertStringContainsString('vp-landing-footer-layout--a', $html);
         $this->assertStringContainsString('Acme', $html);
         $this->assertStringContainsString('Products', $html);
     }
