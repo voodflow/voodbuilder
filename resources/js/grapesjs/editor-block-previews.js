@@ -10,6 +10,7 @@ import {
     resolveBlockWireframe,
     unifyBlockCategories,
 } from './section-block-meta.js';
+import { BRICKS_BLOCK_WIREFRAMES } from './grapesjs-bricks-blocks.js';
 
 export const LIGHT_BLOCK_PREVIEWS = {
     column1: previewSvg('<rect x="11" y="13" width="26" height="22" rx="2.5" />'),
@@ -26,16 +27,6 @@ export const LIGHT_BLOCK_PREVIEWS = {
         '<rect x="6" y="13" width="11" height="22" rx="1.75" />'
         + '<rect x="22" y="13" width="20" height="22" rx="2" />',
     ),
-    text: previewSvg(
-        '<path d="M18 14h12" />'
-        + '<path d="M14 14V32" />'
-        + '<path d="M34 14V32" />'
-        + '<path d="M12 32h24" />',
-    ),
-    link: previewSvg(
-        '<path d="M17 21a5 5 0 0 1 7-7l2 2a5 5 0 0 1-7 7" />'
-        + '<path d="M31 27a5 5 0 0 1-7 7l-2-2a5 5 0 0 1 7-7" />',
-    ),
     image: previewSvg(
         '<rect x="9" y="12" width="30" height="24" rx="2.5" />'
         + '<circle cx="17" cy="20" r="2.25" />'
@@ -44,10 +35,6 @@ export const LIGHT_BLOCK_PREVIEWS = {
     video: previewSvg(
         '<rect x="9" y="14" width="30" height="20" rx="2.5" />'
         + '<path d="M22 20l8 4-8 4z" />',
-    ),
-    map: previewSvg(
-        '<path d="M14 12 22 15l8-3v22l-8 3-8-3V12z" />'
-        + '<path d="M22 15v22" />',
     ),
 };
 
@@ -235,10 +222,9 @@ function blockCategoryLabel(category) {
 
 function sectionCategoryKey(category) {
     const label = blockCategoryLabel(category);
-    const match = label.match(/Sections\s*·\s*([\w]+)/i)
-        ?? label.match(/Tailblocks\s*\/\s*([\w]+)/i);
+    const match = label.match(/Sections\s*·\s*([\w]+)/i);
 
-    return match ? match[1].toLowerCase() : 'content';
+    return match ? match[1].toLowerCase() : label.toLowerCase();
 }
 
 function sectionVariant(label) {
@@ -325,6 +311,25 @@ function applyFormsBlockPreviews(blockManager) {
     });
 }
 
+function applyBricksBlockPreviews(blockManager) {
+    blockManager.getAll().forEach((block) => {
+        const blockId = String(block.get('id') ?? '');
+        const wireframe = BRICKS_BLOCK_WIREFRAMES[blockId] ?? resolveBlockWireframe(blockId);
+
+        if (! wireframe) {
+            return;
+        }
+
+        block.set('media', wireframe);
+
+        const label = resolveBlockLabel(blockId, block.get('label'));
+
+        if (label && label !== block.get('label')) {
+            block.set('label', label);
+        }
+    });
+}
+
 export function applyLightBlockPreviews(editor) {
     const blockManager = editor.BlockManager;
 
@@ -336,6 +341,7 @@ export function applyLightBlockPreviews(editor) {
     applyBasicBlockPreviews(blockManager);
     applySectionBlockPreviews(blockManager);
     applyFormsBlockPreviews(blockManager);
+    applyBricksBlockPreviews(blockManager);
 
     if (blockManager.getContainer()) {
         blockManager.render();

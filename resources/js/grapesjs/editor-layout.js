@@ -4,9 +4,12 @@
  */
 
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
+import { isComponentBlock, isComponentBlockElement, isComponentCategoryId } from './component-block-utils.js';
+import { isPinnedCategoryId, registerBlockPins } from './block-pins.js';
 import { lucideIcon } from './editor-icons.js';
+import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 
-const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'layers'];
+const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -39,9 +42,14 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                 </div>
             </header>
             <div class="voodbuilder-gjs-shell__workspace">
-                <aside class="voodbuilder-gjs-shell__left" aria-label="${escapeHtml(labels.panelBlocks ?? 'Blocks')}">
-                    <div class="voodbuilder-gjs-shell__panel-head">
-                        <span class="voodbuilder-gjs-shell__panel-title">${escapeHtml(labels.panelBlocks ?? 'Blocks')}</span>
+                <aside class="voodbuilder-gjs-shell__left" aria-label="${escapeHtml(labels.panelLibrary ?? labels.panelBlocks ?? 'Library')}">
+                    <div class="voodbuilder-gjs-library-tabs" role="tablist">
+                        <button type="button" class="voodbuilder-gjs-library-tab voodbuilder-gjs-library-tab--active" data-voodbuilder-library="blocks" role="tab" aria-selected="true">
+                            ${escapeHtml(labels.tabElements ?? 'Elements')}
+                        </button>
+                        <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="components" role="tab" aria-selected="false">
+                            ${escapeHtml(labels.tabComponents ?? 'Components')}
+                        </button>
                     </div>
                     <label class="voodbuilder-gjs-blocks-search-wrap">
                         <span class="voodbuilder-gjs-blocks-search-icon">${lucideIcon('search', 16)}</span>
@@ -53,7 +61,14 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                             aria-label="${escapeHtml(labels.blockSearch ?? 'Search blocks')}"
                         />
                     </label>
-                    <div class="voodbuilder-gjs-blocks-mount"></div>
+                    <div class="voodbuilder-gjs-library-panels">
+                        <div class="voodbuilder-gjs-library-panel voodbuilder-gjs-library-panel--active" data-voodbuilder-library-panel="blocks">
+                            <div class="voodbuilder-gjs-blocks-mount"></div>
+                        </div>
+                        <div class="voodbuilder-gjs-library-panel" data-voodbuilder-library-panel="components" hidden>
+                            <div class="voodbuilder-gjs-components-mount"></div>
+                        </div>
+                    </div>
                 </aside>
                 <div class="voodbuilder-gjs-shell__center">
                     <div class="voodbuilder-gjs-canvas-mount"></div>
@@ -63,13 +78,18 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                     <div class="voodbuilder-gjs-inspector-panels">
                         <div class="voodbuilder-gjs-inspector-panel voodbuilder-gjs-inspector-panel--active" data-voodbuilder-inspector="content">
                             <div class="voodbuilder-gjs-traits-mount"></div>
+                            <div class="voodbuilder-gjs-component-props-mount"></div>
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="style">
                             <div class="voodbuilder-gjs-selectors-mount"></div>
                             <div class="voodbuilder-gjs-styles-mount"></div>
+                            <div class="voodbuilder-gjs-global-classes-mount"></div>
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="dynamic">
                             <div class="voodbuilder-gjs-dynamic-mount"></div>
+                        </div>
+                        <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="conditions">
+                            <div class="voodbuilder-gjs-conditions-mount"></div>
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="layers">
                             <div class="voodbuilder-gjs-layers-mount"></div>
@@ -84,6 +104,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         content: labels.tabContent ?? 'Content',
         style: labels.tabStyle ?? 'Style',
         dynamic: labels.tabDynamic ?? 'Dynamic',
+        conditions: labels.tabConditions ?? 'Conditions',
         layers: labels.tabLayers ?? 'Layers',
     };
 
@@ -108,11 +129,17 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             canvas: container.querySelector('.voodbuilder-gjs-canvas-mount'),
             canvasToolbar: container.querySelector('.voodbuilder-gjs-topbar__tools'),
             blocks: container.querySelector('.voodbuilder-gjs-blocks-mount'),
+            components: container.querySelector('.voodbuilder-gjs-components-mount'),
+            componentProps: container.querySelector('.voodbuilder-gjs-component-props-mount'),
+            libraryTabs: container.querySelector('.voodbuilder-gjs-library-tabs'),
+            libraryPanels: container.querySelector('.voodbuilder-gjs-library-panels'),
             layers: container.querySelector('.voodbuilder-gjs-layers-mount'),
             traits: container.querySelector('.voodbuilder-gjs-traits-mount'),
             selectors: container.querySelector('.voodbuilder-gjs-selectors-mount'),
             styles: container.querySelector('.voodbuilder-gjs-styles-mount'),
             dynamic: container.querySelector('.voodbuilder-gjs-dynamic-mount'),
+            conditions: container.querySelector('.voodbuilder-gjs-conditions-mount'),
+            globalClasses: container.querySelector('.voodbuilder-gjs-global-classes-mount'),
             search: container.querySelector('.voodbuilder-gjs-blocks-search'),
             tablist,
             panels: container.querySelector('.voodbuilder-gjs-inspector-panels'),
@@ -138,24 +165,71 @@ export function editorLayoutInitOptions(mounts) {
         },
         selectorManager: {
             componentFirst: true,
+            states: [
+                { name: 'hover', label: 'Hover' },
+                { name: 'active', label: 'Active' },
+                { name: 'focus', label: 'Focus' },
+            ],
         },
         styleManager: {
             appendTo: mounts.styles,
             sectors: STYLE_MANAGER_SECTORS,
         },
-        panels: {
-            defaults: [
-                {
-                    id: 'commands',
-                    el: mounts.canvasToolbar,
-                },
-                {
-                    id: 'options',
-                    el: mounts.canvasToolbar,
-                },
-            ],
-        },
     };
+}
+
+function setupLibraryTabs(mounts, labels = {}, editor = null) {
+    const { libraryTabs, libraryPanels, search } = mounts;
+
+    if (! libraryTabs || ! libraryPanels) {
+        return;
+    }
+
+    let activeLibrary = 'blocks';
+
+    const placeholders = {
+        blocks: labels.blockSearch ?? 'Search blocks…',
+        components: labels.componentSearch ?? 'Search components…',
+    };
+
+    const activateLibrary = (libraryId) => {
+        activeLibrary = libraryId;
+
+        if (editor) {
+            editor.__voodbuilderActiveLibrary = libraryId;
+            editor.__voodbuilderRelocateLibrary?.(libraryId);
+        }
+
+        libraryTabs.querySelectorAll('[data-voodbuilder-library]').forEach((button) => {
+            const active = button.dataset.voodbuilderLibrary === libraryId;
+            button.classList.toggle('voodbuilder-gjs-library-tab--active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        libraryPanels.querySelectorAll('[data-voodbuilder-library-panel]').forEach((panel) => {
+            const active = panel.dataset.voodbuilderLibraryPanel === libraryId;
+            panel.classList.toggle('voodbuilder-gjs-library-panel--active', active);
+            panel.hidden = ! active;
+        });
+
+        if (search) {
+            search.placeholder = placeholders[libraryId] ?? placeholders.blocks;
+            search.value = '';
+            search.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    libraryTabs.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-voodbuilder-library]');
+
+        if (! button?.dataset.voodbuilderLibrary) {
+            return;
+        }
+
+        activateLibrary(button.dataset.voodbuilderLibrary);
+    });
+
+    activateLibrary('blocks');
 }
 
 function setupBlockSearch(editor, searchInput) {
@@ -165,18 +239,25 @@ function setupBlockSearch(editor, searchInput) {
 
     const filter = () => {
         const query = searchInput.value.trim().toLowerCase();
+        const activePanel = searchInput.closest('.voodbuilder-gjs-shell__left')
+            ?.querySelector('.voodbuilder-gjs-library-panel--active');
+        const libraryId = activePanel?.dataset.voodbuilderLibraryPanel ?? 'blocks';
         const blockContainer = editor.BlockManager.getContainer();
 
         if (! blockContainer) {
             return;
         }
 
+        const showComponents = libraryId === 'components';
         const openCategories = new Set();
 
         editor.BlockManager.getAll().forEach((block) => {
+            const isComponentBlockEntry = isComponentBlock(block);
             const label = String(block.get('label') ?? '').toLowerCase();
+            const matchesQuery = ! query || label.includes(query);
+            const inActiveLibrary = showComponents ? isComponentBlockEntry : ! isComponentBlockEntry;
 
-            if (query && ! label.includes(query)) {
+            if (! inActiveLibrary || ! matchesQuery) {
                 return;
             }
 
@@ -190,11 +271,28 @@ function setupBlockSearch(editor, searchInput) {
         });
 
         blockContainer.querySelectorAll('.gjs-block').forEach((blockEl) => {
+            const isComponent = isComponentBlockElement(editor, blockEl);
+            const inActiveLibrary = showComponents ? isComponent : ! isComponent;
             const label = blockEl.textContent?.toLowerCase() ?? '';
-            blockEl.style.display = ! query || label.includes(query) ? '' : 'none';
+            const matchesQuery = ! query || label.includes(query);
+
+            if (inActiveLibrary && matchesQuery) {
+                blockEl.style.removeProperty('display');
+            } else {
+                blockEl.style.display = 'none';
+            }
         });
 
         blockContainer.querySelectorAll('.gjs-block-category').forEach((categoryEl) => {
+            const isComponentCategory = categoryEl.classList.contains('voodbuilder-gjs-component-category');
+            const inActiveLibrary = showComponents ? isComponentCategory : ! isComponentCategory;
+
+            if (! inActiveLibrary) {
+                categoryEl.style.display = 'none';
+
+                return;
+            }
+
             const hasVisible = [...categoryEl.querySelectorAll('.gjs-block')].some(
                 (blockEl) => blockEl.style.display !== 'none',
             );
@@ -203,19 +301,28 @@ function setupBlockSearch(editor, searchInput) {
         });
 
         editor.BlockManager.getCategories?.()?.each?.((category) => {
-            category.set('open', query ? openCategories.has(category.get('id')) : false);
+            category.set('open', query ? openCategories.has(category.get('id')) : category.get('open'));
         });
     };
 
     searchInput.addEventListener('input', filter);
     editor.on('block:add', filter);
     editor.on('block:remove', filter);
+    editor.on('load', () => {
+        window.requestAnimationFrame(filter);
+    });
 }
 
 export function collapseBlockCategories(editor) {
     const categories = editor.BlockManager.getCategories?.();
 
     categories?.each?.((category) => {
+        const categoryId = String(category.get('id') ?? '');
+
+        if (isComponentCategoryId(categoryId) || isPinnedCategoryId(categoryId)) {
+            return;
+        }
+
         category.set('open', false);
     });
 }
@@ -223,15 +330,20 @@ export function collapseBlockCategories(editor) {
 function syncInspectorManagers(editor, tabId) {
     const component = editor.getSelected();
 
-    if (! component) {
-        return;
+    if (tabId === 'content' && component) {
+        editor.TraitManager.select(component);
     }
 
-    // Managers are mounted in the custom right sidebar — do not run GrapesJS
-    // open-tm / open-sm / open-layers commands; they show the native views panel
-    // inside the canvas and create an empty white column beside the iframe.
-    if (tabId === 'content') {
-        editor.TraitManager.select(component);
+    if (tabId === 'layers') {
+        window.requestAnimationFrame(() => {
+            editor.LayerManager?.render?.();
+        });
+    }
+
+    if ((tabId === 'dynamic' || tabId === 'conditions') && component) {
+        window.requestAnimationFrame(() => {
+            editor.trigger('component:selected', component);
+        });
     }
 }
 
@@ -274,6 +386,10 @@ function setupInspectorTabs(mounts, editor) {
 
         if (component?.getAttributes?.()['data-voodbuilder-bind']) {
             activateTab('dynamic');
+        }
+
+        if (component?.getAttributes?.()['data-voodbuilder-conditions']) {
+            activateTab('conditions');
         }
     });
 
@@ -373,6 +489,8 @@ function trimDefaultPanelButtons(editor) {
         'open-layers',
         'open-blocks',
         'fullscreen',
+        'preview',
+        'sw-visibility',
     ];
 
     for (const panelId of ['options', 'views', 'commands']) {
@@ -390,7 +508,13 @@ function trimDefaultPanelButtons(editor) {
 
 export function configureEditorLayout(editor, shell, labels = {}) {
     trimDefaultPanelButtons(editor);
+    setupStyleInspectorSectors(shell.mounts, labels);
+    setupLibraryTabs(shell.mounts, labels, editor);
     setupBlockSearch(editor, shell.mounts.search);
+    registerBlockPins(editor, {
+        blocksMount: shell.mounts.blocks,
+        labels,
+    });
     setupStyleInspector(editor, shell.mounts);
     setupInspectorTabs(shell.mounts, editor);
 

@@ -7,6 +7,7 @@ import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 export const CODE_BLOCK_CATEGORY = 'Code';
 
 export const CATEGORY_ORDER = {
+    Pinned: -200,
     Site: -110,
     Hero: -100,
     Content: -95,
@@ -28,7 +29,10 @@ export const CATEGORY_ORDER = {
     Voodbuilder: -120,
     Dynamic: -115,
     Forms: 100,
-    Basic: 110,
+    Basic: 105,
+    Layout: 110,
+    Media: 112,
+    Single: 114,
 };
 
 /** @type {Record<string, string>} */
@@ -50,7 +54,8 @@ const CATEGORY_ALIASES = {
     'Sections · Tabs': 'Tabs',
     'Sections · Header': 'Header',
     'Sections · Footer': 'Footer',
-    Extra: 'Basic',
+    Basic: 'Layout',
+    Extra: 'Layout',
 };
 
 export const BASIC_BLOCK_LABELS = {
@@ -58,11 +63,8 @@ export const BASIC_BLOCK_LABELS = {
     column2: '2 columns',
     column3: '3 columns',
     'column3-7': '2 cols · 30/70',
-    text: 'Text',
-    link: 'Link',
     image: 'Image',
     video: 'Video',
-    map: 'Map',
 };
 
 /** @type {Record<string, string>} */
@@ -128,6 +130,15 @@ export const SECTION_BLOCK_LABELS = {
     'voodbuilder-tabs-pills': 'Tabs · pills',
     'voodbuilder-tabs-underline': 'Tabs · underline',
     'voodbuilder-tabs-segmented': 'Tabs · segmented',
+    'voodbuilder-icon': 'Icon',
+    'voodbuilder-text-link': 'Text link',
+    'voodbuilder-reading-time': 'Reading time',
+    'voodbuilder-reading-progress': 'Reading progress',
+    'voodbuilder-social-share': 'Social sharing',
+    'voodbuilder-image-gallery': 'Image gallery',
+    'voodbuilder-audio': 'Audio',
+    'voodbuilder-carousel': 'Carousel',
+    'voodbuilder-slider': 'Slider',
     form: 'Form (legacy)',
     input: 'Text field',
     textarea: 'Text area',
@@ -249,6 +260,20 @@ export function normalizeCategoryLabel(category) {
         return CATEGORY_ALIASES[label];
     }
 
+    const lower = label.toLowerCase();
+
+    for (const [alias, canonical] of Object.entries(CATEGORY_ALIASES)) {
+        if (alias.toLowerCase() === lower) {
+            return canonical;
+        }
+    }
+
+    for (const canonical of Object.keys(CATEGORY_ORDER)) {
+        if (canonical.toLowerCase() === lower) {
+            return canonical;
+        }
+    }
+
     if (label.startsWith('Sections · ')) {
         return label.replace('Sections · ', '');
     }
@@ -326,10 +351,6 @@ export function resolveCategoryOrder(categoryLabel) {
 
     if (normalized in CATEGORY_ORDER) {
         return CATEGORY_ORDER[normalized];
-    }
-
-    if (String(categoryLabel).startsWith('Tailblocks')) {
-        return 90;
     }
 
     return 0;

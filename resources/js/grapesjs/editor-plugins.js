@@ -12,6 +12,10 @@ import {
     grapesJsFormsPluginOptions,
     registerVoodbuilderFormBlock,
 } from './grapesjs-forms-blocks.js';
+import {
+    configureBricksCanvas,
+    registerBricksBlocks,
+} from './grapesjs-bricks-blocks.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
@@ -102,4 +106,10 @@ export function configureGrapesJsPlugins(editor, options = {}) {
 
         editor.on('component:add', applyToForms);
     }
+
+    const registerBricks = () => registerBricksBlocks(editor);
+
+    editor.on('load', registerBricks);
+    registerBricks();
+    configureBricksCanvas(editor);
 }
