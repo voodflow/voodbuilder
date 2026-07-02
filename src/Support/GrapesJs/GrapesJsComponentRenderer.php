@@ -82,7 +82,7 @@ final class GrapesJsComponentRenderer
             $element->appendChild($document->importNode($child, true));
         }
 
-        $this->markComponentRendered($element);
+        $this->stripInstanceWrapperAttributes($element);
     }
 
     protected function instanceHasStoredContent(DOMElement $element): bool
@@ -98,6 +98,12 @@ final class GrapesJsComponentRenderer
 
     protected function stripInstanceWrapperAttributes(DOMElement $element): void
     {
+        $componentId = trim($element->getAttribute('data-voodbuilder-component'));
+
+        if ($componentId !== '') {
+            $element->setAttribute(GrapesJsComponentInstanceCssScoper::SCOPE_ATTR, $componentId);
+        }
+
         $element->removeAttribute('data-voodbuilder-component');
         $element->removeAttribute('data-voodbuilder-component-props');
         $this->markComponentRendered($element);

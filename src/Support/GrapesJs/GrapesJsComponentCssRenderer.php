@@ -37,7 +37,10 @@ final class GrapesJsComponentCssRenderer
                 $catalogHtml = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
                 $sourceHtml = $instanceHtml !== '' ? $instanceHtml : $catalogHtml;
 
-                return GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($sourceHtml, $component->css);
+                return GrapesJsComponentInstanceCssScoper::scopeCssToComponentInstance(
+                    GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($sourceHtml, $component->css),
+                    (string) $component->id,
+                );
             })
             ->filter(fn (string $css): bool => $css !== '')
             ->implode("\n\n");

@@ -4,6 +4,7 @@
  */
 
 export const COMPONENT_ATTR = 'data-voodbuilder-component';
+export const COMPONENT_SCOPE_ATTR = 'data-vb-component-id';
 export const PROPS_ATTR = 'data-voodbuilder-component-props';
 export const COMPONENT_TYPE = 'voodbuilder-component-instance';
 export const COMPONENT_HYDRATED_KEY = '__vbComponentHydrated';

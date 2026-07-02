@@ -43,6 +43,7 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
 
         $this->assertStringContainsString('Hello', $rendered);
         $this->assertStringNotContainsString('data-voodbuilder-component', $rendered);
+        $this->assertStringContainsString('data-vb-component-id="'.$component->id.'"', $rendered);
     }
 
     public function test_component_renderer_preserves_inline_instance_overrides(): void
@@ -62,6 +63,7 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
         $this->assertStringContainsString('Page override', $rendered);
         $this->assertStringNotContainsString('Catalog default', $rendered);
         $this->assertStringNotContainsString('data-voodbuilder-component', $rendered);
+        $this->assertStringContainsString('data-vb-component-id="'.$component->id.'"', $rendered);
         $this->assertStringNotContainsString('voodbuilder-gjs-component-instance', $rendered);
         $this->assertStringContainsString('voodbuilder-component-rendered', $rendered);
     }
@@ -91,6 +93,7 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
 
         $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
 
+        $this->assertStringContainsString('[data-vb-component-id="'.$component->id.'"]', $css);
         $this->assertStringContainsString('bg-vp-brand', $css);
         $this->assertStringNotContainsString('bg-indigo-600', $css);
     }
