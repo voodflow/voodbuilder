@@ -309,6 +309,10 @@ export function unifyBlockCategories(editor) {
     blockManager.getAll().forEach((block) => {
         const label = normalizeCategoryLabel(block.get('category'));
 
+        if (! label) {
+            return;
+        }
+
         if (! blocksByCategory.has(label)) {
             blocksByCategory.set(label, []);
         }
@@ -316,22 +320,48 @@ export function unifyBlockCategories(editor) {
         blocksByCategory.get(label).push(block);
     });
 
+    const categoriesByLabel = new Map();
+
     categories.each((category) => {
         const rawLabel = String(category.get('label') ?? category.get('id') ?? '');
-        const label = normalizeCategoryLabel(rawLabel);
+        const label = normalizeCategoryLabel(rawLabel) || rawLabel;
 
-        category.set('label', label);
-        category.set('id', label);
-        category.set('order', resolveCategoryOrder(label));
-        category.set('open', false);
+        if (! categoriesByLabel.has(label)) {
+            categoriesByLabel.set(label, []);
+        }
+
+        categoriesByLabel.get(label).push(category);
     });
 
-    categories.each((category) => {
-        const label = normalizeCategoryLabel(category.get('label'));
+    const categoriesToRemove = [];
+
+    for (const [label, categoryGroup] of categoriesByLabel.entries()) {
         const blocks = blocksByCategory.get(label) ?? [];
+        const [canonical, ...duplicates] = categoryGroup;
+
+        if (! canonical) {
+            continue;
+        }
+
+        canonical.set('label', label);
+        canonical.set('id', label);
+        canonical.set('order', resolveCategoryOrder(label));
+        categoriesToRemove.push(...duplicates);
 
         if (blocks.length === 0) {
-            categories.remove(category);
+            categoriesToRemove.push(canonical);
+        }
+    }
+
+    for (const category of categoriesToRemove) {
+        categories.remove(category);
+    }
+
+    blockManager.getAll().forEach((block) => {
+        const label = normalizeCategoryLabel(block.get('category'));
+
+        if (label) {
+            block.set('category', label);
         }
     });
 }

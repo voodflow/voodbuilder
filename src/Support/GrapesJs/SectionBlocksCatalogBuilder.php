@@ -203,6 +203,8 @@ final class SectionBlocksCatalogBuilder
 
         $html = str_replace(array_keys($replacements), array_values($replacements), $html);
 
-        return preg_replace('/\s{2,}/', ' ', $html) ?? $html;
+        return GrapesJsBrandingNormalizer::normalizeHtml(
+            preg_replace('/\s{2,}/', ' ', $html) ?? $html,
+        );
     }
 }

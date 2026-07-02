@@ -94,6 +94,8 @@ final class TailblocksThemeTokenMigrator
         }
 
         $css = self::stripScopedThemeTokenOverrides($css);
+        $css = self::stripLegacyPaletteColorVariables($css);
+        $css = self::replaceLegacyPaletteColorReferences($css);
         $css = self::replaceFixedBackgroundColors($css);
         $css = self::replaceFixedBrandBackgroundColors($css);
         $css = self::stripLegacyButtonCss($css);
@@ -383,7 +385,7 @@ final class TailblocksThemeTokenMigrator
 
     private static function migrateBrandToken(string $token): ?string
     {
-        if (preg_match('/^(bg|text|border|ring|from|to|via)-('.implode('|', self::BRAND_COLORS).')-(\d+)$/', $token, $matches) !== 1) {
+        if (preg_match('/^(bg|text|border|ring|outline|from|to|via)-('.implode('|', self::BRAND_COLORS).')-(\d+)$/', $token, $matches) !== 1) {
             return null;
         }
 
@@ -416,6 +418,10 @@ final class TailblocksThemeTokenMigrator
 
         if ($utility === 'ring') {
             return 'ring-vp-brand-1/20';
+        }
+
+        if ($utility === 'outline') {
+            return $shade >= 600 ? 'outline-vp-brand-2' : 'outline-vp-brand-1';
         }
 
         if (in_array($utility, ['from', 'to', 'via'], true)) {
@@ -755,9 +761,35 @@ final class TailblocksThemeTokenMigrator
      */
     private static function stripScopedThemeTokenOverrides(string $css): string
     {
-        return preg_replace(
+        $css = preg_replace(
             '/\s*--color-vp-(?:brand-\d|text-\d|bg(?:-alt|-elv)?|divider|gray-soft)\s*:[^;]+;/i',
             '',
+            $css,
+        ) ?? $css;
+
+        return self::stripLegacyPaletteColorVariables($css);
+    }
+
+    private static function stripLegacyPaletteColorVariables(string $css): string
+    {
+        return preg_replace(
+            '/\s*--color-(?:indigo|yellow|red|purple|violet|pink|blue|green)-[^;]+;/i',
+            '',
+            $css,
+        ) ?? $css;
+    }
+
+    private static function replaceLegacyPaletteColorReferences(string $css): string
+    {
+        $css = preg_replace(
+            '/background-color:\s*var\(--color-(?:indigo|purple|violet)-\d+\)/i',
+            'background-color: var(--color-vp-brand-3)',
+            $css,
+        ) ?? $css;
+
+        return preg_replace(
+            '/outline-color:\s*var\(--color-(?:indigo|purple|violet)-\d+\)/i',
+            'outline-color: var(--color-vp-brand-2)',
             $css,
         ) ?? $css;
     }

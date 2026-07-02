@@ -4,10 +4,11 @@
  */
 
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
-import { isComponentBlock, isComponentBlockElement, isComponentCategoryId } from './component-block-utils.js';
+import { isComponentCategoryId } from './component-block-utils.js';
 import { isPinnedCategoryId, registerBlockPins } from './block-pins.js';
 import { lucideIcon } from './editor-icons.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
+import { applyBlocksLibraryUi, readBlocksSearchQuery } from './blocks-library-sync.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -230,6 +231,7 @@ function setupLibraryTabs(mounts, labels = {}, editor = null) {
     });
 
     activateLibrary('blocks');
+    mounts.blocks?.setAttribute('data-voodbuilder-blocks-library', 'blocks');
 }
 
 function setupBlockSearch(editor, searchInput) {
@@ -238,80 +240,21 @@ function setupBlockSearch(editor, searchInput) {
     }
 
     const filter = () => {
-        const query = searchInput.value.trim().toLowerCase();
-        const activePanel = searchInput.closest('.voodbuilder-gjs-shell__left')
-            ?.querySelector('.voodbuilder-gjs-library-panel--active');
-        const libraryId = activePanel?.dataset.voodbuilderLibraryPanel ?? 'blocks';
-        const blockContainer = editor.BlockManager.getContainer();
-
-        if (! blockContainer) {
-            return;
-        }
-
-        const showComponents = libraryId === 'components';
-        const openCategories = new Set();
-
-        editor.BlockManager.getAll().forEach((block) => {
-            const isComponentBlockEntry = isComponentBlock(block);
-            const label = String(block.get('label') ?? '').toLowerCase();
-            const matchesQuery = ! query || label.includes(query);
-            const inActiveLibrary = showComponents ? isComponentBlockEntry : ! isComponentBlockEntry;
-
-            if (! inActiveLibrary || ! matchesQuery) {
-                return;
-            }
-
-            const category = block.get('category');
-
-            if (category?.get?.('id')) {
-                openCategories.add(category.get('id'));
-            } else if (typeof category === 'string') {
-                openCategories.add(category);
-            }
-        });
-
-        blockContainer.querySelectorAll('.gjs-block').forEach((blockEl) => {
-            const isComponent = isComponentBlockElement(editor, blockEl);
-            const inActiveLibrary = showComponents ? isComponent : ! isComponent;
-            const label = blockEl.textContent?.toLowerCase() ?? '';
-            const matchesQuery = ! query || label.includes(query);
-
-            if (inActiveLibrary && matchesQuery) {
-                blockEl.style.removeProperty('display');
-            } else {
-                blockEl.style.display = 'none';
-            }
-        });
-
-        blockContainer.querySelectorAll('.gjs-block-category').forEach((categoryEl) => {
-            const isComponentCategory = categoryEl.classList.contains('voodbuilder-gjs-component-category');
-            const inActiveLibrary = showComponents ? isComponentCategory : ! isComponentCategory;
-
-            if (! inActiveLibrary) {
-                categoryEl.style.display = 'none';
-
-                return;
-            }
-
-            const hasVisible = [...categoryEl.querySelectorAll('.gjs-block')].some(
-                (blockEl) => blockEl.style.display !== 'none',
-            );
-
-            categoryEl.style.display = hasVisible ? '' : 'none';
-        });
-
-        editor.BlockManager.getCategories?.()?.each?.((category) => {
-            category.set('open', query ? openCategories.has(category.get('id')) : category.get('open'));
-        });
+        editor.__voodbuilderBlocksSearchQuery = searchInput.value.trim();
+        applyBlocksLibraryUi(editor, editor.__voodbuilderBlocksSearchQuery);
     };
 
     searchInput.addEventListener('input', filter);
-    editor.on('block:add', filter);
+    editor.on('block:add', () => {
+        window.requestAnimationFrame(filter);
+    });
     editor.on('block:remove', filter);
     editor.on('load', () => {
         window.requestAnimationFrame(filter);
     });
 }
+
+const DEFAULT_OPEN_BLOCK_CATEGORIES = ['Pinned', 'Hero', 'Layout'];
 
 export function collapseBlockCategories(editor) {
     const categories = editor.BlockManager.getCategories?.();
@@ -325,9 +268,60 @@ export function collapseBlockCategories(editor) {
 
         category.set('open', false);
     });
+
+    openDefaultBlockCategories(editor);
 }
 
-function syncInspectorManagers(editor, tabId) {
+export function openDefaultBlockCategories(editor) {
+    const categories = editor.BlockManager.getCategories?.();
+
+    if (! categories?.each) {
+        return;
+    }
+
+    const preferred = new Set(DEFAULT_OPEN_BLOCK_CATEGORIES.map((label) => label.toLowerCase()));
+    let openedAny = false;
+
+    categories.each((category) => {
+        const categoryId = String(category.get('id') ?? '');
+
+        if (isComponentCategoryId(categoryId)) {
+            return;
+        }
+
+        const label = String(category.get('label') ?? categoryId).toLowerCase();
+
+        if (preferred.has(label) || isPinnedCategoryId(categoryId)) {
+            category.set('open', true);
+            openedAny = true;
+        }
+    });
+
+    if (openedAny) {
+        return;
+    }
+
+    categories.each((category) => {
+        const categoryId = String(category.get('id') ?? '');
+
+        if (isComponentCategoryId(categoryId) || openedAny) {
+            return;
+        }
+
+        category.set('open', true);
+        openedAny = true;
+    });
+}
+
+export function refreshBlocksLibraryUi(editor) {
+    const libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks';
+
+    editor.__voodbuilderRelocateLibrary?.(libraryId);
+    openDefaultBlockCategories(editor);
+    applyBlocksLibraryUi(editor, readBlocksSearchQuery());
+}
+
+function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false } = {}) {
     const component = editor.getSelected();
 
     if (tabId === 'content' && component) {
@@ -340,9 +334,12 @@ function syncInspectorManagers(editor, tabId) {
         });
     }
 
-    if ((tabId === 'dynamic' || tabId === 'conditions') && component) {
+    if (refreshInspectorPanels && (tabId === 'dynamic' || tabId === 'conditions')) {
         window.requestAnimationFrame(() => {
-            editor.trigger('component:selected', component);
+            editor.trigger('voodbuilder:inspector-panel:refresh', {
+                tabId,
+                component: editor.getSelected(),
+            });
         });
     }
 }
@@ -377,7 +374,7 @@ function setupInspectorTabs(mounts, editor) {
             inspectorAside.setAttribute('data-voodbuilder-inspector-tab', tabId);
         }
 
-        window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId));
+        window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId, { refreshInspectorPanels: true }));
     };
 
     tablist.addEventListener('click', (event) => {

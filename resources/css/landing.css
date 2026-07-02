@@ -124,6 +124,18 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     border: 0;
 }
 
+/* Preline / pasted component CTA pairs stay side-by-side when Tailwind grid utilities load */
+:is(.voodbuilder-pasted-component, .voodbuilder-component-rendered) div:has(> a[href].bg-primary):has(> a[href].bg-layer),
+:is(.voodbuilder-pasted-component, .voodbuilder-component-rendered) div:has(> a[href][class*="bg-primary"]):has(> a[href][class*="bg-layer"]) {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    width: auto;
+    max-width: 100%;
+}
+
 .VPRichPage :is(
     video:not([data-gjs-type="video"] *),
     iframe[src*='youtube']:not([data-gjs-type="video"] *),
@@ -187,14 +199,14 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPa
     @apply text-vp-text-2;
 }
 
-.VPRichPage .voodbuilder-gjs-component-instance {
+.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered) {
     position: relative;
     min-height: 0;
     overflow: visible;
     outline: none;
 }
 
-.VPRichPage .voodbuilder-gjs-component-instance:has(.voodbuilder-pasted-component) {
+.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered):has(.voodbuilder-pasted-component) {
     min-height: 0;
 }
 

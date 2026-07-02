@@ -29,6 +29,12 @@ const SOCIAL_NETWORKS = [
 
 const ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="vb-icon__glyph"><path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/></svg>';
 
+function galleryPlaceholderSrc(index) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#e2e8f0"/><text x="200" y="205" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="16">Image ${index}</text></svg>`;
+
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 function wireframe(paths) {
     return thumbWrap(previewSvg(paths));
 }
@@ -278,7 +284,7 @@ const BLOCKS = [
                 type: 'image',
                 classes: ['w-full', 'rounded-lg', 'object-cover', 'aspect-square'],
                 attributes: {
-                    src: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'400\'%3E%3Crect width=\'400\' height=\'400\' fill=\'%23e2e8f0\'/%3E%3Ctext x=\'200\' y=\'205\' text-anchor=\'middle\' fill=\'%2394a3b8\' font-family=\'system-ui\' font-size=\'16\'%3EImage ' + index + '%3C/text%3E%3C/svg%3E',
+                    src: galleryPlaceholderSrc(index),
                     alt: `Gallery image ${index}`,
                 },
             })),

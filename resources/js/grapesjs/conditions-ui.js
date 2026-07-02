@@ -168,6 +168,12 @@ export function registerConditionsPersistence(editor) {
         return;
     }
 
+    if (editor.__voodbuilderConditionsPersistenceRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderConditionsPersistenceRegistered = true;
+
     const restore = (component) => {
         const definition = parseConditions(readConditionAttribute(component));
         const encoded = serializeConditions(definition);
@@ -316,6 +322,12 @@ export function registerConditionsUi(editor, options = {}) {
     if (! mount) {
         return;
     }
+
+    if (editor.__voodbuilderConditionsUiRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderConditionsUiRegistered = true;
 
     mount.addEventListener('mousedown', (event) => {
         event.stopPropagation();
@@ -505,6 +517,13 @@ export function registerConditionsUi(editor, options = {}) {
     editor.on('component:deselected', () => {
         render();
     });
+
+    editor.on('voodbuilder:inspector-panel:refresh', ({ tabId }) => {
+        if (tabId === 'conditions') {
+            render();
+        }
+    });
+
     render();
 }
 

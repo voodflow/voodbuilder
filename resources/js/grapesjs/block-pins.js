@@ -254,6 +254,7 @@ function refreshBlockPins(editor, { sync = true } = {}) {
 
     const mount = editor.BlockManager?.getContainer?.() ?? state.blocksMount;
     decorateBlockPins(editor, mount, pinnedIds, state.labels);
+    state.pinnedIds = new Set(pinnedIds);
 }
 
 let pinSyncTimer = null;

@@ -30,14 +30,33 @@ import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from './bindings-ui.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from './conditions-ui.js';
-import { registerComponentsUi, registerComponentInstanceType, syncComponentInstancesForExport } from './components-ui.js';
+import {
+    ensureComponentInstancesForExport,
+    registerComponentsUi,
+    syncComponentInstancesForExport,
+} from './components-ui.js';
+import { registerComponentTailwindAutobuild } from './component-tailwind-autobuild.js';
 import { registerGlobalClassesUi } from './global-classes-ui.js';
 import { registerRevisionsUi } from './revisions-ui.js';
-import { registerVisualStyleInspector, registerVisualStyleTarget } from './tailwind-visual-style.js';
+import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
-import { buildEditorShell, collapseBlockCategories, configureEditorLayout, editorLayoutInitOptions } from './editor-layout.js';
+import {
+    buildEditorShell,
+    collapseBlockCategories,
+    configureEditorLayout,
+    editorLayoutInitOptions,
+    refreshBlocksLibraryUi,
+} from './editor-layout.js';
+import {
+    finishEditorBoot,
+    registerEditorBuildStatus,
+    startEditorBoot,
+    waitForEditorBootTasks,
+} from './editor-build-status.js';
 import { applyLightBlockPreviews } from './editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from './editor-video.js';
+import { registerCanvasContextMenu } from './canvas-context-menu.js';
+import { registerBlocksContextMenu } from './blocks-context-menu.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -69,19 +88,39 @@ function buildPayload(editor) {
     normalizeVpressDynamicComponents(editor);
     pruneEmptyDynamicBlocks(editor);
     syncBindingsForExport(editor);
+    ensureComponentInstancesForExport(editor);
+    purgeDesyncedBackgroundCssRules(editor);
+    syncSpacingStylesForExport(editor);
+    syncPaintStylesForExport(editor);
+    bakeSvgPaintForExport(editor);
+    pruneRedundantSpacingZerosForExport(editor);
     syncComponentInstancesForExport(editor);
     syncRepeatBindingsForExport(editor);
     syncConditionsForExport(editor);
     syncVideoComponentsForExport(editor);
 
-    return {
+    const payload = {
         html: editor.getHtml({
             cleanId: false,
             withProps: true,
+            keepInlineStyle: true,
         }),
         css: editor.getCss(),
         js: editor.getJs(),
     };
+
+    restoreSvgPaintInspectorStyles(editor);
+
+    const selected = editor.getSelected?.();
+
+    if (selected && String(selected.get?.('tagName') ?? '').toLowerCase() === 'svg') {
+        window.requestAnimationFrame(() => {
+            restoreSvgPaintInspectorStyle(selected);
+            editor.StyleManager?.select?.(selected);
+        });
+    }
+
+    return payload;
 }
 
 function resolvePageManager(initial) {
@@ -102,7 +141,18 @@ function resolvePageManager(initial) {
     };
 }
 
+function canvasIframeHasContent(editor) {
+    const doc = editor.Canvas?.getDocument?.();
+    const bodyHtml = doc?.body?.innerHTML?.replace(/\s/g, '') ?? '';
+
+    return bodyHtml.length > 20;
+}
+
 function canvasHasRenderedHtml(editor) {
+    if (canvasIframeHasContent(editor)) {
+        return true;
+    }
+
     const html = editor.getHtml()?.replace(/\s/g, '') ?? '';
 
     return html.length > 20;
@@ -113,7 +163,7 @@ function applyInitialContent(editor, initial) {
         return;
     }
 
-    if (canvasHasRenderedHtml(editor)) {
+    if (canvasIframeHasContent(editor)) {
         return;
     }
 
@@ -125,22 +175,50 @@ function applyInitialContent(editor, initial) {
 }
 
 function ensureInitialContent(editor, initial) {
-    if (initial.pageManager || hasProjectData(initial.project) || ! initial.html?.trim()) {
+    if (! initial.html?.trim()) {
         return;
     }
 
     const apply = () => applyInitialContent(editor, initial);
+    const usesPageManager = Boolean(initial.pageManager) || hasProjectData(initial.project);
 
-    editor.on('load', apply);
-    editor.on('canvas:frame:load', apply);
-    window.requestAnimationFrame(apply);
-    window.setTimeout(apply, 100);
+    if (! usesPageManager) {
+        editor.on('load', apply);
+        editor.on('canvas:frame:load', apply);
+        window.requestAnimationFrame(apply);
+        window.setTimeout(apply, 100);
+
+        return;
+    }
+
+    const ensureRendered = () => {
+        window.requestAnimationFrame(() => {
+            applyInitialContent(editor, initial);
+        });
+    };
+
+    editor.on('canvas:frame:load', ensureRendered);
+    editor.on('load', () => {
+        window.setTimeout(ensureRendered, 50);
+    });
 }
 
-function applyCanvasDocumentTheme(editor, subTheme) {
+function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     if (! subTheme) {
         return;
     }
+
+    const resolveDark = (isDark = null) => {
+        if (isDark != null) {
+            return Boolean(isDark);
+        }
+
+        if (themeOptions.canvasPrefersDark != null) {
+            return Boolean(themeOptions.canvasPrefersDark);
+        }
+
+        return document.documentElement.classList.contains('dark');
+    };
 
     const apply = (isDark = null) => {
         const doc = editor.Canvas.getDocument();
@@ -151,9 +229,7 @@ function applyCanvasDocumentTheme(editor, subTheme) {
 
         doc.documentElement.setAttribute('data-voodbuilder-sub-theme', subTheme);
 
-        const useDark = isDark ?? document.documentElement.classList.contains('dark');
-
-        if (useDark) {
+        if (resolveDark(isDark)) {
             doc.documentElement.classList.add('dark');
         } else {
             doc.documentElement.classList.remove('dark');
@@ -167,7 +243,25 @@ function applyCanvasDocumentTheme(editor, subTheme) {
     apply();
 }
 
-function waitForCanvasStyles(frameWindow) {
+function waitForStylesheetLink(link, timeoutMs = 2_500) {
+    if (link.sheet) {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const done = () => {
+            window.clearTimeout(timer);
+            resolve();
+        };
+
+        const timer = window.setTimeout(done, timeoutMs);
+
+        link.addEventListener('load', done, { once: true });
+        link.addEventListener('error', done, { once: true });
+    });
+}
+
+function waitForCanvasStyles(frameWindow, timeoutMs = 4_000) {
     const doc = frameWindow?.document;
 
     if (! doc) {
@@ -177,22 +271,42 @@ function waitForCanvasStyles(frameWindow) {
     const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
 
     if (links.length === 0) {
-        doc.body?.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
-
         return Promise.resolve();
     }
 
-    return Promise.all(links.map((link) => {
-        if (link.sheet) {
-            return Promise.resolve();
-        }
+    return Promise.race([
+        Promise.all(links.map((link) => waitForStylesheetLink(link))),
+        new Promise((resolve) => {
+            window.setTimeout(resolve, timeoutMs);
+        }),
+    ]);
+}
 
-        return new Promise((resolve) => {
-            link.addEventListener('load', resolve, { once: true });
-            link.addEventListener('error', resolve, { once: true });
-        });
-    })).then(() => {
-        doc.body?.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
+function revealCanvasDocument(frameWindow) {
+    const doc = frameWindow?.document;
+
+    if (! doc?.body) {
+        return false;
+    }
+
+    doc.body.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
+
+    return true;
+}
+
+function waitForCanvasPresentation(editor) {
+    return waitForEditorBootTasks(editor, [
+        waitForCanvasFrame(editor).then(() => {
+            const frameWindow = editor.Canvas?.getWindow?.();
+
+            return waitForCanvasStyles(frameWindow);
+        }),
+    ]).then(() => {
+        if (! revealCanvasDocument(editor.Canvas?.getWindow?.())) {
+            window.requestAnimationFrame(() => {
+                revealCanvasDocument(editor.Canvas?.getWindow?.());
+            });
+        }
     });
 }
 
@@ -214,26 +328,103 @@ function configureLayoutBlocks(editor) {
     }
 }
 
-function registerCanvasBootGate(editor, shellRoot) {
+function waitForCanvasFrame(editor, timeoutMs = 10_000) {
+    if (editor.Canvas?.getFrameEl?.()) {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const timeout = window.setTimeout(resolve, timeoutMs);
+
+        const onFrameLoad = () => {
+            window.clearTimeout(timeout);
+            editor.off('canvas:frame:load', onFrameLoad);
+            resolve();
+        };
+
+        editor.on('canvas:frame:load', onFrameLoad);
+    });
+}
+
+function registerCanvasBootGate(editor, shellRoot, shell) {
     if (! shellRoot) {
         return;
     }
 
-    shellRoot.classList.add('voodbuilder-gjs-root--booting');
+    startEditorBoot(editor);
+
+    let revealPromise = null;
 
     const reveal = () => {
-        shellRoot.classList.remove('voodbuilder-gjs-root--booting');
+        if (! revealPromise) {
+            revealPromise = (async () => {
+                try {
+                    await waitForCanvasPresentation(editor);
+                } finally {
+                    finishEditorBoot(editor);
+                    shellRoot.classList.remove('voodbuilder-gjs-root--booting');
+                }
+            })();
+        }
+
+        return revealPromise;
     };
 
-    const onFrameReady = () => {
-        const frameWindow = editor.Canvas.getWindow();
+    editor.on('canvas:frame:load', () => {
+        void reveal();
+    });
 
-        void waitForCanvasStyles(frameWindow).then(reveal);
-    };
-
-    editor.on('canvas:frame:load', onFrameReady);
     editor.on('load', () => {
-        window.requestAnimationFrame(onFrameReady);
+        void reveal();
+    });
+
+    window.setTimeout(() => {
+        void reveal();
+    }, 4_000);
+}
+
+function createDynamicBlocksPending() {
+    let resolvePending = null;
+    const pending = new Promise((resolve) => {
+        resolvePending = resolve;
+    });
+
+    return {
+        pending,
+        resolve: () => {
+            resolvePending?.();
+            resolvePending = null;
+        },
+    };
+}
+
+function registerInspectorExtensions(editor, shell, options, labels) {
+    if (editor.__voodbuilderInspectorExtensionsRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderInspectorExtensionsRegistered = true;
+
+    void registerBindingsUi(editor, {
+        bindingsUrl: options.bindingsUrl,
+        bindingsPreviewUrl: options.bindingsPreviewUrl,
+        labels: options.bindingLabels ?? labels,
+        dynamicMount: shell?.mounts?.dynamic ?? null,
+    });
+
+    registerConditionsUi(editor, {
+        mount: shell?.mounts?.conditions ?? null,
+        labels,
+        conditionOptions: options.conditionOptions ?? [],
+    });
+
+    registerConditionsPersistence(editor);
+
+    registerGlobalClassesUi(editor, {
+        globalClassesUrl: options.globalClassesUrl,
+        csrf: options.csrf,
+        labels,
+        mount: shell?.mounts?.globalClasses ?? null,
     });
 }
 
@@ -334,18 +525,46 @@ export function initVpressGrapesJs(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
+    const dynamicBlocksGate = createDynamicBlocksPending();
+    editor.__voodbuilderDynamicBlocksPending = dynamicBlocksGate.pending;
+    editor.__voodbuilderDynamicBlocksRefresh = dynamicBlocksGate.pending;
+
     registerEditorVideoSafety(editor);
 
-    registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
-
     if (shell) {
-        registerCanvasBootGate(editor, shell.shell?.closest('.voodbuilder-gjs-root') ?? container);
+        const shellRoot = shell.shell?.closest('.voodbuilder-gjs-root') ?? container;
+        shellRoot.classList.add('voodbuilder-gjs-root--booting');
+        registerEditorBuildStatus(editor, shell, labels);
+        registerCanvasBootGate(editor, shellRoot, shell);
         configureEditorLayout(editor, shell, labels);
+        registerInspectorExtensions(editor, shell, options, labels);
+    }
+
+    if (shell && options.componentsUrl) {
+        try {
+            registerComponentsUi(editor, {
+                componentsUrl: options.componentsUrl,
+                csrf: options.csrf,
+                labels,
+                componentsMount: shell.mounts?.components ?? null,
+                componentPropsMount: shell.mounts?.componentProps ?? null,
+                canvasStyles: options.canvasStyles ?? [],
+                componentCategories: options.componentCategories ?? [],
+            });
+        } catch (error) {
+            console.error('Voodbuilder GrapesJS: could not mount components library UI.', error);
+        }
+
+        registerComponentTailwindAutobuild(editor, {
+            componentsUrl: options.componentsUrl,
+            csrf: options.csrf,
+        });
     }
 
     configureEditorChrome(editor, {
         labels,
         shellRoot: shell?.shell ?? null,
+        shell,
         toolsMount: shell?.mounts?.canvasToolbar ?? null,
         actionsMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
         viewPageUrl: options.viewPageUrl ?? options.exitUrl ?? null,
@@ -365,7 +584,9 @@ export function initVpressGrapesJs(container, options = {}) {
     registerVisualStyleTarget(editor);
     registerVisualStyleInspector(editor);
 
-    applyCanvasDocumentTheme(editor, options.subTheme);
+    applyCanvasDocumentTheme(editor, options.subTheme, {
+        canvasPrefersDark: options.canvasPrefersDark,
+    });
     ensureInitialContent(editor, initial);
 
     editor.on('load', () => {
@@ -374,40 +595,22 @@ export function initVpressGrapesJs(container, options = {}) {
         migrateEditorComponents(editor);
         ensureLayoutSectionTraits(editor);
         pruneEmptySections(editor);
-        applyLightBlockPreviews(editor);
+
+        try {
+            applyLightBlockPreviews(editor);
+        } catch (error) {
+            console.error('Voodbuilder GrapesJS: block previews failed.', error);
+        }
+
         configureLayoutBlocks(editor);
 
-        void registerBindingsUi(editor, {
-            bindingsUrl: options.bindingsUrl,
-            bindingsPreviewUrl: options.bindingsPreviewUrl,
-            labels: options.bindingLabels ?? labels,
-            dynamicMount: shell?.mounts?.dynamic ?? null,
-        });
+        registerInspectorExtensions(editor, shell, options, labels);
 
-        registerConditionsUi(editor, {
-            mount: shell?.mounts?.conditions ?? null,
-            labels,
-            conditionOptions: options.conditionOptions ?? [],
-        });
+        registerCanvasContextMenu(editor, { labels });
 
-        registerConditionsPersistence(editor);
-
-        registerGlobalClassesUi(editor, {
-            globalClassesUrl: options.globalClassesUrl,
-            csrf: options.csrf,
-            labels,
-            mount: shell?.mounts?.globalClasses ?? null,
-        });
-
-        registerComponentsUi(editor, {
-            componentsUrl: options.componentsUrl,
-            csrf: options.csrf,
-            labels,
-            componentsMount: shell?.mounts?.components ?? null,
-            componentPropsMount: shell?.mounts?.componentProps ?? null,
-            canvasStyles: options.canvasStyles ?? [],
-            componentCategories: options.componentCategories ?? [],
-        });
+        if (shell?.shell) {
+            registerBlocksContextMenu(editor, shell.shell, labels);
+        }
 
         registerRevisionsUi(editor, {
             revisionsUrl: options.revisionsUrl,
@@ -417,22 +620,36 @@ export function initVpressGrapesJs(container, options = {}) {
             toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
         });
 
-        void refreshDynamicBlocks(editor, options.blocksRenderUrl).finally(() => {
-            migrateEditorComponents(editor);
-            editor.getWrapper().find('[data-voodbuilder-block]').forEach((component) => {
-                lockDynamicPreviewContent(component);
+        if (! options.blocksRenderUrl) {
+            dynamicBlocksGate.resolve();
+        } else {
+            const refresh = refreshDynamicBlocks(editor, options.blocksRenderUrl);
+            editor.__voodbuilderDynamicBlocksRefresh = Promise.resolve(refresh);
+            void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
+                dynamicBlocksGate.resolve();
+                migrateEditorComponents(editor);
+                for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
+                    lockDynamicPreviewContent(component);
 
-                if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                    applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                    if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                        applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                    }
                 }
             });
-        });
+        }
     });
 
     editor.on('canvas:frame:load', () => {
         initReadingTime();
         initSocialShare();
         initCarousels();
+
+        try {
+            hydrateSvgPaintFromAttributes(editor);
+            purgeDesyncedPaintCssRules(editor);
+        } catch {
+            // Ignore paint sync errors during early frame mount.
+        }
     });
 
     editor.on('component:add', () => {
@@ -456,7 +673,13 @@ async function refreshDynamicBlocks(editor, renderUrl) {
         return;
     }
 
-    const components = editor.getWrapper().find('[data-voodbuilder-block]');
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    const components = safeFindComponents(wrapper, '[data-voodbuilder-block]');
 
     for (const component of components) {
         const attributes = component.getAttributes();
@@ -466,7 +689,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
             continue;
         }
 
-        const hasDynamicBindings = component.find('[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
+        const hasDynamicBindings = safeFindComponents(component, '[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
 
         if (hasDynamicBindings) {
             lockDynamicPreviewContent(component);
@@ -517,7 +740,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
             if (footerBlock && fresh.tagName === 'FOOTER') {
                 applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
 
-                if (component.find('[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
+                if (safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
                     refreshDynamicSlots(component, fresh);
                 } else {
                     component.components(fresh.innerHTML);
@@ -534,7 +757,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
                 });
 
                 const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
-                    && component.find('[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
+                    && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
 
                 if (hydratesSlots) {
                     refreshDynamicSlots(component, fresh);
@@ -554,7 +777,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
     }
 }
 
-async function loadBlocks(editor, blocksUrl) {
+async function loadBlocks(editor, blocksUrl, labels = {}) {
     try {
         const response = await fetch(blocksUrl, {
             headers: {
@@ -571,16 +794,31 @@ async function loadBlocks(editor, blocksUrl) {
         registerBlocks(editor, payload.blocks ?? []);
         prioritizeBlockCategories(editor);
         collapseBlockCategories(editor);
-        applyLightBlockPreviews(editor);
+
+        try {
+            applyLightBlockPreviews(editor);
+        } catch (error) {
+            console.error('Voodbuilder GrapesJS: block previews failed after catalog load.', error);
+        }
+
+        refreshBlocksLibraryUi(editor);
     } catch (error) {
         console.error('Voodbuilder GrapesJS: could not load block catalog.', error);
+        refreshBlocksLibraryUi(editor);
+
+        void alertDialog({
+            message: labels.blocksLoadError ?? 'Could not load the block library. Reload the editor or check your session.',
+            labels,
+        });
     }
 }
 
 function refreshEditorLayout(editor) {
-    if (editor) {
-        editor.refresh();
+    if (! editor || editor.__voodbuilderBooting === true) {
+        return;
     }
+
+    editor.refresh();
 }
 
 function readConfig() {
@@ -619,6 +857,7 @@ function mountFrontendEditor() {
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
         subTheme: config.subTheme,
+        canvasPrefersDark: config.canvasPrefersDark,
         uploadUrl: config.uploadUrl,
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,
@@ -640,15 +879,20 @@ function mountFrontendEditor() {
     const onResize = () => refreshEditorLayout(editor);
 
     window.addEventListener('resize', onResize);
-    editor.on('load', onResize);
+    editor.on('load', () => {
+        window.requestAnimationFrame(() => {
+            refreshEditorLayout(editor);
+        });
+    });
 
     if (config.blocksUrl) {
-        void loadBlocks(editor, config.blocksUrl);
+        void loadBlocks(editor, config.blocksUrl, config.labels ?? {});
     } else if (Array.isArray(config.blocks) && config.blocks.length > 0) {
         registerBlocks(editor, config.blocks);
         prioritizeBlockCategories(editor);
         collapseBlockCategories(editor);
         applyLightBlockPreviews(editor);
+        refreshBlocksLibraryUi(editor);
     }
 
     const saveButton = document.querySelector('[data-voodbuilder-grapesjs-save]');
@@ -671,6 +915,8 @@ function mountFrontendEditor() {
         }
 
         try {
+            const payload = buildPayload(editor);
+
             const response = await fetch(config.saveUrl, {
                 method: 'PUT',
                 credentials: 'same-origin',
@@ -679,11 +925,12 @@ function mountFrontendEditor() {
                     Accept: 'application/json',
                     'X-CSRF-TOKEN': config.csrf,
                 },
-                body: JSON.stringify(buildPayload(editor)),
+                body: JSON.stringify(payload),
             });
 
             if (! response.ok) {
-                throw new Error('Save failed');
+                const body = await response.text().catch(() => '');
+                throw new Error(body || `Save failed (${response.status})`);
             }
 
             if (savedIndicator) {
@@ -696,6 +943,8 @@ function mountFrontendEditor() {
                 }
             }, 2500);
         } catch (error) {
+            console.error('VoodBuilder page save failed', error);
+
             await alertDialog({
                 message: config.labels?.error ?? 'Could not save the page.',
                 labels: config.labels ?? {},

@@ -85,13 +85,13 @@ final class GrapesJsPastedComponentNormalizer
     {
         $html = TailblocksThemeTokenMigrator::migrateHtml($html);
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+        $compiled = self::compileTailwindCss($html);
 
-        if ($storedCss === '' || self::cssReferencesLegacyBrandUtilities($storedCss)) {
-            $compiled = self::compileTailwindCss($html);
+        if ($compiled !== '') {
+            $manualCss = self::manualCssFromStoredComponentCss($storedCss);
+            $css = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
 
-            if ($compiled !== '') {
-                return trim(TailblocksThemeTokenMigrator::migrateCss($compiled)."\n\n".self::componentThemeTokenBridgeCss());
-            }
+            return trim(TailblocksThemeTokenMigrator::migrateCss((string) $css)."\n\n".self::componentThemeTokenBridgeCss());
         }
 
         if ($storedCss === '') {
@@ -101,10 +101,40 @@ final class GrapesJsPastedComponentNormalizer
         return trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
     }
 
+    public static function manualCssFromStoredComponentCss(string $storedCss): string
+    {
+        $storedCss = trim($storedCss);
+
+        if ($storedCss === '') {
+            return '';
+        }
+
+        if (! str_contains($storedCss, '.voodbuilder-pasted-component')) {
+            return $storedCss;
+        }
+
+        $chunks = preg_split('/\n(?=\.voodbuilder-pasted-component\b)/', $storedCss) ?: [];
+        $manual = [];
+
+        foreach ($chunks as $chunk) {
+            $trimmed = trim($chunk);
+
+            if ($trimmed === '' || preg_match('/^\.voodbuilder-pasted-component\b/', $trimmed) === 1) {
+                continue;
+            }
+
+            $manual[] = $trimmed;
+        }
+
+        return trim(implode("\n\n", $manual));
+    }
+
     public static function componentThemeTokenBridgeCss(): string
     {
         return <<<'CSS'
 .voodbuilder-gjs-component-instance .voodbuilder-pasted-component,
+.voodbuilder-component-rendered .voodbuilder-pasted-component,
+.VPRichPage .voodbuilder-pasted-component,
 .voodbuilder-pasted-component {
     --color-vp-brand-1: inherit;
     --color-vp-brand-2: inherit;
@@ -117,6 +147,46 @@ final class GrapesJsPastedComponentNormalizer
     --color-vp-bg-elv: inherit;
     --color-vp-divider: inherit;
     --color-vp-gray-soft: inherit;
+    --color-primary: var(--color-vp-brand-2);
+    --color-primary-hover: var(--color-vp-brand-1);
+    --color-primary-focus: var(--color-vp-brand-1);
+    --color-primary-line: var(--color-vp-brand-2);
+    --color-primary-foreground: #ffffff;
+    --color-foreground: var(--color-vp-text-1);
+    --color-layer: var(--color-vp-bg-elv);
+    --color-layer-hover: var(--color-vp-bg-alt);
+    --color-layer-focus: var(--color-vp-bg-alt);
+    --color-layer-line: var(--color-vp-divider);
+    --color-layer-foreground: var(--color-vp-text-1);
+    --color-surface-1: var(--color-vp-bg-alt);
+    --color-surface: var(--color-vp-bg-alt);
+    --color-plain: var(--color-vp-bg-elv);
+    --color-inverse: #ffffff;
+    --color-foreground-inverse: #ffffff;
+    --color-muted-hover: var(--color-vp-bg-alt);
+    --color-muted-focus: var(--color-vp-bg-alt);
+    --color-travia-transparent: transparent;
+    --color-white: #ffffff;
+    --color-neutral-900: #171717;
+    color: var(--color-vp-text-1);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .text-white {
+    color: var(--color-white);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .text-primary {
+    color: var(--color-primary);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .text-foreground {
+    color: var(--color-foreground);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .text-foreground-inverse {
+    color: var(--color-foreground-inverse);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .text-inverse {
+    color: var(--color-inverse);
+}
+.dark :where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .dark\:text-neutral-900 {
+    color: var(--color-neutral-900);
 }
 CSS;
     }
@@ -124,9 +194,40 @@ CSS;
     public static function cssReferencesLegacyBrandUtilities(string $css): bool
     {
         return (bool) preg_match(
-            '/\.(?:[a-z0-9_-]+:)*-?(?:bg|text|border|ring|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+/i',
+            '/\.(?:[a-z0-9_-]+:)*-?(?:bg|text|border|ring|outline|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+/i',
             $css,
         );
+    }
+
+    public static function htmlReferencesLegacyBrandUtilities(string $html): bool
+    {
+        return (bool) preg_match(
+            '/\b(?:hover:|focus:|focus-visible:|active:|group-hover:)?(?:bg|text|border|ring|outline|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+/i',
+            $html,
+        );
+    }
+
+    public static function cssReferencesLegacyPaletteVariables(string $css): bool
+    {
+        return (bool) preg_match(
+            '/--color-(?:indigo|yellow|red|purple|violet|pink|blue|green)-/i',
+            $css,
+        );
+    }
+
+    public static function htmlReferencesPrelineSemanticUtilities(string $html): bool
+    {
+        return (bool) preg_match(
+            '/\b(?:hover:|focus:|focus-visible:)?(?:bg|text|border|from|to|via)-(?:primary|foreground|layer|surface-1|surface|plain|inverse|foreground-inverse|muted-hover|muted-focus)(?:-(?:hover|focus|line|foreground))?\b/i',
+            $html,
+        );
+    }
+
+    public static function cssIncludesPrelineSemanticUtilities(string $css): bool
+    {
+        return str_contains($css, '.text-primary')
+            || str_contains($css, '.bg-primary')
+            || str_contains($css, '.text-foreground');
     }
 
     /**

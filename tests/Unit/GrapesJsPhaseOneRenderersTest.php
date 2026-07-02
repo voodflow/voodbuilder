@@ -63,6 +63,7 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
         $this->assertStringNotContainsString('Catalog default', $rendered);
         $this->assertStringNotContainsString('data-voodbuilder-component', $rendered);
         $this->assertStringNotContainsString('voodbuilder-gjs-component-instance', $rendered);
+        $this->assertStringContainsString('voodbuilder-component-rendered', $rendered);
     }
 
     public function test_global_class_renderer_concatenates_css(): void

@@ -3,13 +3,27 @@
  */
 
 let activeMenu = null;
+let menuRoot = null;
 
-function ensureMount(mount) {
-    if (mount.querySelector('[data-voodbuilder-context-menu]')) {
-        return mount.querySelector('[data-voodbuilder-context-menu]');
+function resolveMenuRoot() {
+    if (menuRoot?.isConnected) {
+        return menuRoot;
     }
 
-    const menu = document.createElement('div');
+    menuRoot = document.body;
+
+    return menuRoot;
+}
+
+function ensureMenu() {
+    const mount = resolveMenuRoot();
+    let menu = mount.querySelector('[data-voodbuilder-context-menu]');
+
+    if (menu) {
+        return menu;
+    }
+
+    menu = document.createElement('div');
     menu.className = 'voodbuilder-gjs-context-menu';
     menu.setAttribute('data-voodbuilder-context-menu', '');
     menu.hidden = true;
@@ -33,23 +47,24 @@ function closeActiveMenu() {
     activeMenu = null;
 }
 
-function positionMenu(menu, mount, x, y) {
+function positionMenu(menu, x, y) {
     menu.hidden = false;
     menu.style.left = '0px';
     menu.style.top = '0px';
 
-    const mountRect = mount.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
     const padding = 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-    let left = x - mountRect.left;
-    let top = y - mountRect.top;
+    let left = x;
+    let top = y;
 
-    if (left + menuRect.width > mountRect.width - padding) {
-        left = Math.max(padding, mountRect.width - menuRect.width - padding);
+    if (left + menuRect.width > viewportWidth - padding) {
+        left = Math.max(padding, viewportWidth - menuRect.width - padding);
     }
 
-    if (top + menuRect.height > mountRect.height - padding) {
+    if (top + menuRect.height > viewportHeight - padding) {
         top = Math.max(padding, top - menuRect.height);
     }
 
@@ -59,20 +74,19 @@ function positionMenu(menu, mount, x, y) {
 
 /**
  * @param {object} options
- * @param {HTMLElement} options.mount - Positioning container (usually shell root)
  * @param {number} options.x - Viewport X
  * @param {number} options.y - Viewport Y
  * @param {Array<{id: string, label: string, danger?: boolean, disabled?: boolean, onSelect?: (context: *) => void}>} options.items
  * @param {*} [options.context] - Passed to onSelect handlers
  */
-export function openContextMenu({ mount, x, y, items = [], context = null }) {
-    if (! mount || items.length === 0) {
+export function openContextMenu({ x, y, items = [], context = null }) {
+    if (items.length === 0) {
         return;
     }
 
     closeActiveMenu();
 
-    const menu = ensureMount(mount);
+    const menu = ensureMenu();
     menu.replaceChildren();
 
     for (const item of items) {
@@ -124,7 +138,7 @@ export function openContextMenu({ mount, x, y, items = [], context = null }) {
     window.addEventListener('resize', onClose, true);
     window.addEventListener('scroll', onClose, true);
 
-    positionMenu(menu, mount, x, y);
+    positionMenu(menu, x, y);
 }
 
 export function closeContextMenu() {

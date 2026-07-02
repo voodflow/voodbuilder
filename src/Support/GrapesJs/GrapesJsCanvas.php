@@ -18,24 +18,43 @@ final class GrapesJsCanvas
         $entries = config('voodbuilder.grapesjs.canvas_styles', VoodbuilderPaths::grapesJsCanvasStyleEntries());
 
         return collect($entries)
-            ->map(static function (string $entry): ?string {
-                if (str_starts_with($entry, 'http://') || str_starts_with($entry, 'https://')) {
-                    return $entry;
-                }
-
-                if (! class_exists(Vite::class) || ! Vite::isRunningHot() && ! self::hasBuiltAsset($entry)) {
-                    return null;
-                }
-
-                try {
-                    return Vite::asset($entry);
-                } catch (\Throwable) {
-                    return null;
-                }
-            })
+            ->map(static fn (string $entry): ?string => self::resolveViteAsset($entry))
             ->filter()
             ->values()
             ->all();
+    }
+
+    /**
+     * Stylesheets required on published GrapesJS pages (section Tailwind utilities).
+     *
+     * @return list<string>
+     */
+    public static function publishedStyleUrls(): array
+    {
+        if (! VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
+            return [];
+        }
+
+        $utilities = self::resolveViteAsset(VoodbuilderSectionGrapesJsBlocks::utilitiesCssEntry());
+
+        return $utilities ? [$utilities] : [];
+    }
+
+    protected static function resolveViteAsset(string $entry): ?string
+    {
+        if (str_starts_with($entry, 'http://') || str_starts_with($entry, 'https://')) {
+            return $entry;
+        }
+
+        if (! class_exists(Vite::class) || ! Vite::isRunningHot() && ! self::hasBuiltAsset($entry)) {
+            return null;
+        }
+
+        try {
+            return Vite::asset($entry);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public static function pageBackgroundColor(string $subTheme): string
@@ -75,6 +94,21 @@ final class GrapesJsCanvas
 
         body:not(.voodbuilder-canvas-ready) {
             visibility: hidden;
+        }
+
+        .voodbuilder-pasted-component div:has(> a[href].bg-primary):has(> a[href].bg-layer),
+        .voodbuilder-pasted-component div:has(> a[href][class*="bg-primary"]):has(> a[href][class*="bg-layer"]),
+        .voodbuilder-pasted-component div.flex.flex-col:has(> a[href].bg-primary),
+        .voodbuilder-pasted-component div.flex.flex-col:has(> a[href][class*="bg-primary"]),
+        .voodbuilder-pasted-component div.flex.flex-col:has(> a[href].bg-layer),
+        .voodbuilder-pasted-component div.flex.flex-col:has(> a[href][class*="bg-layer"]) {
+            display: inline-flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            width: auto;
+            max-width: 100%;
         }
 
         * ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1) }

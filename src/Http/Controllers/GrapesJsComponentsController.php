@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\BuilderComponent;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentImporter;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsImportCompatibilityAnalyzer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\TailblocksThemeTokenMigrator;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -20,6 +21,7 @@ class GrapesJsComponentsController extends Controller
     public function __construct(
         private readonly GrapesJsComponentImporter $importer,
     ) {}
+
     public function index(): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
@@ -129,11 +131,17 @@ class GrapesJsComponentsController extends Controller
 
         $normalized = GrapesJsPastedComponentNormalizer::normalize($validated['html']);
         $tailwindCss = GrapesJsPastedComponentNormalizer::compileTailwindCss($normalized['html']);
+        $compatibility = GrapesJsImportCompatibilityAnalyzer::analyze(
+            $validated['html'],
+            $normalized['html'],
+            $tailwindCss,
+        );
 
         return response()->json([
             'html' => $normalized['html'],
             'css' => $tailwindCss,
             'compiled' => true,
+            'compatibility' => $compatibility,
         ]);
     }
 

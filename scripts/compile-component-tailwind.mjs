@@ -22,6 +22,25 @@ const INHERITED_THEME_PROPS = [
     '--color-vp-gray-soft',
 ];
 
+const LEGACY_PALETTE_NAMES = [
+    'indigo',
+    'yellow',
+    'red',
+    'purple',
+    'violet',
+    'pink',
+    'blue',
+    'green',
+];
+
+function isLegacyPaletteColorVariable(prop) {
+    if (! prop.startsWith('--color-')) {
+        return false;
+    }
+
+    return LEGACY_PALETTE_NAMES.some((name) => prop.startsWith(`--color-${name}-`));
+}
+
 function extractClassNames(html) {
     const classes = new Set();
     const pattern = /\bclass=(["'])(.*?)\1/gis;
@@ -57,7 +76,11 @@ function collectThemeVariables(root) {
             }
 
             rule.walkDecls((decl) => {
-                if (decl.prop.startsWith('--') && ! decl.prop.startsWith('--color-vp-')) {
+                if (
+                    decl.prop.startsWith('--')
+                    && ! decl.prop.startsWith('--color-vp-')
+                    && ! isLegacyPaletteColorVariable(decl.prop)
+                ) {
                     variables.set(decl.prop, decl.value);
                 }
             });
@@ -69,8 +92,24 @@ function collectThemeVariables(root) {
 
 function stripScopedVpThemeOverrides(root) {
     root.walkDecls((decl) => {
-        if (decl.prop.startsWith('--color-vp-')) {
+        if (decl.prop.startsWith('--color-vp-') || isLegacyPaletteColorVariable(decl.prop)) {
             decl.remove();
+        }
+    });
+}
+
+function rewriteLegacyPaletteUtilityColors(root) {
+    root.walkDecls((decl) => {
+        if (! ['background-color', 'outline-color', 'border-color', 'color'].includes(decl.prop)) {
+            return;
+        }
+
+        const value = String(decl.value ?? '');
+
+        if (/var\(--color-(?:indigo|purple|violet)-\d+\)/i.test(value)) {
+            decl.value = decl.prop === 'background-color'
+                ? 'var(--color-vp-brand-3)'
+                : 'var(--color-vp-brand-2)';
         }
     });
 }
@@ -95,7 +134,15 @@ function optimizeComponentCss(css, scope) {
                 return;
             }
 
-            for (const node of [...atRule.nodes]) {
+            const nodes = atRule.nodes ?? [];
+
+            if (nodes.length === 0) {
+                atRule.remove();
+
+                return;
+            }
+
+            for (const node of [...nodes]) {
                 parent.insertBefore(atRule, node.clone());
             }
 
@@ -104,6 +151,7 @@ function optimizeComponentCss(css, scope) {
     });
 
     stripScopedVpThemeOverrides(root);
+    rewriteLegacyPaletteUtilityColors(root);
 
     const scopedDeclarations = INHERITED_THEME_PROPS.map((prop) => postcss.decl({ prop, value: 'inherit' }));
 
@@ -185,6 +233,26 @@ async function main() {
     --color-vp-bg-elv: #ffffff;
     --color-vp-divider: #e2e2e3;
     --color-vp-gray-soft: rgba(142, 150, 170, 0.14);
+    --color-primary: var(--color-vp-brand-2);
+    --color-primary-hover: var(--color-vp-brand-1);
+    --color-primary-focus: var(--color-vp-brand-1);
+    --color-primary-line: var(--color-vp-brand-2);
+    --color-primary-foreground: #ffffff;
+    --color-foreground: var(--color-vp-text-1);
+    --color-layer: var(--color-vp-bg-elv);
+    --color-layer-hover: var(--color-vp-bg-alt);
+    --color-layer-focus: var(--color-vp-bg-alt);
+    --color-layer-line: var(--color-vp-divider);
+    --color-layer-foreground: var(--color-vp-text-1);
+    --color-surface-1: var(--color-vp-bg-alt);
+    --color-surface: var(--color-vp-bg-alt);
+    --color-plain: var(--color-vp-bg-elv);
+    --color-inverse: #ffffff;
+    --color-foreground-inverse: #ffffff;
+    --color-muted-hover: var(--color-vp-bg-alt);
+    --color-muted-focus: var(--color-vp-bg-alt);
+    --color-travia-transparent: transparent;
+    --spacing-120: 30rem;
 }
 `;
 

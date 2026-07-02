@@ -54,7 +54,7 @@ final class VoodbuilderSectionGrapesJsBlocks
     public static function utilitiesCssEntry(): string
     {
         return VoodbuilderPaths::relativeToBasePath(
-            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/section-utilities.css',
+            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/tailblocks-utilities.css',
         );
     }
 

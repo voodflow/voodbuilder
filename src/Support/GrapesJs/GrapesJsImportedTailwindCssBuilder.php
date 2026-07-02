@@ -28,8 +28,30 @@ final class GrapesJsImportedTailwindCssBuilder
         'gray-600' => '#4b5563',
         'gray-500' => '#6b7280',
         'gray-50' => '#f9fafb',
-        'indigo-600' => '#4f46e5',
-        'indigo-500' => '#6366f1',
+        'indigo-600' => 'var(--color-vp-brand-3)',
+        'indigo-500' => 'var(--color-vp-brand-2)',
+        'vp-brand-1' => 'var(--color-vp-brand-1)',
+        'vp-brand-2' => 'var(--color-vp-brand-2)',
+        'vp-brand-3' => 'var(--color-vp-brand-3)',
+        'primary' => 'var(--color-primary)',
+        'primary-hover' => 'var(--color-primary-hover)',
+        'primary-focus' => 'var(--color-primary-focus)',
+        'primary-line' => 'var(--color-primary-line)',
+        'primary-foreground' => 'var(--color-primary-foreground)',
+        'foreground' => 'var(--color-foreground)',
+        'layer' => 'var(--color-layer)',
+        'layer-hover' => 'var(--color-layer-hover)',
+        'layer-focus' => 'var(--color-layer-focus)',
+        'layer-line' => 'var(--color-layer-line)',
+        'layer-foreground' => 'var(--color-layer-foreground)',
+        'surface-1' => 'var(--color-surface-1)',
+        'surface' => 'var(--color-surface)',
+        'plain' => 'var(--color-plain)',
+        'inverse' => 'var(--color-inverse)',
+        'foreground-inverse' => 'var(--color-foreground-inverse)',
+        'muted-hover' => 'var(--color-muted-hover)',
+        'muted-focus' => 'var(--color-muted-focus)',
+        'travia-transparent' => 'transparent',
         'white' => '#ffffff',
     ];
 
@@ -59,6 +81,7 @@ final class GrapesJsImportedTailwindCssBuilder
         return implode("\n", [
             self::SCOPE.' dialog:not([open]) { display: none; }',
             self::SCOPE.' { position: relative; }',
+            self::SCOPE.' { --color-primary: var(--color-vp-brand-2); --color-primary-hover: var(--color-vp-brand-1); --color-primary-focus: var(--color-vp-brand-1); --color-primary-line: var(--color-vp-brand-2); --color-primary-foreground: #ffffff; --color-foreground: var(--color-vp-text-1); --color-layer: var(--color-vp-bg-elv); --color-layer-hover: var(--color-vp-bg-alt); --color-layer-focus: var(--color-vp-bg-alt); --color-layer-line: var(--color-vp-divider); --color-layer-foreground: var(--color-vp-text-1); --color-surface-1: var(--color-vp-bg-alt); --color-surface: var(--color-vp-bg-alt); --color-plain: var(--color-vp-bg-elv); --color-inverse: #ffffff; --color-foreground-inverse: #ffffff; --color-muted-hover: var(--color-vp-bg-alt); --color-muted-focus: var(--color-vp-bg-alt); --color-travia-transparent: transparent; }',
             self::SCOPE.':has(> header.absolute, header.absolute) { min-height: 42rem; }',
             self::SCOPE.' > header.absolute { position: absolute; left: 0; right: 0; top: 0; z-index: 50; }',
         ]);
@@ -66,7 +89,7 @@ final class GrapesJsImportedTailwindCssBuilder
 
     protected static function ruleForClass(string $class): ?string
     {
-        if (preg_match('/^(?:(sm|md|lg|xl|2xl):)?(?:(hover|focus-visible):)?(.+)$/', $class, $matches) !== 1) {
+        if (preg_match('/^(?:(sm|md|lg|xl|2xl):)?(?:(hover|focus-visible|focus):)?(.+)$/', $class, $matches) !== 1) {
             return null;
         }
 
@@ -110,6 +133,14 @@ final class GrapesJsImportedTailwindCssBuilder
             return null;
         }
 
+        if ($variant === 'focus') {
+            if (str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)])) {
+                return 'background-color: '.self::COLORS[substr($utility, 3)].';';
+            }
+
+            return null;
+        }
+
         if ($variant === 'focus-visible') {
             return self::focusOutlineDeclaration($utility);
         }
@@ -141,6 +172,8 @@ final class GrapesJsImportedTailwindCssBuilder
             $utility === 'bg-gradient-to-tr' => 'background-image: linear-gradient(to top right, var(--vb-tw-gradient-stops, #ff80b5, #9089fc));',
             str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)]) => 'background-color: '.self::COLORS[substr($utility, 3)].';',
             str_starts_with($utility, 'text-') && isset(self::COLORS[substr($utility, 5)]) => 'color: '.self::COLORS[substr($utility, 5)].';',
+            str_starts_with($utility, 'border-') && isset(self::COLORS[substr($utility, 7)]) => 'border-color: '.self::COLORS[substr($utility, 7)].';',
+            str_starts_with($utility, 'from-') && isset(self::COLORS[substr($utility, 5)]) => self::gradientFromDeclarationForColor(self::COLORS[substr($utility, 5)]),
             str_starts_with($utility, 'from-[#') && str_ends_with($utility, ']') => self::gradientFromDeclaration($utility),
             str_starts_with($utility, 'to-[#') && str_ends_with($utility, ']') => self::gradientToDeclaration($utility),
             str_starts_with($utility, 'ring-') => self::ringDeclaration($utility),
@@ -156,6 +189,11 @@ final class GrapesJsImportedTailwindCssBuilder
     {
         $color = self::extractBracketValue($utility);
 
+        return self::gradientFromDeclarationForColor($color ?? 'transparent');
+    }
+
+    protected static function gradientFromDeclarationForColor(string $color): string
+    {
         return '--vb-tw-gradient-from: '.$color.'; --vb-tw-gradient-stops: var(--vb-tw-gradient-from), var(--vb-tw-gradient-to, transparent);';
     }
 
@@ -186,7 +224,9 @@ final class GrapesJsImportedTailwindCssBuilder
         return match ($utility) {
             'outline-2' => 'outline-width: 2px;',
             'outline-offset-2' => 'outline-offset: 2px;',
-            'outline-indigo-600' => 'outline-color: #4f46e5;',
+            'outline-indigo-600' => 'outline-color: var(--color-vp-brand-2);',
+            'outline-vp-brand-1' => 'outline-color: var(--color-vp-brand-1);',
+            'outline-vp-brand-2' => 'outline-color: var(--color-vp-brand-2);',
             default => null,
         };
     }
@@ -236,6 +276,10 @@ final class GrapesJsImportedTailwindCssBuilder
 
         if ($variant === 'hover') {
             return self::SCOPE.' .'.$escaped.':hover';
+        }
+
+        if ($variant === 'focus') {
+            return self::SCOPE.' .'.$escaped.':focus';
         }
 
         if ($variant === 'focus-visible') {

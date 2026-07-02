@@ -16,6 +16,7 @@ import {
     configureBricksCanvas,
     registerBricksBlocks,
 } from './grapesjs-bricks-blocks.js';
+import registerGrapesJsTailwindPlugin from './grapesjs-tailwind-plugin.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
@@ -47,6 +48,15 @@ export function resolveGrapesJsPlugins(enabled = {}) {
         }
 
         pluginsOpts[plugin] = {};
+    }
+
+    if (enabled.tailwind !== false) {
+        plugins.push(registerGrapesJsTailwindPlugin);
+        pluginsOpts[registerGrapesJsTailwindPlugin] = {
+            autobuild: true,
+            autocomplete: false,
+            buildButton: false,
+        };
     }
 
     return { plugins, pluginsOpts };

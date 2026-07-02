@@ -1519,8 +1519,34 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
         return;
     }
 
+    if (mount.dataset.voodbuilderDynamicPanelMounted === '1') {
+        return;
+    }
+
+    mount.dataset.voodbuilderDynamicPanelMounted = '1';
+
+    mount.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+    });
+
+    let lastTarget = null;
+
+    const workingTarget = () => {
+        const current = editor.getSelected();
+
+        if (isBindingPanelComponentAlive(current)) {
+            return current;
+        }
+
+        if (isBindingPanelComponentAlive(lastTarget)) {
+            return lastTarget;
+        }
+
+        return null;
+    };
+
     const renderPanel = () => {
-        const selected = editor.getSelected();
+        const selected = workingTarget();
 
         mount.innerHTML = '';
 
@@ -1533,15 +1559,46 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
             return;
         }
 
-        mountBindingForm(editor, selected, catalog, labels, () => refreshBindingPreviews(editor, previewOptions), {
+        mountBindingForm(editor, selected, previewOptions.catalog ?? catalog, labels, () => refreshBindingPreviews(editor, previewOptions), {
             mode: 'inline',
             mount,
         });
     };
 
-    editor.on('component:selected', renderPanel);
-    editor.on('component:deselected', renderPanel);
+    editor.on('component:selected', (component) => {
+        lastTarget = component;
+        renderPanel();
+    });
+
+    editor.on('component:deselected', () => {
+        if (workingTarget()) {
+            return;
+        }
+
+        renderPanel();
+    });
+
+    editor.on('voodbuilder:inspector-panel:refresh', ({ tabId }) => {
+        if (tabId === 'dynamic') {
+            renderPanel();
+        }
+    });
+
     renderPanel();
+}
+
+function isBindingPanelComponentAlive(component) {
+    if (! component) {
+        return false;
+    }
+
+    try {
+        const el = component.getEl?.();
+
+        return el ? el.isConnected !== false : component.parent?.() != null;
+    } catch {
+        return false;
+    }
 }
 
 async function loadBindingsCatalog(bindingsUrl) {
@@ -1695,15 +1752,15 @@ async function ensureBoundComponentVisible(component, options = {}) {
 }
 
 export async function registerBindingsUi(editor, options = {}) {
+    if (editor.__voodbuilderBindingsUiRegistered) {
+        return editor.__voodbuilderBindingsCatalog ?? { groups: [], sources: [] };
+    }
+
+    editor.__voodbuilderBindingsUiRegistered = true;
+
     const labels = options.labels ?? {};
-    const catalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
-        console.error('Voodbuilder GrapesJS: could not load bindings catalog.', error);
-
-        return { groups: [], sources: [] };
-    });
-
     const previewOptions = {
-        catalog,
+        catalog: { groups: [], sources: [] },
         bindingsUrl: options.bindingsUrl,
         bindingsPreviewUrl: options.bindingsPreviewUrl,
         editor,
@@ -1711,9 +1768,26 @@ export async function registerBindingsUi(editor, options = {}) {
 
     registerBoundComponentType(editor);
 
-    editor.getWrapper().find('[data-voodbuilder-bind]').forEach((component) => {
-        configureBoundComponent(editor, component, catalog);
+    mountDynamicInspectorPanel(editor, options.dynamicMount, previewOptions.catalog, labels, previewOptions);
+
+    const catalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
+        console.error('Voodbuilder GrapesJS: could not load bindings catalog.', error);
+
+        return { groups: [], sources: [] };
     });
+
+    previewOptions.catalog = catalog;
+    editor.__voodbuilderBindingsCatalog = catalog;
+
+    editor.trigger('voodbuilder:inspector-panel:refresh', { tabId: 'dynamic' });
+
+    const wrapper = editor.getWrapper?.();
+
+    if (wrapper) {
+        wrapper.find('[data-voodbuilder-bind]').forEach((component) => {
+            configureBoundComponent(editor, component, catalog);
+        });
+    }
 
     editor.on('component:add', (component) => {
         configureBoundComponent(editor, component, catalog);
@@ -1755,7 +1829,7 @@ export async function registerBindingsUi(editor, options = {}) {
                 return;
             }
 
-            openBindingModal(ed, selected, catalog, labels, refreshPreviews);
+            openBindingModal(ed, selected, previewOptions.catalog, labels, refreshPreviews);
         },
     });
 
@@ -1771,10 +1845,8 @@ export async function registerBindingsUi(editor, options = {}) {
         },
     });
 
-    mountDynamicInspectorPanel(editor, options.dynamicMount, catalog, labels, previewOptions);
-
     editor.on('load', () => {
-        ensureRepeatContainers(editor, catalog);
+        ensureRepeatContainers(editor, previewOptions.catalog);
         void refreshBindingPreviews(editor, previewOptions);
     });
 

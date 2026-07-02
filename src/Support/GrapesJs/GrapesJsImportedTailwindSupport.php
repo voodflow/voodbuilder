@@ -37,11 +37,162 @@ final class GrapesJsImportedTailwindSupport
     public static function prepareHtml(string $html): string
     {
         $html = self::migrateClassTokens($html);
+        $html = self::inlineBackgroundImageClasses($html);
         $html = self::simplifyCustomElements($html);
         $html = self::stripNonStandardAttributes($html);
         $html = self::markPastedComponentRoot($html);
 
-        return self::ensureDarkVariantScope($html);
+        return self::ensureDarkVariantScope(self::bakeSvgPaintInHtml($html));
+    }
+
+    public static function bakeSvgPaintInHtml(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, '<svg')) {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $svgNodes = $document->getElementsByTagName('svg');
+
+        if ($svgNodes->length === 0) {
+            return $html;
+        }
+
+        foreach ($svgNodes as $svg) {
+            if (! $svg instanceof DOMElement) {
+                continue;
+            }
+
+            $paint = self::resolveSvgPaintFromElement($svg);
+
+            if ($paint === null) {
+                continue;
+            }
+
+            self::applySvgPaintToTree($svg, $paint);
+        }
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
+    public static function resolveSvgPaintFromElement(DOMElement $svg): ?string
+    {
+        $style = self::parseStyleAttribute($svg->getAttribute('style'));
+
+        if (isset($style['color']) && $style['color'] !== '') {
+            return $style['color'];
+        }
+
+        if (isset($style['fill']) && $style['fill'] !== '' && strtolower($style['fill']) !== 'none') {
+            return $style['fill'];
+        }
+
+        if (isset($style['stroke']) && $style['stroke'] !== '' && strtolower($style['stroke']) !== 'none') {
+            return $style['stroke'];
+        }
+
+        foreach ($svg->getElementsByTagName('*') as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
+            }
+
+            $fill = strtolower($node->getAttribute('fill'));
+
+            if ($fill !== '' && $fill !== 'currentcolor' && $fill !== 'none') {
+                return $node->getAttribute('fill');
+            }
+
+            $stroke = strtolower($node->getAttribute('stroke'));
+
+            if ($stroke !== '' && $stroke !== 'currentcolor' && $stroke !== 'none') {
+                return $node->getAttribute('stroke');
+            }
+        }
+
+        return null;
+    }
+
+    protected static function applySvgPaintToTree(DOMElement $svg, string $paint): void
+    {
+        $existingStyle = self::parseStyleAttribute($svg->getAttribute('style'));
+        $style = self::mergeStyleProperty($svg->getAttribute('style'), 'color', $paint);
+        $style = self::mergeStyleProperty($style, 'fill', $paint);
+        $style = self::mergeStyleProperty($style, 'stroke', $paint);
+
+        foreach (['stroke-width', 'opacity'] as $property) {
+            if (isset($existingStyle[$property]) && $existingStyle[$property] !== '') {
+                $style = self::mergeStyleProperty($style, $property, $existingStyle[$property]);
+            }
+        }
+
+        $svg->setAttribute('style', $style);
+
+        foreach ($svg->getElementsByTagName('*') as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
+            }
+
+            $fill = strtolower($node->getAttribute('fill'));
+
+            if (self::isPaintableSvgFillValue($fill)) {
+                $node->setAttribute('fill', $paint);
+            }
+
+            $stroke = strtolower($node->getAttribute('stroke'));
+
+            if (self::isPaintableSvgStrokeValue($stroke)) {
+                $node->setAttribute('stroke', $paint);
+            }
+        }
+    }
+
+    protected static function isPaintableSvgFillValue(string $fill): bool
+    {
+        $fill = strtolower(trim($fill));
+
+        if ($fill === 'none' || str_starts_with($fill, 'url(')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected static function isPaintableSvgStrokeValue(string $stroke): bool
+    {
+        $stroke = strtolower(trim($stroke));
+
+        if ($stroke === '' || $stroke === 'none' || str_starts_with($stroke, 'url(')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected static function parseStyleAttribute(string $style): array
+    {
+        if ($style === '') {
+            return [];
+        }
+
+        $parsed = [];
+
+        foreach (explode(';', $style) as $chunk) {
+            $chunk = trim($chunk);
+
+            if ($chunk === '' || ! str_contains($chunk, ':')) {
+                continue;
+            }
+
+            [$property, $value] = array_map('trim', explode(':', $chunk, 2));
+            $property = strtolower($property);
+            $value = preg_replace('/\s*!important\s*$/i', '', $value) ?? $value;
+
+            if ($property !== '' && $value !== '') {
+                $parsed[$property] = $value;
+            }
+        }
+
+        return $parsed;
     }
 
     public static function ensureDarkVariantScope(string $html): string
@@ -168,6 +319,89 @@ final class GrapesJsImportedTailwindSupport
         return self::extractBodyHtml($document) ?? $html;
     }
 
+    public static function inlineBackgroundImageClasses(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'bg-[url')) {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('class')) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', trim($element->getAttribute('class'))) ?: [];
+            $remaining = [];
+            $backgroundUrl = null;
+
+            foreach ($classes as $class) {
+                $class = trim($class);
+
+                if ($class === '') {
+                    continue;
+                }
+
+                $url = self::parseBackgroundUrlClass($class);
+
+                if ($url !== null) {
+                    $backgroundUrl = $url;
+
+                    continue;
+                }
+
+                $remaining[] = $class;
+            }
+
+            if ($backgroundUrl === null) {
+                continue;
+            }
+
+            $style = $element->getAttribute('style');
+            $style = self::mergeStyleProperty($style, 'background-image', self::cssUrl($backgroundUrl));
+
+            if (in_array('bg-cover', $remaining, true)) {
+                $style = self::mergeStyleProperty($style, 'background-size', 'cover');
+            }
+
+            if (in_array('bg-center', $remaining, true)) {
+                $style = self::mergeStyleProperty($style, 'background-position', 'center');
+            }
+
+            if (in_array('bg-no-repeat', $remaining, true)) {
+                $style = self::mergeStyleProperty($style, 'background-repeat', 'no-repeat');
+            }
+
+            $element->setAttribute('style', $style);
+            $element->setAttribute('class', implode(' ', $remaining));
+        }
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
+    public static function parseBackgroundUrlClass(string $class): ?string
+    {
+        if (! str_starts_with($class, 'bg-[url(') || ! str_ends_with($class, ')]')) {
+            return null;
+        }
+
+        $inner = substr($class, 8, -2);
+        $inner = trim($inner);
+
+        if ($inner === '') {
+            return null;
+        }
+
+        $quote = $inner[0];
+
+        if (($quote === '"' || $quote === "'") && str_ends_with($inner, $quote)) {
+            return substr($inner, 1, -1);
+        }
+
+        return $inner;
+    }
+
     public static function stripNonStandardAttributes(string $html): string
     {
         return preg_replace('/\s(?:command|commandfor)=(["\']).*?\1/i', '', $html) ?? $html;
@@ -229,5 +463,37 @@ final class GrapesJsImportedTailwindSupport
         }
 
         return trim($html);
+    }
+
+    protected static function mergeStyleProperty(string $style, string $property, string $value): string
+    {
+        $declaration = $property.': '.$value.';';
+        $style = trim($style);
+
+        if ($style === '') {
+            return $declaration;
+        }
+
+        $pattern = '/\b'.preg_quote($property, '/').'\s*:[^;]*;?/i';
+        $replaced = preg_replace($pattern, $declaration, $style);
+
+        if (is_string($replaced) && $replaced !== $style) {
+            return trim($replaced);
+        }
+
+        return rtrim($style, ';').';'.$declaration;
+    }
+
+    protected static function cssUrl(string $url): string
+    {
+        $url = trim($url);
+
+        if ($url === '') {
+            return "url('')";
+        }
+
+        $escaped = str_replace(['\\', "'"], ['\\\\', "\\'"], $url);
+
+        return "url('{$escaped}')";
     }
 }

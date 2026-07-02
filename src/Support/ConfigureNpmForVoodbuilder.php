@@ -76,6 +76,7 @@ final class ConfigureNpmForVoodbuilder
             'grapesjs-plugin-forms' => '^2.0.6',
             'grapesjs-style-bg' => '^2.0.2',
             'grapesjs-tabs' => '^1.0.6',
+            'grapesjs-tailwindcss-plugin' => '^0.1.10',
             'tailwindcss' => '^4.3.0',
         ];
     }

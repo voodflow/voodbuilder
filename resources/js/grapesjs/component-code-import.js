@@ -7,6 +7,7 @@ import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
 import { normalizeComponentCategory, resolveComponentCategories } from './component-categories.js';
 import { stripEmbeddableMediaFromHtml } from './component-media.js';
 import { migrateImportedTailwindHtml } from './imported-tailwind-support.js';
+import { renderCompatibilityPlaceholder, renderCompatibilityReport } from './import-compatibility-report.js';
 import { lucideIcon } from './editor-icons.js';
 
 let activeModal = null;
@@ -71,16 +72,24 @@ function buildPreviewDocument({ html, css, canvasStyles = [] }) {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=1280">
 ${links}
 <style>
-body { margin: 0; padding: 0; background: var(--color-vp-bg, #fff); }
+html, body { margin: 0; padding: 0; background: var(--color-vp-bg, #fff); }
+.voodbuilder-code-import-preview-viewport {
+    width: 1280px;
+    min-height: 100%;
+    transform: scale(0.58);
+    transform-origin: top left;
+}
 .voodbuilder-component-code-preview { min-height: 100%; }
 </style>
 ${css ? `<style>${css}</style>` : ''}
 </head>
 <body>
+<div class="voodbuilder-code-import-preview-viewport">
 <div class="voodbuilder-component-code-preview">${html}</div>
+</div>
 </body>
 </html>`;
 }
@@ -137,7 +146,7 @@ function openComponentCodeDialog({
         : (labels.componentsCodeImportTitle ?? 'Import from code');
     const modalHint = isEdit
         ? (labels.componentsEditHint ?? 'Update the component markup, styles, or library metadata.')
-        : (labels.componentsCodeImportHint ?? 'Paste HTML from Tailblocks, Pagedone, or any Tailwind snippet. Optional CSS is extracted from <style> tags automatically.');
+        : (labels.componentsCodeImportHint ?? 'Paste HTML from Pagedone or any Tailwind snippet. Optional CSS is extracted from <style> tags automatically.');
     const submitLabel = isEdit
         ? (labels.componentsEditSubmit ?? 'Save changes')
         : (labels.componentsCodeImportSubmit ?? 'Create component');
@@ -194,6 +203,7 @@ function openComponentCodeDialog({
                                     <span>${escapeHtml(compileLabel)}</span>
                                 </div>
                             </div>
+                            <div data-voodbuilder-code-compatibility></div>
                         </div>
                     </div>
                 </div>
@@ -218,6 +228,7 @@ function openComponentCodeDialog({
         const cssInput = modal.querySelector('[data-voodbuilder-code-css]');
         const previewFrame = modal.querySelector('[data-voodbuilder-code-preview]');
         const previewLoading = modal.querySelector('[data-voodbuilder-code-preview-loading]');
+        const compatibilityMount = modal.querySelector('[data-voodbuilder-code-compatibility]');
         const submitButton = modal.querySelector('[data-voodbuilder-code-submit]');
         const baseUrl = componentsUrl.replace(/\/$/, '');
 
@@ -226,6 +237,8 @@ function openComponentCodeDialog({
         let normalizedPreviewHtml = '';
         let compileReady = false;
         let isCompiling = false;
+
+        renderCompatibilityPlaceholder(compatibilityMount, labels);
 
         const updateSubmitState = () => {
             const hasName = nameInput.value.trim() !== '';
@@ -263,6 +276,7 @@ function openComponentCodeDialog({
                 normalizedPreviewHtml = '';
                 compileReady = false;
                 setCompiling(false);
+                renderCompatibilityPlaceholder(compatibilityMount, labels);
                 refreshPreview();
                 updateSubmitState();
 
@@ -302,6 +316,7 @@ function openComponentCodeDialog({
                 normalizedPreviewHtml = String(payload.html ?? parsePastedComponentSource(trimmed).html);
                 compiledTailwindCss = String(payload.css ?? '');
                 compileReady = payload.compiled === true;
+                renderCompatibilityReport(compatibilityMount, payload.compatibility ?? null, labels);
             } catch (error) {
                 if (requestId !== compileRequestId) {
                     return;
@@ -310,6 +325,7 @@ function openComponentCodeDialog({
                 compiledTailwindCss = '';
                 normalizedPreviewHtml = parsePastedComponentSource(trimmed).html;
                 compileReady = false;
+                renderCompatibilityPlaceholder(compatibilityMount, labels);
 
                 await alertDialog({
                     message: error instanceof Error

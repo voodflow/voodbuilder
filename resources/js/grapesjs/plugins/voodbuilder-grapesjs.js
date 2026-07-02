@@ -3,6 +3,8 @@
  * @see https://grapesjs.com/docs/modules/Plugins.html
  */
 
+import { clearBackgroundCssRules, pruneRedundantSpacingZeros, resolveVisualStyleTarget } from '../tailwind-visual-style.js';
+import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import {
@@ -13,7 +15,6 @@ import {
     stripRoundedClasses,
     stripTextColorClasses,
 } from '../theme-tokens.js';
-import { resolveVisualStyleTarget } from '../tailwind-visual-style.js';
 
 function isSiteFooterBlock(blockId) {
     return blockId === 'site_footer' || (typeof blockId === 'string' && blockId.startsWith('site_footer_'));
@@ -42,6 +43,15 @@ function registerSpacingStyleSync(editor) {
         }
 
         stripTailwindSpacingClasses(component);
+        window.requestAnimationFrame(() => {
+            pruneRedundantSpacingZeros(component);
+
+            for (const target of [component, resolveVisualStyleTarget(component)]) {
+                if (target && target !== component) {
+                    pruneRedundantSpacingZeros(target);
+                }
+            }
+        });
     });
 }
 
@@ -55,6 +65,10 @@ function isBorderPaintProperty(property) {
 
 function registerTailwindStyleSync(editor) {
     editor.on('component:styleUpdate', (component, property) => {
+        if (editor.__voodbuilderPurgingBackground) {
+            return;
+        }
+
         if (! property || ! component) {
             return;
         }
@@ -67,8 +81,7 @@ function registerTailwindStyleSync(editor) {
 
             if (isClearedBackground(background)) {
                 restoreBackgroundClasses(target);
-                target.removeStyle('background');
-                target.removeStyle('background-color');
+                clearBackgroundCssRules(editor, component);
             } else {
                 stripBackgroundClasses(target);
             }
@@ -91,7 +104,13 @@ function registerTailwindStyleSync(editor) {
 }
 
 function fixGrapesJsSrcUri(value) {
-    return value.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
+    let fixed = value.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
+
+    if (fixed.startsWith('data:image/svg+xml,')) {
+        fixed = fixed.replace(/ /g, '%20');
+    }
+
+    return fixed;
 }
 
 const NEUTRAL_PLACEHOLDER_SRC = 'data:image/svg+xml,' + encodeURIComponent(
@@ -107,8 +126,8 @@ function normalizePlaceholderHtml(html) {
     }
 
     return html
-        .replace(/\bsrc=(["'])(https?:\/\/(?:dummyimage|placehold|placekitten|placeimg|picsum|unsplash)\.[^"']+)\1/gi, `src=$1${NEUTRAL_PLACEHOLDER_SRC}$1`)
-        .replace(/\bbackground-image\s*:\s*url\((["']?)(https?:\/\/(?:dummyimage|placehold|placekitten|placeimg|picsum|unsplash)\.[^"')]+)\1\)\s*;?/gi, `background-image: url(${NEUTRAL_PLACEHOLDER_SRC});`);
+        .replace(/\bsrc=(["'])(https?:\/\/(?:dummyimage|placehold|placekitten|placeimg|picsum)\.[^"']+)\1/gi, `src=$1${NEUTRAL_PLACEHOLDER_SRC}$1`)
+        .replace(/\bbackground-image\s*:\s*url\((["']?)(https?:\/\/(?:dummyimage|placehold|placekitten|placeimg|picsum)\.[^"')]+)\1\)\s*;?/gi, `background-image: url(${NEUTRAL_PLACEHOLDER_SRC});`);
 }
 
 function sanitizeBlockHtml(html) {
@@ -543,7 +562,6 @@ function prioritizeBlockCategories(editor) {
         const id = normalizeCategoryLabel(String(category.get('id') ?? category.get('label') ?? ''));
 
         category.set('label', id);
-        category.set('open', false);
         category.set('order', resolveCategoryOrder(id));
     });
 }
@@ -632,6 +650,8 @@ export {
 };
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
+    registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
+
     registerDynamicBlockType(editor);
     registerLayoutSectionType(editor);
     registerSpacingStyleSync(editor);

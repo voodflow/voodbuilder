@@ -243,7 +243,17 @@ export function isClearedBackground(value) {
 
     const normalized = String(value).trim().toLowerCase();
 
-    return ['none', 'transparent', 'unset', 'initial'].includes(normalized);
+    if (['none', 'transparent', 'unset', 'initial'].includes(normalized)) {
+        return true;
+    }
+
+    const rgbaMatch = normalized.match(/^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)$/);
+
+    if (rgbaMatch && Number.parseFloat(rgbaMatch[1]) === 0) {
+        return true;
+    }
+
+    return false;
 }
 
 const ORIGINAL_BACKGROUND_CLASSES_ATTR = 'data-vb-original-bg-classes';

@@ -8,6 +8,9 @@
  * @see https://github.com/fasenderos/grapesjs-tailwindcss-plugin
  */
 import tailwindPluginModule from 'grapesjs-tailwindcss-plugin';
+import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
+
+const TAILWIND_BUILD_SCOPE = 'tailwind';
 
 function resolveGrapesJsTailwindPlugin(module) {
     if (typeof module === 'function') {
@@ -59,13 +62,36 @@ const VOODBUILDER_TAILWIND_CUSTOM_CSS = `
 `;
 
 export default function registerGrapesJsTailwindPlugin(editor, options = {}) {
+    let tailwindBuilding = false;
+
+    const armBuild = () => {
+        if (! tailwindBuilding) {
+            tailwindBuilding = true;
+            beginEditorBuild(editor, TAILWIND_BUILD_SCOPE);
+        }
+    };
+
+    const disarmBuild = () => {
+        if (tailwindBuilding) {
+            tailwindBuilding = false;
+            endEditorBuild(editor, TAILWIND_BUILD_SCOPE);
+        }
+    };
+
     grapesjsTailwind(editor, {
         autobuild: options.autobuild ?? true,
         autocomplete: options.autocomplete ?? false,
         buildButton: options.buildButton ?? false,
         customCss: options.customCss ?? VOODBUILDER_TAILWIND_CUSTOM_CSS,
-        notificationCallback: options.notificationCallback,
+        notificationCallback: () => {
+            disarmBuild();
+            options.notificationCallback?.();
+        },
     });
+
+    editor.on('run:build-tailwind', armBuild);
+    editor.on('stop:build-tailwind', disarmBuild);
+    editor.on('destroy', disarmBuild);
 }
 
 export { grapesjsTailwind };

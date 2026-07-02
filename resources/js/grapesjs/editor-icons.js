@@ -33,6 +33,10 @@ const PATHS = {
     'grip-vertical': '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
     pin: '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/><path d="M9 5h6"/>',
     'pin-off': '<path d="M12 17v5"/><path d="m15 9.5-6.5 6.5"/><path d="m8.5 8.5 6.5 6.5"/><path d="M9 10.76V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 21 15.24V16a1 1 0 0 1-1 1h-3"/><path d="M9 5h6"/>',
+    'panel-left': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    'panel-right': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',
+    pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L8.28 12.732a1 1 0 0 0-.24.34l-1.321 3.958a1 1 0 0 0 1.263 1.263l3.958-1.321a1 1 0 0 0 .34-.24z"/><path d="m15 5 4 4"/>',
+    'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
 };
 
 export function lucideIcon(name, size = 18) {

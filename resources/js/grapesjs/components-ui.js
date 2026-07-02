@@ -14,17 +14,24 @@ import { resolveCategoryOrder } from './section-block-meta.js';
 import {
     COMPONENT_BLOCK_PREFIX,
     COMPONENT_CATEGORY_PREFIX,
+    componentCategoryAttributes,
     isComponentBlock,
-    isComponentBlockElement,
     isComponentBlockId,
     isComponentCategoryId,
     resolveBlockFromElement,
 } from './component-block-utils.js';
 import { refreshBlockPinUi } from './block-pins.js';
-const COMPONENT_ATTR = 'data-voodbuilder-component';
-const PROPS_ATTR = 'data-voodbuilder-component-props';
-const COMPONENT_TYPE = 'voodbuilder-component-instance';
-const COMPONENT_HYDRATED_KEY = '__vbComponentHydrated';
+import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
+import { applyBlocksLibraryUi, readBlocksSearchQuery } from './blocks-library-sync.js';
+import {
+    COMPONENT_ATTR,
+    COMPONENT_HYDRATED_KEY,
+    COMPONENT_TYPE,
+    PROPS_ATTR,
+    registerComponentInstanceType,
+} from './component-instance-type.js';
+
+export { registerComponentInstanceType } from './component-instance-type.js';
 const BLOCK_PREFIX = COMPONENT_BLOCK_PREFIX;
 const CATEGORY_PREFIX = COMPONENT_CATEGORY_PREFIX;
 
@@ -61,8 +68,16 @@ export function registerComponentsUi(editor, options = {}) {
     };
 
     if (! componentsUrl || ! componentsMount) {
+        editor.__voodbuilderComponentCatalogCssReady = Promise.resolve();
+
         return;
     }
+
+    if (componentsMount.querySelector('[data-voodbuilder-components-library]')) {
+        return;
+    }
+
+    editor.__voodbuilderComponentCatalogCssReady = Promise.resolve();
 
     let catalog = [];
     let selectionMode = false;
@@ -71,6 +86,7 @@ export function registerComponentsUi(editor, options = {}) {
     const deletingIds = new Set();
 
     editor.__voodbuilderComponentsCatalog = catalog;
+    editor.__voodbuilderHydrateComponentInstance = hydrateComponentInstance;
 
     registerComponentInstanceType(editor, () => catalog);
 
@@ -118,12 +134,11 @@ export function registerComponentsUi(editor, options = {}) {
                     </div>
                 </div>
                 <div class="voodbuilder-gjs-components-selection-bar" data-voodbuilder-components-selection-bar hidden>
-                    <div class="voodbuilder-gjs-components-selection-bar__meta">
-                        <span class="voodbuilder-gjs-components-selection-bar__badge" data-voodbuilder-components-selection-badge>0</span>
+                    <p class="voodbuilder-gjs-components-selection-bar__meta">
                         <span class="voodbuilder-gjs-components-selection-bar__count" data-voodbuilder-components-selection-count>
-                            ${escapeHtml(labels.componentsSelectedShort ?? 'selected')}
+                            ${escapeHtml(labels.componentsSelectedCount?.replace('{count}', '0') ?? '0 selected')}
                         </span>
-                    </div>
+                    </p>
                     <div class="voodbuilder-gjs-components-selection-bar__actions">
                         <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-components-selection-bar__action" data-voodbuilder-components-export-selected disabled>
                             ${lucideIcon('download', 14)}
@@ -176,15 +191,14 @@ export function registerComponentsUi(editor, options = {}) {
     const importPanel = componentsMount.querySelector('[data-voodbuilder-components-import-panel]');
     const importDropzone = componentsMount.querySelector('[data-voodbuilder-components-import-drop]');
     const importInput = componentsMount.querySelector('[data-voodbuilder-components-import-input]');
-    const contextMenuMount = shell;
-
     const libraryMounts = { blocks: blocksMount, componentsBlocks: componentsBlocksMount };
+    blocksMount?.setAttribute('data-voodbuilder-blocks-library', 'blocks');
     editor.__voodbuilderLibraryMounts = libraryMounts;
     editor.__voodbuilderRelocateLibrary = (libraryId) => {
         refreshComponentBlocksLibrary(editor, libraryId ?? getActiveLibraryId(), libraryMounts);
         updateEmptyState();
         updateBlocksSelectionState();
-        shell.querySelector('.voodbuilder-gjs-blocks-search')?.dispatchEvent(new Event('input', { bubbles: true }));
+        applyBlocksLibraryUi(editor, readBlocksSearchQuery());
     };
 
     const getActiveLibraryId = () => {
@@ -233,7 +247,7 @@ export function registerComponentsUi(editor, options = {}) {
 
         window.requestAnimationFrame(() => {
             refreshComponentBlocksLibrary(editor, getActiveLibraryId(), libraryMounts);
-            shell.querySelector('.voodbuilder-gjs-blocks-search')?.dispatchEvent(new Event('input', { bubbles: true }));
+            applyBlocksLibraryUi(editor, readBlocksSearchQuery());
         });
     };
 
@@ -270,14 +284,17 @@ export function registerComponentsUi(editor, options = {}) {
 
     const setSelectionMode = (active) => {
         selectionMode = active;
+        editor.__voodbuilderComponentSelectionMode = active;
 
         if (! selectionMode) {
             selectedIds.clear();
         }
 
+        syncComponentBlockDragState(editor, selectionMode);
         updateLibraryHint();
         updateSelectionUi();
         updateBlocksSelectionState();
+        syncComponentBlockQuickActions(editor);
     };
 
     const toggleComponentSelection = (item) => {
@@ -327,9 +344,9 @@ export function registerComponentsUi(editor, options = {}) {
         const header = componentsMount.querySelector('.voodbuilder-gjs-components-library__header');
         const toggle = componentsMount.querySelector('[data-voodbuilder-components-select-toggle]');
         const countEl = componentsMount.querySelector('[data-voodbuilder-components-selection-count]');
-        const badgeEl = componentsMount.querySelector('[data-voodbuilder-components-selection-badge]');
         const exportSelectedButton = componentsMount.querySelector('[data-voodbuilder-components-export-selected]');
         const count = selectedIds.size;
+        const countLabel = (labels.componentsSelectedCount ?? '{count} selected').replace('{count}', String(count));
 
         library?.classList.toggle('is-selection-mode', selectionMode);
         bar?.toggleAttribute('hidden', ! selectionMode);
@@ -337,12 +354,8 @@ export function registerComponentsUi(editor, options = {}) {
         toggle?.classList.toggle('is-active', selectionMode);
         toggle?.setAttribute('aria-pressed', selectionMode ? 'true' : 'false');
 
-        if (badgeEl) {
-            badgeEl.textContent = String(count);
-        }
-
         if (countEl) {
-            countEl.textContent = labels.componentsSelectedShort ?? 'selected';
+            countEl.textContent = countLabel;
         }
 
         if (exportSelectedButton) {
@@ -547,7 +560,6 @@ export function registerComponentsUi(editor, options = {}) {
 
     const openComponentMenu = (item, x, y) => {
         openContextMenu({
-            mount: contextMenuMount,
             x,
             y,
             context: item,
@@ -666,14 +678,27 @@ export function registerComponentsUi(editor, options = {}) {
 
     const loadCatalog = async () => {
         const loadId = ++catalogLoadVersion;
+        const controller = new AbortController();
+        const fetchTimeout = window.setTimeout(() => controller.abort(), 8_000);
 
         try {
             const response = await fetch(componentsUrl, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
+                signal: controller.signal,
             });
 
             if (! response.ok || loadId !== catalogLoadVersion) {
+                if (loadId === catalogLoadVersion && ! response.ok) {
+                    emptyStateEl?.removeAttribute('hidden');
+                    emptyStateEl?.querySelector('.voodbuilder-gjs-components-empty__title')
+                        ?.replaceChildren(document.createTextNode(labels.componentsLoadError ?? 'Could not load components.'));
+                    emptyStateEl?.querySelector('.voodbuilder-gjs-components-empty__hint')
+                        ?.replaceChildren(document.createTextNode(labels.componentsLoadErrorHint ?? 'Check your connection and reload the editor.'));
+                }
+
+                markComponentCatalogCssReady(editor);
+
                 return;
             }
 
@@ -684,6 +709,7 @@ export function registerComponentsUi(editor, options = {}) {
 
             catalog = [...remote, ...localOnly];
             syncCatalog();
+            updateEmptyState();
         } catch {
             if (loadId !== catalogLoadVersion) {
                 return;
@@ -692,6 +718,9 @@ export function registerComponentsUi(editor, options = {}) {
             emptyStateEl?.removeAttribute('hidden');
             emptyStateEl?.querySelector('.voodbuilder-gjs-components-empty__title')
                 ?.replaceChildren(document.createTextNode(labels.componentsLoadError ?? 'Could not load components.'));
+            markComponentCatalogCssReady(editor);
+        } finally {
+            window.clearTimeout(fetchTimeout);
         }
     };
 
@@ -736,7 +765,12 @@ export function registerComponentsUi(editor, options = {}) {
             return;
         }
 
-        const html = selected.toHTML();
+        const html = (() => {
+            syncPaintStylesForExport(editor);
+            bakeSvgPaintForComponent(editor, selected);
+
+            return selected.toHTML({ keepInlineStyle: true });
+        })();
         const properties = inferProperties(selected);
 
         const response = await fetch(componentsUrl.replace(/\/$/, ''), {
@@ -775,7 +809,7 @@ export function registerComponentsUi(editor, options = {}) {
         hydrateComponentInstances(editor, catalog);
         refreshComponentBlocksLibrary(editor, getActiveLibraryId(), libraryMounts);
         updateEmptyState();
-        shell.querySelector('.voodbuilder-gjs-blocks-search')?.dispatchEvent(new Event('input', { bubbles: true }));
+        applyBlocksLibraryUi(editor, readBlocksSearchQuery());
     };
 
     editor.on('load', bootstrapComponentBlocksLibrary);
@@ -784,45 +818,55 @@ export function registerComponentsUi(editor, options = {}) {
         bootstrapComponentBlocksLibrary();
     }
 
-    componentsBlocksMount?.addEventListener('contextmenu', (event) => {
-        const blockEl = event.target.closest('.gjs-block');
+    editor.__voodbuilderComponentLibraryActions = {
+        edit: editComponent,
+        delete: deleteComponent,
+        openMenu: openComponentMenu,
+    };
 
-        if (! blockEl || selectionMode) {
-            return;
-        }
+    if (! shell.dataset.voodbuilderComponentLibraryBound) {
+        shell.dataset.voodbuilderComponentLibraryBound = 'true';
 
-        const item = resolveCatalogItemFromBlockElement(blockEl);
+        shell.addEventListener('contextmenu', (event) => {
+            const blockEl = event.target.closest('.gjs-block.voodbuilder-gjs-component-block');
 
-        if (! item) {
-            return;
-        }
+            if (! blockEl || selectionMode) {
+                return;
+            }
 
-        event.preventDefault();
-        event.stopPropagation();
-        openComponentMenu(item, event.clientX, event.clientY);
-    });
+            const item = resolveCatalogItemFromBlockElement(blockEl);
 
-    componentsBlocksMount?.addEventListener('click', (event) => {
-        if (! selectionMode) {
-            return;
-        }
+            if (! item) {
+                return;
+            }
 
-        const blockEl = event.target.closest('.gjs-block');
+            event.preventDefault();
+            event.stopPropagation();
+            openComponentMenu(item, event.clientX, event.clientY);
+        }, true);
 
-        if (! blockEl) {
-            return;
-        }
+        shell.addEventListener('pointerdown', (event) => {
+            if (! selectionMode || event.button !== 0) {
+                return;
+            }
 
-        const item = resolveCatalogItemFromBlockElement(blockEl);
+            const blockEl = event.target.closest('.gjs-block.voodbuilder-gjs-component-block');
 
-        if (! item) {
-            return;
-        }
+            if (! blockEl || event.target.closest('[data-voodbuilder-component-block-toolbar]')) {
+                return;
+            }
 
-        event.preventDefault();
-        event.stopPropagation();
-        toggleComponentSelection(item);
-    });
+            const item = resolveCatalogItemFromBlockElement(blockEl);
+
+            if (! item) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            toggleComponentSelection(item);
+        }, true);
+    }
 
     editor.on('component:add', (component) => {
         const attrs = component.getAttributes?.({ noClass: true, noStyle: true }) ?? {};
@@ -841,51 +885,13 @@ export function registerComponentsUi(editor, options = {}) {
 
     updateSelectionUi();
 
-    void loadCatalog();
-}
-
-export function registerComponentInstanceType(editor, getCatalog) {
-    if (editor.__voodbuilderComponentTypeRegistered) {
-        return;
-    }
-
-    editor.__voodbuilderComponentTypeRegistered = true;
-
-    const defaultType = editor.DomComponents.getType('default');
-    const defaultDefaults = defaultType?.model?.prototype?.defaults ?? {};
-
-    editor.DomComponents.addType(COMPONENT_TYPE, {
-        extend: 'default',
-        isComponent: (element) => element?.hasAttribute?.(COMPONENT_ATTR) === true,
-        model: {
-            defaults: {
-                ...defaultDefaults,
-                type: COMPONENT_TYPE,
-                name: 'Component',
-                tagName: 'div',
-                draggable: true,
-                droppable: true,
-                removable: true,
-                copyable: true,
-                layerable: true,
-                selectable: true,
-                highlightable: true,
-                editable: false,
-                attributes: {
-                    class: 'voodbuilder-gjs-component-instance',
-                },
-            },
-            init() {
-                this.on(`change:attributes:${COMPONENT_ATTR}`, () => {
-                    this.set(COMPONENT_HYDRATED_KEY, false, { silent: true });
-                    hydrateComponentInstance(this, getCatalog());
-                });
-                this.on(`change:attributes:${PROPS_ATTR}`, () => {
-                    hydrateComponentInstance(this, getCatalog());
-                });
-            },
-        },
+    editor.on('load', () => {
+        window.requestAnimationFrame(() => {
+            applyBlocksLibraryUi(editor, readBlocksSearchQuery());
+        });
     });
+
+    void loadCatalog();
 }
 
 function registerComponentBlocks(editor, catalog, labels = {}, componentCategories = [], uncategorizedLabel = 'General') {
@@ -933,12 +939,21 @@ function registerComponentBlocks(editor, catalog, labels = {}, componentCategori
         const categoryId = `${CATEGORY_PREFIX}${slugify(categoryLabel)}`;
 
         if (! seenCategories.has(categoryId)) {
-            if (! categories?.get?.(categoryId)) {
+            const categoryAttributes = componentCategoryAttributes(categoryId);
+            const existingCategory = categories?.get?.(categoryId);
+
+            if (existingCategory) {
+                existingCategory.set({
+                    open: false,
+                    attributes: categoryAttributes,
+                });
+            } else {
                 blockManager.getCategories().add({
                     id: categoryId,
                     label: categoryLabel.toUpperCase(),
                     order: resolveCategoryOrder(categoryLabel),
-                    open: true,
+                    open: false,
+                    attributes: categoryAttributes,
                 });
             }
 
@@ -966,16 +981,18 @@ function registerComponentBlocks(editor, catalog, labels = {}, componentCategori
     }
 
     const activeLibrary = editor.__voodbuilderActiveLibrary ?? 'blocks';
-    syncBlocksLibraryVisibility(editor, activeLibrary);
+
+    applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 
     if (! editor.__voodbuilderComponentBlocksHooked) {
         editor.__voodbuilderComponentBlocksHooked = true;
         editor.on('block:add', () => {
-            syncBlocksLibraryVisibility(editor, editor.__voodbuilderActiveLibrary ?? 'blocks');
-            scheduleTagComponentBlockElements(editor);
+            window.requestAnimationFrame(() => {
+                applyBlocksLibraryUi(editor, readBlocksSearchQuery());
+            });
         });
         editor.on('block:remove', () => {
-            syncBlocksLibraryVisibility(editor, editor.__voodbuilderActiveLibrary ?? 'blocks');
+            applyBlocksLibraryUi(editor, readBlocksSearchQuery());
         });
     }
 
@@ -993,6 +1010,94 @@ function scheduleTagComponentBlockElements(editor) {
     window.requestAnimationFrame(() => tagComponentBlockElements(editor));
 }
 
+function syncComponentBlockDragState(editor, selectionMode) {
+    editor.BlockManager?.getAll?.()?.forEach((block) => {
+        const blockId = block.get?.('id') ?? block.id;
+
+        if (! isComponentBlockId(blockId)) {
+            return;
+        }
+
+        block.set('draggable', ! selectionMode);
+    });
+}
+
+function syncComponentBlockQuickActions(editor) {
+    const actions = editor.__voodbuilderComponentLibraryActions;
+    const container = editor.BlockManager?.getContainer?.();
+
+    if (! actions || ! container) {
+        return;
+    }
+
+    const selectionMode = editor.__voodbuilderComponentSelectionMode === true;
+
+    container.querySelectorAll('.gjs-block.voodbuilder-gjs-component-block').forEach((blockEl) => {
+        const block = resolveBlockFromElement(editor, blockEl);
+
+        if (! isComponentBlock(block)) {
+            return;
+        }
+
+        const itemId = String(block.get?.('id') ?? block.id).slice(BLOCK_PREFIX.length);
+        const item = editor.__voodbuilderComponentsCatalog?.find?.((entry) => String(entry.id) === itemId);
+
+        if (! item) {
+            return;
+        }
+
+        let toolbar = blockEl.querySelector('[data-voodbuilder-component-block-toolbar]');
+
+        if (! toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'voodbuilder-gjs-component-block__toolbar';
+            toolbar.dataset.voodbuilderComponentBlockToolbar = '';
+            toolbar.setAttribute('role', 'toolbar');
+
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.className = 'voodbuilder-gjs-component-block__toolbar-btn';
+            editButton.dataset.voodbuilderComponentBlockEdit = '';
+            editButton.title = 'Edit';
+            editButton.innerHTML = lucideIcon('pencil', 14);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'voodbuilder-gjs-component-block__toolbar-btn voodbuilder-gjs-component-block__toolbar-btn--danger';
+            deleteButton.dataset.voodbuilderComponentBlockDelete = '';
+            deleteButton.title = 'Delete';
+            deleteButton.innerHTML = lucideIcon('trash-2', 14);
+
+            toolbar.append(editButton, deleteButton);
+            blockEl.appendChild(toolbar);
+
+            editButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                actions.edit?.(item);
+            });
+
+            deleteButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                actions.delete?.(item);
+            });
+
+            blockEl.addEventListener('contextmenu', (event) => {
+                if (selectionMode) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                actions.openMenu?.(item, event.clientX, event.clientY);
+            });
+        }
+
+        toolbar.hidden = selectionMode;
+    });
+}
+
 function tagComponentBlockElements(editor) {
     editor.BlockManager?.getAll?.()?.forEach((block) => {
         const blockId = block.get?.('id') ?? block.id;
@@ -1004,6 +1109,8 @@ function tagComponentBlockElements(editor) {
         block.view?.el?.classList?.add('voodbuilder-gjs-component-block');
         block.view?.el?.setAttribute?.('data-voodbuilder-component-block', '1');
     });
+
+    syncComponentBlockQuickActions(editor);
 }
 
 function componentItemUrl(componentsUrl, id) {
@@ -1054,14 +1161,6 @@ function downloadComponentsExport(items, filename) {
     URL.revokeObjectURL(url);
 }
 
-function setBlockDisplay(blockEl, visible) {
-    if (visible) {
-        blockEl.style.removeProperty('display');
-    } else {
-        blockEl.style.display = 'none';
-    }
-}
-
 function markLibraryMounts(mounts, libraryId) {
     if (libraryId === 'blocks') {
         mounts.blocks?.setAttribute('data-voodbuilder-blocks-library', 'blocks');
@@ -1102,73 +1201,22 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
         openComponentBlockCategories(editor);
     }
 
-    syncBlocksLibraryVisibility(editor, libraryId);
     scheduleTagComponentBlockElements(editor);
 
     if (libraryId === 'blocks') {
         refreshBlockPinUi(editor, { sync: false });
     }
+
+    if (libraryId === 'components') {
+        syncComponentBlockDragState(editor, editor.__voodbuilderComponentSelectionMode === true);
+        syncComponentBlockQuickActions(editor);
+    }
+
+    applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 }
 
 export function relocateComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     refreshComponentBlocksLibrary(editor, libraryId, mounts);
-}
-
-function syncBlocksLibraryVisibility(editor, libraryId = 'blocks') {
-    const container = editor.BlockManager?.getContainer?.();
-
-    if (! container) {
-        return;
-    }
-
-    tagComponentBlockElements(editor);
-
-    const showComponents = libraryId === 'components';
-
-    container.querySelectorAll('.gjs-block').forEach((blockEl) => {
-        const isComponent = isComponentBlockElement(editor, blockEl);
-        setBlockDisplay(blockEl, showComponents ? isComponent : ! isComponent);
-    });
-
-    editor.BlockManager.getCategories?.()?.each?.((category) => {
-        const categoryId = String(category.get('id') ?? '');
-        const isComponentCategory = isComponentCategoryId(categoryId);
-        const categoryEl = category.view?.el;
-
-        if (! categoryEl) {
-            return;
-        }
-
-        categoryEl.classList.toggle('voodbuilder-gjs-component-category', isComponentCategory);
-
-        if (showComponents) {
-            setBlockDisplay(categoryEl, isComponentCategory);
-        } else {
-            setBlockDisplay(categoryEl, ! isComponentCategory);
-        }
-    });
-
-    container.querySelectorAll('.gjs-block-category').forEach((categoryEl) => {
-        const isComponentCategory = categoryEl.classList.contains('voodbuilder-gjs-component-category');
-
-        if (showComponents && ! isComponentCategory) {
-            categoryEl.style.display = 'none';
-
-            return;
-        }
-
-        if (! showComponents && isComponentCategory) {
-            categoryEl.style.display = 'none';
-
-            return;
-        }
-
-        const hasVisible = [...categoryEl.querySelectorAll('.gjs-block')].some(
-            (blockEl) => blockEl.style.display !== 'none',
-        );
-
-        setBlockDisplay(categoryEl, hasVisible);
-    });
 }
 
 function parseImportPayload(payload) {
@@ -1449,6 +1497,8 @@ function inferProperties(component) {
 
 const COMPONENT_THEME_TOKEN_BRIDGE = `
 .voodbuilder-gjs-component-instance .voodbuilder-pasted-component,
+.voodbuilder-component-rendered .voodbuilder-pasted-component,
+.VPRichPage .voodbuilder-pasted-component,
 .voodbuilder-pasted-component {
     --color-vp-brand-1: inherit;
     --color-vp-brand-2: inherit;
@@ -1461,8 +1511,16 @@ const COMPONENT_THEME_TOKEN_BRIDGE = `
     --color-vp-bg-elv: inherit;
     --color-vp-divider: inherit;
     --color-vp-gray-soft: inherit;
+    color: var(--color-vp-text-1);
 }
 `.trim();
+
+function markComponentCatalogCssReady(editor) {
+    if (typeof editor.__voodbuilderResolveComponentCatalogCssReady === 'function') {
+        editor.__voodbuilderResolveComponentCatalogCssReady();
+        editor.__voodbuilderResolveComponentCatalogCssReady = null;
+    }
+}
 
 function injectComponentCatalogCss(editor, catalog) {
     const frame = editor.Canvas?.getFrameEl?.();
@@ -1474,6 +1532,8 @@ function injectComponentCatalogCss(editor, catalog) {
     const doc = frame.contentDocument ?? frame.contentWindow?.document;
 
     if (! doc) {
+        markComponentCatalogCssReady(editor);
+
         return;
     }
 
@@ -1491,6 +1551,7 @@ function injectComponentCatalogCss(editor, catalog) {
         .join('\n\n');
 
     styleEl.textContent = [catalogCss, COMPONENT_THEME_TOKEN_BRIDGE].filter(Boolean).join('\n\n');
+    markComponentCatalogCssReady(editor);
 }
 
 function buildComponentBlockMedia(item) {
@@ -1539,6 +1600,23 @@ function escapeHtml(value) {
 }
 
 /**
+ * Embed catalog HTML into empty component instances so getHtml() matches the canvas.
+ */
+export function ensureComponentInstancesForExport(editor) {
+    const catalog = editor.__voodbuilderComponentsCatalog;
+
+    if (! editor?.getWrapper || ! Array.isArray(catalog) || catalog.length === 0) {
+        return;
+    }
+
+    editor.getWrapper().find(`[${COMPONENT_ATTR}]`).forEach((component) => {
+        if (! hasMeaningfulComponentBody(component)) {
+            hydrateComponentInstance(component, catalog);
+        }
+    });
+}
+
+/**
  * Normalize component instance attributes before save (keep inner HTML for per-page edits).
  */
 export function syncComponentInstancesForExport(editor) {
@@ -1555,9 +1633,11 @@ export function syncComponentInstancesForExport(editor) {
         }
 
         const props = attrs[PROPS_ATTR];
+        const existingClasses = (component.getClasses?.() ?? [])
+            .filter((className) => className && className !== 'voodbuilder-gjs-component-instance');
         const nextAttributes = {
             [COMPONENT_ATTR]: String(componentId),
-            class: 'voodbuilder-gjs-component-instance',
+            class: ['voodbuilder-gjs-component-instance', ...existingClasses].join(' ').trim(),
         };
 
         if (props) {
@@ -1565,5 +1645,11 @@ export function syncComponentInstancesForExport(editor) {
         }
 
         component.addAttributes(nextAttributes);
+
+        const inlineStyle = component.getStyle?.({ inline: true }) ?? {};
+
+        if (Object.keys(inlineStyle).length > 0) {
+            component.addStyle(inlineStyle, { inline: true });
+        }
     });
 }

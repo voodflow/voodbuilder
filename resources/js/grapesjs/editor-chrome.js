@@ -4,6 +4,7 @@
  */
 
 import { lucideIcon } from './editor-icons.js';
+import { registerEditorPanelToggles } from './editor-panel-toggles.js';
 
 const CMD_DEVICE_DESKTOP = 'voodbuilder-set-device-desktop';
 const CMD_DEVICE_TABLET = 'voodbuilder-set-device-tablet';
@@ -39,7 +40,20 @@ export const STYLE_MANAGER_SECTORS = [
     {
         name: 'Dimension',
         open: false,
-        buildProps: ['width', 'height', 'max-width', 'min-height', 'margin', 'padding'],
+        buildProps: [
+            'width',
+            'height',
+            'max-width',
+            'min-height',
+            'margin-top',
+            'margin-right',
+            'margin-bottom',
+            'margin-left',
+            'padding-top',
+            'padding-right',
+            'padding-bottom',
+            'padding-left',
+        ],
     },
     {
         name: 'Typography',
@@ -69,11 +83,13 @@ export const STYLE_MANAGER_SECTORS = [
     {
         name: 'Decorations',
         open: false,
-        buildProps: ['background-color', 'border-radius', 'border', 'box-shadow', 'background'],
+        buildProps: ['background-color', 'border-radius', 'border', 'box-shadow', 'background', 'fill', 'stroke'],
         extendBuilded: true,
         properties: [
             { property: 'background-color', important: true },
             { property: 'background', important: true },
+            { property: 'fill', important: true },
+            { property: 'stroke', important: true },
             { property: 'border-radius', important: true },
             { property: 'border-top-left-radius', important: true },
             { property: 'border-top-right-radius', important: true },
@@ -475,7 +491,7 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
     editor.on('load', syncDevices);
     syncDevices();
 
-    return { readout, syncDevices };
+    return { readout, syncDevices, root };
 }
 
 function mountViewPageAction(actionsMount, viewPageUrl, labels = {}) {
@@ -527,6 +543,10 @@ export function configureEditorChrome(editor, options = {}) {
         options.viewPageUrl ?? null,
         options.labels ?? {},
     );
+
+    if (options.shell) {
+        registerEditorPanelToggles(options.shell, options.labels ?? {}, topbar?.root ?? null);
+    }
 
     const sync = () => {
         topbar?.syncDevices?.();

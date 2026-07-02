@@ -82,8 +82,7 @@ final class GrapesJsComponentRenderer
             $element->appendChild($document->importNode($child, true));
         }
 
-        $element->removeAttribute('data-voodbuilder-component-props');
-        $element->removeAttribute('data-voodbuilder-component');
+        $this->markComponentRendered($element);
     }
 
     protected function instanceHasStoredContent(DOMElement $element): bool
@@ -101,14 +100,15 @@ final class GrapesJsComponentRenderer
     {
         $element->removeAttribute('data-voodbuilder-component');
         $element->removeAttribute('data-voodbuilder-component-props');
+        $this->markComponentRendered($element);
+    }
 
+    protected function markComponentRendered(DOMElement $element): void
+    {
         $class = trim(preg_replace('/\bvoodbuilder-gjs-component-instance\b/', '', $element->getAttribute('class')) ?? '');
+        $class = trim($class.' voodbuilder-component-rendered');
 
-        if ($class === '') {
-            $element->removeAttribute('class');
-        } else {
-            $element->setAttribute('class', preg_replace('/\s+/', ' ', $class) ?? $class);
-        }
+        $element->setAttribute('class', preg_replace('/\s+/', ' ', $class) ?? $class);
     }
 
     /**

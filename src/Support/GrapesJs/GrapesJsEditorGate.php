@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 
 final class GrapesJsEditorGate
 {
@@ -77,6 +78,7 @@ final class GrapesJsEditorGate
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
             'subTheme' => $subTheme,
+            'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
@@ -116,6 +118,7 @@ final class GrapesJsEditorGate
                 'panelLibrary' => __('voodbuilder::pro.editor_ui.panel_library'),
                 'panelInspector' => __('voodbuilder::pro.editor_ui.panel_inspector'),
         'blockSearch' => __('voodbuilder::pro.editor_ui.block_search'),
+        'blocksLoadError' => __('voodbuilder::pro.editor_ui.blocks_load_error'),
         'blockPin' => __('voodbuilder::pro.editor_ui.block_pin'),
         'blockUnpin' => __('voodbuilder::pro.editor_ui.block_unpin'),
         'blockPinnedCategory' => __('voodbuilder::pro.editor_ui.block_pinned_category'),
@@ -140,6 +143,11 @@ final class GrapesJsEditorGate
                 'zoomIn' => __('voodbuilder::pro.editor_ui.zoom_in'),
                 'zoomOut' => __('voodbuilder::pro.editor_ui.zoom_out'),
                 'revisions' => __('voodbuilder::pro.editor_ui.revisions'),
+        'compilingStyles' => __('voodbuilder::pro.editor_ui.compiling_styles'),
+        'loadingEditor' => __('voodbuilder::pro.editor_ui.loading_editor'),
+        'toggleLibraryPanel' => __('voodbuilder::pro.editor_ui.toggle_library_panel'),
+        'toggleInspectorPanel' => __('voodbuilder::pro.editor_ui.toggle_inspector_panel'),
+        'panelToggles' => __('voodbuilder::pro.editor_ui.panel_toggles'),
                 'revisionsTitle' => __('voodbuilder::pro.revisions.title'),
                 'revisionsRestore' => __('voodbuilder::pro.revisions.restore'),
                 'revisionsRestoreConfirm' => __('voodbuilder::pro.revisions.restore_confirm'),
@@ -190,6 +198,7 @@ final class GrapesJsEditorGate
                 'componentsUncategorized' => __('voodbuilder::pro.components.uncategorized'),
                 'componentsNamePrompt' => __('voodbuilder::pro.components.name_prompt'),
                 'componentsLoadError' => __('voodbuilder::pro.components.load_error'),
+                'componentsLoadErrorHint' => __('voodbuilder::pro.components.load_error_hint'),
                 'componentsSaveError' => __('voodbuilder::pro.components.save_error'),
                 'componentsDragHint' => __('voodbuilder::pro.components.drag_hint'),
                 'componentsMenu' => __('voodbuilder::pro.components.menu'),
@@ -200,6 +209,10 @@ final class GrapesJsEditorGate
                 'componentsDelete' => __('voodbuilder::pro.components.delete'),
                 'componentsDeleteConfirm' => __('voodbuilder::pro.components.delete_confirm'),
                 'componentsDeleteError' => __('voodbuilder::pro.components.delete_error'),
+                'componentsCanvasEdit' => __('voodbuilder::pro.components.canvas_edit'),
+                'componentsCanvasDelete' => __('voodbuilder::pro.components.canvas_delete'),
+                'canvasDuplicate' => __('voodbuilder::pro.components.canvas_duplicate'),
+                'canvasDelete' => __('voodbuilder::pro.components.canvas_delete'),
                 'componentsImport' => __('voodbuilder::pro.components.import'),
                 'componentsExport' => __('voodbuilder::pro.components.export'),
                 'componentsExportAll' => __('voodbuilder::pro.components.export_all'),
@@ -229,6 +242,22 @@ final class GrapesJsEditorGate
                 'componentsCodeImportNameRequired' => __('voodbuilder::pro.components.code_import_name_required'),
                 'componentsCodeImportHtmlRequired' => __('voodbuilder::pro.components.code_import_html_required'),
                 'componentsCodeImportCompiling' => __('voodbuilder::pro.components.code_import_compiling'),
+                'componentsCompatibilityTitle' => __('voodbuilder::pro.components.compatibility_title'),
+                'componentsCompatibilityEmpty' => __('voodbuilder::pro.components.compatibility_empty'),
+                'componentsCompatibilityClasses' => __('voodbuilder::pro.components.compatibility_classes'),
+                'componentsCompatibilityReady' => __('voodbuilder::pro.components.compatibility_ready'),
+                'componentsCompatibilityAdapted' => __('voodbuilder::pro.components.compatibility_adapted'),
+                'componentsCompatibilityReview' => __('voodbuilder::pro.components.compatibility_review'),
+                'componentsCompatibilityAdaptations' => __('voodbuilder::pro.components.compatibility_adaptations'),
+                'componentsCompatibilityNoAdaptations' => __('voodbuilder::pro.components.compatibility_no_adaptations'),
+                'componentsCompatibilityReviewTitle' => __('voodbuilder::pro.components.compatibility_review_title'),
+                'componentsCompatibilityReviewHint' => __('voodbuilder::pro.components.compatibility_review_hint'),
+                'componentsCompatibilityNoReview' => __('voodbuilder::pro.components.compatibility_no_review'),
+                'componentsCompatibilityReadySample' => __('voodbuilder::pro.components.compatibility_ready_sample'),
+                'componentsCompatibilityStatusExcellent' => __('voodbuilder::pro.components.compatibility_status_excellent'),
+                'componentsCompatibilityStatusGood' => __('voodbuilder::pro.components.compatibility_status_good'),
+                'componentsCompatibilityStatusPartial' => __('voodbuilder::pro.components.compatibility_status_partial'),
+                'componentsCompatibilityStatusPoor' => __('voodbuilder::pro.components.compatibility_status_poor'),
                 'componentsCompileError' => __('voodbuilder::pro.components.compile_error'),
                 'componentsCompilePending' => __('voodbuilder::pro.components.compile_pending'),
                 'dialogOk' => __('voodbuilder::pro.editor_ui.dialog_ok'),
@@ -322,9 +351,11 @@ final class GrapesJsEditorGate
         $project = $payload['project'] ?? null;
 
         return [
-            'html' => app(GrapesJsBindingNormalizer::class)->normalizeHtml(
-                GrapesJsPlaceholderNormalizer::normalizeHtml(
-                    TailblocksThemeTokenMigrator::migrateHtml($html),
+            'html' => GrapesJsImportedTailwindSupport::bakeSvgPaintInHtml(
+                app(GrapesJsBindingNormalizer::class)->normalizeHtml(
+                    GrapesJsPlaceholderNormalizer::normalizeHtml(
+                        TailblocksThemeTokenMigrator::migrateHtml($html),
+                    ),
                 ),
             ),
             'css' => GrapesJsCssSanitizer::sanitize(

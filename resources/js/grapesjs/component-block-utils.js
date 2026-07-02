@@ -13,6 +13,46 @@ export function isComponentCategoryId(categoryId) {
     return String(categoryId ?? '').startsWith(COMPONENT_CATEGORY_PREFIX);
 }
 
+export function componentCategoryAttributes(categoryId) {
+    return {
+        class: 'voodbuilder-gjs-component-category',
+        'data-voodbuilder-component-category': '1',
+        'data-voodbuilder-category-id': String(categoryId),
+    };
+}
+
+export function isComponentCategoryElement(categoryEl, editor = null) {
+    if (! categoryEl) {
+        return false;
+    }
+
+    if (categoryEl.classList.contains('voodbuilder-gjs-component-category')) {
+        return true;
+    }
+
+    if (categoryEl.hasAttribute('data-voodbuilder-component-category')) {
+        return true;
+    }
+
+    if (isComponentCategoryId(categoryEl.getAttribute('data-voodbuilder-category-id') ?? '')) {
+        return true;
+    }
+
+    if (! editor?.BlockManager?.getCategories) {
+        return false;
+    }
+
+    let matched = false;
+
+    editor.BlockManager.getCategories().each((category) => {
+        if (category.view?.el === categoryEl) {
+            matched = isComponentCategoryId(String(category.get('id') ?? ''));
+        }
+    });
+
+    return matched;
+}
+
 export function resolveBlockFromElement(editor, blockEl) {
     if (! blockEl || ! editor?.BlockManager) {
         return null;

@@ -152,4 +152,67 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringNotContainsString('#6366f1', $resolved);
         $this->assertStringContainsString('--color-vp-brand-3: inherit', $resolved);
     }
+
+    public function test_resolved_css_recompiles_when_stored_css_pins_tailwind_indigo_variables(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><a class="bg-vp-brand-3 text-white hover:bg-vp-brand-2">Contact</a></div>';
+        $storedCss = '.voodbuilder-pasted-component { --color-indigo-600: oklch(51.1% 0.262 276.966); }'
+            .' .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss);
+
+        $this->assertStringNotContainsString('--color-indigo-600', $resolved);
+        $this->assertStringContainsString('var(--color-vp-brand-3)', $resolved);
+    }
+
+    public function test_html_legacy_brand_utilities_trigger_recompile_path(): void
+    {
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::htmlReferencesLegacyBrandUtilities(
+            '<button class="rounded-md bg-indigo-600 hover:bg-indigo-500">Contact</button>',
+        ));
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::htmlReferencesLegacyBrandUtilities(
+            '<a class="focus-visible:outline-indigo-600">Contact</a>',
+        ));
+    }
+
+    public function test_normalizes_preline_semantic_utilities_and_generates_theme_colors(): void
+    {
+        $result = GrapesJsPastedComponentNormalizer::normalize(<<<'HTML'
+            <div class="voodbuilder-pasted-component">
+              <h1 class="text-3xl font-bold text-foreground">Start with <span class="text-primary">Preline</span></h1>
+              <a class="bg-primary text-primary-foreground hover:bg-primary-hover border border-primary-line" href="#">Get started</a>
+              <a class="bg-layer text-layer-foreground hover:bg-layer-hover border border-layer-line" href="#">Contact</a>
+            </div>
+        HTML);
+
+        $css = (string) $result['css'];
+
+        $this->assertStringContainsString('text-primary', $css);
+        $this->assertStringContainsString('bg-primary', $css);
+        $this->assertStringContainsString('var(--color-primary)', $css);
+        $this->assertStringContainsString('--color-primary: var(--color-vp-brand-2)', $css);
+    }
+
+    public function test_resolved_css_recompiles_when_preline_semantic_utilities_are_missing(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><span class="text-primary bg-primary">Preline</span></div>';
+        $storedCss = '.voodbuilder-pasted-component { position: relative; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss);
+
+        $this->assertStringContainsString('.text-primary', $resolved);
+        $this->assertStringContainsString('.bg-primary', $resolved);
+    }
+
+    public function test_resolved_css_recompiles_when_new_classes_are_added_after_import(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss);
+
+        $this->assertStringContainsString('.mx-auto', $resolved);
+        $this->assertStringContainsString('.w-2\\/5', $resolved);
+        $this->assertStringContainsString('.bg-vp-brand-3', $resolved);
+    }
 }

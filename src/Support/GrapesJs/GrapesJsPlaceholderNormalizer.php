@@ -27,7 +27,8 @@ final class GrapesJsPlaceholderNormalizer
         }
 
         $placeholder = self::neutralImageDataUri();
-        $hostPattern = '(?:dummyimage|placehold|placekitten|placeimg|picsum|unsplash)\.[^"\')\s]+';
+        // Keep real CDN images (e.g. Unsplash in Preline demos); only neutralize known placeholder hosts.
+        $hostPattern = '(?:dummyimage|placehold|placekitten|placeimg|picsum)\.[^"\')\s]+';
 
         $html = preg_replace_callback(
             '#\bsrc=(["\'])(https?://'.$hostPattern.')\1#i',
@@ -41,6 +42,29 @@ final class GrapesJsPlaceholderNormalizer
             $html,
         ) ?? $html;
 
-        return $html;
+        return self::normalizeDataImageSrc($html);
+    }
+
+    /**
+     * Chrome rejects data:image/svg+xml URIs that contain literal spaces.
+     */
+    public static function normalizeDataImageSrc(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'data:image/svg+xml')) {
+            return $html;
+        }
+
+        $normalized = preg_replace_callback(
+            '#\bsrc=(["\'])(data:image/svg\+xml,[^"\']+)\1#i',
+            static function (array $matches): string {
+                $quote = $matches[1];
+                $uri = preg_replace('/ /', '%20', $matches[2]) ?? $matches[2];
+
+                return 'src='.$quote.$uri.$quote;
+            },
+            $html,
+        );
+
+        return is_string($normalized) ? $normalized : $html;
     }
 }

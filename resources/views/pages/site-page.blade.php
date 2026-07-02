@@ -61,10 +61,8 @@
                 'grapesJsConfig' => $grapesJsConfig,
             ])
         @else
-            @if ($page->usesGrapesJsBuilder())
-                @if (filled($page->renderedStyles()))
-                    <style>{!! $page->renderedStyles() !!}</style>
-                @endif
+            @if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
+                <style>{!! $page->renderedStyles() !!}</style>
             @endif
 
             {!! $page->renderedContent() !!}
