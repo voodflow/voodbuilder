@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRen
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsGlobalClassRenderer;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsPhaseOneRenderersTest extends TestCase
@@ -83,18 +84,39 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
 
     public function test_component_css_renderer_collects_styles_for_used_instances(): void
     {
+        $html = '<div class="voodbuilder-pasted-component"><button class="bg-vp-brand-3 text-white">Go</button></div>';
         $component = BuilderComponent::query()->create([
             'name' => 'Hero',
-            'html' => '<div class="voodbuilder-pasted-component"><button class="bg-indigo-600 text-white">Go</button></div>',
-            'css' => '.voodbuilder-pasted-component .bg-indigo-600 { background-color: #4f46e5; }',
+            'html' => $html,
+            'css' => '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }',
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum($html),
         ]);
 
-        $html = '<div data-voodbuilder-component="'.$component->id.'"></div>';
+        $pageHtml = '<div data-voodbuilder-component="'.$component->id.'"></div>';
 
-        $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($pageHtml);
 
         $this->assertStringContainsString('[data-vb-component-id="'.$component->id.'"]', $css);
-        $this->assertStringContainsString('bg-vp-brand', $css);
+        $this->assertStringContainsString('bg-vp-brand-3', $css);
         $this->assertStringNotContainsString('bg-indigo-600', $css);
+    }
+
+    public function test_component_css_renderer_uses_stored_css_without_runtime_compilation(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+        $component = BuilderComponent::query()->create([
+            'name' => 'Box',
+            'html' => $html,
+            'css' => $storedCss,
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum($html),
+        ]);
+
+        $pageHtml = '<div data-voodbuilder-component="'.$component->id.'"></div>';
+        $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($pageHtml);
+
+        $this->assertStringContainsString('bg-vp-brand-3', $css);
+        $this->assertStringNotContainsString('.mx-auto', $css);
+        $this->assertStringNotContainsString('.w-2\\/5', $css);
     }
 }

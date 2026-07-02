@@ -41,10 +41,10 @@ class GrapesJsComponentsController extends Controller
             });
 
         if ($backfillCss !== []) {
-            foreach ($backfillCss as $componentId => $css) {
+            foreach ($backfillCss as $componentId => $payload) {
                 BuilderComponent::query()
                     ->whereKey($componentId)
-                    ->update(['css' => $css]);
+                    ->update($payload);
             }
         }
 
@@ -80,6 +80,7 @@ class GrapesJsComponentsController extends Controller
             'description' => $validated['description'] ?? null,
             'html' => $normalized['html'],
             'css' => $css !== '' ? $css : null,
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum((string) $normalized['html']),
             'properties' => $validated['properties'] ?? [],
         ]);
 
@@ -115,6 +116,10 @@ class GrapesJsComponentsController extends Controller
 
         if (array_key_exists('category', $validated)) {
             $validated['category'] = GrapesJsComponentCategoryNormalizer::normalize($validated['category']);
+        }
+
+        if (array_key_exists('html', $validated)) {
+            $validated['html_checksum'] = GrapesJsPastedComponentNormalizer::htmlChecksum((string) $validated['html']);
         }
 
         $component->update($validated);
@@ -177,17 +182,20 @@ class GrapesJsComponentsController extends Controller
     }
 
     /**
-     * @param  array<string|int, string>  $backfillCss
+     * @param  array<string|int, array<string, string>>  $backfillCss
      * @return array<string, mixed>
      */
     protected function toCatalogArray(BuilderComponent $component, array &$backfillCss = []): array
     {
         $html = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
-        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $component->css);
+        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $component->css, $component->html_checksum);
         $css = $resolved['css'];
 
         if (filled($resolved['cssToPersist'] ?? null)) {
-            $backfillCss[(string) $component->id] = (string) $resolved['cssToPersist'];
+            $backfillCss[(string) $component->id] = [
+                'css' => (string) $resolved['cssToPersist'],
+                'html_checksum' => (string) ($resolved['htmlChecksumToPersist'] ?? GrapesJsPastedComponentNormalizer::htmlChecksum($html)),
+            ];
         }
 
         return [
@@ -207,7 +215,11 @@ class GrapesJsComponentsController extends Controller
     protected function toArray(BuilderComponent $component): array
     {
         $html = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
-        $css = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $component->css);
+        $css = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml(
+            $html,
+            $component->css,
+            $component->html_checksum,
+        );
 
         return [
             'id' => $component->id,

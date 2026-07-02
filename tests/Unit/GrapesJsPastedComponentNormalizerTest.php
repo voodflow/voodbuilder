@@ -221,7 +221,11 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
         $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
 
-        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $storedCss);
+        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss(
+            $html,
+            $storedCss,
+            GrapesJsPastedComponentNormalizer::htmlChecksum($html),
+        );
 
         $this->assertStringContainsString('.bg-vp-brand-3', $resolved['css']);
         $this->assertStringNotContainsString('.mx-auto', $resolved['css']);
@@ -237,6 +241,40 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
 
         $this->assertNotSame('', $resolved['css']);
         $this->assertNotNull($resolved['cssToPersist']);
+        $this->assertNotNull($resolved['htmlChecksumToPersist']);
         $this->assertStringContainsString('.bg-vp-brand-3', $resolved['cssToPersist']);
+    }
+
+    public function test_published_css_never_compiles_tailwind_utilities(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $published = GrapesJsPastedComponentNormalizer::publishedCssForStoredHtml($html, $storedCss);
+
+        $this->assertStringContainsString('.bg-vp-brand-3', $published);
+        $this->assertStringNotContainsString('.mx-auto', $published);
+        $this->assertStringNotContainsString('.w-2\\/5', $published);
+    }
+
+    public function test_stored_css_is_current_when_checksum_matches(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';
+        $checksum = GrapesJsPastedComponentNormalizer::htmlChecksum($html);
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::storedCssIsCurrent($html, $storedCss, $checksum));
+    }
+
+    public function test_resolved_css_skips_compile_when_checksum_matches(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+        $checksum = GrapesJsPastedComponentNormalizer::htmlChecksum($html);
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss, $checksum);
+
+        $this->assertStringContainsString('.bg-vp-brand-3', $resolved);
+        $this->assertStringNotContainsString('.mx-auto', $resolved);
     }
 }

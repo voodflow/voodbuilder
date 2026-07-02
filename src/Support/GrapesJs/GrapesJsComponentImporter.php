@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Validation\ValidationException;
 use Voodflow\Voodbuilder\Models\BuilderComponent;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 
 final class GrapesJsComponentImporter
 {
@@ -113,6 +112,7 @@ final class GrapesJsComponentImporter
             'description' => $description !== '' ? $description : null,
             'html' => $html,
             'css' => $css !== '' ? $css : null,
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum($html),
             'properties' => $this->normalizeProperties($raw['properties'] ?? [], $index),
         ];
     }

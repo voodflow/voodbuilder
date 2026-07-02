@@ -25,7 +25,7 @@ class SitePageGrapesJsTest extends TestCase
         ]);
 
         $this->assertTrue($page->usesGrapesJsBuilder());
-        $this->assertSame('<section class="hero">Hello Grapes</section>', $page->renderedContent());
+        $this->assertSame('<section class="hero voodbuilder-gjs-section">Hello Grapes</section>', $page->renderedContent());
         $this->assertSame('.hero { color: red; }', $page->renderedStyles());
         $this->assertNull($page->renderedScripts());
     }
@@ -54,6 +54,23 @@ class SitePageGrapesJsTest extends TestCase
         $this->assertFalse($page->usesGrapesJsBuilder());
         $this->assertSame('', $page->renderedContent());
         $this->assertNull($page->renderedStyles());
+    }
+
+    public function test_rendered_styles_are_memoized_per_request(): void
+    {
+        $page = new SitePage([
+            'builder' => PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<section class="hero">Hello Grapes</section>',
+                'css' => '.hero { color: red; }',
+            ],
+        ]);
+
+        $first = $page->renderedStyles();
+        $second = $page->renderedStyles();
+
+        $this->assertSame($first, $second);
+        $this->assertSame('.hero { color: red; }', $first);
     }
 
     public function test_grapesjs_block_registry_exposes_editor_blocks(): void

@@ -36,6 +36,9 @@ class SitePage extends Model implements HasRichContent
 
     public const LAYOUT_AUTO = 'auto';
 
+    /** @var array{resolved?: bool, styles?: ?string} */
+    private array $renderedStylesCache = [];
+
     protected $fillable = [
         'title',
         'slug',
@@ -202,11 +205,20 @@ class SitePage extends Model implements HasRichContent
 
     public function renderedStyles(): ?string
     {
+        if (array_key_exists('resolved', $this->renderedStylesCache)) {
+            return $this->renderedStylesCache['styles'];
+        }
+
         if (! $this->usesGrapesJsBuilder()) {
+            $this->renderedStylesCache = ['resolved' => true, 'styles' => null];
+
             return null;
         }
 
-        return app(GrapesJsRenderer::class)->css($this);
+        $styles = app(GrapesJsRenderer::class)->css($this);
+        $this->renderedStylesCache = ['resolved' => true, 'styles' => $styles];
+
+        return $styles;
     }
 
     public function renderedScripts(): ?string

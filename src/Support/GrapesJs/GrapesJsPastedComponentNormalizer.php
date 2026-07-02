@@ -81,10 +81,19 @@ final class GrapesJsPastedComponentNormalizer
         return trim($manualCss."\n\n".$autoCss);
     }
 
-    public static function resolvedCssForStoredHtml(string $html, ?string $storedCss): string
-    {
+    public static function resolvedCssForStoredHtml(
+        string $html,
+        ?string $storedCss,
+        ?string $storedChecksum = null,
+    ): string {
         $html = TailblocksThemeTokenMigrator::migrateHtml($html);
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+        $currentChecksum = self::htmlChecksum($html);
+
+        if ($storedCss !== '' && self::storedCssIsCurrent($html, $storedCss, $storedChecksum, $currentChecksum)) {
+            return self::publishedCssForStoredHtml($html, $storedCss);
+        }
+
         $compiled = self::compileTailwindCss($html);
 
         if ($compiled !== '') {
@@ -98,24 +107,105 @@ final class GrapesJsPastedComponentNormalizer
             return '';
         }
 
+        return self::publishedCssForStoredHtml($html, $storedCss);
+    }
+
+    /**
+     * CSS for public page render — never invokes Tailwind compilation.
+     */
+    public static function publishedCssForStoredHtml(string $html, ?string $storedCss): string
+    {
+        $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+
+        if ($storedCss === '') {
+            return '';
+        }
+
         return trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
+    }
+
+    public static function htmlChecksum(string $html): string
+    {
+        return hash('sha256', TailblocksThemeTokenMigrator::migrateHtml($html));
+    }
+
+    public static function storedCssIsCurrent(
+        string $html,
+        string $storedCss,
+        ?string $storedChecksum,
+        ?string $currentChecksum = null,
+    ): bool {
+        if ($storedCss === '') {
+            return false;
+        }
+
+        $currentChecksum ??= self::htmlChecksum($html);
+
+        if ($storedChecksum !== null && $storedChecksum !== '') {
+            return hash_equals($storedChecksum, $currentChecksum);
+        }
+
+        return ! self::storedCssRequiresRecompile($html, $storedCss);
+    }
+
+    public static function storedCssRequiresRecompile(string $html, string $storedCss): bool
+    {
+        if (self::htmlReferencesLegacyBrandUtilities($html) || self::cssReferencesLegacyBrandUtilities($storedCss)) {
+            return true;
+        }
+
+        if (self::cssReferencesLegacyPaletteVariables($storedCss)) {
+            return true;
+        }
+
+        if (self::htmlReferencesPrelineSemanticUtilities($html) && ! self::cssIncludesPrelineSemanticUtilities($storedCss)) {
+            return true;
+        }
+
+        return self::htmlHasTailwindUtilitiesMissingFromCss($html, $storedCss);
+    }
+
+    public static function htmlHasTailwindUtilitiesMissingFromCss(string $html, string $storedCss): bool
+    {
+        if (! preg_match_all('/\bclass=(["\'])([^"\']+)\1/i', $html, $matches)) {
+            return false;
+        }
+
+        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|block|hidden|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|gap-|p-|px-|py-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-)/i';
+
+        foreach ($matches[2] as $classAttribute) {
+            foreach (preg_split('/\s+/', trim($classAttribute)) ?: [] as $className) {
+                if ($className === '' || ! preg_match($utilityPattern, $className)) {
+                    continue;
+                }
+
+                $escaped = preg_quote($className, '/');
+
+                if (preg_match('/\.'.$escaped.'\b/', $storedCss) !== 1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
      * CSS for catalog listing: uses stored CSS when present; compiles Tailwind only for
      * components that have no stored CSS yet (new imports / legacy rows).
      *
-     * @return array{css: string, cssToPersist: ?string}
+     * @return array{css: string, cssToPersist: ?string, htmlChecksumToPersist: ?string}
      */
-    public static function resolveCatalogCss(string $html, ?string $storedCss): array
+    public static function resolveCatalogCss(string $html, ?string $storedCss, ?string $storedChecksum = null): array
     {
         $html = TailblocksThemeTokenMigrator::migrateHtml($html);
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
 
-        if ($storedCss !== '') {
+        if ($storedCss !== '' && self::storedCssIsCurrent($html, $storedCss, $storedChecksum)) {
             return [
-                'css' => trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss()),
+                'css' => self::publishedCssForStoredHtml($html, $storedCss),
                 'cssToPersist' => null,
+                'htmlChecksumToPersist' => null,
             ];
         }
 
@@ -123,11 +213,14 @@ final class GrapesJsPastedComponentNormalizer
         $cssToPersist = $compiled !== '' ? trim(TailblocksThemeTokenMigrator::migrateCss($compiled)) : null;
         $css = $cssToPersist !== null && $cssToPersist !== ''
             ? trim($cssToPersist."\n\n".self::componentThemeTokenBridgeCss())
-            : self::resolvedCssForStoredHtml($html, null);
+            : self::resolvedCssForStoredHtml($html, null, null);
 
         return [
             'css' => $css,
             'cssToPersist' => $cssToPersist,
+            'htmlChecksumToPersist' => $cssToPersist !== null && $cssToPersist !== ''
+                ? self::htmlChecksum($html)
+                : null,
         ];
     }
 

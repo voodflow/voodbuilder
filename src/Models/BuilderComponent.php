@@ -19,6 +19,7 @@ class BuilderComponent extends Model
         'description',
         'html',
         'css',
+        'html_checksum',
         'properties',
     ];
 
