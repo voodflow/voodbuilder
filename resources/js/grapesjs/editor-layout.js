@@ -201,6 +201,9 @@ function setupLibraryTabs(mounts, labels = {}, editor = null) {
             editor.__voodbuilderRelocateLibrary?.(libraryId);
         }
 
+        libraryTabs.closest('.voodbuilder-gjs-shell')
+            ?.setAttribute('data-voodbuilder-active-library', libraryId);
+
         libraryTabs.querySelectorAll('[data-voodbuilder-library]').forEach((button) => {
             const active = button.dataset.voodbuilderLibrary === libraryId;
             button.classList.toggle('voodbuilder-gjs-library-tab--active', active);
@@ -317,7 +320,11 @@ export function refreshBlocksLibraryUi(editor) {
     const libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks';
 
     editor.__voodbuilderRelocateLibrary?.(libraryId);
-    openDefaultBlockCategories(editor);
+
+    if (libraryId === 'blocks') {
+        openDefaultBlockCategories(editor);
+    }
+
     applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 }
 

@@ -2,6 +2,7 @@
  * Descriptive sidebar labels and per-block wireframes for section blocks.
  */
 
+import { isComponentBlock, isComponentCategoryId } from './component-block-utils.js';
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 
 export const CODE_BLOCK_CATEGORY = 'Code';
@@ -291,6 +292,10 @@ export function unifyBlockCategories(editor) {
     blockManager.remove('custom-code');
 
     blockManager.getAll().forEach((block) => {
+        if (isComponentBlock(block)) {
+            return;
+        }
+
         const normalized = normalizeCategoryLabel(block.get('category'));
 
         if (normalized && normalized !== blockCategoryLabel(block.get('category'))) {
@@ -307,6 +312,10 @@ export function unifyBlockCategories(editor) {
     const blocksByCategory = new Map();
 
     blockManager.getAll().forEach((block) => {
+        if (isComponentBlock(block)) {
+            return;
+        }
+
         const label = normalizeCategoryLabel(block.get('category'));
 
         if (! label) {
@@ -323,7 +332,13 @@ export function unifyBlockCategories(editor) {
     const categoriesByLabel = new Map();
 
     categories.each((category) => {
-        const rawLabel = String(category.get('label') ?? category.get('id') ?? '');
+        const categoryId = String(category.get('id') ?? '');
+
+        if (isComponentCategoryId(categoryId)) {
+            return;
+        }
+
+        const rawLabel = String(category.get('label') ?? categoryId);
         const label = normalizeCategoryLabel(rawLabel) || rawLabel;
 
         if (! categoriesByLabel.has(label)) {
@@ -358,6 +373,10 @@ export function unifyBlockCategories(editor) {
     }
 
     blockManager.getAll().forEach((block) => {
+        if (isComponentBlock(block)) {
+            return;
+        }
+
         const label = normalizeCategoryLabel(block.get('category'));
 
         if (label) {

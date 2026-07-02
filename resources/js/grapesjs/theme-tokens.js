@@ -233,8 +233,49 @@ function migrateLegacyButtonClasses(classList) {
     return migrateLegacyButtonClassesArray(tokens).join(' ');
 }
 
-const BACKGROUND_CLASS_PATTERN = /^(?:hover:|focus:|active:|group-hover:)?bg-/;
+const BACKGROUND_CLASS_PATTERN = /^(?:hover:|focus:|active:|group-hover:|focus-within:)?bg-/;
 const BACKGROUND_OPACITY_CLASS_PATTERN = /^bg-opacity-/;
+
+export function isBackgroundUtilityClass(className) {
+    return BACKGROUND_CLASS_PATTERN.test(className)
+        || BACKGROUND_OPACITY_CLASS_PATTERN.test(className);
+}
+
+export function extractBackgroundUtilityClasses(classes) {
+    return classes.filter(isBackgroundUtilityClass);
+}
+
+function isComponentInstanceContainer(component) {
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-component']) {
+        return true;
+    }
+
+    const classes = component.getClasses?.() ?? [];
+
+    return classes.includes('voodbuilder-gjs-component-instance');
+}
+
+function isInsideComponentInstance(component) {
+    let current = component;
+
+    while (current) {
+        if (isComponentInstanceContainer(current)) {
+            return true;
+        }
+
+        const parent = current.parent?.();
+
+        if (! parent || parent === current) {
+            break;
+        }
+
+        current = parent;
+    }
+
+    return false;
+}
 
 export function isClearedBackground(value) {
     if (value == null || value === '') {
@@ -427,6 +468,10 @@ function migrateComponentInlineThemeStyles(component) {
 }
 
 function migrateComponentTree(component) {
+    if (isInsideComponentInstance(component)) {
+        return;
+    }
+
     ensureLandingSectionClasses(component);
     migrateComponentInlineThemeStyles(component);
 

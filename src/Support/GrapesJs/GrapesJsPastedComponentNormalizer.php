@@ -101,6 +101,41 @@ final class GrapesJsPastedComponentNormalizer
         return trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
     }
 
+    /**
+     * CSS for catalog listing: uses stored CSS when present; compiles Tailwind only for
+     * components that have no stored CSS yet (new imports / legacy rows).
+     *
+     * @return array{css: string, cssToPersist: ?string}
+     */
+    public static function resolveCatalogCss(string $html, ?string $storedCss): array
+    {
+        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+
+        if ($storedCss !== '') {
+            return [
+                'css' => trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss()),
+                'cssToPersist' => null,
+            ];
+        }
+
+        $compiled = self::compileTailwindCss($html);
+        $cssToPersist = $compiled !== '' ? trim(TailblocksThemeTokenMigrator::migrateCss($compiled)) : null;
+        $css = $cssToPersist !== null && $cssToPersist !== ''
+            ? trim($cssToPersist."\n\n".self::componentThemeTokenBridgeCss())
+            : self::resolvedCssForStoredHtml($html, null);
+
+        return [
+            'css' => $css,
+            'cssToPersist' => $cssToPersist,
+        ];
+    }
+
+    public static function catalogCssForStoredComponent(string $html, ?string $storedCss): string
+    {
+        return self::resolveCatalogCss($html, $storedCss)['css'];
+    }
+
     public static function manualCssFromStoredComponentCss(string $storedCss): string
     {
         $storedCss = trim($storedCss);

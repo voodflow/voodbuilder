@@ -30,11 +30,23 @@ class GrapesJsComponentsController extends Controller
             return response()->json(['components' => []]);
         }
 
+        $backfillCss = [];
+
         $components = BuilderComponent::query()
             ->orderBy('category')
             ->orderBy('name')
             ->get()
-            ->map(fn (BuilderComponent $component): array => $this->toArray($component));
+            ->map(function (BuilderComponent $component) use (&$backfillCss): array {
+                return $this->toCatalogArray($component, $backfillCss);
+            });
+
+        if ($backfillCss !== []) {
+            foreach ($backfillCss as $componentId => $css) {
+                BuilderComponent::query()
+                    ->whereKey($componentId)
+                    ->update(['css' => $css]);
+            }
+        }
 
         return response()->json(['components' => $components]);
     }
@@ -162,6 +174,31 @@ class GrapesJsComponentsController extends Controller
                 $created,
             ),
         ], 201);
+    }
+
+    /**
+     * @param  array<string|int, string>  $backfillCss
+     * @return array<string, mixed>
+     */
+    protected function toCatalogArray(BuilderComponent $component, array &$backfillCss = []): array
+    {
+        $html = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
+        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $component->css);
+        $css = $resolved['css'];
+
+        if (filled($resolved['cssToPersist'] ?? null)) {
+            $backfillCss[(string) $component->id] = (string) $resolved['cssToPersist'];
+        }
+
+        return [
+            'id' => $component->id,
+            'name' => $component->name,
+            'category' => GrapesJsComponentCategoryNormalizer::normalize($component->category),
+            'description' => $component->description,
+            'html' => $html,
+            'css' => $css !== '' ? $css : null,
+            'properties' => $component->propertySchema(),
+        ];
     }
 
     /**

@@ -546,6 +546,19 @@
     color: var(--color-vp-brand-1, #6366f1);
 }
 
+.voodbuilder-gjs-root .gjs-toolbar-item[data-voodbuilder-toolbar='clear-dynamic'].is-hidden {
+    display: none !important;
+}
+
+.voodbuilder-gjs-root .gjs-toolbar-item[data-voodbuilder-toolbar='dynamic'].is-bound,
+.voodbuilder-gjs-root .gjs-toolbar-item[data-voodbuilder-toolbar='dynamic']:hover {
+    color: var(--color-vp-brand-1, #6366f1);
+}
+
+.voodbuilder-gjs-root .gjs-toolbar-item .voodbuilder-gjs-icon {
+    display: block;
+}
+
 .voodbuilder-gjs-root .gjs-badge {
     background: var(--color-vp-brand-1, #6366f1);
     font-size: 0.625rem;

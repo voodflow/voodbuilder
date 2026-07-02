@@ -4,6 +4,11 @@
 
 import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import {
+    CMD_CLEAR_DYNAMIC,
+    CMD_MAKE_DYNAMIC,
+    registerCanvasComponentToolbar,
+} from './canvas-component-toolbar.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -11,9 +16,6 @@ export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURICompon
     + '<text x="400" y="250" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="18">Dynamic image</text>'
     + '</svg>',
 );
-
-const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
-const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 
 let bindingsCatalog = null;
 let bindingsPreviewValues = null;
@@ -214,6 +216,38 @@ function hasStructuralChildren(component) {
     return hasElementChildren(component);
 }
 
+const INLINE_FORMATTING_TAGS = new Set([
+    'span', 'strong', 'em', 'b', 'i', 'u', 'mark', 'small', 'sub', 'sup', 'br', 'wbr', 'code', 'kbd',
+]);
+
+const TEXT_BINDING_TAGS = new Set([
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'figcaption', 'blockquote', 'label', 'li', 'td', 'th',
+]);
+
+function isInlineFormattingComponent(component) {
+    return INLINE_FORMATTING_TAGS.has(componentTag(component));
+}
+
+function hasBindBlockingChildren(component) {
+    for (const child of component?.components?.()?.models ?? []) {
+        if (isTextNodeComponent(child)) {
+            continue;
+        }
+
+        if (isInlineFormattingComponent(child)) {
+            if (hasBindBlockingChildren(child)) {
+                return true;
+            }
+
+            continue;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 function isRepeatContainer(component) {
     return Boolean(component?.getAttributes?.()['data-voodbuilder-repeat']);
 }
@@ -322,13 +356,15 @@ function resolveRepeatTargetContainer(component) {
 }
 
 function bindingRejectionMessage(component, fieldType, labels) {
-    if (hasStructuralChildren(component) && (isRepeatHost(component) || findRepeatListContainer(component))) {
+    if (hasBindBlockingChildren(component) && (isRepeatHost(component) || findRepeatListContainer(component))) {
         return labels.repeatListInstead
             ?? 'This looks like a list. Use the List repeat section in the Dynamic tab, then bind title, text and links inside each card with “List item”.';
     }
 
+    const tag = componentTag(component);
+
     return labels.bindingNeedsLeaf
-        ?? 'Bind text and images on the inner element (h2, p, img, a) — not on the grid container.';
+        ?? `Bind text and images on the inner element (h2, p, img, a), not on the ${tag || 'container'}.`;
 }
 
 function findLayoutRowDescendant(component) {
@@ -574,7 +610,37 @@ function canAcceptFieldBinding(component, fieldType) {
         return true;
     }
 
-    return ! hasElementChildren(component);
+    if (TEXT_BINDING_TAGS.has(tag)) {
+        return ! hasBindBlockingChildren(component);
+    }
+
+    return ! hasBindBlockingChildren(component);
+}
+
+function resolveFieldBindingTarget(component, fieldType) {
+    if (canAcceptFieldBinding(component, fieldType)) {
+        return component;
+    }
+
+    const matches = [];
+
+    const visit = (node) => {
+        for (const child of node.components?.()?.models ?? []) {
+            if (isTextNodeComponent(child)) {
+                continue;
+            }
+
+            if (canAcceptFieldBinding(child, fieldType)) {
+                matches.push(child);
+            }
+
+            visit(child);
+        }
+    };
+
+    visit(component);
+
+    return matches.length === 1 ? matches[0] : null;
 }
 
 function isRepeatListSource(sourceId) {
@@ -870,7 +936,7 @@ function paintPreviewOnElement(component, value, fieldType) {
         return;
     }
 
-    if (hasStructuralChildren(component)) {
+    if (hasBindBlockingChildren(component)) {
         return;
     }
 
@@ -885,7 +951,6 @@ function applyPreviewValue(component, bindingKey, option, value) {
 }
 
 function applyBindingToComponent(editor, component, bindingKey, option, labels = {}) {
-    const tag = componentTag(component);
     const sourceLabel = option?.source?.label ?? 'Dynamic';
     const fieldLabel = option?.field?.label ?? bindingKey;
     const fieldType = option?.field?.type ?? 'text';
@@ -910,38 +975,31 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
         return;
     }
 
-    if (! canAcceptFieldBinding(component, fieldType)) {
+    const bindTarget = resolveFieldBindingTarget(component, fieldType);
+
+    if (! bindTarget) {
         void alertDialog({
             message: bindingRejectionMessage(component, fieldType, labels),
             labels,
         });
 
-        return;
+        return null;
     }
 
-    if (hasStructuralChildren(component) && ! isRepeatItemSource(sourceId) && fieldType === 'text') {
-        void alertDialog({
-            message: bindingRejectionMessage(component, fieldType, labels),
-            labels,
-        });
+    const effectiveTag = componentTag(bindTarget);
 
-        return;
+    if (fieldType === 'url' && effectiveTag === 'button') {
+        morphUrlButtonToAnchor(editor, bindTarget);
     }
 
-    if (fieldType === 'url' && tag === 'button') {
-        morphUrlButtonToAnchor(editor, component);
-    }
-
-    const effectiveTag = componentTag(component);
-
-    component.addAttributes({
+    bindTarget.addAttributes({
         'data-voodbuilder-bind': bindingKey,
     });
-    component.addClass('voodbuilder-gjs-bound');
+    bindTarget.addClass('voodbuilder-gjs-bound');
 
     const urlOnInteractive = fieldType === 'url' && (effectiveTag === 'button' || effectiveTag === 'a');
 
-    component.set({
+    bindTarget.set({
         editable: urlOnInteractive,
         highlightable: true,
         selectable: true,
@@ -950,25 +1008,27 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     });
 
     if (effectiveTag === 'img' && fieldType === 'image') {
-        component.addAttributes({
+        bindTarget.addAttributes({
             src: NEUTRAL_IMAGE_PLACEHOLDER,
             alt: placeholder,
         });
-        paintPreviewOnElement(component, NEUTRAL_IMAGE_PLACEHOLDER, 'image');
+        paintPreviewOnElement(bindTarget, NEUTRAL_IMAGE_PLACEHOLDER, 'image');
 
-        return;
+        return bindTarget;
     }
 
     if (fieldType === 'url') {
-        component.addAttributes({ href: '#' });
-        component.removeAttributes('onclick');
+        bindTarget.addAttributes({ href: '#' });
+        bindTarget.removeAttributes('onclick');
 
-        return;
+        return bindTarget;
     }
 
     if (fieldType === 'text') {
-        paintPreviewOnElement(component, placeholder, 'text');
+        paintPreviewOnElement(bindTarget, placeholder, 'text');
     }
+
+    return bindTarget;
 }
 
 function clearBindingFromComponent(component) {
@@ -1006,6 +1066,12 @@ function configureBoundComponent(editor, component, catalog) {
 }
 
 export function registerBoundComponentType(editor) {
+    if (editor.__voodbuilderBoundTypesRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderBoundTypesRegistered = true;
+
     const domComponents = editor.DomComponents;
 
     for (const [typeName, matcher] of [
@@ -1281,8 +1347,11 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 ? findBindingOption(catalog, 'vtuts.latest.introduction')
                 : null);
 
-        applyBindingToComponent(editor, component, bindingKey, option, labels);
-        editor.select(component);
+        const bound = applyBindingToComponent(editor, component, bindingKey, option, labels);
+
+        if (bound) {
+            editor.select(bound);
+        }
 
         if (typeof onApplied === 'function') {
             onApplied(component, bindingKey, option);
@@ -1697,7 +1766,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
             return;
         }
 
-        if (hasStructuralChildren(component)) {
+        if (hasBindBlockingChildren(component)) {
             return;
         }
 
@@ -1736,7 +1805,7 @@ async function ensureBoundComponentVisible(component, options = {}) {
         return;
     }
 
-    if (hasStructuralChildren(component) && resolveBindingFieldType(bindingKey, catalog) === 'text') {
+    if (hasBindBlockingChildren(component) && resolveBindingFieldType(bindingKey, catalog) === 'text') {
         return;
     }
 
@@ -1843,6 +1912,11 @@ export async function registerBindingsUi(editor, options = {}) {
 
             clearBindingFromComponent(selected);
         },
+    });
+
+    registerCanvasComponentToolbar(editor, {
+        makeDynamic: labels.makeDynamic,
+        clearDynamic: labels.clearDynamic,
     });
 
     editor.on('load', () => {

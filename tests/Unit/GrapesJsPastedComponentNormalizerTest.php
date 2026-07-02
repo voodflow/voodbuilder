@@ -215,4 +215,28 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringContainsString('.w-2\\/5', $resolved);
         $this->assertStringContainsString('.bg-vp-brand-3', $resolved);
     }
+
+    public function test_catalog_css_uses_stored_css_without_tailwind_recompilation(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="mx-auto w-2/5 bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $storedCss);
+
+        $this->assertStringContainsString('.bg-vp-brand-3', $resolved['css']);
+        $this->assertStringNotContainsString('.mx-auto', $resolved['css']);
+        $this->assertStringNotContainsString('.w-2\\/5', $resolved['css']);
+        $this->assertNull($resolved['cssToPersist']);
+    }
+
+    public function test_catalog_css_marks_new_components_for_persistence(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, null);
+
+        $this->assertNotSame('', $resolved['css']);
+        $this->assertNotNull($resolved['cssToPersist']);
+        $this->assertStringContainsString('.bg-vp-brand-3', $resolved['cssToPersist']);
+    }
 }

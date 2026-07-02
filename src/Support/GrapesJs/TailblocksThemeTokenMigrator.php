@@ -73,18 +73,81 @@ final class TailblocksThemeTokenMigrator
         $html = self::stripConflictingInlineTextColors($html);
         $html = self::migrateInlineStyles($html);
 
-        $html = preg_replace_callback(
-            '/\bclass=(["\'])(.*?)\1/',
-            static function (array $matches): string {
-                $quote = $matches[1];
-                $classes = self::migrateClassList($matches[2]);
+        return self::migrateHtmlClassAttributes($html);
+    }
 
-                return 'class='.$quote.$classes.$quote;
-            },
-            $html,
-        ) ?? $html;
+    private static function migrateHtmlClassAttributes(string $html): string
+    {
+        if (! str_contains($html, 'data-voodbuilder-component')) {
+            return preg_replace_callback(
+                '/\bclass=(["\'])(.*?)\1/',
+                static function (array $matches): string {
+                    $quote = $matches[1];
+                    $classes = self::migrateClassList($matches[2]);
 
-        return $html;
+                    return 'class='.$quote.$classes.$quote;
+                },
+                $html,
+            ) ?? $html;
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if (! $element instanceof \DOMElement || ! $element->hasAttribute('class')) {
+                continue;
+            }
+
+            if (self::isInsideComponentInstance($element)) {
+                continue;
+            }
+
+            $element->setAttribute('class', self::migrateClassList($element->getAttribute('class')));
+        }
+
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if (! $body instanceof \DOMElement) {
+            return $html;
+        }
+
+        $migrated = '';
+
+        foreach ($body->childNodes as $child) {
+            $migrated .= $document->saveHTML($child);
+        }
+
+        return $migrated;
+    }
+
+    private static function isInsideComponentInstance(\DOMElement $element): bool
+    {
+        $current = $element;
+
+        while ($current instanceof \DOMElement) {
+            if ($current->hasAttribute('data-voodbuilder-component')) {
+                return true;
+            }
+
+            $parent = $current->parentNode;
+
+            if (! $parent instanceof \DOMElement) {
+                break;
+            }
+
+            $current = $parent;
+        }
+
+        return false;
     }
 
     public static function migrateCss(string $css): string

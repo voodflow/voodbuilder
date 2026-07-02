@@ -33,6 +33,7 @@ import { registerConditionsUi, registerConditionsPersistence, syncConditionsForE
 import {
     ensureComponentInstancesForExport,
     registerComponentsUi,
+    syncComponentInstancePaintForExport,
     syncComponentInstancesForExport,
 } from './components-ui.js';
 import { registerComponentTailwindAutobuild } from './component-tailwind-autobuild.js';
@@ -92,6 +93,7 @@ function buildPayload(editor) {
     purgeDesyncedBackgroundCssRules(editor);
     syncSpacingStylesForExport(editor);
     syncPaintStylesForExport(editor);
+    syncComponentInstancePaintForExport(editor);
     bakeSvgPaintForExport(editor);
     pruneRedundantSpacingZerosForExport(editor);
     syncComponentInstancesForExport(editor);
@@ -602,6 +604,9 @@ export function initVpressGrapesJs(container, options = {}) {
             console.error('Voodbuilder GrapesJS: block previews failed.', error);
         }
 
+        editor.__voodbuilderSyncComponentsCatalog?.();
+        refreshBlocksLibraryUi(editor);
+
         configureLayoutBlocks(editor);
 
         registerInspectorExtensions(editor, shell, options, labels);
@@ -801,6 +806,7 @@ async function loadBlocks(editor, blocksUrl, labels = {}) {
             console.error('Voodbuilder GrapesJS: block previews failed after catalog load.', error);
         }
 
+        editor.__voodbuilderSyncComponentsCatalog?.();
         refreshBlocksLibraryUi(editor);
     } catch (error) {
         console.error('Voodbuilder GrapesJS: could not load block catalog.', error);
@@ -892,6 +898,7 @@ function mountFrontendEditor() {
         prioritizeBlockCategories(editor);
         collapseBlockCategories(editor);
         applyLightBlockPreviews(editor);
+        editor.__voodbuilderSyncComponentsCatalog?.();
         refreshBlocksLibraryUi(editor);
     }
 

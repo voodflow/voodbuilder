@@ -230,4 +230,17 @@ class TailblocksThemeTokenMigratorTest extends TestCase
         $this->assertContains('text-white', $heading['classes']);
         $this->assertArrayNotHasKey('color', $heading['style']);
     }
+
+    public function test_migrate_html_preserves_background_classes_inside_component_instances(): void
+    {
+        $html = '<div class="voodbuilder-gjs-component-instance bg-blue-400" data-voodbuilder-component="abc">'
+            .'<div class="voodbuilder-pasted-component bg-blue-400"><p class="text-blue-500">Hi</p></div>'
+            .'</div>';
+
+        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('bg-blue-400', $migrated);
+        $this->assertStringNotContainsString('bg-vp-brand-1', $migrated);
+        $this->assertStringContainsString('text-blue-500', $migrated);
+    }
 }

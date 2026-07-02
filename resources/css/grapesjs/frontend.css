@@ -663,6 +663,18 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     padding: 0.25rem 0.625rem 0.875rem;
 }
 
+/* Saved components are listed only under the Components tab */
+.voodbuilder-gjs-blocks-mount .gjs-block.voodbuilder-gjs-component-block,
+.voodbuilder-gjs-blocks-mount [data-voodbuilder-component-block],
+.voodbuilder-gjs-blocks-mount [data-gjs-block-id^="vb-component-"],
+.voodbuilder-gjs-blocks-mount .gjs-block[id^="vb-component-"],
+.voodbuilder-gjs-blocks-mount .gjs-block-category.voodbuilder-gjs-component-category,
+.voodbuilder-gjs-blocks-mount [data-voodbuilder-component-category],
+.voodbuilder-gjs-blocks-mount [data-voodbuilder-category-id^="vb-components-"],
+.voodbuilder-gjs-blocks-mount .gjs-block-category[id^="vb-components-"] {
+    display: none !important;
+}
+
 .voodbuilder-gjs-components-library {
     display: flex;
     flex: 1 1 auto;

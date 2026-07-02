@@ -4,8 +4,10 @@
  */
 
 import { clearBackgroundCssRules, pruneRedundantSpacingZeros, resolveVisualStyleTarget } from '../tailwind-visual-style.js';
+import { registerBoundComponentType } from '../bindings-ui.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
+import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import {
     isClearedBackground,
@@ -74,15 +76,21 @@ function registerTailwindStyleSync(editor) {
         }
 
         const target = resolveVisualStyleTarget(component);
+        const wrapperStyle = component.getStyle?.() ?? {};
+        const targetStyle = target?.getStyle?.() ?? {};
 
         if (property === 'background-color' || property === 'background') {
-            const style = component.getStyle?.() ?? {};
-            const background = style[property] ?? style['background-color'] ?? style.background;
+            const background = wrapperStyle[property]
+                ?? wrapperStyle['background-color']
+                ?? wrapperStyle.background
+                ?? targetStyle[property]
+                ?? targetStyle['background-color']
+                ?? targetStyle.background;
 
             if (isClearedBackground(background)) {
                 restoreBackgroundClasses(target);
                 clearBackgroundCssRules(editor, component);
-            } else {
+            } else if (background != null && background !== '') {
                 stripBackgroundClasses(target);
             }
         }
@@ -559,7 +567,13 @@ function prioritizeBlockCategories(editor) {
     }
 
     categories.each((category) => {
-        const id = normalizeCategoryLabel(String(category.get('id') ?? category.get('label') ?? ''));
+        const categoryId = String(category.get('id') ?? '');
+
+        if (isComponentCategoryId(categoryId)) {
+            return;
+        }
+
+        const id = normalizeCategoryLabel(String(categoryId || category.get('label') || ''));
 
         category.set('label', id);
         category.set('order', resolveCategoryOrder(id));
@@ -650,6 +664,7 @@ export {
 };
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
+    registerBoundComponentType(editor);
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 
     registerDynamicBlockType(editor);
