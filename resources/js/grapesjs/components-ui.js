@@ -218,9 +218,25 @@ export function registerComponentsUi(editor, options = {}) {
         updateBlocksSelectionState();
         applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 
-        if (resolvedLibraryId === 'components' && catalog.length > 0) {
+        if (resolvedLibraryId === 'components') {
             ensureComponentsLibraryVisible(editor, libraryMounts, resolvedLibraryId);
         }
+    };
+
+    const preserveComponentsLibraryTab = () => {
+        const componentsTab = shell.querySelector('[data-voodbuilder-library="components"]');
+
+        if (! componentsTab) {
+            return;
+        }
+
+        if (! componentsTab.classList.contains('voodbuilder-gjs-library-tab--active')) {
+            componentsTab.click();
+        }
+
+        editor.__voodbuilderActiveLibrary = 'components';
+        ensureComponentsLibraryVisible(editor, libraryMounts, 'components');
+        updateEmptyState();
     };
 
     const getActiveLibraryId = () => {
@@ -278,6 +294,10 @@ export function registerComponentsUi(editor, options = {}) {
             applyBlocksLibraryUi(editor, readBlocksSearchQuery());
             ensureComponentsLibraryVisible(editor, libraryMounts, getActiveLibraryId());
         });
+
+        if (libraryId === 'components') {
+            preserveComponentsLibraryTab();
+        }
     };
 
     const setImportPanelOpen = (open) => {
@@ -613,6 +633,7 @@ export function registerComponentsUi(editor, options = {}) {
             try {
                 syncCatalog();
                 updateSelectionUi();
+                preserveComponentsLibraryTab();
             } catch (syncError) {
                 console.error('VoodBuilder: component deleted but library UI failed to refresh.', syncError);
                 updateSelectionUi();
@@ -1692,9 +1713,7 @@ function ensureComponentScopeAttribute(component) {
 }
 
 function formatComponentInstanceName(name) {
-    const label = String(name ?? 'Component').trim() || 'Component';
-
-    return `Voodbuilder: ${label}`;
+    return String(name ?? 'Component').trim() || 'Component';
 }
 
 function applyComponentInstancePresentation(component, item) {
