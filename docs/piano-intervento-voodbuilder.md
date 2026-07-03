@@ -38,7 +38,9 @@
 
 Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
-### 1.1 Menu contestuale sui layer / “Salva come componente” — 🟢 S · P1
+### 1.1 Menu contestuale sui layer / “Salva come componente” — 🟢 S · P1 ✅
+
+**Stato:** implementato (luglio 2026) — menu contestuale su canvas e layer tree con salva nel catalogo, export, duplica, seleziona parent.
 
 **Cosa:** click destro (o menu `⋯`) sul layer: *Duplica*, *Salva nel catalogo*, *Esporta*, *Elimina* — allineato al flusso componenti già usato in sidebar.
 
@@ -55,7 +57,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 1.2 Miglioramenti Dynamic Data — 🟢 S · P1
+### 1.2 Miglioramenti Dynamic Data — 🟢 S · P1 ✅
+
+**Stato:** implementato (luglio 2026) — ricerca campi, etichette tipo dato, anteprima valore nel pannello Dynamic.
 
 **Cosa:** UX del pannello Dynamic più vicina a un “dynamic tag picker”: anteprima live più chiara, ricerca campi, hint tipo dato, binding su attributi (`title`, `aria-label`), lista campi nested.
 
@@ -70,7 +74,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 1.3 Suggeritore classi Tailwind nel pannello Classes — 🟢 S · P2
+### 1.3 Suggeritore classi Tailwind nel pannello Classes — 🟢 S · P2 ✅
+
+**Stato:** implementato (luglio 2026) — autocomplete utility comuni + hint classi non ancora in pagina.
 
 **Cosa:** autocomplete classi Tailwind mentre si digita, **incluso** classi non ancora presenti nel CSS compilato della pagina (con badge “verrà compilata al save”).
 
