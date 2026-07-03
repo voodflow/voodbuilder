@@ -73,6 +73,16 @@ return [
         'appearance' => 'Aspetto (opzionale)',
     ],
 
+    'menu_preview' => [
+        'title' => 'Anteprima menu',
+        'heading' => 'Anteprima live',
+        'description' => 'Vedi come questo menu appare nell’header o nel footer del sito. Salva le voci per aggiornare l’anteprima.',
+        'badge' => 'Anteprima: :menu',
+        'iframe_title' => 'Anteprima menu di navigazione',
+        'empty' => 'Nessuna voce di menu.',
+        'standalone_help' => 'Anteprima dei link per questo placement.',
+    ],
+
     'helpers' => [
         'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente. Se la route richiede parametri, compila i campi mostrati sotto.',
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',

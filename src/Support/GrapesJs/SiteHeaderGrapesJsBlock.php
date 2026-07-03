@@ -23,6 +23,11 @@ final class SiteHeaderGrapesJsBlock implements GrapesJsServerBlock
         return [
             'main_menu' => 'main',
             'extra_menu' => 'header_extra',
+            'show_search' => true,
+            'show_profile' => true,
+            'show_notifications' => true,
+            'show_docs_menu' => true,
+            'sticky' => false,
         ];
     }
 

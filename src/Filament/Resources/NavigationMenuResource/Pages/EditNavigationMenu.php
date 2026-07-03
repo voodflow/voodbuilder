@@ -83,6 +83,18 @@ class EditNavigationMenu extends EditRecord
 
         return $schema
             ->components([
+                Section::make(__('voodbuilder::admin.menu_preview.heading'))
+                    ->description(__('voodbuilder::admin.menu_preview.description'))
+                    ->schema([
+                        View::make('voodbuilder::filament.navigation-menu-preview-frame')
+                            ->viewData([
+                                'previewUrl' => route('voodbuilder.admin.navigation-menus.preview', $this->record),
+                                'height' => in_array($this->record->slug, ['main', 'header_extra', 'landing_nav'], true)
+                                    ? '14rem'
+                                    : '10rem',
+                            ]),
+                    ])
+                    ->collapsible(),
                 $this->getFormContentComponent(),
                 Section::make(__('Menu items'))
                     ->description(__('voodbuilder::admin.helpers.menu_tree'))

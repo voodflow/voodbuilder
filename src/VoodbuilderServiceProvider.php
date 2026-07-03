@@ -33,15 +33,15 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsComponentsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
+use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
@@ -150,6 +150,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             $this->registerGrapesJsBindings();
         }
 
+        $this->registerAdminRoutes();
+
         SEOManager::SEODataTransformer(static function ($seoData) {
             return VoodbuilderSeo::applyDefaults($seoData);
         });
@@ -217,6 +219,17 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('components/export', [GrapesJsComponentsController::class, 'export'])->name('components.export');
                 Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
                 Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
+            });
+    }
+
+    protected function registerAdminRoutes(): void
+    {
+        Route::middleware(['web', 'auth', 'throttle:60,1'])
+            ->prefix('voodbuilder/admin')
+            ->name('voodbuilder.admin.')
+            ->group(function (): void {
+                Route::get('navigation-menus/{navigationMenu}/preview', NavigationMenuPreviewController::class)
+                    ->name('navigation-menus.preview');
             });
     }
 

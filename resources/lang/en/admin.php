@@ -73,6 +73,16 @@ return [
         'appearance' => 'Appearance (optional)',
     ],
 
+    'menu_preview' => [
+        'title' => 'Menu preview',
+        'heading' => 'Live preview',
+        'description' => 'See how this menu looks in the site header or footer. Save menu items to refresh the preview.',
+        'badge' => 'Preview: :menu',
+        'iframe_title' => 'Navigation menu preview',
+        'empty' => 'No menu items yet.',
+        'standalone_help' => 'Preview of links for this menu placement.',
+    ],
+
     'helpers' => [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',

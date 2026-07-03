@@ -91,7 +91,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 1.4 Blocchi header / nav allineati al tema — 🟢 S–🟡 M · P2
+### 1.4 Blocchi header / nav allineati al tema — 🟢 S–🟡 M · P2 ✅
+
+**Stato:** implementato (luglio 2026) — blocco `site_header` allineato al nav del tema (logo, menu main/extra, docs, search, account, notifiche, mobile drawer).
 
 **Cosa:** blocchi GrapesJS per header come nel tema base: logo, slot menu `main` + `header_extra`, icona search, login, notifiche (placeholder o binding).
 
@@ -106,7 +108,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 1.5 Elementi mancanti nel Block Manager — 🟢 S · P2
+### 1.5 Elementi mancanti nel Block Manager — 🟢 S · P2 ✅ (batch 1)
+
+**Stato:** implementato (luglio 2026) — batch 1 in categoria Basic/Media: Divider, Icon box, Styled list, Embed.
 
 **Cosa:** audit rispetto a [Bricks elements](https://bricksbuilder.io/elements/) — aggiungere solo ciò che manca e ha senso in GrapesJS (divider, icon box, list styled, embed, map, countdown, pricing table già parzialmente da sezioni).
 
@@ -145,7 +149,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 2.3 Potenziamento menu builder (admin) — 🟡 M · P3
+### 2.3 Potenziamento menu builder (admin) — 🟡 M · P3 (fase A ✅)
+
+**Stato:** fase A implementata (luglio 2026) — anteprima iframe header/footer nel form Filament modifica menu.
 
 **Cosa:** esperienza admin più visuale: anteprima header live, drag migliorato, assegnazione icone voce, badge, visibilità per ruolo.
 

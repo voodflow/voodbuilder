@@ -1,5 +1,6 @@
 @props([
     'hasDocSidebar' => false,
+    'enableNotifications' => true,
 ])
 
 @php
@@ -20,7 +21,7 @@
     $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
         && \Voodflow\Vdocs\Support\DocNavigation::enabled()
         && \Voodflow\Vdocs\Support\DocNavigation::isActive();
-    $showNotificationBell = (bool) VoodbuilderSettings::get('show_notification_bell', true);
+    $showNotificationBell = $enableNotifications && (bool) VoodbuilderSettings::get('show_notification_bell', true);
     $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
     $showAccountLink = (bool) VoodbuilderSettings::get('show_account_link', true);
     $searchEnabled = Route::has('voodbuilder.search');
@@ -122,11 +123,9 @@
                     </a>
                 @endif
 
-                @if (class_exists(\Voodflow\Vtuts\Support\LocaleSwitcher::class) && \Voodflow\Vtuts\Support\LocaleSwitcher::visible())
-                    <div class="voodbuilder-mobile-nav__tool">
-                        <x-vtuts::language-switcher />
-                    </div>
-                @endif
+                <div class="voodbuilder-mobile-nav__tool">
+                    <x-voodbuilder::optional-language-switcher />
+                </div>
 
                 @if ($showThemeToggle)
                     <button

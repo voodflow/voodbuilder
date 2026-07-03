@@ -287,7 +287,7 @@ return [
             'site_header_preview' => 'Live menu from Admin → Menus',
             'site_footer_preview' => 'Edit titles, tagline and copyright in the canvas. Brand and links stay dynamic.',
             'site_footer_help' => 'Uses Admin → Menus → Footer column 1–4. Logo and brand name from site settings.',
-            'site_header_help' => 'Uses Admin → Menus → Main navigation and Header extras.',
+            'site_header_help' => 'Uses Admin → Menus → Main navigation and Header extras. Includes search, account menu, and notifications when enabled in site settings.',
             'site_footer_empty' => 'No items in “:menu”. Add links in Admin → Menus.',
             'footer_menu_empty' => 'No links in :menu yet',
             'footer_default_tagline' => 'Short description for your brand.',

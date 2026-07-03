@@ -67,6 +67,23 @@ export const BRICKS_BLOCK_WIREFRAMES = {
         '<rect x="8" y="14" width="32" height="18" rx="2"/>'
         + '<circle cx="18" cy="36" r="1.5" fill="currentColor"/><circle cx="24" cy="36" r="1.5"/><circle cx="30" cy="36" r="1.5"/>',
     ),
+    'voodbuilder-divider': wireframe('<path d="M8 24h32"/>'),
+    'voodbuilder-icon-box': wireframe(
+        '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>'
+        + '<path d="M22 16h16M22 22h12M22 28h8"/>',
+    ),
+    'voodbuilder-styled-list': wireframe(
+        '<circle cx="12" cy="16" r="1.5" fill="currentColor"/>'
+        + '<path d="M18 16h20"/>'
+        + '<circle cx="12" cy="24" r="1.5" fill="currentColor"/>'
+        + '<path d="M18 24h16"/>'
+        + '<circle cx="12" cy="32" r="1.5" fill="currentColor"/>'
+        + '<path d="M18 32h18"/>',
+    ),
+    'voodbuilder-embed': wireframe(
+        '<rect x="8" y="14" width="32" height="18" rx="2"/>'
+        + '<path d="M20 20l8 4-8 4z"/>',
+    ),
 };
 
 function linkTraitSchema() {
@@ -360,6 +377,91 @@ const BLOCKS = [
                 },
             ],
         },
+    },
+    {
+        id: 'voodbuilder-divider',
+        label: 'Divider',
+        category: BASIC_BLOCK_CATEGORY,
+        content: `
+            <hr class="vb-divider my-6 w-full border-0 border-t border-vp-divider" data-voodbuilder-divider />
+        `,
+    },
+    {
+        id: 'voodbuilder-icon-box',
+        label: 'Icon box',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            tagName: 'div',
+            classes: ['vb-icon-box', 'flex', 'items-start', 'gap-4'],
+            attributes: { 'data-voodbuilder-icon-box': '' },
+            components: [
+                {
+                    type: 'voodbuilder-icon',
+                    classes: ['shrink-0', 'text-vp-brand-1'],
+                    attributes: {
+                        'data-voodbuilder-icon': '',
+                        href: '#',
+                        'data-vb-link-type': 'none',
+                    },
+                    style: { 'font-size': '2.5rem' },
+                    components: ICON_SVG,
+                },
+                {
+                    tagName: 'div',
+                    classes: ['min-w-0', 'space-y-2'],
+                    components: [
+                        {
+                            tagName: 'h3',
+                            classes: ['text-lg', 'font-semibold', 'text-vp-text-1'],
+                            components: 'Feature title',
+                        },
+                        {
+                            tagName: 'p',
+                            classes: ['text-sm', 'leading-relaxed', 'text-vp-text-2'],
+                            components: 'Short supporting text for this icon box.',
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        id: 'voodbuilder-styled-list',
+        label: 'Styled list',
+        category: BASIC_BLOCK_CATEGORY,
+        content: `
+            <ul class="vb-styled-list space-y-3" data-voodbuilder-styled-list>
+                <li class="flex items-start gap-3 text-sm text-vp-text-1">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
+                    <span>First list item</span>
+                </li>
+                <li class="flex items-start gap-3 text-sm text-vp-text-1">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
+                    <span>Second list item</span>
+                </li>
+                <li class="flex items-start gap-3 text-sm text-vp-text-1">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
+                    <span>Third list item</span>
+                </li>
+            </ul>
+        `,
+    },
+    {
+        id: 'voodbuilder-embed',
+        label: 'Embed',
+        category: MEDIA_BLOCK_CATEGORY,
+        content: `
+            <div class="vb-embed aspect-video w-full overflow-hidden rounded-xl border border-vp-divider bg-vp-bg-alt" data-voodbuilder-embed>
+                <iframe
+                    class="h-full w-full"
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    title="Embedded content"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
+            </div>
+        `,
     },
 ];
 

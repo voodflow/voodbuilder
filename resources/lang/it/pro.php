@@ -287,7 +287,7 @@ return [
             'site_header_preview' => 'Menu reale da Admin → Menu',
             'site_footer_preview' => 'Modifica titoli, tagline e copyright nel canvas. Brand e link restano dinamici.',
             'site_footer_help' => 'Usa Admin → Menu → Footer colonna 1–4. Logo e nome brand dalle impostazioni sito.',
-            'site_header_help' => 'Usa Admin → Menu → Navigazione principale e Extra header.',
+            'site_header_help' => 'Usa Admin → Menu → Navigazione principale e Extra header. Include ricerca, account e notifiche se abilitati nelle impostazioni sito.',
             'site_footer_empty' => 'Nessuna voce in “:menu”. Aggiungi link in Admin → Menu.',
             'footer_menu_empty' => 'Nessun link in :menu',
             'footer_default_tagline' => 'Breve descrizione del brand.',

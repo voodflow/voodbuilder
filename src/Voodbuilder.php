@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
 use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
@@ -97,7 +99,7 @@ class Voodbuilder
     /**
      * Register a custom image URL resolver for a model field (level 4 — exotic storage).
      *
-     * @param  callable(\Illuminate\Database\Eloquent\Model, \Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext): (?string)  $resolver
+     * @param  callable(Model, BindingContext): (?string)  $resolver
      */
     public static function registerBindingImageResolver(string $modelClass, string $fieldId, callable $resolver): void
     {
