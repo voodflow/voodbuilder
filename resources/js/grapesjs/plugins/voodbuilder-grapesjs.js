@@ -6,6 +6,7 @@
 import { clearBackgroundCssRules, pruneRedundantSpacingZeros, resolveVisualStyleTarget } from '../tailwind-visual-style.js';
 import { registerBoundComponentType } from '../bindings-ui.js';
 import { registerTopDropSpacerType } from '../canvas-block-drag.js';
+import { resolveBlockLayerLabel } from '../layer-display-name.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
 import { isComponentCategoryId } from '../component-block-utils.js';
@@ -258,7 +259,7 @@ function syncVpressDynamicAttributes(component) {
     const config = parseVpressConfig(attributes['data-voodbuilder-config']);
 
     component.set('vpressConfig', config, { silent: true });
-    component.set('name', blockId ? `Voodbuilder: ${blockId}` : 'Voodbuilder block');
+    component.set('name', blockId ? resolveBlockLayerLabel(blockId) : 'Block');
     component.setAttributes({
         'data-voodbuilder-block': blockId,
         'data-voodbuilder-config': encodeVpressConfig(config),

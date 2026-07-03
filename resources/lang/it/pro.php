@@ -273,6 +273,9 @@ return [
             'clone' => 'Duplica',
             'delete' => 'Elimina',
         ],
+        'layer_rename' => 'Rinomina layer',
+        'layer_rename_hint' => 'Modifica solo l\'etichetta nel pannello layer. Gli id degli elementi non vengono cambiati.',
+        'layer_rename_placeholder' => 'Nome layer',
         'blocks' => [
             'site_header' => 'Header sito (menu Admin)',
             'site_footer' => 'Footer sito — menu a colonne',

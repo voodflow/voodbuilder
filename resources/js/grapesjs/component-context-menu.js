@@ -3,10 +3,15 @@
  */
 
 import { openContextMenu } from './context-menu.js';
+import { promptDialog } from './editor-dialog.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import {
     duplicateCanvasComponent,
 } from './component-catalog-actions.js';
+import {
+    applyLayerDisplayName,
+    resolveLayerDisplayName,
+} from './layer-display-name.js';
 
 export function resolveComponentFromElement(editor, element) {
     const doc = editor.Canvas?.getDocument?.();
@@ -97,6 +102,29 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
             },
         });
     }
+
+    items.push({
+        id: 'rename-layer',
+        label: labels.layerRename ?? 'Rename layer',
+        onSelect: async () => {
+            const current = resolveLayerDisplayName(component, editor);
+            const next = await promptDialog({
+                title: labels.layerRename ?? 'Rename layer',
+                message: labels.layerRenameHint ?? 'Changes the label in the layer tree only. Element ids are not modified.',
+                labels,
+                defaultValue: current,
+                placeholder: labels.layerRenamePlaceholder ?? 'Layer name',
+                confirmLabel: labels.dialogSave ?? 'Save',
+            });
+
+            if (! next?.trim()) {
+                return;
+            }
+
+            applyLayerDisplayName(editor, component, next.trim());
+            component.addAttributes({ 'data-voodbuilder-layer-label': 'custom' });
+        },
+    });
 
     items.push({
         id: 'save-catalog',

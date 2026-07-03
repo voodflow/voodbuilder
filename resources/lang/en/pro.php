@@ -273,6 +273,9 @@ return [
             'clone' => 'Duplicate',
             'delete' => 'Delete',
         ],
+        'layer_rename' => 'Rename layer',
+        'layer_rename_hint' => 'Changes the label in the layer tree only. Element ids are not modified.',
+        'layer_rename_placeholder' => 'Layer name',
         'blocks' => [
             'site_header' => 'Site header (menu)',
             'site_footer' => 'Site footer — column menus',

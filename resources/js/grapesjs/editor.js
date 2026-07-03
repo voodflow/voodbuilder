@@ -61,6 +61,7 @@ import { registerEditorVideoSafety, syncVideoComponentsForExport } from './edito
 import { registerCanvasContextMenu } from './canvas-context-menu.js';
 import { registerLayersContextMenu } from './layers-context-menu.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
+import { syncAllLayerDisplayNames } from './layer-display-name.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
 
 function hasProjectData(project) {
@@ -626,6 +627,8 @@ export function initVpressGrapesJs(container, options = {}) {
         refreshBlocksLibraryUi(editor);
 
         configureLayoutBlocks(editor);
+
+        syncAllLayerDisplayNames(editor);
 
         registerInspectorExtensions(editor, shell, options, labels);
 
