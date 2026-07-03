@@ -1334,7 +1334,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         sourceSelect.appendChild(optgroup);
     }
 
-    const populateFields = (autoApply = false) => {
+    const populateFields = (autoApply = false, { searchActive = false } = {}) => {
         const sourceId = sourceSelect.value;
         const source = groups
             .flatMap((group) => group.sources ?? [])
@@ -1358,15 +1358,24 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             fieldSelect.appendChild(option);
         }
 
-        if (previousValue && [...fieldSelect.options].some((option) => option.value === previousValue)) {
+        const canRestorePrevious = ! query
+            && previousValue
+            && [...fieldSelect.options].some((option) => option.value === previousValue);
+
+        if (canRestorePrevious) {
             fieldSelect.value = previousValue;
+        } else if (fieldSelect.options.length > 0) {
+            fieldSelect.value = fieldSelect.options[0].value;
         }
 
         if (applyButton) {
             applyButton.disabled = ! source || fieldSelect.options.length === 0;
         }
 
-        if (autoApply && fieldSelect.options.length > 0) {
+        const shouldAutoApply = (autoApply || (! isModal && searchActive && fieldSelect.options.length > 0))
+            && fieldSelect.value;
+
+        if (shouldAutoApply) {
             commitBinding();
         }
     };
@@ -1418,7 +1427,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     };
 
     sourceSelect.addEventListener('change', () => populateFields(! isModal));
-    fieldSearchInput?.addEventListener('input', () => populateFields(false));
+    fieldSearchInput?.addEventListener('input', () => {
+        const query = String(fieldSearchInput?.value ?? '').trim();
+        populateFields(false, { searchActive: query.length > 0 });
+    });
     populateFields(false);
 
     const existingBinding = component?.getAttributes?.()['data-voodbuilder-bind'];

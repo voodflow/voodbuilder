@@ -36,9 +36,24 @@ export function resolveComponentFromElement(editor, element) {
 }
 
 export function resolveComponentFromLayerElement(layerEl) {
-    const view = layerEl?.__gjsv;
+    const layer = layerEl?.closest?.('.gjs-layer') ?? layerEl;
 
-    return view?.model ?? null;
+    if (! layer) {
+        return null;
+    }
+
+    const viewModel = layer.__gjsv?.model;
+    const cashModel = layer.__cashData?.model;
+
+    if (viewModel?.toHTML) {
+        return viewModel;
+    }
+
+    if (cashModel?.toHTML) {
+        return cashModel;
+    }
+
+    return null;
 }
 
 function hasSelectableParent(component, editor) {

@@ -17,7 +17,7 @@ export function registerLayersContextMenu(editor, options = {}) {
     editor.__voodbuilderLayersContextMenuRegistered = true;
 
     mount.addEventListener('contextmenu', (event) => {
-        const layerEl = event.target.closest?.('.gjs-layer');
+        const layerEl = event.target.closest?.('.gjs-layer, .gjs-layer-item, [data-toggle-select]');
 
         if (! layerEl) {
             return;
