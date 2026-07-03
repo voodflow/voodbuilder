@@ -59,6 +59,7 @@ import {
 import { applyLightBlockPreviews } from './editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from './editor-video.js';
 import { registerCanvasContextMenu } from './canvas-context-menu.js';
+import { registerLayersContextMenu } from './layers-context-menu.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
 
@@ -632,19 +633,23 @@ export function initVpressGrapesJs(container, options = {}) {
 
         registerCanvasContextMenu(editor, { labels });
 
-        if (shell?.mounts?.layers) {
-            registerLayersContextMenu(editor, { mount: shell.mounts.layers, labels });
-        }
+        try {
+            if (shell?.mounts?.layers) {
+                registerLayersContextMenu(editor, { mount: shell.mounts.layers, labels });
+            }
 
-        if (shell?.mounts?.selectors) {
-            registerTailwindClassSuggestions(editor, {
-                mount: shell.mounts.selectors,
-                labels,
-            });
-        }
+            if (shell?.mounts?.selectors) {
+                registerTailwindClassSuggestions(editor, {
+                    mount: shell.mounts.selectors,
+                    labels,
+                });
+            }
 
-        if (shell?.shell) {
-            registerBlocksContextMenu(editor, shell.shell, labels);
+            if (shell?.shell) {
+                registerBlocksContextMenu(editor, shell.shell, labels);
+            }
+        } catch (error) {
+            console.error('Voodbuilder GrapesJS: inspector menus failed.', error);
         }
 
         registerRevisionsUi(editor, {

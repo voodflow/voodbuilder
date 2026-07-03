@@ -190,6 +190,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
     };
 
     input.addEventListener('input', refresh);
+    input.addEventListener('keyup', refresh);
     input.addEventListener('focus', refresh);
     input.addEventListener('blur', () => {
         window.setTimeout(() => {
@@ -228,9 +229,9 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
     }
 
     const scan = () => {
-        const input = mount.querySelector('[data-input]');
-
-        wireClassInput(editor, input, hintEl, labels);
+        for (const input of mount.querySelectorAll('[data-input]')) {
+            wireClassInput(editor, input, hintEl, labels);
+        }
     };
 
     const observer = new MutationObserver(() => scan());
