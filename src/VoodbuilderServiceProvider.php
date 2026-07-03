@@ -41,6 +41,7 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
 use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;

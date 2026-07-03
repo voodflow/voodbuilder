@@ -76,7 +76,7 @@ return [
     'menu_preview' => [
         'title' => 'Anteprima menu',
         'heading' => 'Anteprima live',
-        'description' => 'Vedi come questo menu appare nell’header o nel footer del sito. Salva le voci per aggiornare l’anteprima.',
+        'description' => 'Vedi come questo menu appare nell’header o nel footer del sito. Salva le voci per aggiornare l’anteprima. Nell’editor pagine usa il blocco Site → Header sito (menu Admin).',
         'badge' => 'Anteprima: :menu',
         'iframe_title' => 'Anteprima menu di navigazione',
         'empty' => 'Nessuna voce di menu.',

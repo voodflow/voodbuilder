@@ -9,18 +9,37 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use SolutionForest\FilamentNestableTree\Concerns\InteractsWithTree;
 use SolutionForest\FilamentNestableTree\Tree;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
+use Voodflow\Voodbuilder\Support\NavigationMenuPreview;
 
 class EditNavigationMenu extends EditRecord
 {
     use InteractsWithTree;
 
     protected static string $resource = NavigationMenuResource::class;
+
+    private static bool $previewAssetsRegistered = false;
+
+    protected static function registerPreviewAssets(): void
+    {
+        if (static::$previewAssetsRegistered) {
+            return;
+        }
+
+        static::$previewAssetsRegistered = true;
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): string => view('voodbuilder::filament.partials.menu-preview-assets')->render(),
+        );
+    }
 
     public function bootInteractsWithTree(): void
     {
@@ -33,6 +52,8 @@ class EditNavigationMenu extends EditRecord
 
     public function mount(int|string $record): void
     {
+        static::registerPreviewAssets();
+
         parent::mount($record);
 
         $this->cacheTreeActions();
@@ -86,12 +107,11 @@ class EditNavigationMenu extends EditRecord
                 Section::make(__('voodbuilder::admin.menu_preview.heading'))
                     ->description(__('voodbuilder::admin.menu_preview.description'))
                     ->schema([
-                        View::make('voodbuilder::filament.navigation-menu-preview-frame')
-                            ->viewData([
-                                'previewUrl' => route('voodbuilder.admin.navigation-menus.preview', $this->record),
-                                'height' => in_array($this->record->slug, ['main', 'header_extra', 'landing_nav'], true)
-                                    ? '14rem'
-                                    : '10rem',
+                        View::make('voodbuilder::filament.navigation-menu-preview-inline')
+                            ->viewData(fn (): array => [
+                                'previewHtml' => NavigationMenuPreview::renderContent($this->record),
+                                'previewKey' => $this->record->updated_at?->getTimestamp() ?? time(),
+                                'menuName' => $this->record->name,
                             ]),
                     ])
                     ->collapsible(),

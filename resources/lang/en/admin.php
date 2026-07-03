@@ -76,7 +76,7 @@ return [
     'menu_preview' => [
         'title' => 'Menu preview',
         'heading' => 'Live preview',
-        'description' => 'See how this menu looks in the site header or footer. Save menu items to refresh the preview.',
+        'description' => 'See how this menu looks in the site header or footer. Save menu items to refresh the preview. In the page editor use the Site → Site header (menu) block.',
         'badge' => 'Preview: :menu',
         'iframe_title' => 'Navigation menu preview',
         'empty' => 'No menu items yet.',
