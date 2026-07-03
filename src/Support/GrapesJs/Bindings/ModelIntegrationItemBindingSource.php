@@ -35,6 +35,6 @@ final class ModelIntegrationItemBindingSource extends AbstractModelIntegrationBi
             return null;
         }
 
-        return $this->resolveFieldValue($record, $fieldId);
+        return $this->resolveFieldValue($record, $fieldId, $context);
     }
 }

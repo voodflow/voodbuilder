@@ -675,6 +675,17 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     display: none !important;
 }
 
+/* Catalog blocks (Elements) are listed only under the Elements tab */
+.voodbuilder-gjs-components-blocks-mount .gjs-block:not(.voodbuilder-gjs-component-block),
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category:not(.voodbuilder-gjs-component-category) {
+    display: none !important;
+}
+
+/* Elements catalog is read-only: no component block toolbar */
+.voodbuilder-gjs-blocks-mount .voodbuilder-gjs-component-block__toolbar {
+    display: none !important;
+}
+
 .voodbuilder-gjs-components-library {
     display: flex;
     flex: 1 1 auto;

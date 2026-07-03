@@ -140,3 +140,38 @@ export function readBlocksSearchQuery() {
 
     return shell?.querySelector('.voodbuilder-gjs-blocks-search')?.value?.trim() ?? '';
 }
+
+export function registerBlocksLibraryRenderHook(editor) {
+    if (! editor || editor.__voodbuilderBlocksLibraryRenderHookBound) {
+        return;
+    }
+
+    editor.__voodbuilderBlocksLibraryRenderHookBound = true;
+
+    const reapply = () => {
+        window.requestAnimationFrame(() => {
+            applyBlocksLibraryUi(editor, readBlocksSearchQuery());
+        });
+    };
+
+    editor.on('block:add', reapply);
+    editor.on('block:remove', reapply);
+    editor.on('block:update', reapply);
+
+    const blockManager = editor.BlockManager;
+
+    if (! blockManager?.render || blockManager.__voodbuilderRenderWrapped) {
+        return;
+    }
+
+    blockManager.__voodbuilderRenderWrapped = true;
+    const originalRender = blockManager.render.bind(blockManager);
+
+    blockManager.render = (...args) => {
+        const result = originalRender(...args);
+
+        reapply();
+
+        return result;
+    };
+}

@@ -31,7 +31,10 @@ final class VoodbuilderSectionGrapesJsBlocks
                 continue;
             }
 
-            $content = self::prepareBlockHtml((string) ($definition['content'] ?? ''));
+            $content = self::prepareBlockHtml(
+                (string) ($definition['content'] ?? ''),
+                (string) ($definition['id'] ?? ''),
+            );
 
             $registry->register(new GrapesJsBlockDefinition(
                 id: (string) ($definition['id'] ?? uniqid('vb-', true)),
@@ -102,14 +105,22 @@ final class VoodbuilderSectionGrapesJsBlocks
         return (string) ($definition['label'] ?? 'Section');
     }
 
-    protected static function prepareBlockHtml(string $html): string
+    protected static function prepareBlockHtml(string $html, string $blockId = ''): string
     {
-        return GrapesJsHtmlSanitizer::sanitize(
+        $html = GrapesJsHtmlSanitizer::sanitize(
             GrapesJsPlaceholderNormalizer::normalizeHtml(
                 VoodbuilderThemeTokenMigrator::migrateHtml(
                     TailwindV4ClassMigrator::migrateHtml($html),
                 ),
             ),
         );
+
+        if ($blockId !== '' && preg_match('/<section\b/i', $html) === 1) {
+            $attribute = ' data-voodbuilder-section-block="'.htmlspecialchars($blockId, ENT_QUOTES, 'UTF-8').'"';
+
+            $html = (string) preg_replace('/<section\b/i', '<section'.$attribute, $html, 1);
+        }
+
+        return $html;
     }
 }

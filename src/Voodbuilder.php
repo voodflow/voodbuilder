@@ -9,6 +9,7 @@ use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
 use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
@@ -91,5 +92,15 @@ class Voodbuilder
     public static function grapesJsBindingSource(GrapesJsBindingSource $source): void
     {
         app(BindingRegistry::class)->register($source);
+    }
+
+    /**
+     * Register a custom image URL resolver for a model field (level 4 — exotic storage).
+     *
+     * @param  callable(\Illuminate\Database\Eloquent\Model, \Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext): (?string)  $resolver
+     */
+    public static function registerBindingImageResolver(string $modelClass, string $fieldId, callable $resolver): void
+    {
+        app(BindingImageResolverRegistry::class)->register($modelClass, $fieldId, $resolver);
     }
 }

@@ -94,8 +94,10 @@ final class GrapesJsBindingStorageNormalizer
 
         $element->setAttribute('src', BindingPlaceholders::imageDataUri());
 
-        if (! $element->hasAttribute('alt') || trim($element->getAttribute('alt')) === '') {
-            $element->setAttribute('alt', 'Dynamic image');
+        $currentAlt = trim($element->getAttribute('alt'));
+
+        if ($currentAlt === '' || BindingImageAltResolver::isPlaceholderAlt($currentAlt)) {
+            $element->setAttribute('alt', '');
         }
     }
 

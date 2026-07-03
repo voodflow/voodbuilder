@@ -74,6 +74,12 @@ export function resolveLayerDisplayName(component, editor = null) {
         return resolveBlockLayerLabel(blockId, editor);
     }
 
+    const sectionBlockId = component.getAttributes?.()['data-voodbuilder-section-block'];
+
+    if (sectionBlockId) {
+        return resolveBlockLayerLabel(sectionBlockId, editor);
+    }
+
     const catalogName = resolveComponentCatalogName(component, editor?.__voodbuilderComponentsCatalog ?? []);
 
     if (catalogName) {
@@ -175,7 +181,7 @@ export function syncAllLayerDisplayNames(editor) {
         return;
     }
 
-    wrapper.find('[data-voodbuilder-block], [data-voodbuilder-component], [data-voodbuilder-component-scope]').forEach((component) => {
+    wrapper.find('[data-voodbuilder-block], [data-voodbuilder-section-block], [data-voodbuilder-component], [data-voodbuilder-component-scope]').forEach((component) => {
         syncLayerDisplayName(component, editor);
     });
 }

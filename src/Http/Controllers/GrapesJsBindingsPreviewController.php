@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingMediaUrlResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
@@ -21,7 +22,7 @@ class GrapesJsBindingsPreviewController extends Controller
         abort_unless(GrapesJsEditorGate::canEdit($sitePage), 403);
 
         $registry = app(BindingRegistry::class);
-        $context = BindingContext::forPage($sitePage);
+        $context = BindingContext::forEditorPreview($sitePage);
         $values = [];
 
         foreach ($registry->catalog() as $source) {
@@ -102,7 +103,7 @@ class GrapesJsBindingsPreviewController extends Controller
 
             foreach ($lists->resolve($repeatKey, $limit, $sort, $dir) as $record) {
                 $row = [];
-                $context = BindingContext::forPage($sitePage, $record);
+                $context = BindingContext::forEditorPreview($sitePage)->withRepeatItem($record);
 
                 foreach ($itemSource->fields() as $field) {
                     $value = $registry->resolve($itemSourceId.'.'.$field->id, $context);
@@ -177,20 +178,6 @@ class GrapesJsBindingsPreviewController extends Controller
             return $value;
         }
 
-        if (str_starts_with($value, '/storage/')) {
-            return $value;
-        }
-
-        if (! str_starts_with($value, 'http://') && ! str_starts_with($value, 'https://')) {
-            return $value;
-        }
-
-        $path = parse_url($value, PHP_URL_PATH);
-
-        if (is_string($path) && str_starts_with($path, '/storage/')) {
-            return $path;
-        }
-
-        return $value;
+        return BindingMediaUrlResolver::normalizeForEditor($value);
     }
 }

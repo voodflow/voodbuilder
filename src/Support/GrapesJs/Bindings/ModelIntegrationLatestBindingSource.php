@@ -31,7 +31,7 @@ final class ModelIntegrationLatestBindingSource extends AbstractModelIntegration
             return null;
         }
 
-        return $this->resolveFieldValue($record, $fieldId);
+        return $this->resolveFieldValue($record, $fieldId, $context);
     }
 
     protected function resolveLatestRecord(): ?Model

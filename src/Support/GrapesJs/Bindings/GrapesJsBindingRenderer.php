@@ -96,13 +96,13 @@ final class GrapesJsBindingRenderer
         $tag = strtolower($element->tagName);
 
         match ($field->type) {
-            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped),
+            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped, $bindingKey, $context),
             BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
             default => $this->applyTextBinding($element, $escaped, $tag),
         };
     }
 
-    protected function applyImageBinding(DOMElement $element, string $url): void
+    protected function applyImageBinding(DOMElement $element, string $url, string $bindingKey, BindingContext $context): void
     {
         if (strtolower($element->tagName) !== 'img') {
             return;
@@ -110,9 +110,24 @@ final class GrapesJsBindingRenderer
 
         $element->setAttribute('src', html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-        if (! $element->hasAttribute('alt') || trim($element->getAttribute('alt')) === '') {
+        $alt = $this->imageAltResolver()->resolve($bindingKey, $context);
+
+        if ($alt !== null && $alt !== '') {
+            $element->setAttribute('alt', htmlspecialchars($alt, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+            return;
+        }
+
+        $currentAlt = trim($element->getAttribute('alt'));
+
+        if ($currentAlt === '' || BindingImageAltResolver::isPlaceholderAlt($currentAlt)) {
             $element->setAttribute('alt', '');
         }
+    }
+
+    protected function imageAltResolver(): BindingImageAltResolver
+    {
+        return new BindingImageAltResolver($this->registry);
     }
 
     protected function applyUrlBinding(DOMElement $element, string $url): void

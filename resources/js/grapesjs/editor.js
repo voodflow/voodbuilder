@@ -63,6 +63,8 @@ import { registerLayersContextMenu } from './layers-context-menu.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
 import { syncAllLayerDisplayNames } from './layer-display-name.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
+import { registerBlocksLibraryRenderHook } from './blocks-library-sync.js';
+import { registerSectionBlockTagging } from './section-block-tagging.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -624,6 +626,8 @@ export function initVpressGrapesJs(container, options = {}) {
         }
 
         editor.__voodbuilderSyncComponentsCatalog?.();
+        registerBlocksLibraryRenderHook(editor);
+        registerSectionBlockTagging(editor);
         refreshBlocksLibraryUi(editor);
 
         configureLayoutBlocks(editor);

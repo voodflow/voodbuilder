@@ -196,6 +196,41 @@ On **save**, `GrapesJsBindingStorageNormalizer` strips live values back to place
 
 ---
 
+## Image bindings (4 resolution levels)
+
+Image fields (`BindingField::TYPE_IMAGE`) must resolve to a **browser-loadable URL**. Prefer relative `/storage/...` paths so URLs work across ports and reverse proxies.
+
+| Level | Who | How |
+|-------|-----|-----|
+| **1 — Conventions** | Voodbuilder | `BindingMediaUrlResolver` tries Spatie Media Library collections, `{field}Url()` accessors, and public-disk paths automatically. |
+| **2 — Binding source** | Plugin author | Return the final URL from `GrapesJsBindingSource::resolve()` (optionally via a package helper such as `MyMedia::url($record)`). |
+| **3 — Editor proxy** | Voodbuilder | When previewing in the editor (`BindingContext::editorPreview`), non-public Spatie media is served via `GET /voodbuilder/grapesjs/media/{id}` (auth required). |
+| **4 — Custom hook** | Plugin author | Register a resolver for exotic storage (CDN, signed URLs, WordPress attachments, …). |
+
+### Level 2 example (recommended for third-party plugins)
+
+```php
+'image' => BindingMediaUrlResolver::resolve($item, 'image', $item->imageUrl(), $context),
+```
+
+### Level 4 example (exotic storage)
+
+```php
+use Voodflow\Voodbuilder\Voodbuilder;
+
+Voodbuilder::registerBindingImageResolver(MyModel::class, 'image', function (MyModel $record, BindingContext $context): ?string {
+    return MyPackageMedia::signedUrl($record);
+});
+```
+
+Registered resolvers run **before** automatic convention matching. Use them only when level 1 is insufficient.
+
+### Alt text
+
+Bound `img` elements use the related record **title** (or `name`, `label`, …) for `alt` when available — see `BindingImageAltResolver`.
+
+---
+
 ## Vtuts: `vtuts.latest`
 
 Registered by `Voodflow\Vtuts\Support\VtutsGrapesJsBlocks`.

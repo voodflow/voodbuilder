@@ -29,7 +29,7 @@ class ModelIntegrationBindingSourceTest extends TestCase
         $source = new ModelIntegrationLatestBindingSource($integration);
 
         $this->assertSame(
-            'https://example.test/storage/tutorial-series/example.jpg',
+            '/storage/tutorial-series/example.jpg',
             $source->resolve('featured_image', BindingContext::forPage(null)),
         );
     }

@@ -24,6 +24,10 @@ export function registerBlocksContextMenu(editor, shell, labels = {}) {
             return;
         }
 
+        if ((editor.__voodbuilderActiveLibrary ?? 'blocks') === 'blocks') {
+            return;
+        }
+
         if (isComponentBlockElement(editor, blockEl)) {
             if (editor.__voodbuilderActiveLibrary === 'components' && ! editor.__voodbuilderComponentSelectionMode) {
                 const item = resolveCatalogItemFromComponentBlock(editor, blockEl);

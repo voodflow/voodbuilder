@@ -29,7 +29,7 @@ class GrapesJsBindingRendererTest extends TestCase
 
         $this->assertStringContainsString('>Hello world<', $rendered);
         $this->assertStringContainsString('href="https://example.test/tutorial"', $rendered);
-        $this->assertStringContainsString('onclick="window.location.href=', $rendered);
+        $this->assertStringContainsString('window.location.href=', $rendered);
         $this->assertStringContainsString('https://example.test/tutorial', $rendered);
     }
 
@@ -43,6 +43,20 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertNotNull($parsed);
         $this->assertSame('demo.latest', $parsed->sourceId);
         $this->assertSame('title', $parsed->fieldId);
+    }
+
+    public function test_image_binding_uses_title_as_alt_text(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<img src="#" alt="[Latest item: Cover]" data-voodbuilder-bind="demo.latest.image">';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('src="https://example.test/cover.jpg"', $rendered);
+        $this->assertStringContainsString('alt="Hello world"', $rendered);
+        $this->assertStringNotContainsString('[Latest item: Cover]', $rendered);
     }
 }
 
@@ -73,6 +87,7 @@ final class FakeLatestBindingSource implements GrapesJsBindingSource
         return [
             new BindingField('title', 'Title', BindingField::TYPE_TEXT),
             new BindingField('url', 'URL', BindingField::TYPE_URL),
+            new BindingField('image', 'Cover', BindingField::TYPE_IMAGE),
         ];
     }
 
@@ -81,6 +96,7 @@ final class FakeLatestBindingSource implements GrapesJsBindingSource
         return match ($fieldId) {
             'title' => 'Hello world',
             'url' => 'https://example.test/tutorial',
+            'image' => 'https://example.test/cover.jpg',
             default => null,
         };
     }

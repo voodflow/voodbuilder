@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
-use Voodflow\Voodbuilder\Support\PublicDiskUrl;
 
 abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingSource
 {
@@ -58,8 +57,18 @@ abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingS
         return $fields;
     }
 
-    protected function resolveFieldValue(Model $record, string $fieldId): ?string
+    protected function resolveFieldValue(Model $record, string $fieldId, ?BindingContext $context = null): ?string
     {
+        $fieldType = ModelIntegrationFieldTypeGuesser::guess($fieldId);
+        $bindingContext = $context ?? new BindingContext;
+
+        if ($fieldType === BindingField::TYPE_IMAGE) {
+            $fallback = data_get($record, $fieldId);
+            $fallbackValue = is_scalar($fallback) && (string) $fallback !== '' ? (string) $fallback : null;
+
+            return BindingMediaUrlResolver::resolve($record, $fieldId, $fallbackValue, $bindingContext);
+        }
+
         $urlAccessor = Str::camel($fieldId).'Url';
 
         if (method_exists($record, $urlAccessor)) {
@@ -85,17 +94,7 @@ abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingS
         }
 
         if (is_scalar($value)) {
-            $stringValue = (string) $value;
-
-            if (
-                $stringValue !== ''
-                && ModelIntegrationFieldTypeGuesser::guess($fieldId) === BindingField::TYPE_IMAGE
-                && ! preg_match('#^(https?://|data:|/)#i', $stringValue)
-            ) {
-                return PublicDiskUrl::fromPath($stringValue);
-            }
-
-            return $stringValue;
+            return (string) $value;
         }
 
         if ($value instanceof \DateTimeInterface) {

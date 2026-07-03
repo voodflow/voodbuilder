@@ -330,6 +330,46 @@ function isPlaceholderText(text) {
     return value === '' || /^\[[^:]+:[^\]]+\]$/.test(value);
 }
 
+function isPlaceholderAlt(text) {
+    const value = String(text ?? '').trim();
+
+    return value === '' || value === 'Dynamic image' || isPlaceholderText(value);
+}
+
+const IMAGE_ALT_FIELD_IDS = ['title', 'name', 'label', 'company_name', 'slug'];
+
+const IMAGE_BINDING_FIELD_IDS = new Set([
+    'image',
+    'featured_image',
+    'cover_image',
+    'logo',
+    'thumbnail',
+    'author_avatar',
+    'avatar',
+]);
+
+function resolveImageAltValue(bindingKey, component, values, listValues, catalog) {
+    const parts = String(bindingKey ?? '').split('.');
+    const fieldId = parts.pop();
+
+    if (! IMAGE_BINDING_FIELD_IDS.has(fieldId ?? '')) {
+        return null;
+    }
+
+    const sourcePrefix = parts.join('.');
+
+    for (const altFieldId of IMAGE_ALT_FIELD_IDS) {
+        const altKey = `${sourcePrefix}.${altFieldId}`;
+        const altValue = resolvePreviewValue(altKey, component, values, listValues, catalog);
+
+        if (altValue != null && String(altValue).trim() !== '') {
+            return String(altValue).trim();
+        }
+    }
+
+    return null;
+}
+
 function isTextNodeComponent(component) {
     const type = String(component?.get?.('type') ?? '').toLowerCase();
 
@@ -1022,7 +1062,7 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
     }, 120);
 }
 
-function paintPreviewOnElement(component, value, fieldType) {
+function paintPreviewOnElement(component, value, fieldType, { altText = null } = {}) {
     if (value == null || value === '') {
         return;
     }
@@ -1042,6 +1082,14 @@ function paintPreviewOnElement(component, value, fieldType) {
         element.setAttribute('src', src);
         component.addAttributes({ src }, { silent: true });
         component.set('src', src, { silent: true });
+
+        const resolvedAlt = altText ?? (isPlaceholderAlt(component.getAttributes()?.alt) ? '' : component.getAttributes()?.alt);
+
+        if (resolvedAlt) {
+            element.setAttribute('alt', resolvedAlt);
+            component.addAttributes({ alt: resolvedAlt }, { silent: true });
+            component.set('alt', resolvedAlt, { silent: true });
+        }
 
         return;
     }
@@ -1080,8 +1128,22 @@ function paintPreviewOnElement(component, value, fieldType) {
     component.set('content', text, { silent: true });
 }
 
-function applyPreviewValue(component, bindingKey, option, value) {
+function applyPreviewValue(component, bindingKey, option, value, previewContext = {}) {
     const fieldType = option?.field?.type ?? 'text';
+
+    if (fieldType === 'image') {
+        const altText = resolveImageAltValue(
+            bindingKey,
+            component,
+            previewContext.values ?? {},
+            previewContext.listValues ?? {},
+            previewContext.catalog ?? null,
+        );
+
+        paintPreviewOnElement(component, value, fieldType, { altText });
+
+        return;
+    }
 
     paintPreviewOnElement(component, value, fieldType);
 }
@@ -1146,7 +1208,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     if (effectiveTag === 'img' && fieldType === 'image') {
         bindTarget.addAttributes({
             src: NEUTRAL_IMAGE_PLACEHOLDER,
-            alt: placeholder,
+            alt: '',
         });
         paintPreviewOnElement(bindTarget, NEUTRAL_IMAGE_PLACEHOLDER, 'image');
 
@@ -1529,10 +1591,21 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         if (bound) {
             editor.select(bound);
 
-            const previewValue = bindingsPreviewValues?.[bindingKey];
+            const previewValue = resolvePreviewValue(
+                bindingKey,
+                bound,
+                bindingsPreviewValues ?? {},
+                bindingsPreviewListValues ?? {},
+                catalog,
+            );
+            const previewContext = {
+                values: bindingsPreviewValues ?? {},
+                listValues: bindingsPreviewListValues ?? {},
+                catalog,
+            };
 
             if (previewValue) {
-                applyPreviewValue(bound, bindingKey, option, previewValue);
+                applyPreviewValue(bound, bindingKey, option, previewValue, previewContext);
             }
         }
 
@@ -1926,6 +1999,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
         return {};
     });
     const listValues = bindingsPreviewListValues ?? {};
+    const previewContext = { values, listValues, catalog };
 
     editor.getWrapper().find('[data-voodbuilder-bind]').forEach((component) => {
         const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
@@ -1947,7 +2021,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
         }
 
         if (tag === 'img') {
-            applyPreviewValue(component, bindingKey, option, value);
+            applyPreviewValue(component, bindingKey, option, value, previewContext);
 
             return;
         }
@@ -1962,7 +2036,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
             return;
         }
 
-        applyPreviewValue(component, bindingKey, option, value);
+        applyPreviewValue(component, bindingKey, option, value, previewContext);
     });
 }
 
@@ -1985,6 +2059,7 @@ async function ensureBoundComponentVisible(component, options = {}) {
         options.editor ? collectRepeatPreviewConfigs(options.editor) : [],
     );
     const listValues = bindingsPreviewListValues ?? {};
+    const previewContext = { values, listValues, catalog };
     const option = findBindingOption(catalog, bindingKey)
         ?? (bindingKey === 'vtuts.latest.excerpt'
             ? findBindingOption(catalog, 'vtuts.latest.introduction')
@@ -2002,14 +2077,17 @@ async function ensureBoundComponentVisible(component, options = {}) {
     }
 
     const needsPaint = tag === 'img'
-        ? ! element.getAttribute('src') || element.getAttribute('src')?.startsWith('data:image/svg')
+        ? ! element.getAttribute('src')
+            || element.getAttribute('src')?.startsWith('data:image/svg')
+            || isPlaceholderAlt(element.getAttribute('alt'))
+            || (element.getAttribute('src')?.includes('/storage/') && bindingKey.includes('.latest.'))
         : (tag !== 'button' && tag !== 'a' && ! element.textContent?.trim());
 
     if (! needsPaint) {
         return;
     }
 
-    applyPreviewValue(component, bindingKey, option, value);
+    applyPreviewValue(component, bindingKey, option, value, previewContext);
 }
 
 export async function registerBindingsUi(editor, options = {}) {
