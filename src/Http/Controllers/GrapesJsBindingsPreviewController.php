@@ -30,7 +30,7 @@ class GrapesJsBindingsPreviewController extends Controller
                 $value = $registry->resolve($key, $context);
 
                 if ($value !== null && $value !== '') {
-                    $values[$key] = $value;
+                    $values[$key] = $this->normalizePreviewValue((string) $value, $field['type'] ?? 'text');
                 }
             }
 
@@ -42,7 +42,7 @@ class GrapesJsBindingsPreviewController extends Controller
                     $value = $registry->resolve($key, $context);
 
                     if ($value !== null && $value !== '') {
-                        $values[$key] = $value;
+                        $values[$key] = $this->normalizePreviewValue((string) $value, 'text');
                     }
                 }
             }
@@ -108,7 +108,7 @@ class GrapesJsBindingsPreviewController extends Controller
                     $value = $registry->resolve($itemSourceId.'.'.$field->id, $context);
 
                     if ($value !== null && $value !== '') {
-                        $row[$field->id] = $value;
+                        $row[$field->id] = $this->normalizePreviewValue((string) $value, $field->type);
                     }
                 }
 
@@ -169,5 +169,28 @@ class GrapesJsBindingsPreviewController extends Controller
     public static function listValuesKey(string $repeatKey, string $sort, string $dir): string
     {
         return $repeatKey.'|'.$sort.'|'.$dir;
+    }
+
+    protected function normalizePreviewValue(string $value, string $fieldType): string
+    {
+        if ($fieldType !== 'image') {
+            return $value;
+        }
+
+        if (str_starts_with($value, '/storage/')) {
+            return $value;
+        }
+
+        if (! str_starts_with($value, 'http://') && ! str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        $path = parse_url($value, PHP_URL_PATH);
+
+        if (is_string($path) && str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+
+        return $value;
     }
 }

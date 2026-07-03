@@ -44,6 +44,8 @@ function pageCompiledClassNames(editor) {
     return names;
 }
 
+const COMMON_TAILWIND_SET = new Set(COMMON_TAILWIND_CLASSES);
+
 function allSuggestionPool(editor) {
     const pool = new Set(COMMON_TAILWIND_CLASSES);
 
@@ -51,14 +53,14 @@ function allSuggestionPool(editor) {
         pool.add(className);
     }
 
-    return [...pool].sort();
+    return [...pool];
 }
 
 function filterSuggestions(pool, query) {
     const normalized = String(query ?? '').trim().toLowerCase();
 
-    if (! normalized) {
-        return pool.slice(0, 14);
+    if (normalized.length < 1) {
+        return [];
     }
 
     const prefixMatches = [];
@@ -74,7 +76,35 @@ function filterSuggestions(pool, query) {
         }
     }
 
-    return [...prefixMatches, ...containsMatches].slice(0, 14);
+    const rank = (className) => {
+        let score = 0;
+
+        if (COMMON_TAILWIND_SET.has(className)) {
+            score -= 100;
+        }
+
+        if (className.startsWith('-') && ! normalized.startsWith('-')) {
+            score += 40;
+        }
+
+        if (className.startsWith(normalized)) {
+            score -= 20;
+        }
+
+        return score;
+    };
+
+    const sortMatches = (left, right) => {
+        const scoreDiff = rank(left) - rank(right);
+
+        if (scoreDiff !== 0) {
+            return scoreDiff;
+        }
+
+        return left.localeCompare(right);
+    };
+
+    return [...prefixMatches.sort(sortMatches), ...containsMatches.sort(sortMatches)].slice(0, 12);
 }
 
 function ensureSuggestList(input) {

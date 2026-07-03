@@ -1767,6 +1767,12 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 80%, #000);
 }
 
+.voodbuilder-gjs-dynamic-panel__current-filename {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    color: var(--color-vp-text-2, #64748b);
+}
+
 .voodbuilder-gjs-dynamic-panel__actions {
     display: flex;
     justify-content: flex-start;

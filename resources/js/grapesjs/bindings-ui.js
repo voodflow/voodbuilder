@@ -50,11 +50,16 @@ function bindingPreviewSnippet(bindingKey, catalog, previewValues = {}) {
     const text = String(value).trim();
     const type = resolveBindingFieldType(bindingKey, catalog);
 
-    if (type === 'image' || type === 'url') {
+    if (type === 'image') {
+        const href = normalizeEditorAssetUrl(text);
+        const label = href.split('/').pop()?.split('?')[0] || 'image';
+
+        return { kind: 'image', href, label };
+    }
+
+    if (type === 'url') {
         const href = absolutePreviewUrl(text);
-        const label = type === 'image'
-            ? (href.split('/').pop()?.split('?')[0] || 'image')
-            : (text.length > 48 ? `${text.slice(0, 45)}…` : text);
+        const label = text.length > 48 ? `${text.slice(0, 45)}…` : text;
 
         return { kind: 'link', href, label };
     }
@@ -64,8 +69,38 @@ function bindingPreviewSnippet(bindingKey, catalog, previewValues = {}) {
     return { kind: 'text', text: snippet };
 }
 
-function absolutePreviewUrl(value) {
+function normalizeEditorAssetUrl(value) {
     const text = String(value ?? '').trim();
+
+    if (! text) {
+        return text;
+    }
+
+    if (text.startsWith('//')) {
+        return text;
+    }
+
+    try {
+        if (/^https?:\/\//i.test(text)) {
+            const url = new URL(text);
+
+            if (url.origin === window.location.origin) {
+                return `${url.pathname}${url.search}`;
+            }
+        }
+    } catch {
+        // Keep original value when URL parsing fails.
+    }
+
+    if (text.startsWith('/')) {
+        return text;
+    }
+
+    return text;
+}
+
+function absolutePreviewUrl(value) {
+    const text = normalizeEditorAssetUrl(value);
 
     if (text.startsWith('//')) {
         return `${window.location.protocol}${text}`;
@@ -90,6 +125,17 @@ function renderCurrentBindingSummary(currentEl, bindingKey, catalog, previewValu
 
     currentEl.hidden = false;
     currentEl.replaceChildren();
+
+    if (formatted?.kind === 'image') {
+        currentEl.append(document.createTextNode(`${prefix} — `));
+        const label = document.createElement('span');
+        label.className = 'voodbuilder-gjs-dynamic-panel__current-filename';
+        label.textContent = formatted.label;
+        label.title = formatted.href;
+        currentEl.append(label);
+
+        return;
+    }
 
     if (formatted?.kind === 'link') {
         currentEl.append(document.createTextNode(`${prefix} — `));
@@ -992,7 +1038,7 @@ function paintPreviewOnElement(component, value, fieldType) {
     const text = String(value);
 
     if (fieldType === 'image' && tag === 'img') {
-        const src = absolutePreviewUrl(text);
+        const src = normalizeEditorAssetUrl(text);
         element.setAttribute('src', src);
         component.addAttributes({ src }, { silent: true });
         component.set('src', src, { silent: true });
