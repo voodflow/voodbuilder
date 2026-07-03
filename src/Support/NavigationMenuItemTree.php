@@ -17,7 +17,7 @@ use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 class NavigationMenuItemTree
 {
-    public const MAX_DEPTH = 2;
+    public const MAX_DEPTH = 3;
 
     public static function configure(Tree $tree, NavigationMenu $menu, object $livewire): Tree
     {

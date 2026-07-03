@@ -33,3 +33,8 @@ analisi https://bricksbuilder.io/performance-seo/
 - analisi https://academy.bricksbuilder.io/
 
 crea un file di analisi con le cose che si potrebbero implementare in voodbuilder in ordine di facilità e immediatezza
+
+
+- PAGINE DINAMICHE PER VISUALIZZAZIONE CONTENUTI COME NEWS
+- INTEGRAZIONE VISTE DEI PLUGIN DENTRO PAGINA CON MENU E FOOTER DA BUILDER (eliminazione di menu e footer tradizionali) 
+

@@ -13,6 +13,7 @@ final class NavigationMenuPreview
      *     menu: NavigationMenu,
      *     placement: string,
      *     isHeaderPlacement: bool,
+     *     isSiteFooterColumnPlacement: bool,
      *     isFooterPlacement: bool
      * }
      */
@@ -24,6 +25,7 @@ final class NavigationMenuPreview
             'menu' => $menu,
             'placement' => $placement,
             'isHeaderPlacement' => in_array($placement, ['main', 'header_extra', 'landing_nav'], true),
+            'isSiteFooterColumnPlacement' => in_array($placement, SiteFooterColumnPlacements::columnSlugs(), true),
             'isFooterPlacement' => $placement === 'footer'
                 || $placement === 'landing_footer'
                 || in_array($placement, LandingMenuPlacements::footerColumnSlugs(), true),

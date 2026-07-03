@@ -12,8 +12,11 @@ import { alertDialog } from './editor-dialog.js';
 import vpressGrapesJsPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
+    configureSiteNavTraits,
     ensureLayoutSectionTraits,
     isSiteFooterBlock,
+    isSiteNavBlock,
+    isSiteHeaderBlock,
     lockDynamicPreviewContent,
     prioritizeBlockCategories,
     pruneEmptyDynamicBlocks,
@@ -59,7 +62,9 @@ import {
 import { applyLightBlockPreviews } from './editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from './editor-video.js';
 import { registerCanvasContextMenu } from './canvas-context-menu.js';
+import { registerCanvasSiteChrome } from './canvas-site-chrome.js';
 import { registerLayersContextMenu } from './layers-context-menu.js';
+import { registerLayersDrag } from './layers-drag.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
 import { syncAllLayerDisplayNames } from './layer-display-name.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
@@ -428,6 +433,8 @@ function registerInspectorExtensions(editor, shell, options, labels) {
 
     registerCanvasBlockDrag(editor);
 
+    registerCanvasSiteChrome(editor);
+
     void registerBindingsUi(editor, {
         bindingsUrl: options.bindingsUrl,
         bindingsPreviewUrl: options.bindingsPreviewUrl,
@@ -643,6 +650,7 @@ export function initVpressGrapesJs(container, options = {}) {
         try {
             if (shell?.mounts?.layers) {
                 registerLayersContextMenu(editor, { mount: shell.mounts.layers, labels });
+                registerLayersDrag(editor, { mount: shell.mounts.layers });
             }
 
             if (shell?.mounts?.selectors) {
@@ -670,6 +678,14 @@ export function initVpressGrapesJs(container, options = {}) {
         if (! options.blocksRenderUrl) {
             dynamicBlocksGate.resolve();
         } else {
+            editor.on('voodbuilder:refresh-dynamic-block', (component) => {
+                if (! component) {
+                    return;
+                }
+
+                void refreshDynamicBlockComponent(editor, options.blocksRenderUrl, component);
+            });
+
             const refresh = refreshDynamicBlocks(editor, options.blocksRenderUrl);
             editor.__voodbuilderDynamicBlocksRefresh = Promise.resolve(refresh);
             void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
@@ -680,6 +696,10 @@ export function initVpressGrapesJs(container, options = {}) {
 
                     if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
                         applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                    }
+
+                    if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                        configureSiteNavTraits(component, editor);
                     }
                 }
             });
@@ -715,6 +735,119 @@ export function initVpressGrapesJs(container, options = {}) {
     return editor;
 }
 
+async function refreshDynamicBlockComponent(editor, renderUrl, component) {
+    if (! renderUrl || ! component) {
+        return;
+    }
+
+    const attributes = component.getAttributes();
+    const blockId = attributes['data-voodbuilder-block'];
+
+    if (! blockId) {
+        return;
+    }
+
+    const hasDynamicBindings = safeFindComponents(component, '[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
+
+    if (hasDynamicBindings) {
+        lockDynamicPreviewContent(component);
+
+        return;
+    }
+
+    const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
+    const params = new URLSearchParams({
+        block: blockId,
+        config: serializeVpressConfig(config),
+    });
+
+    try {
+        const response = await fetch(`${renderUrl}?${params.toString()}`, {
+            headers: {
+                Accept: 'application/json',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (! response.ok) {
+            return;
+        }
+
+        const payload = await response.json();
+        const html = payload.html;
+
+        if (typeof html !== 'string' || html === '') {
+            return;
+        }
+
+        const temp = document.createElement('div');
+
+        temp.innerHTML = sanitizeBlockHtml(html);
+        const fresh = temp.firstElementChild;
+
+        if (! fresh) {
+            return;
+        }
+
+        const freshConfig = parseVpressConfig(
+            fresh.getAttribute('data-voodbuilder-config') ?? serializeVpressConfig(config),
+        );
+
+        if (isSiteNavBlock(blockId)) {
+            component.set('vpressConfig', freshConfig, { silent: true });
+            component.setAttributes({
+                'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
+                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+                class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
+            });
+            component.components(fresh.innerHTML);
+            lockDynamicPreviewContent(component);
+            configureSiteNavTraits(component, editor);
+
+            return;
+        }
+
+        const footerBlock = isSiteFooterBlock(blockId);
+
+        if (footerBlock && fresh.tagName === 'FOOTER') {
+            applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
+
+            if (safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
+                refreshDynamicSlots(component, fresh);
+            } else {
+                component.components(fresh.innerHTML);
+            }
+        } else {
+            component.set('vpressConfig', freshConfig, { silent: true });
+            component.setAttributes({
+                'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
+                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+                class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
+                ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
+                    ? { 'data-voodbuilder-hydrate-slots': '1' }
+                    : {}),
+            });
+
+            const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
+                && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
+
+            if (hydratesSlots) {
+                refreshDynamicSlots(component, fresh);
+            } else {
+                component.components(fresh.innerHTML);
+            }
+        }
+
+        lockDynamicPreviewContent(component);
+
+        if (footerBlock) {
+            applySiteFooterColumns(component, freshConfig.columns ?? 4);
+        }
+    } catch (error) {
+        console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, error);
+    }
+}
+
 async function refreshDynamicBlocks(editor, renderUrl) {
     if (! renderUrl) {
         return;
@@ -729,98 +862,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
     const components = safeFindComponents(wrapper, '[data-voodbuilder-block]');
 
     for (const component of components) {
-        const attributes = component.getAttributes();
-        const blockId = attributes['data-voodbuilder-block'];
-
-        if (! blockId) {
-            continue;
-        }
-
-        const hasDynamicBindings = safeFindComponents(component, '[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
-
-        if (hasDynamicBindings) {
-            lockDynamicPreviewContent(component);
-
-            continue;
-        }
-
-        const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
-        const params = new URLSearchParams({
-            block: blockId,
-            config: serializeVpressConfig(config),
-        });
-
-        try {
-            const response = await fetch(`${renderUrl}?${params.toString()}`, {
-                headers: {
-                    Accept: 'application/json',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (! response.ok) {
-                continue;
-            }
-
-            const payload = await response.json();
-            const html = payload.html;
-
-            if (typeof html !== 'string' || html === '') {
-                continue;
-            }
-
-            const temp = document.createElement('div');
-
-            temp.innerHTML = sanitizeBlockHtml(html);
-            const fresh = temp.firstElementChild;
-
-            if (! fresh) {
-                continue;
-            }
-
-            const freshConfig = parseVpressConfig(
-                fresh.getAttribute('data-voodbuilder-config') ?? serializeVpressConfig(config),
-            );
-
-            const footerBlock = isSiteFooterBlock(blockId);
-
-            if (footerBlock && fresh.tagName === 'FOOTER') {
-                applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
-
-                if (safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
-                    refreshDynamicSlots(component, fresh);
-                } else {
-                    component.components(fresh.innerHTML);
-                }
-            } else {
-                component.set('vpressConfig', freshConfig, { silent: true });
-                component.setAttributes({
-                    'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
-                    'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
-                    class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
-                    ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
-                        ? { 'data-voodbuilder-hydrate-slots': '1' }
-                        : {}),
-                });
-
-                const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
-                    && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
-
-                if (hydratesSlots) {
-                    refreshDynamicSlots(component, fresh);
-                } else {
-                    component.components(fresh.innerHTML);
-                }
-            }
-
-            lockDynamicPreviewContent(component);
-
-            if (footerBlock) {
-                applySiteFooterColumns(component, freshConfig.columns ?? 4);
-            }
-        } catch (error) {
-            console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, error);
-        }
+        await refreshDynamicBlockComponent(editor, renderUrl, component);
     }
 }
 

@@ -79,6 +79,9 @@ class ThemePaletteTest extends TestCase
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
+        $this->assertStringContainsString('html header[role=\'banner\'] .bg-vp-bg', $css);
+        $this->assertStringContainsString('--vx-header-bg)!important', $css);
+        $this->assertStringContainsString('html header[role=\'banner\'] .voodbuilder-header-icon-btn', $css);
         $this->assertStringNotContainsString("data-voodbuilder-sub-theme='site'", $css);
     }
 
@@ -95,6 +98,7 @@ class ThemePaletteTest extends TestCase
         $css = ThemePalette::cssForCanvas('site');
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#c8102e!important', $css);
+        $this->assertStringContainsString('html:not(.dark){--vx-header-bg:#0f172a!important', $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
     }
 

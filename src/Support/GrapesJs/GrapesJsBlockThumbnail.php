@@ -25,15 +25,21 @@ final class GrapesJsBlockThumbnail
             return self::wrap(self::ctaSvg());
         }
 
-        if ($blockId === 'site_header') {
+        if ($blockId === 'site_header' || str_starts_with($blockId, 'site_nav_')) {
             return self::wrap(self::headerSvg());
         }
 
+        if ($blockId === 'site_footer' || str_starts_with($blockId, 'site_footer_')) {
+            return match (true) {
+                in_array($blockId, ['site_footer_columns_mission', 'site_footer_a'], true) => self::wrap(self::footerASvg()),
+                in_array($blockId, ['site_footer_columns_brand_end', 'site_footer_b'], true) => self::wrap(self::footerBSvg()),
+                in_array($blockId, ['site_footer_social', 'site_footer_d'], true) => self::wrap(self::footerDSvg()),
+                in_array($blockId, ['site_footer_centered'], true) => self::wrap(self::footerDSvg()),
+                default => self::wrap(self::footerColumnsSvg()),
+            };
+        }
+
         return match ($blockId) {
-            'site_footer_a' => self::wrap(self::footerASvg()),
-            'site_footer_b' => self::wrap(self::footerBSvg()),
-            'site_footer_c', 'site_footer_e' => self::wrap(self::footerColumnsSvg()),
-            'site_footer_d' => self::wrap(self::footerDSvg()),
             'latest_vtuts' => self::wrap(self::tutorialsSvg()),
             default => self::wrap(self::genericSvg()),
         };

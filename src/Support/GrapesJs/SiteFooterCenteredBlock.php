@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-final class SiteFooterCBlock extends AbstractSiteFooterVariantBlock
+final class SiteFooterCenteredBlock extends AbstractSiteFooterVariantBlock
 {
     public static function variant(): string
     {
-        return 'c';
+        return 'centered';
     }
 
     public static function defaultColumns(): int
     {
-        return 4;
+        return 1;
     }
 }

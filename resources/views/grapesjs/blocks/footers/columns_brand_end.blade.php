@@ -1,9 +1,3 @@
-@php
-    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-
-    $brandName = VoodbuilderSettings::brandName();
-@endphp
-
 <div class="container mx-auto px-5 py-24">
     <div class="flex flex-col flex-wrap md:flex-row md:flex-nowrap md:items-center lg:items-start">
         <div class="order-first flex grow flex-wrap md:order-none md:pr-12 md:text-left text-center">

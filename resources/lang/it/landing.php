@@ -212,7 +212,7 @@ return [
         'hide_site_footer' => 'Nascondi footer del sito',
         'hide_site_footer_help' => 'Usa quando la pagina include un blocco footer landing.',
         'hide_site_nav' => 'Nascondi navigazione del sito',
-        'hide_site_nav_help' => 'Usa quando la pagina include un blocco navbar landing.',
+        'hide_site_nav_help' => 'Attiva se inserisci nel canvas il blocco «Navigazione sito» o una navbar landing, per non mostrare due menu.',
     ],
 
     'navbar' => [

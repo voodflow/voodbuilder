@@ -60,7 +60,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteHeaderGrapesJsBlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
@@ -241,7 +241,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
             if (config('voodbuilder.grapesjs.site_blocks.header_footer', true)) {
                 $serverRegistry = $this->app->make(GrapesJsServerBlockRegistry::class);
-                $serverRegistry->register('Site', SiteHeaderGrapesJsBlock::class);
+                foreach (SiteNavBlocks::blockClasses() as $navBlockClass) {
+                    $serverRegistry->register('Site', $navBlockClass);
+                }
 
                 foreach (SiteFooterBlocks::blockClasses() as $footerBlockClass) {
                     $serverRegistry->register('Site', $footerBlockClass);

@@ -24,6 +24,11 @@ html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-br
 html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']:hover,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] a:hover,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] button[role='menuitem']:hover{color:var(--color-vp-brand-1)!important}
 CSS;
 
+    private const CANVAS_HEADER_BACKGROUND_CSS = <<<'CSS'
+html header[role='banner'] .bg-vp-bg,html header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg)!important}
+html header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text) 12%,transparent)}
+CSS;
+
     /** @var list<string> */
     private const COLOR_KEYS = [
         'primary',
@@ -142,6 +147,8 @@ CSS;
     {
         $rules = [
             self::tokenBridgeCss('html'),
+            self::headerChromeCssForCanvas(),
+            self::CANVAS_HEADER_BACKGROUND_CSS,
             ...self::builtinSubThemeRulesForCanvas($subThemeId),
         ];
 
@@ -168,6 +175,15 @@ CSS;
     public static function headerChromeCss(): string
     {
         return self::HEADER_CHROME_CSS;
+    }
+
+    public static function headerChromeCssForCanvas(): string
+    {
+        return str_replace(
+            'html[data-voodbuilder-sub-theme]',
+            'html',
+            self::HEADER_CHROME_CSS,
+        );
     }
 
     public static function resetForTheme(string $themeId): void

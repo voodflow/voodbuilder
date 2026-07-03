@@ -23,6 +23,7 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNav
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
+use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 
@@ -113,7 +114,8 @@ class NavigationMenuResource extends Resource
                             ->options([
                                 'main' => __('Main navigation — center of the header'),
                                 'header_extra' => __('Header extras — right side (before language / theme / account)'),
-                                'footer' => __('Footer links'),
+                                'footer' => __('Footer links (legacy row)'),
+                                ...SiteFooterColumnPlacements::placementLabels(),
                                 'landing_nav' => __('Landing navbar links'),
                                 'landing_footer' => __('Landing footer columns (legacy groups)'),
                                 ...LandingMenuPlacements::footerColumnPlacementLabels(),

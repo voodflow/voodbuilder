@@ -28,14 +28,16 @@ final class NavigationMenuResolver
 
     public static function placementLabel(string $slug): string
     {
+        if (in_array($slug, SiteFooterColumnPlacements::columnSlugs(), true)) {
+            $index = (int) preg_replace('/\D+/', '', $slug);
+
+            return __('Footer column :number', ['number' => max(1, $index)]);
+        }
+
         return match ($slug) {
             'main' => __('Main navigation'),
             'header_extra' => __('Header extras'),
             'footer' => __('Footer links'),
-            'footer_col_1' => __('Footer column 1'),
-            'footer_col_2' => __('Footer column 2'),
-            'footer_col_3' => __('Footer column 3'),
-            'footer_col_4' => __('Footer column 4'),
             'landing_footer' => __('Landing footer columns'),
             default => $slug,
         };

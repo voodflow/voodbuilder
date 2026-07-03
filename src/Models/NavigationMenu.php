@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Voodflow\Voodbuilder\Support\Navigation;
 
 class NavigationMenu extends Model
 {
@@ -15,6 +16,27 @@ class NavigationMenu extends Model
         'name',
         'slug',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (NavigationMenu $menu): void {
+            if ($menu->isDirty('slug')) {
+                $previousSlug = $menu->getOriginal('slug');
+
+                if (is_string($previousSlug) && $previousSlug !== '') {
+                    Navigation::clearCache($previousSlug);
+                }
+            }
+        });
+
+        static::saved(function (NavigationMenu $menu): void {
+            Navigation::clearCache($menu->slug);
+        });
+
+        static::deleted(function (NavigationMenu $menu): void {
+            Navigation::clearCache($menu->slug);
+        });
+    }
 
     public function items(): HasMany
     {

@@ -10,7 +10,7 @@ final class SiteFooterBlocks
 {
     public static function isFooterBlockId(string $blockId): bool
     {
-        return $blockId === 'site_footer' || str_starts_with($blockId, 'site_footer_');
+        return str_starts_with($blockId, 'site_footer_');
     }
 
     /**
@@ -19,11 +19,14 @@ final class SiteFooterBlocks
     public static function blockClasses(): array
     {
         return [
-            SiteFooterABlock::class,
-            SiteFooterBBlock::class,
-            SiteFooterCBlock::class,
-            SiteFooterDBlock::class,
-            SiteFooterEBlock::class,
+            SiteFooterColumnsMissionBlock::class,
+            SiteFooterColumnsBrandEndBlock::class,
+            SiteFooterColumnsSimpleBlock::class,
+            SiteFooterColumnsCtaBlock::class,
+            SiteFooterColumnsNewsletterBlock::class,
+            SiteFooterColumnsNewsletterBelowBlock::class,
+            SiteFooterCenteredBlock::class,
+            SiteFooterSocialBlock::class,
         ];
     }
 }

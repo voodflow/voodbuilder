@@ -277,7 +277,7 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
 
     if (tabId === 'layers') {
         window.requestAnimationFrame(() => {
-            editor.LayerManager?.render?.();
+            editor.trigger('voodbuilder:layers-panel:show');
         });
     }
 

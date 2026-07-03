@@ -19,6 +19,11 @@
     @apply w-full;
 }
 
+/* GrapesJS site_header block: fixed nav needs layout space so content does not jump underneath. */
+[data-voodbuilder-gjs-site-header].voodbuilder-site-header-spacer {
+    height: 4rem;
+}
+
 .voodbuilder-full-width-shell,
 .voodbuilder-site-shell:has(.VPRichPage--landing),
 :where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),

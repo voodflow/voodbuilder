@@ -11,17 +11,15 @@
 
 <div
     class="voodbuilder-nav-profile-menu relative"
-    x-data="{ open: false }"
-    @click.outside="open = false"
-    @keydown.escape.window="open = false"
+    data-voodbuilder-profile-menu
 >
     <button
         type="button"
         class="voodbuilder-header-icon-btn"
+        data-voodbuilder-profile-menu-toggle
         aria-haspopup="menu"
-        :aria-expanded="open"
+        aria-expanded="false"
         aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
-        @click="open = ! open"
     >
         @if ($avatarUrl)
             <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
@@ -33,10 +31,9 @@
     </button>
 
     <div
-        x-show="open"
-        x-cloak
-        x-transition
+        data-voodbuilder-profile-menu-panel
         role="menu"
+        hidden
         class="voodbuilder-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
     >
         @auth

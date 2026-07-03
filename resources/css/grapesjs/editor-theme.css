@@ -479,12 +479,14 @@
 }
 
 /* ── Trait manager (Content tab) ── */
+.voodbuilder-gjs-traits-mount,
 .voodbuilder-gjs-traits-mount .gjs-traits,
 .voodbuilder-gjs-root .gjs-trt-traits {
     display: flex;
     flex-direction: column;
     gap: 0;
     padding: 0;
+    color-scheme: light;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait {
@@ -512,6 +514,24 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-vp-text-2, #64748b);
+    white-space: nowrap;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field.gjs-field-select,
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(select) {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0.3125rem 0.5rem 0.3125rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.4375rem;
+    background: var(--color-vp-bg-elv, #fff);
+    color-scheme: light;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field-select .gjs-sel-arrow,
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(select) .gjs-sel-arrow {
+    display: none;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field {
@@ -526,7 +546,11 @@
     padding: 0.4375rem 0.625rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
     border-radius: 0.4375rem;
-    background: var(--color-vp-bg-alt, #f8fafc);
+    background: var(--color-vp-bg-elv, #fff);
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):has(select) {
+    padding: 0.3125rem 0.5rem 0.3125rem 0.625rem;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field-checkbox {
@@ -584,7 +608,6 @@
 .voodbuilder-gjs-root .gjs-sm-property .gjs-field select,
 .voodbuilder-gjs-root .gjs-sm-property .gjs-field textarea,
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) input,
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) select,
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) textarea {
     width: 100%;
     padding: 0.2rem 0;
@@ -592,6 +615,36 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) select,
+.voodbuilder-gjs-root .gjs-sm-property .gjs-field-select select,
+.voodbuilder-gjs-root .gjs-sm-property .gjs-select select {
+    width: 100%;
+    min-height: 1.5rem;
+    padding: 0.125rem 1.75rem 0.125rem 0;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.15rem center;
+    background-size: 0.75rem;
+    color: var(--color-vp-text-1, #0f172a);
+    box-shadow: none;
+    color-scheme: light;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) select option,
+.voodbuilder-gjs-root .gjs-sm-property .gjs-field-select option,
+.voodbuilder-gjs-root .gjs-sm-property .gjs-select option {
+    background-color: #fff;
+    color: #0f172a;
 }
 
 .voodbuilder-gjs-root .gjs-field input:focus,
@@ -618,6 +671,41 @@
 
 .voodbuilder-gjs-root .gjs-layer.gjs-selected {
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
+.voodbuilder-gjs-root .gjs-layer-move {
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-inline-start: 0.125rem;
+    border-radius: 0.25rem;
+    color: var(--color-vp-text-3, #94a3b8);
+    cursor: grab;
+    opacity: 0.55;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.voodbuilder-gjs-root .gjs-layer-item:hover .gjs-layer-move,
+.voodbuilder-gjs-root .gjs-layer-move:hover {
+    opacity: 1;
+    color: var(--color-vp-brand-1, #6366f1);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 8%, transparent);
+}
+
+.voodbuilder-gjs-root .gjs-layer-item[data-toggle-select] {
+    cursor: default;
+}
+
+.voodbuilder-gjs-root .gjs-layer-item[data-toggle-select]:has(.gjs-layer-move:not([style*='display: none'])) {
+    cursor: grab;
+}
+
+.voodbuilder-gjs-layers-mount {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .voodbuilder-gjs-root .gjs-cv-canvas {

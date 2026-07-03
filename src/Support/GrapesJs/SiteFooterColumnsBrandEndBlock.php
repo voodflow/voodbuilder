@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
-final class SiteFooterABlock extends AbstractSiteFooterVariantBlock
+final class SiteFooterColumnsBrandEndBlock extends AbstractSiteFooterVariantBlock
 {
     public static function variant(): string
     {
-        return 'a';
+        return 'columns_brand_end';
     }
 
     public static function defaultColumns(): int

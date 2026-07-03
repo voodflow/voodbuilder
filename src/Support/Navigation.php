@@ -26,7 +26,11 @@ final class Navigation
         $cached = Cache::get("voodbuilder.menu.{$menuSlug}");
 
         if (is_array($cached)) {
-            return self::hydrateItems($cached);
+            if (! self::menuExistsForSlug($menuSlug)) {
+                Cache::forget("voodbuilder.menu.{$menuSlug}");
+            } else {
+                return self::hydrateItems($cached);
+            }
         }
 
         $items = self::loadItems($menuSlug);
@@ -77,6 +81,17 @@ final class Navigation
         }
 
         return collect();
+    }
+
+    protected static function menuExistsForSlug(string $menuSlug): bool
+    {
+        foreach (self::slugAliases($menuSlug) as $slug) {
+            if (NavigationMenu::query()->where('slug', $slug)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

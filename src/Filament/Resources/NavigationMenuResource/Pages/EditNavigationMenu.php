@@ -15,7 +15,6 @@ use SolutionForest\FilamentNestableTree\Concerns\InteractsWithTree;
 use SolutionForest\FilamentNestableTree\Tree;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
-use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\NavigationMenuPreview;
 
@@ -134,13 +133,5 @@ class EditNavigationMenu extends EditRecord
                     ]),
                 $this->getRelationManagersContentComponent(),
             ]);
-    }
-
-    protected function afterSave(): void
-    {
-        /** @var NavigationMenu $record */
-        $record = $this->record;
-
-        Navigation::clearCache($record->slug);
     }
 }

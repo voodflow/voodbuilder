@@ -1402,6 +1402,12 @@ export function registerVisualStyleInspector(editor) {
             return;
         }
 
+        const blockId = component.getAttributes?.()?.['data-voodbuilder-block'];
+
+        if (blockId === 'site_header' || isSiteNavBlock(blockId)) {
+            return;
+        }
+
         window.requestAnimationFrame(() => {
             if (String(component.get?.('tagName') ?? '').toLowerCase() === 'svg') {
                 restoreSvgPaintInspectorStyle(component);

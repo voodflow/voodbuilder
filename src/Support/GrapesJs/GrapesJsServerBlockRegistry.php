@@ -43,7 +43,17 @@ final class GrapesJsServerBlockRegistry
      */
     public function resolve(string $blockId): ?string
     {
-        return $this->blocks[$blockId] ?? null;
+        if (isset($this->blocks[$blockId])) {
+            return $this->blocks[$blockId];
+        }
+
+        $legacyId = GrapesJsLegacySiteBlockMap::resolve($blockId);
+
+        if ($legacyId !== null) {
+            return $this->blocks[$legacyId] ?? null;
+        }
+
+        return null;
     }
 
     public function registerEditorBlocks(GrapesJsBlockRegistry $registry, ?int $eventId = null): void

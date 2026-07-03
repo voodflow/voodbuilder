@@ -93,7 +93,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ### 1.4 Blocchi header / nav allineati al tema — 🟢 S–🟡 M · P2 ✅
 
-**Stato:** implementato (luglio 2026) — blocco `site_header` allineato al nav del tema (logo, menu main/extra, docs, search, account, notifiche, mobile drawer).
+**Stato:** implementato (luglio 2026) — 8 varianti navbar Tailwind UI (`site_nav_*`) e 8 footer (`site_footer_*`), menu da Admin → Menu (voodpress) con supporto multilivello fino a 3 livelli. Legacy `site_header` / `site_footer_a`… mappati automaticamente.
 
 **Cosa:** blocchi GrapesJS per header come nel tema base: logo, slot menu `main` + `header_extra`, icona search, login, notifiche (placeholder o binding).
 

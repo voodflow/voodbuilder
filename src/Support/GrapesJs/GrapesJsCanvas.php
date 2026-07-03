@@ -171,6 +171,48 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
+        .voodbuilder-nav--canvas-preview .hidden.md\:block {
+            display: block !important;
+        }
+
+        .voodbuilder-nav--canvas-preview .hidden.md\:flex {
+            display: flex !important;
+        }
+
+        .voodbuilder-nav--canvas-preview .md\:hidden {
+            display: none !important;
+        }
+
+        .voodbuilder-nav--canvas-preview .inline-flex.md\:hidden {
+            display: inline-flex !important;
+        }
+
+        @media (min-width: 48rem) {
+            .voodbuilder-nav--canvas-preview .inline-flex.md\:hidden {
+                display: none !important;
+            }
+        }
+
+        [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown[hidden] {
+            display: none !important;
+        }
+
+        [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown:not([hidden]) {
+            display: block !important;
+        }
+
+        [data-voodbuilder-gjs-site-header] header[role='banner'] .voodbuilder-header-icon-btn,
+        [data-voodbuilder-block^='site_nav_'] header[role='banner'] .voodbuilder-header-icon-btn {
+            color: var(--vx-header-text, var(--color-vp-text-2)) !important;
+            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-2)) 10%, transparent) !important;
+        }
+
+        [data-voodbuilder-gjs-site-header] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible),
+        [data-voodbuilder-block^='site_nav_'] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible) {
+            color: var(--color-vp-brand-1) !important;
+            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 16%, transparent) !important;
+        }
+
         body:not(.voodbuilder-canvas-ready) {
             visibility: hidden;
         }

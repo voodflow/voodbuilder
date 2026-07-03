@@ -303,6 +303,102 @@ function lockDynamicPreviewContent(component) {
     });
 }
 
+function isSiteNavBlock(blockId) {
+    return typeof blockId === 'string' && blockId.startsWith('site_nav_');
+}
+
+function isSiteHeaderBlock(blockId) {
+    return isSiteNavBlock(blockId) || blockId === 'site_header';
+}
+
+function siteHeaderTraitOptions() {
+    return [
+        {
+            type: 'select',
+            label: 'Menu position',
+            name: 'vpressMainNavAlign',
+            changeProp: true,
+            options: [
+                { value: 'start', id: 'start', name: 'Left (next to logo)' },
+                { value: 'center', id: 'center', name: 'Center' },
+            ],
+        },
+        {
+            type: 'select',
+            label: 'Sticky',
+            name: 'vpressStickyNav',
+            changeProp: true,
+            options: [
+                { value: 'inherit', id: 'inherit', name: 'Site default' },
+                { value: 'sticky', id: 'sticky', name: 'Sticky' },
+                { value: 'static', id: 'static', name: 'Scrolls with page' },
+            ],
+        },
+    ];
+}
+
+function syncSiteHeaderConfig(component) {
+    const align = component.get('vpressMainNavAlign') === 'center' ? 'center' : 'start';
+    const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('vpressStickyNav'))
+        ? component.get('vpressStickyNav')
+        : 'inherit';
+    const config = {
+        ...(component.get('vpressConfig') ?? {}),
+        main_nav_align: align,
+        sticky_nav: stickyNav,
+    };
+
+    component.set('vpressConfig', config, { silent: true });
+    component.addAttributes({
+        'data-voodbuilder-config': encodeVpressConfig(config),
+    });
+}
+
+function configureSiteNavTraits(component, editor) {
+    if (! isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+        return;
+    }
+
+    component.set('stylable', false);
+
+    const config = component.get('vpressConfig') ?? {};
+
+    component.set('vpressMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
+    component.set('vpressStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
+    component.set('traits', siteHeaderTraitOptions());
+}
+
+function registerSiteNavTraitBridge(editor) {
+    if (editor.__voodbuilderSiteNavTraitBridgeRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderSiteNavTraitBridgeRegistered = true;
+
+    editor.on('trait:value', ({ trait, component, value }) => {
+        const blockId = component?.getAttributes?.()?.['data-voodbuilder-block'];
+
+        if (! isSiteNavBlock(blockId)) {
+            return;
+        }
+
+        const traitName = trait?.get?.('name');
+
+        if (traitName !== 'vpressMainNavAlign' && traitName !== 'vpressStickyNav') {
+            return;
+        }
+
+        if (typeof value === 'string' && value !== '') {
+            component.set(traitName, value, { silent: true });
+        }
+
+        window.requestAnimationFrame(() => {
+            syncSiteHeaderConfig(component);
+            editor.trigger('voodbuilder:refresh-dynamic-block', component);
+        });
+    });
+}
+
 function applySiteFooterColumns(component, columns) {
     const count = Math.max(1, Math.min(4, Number(columns) || 4));
 
@@ -336,7 +432,7 @@ function applySiteFooterColumns(component, columns) {
 function configureSiteFooterTraits(component) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
 
-    if (blockId === 'site_footer_d' || component.find('[data-voodbuilder-footer-col]').length === 0) {
+    if (blockId === 'site_footer_social' || blockId === 'site_footer_centered' || component.find('[data-voodbuilder-footer-col]').length === 0) {
         component.set('traits', []);
 
         return;
@@ -349,10 +445,10 @@ function configureSiteFooterTraits(component) {
             name: 'vpressFooterColumns',
             changeProp: true,
             options: [
-                { id: '1', name: '1 column' },
-                { id: '2', name: '2 columns' },
-                { id: '3', name: '3 columns' },
-                { id: '4', name: '4 columns' },
+                { value: '1', id: '1', name: '1 column' },
+                { value: '2', id: '2', name: '2 columns' },
+                { value: '3', id: '3', name: '3 columns' },
+                { value: '4', id: '4', name: '4 columns' },
             ],
         },
     ]);
@@ -509,6 +605,8 @@ function registerDynamicBlockType(editor) {
                 layerable: true,
                 highlightable: true,
                 vpressConfig: {},
+                vpressMainNavAlign: 'start',
+                vpressStickyNav: 'inherit',
                 attributes: {
                     class: 'voodbuilder-gjs-dynamic',
                     'data-voodbuilder-block': '',
@@ -521,6 +619,10 @@ function registerDynamicBlockType(editor) {
 
                 if (isSiteFooterBlock(this.getAttributes()['data-voodbuilder-block'])) {
                     configureSiteFooterTraits(this);
+                }
+
+                if (isSiteNavBlock(this.getAttributes()['data-voodbuilder-block'])) {
+                    configureSiteNavTraits(this, editor);
                 }
 
                 this.on('change:attributes:data-voodbuilder-config', () => {
@@ -647,8 +749,13 @@ export {
     registerDynamicBlockGuards,
     pruneEmptyDynamicBlocks,
     applySiteFooterColumns,
+    configureSiteNavTraits,
+    registerSiteNavTraitBridge,
+    syncSiteHeaderConfig,
     refreshDynamicSlots,
     isSiteFooterBlock,
+    isSiteNavBlock,
+    isSiteHeaderBlock,
     applyFreshFooterAttributes,
     prioritizeBlockCategories,
     ensureLayoutSectionTraits,
@@ -661,6 +768,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 
     registerDynamicBlockType(editor);
+    registerSiteNavTraitBridge(editor);
     registerLayoutSectionType(editor);
     registerSpacingStyleSync(editor);
     registerTailwindStyleSync(editor);

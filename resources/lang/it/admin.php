@@ -9,6 +9,7 @@ return [
         'pages' => 'Pagine',
         'settings' => 'Impostazioni',
         'content_channels' => 'Temi canali',
+        'footer_column_placement' => 'Footer colonna :number',
     ],
 
     'fields' => [

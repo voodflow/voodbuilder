@@ -57,22 +57,7 @@
                 @endif
 
                 @foreach ($item->children as $child)
-                    <li>
-                        <a
-                            href="{{ $child->resolveUrl() }}"
-                            @class([
-                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
-                                'is-active' => $child->isActive(),
-                            ])
-                            @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                            data-mobile-nav-close
-                        >
-                            <span>{{ __($child->label) }}</span>
-                            @if ($child->isExternal())
-                                <x-voodbuilder::external-link-icon />
-                            @endif
-                        </a>
-                    </li>
+                    <x-voodbuilder::menu-nav-mobile-item :item="$child" :depth="1" />
                 @endforeach
                 </ul>
             </div>
@@ -125,18 +110,22 @@
                 @endif
 
                 @foreach ($item->children as $child)
-                    <a
-                        href="{{ $child->resolveUrl() }}"
-                        role="menuitem"
-                        @class([
-                            'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
-                            'font-medium text-vp-brand-1' => $child->isActive(),
-                            'text-vp-text-2' => ! $child->isActive(),
-                        ])
-                        @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                    >
-                        {{ __($child->label) }}
-                    </a>
+                    @if ($child->hasChildren())
+                        <x-voodbuilder::menu-nav-dropdown-item :item="$child" />
+                    @else
+                        <a
+                            href="{{ $child->resolveUrl() }}"
+                            role="menuitem"
+                            @class([
+                                'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+                                'font-medium text-vp-brand-1' => $child->isActive(),
+                                'text-vp-text-2' => ! $child->isActive(),
+                            ])
+                            @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                        >
+                            {{ __($child->label) }}
+                        </a>
+                    @endif
                 @endforeach
             </div>
         </div>
