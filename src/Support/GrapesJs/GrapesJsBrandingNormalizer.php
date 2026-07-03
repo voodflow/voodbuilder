@@ -25,7 +25,7 @@ final class GrapesJsBrandingNormalizer
         $mark = self::brandMarkHtml();
         $logoPath = 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5';
 
-        // Match only legacy bare Tailblocks logo SVGs (svg > path). Never reset customized brand marks.
+        // Match only legacy bare section-catalog logo SVGs (svg > path). Never reset customized brand marks.
         $html = preg_replace_callback(
             '/<svg\b([^>]*)\bviewBox\s*=\s*["\']0\s+0\s+24\s+24["\']([^>]*)>\s*'
             .'<path\b[^>]*\bd="'.preg_quote($logoPath, '/').'"[^>]*(?:\/>|>\s*<\/path>)\s*'

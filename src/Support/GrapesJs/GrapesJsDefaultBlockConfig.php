@@ -226,14 +226,14 @@ final class GrapesJsDefaultBlockConfig
             ],
             'landing_footer' => [
                 'variant' => 'a',
-                'brand_name' => __('Tailblocks'),
-                'brand_tagline' => __('Air plant banjo lyft occupy retro adaptogen indego'),
-                'copyright_brand' => 'Tailblocks',
+                'brand_name' => __('VoodBuilder'),
+                'brand_tagline' => __('Build beautiful pages with VoodBuilder'),
+                'copyright_brand' => 'VoodBuilder',
                 'copyright_year' => now()->year,
             ],
             'landing_navbar' => [
                 'variant' => 'a',
-                'brand_name' => __('Tailblocks'),
+                'brand_name' => __('VoodBuilder'),
                 'cta_label' => __('Button'),
                 'cta_url' => '#',
             ],

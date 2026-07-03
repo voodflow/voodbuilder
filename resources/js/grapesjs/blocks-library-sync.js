@@ -4,6 +4,27 @@
 
 import { isComponentBlock, isComponentBlockElement, isComponentCategoryElement, isComponentCategoryId } from './component-block-utils.js';
 
+export function collapseLibraryCategories(editor, libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks') {
+    const showComponents = libraryId === 'components';
+
+    editor.BlockManager.getCategories?.()?.each?.((category) => {
+        const categoryId = String(category.get('id') ?? '');
+        const isComponentCategory = isComponentCategoryId(categoryId);
+
+        if (showComponents !== isComponentCategory) {
+            return;
+        }
+
+        category.set('open', false);
+    });
+}
+
+export function collapseAllBlockCategories(editor) {
+    editor.BlockManager.getCategories?.()?.each?.((category) => {
+        category.set('open', false);
+    });
+}
+
 function setBlockDisplay(blockEl, visible) {
     if (! blockEl) {
         return;

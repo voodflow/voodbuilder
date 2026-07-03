@@ -122,7 +122,7 @@ final class GrapesJsImportCompatibilityAnalyzer
                 continue;
             }
 
-            $migrated = TailblocksThemeTokenMigrator::migrateClassList($class);
+            $migrated = VoodbuilderThemeTokenMigrator::migrateClassList($class);
             $migratedTokens = preg_split('/\s+/', trim($migrated)) ?: [];
 
             if ($migrated === $class || $migratedTokens === []) {

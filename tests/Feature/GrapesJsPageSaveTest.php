@@ -131,7 +131,7 @@ class GrapesJsPageSaveTest extends TestCase
         $this->assertSame($js, $page->renderedScripts());
     }
 
-    public function test_save_migrates_tailblocks_brand_classes(): void
+    public function test_save_migrates_legacy_brand_classes(): void
     {
         $user = new class extends User implements FilamentUser
         {

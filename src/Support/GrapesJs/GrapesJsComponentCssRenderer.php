@@ -14,11 +14,7 @@ final class GrapesJsComponentCssRenderer
             return '';
         }
 
-        if (! preg_match_all('/\bdata-voodbuilder-component=(["\'])([^"\']+)\1/i', $html, $matches)) {
-            return '';
-        }
-
-        $ids = array_values(array_unique(array_filter($matches[2])));
+        $ids = GrapesJsComponentPageHtml::componentIds($html);
 
         if ($ids === []) {
             return '';
@@ -29,7 +25,7 @@ final class GrapesJsComponentCssRenderer
             ->orderBy('id')
             ->get()
             ->map(function (BuilderComponent $component): string {
-                $catalogHtml = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
+                $catalogHtml = VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html);
 
                 return GrapesJsComponentInstanceCssScoper::scopeCssToComponentInstance(
                     GrapesJsPastedComponentNormalizer::publishedCssForStoredHtml($catalogHtml, $component->css),

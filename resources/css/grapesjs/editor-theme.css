@@ -88,11 +88,98 @@
 .voodbuilder-gjs-root .gjs-block-category .gjs-title {
     background: transparent;
     border-bottom: none;
-    color: var(--color-vp-text-3, #94a3b8);
-    font-size: 0.625rem;
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+
+/* ── Block library categories (Elements / Components) — match inspector sectors ── */
+.voodbuilder-gjs-blocks-mount .gjs-block-categories,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category {
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+    border-radius: 0.625rem;
+    overflow: hidden;
+    background: var(--color-vp-bg-elv, #fff);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category.gjs-open,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open {
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-title,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff));
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+    text-align: left;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title {
+    border-bottom: none;
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-title:hover,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title:hover {
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-caret-icon,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: 0;
+    font-size: 0;
+    line-height: 0;
+    color: inherit;
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-caret-icon::before,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon::before {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-top: 0.2rem solid transparent;
+    border-bottom: 0.2rem solid transparent;
+    border-left: 0.3rem solid currentColor;
+    transition: transform 0.15s ease;
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before {
+    transform: rotate(90deg);
+}
+
+.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-blocks-c,
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-blocks-c {
+    padding: 0.625rem 0.75rem 0.75rem;
 }
 
 .voodbuilder-gjs-root .gjs-layer,
@@ -144,13 +231,19 @@
     border-bottom: none;
 }
 
-/* ── Custom collapsible sectors (Classes, Style, Global classes) ── */
+/* ── Custom collapsible sectors (Classes, Global classes) ── */
 .voodbuilder-gjs-inspector-panel--active[data-voodbuilder-inspector='style'] {
     flex-direction: column;
     min-height: 0;
     padding: 0.75rem 1.125rem 1rem;
     gap: 0.75rem;
-    overflow: hidden;
+    overflow: auto;
+}
+
+.voodbuilder-gjs-inspector-panel--active[data-voodbuilder-inspector='style'] .voodbuilder-gjs-styles-mount {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
 }
 
 .voodbuilder-gjs-inspector-sector {

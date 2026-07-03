@@ -76,11 +76,7 @@ function collectThemeVariables(root) {
             }
 
             rule.walkDecls((decl) => {
-                if (
-                    decl.prop.startsWith('--')
-                    && ! decl.prop.startsWith('--color-vp-')
-                    && ! isLegacyPaletteColorVariable(decl.prop)
-                ) {
+                if (decl.prop.startsWith('--') && ! decl.prop.startsWith('--color-vp-')) {
                     variables.set(decl.prop, decl.value);
                 }
             });

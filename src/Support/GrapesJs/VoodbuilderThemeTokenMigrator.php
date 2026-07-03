@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 /**
- * Maps Tailblocks hardcoded Tailwind colors to Voodbuilder theme tokens so blocks
+ * Normalizes hardcoded Tailwind colors to Voodbuilder theme tokens so components
  * adapt automatically to light/dark mode and backend palette overrides.
  */
-final class TailblocksThemeTokenMigrator
+final class VoodbuilderThemeTokenMigrator
 {
     /**
      * @var list<string>
@@ -189,6 +189,107 @@ final class TailblocksThemeTokenMigrator
             $css,
         ) ?? $css;
     }
+
+    /**
+     * Component Tailwind CSS keeps palette utilities (bg-blue-200, etc.) on instance HTML.
+     * Do not strip --color-blue-* declarations or bare var() references needed by those utilities.
+     */
+    public static function migrateComponentCss(string $css): string
+    {
+        if ($css === '') {
+            return $css;
+        }
+
+        $css = preg_replace(
+            '/\s*--color-vp-(?:brand-\d|text-\d|bg(?:-alt|-elv)?|divider|gray-soft)\s*:[^;]+;/i',
+            '',
+            $css,
+        ) ?? $css;
+
+        $css = self::replaceLegacyPaletteColorReferences($css);
+        $css = self::ensurePaletteVarFallbacks($css);
+        $css = self::stripLegacyButtonCss($css);
+
+        return $css;
+    }
+
+    public static function ensurePaletteVarFallbacks(string $css): string
+    {
+        return preg_replace_callback(
+            '/var\(--color-(blue|green|indigo|yellow|red|purple|violet|pink)-(\d+)\)(?!\s*,)/i',
+            static function (array $matches): string {
+                $fallback = self::tailwindPaletteFallback(
+                    strtolower($matches[1]),
+                    (int) $matches[2],
+                );
+
+                if ($fallback === null) {
+                    return $matches[0];
+                }
+
+                return 'var(--color-'.$matches[1].'-'.$matches[2].', '.$fallback.')';
+            },
+            $css,
+        ) ?? $css;
+    }
+
+    private static function tailwindPaletteFallback(string $palette, int $shade): ?string
+    {
+        $values = self::TAILWIND_PALETTE_FALLBACKS[$palette] ?? null;
+
+        if ($values === null) {
+            return null;
+        }
+
+        return $values[$shade] ?? null;
+    }
+
+    /**
+     * Tailwind CSS v4 default oklch values for legacy palette utilities in pasted components.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const TAILWIND_PALETTE_FALLBACKS = [
+        'blue' => [
+            50 => 'oklch(97% 0.014 254.604)',
+            100 => 'oklch(93.2% 0.032 255.585)',
+            200 => 'oklch(88.2% 0.059 254.128)',
+            300 => 'oklch(80.9% 0.105 251.813)',
+            400 => 'oklch(70.7% 0.165 254.624)',
+            500 => 'oklch(62.3% 0.214 259.815)',
+            600 => 'oklch(54.6% 0.245 262.881)',
+            700 => 'oklch(48.8% 0.243 264.376)',
+            800 => 'oklch(42.4% 0.199 265.638)',
+            900 => 'oklch(37.9% 0.146 265.522)',
+            950 => 'oklch(28.2% 0.091 267.935)',
+        ],
+        'indigo' => [
+            50 => 'oklch(96.2% 0.018 272.314)',
+            100 => 'oklch(93% 0.034 272.788)',
+            200 => 'oklch(87% 0.065 274.039)',
+            300 => 'oklch(78.5% 0.115 274.713)',
+            400 => 'oklch(67.3% 0.182 276.935)',
+            500 => 'oklch(58.5% 0.233 277.117)',
+            600 => 'oklch(51.1% 0.262 276.966)',
+            700 => 'oklch(45.7% 0.24 277.023)',
+            800 => 'oklch(39.8% 0.195 277.366)',
+            900 => 'oklch(35.9% 0.144 278.697)',
+            950 => 'oklch(25.7% 0.09 281.288)',
+        ],
+        'green' => [
+            50 => 'oklch(98.2% 0.018 155.826)',
+            100 => 'oklch(96.2% 0.044 156.743)',
+            200 => 'oklch(92.5% 0.084 155.995)',
+            300 => 'oklch(87.1% 0.15 154.449)',
+            400 => 'oklch(79.2% 0.209 151.711)',
+            500 => 'oklch(72.3% 0.219 149.579)',
+            600 => 'oklch(62.7% 0.194 149.214)',
+            700 => 'oklch(52.7% 0.154 150.069)',
+            800 => 'oklch(44.8% 0.119 151.328)',
+            900 => 'oklch(39.3% 0.095 152.535)',
+            950 => 'oklch(26.6% 0.065 152.934)',
+        ],
+    ];
 
     /**
      * @param  array<string, mixed>  $project
@@ -836,7 +937,7 @@ final class TailblocksThemeTokenMigrator
     private static function stripLegacyPaletteColorVariables(string $css): string
     {
         return preg_replace(
-            '/\s*--color-(?:indigo|yellow|red|purple|violet|pink|blue|green)-[^;]+;/i',
+            '/\s*--color-(?:indigo|yellow|red|purple|violet|pink|blue|green)-[a-z0-9-]+:\s*[^;]+;/i',
             '',
             $css,
         ) ?? $css;

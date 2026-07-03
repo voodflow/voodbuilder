@@ -16,7 +16,7 @@ class SectionBlocksCatalogBuilderTest extends TestCase
     public function test_build_applies_voodbuilder_branding_to_section_content(): void
     {
         if (! is_file(SectionBlocksCatalogBuilder::sourcePath())) {
-            $this->markTestSkipped('tailblocks-blocks.json source missing.');
+            $this->markTestSkipped('section-source-blocks.json source missing.');
         }
 
         $blocks = (new SectionBlocksCatalogBuilder)->build();

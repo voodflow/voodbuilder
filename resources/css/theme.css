@@ -23,7 +23,7 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
-@source '../grapesjs/tailblocks-catalog.html';
+@source '../grapesjs/section-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
 

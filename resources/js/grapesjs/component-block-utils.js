@@ -58,11 +58,56 @@ export function resolveBlockFromElement(editor, blockEl) {
         return null;
     }
 
-    return editor.BlockManager.getAll().find((candidate) => {
+    const domBlockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id;
+
+    if (isComponentBlockId(domBlockId)) {
+        const byId = editor.BlockManager.get(domBlockId);
+
+        if (byId) {
+            return byId;
+        }
+    }
+
+    let match = null;
+
+    editor.BlockManager.getAll().forEach((candidate) => {
+        if (match) {
+            return;
+        }
+
         const viewEl = candidate.view?.el;
 
-        return viewEl === blockEl || viewEl?.contains?.(blockEl);
-    }) ?? null;
+        if (viewEl === blockEl || viewEl?.contains?.(blockEl) || blockEl?.contains?.(viewEl)) {
+            match = candidate;
+        }
+    });
+
+    return match;
+}
+
+export function resolveCatalogItemFromComponentBlock(editor, blockEl) {
+    if (! editor || ! blockEl) {
+        return null;
+    }
+
+    const catalog = editor.__voodbuilderComponentsCatalog ?? [];
+    const domBlockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id;
+
+    if (isComponentBlockId(domBlockId)) {
+        const itemId = domBlockId.slice(COMPONENT_BLOCK_PREFIX.length);
+
+        return catalog.find((entry) => String(entry.id) === itemId) ?? null;
+    }
+
+    const block = resolveBlockFromElement(editor, blockEl);
+
+    if (! isComponentBlock(block)) {
+        return null;
+    }
+
+    const itemId = String(block.get?.('id') ?? block.id).slice(COMPONENT_BLOCK_PREFIX.length);
+
+    return catalog.find((entry) => String(entry.id) === itemId) ?? null;
 }
 
 export function isComponentBlock(block) {
@@ -70,11 +115,21 @@ export function isComponentBlock(block) {
 }
 
 export function isComponentBlockElement(editor, blockEl) {
-    if (blockEl?.classList?.contains('voodbuilder-gjs-component-block')) {
+    if (! blockEl) {
+        return false;
+    }
+
+    if (blockEl.classList?.contains('voodbuilder-gjs-component-block')) {
         return true;
     }
 
-    if (blockEl?.hasAttribute?.('data-voodbuilder-component-block')) {
+    if (blockEl.hasAttribute?.('data-voodbuilder-component-block')) {
+        return true;
+    }
+
+    const domBlockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id;
+
+    if (isComponentBlockId(domBlockId)) {
         return true;
     }
 

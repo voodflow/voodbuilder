@@ -9,7 +9,7 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsCssSanitizerTest extends TestCase
 {
-    public function test_removes_broad_tailblocks_background_image_rules(): void
+    public function test_removes_broad_section_layout_background_image_rules(): void
     {
         $css = '.text-vp-text-2.body-font.voodbuilder-gjs-section.bg-vp-bg{background-image:url("/storage/voodbuilder/grapesjs/test.jpg");}';
 

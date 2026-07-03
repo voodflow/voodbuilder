@@ -8,7 +8,7 @@ final class GrapesJsHtmlSanitizer
 {
     /**
      * GrapesJS map/image components call decodeURIComponent on query params.
-     * Tailblocks ship Google Maps embeds with `width=100%`, which throws URIError.
+     * Section templates may ship Google Maps embeds with `width=100%`, which throws URIError.
      */
     public static function sanitize(string $html): string
     {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 /**
- * GrapesJS can persist class-based background rules that match every Tailblocks
- * section (shared voodbuilder-gjs-section / body-font utilities). Those rules bleed
+ * GrapesJS can persist class-based background rules that match every section layout
+ * (shared voodbuilder-gjs-section / body-font utilities). Those rules bleed
  * one uploaded image across the whole page.
  */
 final class GrapesJsCssSanitizer
@@ -27,7 +27,7 @@ final class GrapesJsCssSanitizer
                     return $matches[0];
                 }
 
-                if (! self::isBroadTailblocksSectionSelector($selectors)) {
+                if (! self::isBroadSectionLayoutSelector($selectors)) {
                     return $matches[0];
                 }
 
@@ -44,7 +44,7 @@ final class GrapesJsCssSanitizer
         return preg_match('/\bbackground(?:-image)?\s*:[^;]*url\s*\(/i', $declarations) === 1;
     }
 
-    private static function isBroadTailblocksSectionSelector(string $selectors): bool
+    private static function isBroadSectionLayoutSelector(string $selectors): bool
     {
         if (! str_contains($selectors, 'voodbuilder-gjs-section') && ! str_contains($selectors, 'body-font')) {
             return false;

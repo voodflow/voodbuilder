@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 use Voodflow\Voodbuilder\Support\GrapesJs\SectionBlocksCatalogBuilder;
 use Voodflow\Voodbuilder\Support\GrapesJs\SoundmitGrapesJsLanding;
-use Voodflow\Voodbuilder\Support\GrapesJs\TailblocksGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 class BuildSectionsCommand extends Command
@@ -20,7 +19,7 @@ class BuildSectionsCommand extends Command
 
     public function handle(): int
     {
-        $script = VoodbuilderPaths::packagePath().'/scripts/build-tailblocks.mjs';
+        $script = VoodbuilderPaths::packagePath().'/scripts/build-section-source.mjs';
 
         if (! is_file($script)) {
             $this->components->error('Missing build script: '.$script);
@@ -41,7 +40,7 @@ class BuildSectionsCommand extends Command
         $process = new Process(
             ['node', $script],
             base_path(),
-            ['TAILBLOCKS_THEME' => $theme],
+            ['VOODBUILDER_SECTION_THEME' => $theme],
             null,
             300,
         );
@@ -58,7 +57,7 @@ class BuildSectionsCommand extends Command
             return self::FAILURE;
         }
 
-        if (! TailblocksGrapesJsBlocks::isAvailable()) {
+        if (! SectionBlocksCatalogBuilder::sourceIsAvailable()) {
             $this->components->error('Intermediate catalog file was not created.');
 
             return self::FAILURE;

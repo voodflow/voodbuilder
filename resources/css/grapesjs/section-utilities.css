@@ -1,10 +1,10 @@
 /**
- * Tailwind CSS v4 utilities for Tailblocks in GrapesJS canvas and published pages.
+ * Tailwind CSS v4 utilities for Voodbuilder section blocks in GrapesJS canvas and published pages.
  * Uses Voodbuilder theme tokens so blocks adapt to light/dark mode automatically.
  */
 @import '../theme.css';
 
-@source '../grapesjs/tailblocks-catalog.html';
+@source '../grapesjs/section-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
 
@@ -15,5 +15,22 @@
 
     .title-font {
         @apply font-sans tracking-tight;
+    }
+
+    .voodbuilder-brand-mark__glyph {
+        animation: voodbuilder-brand-pulse 2.4s ease-in-out infinite;
+    }
+}
+
+@keyframes voodbuilder-brand-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.82;
     }
 }

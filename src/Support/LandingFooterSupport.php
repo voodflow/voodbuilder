@@ -96,16 +96,6 @@ class LandingFooterSupport
         ];
     }
 
-    /**
-     * @deprecated Use layoutVariantOptions()
-     *
-     * @return array<string, string>
-     */
-    public static function tailblocksVariantOptions(): array
-    {
-        return self::layoutVariantOptions();
-    }
-
     public static function menuColumnsFromNavigation(string $menuSlug): array
     {
         $columns = [];

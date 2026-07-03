@@ -252,17 +252,13 @@ return [
         'sections' => [
             'enabled' => env('VOODBUILDER_SECTIONS_ENABLED', true),
             'modes' => ['adaptive'],
+            'theme' => env('VOODBUILDER_SECTION_THEME', 'indigo'),
         ],
         'builder' => [
             'brand' => env('VOODBUILDER_BUILDER_BRAND', 'VoodBuilder'),
         ],
         'model_integrations' => [
             'excluded_models' => [],
-        ],
-        'tailblocks' => [
-            'enabled' => false,
-            'theme' => env('VOODBUILDER_TAILBLOCKS_THEME', 'indigo'),
-            'modes' => ['adaptive'],
         ],
         'payload' => [
             'max_html_bytes' => 500_000,

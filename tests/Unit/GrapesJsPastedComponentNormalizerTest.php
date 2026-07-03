@@ -257,6 +257,28 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringNotContainsString('.w-2\\/5', $published);
     }
 
+    public function test_stored_css_is_corrupted_detects_truncated_var_references(): void
+    {
+        $corrupted = '.bg-blue-200 { background-color: var( }';
+
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::storedCssIsCorrupted($corrupted));
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::storedCssRequiresRecompile(
+            '<div class="bg-blue-200">Box</div>',
+            $corrupted,
+        ));
+    }
+
+    public function test_resolve_published_page_css_recompiles_when_stored_css_is_corrupted(): void
+    {
+        $html = '<section class="bg-blue-200 p-4"><p class="text-white">Hi</p></section>';
+        $corrupted = '.bg-blue-200 { background-color: var( }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $corrupted);
+
+        $this->assertFalse(GrapesJsPastedComponentNormalizer::storedCssIsCorrupted($resolved));
+        $this->assertStringContainsString('background-color: var(--color-blue-200)', $resolved);
+    }
+
     public function test_stored_css_is_current_when_checksum_matches(): void
     {
         $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';

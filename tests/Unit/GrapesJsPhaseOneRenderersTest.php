@@ -119,4 +119,50 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
         $this->assertStringNotContainsString('.mx-auto', $css);
         $this->assertStringNotContainsString('.w-2\\/5', $css);
     }
+
+    public function test_page_save_sync_compiles_instance_html_without_theme_html_migration(): void
+    {
+        $instanceHtml = '<div class="voodbuilder-pasted-component"><div class="rounded-bl-[20px] bg-blue-200">Card</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .rounded-bl-\\[20px\\] { border-bottom-left-radius: 20px; }';
+        $component = BuilderComponent::query()->create([
+            'name' => 'Testimonials',
+            'html' => '<div class="voodbuilder-pasted-component"><div class="rounded-bl-[20px]">Card</div></div>',
+            'css' => $storedCss,
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum(
+                '<div class="voodbuilder-pasted-component"><div class="rounded-bl-[20px]">Card</div></div>',
+            ),
+        ]);
+
+        $pageHtml = '<div data-voodbuilder-component="'.$component->id.'">'.$instanceHtml.'</div>';
+
+        app(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($pageHtml);
+
+        $component->refresh();
+
+        $this->assertStringContainsString('bg-blue-200', (string) $component->css);
+    }
+
+    public function test_component_css_renderer_does_not_compile_on_render(): void
+    {
+        $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';
+        $storedCss = '.voodbuilder-pasted-component .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+        $component = BuilderComponent::query()->create([
+            'name' => 'Box',
+            'html' => $html,
+            'css' => $storedCss,
+            'html_checksum' => GrapesJsPastedComponentNormalizer::htmlChecksum($html),
+        ]);
+
+        $pageHtml = '<div data-voodbuilder-component="'.$component->id.'">'
+            .'<div class="voodbuilder-pasted-component"><div class="mx-auto bg-vp-brand-3 bg-blue-200">Box</div></div>'
+            .'</div>';
+
+        $start = microtime(true);
+        $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($pageHtml);
+        $elapsedMs = (microtime(true) - $start) * 1000;
+
+        $this->assertStringContainsString('bg-vp-brand-3', $css);
+        $this->assertStringNotContainsString('bg-blue-200', $css);
+        $this->assertLessThan(200, $elapsedMs);
+    }
 }

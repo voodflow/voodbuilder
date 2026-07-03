@@ -4,11 +4,10 @@
  */
 
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
-import { isComponentCategoryId } from './component-block-utils.js';
-import { isPinnedCategoryId, registerBlockPins } from './block-pins.js';
+import { registerBlockPins } from './block-pins.js';
 import { lucideIcon } from './editor-icons.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
-import { applyBlocksLibraryUi, readBlocksSearchQuery } from './blocks-library-sync.js';
+import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -83,8 +82,8 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="style">
                             <div class="voodbuilder-gjs-selectors-mount"></div>
-                            <div class="voodbuilder-gjs-styles-mount"></div>
                             <div class="voodbuilder-gjs-global-classes-mount"></div>
+                            <div class="voodbuilder-gjs-styles-mount"></div>
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="dynamic">
                             <div class="voodbuilder-gjs-dynamic-mount"></div>
@@ -257,74 +256,15 @@ function setupBlockSearch(editor, searchInput) {
     });
 }
 
-const DEFAULT_OPEN_BLOCK_CATEGORIES = ['Pinned', 'Hero', 'Layout'];
-
 export function collapseBlockCategories(editor) {
-    const categories = editor.BlockManager.getCategories?.();
-
-    categories?.each?.((category) => {
-        const categoryId = String(category.get('id') ?? '');
-
-        if (isComponentCategoryId(categoryId) || isPinnedCategoryId(categoryId)) {
-            return;
-        }
-
-        category.set('open', false);
-    });
-
-    openDefaultBlockCategories(editor);
-}
-
-export function openDefaultBlockCategories(editor) {
-    const categories = editor.BlockManager.getCategories?.();
-
-    if (! categories?.each) {
-        return;
-    }
-
-    const preferred = new Set(DEFAULT_OPEN_BLOCK_CATEGORIES.map((label) => label.toLowerCase()));
-    let openedAny = false;
-
-    categories.each((category) => {
-        const categoryId = String(category.get('id') ?? '');
-
-        if (isComponentCategoryId(categoryId)) {
-            return;
-        }
-
-        const label = String(category.get('label') ?? categoryId).toLowerCase();
-
-        if (preferred.has(label) || isPinnedCategoryId(categoryId)) {
-            category.set('open', true);
-            openedAny = true;
-        }
-    });
-
-    if (openedAny) {
-        return;
-    }
-
-    categories.each((category) => {
-        const categoryId = String(category.get('id') ?? '');
-
-        if (isComponentCategoryId(categoryId) || openedAny) {
-            return;
-        }
-
-        category.set('open', true);
-        openedAny = true;
-    });
+    collapseAllBlockCategories(editor);
 }
 
 export function refreshBlocksLibraryUi(editor) {
     const libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks';
 
     editor.__voodbuilderRelocateLibrary?.(libraryId);
-
-    if (libraryId === 'blocks') {
-        openDefaultBlockCategories(editor);
-    }
-
+    collapseLibraryCategories(editor, libraryId);
     applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 }
 

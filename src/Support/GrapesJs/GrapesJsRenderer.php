@@ -23,7 +23,7 @@ final class GrapesJsRenderer
             GrapesJsFormNormalizer::normalize(
                 GrapesJsStepTabsNormalizer::normalize(
                     GrapesJsCodeBlockNormalizer::normalize(
-                        TailblocksThemeTokenMigrator::migrateHtml(
+                        VoodbuilderThemeTokenMigrator::migrateHtml(
                             GrapesJsHtmlSanitizer::sanitize($html),
                         ),
                     ),
@@ -38,13 +38,11 @@ final class GrapesJsRenderer
         $payload = $page->builder_payload ?? [];
         $html = (string) ($payload['html'] ?? '');
         $componentCss = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
-        $css = $payload['css'] ?? null;
-
-        $pageCss = filled($css)
-            ? GrapesJsCssSanitizer::sanitize(
-                TailblocksThemeTokenMigrator::migrateCss((string) $css),
-            )
-            : '';
+        $storedPageCss = $payload['css'] ?? null;
+        $pageCss = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss(
+            $html,
+            filled($storedPageCss) ? (string) $storedPageCss : null,
+        );
 
         $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
 

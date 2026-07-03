@@ -512,7 +512,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     grid-template-columns: 1fr 1fr;
     gap: 0.35rem;
     flex-shrink: 0;
-    padding: 0.75rem 0.625rem 0.5rem;
+    padding: 0.75rem 1.125rem 0.5rem;
 }
 
 .voodbuilder-gjs-library-tab {
@@ -569,7 +569,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     position: relative;
     flex-shrink: 0;
     display: block;
-    margin: 0 0.625rem 0.5rem;
+    margin: 0 1.125rem 0.5rem;
 }
 
 .voodbuilder-gjs-blocks-search-icon {
@@ -651,7 +651,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 }
 
 .voodbuilder-gjs-blocks-mount {
-    padding: 0.25rem 0.625rem 0.875rem;
+    padding: 0 1.125rem 1rem;
 }
 
 .voodbuilder-gjs-components-mount {
@@ -660,7 +660,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-    padding: 0.25rem 0.625rem 0.875rem;
+    padding: 0.75rem 1.125rem 1rem;
 }
 
 /* Saved components are listed only under the Components tab */
@@ -686,7 +686,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
-    padding: 0 0 0.25rem;
+    padding: 0;
 }
 
 .voodbuilder-gjs-components-blocks-mount.is-hidden {
@@ -876,8 +876,39 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     white-space: nowrap;
 }
 
-.voodbuilder-gjs-components-library.is-selection-mode .voodbuilder-gjs-components-blocks-mount .gjs-block.voodbuilder-gjs-component-block {
+.voodbuilder-gjs-components-library.is-selection-mode .voodbuilder-gjs-components-blocks-mount .gjs-block.voodbuilder-gjs-component-block,
+.voodbuilder-gjs-components-library.is-selection-mode .voodbuilder-gjs-components-blocks-mount .gjs-block.is-selectable {
     cursor: pointer;
+}
+
+.voodbuilder-gjs-components-blocks-mount .gjs-block.is-selectable {
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-component-block__selection-badge {
+    position: absolute;
+    top: 0.35rem;
+    left: 0.35rem;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 9999px;
+    border: 1.5px solid color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent);
+    background: var(--color-vp-brand-1, #6366f1);
+    color: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-component-block__selection-badge[hidden] {
+    display: none !important;
+}
+
+.voodbuilder-gjs-components-selection-bar__action--danger:not(:disabled) {
+    color: #b91c1c;
 }
 
 .voodbuilder-gjs-components-library.is-selection-mode .voodbuilder-gjs-component-block__toolbar {
@@ -1489,16 +1520,6 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     font-weight: 500;
     line-height: 1.25;
     letter-spacing: 0.01em;
-}
-
-.voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-title,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title {
-    padding: 0.4375rem 0.25rem 0.3125rem;
-    margin-top: 0.25rem;
-    border-bottom: none;
-    font-size: 0.625rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
 }
 
 .voodbuilder-gjs-canvas-mount {

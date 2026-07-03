@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs\Conditions;
 
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Models\SitePage;
 
 final class GrapesJsConditionHooks
@@ -173,10 +174,10 @@ final class GrapesJsConditionHooks
 
         try {
             if (
-                class_exists(\Spatie\Permission\Models\Role::class)
+                class_exists(Role::class)
                 && Schema::hasTable('roles')
             ) {
-                return \Spatie\Permission\Models\Role::query()
+                return Role::query()
                     ->orderBy('name')
                     ->pluck('name')
                     ->map(fn (string $name): array => ['value' => $name, 'label' => $name])

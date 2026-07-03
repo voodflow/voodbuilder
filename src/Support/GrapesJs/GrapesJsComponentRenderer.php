@@ -47,7 +47,7 @@ final class GrapesJsComponentRenderer
         }
 
         $props = $this->parseProps($element->getAttribute('data-voodbuilder-component-props'));
-        $componentHtml = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
+        $componentHtml = VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html);
         $template = $this->loadDocument($componentHtml);
 
         $body = $template->getElementsByTagName('body')->item(0);

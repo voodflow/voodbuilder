@@ -167,7 +167,7 @@
     display: none !important;
 }
 
-/* Step tabs (Tailblocks step B → interactive tabs) */
+/* Step tabs (step nav → interactive tabs) */
 .vb-step-tabs__bar {
     display: flex;
     flex-wrap: wrap;

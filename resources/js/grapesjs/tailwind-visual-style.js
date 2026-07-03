@@ -1,5 +1,5 @@
 /**
- * Tailblocks cards use a layout wrapper (p-4, lg:w-1/3) around the visual surface
+ * Voodbuilder section cards use a layout wrapper (p-4, lg:w-1/3) around the visual surface
  * (rounded-lg, bg-gray-100). Forward decoration styles to that inner element.
  */
 
@@ -401,7 +401,11 @@ const EXPORT_PAINT_PROPERTIES = [
     'opacity',
 ];
 
-const TEXT_COLOR_CLASS_PATTERN = /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:white|black|primary(?:-foreground)?|foreground(?:-inverse)?|inverse|layer-foreground|gray-\d+|vp-text-[123])(?:\/[\d.]+)?$/;
+const TEXT_COLOR_CLASS_PATTERN = /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:white|black|primary(?:-foreground)?|foreground(?:-inverse)?|inverse|layer-foreground|gray-\d+|vp-(?:text-[123]|brand-\d+))(?:\/[\d.]+)?$/;
+
+const TAILWIND_TEXT_COLOR_CLASS_PATTERN = /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:vp-|gray-|white|black|primary|foreground)/;
+
+const SVG_SHAPE_SELECTOR = 'path, circle, rect, polygon, polyline, line, ellipse';
 
 const SVG_TAGS = new Set(['svg', 'path', 'circle', 'rect', 'g', 'polygon', 'polyline', 'line', 'ellipse']);
 
@@ -409,6 +413,104 @@ function isSvgElement(component) {
     const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
 
     return SVG_TAGS.has(tag);
+}
+
+function isGenericBlackPaint(paint) {
+    const normalized = normalizeCssColorValue(stripImportant(paint)).toLowerCase();
+
+    return normalized === '#000000' || normalized === '#000' || normalized === 'black';
+}
+
+function svgUsesCurrentColorPaint(component) {
+    const attributes = component?.getAttributes?.() ?? {};
+    const rootFill = String(attributes.fill ?? '').toLowerCase();
+
+    if (rootFill === 'currentcolor') {
+        return true;
+    }
+
+    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
+        const fill = String(child.getAttributes?.()?.fill ?? '').toLowerCase();
+        const stroke = String(child.getAttributes?.()?.stroke ?? '').toLowerCase();
+
+        if (fill === 'currentcolor' || stroke === 'currentcolor') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function svgPreservesTailwindPaint(component) {
+    if (! isSvgElement(component)) {
+        return false;
+    }
+
+    const classes = component?.getClasses?.() ?? [];
+    const hasTailwindTextColor = classes.some((className) => TAILWIND_TEXT_COLOR_CLASS_PATTERN.test(className));
+
+    if (! hasTailwindTextColor) {
+        return false;
+    }
+
+    return svgUsesCurrentColorPaint(component);
+}
+
+function stripSpuriousSvgBakedPaint(component) {
+    if (! svgPreservesTailwindPaint(component)) {
+        return false;
+    }
+
+    const attributes = { ...(component.getAttributes?.() ?? {}) };
+    const attributeStyle = parseStyleAttribute(attributes.style);
+    const bakedPaint = attributeStyle.color || attributeStyle.fill || attributeStyle.stroke;
+
+    if (! bakedPaint || ! isGenericBlackPaint(bakedPaint)) {
+        return false;
+    }
+
+    for (const property of ['color', 'fill', 'stroke']) {
+        delete attributeStyle[property];
+        component.removeStyle?.(property);
+    }
+
+    const remainingStyle = Object.entries(attributeStyle)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('; ');
+
+    if (remainingStyle) {
+        attributes.style = remainingStyle;
+    } else {
+        delete attributes.style;
+    }
+
+    component.setAttributes(attributes);
+
+    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
+        const childAttributes = { ...(child.getAttributes?.() ?? {}) };
+        let changed = false;
+
+        if (isGenericBlackPaint(childAttributes.fill)) {
+            childAttributes.fill = 'currentColor';
+            changed = true;
+        }
+
+        if (isGenericBlackPaint(childAttributes.stroke)) {
+            childAttributes.stroke = 'currentColor';
+            changed = true;
+        }
+
+        if (! changed) {
+            continue;
+        }
+
+        child.removeStyle?.('fill');
+        child.removeStyle?.('stroke');
+        child.removeStyle?.('color');
+        child.setAttributes(childAttributes);
+    }
+
+    return true;
 }
 
 function stripConflictingTextColorClasses(component) {
@@ -585,6 +687,10 @@ function propagateSvgPaint(editor, component, property, value) {
     }
 
     for (const svg of safeFindComponents(component, 'svg')) {
+        if (svgPreservesTailwindPaint(svg) && isGenericBlackPaint(value)) {
+            continue;
+        }
+
         applyCustomSvgPaint(editor, svg, property, value);
     }
 }
@@ -760,6 +866,8 @@ function bakeSvgPaintOnComponent(editor, component) {
         return;
     }
 
+    stripSpuriousSvgBakedPaint(component);
+
     const exportStyles = resolveSvgExportStyles(editor, component);
     const paint = normalizeCssColorValue(
         exportStyles.color
@@ -767,6 +875,10 @@ function bakeSvgPaintOnComponent(editor, component) {
         || exportStyles.stroke
         || resolveEffectivePaint(editor, component),
     );
+
+    if (paint && svgPreservesTailwindPaint(component) && isGenericBlackPaint(paint)) {
+        return;
+    }
 
     if (! paint && Object.keys(exportStyles).length === 0) {
         return;
@@ -1019,6 +1131,8 @@ export function hydrateSvgPaintFromAttributes(editor) {
         if (! componentHasRenderableView(component)) {
             return;
         }
+
+        stripSpuriousSvgBakedPaint(component);
 
         if (! resolvePaintFromSvgAttributes(component)) {
             return;

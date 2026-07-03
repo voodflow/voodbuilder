@@ -1,5 +1,5 @@
 /**
- * Upgrades Tailblocks-style step nav (STEP 1…N) to accessible tabs in the editor canvas.
+ * Upgrades step nav (STEP 1…N) to accessible tabs in the editor canvas.
  */
 
 import { initTabsInDocument } from './grapesjs-tabs-runtime.js';

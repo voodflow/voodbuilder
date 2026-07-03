@@ -3,7 +3,11 @@
  */
 
 import { openContextMenu } from './context-menu.js';
-import { isComponentBlockElement, resolveBlockFromElement } from './component-block-utils.js';
+import {
+    isComponentBlockElement,
+    resolveBlockFromElement,
+    resolveCatalogItemFromComponentBlock,
+} from './component-block-utils.js';
 import { isPinnedBlockId, resolvePinnedSourceId } from './block-pins.js';
 
 export function registerBlocksContextMenu(editor, shell, labels = {}) {
@@ -16,7 +20,27 @@ export function registerBlocksContextMenu(editor, shell, labels = {}) {
     shell.addEventListener('contextmenu', (event) => {
         const blockEl = event.target.closest('.gjs-block');
 
-        if (! blockEl || isComponentBlockElement(editor, blockEl)) {
+        if (! blockEl) {
+            return;
+        }
+
+        if (isComponentBlockElement(editor, blockEl)) {
+            if (editor.__voodbuilderActiveLibrary === 'components' && ! editor.__voodbuilderComponentSelectionMode) {
+                const item = resolveCatalogItemFromComponentBlock(editor, blockEl);
+
+                if (item && typeof editor.__voodbuilderComponentLibraryActions?.openMenu === 'function') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    editor.__voodbuilderComponentLibraryActions.openMenu(item, event.clientX, event.clientY);
+
+                    return;
+                }
+            }
+
+            if (editor.__voodbuilderActiveLibrary === 'components') {
+                event.preventDefault();
+            }
+
             return;
         }
 

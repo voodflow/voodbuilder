@@ -1,7 +1,7 @@
 /**
  * Optional GrapesJS Tailwind CSS plugin wrapper (not loaded by default).
  *
- * The editor canvas already uses pre-built `tailblocks-utilities.css` via Vite.
+ * The editor canvas already uses pre-built `section-utilities.css` via Vite.
  * Enable this only if you explicitly add `registerGrapesJsTailwindPlugin` to the
  * editor `plugins` array — never patch files under node_modules.
  *

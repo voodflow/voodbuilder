@@ -80,7 +80,7 @@ function ensurePinnedCategory(editor, labels = {}) {
             id: PINNED_CATEGORY_ID,
             label: String(labels.blockPinnedCategory ?? 'Pinned').toUpperCase(),
             order: resolveCategoryOrder(PINNED_CATEGORY_ID),
-            open: true,
+            open: false,
         });
     } else {
         const category = categories.get(PINNED_CATEGORY_ID);
@@ -162,9 +162,6 @@ export function syncPinnedBlocks(editor, labels = {}, scope = 'global') {
     for (const sourceId of pinnedIds) {
         cloneBlockAsPinned(editor, sourceId);
     }
-
-    const pinnedCategory = editor.BlockManager.getCategories?.()?.get?.(PINNED_CATEGORY_ID);
-    pinnedCategory?.set('open', true);
 
     return pinnedIds;
 }

@@ -54,7 +54,7 @@ final class VoodbuilderSectionGrapesJsBlocks
     public static function utilitiesCssEntry(): string
     {
         return VoodbuilderPaths::relativeToBasePath(
-            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/tailblocks-utilities.css',
+            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/section-utilities.css',
         );
     }
 
@@ -106,7 +106,7 @@ final class VoodbuilderSectionGrapesJsBlocks
     {
         return GrapesJsHtmlSanitizer::sanitize(
             GrapesJsPlaceholderNormalizer::normalizeHtml(
-                TailblocksThemeTokenMigrator::migrateHtml(
+                VoodbuilderThemeTokenMigrator::migrateHtml(
                     TailwindV4ClassMigrator::migrateHtml($html),
                 ),
             ),

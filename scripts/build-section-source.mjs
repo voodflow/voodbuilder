@@ -1,7 +1,5 @@
 /**
- * Export Tailblocks (MIT) React components to GrapesJS-ready JSON.
- * @see https://github.com/mertJF/tailblocks
- * @see https://tailblocks.cc/
+ * Export upstream section React components to GrapesJS-ready JSON for voodbuilder:build-sections.
  */
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -14,11 +12,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
-const cacheDir = path.join(packageRoot, 'storage', 'tailblocks-src');
-const outJson = path.join(packageRoot, 'resources', 'grapesjs', 'tailblocks-blocks.json');
-const outCatalog = path.join(packageRoot, 'resources', 'grapesjs', 'tailblocks-catalog.html');
+const cacheDir = path.join(packageRoot, 'storage', 'section-source-src');
+const outJson = path.join(packageRoot, 'resources', 'grapesjs', 'section-source-blocks.json');
+const outCatalog = path.join(packageRoot, 'resources', 'grapesjs', 'section-catalog.html');
 
-const theme = process.env.TAILBLOCKS_THEME ?? 'indigo';
+const theme = process.env.VOODBUILDER_SECTION_THEME ?? 'indigo';
 
 const TAILWIND_V4_REPLACEMENTS = {
     'flex-grow': 'grow',
@@ -81,7 +79,7 @@ if (! fs.existsSync(cacheDir)) {
     });
 }
 
-const entryFile = path.join(packageRoot, 'storage', 'tailblocks-extract-entry.mjs');
+const entryFile = path.join(packageRoot, 'storage', 'section-source-extract-entry.mjs');
 
 fs.writeFileSync(
     entryFile,
@@ -92,7 +90,7 @@ export default getBlock;
 `,
 );
 
-const bundlePath = path.join(packageRoot, 'storage', 'tailblocks-extract.bundle.mjs');
+const bundlePath = path.join(packageRoot, 'storage', 'section-source-extract.bundle.mjs');
 
 await esbuild.build({
     entryPoints: [entryFile],
@@ -125,12 +123,12 @@ for (const darkMode of [false]) {
 
             const rawHtml = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
             const html = sanitizeGrapesJsHtml(migrateToTailwindV4(rawHtml));
-            const id = `tailblocks-${category.toLowerCase()}-${variant.toLowerCase()}`;
+            const id = `section-source-${category.toLowerCase()}-${variant.toLowerCase()}`;
 
             definitions.push({
                 id,
                 label: formatBlockLabel(category, variant),
-                category: `Tailblocks / ${category}`,
+                category: `Sections / ${category}`,
                 content: html,
                 preview: buildPreview(html),
                 mode: 'adaptive',
@@ -145,4 +143,4 @@ fs.writeFileSync(outJson, JSON.stringify(definitions, null, 2));
 const catalog = definitions.map((block) => block.content).join('\n');
 fs.writeFileSync(outCatalog, `<!doctype html><html><body>${catalog}</body></html>`);
 
-console.log(`Exported ${definitions.length} Tailblocks (Tailwind v4 migrated) to ${outJson}`);
+console.log(`Exported ${definitions.length} section source blocks to ${outJson}`);

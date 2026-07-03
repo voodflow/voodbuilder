@@ -7,7 +7,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 use Illuminate\Support\Str;
 
 /**
- * Builds the Voodbuilder section block catalog from the legacy source JSON.
+ * Builds the Voodbuilder section block catalog from the upstream source JSON.
  * Output blocks are renamed and use neutral placeholder copy (no third-party branding).
  */
 final class SectionBlocksCatalogBuilder
@@ -72,7 +72,12 @@ final class SectionBlocksCatalogBuilder
 
     public static function sourcePath(): string
     {
-        return dirname(__DIR__, 3).'/resources/grapesjs/tailblocks-blocks.json';
+        return dirname(__DIR__, 3).'/resources/grapesjs/section-source-blocks.json';
+    }
+
+    public static function sourceIsAvailable(): bool
+    {
+        return is_file(self::sourcePath());
     }
 
     public static function outputPath(): string
@@ -145,7 +150,7 @@ final class SectionBlocksCatalogBuilder
             return Str::lower($matches[1]);
         }
 
-        if (preg_match('#tailblocks-(\\w+)-#', $id, $matches)) {
+        if (preg_match('#section-source-(\\w+)-#', $id, $matches)) {
             return Str::lower($matches[1]);
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 /**
- * Tailblocks ship with dummyimage.com placeholders that often resolve to random stock photos.
+ * Third-party section templates may ship dummyimage.com placeholders that often resolve to random stock photos.
  * Replace them with a neutral local placeholder so editors start from a clean slate.
  */
 final class GrapesJsPlaceholderNormalizer

@@ -203,11 +203,6 @@ function registerLayoutSectionType(editor) {
 
     editor.DomComponents.addType('voodbuilder-section', sectionTypeDefinition);
 
-    // Legacy alias: existing projects may reference this type id in saved JSON.
-    editor.DomComponents.addType('voodbuilder-tailblocks-section', {
-        extend: 'voodbuilder-section',
-    });
-
     editor.DomComponents.addType('voodbuilder-container', {
         isComponent: (element) => {
             if (element?.tagName !== 'DIV') {
@@ -231,10 +226,6 @@ function registerLayoutSectionType(editor) {
                 });
             },
         },
-    });
-
-    editor.DomComponents.addType('voodbuilder-tailblocks-container', {
-        extend: 'voodbuilder-container',
     });
 }
 
@@ -604,7 +595,7 @@ function ensureLayoutSectionTraits(editor) {
 
         const type = section.get('type');
 
-        if (type === 'default' || type === 'voodbuilder-tailblocks-section') {
+        if (type === 'default') {
             section.set('type', 'voodbuilder-section');
         }
 
@@ -659,7 +650,6 @@ export {
     applyFreshFooterAttributes,
     prioritizeBlockCategories,
     ensureLayoutSectionTraits,
-    ensureLayoutSectionTraits as ensureTailblocksSectionTraits,
     pruneEmptySections,
 };
 

@@ -42,7 +42,116 @@ final class GrapesJsImportedTailwindSupport
         $html = self::stripNonStandardAttributes($html);
         $html = self::markPastedComponentRoot($html);
 
-        return self::ensureDarkVariantScope(self::bakeSvgPaintInHtml($html));
+        return self::ensureDarkVariantScope(self::bakeSvgPaintInHtml(self::stripSpuriousSvgBakedPaint($html)));
+    }
+
+    public static function stripSpuriousSvgBakedPaint(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, '<svg')) {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $svgNodes = $document->getElementsByTagName('svg');
+
+        if ($svgNodes->length === 0) {
+            return $html;
+        }
+
+        foreach ($svgNodes as $svg) {
+            if (! $svg instanceof DOMElement) {
+                continue;
+            }
+
+            if (! self::svgPreservesTailwindCurrentColorPaint($svg)) {
+                continue;
+            }
+
+            $style = self::parseStyleAttribute($svg->getAttribute('style'));
+            $bakedPaint = $style['color'] ?? $style['fill'] ?? $style['stroke'] ?? null;
+
+            if ($bakedPaint === null || ! self::isGenericBlackPaint($bakedPaint)) {
+                continue;
+            }
+
+            foreach (['color', 'fill', 'stroke'] as $property) {
+                unset($style[$property]);
+            }
+
+            if ($style === []) {
+                $svg->removeAttribute('style');
+            } else {
+                $svg->setAttribute('style', self::serializeStyleAttribute($style));
+            }
+
+            foreach ($svg->getElementsByTagName('*') as $node) {
+                if (! $node instanceof DOMElement) {
+                    continue;
+                }
+
+                if (self::isGenericBlackPaint($node->getAttribute('fill'))) {
+                    $node->setAttribute('fill', 'currentColor');
+                }
+
+                if (self::isGenericBlackPaint($node->getAttribute('stroke'))) {
+                    $node->setAttribute('stroke', 'currentColor');
+                }
+            }
+        }
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
+    protected static function svgPreservesTailwindCurrentColorPaint(DOMElement $svg): bool
+    {
+        $class = $svg->getAttribute('class');
+
+        if ($class === '' || ! preg_match('/\btext-(?:vp-|gray-|white|black|primary|foreground)/', $class)) {
+            return false;
+        }
+
+        $rootFill = strtolower($svg->getAttribute('fill'));
+
+        if ($rootFill === 'currentcolor') {
+            return true;
+        }
+
+        foreach ($svg->getElementsByTagName('*') as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
+            }
+
+            $fill = strtolower($node->getAttribute('fill'));
+            $stroke = strtolower($node->getAttribute('stroke'));
+
+            if ($fill === 'currentcolor' || $stroke === 'currentcolor') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected static function isGenericBlackPaint(string $paint): bool
+    {
+        $normalized = strtolower(trim(preg_replace('/\s*!important\s*$/i', '', $paint) ?? $paint));
+
+        return in_array($normalized, ['#000', '#000000', 'black', 'rgb(0, 0, 0)', 'rgb(0,0,0)'], true);
+    }
+
+    protected static function serializeStyleAttribute(array $style): string
+    {
+        $chunks = [];
+
+        foreach ($style as $property => $value) {
+            if ($property === '' || $value === '') {
+                continue;
+            }
+
+            $chunks[] = "{$property}: {$value}";
+        }
+
+        return implode('; ', $chunks);
     }
 
     public static function bakeSvgPaintInHtml(string $html): string
@@ -61,6 +170,15 @@ final class GrapesJsImportedTailwindSupport
         foreach ($svgNodes as $svg) {
             if (! $svg instanceof DOMElement) {
                 continue;
+            }
+
+            if (self::svgPreservesTailwindCurrentColorPaint($svg)) {
+                $style = self::parseStyleAttribute($svg->getAttribute('style'));
+                $bakedPaint = $style['color'] ?? $style['fill'] ?? $style['stroke'] ?? null;
+
+                if ($bakedPaint !== null && self::isGenericBlackPaint($bakedPaint)) {
+                    continue;
+                }
             }
 
             $paint = self::resolveSvgPaintFromElement($svg);

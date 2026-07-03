@@ -84,7 +84,7 @@ final class ConfigureNpmForVoodbuilder
     /**
      * @return array<string, string>
      */
-    public static function tailblocksDevDependencies(): array
+    public static function sectionSourceDevDependencies(): array
     {
         return [
             'esbuild' => '^0.25.0',

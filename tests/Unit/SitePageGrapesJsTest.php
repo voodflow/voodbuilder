@@ -107,4 +107,21 @@ class SitePageGrapesJsTest extends TestCase
         $this->assertNull($renderer->css($page));
         $this->assertNull($renderer->js($page));
     }
+
+    public function test_grapesjs_renderer_css_repairs_corrupted_page_styles_in_package(): void
+    {
+        $page = new SitePage([
+            'builder' => PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<section class="bg-blue-200 p-4">Hi</section>',
+                'css' => '.bg-blue-200 { background-color: var( }',
+            ],
+        ]);
+
+        $css = app(GrapesJsRenderer::class)->css($page);
+
+        $this->assertIsString($css);
+        $this->assertStringNotContainsString('background-color: var( }', $css);
+        $this->assertStringContainsString('var(--color-blue-200)', $css);
+    }
 }

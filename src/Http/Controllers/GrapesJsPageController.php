@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 use Voodflow\Voodbuilder\Support\GrapesJs\SitePageRevisionRecorder;
 
@@ -50,6 +51,8 @@ class GrapesJsPageController extends Controller
                 'project' => null,
             ],
         ]);
+
+        app(GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($normalized['html']);
 
         app(SitePageRevisionRecorder::class)
             ->recordIfChanged($sitePage, $previousPayload);

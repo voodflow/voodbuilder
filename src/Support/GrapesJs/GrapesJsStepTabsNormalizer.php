@@ -9,7 +9,7 @@ use DOMElement;
 use DOMXPath;
 
 /**
- * Upgrades Tailblocks-style step nav blocks (STEP 1…N anchors + single content) to accessible tabs.
+ * Upgrades step-nav blocks (STEP 1…N anchors + single content) to accessible tabs.
  */
 final class GrapesJsStepTabsNormalizer
 {

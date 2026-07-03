@@ -53,7 +53,7 @@ final class GrapesJsRichContentBlockAdapter
     public static function prepareBlockHtml(string $html): string
     {
         return GrapesJsPlaceholderNormalizer::normalizeHtml(
-            TailblocksThemeTokenMigrator::migrateHtml(
+            VoodbuilderThemeTokenMigrator::migrateHtml(
                 TailwindV4ClassMigrator::migrateHtml($html),
             ),
         );

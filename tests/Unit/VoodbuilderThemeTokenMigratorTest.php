@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\TailblocksThemeTokenMigrator;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderThemeTokenMigrator;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
-class TailblocksThemeTokenMigratorTest extends TestCase
+class VoodbuilderThemeTokenMigratorTest extends TestCase
 {
     public function test_migrates_surface_and_text_tokens(): void
     {
         $html = '<section class="bg-white text-gray-600"><h1 class="text-gray-900">Title</h1></section>';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('voodbuilder-gjs-section', $migrated);
         $this->assertStringContainsString('bg-vp-bg-elv', $migrated);
@@ -27,16 +27,17 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     {
         $html = '<section class="body-font"><h1 class="text-gray-900">Title</h1></section>';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-section bg-vp-bg', $migrated);
+        $this->assertStringContainsString('voodbuilder-gjs-section', $migrated);
+        $this->assertStringNotContainsString('bg-vp-bg', $migrated);
     }
 
     public function test_migrates_inline_light_background_to_theme_variable(): void
     {
         $html = '<section style="background-color: #ffffff;"><h1>Title</h1></section>';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('background-color: var(--color-vp-bg-elv)', $migrated);
     }
@@ -45,7 +46,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     {
         $css = '#hero { background-color: #ffffff; color: #111827; }';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
 
         $this->assertStringContainsString('background-color: var(--color-vp-bg-elv)', $migrated);
         $this->assertStringContainsString('color: var(--color-vp-text-1)', $migrated);
@@ -53,16 +54,16 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_migrates_brand_and_variant_tokens(): void
     {
-        $token = TailblocksThemeTokenMigrator::migrateToken('hover:bg-indigo-600');
+        $token = VoodbuilderThemeTokenMigrator::migrateToken('hover:bg-indigo-600');
 
         $this->assertSame('hover:bg-vp-brand-3', $token);
-        $this->assertSame('text-vp-brand-1', TailblocksThemeTokenMigrator::migrateToken('text-indigo-500'));
-        $this->assertSame('bg-vp-gray-soft', TailblocksThemeTokenMigrator::migrateToken('bg-indigo-50'));
+        $this->assertSame('text-vp-brand-1', VoodbuilderThemeTokenMigrator::migrateToken('text-indigo-500'));
+        $this->assertSame('bg-vp-gray-soft', VoodbuilderThemeTokenMigrator::migrateToken('bg-indigo-50'));
     }
 
     public function test_migrates_legacy_button_class_to_theme_utilities(): void
     {
-        $classes = TailblocksThemeTokenMigrator::migrateClassList('voodbuilder-gjs-btn-primary inline-flex text-white');
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-gjs-btn-primary inline-flex text-white');
 
         $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $classes);
         $this->assertStringContainsString('bg-vp-brand-1', $classes);
@@ -73,7 +74,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     {
         $css = '.voodbuilder-gjs-btn-primary { background-color: #6366f1; } .voodbuilder-gjs-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
 
         $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $migrated);
         $this->assertStringContainsString('.safe { color: red; }', $migrated);
@@ -81,18 +82,52 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_preserves_non_theme_utilities(): void
     {
-        $this->assertSame('text-white', TailblocksThemeTokenMigrator::migrateToken('text-white'));
-        $this->assertSame('rounded-lg', TailblocksThemeTokenMigrator::migrateToken('rounded-lg'));
+        $this->assertSame('text-white', VoodbuilderThemeTokenMigrator::migrateToken('text-white'));
+        $this->assertSame('rounded-lg', VoodbuilderThemeTokenMigrator::migrateToken('rounded-lg'));
     }
 
     public function test_migrates_brand_hex_in_css_without_touching_custom_colors(): void
     {
         $css = '#btn { background-color: #6366f1; } .custom { background-color: #002b49; }';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateCss($css);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
 
         $this->assertStringContainsString('background-color: var(--color-vp-brand-1)', $migrated);
         $this->assertStringContainsString('background-color: #002b49', $migrated);
+    }
+
+    public function test_migrate_css_preserves_tailwind_var_references_in_declarations(): void
+    {
+        $css = <<<'CSS'
+        :root {
+          --color-blue-200: oklch(0.882 0.059 254.128);
+        }
+        .bg-blue-200 {
+          background-color: var(--color-blue-200);
+        }
+        CSS;
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
+
+        $this->assertStringContainsString('background-color: var(--color-blue-200)', $migrated);
+        $this->assertDoesNotMatchRegularExpression('/background-color:\s*var\(\s*\}/', $migrated);
+    }
+
+    public function test_migrate_component_css_preserves_palette_utilities_with_fallbacks(): void
+    {
+        $css = <<<'CSS'
+        .voodbuilder-pasted-component .bg-blue-400 {
+          background-color: var(--color-blue-400);
+        }
+        .voodbuilder-pasted-component .bg-blue-200 {
+          background-color: var(--color-blue-200);
+        }
+        CSS;
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateComponentCss($css);
+
+        $this->assertStringContainsString('var(--color-blue-400, oklch(70.7% 0.165 254.624))', $migrated);
+        $this->assertStringContainsString('var(--color-blue-200, oklch(88.2% 0.059 254.128))', $migrated);
     }
 
     public function test_migrates_grapesjs_project_component_classes(): void
@@ -114,12 +149,12 @@ class TailblocksThemeTokenMigratorTest extends TestCase
             ]],
         ];
 
-        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateProject($project);
         $class = $migrated['pages'][0]['frames'][0]['component']['components'][0]['attributes']['class'];
 
         $this->assertStringContainsString('bg-vp-brand-1', $class);
         $this->assertStringNotContainsString('bg-indigo-500', $class);
-        $this->assertSame('text-white', TailblocksThemeTokenMigrator::migrateToken('text-white'));
+        $this->assertSame('text-white', VoodbuilderThemeTokenMigrator::migrateToken('text-white'));
     }
 
     public function test_migrates_grapesjs_project_string_classes_and_removes_legacy_button_styles(): void
@@ -153,7 +188,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
             ]],
         ];
 
-        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateProject($project);
         $classes = $migrated['pages'][0]['frames'][0]['component']['components'][0]['classes'];
 
         $this->assertSame([], $migrated['styles']);
@@ -166,7 +201,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_dedupes_conflicting_hover_brand_classes_from_indigo_migration(): void
     {
-        $classes = TailblocksThemeTokenMigrator::migrateClassList(
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList(
             'inline-flex bg-indigo-500 hover:bg-indigo-600 hover:bg-indigo-500 text-white',
         );
 
@@ -181,7 +216,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
 
     public function test_dedupes_conflicting_hover_brand_classes_after_legacy_button_migration(): void
     {
-        $classes = TailblocksThemeTokenMigrator::migrateClassList(
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList(
             'voodbuilder-gjs-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
         );
 
@@ -198,7 +233,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
     {
         $html = '<h1 class="title-font text-4xl text-white" style="color: rgb(60, 60, 67);">Voodbuilder</h1>';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('text-white', $migrated);
         $this->assertStringNotContainsString('color:', $migrated);
@@ -224,7 +259,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
             ]],
         ];
 
-        $migrated = TailblocksThemeTokenMigrator::migrateProject($project);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateProject($project);
         $heading = $migrated['pages'][0]['frames'][0]['component']['components'][0];
 
         $this->assertContains('text-white', $heading['classes']);
@@ -237,7 +272,7 @@ class TailblocksThemeTokenMigratorTest extends TestCase
             .'<div class="voodbuilder-pasted-component bg-blue-400"><p class="text-blue-500">Hi</p></div>'
             .'</div>';
 
-        $migrated = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('bg-blue-400', $migrated);
         $this->assertStringNotContainsString('bg-vp-brand-1', $migrated);

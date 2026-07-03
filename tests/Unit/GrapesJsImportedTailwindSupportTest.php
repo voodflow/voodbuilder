@@ -70,6 +70,29 @@ class GrapesJsImportedTailwindSupportTest extends TestCase
         $this->assertStringNotContainsString('#f87171', $baked);
     }
 
+    public function test_strip_spurious_svg_baked_paint_restores_tailwind_current_color_icons(): void
+    {
+        $html = '<svg class="text-vp-brand-1" fill="currentColor" style="fill: #000000;stroke: #000000;color: #000000;" viewBox="0 0 20 20">'
+            .'<path fill="#000000" d="M16.707 5.293"/></svg>';
+
+        $restored = GrapesJsImportedTailwindSupport::stripSpuriousSvgBakedPaint($html);
+
+        $this->assertStringNotContainsString('#000000', $restored);
+        $this->assertStringContainsString('fill="currentColor"', $restored);
+        $this->assertStringContainsString('text-vp-brand-1', $restored);
+    }
+
+    public function test_prepare_html_does_not_bake_black_paint_over_tailwind_brand_icons(): void
+    {
+        $html = '<svg class="text-vp-brand-1" fill="currentColor" style="color: #000000;" viewBox="0 0 20 20">'
+            .'<path fill="currentColor" d="M16.707 5.293"/></svg>';
+
+        $prepared = GrapesJsImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertStringNotContainsString('#000000', $prepared);
+        $this->assertStringContainsString('fill="currentColor"', $prepared);
+    }
+
     public function test_parse_background_url_class_handles_quoted_and_unquoted_urls(): void
     {
         $this->assertSame(
