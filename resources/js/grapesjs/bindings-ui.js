@@ -24,6 +24,38 @@ function componentTag(component) {
     return String(component.get('tagName') ?? '').toLowerCase();
 }
 
+function fieldTypeLabel(type, labels = {}) {
+    const map = {
+        text: labels.fieldTypeText ?? 'Text',
+        url: labels.fieldTypeUrl ?? 'URL',
+        image: labels.fieldTypeImage ?? 'Image',
+    };
+
+    return map[type] ?? type ?? 'Text';
+}
+
+function formatFieldOptionLabel(field, labels = {}) {
+    const type = fieldTypeLabel(field?.type, labels);
+
+    return `[${type}] ${field.label}`;
+}
+
+function bindingPreviewSnippet(bindingKey, catalog, previewValues = {}) {
+    const value = previewValues?.[bindingKey];
+
+    if (value == null || value === '') {
+        return '';
+    }
+
+    const text = String(value).trim();
+
+    if (text.length <= 72) {
+        return text;
+    }
+
+    return `${text.slice(0, 69)}…`;
+}
+
 function flatBindingOptions(catalog) {
     const options = [];
 
@@ -1191,6 +1223,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                         <select class="voodbuilder-gjs-bindings-modal__select" data-bind-source></select>
                     </label>
                     <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-bind-field-search-label></span>
+                        <input type="search" class="voodbuilder-gjs-bindings-modal__input" data-bind-field-search autocomplete="off" />
+                    </label>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
                         <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
                         <select class="voodbuilder-gjs-bindings-modal__select" data-bind-field disabled></select>
                     </label>
@@ -1240,7 +1276,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             fieldBindPanel.hidden = true;
         }
         host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
-        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
+        host.querySelector('[data-bind-field-search-label]').textContent = labels.fieldSearch ?? 'Search fields';
+        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[2].textContent = labels.modalField;
         host.querySelector('[data-bind-clear]').textContent = labels.clearDynamic ?? 'Clear binding';
 
         const repeatPanel = host.querySelector('[data-repeat-panel]');
@@ -1267,6 +1304,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const repeatClearButton = host.querySelector('[data-repeat-clear]');
     const repeatCurrentEl = host.querySelector('[data-repeat-current]');
     const sourceSelect = host.querySelector('[data-bind-source]');
+    const fieldSearchInput = host.querySelector('[data-bind-field-search]');
     const fieldSelect = host.querySelector('[data-bind-field]');
     const applyButton = host.querySelector('[data-bind-apply]');
     const clearButton = host.querySelector('[data-bind-clear]');
@@ -1301,15 +1339,27 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         const source = groups
             .flatMap((group) => group.sources ?? [])
             .find((item) => item.id === sourceId);
+        const query = String(fieldSearchInput?.value ?? '').trim().toLowerCase();
+        const previousValue = fieldSelect.value;
 
         fieldSelect.innerHTML = '';
         fieldSelect.disabled = ! source;
 
         for (const field of source?.fields ?? []) {
+            const haystack = `${field.label} ${field.id} ${field.type ?? ''}`.toLowerCase();
+
+            if (query && ! haystack.includes(query)) {
+                continue;
+            }
+
             const option = document.createElement('option');
             option.value = field.id;
-            option.textContent = field.label;
+            option.textContent = formatFieldOptionLabel(field, labels);
             fieldSelect.appendChild(option);
+        }
+
+        if (previousValue && [...fieldSelect.options].some((option) => option.value === previousValue)) {
+            fieldSelect.value = previousValue;
         }
 
         if (applyButton) {
@@ -1358,11 +1408,17 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
         if (currentEl) {
             currentEl.hidden = false;
-            currentEl.textContent = `${labels.currentBinding ?? 'Current'}: ${boundComponentLabel(bindingKey, catalog)}`;
+            const preview = bindingPreviewSnippet(bindingKey, catalog, bindingsPreviewValues ?? {});
+            const type = resolveBindingFieldType(bindingKey, catalog);
+            const summary = `${boundComponentLabel(bindingKey, catalog)} · ${fieldTypeLabel(type, labels)}`;
+            currentEl.textContent = preview
+                ? `${labels.currentBinding ?? 'Current'}: ${summary} — “${preview}”`
+                : `${labels.currentBinding ?? 'Current'}: ${summary}`;
         }
     };
 
     sourceSelect.addEventListener('change', () => populateFields(! isModal));
+    fieldSearchInput?.addEventListener('input', () => populateFields(false));
     populateFields(false);
 
     const existingBinding = component?.getAttributes?.()['data-voodbuilder-bind'];
@@ -1383,7 +1439,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
     if (currentEl && existingBinding) {
         currentEl.hidden = false;
-        currentEl.textContent = `${labels.currentBinding ?? 'Current'}: ${boundComponentLabel(existingBinding, catalog)}`;
+        const preview = bindingPreviewSnippet(existingBinding, catalog, bindingsPreviewValues ?? {});
+        const type = resolveBindingFieldType(existingBinding, catalog);
+        const summary = `${boundComponentLabel(existingBinding, catalog)} · ${fieldTypeLabel(type, labels)}`;
+        currentEl.textContent = preview
+            ? `${labels.currentBinding ?? 'Current'}: ${summary} — “${preview}”`
+            : `${labels.currentBinding ?? 'Current'}: ${summary}`;
     } else if (currentEl) {
         currentEl.hidden = true;
     }
