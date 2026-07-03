@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 
 final class GrapesJsEditorGate
@@ -72,7 +73,7 @@ final class GrapesJsEditorGate
             ]),
             'globalClassesUrl' => route('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => route('voodbuilder.grapesjs.components.index'),
-            'packageVersion' => \Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion::current(),
+            'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'conditionOptions' => GrapesJsConditionHooks::options(),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),
@@ -90,6 +91,10 @@ final class GrapesJsEditorGate
                 'error' => __('voodbuilder::pro.frontend.error'),
                 'makeDynamic' => __('voodbuilder::pro.bindings.make_dynamic'),
                 'clearDynamic' => __('voodbuilder::pro.bindings.clear_dynamic'),
+                'selectParent' => __('voodbuilder::pro.grapesjs.toolbar.select_parent'),
+                'drag' => __('voodbuilder::pro.grapesjs.toolbar.drag'),
+                'clone' => __('voodbuilder::pro.grapesjs.toolbar.clone'),
+                'delete' => __('voodbuilder::pro.grapesjs.toolbar.delete'),
                 'modalTitle' => __('voodbuilder::pro.bindings.modal_title'),
                 'modalSource' => __('voodbuilder::pro.bindings.modal_source'),
                 'modalField' => __('voodbuilder::pro.bindings.modal_field'),

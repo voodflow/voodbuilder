@@ -1,5 +1,5 @@
 /**
- * Extend GrapesJS canvas component toolbar (arrow, move, copy, delete) via public APIs only.
+ * GrapesJS canvas component toolbar (parent select, drag, clone, delete) + dynamic bindings.
  * @see https://grapesjs.com/docs/api/component.html#toolbar
  */
 
@@ -10,12 +10,19 @@ export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 
-function toolbarHasVoodbuilderButtons(toolbar) {
-    return (toolbar ?? []).some((button) => {
-        const flag = button?.attributes?.[TOOLBAR_FLAG];
+function hasSelectableParent(component, editor) {
+    let parent = component.parent?.();
+    const wrapper = editor.getWrapper?.();
 
-        return flag === 'dynamic' || flag === 'clear-dynamic';
-    });
+    while (parent && parent !== wrapper) {
+        if (parent.get('selectable')) {
+            return true;
+        }
+
+        parent = parent.parent?.();
+    }
+
+    return false;
 }
 
 function buildDynamicToolbarButtons(labels = {}) {
@@ -27,7 +34,7 @@ function buildDynamicToolbarButtons(labels = {}) {
                 title: labels.makeDynamic ?? 'Make dynamic',
                 'aria-label': labels.makeDynamic ?? 'Make dynamic',
             },
-            label: lucideIcon('link', 15),
+            label: lucideIcon('link-2', 16),
             command: CMD_MAKE_DYNAMIC,
         },
         {
@@ -37,28 +44,68 @@ function buildDynamicToolbarButtons(labels = {}) {
                 title: labels.clearDynamic ?? 'Clear dynamic binding',
                 'aria-label': labels.clearDynamic ?? 'Clear dynamic binding',
             },
-            label: lucideIcon('unlink', 15),
+            label: lucideIcon('unlink-2', 16),
             command: CMD_CLEAR_DYNAMIC,
         },
     ];
 }
 
-function ensureDefaultToolbar(component) {
-    const toolbar = component.get('toolbar');
+function buildComponentToolbar(editor, component, labels = {}) {
+    const stylePrefix = editor.getConfig?.('stylePrefix') ?? 'gjs-';
+    const toolbar = [];
 
-    if ((toolbar == null || toolbar.length === 0) && typeof component.initToolbar === 'function') {
-        component.initToolbar();
+    if (component.collection && hasSelectableParent(component, editor)) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--parent',
+                [TOOLBAR_FLAG]: 'select-parent',
+                title: labels.selectParent ?? 'Select parent',
+                'aria-label': labels.selectParent ?? 'Select parent',
+            },
+            label: lucideIcon('chevrons-up', 16),
+            command: (ed) => ed.runCommand('core:component-exit', { force: true }),
+        });
     }
-}
 
-function insertBeforeDelete(toolbar, buttons) {
-    const next = [...toolbar];
-    const deleteIndex = next.findIndex((button) => button.command === 'tlb-delete');
-    const insertAt = deleteIndex >= 0 ? deleteIndex : next.length;
+    if (component.get('draggable')) {
+        toolbar.push({
+            attributes: {
+                class: `${stylePrefix}no-touch-actions`,
+                draggable: true,
+                title: labels.drag ?? 'Drag to move',
+                'aria-label': labels.drag ?? 'Drag to move',
+            },
+            label: lucideIcon('move', 16),
+            command: 'tlb-move',
+        });
+    }
 
-    next.splice(insertAt, 0, ...buttons);
+    if (component.get('copyable')) {
+        toolbar.push({
+            attributes: {
+                title: labels.clone ?? 'Duplicate',
+                'aria-label': labels.clone ?? 'Duplicate',
+            },
+            label: lucideIcon('copy', 16),
+            command: 'tlb-clone',
+        });
+    }
 
-    return next;
+    toolbar.push(...buildDynamicToolbarButtons(labels));
+
+    if (component.get('removable')) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--danger',
+                title: labels.delete ?? 'Delete',
+                'aria-label': labels.delete ?? 'Delete',
+            },
+            label: lucideIcon('trash-2', 16),
+            command: 'tlb-delete',
+        });
+    }
+
+    return toolbar;
 }
 
 function syncBoundToolbarState(editor, component) {
@@ -81,16 +128,38 @@ export function ensureCanvasComponentToolbarButtons(editor, component, labels = 
         return;
     }
 
-    ensureDefaultToolbar(component);
-
-    const toolbar = component.get('toolbar') ?? [];
-
-    if (! toolbarHasVoodbuilderButtons(toolbar)) {
-        component.set('toolbar', insertBeforeDelete(toolbar, buildDynamicToolbarButtons(labels)));
-    }
+    component.set('toolbar', buildComponentToolbar(editor, component, labels));
 
     window.requestAnimationFrame(() => {
         syncBoundToolbarState(editor, component);
+    });
+}
+
+export function registerCanvasDropAffordance(editor) {
+    if (editor.__voodbuilderCanvasDropAffordanceRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderCanvasDropAffordanceRegistered = true;
+
+    const ensureWrapperDroppable = () => {
+        const wrapper = editor.getWrapper?.();
+
+        if (! wrapper) {
+            return;
+        }
+
+        wrapper.set({
+            droppable: true,
+            highlightable: false,
+            selectable: false,
+            hoverable: false,
+        });
+    };
+
+    editor.on('load', ensureWrapperDroppable);
+    editor.on('component:add', () => {
+        window.requestAnimationFrame(ensureWrapperDroppable);
     });
 }
 
@@ -100,6 +169,8 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
     }
 
     editor.__voodbuilderCanvasToolbarRegistered = true;
+
+    registerCanvasDropAffordance(editor);
 
     editor.on('component:selected', (component) => {
         ensureCanvasComponentToolbarButtons(editor, component, labels);

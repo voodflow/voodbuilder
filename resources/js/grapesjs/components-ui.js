@@ -1291,7 +1291,7 @@ function syncComponentBlockQuickActions(editor) {
             editButton.dataset.voodbuilderComponentBlockEdit = '';
             editButton.title = 'Edit';
             editButton.setAttribute('aria-label', 'Edit');
-            editButton.innerHTML = lucideIcon('pencil', 14);
+            editButton.innerHTML = lucideIcon('pencil', 16);
 
             const exportButton = document.createElement('button');
             exportButton.type = 'button';
@@ -1299,7 +1299,7 @@ function syncComponentBlockQuickActions(editor) {
             exportButton.dataset.voodbuilderComponentBlockExport = '';
             exportButton.title = 'Export';
             exportButton.setAttribute('aria-label', 'Export');
-            exportButton.innerHTML = lucideIcon('upload', 14);
+            exportButton.innerHTML = lucideIcon('download', 16);
 
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
@@ -1307,7 +1307,7 @@ function syncComponentBlockQuickActions(editor) {
             deleteButton.dataset.voodbuilderComponentBlockDelete = '';
             deleteButton.title = 'Delete';
             deleteButton.setAttribute('aria-label', 'Delete');
-            deleteButton.innerHTML = lucideIcon('trash-2', 14);
+            deleteButton.innerHTML = lucideIcon('trash-2', 16);
 
             toolbar.append(editButton, exportButton, deleteButton);
             blockEl.appendChild(toolbar);
@@ -1928,6 +1928,20 @@ function buildComponentBlockMedia(item) {
     }
 
     if (name.includes('hero') || name.includes('header')) {
+        return thumbWrap(previewSvg(
+            '<path d="M10 16h28M12 22h20" />'
+            + '<rect x="14" y="28" width="20" height="5" rx="1.5" />',
+        ));
+    }
+
+    if (name.includes('pricing') || name.includes('price') || name.includes('plan')) {
+        return thumbWrap(previewSvg(
+            '<rect x="9" y="12" width="12" height="20" rx="2" />'
+            + '<rect x="23" y="8" width="16" height="24" rx="2" />',
+        ));
+    }
+
+    if (name.includes('stat') || name.includes('metric')) {
         return thumbWrap(previewSvg(
             '<path d="M10 16h28M12 22h20" />'
             + '<rect x="14" y="28" width="20" height="5" rx="1.5" />',

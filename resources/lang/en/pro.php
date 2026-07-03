@@ -260,6 +260,12 @@ return [
     ],
 
     'grapesjs' => [
+        'toolbar' => [
+            'select_parent' => 'Select parent',
+            'drag' => 'Drag to move',
+            'clone' => 'Duplicate',
+            'delete' => 'Delete',
+        ],
         'blocks' => [
             'site_header' => 'Site header (menu)',
             'site_footer' => 'Site footer — column menus',

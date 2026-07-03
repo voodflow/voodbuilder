@@ -29,6 +29,8 @@ import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtim
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from './bindings-ui.js';
+import { registerCanvasComponentToolbar } from './canvas-component-toolbar.js';
+import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport } from './canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from './conditions-ui.js';
 import {
     ensureComponentInstancesForExport,
@@ -100,6 +102,7 @@ function buildPayload(editor) {
     syncRepeatBindingsForExport(editor);
     syncConditionsForExport(editor);
     syncVideoComponentsForExport(editor);
+    detachTopDropSpacerForExport(editor);
 
     const payload = {
         html: editor.getHtml({
@@ -110,6 +113,8 @@ function buildPayload(editor) {
         css: editor.getCss(),
         js: editor.getJs(),
     };
+
+    restoreTopDropSpacerAfterExport(editor);
 
     restoreSvgPaintInspectorStyles(editor);
 
@@ -406,6 +411,17 @@ function registerInspectorExtensions(editor, shell, options, labels) {
     }
 
     editor.__voodbuilderInspectorExtensionsRegistered = true;
+
+    registerCanvasComponentToolbar(editor, {
+        makeDynamic: labels.makeDynamic,
+        clearDynamic: labels.clearDynamic,
+        selectParent: labels.selectParent,
+        drag: labels.drag,
+        clone: labels.clone,
+        delete: labels.delete,
+    });
+
+    registerCanvasBlockDrag(editor);
 
     void registerBindingsUi(editor, {
         bindingsUrl: options.bindingsUrl,

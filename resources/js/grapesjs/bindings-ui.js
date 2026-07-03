@@ -7,7 +7,6 @@ import { lucideIcon } from './editor-icons.js';
 import {
     CMD_CLEAR_DYNAMIC,
     CMD_MAKE_DYNAMIC,
-    registerCanvasComponentToolbar,
 } from './canvas-component-toolbar.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
@@ -1912,11 +1911,6 @@ export async function registerBindingsUi(editor, options = {}) {
 
             clearBindingFromComponent(selected);
         },
-    });
-
-    registerCanvasComponentToolbar(editor, {
-        makeDynamic: labels.makeDynamic,
-        clearDynamic: labels.clearDynamic,
     });
 
     editor.on('load', () => {

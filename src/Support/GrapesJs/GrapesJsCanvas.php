@@ -80,7 +80,86 @@ final class GrapesJsCanvas
 
         [data-gjs-type="wrapper"] {
             background-color: var(--color-vp-bg, #ffffff);
+            box-sizing: border-box;
             min-height: 100vh;
+            padding-top: 0.5rem;
+            padding-bottom: 2.5rem;
+        }
+
+        .voodbuilder-gjs-top-drop-spacer {
+            box-sizing: border-box;
+            height: 0;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+        }
+
+        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-top-drop-spacer,
+        .voodbuilder-gjs-top-drop-spacer.is-active {
+            min-height: 4.5rem;
+            height: 4.5rem;
+            opacity: 1;
+            pointer-events: auto;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 8%, transparent);
+            border-radius: 0.375rem;
+        }
+
+        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-top-drop-spacer::after,
+        .voodbuilder-gjs-top-drop-spacer.is-active::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+            border-radius: 0.375rem;
+            box-sizing: border-box;
+        }
+
+        .voodbuilder-gjs-drag-chip {
+            position: relative !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+            width: auto !important;
+            min-width: 7.5rem !important;
+            max-width: 14rem !important;
+            min-height: 2.5rem !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0.5rem 0.875rem !important;
+            overflow: hidden !important;
+            border-radius: 0.5rem !important;
+            border: 2px solid color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent) !important;
+            background: var(--color-vp-bg-elv, #fff) !important;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16) !important;
+            opacity: 0.96 !important;
+            pointer-events: none !important;
+            font-family: ui-sans-serif, system-ui, sans-serif !important;
+            font-size: 0.8125rem !important;
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+            color: var(--color-vp-text-1, #0f172a) !important;
+            white-space: nowrap !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .voodbuilder-gjs-drag-chip > * {
+            display: none !important;
+        }
+
+        .voodbuilder-gjs-drag-chip::after {
+            content: attr(data-voodbuilder-drag-label);
+            display: block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         html {

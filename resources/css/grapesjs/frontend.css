@@ -955,6 +955,26 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     pointer-events: auto;
 }
 
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    fill: none !important;
+    stroke: currentColor;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon path,
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon line,
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon rect,
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon circle,
+.voodbuilder-gjs-component-block__toolbar-btn .voodbuilder-gjs-icon polyline {
+    fill: none !important;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
 .voodbuilder-gjs-component-block__toolbar-btn {
     display: inline-flex;
     align-items: center;

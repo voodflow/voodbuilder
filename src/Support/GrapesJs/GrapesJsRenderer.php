@@ -19,6 +19,8 @@ final class GrapesJsRenderer
             return '';
         }
 
+        $html = GrapesJsHtmlSanitizer::stripEditorOnlyElements($html);
+
         return GrapesJsPlaceholderNormalizer::normalizeHtml(
             GrapesJsFormNormalizer::normalize(
                 GrapesJsStepTabsNormalizer::normalize(

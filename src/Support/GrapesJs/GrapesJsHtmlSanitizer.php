@@ -40,4 +40,19 @@ final class GrapesJsHtmlSanitizer
     {
         return preg_replace('/%(?![0-9A-Fa-f]{2})/', '%25', $value) ?? $value;
     }
+
+    public static function stripEditorOnlyElements(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-top-drop-spacer')) {
+            return $html;
+        }
+
+        $stripped = preg_replace(
+            '/<div\b[^>]*\bdata-voodbuilder-top-drop-spacer\b[^>]*>\s*<\/div>/i',
+            '',
+            $html,
+        );
+
+        return is_string($stripped) ? $stripped : $html;
+    }
 }
