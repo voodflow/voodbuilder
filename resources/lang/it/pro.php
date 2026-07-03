@@ -66,6 +66,10 @@ return [
         'repeat_item_hint' => 'Scegli List item e il campo per questo elemento (titolo, descrizione, slug…).',
         'repeat_container_no_bind' => 'I container con list repeat non possono avere un binding di campo. Collega i campi dentro la card.',
         'repeat_list_not_field' => 'La repeat list si configura nella sezione List repeat, non come binding di campo.',
+        'field_search' => 'Cerca campi',
+        'field_type_text' => 'Testo',
+        'field_type_url' => 'URL',
+        'field_type_image' => 'Immagine',
     ],
 
     'editor_ui' => [
@@ -83,6 +87,8 @@ return [
         'tab_content' => 'Contenuto',
         'tab_style' => 'Stile',
         'style_classes_title' => 'Classi',
+        'class_input_placeholder' => 'Aggiungi classe Tailwind…',
+        'class_pending_compile' => 'Non ancora usata in pagina. Le nuove utility vengono compilate al salvataggio del markup.',
         'tab_dynamic' => 'Dinamico',
         'tab_layers' => 'Layers',
         'tab_conditions' => 'Condizioni',
@@ -191,6 +197,7 @@ return [
         'delete_confirm' => 'Eliminare “{name}” dalla libreria? Le istanze già in pagina restano finché non le rimuovi.',
         'delete_error' => 'Impossibile eliminare il componente.',
         'canvas_edit' => 'Modifica codice',
+        'canvas_save' => 'Salva nel catalogo',
         'canvas_delete' => 'Elimina dal canvas',
         'canvas_duplicate' => 'Duplica',
         'import' => 'Importa',

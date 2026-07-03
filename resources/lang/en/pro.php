@@ -66,6 +66,10 @@ return [
         'repeat_item_hint' => 'Choose List item and pick the field for this element (title, description, slug…).',
         'repeat_container_no_bind' => 'List repeat containers cannot hold a field binding. Bind the fields inside the card template.',
         'repeat_list_not_field' => 'Repeat list is configured via the List repeat section below, not as a field binding.',
+        'field_search' => 'Search fields',
+        'field_type_text' => 'Text',
+        'field_type_url' => 'URL',
+        'field_type_image' => 'Image',
     ],
 
     'editor_ui' => [
@@ -83,6 +87,8 @@ return [
         'tab_content' => 'Content',
         'tab_style' => 'Style',
         'style_classes_title' => 'Classes',
+        'class_input_placeholder' => 'Add Tailwind class…',
+        'class_pending_compile' => 'Not used on the page yet. New utilities compile when you save component markup.',
         'tab_dynamic' => 'Dynamic',
         'tab_layers' => 'Layers',
         'tab_conditions' => 'Conditions',
@@ -191,6 +197,7 @@ return [
         'delete_confirm' => 'Delete “{name}” from the library? Existing instances on pages will keep working until removed.',
         'delete_error' => 'Could not delete component.',
         'canvas_edit' => 'Edit code',
+        'canvas_save' => 'Save to catalog',
         'canvas_delete' => 'Remove from canvas',
         'canvas_duplicate' => 'Duplicate',
         'import' => 'Import',

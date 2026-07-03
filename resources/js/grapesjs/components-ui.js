@@ -7,7 +7,7 @@ import { openContextMenu } from './context-menu.js';
 import { openComponentCodeImportDialog, openComponentCodeEditorDialog } from './component-code-import.js';
 import { normalizeComponentCategory, resolveComponentCategories } from './component-categories.js';
 import { stripEmbeddableMediaFromHtml } from './component-media.js';
-import { alertDialog, componentMetaDialog, confirmDialog } from './editor-dialog.js';
+import { alertDialog, confirmDialog } from './editor-dialog.js';
 import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
 import { lucideIcon } from './editor-icons.js';
 import { resolveCategoryOrder } from './section-block-meta.js';
@@ -23,7 +23,7 @@ import {
     resolveCatalogItemFromComponentBlock,
 } from './component-block-utils.js';
 import { refreshBlockPinUi } from './block-pins.js';
-import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
+import { saveComponentToCatalog } from './component-catalog-actions.js';
 import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import {
     extractBackgroundUtilityClasses,
@@ -903,59 +903,22 @@ export function registerComponentsUi(editor, options = {}) {
             return;
         }
 
-        const meta = await componentMetaDialog({
-            title: labels.componentsSave ?? 'Save selection as component',
+        const saved = await saveComponentToCatalog(editor, selected, {
+            componentsUrl,
+            csrf,
             labels,
             categories,
-            defaultCategory: uncategorizedLabel,
-            namePlaceholder: labels.componentsNamePrompt ?? 'Component name',
-            categoryLabel: labels.componentsCodeImportCategory ?? 'Category',
-            confirmLabel: labels.dialogConfirm ?? 'OK',
+            uncategorizedLabel,
+            onSaved: (entry) => {
+                upsertCatalogEntry(entry);
+                focusComponentsLibrary();
+                syncCatalog();
+            },
         });
 
-        if (! meta?.name?.trim()) {
+        if (! saved) {
             return;
         }
-
-        const html = (() => {
-            syncPaintStylesForExport(editor);
-            bakeSvgPaintForComponent(editor, selected);
-
-            return selected.toHTML({ keepInlineStyle: true });
-        })();
-        const properties = inferProperties(selected);
-
-        const response = await fetch(componentsUrl.replace(/\/$/, ''), {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: editorApiHeaders(csrf, { json: true }),
-            body: JSON.stringify({
-                name: meta.name.trim(),
-                category: meta.category || null,
-                html,
-                properties,
-            }),
-        });
-
-        if (! response.ok) {
-            await alertDialog({
-                message: labels.componentsSaveError ?? 'Could not save component.',
-                labels,
-            });
-
-            return;
-        }
-
-        const payload = await response.json();
-        const saved = upsertCatalogEntry(payload.component);
-        focusComponentsLibrary();
-        syncCatalog();
-
-        selected.addAttributes({
-            [COMPONENT_ATTR]: String(saved.id),
-            [COMPONENT_SCOPE_ATTR]: String(saved.id),
-            [PROPS_ATTR]: JSON.stringify({}),
-        });
     });
 
     const bootstrapComponentBlocksLibrary = () => {
@@ -976,6 +939,31 @@ export function registerComponentsUi(editor, options = {}) {
         delete: deleteComponent,
         export: exportComponent,
         openMenu: openComponentMenu,
+        saveFromCanvas: async (component) => {
+            const target = component ?? editor.getSelected();
+
+            if (! target) {
+                await alertDialog({
+                    message: labels.selectComponent ?? 'Select an element first.',
+                    labels,
+                });
+
+                return;
+            }
+
+            await saveComponentToCatalog(editor, target, {
+                componentsUrl,
+                csrf,
+                labels,
+                categories,
+                uncategorizedLabel,
+                onSaved: (entry) => {
+                    upsertCatalogEntry(entry);
+                    focusComponentsLibrary();
+                    syncCatalog();
+                },
+            });
+        },
     };
     editor.__voodbuilderToggleComponentSelection = toggleComponentSelection;
 
@@ -1822,29 +1810,6 @@ function parseProps(raw) {
     } catch {
         return {};
     }
-}
-
-function inferProperties(component) {
-    const properties = [];
-    const seen = new Set();
-
-    component.find('[data-voodbuilder-prop]').forEach((child) => {
-        const id = child.getAttributes()['data-voodbuilder-prop'];
-
-        if (! id || seen.has(id)) {
-            return;
-        }
-
-        seen.add(id);
-        properties.push({
-            id,
-            label: id,
-            type: 'text',
-            default: child.get('content') ?? '',
-        });
-    });
-
-    return properties;
 }
 
 const COMPONENT_THEME_TOKEN_BRIDGE = `
