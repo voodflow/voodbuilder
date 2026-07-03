@@ -229,6 +229,16 @@ Registered resolvers run **before** automatic convention matching. Use them only
 
 Bound `img` elements use the related record **title** (or `name`, `label`, …) for `alt` when available — see `BindingImageAltResolver`.
 
+### URL fields and `slug`
+
+Fields guessed as URL (including `slug`) resolve through `BindingUrlResolver`:
+
+1. `{field}Url` accessor when present
+2. `getUrl()` on the model (recommended for list items such as tutorial series)
+3. Stored scalar value when it already looks like a path or absolute URL
+
+Binding `slug` on a **Read more** link therefore uses the model permalink, not the bare slug segment.
+
 ---
 
 ## Vtuts: `vtuts.latest`

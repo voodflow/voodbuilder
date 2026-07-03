@@ -69,6 +69,10 @@ abstract class AbstractModelIntegrationBindingSource implements GrapesJsBindingS
             return BindingMediaUrlResolver::resolve($record, $fieldId, $fallbackValue, $bindingContext);
         }
 
+        if ($fieldType === BindingField::TYPE_URL) {
+            return BindingUrlResolver::resolve($record, $fieldId);
+        }
+
         $urlAccessor = Str::camel($fieldId).'Url';
 
         if (method_exists($record, $urlAccessor)) {
