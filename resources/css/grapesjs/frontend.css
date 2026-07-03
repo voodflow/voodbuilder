@@ -1715,6 +1715,21 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     position: relative;
     z-index: 1;
     pointer-events: auto;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.4375rem;
+    background: var(--color-vp-bg-alt, #f8fafc);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+}
+
+.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__select:focus,
+.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, var(--color-vp-divider, #e2e8f0));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
 }
 
 .voodbuilder-gjs-dynamic-panel__hint,

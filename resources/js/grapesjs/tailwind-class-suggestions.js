@@ -2,7 +2,7 @@
  * Tailwind utility autocomplete for the GrapesJS class manager (selector panel).
  */
 
-const SUGGESTION_LIST_ID = 'voodbuilder-tailwind-class-suggestions';
+const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
 
 const COMMON_TAILWIND_CLASSES = [
     'container', 'mx-auto', 'px-4', 'px-6', 'px-8', 'py-4', 'py-6', 'py-8', 'py-12', 'py-16', 'py-24',
@@ -30,27 +30,6 @@ const COMMON_TAILWIND_CLASSES = [
     'relative', 'absolute', 'fixed', 'sticky', 'inset-0', 'top-0', 'z-10', 'z-20', 'z-50',
 ];
 
-function ensureSuggestionDatalist() {
-    let datalist = document.getElementById(SUGGESTION_LIST_ID);
-
-    if (datalist) {
-        return datalist;
-    }
-
-    datalist = document.createElement('datalist');
-    datalist.id = SUGGESTION_LIST_ID;
-
-    for (const className of COMMON_TAILWIND_CLASSES) {
-        const option = document.createElement('option');
-        option.value = className;
-        datalist.appendChild(option);
-    }
-
-    document.body.appendChild(datalist);
-
-    return datalist;
-}
-
 function pageCompiledClassNames(editor) {
     const names = new Set();
 
@@ -65,15 +44,107 @@ function pageCompiledClassNames(editor) {
     return names;
 }
 
+function allSuggestionPool(editor) {
+    const pool = new Set(COMMON_TAILWIND_CLASSES);
+
+    for (const className of pageCompiledClassNames(editor)) {
+        pool.add(className);
+    }
+
+    return [...pool].sort();
+}
+
+function filterSuggestions(pool, query) {
+    const normalized = String(query ?? '').trim().toLowerCase();
+
+    if (! normalized) {
+        return pool.slice(0, 14);
+    }
+
+    const prefixMatches = [];
+    const containsMatches = [];
+
+    for (const className of pool) {
+        const lower = className.toLowerCase();
+
+        if (lower.startsWith(normalized)) {
+            prefixMatches.push(className);
+        } else if (lower.includes(normalized)) {
+            containsMatches.push(className);
+        }
+    }
+
+    return [...prefixMatches, ...containsMatches].slice(0, 14);
+}
+
+function ensureSuggestList(input) {
+    const field = input.closest('.gjs-field, .clm-tags, .gjs-clm-tags') ?? input.parentElement;
+    let list = field?.querySelector(`[${SUGGEST_LIST_ATTR}]`);
+
+    if (! list && field) {
+        field.classList.add('voodbuilder-gjs-class-suggest-field');
+        list = document.createElement('ul');
+        list.className = 'voodbuilder-gjs-class-suggest-list';
+        list.setAttribute(SUGGEST_LIST_ATTR, '');
+        list.hidden = true;
+        field.appendChild(list);
+    }
+
+    return list;
+}
+
+function renderSuggestList(list, suggestions, compiled, onPick) {
+    if (! list) {
+        return;
+    }
+
+    list.replaceChildren();
+
+    if (suggestions.length === 0) {
+        list.hidden = true;
+
+        return;
+    }
+
+    for (const className of suggestions) {
+        const item = document.createElement('li');
+        item.className = 'voodbuilder-gjs-class-suggest-list__item';
+        item.dataset.className = className;
+
+        const label = document.createElement('span');
+        label.className = 'voodbuilder-gjs-class-suggest-list__label';
+        label.textContent = className;
+
+        const status = document.createElement('span');
+        status.className = 'voodbuilder-gjs-class-suggest-list__status';
+        status.textContent = compiled.has(className) ? 'on page' : 'new';
+
+        item.append(label, status);
+        item.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            onPick(className);
+        });
+        list.appendChild(item);
+    }
+
+    list.hidden = false;
+}
+
 function wireClassInput(editor, input, hintEl, labels = {}) {
     if (! input || input.dataset.voodbuilderTwSuggest === '1') {
         return;
     }
 
     input.dataset.voodbuilderTwSuggest = '1';
-    input.setAttribute('list', SUGGESTION_LIST_ID);
     input.setAttribute('autocomplete', 'off');
     input.placeholder = labels.classInputPlaceholder ?? 'Add Tailwind class…';
+
+    const list = ensureSuggestList(input);
+    const field = input.closest('.gjs-field, .clm-tags, .gjs-clm-tags') ?? input.parentElement;
+
+    if (hintEl && field && hintEl.parentElement !== field) {
+        field.appendChild(hintEl);
+    }
 
     const refreshHint = () => {
         if (! hintEl) {
@@ -101,9 +172,39 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             ?? 'This class is not on the page yet. It will be compiled when you save if used in component markup.';
     };
 
-    input.addEventListener('input', refreshHint);
-    input.addEventListener('change', refreshHint);
-    refreshHint();
+    const refresh = () => {
+        const value = String(input.value ?? '').trim();
+        const compiled = pageCompiledClassNames(editor);
+        const pool = allSuggestionPool(editor);
+        const suggestions = filterSuggestions(pool, value);
+
+        renderSuggestList(list, suggestions, compiled, (className) => {
+            input.value = className;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter' }));
+            list.hidden = true;
+            refreshHint();
+        });
+
+        refreshHint();
+    };
+
+    input.addEventListener('input', refresh);
+    input.addEventListener('focus', refresh);
+    input.addEventListener('blur', () => {
+        window.setTimeout(() => {
+            if (list) {
+                list.hidden = true;
+            }
+        }, 140);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && list) {
+            list.hidden = true;
+        }
+    });
+
+    refresh();
 }
 
 export function registerTailwindClassSuggestions(editor, options = {}) {
@@ -115,7 +216,6 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
     }
 
     editor.__voodbuilderTailwindClassSuggestionsRegistered = true;
-    ensureSuggestionDatalist();
 
     let hintEl = mount.querySelector('[data-voodbuilder-class-suggest-hint]');
 
