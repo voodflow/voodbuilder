@@ -44,16 +44,73 @@ function bindingPreviewSnippet(bindingKey, catalog, previewValues = {}) {
     const value = previewValues?.[bindingKey];
 
     if (value == null || value === '') {
-        return '';
+        return null;
     }
 
     const text = String(value).trim();
+    const type = resolveBindingFieldType(bindingKey, catalog);
 
-    if (text.length <= 72) {
-        return text;
+    if (type === 'image' || type === 'url') {
+        const href = absolutePreviewUrl(text);
+        const label = type === 'image'
+            ? (href.split('/').pop()?.split('?')[0] || 'image')
+            : (text.length > 48 ? `${text.slice(0, 45)}…` : text);
+
+        return { kind: 'link', href, label };
     }
 
-    return `${text.slice(0, 69)}…`;
+    const snippet = text.length <= 72 ? text : `${text.slice(0, 69)}…`;
+
+    return { kind: 'text', text: snippet };
+}
+
+function absolutePreviewUrl(value) {
+    const text = String(value ?? '').trim();
+
+    if (text.startsWith('//')) {
+        return `${window.location.protocol}${text}`;
+    }
+
+    if (text.startsWith('/')) {
+        return `${window.location.origin}${text}`;
+    }
+
+    return text;
+}
+
+function renderCurrentBindingSummary(currentEl, bindingKey, catalog, previewValues, labels) {
+    if (! currentEl) {
+        return;
+    }
+
+    const formatted = bindingPreviewSnippet(bindingKey, catalog, previewValues);
+    const type = resolveBindingFieldType(bindingKey, catalog);
+    const summary = `${boundComponentLabel(bindingKey, catalog)} · ${fieldTypeLabel(type, labels)}`;
+    const prefix = `${labels.currentBinding ?? 'Current'}: ${summary}`;
+
+    currentEl.hidden = false;
+    currentEl.replaceChildren();
+
+    if (formatted?.kind === 'link') {
+        currentEl.append(document.createTextNode(`${prefix} — `));
+        const link = document.createElement('a');
+        link.href = formatted.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'voodbuilder-gjs-dynamic-panel__current-link';
+        link.textContent = formatted.label;
+        currentEl.append(link);
+
+        return;
+    }
+
+    if (formatted?.kind === 'text') {
+        currentEl.textContent = `${prefix} — “${formatted.text}”`;
+
+        return;
+    }
+
+    currentEl.textContent = prefix;
 }
 
 function flatBindingOptions(catalog) {
@@ -935,8 +992,10 @@ function paintPreviewOnElement(component, value, fieldType) {
     const text = String(value);
 
     if (fieldType === 'image' && tag === 'img') {
-        element.setAttribute('src', text);
-        component.addAttributes({ src: text }, { silent: true });
+        const src = absolutePreviewUrl(text);
+        element.setAttribute('src', src);
+        component.addAttributes({ src }, { silent: true });
+        component.set('src', src, { silent: true });
 
         return;
     }
@@ -1140,9 +1199,23 @@ export function registerBoundComponentType(editor) {
     const defaultType = domComponents.getType('default');
     const defaultModel = defaultType?.model;
 
+    domComponents.addType('voodbuilder-bound-image', {
+        extend: 'image',
+        isComponent: (element) => element?.tagName === 'IMG'
+            && element?.hasAttribute?.('data-voodbuilder-bind') === true,
+        model: {
+            defaults: {
+                highlightable: true,
+                selectable: true,
+                layerable: true,
+            },
+        },
+    });
+
     domComponents.addType('voodbuilder-bound', {
         extend: 'default',
-        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-bind') === true,
+        isComponent: (element) => element?.tagName !== 'IMG'
+            && element?.hasAttribute?.('data-voodbuilder-bind') === true,
         model: {
             defaults: {
                 ...(defaultModel?.prototype?.defaults ?? {}),
@@ -1409,20 +1482,20 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
         if (bound) {
             editor.select(bound);
+
+            const previewValue = bindingsPreviewValues?.[bindingKey];
+
+            if (previewValue) {
+                applyPreviewValue(bound, bindingKey, option, previewValue);
+            }
         }
 
         if (typeof onApplied === 'function') {
-            onApplied(component, bindingKey, option);
+            onApplied(bound ?? component, bindingKey, option);
         }
 
         if (currentEl) {
-            currentEl.hidden = false;
-            const preview = bindingPreviewSnippet(bindingKey, catalog, bindingsPreviewValues ?? {});
-            const type = resolveBindingFieldType(bindingKey, catalog);
-            const summary = `${boundComponentLabel(bindingKey, catalog)} · ${fieldTypeLabel(type, labels)}`;
-            currentEl.textContent = preview
-                ? `${labels.currentBinding ?? 'Current'}: ${summary} — “${preview}”`
-                : `${labels.currentBinding ?? 'Current'}: ${summary}`;
+            renderCurrentBindingSummary(currentEl, bindingKey, catalog, bindingsPreviewValues ?? {}, labels);
         }
     };
 
@@ -1450,13 +1523,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     }
 
     if (currentEl && existingBinding) {
-        currentEl.hidden = false;
-        const preview = bindingPreviewSnippet(existingBinding, catalog, bindingsPreviewValues ?? {});
-        const type = resolveBindingFieldType(existingBinding, catalog);
-        const summary = `${boundComponentLabel(existingBinding, catalog)} · ${fieldTypeLabel(type, labels)}`;
-        currentEl.textContent = preview
-            ? `${labels.currentBinding ?? 'Current'}: ${summary} — “${preview}”`
-            : `${labels.currentBinding ?? 'Current'}: ${summary}`;
+        renderCurrentBindingSummary(currentEl, existingBinding, catalog, bindingsPreviewValues ?? {}, labels);
     } else if (currentEl) {
         currentEl.hidden = true;
     }
@@ -1828,13 +1895,20 @@ export async function refreshBindingPreviews(editor, options = {}) {
         const value = resolvePreviewValue(bindingKey, component, values, listValues, catalog);
         const element = component.getView()?.el;
         const tag = componentTag(component);
-        const currentText = element?.textContent?.trim() ?? '';
 
         if (value == null || value === '') {
             return;
         }
 
-        if (tag !== 'img' && tag !== 'button' && tag !== 'a' && ! isPlaceholderText(currentText) && currentText !== '') {
+        if (tag === 'img') {
+            applyPreviewValue(component, bindingKey, option, value);
+
+            return;
+        }
+
+        const currentText = element?.textContent?.trim() ?? '';
+
+        if (tag !== 'button' && tag !== 'a' && ! isPlaceholderText(currentText) && currentText !== '') {
             return;
         }
 

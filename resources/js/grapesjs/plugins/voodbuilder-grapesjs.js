@@ -5,6 +5,7 @@
 
 import { clearBackgroundCssRules, pruneRedundantSpacingZeros, resolveVisualStyleTarget } from '../tailwind-visual-style.js';
 import { registerBoundComponentType } from '../bindings-ui.js';
+import { registerTopDropSpacerType } from '../canvas-block-drag.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
 import { isComponentCategoryId } from '../component-block-utils.js';
@@ -654,6 +655,7 @@ export {
 };
 
 export default function vpressGrapesJsPlugin(editor, options = {}) {
+    registerTopDropSpacerType(editor);
     registerBoundComponentType(editor);
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 

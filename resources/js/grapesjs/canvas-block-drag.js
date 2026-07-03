@@ -273,7 +273,7 @@ function startDragChipLoop(editor) {
     tick();
 }
 
-function registerTopDropSpacerType(editor) {
+export function registerTopDropSpacerType(editor) {
     if (editor.__voodbuilderTopDropSpacerTypeRegistered) {
         return;
     }

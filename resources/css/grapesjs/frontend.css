@@ -1752,6 +1752,19 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     font-size: 0.8125rem;
     font-weight: 500;
     color: var(--color-vp-text-1, #0f172a);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.voodbuilder-gjs-dynamic-panel__current-link {
+    color: var(--color-vp-brand-1, #6366f1);
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+}
+
+.voodbuilder-gjs-dynamic-panel__current-link:hover {
+    color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 80%, #000);
 }
 
 .voodbuilder-gjs-dynamic-panel__actions {
