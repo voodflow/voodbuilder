@@ -72,6 +72,7 @@ final class GrapesJsEditorGate
             ]),
             'globalClassesUrl' => route('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => route('voodbuilder.grapesjs.components.index'),
+            'packageVersion' => \Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'conditionOptions' => GrapesJsConditionHooks::options(),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),
@@ -117,12 +118,12 @@ final class GrapesJsEditorGate
                 'panelBlocks' => __('voodbuilder::pro.editor_ui.panel_blocks'),
                 'panelLibrary' => __('voodbuilder::pro.editor_ui.panel_library'),
                 'panelInspector' => __('voodbuilder::pro.editor_ui.panel_inspector'),
-        'blockSearch' => __('voodbuilder::pro.editor_ui.block_search'),
-        'blocksLoadError' => __('voodbuilder::pro.editor_ui.blocks_load_error'),
-        'blockPin' => __('voodbuilder::pro.editor_ui.block_pin'),
-        'blockUnpin' => __('voodbuilder::pro.editor_ui.block_unpin'),
-        'blockPinnedCategory' => __('voodbuilder::pro.editor_ui.block_pinned_category'),
-        'componentSearch' => __('voodbuilder::pro.editor_ui.component_search'),
+                'blockSearch' => __('voodbuilder::pro.editor_ui.block_search'),
+                'blocksLoadError' => __('voodbuilder::pro.editor_ui.blocks_load_error'),
+                'blockPin' => __('voodbuilder::pro.editor_ui.block_pin'),
+                'blockUnpin' => __('voodbuilder::pro.editor_ui.block_unpin'),
+                'blockPinnedCategory' => __('voodbuilder::pro.editor_ui.block_pinned_category'),
+                'componentSearch' => __('voodbuilder::pro.editor_ui.component_search'),
                 'tabElements' => __('voodbuilder::pro.editor_ui.tab_elements'),
                 'tabComponents' => __('voodbuilder::pro.editor_ui.tab_components'),
                 'tabContent' => __('voodbuilder::pro.editor_ui.tab_content'),
@@ -143,11 +144,11 @@ final class GrapesJsEditorGate
                 'zoomIn' => __('voodbuilder::pro.editor_ui.zoom_in'),
                 'zoomOut' => __('voodbuilder::pro.editor_ui.zoom_out'),
                 'revisions' => __('voodbuilder::pro.editor_ui.revisions'),
-        'compilingStyles' => __('voodbuilder::pro.editor_ui.compiling_styles'),
-        'loadingEditor' => __('voodbuilder::pro.editor_ui.loading_editor'),
-        'toggleLibraryPanel' => __('voodbuilder::pro.editor_ui.toggle_library_panel'),
-        'toggleInspectorPanel' => __('voodbuilder::pro.editor_ui.toggle_inspector_panel'),
-        'panelToggles' => __('voodbuilder::pro.editor_ui.panel_toggles'),
+                'compilingStyles' => __('voodbuilder::pro.editor_ui.compiling_styles'),
+                'loadingEditor' => __('voodbuilder::pro.editor_ui.loading_editor'),
+                'toggleLibraryPanel' => __('voodbuilder::pro.editor_ui.toggle_library_panel'),
+                'toggleInspectorPanel' => __('voodbuilder::pro.editor_ui.toggle_inspector_panel'),
+                'panelToggles' => __('voodbuilder::pro.editor_ui.panel_toggles'),
                 'revisionsTitle' => __('voodbuilder::pro.revisions.title'),
                 'revisionsRestore' => __('voodbuilder::pro.revisions.restore'),
                 'revisionsRestoreConfirm' => __('voodbuilder::pro.revisions.restore_confirm'),
@@ -218,6 +219,8 @@ final class GrapesJsEditorGate
                 'componentsExportAll' => __('voodbuilder::pro.components.export_all'),
                 'componentsExportOne' => __('voodbuilder::pro.components.export_one'),
                 'componentsExportSelected' => __('voodbuilder::pro.components.export_selected'),
+                'componentsDeleteSelected' => __('voodbuilder::pro.components.delete_selected'),
+                'componentsDeleteSelectedConfirm' => __('voodbuilder::pro.components.delete_selected_confirm'),
                 'componentsSelectMode' => __('voodbuilder::pro.components.select_mode'),
                 'componentsSelectCancel' => __('voodbuilder::pro.components.select_cancel'),
                 'componentsSelectedCount' => __('voodbuilder::pro.components.selected_count'),
@@ -229,6 +232,7 @@ final class GrapesJsEditorGate
                 'componentsImportSuccess' => __('voodbuilder::pro.components.import_success'),
                 'componentsImportError' => __('voodbuilder::pro.components.import_error'),
                 'componentsImportInvalidFile' => __('voodbuilder::pro.components.import_invalid_file'),
+                'componentsExportError' => __('voodbuilder::pro.components.export_error'),
                 'componentsCodeImport' => __('voodbuilder::pro.components.code_import'),
                 'componentsCodeImportTitle' => __('voodbuilder::pro.components.code_import_title'),
                 'componentsCodeImportHint' => __('voodbuilder::pro.components.code_import_hint'),
@@ -350,20 +354,22 @@ final class GrapesJsEditorGate
         $js = (string) ($payload['js'] ?? '');
         $project = $payload['project'] ?? null;
 
-        return [
-            'html' => GrapesJsImportedTailwindSupport::bakeSvgPaintInHtml(
+        $migratedHtml = GrapesJsImportedTailwindSupport::bakeSvgPaintInHtml(
+            GrapesJsImportedTailwindSupport::stripSpuriousSvgBakedPaint(
                 app(GrapesJsBindingNormalizer::class)->normalizeHtml(
                     GrapesJsPlaceholderNormalizer::normalizeHtml(
-                        TailblocksThemeTokenMigrator::migrateHtml($html),
+                        VoodbuilderThemeTokenMigrator::migrateHtml($html),
                     ),
                 ),
             ),
-            'css' => GrapesJsCssSanitizer::sanitize(
-                TailblocksThemeTokenMigrator::migrateCss($css),
-            ),
+        );
+
+        return [
+            'html' => $migratedHtml,
+            'css' => GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($migratedHtml, $css),
             'js' => GrapesJsJsSanitizer::sanitize($js),
             'project' => is_array($project)
-                ? TailblocksThemeTokenMigrator::migrateProject($project)
+                ? VoodbuilderThemeTokenMigrator::migrateProject($project)
                 : $project,
         ];
     }

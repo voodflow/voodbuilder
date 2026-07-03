@@ -11,15 +11,18 @@ final class GrapesJsComponentImporter
 {
     /**
      * @param  array<int, mixed>  $rawComponents
+     * @param  array<string, mixed>|null  $importMeta
      * @return list<BuilderComponent>
      */
-    public function import(array $rawComponents): array
+    public function import(array $rawComponents, ?array $importMeta = null): array
     {
         if ($rawComponents === []) {
             throw ValidationException::withMessages([
                 'components' => __('voodbuilder::pro.components.import_empty'),
             ]);
         }
+
+        GrapesJsComponentBundle::assertImportable($importMeta);
 
         if (count($rawComponents) > 100) {
             throw ValidationException::withMessages([

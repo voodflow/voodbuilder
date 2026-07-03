@@ -17,12 +17,14 @@ import {
     componentCategoryAttributes,
     isComponentBlock,
     isComponentBlockId,
+    isComponentBlockElement,
     isComponentCategoryId,
     resolveBlockFromElement,
+    resolveCatalogItemFromComponentBlock,
 } from './component-block-utils.js';
 import { refreshBlockPinUi } from './block-pins.js';
 import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
-import { applyBlocksLibraryUi, readBlocksSearchQuery } from './blocks-library-sync.js';
+import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import {
     extractBackgroundUtilityClasses,
     isBackgroundUtilityClass,
@@ -125,7 +127,7 @@ export function registerComponentsUi(editor, options = {}) {
                             data-voodbuilder-components-import-toggle
                             title="${escapeHtml(labels.componentsImport ?? 'Import')}"
                             aria-label="${escapeHtml(labels.componentsImport ?? 'Import')}"
-                        >${lucideIcon('upload', 16)}</button>
+                        >${lucideIcon('download', 16)}</button>
                         <button
                             type="button"
                             class="voodbuilder-gjs-icon-btn voodbuilder-gjs-components-library__icon-btn"
@@ -140,7 +142,7 @@ export function registerComponentsUi(editor, options = {}) {
                             data-voodbuilder-components-export
                             title="${escapeHtml(labels.componentsExportAll ?? labels.componentsExport ?? 'Export all')}"
                             aria-label="${escapeHtml(labels.componentsExportAll ?? labels.componentsExport ?? 'Export all')}"
-                        >${lucideIcon('download', 16)}</button>
+                        >${lucideIcon('upload', 16)}</button>
                     </div>
                 </div>
                 <div class="voodbuilder-gjs-components-selection-bar" data-voodbuilder-components-selection-bar hidden>
@@ -151,8 +153,12 @@ export function registerComponentsUi(editor, options = {}) {
                     </p>
                     <div class="voodbuilder-gjs-components-selection-bar__actions">
                         <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-components-selection-bar__action" data-voodbuilder-components-export-selected disabled>
-                            ${lucideIcon('download', 14)}
+                            ${lucideIcon('upload', 14)}
                             <span>${escapeHtml(labels.componentsExportSelected ?? 'Export selected')}</span>
+                        </button>
+                        <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-components-selection-bar__action voodbuilder-gjs-components-selection-bar__action--danger" data-voodbuilder-components-delete-selected disabled>
+                            ${lucideIcon('trash-2', 14)}
+                            <span>${escapeHtml(labels.componentsDeleteSelected ?? 'Delete selected')}</span>
                         </button>
                         <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-components-selection-bar__action" data-voodbuilder-components-select-cancel>
                             ${lucideIcon('x', 14)}
@@ -284,25 +290,57 @@ export function registerComponentsUi(editor, options = {}) {
         importDropzone?.classList.remove('is-dragover');
     };
 
-    const exportComponents = (items, filename) => {
+    const exportComponents = async (items, filename) => {
         if (! items.length) {
             return;
         }
 
-        downloadComponentsExport(items, filename);
+        const ids = items
+            .map((item) => item?.id)
+            .filter((id) => id != null && id !== '');
+
+        try {
+            const response = await fetch(`${componentsUrl.replace(/\/$/, '')}/export`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({ ids }),
+            });
+
+            if (! response.ok) {
+                await alertDialog({
+                    message: await resolveApiErrorMessage(
+                        response,
+                        labels.componentsExportError ?? 'Could not export components.',
+                        labels,
+                    ),
+                    labels,
+                });
+
+                return;
+            }
+
+            const payload = await response.json();
+            downloadComponentsExportPayload(payload, filename);
+        } catch {
+            await alertDialog({
+                message: labels.componentsExportError ?? 'Could not export components.',
+                labels,
+            });
+        }
     };
 
-    const exportCatalog = () => {
-        exportComponents(catalog, exportBundleFilename());
+    const exportCatalog = async () => {
+        await exportComponents(catalog, exportBundleFilename());
     };
 
-    const exportSelectedComponents = () => {
+    const exportSelectedComponents = async () => {
         const items = catalog.filter((item) => selectedIds.has(String(item.id)));
-        exportComponents(items, exportBundleFilename('selected'));
+        await exportComponents(items, exportBundleFilename('selected'));
     };
 
-    const exportComponent = (item) => {
-        exportComponents([item], exportComponentFilename(item.name));
+    const exportComponent = async (item) => {
+        await exportComponents([item], exportComponentFilename(item.name));
     };
 
     const setSelectionMode = (active) => {
@@ -314,6 +352,7 @@ export function registerComponentsUi(editor, options = {}) {
         }
 
         syncComponentBlockDragState(editor, selectionMode);
+        tagComponentBlockElements(editor);
         updateLibraryHint();
         updateSelectionUi();
         updateBlocksSelectionState();
@@ -333,17 +372,7 @@ export function registerComponentsUi(editor, options = {}) {
         updateBlocksSelectionState();
     };
 
-    const resolveCatalogItemFromBlockElement = (blockEl) => {
-        const block = resolveBlockFromElement(editor, blockEl);
-
-        if (! isComponentBlock(block)) {
-            return null;
-        }
-
-        const itemId = String(block.get?.('id') ?? block.id).slice(BLOCK_PREFIX.length);
-
-        return catalog.find((entry) => String(entry.id) === itemId) ?? null;
-    };
+    const resolveCatalogItemFromBlockElement = (blockEl) => resolveCatalogItemFromComponentBlock(editor, blockEl);
 
     const updateBlocksSelectionState = () => {
         const container = editor.BlockManager?.getContainer?.();
@@ -353,11 +382,33 @@ export function registerComponentsUi(editor, options = {}) {
         }
 
         container.querySelectorAll('.gjs-block').forEach((blockEl) => {
+            if (! isComponentBlockElement(editor, blockEl)) {
+                return;
+            }
+
             const item = resolveCatalogItemFromBlockElement(blockEl);
             const isSelected = item ? selectedIds.has(String(item.id)) : false;
 
             blockEl.classList.toggle('is-selected', selectionMode && isSelected);
+            blockEl.classList.toggle('is-selectable', selectionMode);
             blockEl.setAttribute('aria-pressed', selectionMode && isSelected ? 'true' : 'false');
+
+            let badge = blockEl.querySelector('[data-voodbuilder-component-selection-badge]');
+
+            if (selectionMode) {
+                if (! badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'voodbuilder-gjs-component-block__selection-badge';
+                    badge.dataset.voodbuilderComponentSelectionBadge = '';
+                    badge.setAttribute('aria-hidden', 'true');
+                    badge.innerHTML = lucideIcon('check', 12);
+                    blockEl.appendChild(badge);
+                }
+
+                badge.hidden = ! isSelected;
+            } else {
+                badge?.remove();
+            }
         });
     };
 
@@ -368,6 +419,7 @@ export function registerComponentsUi(editor, options = {}) {
         const toggle = componentsMount.querySelector('[data-voodbuilder-components-select-toggle]');
         const countEl = componentsMount.querySelector('[data-voodbuilder-components-selection-count]');
         const exportSelectedButton = componentsMount.querySelector('[data-voodbuilder-components-export-selected]');
+        const deleteSelectedButton = componentsMount.querySelector('[data-voodbuilder-components-delete-selected]');
         const count = selectedIds.size;
         const countLabel = (labels.componentsSelectedCount ?? '{count} selected').replace('{count}', String(count));
 
@@ -384,6 +436,10 @@ export function registerComponentsUi(editor, options = {}) {
         if (exportSelectedButton) {
             exportSelectedButton.disabled = count === 0;
         }
+
+        if (deleteSelectedButton) {
+            deleteSelectedButton.disabled = count === 0;
+        }
     };
 
     const updateLibraryHint = () => {
@@ -396,7 +452,7 @@ export function registerComponentsUi(editor, options = {}) {
         hint.hidden = catalog.length > 0 || selectionMode;
     };
 
-    const importComponents = async (entries) => {
+    const importComponents = async (entries, importMeta = null) => {
         if (! Array.isArray(entries) || entries.length === 0) {
             await alertDialog({
                 message: labels.componentsImportInvalidFile ?? 'Invalid JSON file.',
@@ -411,7 +467,10 @@ export function registerComponentsUi(editor, options = {}) {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: editorApiHeaders(csrf, { json: true }),
-                body: JSON.stringify({ components: entries }),
+                body: JSON.stringify({
+                    components: entries,
+                    import_meta: importMeta,
+                }),
             });
 
             if (! response.ok) {
@@ -468,11 +527,17 @@ export function registerComponentsUi(editor, options = {}) {
         }
 
         const entries = [];
+        let importMeta = null;
 
         for (const file of list) {
             try {
                 const text = await file.text();
                 const parsed = JSON.parse(text);
+
+                if (importMeta === null) {
+                    importMeta = resolveImportMeta(parsed);
+                }
+
                 entries.push(...parseImportPayload(parsed));
             } catch {
                 await alertDialog({
@@ -484,10 +549,10 @@ export function registerComponentsUi(editor, options = {}) {
             }
         }
 
-        await importComponents(entries);
+        await importComponents(entries, importMeta);
     };
 
-    const deleteComponent = async (item) => {
+    const removeComponentFromLibrary = async (item, { skipConfirm = false } = {}) => {
         const componentId = item?.id;
 
         if (! componentId) {
@@ -496,26 +561,28 @@ export function registerComponentsUi(editor, options = {}) {
                 labels,
             });
 
-            return;
+            return false;
         }
 
         if (deletingIds.has(String(componentId))) {
-            return;
+            return false;
         }
 
-        const message = (labels.componentsDeleteConfirm ?? 'Delete “{name}” from the library?')
-            .replace('{name}', item.name ?? '');
+        if (! skipConfirm) {
+            const message = (labels.componentsDeleteConfirm ?? 'Delete “{name}” from the library?')
+                .replace('{name}', item.name ?? '');
 
-        const confirmed = await confirmDialog({
-            title: labels.componentsDelete ?? 'Delete from library',
-            message,
-            labels,
-            confirmLabel: labels.dialogDelete ?? labels.componentsDelete ?? 'Delete',
-            danger: true,
-        });
+            const confirmed = await confirmDialog({
+                title: labels.componentsDelete ?? 'Delete from library',
+                message,
+                labels,
+                confirmLabel: labels.dialogDelete ?? labels.componentsDelete ?? 'Delete',
+                danger: true,
+            });
 
-        if (! confirmed) {
-            return;
+            if (! confirmed) {
+                return false;
+            }
         }
 
         deletingIds.add(String(componentId));
@@ -537,7 +604,7 @@ export function registerComponentsUi(editor, options = {}) {
                     labels,
                 });
 
-                return;
+                return false;
             }
 
             catalog = catalog.filter((entry) => String(entry.id) !== String(componentId));
@@ -548,16 +615,54 @@ export function registerComponentsUi(editor, options = {}) {
                 updateSelectionUi();
             } catch (syncError) {
                 console.error('VoodBuilder: component deleted but library UI failed to refresh.', syncError);
-                renderGrid();
                 updateSelectionUi();
             }
+
+            return true;
         } catch {
             await alertDialog({
                 message: labels.componentsDeleteError ?? 'Could not delete component.',
                 labels,
             });
+
+            return false;
         } finally {
             deletingIds.delete(String(componentId));
+        }
+    };
+
+    const deleteComponent = async (item) => {
+        await removeComponentFromLibrary(item);
+    };
+
+    const deleteSelectedComponents = async () => {
+        const items = catalog.filter((entry) => selectedIds.has(String(entry.id)));
+
+        if (items.length === 0) {
+            return;
+        }
+
+        const message = (labels.componentsDeleteSelectedConfirm ?? 'Delete {count} components from the library?')
+            .replace('{count}', String(items.length));
+
+        const confirmed = await confirmDialog({
+            title: labels.componentsDeleteSelected ?? 'Delete selected',
+            message,
+            labels,
+            confirmLabel: labels.dialogDelete ?? labels.componentsDelete ?? 'Delete',
+            danger: true,
+        });
+
+        if (! confirmed) {
+            return;
+        }
+
+        for (const item of items) {
+            await removeComponentFromLibrary(item, { skipConfirm: true });
+        }
+
+        if (selectedIds.size === 0) {
+            setSelectionMode(false);
         }
     };
 
@@ -647,6 +752,10 @@ export function registerComponentsUi(editor, options = {}) {
 
     componentsMount.querySelector('[data-voodbuilder-components-export-selected]')?.addEventListener('click', () => {
         exportSelectedComponents();
+    });
+
+    componentsMount.querySelector('[data-voodbuilder-components-delete-selected]')?.addEventListener('click', () => {
+        void deleteSelectedComponents();
     });
 
     componentsMount.querySelector('[data-voodbuilder-components-import-select]')?.addEventListener('click', (event) => {
@@ -865,52 +974,12 @@ export function registerComponentsUi(editor, options = {}) {
     editor.__voodbuilderComponentLibraryActions = {
         edit: editComponent,
         delete: deleteComponent,
+        export: exportComponent,
         openMenu: openComponentMenu,
     };
+    editor.__voodbuilderToggleComponentSelection = toggleComponentSelection;
 
-    if (! shell.dataset.voodbuilderComponentLibraryBound) {
-        shell.dataset.voodbuilderComponentLibraryBound = 'true';
-
-        shell.addEventListener('contextmenu', (event) => {
-            const blockEl = event.target.closest('.gjs-block.voodbuilder-gjs-component-block');
-
-            if (! blockEl || selectionMode) {
-                return;
-            }
-
-            const item = resolveCatalogItemFromBlockElement(blockEl);
-
-            if (! item) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            openComponentMenu(item, event.clientX, event.clientY);
-        }, true);
-
-        shell.addEventListener('pointerdown', (event) => {
-            if (! selectionMode || event.button !== 0) {
-                return;
-            }
-
-            const blockEl = event.target.closest('.gjs-block.voodbuilder-gjs-component-block');
-
-            if (! blockEl || event.target.closest('[data-voodbuilder-component-block-toolbar]')) {
-                return;
-            }
-
-            const item = resolveCatalogItemFromBlockElement(blockEl);
-
-            if (! item) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            toggleComponentSelection(item);
-        }, true);
-    }
+    bindComponentLibraryBlockInteractions(editor);
 
     editor.on('component:add', (component) => {
         const attrs = component.getAttributes?.({ noClass: true, noStyle: true }) ?? {};
@@ -1058,6 +1127,115 @@ function scheduleTagComponentBlockElements(editor) {
     });
 }
 
+function bindComponentLibraryBlockInteractions(editor) {
+    const attachToContainer = () => {
+        const container = editor.BlockManager?.getContainer?.();
+
+        if (! container || container.dataset.voodbuilderComponentLibraryBound === 'true') {
+            return;
+        }
+
+        container.dataset.voodbuilderComponentLibraryBound = 'true';
+
+        container.addEventListener('contextmenu', (event) => {
+            if (editor.__voodbuilderActiveLibrary !== 'components') {
+                return;
+            }
+
+            if (editor.__voodbuilderComponentSelectionMode === true) {
+                return;
+            }
+
+            if (event.target.closest('[data-voodbuilder-component-block-toolbar]')) {
+                return;
+            }
+
+            const blockEl = event.target.closest('.gjs-block');
+
+            if (! blockEl || ! isComponentBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            const item = resolveCatalogItemFromComponentBlock(editor, blockEl);
+
+            if (! item) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            editor.__voodbuilderComponentLibraryActions?.openMenu?.(item, event.clientX, event.clientY);
+        }, true);
+
+        container.addEventListener('mousedown', (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+
+            if (editor.__voodbuilderActiveLibrary !== 'components') {
+                return;
+            }
+
+            if (editor.__voodbuilderComponentSelectionMode !== true) {
+                return;
+            }
+
+            if (event.target.closest('[data-voodbuilder-component-block-toolbar]')) {
+                return;
+            }
+
+            const blockEl = event.target.closest('.gjs-block');
+
+            if (! blockEl || ! isComponentBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            const item = resolveCatalogItemFromComponentBlock(editor, blockEl);
+
+            if (! item) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            editor.__voodbuilderToggleComponentSelection?.(item);
+        }, true);
+
+        container.addEventListener('click', (event) => {
+            if (editor.__voodbuilderActiveLibrary !== 'components') {
+                return;
+            }
+
+            if (editor.__voodbuilderComponentSelectionMode !== true) {
+                return;
+            }
+
+            const blockEl = event.target.closest('.gjs-block');
+
+            if (! blockEl || ! isComponentBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+        }, true);
+    };
+
+    attachToContainer();
+
+    if (! editor.__voodbuilderComponentLibraryInteractionsHooked) {
+        editor.__voodbuilderComponentLibraryInteractionsHooked = true;
+
+        editor.on('block:add', () => {
+            window.requestAnimationFrame(attachToContainer);
+        });
+
+        editor.on('block:remove', () => {
+            window.requestAnimationFrame(attachToContainer);
+        });
+    }
+}
+
 function syncComponentBlockDragState(editor, selectionMode) {
     editor.BlockManager?.getAll?.()?.forEach((block) => {
         const blockId = block.get?.('id') ?? block.id;
@@ -1080,21 +1258,26 @@ function syncComponentBlockQuickActions(editor) {
 
     const selectionMode = editor.__voodbuilderComponentSelectionMode === true;
 
-    container.querySelectorAll('.gjs-block.voodbuilder-gjs-component-block').forEach((blockEl) => {
-        const block = resolveBlockFromElement(editor, blockEl);
-
-        if (! isComponentBlock(block)) {
+    container.querySelectorAll('.gjs-block').forEach((blockEl) => {
+        if (! isComponentBlockElement(editor, blockEl)) {
             return;
         }
 
-        const itemId = String(block.get?.('id') ?? block.id).slice(BLOCK_PREFIX.length);
-        const item = editor.__voodbuilderComponentsCatalog?.find?.((entry) => String(entry.id) === itemId);
+        const item = resolveCatalogItemFromComponentBlock(editor, blockEl);
 
         if (! item) {
             return;
         }
 
         let toolbar = blockEl.querySelector('[data-voodbuilder-component-block-toolbar]');
+
+        if (toolbar && (
+            ! toolbar.querySelector('[data-voodbuilder-component-block-export]')
+            || toolbar.querySelector('[data-voodbuilder-component-block-menu]')
+        )) {
+            toolbar.remove();
+            toolbar = null;
+        }
 
         if (! toolbar) {
             toolbar = document.createElement('div');
@@ -1107,22 +1290,38 @@ function syncComponentBlockQuickActions(editor) {
             editButton.className = 'voodbuilder-gjs-component-block__toolbar-btn';
             editButton.dataset.voodbuilderComponentBlockEdit = '';
             editButton.title = 'Edit';
+            editButton.setAttribute('aria-label', 'Edit');
             editButton.innerHTML = lucideIcon('pencil', 14);
+
+            const exportButton = document.createElement('button');
+            exportButton.type = 'button';
+            exportButton.className = 'voodbuilder-gjs-component-block__toolbar-btn';
+            exportButton.dataset.voodbuilderComponentBlockExport = '';
+            exportButton.title = 'Export';
+            exportButton.setAttribute('aria-label', 'Export');
+            exportButton.innerHTML = lucideIcon('upload', 14);
 
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
             deleteButton.className = 'voodbuilder-gjs-component-block__toolbar-btn voodbuilder-gjs-component-block__toolbar-btn--danger';
             deleteButton.dataset.voodbuilderComponentBlockDelete = '';
             deleteButton.title = 'Delete';
+            deleteButton.setAttribute('aria-label', 'Delete');
             deleteButton.innerHTML = lucideIcon('trash-2', 14);
 
-            toolbar.append(editButton, deleteButton);
+            toolbar.append(editButton, exportButton, deleteButton);
             blockEl.appendChild(toolbar);
 
             editButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 actions.edit?.(item);
+            });
+
+            exportButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                actions.export?.(item);
             });
 
             deleteButton.addEventListener('click', (event) => {
@@ -1132,7 +1331,7 @@ function syncComponentBlockQuickActions(editor) {
             });
 
             blockEl.addEventListener('contextmenu', (event) => {
-                if (selectionMode) {
+                if (editor.__voodbuilderComponentSelectionMode === true) {
                     return;
                 }
 
@@ -1144,6 +1343,16 @@ function syncComponentBlockQuickActions(editor) {
 
         toolbar.hidden = selectionMode;
     });
+
+    if (editor.__voodbuilderComponentSelectionMode === true) {
+        editor.BlockManager?.getContainer?.()?.querySelectorAll('.gjs-block').forEach((blockEl) => {
+            if (! isComponentBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            blockEl.classList.toggle('is-selectable', true);
+        });
+    }
 }
 
 function ensureComponentsLibraryVisible(editor, mounts, libraryId = 'components') {
@@ -1167,7 +1376,7 @@ function ensureComponentsLibraryVisible(editor, mounts, libraryId = 'components'
     editor.BlockManager?.render?.();
     tagComponentBlockElements(editor);
     tagComponentCategoryElements(editor);
-    openComponentBlockCategories(editor);
+    collapseLibraryCategories(editor, 'components');
     applyBlocksLibraryUi(editor, readBlocksSearchQuery());
 }
 
@@ -1248,23 +1457,29 @@ function componentItemUrl(componentsUrl, id) {
     return `${componentsUrl.replace(/\/$/, '')}/${id}`;
 }
 
-function serializeComponentForExport(item) {
-    return {
-        name: item.name,
-        category: item.category ?? null,
-        description: item.description ?? null,
-        html: item.html,
-        css: item.css ?? null,
-        properties: item.properties ?? [],
-    };
+function downloadComponentsExportPayload(payload, filename) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
 }
 
-function buildComponentsExportPayload(items) {
+function resolveImportMeta(payload) {
+    if (! payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    if (payload.format !== 'voodbuilder-components') {
+        return null;
+    }
+
     return {
-        version: 1,
-        format: 'voodbuilder-components',
-        exported_at: new Date().toISOString(),
-        components: items.map(serializeComponentForExport),
+        format: payload.format,
+        format_version: payload.format_version ?? payload.version ?? null,
+        generator: payload.generator ?? null,
     };
 }
 
@@ -1279,17 +1494,6 @@ function exportComponentFilename(name) {
     const date = new Date().toISOString().slice(0, 10);
 
     return `voodbuilder-component-${slugify(name || 'component')}-${date}.json`;
-}
-
-function downloadComponentsExport(items, filename) {
-    const payload = buildComponentsExportPayload(items);
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
 }
 
 function markLibraryMounts(mounts, libraryId) {
@@ -1307,13 +1511,6 @@ function markLibraryMounts(mounts, libraryId) {
     }
 }
 
-function openComponentBlockCategories(editor) {
-    editor.BlockManager.getCategories?.()?.each?.((category) => {
-        if (isComponentCategoryId(String(category.get('id') ?? ''))) {
-            category.set('open', true);
-        }
-    });
-}
 
 export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     const container = editor.BlockManager?.getContainer?.();
@@ -1335,7 +1532,7 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     tagComponentCategoryElements(editor);
 
     if (libraryId === 'components') {
-        openComponentBlockCategories(editor);
+        collapseLibraryCategories(editor, 'components');
     }
 
     scheduleTagComponentBlockElements(editor);
@@ -1347,6 +1544,7 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     if (libraryId === 'components') {
         syncComponentBlockDragState(editor, editor.__voodbuilderComponentSelectionMode === true);
         syncComponentBlockQuickActions(editor);
+        bindComponentLibraryBlockInteractions(editor);
     }
 
     applyBlocksLibraryUi(editor, readBlocksSearchQuery());

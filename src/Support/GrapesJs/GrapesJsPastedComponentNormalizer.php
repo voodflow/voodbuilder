@@ -30,18 +30,18 @@ final class GrapesJsPastedComponentNormalizer
         $html = self::wrapMultipleRoots($html);
         $html = self::uniquifySvgIds($html);
         $html = self::stripEmbeddableMedia($html);
-        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $html = VoodbuilderThemeTokenMigrator::migrateHtml($html);
         $html = GrapesJsHtmlSanitizer::sanitize(trim($html));
 
         $importedCss = self::compileTailwindCss($html);
 
         if ($importedCss !== '') {
-            $importedCss = TailblocksThemeTokenMigrator::migrateCss($importedCss);
+            $importedCss = VoodbuilderThemeTokenMigrator::migrateCss($importedCss);
             $cssParts[] = $importedCss;
         }
 
         $css = $cssParts !== [] ? trim(implode("\n\n", array_map(
-            static fn (string $chunk): string => TailblocksThemeTokenMigrator::migrateCss($chunk),
+            static fn (string $chunk): string => VoodbuilderThemeTokenMigrator::migrateCss($chunk),
             $cssParts,
         ))) : null;
 
@@ -86,7 +86,7 @@ final class GrapesJsPastedComponentNormalizer
         ?string $storedCss,
         ?string $storedChecksum = null,
     ): string {
-        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $html = VoodbuilderThemeTokenMigrator::migrateHtml($html);
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
         $currentChecksum = self::htmlChecksum($html);
 
@@ -100,7 +100,7 @@ final class GrapesJsPastedComponentNormalizer
             $manualCss = self::manualCssFromStoredComponentCss($storedCss);
             $css = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
 
-            return trim(TailblocksThemeTokenMigrator::migrateCss((string) $css)."\n\n".self::componentThemeTokenBridgeCss());
+            return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss((string) $css)."\n\n".self::componentThemeTokenBridgeCss());
         }
 
         if ($storedCss === '') {
@@ -121,12 +121,149 @@ final class GrapesJsPastedComponentNormalizer
             return '';
         }
 
-        return trim(TailblocksThemeTokenMigrator::migrateCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
+        return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
+    }
+
+    /**
+     * CSS for page-level GrapesJS styles (non-component utilities).
+     */
+    public static function resolvePublishedPageCss(string $html, ?string $storedCss): string
+    {
+        $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+
+        if ($storedCss !== '' && ! self::storedCssIsCorrupted($storedCss)) {
+            return GrapesJsCssSanitizer::sanitize(
+                VoodbuilderThemeTokenMigrator::migrateCss($storedCss),
+            );
+        }
+
+        if ($html === '') {
+            return $storedCss !== ''
+                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migrateCss($storedCss))
+                : '';
+        }
+
+        $compiled = self::compileTailwindCss($html);
+
+        if ($compiled === '') {
+            return $storedCss !== ''
+                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migrateCss($storedCss))
+                : '';
+        }
+
+        return GrapesJsCssSanitizer::sanitize(
+            VoodbuilderThemeTokenMigrator::migrateCss($compiled),
+        );
+    }
+
+    /**
+     * Compile Tailwind utilities for markup saved inside a component instance on a page.
+     * Instance HTML is not theme-migrated (same as public render inside components).
+     */
+    public static function compileCssForComponentInstanceHtml(string $html): ?string
+    {
+        $html = trim($html);
+
+        if ($html === '') {
+            return null;
+        }
+
+        $compiled = self::compileTailwindCss($html);
+
+        if ($compiled === '') {
+            return null;
+        }
+
+        return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($compiled));
+    }
+
+    public static function cssForDatabaseStorage(?string $css): ?string
+    {
+        $css = filled($css) ? trim((string) $css) : '';
+
+        if ($css === '') {
+            return null;
+        }
+
+        $css = str_replace(self::componentThemeTokenBridgeCss(), '', $css);
+
+        return trim($css) !== '' ? trim($css) : null;
+    }
+
+    public static function cssForExport(?string $css, string $html = ''): ?string
+    {
+        $css = self::cssForDatabaseStorage($css);
+
+        if ($css === null || $css === '') {
+            return null;
+        }
+
+        $css = self::stripComponentRuntimeBaseStyles($css, $html);
+        $css = trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($css));
+
+        return $css !== '' ? $css : null;
+    }
+
+    public static function stripComponentRuntimeBaseStyles(string $css, string $html): string
+    {
+        $needsHeaderLayout = preg_match('/<header\b[^>]*\babsolute\b/i', $html) === 1;
+        $needsDialog = str_contains(strtolower($html), '<dialog');
+
+        foreach (explode("\n", GrapesJsImportedTailwindCssBuilder::baseStyles()) as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            if (! $needsDialog && str_contains($line, 'dialog:not([open])')) {
+                $css = str_replace($line, '', $css);
+
+                continue;
+            }
+
+            if (! $needsHeaderLayout && (str_contains($line, 'header.absolute') || str_contains($line, 'min-height: 42rem'))) {
+                $css = str_replace($line, '', $css);
+
+                continue;
+            }
+
+            if (str_contains($line, '--color-primary:')) {
+                $css = str_replace($line, '', $css);
+            }
+        }
+
+        $css = preg_replace("/\n{3,}/", "\n\n", $css) ?? $css;
+
+        return trim($css);
+    }
+
+    public static function persistCssFromCatalogResolution(
+        array $resolved,
+        ?string $incomingCss,
+        ?string $normalizedAutoCss = null,
+    ): ?string {
+        $manualCss = filled($incomingCss)
+            ? self::manualCssFromStoredComponentCss(trim((string) $incomingCss))
+            : '';
+
+        if (filled($resolved['cssToPersist'] ?? null)) {
+            return self::mergeCss(
+                $manualCss !== '' ? $manualCss : null,
+                (string) $resolved['cssToPersist'],
+            );
+        }
+
+        if (filled($incomingCss)) {
+            return self::cssForDatabaseStorage((string) $incomingCss);
+        }
+
+        return filled($normalizedAutoCss) ? trim((string) $normalizedAutoCss) : null;
     }
 
     public static function htmlChecksum(string $html): string
     {
-        return hash('sha256', TailblocksThemeTokenMigrator::migrateHtml($html));
+        return hash('sha256', VoodbuilderThemeTokenMigrator::migrateHtml($html));
     }
 
     public static function storedCssIsCurrent(
@@ -148,8 +285,17 @@ final class GrapesJsPastedComponentNormalizer
         return ! self::storedCssRequiresRecompile($html, $storedCss);
     }
 
+    public static function storedCssIsCorrupted(string $storedCss): bool
+    {
+        return (bool) preg_match('/\bvar\(\s*(?:\}|;)/', $storedCss);
+    }
+
     public static function storedCssRequiresRecompile(string $html, string $storedCss): bool
     {
+        if (self::storedCssIsCorrupted($storedCss)) {
+            return true;
+        }
+
         if (self::htmlReferencesLegacyBrandUtilities($html) || self::cssReferencesLegacyBrandUtilities($storedCss)) {
             return true;
         }
@@ -175,13 +321,15 @@ final class GrapesJsPastedComponentNormalizer
 
         foreach ($matches[2] as $classAttribute) {
             foreach (preg_split('/\s+/', trim($classAttribute)) ?: [] as $className) {
+                $className = ltrim($className, '!');
+
                 if ($className === '' || ! preg_match($utilityPattern, $className)) {
                     continue;
                 }
 
                 $escaped = preg_quote($className, '/');
 
-                if (preg_match('/\.'.$escaped.'\b/', $storedCss) !== 1) {
+                if (preg_match('/\.'.$escaped.'(?:\b|[\[:])/', $storedCss) !== 1) {
                     return true;
                 }
             }
@@ -198,7 +346,7 @@ final class GrapesJsPastedComponentNormalizer
      */
     public static function resolveCatalogCss(string $html, ?string $storedCss, ?string $storedChecksum = null): array
     {
-        $html = TailblocksThemeTokenMigrator::migrateHtml($html);
+        $html = VoodbuilderThemeTokenMigrator::migrateHtml($html);
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
 
         if ($storedCss !== '' && self::storedCssIsCurrent($html, $storedCss, $storedChecksum)) {
@@ -210,7 +358,7 @@ final class GrapesJsPastedComponentNormalizer
         }
 
         $compiled = self::compileTailwindCss($html);
-        $cssToPersist = $compiled !== '' ? trim(TailblocksThemeTokenMigrator::migrateCss($compiled)) : null;
+        $cssToPersist = $compiled !== '' ? trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($compiled)) : null;
         $css = $cssToPersist !== null && $cssToPersist !== ''
             ? trim($cssToPersist."\n\n".self::componentThemeTokenBridgeCss())
             : self::resolvedCssForStoredHtml($html, null, null);
@@ -315,6 +463,18 @@ final class GrapesJsPastedComponentNormalizer
 }
 .dark :where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .dark\:text-neutral-900 {
     color: var(--color-neutral-900);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .bg-card {
+    background-color: var(--color-vp-bg-elv);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .bg-layer {
+    background-color: var(--color-vp-bg-elv);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .bg-surface {
+    background-color: var(--color-vp-bg-alt);
+}
+:where(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered, .VPRichPage) :where(.voodbuilder-pasted-component) .bg-surface-1 {
+    background-color: var(--color-vp-bg-alt);
 }
 CSS;
     }

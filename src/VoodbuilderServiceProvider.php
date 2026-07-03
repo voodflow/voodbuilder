@@ -16,7 +16,6 @@ use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
-use Voodflow\Voodbuilder\Console\BuildTailblocksCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
 use Voodflow\Voodbuilder\Console\MakeSubThemeCommand;
@@ -89,7 +88,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->hasCommand(InstallCommand::class)
             ->hasCommand(MakeSubThemeCommand::class)
             ->hasCommand(BuildSectionsCommand::class)
-            ->hasCommand(BuildTailblocksCommand::class)
             ->hasCommand(SeedSoundmitGrapesLandingCommand::class)
             ->hasCommand(ThemePresetCommand::class)
             ->hasCommand(SubThemeCommand::class)
@@ -212,6 +210,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('components', [GrapesJsComponentsController::class, 'store'])->name('components.store');
                 Route::post('components/compile-css', [GrapesJsComponentsController::class, 'compileCss'])->name('components.compile-css');
                 Route::post('components/import', [GrapesJsComponentsController::class, 'import'])->name('components.import');
+                Route::post('components/export', [GrapesJsComponentsController::class, 'export'])->name('components.export');
                 Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
                 Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
             });

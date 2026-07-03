@@ -9,11 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\BuilderComponent;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentBundle;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentImporter;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsImportCompatibilityAnalyzer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
-use Voodflow\Voodbuilder\Support\GrapesJs\TailblocksThemeTokenMigrator;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderThemeTokenMigrator;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsComponentsController extends Controller
@@ -104,22 +105,29 @@ class GrapesJsComponentsController extends Controller
             $normalized = GrapesJsPastedComponentNormalizer::normalize($validated['html']);
             $validated['html'] = $normalized['html'];
 
-            if (! array_key_exists('css', $validated)) {
-                $validated['css'] = $normalized['css'];
-            } elseif (filled($validated['css'] ?? null)) {
-                $validated['css'] = GrapesJsPastedComponentNormalizer::mergeCss(
-                    trim((string) $validated['css']),
-                    $normalized['css'],
-                );
-            }
+            $incomingCss = array_key_exists('css', $validated) && filled($validated['css'] ?? null)
+                ? trim((string) $validated['css'])
+                : null;
+
+            $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss(
+                $validated['html'],
+                $incomingCss ?? $component->css,
+                null,
+            );
+
+            $validated['css'] = GrapesJsPastedComponentNormalizer::persistCssFromCatalogResolution(
+                $resolved,
+                $incomingCss,
+                $normalized['css'],
+            );
+
+            $validated['html_checksum'] = filled($resolved['htmlChecksumToPersist'] ?? null)
+                ? (string) $resolved['htmlChecksumToPersist']
+                : GrapesJsPastedComponentNormalizer::htmlChecksum((string) $validated['html']);
         }
 
         if (array_key_exists('category', $validated)) {
             $validated['category'] = GrapesJsComponentCategoryNormalizer::normalize($validated['category']);
-        }
-
-        if (array_key_exists('html', $validated)) {
-            $validated['html_checksum'] = GrapesJsPastedComponentNormalizer::htmlChecksum((string) $validated['html']);
         }
 
         $component->update($validated);
@@ -168,9 +176,13 @@ class GrapesJsComponentsController extends Controller
 
         $validated = $request->validate([
             'components' => ['required', 'array', 'min:1', 'max:100'],
+            'import_meta' => ['nullable', 'array'],
         ]);
 
-        $created = $this->importer->import($validated['components']);
+        $created = $this->importer->import(
+            $validated['components'],
+            $validated['import_meta'] ?? null,
+        );
 
         return response()->json([
             'imported' => count($created),
@@ -181,13 +193,38 @@ class GrapesJsComponentsController extends Controller
         ], 201);
     }
 
+    public function export(Request $request): JsonResponse
+    {
+        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+
+        $validated = $request->validate([
+            'ids' => ['nullable', 'array', 'max:100'],
+            'ids.*' => ['uuid'],
+        ]);
+
+        $query = BuilderComponent::query()
+            ->orderBy('category')
+            ->orderBy('name');
+
+        if (filled($validated['ids'] ?? null)) {
+            $query->whereIn('id', $validated['ids']);
+        }
+
+        /** @var list<BuilderComponent> $components */
+        $components = $query->get()->all();
+
+        return response()->json(
+            GrapesJsComponentBundle::buildExportPayload($components),
+        );
+    }
+
     /**
      * @param  array<string|int, array<string, string>>  $backfillCss
      * @return array<string, mixed>
      */
     protected function toCatalogArray(BuilderComponent $component, array &$backfillCss = []): array
     {
-        $html = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
+        $html = VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html);
         $resolved = GrapesJsPastedComponentNormalizer::resolveCatalogCss($html, $component->css, $component->html_checksum);
         $css = $resolved['css'];
 
@@ -214,7 +251,7 @@ class GrapesJsComponentsController extends Controller
      */
     protected function toArray(BuilderComponent $component): array
     {
-        $html = TailblocksThemeTokenMigrator::migrateHtml((string) $component->html);
+        $html = VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html);
         $css = GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml(
             $html,
             $component->css,
