@@ -40,7 +40,9 @@ final class GrapesJsComponentBundle
      */
     public static function serializeComponent(BuilderComponent $component): array
     {
-        $html = VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html);
+        $html = GrapesJsComponentExportNormalizer::htmlForExport(
+            VoodbuilderThemeTokenMigrator::migrateHtml((string) $component->html),
+        );
         $css = GrapesJsPastedComponentNormalizer::cssForExport(
             GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml(
                 $html,
@@ -55,9 +57,12 @@ final class GrapesJsComponentBundle
         $entry = [
             'name' => $component->name,
             'category' => GrapesJsComponentCategoryNormalizer::normalize($component->category),
-            'description' => $component->description,
             'html' => $html,
         ];
+
+        if (filled($component->description)) {
+            $entry['description'] = $component->description;
+        }
 
         if ($css !== null && $css !== '') {
             $entry['css'] = $css;
