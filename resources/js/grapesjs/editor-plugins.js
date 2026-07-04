@@ -17,6 +17,7 @@ import {
     registerBricksBlocks,
 } from './grapesjs-bricks-blocks.js';
 import registerGrapesJsTailwindPlugin from './grapesjs-tailwind-plugin.js';
+import { safeFindComponents } from './tailwind-visual-style.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
@@ -87,22 +88,10 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
     }
 }
 
-function isInsideSiteHeaderChrome(component) {
-    let current = component;
-
-    while (current) {
-        if (current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
-            return true;
-        }
-
-        current = current.parent?.();
-    }
-
-    return false;
-}
-
 function protectSiteHeaderButton(component) {
-    if (component.get('tagName') !== 'button' || ! isInsideSiteHeaderChrome(component)) {
+    const classes = component.getClasses?.() ?? [];
+
+    if (component.get('tagName') !== 'button' || ! classes.includes('voodbuilder-header-icon-btn')) {
         return;
     }
 
@@ -112,7 +101,7 @@ function protectSiteHeaderButton(component) {
 
     const text = String(component.get('text') ?? '').trim();
 
-    if (text === 'Send' && component.find('svg').length === 0) {
+    if (text === 'Send' && safeFindComponents(component, 'svg').length === 0) {
         component.set('text', '');
     }
 }

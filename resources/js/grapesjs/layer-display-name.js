@@ -4,6 +4,7 @@
 
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { walkComponentTree } from './tailwind-visual-style.js';
 
 function humanizeToken(value) {
     return String(value ?? '')
@@ -110,7 +111,7 @@ export function collectLayerDisplayNames(editor, excludeComponent = null) {
         return names;
     }
 
-    wrapper.find('*').forEach((component) => {
+    walkComponentTree(wrapper, (component) => {
         if (excludeComponent && component === excludeComponent) {
             return;
         }
@@ -181,7 +182,14 @@ export function syncAllLayerDisplayNames(editor) {
         return;
     }
 
-    wrapper.find('[data-voodbuilder-block], [data-voodbuilder-section-block], [data-voodbuilder-component], [data-voodbuilder-component-scope]').forEach((component) => {
-        syncLayerDisplayName(component, editor);
+    walkComponentTree(wrapper, (component) => {
+        const attrs = component.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-block']
+            || attrs['data-voodbuilder-section-block']
+            || attrs['data-voodbuilder-component']
+            || attrs['data-voodbuilder-component-scope']) {
+            syncLayerDisplayName(component, editor);
+        }
     });
 }

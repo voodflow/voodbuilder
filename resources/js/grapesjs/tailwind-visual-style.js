@@ -20,6 +20,30 @@ export function componentHasRenderableView(component) {
     return Boolean(el && typeof el.querySelectorAll === 'function');
 }
 
+function isSiteNavBlockId(blockId) {
+    if (typeof blockId !== 'string' || blockId === '') {
+        return false;
+    }
+
+    if (blockId === 'site_header' || blockId === 'site_nav_simple') {
+        return true;
+    }
+
+    return blockId.startsWith('site_nav_');
+}
+
+export function walkComponentTree(component, callback) {
+    if (! component) {
+        return;
+    }
+
+    callback(component);
+
+    component.components?.()?.forEach((child) => {
+        walkComponentTree(child, callback);
+    });
+}
+
 export function safeFindComponents(component, selector) {
     if (! component?.find || ! componentHasRenderableView(component)) {
         return [];
@@ -33,6 +57,18 @@ export function safeFindComponents(component, selector) {
         }
 
         return typeof matches[Symbol.iterator] === 'function' ? [...matches] : [];
+    } catch {
+        return [];
+    }
+}
+
+export function safeGetClasses(component) {
+    if (! component?.getClasses) {
+        return [];
+    }
+
+    try {
+        return component.getClasses() ?? [];
     } catch {
         return [];
     }
@@ -1404,7 +1440,7 @@ export function registerVisualStyleInspector(editor) {
 
         const blockId = component.getAttributes?.()?.['data-voodbuilder-block'];
 
-        if (blockId === 'site_header' || isSiteNavBlock(blockId)) {
+        if (blockId === 'site_header' || isSiteNavBlockId(blockId)) {
             return;
         }
 

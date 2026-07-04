@@ -21,9 +21,9 @@
     >
         <button
             type="button"
-            class="voodbuilder-header-icon-btn"
+            class="voodbuilder-header-icon-btn text-vp-text-2"
             data-voodbuilder-profile-menu-toggle
-            data-gjs-type="default"
+            data-gjs-type="voodbuilder-chrome-button"
             data-gjs-selectable="false"
             aria-haspopup="menu"
             aria-expanded="false"

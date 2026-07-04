@@ -208,7 +208,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
-                Route::put('pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
+                Route::match(['put', 'post'], 'pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
                 Route::get('pages/{sitePage}/revisions', [GrapesJsPageRevisionsController::class, 'index'])->name('pages.revisions.index');
                 Route::post('pages/{sitePage}/revisions/{revision}/restore', [GrapesJsPageRevisionsController::class, 'restore'])->name('pages.revisions.restore');
                 Route::get('global-classes', [GrapesJsGlobalClassesController::class, 'index'])->name('global-classes.index');

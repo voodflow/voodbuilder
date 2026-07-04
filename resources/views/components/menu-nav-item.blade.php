@@ -2,6 +2,7 @@
     'item',
     'linkClass' => 'inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1',
     'mobile' => false,
+    'canvasPreview' => false,
 ])
 
 @php
@@ -23,6 +24,7 @@
             <button
                 type="button"
                 data-voodbuilder-nav-mobile-toggle
+                @if ($canvasPreview) data-gjs-type="voodbuilder-nav-menu-button" @endif
                 @class([
                     'voodbuilder-mobile-nav__link w-full',
                     'is-active' => $isActive,
@@ -78,6 +80,7 @@
             <button
                 type="button"
                 data-voodbuilder-nav-dropdown-toggle
+                @if ($canvasPreview) data-gjs-type="voodbuilder-nav-menu-button" @endif
                 @class([
                     $linkClass,
                     'text-vp-brand-1' => $isActive,
@@ -86,7 +89,7 @@
                 aria-expanded="false"
             >
                 <span>{{ __($item->label) }}</span>
-                <svg class="h-4 w-4 text-vp-text-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg class="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>

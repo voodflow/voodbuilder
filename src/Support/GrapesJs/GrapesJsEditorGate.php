@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
@@ -54,25 +55,25 @@ final class GrapesJsEditorGate
 
         return [
             'pageId' => $page->getKey(),
-            'saveUrl' => route('voodbuilder.grapesjs.pages.update', $page),
+            'saveUrl' => self::editorRoute('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
-            'uploadUrl' => route('voodbuilder.grapesjs.upload'),
+            'uploadUrl' => self::editorRoute('voodbuilder.grapesjs.upload'),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
-            'blocksUrl' => route('voodbuilder.grapesjs.blocks'),
-            'bindingsUrl' => route('voodbuilder.grapesjs.bindings'),
-            'bindingsPreviewUrl' => route('voodbuilder.grapesjs.bindings.preview', $page),
-            'blocksRenderUrl' => route('voodbuilder.grapesjs.blocks.render'),
-            'codeHighlightUrl' => route('voodbuilder.grapesjs.code.highlight'),
-            'formSubmitUrl' => route('voodbuilder.grapesjs.forms.submit', $page),
-            'revisionsUrl' => route('voodbuilder.grapesjs.pages.revisions.index', $page),
-            'revisionsRestoreUrl' => route('voodbuilder.grapesjs.pages.revisions.restore', [
+            'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),
+            'bindingsUrl' => self::editorRoute('voodbuilder.grapesjs.bindings'),
+            'bindingsPreviewUrl' => self::editorRoute('voodbuilder.grapesjs.bindings.preview', $page),
+            'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
+            'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
+            'formSubmitUrl' => self::editorRoute('voodbuilder.grapesjs.forms.submit', $page),
+            'revisionsUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.index', $page),
+            'revisionsRestoreUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.restore', [
                 'sitePage' => $page,
                 'revision' => '__REVISION__',
             ]),
-            'globalClassesUrl' => route('voodbuilder.grapesjs.global-classes.index'),
-            'componentsUrl' => route('voodbuilder.grapesjs.components.index'),
+            'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
+            'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'conditionOptions' => GrapesJsConditionHooks::options(),
@@ -82,6 +83,9 @@ final class GrapesJsEditorGate
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
+            'siteNavDefaults' => [
+                'stickyNav' => (bool) VoodbuilderSettings::get('sticky_nav', false),
+            ],
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => [
@@ -387,6 +391,16 @@ final class GrapesJsEditorGate
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)
                 : $project,
         ];
+    }
+
+    /**
+     * Relative URLs so the editor works when APP_URL port differs from the browser (e.g. dock WEB_PORT).
+     *
+     * @param  array<string, mixed>|object|string|int|null  $parameters
+     */
+    private static function editorRoute(string $name, mixed $parameters = []): string
+    {
+        return route($name, $parameters, absolute: false);
     }
 
     public static function hasPersistedProject(mixed $project): bool

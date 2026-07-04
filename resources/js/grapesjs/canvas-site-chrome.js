@@ -16,7 +16,7 @@ function syncCanvasDeviceMode(editor) {
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
 }
 
-function bootCanvasSiteChrome(editor) {
+export function bootCanvasSiteChrome(editor) {
     const frameWindow = editor.Canvas?.getWindow?.();
 
     if (! frameWindow?.document) {
@@ -43,7 +43,6 @@ export function registerCanvasSiteChrome(editor) {
     editor.on('canvas:frame:load', boot);
     editor.on('load', boot);
     editor.on('device:select', boot);
-    editor.on('component:add', boot);
-    editor.on('component:update', boot);
     editor.on('sorter:drag:end', boot);
+    editor.on('voodbuilder:site-chrome-updated', boot);
 }

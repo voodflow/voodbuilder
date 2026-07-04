@@ -509,12 +509,14 @@
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-label {
     flex: none;
     min-width: 0;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--color-vp-text-2, #64748b);
-    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-vp-text-1, #0f172a);
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field.gjs-field-select,

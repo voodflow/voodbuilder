@@ -66,7 +66,7 @@
                     </div>
 
                     <div @class(['hidden min-w-0 flex-1 items-center justify-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
-                        <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" />
+                        <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" :canvas-preview="$canvasPreview" />
                         <x-voodbuilder::docs-menu />
                     </div>
                 @else
@@ -76,7 +76,7 @@
                         </div>
 
                         <div @class(['hidden min-w-0 items-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
-                            <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" />
+                            <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" :canvas-preview="$canvasPreview" />
                             <x-voodbuilder::docs-menu />
                         </div>
                     </div>
@@ -116,6 +116,7 @@
         <x-voodbuilder::mobile-drawer
             :has-doc-sidebar="$hasDocSidebar"
             :enable-notifications="$showNotifications"
+            :canvas-preview="$canvasPreview"
         />
     @endunless
 </header>

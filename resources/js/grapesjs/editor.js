@@ -12,6 +12,7 @@ import { alertDialog } from './editor-dialog.js';
 import vpressGrapesJsPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
+    applySiteNavSettingsPreview,
     configureSiteNavTraits,
     ensureLayoutSectionTraits,
     registerSiteNavSettingsUi,
@@ -26,6 +27,7 @@ import vpressGrapesJsPlugin, {
     registerBlocks,
     sanitizeBlockHtml,
     syncVpressDynamicAttributes,
+    syncSiteHeaderConfig,
 } from './plugins/voodbuilder-grapesjs.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './voodbuilder-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
@@ -63,7 +65,7 @@ import {
 import { applyLightBlockPreviews } from './editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from './editor-video.js';
 import { registerCanvasContextMenu } from './canvas-context-menu.js';
-import { registerCanvasSiteChrome } from './canvas-site-chrome.js';
+import { bootCanvasSiteChrome, registerCanvasSiteChrome } from './canvas-site-chrome.js';
 import { registerLayersContextMenu } from './layers-context-menu.js';
 import { registerLayersDrag } from './layers-drag.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
@@ -94,27 +96,39 @@ function hasProjectData(project) {
 }
 
 function normalizeVpressDynamicComponents(editor) {
-    editor.getWrapper().find('[data-voodbuilder-block]').forEach((component) => {
+    safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]').forEach((component) => {
         syncVpressDynamicAttributes(component);
+
+        if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+            syncSiteHeaderConfig(component);
+        }
     });
 }
 
 function buildPayload(editor) {
-    normalizeVpressDynamicComponents(editor);
-    pruneEmptyDynamicBlocks(editor);
-    syncBindingsForExport(editor);
-    ensureComponentInstancesForExport(editor);
-    purgeDesyncedBackgroundCssRules(editor);
-    syncSpacingStylesForExport(editor);
-    syncPaintStylesForExport(editor);
-    syncComponentInstancePaintForExport(editor);
-    bakeSvgPaintForExport(editor);
-    pruneRedundantSpacingZerosForExport(editor);
-    syncComponentInstancesForExport(editor);
-    syncRepeatBindingsForExport(editor);
-    syncConditionsForExport(editor);
-    syncVideoComponentsForExport(editor);
-    detachTopDropSpacerForExport(editor);
+    const runExportStep = (label, step) => {
+        try {
+            step();
+        } catch (error) {
+            console.warn(`Voodbuilder buildPayload: ${label} failed`, error);
+        }
+    };
+
+    runExportStep('normalizeVpressDynamicComponents', () => normalizeVpressDynamicComponents(editor));
+    runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
+    runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
+    runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
+    runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
+    runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor));
+    runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor));
+    runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
+    runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
+    runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
+    runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
+    runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
+    runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
+    runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
+    runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
 
     const payload = {
         html: editor.getHtml({
@@ -503,6 +517,7 @@ export function initVpressGrapesJs(container, options = {}) {
             ...pluginBundle.pluginsOpts,
             [vpressGrapesJsPlugin]: {
                 blocks: options.blocks ?? [],
+                siteNavDefaults: options.siteNavDefaults ?? { stickyNav: false },
             },
         },
         canvas: {
@@ -697,14 +712,19 @@ export function initVpressGrapesJs(container, options = {}) {
                 dynamicBlocksGate.resolve();
                 migrateEditorComponents(editor);
                 for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
-                    lockDynamicPreviewContent(component);
+                    try {
+                        lockDynamicPreviewContent(component);
 
-                    if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                        applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
-                    }
+                        if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                            applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                        }
 
-                    if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                        configureSiteNavTraits(component, editor);
+                        if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                            configureSiteNavTraits(component, editor);
+                            applySiteNavSettingsPreview(component, editor);
+                        }
+                    } catch (lockError) {
+                        console.warn('Voodbuilder GrapesJS: could not lock dynamic block.', component.getAttributes()['data-voodbuilder-block'], lockError);
                     }
                 }
             });
@@ -760,6 +780,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         return;
     }
 
+    if (isSiteNavBlock(blockId)) {
+        syncSiteHeaderConfig(component);
+    }
+
     const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
     const params = new URLSearchParams({
         block: blockId,
@@ -775,6 +799,9 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         });
 
         if (! response.ok) {
+            const body = await response.text().catch(() => '');
+            console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, response.status, body);
+
             return;
         }
 
@@ -806,8 +833,23 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
             });
             component.components(fresh.innerHTML);
-            lockDynamicPreviewContent(component);
-            configureSiteNavTraits(component, editor);
+            const preserveSelection = editor.getSelected?.();
+
+            window.requestAnimationFrame(() => {
+                lockDynamicPreviewContent(component);
+                configureSiteNavTraits(component, editor);
+                applySiteNavSettingsPreview(component, editor);
+                bootCanvasSiteChrome(editor);
+                editor.trigger('voodbuilder:site-chrome-updated');
+
+                window.requestAnimationFrame(() => {
+                    if (preserveSelection && ! preserveSelection.isRemoved?.()) {
+                        editor.select(preserveSelection);
+                    }
+
+                    applySiteNavSettingsPreview(component, editor);
+                });
+            });
 
             return;
         }
@@ -843,11 +885,19 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             }
         }
 
-        lockDynamicPreviewContent(component);
+        window.requestAnimationFrame(() => {
+            try {
+                lockDynamicPreviewContent(component);
 
-        if (footerBlock) {
-            applySiteFooterColumns(component, freshConfig.columns ?? 4);
-        }
+                if (footerBlock) {
+                    applySiteFooterColumns(component, freshConfig.columns ?? 4);
+                    bootCanvasSiteChrome(editor);
+                    editor.trigger('voodbuilder:site-chrome-updated');
+                }
+            } catch (lockError) {
+                console.error('Voodbuilder GrapesJS: could not lock dynamic block.', blockId, lockError);
+            }
+        });
     } catch (error) {
         console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, error);
     }
@@ -932,6 +982,64 @@ function readConfig() {
     }
 }
 
+function resolveCsrfToken(fallback = '') {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? fallback;
+}
+
+function resolveSaveUrl(config) {
+    const pageId = config?.pageId;
+    let path = typeof config?.saveUrl === 'string' ? config.saveUrl.trim() : '';
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+        try {
+            path = new URL(path).pathname;
+        } catch {
+            path = '';
+        }
+    }
+
+    if (! path && pageId) {
+        path = `/voodbuilder/grapesjs/pages/${pageId}`;
+    }
+
+    if (! path) {
+        throw new Error('Missing GrapesJS save URL.');
+    }
+
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+    return new URL(normalizedPath, window.location.origin).href;
+}
+
+async function persistPagePayload(saveUrl, payload, csrf) {
+    const headers = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-TOKEN': csrf,
+    };
+
+    let response = await fetch(saveUrl, {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers,
+        body: JSON.stringify(payload),
+    });
+
+    if (response.status === 405) {
+        response = await fetch(saveUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                ...headers,
+                'X-HTTP-Method-Override': 'PUT',
+            },
+            body: JSON.stringify(payload),
+        });
+    }
+
+    return response;
+}
+
 function mountFrontendEditor() {
     const root = document.querySelector('[data-voodbuilder-grapesjs-root]');
     const canvas = document.querySelector('[data-voodbuilder-grapesjs-canvas]');
@@ -969,6 +1077,7 @@ function mountFrontendEditor() {
         builderBrand: config.builderBrand ?? 'VoodBuilder',
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
+        siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },
     });
 
     const onResize = () => refreshEditorLayout(editor);
@@ -1011,21 +1120,25 @@ function mountFrontendEditor() {
         }
 
         try {
-            const payload = buildPayload(editor);
+            let payload;
 
-            const response = await fetch(config.saveUrl, {
-                method: 'PUT',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': config.csrf,
-                },
-                body: JSON.stringify(payload),
-            });
+            try {
+                payload = buildPayload(editor);
+            } catch (buildError) {
+                console.error('VoodBuilder buildPayload failed', buildError);
+                throw buildError;
+            }
+
+            const saveUrl = resolveSaveUrl(config);
+            const response = await persistPagePayload(
+                saveUrl,
+                payload,
+                resolveCsrfToken(config.csrf),
+            );
 
             if (! response.ok) {
                 const body = await response.text().catch(() => '');
+                console.error('VoodBuilder page save failed', response.status, saveUrl, body);
                 throw new Error(body || `Save failed (${response.status})`);
             }
 

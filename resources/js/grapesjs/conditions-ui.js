@@ -146,8 +146,20 @@ function syncConditionAttributeToDom(component) {
     }
 }
 
+function walkComponentTree(component, callback) {
+    if (! component) {
+        return;
+    }
+
+    callback(component);
+
+    component.components?.()?.forEach((child) => {
+        walkComponentTree(child, callback);
+    });
+}
+
 export function syncConditionsForExport(editor) {
-    editor?.getWrapper?.().find('*').forEach((component) => {
+    walkComponentTree(editor?.getWrapper?.(), (component) => {
         const definition = parseConditions(readConditionAttribute(component));
         const encoded = serializeConditions(definition);
 
@@ -187,7 +199,7 @@ export function registerConditionsPersistence(editor) {
     };
 
     editor.on('load', () => {
-        editor.getWrapper().find('*').forEach(restore);
+        walkComponentTree(editor.getWrapper?.(), restore);
     });
 
     editor.on('component:add', restore);

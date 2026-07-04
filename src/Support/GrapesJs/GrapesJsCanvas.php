@@ -187,6 +187,14 @@ final class GrapesJsCanvas
             display: none !important;
         }
 
+        .voodbuilder-nav--canvas-preview [data-voodbuilder-chrome][data-voodbuilder-chrome-hidden] {
+            display: none !important;
+        }
+
+        .voodbuilder-nav--canvas-preview [data-voodbuilder-chrome]:not([data-voodbuilder-chrome-hidden]) {
+            display: block !important;
+        }
+
         [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown[hidden] {
             display: none !important;
         }
@@ -197,8 +205,8 @@ final class GrapesJsCanvas
 
         [data-voodbuilder-gjs-site-header] header[role='banner'] .voodbuilder-header-icon-btn,
         [data-voodbuilder-block^='site_nav_'] header[role='banner'] .voodbuilder-header-icon-btn {
-            color: var(--vx-header-text, var(--color-vp-text-2)) !important;
-            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-2)) 10%, transparent) !important;
+            color: var(--vx-header-text, var(--color-vp-text-2, #64748b)) !important;
+            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-2, #64748b)) 10%, transparent) !important;
         }
 
         [data-voodbuilder-gjs-site-header] header[role='banner'] .voodbuilder-header-icon-btn svg,
@@ -212,12 +220,17 @@ final class GrapesJsCanvas
             background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 16%, transparent) !important;
         }
 
+        [data-voodbuilder-nav-dropdown-toggle] svg {
+            color: inherit;
+            stroke: currentColor;
+        }
+
         .gjs-selected [data-voodbuilder-gjs-site-header] .voodbuilder-header-icon-btn,
         [data-voodbuilder-gjs-site-header] .gjs-selected .voodbuilder-header-icon-btn,
         [data-voodbuilder-block^='site_nav_'] .gjs-selected .voodbuilder-header-icon-btn,
         .gjs-hovered [data-voodbuilder-gjs-site-header] .voodbuilder-header-icon-btn,
         [data-voodbuilder-gjs-site-header] .gjs-hovered .voodbuilder-header-icon-btn {
-            color: var(--vx-header-text, var(--color-vp-text-2)) !important;
+            color: var(--vx-header-text, var(--color-vp-text-2, #64748b)) !important;
         }
 
         body:not(.voodbuilder-canvas-ready) {

@@ -1,6 +1,7 @@
 @props([
     'hasDocSidebar' => false,
     'enableNotifications' => true,
+    'canvasPreview' => false,
 ])
 
 @php
@@ -143,38 +144,56 @@
             @auth
                 @if (config('voodbuilder.notifications.enabled', true) && $showNotificationBell)
                     <div class="voodbuilder-mobile-nav__section">
-                        <livewire:voodbuilder.site-notification-bell wire:key="nav-bell-mobile" />
+                        @if ($canvasPreview)
+                            <button
+                                type="button"
+                                class="voodbuilder-mobile-nav__tool"
+                                disabled
+                                aria-label="{{ __('voodbuilder::notifications.bell_label') }}"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                                <span>{{ __('voodbuilder::notifications.bell_label') }}</span>
+                            </button>
+                        @else
+                            <livewire:voodbuilder.site-notification-bell wire:key="nav-bell-mobile" />
+                        @endif
                     </div>
                 @endif
 
                 <div class="voodbuilder-mobile-nav__actions">
-                    @if ($showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account'))
-                        <a href="{{ route('voodbuilder.account') }}" class="voodbuilder-mobile-nav__account" data-mobile-nav-close>
-                            @if ($avatarUrl)
-                                <img src="{{ $avatarUrl }}" alt="">
-                            @endif
-                            <span>{{ __('voodbuilder::account.nav') }}</span>
-                        </a>
+                    @if ($canvasPreview)
+                        <span class="voodbuilder-mobile-nav__action text-vp-text-2">{{ __('voodbuilder::account.nav') }}</span>
+                    @else
+                        @if ($showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account'))
+                            <a href="{{ route('voodbuilder.account') }}" class="voodbuilder-mobile-nav__account" data-mobile-nav-close>
+                                @if ($avatarUrl)
+                                    <img src="{{ $avatarUrl }}" alt="">
+                                @endif
+                                <span>{{ __('voodbuilder::account.nav') }}</span>
+                            </a>
+                        @endif
+
+                        @foreach (\Voodflow\Voodbuilder\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
+                            <a href="{{ $profileMenuLink['url'] }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                                {{ $profileMenuLink['label'] }}
+                            </a>
+                        @endforeach
+
+                        @if (AdminAccess::userCanAccessPanel())
+                            <a href="{{ AdminAccess::panelUrl() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                                {{ __('Admin') }}
+                            </a>
+                        @endif
+
+                        <form method="POST" action="{{ VoodbuilderUrls::logout() }}">
+                            @csrf
+                            <button type="submit" class="voodbuilder-mobile-nav__action">
+                                {{ __('voodbuilder::auth.logout') }}
+                            </button>
+                        </form>
                     @endif
-
-                    @foreach (\Voodflow\Voodbuilder\Support\ProfileMenuLinkRegistry::links() as $profileMenuLink)
-                        <a href="{{ $profileMenuLink['url'] }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
-                            {{ $profileMenuLink['label'] }}
-                        </a>
-                    @endforeach
-
-                    @if (AdminAccess::userCanAccessPanel())
-                        <a href="{{ AdminAccess::panelUrl() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
-                            {{ __('Admin') }}
-                        </a>
-                    @endif
-
-                    <form method="POST" action="{{ VoodbuilderUrls::logout() }}">
-                        @csrf
-                        <button type="submit" class="voodbuilder-mobile-nav__action">
-                            {{ __('voodbuilder::auth.logout') }}
-                        </button>
-                    </form>
                 </div>
             @else
                 <div class="voodbuilder-mobile-nav__actions">
