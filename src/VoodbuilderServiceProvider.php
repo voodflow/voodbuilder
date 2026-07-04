@@ -21,6 +21,7 @@ use Voodflow\Voodbuilder\Console\InstallCommand;
 use Voodflow\Voodbuilder\Console\MakeSubThemeCommand;
 use Voodflow\Voodbuilder\Console\SeedSoundmitGrapesLandingCommand;
 use Voodflow\Voodbuilder\Console\SubThemeCommand;
+use Voodflow\Voodbuilder\Console\SyncNpmDepsCommand;
 use Voodflow\Voodbuilder\Console\SyncThemeStylesheetImportsCommand;
 use Voodflow\Voodbuilder\Console\ThemePresetCommand;
 use Voodflow\Voodbuilder\Filament\Livewire\ThemeMapBridge;
@@ -95,6 +96,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->hasCommand(ThemePresetCommand::class)
             ->hasCommand(SubThemeCommand::class)
             ->hasCommand(SyncThemeStylesheetImportsCommand::class)
+            ->hasCommand(SyncNpmDepsCommand::class)
             ->hasCommand(CompileThemeAssetsCommand::class);
     }
 

@@ -33,12 +33,8 @@ final class ConfigureNpmForVoodbuilder
             $devDependencies = [];
         }
 
-        foreach (self::requiredDevDependencies() as $name => $version) {
-            if (array_key_exists($name, $devDependencies) || array_key_exists($name, $package['dependencies'] ?? [])) {
-                continue;
-            }
-
-            $devDependencies[$name] = $version;
+        foreach (self::missingFromPackage($package) as $name) {
+            $devDependencies[$name] = self::requiredDevDependencies()[$name];
             $added[] = $name;
         }
 
@@ -59,6 +55,47 @@ final class ConfigureNpmForVoodbuilder
         File::put($packageJsonPath, $encoded);
 
         return $added;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function missingFromPackageJson(?string $packageJsonPath = null): array
+    {
+        $packageJsonPath ??= base_path('package.json');
+
+        if (! is_file($packageJsonPath)) {
+            return array_keys(self::requiredDevDependencies());
+        }
+
+        $package = json_decode((string) file_get_contents($packageJsonPath), true);
+
+        if (! is_array($package)) {
+            return array_keys(self::requiredDevDependencies());
+        }
+
+        return self::missingFromPackage($package);
+    }
+
+    /**
+     * @param  array<string, mixed>  $package
+     * @return list<string>
+     */
+    public static function missingFromPackage(array $package): array
+    {
+        $dependencies = is_array($package['dependencies'] ?? null) ? $package['dependencies'] : [];
+        $devDependencies = is_array($package['devDependencies'] ?? null) ? $package['devDependencies'] : [];
+        $missing = [];
+
+        foreach (self::requiredDevDependencies() as $name => $version) {
+            if (array_key_exists($name, $devDependencies) || array_key_exists($name, $dependencies)) {
+                continue;
+            }
+
+            $missing[] = $name;
+        }
+
+        return $missing;
     }
 
     /**

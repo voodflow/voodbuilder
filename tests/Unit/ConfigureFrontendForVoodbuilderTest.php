@@ -43,6 +43,7 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
         $added = ConfigureNpmForVoodbuilder::apply();
 
         $this->assertContains('grapesjs', $added);
+        $this->assertContains('grapesjs-tailwindcss-plugin', $added);
         $this->assertContains('tailwindcss', $added);
 
         $package = json_decode((string) file_get_contents(base_path('package.json')), true);
@@ -64,6 +65,30 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
         $added = ConfigureNpmForVoodbuilder::apply();
 
         $this->assertSame([], $added);
+    }
+
+    public function test_required_dev_dependencies_include_grapesjs_tailwind_plugin(): void
+    {
+        $this->assertArrayHasKey(
+            'grapesjs-tailwindcss-plugin',
+            ConfigureNpmForVoodbuilder::requiredDevDependencies(),
+        );
+    }
+
+    public function test_missing_from_package_json_detects_absent_dependencies(): void
+    {
+        File::put(base_path('package.json'), json_encode([
+            'private' => true,
+            'devDependencies' => [
+                'vite' => '^8.0.0',
+                'grapesjs' => '^0.22.12',
+            ],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+
+        $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
+
+        $this->assertContains('grapesjs-tailwindcss-plugin', $missing);
+        $this->assertNotContains('grapesjs', $missing);
     }
 
     public function test_configure_vite_appends_package_entries(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
+use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
@@ -47,10 +48,19 @@ final class GrapesJsAssets
 
     public static function buildInstructions(): string
     {
+        $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
+
+        if ($missing !== []) {
+            return 'Missing npm packages: '.implode(', ', $missing).'. '
+                .'Run `php artisan voodbuilder:install --skip-migrate --skip-seed --with-npm-build` '
+                .'(or `php artisan voodbuilder:sync-npm-deps --install`, then `npm run build`).';
+        }
+
         $script = self::editorScriptEntry();
         $style = self::editorStyleEntry();
 
-        return "Add `{$script}` and `{$style}` to vite.config.js input, run `npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code`, then `npm run build`.";
+        return "Add `{$script}` and `{$style}` to vite.config.js input, then run `npm install --legacy-peer-deps && npm run build`. "
+            .'Or run `php artisan voodbuilder:install --skip-migrate --skip-seed --with-npm-build`.';
     }
 
     protected static function hasBuiltAsset(string $entry): bool
