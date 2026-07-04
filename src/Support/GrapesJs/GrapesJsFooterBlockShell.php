@@ -19,7 +19,7 @@ final class GrapesJsFooterBlockShell
         $safeId = htmlspecialchars($blockId, ENT_QUOTES | ENT_HTML5);
 
         return <<<HTML
-<footer data-voodbuilder-block="{$safeId}" data-voodbuilder-config="{$encodedConfig}" data-voodbuilder-hydrate-slots="1" class="voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font">
+<footer data-voodbuilder-block="{$safeId}" data-voodbuilder-config="{$encodedConfig}" data-voodbuilder-hydrate-slots="1" class="voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font" role="contentinfo">
 {$innerHtml}
 </footer>
 HTML;

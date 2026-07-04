@@ -188,6 +188,17 @@ function registerLayoutSectionType(editor) {
                 name: 'Section',
                 vpressSectionPy: 'py-24',
                 traits: [paddingTrait],
+                droppable: (srcComponent) => {
+                    if (! srcComponent?.get) {
+                        return true;
+                    }
+
+                    if (String(srcComponent.get('tagName') ?? '').toLowerCase() === 'section') {
+                        return false;
+                    }
+
+                    return (srcComponent.find?.('section[data-voodbuilder-section-block]') ?? []).length === 0;
+                },
             },
             init() {
                 const container = sectionPaddingTarget(this);
@@ -298,17 +309,116 @@ function lockDynamicPreviewContent(component) {
         return;
     }
 
+    if (isSiteNavBlock(blockId)) {
+        component.set({
+            selectable: true,
+            highlightable: true,
+            hoverable: true,
+            layerable: true,
+        });
+        migrateSiteNavBlockComponent(component);
+        component.components().forEach((child) => {
+            lockSiteNavPreviewTree(child);
+        });
+        normalizeSiteNavChromeButtons(component);
+
+        return;
+    }
+
     component.components().forEach((child) => {
         lockComponentTree(child);
     });
 }
 
+function lockSiteNavPreviewTree(component) {
+    component.set({
+        removable: false,
+        draggable: false,
+        copyable: false,
+        selectable: false,
+        hoverable: false,
+        layerable: false,
+        editable: false,
+        stylable: false,
+    });
+
+    component.components().forEach((child) => {
+        lockSiteNavPreviewTree(child);
+    });
+}
+
 function isSiteNavBlock(blockId) {
-    return typeof blockId === 'string' && blockId.startsWith('site_nav_');
+    return resolveSiteNavBlockId(blockId) === 'site_nav_simple';
 }
 
 function isSiteHeaderBlock(blockId) {
     return isSiteNavBlock(blockId) || blockId === 'site_header';
+}
+
+function resolveSiteNavBlockId(blockId) {
+    if (typeof blockId !== 'string' || blockId === '') {
+        return blockId;
+    }
+
+    if (blockId === 'site_header' || (blockId.startsWith('site_nav_') && blockId !== 'site_nav_simple')) {
+        return 'site_nav_simple';
+    }
+
+    return blockId;
+}
+
+function migrateSiteNavBlockComponent(component) {
+    const blockId = component.getAttributes()['data-voodbuilder-block'];
+
+    if (! isSiteHeaderBlock(blockId)) {
+        return;
+    }
+
+    const resolvedId = resolveSiteNavBlockId(blockId);
+
+    if (resolvedId !== blockId) {
+        component.addAttributes({ 'data-voodbuilder-block': resolvedId });
+    }
+}
+
+function findSiteNavRootComponent(component) {
+    let current = component;
+
+    while (current) {
+        const blockId = current.getAttributes?.()?.['data-voodbuilder-block'];
+
+        if (isSiteHeaderBlock(blockId)) {
+            migrateSiteNavBlockComponent(current);
+
+            return current;
+        }
+
+        if (current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
+            return findVpressDynamicAncestor(current) ?? current;
+        }
+
+        current = current.parent();
+    }
+
+    return null;
+}
+
+function normalizeSiteNavChromeButtons(root) {
+    if (! root?.find) {
+        return;
+    }
+
+    root.find('[data-voodbuilder-gjs-site-header] button').forEach((button) => {
+        if (button.get('type') === 'button') {
+            button.set('type', 'default');
+        }
+
+        const text = String(button.get('text') ?? '').trim();
+
+        if (text === 'Send' && button.find('svg').length === 0) {
+            button.set('text', '');
+        }
+    });
 }
 
 function siteHeaderTraitOptions() {
@@ -334,6 +444,24 @@ function siteHeaderTraitOptions() {
                 { value: 'static', id: 'static', name: 'Scrolls with page' },
             ],
         },
+        {
+            type: 'checkbox',
+            label: 'Show search',
+            name: 'vpressShowSearch',
+            changeProp: true,
+        },
+        {
+            type: 'checkbox',
+            label: 'Show notifications',
+            name: 'vpressShowNotifications',
+            changeProp: true,
+        },
+        {
+            type: 'checkbox',
+            label: 'Show account menu',
+            name: 'vpressShowProfileMenu',
+            changeProp: true,
+        },
     ];
 }
 
@@ -344,8 +472,12 @@ function syncSiteHeaderConfig(component) {
         : 'inherit';
     const config = {
         ...(component.get('vpressConfig') ?? {}),
+        variant: 'simple',
         main_nav_align: align,
         sticky_nav: stickyNav,
+        show_search: component.get('vpressShowSearch') !== false,
+        show_notifications: component.get('vpressShowNotifications') !== false,
+        show_profile_menu: component.get('vpressShowProfileMenu') !== false,
     };
 
     component.set('vpressConfig', config, { silent: true });
@@ -355,6 +487,8 @@ function syncSiteHeaderConfig(component) {
 }
 
 function configureSiteNavTraits(component, editor) {
+    migrateSiteNavBlockComponent(component);
+
     if (! isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
         return;
     }
@@ -365,7 +499,14 @@ function configureSiteNavTraits(component, editor) {
 
     component.set('vpressMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
     component.set('vpressStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
+    component.set('vpressShowSearch', config.show_search !== false, { silent: true });
+    component.set('vpressShowNotifications', config.show_notifications !== false, { silent: true });
+    component.set('vpressShowProfileMenu', config.show_profile_menu !== false, { silent: true });
     component.set('traits', siteHeaderTraitOptions());
+
+    if (editor?.TraitManager && editor.getSelected?.() === component) {
+        editor.TraitManager.select(component);
+    }
 }
 
 function registerSiteNavTraitBridge(editor) {
@@ -374,6 +515,22 @@ function registerSiteNavTraitBridge(editor) {
     }
 
     editor.__voodbuilderSiteNavTraitBridgeRegistered = true;
+
+    editor.on('component:selected', (component) => {
+        const root = findSiteNavRootComponent(component);
+
+        if (! root) {
+            return;
+        }
+
+        configureSiteNavTraits(root, editor);
+
+        if (root !== component) {
+            window.requestAnimationFrame(() => {
+                editor.select(root);
+            });
+        }
+    });
 
     editor.on('trait:value', ({ trait, component, value }) => {
         const blockId = component?.getAttributes?.()?.['data-voodbuilder-block'];
@@ -384,11 +541,17 @@ function registerSiteNavTraitBridge(editor) {
 
         const traitName = trait?.get?.('name');
 
-        if (traitName !== 'vpressMainNavAlign' && traitName !== 'vpressStickyNav') {
+        if (traitName !== 'vpressMainNavAlign'
+            && traitName !== 'vpressStickyNav'
+            && traitName !== 'vpressShowSearch'
+            && traitName !== 'vpressShowNotifications'
+            && traitName !== 'vpressShowProfileMenu') {
             return;
         }
 
         if (typeof value === 'string' && value !== '') {
+            component.set(traitName, value, { silent: true });
+        } else if (typeof value === 'boolean') {
             component.set(traitName, value, { silent: true });
         }
 
@@ -563,6 +726,177 @@ function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
     });
 }
 
+function registerSiteNavChromeButtonType(editor) {
+    if (editor.__voodbuilderSiteNavChromeButtonRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderSiteNavChromeButtonRegistered = true;
+
+    editor.DomComponents.addType('voodbuilder-chrome-button', {
+        isComponent: (element) => {
+            if (element?.tagName !== 'BUTTON') {
+                return false;
+            }
+
+            if (element.classList?.contains('voodbuilder-header-icon-btn')) {
+                return { type: 'voodbuilder-chrome-button' };
+            }
+
+            if (element.closest?.('[data-voodbuilder-gjs-site-header]')) {
+                return { type: 'voodbuilder-chrome-button' };
+            }
+
+            return false;
+        },
+        model: {
+            defaults: {
+                tagName: 'button',
+                draggable: false,
+                droppable: false,
+                selectable: false,
+                hoverable: false,
+                copyable: false,
+                removable: false,
+                editable: false,
+                stylable: false,
+                layerable: false,
+                highlightable: false,
+            },
+        },
+    });
+}
+
+function registerSiteNavSettingsUi(editor, mount) {
+    if (! mount || editor.__voodbuilderSiteNavSettingsUiRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderSiteNavSettingsUiRegistered = true;
+
+    const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
+        ?.querySelector('.voodbuilder-gjs-traits-mount');
+
+    const render = () => {
+        const selected = editor.getSelected();
+        const root = findSiteNavRootComponent(selected);
+
+        if (! root || ! isSiteNavBlock(root.getAttributes()['data-voodbuilder-block'])) {
+            mount.hidden = true;
+            mount.replaceChildren();
+            traitsMount?.classList.remove('hidden');
+
+            return;
+        }
+
+        configureSiteNavTraits(root, editor);
+
+        mount.hidden = false;
+        traitsMount?.classList.add('hidden');
+        mount.replaceChildren();
+
+        const panel = document.createElement('div');
+        panel.className = 'voodbuilder-gjs-site-nav-settings';
+
+        const title = document.createElement('p');
+        title.className = 'voodbuilder-gjs-site-nav-settings__title';
+        title.textContent = 'Navbar settings';
+        panel.appendChild(title);
+
+        const fields = document.createElement('div');
+        fields.className = 'voodbuilder-gjs-site-nav-settings__fields';
+
+        const addSelect = (label, name, options, value) => {
+            const field = document.createElement('label');
+            field.className = 'voodbuilder-gjs-site-nav-settings__field';
+
+            const fieldLabel = document.createElement('span');
+            fieldLabel.className = 'voodbuilder-gjs-site-nav-settings__label';
+            fieldLabel.textContent = label;
+            field.appendChild(fieldLabel);
+
+            const select = document.createElement('select');
+            select.className = 'voodbuilder-gjs-site-nav-settings__select';
+            select.dataset.setting = name;
+
+            for (const option of options) {
+                const node = document.createElement('option');
+                node.value = option.value;
+                node.textContent = option.label;
+                node.selected = option.value === value;
+                select.appendChild(node);
+            }
+
+            field.appendChild(select);
+            fields.appendChild(field);
+        };
+
+        const addCheckbox = (label, name, checked) => {
+            const field = document.createElement('label');
+            field.className = 'voodbuilder-gjs-site-nav-settings__field voodbuilder-gjs-site-nav-settings__field--checkbox';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = checked;
+            input.dataset.setting = name;
+            field.appendChild(input);
+
+            const fieldLabel = document.createElement('span');
+            fieldLabel.className = 'voodbuilder-gjs-site-nav-settings__label';
+            fieldLabel.textContent = label;
+            field.appendChild(fieldLabel);
+
+            fields.appendChild(field);
+        };
+
+        addSelect('Menu position', 'vpressMainNavAlign', [
+            { value: 'start', label: 'Left (next to logo)' },
+            { value: 'center', label: 'Center' },
+        ], root.get('vpressMainNavAlign') === 'center' ? 'center' : 'start');
+
+        addSelect('Sticky', 'vpressStickyNav', [
+            { value: 'inherit', label: 'Site default' },
+            { value: 'sticky', label: 'Sticky' },
+            { value: 'static', label: 'Scrolls with page' },
+        ], root.get('vpressStickyNav') ?? 'inherit');
+
+        addCheckbox('Show search', 'vpressShowSearch', root.get('vpressShowSearch') !== false);
+        addCheckbox('Show notifications', 'vpressShowNotifications', root.get('vpressShowNotifications') !== false);
+        addCheckbox('Show account menu', 'vpressShowProfileMenu', root.get('vpressShowProfileMenu') !== false);
+
+        panel.appendChild(fields);
+        mount.appendChild(panel);
+
+        const applyChange = (name, value) => {
+            if (typeof value === 'boolean') {
+                root.set(name, value, { silent: true });
+            } else if (typeof value === 'string' && value !== '') {
+                root.set(name, value, { silent: true });
+            }
+
+            syncSiteHeaderConfig(root);
+            editor.trigger('voodbuilder:refresh-dynamic-block', root);
+            window.requestAnimationFrame(render);
+        };
+
+        fields.querySelectorAll('select[data-setting]').forEach((select) => {
+            select.addEventListener('change', () => {
+                applyChange(select.dataset.setting, select.value);
+            });
+        });
+
+        fields.querySelectorAll('input[type="checkbox"][data-setting]').forEach((input) => {
+            input.addEventListener('change', () => {
+                applyChange(input.dataset.setting, input.checked);
+            });
+        });
+    };
+
+    editor.on('component:selected', render);
+    editor.on('component:deselected', render);
+    editor.on('load', render);
+}
+
 function registerDynamicBlockType(editor) {
     editor.DomComponents.addType('voodbuilder-dynamic', {
         isComponent: (element) => {
@@ -607,6 +941,9 @@ function registerDynamicBlockType(editor) {
                 vpressConfig: {},
                 vpressMainNavAlign: 'start',
                 vpressStickyNav: 'inherit',
+                vpressShowSearch: true,
+                vpressShowNotifications: true,
+                vpressShowProfileMenu: true,
                 attributes: {
                     class: 'voodbuilder-gjs-dynamic',
                     'data-voodbuilder-block': '',
@@ -751,6 +1088,7 @@ export {
     applySiteFooterColumns,
     configureSiteNavTraits,
     registerSiteNavTraitBridge,
+    registerSiteNavSettingsUi,
     syncSiteHeaderConfig,
     refreshDynamicSlots,
     isSiteFooterBlock,
@@ -768,6 +1106,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 
     registerDynamicBlockType(editor);
+    registerSiteNavChromeButtonType(editor);
     registerSiteNavTraitBridge(editor);
     registerLayoutSectionType(editor);
     registerSpacingStyleSync(editor);

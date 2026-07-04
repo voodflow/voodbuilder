@@ -603,6 +603,73 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
 }
 
+.voodbuilder-gjs-traits-mount.hidden {
+    display: none !important;
+}
+
+.voodbuilder-gjs-site-chrome-settings-mount {
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
+.voodbuilder-gjs-site-nav-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.voodbuilder-gjs-site-nav-settings__title {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-gjs-site-nav-settings__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.voodbuilder-gjs-site-nav-settings__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.voodbuilder-gjs-site-nav-settings__field--checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.voodbuilder-gjs-site-nav-settings__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-gjs-site-nav-settings__select {
+    width: 100%;
+    padding: 0.4375rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.4375rem;
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.8125rem;
+}
+
+.voodbuilder-gjs-site-nav-settings__field--checkbox input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--color-vp-brand-1, #6366f1);
+}
+
 .voodbuilder-gjs-blocks-mount,
 .voodbuilder-gjs-layers-mount,
 .voodbuilder-gjs-traits-mount,
@@ -617,6 +684,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 }
 
 .voodbuilder-gjs-traits-mount,
+.voodbuilder-gjs-site-chrome-settings-mount,
 .voodbuilder-gjs-layers-mount,
 .voodbuilder-gjs-dynamic-mount,
 .voodbuilder-gjs-conditions-mount {
@@ -1586,6 +1654,45 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     left: 0 !important;
     width: 100% !important;
     height: 100%;
+    scrollbar-gutter: auto;
+}
+
+.voodbuilder-gjs-shell__right,
+.voodbuilder-gjs-inspector-panels,
+.voodbuilder-gjs-traits-mount,
+.voodbuilder-gjs-layers-mount {
+    scrollbar-gutter: auto;
+}
+
+.voodbuilder-gjs-root,
+.voodbuilder-gjs-root .gjs-editor,
+.voodbuilder-gjs-shell__workspace {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent) transparent;
+}
+
+.voodbuilder-gjs-root ::-webkit-scrollbar,
+.voodbuilder-gjs-shell ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.voodbuilder-gjs-root ::-webkit-scrollbar-track,
+.voodbuilder-gjs-shell ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.voodbuilder-gjs-root ::-webkit-scrollbar-thumb,
+.voodbuilder-gjs-shell ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+}
+
+.voodbuilder-gjs-root ::-webkit-scrollbar-thumb:hover,
+.voodbuilder-gjs-shell ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 60%, transparent);
 }
 
 .voodbuilder-gjs-canvas-mount .gjs-cv-canvas__frames {

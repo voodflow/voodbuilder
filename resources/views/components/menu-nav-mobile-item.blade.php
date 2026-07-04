@@ -13,26 +13,28 @@
     $paddingClass = match ($depth) {
         0 => '',
         1 => 'pl-3',
-        2 => 'pl-6',
-        default => 'pl-9',
+        default => 'pl-6',
     };
 @endphp
 
-@if ($hasChildren)
-    <li x-data="{ open: {{ $isActive ? 'true' : 'false' }} }" @class([$paddingClass])>
+@if ($hasChildren && $depth < 1)
+    <li data-voodbuilder-nav-mobile-item @class([$paddingClass, 'is-open' => $isActive])>
         <button
             type="button"
+            data-voodbuilder-nav-mobile-toggle
             @class([
                 'voodbuilder-mobile-nav__link w-full',
                 'is-active' => $isActive,
             ])
-            @click="open = ! open"
-            :aria-expanded="open"
+            aria-expanded="{{ $isActive ? 'true' : 'false' }}"
         >
             <span>{{ __($item->label) }}</span>
             <svg
-                class="h-4 w-4 shrink-0 transition-transform duration-300 ease-out"
-                :class="{ 'rotate-180': open }"
+                data-voodbuilder-nav-mobile-chevron
+                @class([
+                    'h-4 w-4 shrink-0 transition-transform duration-300 ease-out',
+                    'rotate-180' => $isActive,
+                ])
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -42,7 +44,7 @@
             </svg>
         </button>
 
-        <div x-show="open" x-collapse.duration.300ms x-cloak>
+        <div data-voodbuilder-nav-mobile-panel @hidden(!$isActive)>
             <ul class="mt-1 space-y-1 pl-3">
                 @if ($hasParentLink)
                     <li>
@@ -72,7 +74,7 @@
             href="{{ $item->resolveUrl() }}"
             @class([
                 'voodbuilder-mobile-nav__link',
-                $depth > 0 ? 'voodbuilder-mobile-nav__link--secondary' : '',
+                'voodbuilder-mobile-nav__link--secondary' => $depth > 0,
                 'is-active' => $isActive,
             ])
             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif

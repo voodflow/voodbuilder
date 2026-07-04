@@ -50,6 +50,25 @@ class NavigationMenuPreviewTest extends TestCase
         $this->assertStringContainsString('data-mobile-nav-toggle', $html);
     }
 
+    public function test_site_nav_block_renders_a_single_brand_title(): void
+    {
+        $html = SiteNavSimpleBlock::toHtml(SiteNavSimpleBlock::defaultConfig(), []);
+
+        $this->assertSame(1, preg_match_all(
+            '/inline-flex h-16 w-full items-center gap-2\.5/',
+            $html,
+        ));
+    }
+
+    public function test_site_nav_block_uses_full_width_row_by_default(): void
+    {
+        $html = SiteNavSimpleBlock::toHtml(SiteNavSimpleBlock::defaultConfig(), []);
+
+        $this->assertStringContainsString('voodbuilder-nav__row', $html);
+        $this->assertStringContainsString('w-full', $html);
+        $this->assertStringNotContainsString('mx-auto max-w-[calc(var(--width-vp-layout)-4rem)]', $html);
+    }
+
     public function test_site_nav_block_pins_nav_when_sticky_is_enabled(): void
     {
         $html = SiteNavSimpleBlock::toHtml(array_merge(SiteNavSimpleBlock::defaultConfig(), [

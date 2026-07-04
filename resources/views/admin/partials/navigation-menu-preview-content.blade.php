@@ -6,11 +6,11 @@
 @if ($placement === 'main' || $placement === 'header_extra')
     @php
         $headerConfig = array_merge(SiteNavSimpleBlock::defaultConfig(), [
-            'show_profile' => false,
+            'show_profile_menu' => false,
             'show_notifications' => false,
         ]);
     @endphp
-    {!! SiteNavSimpleBlock::toHtml($headerConfig, []) !!}
+    {!! SiteNavSimpleBlock::toPreviewHtml($headerConfig, []) !!}
 @elseif (str_starts_with($placement, 'footer_col_'))
     {!! SiteFooterColumnsSimpleBlock::toHtml(SiteFooterColumnsSimpleBlock::defaultConfig(), []) !!}
 @endif

@@ -14,6 +14,7 @@ import vpressGrapesJsPlugin, {
     applySiteFooterColumns,
     configureSiteNavTraits,
     ensureLayoutSectionTraits,
+    registerSiteNavSettingsUi,
     isSiteFooterBlock,
     isSiteNavBlock,
     isSiteHeaderBlock,
@@ -70,6 +71,7 @@ import { syncAllLayerDisplayNames } from './layer-display-name.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
 import { registerBlocksLibraryRenderHook } from './blocks-library-sync.js';
 import { registerSectionBlockTagging } from './section-block-tagging.js';
+import { registerSectionNestingGuard } from './section-nesting-guard.js';
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -456,6 +458,8 @@ function registerInspectorExtensions(editor, shell, options, labels) {
         labels,
         mount: shell?.mounts?.globalClasses ?? null,
     });
+
+    registerSiteNavSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
 }
 
 export function initVpressGrapesJs(container, options = {}) {
@@ -635,6 +639,7 @@ export function initVpressGrapesJs(container, options = {}) {
         editor.__voodbuilderSyncComponentsCatalog?.();
         registerBlocksLibraryRenderHook(editor);
         registerSectionBlockTagging(editor);
+        registerSectionNestingGuard(editor);
         refreshBlocksLibraryUi(editor);
 
         configureLayoutBlocks(editor);

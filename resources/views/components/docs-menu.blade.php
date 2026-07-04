@@ -9,20 +9,19 @@
 @if ($sections->isNotEmpty() && Route::has('vdocs.index'))
     <div
         class="relative hidden vp:block"
-        x-data="{ open: false }"
-        @click.outside="open = false"
-        @keydown.escape.window="open = false"
+        data-voodbuilder-nav-dropdown
+        data-voodbuilder-nav-dropdown-trigger="click"
     >
         <button
             type="button"
+            data-voodbuilder-nav-dropdown-toggle
             @class([
                 'inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors',
                 'text-vp-brand-1' => DocNavigation::isActive(),
                 'text-vp-text-1 hover:text-vp-brand-1' => ! DocNavigation::isActive(),
             ])
             aria-haspopup="menu"
-            :aria-expanded="open"
-            @click="open = ! open"
+            aria-expanded="false"
         >
             <span>{{ __('vdocs::nav.label') }}</span>
             <svg class="h-4 w-4 text-vp-text-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,9 +30,8 @@
         </button>
 
         <div
-            x-show="open"
-            x-cloak
-            x-transition
+            data-voodbuilder-nav-dropdown-panel
+            hidden
             role="menu"
             class="absolute top-[calc(100%+0.5rem)] left-0 z-50 min-w-[14rem] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
         >

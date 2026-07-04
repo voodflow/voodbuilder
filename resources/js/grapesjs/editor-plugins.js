@@ -87,6 +87,36 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
     }
 }
 
+function isInsideSiteHeaderChrome(component) {
+    let current = component;
+
+    while (current) {
+        if (current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+function protectSiteHeaderButton(component) {
+    if (component.get('tagName') !== 'button' || ! isInsideSiteHeaderChrome(component)) {
+        return;
+    }
+
+    if (component.get('type') === 'button') {
+        component.set('type', 'default');
+    }
+
+    const text = String(component.get('text') ?? '').trim();
+
+    if (text === 'Send' && component.find('svg').length === 0) {
+        component.set('text', '');
+    }
+}
+
 export function configureGrapesJsPlugins(editor, options = {}) {
     const { formSubmitUrl, csrf, plugins: enabled = {} } = options;
 
@@ -105,6 +135,12 @@ export function configureGrapesJsPlugins(editor, options = {}) {
         editor.on('load', registerForms);
         registerForms();
         configureGrapesJsFormsCanvas(editor);
+
+        editor.on('component:add', (component) => {
+            window.requestAnimationFrame(() => {
+                protectSiteHeaderButton(component);
+            });
+        });
     }
 
     if (enabled.forms !== false && formSubmitUrl) {

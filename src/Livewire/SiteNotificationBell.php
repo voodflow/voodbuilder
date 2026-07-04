@@ -91,6 +91,10 @@ class SiteNotificationBell extends Component
             abort(401);
         }
 
+        if (! method_exists($user, 'notifications')) {
+            return DatabaseNotification::query()->whereRaw('0 = 1');
+        }
+
         return $user->notifications();
     }
 

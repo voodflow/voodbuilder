@@ -21,15 +21,19 @@
         'relative' => $preview,
     ])
     data-voodbuilder-gjs-site-header
-    data-voodbuilder-nav-variant="{{ $variant }}"
+    data-voodbuilder-nav-variant="simple"
+    @if ($canvasPreview) data-gjs-type="default" @endif
 >
     <x-voodbuilder::nav
         :has-doc-sidebar="false"
         :show-reading-progress="false"
         :canvas-preview="$canvasPreview"
-        :variant="$variant"
+        variant="simple"
         :main-nav-align="$config['main_nav_align'] ?? 'start'"
         :sticky-nav-mode="$config['sticky_nav'] ?? 'inherit'"
+        :show-search="(bool) ($config['show_search'] ?? true)"
+        :show-notifications="(bool) ($config['show_notifications'] ?? true)"
+        :show-profile-menu="(bool) ($config['show_profile_menu'] ?? true)"
         :in-page-block="true"
     />
 

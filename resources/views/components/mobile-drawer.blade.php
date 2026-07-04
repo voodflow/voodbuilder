@@ -123,9 +123,7 @@
                     </a>
                 @endif
 
-                <div class="voodbuilder-mobile-nav__tool">
-                    <x-voodbuilder::optional-language-switcher />
-                </div>
+                <x-voodbuilder::optional-language-switcher variant="mobile-tool" />
 
                 @if ($showThemeToggle)
                     <button

@@ -151,6 +151,62 @@
             setMobileNavOpen(! mobileNav.classList.contains('is-open'));
         });
 
+        function closeProfileMenus() {
+            document.querySelectorAll('[data-voodbuilder-profile-menu-panel]').forEach((panel) => {
+                panel.hidden = true;
+            });
+
+            document.querySelectorAll('[data-voodbuilder-profile-menu-toggle]').forEach((toggle) => {
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        document.querySelectorAll('[data-voodbuilder-profile-menu]').forEach((root) => {
+            if (root.dataset.voodbuilderProfileMenuBound === 'true') {
+                return;
+            }
+
+            root.dataset.voodbuilderProfileMenuBound = 'true';
+
+            const toggle = root.querySelector('[data-voodbuilder-profile-menu-toggle]');
+            const panel = root.querySelector('[data-voodbuilder-profile-menu-panel]');
+
+            if (! toggle || ! panel) {
+                return;
+            }
+
+            toggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const willOpen = panel.hidden;
+                closeProfileMenus();
+
+                if (willOpen) {
+                    panel.hidden = false;
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        if (document.documentElement.dataset.voodbuilderProfileMenuDismissBound !== 'true') {
+            document.documentElement.dataset.voodbuilderProfileMenuDismissBound = 'true';
+
+            document.addEventListener('click', (event) => {
+                if (event.target instanceof Element && event.target.closest('[data-voodbuilder-profile-menu]')) {
+                    return;
+                }
+
+                closeProfileMenus();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeProfileMenus();
+                }
+            });
+        }
+
         document.addEventListener('click', (event) => {
             const target = event.target instanceof Element
                 ? event.target.closest('[data-mobile-nav-close]')

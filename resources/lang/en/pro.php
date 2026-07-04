@@ -277,7 +277,7 @@ return [
         'layer_rename_hint' => 'Changes the label in the layer tree only. Element ids are not modified.',
         'layer_rename_placeholder' => 'Layer name',
         'blocks' => [
-            'site_nav_simple' => 'Navbar · Simple',
+            'site_nav_simple' => 'Navbar',
             'site_nav_simple_dark' => 'Navbar · Simple dark',
             'site_nav_with_search' => 'Navbar · With search',
             'site_nav_with_search_dark' => 'Navbar · With search dark',

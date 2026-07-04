@@ -277,7 +277,7 @@ return [
         'layer_rename_hint' => 'Modifica solo l\'etichetta nel pannello layer. Gli id degli elementi non vengono cambiati.',
         'layer_rename_placeholder' => 'Nome layer',
         'blocks' => [
-            'site_nav_simple' => 'Navbar · Semplice',
+            'site_nav_simple' => 'Navbar',
             'site_nav_simple_dark' => 'Navbar · Semplice scura',
             'site_nav_with_search' => 'Navbar · Con ricerca',
             'site_nav_with_search_dark' => 'Navbar · Con ricerca scura',

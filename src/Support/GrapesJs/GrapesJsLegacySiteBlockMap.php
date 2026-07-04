@@ -11,6 +11,10 @@ final class GrapesJsLegacySiteBlockMap
 {
     public static function resolve(string $blockId): ?string
     {
+        if ($blockId !== 'site_nav_simple' && str_starts_with($blockId, 'site_nav_')) {
+            return 'site_nav_simple';
+        }
+
         return match ($blockId) {
             'site_header' => 'site_nav_simple',
             'site_footer' => 'site_footer_columns_simple',

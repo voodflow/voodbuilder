@@ -22,13 +22,7 @@ abstract class AbstractSiteNavVariantBlock implements GrapesJsServerBlock
 
     public static function defaultConfig(): array
     {
-        $variant = static::variant();
-
-        return [
-            'variant' => $variant,
-            'main_nav_align' => $variant === 'centered_links' ? 'center' : 'start',
-            'sticky_nav' => 'inherit',
-        ];
+        return SiteNavConfig::defaults();
     }
 
     public static function toHtml(array $config, array $context): string
@@ -46,7 +40,7 @@ abstract class AbstractSiteNavVariantBlock implements GrapesJsServerBlock
      */
     protected static function renderShell(array $config, bool $preview): string
     {
-        $merged = array_merge(static::defaultConfig(), $config);
+        $merged = SiteNavConfig::normalize(array_merge(static::defaultConfig(), $config));
 
         return view('voodbuilder::grapesjs.blocks.site-nav', [
             'config' => $merged,

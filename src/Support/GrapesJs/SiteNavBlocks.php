@@ -20,13 +20,6 @@ final class SiteNavBlocks
     {
         return [
             SiteNavSimpleBlock::class,
-            SiteNavSimpleDarkBlock::class,
-            SiteNavWithSearchBlock::class,
-            SiteNavWithSearchDarkBlock::class,
-            SiteNavWithActionBlock::class,
-            SiteNavWithActionDarkBlock::class,
-            SiteNavCenteredLinksBlock::class,
-            SiteNavMenuLeftBlock::class,
         ];
     }
 }

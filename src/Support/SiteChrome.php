@@ -10,11 +10,37 @@ final class SiteChrome
 {
     public static function shouldHideNav(?SitePage $page = null, bool $grapesJsEditor = false): bool
     {
+        if ($grapesJsEditor) {
+            return false;
+        }
+
         if ($page?->shouldHideSiteNav()) {
             return true;
         }
 
+        if ($page !== null && self::pageContainsSiteNavBlock($page)) {
+            return true;
+        }
+
         return self::themeChromeFlag($page, 'hide_site_nav');
+    }
+
+    public static function pageContainsSiteNavBlock(SitePage $page): bool
+    {
+        if (! $page->usesGrapesJsBuilder()) {
+            return false;
+        }
+
+        $html = (string) ($page->builder_payload['html'] ?? '');
+
+        if ($html === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/data-voodbuilder-block="(?:site_header|site_nav_[^"]+|landing_navbar)"/',
+            $html,
+        );
     }
 
     public static function shouldHideFooter(?SitePage $page = null, bool $grapesJsEditor = false): bool

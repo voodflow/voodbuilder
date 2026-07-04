@@ -78,6 +78,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                     <div class="voodbuilder-gjs-inspector-panels">
                         <div class="voodbuilder-gjs-inspector-panel voodbuilder-gjs-inspector-panel--active" data-voodbuilder-inspector="content">
                             <div class="voodbuilder-gjs-traits-mount"></div>
+                            <div class="voodbuilder-gjs-site-chrome-settings-mount" hidden></div>
                             <div class="voodbuilder-gjs-component-props-mount"></div>
                         </div>
                         <div class="voodbuilder-gjs-inspector-panel" data-voodbuilder-inspector="style">
@@ -135,6 +136,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             libraryPanels: container.querySelector('.voodbuilder-gjs-library-panels'),
             layers: container.querySelector('.voodbuilder-gjs-layers-mount'),
             traits: container.querySelector('.voodbuilder-gjs-traits-mount'),
+            siteChromeSettings: container.querySelector('.voodbuilder-gjs-site-chrome-settings-mount'),
             selectors: container.querySelector('.voodbuilder-gjs-selectors-mount'),
             styles: container.querySelector('.voodbuilder-gjs-styles-mount'),
             dynamic: container.querySelector('.voodbuilder-gjs-dynamic-mount'),

@@ -13,13 +13,8 @@
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
 @endphp
 
-@if ($hasChildren)
-    <div
-        class="relative"
-        x-data="{ open: false }"
-        @mouseenter="open = true"
-        @mouseleave="open = false"
-    >
+@if ($hasChildren && $depth < 1)
+    <div class="space-y-1">
         @if ($hasParentLink)
             <a
                 href="{{ $item->resolveUrl() }}"
@@ -34,47 +29,25 @@
                 {{ __($item->label) }}
             </a>
         @else
-            <span
+            <p class="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-vp-text-3">
+                {{ __($item->label) }}
+            </p>
+        @endif
+
+        @foreach ($item->children as $child)
+            <a
+                href="{{ $child->resolveUrl() }}"
                 role="menuitem"
                 @class([
                     $linkClass,
-                    'cursor-default font-medium text-vp-text-1',
+                    'font-medium text-vp-brand-1' => $child->isActive(),
+                    'text-vp-text-2' => ! $child->isActive(),
                 ])
+                @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
             >
-                {{ __($item->label) }}
-            </span>
-        @endif
-
-        <div
-            x-show="open"
-            x-cloak
-            x-transition
-            role="menu"
-            @class([
-                'absolute z-50 min-w-[14rem] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg',
-                'top-0 left-full ml-1' => $depth > 0,
-                'top-[calc(100%+0.25rem)] left-0' => $depth === 0,
-            ])
-        >
-            @foreach ($item->children as $child)
-                @if ($child->hasChildren())
-                    <x-voodbuilder::menu-nav-dropdown-item :item="$child" :depth="$depth + 1" />
-                @else
-                    <a
-                        href="{{ $child->resolveUrl() }}"
-                        role="menuitem"
-                        @class([
-                            $linkClass,
-                            'font-medium text-vp-brand-1' => $child->isActive(),
-                            'text-vp-text-2' => ! $child->isActive(),
-                        ])
-                        @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                    >
-                        {{ __($child->label) }}
-                    </a>
-                @endif
-            @endforeach
-        </div>
+                {{ __($child->label) }}
+            </a>
+        @endforeach
     </div>
 @else
     <a

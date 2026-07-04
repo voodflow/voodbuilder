@@ -11,7 +11,11 @@
 @endphp
 
 @if ($languageSwitcherAvailable)
-    @if ($labeled)
+    @if ($variant === 'mobile-tool')
+        <div {{ $attributes->class(['voodbuilder-mobile-nav__tool']) }}>
+            @include('vtuts::components.language-switcher', ['variant' => 'inline'])
+        </div>
+    @elseif ($labeled)
         <div class="px-3 py-2">
             <div class="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">
                 {{ __('vtuts::language_switcher.label') }}

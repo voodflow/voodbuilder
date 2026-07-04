@@ -29,9 +29,43 @@ class SiteChromeTest extends TestCase
         $page = new SitePage([
             'layout' => 'home',
             'sub_theme' => 'site',
+            'hide_site_nav' => true,
+            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<div data-voodbuilder-block="site_nav_simple"></div>',
+            ],
         ]);
 
         $this->assertFalse(SiteChrome::shouldHideNav($page, grapesJsEditor: true));
+    }
+
+    public function test_site_nav_block_in_canvas_hides_layout_navigation(): void
+    {
+        $page = new SitePage([
+            'layout' => 'landing',
+            'sub_theme' => 'site',
+            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<div data-voodbuilder-block="site_nav_with_search"></div>',
+            ],
+        ]);
+
+        $this->assertTrue(SiteChrome::shouldHideNav($page));
+        $this->assertTrue(SiteChrome::pageContainsSiteNavBlock($page));
+    }
+
+    public function test_legacy_site_header_block_hides_layout_navigation(): void
+    {
+        $page = new SitePage([
+            'layout' => 'landing',
+            'sub_theme' => 'site',
+            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder_payload' => [
+                'html' => '<div data-voodbuilder-block="site_header"></div>',
+            ],
+        ]);
+
+        $this->assertTrue(SiteChrome::shouldHideNav($page));
     }
 
     public function test_sub_theme_chrome_defaults_apply_on_landing_layout(): void

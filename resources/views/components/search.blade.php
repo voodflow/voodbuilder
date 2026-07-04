@@ -1,3 +1,7 @@
+@props([
+    'canvasPreview' => false,
+])
+
 @php
     use Illuminate\Support\Facades\Route;
     use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
@@ -10,7 +14,22 @@
         : null;
 @endphp
 
-@if ($enabled && $searchUrl)
+@if ($canvasPreview)
+    <div class="flex items-center" data-voodbuilder-search data-gjs-type="default" data-gjs-selectable="false">
+        <button
+            type="button"
+            class="voodbuilder-header-icon-btn"
+            data-voodbuilder-search-open
+            data-gjs-type="default"
+            data-gjs-selectable="false"
+            aria-label="{{ __('voodbuilder::search.button') }}"
+        >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+        </button>
+    </div>
+@elseif ($enabled && $searchUrl)
     <div class="flex items-center" data-voodbuilder-search>
         <button
             type="button"
