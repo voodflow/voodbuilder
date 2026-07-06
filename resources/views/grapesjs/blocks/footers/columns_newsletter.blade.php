@@ -1,5 +1,8 @@
 <div class="container mx-auto px-5 py-24">
-    <div class="mb-12 flex flex-col items-center gap-4 rounded-2xl border border-vp-divider bg-vp-bg-alt px-6 py-8 text-center md:flex-row md:justify-between md:text-left">
+    <div
+        class="mb-12 flex flex-col items-center gap-4 rounded-2xl border border-vp-divider bg-vp-bg-alt px-6 py-8 text-center md:flex-row md:justify-between md:text-left"
+        data-voodbuilder-chrome="newsletter"
+    >
         <div>
             <h2 class="text-base font-semibold text-vp-text-1" data-voodbuilder-footer-newsletter-title>
                 {{ __('voodbuilder::pro.grapesjs.blocks.footer_newsletter_title') }}

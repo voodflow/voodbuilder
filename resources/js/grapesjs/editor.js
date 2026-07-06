@@ -12,9 +12,12 @@ import { alertDialog } from './editor-dialog.js';
 import vpressGrapesJsPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
+    applySiteFooterSettingsPreview,
     applySiteNavSettingsPreview,
+    configureSiteFooterTraits,
     configureSiteNavTraits,
     ensureLayoutSectionTraits,
+    registerSiteFooterSettingsUi,
     registerSiteNavSettingsUi,
     isSiteFooterBlock,
     isSiteNavBlock,
@@ -473,6 +476,7 @@ function registerInspectorExtensions(editor, shell, options, labels) {
         mount: shell?.mounts?.globalClasses ?? null,
     });
 
+    registerSiteFooterSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerSiteNavSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
 }
 
@@ -716,7 +720,8 @@ export function initVpressGrapesJs(container, options = {}) {
                         lockDynamicPreviewContent(component);
 
                         if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                            applySiteFooterColumns(component, component.get('vpressConfig')?.columns ?? 4);
+                            configureSiteFooterTraits(component, editor);
+                            applySiteFooterSettingsPreview(component, editor);
                         }
 
                         if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
@@ -890,7 +895,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 lockDynamicPreviewContent(component);
 
                 if (footerBlock) {
-                    applySiteFooterColumns(component, freshConfig.columns ?? 4);
+                    configureSiteFooterTraits(component, editor);
+                    applySiteFooterSettingsPreview(component, editor);
                     bootCanvasSiteChrome(editor);
                     editor.trigger('voodbuilder:site-chrome-updated');
                 }

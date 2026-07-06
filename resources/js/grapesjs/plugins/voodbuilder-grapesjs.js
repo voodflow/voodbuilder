@@ -781,6 +781,109 @@ function registerSiteNavTraitBridge(editor) {
     });
 }
 
+function setFooterChromeVisible(node, visible) {
+    setNavChromeVisible(node, visible);
+}
+
+function footerBlockHasColumns(blockId) {
+    return blockId === 'site_footer_columns_simple' || blockId === 'site_footer_columns_newsletter';
+}
+
+function footerBlockHasNewsletter(blockId) {
+    return blockId === 'site_footer_columns_newsletter';
+}
+
+function footerBlockHasSocial(blockId) {
+    return blockId === 'site_footer_social';
+}
+
+function footerBlockHasMenu(blockId) {
+    return blockId === 'site_footer_social' || blockId === 'site_footer_centered';
+}
+
+function findSiteFooterRootComponent(component) {
+    let current = component;
+
+    while (current) {
+        const blockId = current.getAttributes?.()?.['data-voodbuilder-block'];
+
+        if (isSiteFooterBlock(blockId)) {
+            return current;
+        }
+
+        current = current.parent();
+    }
+
+    return null;
+}
+
+function syncSiteFooterConfig(component) {
+    const blockId = component.getAttributes()['data-voodbuilder-block'];
+    const config = {
+        ...(component.get('vpressConfig') ?? {}),
+        show_newsletter: component.get('vpressShowNewsletter') === true,
+        show_social: component.get('vpressShowSocial') === true,
+        show_footer_menu: component.get('vpressShowFooterMenu') === true,
+        show_copyright: component.get('vpressShowCopyright') === true,
+    };
+
+    if (footerBlockHasColumns(blockId)) {
+        config.columns = Math.max(1, Math.min(4, Number(component.get('vpressFooterColumns')) || 4));
+    }
+
+    component.set('vpressConfig', config, { silent: true });
+    component.addAttributes({
+        'data-voodbuilder-config': encodeVpressConfig(config),
+    }, { silent: true });
+}
+
+function applySiteFooterSettingsPreview(root, editor = null) {
+    void editor;
+
+    const blockId = root.getAttributes()['data-voodbuilder-block'];
+    const config = root.get('vpressConfig') ?? {};
+
+    if (footerBlockHasColumns(blockId)) {
+        applySiteFooterColumns(root, config.columns ?? root.get('vpressFooterColumns') ?? 4);
+    }
+
+    const el = root.getEl?.();
+
+    if (! el) {
+        return;
+    }
+
+    const showNewsletter = root.get('vpressShowNewsletter') === true;
+    const showSocial = root.get('vpressShowSocial') === true;
+    const showMenu = root.get('vpressShowFooterMenu') === true;
+    const showCopyright = root.get('vpressShowCopyright') === true;
+
+    el.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
+        const kind = node.getAttribute('data-voodbuilder-chrome');
+
+        if (kind === 'newsletter') {
+            setFooterChromeVisible(node, showNewsletter);
+        } else if (kind === 'social') {
+            setFooterChromeVisible(node, showSocial);
+        } else if (kind === 'footer-menu') {
+            setFooterChromeVisible(node, showMenu);
+        } else if (kind === 'copyright') {
+            setFooterChromeVisible(node, showCopyright);
+        }
+    });
+}
+
+function applySiteFooterSettingChange(editor, root, name, value) {
+    if (typeof value === 'boolean') {
+        root.set(name, value, { silent: true });
+    } else if (typeof value === 'string' && value !== '') {
+        root.set(name, value, { silent: true });
+    }
+
+    syncSiteFooterConfig(root);
+    applySiteFooterSettingsPreview(root, editor);
+}
+
 function applySiteFooterColumns(component, columns) {
     const count = Math.max(1, Math.min(4, Number(columns) || 4));
 
@@ -810,38 +913,114 @@ function applySiteFooterColumns(component, columns) {
     });
 }
 
-function configureSiteFooterTraits(component) {
+function configureSiteFooterTraits(component, editor = null) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
 
-    if (blockId === 'site_footer_social' || blockId === 'site_footer_centered' || safeFindComponents(component, '[data-voodbuilder-footer-col]').length === 0) {
-        component.set('traits', []);
-
+    if (! isSiteFooterBlock(blockId)) {
         return;
     }
 
-    component.set('traits', [
-        {
-            type: 'select',
-            label: 'Columns',
-            name: 'vpressFooterColumns',
-            changeProp: true,
-            options: [
-                { value: '1', id: '1', name: '1 column' },
-                { value: '2', id: '2', name: '2 columns' },
-                { value: '3', id: '3', name: '3 columns' },
-                { value: '4', id: '4', name: '4 columns' },
-            ],
-        },
-    ]);
+    component.set('stylable', false);
 
-    const columns = String(component.get('vpressConfig')?.columns ?? 4);
+    const config = component.get('vpressConfig') ?? {};
 
-    component.set('vpressFooterColumns', columns, { silent: true });
-    applySiteFooterColumns(component, columns);
+    component.set('vpressFooterColumns', String(config.columns ?? 4), { silent: true });
+    component.set('vpressShowNewsletter', config.show_newsletter !== false, { silent: true });
+    component.set('vpressShowSocial', config.show_social !== false, { silent: true });
+    component.set('vpressShowFooterMenu', config.show_footer_menu !== false, { silent: true });
+    component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
+    component.set('traits', []);
 
-    component.on('change:vpressFooterColumns', () => {
-        applySiteFooterColumns(component, component.get('vpressFooterColumns'));
-    });
+    applySiteFooterSettingsPreview(component, editor);
+}
+
+function registerSiteFooterSettingsUi(editor, mount) {
+    if (! mount) {
+        return;
+    }
+
+    if (! editor.__voodbuilderSiteFooterSettingsRegistered) {
+        editor.__voodbuilderSiteFooterSettingsRegistered = true;
+
+        registerBlockSettings({
+            id: 'site_footer',
+            findRoot: (component) => findSiteFooterRootComponent(component),
+            matchesRoot: (root) => isSiteFooterBlock(root.getAttributes()['data-voodbuilder-block']),
+            render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
+                configureSiteFooterTraits(root, gjsEditor);
+
+                const blockId = root.getAttributes()['data-voodbuilder-block'];
+                const applyChange = (name, value) => {
+                    applySiteFooterSettingChange(gjsEditor, root, name, value);
+                };
+
+                const { section, fields } = createFormSection('Footer settings');
+
+                if (footerBlockHasColumns(blockId)) {
+                    fields.append(
+                        createSelectField({
+                            label: 'Columns',
+                            name: 'vpressFooterColumns',
+                            value: String(root.get('vpressFooterColumns') ?? '4'),
+                            options: [
+                                { value: '1', label: '1 column' },
+                                { value: '2', label: '2 columns' },
+                                { value: '3', label: '3 columns' },
+                                { value: '4', label: '4 columns' },
+                            ],
+                            onChange: (value) => applyChange('vpressFooterColumns', value),
+                        }),
+                    );
+                }
+
+                if (footerBlockHasNewsletter(blockId)) {
+                    fields.append(
+                        createCheckboxField({
+                            label: 'Show newsletter',
+                            name: 'vpressShowNewsletter',
+                            checked: root.get('vpressShowNewsletter') === true,
+                            onChange: (checked) => applyChange('vpressShowNewsletter', checked),
+                        }),
+                    );
+                }
+
+                if (footerBlockHasSocial(blockId)) {
+                    fields.append(
+                        createCheckboxField({
+                            label: 'Show social icons',
+                            name: 'vpressShowSocial',
+                            checked: root.get('vpressShowSocial') === true,
+                            onChange: (checked) => applyChange('vpressShowSocial', checked),
+                        }),
+                    );
+                }
+
+                if (footerBlockHasMenu(blockId)) {
+                    fields.append(
+                        createCheckboxField({
+                            label: 'Show footer menu',
+                            name: 'vpressShowFooterMenu',
+                            checked: root.get('vpressShowFooterMenu') === true,
+                            onChange: (checked) => applyChange('vpressShowFooterMenu', checked),
+                        }),
+                    );
+                }
+
+                if (footerBlockHasMenu(blockId) || footerBlockHasSocial(blockId)) {
+                    fields.append(
+                        createCheckboxField({
+                            label: 'Show copyright',
+                            name: 'vpressShowCopyright',
+                            checked: root.get('vpressShowCopyright') === true,
+                            onChange: (checked) => applyChange('vpressShowCopyright', checked),
+                        }),
+                    );
+                }
+
+                settingsMount.appendChild(section);
+            },
+        });
+    }
 }
 
 function findVpressDynamicAncestor(component) {
@@ -1099,6 +1278,11 @@ function registerDynamicBlockType(editor) {
                 vpressShowSearch: true,
                 vpressShowNotifications: true,
                 vpressShowProfileMenu: true,
+                vpressFooterColumns: '4',
+                vpressShowNewsletter: true,
+                vpressShowSocial: true,
+                vpressShowFooterMenu: true,
+                vpressShowCopyright: true,
                 attributes: {
                     class: 'voodbuilder-gjs-dynamic',
                     'data-voodbuilder-block': '',
@@ -1110,7 +1294,7 @@ function registerDynamicBlockType(editor) {
                 syncVpressDynamicAttributes(this);
 
                 if (isSiteFooterBlock(this.getAttributes()['data-voodbuilder-block'])) {
-                    configureSiteFooterTraits(this);
+                    configureSiteFooterTraits(this, editor);
                 }
 
                 if (isSiteNavBlock(this.getAttributes()['data-voodbuilder-block'])) {
@@ -1258,8 +1442,11 @@ export {
     configureSiteNavTraits,
     registerSiteNavTraitBridge,
     registerSiteNavSettingsUi,
+    registerSiteFooterSettingsUi,
     syncSiteHeaderConfig,
+    syncSiteFooterConfig,
     applySiteNavSettingsPreview,
+    applySiteFooterSettingsPreview,
     normalizeSiteNavMenuButtons,
     refreshDynamicSlots,
     isSiteFooterBlock,

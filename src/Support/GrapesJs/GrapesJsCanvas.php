@@ -191,6 +191,10 @@ final class GrapesJsCanvas
             display: none !important;
         }
 
+        [data-voodbuilder-chrome][data-voodbuilder-chrome-hidden] {
+            display: none !important;
+        }
+
         .voodbuilder-nav--canvas-preview [data-voodbuilder-chrome]:not([data-voodbuilder-chrome-hidden]) {
             display: block !important;
         }
