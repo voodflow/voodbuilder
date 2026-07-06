@@ -7,8 +7,10 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Vtuts\Support\Locales;
 
 final class Navigation
 {
@@ -23,11 +25,13 @@ final class Navigation
             return collect();
         }
 
-        $cached = Cache::get("voodbuilder.menu.{$menuSlug}");
+        $cacheKey = self::cacheKey($menuSlug);
+
+        $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
             if (! self::menuExistsForSlug($menuSlug)) {
-                Cache::forget("voodbuilder.menu.{$menuSlug}");
+                Cache::forget($cacheKey);
             } else {
                 return self::hydrateItems($cached);
             }
@@ -35,9 +39,26 @@ final class Navigation
 
         $items = self::loadItems($menuSlug);
 
-        Cache::put("voodbuilder.menu.{$menuSlug}", self::dehydrateItems($items), 3600);
+        Cache::put($cacheKey, self::dehydrateItems($items), 3600);
 
         return $items;
+    }
+
+    public static function linkDisplay(string $menuSlug): MenuLinkDisplay
+    {
+        if (! Schema::hasTable('voodbuilder_menus')) {
+            return MenuLinkDisplay::TextOnly;
+        }
+
+        $menu = NavigationMenuResolver::forPlacement($menuSlug);
+
+        if ($menu?->link_display instanceof MenuLinkDisplay) {
+            return $menu->link_display;
+        }
+
+        return $menuSlug === 'social'
+            ? MenuLinkDisplay::IconOnly
+            : MenuLinkDisplay::TextOnly;
     }
 
     /** @return list<string> */
@@ -50,11 +71,25 @@ final class Navigation
         };
     }
 
-    public static function clearCache(?string $menuSlug = null): void
+    public static function clearCache(?string $menuSlug = null, ?string $locale = null): void
     {
         if ($menuSlug !== null) {
             foreach (self::slugAliases($menuSlug) as $slug) {
-                Cache::forget("voodbuilder.menu.{$slug}");
+                if ($locale !== null) {
+                    Cache::forget(self::cacheKey($slug, $locale));
+
+                    continue;
+                }
+
+                if (NavigationMenuResolver::localizationEnabled() && class_exists(Locales::class)) {
+                    foreach (Locales::codes() as $code) {
+                        Cache::forget(self::cacheKey($slug, $code));
+                    }
+
+                    continue;
+                }
+
+                Cache::forget(self::cacheKey($slug));
             }
 
             return;
@@ -64,34 +99,39 @@ final class Navigation
             return;
         }
 
-        NavigationMenu::query()->pluck('slug')->each(
-            fn (string $slug) => Cache::forget("voodbuilder.menu.{$slug}")
-        );
+        NavigationMenu::query()
+            ->get(['slug', 'locale'])
+            ->each(function (NavigationMenu $menu): void {
+                self::clearCache($menu->slug, $menu->locale);
+            });
     }
 
     /** @return Collection<int, NavigationMenuItem> */
     protected static function loadItems(string $menuSlug): Collection
     {
-        foreach (self::slugAliases($menuSlug) as $slug) {
-            $menu = NavigationMenu::query()->where('slug', $slug)->first();
+        $menu = NavigationMenuResolver::forPlacement($menuSlug);
 
-            if ($menu !== null) {
-                return $menu->rootItems()->with('children')->get();
-            }
+        if ($menu === null) {
+            return collect();
         }
 
-        return collect();
+        return $menu->rootItems()->with('children')->get();
     }
 
     protected static function menuExistsForSlug(string $menuSlug): bool
     {
-        foreach (self::slugAliases($menuSlug) as $slug) {
-            if (NavigationMenu::query()->where('slug', $slug)->exists()) {
-                return true;
-            }
+        return NavigationMenuResolver::forPlacement($menuSlug) !== null;
+    }
+
+    protected static function cacheKey(string $menuSlug, ?string $locale = null): string
+    {
+        if (NavigationMenuResolver::localizationEnabled()) {
+            $locale ??= SitePageResolver::preferredLocale();
+
+            return "voodbuilder.menu.{$menuSlug}.{$locale}";
         }
 
-        return false;
+        return "voodbuilder.menu.{$menuSlug}";
     }
 
     /**
@@ -111,6 +151,7 @@ final class Navigation
     {
         return [
             'label' => $item->label,
+            'icon' => $item->icon,
             'type' => $item->type->value,
             'link' => $item->link,
             'route_parameters' => $item->route_parameters,

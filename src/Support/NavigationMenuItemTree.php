@@ -35,7 +35,7 @@ class NavigationMenuItemTree
             )
             ->saveOrderUsing(function (array $nodes) use ($menu): void {
                 static::saveOrder($menu, $nodes);
-                Navigation::clearCache($menu->slug);
+                Navigation::clearCache($menu->slug, $menu->locale);
             })
             ->nodeActions([
                 EditAction::make('edit_menu_item')
@@ -52,6 +52,8 @@ class NavigationMenuItemTree
                         fn (Schema $schema, mixed $record): Schema => $schema->components(
                             NavigationMenuResource::menuItemFormSchema(
                                 $record instanceof NavigationMenuItem && filled($record->parent_id),
+                                $menu->slug,
+                                $menu->locale,
                             ),
                         ),
                     )
@@ -61,7 +63,7 @@ class NavigationMenuItemTree
                         }
 
                         $record->update(MenuRouteParameterField::compressForSave($data));
-                        Navigation::clearCache($menu->slug);
+                        Navigation::clearCache($menu->slug, $menu->locale);
                     })
                     ->after(fn () => $livewire->dispatch('tree-refresh')),
 
@@ -72,7 +74,7 @@ class NavigationMenuItemTree
                     ->iconButton()
                     ->after(function () use ($livewire, $menu): void {
                         $livewire->dispatch('tree-refresh');
-                        Navigation::clearCache($menu->slug);
+                        Navigation::clearCache($menu->slug, $menu->locale);
                     }),
             ])
             ->appendToolbarActions([
@@ -81,7 +83,7 @@ class NavigationMenuItemTree
                     ->model(NavigationMenuItem::class)
                     ->schema(
                         fn (Schema $schema): Schema => $schema->components(
-                            NavigationMenuResource::menuItemFormSchema(isChild: false),
+                            NavigationMenuResource::menuItemFormSchema(isChild: false, menuSlug: $menu->slug, menuLocale: $menu->locale),
                         ),
                     )
                     ->mutateFormDataUsing(function (array $data) use ($menu): array {
@@ -98,7 +100,7 @@ class NavigationMenuItemTree
                     ->using(fn (array $data): NavigationMenuItem => NavigationMenuItem::create($data))
                     ->after(function () use ($livewire, $menu): void {
                         $livewire->dispatch('tree-refresh');
-                        Navigation::clearCache($menu->slug);
+                        Navigation::clearCache($menu->slug, $menu->locale);
                     }),
             ]);
     }

@@ -88,7 +88,7 @@ final class LandingMenuColumnsSupport
             return null;
         }
 
-        $menu = NavigationMenu::query()->where('slug', $menuSlug)->first();
+        $menu = NavigationMenuResolver::forPlacement($menuSlug);
 
         if ($menu === null) {
             return null;

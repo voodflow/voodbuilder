@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages;
 
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
+use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
@@ -23,6 +26,15 @@ class EditNavigationMenu extends EditRecord
     use InteractsWithTree;
 
     protected static string $resource = NavigationMenuResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            CreateNavigationMenuTranslationAction::make(),
+            CloneNavigationMenuAction::make(),
+            DeleteAction::make(),
+        ];
+    }
 
     private static bool $previewAssetsRegistered = false;
 

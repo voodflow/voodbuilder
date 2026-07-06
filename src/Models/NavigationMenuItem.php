@@ -22,6 +22,7 @@ class NavigationMenuItem extends Model
         'menu_id',
         'parent_id',
         'label',
+        'icon',
         'type',
         'link',
         'route_parameters',

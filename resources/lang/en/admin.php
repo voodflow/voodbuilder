@@ -10,9 +10,29 @@ return [
         'settings' => 'Settings',
         'content_channels' => 'Channel themes',
         'footer_column_placement' => 'Footer column :number',
+        'link_display' => 'Link display',
+        'link_display_help' => 'Applies to every link in this menu.',
+        'link_display_icon_only' => 'Icon only',
+        'link_display_icon_text' => 'Icon + text',
+        'link_display_text_only' => 'Text only',
+    ],
+
+    'menu_placements' => [
+        'helper' => 'Header menus appear in the site navigation. Footer column menus (1–4) power multi-column footers. Inline links and social icons are used by centered and social footer blocks.',
+        'main' => 'Main navigation',
+        'header_extra' => 'Header right links',
+        'social' => 'Social icons',
+        'footer_inline' => 'Inline footer links',
+        'footer_column' => 'Footer column :number',
+        'groups' => [
+            'header' => 'Header',
+            'footer_columns' => 'Footer columns',
+            'footer' => 'Footer links & social',
+        ],
     ],
 
     'fields' => [
+        'menu_icon' => 'Tabler icon',
         'menu_route' => 'App route',
         'menu_route_match' => 'Active route pattern',
         'sub_theme' => 'Visual theme',
@@ -28,10 +48,15 @@ return [
         'language' => 'Language',
         'target_language' => 'Target language',
         'translations' => 'Translations',
+        'menu_clone_name' => 'Menu name',
     ],
 
     'actions' => [
         'translate_page' => 'Create translation',
+        'translate_menu' => 'Translate to…',
+        'clone_menu' => 'Clone menu',
+        'clone_menu_placement' => 'Copy to placement…',
+        'more' => 'Actions',
     ],
 
     'translation' => [
@@ -41,9 +66,25 @@ return [
         'none_yet' => 'No linked translations yet.',
     ],
 
+    'menu_translation' => [
+        'tooltip' => 'Duplicate this menu for another language',
+        'modal_heading' => 'Create menu translation',
+        'modal_description' => 'A copy of all menu items will be created for the target language. Page links are mapped to linked page translations when available.',
+        'none_yet' => 'No linked translations yet.',
+    ],
+
+    'menu_clone' => [
+        'tooltip' => 'Duplicate this menu to another placement',
+        'modal_heading' => 'Clone menu',
+        'modal_description' => 'Creates an independent copy with the same items. Choose a new placement that is not already used for this language.',
+    ],
+
     'notifications' => [
         'translation_created' => 'Translation created',
         'translation_created_body' => 'Edit the :locale version and publish when ready.',
+        'menu_translation_created' => 'Menu translation created',
+        'menu_translation_created_body' => 'Edit the :locale menu and adjust labels and links.',
+        'menu_cloned' => 'Menu cloned',
         'home_reassigned' => 'Other home pages updated',
         'home_reassigned_body' => ':count other page(s) are no longer marked as home.',
     ],
@@ -88,6 +129,7 @@ return [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
+        'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
         'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
         'sub_theme_site' => 'Default visual theme for Site Pages (home, landing, CMS). Configure per-area bindings below.',
         'sub_theme_page' => 'Leave “Site default” to use :theme from Settings → Theme. Change only when this single page needs a different look.',

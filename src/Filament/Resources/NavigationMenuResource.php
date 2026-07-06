@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Filament\Resources;
 
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
+use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -15,17 +19,24 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
+use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\HtmlString;
+use Illuminate\Validation\Rules\Unique;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
-use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
+use Voodflow\Voodbuilder\Support\MenuTablerIcons;
+use Voodflow\Voodbuilder\Support\NavigationMenuPlacements;
+use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Vtuts\Support\Locales;
+use Filament\Tables\Table;
 
 class NavigationMenuResource extends Resource
 {
@@ -48,11 +59,17 @@ class NavigationMenuResource extends Resource
     }
 
     /** @return array<string, string> */
-    protected static function sitePageOptions(): array
+    protected static function sitePageOptions(?string $locale = null): array
     {
-        return SitePage::query()
+        $query = SitePage::query()
             ->orderByDesc('is_home')
-            ->orderBy('title')
+            ->orderBy('title');
+
+        if ($locale !== null && SitePageResolver::localizationEnabled()) {
+            $query->where('locale', $locale);
+        }
+
+        return $query
             ->get()
             ->mapWithKeys(function (SitePage $page): array {
                 $label = $page->title;
@@ -111,36 +128,97 @@ class NavigationMenuResource extends Resource
                             ->maxLength(255),
                         Select::make('slug')
                             ->label(__('Menu placement'))
-                            ->options([
-                                'main' => __('Main navigation — center of the header'),
-                                'header_extra' => __('Header extras — right side (before language / theme / account)'),
-                                'footer' => __('Footer links (legacy row)'),
-                                ...SiteFooterColumnPlacements::placementLabels(),
-                                'landing_nav' => __('Landing navbar links'),
-                                'landing_footer' => __('Landing footer columns (legacy groups)'),
-                                ...LandingMenuPlacements::footerColumnPlacementLabels(),
-                            ])
+                            ->options(fn (?NavigationMenu $record): array => NavigationMenuPlacements::formOptions($record))
                             ->required()
-                            ->unique(ignoreRecord: true)
+                            ->unique(
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
+                                    'locale',
+                                    $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
+                                ),
+                            )
                             ->native(false)
-                            ->helperText(__('Use header_extra for Shop, Blog, or other links on the right side of the navbar.')),
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, ?string $state): void {
+                                if ($state === 'social') {
+                                    $set('link_display', MenuLinkDisplay::IconOnly->value);
+                                }
+                            })
+                            ->helperText(__('voodbuilder::admin.menu_placements.helper')),
+                        Select::make('link_display')
+                            ->label(__('voodbuilder::admin.navigation.link_display'))
+                            ->options(MenuLinkDisplay::class)
+                            ->default(MenuLinkDisplay::TextOnly)
+                            ->native(false)
+                            ->visible(fn (Get $get): bool => $get('slug') === 'social')
+                            ->required(fn (Get $get): bool => $get('slug') === 'social')
+                            ->helperText(__('voodbuilder::admin.navigation.link_display_help')),
+                        Select::make('locale')
+                            ->label(__('voodbuilder::admin.fields.language'))
+                            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
+                            ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                            ->required()
+                            ->native(false)
+                            ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                        Placeholder::make('translation_links')
+                            ->label(__('voodbuilder::admin.fields.translations'))
+                            ->content(function (?NavigationMenu $record): HtmlString|string {
+                                if ($record === null || blank($record->translation_group_id)) {
+                                    return __('voodbuilder::admin.menu_translation.none_yet');
+                                }
+
+                                $siblings = NavigationMenu::query()
+                                    ->where('translation_group_id', $record->translation_group_id)
+                                    ->whereKeyNot($record->getKey())
+                                    ->orderBy('locale')
+                                    ->get();
+
+                                if ($siblings->isEmpty()) {
+                                    return __('voodbuilder::admin.menu_translation.none_yet');
+                                }
+
+                                $links = $siblings
+                                    ->map(function (NavigationMenu $menu): string {
+                                        $label = class_exists(Locales::class)
+                                            ? (Locales::options()[$menu->locale] ?? $menu->locale)
+                                            : $menu->locale;
+                                        $url = static::getUrl('edit', ['record' => $menu]);
+
+                                        return '<a href="'.e($url).'" class="text-primary-600 hover:underline">'.e($label).'</a>';
+                                    })
+                                    ->implode(' · ');
+
+                                return new HtmlString($links);
+                            })
+                            ->visibleOn('edit')
+                            ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
                     ]),
             ]);
     }
 
     /** @return array<int, Component> */
-    public static function menuItemFormSchema(bool $isChild): array
+    public static function menuItemFormSchema(bool $isChild, ?string $menuSlug = null, ?string $menuLocale = null): array
     {
-        return static::menuItemFields($isChild);
+        return static::menuItemFields($isChild, $menuSlug, $menuLocale);
     }
 
     /** @return array<int, Component> */
-    protected static function menuItemFields(bool $isChild): array
+    protected static function menuItemFields(bool $isChild, ?string $menuSlug = null, ?string $menuLocale = null): array
     {
+        $isSocialMenu = $menuSlug === 'social';
+
         return [
             TextInput::make('label')
                 ->required()
                 ->maxLength(255),
+            Select::make('icon')
+                ->label(__('voodbuilder::admin.fields.menu_icon'))
+                ->options(MenuTablerIcons::options())
+                ->searchable()
+                ->native(false)
+                ->visible($isSocialMenu)
+                ->required($isSocialMenu)
+                ->helperText(__('voodbuilder::admin.helpers.menu_icon')),
             Select::make('type')
                 ->options(static::menuItemTypeOptions($isChild))
                 ->required()
@@ -159,7 +237,7 @@ class NavigationMenuResource extends Resource
             Select::make('link')
                 ->key($isChild ? 'menu_child_link_page' : 'menu_item_link_page')
                 ->label(__('Page'))
-                ->options(fn (): array => static::sitePageOptions())
+                ->options(fn (): array => static::sitePageOptions($menuLocale))
                 ->searchable()
                 ->preload()
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
@@ -238,14 +316,45 @@ class NavigationMenuResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('slug')->badge(),
+                TextColumn::make('slug')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => NavigationMenuPlacements::label($state)),
+                TextColumn::make('locale')
+                    ->label(__('voodbuilder::admin.fields.language'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => class_exists(Locales::class) && is_string($state)
+                        ? (Locales::options()[$state] ?? strtoupper($state))
+                        : (string) $state)
+                    ->sortable()
+                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                TextColumn::make('translations')
+                    ->label(__('voodbuilder::admin.fields.translations'))
+                    ->badge()
+                    ->state(fn (NavigationMenu $record): array => $record->otherTranslationLocaleCodes())
+                    ->placeholder('—')
+                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
                 TextColumn::make('root_items_count')->counts('rootItems')->label(__('Items')),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
+            ->recordUrl(fn (NavigationMenu $record): string => static::getUrl('edit', ['record' => $record]))
+            ->filters([
+                SelectFilter::make('locale')
+                    ->label(__('voodbuilder::admin.fields.language'))
+                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
+                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+            ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ]);
+                ActionGroup::make([
+                    EditAction::make(),
+                    CreateNavigationMenuTranslationAction::make(),
+                    CloneNavigationMenuAction::make(),
+                    DeleteAction::make(),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->iconButton()
+                    ->tooltip(__('voodbuilder::admin.actions.more')),
+            ])
+            ->recordActionsColumnLabel(null);
     }
 
     public static function getPages(): array
