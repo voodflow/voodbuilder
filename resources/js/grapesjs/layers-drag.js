@@ -1,12 +1,13 @@
 /**
- * Layer tree reorder — drag from the whole row, not only the tiny move handle.
+ * Layer tree reorder — drag from the move handle or the row background.
  */
 
 import { resolveComponentFromLayerElement } from './component-context-menu.js';
 
-function isInteractiveLayerTarget(target) {
+function isRowDragTarget(target) {
     return Boolean(
-        target?.closest?.('[data-toggle-visible], [data-toggle-open], [data-name], [data-toggle-move]'),
+        target?.closest?.('.gjs-layer-item[data-toggle-select]')
+        && ! target?.closest?.('[data-toggle-visible], [data-toggle-open], [data-name]'),
     );
 }
 
@@ -20,16 +21,20 @@ function canSortLayer(component, editor) {
     return config.sortable !== false;
 }
 
-function triggerLayerMove(component, clientX, clientY) {
+function startLayerSort(component, clientX, clientY) {
     const viewLayer = component?.viewLayer;
-    const layerEl = viewLayer?.el;
-    const handle = layerEl?.querySelector?.('[data-toggle-move]');
+
+    if (! viewLayer || typeof viewLayer.startSort !== 'function') {
+        return false;
+    }
+
+    const handle = viewLayer.el?.querySelector?.('[data-toggle-move]');
 
     if (! handle || handle.style.display === 'none') {
         return false;
     }
 
-    handle.dispatchEvent(new MouseEvent('mousedown', {
+    viewLayer.startSort(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         view: window,
@@ -63,11 +68,12 @@ export function registerLayersDrag(editor, options = {}) {
     });
 
     mount.addEventListener('mousedown', (event) => {
-        if (event.button !== 0 || isInteractiveLayerTarget(event.target)) {
+        if (event.button !== 0) {
             return;
         }
 
-        const layerItem = event.target.closest?.('.gjs-layer-item[data-toggle-select]');
+        const onHandle = event.target?.closest?.('[data-toggle-move]');
+        const layerItem = event.target?.closest?.('.gjs-layer-item[data-toggle-select]');
 
         if (! layerItem) {
             return;
@@ -79,9 +85,11 @@ export function registerLayersDrag(editor, options = {}) {
             return;
         }
 
-        if (triggerLayerMove(component, event.clientX, event.clientY)) {
-            event.preventDefault();
-            event.stopPropagation();
+        if (onHandle || isRowDragTarget(event.target)) {
+            if (startLayerSort(component, event.clientX, event.clientY)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
         }
     });
 }

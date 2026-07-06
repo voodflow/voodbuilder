@@ -564,6 +564,7 @@ export function initVpressGrapesJs(container, options = {}) {
         },
         layerManager: {
             showWrapper: true,
+            sortable: true,
             ...(layoutOptions.layerManager ?? {}),
         },
         traitManager: layoutOptions.traitManager ?? undefined,
