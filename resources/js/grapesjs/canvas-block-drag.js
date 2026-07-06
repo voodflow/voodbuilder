@@ -6,6 +6,58 @@ const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const SPACER_TYPE = 'voodbuilder-top-drop-spacer';
+const TOP_DROP_EDGE_PX = 72;
+
+function isPointerNearCanvasTop(clientX, clientY, frame) {
+    if (! frame) {
+        return false;
+    }
+
+    const frameRect = frame.getBoundingClientRect();
+
+    if (clientX < frameRect.left || clientX > frameRect.right) {
+        return false;
+    }
+
+    if (clientY < frameRect.top || clientY > frameRect.bottom) {
+        return false;
+    }
+
+    return (clientY - frameRect.top) <= TOP_DROP_EDGE_PX;
+}
+
+function getTopDropSpacer(editor) {
+    return editor.Canvas?.getDocument?.()?.querySelector?.(`[${SPACER_ATTR}]`) ?? null;
+}
+
+function setTopDropSpacerActive(editor, active) {
+    getTopDropSpacer(editor)?.classList?.toggle('is-active', active);
+}
+
+function updateTopDropSpacerState(editor, clientX, clientY) {
+    const frame = editor.Canvas?.getFrameEl?.();
+    const overSpacer = isPointerOverTopSpacer(editor, clientX, clientY);
+    const nearTopEdge = isPointerNearCanvasTop(clientX, clientY, frame);
+    const shouldReveal = overSpacer || nearTopEdge;
+
+    setTopDropSpacerActive(editor, shouldReveal);
+
+    if (! nearTopEdge || ! frame?.contentWindow) {
+        return;
+    }
+
+    const scrollY = frame.contentWindow.scrollY ?? 0;
+
+    if (scrollY <= 4) {
+        return;
+    }
+
+    try {
+        frame.contentWindow.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    } catch {
+        frame.contentWindow.scrollTo(0, 0);
+    }
+}
 
 function isPointerOverTopSpacer(editor, clientX, clientY) {
     const frame = editor.Canvas?.getFrameEl?.();
@@ -83,6 +135,7 @@ function bindBlockDragPointerTracking(editor) {
             event.clientX,
             event.clientY,
         );
+        updateTopDropSpacerState(editor, event.clientX, event.clientY);
     };
 
     editor.__voodbuilderBlockDragPointerTrack = track;
@@ -115,7 +168,6 @@ function beginTopDropSession(editor, block) {
     editor.__voodbuilderDragBlockLabel = String(
         block?.get?.('label') ?? block?.getLabel?.() ?? editor.__voodbuilderDragBlockLabel ?? '',
     ).trim();
-    scrollCanvasToTop(editor);
     setCanvasDragState(editor, true);
     bindBlockDragPointerTracking(editor);
 
@@ -127,6 +179,7 @@ function beginTopDropSession(editor, block) {
 function endTopDropSession(editor) {
     clearDragChip(editor);
     setCanvasDragState(editor, false);
+    setTopDropSpacerActive(editor, false);
     unbindBlockDragPointerTracking(editor);
     delete editor.__voodbuilderActiveBlockDrag;
     delete editor.__voodbuilderTopDropHandled;
@@ -143,35 +196,14 @@ function consumeTopDropHandled(editor) {
     return handled;
 }
 
-function scrollCanvasToTop(editor) {
-    const frame = editor.Canvas?.getFrameEl?.();
-
-    if (! frame?.contentWindow) {
-        return;
-    }
-
-    try {
-        frame.contentWindow.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    } catch {
-        frame.contentWindow.scrollTo(0, 0);
-    }
-
-    const doc = editor.Canvas?.getDocument?.();
-
-    if (doc?.documentElement) {
-        doc.documentElement.scrollTop = 0;
-        doc.body.scrollTop = 0;
-    }
-}
-
 function setCanvasDragState(editor, active) {
     const doc = editor.Canvas?.getDocument?.();
 
     doc?.body?.classList?.toggle(DRAG_BODY_CLASS, active);
 
-    const spacer = doc?.querySelector?.(`[${SPACER_ATTR}]`);
-
-    spacer?.classList?.toggle('is-active', active);
+    if (! active) {
+        setTopDropSpacerActive(editor, false);
+    }
 }
 
 function createDragChipElement(label) {

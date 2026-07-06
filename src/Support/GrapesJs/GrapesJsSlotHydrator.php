@@ -11,15 +11,21 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
 final class GrapesJsSlotHydrator
 {
-    public static function hydrateSubtree(DOMDocument $document, DOMElement $root, bool $preview = false): void
+    public static function hydrateSubtree(DOMDocument $document, DOMElement $root, bool $preview = false, array $config = []): void
     {
         self::hydrateBrands($document, $root, $preview);
         self::hydrateMenus($document, $root, $preview);
+
+        if ($config !== []) {
+            $normalized = SiteFooterConfig::normalize($config);
+            self::applyFooterChromeVisibility($document, $root, $normalized, $preview);
+            self::applyFooterColumnsVisibility($document, $root, $normalized);
+        }
     }
 
-    public static function hydrateHtml(string $html, bool $preview = false): string
+    public static function hydrateHtml(string $html, bool $preview = false, array $config = []): string
     {
-        if ($html === '' || (! str_contains($html, 'data-voodbuilder-menu') && ! str_contains($html, 'data-voodbuilder-brand'))) {
+        if ($html === '' || (! str_contains($html, 'data-voodbuilder-menu') && ! str_contains($html, 'data-voodbuilder-brand') && ! str_contains($html, 'data-voodbuilder-chrome'))) {
             return $html;
         }
 
@@ -27,6 +33,12 @@ final class GrapesJsSlotHydrator
 
         self::hydrateBrands($document, $document->documentElement, $preview);
         self::hydrateMenus($document, $document->documentElement, $preview);
+
+        if ($config !== []) {
+            $normalized = SiteFooterConfig::normalize($config);
+            self::applyFooterChromeVisibility($document, $document->documentElement, $normalized, $preview);
+            self::applyFooterColumnsVisibility($document, $document->documentElement, $normalized);
+        }
 
         return self::extractBodyHtml($document) ?? $html;
     }
@@ -42,6 +54,13 @@ final class GrapesJsSlotHydrator
 
     public static function renderMenuList(string $menuSlug, bool $preview = false): string
     {
+        if ($menuSlug === 'social') {
+            return view('voodbuilder::grapesjs.blocks.partials.social-menu-list-wrapper', [
+                'menuSlug' => $menuSlug,
+                'preview' => $preview,
+            ])->render();
+        }
+
         return view('voodbuilder::grapesjs.blocks.partials.footer-menu-list-wrapper', [
             'menuSlug' => $menuSlug,
             'preview' => $preview,
@@ -73,6 +92,78 @@ final class GrapesJsSlotHydrator
             }
 
             self::replaceElementInnerHtml($document, $element, self::renderMenuList($menuSlug, $preview));
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    protected static function applyFooterChromeVisibility(
+        DOMDocument $document,
+        DOMElement $root,
+        array $config,
+        bool $preview,
+    ): void {
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-chrome')) {
+                continue;
+            }
+
+            $kind = (string) $element->getAttribute('data-voodbuilder-chrome');
+            $visible = SiteFooterConfig::isChromeVisible($config, $kind);
+
+            if ($preview) {
+                if ($visible) {
+                    $element->removeAttribute('data-voodbuilder-chrome-hidden');
+                } else {
+                    $element->setAttribute('data-voodbuilder-chrome-hidden', '');
+                }
+
+                continue;
+            }
+
+            $element->removeAttribute('data-voodbuilder-chrome-hidden');
+            self::toggleElementClass($element, 'hidden', ! $visible);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    protected static function applyFooterColumnsVisibility(DOMDocument $document, DOMElement $root, array $config): void
+    {
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-footer-col')) {
+                continue;
+            }
+
+            $index = (int) $element->getAttribute('data-voodbuilder-footer-col');
+            $visible = SiteFooterConfig::isFooterColumnVisible($config, $index);
+
+            self::toggleElementClass($element, 'hidden', ! $visible);
+        }
+    }
+
+    protected static function toggleElementClass(DOMElement $element, string $className, bool $add): void
+    {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class'))) ?: [];
+        $classes = array_values(array_filter($classes, static fn (string $class): bool => $class !== ''));
+
+        if ($add) {
+            if (! in_array($className, $classes, true)) {
+                $classes[] = $className;
+            }
+        } else {
+            $classes = array_values(array_filter(
+                $classes,
+                static fn (string $class): bool => $class !== $className,
+            ));
+        }
+
+        if ($classes === []) {
+            $element->removeAttribute('class');
+        } else {
+            $element->setAttribute('class', implode(' ', $classes));
         }
     }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+
 final class SiteFooterColumnPlacements
 {
     public const COLUMN_COUNT = 4;
@@ -31,9 +33,30 @@ final class SiteFooterColumnPlacements
         $labels = [];
 
         for ($index = 1; $index <= self::COLUMN_COUNT; $index++) {
-            $labels[self::columnSlug($index)] = __('voodbuilder::admin.navigation.footer_column_placement', [
-                'number' => $index,
-            ]);
+            $labels[self::columnSlug($index)] = self::genericColumnLabel($index);
+        }
+
+        return $labels;
+    }
+
+    public static function columnTitle(int $index): string
+    {
+        $menu = NavigationMenuResolver::forPlacement(self::columnSlug($index));
+
+        if ($menu instanceof NavigationMenu && filled($menu->name)) {
+            return (string) $menu->name;
+        }
+
+        return self::genericColumnLabel($index);
+    }
+
+    /** @return array<string, string> */
+    public static function columnOptionLabels(): array
+    {
+        $labels = [];
+
+        for ($index = 1; $index <= self::COLUMN_COUNT; $index++) {
+            $labels[(string) $index] = self::columnTitle($index);
         }
 
         return $labels;
@@ -41,12 +64,13 @@ final class SiteFooterColumnPlacements
 
     public static function defaultColumnTitle(int $index): string
     {
-        return match ($index) {
-            1 => __('voodbuilder::pro.grapesjs.blocks.footer_col_1_title'),
-            2 => __('voodbuilder::pro.grapesjs.blocks.footer_col_2_title'),
-            3 => __('voodbuilder::pro.grapesjs.blocks.footer_col_3_title'),
-            4 => __('voodbuilder::pro.grapesjs.blocks.footer_col_4_title'),
-            default => __('Footer column :number', ['number' => $index]),
-        };
+        return self::columnTitle($index);
+    }
+
+    public static function genericColumnLabel(int $index): string
+    {
+        return __('voodbuilder::admin.menu_placements.footer_column', [
+            'number' => max(1, $index),
+        ]);
     }
 }

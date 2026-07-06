@@ -95,8 +95,20 @@ final class GrapesJsDynamicBlockRenderer
             $config['event_id'] = $eventId;
         }
 
-        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->hasDynamicSlots($node)) {
-            GrapesJsSlotHydrator::hydrateSubtree($document, $node, false);
+        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->alwaysFullRenderFooterBlock($blockId)) {
+            $rendered = $this->renderBlockId($blockId, $config, $renderData);
+
+            if ($rendered === null) {
+                return;
+            }
+
+            $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+
+            return;
+        }
+
+        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->hasDynamicSlots($node) && ! $this->footerNeedsFullRender($node, $blockId)) {
+            GrapesJsSlotHydrator::hydrateSubtree($document, $node, false, $config);
 
             return;
         }
@@ -107,6 +119,26 @@ final class GrapesJsDynamicBlockRenderer
             return;
         }
 
+        $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+    }
+
+    protected function alwaysFullRenderFooterBlock(string $blockId): bool
+    {
+        return in_array($blockId, [
+            'site_footer_columns_simple',
+            'site_footer_columns_newsletter',
+            'site_footer_centered',
+            'site_footer_social',
+        ], true);
+    }
+
+    protected function isColumnFooterBlock(string $blockId): bool
+    {
+        return in_array($blockId, ['site_footer_columns_simple', 'site_footer_columns_newsletter'], true);
+    }
+
+    protected function replaceNodeWithRenderedHtml(DOMDocument $document, DOMElement $node, string $rendered): void
+    {
         $parent = $node->parentNode;
 
         if ($parent === null) {
@@ -177,6 +209,49 @@ final class GrapesJsDynamicBlockRenderer
                 $element->hasAttribute('data-voodbuilder-menu')
                 || $element->hasAttribute('data-voodbuilder-brand')
             )) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function footerNeedsFullRender(DOMElement $node, string $blockId): bool
+    {
+        if (! $this->isColumnFooterBlock($blockId)) {
+            return false;
+        }
+
+        $hasBrandColumn = false;
+        $columnsUsePerColumnChrome = true;
+
+        foreach ($node->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if ($element->hasAttribute('data-voodbuilder-footer-brand-col')) {
+                $hasBrandColumn = true;
+            }
+
+            if ($element->hasAttribute('data-voodbuilder-footer-col')
+                && ! $element->hasAttribute('data-voodbuilder-chrome')) {
+                $columnsUsePerColumnChrome = false;
+            }
+        }
+
+        return ! $hasBrandColumn || ! $columnsUsePerColumnChrome || $this->footerHasLegacyInlineMenu($node);
+    }
+
+    protected function footerHasLegacyInlineMenu(DOMElement $node): bool
+    {
+        foreach ($node->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if ($element->getAttribute('data-voodbuilder-menu') === 'footer'
+                && $element->getAttribute('data-voodbuilder-chrome') === 'footer-menu') {
                 return true;
             }
         }

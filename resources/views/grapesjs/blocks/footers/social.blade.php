@@ -1,23 +1,35 @@
 @php
-    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
 
-    $brandName = VoodbuilderSettings::brandName();
+    $brandChrome = SiteFooterConfig::chromeAttributes($config, 'brand', $preview);
 @endphp
 
 <div class="container mx-auto px-5 py-8">
-    <div class="flex flex-col items-center sm:flex-row">
-        <div class="shrink-0" data-voodbuilder-brand></div>
-        <p class="mt-4 text-sm text-vp-text-2 sm:ml-4 sm:mt-0 sm:border-l sm:border-vp-divider sm:py-2 sm:pl-4" data-voodbuilder-footer-copyright data-voodbuilder-chrome="copyright">
-            &copy; {{ date('Y') }} {{ $brandName }}
-        </p>
-        <nav class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 sm:ml-6 sm:mt-0" data-voodbuilder-menu="footer" data-voodbuilder-chrome="footer-menu" aria-label="{{ __('Footer') }}"></nav>
-        <span class="mt-4 inline-flex justify-center gap-3 sm:ml-auto sm:mt-0 sm:justify-start" data-voodbuilder-footer-social data-voodbuilder-chrome="social">
-            <a href="#" class="text-vp-text-2 transition-colors hover:text-vp-brand-1" aria-label="Facebook">
-                <svg fill="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-5 w-5" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path></svg>
-            </a>
-            <a href="#" class="text-vp-text-2 transition-colors hover:text-vp-brand-1" aria-label="Twitter">
-                <svg fill="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-5 w-5" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path></svg>
-            </a>
-        </span>
+    <div class="flex flex-col items-center sm:flex-row sm:items-center">
+        <div class="flex shrink-0 flex-col items-center sm:items-start">
+            <div @class([$brandChrome['class']]) data-voodbuilder-chrome="brand" {!! $brandChrome['attr'] !!}>
+                <div data-voodbuilder-brand></div>
+            </div>
+            @include('voodbuilder::grapesjs.blocks.partials.footer-tagline', [
+                'config' => $config,
+                'preview' => $preview,
+                'taglineClass' => 'mt-1 max-w-xs text-center text-xs text-vp-text-2 sm:text-left',
+            ])
+        </div>
+        @include('voodbuilder::grapesjs.blocks.partials.footer-copyright', [
+            'config' => $config,
+            'preview' => $preview,
+            'copyrightClass' => 'mt-4 text-sm text-vp-text-2 sm:ml-4 sm:mt-0 sm:border-l sm:border-vp-divider sm:py-2 sm:pl-4',
+        ])
+        @include('voodbuilder::grapesjs.blocks.partials.footer-inline-menu', [
+            'config' => $config,
+            'preview' => $preview,
+            'menuClass' => 'mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 sm:ml-6 sm:mt-0',
+        ])
+        @include('voodbuilder::grapesjs.blocks.partials.footer-social', [
+            'config' => $config,
+            'preview' => $preview,
+            'socialClass' => 'mt-4 sm:ml-auto sm:mt-0',
+        ])
     </div>
 </div>

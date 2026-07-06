@@ -99,7 +99,6 @@ final class GrapesJsCanvas
             transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
         }
 
-        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-top-drop-spacer,
         .voodbuilder-gjs-top-drop-spacer.is-active {
             min-height: 4.5rem;
             height: 4.5rem;
@@ -109,7 +108,6 @@ final class GrapesJsCanvas
             border-radius: 0.375rem;
         }
 
-        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-top-drop-spacer::after,
         .voodbuilder-gjs-top-drop-spacer.is-active::after {
             content: '';
             display: block;

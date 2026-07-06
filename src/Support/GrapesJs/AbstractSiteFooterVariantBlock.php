@@ -58,6 +58,6 @@ abstract class AbstractSiteFooterVariantBlock implements GrapesJsConfigurableBlo
 
         $shell = GrapesJsFooterBlockShell::compose(static::getId(), $merged, $inner);
 
-        return GrapesJsSlotHydrator::hydrateHtml($shell, $preview);
+        return GrapesJsSlotHydrator::hydrateHtml($shell, $preview, $merged);
     }
 }

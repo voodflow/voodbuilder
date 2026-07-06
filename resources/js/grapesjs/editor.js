@@ -522,6 +522,8 @@ export function initVpressGrapesJs(container, options = {}) {
             [vpressGrapesJsPlugin]: {
                 blocks: options.blocks ?? [],
                 siteNavDefaults: options.siteNavDefaults ?? { stickyNav: false },
+                footerColumnOptions: options.footerColumnOptions ?? {},
+                labels: options.labels ?? {},
             },
         },
         canvas: {
@@ -1084,6 +1086,7 @@ function mountFrontendEditor() {
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
         siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },
+        footerColumnOptions: config.footerColumnOptions ?? {},
     });
 
     const onResize = () => refreshEditorLayout(editor);

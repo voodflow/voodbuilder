@@ -1,18 +1,33 @@
 @php
-    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
 
-    $brandName = VoodbuilderSettings::brandName();
+    $brandChrome = SiteFooterConfig::chromeAttributes($config, 'brand', $preview);
 @endphp
 
 <div class="container mx-auto px-5 py-16 text-center">
     <div class="mx-auto max-w-lg">
-        <div data-voodbuilder-brand></div>
-        <p class="mt-4 text-sm text-vp-text-2" data-voodbuilder-footer-tagline>
-            {{ __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline') }}
-        </p>
-        <nav class="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2" data-voodbuilder-menu="footer" data-voodbuilder-chrome="footer-menu" aria-label="{{ __('Footer') }}"></nav>
-        <p class="mt-8 text-xs text-vp-text-3" data-voodbuilder-footer-copyright data-voodbuilder-chrome="copyright">
-            &copy; {{ date('Y') }} {{ $brandName }}
-        </p>
+        <div @class([$brandChrome['class']]) data-voodbuilder-chrome="brand" {!! $brandChrome['attr'] !!}>
+            <div data-voodbuilder-brand></div>
+        </div>
+        @include('voodbuilder::grapesjs.blocks.partials.footer-tagline', [
+            'config' => $config,
+            'preview' => $preview,
+            'taglineClass' => 'mt-4 text-sm text-vp-text-2',
+        ])
+        @include('voodbuilder::grapesjs.blocks.partials.footer-inline-menu', [
+            'config' => $config,
+            'preview' => $preview,
+            'menuClass' => 'mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2',
+        ])
+        @include('voodbuilder::grapesjs.blocks.partials.footer-social', [
+            'config' => $config,
+            'preview' => $preview,
+            'socialClass' => 'mt-6 flex justify-center',
+        ])
+        @include('voodbuilder::grapesjs.blocks.partials.footer-copyright', [
+            'config' => $config,
+            'preview' => $preview,
+            'copyrightClass' => 'mt-8 text-xs text-vp-text-3',
+        ])
     </div>
 </div>

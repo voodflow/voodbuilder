@@ -301,5 +301,14 @@ return [
             'footer_col_3_title' => 'COMPANY',
             'footer_col_4_title' => 'LEGAL',
         ],
+        'footer_settings' => [
+            'show_logo' => 'Show logo',
+            'show_copyright' => 'Show copyright',
+            'show_footer_menu' => 'Show footer menu',
+            'show_tagline' => 'Show tagline',
+            'show_social' => 'Show social icons',
+            'show_newsletter' => 'Show newsletter',
+            'columns_redistribute' => 'Redistribute visible columns',
+        ],
     ],
 ];

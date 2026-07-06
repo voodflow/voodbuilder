@@ -301,5 +301,14 @@ return [
             'footer_col_3_title' => 'AZIENDA',
             'footer_col_4_title' => 'LEGALE',
         ],
+        'footer_settings' => [
+            'show_logo' => 'Mostra logo',
+            'show_copyright' => 'Mostra copyright',
+            'show_footer_menu' => 'Mostra menu footer',
+            'show_tagline' => 'Mostra descrizione',
+            'show_social' => 'Mostra icone social',
+            'show_newsletter' => 'Mostra newsletter',
+            'columns_redistribute' => 'Ridistribuisci colonne visibili',
+        ],
     ],
 ];

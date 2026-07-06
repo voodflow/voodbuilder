@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
@@ -86,6 +87,7 @@ final class GrapesJsEditorGate
             'siteNavDefaults' => [
                 'stickyNav' => (bool) VoodbuilderSettings::get('sticky_nav', false),
             ],
+            'footerColumnOptions' => SiteFooterColumnPlacements::columnOptionLabels(),
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => [
@@ -292,6 +294,14 @@ final class GrapesJsEditorGate
                 'dialogPromptTitle' => __('voodbuilder::pro.editor_ui.dialog_prompt_title'),
                 'sessionExpired' => __('voodbuilder::pro.frontend.session_expired'),
                 'forbidden' => __('voodbuilder::pro.frontend.forbidden'),
+                'footerShowLogo' => __('voodbuilder::pro.grapesjs.footer_settings.show_logo'),
+                'footerShowCopyright' => __('voodbuilder::pro.grapesjs.footer_settings.show_copyright'),
+                'footerShowMenu' => __('voodbuilder::pro.grapesjs.footer_settings.show_footer_menu'),
+                'footerShowTagline' => __('voodbuilder::pro.grapesjs.footer_settings.show_tagline'),
+                'footerShowSocial' => __('voodbuilder::pro.grapesjs.footer_settings.show_social'),
+                'footerShowNewsletter' => __('voodbuilder::pro.grapesjs.footer_settings.show_newsletter'),
+                'footerColumnsRedistribute' => __('voodbuilder::pro.grapesjs.footer_settings.columns_redistribute'),
+                'footerDefaultTagline' => __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline'),
             ],
         ];
     }
