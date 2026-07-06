@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+use Voodflow\Voodbuilder\Contracts\GrapesJsConfigurableBlock;
 use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
-abstract class AbstractSiteNavVariantBlock implements GrapesJsServerBlock
+abstract class AbstractSiteNavVariantBlock implements GrapesJsConfigurableBlock
 {
     abstract public static function variant(): string;
 
@@ -23,6 +24,11 @@ abstract class AbstractSiteNavVariantBlock implements GrapesJsServerBlock
     public static function defaultConfig(): array
     {
         return SiteNavConfig::defaults();
+    }
+
+    public static function normalizeConfig(array $config): array
+    {
+        return SiteNavConfig::normalize($config);
     }
 
     public static function toHtml(array $config, array $context): string

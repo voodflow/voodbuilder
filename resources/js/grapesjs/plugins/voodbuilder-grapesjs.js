@@ -19,6 +19,7 @@ import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-co
 import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
+import { registerBlockSettings, registerBlockSettingsUi } from '../block-settings-registry.js';
 import {
     isClearedBackground,
     restoreBackgroundClasses,
@@ -981,87 +982,74 @@ function registerSiteNavChromeButtonType(editor) {
 }
 
 function registerSiteNavSettingsUi(editor, mount) {
-    if (! mount || editor.__voodbuilderSiteNavSettingsUiRegistered) {
+    if (! mount) {
         return;
     }
 
-    editor.__voodbuilderSiteNavSettingsUiRegistered = true;
+    if (! editor.__voodbuilderSiteNavSettingsRegistered) {
+        editor.__voodbuilderSiteNavSettingsRegistered = true;
 
-    const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
-        ?.querySelector('.voodbuilder-gjs-traits-mount');
+        registerBlockSettings({
+            id: 'site_nav',
+            findRoot: (component) => findSiteNavRootComponent(component),
+            matchesRoot: (root) => isSiteNavBlock(root.getAttributes()['data-voodbuilder-block']),
+            render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
+                configureSiteNavTraits(root, gjsEditor);
 
-    const render = () => {
-        const selected = editor.getSelected();
-        const root = findSiteNavRootComponent(selected);
+                const applyChange = (name, value) => {
+                    applySiteNavSettingChange(gjsEditor, root, name, value);
+                };
 
-        if (! root || ! isSiteNavBlock(root.getAttributes()['data-voodbuilder-block'])) {
-            mount.hidden = true;
-            mount.replaceChildren();
-            traitsMount?.classList.remove('hidden');
+                const { section, fields } = createFormSection('Navbar settings');
 
-            return;
-        }
+                fields.append(
+                    createSelectField({
+                        label: 'Menu position',
+                        name: 'vpressMainNavAlign',
+                        value: root.get('vpressMainNavAlign') === 'center' ? 'center' : 'start',
+                        options: [
+                            { value: 'start', label: 'Left (next to logo)' },
+                            { value: 'center', label: 'Center' },
+                        ],
+                        onChange: (value) => applyChange('vpressMainNavAlign', value),
+                    }),
+                    createSelectField({
+                        label: 'Sticky',
+                        name: 'vpressStickyNav',
+                        value: root.get('vpressStickyNav') ?? 'inherit',
+                        options: [
+                            { value: 'inherit', label: 'Site default' },
+                            { value: 'sticky', label: 'Sticky' },
+                            { value: 'static', label: 'Scrolls with page' },
+                        ],
+                        onChange: (value) => applyChange('vpressStickyNav', value),
+                    }),
+                    createCheckboxField({
+                        label: 'Show search',
+                        name: 'vpressShowSearch',
+                        checked: root.get('vpressShowSearch') === true,
+                        onChange: (checked) => applyChange('vpressShowSearch', checked),
+                    }),
+                    createCheckboxField({
+                        label: 'Show notifications',
+                        name: 'vpressShowNotifications',
+                        checked: root.get('vpressShowNotifications') === true,
+                        onChange: (checked) => applyChange('vpressShowNotifications', checked),
+                    }),
+                    createCheckboxField({
+                        label: 'Show account menu',
+                        name: 'vpressShowProfileMenu',
+                        checked: root.get('vpressShowProfileMenu') === true,
+                        onChange: (checked) => applyChange('vpressShowProfileMenu', checked),
+                    }),
+                );
 
-        configureSiteNavTraits(root, editor);
+                settingsMount.appendChild(section);
+            },
+        });
+    }
 
-        mount.hidden = false;
-        traitsMount?.classList.add('hidden');
-        mount.replaceChildren();
-
-        const applyChange = (name, value) => {
-            applySiteNavSettingChange(editor, root, name, value);
-        };
-
-        const { section, fields } = createFormSection('Navbar settings');
-
-        fields.append(
-            createSelectField({
-                label: 'Menu position',
-                name: 'vpressMainNavAlign',
-                value: root.get('vpressMainNavAlign') === 'center' ? 'center' : 'start',
-                options: [
-                    { value: 'start', label: 'Left (next to logo)' },
-                    { value: 'center', label: 'Center' },
-                ],
-                onChange: (value) => applyChange('vpressMainNavAlign', value),
-            }),
-            createSelectField({
-                label: 'Sticky',
-                name: 'vpressStickyNav',
-                value: root.get('vpressStickyNav') ?? 'inherit',
-                options: [
-                    { value: 'inherit', label: 'Site default' },
-                    { value: 'sticky', label: 'Sticky' },
-                    { value: 'static', label: 'Scrolls with page' },
-                ],
-                onChange: (value) => applyChange('vpressStickyNav', value),
-            }),
-            createCheckboxField({
-                label: 'Show search',
-                name: 'vpressShowSearch',
-                checked: root.get('vpressShowSearch') === true,
-                onChange: (checked) => applyChange('vpressShowSearch', checked),
-            }),
-            createCheckboxField({
-                label: 'Show notifications',
-                name: 'vpressShowNotifications',
-                checked: root.get('vpressShowNotifications') === true,
-                onChange: (checked) => applyChange('vpressShowNotifications', checked),
-            }),
-            createCheckboxField({
-                label: 'Show account menu',
-                name: 'vpressShowProfileMenu',
-                checked: root.get('vpressShowProfileMenu') === true,
-                onChange: (checked) => applyChange('vpressShowProfileMenu', checked),
-            }),
-        );
-
-        mount.appendChild(section);
-    };
-
-    editor.on('component:selected', render);
-    editor.on('component:deselected', render);
-    editor.on('load', render);
+    registerBlockSettingsUi(editor, mount);
 }
 
 function registerDynamicBlockType(editor) {

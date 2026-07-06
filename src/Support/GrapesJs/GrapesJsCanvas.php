@@ -225,6 +225,24 @@ final class GrapesJsCanvas
             stroke: currentColor;
         }
 
+        svg[fill="none"] {
+            fill: none !important;
+        }
+
+        svg[fill="none"] path:not([fill]),
+        svg[fill="none"] circle:not([fill]),
+        svg[fill="none"] rect:not([fill]),
+        svg[fill="none"] line:not([fill]),
+        svg[fill="none"] polyline:not([fill]),
+        svg[fill="none"] polygon:not([fill]) {
+            fill: none !important;
+        }
+
+        svg[fill="none"][stroke="currentColor"],
+        svg[fill="none"] [stroke="currentColor"] {
+            stroke: currentColor;
+        }
+
         .gjs-selected [data-voodbuilder-gjs-site-header] .voodbuilder-header-icon-btn,
         [data-voodbuilder-gjs-site-header] .gjs-selected .voodbuilder-header-icon-btn,
         [data-voodbuilder-block^='site_nav_'] .gjs-selected .voodbuilder-header-icon-btn,

@@ -482,6 +482,10 @@ function svgPreservesTailwindPaint(component) {
         return false;
     }
 
+    if (isStrokeOnlyCurrentColorSvg(component)) {
+        return true;
+    }
+
     const classes = component?.getClasses?.() ?? [];
     const hasTailwindTextColor = classes.some((className) => TAILWIND_TEXT_COLOR_CLASS_PATTERN.test(className));
 
@@ -527,7 +531,7 @@ function stripSpuriousSvgBakedPaint(component) {
         let changed = false;
 
         if (isGenericBlackPaint(childAttributes.fill)) {
-            childAttributes.fill = 'currentColor';
+            childAttributes.fill = svgRootFillIsNone(component) ? 'none' : 'currentColor';
             changed = true;
         }
 
@@ -560,10 +564,47 @@ function stripConflictingTextColorClasses(component) {
     component.setClass(kept);
 }
 
-function isPaintableFillValue(fill) {
+function svgRootFillIsNone(component) {
+    const rootFill = String(component?.getAttributes?.()?.fill ?? '').toLowerCase();
+
+    return rootFill === 'none';
+}
+
+function isStrokeOnlyCurrentColorSvg(component) {
+    if (! isSvgElement(component)) {
+        return false;
+    }
+
+    if (! svgRootFillIsNone(component)) {
+        return false;
+    }
+
+    const attributes = component.getAttributes?.() ?? {};
+    const rootStroke = String(attributes.stroke ?? '').toLowerCase();
+
+    if (rootStroke === 'currentcolor') {
+        return true;
+    }
+
+    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
+        const stroke = String(child.getAttributes?.()?.stroke ?? '').toLowerCase();
+
+        if (stroke === 'currentcolor') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function isPaintableFillValue(fill, { rootFillIsNone = false } = {}) {
     const value = String(fill ?? '').trim().toLowerCase();
 
     if (value === 'none' || value.startsWith('url(')) {
+        return false;
+    }
+
+    if (value === '' && rootFillIsNone) {
         return false;
     }
 
@@ -582,6 +623,7 @@ function isPaintableStrokeValue(stroke) {
 
 function applyPaintToSvgShapeDescendants(svgComponent, paint) {
     const normalizedPaint = stripImportant(paint);
+    const rootFillIsNone = svgRootFillIsNone(svgComponent);
 
     for (const child of safeFindComponents(svgComponent, '*')) {
         const tag = String(child.get?.('tagName') ?? '').toLowerCase();
@@ -595,7 +637,7 @@ function applyPaintToSvgShapeDescendants(svgComponent, paint) {
         const stroke = String(childAttributes.stroke ?? '');
         let changed = false;
 
-        if (isPaintableFillValue(fill)) {
+        if (isPaintableFillValue(fill, { rootFillIsNone })) {
             childAttributes.fill = normalizedPaint;
             changed = true;
         }
@@ -917,6 +959,12 @@ function bakeSvgPaintOnComponent(editor, component) {
     }
 
     if (! paint && Object.keys(exportStyles).length === 0) {
+        return;
+    }
+
+    if (isStrokeOnlyCurrentColorSvg(component) && (! paint || isGenericBlackPaint(paint))) {
+        stripSpuriousSvgBakedPaint(component);
+
         return;
     }
 

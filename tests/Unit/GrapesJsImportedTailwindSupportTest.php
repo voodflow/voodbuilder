@@ -93,6 +93,28 @@ class GrapesJsImportedTailwindSupportTest extends TestCase
         $this->assertStringContainsString('fill="currentColor"', $prepared);
     }
 
+    public function test_prepare_html_preserves_stroke_only_section_icons(): void
+    {
+        $html = '<span class="text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="fill: #000000; color: #000000; stroke: #000000;">'
+            .'<path d="M5 12h14" fill="#000000" stroke="#000000"/></svg>1.2K</span>';
+
+        $prepared = GrapesJsImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertStringNotContainsString('#000000', $prepared);
+        $this->assertStringContainsString('fill="none"', $prepared);
+        $this->assertStringContainsString('stroke="currentColor"', $prepared);
+    }
+
+    public function test_bake_svg_paint_skips_black_fill_on_stroke_only_icons(): void
+    {
+        $html = '<svg fill="none" stroke="currentColor" style="color: #000000"><path d="M0 0" fill="#000000" stroke="#000000"/></svg>';
+
+        $baked = GrapesJsImportedTailwindSupport::bakeSvgPaintInHtml($html);
+
+        $this->assertStringNotContainsString('fill="#000000"', $baked);
+        $this->assertStringNotContainsString('fill: #000000', $baked);
+    }
+
     public function test_parse_background_url_class_handles_quoted_and_unquoted_urls(): void
     {
         $this->assertSame(

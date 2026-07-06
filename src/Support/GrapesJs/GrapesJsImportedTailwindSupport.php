@@ -90,7 +90,10 @@ final class GrapesJsImportedTailwindSupport
                 }
 
                 if (self::isGenericBlackPaint($node->getAttribute('fill'))) {
-                    $node->setAttribute('fill', 'currentColor');
+                    $node->setAttribute(
+                        'fill',
+                        self::svgRootFillIsNone($svg) ? 'none' : 'currentColor',
+                    );
                 }
 
                 if (self::isGenericBlackPaint($node->getAttribute('stroke'))) {
@@ -104,9 +107,13 @@ final class GrapesJsImportedTailwindSupport
 
     protected static function svgPreservesTailwindCurrentColorPaint(DOMElement $svg): bool
     {
+        if (self::svgIsStrokeOnlyCurrentColorIcon($svg)) {
+            return true;
+        }
+
         $class = $svg->getAttribute('class');
 
-        if ($class === '' || ! preg_match('/\btext-(?:vp-|gray-|white|black|primary|foreground)/', $class)) {
+        if ($class === '' || ! preg_match('/\btext-(?:vp-|gray-|white|black|primary|foreground|indigo-)/', $class)) {
             return false;
         }
 
@@ -130,6 +137,63 @@ final class GrapesJsImportedTailwindSupport
         }
 
         return false;
+    }
+
+    protected static function svgIsStrokeOnlyCurrentColorIcon(DOMElement $svg): bool
+    {
+        if (strtolower($svg->getAttribute('fill')) !== 'none') {
+            return false;
+        }
+
+        if (strtolower($svg->getAttribute('stroke')) === 'currentcolor') {
+            return true;
+        }
+
+        foreach ($svg->getElementsByTagName('*') as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
+            }
+
+            if (strtolower($node->getAttribute('stroke')) === 'currentcolor') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected static function svgRootFillIsNone(DOMElement $svg): bool
+    {
+        return strtolower($svg->getAttribute('fill')) === 'none';
+    }
+
+    protected static function restoreStrokeOnlySvgCurrentColorPaint(DOMElement $svg): void
+    {
+        $style = self::parseStyleAttribute($svg->getAttribute('style'));
+
+        foreach (['color', 'fill', 'stroke'] as $property) {
+            unset($style[$property]);
+        }
+
+        if ($style === []) {
+            $svg->removeAttribute('style');
+        } else {
+            $svg->setAttribute('style', self::serializeStyleAttribute($style));
+        }
+
+        foreach ($svg->getElementsByTagName('*') as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
+            }
+
+            if (self::isGenericBlackPaint($node->getAttribute('fill'))) {
+                $node->setAttribute('fill', self::svgRootFillIsNone($svg) ? 'none' : 'currentColor');
+            }
+
+            if (self::isGenericBlackPaint($node->getAttribute('stroke'))) {
+                $node->setAttribute('stroke', 'currentColor');
+            }
+        }
     }
 
     protected static function isGenericBlackPaint(string $paint): bool
@@ -177,6 +241,8 @@ final class GrapesJsImportedTailwindSupport
                 $bakedPaint = $style['color'] ?? $style['fill'] ?? $style['stroke'] ?? null;
 
                 if ($bakedPaint !== null && self::isGenericBlackPaint($bakedPaint)) {
+                    self::restoreStrokeOnlySvgCurrentColorPaint($svg);
+
                     continue;
                 }
             }
@@ -184,6 +250,12 @@ final class GrapesJsImportedTailwindSupport
             $paint = self::resolveSvgPaintFromElement($svg);
 
             if ($paint === null) {
+                continue;
+            }
+
+            if (self::svgIsStrokeOnlyCurrentColorIcon($svg) && self::isGenericBlackPaint($paint)) {
+                self::restoreStrokeOnlySvgCurrentColorPaint($svg);
+
                 continue;
             }
 
@@ -232,9 +304,17 @@ final class GrapesJsImportedTailwindSupport
 
     protected static function applySvgPaintToTree(DOMElement $svg, string $paint): void
     {
+        if (self::svgIsStrokeOnlyCurrentColorIcon($svg) && self::isGenericBlackPaint($paint)) {
+            return;
+        }
+
         $existingStyle = self::parseStyleAttribute($svg->getAttribute('style'));
         $style = self::mergeStyleProperty($svg->getAttribute('style'), 'color', $paint);
-        $style = self::mergeStyleProperty($style, 'fill', $paint);
+
+        if (! self::svgRootFillIsNone($svg)) {
+            $style = self::mergeStyleProperty($style, 'fill', $paint);
+        }
+
         $style = self::mergeStyleProperty($style, 'stroke', $paint);
 
         foreach (['stroke-width', 'opacity'] as $property) {
@@ -252,7 +332,7 @@ final class GrapesJsImportedTailwindSupport
 
             $fill = strtolower($node->getAttribute('fill'));
 
-            if (self::isPaintableSvgFillValue($fill)) {
+            if (self::isPaintableSvgFillValue($fill, self::svgRootFillIsNone($svg))) {
                 $node->setAttribute('fill', $paint);
             }
 
@@ -264,11 +344,15 @@ final class GrapesJsImportedTailwindSupport
         }
     }
 
-    protected static function isPaintableSvgFillValue(string $fill): bool
+    protected static function isPaintableSvgFillValue(string $fill, bool $rootFillIsNone = false): bool
     {
         $fill = strtolower(trim($fill));
 
         if ($fill === 'none' || str_starts_with($fill, 'url(')) {
+            return false;
+        }
+
+        if ($fill === '' && $rootFillIsNone) {
             return false;
         }
 

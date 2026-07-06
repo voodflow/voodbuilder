@@ -19,12 +19,8 @@ final class SiteFooterBlocks
     public static function blockClasses(): array
     {
         return [
-            SiteFooterColumnsMissionBlock::class,
-            SiteFooterColumnsBrandEndBlock::class,
             SiteFooterColumnsSimpleBlock::class,
-            SiteFooterColumnsCtaBlock::class,
             SiteFooterColumnsNewsletterBlock::class,
-            SiteFooterColumnsNewsletterBelowBlock::class,
             SiteFooterCenteredBlock::class,
             SiteFooterSocialBlock::class,
         ];
