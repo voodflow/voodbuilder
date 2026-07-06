@@ -15,11 +15,17 @@ const OUTLINE_STORAGE_KEY = 'voodbuilder:component-outline-visible';
 
 const TOGGLE_COMMANDS = [CMD_COMPONENT_OUTLINE, CMD_PREVIEW];
 
+function stylePropsImportant(propertyNames) {
+    return propertyNames.map((property) => ({ property, important: true }));
+}
+
 export const STYLE_MANAGER_SECTORS = [
     {
         name: 'General',
         open: false,
         buildProps: ['display', 'float', 'position', 'top', 'right', 'left', 'bottom'],
+        extendBuilded: true,
+        properties: stylePropsImportant(['display', 'float', 'position', 'top', 'right', 'left', 'bottom']),
     },
     {
         name: 'Flex',
@@ -36,6 +42,19 @@ export const STYLE_MANAGER_SECTORS = [
             'flex-shrink',
             'align-self',
         ],
+        extendBuilded: true,
+        properties: stylePropsImportant([
+            'flex-direction',
+            'flex-wrap',
+            'justify-content',
+            'align-items',
+            'align-content',
+            'order',
+            'flex-basis',
+            'flex-grow',
+            'flex-shrink',
+            'align-self',
+        ]),
     },
     {
         name: 'Dimension',
@@ -54,6 +73,21 @@ export const STYLE_MANAGER_SECTORS = [
             'padding-bottom',
             'padding-left',
         ],
+        extendBuilded: true,
+        properties: stylePropsImportant([
+            'width',
+            'height',
+            'max-width',
+            'min-height',
+            'margin-top',
+            'margin-right',
+            'margin-bottom',
+            'margin-left',
+            'padding-top',
+            'padding-right',
+            'padding-bottom',
+            'padding-left',
+        ]),
     },
     {
         name: 'Typography',
@@ -106,6 +140,8 @@ export const STYLE_MANAGER_SECTORS = [
         name: 'Extra',
         open: false,
         buildProps: ['opacity', 'transition', 'transform'],
+        extendBuilded: true,
+        properties: stylePropsImportant(['opacity', 'transition', 'transform']),
     },
 ];
 
