@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingMediaUrlResolver;
 use Voodflow\Voodbuilder\Tests\TestCase;

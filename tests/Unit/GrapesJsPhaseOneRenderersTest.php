@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Voodflow\Voodbuilder\Models\BuilderComponent;
 use Voodflow\Voodbuilder\Models\BuilderGlobalClass;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsGlobalClassRenderer;
@@ -135,7 +136,7 @@ class GrapesJsPhaseOneRenderersTest extends TestCase
 
         $pageHtml = '<div data-voodbuilder-component="'.$component->id.'">'.$instanceHtml.'</div>';
 
-        app(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($pageHtml);
+        app(GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($pageHtml);
 
         $component->refresh();
 

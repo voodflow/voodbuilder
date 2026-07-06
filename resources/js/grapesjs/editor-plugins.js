@@ -68,7 +68,14 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
         return;
     }
 
+    const attributes = component.getAttributes?.() ?? {};
+    const isNewsletter = attributes['data-voodbuilder-form'] === 'newsletter';
+
     component.addClass('vb-gjs-form');
+
+    if (isNewsletter) {
+        component.addClass('vb-gjs-newsletter-form');
+    }
 
     component.addAttributes({
         action: formSubmitUrl,
@@ -79,12 +86,20 @@ function patchFormComponent(component, formSubmitUrl, csrf) {
         return;
     }
 
-    const hasToken = component
-        .components()
-        .some((child) => child.getAttributes()?.name === '_token');
+    const children = component.components();
 
-    if (! hasToken) {
-        component.append(`<input type="hidden" name="_token" value="${csrf}">`);
+    const ensureHidden = (name, value) => {
+        const hasField = children.some((child) => child.getAttributes()?.name === name);
+
+        if (! hasField) {
+            component.append(`<input type="hidden" name="${name}" value="${value}">`);
+        }
+    };
+
+    ensureHidden('_token', csrf);
+
+    if (isNewsletter) {
+        ensureHidden('form_type', 'newsletter');
     }
 }
 

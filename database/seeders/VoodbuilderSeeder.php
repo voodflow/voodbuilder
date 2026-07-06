@@ -7,6 +7,8 @@ namespace Voodflow\Voodbuilder\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Route;
 use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
@@ -173,7 +175,7 @@ class VoodbuilderSeeder extends Seeder
 
     protected function seedPermissions(): void
     {
-        if (! class_exists(\Spatie\Permission\Models\Permission::class)) {
+        if (! class_exists(Permission::class)) {
             return;
         }
 
@@ -184,14 +186,14 @@ class VoodbuilderSeeder extends Seeder
             return;
         }
 
-        $permission = \Spatie\Permission\Models\Permission::findOrCreate($permissionName, $guard);
+        $permission = Permission::findOrCreate($permissionName, $guard);
 
-        if (! class_exists(\Spatie\Permission\Models\Role::class)) {
+        if (! class_exists(Role::class)) {
             return;
         }
 
         foreach ((array) config('voodbuilder.permissions.page_builder_roles', ['editor', 'super_admin']) as $roleName) {
-            $role = \Spatie\Permission\Models\Role::query()
+            $role = Role::query()
                 ->where('name', $roleName)
                 ->where('guard_name', $guard)
                 ->first();

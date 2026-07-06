@@ -29,7 +29,7 @@ final class GrapesJsServerBlockAdapter
             label: $blockClass::getLabel(),
             category: $category,
             content: $content,
-            preview: GrapesJsBlockThumbnail::forBlockId($blockId),
+            preview: self::sidebarPreviewFor($blockId, $content),
             attributes: [
                 'class' => 'voodbuilder-gjs-dynamic',
                 'title' => $blockClass::getLabel(),
@@ -57,5 +57,14 @@ final class GrapesJsServerBlockAdapter
         $context = GrapesJsRichContentBlockAdapter::renderData($eventId);
 
         return $blockClass::toPreviewHtml($config, $context);
+    }
+
+    private static function sidebarPreviewFor(string $blockId, string $content): string
+    {
+        if (SiteFooterBlocks::isFooterBlockId($blockId) || SiteNavBlocks::isNavBlockId($blockId)) {
+            return GrapesJsSiteChromeSidebarPreview::fromPreviewHtml($content, $blockId);
+        }
+
+        return GrapesJsBlockPreview::wrapHtml($content) ?? GrapesJsBlockThumbnail::forBlockId($blockId);
     }
 }

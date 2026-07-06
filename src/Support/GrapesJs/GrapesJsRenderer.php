@@ -22,7 +22,7 @@ final class GrapesJsRenderer
         $html = GrapesJsHtmlSanitizer::stripEditorOnlyElements($html);
 
         return GrapesJsPlaceholderNormalizer::normalizeHtml(
-            GrapesJsFormNormalizer::normalize(
+            GrapesJsFormNormalizer::normalizeForPage(
                 GrapesJsStepTabsNormalizer::normalize(
                     GrapesJsCodeBlockNormalizer::normalize(
                         VoodbuilderThemeTokenMigrator::migrateHtml(
@@ -30,6 +30,7 @@ final class GrapesJsRenderer
                         ),
                     ),
                 ),
+                $page,
             ),
         );
     }

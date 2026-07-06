@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\RichContent\Landing\LandingFooterBlock;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SiteChrome;
@@ -30,7 +31,7 @@ class SiteChromeTest extends TestCase
             'layout' => 'home',
             'sub_theme' => 'site',
             'hide_site_nav' => true,
-            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder' => PageBuilder::GrapesJs,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_nav_simple"></div>',
             ],
@@ -44,7 +45,7 @@ class SiteChromeTest extends TestCase
         $page = new SitePage([
             'layout' => 'landing',
             'sub_theme' => 'site',
-            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder' => PageBuilder::GrapesJs,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_nav_with_search"></div>',
             ],
@@ -59,7 +60,7 @@ class SiteChromeTest extends TestCase
         $page = new SitePage([
             'layout' => 'landing',
             'sub_theme' => 'site',
-            'builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::GrapesJs,
+            'builder' => PageBuilder::GrapesJs,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_header"></div>',
             ],

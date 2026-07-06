@@ -24,9 +24,16 @@
                 {{ __('voodbuilder::pro.grapesjs.blocks.footer_newsletter_text') }}
             </p>
         </div>
-        <form class="flex w-full max-w-md gap-2" action="#" method="post" onsubmit="return false;">
-            <input type="email" class="min-w-0 flex-1 rounded-lg border border-vp-divider bg-vp-bg px-3 py-2 text-sm text-vp-text-1" placeholder="{{ __('voodbuilder::pro.grapesjs.blocks.footer_newsletter_placeholder') }}" />
-            <button type="button" class="shrink-0 rounded-lg bg-vp-brand-1 px-4 py-2 text-sm font-semibold text-white">
+        <form
+            @class([
+                'flex w-full max-w-md gap-2 vb-gjs-form vb-gjs-newsletter-form',
+            ])
+            data-voodbuilder-form="newsletter"
+            method="post"
+            @if($preview) action="#" onsubmit="return false;" @endif
+        >
+            <input type="email" name="email" required class="min-w-0 flex-1 rounded-lg border border-vp-divider bg-vp-bg px-3 py-2 text-sm text-vp-text-1" placeholder="{{ __('voodbuilder::pro.grapesjs.blocks.footer_newsletter_placeholder') }}" />
+            <button type="{{ $preview ? 'button' : 'submit' }}" class="shrink-0 rounded-lg bg-vp-brand-1 px-4 py-2 text-sm font-semibold text-white">
                 {{ __('voodbuilder::pro.grapesjs.blocks.footer_newsletter_button') }}
             </button>
         </form>

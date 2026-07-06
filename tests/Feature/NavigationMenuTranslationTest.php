@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Feature;
 
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
@@ -56,7 +57,7 @@ class NavigationMenuTranslationTest extends TestCase
     #[Test]
     public function test_it_maps_page_links_to_target_locale_slug(): void
     {
-        $group = (string) \Illuminate\Support\Str::uuid();
+        $group = (string) Str::uuid();
 
         SitePage::query()->create([
             'title' => 'About',

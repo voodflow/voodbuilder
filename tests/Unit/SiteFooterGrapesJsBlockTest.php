@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\Test;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
@@ -13,7 +14,6 @@ use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
-use PHPUnit\Framework\Attributes\Test;
 
 class SiteFooterGrapesJsBlockTest extends TestCase
 {

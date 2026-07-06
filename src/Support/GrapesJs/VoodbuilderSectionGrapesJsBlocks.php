@@ -41,7 +41,7 @@ final class VoodbuilderSectionGrapesJsBlocks
                 label: self::blockLabel($definition),
                 category: (string) ($definition['category'] ?? 'Sections'),
                 content: $content,
-                preview: null,
+                preview: GrapesJsBlockPreview::wrapHtml($content),
                 attributes: [
                     'title' => self::blockLabel($definition),
                 ],

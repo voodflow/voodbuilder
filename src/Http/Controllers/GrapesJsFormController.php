@@ -16,6 +16,26 @@ class GrapesJsFormController extends Controller
     {
         abort_unless($sitePage->published, 404);
 
+        $formType = (string) $request->input('form_type', 'contact');
+
+        if ($formType === 'newsletter') {
+            $validated = $request->validate([
+                'email' => ['required', 'email', 'max:255'],
+                'form_type' => ['nullable', 'string', 'in:newsletter'],
+                'newsletter_list' => ['nullable', 'string', 'max:100'],
+                '_honeypot' => ['nullable', 'max:0'],
+            ]);
+
+            event(new GrapesJsFormSubmitted($sitePage, array_merge($validated, [
+                'form_type' => 'newsletter',
+            ])));
+
+            return response()->json([
+                'ok' => true,
+                'message' => config('voodbuilder.grapesjs.forms.newsletter_success_message'),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -31,7 +51,9 @@ class GrapesJsFormController extends Controller
             ], 422);
         }
 
-        event(new GrapesJsFormSubmitted($sitePage, $validated));
+        event(new GrapesJsFormSubmitted($sitePage, array_merge($validated, [
+            'form_type' => 'contact',
+        ])));
 
         return response()->json([
             'ok' => true,

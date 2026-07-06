@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
@@ -46,7 +47,7 @@ class NavigationMenuCacheTest extends TestCase
             'slug' => 'header_extra',
         ]);
 
-        \Illuminate\Support\Facades\Cache::put('voodbuilder.menu.main', [
+        Cache::put('voodbuilder.menu.main', [
             [
                 'label' => 'Stale',
                 'type' => MenuItemType::Url->value,

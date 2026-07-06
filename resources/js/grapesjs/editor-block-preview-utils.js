@@ -11,3 +11,17 @@ export function previewSvg(paths, viewBox = '0 0 48 48') {
 export function thumbWrap(svg) {
     return `<div class="voodbuilder-gjs-block-thumb" aria-hidden="true">${svg}</div>`;
 }
+
+export function htmlBlockPreview(html) {
+    const trimmed = String(html ?? '').trim();
+
+    if (trimmed === '') {
+        return '';
+    }
+
+    return `<div class="voodbuilder-gjs-block-preview"><div class="voodbuilder-gjs-block-preview__scale">${trimmed}</div></div>`;
+}
+
+export function blockHasHtmlPreview(media) {
+    return typeof media === 'string' && media.includes('voodbuilder-gjs-block-preview');
+}

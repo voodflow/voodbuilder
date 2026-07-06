@@ -20,6 +20,7 @@ import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
 import { registerBlockSettings, registerBlockSettingsUi } from '../block-settings-registry.js';
+import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
 import {
     isClearedBackground,
     restoreBackgroundClasses,
@@ -168,6 +169,14 @@ function readSectionPadding(container) {
     return SECTION_PADDING_CLASSES.find((className) => classes.includes(className)) ?? 'py-24';
 }
 
+function sectionCatalogBlockId(section) {
+    return String(section?.getAttributes?.()?.['data-voodbuilder-section-block'] ?? '');
+}
+
+function isHeroCatalogSection(section) {
+    return sectionCatalogBlockId(section).startsWith('vb-hero-');
+}
+
 function registerLayoutSectionType(editor) {
     const paddingTrait = {
         type: 'select',
@@ -209,6 +218,12 @@ function registerLayoutSectionType(editor) {
                 },
             },
             init() {
+                if (isHeroCatalogSection(this)) {
+                    this.set('traits', []);
+
+                    return;
+                }
+
                 const container = sectionPaddingTarget(this);
 
                 if (container) {
@@ -240,6 +255,14 @@ function registerLayoutSectionType(editor) {
                 traits: [paddingTrait],
             },
             init() {
+                const parentSection = this.parent();
+
+                if (parentSection && isHeroCatalogSection(parentSection)) {
+                    this.set('traits', []);
+
+                    return;
+                }
+
                 this.set('vpressSectionPy', readSectionPadding(this), { silent: true });
 
                 this.on('change:vpressSectionPy', () => {
@@ -1576,6 +1599,12 @@ function ensureLayoutSectionTraits(editor) {
             section.set('type', 'voodbuilder-section');
         }
 
+        if (isHeroCatalogSection(section)) {
+            section.set('traits', []);
+
+            return;
+        }
+
         if (section.get('_vpressTraitsBound')) {
             return;
         }
@@ -1605,6 +1634,12 @@ function ensureLayoutSectionTraits(editor) {
         const parentSection = container.parent();
 
         if (! parentSection || parentSection.get('tagName') !== 'section') {
+            return;
+        }
+
+        if (isHeroCatalogSection(parentSection)) {
+            container.set('traits', []);
+
             return;
         }
 
@@ -1658,6 +1693,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     editor.__voodbuilderLabels = options.labels ?? {};
 
     registerTopDropSpacerType(editor);
+    registerLinkableButtonTypes(editor);
     registerBoundComponentType(editor);
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 

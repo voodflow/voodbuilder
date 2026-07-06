@@ -7,6 +7,7 @@ import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
 import { registerBlockPins } from './block-pins.js';
 import { lucideIcon } from './editor-icons.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
+import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
@@ -472,6 +473,7 @@ export function configureEditorLayout(editor, shell, labels = {}) {
     });
     setupStyleInspector(editor, shell.mounts);
     setupInspectorTabs(shell.mounts, editor);
+    registerInspectorSelectUi(editor, shell.mounts);
 
     editor.on('style:change', () => {
         editor.Canvas.getFrameEl()?.contentWindow?.dispatchEvent(new Event('resize'));

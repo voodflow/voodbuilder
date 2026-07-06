@@ -49,6 +49,10 @@ final class GrapesJsDynamicBlockRegistry
     public function registerEditorBlocks(GrapesJsBlockRegistry $registry, ?int $eventId = null): void
     {
         foreach ($this->blocks as $blockId => $blockClass) {
+            if (self::isExcludedFromEditor($blockId)) {
+                continue;
+            }
+
             $category = $this->categories[$blockId] ?? 'Dynamic';
 
             try {
@@ -59,5 +63,21 @@ final class GrapesJsDynamicBlockRegistry
                 report($exception);
             }
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected static function excludedEditorBlocks(): array
+    {
+        return array_values(array_filter(
+            (array) config('voodbuilder.grapesjs.excluded_editor_blocks', []),
+            static fn (mixed $blockId): bool => is_string($blockId) && $blockId !== '',
+        ));
+    }
+
+    protected static function isExcludedFromEditor(string $blockId): bool
+    {
+        return in_array($blockId, self::excludedEditorBlocks(), true);
     }
 }

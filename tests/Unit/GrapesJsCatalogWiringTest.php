@@ -31,6 +31,25 @@ class GrapesJsCatalogWiringTest extends TestCase
 
         $this->assertTrue($categories->contains('Hero'));
         $this->assertFalse($categories->contains(fn (string $category): bool => str_starts_with($category, 'Tailblocks')));
+
+        $hero = collect($blocks)->firstWhere('id', 'vb-hero-1');
+
+        $this->assertIsArray($hero);
+        $this->assertStringContainsString('voodbuilder-gjs-block-preview', (string) ($hero['preview'] ?? ''));
+    }
+
+    public function test_excluded_dynamic_blocks_are_not_registered_in_editor(): void
+    {
+        config()->set('voodbuilder.grapesjs.excluded_editor_blocks', ['latest_vtuts']);
+
+        $dynamic = app(GrapesJsDynamicBlockRegistry::class);
+        $registry = new GrapesJsBlockRegistry;
+
+        $dynamic->registerEditorBlocks($registry);
+
+        $ids = collect($registry->toEditorBlocks())->pluck('id')->all();
+
+        $this->assertNotContains('voodbuilder-latest_vtuts', $ids);
     }
 
     public function test_dynamic_registry_can_register_editor_blocks(): void

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Enums\MenuItemType;
-use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
 final class LandingMenuColumnsSupport

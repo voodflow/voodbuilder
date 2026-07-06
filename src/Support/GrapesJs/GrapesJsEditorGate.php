@@ -68,6 +68,7 @@ final class GrapesJsEditorGate
             'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'formSubmitUrl' => self::editorRoute('voodbuilder.grapesjs.forms.submit', $page),
+            'newsletterLists' => self::newsletterListOptions(),
             'revisionsUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.index', $page),
             'revisionsRestoreUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.restore', [
                 'sitePage' => $page,
@@ -302,6 +303,14 @@ final class GrapesJsEditorGate
                 'footerShowNewsletter' => __('voodbuilder::pro.grapesjs.footer_settings.show_newsletter'),
                 'footerColumnsRedistribute' => __('voodbuilder::pro.grapesjs.footer_settings.columns_redistribute'),
                 'footerDefaultTagline' => __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline'),
+                'newsletterList' => __('voodbuilder::pro.grapesjs.newsletter_settings.list'),
+                'newsletterTitle' => __('voodbuilder::pro.grapesjs.newsletter_settings.title'),
+                'newsletterHint' => __('voodbuilder::pro.grapesjs.newsletter_settings.hint'),
+                'buttonLinkUrl' => __('voodbuilder::pro.grapesjs.button_link.url'),
+                'buttonLinkUrlPlaceholder' => __('voodbuilder::pro.grapesjs.button_link.url_placeholder'),
+                'buttonLinkTarget' => __('voodbuilder::pro.grapesjs.button_link.target'),
+                'buttonLinkSameTab' => __('voodbuilder::pro.grapesjs.button_link.same_tab'),
+                'buttonLinkNewTab' => __('voodbuilder::pro.grapesjs.button_link.new_tab'),
             ],
         ];
     }
@@ -428,5 +437,21 @@ final class GrapesJsEditorGate
         }
 
         return $project !== [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function newsletterListOptions(): array
+    {
+        $lists = config('voodbuilder.grapesjs.newsletter_lists', []);
+
+        if ($lists === []) {
+            return [
+                'default' => __('voodbuilder::pro.grapesjs.newsletter_settings.default_list'),
+            ];
+        }
+
+        return $lists;
     }
 }

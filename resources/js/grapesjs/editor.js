@@ -34,6 +34,13 @@ import vpressGrapesJsPlugin, {
 } from './plugins/voodbuilder-grapesjs.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './voodbuilder-dynamic-config.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
+import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from './grapesjs-button-link.js';
+import { registerNewsletterFormSettings } from './grapesjs-forms-blocks.js';
+
+function voodbuilderEarlyTypesPlugin(editor, pluginOpts = {}) {
+    editor.__voodbuilderLabels = pluginOpts.labels ?? editor.__voodbuilderLabels ?? {};
+    registerLinkableButtonTypes(editor);
+}
 import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtime.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
@@ -478,6 +485,7 @@ function registerInspectorExtensions(editor, shell, options, labels) {
 
     registerSiteFooterSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerSiteNavSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
+    registerNewsletterFormSettings(editor);
 }
 
 export function initVpressGrapesJs(container, options = {}) {
@@ -511,8 +519,11 @@ export function initVpressGrapesJs(container, options = {}) {
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
-        plugins: [grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
+        plugins: [voodbuilderEarlyTypesPlugin, grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
         pluginsOpts: {
+            [voodbuilderEarlyTypesPlugin]: {
+                labels: options.labels ?? {},
+            },
             [grapesjsBlocksBasic]: {
                 flexGrid: true,
                 category: 'Layout',
@@ -579,6 +590,9 @@ export function initVpressGrapesJs(container, options = {}) {
     }
 
     const editor = grapesjs.init(editorOptions);
+
+    editor.__voodbuilderLabels = labels;
+    registerLinkableButtonTypes(editor);
 
     const dynamicBlocksGate = createDynamicBlocksPending();
     editor.__voodbuilderDynamicBlocksPending = dynamicBlocksGate.pending;
@@ -670,6 +684,10 @@ export function initVpressGrapesJs(container, options = {}) {
         registerInspectorExtensions(editor, shell, options, labels);
 
         editor.__voodbuilderLabels = labels;
+        editor.__voodbuilderNewsletterLists = options.newsletterLists ?? {};
+
+        configureLinkableButtons(editor);
+        scanLinkableButtons(editor);
 
         registerCanvasContextMenu(editor, { labels });
 
@@ -717,6 +735,7 @@ export function initVpressGrapesJs(container, options = {}) {
             void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
                 dynamicBlocksGate.resolve();
                 migrateEditorComponents(editor);
+                scanLinkableButtons(editor);
                 for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
                     try {
                         lockDynamicPreviewContent(component);
@@ -1087,6 +1106,7 @@ function mountFrontendEditor() {
         blocksRenderUrl: config.blocksRenderUrl,
         siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },
         footerColumnOptions: config.footerColumnOptions ?? {},
+        newsletterLists: config.newsletterLists ?? {},
     });
 
     const onResize = () => refreshEditorLayout(editor);

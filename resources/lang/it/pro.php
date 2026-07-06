@@ -310,5 +310,18 @@ return [
             'show_newsletter' => 'Mostra newsletter',
             'columns_redistribute' => 'Ridistribuisci colonne visibili',
         ],
+        'newsletter_settings' => [
+            'title' => 'Newsletter',
+            'list' => 'Lista newsletter',
+            'default_list' => 'Newsletter predefinita',
+            'hint' => 'Le iscrizioni arrivano nell\'app tramite GrapesJsFormSubmitted (form_type newsletter nel payload).',
+        ],
+        'button_link' => [
+            'url' => 'URL link',
+            'url_placeholder' => 'https:// o /pagina',
+            'target' => 'Apri in',
+            'same_tab' => 'Stessa scheda',
+            'new_tab' => 'Nuova scheda',
+        ],
     ],
 ];

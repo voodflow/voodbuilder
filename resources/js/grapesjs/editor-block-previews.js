@@ -3,7 +3,7 @@
  * Replaces heavy HTML previews and filled SVGs with thin-stroke wireframes.
  */
 
-import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
+import { previewSvg, thumbWrap, htmlBlockPreview, blockHasHtmlPreview } from './editor-block-preview-utils.js';
 import {
     BASIC_BLOCK_LABELS,
     resolveBlockLabel,
@@ -268,14 +268,22 @@ function applySectionBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
         const customWireframe = resolveBlockWireframe(blockId);
+        const existingMedia = block.get('media');
 
         if (customWireframe) {
             block.set('media', customWireframe);
-        } else if (blockId.startsWith('vb-')) {
-            const category = sectionCategoryKey(block.get('category'));
-            const variant = sectionVariant(block.get('label'));
+        } else if (blockId.startsWith('vb-') && ! blockHasHtmlPreview(existingMedia)) {
+            const content = block.get('content');
+            const preview = typeof content === 'string' ? htmlBlockPreview(content) : '';
 
-            block.set('media', sectionWireframe(category, variant));
+            if (preview !== '') {
+                block.set('media', preview);
+            } else {
+                const category = sectionCategoryKey(block.get('category'));
+                const variant = sectionVariant(block.get('label'));
+
+                block.set('media', sectionWireframe(category, variant));
+            }
         }
 
         const label = resolveBlockLabel(blockId, block.get('label'));

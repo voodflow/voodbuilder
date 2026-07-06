@@ -7,10 +7,8 @@ namespace Voodflow\Voodbuilder\Filament\Resources;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
-use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Component;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -20,10 +18,13 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
+use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
+use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
@@ -36,7 +37,6 @@ use Voodflow\Voodbuilder\Support\NavigationMenuPlacements;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Vtuts\Support\Locales;
-use Filament\Tables\Table;
 
 class NavigationMenuResource extends Resource
 {

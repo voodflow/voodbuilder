@@ -70,11 +70,12 @@ export const BASIC_BLOCK_LABELS = {
 
 /** @type {Record<string, string>} */
 export const SECTION_BLOCK_LABELS = {
-    'vb-hero-1': 'Hero · centered',
-    'vb-hero-2': 'Hero · split image',
-    'vb-hero-3': 'Hero · image background',
-    'vb-hero-4': 'Hero · newsletter',
-    'vb-hero-5': 'Hero · minimal',
+    'vb-hero-1': 'Hero · split text left',
+    'vb-hero-2': 'Hero · centered',
+    'vb-hero-3': 'Hero · split image left',
+    'vb-hero-4': 'Hero · split newsletter',
+    'vb-hero-5': 'Hero · split image + newsletter',
+    'vb-hero-6': 'Hero · centered newsletter',
     'vb-content-1': 'Text · 4 link columns',
     'vb-content-2': 'Split · image cards',
     'vb-content-3': 'Centered · icon grid',
@@ -237,6 +238,34 @@ export const BLOCK_WIREFRAMES = {
         '<path d="M10 14h8M10 20h24M10 26h18" />'
         + '<path d="M34 14v16" />',
     )),
+    site_nav_simple: () => thumbWrap(previewSvg(
+        '<rect x="6" y="16" width="36" height="10" rx="2" />'
+        + '<circle cx="12" cy="21" r="2" />'
+        + '<path d="M18 21h8M28 21h5M35 21h5" />',
+    )),
+    site_footer_columns_simple: () => thumbWrap(previewSvg(
+        '<rect x="6" y="18" width="36" height="14" rx="2" />'
+        + '<circle cx="11" cy="25" r="2.5" />'
+        + '<path d="M16 23h5M16 27h4M23 23h5M23 27h4M30 23h5M30 27h4M37 23h4M37 27h3" />',
+    )),
+    site_footer_columns_newsletter: () => thumbWrap(previewSvg(
+        '<rect x="6" y="18" width="36" height="14" rx="2" />'
+        + '<circle cx="10" cy="25" r="2" />'
+        + '<path d="M15 23h4M15 27h3M21 23h4M21 27h3M27 23h4" />'
+        + '<rect x="34" y="22" width="6" height="6" rx="1" />',
+    )),
+    site_footer_centered: () => thumbWrap(previewSvg(
+        '<rect x="6" y="20" width="36" height="12" rx="2" />'
+        + '<circle cx="24" cy="26" r="2.5" />'
+        + '<path d="M14 30h20" />',
+    )),
+    site_footer_social: () => thumbWrap(previewSvg(
+        '<rect x="6" y="20" width="36" height="12" rx="2" />'
+        + '<circle cx="12" cy="26" r="2" />'
+        + '<path d="M18 26h14" />'
+        + '<circle cx="32" cy="26" r="1.5" />'
+        + '<circle cx="37" cy="26" r="1.5" />',
+    )),
 };
 
 function blockCategoryLabel(category) {
@@ -391,7 +420,8 @@ export function resolveBlockLabel(blockId, fallback = '') {
 }
 
 export function resolveBlockWireframe(blockId) {
-    const render = BLOCK_WIREFRAMES[blockId];
+    const catalogId = String(blockId ?? '').replace(/^voodbuilder-/, '');
+    const render = BLOCK_WIREFRAMES[blockId] ?? BLOCK_WIREFRAMES[catalogId];
 
     return render ? render() : null;
 }

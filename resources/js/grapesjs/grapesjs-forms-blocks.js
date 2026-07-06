@@ -4,6 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { registerBlockSettings } from './block-settings-registry.js';
 
 export const FORMS_BLOCK_CATEGORY = 'Forms';
 
@@ -177,5 +178,75 @@ export function configureGrapesJsFormsCanvas(editor) {
         if (form) {
             ensureFormClasses(form);
         }
+    });
+}
+
+function newsletterFormRoot(component) {
+    if (! component?.get) {
+        return null;
+    }
+
+    if (component.get('tagName') === 'form') {
+        return component.getAttributes()?.['data-voodbuilder-form'] === 'newsletter' ? component : null;
+    }
+
+    return component.closest?.('form[data-voodbuilder-form="newsletter"]') ?? null;
+}
+
+function newsletterSettingLabel(editor, key, fallback) {
+    return editor.__voodbuilderLabels?.[key] ?? fallback;
+}
+
+export function registerNewsletterFormSettings(editor) {
+    registerBlockSettings({
+        id: 'newsletter-form',
+        findRoot: (component) => newsletterFormRoot(component),
+        matchesRoot: (root) => root.getAttributes()?.['data-voodbuilder-form'] === 'newsletter',
+        render: ({ mount, root, editor }) => {
+            const lists = editor.__voodbuilderNewsletterLists ?? {};
+            const currentList = String(root.getAttributes()?.['data-voodbuilder-newsletter-list'] ?? 'default');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'voodbuilder-gjs-settings voodbuilder-gjs-settings--newsletter';
+
+            const title = document.createElement('p');
+            title.className = 'voodbuilder-gjs-settings__title';
+            title.textContent = newsletterSettingLabel(editor, 'newsletterTitle', 'Newsletter');
+            wrapper.appendChild(title);
+
+            const label = document.createElement('label');
+            label.className = 'voodbuilder-gjs-settings__label';
+            label.textContent = newsletterSettingLabel(editor, 'newsletterList', 'Newsletter list');
+
+            const select = document.createElement('select');
+            select.className = 'voodbuilder-gjs-settings__input';
+
+            Object.entries(lists).forEach(([value, text]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                option.selected = value === currentList;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', () => {
+                root.addAttributes({
+                    'data-voodbuilder-newsletter-list': select.value,
+                });
+            });
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(select);
+
+            const hint = document.createElement('p');
+            hint.className = 'voodbuilder-gjs-settings__hint';
+            hint.textContent = newsletterSettingLabel(
+                editor,
+                'newsletterHint',
+                'Submissions are handled via GrapesJsFormSubmitted (form_type newsletter).',
+            );
+            wrapper.appendChild(hint);
+
+            mount.appendChild(wrapper);
+        },
     });
 }

@@ -254,6 +254,13 @@ return [
             'modes' => ['adaptive'],
             'theme' => env('VOODBUILDER_SECTION_THEME', 'indigo'),
         ],
+        /*
+        | Block IDs to hide from the GrapesJS sidebar (runtime rendering still works).
+        | Example: latest_vtuts — use Dynamic bindings in the inspector instead.
+        */
+        'excluded_editor_blocks' => [
+            'latest_vtuts',
+        ],
         'builder' => [
             'brand' => env('VOODBUILDER_BUILDER_BRAND', 'VoodBuilder'),
         ],
@@ -274,6 +281,10 @@ return [
         ],
         'forms' => [
             'success_message' => 'Thank you. Your message has been received.',
+            'newsletter_success_message' => 'Thank you for subscribing to our newsletter.',
+        ],
+        'newsletter_lists' => [
+            'default' => 'Default newsletter',
         ],
         'revisions' => [
             'max_to_keep' => (int) env('VOODBUILDER_GRAPESJS_REVISIONS_MAX', 50),

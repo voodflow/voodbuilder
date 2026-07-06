@@ -310,5 +310,18 @@ return [
             'show_newsletter' => 'Show newsletter',
             'columns_redistribute' => 'Redistribute visible columns',
         ],
+        'newsletter_settings' => [
+            'title' => 'Newsletter',
+            'list' => 'Newsletter list',
+            'default_list' => 'Default newsletter',
+            'hint' => 'Submissions are sent to your app via GrapesJsFormSubmitted. Use form_type newsletter in the payload.',
+        ],
+        'button_link' => [
+            'url' => 'Link URL',
+            'url_placeholder' => 'https:// or /page',
+            'target' => 'Open in',
+            'same_tab' => 'Same tab',
+            'new_tab' => 'New tab',
+        ],
     ],
 ];

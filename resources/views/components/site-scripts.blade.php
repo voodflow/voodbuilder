@@ -7,13 +7,32 @@
             locked: false,
         };
 
+        function syncThemeToggleUi(isDark) {
+            document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+                button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+
+                const darkLabel = button.dataset.themeLabelDark || 'Dark mode';
+                const lightLabel = button.dataset.themeLabelLight || 'Light mode';
+                const nextLabel = isDark ? lightLabel : darkLabel;
+
+                button.setAttribute('aria-label', nextLabel);
+
+                const label = button.querySelector('[data-theme-toggle-label]');
+
+                if (label) {
+                    label.textContent = nextLabel;
+                }
+
+                button.querySelector('[data-theme-icon="moon"]')?.toggleAttribute('hidden', isDark);
+                button.querySelector('[data-theme-icon="sun"]')?.toggleAttribute('hidden', ! isDark);
+            });
+        }
+
         function applyTheme(isDark) {
             root.classList.toggle('dark', isDark);
             root.style.colorScheme = isDark ? 'dark' : 'light';
 
-            document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-                button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-            });
+            syncThemeToggleUi(isDark);
 
             window.dispatchEvent(new CustomEvent('voodbuilder:theme-changed', {
                 detail: {

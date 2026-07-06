@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Contracts\GrapesJsConfigurableBlock;
-use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 
 abstract class AbstractSiteNavVariantBlock implements GrapesJsConfigurableBlock
 {
