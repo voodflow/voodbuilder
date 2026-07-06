@@ -1439,6 +1439,7 @@ export {
     registerDynamicBlockGuards,
     pruneEmptyDynamicBlocks,
     applySiteFooterColumns,
+    configureSiteFooterTraits,
     configureSiteNavTraits,
     registerSiteNavTraitBridge,
     registerSiteNavSettingsUi,

@@ -26,6 +26,7 @@
 @source '../grapesjs/section-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
+@source not '../../tests/**/*.php';
 
 @theme {
     --breakpoint-vp: 60rem;
@@ -571,7 +572,8 @@ html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:h
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
-@import '../../../../../resources/voodbuilder/themes/landingnew/theme.css';
 
 
-@import '../../../../../resources/voodbuilder/themes/docs-copy/theme.css';
+
+
+@import '../../../../../resources/voodbuilder/themes/seires/theme.css';

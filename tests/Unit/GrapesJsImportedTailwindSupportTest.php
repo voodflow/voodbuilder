@@ -12,7 +12,8 @@ class GrapesJsImportedTailwindSupportTest extends TestCase
     public function test_inlines_background_url_arbitrary_class_into_style(): void
     {
         $url = 'https://images.unsplash.com/photo-1615615228002-890bb61cac6e?q=80&w=1920';
-        $html = '<div class="flex bg-[url(\''.$url.'\')] bg-cover bg-center bg-no-repeat"></div>';
+        $bgClass = 'bg-['.'url(\''.$url.'\')'.']';
+        $html = '<div class="flex '.$bgClass.' bg-cover bg-center bg-no-repeat"></div>';
 
         $normalized = GrapesJsImportedTailwindSupport::inlineBackgroundImageClasses($html);
 
@@ -28,7 +29,8 @@ class GrapesJsImportedTailwindSupportTest extends TestCase
     public function test_prepare_html_inlines_background_images_before_marking_root(): void
     {
         $url = 'https://images.unsplash.com/photo-1629666451094-8908989cae90';
-        $html = '<section class="bg-[url(\''.$url.'\')] bg-cover"></section>';
+        $bgClass = 'bg-['.'url(\''.$url.'\')'.']';
+        $html = '<section class="'.$bgClass.' bg-cover"></section>';
 
         $prepared = GrapesJsImportedTailwindSupport::prepareHtml($html);
 
@@ -117,13 +119,16 @@ class GrapesJsImportedTailwindSupportTest extends TestCase
 
     public function test_parse_background_url_class_handles_quoted_and_unquoted_urls(): void
     {
+        $quotedClass = 'bg-['.'url(\'https://example.com/a.jpg\')'.']';
+        $unquotedClass = 'bg-['.'url(https://example.com/a.jpg)'.']';
+
         $this->assertSame(
             'https://example.com/a.jpg',
-            GrapesJsImportedTailwindSupport::parseBackgroundUrlClass("bg-[url('https://example.com/a.jpg')]"),
+            GrapesJsImportedTailwindSupport::parseBackgroundUrlClass($quotedClass),
         );
         $this->assertSame(
             'https://example.com/a.jpg',
-            GrapesJsImportedTailwindSupport::parseBackgroundUrlClass('bg-[url(https://example.com/a.jpg)]'),
+            GrapesJsImportedTailwindSupport::parseBackgroundUrlClass($unquotedClass),
         );
     }
 }
