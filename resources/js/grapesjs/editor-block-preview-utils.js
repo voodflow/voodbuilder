@@ -12,6 +12,14 @@ export function thumbWrap(svg) {
     return `<div class="voodbuilder-gjs-block-thumb" aria-hidden="true">${svg}</div>`;
 }
 
+export function compactBlockPreviewHtml(html) {
+    return String(html ?? '')
+        .replace(/\bpy-24\b/g, 'py-8')
+        .replace(/\bpy-16\b/g, 'py-6')
+        .replace(/\bmd:py-24\b/g, 'md:py-8')
+        .replace(/\bmd:py-16\b/g, 'md:py-6');
+}
+
 export function htmlBlockPreview(html) {
     const trimmed = String(html ?? '').trim();
 
@@ -19,7 +27,7 @@ export function htmlBlockPreview(html) {
         return '';
     }
 
-    return `<div class="voodbuilder-gjs-block-preview"><div class="voodbuilder-gjs-block-preview__scale">${trimmed}</div></div>`;
+    return `<div class="voodbuilder-gjs-block-preview"><div class="voodbuilder-gjs-block-preview__scale">${compactBlockPreviewHtml(trimmed)}</div></div>`;
 }
 
 export function blockHasHtmlPreview(media) {

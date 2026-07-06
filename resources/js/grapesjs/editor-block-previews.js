@@ -1,6 +1,6 @@
 /**
  * Lightweight block preview icons for the GrapesJS sidebar.
- * Replaces heavy HTML previews and filled SVGs with thin-stroke wireframes.
+ * Prefer scaled HTML previews (real block markup); fall back to wireframes when needed.
  */
 
 import { previewSvg, thumbWrap, htmlBlockPreview, blockHasHtmlPreview } from './editor-block-preview-utils.js';
@@ -264,20 +264,34 @@ function applyBasicBlockPreviews(blockManager) {
     }
 }
 
+function resolveHtmlPreviewForBlock(block) {
+    const existingMedia = block.get('media');
+
+    if (blockHasHtmlPreview(existingMedia)) {
+        return existingMedia;
+    }
+
+    const content = block.get('content');
+
+    if (typeof content === 'string' && content.trim() !== '') {
+        return htmlBlockPreview(content);
+    }
+
+    return '';
+}
+
 function applySectionBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
-        const customWireframe = resolveBlockWireframe(blockId);
-        const existingMedia = block.get('media');
+        const htmlPreview = resolveHtmlPreviewForBlock(block);
 
-        if (customWireframe) {
-            block.set('media', customWireframe);
-        } else if (blockId.startsWith('vb-') && ! blockHasHtmlPreview(existingMedia)) {
-            const content = block.get('content');
-            const preview = typeof content === 'string' ? htmlBlockPreview(content) : '';
+        if (htmlPreview) {
+            block.set('media', htmlPreview);
+        } else if (blockId.startsWith('vb-') || blockId.startsWith('site_') || blockId.startsWith('voodbuilder-site_')) {
+            const customWireframe = resolveBlockWireframe(blockId);
 
-            if (preview !== '') {
-                block.set('media', preview);
+            if (customWireframe) {
+                block.set('media', customWireframe);
             } else {
                 const category = sectionCategoryKey(block.get('category'));
                 const variant = sectionVariant(block.get('label'));
@@ -306,8 +320,11 @@ function applyFormsBlockPreviews(blockManager) {
         }
 
         const wireframe = resolveBlockWireframe(blockId);
+        const htmlPreview = resolveHtmlPreviewForBlock(block);
 
-        if (wireframe) {
+        if (htmlPreview) {
+            block.set('media', htmlPreview);
+        } else if (wireframe) {
             block.set('media', wireframe);
         }
 
@@ -323,12 +340,15 @@ function applyBricksBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
         const wireframe = BRICKS_BLOCK_WIREFRAMES[blockId] ?? resolveBlockWireframe(blockId);
+        const htmlPreview = resolveHtmlPreviewForBlock(block);
 
-        if (! wireframe) {
+        if (htmlPreview) {
+            block.set('media', htmlPreview);
+        } else if (wireframe) {
+            block.set('media', wireframe);
+        } else {
             return;
         }
-
-        block.set('media', wireframe);
 
         const label = resolveBlockLabel(blockId, block.get('label'));
 

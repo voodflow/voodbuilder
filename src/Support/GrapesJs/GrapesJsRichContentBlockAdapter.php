@@ -19,13 +19,14 @@ final class GrapesJsRichContentBlockAdapter
         $blockId = $blockClass::getId();
         $config = GrapesJsDefaultBlockConfig::for($blockClass, $eventId);
         $editorInner = self::editorPreviewHtml($blockClass, $config);
+        $previewHtml = GrapesJsBlockPreview::wrapHtml(self::prepareBlockHtml($editorInner));
 
         return new GrapesJsBlockDefinition(
             id: 'voodbuilder-'.$blockId,
             label: $blockClass::getLabel(),
             category: $category,
             content: self::wrap($blockId, $config, $editorInner),
-            preview: GrapesJsBlockThumbnail::forBlockId($blockId),
+            preview: $previewHtml ?? GrapesJsBlockThumbnail::forBlockId($blockId),
             attributes: [
                 'class' => 'voodbuilder-gjs-dynamic',
                 'title' => $blockClass::getLabel(),
