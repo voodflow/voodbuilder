@@ -17,6 +17,10 @@ function closeOpenSelects(exceptWrap = null) {
     });
 }
 
+function triggerLabel(trigger) {
+    return trigger.querySelector('.voodbuilder-gjs-select-trigger-label');
+}
+
 function syncCustomSelect(wrap) {
     const select = wrap.querySelector('select');
     const trigger = wrap.querySelector('.voodbuilder-gjs-select-trigger');
@@ -27,7 +31,14 @@ function syncCustomSelect(wrap) {
     }
 
     const selected = select.options[select.selectedIndex];
-    trigger.textContent = selected?.textContent?.trim() || '';
+    const labelText = selected?.textContent?.trim() || '';
+    const label = triggerLabel(trigger);
+
+    if (label) {
+        label.textContent = labelText;
+    } else {
+        trigger.textContent = labelText;
+    }
 
     list.querySelectorAll('.voodbuilder-gjs-select-option').forEach((option) => {
         const active = option.dataset.value === select.value;
@@ -87,6 +98,10 @@ function enhanceSelect(select) {
     trigger.className = 'voodbuilder-gjs-select-trigger';
     trigger.setAttribute('aria-haspopup', 'listbox');
     trigger.setAttribute('aria-expanded', 'false');
+
+    const label = document.createElement('span');
+    label.className = 'voodbuilder-gjs-select-trigger-label';
+    trigger.appendChild(label);
 
     const chevron = document.createElement('span');
     chevron.className = 'voodbuilder-gjs-select-chevron';
