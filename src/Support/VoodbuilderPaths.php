@@ -45,6 +45,11 @@ final class VoodbuilderPaths
         return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/editor.css');
     }
 
+    public static function grapesJsBlockPreviewCssEntry(): string
+    {
+        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/block-preview-shim.css');
+    }
+
     public static function grapesJsTabsCssEntry(): string
     {
         return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/tabs.css');
@@ -68,6 +73,7 @@ final class VoodbuilderPaths
 
         if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
             $entries[] = VoodbuilderSectionGrapesJsBlocks::utilitiesCssEntry();
+            $entries[] = self::grapesJsBlockPreviewCssEntry();
         }
 
         return $entries;

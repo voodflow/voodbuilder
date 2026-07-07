@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
@@ -20,15 +21,26 @@ final class GrapesJsAssets
         return VoodbuilderPaths::grapesJsEditorCssEntry();
     }
 
+    public static function blockPreviewStyleEntry(): string
+    {
+        return VoodbuilderPaths::grapesJsBlockPreviewCssEntry();
+    }
+
     /**
      * @return list<string>
      */
     public static function viteEntries(): array
     {
-        return [
+        $entries = [
             self::editorScriptEntry(),
             self::editorStyleEntry(),
         ];
+
+        if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
+            $entries[] = self::blockPreviewStyleEntry();
+        }
+
+        return $entries;
     }
 
     public static function isBuilt(): bool

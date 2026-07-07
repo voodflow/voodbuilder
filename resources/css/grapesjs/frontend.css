@@ -67,15 +67,19 @@
     pointer-events: none;
 }
 
-/* Legacy HTML previews (if any remain) must not expand block height. */
+/* Legacy HTML previews — Tailwind scoped via block-preview-utilities.css */
 .voodbuilder-gjs-block-preview__scale {
     position: absolute;
-    top: 0.25rem;
+    top: 0.2rem;
     left: 50%;
-    width: 560%;
-    transform: translateX(-50%) scale(0.11);
+    width: 520%;
+    transform: translateX(-50%) scale(0.115);
     transform-origin: top center;
     pointer-events: none;
+}
+
+.voodbuilder-gjs-block-preview__scale svg {
+    flex-shrink: 0;
 }
 
 /* Site chrome (navbar/footer): compact markup + slightly larger scale for readable thumbnails. */
@@ -463,8 +467,8 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     border-right: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
 }
 
+/* Width + expand animation: see inspector-ui.css (--voodbuilder-gjs-inspector-width*) */
 .voodbuilder-gjs-shell__right {
-    width: 18.5rem;
     border-left: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
 }
 
