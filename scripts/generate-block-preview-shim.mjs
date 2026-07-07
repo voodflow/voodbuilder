@@ -46,6 +46,7 @@ const TAILWIND_MAP = {
     border: 'border-width:1px;border-style:solid',
     'border-0': 'border-width:0',
     container: 'width:100%;max-width:72rem;margin-left:auto;margin-right:auto',
+    'voodbuilder-gjs-container': 'width:100%;max-width:90rem;margin-left:auto;margin-right:auto',
     'body-font': 'font-family:system-ui,sans-serif;color:#4b5563',
     'title-font': 'font-family:system-ui,sans-serif;letter-spacing:-0.025em',
     'w-3': 'width:0.75rem', 'h-3': 'height:0.75rem',

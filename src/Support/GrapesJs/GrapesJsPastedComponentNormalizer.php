@@ -142,10 +142,11 @@ final class GrapesJsPastedComponentNormalizer
     public static function resolvePublishedPageCss(string $html, ?string $storedCss): string
     {
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
-        $pageHtml = GrapesJsComponentPageHtml::htmlExcludingComponentInstances($html);
+        $pageHtml = GrapesJsComponentPageHtml::htmlForPageTailwindCompile($html);
         $needsRecompile = $storedCss === ''
             || self::storedCssIsCorrupted($storedCss)
             || self::pageCssIncludesTailwindPreflight($storedCss)
+            || self::pageCssMissingThemeVariables($storedCss)
             || ($pageHtml !== '' && self::htmlHasTailwindUtilitiesMissingFromCss($pageHtml, $storedCss));
 
         if (! $needsRecompile) {
@@ -168,7 +169,7 @@ final class GrapesJsPastedComponentNormalizer
      */
     public static function resolvePublishedPageCssForSave(string $html, ?string $storedCss): string
     {
-        $pageHtml = GrapesJsComponentPageHtml::htmlExcludingComponentInstances($html);
+        $pageHtml = GrapesJsComponentPageHtml::htmlForPageTailwindCompile($html);
 
         return self::compileAndMergePublishedPageCss(
             $pageHtml,
@@ -203,10 +204,6 @@ final class GrapesJsPastedComponentNormalizer
         );
     }
 
-    /**
-     * Page CSS must not ship Tailwind preflight — it overrides site chrome in theme.css
-     * (e.g. .voodbuilder-header-icon-btn border-radius) because it is unlayered.
-     */
     public static function pageCssIncludesTailwindPreflight(string $css): bool
     {
         $css = trim($css);
@@ -216,7 +213,23 @@ final class GrapesJsPastedComponentNormalizer
         }
 
         return (str_contains($css, 'border-radius: 0') && str_contains($css, '::file-selector-button'))
-            || (str_contains($css, 'box-sizing: border-box') && preg_match('/^\*[^{]*\{[^}]*box-sizing\s*:\s*border-box/m', $css) === 1);
+            || (str_contains($css, 'box-sizing: border-box') && preg_match('/^\*[^{]*\{[^}]*box-sizing\s*:\s*border-box/m', $css) === 1)
+            || (str_contains($css, 'html, :host') && str_contains($css, '-webkit-text-size-adjust'))
+            || (str_contains($css, 'tab-size: 4') && str_contains($css, 'font-family: var(--default-font-family'));
+    }
+
+    /**
+     * JIT page CSS references --spacing and other theme tokens stripped with @layer theme.
+     */
+    public static function pageCssMissingThemeVariables(string $css): bool
+    {
+        $css = trim($css);
+
+        if ($css === '' || ! str_contains($css, 'var(--spacing)')) {
+            return false;
+        }
+
+        return ! preg_match('/:root[^{]*\{[^}]*--spacing\s*:/s', $css);
     }
 
     public static function stripTailwindPreflightFromPageCss(string $css): string
@@ -229,12 +242,15 @@ final class GrapesJsPastedComponentNormalizer
 
         $patterns = [
             '/\*[^{]*\{[^}]*box-sizing\s*:\s*border-box[^}]*\}\s*/s',
+            '/html,\s*:host[^{]*\{[^}]*\}\s*/s',
             '/:root[^{]*\{[^}]*--font-sans[^}]*\}\s*/s',
             '/:host[^{]*\{[^}]*--font-sans[^}]*\}\s*/s',
+            '/(?:^|[\n}])(?:html|body|hr|abbr|h[1-6]|a|b|strong|code|kbd|samp|pre|small|sub|sup|table|button|input|select|optgroup|textarea)[^{]*\{[^}]*\}\s*/ms',
             '/(?:button|input|select|optgroup|textarea|,|\s)+[^{]*\{[^}]*border-radius\s*:\s*0[^}]*\}\s*/s',
             '/button[^{]*\{[^}]*margin-inline-end[^}]*\}\s*/s',
             '/@layer\s+properties\s*;\s*/',
             '/@layer\s+theme,\s*base,\s*components,\s*utilities\s*;\s*/',
+            '/\*,\s*::before,\s*::after,\s*::backdrop[^{]*\{[^}]*--tw-[^}]*\}\s*/s',
         ];
 
         foreach ($patterns as $pattern) {
@@ -272,7 +288,11 @@ final class GrapesJsPastedComponentNormalizer
                 continue;
             }
 
-            if (self::shouldPreserveManualPageCssRule($selectors)) {
+            if ($body === '' || trim(preg_replace('/\s+/', '', $body) ?? '') === '') {
+                continue;
+            }
+
+            if (self::shouldPreserveManualPageCssRule($selectors, $body)) {
                 $kept[] = $selectors.' {'.$body.'}';
             }
         }
@@ -280,8 +300,12 @@ final class GrapesJsPastedComponentNormalizer
         return trim(implode("\n", $kept));
     }
 
-    private static function shouldPreserveManualPageCssRule(string $selectors): bool
+    private static function shouldPreserveManualPageCssRule(string $selectors, string $body = ''): bool
     {
+        if (trim($body) === '') {
+            return false;
+        }
+
         foreach (array_map('trim', explode(',', $selectors)) as $selector) {
             if ($selector === '') {
                 continue;
@@ -292,7 +316,7 @@ final class GrapesJsPastedComponentNormalizer
             }
 
             if (! str_contains($selector, '.')) {
-                return true;
+                continue;
             }
 
             if (! preg_match_all('/\.((?:\\.|[^\s.#:[>+~,])+)/', $selector, $classMatches)) {
@@ -313,7 +337,7 @@ final class GrapesJsPastedComponentNormalizer
 
     public static function isTailwindUtilityClassName(string $className): bool
     {
-        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|block|hidden|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|gap-|p-|px-|py-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-)/i';
+        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|inline|block|hidden|contents|table|flow-root|list-item|absolute|relative|fixed|sticky|static|container|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|min-h-|max-h-|size-|gap-|p-|px-|py-|pt-|pb-|pl-|pr-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border-opacity|border-|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-|antialiased|subpixel-antialiased|italic|not-italic|visible|invisible|collapse|isolate|box-|break-|hyphens-|list-|columns-|float-|clear-|overscroll-|scroll-|snap-|touch-|will-change-|accent-|caret-|field-sizing-)/i';
 
         return preg_match($utilityPattern, $className) === 1;
     }
@@ -497,7 +521,7 @@ final class GrapesJsPastedComponentNormalizer
             return false;
         }
 
-        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|block|hidden|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|gap-|p-|px-|py-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-)/i';
+        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|inline|block|hidden|contents|table|flow-root|list-item|absolute|relative|fixed|sticky|static|container|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|min-h-|max-h-|size-|gap-|p-|px-|py-|pt-|pb-|pl-|pr-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border-opacity|border-|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-|antialiased|subpixel-antialiased|italic|not-italic|visible|invisible|collapse|isolate|box-|break-|hyphens-|list-|columns-|float-|clear-|overscroll-|scroll-|snap-|touch-|will-change-|accent-|caret-|field-sizing-)/i';
 
         foreach ($matches[2] as $classAttribute) {
             foreach (preg_split('/\s+/', trim($classAttribute)) ?: [] as $className) {

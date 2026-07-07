@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentPageHtml;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentTailwindCompiler;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -370,6 +372,36 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringContainsString('.p-4', $stripped);
     }
 
+    public function test_page_css_includes_tailwind_preflight_detects_tailwind_v4_host_reset(): void
+    {
+        $preflight = 'html, :host { line-height: 1.5; -webkit-text-size-adjust: 100%; tab-size: 4; } .bg-red-200 { background-color: red; }';
+
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::pageCssIncludesTailwindPreflight($preflight));
+    }
+
+    public function test_manual_page_css_from_stored_css_strips_preflight_element_selectors(): void
+    {
+        $storedCss = 'html, :host { line-height: 1.5; -webkit-text-size-adjust: 100%; } hr { height: 0; } #hero { color: red; } .md\\:block {}';
+
+        $manual = GrapesJsPastedComponentNormalizer::manualPageCssFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('#hero', $manual);
+        $this->assertStringNotContainsString('html, :host', $manual);
+        $this->assertStringNotContainsString('hr {', $manual);
+        $this->assertStringNotContainsString('.md\\:block', $manual);
+    }
+
+    public function test_html_for_page_tailwind_compile_keeps_site_header_classes(): void
+    {
+        $html = '<div data-voodbuilder-gjs-site-header><header class="px-6 md:px-8">Nav</header></div><section class="bg-red-200">Body</section>';
+
+        $compiledHtml = GrapesJsComponentPageHtml::htmlForPageTailwindCompile($html);
+
+        $this->assertStringContainsString('data-voodbuilder-gjs-site-header', $compiledHtml);
+        $this->assertStringContainsString('px-6', $compiledHtml);
+        $this->assertStringContainsString('bg-red-200', $compiledHtml);
+    }
+
     public function test_resolve_published_page_css_strips_preflight_without_recompile(): void
     {
         $html = '<section class="p-4">Page</section>';
@@ -379,6 +411,28 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
 
         $this->assertStringNotContainsString('border-radius: 0', $resolved);
         $this->assertStringContainsString('padding', $resolved);
+    }
+
+    public function test_page_css_missing_theme_variables_detects_spacing_without_root(): void
+    {
+        $broken = '.p-4 { padding: calc(var(--spacing) * 4); }';
+        $fixed = ':root { --spacing: 0.25rem; } .p-4 { padding: calc(var(--spacing, 0.25rem) * 4); }';
+
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::pageCssMissingThemeVariables($broken));
+        $this->assertFalse(GrapesJsPastedComponentNormalizer::pageCssMissingThemeVariables($fixed));
+    }
+
+    public function test_page_tailwind_compile_omits_broken_container_rules(): void
+    {
+        if (! GrapesJsComponentTailwindCompiler::isAvailable()) {
+            $this->markTestSkipped('Node Tailwind compiler is not available.');
+        }
+
+        $html = '<div class="container px-5 mx-auto"><div class="p-4 md:w-1/3">Card</div></div>';
+        $css = GrapesJsPastedComponentNormalizer::compilePageTailwindCss($html);
+
+        $this->assertStringNotContainsString('.container {', $css);
+        $this->assertStringContainsString('md:w-1/3', str_replace('\\', '', $css));
     }
 
     public function test_stored_css_is_current_when_checksum_matches(): void

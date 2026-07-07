@@ -20,6 +20,10 @@
     .voodbuilder-brand-mark__glyph {
         animation: voodbuilder-brand-pulse 2.4s ease-in-out infinite;
     }
+
+    .voodbuilder-gjs-container {
+        @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+    }
 }
 
 @keyframes voodbuilder-brand-pulse {

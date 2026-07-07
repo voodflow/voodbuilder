@@ -210,7 +210,7 @@ function registerLayoutSectionType(editor) {
                 return false;
             }
 
-            return element.classList.contains('container');
+            return element.classList.contains('container') || element.classList.contains('voodbuilder-gjs-container');
         },
         extend: 'default',
         model: {

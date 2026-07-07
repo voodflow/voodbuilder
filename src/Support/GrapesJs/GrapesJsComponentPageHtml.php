@@ -27,6 +27,46 @@ final class GrapesJsComponentPageHtml
     }
 
     /**
+     * Page HTML for page-level Tailwind compile/checks (no component instances).
+     */
+    public static function htmlForPageTailwindCompile(string $pageHtml): string
+    {
+        return self::htmlExcludingComponentInstances($pageHtml);
+    }
+
+    /**
+     * Page HTML without embedded site header/footer chrome (styled by theme.css).
+     */
+    public static function htmlExcludingSiteChrome(string $pageHtml): string
+    {
+        if ($pageHtml === '' || ! str_contains($pageHtml, 'data-voodbuilder-gjs-site-header')) {
+            return $pageHtml;
+        }
+
+        $document = self::loadDocument($pageHtml);
+        $xpath = new DOMXPath($document);
+        $nodes = $xpath->query('//*[@data-voodbuilder-gjs-site-header]');
+
+        if ($nodes === false) {
+            return $pageHtml;
+        }
+
+        $toRemove = [];
+
+        foreach ($nodes as $node) {
+            if ($node instanceof DOMElement) {
+                $toRemove[] = $node;
+            }
+        }
+
+        foreach ($toRemove as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        return self::serializeBodyChildren($document);
+    }
+
+    /**
      * Page HTML without component instance subtrees (for page-level Tailwind CSS checks/compile).
      */
     public static function htmlExcludingComponentInstances(string $pageHtml): string
@@ -55,6 +95,11 @@ final class GrapesJsComponentPageHtml
             $node->parentNode?->removeChild($node);
         }
 
+        return self::serializeBodyChildren($document);
+    }
+
+    protected static function serializeBodyChildren(DOMDocument $document): string
+    {
         $body = $document->getElementsByTagName('body')->item(0);
 
         if (! $body instanceof DOMElement) {

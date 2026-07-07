@@ -169,6 +169,12 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
+        .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
+            width: 100%;
+            max-width: var(--width-vp-layout, 90rem);
+            margin-inline: auto;
+        }
+
         body[data-voodbuilder-gjs-device='mobilePortrait'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav],
         body[data-voodbuilder-gjs-device='mobilePortrait'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-chrome],
         body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav],
@@ -199,10 +205,6 @@ final class GrapesJsCanvas
 
         [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown[hidden] {
             display: none !important;
-        }
-
-        [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown:not([hidden]) {
-            display: block !important;
         }
 
         [data-voodbuilder-gjs-site-header] header[role='banner'] .voodbuilder-header-icon-btn,

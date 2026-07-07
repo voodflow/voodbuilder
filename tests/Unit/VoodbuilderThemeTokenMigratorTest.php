@@ -273,4 +273,31 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringNotContainsString('bg-vp-brand-1', $migrated);
         $this->assertStringContainsString('text-blue-500', $migrated);
     }
+
+    public function test_adds_base_width_to_lg_only_flex_columns(): void
+    {
+        $html = '<div class="flex flex-wrap -m-4"><div class="p-4 lg:w-1/3">Card</div></div>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('w-full md:w-1/3', $migrated);
+        $this->assertStringContainsString('lg:w-1/3', $migrated);
+    }
+
+    public function test_migrates_tailwind_container_to_voodbuilder_wrapper(): void
+    {
+        $html = '<section class="voodbuilder-gjs-section"><div class="container px-5 py-24 mx-auto">Content</div></section>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringNotContainsString('class="container', $migrated);
+    }
+
+    public function test_preserves_columns_that_already_have_responsive_widths(): void
+    {
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('p-2 lg:w-1/3 md:w-1/2 w-full');
+
+        $this->assertSame('p-2 lg:w-1/3 md:w-1/2 w-full', $classes);
+    }
 }

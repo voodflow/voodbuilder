@@ -3,14 +3,35 @@
  * Used on the live site and inside the GrapesJS canvas iframe.
  */
 
+const PROFILE_PANEL_TRANSITION_MS = 150;
+
 function closeProfileMenus(scope) {
     scope.querySelectorAll('[data-voodbuilder-profile-menu-panel]').forEach((panel) => {
-        panel.hidden = true;
+        panel.classList.remove('is-open');
+
+        window.setTimeout(() => {
+            if (! panel.classList.contains('is-open')) {
+                panel.hidden = true;
+            }
+        }, PROFILE_PANEL_TRANSITION_MS);
     });
 
     scope.querySelectorAll('[data-voodbuilder-profile-menu-toggle]').forEach((toggle) => {
         toggle.setAttribute('aria-expanded', 'false');
     });
+}
+
+function openProfilePanel(panel, toggle) {
+    panel.hidden = false;
+    panel.classList.remove('is-open');
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            panel.classList.add('is-open');
+        });
+    });
+
+    toggle.setAttribute('aria-expanded', 'true');
 }
 
 export function initProfileMenus(scope = document) {
@@ -32,12 +53,11 @@ export function initProfileMenus(scope = document) {
             event.preventDefault();
             event.stopPropagation();
 
-            const willOpen = panel.hidden;
+            const willOpen = panel.hidden || ! panel.classList.contains('is-open');
             closeProfileMenus(scope);
 
             if (willOpen) {
-                panel.hidden = false;
-                toggle.setAttribute('aria-expanded', 'true');
+                openProfilePanel(panel, toggle);
             }
         });
     });

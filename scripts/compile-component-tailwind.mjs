@@ -63,8 +63,29 @@ function htmlUsesClassDarkVariant(html) {
     return /\bdark:[a-z0-9_\-!/\[\]#%.]+/i.test(html);
 }
 
+const PAGE_THEME_FALLBACKS = {
+    '--spacing': '0.25rem',
+    '--radius-lg': '0.5rem',
+    '--radius-md': '0.375rem',
+    '--default-font-family': 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+};
+
+function rememberThemeVariable(variables, prop, value) {
+    if (! prop.startsWith('--') || prop.startsWith('--color-vp-')) {
+        return;
+    }
+
+    variables.set(prop, value);
+}
+
 function collectThemeVariables(root) {
     const variables = new Map();
+
+    root.walkAtRules('theme', (atRule) => {
+        atRule.walkDecls((decl) => {
+            rememberThemeVariable(variables, decl.prop, decl.value);
+        });
+    });
 
     root.walkAtRules('layer', (atRule) => {
         if (atRule.params.trim() !== 'theme') {
@@ -77,14 +98,61 @@ function collectThemeVariables(root) {
             }
 
             rule.walkDecls((decl) => {
-                if (decl.prop.startsWith('--') && ! decl.prop.startsWith('--color-vp-')) {
-                    variables.set(decl.prop, decl.value);
-                }
+                rememberThemeVariable(variables, decl.prop, decl.value);
             });
         });
     });
 
+    root.walkRules((rule) => {
+        if (! rule.selectors.some((selector) => /:root|:host/.test(selector))) {
+            return;
+        }
+
+        rule.walkDecls((decl) => {
+            rememberThemeVariable(variables, decl.prop, decl.value);
+        });
+    });
+
     return variables;
+}
+
+function prependPageThemeVariables(root, themeVariables) {
+    for (const [prop, value] of Object.entries(PAGE_THEME_FALLBACKS)) {
+        if (! themeVariables.has(prop)) {
+            themeVariables.set(prop, value);
+        }
+    }
+
+    if (themeVariables.size === 0) {
+        return;
+    }
+
+    const declarations = [];
+
+    for (const [prop, value] of themeVariables.entries()) {
+        declarations.push(postcss.decl({ prop, value }));
+    }
+
+    root.prepend(postcss.rule({ selector: ':root', nodes: declarations }));
+}
+
+function rewriteThemeVarFallbacks(root) {
+    root.walkDecls((decl) => {
+        const value = String(decl.value ?? '');
+
+        if (! value.includes('var(--')) {
+            return;
+        }
+
+        let next = value.replace(/var\(--spacing\)/g, 'var(--spacing, 0.25rem)');
+
+        next = next.replace(/var\(--radius-lg\)/g, 'var(--radius-lg, 0.5rem)');
+        next = next.replace(/var\(--radius-md\)/g, 'var(--radius-md, 0.375rem)');
+
+        if (next !== value) {
+            decl.value = next;
+        }
+    });
 }
 
 function stripScopedVpThemeOverrides(root) {
@@ -217,8 +285,170 @@ function stripPagePreflight(root) {
     });
 }
 
+const STRIP_PAGE_DISPLAY_UTILITIES = new Set([
+    'hidden',
+    'block',
+    'flex',
+    'inline-flex',
+    'grid',
+    'inline',
+    'contents',
+    'table',
+    'flow-root',
+]);
+
+function stripChromeConflictingDisplayUtilities(root) {
+    root.walkRules((rule) => {
+        if (rule.parent?.type === 'atrule') {
+            return;
+        }
+
+        if (rule.selectors.length !== 1) {
+            return;
+        }
+
+        const selector = rule.selectors[0].trim();
+        const match = selector.match(/^\.((?:\\.|[^\s:#\[,>+~])+)$/);
+
+        if (! match) {
+            return;
+        }
+
+        const className = match[1].replace(/\\/g, '');
+
+        if (STRIP_PAGE_DISPLAY_UTILITIES.has(className)) {
+            rule.remove();
+        }
+    });
+}
+
+function normalizeMediaRangeSyntax(root) {
+    root.walkAtRules('media', (atRule) => {
+        atRule.params = atRule.params
+            .replace(/\(width\s*>=\s*([^)]+)\)/g, '(min-width: $1)')
+            .replace(/\(width\s*<=\s*([^)]+)\)/g, '(max-width: $1)')
+            .replace(/\(width\s*<\s*([^)]+)\)/g, '(max-width: calc($1 - 0.02px))');
+    });
+}
+
+function stripPropertyAtRules(root) {
+    root.walkAtRules('property', (atRule) => {
+        atRule.remove();
+    });
+}
+
+/**
+ * Page JIT CSS can emit .container @media blocks in descending breakpoint order, so the
+ * smallest max-width always wins. Global theme/section-utilities already define .container.
+ */
+function stripContainerUtilityFromPageCss(root) {
+    const isContainerSelector = (selector) => /^\.container(?:\\!)?$/.test(String(selector ?? '').trim());
+
+    root.walkAtRules('media', (atRule) => {
+        atRule.walkRules((rule) => {
+            if (isContainerSelector(rule.selector)) {
+                rule.remove();
+            }
+        });
+
+        let hasRules = false;
+
+        atRule.walkRules(() => {
+            hasRules = true;
+        });
+
+        if (! hasRules) {
+            atRule.remove();
+        }
+    });
+
+    root.walkRules((rule) => {
+        if (rule.parent?.type === 'atrule' && rule.parent.name === 'media') {
+            return;
+        }
+
+        if (isContainerSelector(rule.selector)) {
+            rule.remove();
+        }
+    });
+}
+
+function removeEmptyRules(root) {
+    root.walkRules((rule) => {
+        let hasDeclarations = false;
+
+        rule.walkDecls(() => {
+            hasDeclarations = true;
+        });
+
+        if (! hasDeclarations) {
+            rule.remove();
+        }
+    });
+}
+
+function flattenNestedMediaQueries(root) {
+    const rulesToProcess = [];
+
+    root.walkRules((rule) => {
+        if (rule.parent?.type === 'atrule' && rule.parent.name === 'media') {
+            return;
+        }
+
+        const nestedMedia = [];
+
+        rule.walkAtRules('media', (atRule) => {
+            nestedMedia.push(atRule);
+        });
+
+        if (nestedMedia.length > 0) {
+            rulesToProcess.push({ rule, nestedMedia });
+        }
+    });
+
+    for (const { rule, nestedMedia } of rulesToProcess) {
+        for (const atRule of nestedMedia) {
+            const declarations = [];
+
+            atRule.walkDecls((decl) => {
+                declarations.push(decl.clone());
+            });
+
+            if (declarations.length === 0) {
+                atRule.remove();
+
+                continue;
+            }
+
+            const flattenedRule = postcss.rule({
+                selector: rule.selector,
+                nodes: declarations,
+            });
+            const outerMedia = postcss.atRule({
+                name: 'media',
+                params: atRule.params,
+                nodes: [flattenedRule],
+            });
+
+            rule.parent?.insertAfter(rule, outerMedia);
+            atRule.remove();
+        }
+
+        let hasDeclarations = false;
+
+        rule.walkDecls(() => {
+            hasDeclarations = true;
+        });
+
+        if (! hasDeclarations) {
+            rule.remove();
+        }
+    }
+}
+
 function optimizePageCss(css) {
     const root = postcss.parse(css);
+    const themeVariables = collectThemeVariables(root);
 
     root.walkAtRules('layer', (atRule) => {
         const layer = atRule.params.trim();
@@ -255,6 +485,14 @@ function optimizePageCss(css) {
     stripPagePreflight(root);
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
+    rewriteThemeVarFallbacks(root);
+    flattenNestedMediaQueries(root);
+    normalizeMediaRangeSyntax(root);
+    stripChromeConflictingDisplayUtilities(root);
+    stripPropertyAtRules(root);
+    stripContainerUtilityFromPageCss(root);
+    removeEmptyRules(root);
+    prependPageThemeVariables(root, themeVariables);
 
     return root.toString();
 }

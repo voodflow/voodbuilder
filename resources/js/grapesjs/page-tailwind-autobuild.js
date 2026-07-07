@@ -17,7 +17,7 @@ function collectPageLevelHtml(editor) {
         keepInlineStyle: true,
     }) ?? '').trim();
 
-    if (raw === '' || ! raw.includes('data-voodbuilder-component')) {
+    if (raw === '') {
         return raw;
     }
 

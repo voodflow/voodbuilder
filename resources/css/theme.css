@@ -200,6 +200,29 @@
         @apply h-5 w-5;
     }
 
+    .voodbuilder-nav-profile-menu__dropdown {
+        transform-origin: top right;
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+    }
+
+    .voodbuilder-nav-profile-menu__dropdown:not(.is-open) {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+    }
+
+    .voodbuilder-nav-profile-menu__dropdown.is-open {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: auto;
+    }
+
+    .voodbuilder-nav-profile-menu__dropdown[hidden] {
+        display: none !important;
+    }
+
     .vp-doc {
         @apply text-base leading-7 text-vp-text-1;
     }

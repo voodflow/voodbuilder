@@ -40,6 +40,22 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply w-full max-w-none;
 }
 
+/*
+ * Embedded site nav (GrapesJS block) keeps horizontal gutters.
+ * vp:px-0 in saved markup is for doc-sidebar layout only and must not zero in-page nav padding.
+ */
+@media (min-width: 48rem) {
+    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+        padding-inline: calc(var(--spacing, 0.25rem) * 8) !important;
+    }
+}
+
+@media (max-width: 47.99rem) {
+    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+        padding-inline: calc(var(--spacing, 0.25rem) * 6) !important;
+    }
+}
+
 /* Root GrapesJS sections are full-bleed; inner copy stays padded via px-* on the block. */
 .VPRichPage--landing > section.voodbuilder-gjs-section {
     @apply mx-0 w-full max-w-none;
@@ -57,8 +73,12 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     margin-inline: calc(50% - 50vw);
 }
 
-.VPRichPage--landing .voodbuilder-gjs-footer > .container:has(> .voodbuilder-gjs-hero, > section.voodbuilder-gjs-hero) {
+.VPRichPage--landing .voodbuilder-gjs-footer > :is(.container, .voodbuilder-gjs-container):has(> .voodbuilder-gjs-hero, > section.voodbuilder-gjs-hero) {
     @apply max-w-none px-0 pt-0;
+}
+
+.VPRichPage--landing .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
+    @apply mx-auto w-full max-w-[var(--width-vp-layout)];
 }
 
 .VPRichPage--landing > .vp-landing-section--bleed {

@@ -1190,6 +1190,7 @@ function mountFrontendEditor() {
 
             if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
                 editor.__voodbuilderApplyPageLiveCss?.(saved.css);
+                editor.setStyle(saved.css);
             } else {
                 editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }

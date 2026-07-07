@@ -53,7 +53,10 @@
             </div>
         @endif
 
-        <div class="px-6 md:px-8 vp:px-0">
+        <div @class([
+            'px-6 md:px-8',
+            'vp:px-0' => $hasDocSidebar,
+        ])>
             <div @class([
                 'voodbuilder-nav__row pointer-events-auto relative flex h-16 w-full items-center gap-3 md:gap-4',
                 'mx-auto max-w-[calc(var(--width-vp-layout)-4rem)]' => $hasDocSidebar,

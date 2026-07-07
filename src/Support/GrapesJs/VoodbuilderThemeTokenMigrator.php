@@ -527,8 +527,80 @@ final class VoodbuilderThemeTokenMigrator
         $tokens = array_map(static fn (string $token): string => self::migrateToken($token), $tokens);
         $tokens = self::migrateLegacyButtonClassesArray($tokens);
         $tokens = self::normalizeBrandBackgroundClasses($tokens);
+        $tokens = self::normalizeLegacyFlexColumnWidths($tokens);
+        $tokens = self::migrateContainerClass($tokens);
 
         return implode(' ', $tokens);
+    }
+
+    /**
+     * Tailblocks catalog columns often use only `lg:w-1/3` (1024px+). Below that breakpoint
+     * flex children have no width and collapse to content. Add `w-full md:w-*` when missing.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function normalizeLegacyFlexColumnWidths(array $tokens): array
+    {
+        $lgWidths = array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => preg_match('/^lg:w-/', $token) === 1,
+        ));
+
+        if ($lgWidths === []) {
+            return $tokens;
+        }
+
+        foreach ($tokens as $token) {
+            if (preg_match('/^w-/', $token) === 1) {
+                return $tokens;
+            }
+
+            if (preg_match('/^(?:sm|md):w-/', $token) === 1) {
+                return $tokens;
+            }
+        }
+
+        $additions = ['w-full'];
+
+        foreach ($lgWidths as $lgWidth) {
+            $fraction = substr($lgWidth, strlen('lg:w-'));
+            $mdWidth = 'md:w-'.$fraction;
+
+            if (! in_array($mdWidth, $tokens, true)) {
+                $additions[] = $mdWidth;
+            }
+        }
+
+        return array_values(array_unique(array_merge($additions, $tokens)));
+    }
+
+    /**
+     * Tailwind `.container` uses viewport breakpoints that break inside the GrapesJS canvas
+     * and in page JIT CSS (media queries emitted in wrong cascade order). Use a stable wrapper.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function migrateContainerClass(array $tokens): array
+    {
+        if (! in_array('container', $tokens, true)) {
+            return $tokens;
+        }
+
+        $tokens = array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => $token !== 'container',
+        ));
+
+        if (! in_array('voodbuilder-gjs-container', $tokens, true)) {
+            array_unshift($tokens, 'voodbuilder-gjs-container');
+        }
+
+        return array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => $token !== 'mx-auto',
+        ));
     }
 
     /**
