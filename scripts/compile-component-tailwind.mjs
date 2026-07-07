@@ -6,7 +6,8 @@
 import { compile } from '@tailwindcss/node';
 import postcss from 'postcss';
 
-const SCOPE = '.voodbuilder-pasted-component';
+const COMPONENT_SCOPE = '.voodbuilder-pasted-component';
+const SCOPE_MODE = process.env.VOODBUILDER_TAILWIND_SCOPE === 'page' ? 'page' : 'component';
 
 const INHERITED_THEME_PROPS = [
     '--color-vp-brand-1',
@@ -186,6 +187,47 @@ function scopeCss(css, scope) {
     return root.toString();
 }
 
+function optimizePageCss(css) {
+    const root = postcss.parse(css);
+
+    root.walkAtRules('layer', (atRule) => {
+        const layer = atRule.params.trim();
+
+        if (layer === 'base' || layer === 'theme') {
+            atRule.remove();
+
+            return;
+        }
+
+        if (layer === 'utilities') {
+            const parent = atRule.parent;
+
+            if (! parent) {
+                return;
+            }
+
+            const nodes = atRule.nodes ?? [];
+
+            if (nodes.length === 0) {
+                atRule.remove();
+
+                return;
+            }
+
+            for (const node of [...nodes]) {
+                parent.insertBefore(atRule, node.clone());
+            }
+
+            atRule.remove();
+        }
+    });
+
+    stripScopedVpThemeOverrides(root);
+    rewriteLegacyPaletteUtilityColors(root);
+
+    return root.toString();
+}
+
 async function readStdin() {
     const chunks = [];
 
@@ -258,8 +300,9 @@ async function main() {
     });
 
     const rawCss = compiled.build(candidates);
-    const scopedCss = scopeCss(rawCss, SCOPE);
-    const css = optimizeComponentCss(scopedCss, SCOPE);
+    const css = SCOPE_MODE === 'page'
+        ? optimizePageCss(rawCss)
+        : optimizeComponentCss(scopeCss(rawCss, COMPONENT_SCOPE), COMPONENT_SCOPE);
 
     process.stdout.write(JSON.stringify({
         success: true,

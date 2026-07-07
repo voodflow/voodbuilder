@@ -381,7 +381,7 @@ final class GrapesJsEditorGate
      * @param  array{html?: string, css?: string, js?: string, project?: mixed}  $payload
      * @return array{html: string, css: string, js: string, project: mixed}
      */
-    public static function normalizePayload(array $payload): array
+    public static function normalizePayload(array $payload, bool $recompilePageCss = false): array
     {
         $html = GrapesJsHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
         $html = GrapesJsDynamicBlockAttributeNormalizer::normalize($html);
@@ -402,9 +402,13 @@ final class GrapesJsEditorGate
             ),
         );
 
+        $resolvedCss = $recompilePageCss
+            ? GrapesJsPastedComponentNormalizer::resolvePublishedPageCssForSave($migratedHtml, $css)
+            : GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($migratedHtml, $css);
+
         return [
             'html' => $migratedHtml,
-            'css' => GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($migratedHtml, $css),
+            'css' => $resolvedCss,
             'js' => GrapesJsJsSanitizer::sanitize($js),
             'project' => is_array($project)
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)

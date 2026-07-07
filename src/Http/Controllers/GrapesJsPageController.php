@@ -36,7 +36,7 @@ class GrapesJsPageController extends Controller
             'css' => $validated['css'] ?? '',
             'js' => $validated['js'] ?? '',
             'project' => null,
-        ]);
+        ], recompilePageCss: true);
 
         $normalized['html'] = app(GrapesJsBindingStorageNormalizer::class)->normalizeHtml($normalized['html']);
 
@@ -59,6 +59,7 @@ class GrapesJsPageController extends Controller
 
         return response()->json([
             'saved' => true,
+            'css' => $normalized['css'],
             'updated_at' => $sitePage->fresh()?->updated_at?->toIso8601String(),
         ]);
     }

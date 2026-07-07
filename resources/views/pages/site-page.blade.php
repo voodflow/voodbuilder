@@ -9,12 +9,6 @@
         voodbuilder-grapesjs-editing
     @endsection
 
-    @push('head')
-        @foreach ($grapesJsConfig['canvasStyles'] ?? [] as $canvasStyleUrl)
-            <link rel="preload" href="{{ $canvasStyleUrl }}" as="style">
-        @endforeach
-    @endpush
-
     @push('scripts-before-livewire')
         <style>
             .voodbuilder-grapesjs-mode .voodbuilder-landing-shell,

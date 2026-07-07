@@ -63,47 +63,8 @@ function brandBackgroundVariableForHex(hex) {
 }
 
 function migrateBrandToken(token) {
-    const match = token.match(/^(bg|text|border|ring|from|to|via)-(indigo|yellow|red|purple|pink|blue|green)-(\d+)$/);
-
-    if (! match) {
-        return null;
-    }
-
-    const utility = match[1];
-    const shade = Number.parseInt(match[3], 10);
-
-    if (utility === 'bg') {
-        if (shade <= 100) {
-            return 'bg-vp-gray-soft';
-        }
-
-        if (shade >= 600) {
-            return 'bg-vp-brand-3';
-        }
-
-        return 'bg-vp-brand-1';
-    }
-
-    if (utility === 'text') {
-        if (shade >= 600) {
-            return 'text-vp-brand-2';
-        }
-
-        return 'text-vp-brand-1';
-    }
-
-    if (utility === 'border') {
-        return 'border-vp-brand-1';
-    }
-
-    if (utility === 'ring') {
-        return 'ring-vp-brand-1/20';
-    }
-
-    if (['from', 'to', 'via'].includes(utility)) {
-        return `${utility}-vp-brand-1`;
-    }
-
+    // Keep explicit Tailwind palette utilities (bg-blue-200, text-indigo-500, …).
+    // Users and the class picker expect those classes to round-trip unchanged.
     return null;
 }
 

@@ -122,6 +122,6 @@ class SitePageGrapesJsTest extends TestCase
 
         $this->assertIsString($css);
         $this->assertStringNotContainsString('background-color: var( }', $css);
-        $this->assertStringContainsString('var(--color-blue-200)', $css);
+        $this->assertStringContainsString('var(--color-blue-200,', $css);
     }
 }

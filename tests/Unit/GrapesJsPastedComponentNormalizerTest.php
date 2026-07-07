@@ -276,7 +276,88 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $corrupted);
 
         $this->assertFalse(GrapesJsPastedComponentNormalizer::storedCssIsCorrupted($resolved));
-        $this->assertStringContainsString('background-color: var(--color-blue-200)', $resolved);
+        $this->assertStringContainsString('var(--color-blue-200,', $resolved);
+    }
+
+    public function test_resolve_published_page_css_adds_palette_fallbacks_when_variables_were_stripped(): void
+    {
+        $html = '<section class="bg-blue-200 p-4">Hi</section>';
+        $storedCss = '.bg-blue-200 { background-color: var(--color-blue-200); } .p-4 { padding: 1rem; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertStringContainsString('var(--color-blue-200,', $resolved);
+        $this->assertStringNotContainsString('background-color: var( }', $resolved);
+    }
+
+    public function test_resolve_published_page_css_recompiles_when_html_adds_new_tailwind_utility(): void
+    {
+        $html = '<section class="bg-blue-200 p-4">Hi</section>';
+        $storedCss = '.p-4 { padding: 1rem; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertStringContainsString('bg-blue-200', $resolved);
+        $this->assertStringContainsString('padding', $resolved);
+    }
+
+    public function test_resolve_published_page_css_ignores_component_instance_utilities(): void
+    {
+        $html = '<section class="p-4">Page</section>'
+            .'<div data-voodbuilder-component="cmp-1"><div class="voodbuilder-pasted-component"><div class="bg-blue-200">Card</div></div></div>';
+        $storedCss = '.p-4 { padding: 1rem; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertStringContainsString('padding', $resolved);
+        $this->assertStringNotContainsString('bg-blue-200', $resolved);
+    }
+
+    public function test_resolve_published_page_css_for_save_always_recompiles_from_html(): void
+    {
+        $html = '<section class="bg-red-200 p-4">Hi</section>';
+        $storedCss = '.bg-blue-200 { background-color: var(--color-blue-200); } .p-4 { padding: 1rem; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $storedCss);
+
+        $this->assertStringContainsString('bg-red-200', $resolved);
+        $this->assertStringNotContainsString('bg-blue-200', $resolved);
+        $this->assertStringContainsString('var(--color-red-200,', $resolved);
+        $this->assertStringNotContainsString('.voodbuilder-pasted-component .bg-red-200', $resolved);
+    }
+
+    public function test_resolve_published_page_css_for_save_keeps_grapes_composer_rules(): void
+    {
+        $html = '<section id="iabc" class="bg-red-200 p-4">Hi</section>';
+        $storedCss = '#iabc { margin-top: 2rem; } .bg-blue-200 { background-color: var(--color-blue-200); }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $storedCss);
+
+        $this->assertStringContainsString('#iabc', $resolved);
+        $this->assertStringContainsString('margin-top', $resolved);
+        $this->assertStringContainsString('bg-red-200', $resolved);
+        $this->assertStringNotContainsString('bg-blue-200', $resolved);
+    }
+
+    public function test_grapes_composer_rules_from_stored_css_extracts_id_selectors_only(): void
+    {
+        $storedCss = '#iabc { color: red; } .bg-blue-200 { background-color: blue; }';
+
+        $manual = GrapesJsPastedComponentNormalizer::grapesComposerRulesFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('#iabc', $manual);
+        $this->assertStringNotContainsString('bg-blue-200', $manual);
+    }
+
+    public function test_manual_page_css_from_stored_css_keeps_custom_classes(): void
+    {
+        $storedCss = '#iabc { margin-top: 2rem; } .updated { color: red; } .bg-blue-200 { background-color: blue; }';
+
+        $manual = GrapesJsPastedComponentNormalizer::manualPageCssFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('#iabc', $manual);
+        $this->assertStringContainsString('.updated', $manual);
+        $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 
     public function test_stored_css_is_current_when_checksum_matches(): void

@@ -10,13 +10,15 @@ use Illuminate\Support\Str;
 
 final class GrapesJsComponentTailwindCompiler
 {
-    public static function compile(string $html): ?string
+    public static function compile(string $html, string $scope = 'component'): ?string
     {
         $html = trim($html);
 
         if ($html === '') {
             return null;
         }
+
+        $scope = $scope === 'page' ? 'page' : 'component';
 
         $scriptPath = self::scriptPath();
 
@@ -34,6 +36,7 @@ final class GrapesJsComponentTailwindCompiler
             ->timeout(60)
             ->env([
                 'VOODBUILDER_APP_ROOT' => base_path(),
+                'VOODBUILDER_TAILWIND_SCOPE' => $scope,
             ])
             ->input($html)
             ->run([$nodeBinary, $scriptPath]);

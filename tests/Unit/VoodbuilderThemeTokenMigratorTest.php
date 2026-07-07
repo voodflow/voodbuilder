@@ -52,13 +52,12 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('color: var(--color-vp-text-1)', $migrated);
     }
 
-    public function test_migrates_brand_and_variant_tokens(): void
+    public function test_preserves_brand_palette_utilities(): void
     {
-        $token = VoodbuilderThemeTokenMigrator::migrateToken('hover:bg-indigo-600');
-
-        $this->assertSame('hover:bg-vp-brand-3', $token);
-        $this->assertSame('text-vp-brand-1', VoodbuilderThemeTokenMigrator::migrateToken('text-indigo-500'));
-        $this->assertSame('bg-vp-gray-soft', VoodbuilderThemeTokenMigrator::migrateToken('bg-indigo-50'));
+        $this->assertSame('hover:bg-indigo-600', VoodbuilderThemeTokenMigrator::migrateToken('hover:bg-indigo-600'));
+        $this->assertSame('text-indigo-500', VoodbuilderThemeTokenMigrator::migrateToken('text-indigo-500'));
+        $this->assertSame('bg-indigo-50', VoodbuilderThemeTokenMigrator::migrateToken('bg-indigo-50'));
+        $this->assertSame('bg-blue-200', VoodbuilderThemeTokenMigrator::migrateToken('bg-blue-200'));
     }
 
     public function test_migrates_legacy_button_class_to_theme_utilities(): void
@@ -152,8 +151,8 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $migrated = VoodbuilderThemeTokenMigrator::migrateProject($project);
         $class = $migrated['pages'][0]['frames'][0]['component']['components'][0]['attributes']['class'];
 
-        $this->assertStringContainsString('bg-vp-brand-1', $class);
-        $this->assertStringNotContainsString('bg-indigo-500', $class);
+        $this->assertStringContainsString('bg-indigo-500', $class);
+        $this->assertStringNotContainsString('bg-vp-brand-1', $class);
         $this->assertSame('text-white', VoodbuilderThemeTokenMigrator::migrateToken('text-white'));
     }
 
@@ -199,19 +198,15 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertNotContains('hover:bg-vp-brand-1', $classes);
     }
 
-    public function test_dedupes_conflicting_hover_brand_classes_from_indigo_migration(): void
+    public function test_preserves_conflicting_hover_palette_classes(): void
     {
         $classes = VoodbuilderThemeTokenMigrator::migrateClassList(
             'inline-flex bg-indigo-500 hover:bg-indigo-600 hover:bg-indigo-500 text-white',
         );
 
-        $hoverClasses = array_values(array_filter(
-            preg_split('/\s+/', $classes) ?: [],
-            static fn (string $token): bool => str_starts_with($token, 'hover:bg-vp-brand'),
-        ));
-
-        $this->assertCount(1, $hoverClasses);
-        $this->assertSame('hover:bg-vp-brand-1', $hoverClasses[0]);
+        $this->assertStringContainsString('bg-indigo-500', $classes);
+        $this->assertStringContainsString('hover:bg-indigo-600', $classes);
+        $this->assertStringContainsString('hover:bg-indigo-500', $classes);
     }
 
     public function test_dedupes_conflicting_hover_brand_classes_after_legacy_button_migration(): void

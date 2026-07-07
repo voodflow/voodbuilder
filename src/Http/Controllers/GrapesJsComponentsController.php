@@ -152,18 +152,30 @@ class GrapesJsComponentsController extends Controller
 
         $validated = $request->validate([
             'html' => ['required', 'string', 'max:200000'],
+            'scope' => ['nullable', 'string', 'in:page,component'],
         ]);
 
-        $normalized = GrapesJsPastedComponentNormalizer::normalize($validated['html']);
-        $tailwindCss = GrapesJsPastedComponentNormalizer::compileTailwindCss($normalized['html']);
+        $scope = ($validated['scope'] ?? 'component') === 'page' ? 'page' : 'component';
+
+        if ($scope === 'page') {
+            $sourceHtml = $validated['html'];
+            $normalizedHtml = $sourceHtml;
+            $tailwindCss = GrapesJsPastedComponentNormalizer::compilePageTailwindCss($sourceHtml);
+        } else {
+            $normalized = GrapesJsPastedComponentNormalizer::normalize($validated['html']);
+            $sourceHtml = $validated['html'];
+            $normalizedHtml = $normalized['html'];
+            $tailwindCss = GrapesJsPastedComponentNormalizer::compileTailwindCss($normalizedHtml);
+        }
+
         $compatibility = GrapesJsImportCompatibilityAnalyzer::analyze(
-            $validated['html'],
-            $normalized['html'],
+            $sourceHtml,
+            $normalizedHtml,
             $tailwindCss,
         );
 
         return response()->json([
-            'html' => $normalized['html'],
+            'html' => $normalizedHtml,
             'css' => $tailwindCss,
             'compiled' => true,
             'compatibility' => $compatibility,

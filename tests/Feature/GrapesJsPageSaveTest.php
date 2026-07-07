@@ -166,7 +166,7 @@ class GrapesJsPageSaveTest extends TestCase
 
         $page->refresh();
 
-        $this->assertStringContainsString('bg-vp-brand-1', $page->builder_payload['html']);
+        $this->assertStringContainsString('bg-indigo-500', $page->builder_payload['html']);
         $this->assertStringContainsString('var(--color-vp-brand-1)', $page->builder_payload['css']);
     }
 

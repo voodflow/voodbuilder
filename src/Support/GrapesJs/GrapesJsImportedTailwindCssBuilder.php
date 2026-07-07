@@ -57,23 +57,35 @@ final class GrapesJsImportedTailwindCssBuilder
 
     public static function build(string $html): string
     {
+        return self::buildWithScope($html, self::SCOPE);
+    }
+
+    public static function buildForPage(string $html): string
+    {
+        return self::buildWithScope($html, null);
+    }
+
+    private static function buildWithScope(string $html, ?string $scope): string
+    {
         $classes = GrapesJsImportedTailwindSupport::extractClassNames($html);
 
         if ($classes === []) {
-            return self::baseStyles();
+            return $scope !== null ? self::baseStyles() : '';
         }
 
         $rules = [];
 
         foreach ($classes as $class) {
-            $rule = self::ruleForClass($class);
+            $rule = self::ruleForClass($class, $scope);
 
             if ($rule !== null) {
                 $rules[$class] = $rule;
             }
         }
 
-        return trim(self::baseStyles()."\n".implode("\n", $rules));
+        $base = $scope !== null ? self::baseStyles()."\n" : '';
+
+        return trim($base.implode("\n", $rules));
     }
 
     public static function baseStyles(): string
@@ -87,7 +99,7 @@ final class GrapesJsImportedTailwindCssBuilder
         ]);
     }
 
-    protected static function ruleForClass(string $class): ?string
+    protected static function ruleForClass(string $class, ?string $scope = self::SCOPE): ?string
     {
         if (preg_match('/^(?:(sm|md|lg|xl|2xl):)?(?:(hover|focus-visible|focus):)?(.+)$/', $class, $matches) !== 1) {
             return null;
@@ -102,7 +114,7 @@ final class GrapesJsImportedTailwindCssBuilder
             return null;
         }
 
-        $selector = self::scopedSelector($class, $variant);
+        $selector = self::scopedSelector($class, $variant, $scope);
 
         $rule = $selector.' { '.$declaration.' }';
 
@@ -270,23 +282,24 @@ final class GrapesJsImportedTailwindCssBuilder
         return $matches[1];
     }
 
-    protected static function scopedSelector(string $class, ?string $variant = null): string
+    protected static function scopedSelector(string $class, ?string $variant = null, ?string $scope = self::SCOPE): string
     {
         $escaped = self::escapeClassSelector($class);
+        $prefix = $scope !== null && $scope !== '' ? $scope.' ' : '';
 
         if ($variant === 'hover') {
-            return self::SCOPE.' .'.$escaped.':hover';
+            return $prefix.'.'.$escaped.':hover';
         }
 
         if ($variant === 'focus') {
-            return self::SCOPE.' .'.$escaped.':focus';
+            return $prefix.'.'.$escaped.':focus';
         }
 
         if ($variant === 'focus-visible') {
-            return self::SCOPE.' .'.$escaped.':focus-visible';
+            return $prefix.'.'.$escaped.':focus-visible';
         }
 
-        return self::SCOPE.' .'.$escaped;
+        return $prefix.'.'.$escaped;
     }
 
     protected static function escapeClassSelector(string $class): string

@@ -150,7 +150,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
                 headers: editorApiHeaders(csrf, { 'Content-Type': 'application/json' }),
                 credentials: 'same-origin',
                 signal: controller.signal,
-                body: JSON.stringify({ html }),
+                body: JSON.stringify({ html, scope: 'component' }),
             });
 
             if (! response.ok || currentRequest !== requestId) {

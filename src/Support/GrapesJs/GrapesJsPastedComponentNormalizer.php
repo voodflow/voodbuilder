@@ -53,11 +53,23 @@ final class GrapesJsPastedComponentNormalizer
 
     public static function compileTailwindCss(string $html): string
     {
-        $compiled = GrapesJsComponentTailwindCompiler::compile($html);
+        return self::compileTailwindCssForScope($html, 'component');
+    }
+
+    public static function compilePageTailwindCss(string $html): string
+    {
+        return self::compileTailwindCssForScope($html, 'page');
+    }
+
+    private static function compileTailwindCssForScope(string $html, string $scope): string
+    {
+        $compiled = GrapesJsComponentTailwindCompiler::compile($html, $scope);
 
         if ($compiled === null) {
-            $compiled = GrapesJsImportedTailwindCssBuilder::build($html);
-        } else {
+            $compiled = $scope === 'page'
+                ? GrapesJsImportedTailwindCssBuilder::buildForPage($html)
+                : GrapesJsImportedTailwindCssBuilder::build($html);
+        } elseif ($scope === 'component') {
             $base = GrapesJsImportedTailwindCssBuilder::baseStyles();
             $compiled = $base !== '' ? trim($base."\n\n".$compiled) : $compiled;
         }
@@ -130,30 +142,152 @@ final class GrapesJsPastedComponentNormalizer
     public static function resolvePublishedPageCss(string $html, ?string $storedCss): string
     {
         $storedCss = filled($storedCss) ? trim((string) $storedCss) : '';
+        $pageHtml = GrapesJsComponentPageHtml::htmlExcludingComponentInstances($html);
+        $needsRecompile = $storedCss === ''
+            || self::storedCssIsCorrupted($storedCss)
+            || ($pageHtml !== '' && self::htmlHasTailwindUtilitiesMissingFromCss($pageHtml, $storedCss));
 
-        if ($storedCss !== '' && ! self::storedCssIsCorrupted($storedCss)) {
+        if (! $needsRecompile) {
             return GrapesJsCssSanitizer::sanitize(
-                VoodbuilderThemeTokenMigrator::migrateCss($storedCss),
+                VoodbuilderThemeTokenMigrator::migratePublishedPageCss($storedCss),
             );
         }
 
-        if ($html === '') {
-            return $storedCss !== ''
-                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migrateCss($storedCss))
+        return self::compileAndMergePublishedPageCss(
+            $pageHtml,
+            self::manualPageCssFromStoredCss($storedCss),
+        );
+    }
+
+    /**
+     * Save path: always recompile Tailwind from current page HTML and keep only GrapesJS
+     * composer / custom rules from the submitted CSS — never stale utility bundles from getCss().
+     */
+    public static function resolvePublishedPageCssForSave(string $html, ?string $storedCss): string
+    {
+        $pageHtml = GrapesJsComponentPageHtml::htmlExcludingComponentInstances($html);
+
+        return self::compileAndMergePublishedPageCss(
+            $pageHtml,
+            self::manualPageCssFromStoredCss($storedCss),
+        );
+    }
+
+    private static function compileAndMergePublishedPageCss(string $pageHtml, ?string $manualCss): string
+    {
+        $manualCss = filled($manualCss) ? trim((string) $manualCss) : '';
+
+        if ($pageHtml === '') {
+            return $manualCss !== ''
+                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migratePublishedPageCss($manualCss))
                 : '';
         }
 
-        $compiled = self::compileTailwindCss($html);
+        $compiled = self::compilePageTailwindCss($pageHtml);
 
         if ($compiled === '') {
-            return $storedCss !== ''
-                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migrateCss($storedCss))
+            return $manualCss !== ''
+                ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migratePublishedPageCss($manualCss))
                 : '';
         }
 
+        $merged = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
+
         return GrapesJsCssSanitizer::sanitize(
-            VoodbuilderThemeTokenMigrator::migrateCss($compiled),
+            VoodbuilderThemeTokenMigrator::migratePublishedPageCss((string) $merged),
         );
+    }
+
+    /**
+     * Non-Tailwind rules from GrapesJS getCss(): #id composer styles and custom class rules.
+     * Strips utility bundles and @media blocks (regenerated on compile).
+     */
+    public static function manualPageCssFromStoredCss(?string $storedCss): string
+    {
+        $storedCss = trim((string) ($storedCss ?? ''));
+
+        if ($storedCss === '') {
+            return '';
+        }
+
+        $withoutMedia = preg_replace('/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}/s', '', $storedCss) ?? $storedCss;
+
+        if (! preg_match_all('/(?:^|[\n}])([^{}\n@]+)\{([^{}]*)\}/s', $withoutMedia, $matches, PREG_SET_ORDER)) {
+            return self::grapesComposerRulesFromStoredCss($storedCss);
+        }
+
+        $kept = [];
+
+        foreach ($matches as $match) {
+            $selectors = trim($match[1]);
+            $body = trim($match[2]);
+
+            if ($selectors === '' || str_contains($selectors, '.voodbuilder-pasted-component')) {
+                continue;
+            }
+
+            if (self::shouldPreserveManualPageCssRule($selectors)) {
+                $kept[] = $selectors.' {'.$body.'}';
+            }
+        }
+
+        return trim(implode("\n", $kept));
+    }
+
+    private static function shouldPreserveManualPageCssRule(string $selectors): bool
+    {
+        foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+            if ($selector === '') {
+                continue;
+            }
+
+            if (str_contains($selector, '#')) {
+                return true;
+            }
+
+            if (! str_contains($selector, '.')) {
+                return true;
+            }
+
+            if (! preg_match_all('/\.((?:\\.|[^\s.#:[>+~,])+)/', $selector, $classMatches)) {
+                continue;
+            }
+
+            foreach ($classMatches[1] as $className) {
+                $className = str_replace('\\', '', ltrim($className, '!'));
+
+                if (! self::isTailwindUtilityClassName($className)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static function isTailwindUtilityClassName(string $className): bool
+    {
+        $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|block|hidden|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|gap-|p-|px-|py-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-)/i';
+
+        return preg_match($utilityPattern, $className) === 1;
+    }
+
+    /**
+     * GrapesJS Style Manager rules (#element-id) — excludes Tailwind utility bundles from getCss().
+     */
+    public static function grapesComposerRulesFromStoredCss(?string $storedCss): string
+    {
+        $storedCss = trim((string) ($storedCss ?? ''));
+
+        if ($storedCss === '') {
+            return '';
+        }
+
+        if (! preg_match_all('/#[^{]+\{[^{}]*\}/s', $storedCss, $matches)) {
+            return '';
+        }
+
+        return trim(implode("\n", $matches[0]));
     }
 
     /**

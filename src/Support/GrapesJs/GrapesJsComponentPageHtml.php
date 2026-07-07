@@ -26,6 +26,52 @@ final class GrapesJsComponentPageHtml
         return array_values(array_unique(array_filter($matches[2])));
     }
 
+    /**
+     * Page HTML without component instance subtrees (for page-level Tailwind CSS checks/compile).
+     */
+    public static function htmlExcludingComponentInstances(string $pageHtml): string
+    {
+        if ($pageHtml === '' || ! str_contains($pageHtml, 'data-voodbuilder-component')) {
+            return $pageHtml;
+        }
+
+        $document = self::loadDocument($pageHtml);
+        $xpath = new DOMXPath($document);
+        $nodes = $xpath->query('//*[@data-voodbuilder-component]');
+
+        if ($nodes === false) {
+            return $pageHtml;
+        }
+
+        $toRemove = [];
+
+        foreach ($nodes as $node) {
+            if ($node instanceof DOMElement) {
+                $toRemove[] = $node;
+            }
+        }
+
+        foreach ($toRemove as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if (! $body instanceof DOMElement) {
+            return '';
+        }
+
+        $html = '';
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $html .= $document->saveHTML($child);
+            }
+        }
+
+        return trim($html);
+    }
+
     public static function instanceInnerHtml(string $pageHtml, string $componentId): ?string
     {
         if ($pageHtml === '' || $componentId === '') {

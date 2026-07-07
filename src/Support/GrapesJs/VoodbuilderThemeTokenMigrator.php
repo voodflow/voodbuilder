@@ -191,6 +191,19 @@ final class VoodbuilderThemeTokenMigrator
     }
 
     /**
+     * Page-level Tailwind CSS: migrate legacy tokens, then keep palette var() references usable
+     * when --color-blue-* declarations were stripped from the compiled bundle.
+     */
+    public static function migratePublishedPageCss(string $css): string
+    {
+        if ($css === '') {
+            return $css;
+        }
+
+        return self::ensurePaletteVarFallbacks(self::migrateCss($css));
+    }
+
+    /**
      * Component Tailwind CSS keeps palette utilities (bg-blue-200, etc.) on instance HTML.
      * Do not strip --color-blue-* declarations or bare var() references needed by those utilities.
      */
@@ -288,6 +301,97 @@ final class VoodbuilderThemeTokenMigrator
             800 => 'oklch(44.8% 0.119 151.328)',
             900 => 'oklch(39.3% 0.095 152.535)',
             950 => 'oklch(26.6% 0.065 152.934)',
+        ],
+        'red' => [
+            50 => 'oklch(97.1% 0.013 17.38)',
+            100 => 'oklch(93.6% 0.032 17.717)',
+            200 => 'oklch(88.5% 0.062 18.334)',
+            300 => 'oklch(80.8% 0.114 19.571)',
+            400 => 'oklch(70.4% 0.191 22.216)',
+            500 => 'oklch(63.7% 0.237 25.331)',
+            600 => 'oklch(57.7% 0.245 27.325)',
+            700 => 'oklch(50.5% 0.213 27.518)',
+            800 => 'oklch(44.4% 0.177 26.899)',
+            900 => 'oklch(39.6% 0.141 25.723)',
+            950 => 'oklch(25.8% 0.092 26.042)',
+        ],
+        'yellow' => [
+            50 => 'oklch(98.7% 0.026 102.212)',
+            100 => 'oklch(97.3% 0.071 103.193)',
+            200 => 'oklch(94.5% 0.129 101.54)',
+            300 => 'oklch(90.5% 0.182 98.111)',
+            400 => 'oklch(85.2% 0.199 91.936)',
+            500 => 'oklch(79.5% 0.184 86.047)',
+            600 => 'oklch(68.1% 0.162 75.834)',
+            700 => 'oklch(55.4% 0.135 66.442)',
+            800 => 'oklch(47.6% 0.114 61.907)',
+            900 => 'oklch(42.1% 0.095 57.708)',
+            950 => 'oklch(28.6% 0.066 53.813)',
+        ],
+        'purple' => [
+            50 => 'oklch(97.7% 0.014 308.299)',
+            100 => 'oklch(94.6% 0.033 307.174)',
+            200 => 'oklch(90.2% 0.063 306.703)',
+            300 => 'oklch(82.7% 0.119 306.383)',
+            400 => 'oklch(71.4% 0.203 305.504)',
+            500 => 'oklch(62.7% 0.265 303.9)',
+            600 => 'oklch(55.8% 0.288 302.321)',
+            700 => 'oklch(49.6% 0.265 301.924)',
+            800 => 'oklch(43.8% 0.218 303.724)',
+            900 => 'oklch(38.1% 0.176 304.987)',
+            950 => 'oklch(29.1% 0.149 302.717)',
+        ],
+        'pink' => [
+            50 => 'oklch(97.1% 0.014 343.198)',
+            100 => 'oklch(94.8% 0.028 342.258)',
+            200 => 'oklch(89.9% 0.061 343.231)',
+            300 => 'oklch(82.3% 0.12 346.018)',
+            400 => 'oklch(71.8% 0.202 349.761)',
+            500 => 'oklch(65.6% 0.241 354.308)',
+            600 => 'oklch(59.2% 0.249 0.584)',
+            700 => 'oklch(52.5% 0.223 3.958)',
+            800 => 'oklch(45.9% 0.187 3.815)',
+            900 => 'oklch(40.8% 0.153 2.432)',
+            950 => 'oklch(28.4% 0.109 3.907)',
+        ],
+        'gray' => [
+            50 => 'oklch(98.5% 0.002 247.839)',
+            100 => 'oklch(96.7% 0.003 264.542)',
+            200 => 'oklch(92.8% 0.006 264.531)',
+            300 => 'oklch(87.2% 0.01 258.338)',
+            400 => 'oklch(70.7% 0.022 261.325)',
+            500 => 'oklch(55.1% 0.027 264.364)',
+            600 => 'oklch(44.6% 0.03 256.802)',
+            700 => 'oklch(37.3% 0.034 259.733)',
+            800 => 'oklch(27.8% 0.033 256.848)',
+            900 => 'oklch(21% 0.034 264.665)',
+            950 => 'oklch(13% 0.028 261.692)',
+        ],
+        'slate' => [
+            50 => 'oklch(98.4% 0.003 247.858)',
+            100 => 'oklch(96.8% 0.007 247.896)',
+            200 => 'oklch(92.9% 0.013 255.508)',
+            300 => 'oklch(86.9% 0.022 252.894)',
+            400 => 'oklch(70.4% 0.04 256.788)',
+            500 => 'oklch(55.4% 0.046 257.417)',
+            600 => 'oklch(44.6% 0.043 257.281)',
+            700 => 'oklch(37.2% 0.044 257.287)',
+            800 => 'oklch(27.9% 0.041 260.031)',
+            900 => 'oklch(20.8% 0.042 265.755)',
+            950 => 'oklch(12.9% 0.042 264.695)',
+        ],
+        'zinc' => [
+            50 => 'oklch(98.5% 0 0)',
+            100 => 'oklch(96.7% 0.001 286.375)',
+            200 => 'oklch(92% 0.004 286.32)',
+            300 => 'oklch(87.1% 0.006 286.286)',
+            400 => 'oklch(70.5% 0.015 286.067)',
+            500 => 'oklch(55.2% 0.016 285.938)',
+            600 => 'oklch(44.2% 0.017 285.786)',
+            700 => 'oklch(37% 0.013 285.805)',
+            800 => 'oklch(27.4% 0.006 286.033)',
+            900 => 'oklch(21% 0.006 285.885)',
+            950 => 'oklch(14.1% 0.005 285.823)',
         ],
     ];
 
@@ -549,49 +653,7 @@ final class VoodbuilderThemeTokenMigrator
 
     private static function migrateBrandToken(string $token): ?string
     {
-        if (preg_match('/^(bg|text|border|ring|outline|from|to|via)-('.implode('|', self::BRAND_COLORS).')-(\d+)$/', $token, $matches) !== 1) {
-            return null;
-        }
-
-        $utility = $matches[1];
-        $shade = (int) $matches[3];
-
-        if ($utility === 'bg') {
-            if ($shade <= 100) {
-                return 'bg-vp-gray-soft';
-            }
-
-            if ($shade >= 600) {
-                return 'bg-vp-brand-3';
-            }
-
-            return 'bg-vp-brand-1';
-        }
-
-        if ($utility === 'text') {
-            if ($shade >= 600) {
-                return 'text-vp-brand-2';
-            }
-
-            return 'text-vp-brand-1';
-        }
-
-        if ($utility === 'border') {
-            return 'border-vp-brand-1';
-        }
-
-        if ($utility === 'ring') {
-            return 'ring-vp-brand-1/20';
-        }
-
-        if ($utility === 'outline') {
-            return $shade >= 600 ? 'outline-vp-brand-2' : 'outline-vp-brand-1';
-        }
-
-        if (in_array($utility, ['from', 'to', 'via'], true)) {
-            return $utility.'-vp-brand-1';
-        }
-
+        // Keep explicit Tailwind palette utilities (bg-blue-200, text-indigo-500, …).
         return null;
     }
 

@@ -55,6 +55,7 @@ import {
     syncComponentInstancesForExport,
 } from './components-ui.js';
 import { registerComponentTailwindAutobuild } from './component-tailwind-autobuild.js';
+import { registerPageTailwindAutobuild } from './page-tailwind-autobuild.js';
 import { registerGlobalClassesUi } from './global-classes-ui.js';
 import { registerRevisionsUi } from './revisions-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from './tailwind-visual-style.js';
@@ -630,6 +631,11 @@ export function initVpressGrapesJs(container, options = {}) {
             componentsUrl: options.componentsUrl,
             csrf: options.csrf,
         });
+
+        registerPageTailwindAutobuild(editor, {
+            componentsUrl: options.componentsUrl,
+            csrf: options.csrf,
+        });
     }
 
     configureEditorChrome(editor, {
@@ -773,8 +779,13 @@ export function initVpressGrapesJs(container, options = {}) {
         }
     });
 
+    let pruneEmptySectionsTimer = null;
+
     editor.on('component:add', () => {
-        window.requestAnimationFrame(() => pruneEmptySections(editor));
+        window.clearTimeout(pruneEmptySectionsTimer);
+        pruneEmptySectionsTimer = window.setTimeout(() => {
+            pruneEmptySections(editor);
+        }, 180);
     });
 
     if (typeof options.onUpdate === 'function') {
@@ -829,7 +840,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         if (! response.ok) {
             const body = await response.text().catch(() => '');
-            console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, response.status, body);
+            const preview = body.length > 240 ? `${body.slice(0, 240)}…` : body;
+            console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId, response.status, preview);
 
             return;
         }
@@ -1172,6 +1184,14 @@ function mountFrontendEditor() {
                 const body = await response.text().catch(() => '');
                 console.error('VoodBuilder page save failed', response.status, saveUrl, body);
                 throw new Error(body || `Save failed (${response.status})`);
+            }
+
+            const saved = await response.json().catch(() => ({}));
+
+            if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
+                editor.__voodbuilderApplyPageLiveCss?.(saved.css);
+            } else {
+                editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }
 
             if (savedIndicator) {
