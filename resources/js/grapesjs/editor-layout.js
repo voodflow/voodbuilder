@@ -294,7 +294,7 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
     }
 }
 
-const INSPECTOR_WIDE_TABS = new Set(['style', 'conditions', 'dynamic']);
+const INSPECTOR_WIDE_TABS = new Set(['style', 'dynamic']);
 
 function setInspectorSidebarWidth(inspectorAside, tabId) {
     if (! inspectorAside) {

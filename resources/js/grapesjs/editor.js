@@ -78,6 +78,7 @@ import { registerCanvasContextMenu } from './canvas-context-menu.js';
 import { bootCanvasSiteChrome, registerCanvasSiteChrome } from './canvas-site-chrome.js';
 import { registerLayersContextMenu } from './layers-context-menu.js';
 import { registerLayersDrag } from './layers-drag.js';
+import { registerLayersChromeFilter } from './layers-chrome-filter.js';
 import { registerTailwindClassSuggestions } from './tailwind-class-suggestions.js';
 import { syncAllLayerDisplayNames } from './layer-display-name.js';
 import { registerBlocksContextMenu } from './blocks-context-menu.js';
@@ -694,6 +695,7 @@ export function initVpressGrapesJs(container, options = {}) {
 
         try {
             if (shell?.mounts?.layers) {
+                registerLayersChromeFilter(editor);
                 registerLayersContextMenu(editor, { mount: shell.mounts.layers, labels });
                 registerLayersDrag(editor, { mount: shell.mounts.layers });
             }

@@ -171,37 +171,317 @@
     border-bottom: none;
 }
 
-/* Compact inputs in style manager */
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox),
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field-integer,
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field-select,
-.voodbuilder-gjs-root .gjs-sm-property .gjs-select {
-    min-height: 1.875rem;
-    padding: 0 0.5rem;
-    border-radius: 0.375rem;
-    border-color: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 45%, var(--color-vp-bg-elv, #fff));
+/* ── Unified control surface (single border, no nested boxes) ── */
+.voodbuilder-gjs-shell__right {
+    --vb-inspector-control-h: 2rem;
+    --vb-inspector-control-radius: 0.375rem;
+    --vb-inspector-control-border: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 92%, transparent);
+    --vb-inspector-control-bg: var(--color-vp-bg-elv, #fff);
+    --vb-inspector-control-bg-muted: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 50%, var(--color-vp-bg-elv, #fff));
 }
 
-.dark .voodbuilder-gjs-root .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox),
-.dark .voodbuilder-gjs-root .gjs-sm-property .gjs-field-integer,
-.dark .voodbuilder-gjs-root .gjs-sm-property .gjs-field-select,
-.dark .voodbuilder-gjs-root .gjs-sm-property .gjs-select {
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #1e293b) 55%, var(--color-vp-bg-elv, #0f172a));
+.dark .voodbuilder-gjs-shell__right {
+    --vb-inspector-control-bg: var(--color-vp-bg-elv, #1e293b);
+    --vb-inspector-control-bg-muted: color-mix(in srgb, var(--color-vp-bg-alt, #0f172a) 65%, var(--color-vp-bg-elv, #1e293b));
 }
 
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) {
-    padding: 0 0.375rem;
-    min-height: 1.875rem;
+/* Sectors must not clip open selects */
+.voodbuilder-gjs-root .gjs-sm-sector,
+.voodbuilder-gjs-root .gjs-sm-sector.gjs-sm-open,
+.voodbuilder-gjs-styles-mount,
+.voodbuilder-gjs-inspector-sector,
+.voodbuilder-gjs-inspector-sector__body {
+    overflow: visible;
+}
+
+/* Parent field = layout only */
+.voodbuilder-gjs-root .gjs-sm-property .gjs-field,
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field {
+    min-height: var(--vb-inspector-control-h);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
+/* Select wrap = the visible control */
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap {
+    position: relative;
     display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: var(--vb-inspector-control-h);
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap:focus-within,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap.is-open {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, var(--color-vp-divider, #e2e8f0));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-trigger {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: calc(var(--vb-inspector-control-h) - 2px);
+    padding: 0 1.75rem 0 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-chevron {
+    right: 0.5rem;
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select--native,
+.voodbuilder-gjs-shell__right .gjs-sm-property select.voodbuilder-gjs-select--native,
+.voodbuilder-gjs-shell__right .gjs-trt-trait select.voodbuilder-gjs-select--native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sel-arrow {
+    display: none !important;
+}
+
+/* Text / number inputs */
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-integer,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(:has(.voodbuilder-gjs-select-wrap)),
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):not(:has(.voodbuilder-gjs-select-wrap)) {
+    display: flex;
+    align-items: center;
+    min-height: var(--vb-inspector-control-h);
+    padding: 0 0.625rem;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg);
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-integer input,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field input,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field textarea,
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field input,
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-shell__right .gjs-field:focus-within {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, var(--color-vp-divider, #e2e8f0));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+/* Color fields */
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-color {
+    min-height: var(--vb-inspector-control-h);
+    padding: 0 0.375rem;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg);
+}
+
+/* Remove duplicate borders from legacy frontend rules */
+.voodbuilder-gjs-shell__right .gjs-root .gjs-field:has(.voodbuilder-gjs-select-wrap),
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-select,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property select:not(.voodbuilder-gjs-select--native),
+.voodbuilder-gjs-shell__right .gjs-trt-trait select:not(.voodbuilder-gjs-select--native) {
+    width: 100%;
+    min-height: var(--vb-inspector-control-h);
+    padding: 0 1.75rem 0 0.625rem;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg);
+    font-size: 0.8125rem;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Checkbox rows — left aligned, no wrap */
+.voodbuilder-gjs-form-field--checkbox {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0.5rem 0;
+}
+
+.voodbuilder-gjs-form-field--checkbox .voodbuilder-gjs-checkbox-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.voodbuilder-gjs-form-field--checkbox .voodbuilder-gjs-checkbox {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.voodbuilder-gjs-form-label--checkbox {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-1, #0f172a);
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-label {
+    flex: 1 1 auto;
+    order: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-field-checkbox {
+    order: 1;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+/* Custom form selects (navbar, footer settings) */
+.voodbuilder-gjs-form-field:not(.voodbuilder-gjs-form-field--checkbox) {
     align-items: center;
 }
 
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger {
-    min-height: 1.625rem;
-    padding: 0 1.125rem 0 0;
+.voodbuilder-gjs-form-field:not(.voodbuilder-gjs-form-field--checkbox) .voodbuilder-gjs-select-wrap {
+    flex: 1 1 52%;
+}
+
+/* ── Conditions — same controls as Content/Style ── */
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-card {
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: 0.5rem;
+    background: var(--vb-inspector-control-bg-muted);
+    overflow: visible;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-card__header {
+    padding: 0.4375rem 0.625rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 60%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 70%, transparent);
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem 0.625rem;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item {
+    align-items: stretch;
+    gap: 0.375rem;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__fields {
+    gap: 0.375rem;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__fields > .voodbuilder-gjs-select-wrap,
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__fields > select.voodbuilder-gjs-select,
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__value .voodbuilder-gjs-input,
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__value select {
+    width: 100%;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-condition-item__meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-segmented {
+    display: flex;
+    gap: 0.125rem;
+    padding: 0.15rem;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg-muted);
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-segmented__btn {
+    flex: 1 1 0;
+    min-height: 1.75rem;
+    border-radius: 0.3125rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-segmented__btn.is-active {
+    background: var(--vb-inspector-control-bg);
+    color: var(--color-vp-brand-1, #6366f1);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-btn {
+    min-height: var(--vb-inspector-control-h);
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg);
     font-size: 0.8125rem;
-    line-height: 1.35;
+}
+
+/* ── Dynamic panel — match control height ── */
+.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__label {
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__select,
+.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__input {
+    min-height: var(--vb-inspector-control-h);
 }
 
 /* Radio segmented controls */
@@ -250,7 +530,7 @@
     flex: 0 0 auto;
     width: 1rem;
     height: 1rem;
-    margin-inline-start: 38%;
+    margin: 0;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) {
@@ -260,6 +540,9 @@
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-label {
     flex: 1 1 auto;
     order: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-field-checkbox {
@@ -268,24 +551,7 @@
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox) {
-    min-height: 1.875rem;
-    padding: 0 0.5rem;
-    border-radius: 0.375rem;
-    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 45%, var(--color-vp-bg-elv, #fff));
-}
-
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):has(select),
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):has(.voodbuilder-gjs-select-wrap) {
-    padding: 0 0.375rem;
-    display: flex;
-    align-items: center;
-}
-
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger {
-    min-height: 1.625rem;
-    padding: 0 1.125rem 0 0;
-    font-size: 0.8125rem;
+    min-height: var(--vb-inspector-control-h, 2rem);
 }
 
 /* Custom form sections (site chrome, component props) */
@@ -331,26 +597,24 @@
     flex-wrap: nowrap;
 }
 
-.voodbuilder-gjs-form-field--checkbox .voodbuilder-gjs-checkbox-row {
-    width: 100%;
-    padding-left: 38%;
+/* (checkbox layout defined in unified control section above) */
+
+/* (conditions controls unified above) */
+
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap),
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) {
+    display: block;
+    padding: 0 !important;
+    min-height: 0;
 }
 
-/* ── Dynamic + Conditions (wide panel) ── */
-.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__label,
-.voodbuilder-gjs-conditions-panel .voodbuilder-gjs-conditions__group {
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 0.625rem;
-    border-radius: 0.4375rem;
+.voodbuilder-gjs-shell__right .gjs-root .gjs-field:has(.voodbuilder-gjs-select-wrap) {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
-.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__select,
-.voodbuilder-gjs-dynamic-panel .voodbuilder-gjs-bindings-modal__input,
-.voodbuilder-gjs-conditions-panel select,
-.voodbuilder-gjs-conditions-panel input[type='text'],
-.voodbuilder-gjs-conditions-panel input[type='number'] {
-    min-height: 1.875rem;
-    padding: 0.375rem 0.5rem;
-    font-size: 0.8125rem;
-    line-height: 1.35;
+.voodbuilder-gjs-shell__right .gjs-root .gjs-field:has(.voodbuilder-gjs-select-wrap):focus-within {
+    border: none !important;
+    box-shadow: none !important;
 }

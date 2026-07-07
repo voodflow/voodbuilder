@@ -7,6 +7,7 @@
  */
 
 import { encodeVpressConfig } from './voodbuilder-dynamic-config.js';
+import { enhanceInspectorSelects } from './inspector-select-ui.js';
 
 const ATTR = 'data-voodbuilder-conditions';
 
@@ -379,7 +380,7 @@ export function registerConditionsUi(editor, options = {}) {
     const workingTarget = () => resolveTarget(editor, lastTarget);
 
     mount.innerHTML = `
-        <div class="voodbuilder-gjs-conditions">
+        <div class="voodbuilder-gjs-conditions voodbuilder-gjs-conditions-panel">
             <p class="voodbuilder-gjs-panel-subtitle">${labels.conditionsTitle ?? 'Visibility'}</p>
             <p class="voodbuilder-gjs-hint">${labels.conditionsHint ?? ''}</p>
             <div class="voodbuilder-gjs-conditions-match" hidden>
@@ -467,6 +468,10 @@ export function registerConditionsUi(editor, options = {}) {
                 component,
                 applyDefinition,
             ));
+        });
+
+        window.requestAnimationFrame(() => {
+            enhanceInspectorSelects(mount);
         });
     };
 
@@ -616,7 +621,7 @@ function buildConditionRow(setIndex, condIndex, condition, options, labels, rend
     fields.className = 'voodbuilder-gjs-condition-item__fields';
 
     const keySelect = document.createElement('select');
-    keySelect.className = 'voodbuilder-gjs-input voodbuilder-gjs-input--inline';
+    keySelect.className = 'voodbuilder-gjs-select';
     keySelect.setAttribute('aria-label', labels.conditionsFieldKey ?? 'Condition');
 
     for (const opt of options) {
@@ -630,7 +635,7 @@ function buildConditionRow(setIndex, condIndex, condition, options, labels, rend
     const compares = comparesForKey(condition.key, options);
 
     const compareSelect = document.createElement('select');
-    compareSelect.className = 'voodbuilder-gjs-input voodbuilder-gjs-input--inline';
+    compareSelect.className = 'voodbuilder-gjs-select';
     compareSelect.setAttribute('aria-label', labels.conditionsFieldCompare ?? 'Operator');
 
     const refreshCompareOptions = (key, selected) => {
