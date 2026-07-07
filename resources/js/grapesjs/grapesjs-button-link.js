@@ -403,12 +403,37 @@ export function configureLinkableButtons(editor) {
         scanLinkableButtons(editor);
     });
 
-    editor.on('component:add', (component) => {
-        window.requestAnimationFrame(() => {
-            upgradeLinkableButton(component, editor);
+    const pendingLinkableRoots = new Set();
+    let linkableScanFrame = null;
 
-            component.find?.('button, a[data-voodbuilder-cta]').forEach((node) => upgradeLinkableButton(node, editor));
-        });
+    const flushLinkableScan = () => {
+        linkableScanFrame = null;
+
+        const visit = (node) => {
+            if (isLinkableCtaComponent(node)) {
+                upgradeLinkableButton(node, editor);
+            }
+
+            node.components?.().forEach((child) => visit(child));
+        };
+
+        for (const root of pendingLinkableRoots) {
+            visit(root);
+        }
+
+        pendingLinkableRoots.clear();
+    };
+
+    editor.on('component:add', (component) => {
+        if (! component) {
+            return;
+        }
+
+        pendingLinkableRoots.add(component);
+
+        if (linkableScanFrame == null) {
+            linkableScanFrame = window.requestAnimationFrame(flushLinkableScan);
+        }
     });
 
     editor.on('component:selected', (component) => {

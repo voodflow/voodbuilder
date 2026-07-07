@@ -4,6 +4,7 @@
 
 import { syncLayerDisplayName } from './layer-display-name.js';
 import { isComponentBlockId } from './component-block-utils.js';
+import { safeFindComponents } from './tailwind-visual-style.js';
 
 function findSectionRoot(component) {
     let current = component;
@@ -87,7 +88,7 @@ function migrateLegacySectionBlocks(editor) {
         return;
     }
 
-    wrapper.find('section').forEach((section) => {
+    safeFindComponents(wrapper, 'section').forEach((section) => {
         const attrs = section.getAttributes?.() ?? {};
 
         if (attrs['data-voodbuilder-section-block']) {

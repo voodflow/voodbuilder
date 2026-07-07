@@ -2,7 +2,7 @@
  * Element visibility conditions UI.
  *
  * Data model:
- * - `match`: "any" (default) = OR between groups; "all" = AND between groups
+ * - `match`: always "any" (OR between groups)
  * - Each group: all conditions inside must pass (AND)
  */
 
@@ -69,7 +69,7 @@ function parseConditions(raw) {
     }
 
     return {
-        match: decoded.match === 'all' ? 'all' : 'any',
+        match: 'any',
         sets: Array.isArray(decoded.sets) ? decoded.sets : [],
     };
 }
@@ -80,7 +80,7 @@ function serializeConditions(definition) {
     }
 
     const json = JSON.stringify({
-        match: definition.match === 'all' ? 'all' : 'any',
+        match: 'any',
         sets: definition.sets,
     });
 
@@ -383,18 +383,6 @@ export function registerConditionsUi(editor, options = {}) {
         <div class="voodbuilder-gjs-conditions voodbuilder-gjs-conditions-panel">
             <p class="voodbuilder-gjs-panel-subtitle">${labels.conditionsTitle ?? 'Visibility'}</p>
             <p class="voodbuilder-gjs-hint">${labels.conditionsHint ?? ''}</p>
-            <div class="voodbuilder-gjs-conditions-match" hidden>
-                <span class="voodbuilder-gjs-field-label">${labels.conditionsMatchLabel ?? 'Show when'}</span>
-                <div class="voodbuilder-gjs-segmented" role="group" aria-label="${labels.conditionsMatchLabel ?? 'Show when'}" data-voodbuilder-conditions-match>
-                    <button type="button" class="voodbuilder-gjs-segmented__btn" data-match="any" aria-pressed="true">
-                        ${labels.conditionsMatchAnyShort ?? 'OR'}
-                    </button>
-                    <button type="button" class="voodbuilder-gjs-segmented__btn" data-match="all" aria-pressed="false">
-                        ${labels.conditionsMatchAllShort ?? 'AND'}
-                    </button>
-                </div>
-                <span class="voodbuilder-gjs-segmented__hint">${labels.conditionsMatchBetweenGroups ?? 'between groups'}</span>
-            </div>
             <div data-voodbuilder-conditions-sets class="voodbuilder-gjs-conditions-sets"></div>
             <p class="voodbuilder-gjs-conditions-feedback" data-voodbuilder-conditions-feedback hidden></p>
             <div class="voodbuilder-gjs-actions voodbuilder-gjs-conditions-actions">
@@ -409,22 +397,11 @@ export function registerConditionsUi(editor, options = {}) {
     `;
 
     const setsMount = mount.querySelector('[data-voodbuilder-conditions-sets]');
-    const matchWrap = mount.querySelector('.voodbuilder-gjs-conditions-match');
-    const matchControl = mount.querySelector('[data-voodbuilder-conditions-match]');
-
-    const syncMatchControl = (match) => {
-        matchControl?.querySelectorAll('[data-match]').forEach((button) => {
-            const active = button.dataset.match === match;
-            button.classList.toggle('is-active', active);
-            button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-    };
 
     const render = () => {
         const component = workingTarget();
 
         if (! component) {
-            matchWrap.hidden = true;
             setsMount.innerHTML = `<p class="voodbuilder-gjs-hint voodbuilder-gjs-conditions-select-hint">${labels.selectComponent ?? 'Select an element on the canvas first.'}</p>`;
 
             return;
@@ -432,9 +409,6 @@ export function registerConditionsUi(editor, options = {}) {
 
         const definition = parseConditions(readConditionAttribute(component));
         const hasSets = definition.sets.length > 0;
-
-        matchWrap.hidden = ! hasSets;
-        syncMatchControl(definition.match);
 
         setsMount.replaceChildren();
 
@@ -452,9 +426,7 @@ export function registerConditionsUi(editor, options = {}) {
             if (setIndex > 0) {
                 const divider = document.createElement('div');
                 divider.className = 'voodbuilder-gjs-conditions-operator';
-                divider.textContent = definition.match === 'all'
-                    ? (labels.conditionsOperatorAnd ?? 'AND')
-                    : (labels.conditionsOperatorOr ?? 'OR');
+                divider.textContent = labels.conditionsOperatorOr ?? 'OR';
                 setsMount.appendChild(divider);
             }
 
@@ -474,26 +446,6 @@ export function registerConditionsUi(editor, options = {}) {
             enhanceInspectorSelects(mount);
         });
     };
-
-    matchControl?.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-match]');
-
-        if (! button) {
-            return;
-        }
-
-        const component = workingTarget();
-
-        if (! component) {
-            return;
-        }
-
-        const def = parseConditions(readConditionAttribute(component));
-        def.match = button.dataset.match === 'all' ? 'all' : 'any';
-        applyDefinition(component, def);
-        editor.select(component);
-        render();
-    });
 
     mount.querySelector('[data-voodbuilder-conditions-add-set]')?.addEventListener('click', () => {
         const component = workingTarget();

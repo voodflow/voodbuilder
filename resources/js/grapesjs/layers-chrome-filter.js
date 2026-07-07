@@ -67,7 +67,20 @@ export function registerLayersChromeFilter(editor) {
 
     editor.__voodbuilderLayersChromeFilterRegistered = true;
 
-    const sync = () => {
+    let layersRenderFrame = null;
+
+    const scheduleLayersRender = () => {
+        if (layersRenderFrame != null) {
+            return;
+        }
+
+        layersRenderFrame = window.requestAnimationFrame(() => {
+            layersRenderFrame = null;
+            editor.Layers?.render?.();
+        });
+    };
+
+    const syncAll = () => {
         const wrapper = editor.getWrapper?.();
 
         if (! wrapper) {
@@ -78,13 +91,20 @@ export function registerLayersChromeFilter(editor) {
             applyLayersChromeFilter(component, editor);
         });
 
-        window.requestAnimationFrame(() => {
-            editor.Layers?.render?.();
-        });
+        scheduleLayersRender();
     };
 
-    editor.on('load', sync);
-    editor.on('component:add', sync);
-    editor.on('component:remove', sync);
-    editor.on('voodbuilder:site-chrome-updated', sync);
+    const syncSubtree = (component) => {
+        if (! component) {
+            return;
+        }
+
+        applyLayersChromeFilter(component, editor);
+        scheduleLayersRender();
+    };
+
+    editor.on('load', syncAll);
+    editor.on('component:add', syncSubtree);
+    editor.on('component:remove', syncAll);
+    editor.on('voodbuilder:site-chrome-updated', syncAll);
 }

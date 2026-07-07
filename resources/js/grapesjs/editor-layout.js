@@ -8,9 +8,18 @@ import { registerBlockPins } from './block-pins.js';
 import { lucideIcon } from './editor-icons.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
+import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
+
+const INSPECTOR_TAB_ICONS = {
+    content: 'pencil',
+    style: 'palette',
+    dynamic: 'database',
+    conditions: 'eye',
+    layers: 'layers',
+};
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -119,7 +128,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         button.dataset.voodbuilderTab = tabId;
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-selected', tabId === 'content' ? 'true' : 'false');
-        button.textContent = tabLabels[tabId];
+        button.setAttribute('aria-label', tabLabels[tabId]);
+        button.title = tabLabels[tabId];
+        button.innerHTML = lucideIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17);
         tablist.appendChild(button);
     }
 
@@ -294,17 +305,12 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
     }
 }
 
-const INSPECTOR_WIDE_TABS = new Set(['style', 'dynamic']);
-
 function setInspectorSidebarWidth(inspectorAside, tabId) {
     if (! inspectorAside) {
         return;
     }
 
-    inspectorAside.classList.toggle(
-        'voodbuilder-gjs-shell__right--wide',
-        INSPECTOR_WIDE_TABS.has(tabId),
-    );
+    inspectorAside.setAttribute('data-voodbuilder-inspector-tab', tabId);
 }
 
 function setupInspectorTabs(mounts, editor) {
@@ -334,11 +340,12 @@ function setupInspectorTabs(mounts, editor) {
         });
 
         if (inspectorAside) {
-            inspectorAside.setAttribute('data-voodbuilder-inspector-tab', tabId);
             setInspectorSidebarWidth(inspectorAside, tabId);
         }
 
-        window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId, { refreshInspectorPanels: true }));
+        window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId, {
+            refreshInspectorPanels: tabId === 'dynamic' || tabId === 'conditions',
+        }));
     };
 
     tablist.addEventListener('click', (event) => {
@@ -488,6 +495,7 @@ export function configureEditorLayout(editor, shell, labels = {}) {
     setupStyleInspector(editor, shell.mounts);
     setupInspectorTabs(shell.mounts, editor);
     registerInspectorSelectUi(editor, shell.mounts);
+    registerInspectorColorFix(editor, shell.mounts);
 
     editor.on('style:change', () => {
         editor.Canvas.getFrameEl()?.contentWindow?.dispatchEvent(new Event('resize'));

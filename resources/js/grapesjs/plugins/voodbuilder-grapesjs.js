@@ -159,16 +159,6 @@ function sanitizeBlockHtml(html) {
     return normalized.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`);
 }
 
-function sectionPaddingTarget(section) {
-    return safeFindComponents(section, '.container')[0] ?? section.components().at(0);
-}
-
-function readSectionPadding(container) {
-    const classes = safeGetClasses(container);
-
-    return SECTION_PADDING_CLASSES.find((className) => classes.includes(className)) ?? 'py-24';
-}
-
 function sectionCatalogBlockId(section) {
     return String(section?.getAttributes?.()?.['data-voodbuilder-section-block'] ?? '');
 }
@@ -178,18 +168,6 @@ function isHeroCatalogSection(section) {
 }
 
 function registerLayoutSectionType(editor) {
-    const paddingTrait = {
-        type: 'select',
-        label: 'Vertical padding (Tailwind)',
-        name: 'vpressSectionPy',
-        options: [
-            { id: 'py-0', name: 'None' },
-            { id: 'py-12', name: 'Compact (3rem)' },
-            { id: 'py-16', name: 'Medium (4rem)' },
-            { id: 'py-24', name: 'Large (6rem)' },
-        ],
-    };
-
     const sectionTypeDefinition = {
         isComponent: (element) => {
             if (element?.tagName !== 'SECTION') {
@@ -203,8 +181,7 @@ function registerLayoutSectionType(editor) {
         model: {
             defaults: {
                 name: 'Section',
-                vpressSectionPy: 'py-24',
-                traits: [paddingTrait],
+                traits: [],
                 droppable: (srcComponent) => {
                     if (! srcComponent?.get) {
                         return true;
@@ -220,19 +197,7 @@ function registerLayoutSectionType(editor) {
             init() {
                 if (isHeroCatalogSection(this)) {
                     this.set('traits', []);
-
-                    return;
                 }
-
-                const container = sectionPaddingTarget(this);
-
-                if (container) {
-                    this.set('vpressSectionPy', readSectionPadding(container), { silent: true });
-                }
-
-                this.on('change:vpressSectionPy', () => {
-                    applySectionPadding(this, this.get('vpressSectionPy'));
-                });
             },
         },
     };
@@ -251,47 +216,17 @@ function registerLayoutSectionType(editor) {
         model: {
             defaults: {
                 name: 'Container',
-                vpressSectionPy: 'py-24',
-                traits: [paddingTrait],
+                traits: [],
             },
             init() {
                 const parentSection = this.parent();
 
                 if (parentSection && isHeroCatalogSection(parentSection)) {
                     this.set('traits', []);
-
-                    return;
                 }
-
-                this.set('vpressSectionPy', readSectionPadding(this), { silent: true });
-
-                this.on('change:vpressSectionPy', () => {
-                    applySectionPaddingToElement(this, this.get('vpressSectionPy'));
-                });
             },
         },
     });
-}
-
-function applySectionPaddingToElement(component, pyClass) {
-    const classes = safeGetClasses(component)
-        .filter((className) => ! SECTION_PADDING_CLASSES.includes(className) && ! className.startsWith('md:py-'));
-
-    if (pyClass && pyClass !== 'py-0') {
-        classes.push(pyClass);
-    }
-
-    component.setClass(classes);
-}
-
-function applySectionPadding(section, pyClass) {
-    const container = sectionPaddingTarget(section);
-
-    if (! container) {
-        return;
-    }
-
-    applySectionPaddingToElement(container, pyClass);
 }
 
 function syncVpressDynamicAttributes(component) {
@@ -1587,37 +1522,13 @@ function ensureLayoutSectionTraits(editor) {
             return;
         }
 
-        const container = sectionPaddingTarget(section);
-
-        if (! container) {
-            return;
-        }
-
-        const type = section.get('type');
-
-        if (type === 'default') {
+        if (section.get('type') === 'default') {
             section.set('type', 'voodbuilder-section');
         }
 
         if (isHeroCatalogSection(section)) {
             section.set('traits', []);
-
-            return;
         }
-
-        if (section.get('_vpressTraitsBound')) {
-            return;
-        }
-
-        section.set('_vpressTraitsBound', true);
-
-        if (! section.get('vpressSectionPy')) {
-            section.set('vpressSectionPy', readSectionPadding(container), { silent: true });
-        }
-
-        section.on('change:vpressSectionPy', () => {
-            applySectionPadding(section, section.get('vpressSectionPy'));
-        });
     });
 
     walkComponentTree(editor.getWrapper?.(), (container) => {
@@ -1639,23 +1550,7 @@ function ensureLayoutSectionTraits(editor) {
 
         if (isHeroCatalogSection(parentSection)) {
             container.set('traits', []);
-
-            return;
         }
-
-        if (container.get('_vpressTraitsBound')) {
-            return;
-        }
-
-        container.set('_vpressTraitsBound', true);
-
-        if (! container.get('vpressSectionPy')) {
-            container.set('vpressSectionPy', readSectionPadding(container), { silent: true });
-        }
-
-        container.on('change:vpressSectionPy', () => {
-            applySectionPaddingToElement(container, container.get('vpressSectionPy'));
-        });
     });
 }
 
