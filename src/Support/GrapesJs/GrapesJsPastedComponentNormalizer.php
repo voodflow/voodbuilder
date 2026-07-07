@@ -145,11 +145,14 @@ final class GrapesJsPastedComponentNormalizer
         $pageHtml = GrapesJsComponentPageHtml::htmlExcludingComponentInstances($html);
         $needsRecompile = $storedCss === ''
             || self::storedCssIsCorrupted($storedCss)
+            || self::pageCssIncludesTailwindPreflight($storedCss)
             || ($pageHtml !== '' && self::htmlHasTailwindUtilitiesMissingFromCss($pageHtml, $storedCss));
 
         if (! $needsRecompile) {
             return GrapesJsCssSanitizer::sanitize(
-                VoodbuilderThemeTokenMigrator::migratePublishedPageCss($storedCss),
+                VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
+                    self::stripTailwindPreflightFromPageCss($storedCss),
+                ),
             );
         }
 
@@ -194,8 +197,51 @@ final class GrapesJsPastedComponentNormalizer
         $merged = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
 
         return GrapesJsCssSanitizer::sanitize(
-            VoodbuilderThemeTokenMigrator::migratePublishedPageCss((string) $merged),
+            VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
+                self::stripTailwindPreflightFromPageCss((string) $merged),
+            ),
         );
+    }
+
+    /**
+     * Page CSS must not ship Tailwind preflight — it overrides site chrome in theme.css
+     * (e.g. .voodbuilder-header-icon-btn border-radius) because it is unlayered.
+     */
+    public static function pageCssIncludesTailwindPreflight(string $css): bool
+    {
+        $css = trim($css);
+
+        if ($css === '') {
+            return false;
+        }
+
+        return (str_contains($css, 'border-radius: 0') && str_contains($css, '::file-selector-button'))
+            || (str_contains($css, 'box-sizing: border-box') && preg_match('/^\*[^{]*\{[^}]*box-sizing\s*:\s*border-box/m', $css) === 1);
+    }
+
+    public static function stripTailwindPreflightFromPageCss(string $css): string
+    {
+        $css = trim($css);
+
+        if ($css === '' || ! self::pageCssIncludesTailwindPreflight($css)) {
+            return $css;
+        }
+
+        $patterns = [
+            '/\*[^{]*\{[^}]*box-sizing\s*:\s*border-box[^}]*\}\s*/s',
+            '/:root[^{]*\{[^}]*--font-sans[^}]*\}\s*/s',
+            '/:host[^{]*\{[^}]*--font-sans[^}]*\}\s*/s',
+            '/(?:button|input|select|optgroup|textarea|,|\s)+[^{]*\{[^}]*border-radius\s*:\s*0[^}]*\}\s*/s',
+            '/button[^{]*\{[^}]*margin-inline-end[^}]*\}\s*/s',
+            '/@layer\s+properties\s*;\s*/',
+            '/@layer\s+theme,\s*base,\s*components,\s*utilities\s*;\s*/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $css = preg_replace($pattern, '', $css) ?? $css;
+        }
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $css) ?? $css);
     }
 
     /**

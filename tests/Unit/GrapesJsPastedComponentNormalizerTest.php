@@ -360,6 +360,27 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 
+    public function test_page_css_includes_tailwind_preflight_detects_button_reset(): void
+    {
+        $preflight = '* { box-sizing: border-box; } button, input, ::file-selector-button { border-radius: 0; } .p-4 { padding: 1rem; }';
+
+        $this->assertTrue(GrapesJsPastedComponentNormalizer::pageCssIncludesTailwindPreflight($preflight));
+        $stripped = GrapesJsPastedComponentNormalizer::stripTailwindPreflightFromPageCss($preflight);
+        $this->assertStringNotContainsString('border-radius: 0', $stripped);
+        $this->assertStringContainsString('.p-4', $stripped);
+    }
+
+    public function test_resolve_published_page_css_strips_preflight_without_recompile(): void
+    {
+        $html = '<section class="p-4">Page</section>';
+        $storedCss = '* { box-sizing: border-box; } button, ::file-selector-button { border-radius: 0; background-color: transparent; } .p-4 { padding: 1rem; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertStringNotContainsString('border-radius: 0', $resolved);
+        $this->assertStringContainsString('padding', $resolved);
+    }
+
     public function test_stored_css_is_current_when_checksum_matches(): void
     {
         $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';

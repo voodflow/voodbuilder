@@ -187,13 +187,43 @@ function scopeCss(css, scope) {
     return root.toString();
 }
 
+function stripPagePreflight(root) {
+    root.walkRules((rule) => {
+        const selectors = rule.selectors ?? [];
+
+        if (selectors.some((selector) => ['*', ':root', ':host', 'html', 'body'].includes(selector.trim()))) {
+            rule.remove();
+
+            return;
+        }
+
+        const isFormControlReset = selectors.some((selector) => (
+            /^(?:button|input|select|optgroup|textarea)(?:,|$)/.test(selector.trim())
+            || selector.includes('::file-selector-button')
+            || selector.includes('::-webkit-outer-spin-button')
+        ));
+
+        if (isFormControlReset) {
+            rule.remove();
+        }
+    });
+
+    root.walkAtRules('layer', (atRule) => {
+        const params = atRule.params.trim();
+
+        if (params === 'properties' || params === 'theme, base, components, utilities') {
+            atRule.remove();
+        }
+    });
+}
+
 function optimizePageCss(css) {
     const root = postcss.parse(css);
 
     root.walkAtRules('layer', (atRule) => {
         const layer = atRule.params.trim();
 
-        if (layer === 'base' || layer === 'theme') {
+        if (layer === 'base' || layer === 'theme' || layer.startsWith('theme,') || layer.includes(', base')) {
             atRule.remove();
 
             return;
@@ -222,6 +252,7 @@ function optimizePageCss(css) {
         }
     });
 
+    stripPagePreflight(root);
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
 
