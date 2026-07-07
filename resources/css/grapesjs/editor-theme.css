@@ -389,8 +389,7 @@
     width: 100%;
 }
 
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox),
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field-integer,
+.voodbuilder-gjs-root .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(.gjs-field-integer),
 .voodbuilder-gjs-root .gjs-sm-property .gjs-field-select,
 .voodbuilder-gjs-root .gjs-sm-property .gjs-select {
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);

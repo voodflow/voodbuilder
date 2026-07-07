@@ -2,6 +2,8 @@
  * Tailwind utility autocomplete for the GrapesJS class manager (selector panel).
  */
 
+import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+
 const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
 
 const COMMON_TAILWIND_CLASSES = [
@@ -189,9 +191,9 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             return;
         }
 
-        const compiled = pageCompiledClassNames(editor);
+        const compiled = pageCssCoversClass(editor, value) || pageCompiledClassNames(editor).has(value);
 
-        if (compiled.has(value)) {
+        if (compiled) {
             hintEl.hidden = true;
 
             return;
@@ -199,7 +201,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
 
         hintEl.hidden = false;
         hintEl.textContent = labels.classPendingCompile
-            ?? 'This class is not on the page yet. It will be compiled when you save if used in component markup.';
+            ?? 'Questa classe verrà compilata in anteprima e salvata con la pagina.';
     };
 
     const refresh = () => {
@@ -270,4 +272,5 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
 
     editor.on('component:update', scan);
     editor.on('component:styleUpdate', scan);
+    editor.on('voodbuilder:page-css-compiled', scan);
 }

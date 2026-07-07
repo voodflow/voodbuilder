@@ -88,7 +88,7 @@ return [
         'tab_style' => 'Style',
         'style_classes_title' => 'Classes',
         'class_input_placeholder' => 'Add Tailwind class…',
-        'class_pending_compile' => 'Not used on the page yet. New utilities compile when you save component markup.',
+        'class_pending_compile' => 'Compiling… included in page CSS when you save.',
         'tab_dynamic' => 'Dynamic',
         'tab_layers' => 'Layers',
         'tab_conditions' => 'Conditions',

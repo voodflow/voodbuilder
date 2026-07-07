@@ -3,16 +3,15 @@
  * Overrides GrapesJS property panels via CSS only; no core GrapesJS changes.
  */
 
-/* ── Sidebar width + expand animation ── */
+/* ── Sidebar width (fixed — Style/Dynamic need room; no expand animation) ── */
 .voodbuilder-gjs-shell__right {
-    --voodbuilder-gjs-inspector-width: 18.75rem;
-    --voodbuilder-gjs-inspector-width-wide: 23.5rem;
+    --voodbuilder-gjs-inspector-width: 23.5rem;
     width: var(--voodbuilder-gjs-inspector-width);
-    transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
 }
 
 .voodbuilder-gjs-shell__right--wide {
-    width: var(--voodbuilder-gjs-inspector-width-wide);
+    width: var(--voodbuilder-gjs-inspector-width);
 }
 
 /* ── Tab bar (CONTENT · STYLE · …) ── */
@@ -38,6 +37,26 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--color-vp-text-3, #94a3b8);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.voodbuilder-gjs-inspector-tab .voodbuilder-gjs-icon {
+    display: block;
+    flex-shrink: 0;
+    opacity: 0.72;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.voodbuilder-gjs-inspector-tab:hover .voodbuilder-gjs-icon {
+    opacity: 1;
+}
+
+.voodbuilder-gjs-inspector-tab--active .voodbuilder-gjs-icon {
+    opacity: 1;
+    color: var(--color-vp-brand-1, #6366f1);
 }
 
 .voodbuilder-gjs-inspector-tab--active {
@@ -245,26 +264,67 @@
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select--native,
 .voodbuilder-gjs-shell__right .gjs-sm-property select.voodbuilder-gjs-select--native,
 .voodbuilder-gjs-shell__right .gjs-trt-trait select.voodbuilder-gjs-select--native {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-    border: none;
-    background: transparent;
-    box-shadow: none;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-trigger-label {
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 0.8125rem !important;
+    font-style: normal !important;
+    letter-spacing: 0.01em !important;
+    color: var(--color-vp-text-1, #0f172a);
+    padding-inline-start: 0.125rem;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact .voodbuilder-gjs-select-trigger-label {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-align: center;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact .voodbuilder-gjs-select-trigger {
+    padding: 0 1.25rem 0 0.375rem;
+    min-height: calc(var(--vb-inspector-control-h) - 2px);
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact .voodbuilder-gjs-select-chevron {
+    right: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact {
+    min-height: calc(var(--vb-inspector-control-h) - 2px);
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact:focus-within,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-wrap--compact.is-open {
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .voodbuilder-gjs-shell__right .gjs-sel-arrow {
     display: none !important;
 }
 
-/* Text / number inputs */
-.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-integer,
-.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(:has(.voodbuilder-gjs-select-wrap)),
-.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):not(:has(.voodbuilder-gjs-select-wrap)) {
+/* Text / number inputs (simple fields — not integer+unit groups) */
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(.gjs-field-integer):not(:has(.voodbuilder-gjs-select-wrap)),
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):not(.gjs-field-integer):not(:has(.voodbuilder-gjs-select-wrap)) {
     display: flex;
     align-items: center;
     min-height: var(--vb-inspector-control-h);
@@ -274,7 +334,6 @@
     background: var(--vb-inspector-control-bg);
 }
 
-.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-integer input,
 .voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field input,
 .voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field textarea,
 .voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field input,
@@ -295,13 +354,72 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
 }
 
-/* Color fields */
+/* Color fields — input group with swatch */
 .voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-color {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
     min-height: var(--vb-inspector-control-h);
-    padding: 0 0.375rem;
+    padding: 0 !important;
     border: 1px solid var(--vb-inspector-control-border);
     border-radius: var(--vb-inspector-control-radius);
     background: var(--vb-inspector-control-bg);
+    overflow: hidden;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color:focus-within {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, var(--color-vp-divider, #e2e8f0));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color .gjs-input-holder {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 0.5rem;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color input {
+    width: 100%;
+    min-width: 0;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color .gjs-field-colorp {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    margin: 0;
+    padding: 0.25rem 0.375rem;
+    border: none;
+    border-left: 1px solid var(--vb-inspector-control-border);
+    background: var(--vb-inspector-control-bg-muted);
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color .gjs-field-colorp-c {
+    width: 1.625rem;
+    height: 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
+    border-radius: 0.25rem;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-color .gjs-checker-bg,
+.voodbuilder-gjs-shell__right .gjs-field-color .gjs-field-color-picker {
+    border-radius: inherit;
 }
 
 /* Remove duplicate borders from legacy frontend rules */
@@ -326,10 +444,10 @@
     -webkit-appearance: none;
 }
 
-/* Checkbox rows — left aligned, no wrap */
+/* Checkbox rows — left aligned, full label text */
 .voodbuilder-gjs-form-field--checkbox {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
     gap: 0;
     padding: 0.5rem 0;
@@ -355,9 +473,8 @@
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
     font-size: 0.8125rem;
     line-height: 1.35;
     color: var(--color-vp-text-1, #0f172a);
@@ -366,8 +483,8 @@
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) {
     flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: flex-start;
     gap: 0.5rem;
     padding: 0.5rem 0;
@@ -376,9 +493,8 @@
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-label {
     flex: 1 1 auto;
     order: 2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-field-checkbox {
@@ -534,15 +650,15 @@
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    align-items: flex-start;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-label {
     flex: 1 1 auto;
     order: 2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
 }
 
 .voodbuilder-gjs-root .gjs-trt-trait:has(.gjs-field-checkbox) .gjs-field-checkbox {
@@ -601,8 +717,8 @@
 
 /* (conditions controls unified above) */
 
-.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap),
-.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) {
+.voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap):not(.gjs-field-integer),
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap):not(.gjs-field-integer) {
     display: block;
     padding: 0 !important;
     min-height: 0;
@@ -617,4 +733,181 @@
 .voodbuilder-gjs-shell__right .gjs-root .gjs-field:has(.voodbuilder-gjs-select-wrap):focus-within {
     border: none !important;
     box-shadow: none !important;
+}
+
+/* ── Input groups (number + unit) — Tailwind-style single bar ── */
+.voodbuilder-gjs-shell__right .gjs-field-integer.voodbuilder-gjs-input-group,
+.voodbuilder-gjs-shell__right .gjs-field-integer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    min-height: var(--vb-inspector-control-h);
+    padding: 0 !important;
+    border: 1px solid var(--vb-inspector-control-border) !important;
+    border-radius: var(--vb-inspector-control-radius) !important;
+    background: var(--vb-inspector-control-bg) !important;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer:focus-within {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, var(--color-vp-divider, #e2e8f0)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer .gjs-field-arrows {
+    display: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer .gjs-input-holder {
+    position: static;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer input,
+.voodbuilder-gjs-shell__right .gjs-field-integer input[type='number'],
+.voodbuilder-gjs-shell__right .gjs-field-integer input[type='text'] {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.5rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-1, #0f172a);
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer input::-webkit-outer-spin-button,
+.voodbuilder-gjs-shell__right .gjs-field-integer input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer input:focus {
+    outline: none;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer .gjs-field-units {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-left: 1px solid var(--vb-inspector-control-border);
+    background: var(--vb-inspector-control-bg-muted);
+    min-width: 3.25rem;
+    max-width: 4.5rem;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer .gjs-field-units .voodbuilder-gjs-select-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 3.25rem;
+    max-width: 4.5rem;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer.voodbuilder-gjs-input-group--keyword .gjs-field-units {
+    display: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer.voodbuilder-gjs-input-group--keyword .gjs-input-holder {
+    flex: 1 1 100%;
+}
+
+.voodbuilder-gjs-shell__right .gjs-field-integer .gjs-field-units select.voodbuilder-gjs-select--native {
+    display: none !important;
+}
+
+/* Standalone selects (font family, weight, …) */
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-select,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(> select:only-child) {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-height: 0;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-select .voodbuilder-gjs-select-wrap,
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field > .voodbuilder-gjs-select-wrap:only-child {
+    width: 100%;
+}
+
+/* Text align / radio — full width segmented control */
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-fields {
+    width: 100%;
+    padding: 0;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-items {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    padding: 0;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: 0.375rem;
+    background: var(--vb-inspector-control-bg-muted);
+    overflow: hidden;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item {
+    flex: none;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    margin: 0;
+    border: none !important;
+    border-right: 1px solid var(--vb-inspector-control-border) !important;
+    border-radius: 0 !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item:last-child {
+    border-right: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item-label {
+    display: block;
+    width: 100%;
+    padding: 0.4375rem 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item input:checked + .gjs-radio-item-label {
+    background: #ffffff;
+    color: var(--color-vp-brand-1, #6366f1);
+    box-shadow: none;
 }
