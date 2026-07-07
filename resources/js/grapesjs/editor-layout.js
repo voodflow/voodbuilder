@@ -294,6 +294,19 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
     }
 }
 
+const INSPECTOR_WIDE_TABS = new Set(['style', 'conditions', 'dynamic']);
+
+function setInspectorSidebarWidth(inspectorAside, tabId) {
+    if (! inspectorAside) {
+        return;
+    }
+
+    inspectorAside.classList.toggle(
+        'voodbuilder-gjs-shell__right--wide',
+        INSPECTOR_WIDE_TABS.has(tabId),
+    );
+}
+
 function setupInspectorTabs(mounts, editor) {
     const { tablist, panels } = mounts;
     const inspectorAside = panels?.closest('.voodbuilder-gjs-shell__right') ?? null;
@@ -322,6 +335,7 @@ function setupInspectorTabs(mounts, editor) {
 
         if (inspectorAside) {
             inspectorAside.setAttribute('data-voodbuilder-inspector-tab', tabId);
+            setInspectorSidebarWidth(inspectorAside, tabId);
         }
 
         window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId, { refreshInspectorPanels: true }));

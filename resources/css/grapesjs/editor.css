@@ -1,6 +1,7 @@
 @import 'grapesjs/dist/css/grapes.min.css';
 @import './editor-theme.css';
 @import './frontend.css';
+@import './inspector-ui.css';
 
 .voodbuilder-grapesjs-field .gjs-one-bg {
     background-color: var(--gray-50, #f9fafb);
