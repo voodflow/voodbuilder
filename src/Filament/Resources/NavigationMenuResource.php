@@ -23,6 +23,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
 use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
@@ -62,6 +63,7 @@ class NavigationMenuResource extends Resource
     protected static function sitePageOptions(?string $locale = null): array
     {
         $query = SitePage::query()
+            ->where('builder', PageBuilder::GrapesJs)
             ->orderByDesc('is_home')
             ->orderBy('title');
 
@@ -240,8 +242,10 @@ class NavigationMenuResource extends Resource
                 ->options(fn (): array => static::sitePageOptions($menuLocale))
                 ->searchable()
                 ->preload()
+                ->live()
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
+                ->helperText(__('voodbuilder::admin.helpers.menu_grapes_pages_only'))
                 ->afterStateUpdated(function (callable $set, ?string $state): void {
                     if (blank($state)) {
                         $set('route_match', null);
@@ -253,6 +257,34 @@ class NavigationMenuResource extends Resource
 
                     $set('route_match', $page?->is_home ? 'home' : null);
                 }),
+            Placeholder::make('page_visual_editor_link')
+                ->label('')
+                ->content(function (Get $get): ?HtmlString {
+                    if (! static::isMenuItemType($get, MenuItemType::Page)) {
+                        return null;
+                    }
+
+                    $slug = $get('link');
+
+                    if (blank($slug)) {
+                        return null;
+                    }
+
+                    $page = SitePage::query()->where('slug', $slug)->first();
+
+                    if (! $page instanceof SitePage || ! $page->usesGrapesJsBuilder()) {
+                        return null;
+                    }
+
+                    $url = $page->getUrl().'?edit=1';
+
+                    return new HtmlString(
+                        '<a href="'.e($url).'" target="_blank" rel="noopener" class="text-sm text-primary-600 hover:underline">'
+                        .e(__('voodbuilder::pro.actions.open_visual_editor'))
+                        .'</a>'
+                    );
+                })
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page)),
             Select::make('link')
                 ->key($isChild ? 'menu_child_link_route' : 'menu_item_link_route')
                 ->label(__('voodbuilder::admin.fields.menu_route'))

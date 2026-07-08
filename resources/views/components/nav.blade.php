@@ -30,6 +30,9 @@
     $pinNavFixed = $pinNavInViewport && $inPageBlock;
     $chromeVars = compact('desktopChromeClass', 'desktopFlexClass', 'mobileToggleClass', 'showNotificationBell', 'canvasPreview', 'showSearch', 'showProfileMenu');
     $menuLinkClass = 'inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-vp-text-1 transition-colors hover:text-vp-brand-1';
+    $inlineBrandClass = $hasDocSidebar
+        ? ($canvasPreview ? 'inline-flex md:hidden' : 'hidden max-vp:flex max-vp:items-center')
+        : 'flex shrink-0 items-center';
 @endphp
 
 <header @class([
@@ -64,7 +67,7 @@
                 'justify-between' => $mainNavCentered,
             ])>
                 @if ($mainNavCentered)
-                    <div class="flex min-w-0 shrink-0 items-center">
+                    <div @class(['min-w-0 shrink-0', $inlineBrandClass])>
                         <x-voodbuilder::nav-title />
                     </div>
 
@@ -74,7 +77,7 @@
                     </div>
                 @else
                     <div class="flex min-w-0 shrink-0 items-center gap-3 md:gap-4">
-                        <div class="flex shrink-0 items-center">
+                        <div @class($inlineBrandClass)>
                             <x-voodbuilder::nav-title />
                         </div>
 

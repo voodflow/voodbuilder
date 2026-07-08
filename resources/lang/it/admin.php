@@ -130,6 +130,7 @@ return [
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_icon' => 'Nome icona Tabler (es. brand-facebook). Compatibile con daljo25/filament-tabler-icons.',
+        'menu_grapes_pages_only' => 'Sono elencate solo le pagine GrapesJS. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
         'menu_tree' => 'Trascina per riordinare o rilascia una voce su un’altra per creare un sottomenu. Massimo 2 livelli (principale + sotto-voci). Usa "Gruppo dropdown" per etichette senza link.',
         'sub_theme_site' => 'Tema visivo predefinito per le Site Page (home, landing, CMS). Configura le assegnazioni per area sotto.',
         'sub_theme_page' => 'Lascia “Predefinito sito” per usare :theme da Settings → Theme. Cambia solo se questa pagina deve avere un aspetto diverso.',

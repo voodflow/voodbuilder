@@ -60,6 +60,26 @@ class NavigationMenuPreviewTest extends TestCase
         ));
     }
 
+    public function test_doc_sidebar_nav_hides_inline_brand_on_desktop(): void
+    {
+        $html = view('voodbuilder::components.nav', [
+            'hasDocSidebar' => true,
+            'showReadingProgress' => true,
+        ])->render();
+
+        $this->assertStringContainsString('hidden max-vp:flex max-vp:items-center', $html);
+        $this->assertStringContainsString('w-[var(--vp-sidebar-outer-width)] bg-vp-bg-alt vp:flex', $html);
+    }
+
+    public function test_canvas_block_code_toolbar_command_is_registered_in_editor_bundle(): void
+    {
+        $editorJs = file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/editor.js'));
+
+        $this->assertIsString($editorJs);
+        $this->assertStringContainsString('registerCanvasBlockCodeEditor', $editorJs);
+        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/canvas-component-toolbar.js')));
+    }
+
     public function test_site_nav_block_uses_full_width_row_by_default(): void
     {
         $html = SiteNavSimpleBlock::toHtml(SiteNavSimpleBlock::defaultConfig(), []);

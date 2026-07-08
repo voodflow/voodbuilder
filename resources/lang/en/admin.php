@@ -130,6 +130,7 @@ return [
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
+        'menu_grapes_pages_only' => 'Only GrapesJS pages are listed. Use “Open visual editor” to edit the selected page on the site.',
         'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
         'sub_theme_site' => 'Default visual theme for Site Pages (home, landing, CMS). Configure per-area bindings below.',
         'sub_theme_page' => 'Leave “Site default” to use :theme from Settings → Theme. Change only when this single page needs a different look.',
