@@ -123,7 +123,9 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ## Fase 2 — Medio termine (🟡 M, priorità 3–5)
 
-### 2.1 Template pagina: salva / importa — 🟡 M · P3
+### 2.1 Template pagina: salva / importa — 🟡 M · P3 ✅ RC
+
+**Stato:** release candidate (luglio 2026) — tabella `voodbuilder_page_templates`, API CRUD + import/export JSON, pulsante topbar editor (icona layers).
 
 **Cosa:** salvare una pagina intera come template e inserirla in un nuovo documento (come componenti ma scope pagina: html + css + js + conditions).
 
@@ -131,6 +133,8 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 - Modello `voodbuilder_page_templates` o riuso `voodbuilder_components` con `type=page`.
 - Export/import JSON simmetrico a `GrapesJsComponentBundle`.
 - UI: azione in topbar editor + wizard “Nuova pagina da template”.
+
+**Manca per GA:** select template opzionale in creazione pagina Filament (`SitePageResource`).
 
 **Riferimento Bricks:** [Builder templates](https://bricksbuilder.io/builder/).
 
@@ -149,9 +153,10 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 2.3 Potenziamento menu builder (admin) — 🟡 M · P3 (fase A ✅)
+### 2.3 Potenziamento menu builder (admin) — 🟡 M · P3 (fase A ✅ · fase B ✅ RC)
 
-**Stato:** fase A implementata (luglio 2026) — anteprima iframe header/footer nel form Filament modifica menu.
+**Stato:** fase A implementata (luglio 2026) — anteprima iframe header/footer nel form Filament modifica menu.  
+**Stato fase B RC:** picker pagine limitato a builder GrapesJS + link “Apri editor visuale” (`?edit=1`) sotto la select pagina.
 
 **Cosa:** esperienza admin più visuale: anteprima header live, drag migliorato, assegnazione icone voce, badge, visibilità per ruolo.
 
@@ -166,11 +171,11 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 2.4 Query loop / model integrations — espansioni — 🟡 M · P3
+### 2.4 Query loop / model integrations — espansioni — 🟡 M · P3 (empty state ✅ RC)
 
 **Cosa:** estendere repeat binding: filtri UI, ordinamento, paginazione, template item, empty state.
 
-**Stato:** base con `data-voodbuilder-repeat` e sorgenti plugin.
+**Stato:** base con `data-voodbuilder-repeat` e sorgenti plugin. **RC:** `data-voodbuilder-repeat-empty` documentato in [`BINDINGS.md`](./BINDINGS.md) e gestito da `GrapesJsRepeatRenderer`.
 
 **Approccio:**
 - Trait GrapesJS “Query loop” sul container.
@@ -302,4 +307,37 @@ Backlog prodotto
 
 ---
 
-*Ultimo aggiornamento: 3 luglio 2026*
+## Checklist test manuali — release candidate (luglio 2026)
+
+### Modal “Save selection as component”
+- [ ] Seleziona un blocco nel canvas → Salva come componente
+- [ ] Label **Component name** e **Category** allineate in colonna (stacked)
+- [ ] Select categoria mostra freccia dropdown (custom Tailwind, non select nativa grezza)
+- [ ] Stesso layout nel modal “Import from code” e “Save page as template”
+
+### Template pagina (topbar editor)
+- [ ] Icona **layers** visibile in topbar con permesso builder
+- [ ] Apri modal → lista template (vuota o popolata)
+- [ ] **Save current page** → nome + categoria → compare in lista
+- [ ] **Apply** → conferma → canvas sostituito (html/css/js)
+- [ ] **Delete** → template rimosso da DB e lista
+- [ ] Ricarica pagina dopo apply → contenuto persistito solo dopo Save pagina
+
+### Query loop — empty state
+- [ ] Container con `data-voodbuilder-repeat` + item template + nodo `data-voodbuilder-repeat-empty`
+- [ ] Con lista vuota (o integrazione senza record): messaggio empty visibile in anteprima pubblica
+- [ ] Senza nodo empty: container vuoto, nessun attributo repeat in HTML renderizzato
+
+### Menu admin (fase B)
+- [ ] Modifica menu → tipo **Page** → select mostra solo pagine GrapesJS
+- [ ] Seleziona pagina → link **Apri editor visuale** apre `?edit=1` in nuova scheda
+- [ ] Pagine Rich editor non compaiono nel picker
+
+### Smoke generale editor
+- [ ] `?edit=1` si apre senza errori console
+- [ ] Typography selects, radio segmentati, spacing Dynamic panel ancora ok
+- [ ] Salvataggio pagina e componenti invariato
+
+---
+
+*Ultimo aggiornamento: 8 luglio 2026*
