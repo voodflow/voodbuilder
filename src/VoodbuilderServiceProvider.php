@@ -43,6 +43,7 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
 use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
@@ -222,6 +223,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('components/export', [GrapesJsComponentsController::class, 'export'])->name('components.export');
                 Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
                 Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
+                Route::get('page-templates', [GrapesJsPageTemplatesController::class, 'index'])->name('page-templates.index');
+                Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])->name('page-templates.store');
+                Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])->name('page-templates.import');
+                Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])->name('page-templates.export');
+                Route::delete('page-templates/{pageTemplate}', [GrapesJsPageTemplatesController::class, 'destroy'])->name('page-templates.destroy');
             });
     }
 

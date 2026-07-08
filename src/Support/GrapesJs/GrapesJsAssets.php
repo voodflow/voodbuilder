@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
