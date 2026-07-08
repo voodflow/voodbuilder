@@ -180,6 +180,23 @@ function isSelectUiTarget(target) {
     return Boolean(target?.closest?.('.voodbuilder-gjs-select-wrap, .voodbuilder-gjs-select-list'));
 }
 
+function formatSelectTriggerLabel(select, rawText) {
+    const propertyEl = select.closest('.gjs-sm-property');
+
+    if (! propertyEl) {
+        return rawText;
+    }
+
+    const view = findGrapesView(propertyEl);
+    const property = String(view?.model?.get?.('property') ?? '');
+
+    if (property === 'font-weight') {
+        return String(rawText ?? '').toLowerCase();
+    }
+
+    return rawText;
+}
+
 function syncCustomSelect(wrap) {
     const select = wrap.querySelector('select');
     const trigger = wrap.querySelector('.voodbuilder-gjs-select-trigger');
@@ -191,7 +208,8 @@ function syncCustomSelect(wrap) {
     }
 
     const selected = select.options[select.selectedIndex];
-    const labelText = selected?.textContent?.trim() || selected?.value || '-';
+    const rawLabel = selected?.textContent?.trim() || selected?.value || '-';
+    const labelText = formatSelectTriggerLabel(select, rawLabel);
     const label = triggerLabel(trigger);
 
     if (label) {

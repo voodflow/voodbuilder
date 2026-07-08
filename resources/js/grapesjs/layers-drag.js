@@ -1,55 +1,129 @@
 /**
- * Layer tree reorder — delegate to GrapesJS native sorter on move handles.
+ * Layer tree reorder — enable drag handles on page blocks and delegate to GrapesJS sorter.
  */
 
 import { resolveComponentFromLayerElement } from './component-context-menu.js';
-import { safeFindComponents } from './tailwind-visual-style.js';
 
-function ensureLayerDraggable(component) {
+const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+
+function isSiteChromeBlock(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const blockId = String(attrs['data-voodbuilder-block'] ?? '');
+
+    return Boolean(attrs['data-voodbuilder-gjs-site-header'])
+        || blockId.startsWith('site_nav_')
+        || blockId.startsWith('site_footer_')
+        || blockId === 'site_header';
+}
+
+function isProtectedSlot(component) {
+    const attrs = component.getAttributes?.() ?? {};
+
+    return Boolean(attrs['data-voodbuilder-menu'] || attrs['data-voodbuilder-brand']);
+}
+
+function shouldEnableLayerReorder(component, editor) {
     if (! component?.get) {
-        return;
+        return false;
     }
 
     if (component.get('layerable') === false) {
+        return false;
+    }
+
+    if (isProtectedSlot(component) || isSiteChromeBlock(component)) {
+        return false;
+    }
+
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper || component === wrapper) {
+        return false;
+    }
+
+    if (component.getAttributes?.()?.[SPACER_ATTR]) {
+        return false;
+    }
+
+    const parent = component.parent?.();
+    const isWrapperChild = parent === wrapper || parent?.get?.('type') === 'wrapper';
+
+    if (isWrapperChild) {
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-section-block']) {
+        return true;
+    }
+
+    return attrs['data-voodbuilder-block'] && component.get('type') === 'voodbuilder-dynamic';
+}
+
+function ensureLayerDraggable(component, editor) {
+    if (! shouldEnableLayerReorder(component, editor)) {
         return;
     }
 
     if (component.get('draggable') === false) {
-        const attrs = component.getAttributes?.() ?? {};
-
-        if (attrs['data-voodbuilder-gjs-site-header'] || attrs['data-voodbuilder-block']) {
-            const blockId = String(attrs['data-voodbuilder-block'] ?? '');
-
-            if (blockId.startsWith('site_nav_') || blockId.startsWith('site_footer_')) {
-                return;
-            }
-        }
-
         component.set('draggable', true);
     }
 }
 
-function isMoveHandleVisible(handle) {
-    if (! handle) {
-        return false;
+function syncAllLayerDraggable(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
     }
 
-    return getComputedStyle(handle).display !== 'none';
+    const walk = (component) => {
+        if (! component) {
+            return;
+        }
+
+        ensureLayerDraggable(component, editor);
+        component.components?.().forEach(walk);
+    };
+
+    walk(wrapper);
 }
 
-function startSortFromLayerView(layerEl, event) {
-    const view = layerEl?.__gjsv;
+function layerSortEnabled(editor) {
+    const config = editor?.Layers?.getConfig?.() ?? editor?.LayerManager?.getConfig?.() ?? {};
 
-    if (! view || typeof view.startSort !== 'function') {
+    return config.sortable !== false;
+}
+
+function canStartLayerSort(component, editor) {
+    return Boolean(
+        component?.get?.('draggable')
+        && component.get('layerable') !== false
+        && layerSortEnabled(editor),
+    );
+}
+
+function startLayerSort(component, event) {
+    const viewLayer = component?.viewLayer;
+
+    if (! viewLayer || typeof viewLayer.startSort !== 'function') {
         return false;
     }
 
-    view.startSort(event);
+    viewLayer.startSort(event);
 
     return true;
 }
 
-function forwardRowDragToHandle(event) {
+function isRowDragTarget(target) {
+    return Boolean(
+        target?.closest?.('.gjs-layer-item[data-toggle-select]')
+        && ! target?.closest?.('[data-toggle-visible], [data-toggle-open], [data-name]'),
+    );
+}
+
+function handleLayerMouseDown(editor, event) {
     if (event.button !== 0) {
         return;
     }
@@ -60,39 +134,26 @@ function forwardRowDragToHandle(event) {
 
     const layerItem = event.target?.closest?.('.gjs-layer-item');
 
-    if (! layerItem) {
+    if (! layerItem || ! isRowDragTarget(event.target)) {
         return;
     }
 
-    if (event.target?.closest?.('[data-toggle-visible], [data-toggle-open], [data-name]')) {
+    const component = resolveComponentFromLayerElement(layerItem, editor);
+
+    if (! component) {
         return;
     }
 
-    const layerEl = layerItem.closest('.gjs-layer');
+    ensureLayerDraggable(component, editor);
 
-    if (layerEl && startSortFromLayerView(layerEl, event)) {
+    if (! canStartLayerSort(component, editor)) {
         return;
     }
 
-    const handle = layerItem.querySelector('[data-toggle-move]');
-
-    if (! isMoveHandleVisible(handle)) {
-        return;
+    if (startLayerSort(component, event)) {
+        event.preventDefault();
+        event.stopPropagation();
     }
-
-    event.preventDefault();
-
-    handle.dispatchEvent(new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        button: 0,
-        buttons: 1,
-        clientX: event.clientX,
-        clientY: event.clientY,
-        screenX: event.screenX,
-        screenY: event.screenY,
-    }));
 }
 
 export function registerLayersDrag(editor, options = {}) {
@@ -104,37 +165,29 @@ export function registerLayersDrag(editor, options = {}) {
 
     editor.__voodbuilderLayersDragRegistered = true;
 
-    const syncLayerDraggable = () => {
-        const wrapper = editor.getWrapper?.();
-
-        safeFindComponents(wrapper, '[data-voodbuilder-section-block]').forEach((section) => {
-            ensureLayerDraggable(section);
-        });
-
-        const walk = (component) => {
-            if (! component) {
-                return;
-            }
-
-            ensureLayerDraggable(component);
-            component.components?.().forEach(walk);
-        };
-
-        walk(wrapper);
-    };
-
-    editor.on('load', syncLayerDraggable);
-    editor.on('component:add', (component) => {
-        ensureLayerDraggable(component);
-    });
-
-    editor.on('voodbuilder:layers-panel:show', () => {
-        syncLayerDraggable();
+    const refreshLayers = () => {
+        syncAllLayerDraggable(editor);
 
         window.requestAnimationFrame(() => {
             editor.Layers?.render?.();
         });
+    };
+
+    editor.on('load', refreshLayers);
+    editor.on('component:add', (component) => {
+        ensureLayerDraggable(component, editor);
+
+        let parent = component.parent?.();
+
+        while (parent) {
+            ensureLayerDraggable(parent, editor);
+            parent = parent.parent?.();
+        }
     });
 
-    mount.addEventListener('mousedown', forwardRowDragToHandle);
+    editor.on('voodbuilder:layers-panel:show', refreshLayers);
+
+    mount.addEventListener('mousedown', (event) => {
+        handleLayerMouseDown(editor, event);
+    });
 }

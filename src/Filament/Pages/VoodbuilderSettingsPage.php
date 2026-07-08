@@ -220,57 +220,74 @@ class VoodbuilderSettingsPage extends Page
                         Tab::make(__('voodbuilder::settings.tabs.appearance'))
                             ->icon('heroicon-o-swatch')
                             ->schema([
-                                Section::make(__('Header & navigation'))
+                                Section::make(__('voodbuilder::settings.header_nav.section'))
+                                    ->description(__('voodbuilder::settings.header_nav.section_description'))
                                     ->contained(false)
                                     ->schema([
-                                        Toggle::make('show_notification_bell')
-                                            ->label(__('Show notification bell'))
-                                            ->helperText(__('Visible to logged-in users when comment notifications are enabled.'))
-                                            ->default(true),
-                                        Toggle::make('show_theme_toggle')
-                                            ->label(__('Show dark / light toggle'))
-                                            ->default(true)
-                                            ->live(),
-                                        Select::make('theme_mode')
-                                            ->label(fn (Get $get): string => $get('show_theme_toggle')
-                                                ? __('Default theme')
-                                                : __('Site theme'))
-                                            ->options(fn (Get $get): array => $get('show_theme_toggle')
-                                                ? [
-                                                    'system' => __('Follow system preference'),
-                                                    'light' => __('Always light'),
-                                                    'dark' => __('Always dark'),
-                                                ]
-                                                : [
-                                                    'light' => __('Always light'),
-                                                    'dark' => __('Always dark'),
-                                                ])
-                                            ->default('system')
-                                            ->helperText(fn (Get $get): string => $get('show_theme_toggle')
-                                                ? __('Used on first visit and in private browsing when the visitor has not chosen a theme yet. “Follow system” uses the device setting.')
-                                                : __('Applied to all visitors; the theme toggle is hidden.')),
-                                        Toggle::make('show_account_link')
-                                            ->label(__('Show account link for logged-in users'))
-                                            ->default(true),
-                                        Toggle::make('sticky_nav')
-                                            ->label(__('Sticky navigation on standard pages'))
-                                            ->helperText(__('Keeps the header visible while scrolling on home, CMS pages, and auth screens. Documentation pages with a sidebar always use a fixed header.'))
-                                            ->default(false),
-                                        Toggle::make('show_language_switcher')
-                                            ->label(__('Show language switcher'))
-                                            ->helperText(__('Hidden automatically when only one content locale is configured.'))
-                                            ->default(true)
-                                            ->live()
-                                            ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
-                                                && LocaleSwitcher::enabled()),
-                                        Select::make('primary_locale')
-                                            ->label(__('voodbuilder::settings.primary_locale'))
-                                            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
-                                            ->default(fn (): string => VoodbuilderSettings::primaryLocale())
-                                            ->helperText(__('voodbuilder::settings.primary_locale_help'))
-                                            ->visible(fn (): bool => class_exists(Locales::class)
-                                                && class_exists(LocaleSwitcher::class)
-                                                && LocaleSwitcher::enabled()),
+                                        Section::make(__('voodbuilder::settings.header_nav.navigation_fieldset'))
+                                            ->description(__('voodbuilder::settings.header_nav.navigation_fieldset_help'))
+                                            ->compact()
+                                            ->schema([
+                                                Toggle::make('sticky_nav')
+                                                    ->label(__('voodbuilder::settings.header_nav.sticky_nav'))
+                                                    ->helperText(__('voodbuilder::settings.header_nav.sticky_nav_help'))
+                                                    ->default(false),
+                                                Toggle::make('show_notification_bell')
+                                                    ->label(__('voodbuilder::settings.header_nav.notification_bell'))
+                                                    ->helperText(__('voodbuilder::settings.header_nav.notification_bell_help'))
+                                                    ->default(true),
+                                                Toggle::make('show_account_link')
+                                                    ->label(__('voodbuilder::settings.header_nav.account_link'))
+                                                    ->helperText(__('voodbuilder::settings.header_nav.account_link_help'))
+                                                    ->default(true),
+                                            ]),
+                                        Section::make(__('voodbuilder::settings.header_nav.theme_fieldset'))
+                                            ->description(__('voodbuilder::settings.header_nav.theme_fieldset_help'))
+                                            ->compact()
+                                            ->schema([
+                                                Toggle::make('show_theme_toggle')
+                                                    ->label(__('voodbuilder::settings.header_nav.theme_toggle'))
+                                                    ->helperText(__('voodbuilder::settings.header_nav.theme_toggle_help'))
+                                                    ->default(true)
+                                                    ->live(),
+                                                Select::make('theme_mode')
+                                                    ->label(fn (Get $get): string => $get('show_theme_toggle')
+                                                        ? __('voodbuilder::settings.header_nav.default_theme')
+                                                        : __('voodbuilder::settings.header_nav.site_theme'))
+                                                    ->options(fn (Get $get): array => $get('show_theme_toggle')
+                                                        ? [
+                                                            'system' => __('Follow system preference'),
+                                                            'light' => __('Always light'),
+                                                            'dark' => __('Always dark'),
+                                                        ]
+                                                        : [
+                                                            'light' => __('Always light'),
+                                                            'dark' => __('Always dark'),
+                                                        ])
+                                                    ->default('system')
+                                                    ->helperText(fn (Get $get): string => $get('show_theme_toggle')
+                                                        ? __('voodbuilder::settings.header_nav.default_theme_help')
+                                                        : __('voodbuilder::settings.header_nav.site_theme_help')),
+                                            ]),
+                                        Section::make(__('voodbuilder::settings.header_nav.language_fieldset'))
+                                            ->compact()
+                                            ->schema([
+                                                Toggle::make('show_language_switcher')
+                                                    ->label(__('voodbuilder::settings.header_nav.language_switcher'))
+                                                    ->helperText(__('voodbuilder::settings.header_nav.language_switcher_help'))
+                                                    ->default(true)
+                                                    ->live()
+                                                    ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
+                                                        && LocaleSwitcher::enabled()),
+                                                Select::make('primary_locale')
+                                                    ->label(__('voodbuilder::settings.primary_locale'))
+                                                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
+                                                    ->default(fn (): string => VoodbuilderSettings::primaryLocale())
+                                                    ->helperText(__('voodbuilder::settings.primary_locale_help'))
+                                                    ->visible(fn (): bool => class_exists(Locales::class)
+                                                        && class_exists(LocaleSwitcher::class)
+                                                        && LocaleSwitcher::enabled()),
+                                            ]),
                                     ]),
                             ]),
                         Tab::make('themes')

@@ -949,8 +949,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     min-width: 0;
 }
 
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger,
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger {
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger {
     display: grid;
     align-items: center;
     min-height: 1.3125rem;
@@ -959,8 +958,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     line-height: 1.5;
 }
 
-.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger-label,
-.voodbuilder-gjs-root .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger-label {
+.voodbuilder-gjs-root .gjs-trt-trait .gjs-field:has(.voodbuilder-gjs-select-wrap) .voodbuilder-gjs-select-trigger-label {
     line-height: 1.5;
 }
 

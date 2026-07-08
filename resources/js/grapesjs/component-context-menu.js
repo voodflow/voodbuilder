@@ -40,7 +40,7 @@ export function resolveComponentFromElement(editor, element) {
     return null;
 }
 
-export function resolveComponentFromLayerElement(layerEl) {
+export function resolveComponentFromLayerElement(layerEl, editor = null) {
     const layer = layerEl?.closest?.('.gjs-layer') ?? layerEl;
 
     if (! layer) {
@@ -48,17 +48,40 @@ export function resolveComponentFromLayerElement(layerEl) {
     }
 
     const viewModel = layer.__gjsv?.model;
-    const cashModel = layer.__cashData?.model;
 
     if (viewModel?.toHTML) {
         return viewModel;
     }
 
+    const cashModel = layer.__cashData?.model;
+
     if (cashModel?.toHTML) {
         return cashModel;
     }
 
-    return null;
+    if (! editor?.getWrapper) {
+        return null;
+    }
+
+    let match = null;
+
+    const walk = (component) => {
+        if (match || ! component) {
+            return;
+        }
+
+        if (component.viewLayer?.el === layer) {
+            match = component;
+
+            return;
+        }
+
+        component.components?.().forEach(walk);
+    };
+
+    walk(editor.getWrapper());
+
+    return match;
 }
 
 function hasSelectableParent(component, editor) {

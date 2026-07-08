@@ -790,6 +790,10 @@
     appearance: textfield;
 }
 
+.voodbuilder-gjs-shell__right .gjs-field-integer.voodbuilder-gjs-input-group--keyword input {
+    color: var(--color-vp-text-2, #64748b);
+}
+
 .voodbuilder-gjs-shell__right .gjs-field-integer input::-webkit-outer-spin-button,
 .voodbuilder-gjs-shell__right .gjs-field-integer input::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -856,6 +860,28 @@
 .voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field-select .voodbuilder-gjs-select-wrap,
 .voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field > .voodbuilder-gjs-select-wrap:only-child {
     width: 100%;
+}
+
+/* Style-manager selects (font family, font weight, …) — match integer value styling */
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap):not(.gjs-field-integer) .voodbuilder-gjs-select-trigger {
+    min-height: calc(var(--vb-inspector-control-h) - 2px);
+    padding: 0 1.75rem 0 0.5rem !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.35 !important;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.voodbuilder-gjs-select-wrap):not(.gjs-field-integer) .voodbuilder-gjs-select-trigger-label {
+    padding-inline-start: 0 !important;
+    color: var(--color-vp-text-2, #64748b) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property .voodbuilder-gjs-select-wrap--font .voodbuilder-gjs-select-trigger-label {
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 /* Text align / radio — full width segmented control */

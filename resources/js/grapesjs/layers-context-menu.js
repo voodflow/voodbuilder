@@ -23,7 +23,7 @@ export function registerLayersContextMenu(editor, options = {}) {
             return;
         }
 
-        const component = resolveComponentFromLayerElement(layerEl);
+        const component = resolveComponentFromLayerElement(layerEl, editor);
 
         if (! component) {
             return;
