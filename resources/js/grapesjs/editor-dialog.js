@@ -2,6 +2,8 @@
  * Styled editor dialogs — replaces native browser confirm/alert/prompt.
  */
 
+import { enhanceInspectorSelects } from './inspector-select-ui.js';
+
 let activeDialog = null;
 
 function escapeHtml(value) {
@@ -220,7 +222,7 @@ export function componentMetaDialog(options = {}) {
                 <div class="voodbuilder-gjs-modal__body voodbuilder-gjs-dialog__body">
                     ${messageBlock}
                     <div class="voodbuilder-gjs-component-code-modal__meta">
-                        <label class="voodbuilder-gjs-form-field">
+                        <label class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                             <span class="voodbuilder-gjs-form-field__label">${escapeHtml(labels.componentsNamePrompt ?? 'Component name')}</span>
                             <input
                                 type="text"
@@ -231,9 +233,9 @@ export function componentMetaDialog(options = {}) {
                                 required
                             />
                         </label>
-                        <label class="voodbuilder-gjs-form-field">
+                        <label class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                             <span class="voodbuilder-gjs-form-field__label">${escapeHtml(categoryLabel ?? labels.componentsCodeImportCategory ?? 'Category')}</span>
-                            <select class="voodbuilder-gjs-input" data-voodbuilder-dialog-category>
+                            <select class="voodbuilder-gjs-input voodbuilder-gjs-input--select" data-voodbuilder-dialog-category>
                                 ${categoryOptions}
                             </select>
                         </label>
@@ -252,6 +254,7 @@ export function componentMetaDialog(options = {}) {
 
         document.body.appendChild(modal);
         modal.hidden = false;
+        enhanceInspectorSelects(modal);
 
         const nameInput = modal.querySelector('[data-voodbuilder-dialog-name]');
         const categoryInput = modal.querySelector('[data-voodbuilder-dialog-category]');
