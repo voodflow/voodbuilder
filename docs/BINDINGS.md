@@ -241,6 +241,47 @@ Binding `slug` on a **Read more** link therefore uses the model permalink, not t
 
 ---
 
+## List repeat (query loop)
+
+Repeat a container for each record returned by a registered model integration list.
+
+### HTML contract
+
+```html
+<div data-voodbuilder-repeat="vtuts.latest_list" data-voodbuilder-repeat-limit="6">
+  <article data-voodbuilder-repeat-item>
+    <h2 data-voodbuilder-bind="vtuts.list_item.title">Title</h2>
+    <a data-voodbuilder-bind="vtuts.list_item.url" href="#">Read more</a>
+  </article>
+  <p data-voodbuilder-repeat-empty>No tutorials published yet.</p>
+</div>
+```
+
+| Attribute | Purpose |
+|-----------|---------|
+| `data-voodbuilder-repeat` | List key from a model integration (same registry as Dynamic panel → List repeat) |
+| `data-voodbuilder-repeat-limit` | Max items (1–24, default 6) |
+| `data-voodbuilder-repeat-sort` | Optional sort column |
+| `data-voodbuilder-repeat-sort-dir` | `asc` or `desc` |
+| `data-voodbuilder-repeat-item` | Marks the template node duplicated for each record |
+| `data-voodbuilder-repeat-empty` | Optional fallback shown when the list returns zero records |
+
+Inside the item template, bind fields with **List item** sources (not “Latest record”).
+
+### Empty state
+
+When the resolved list is empty:
+
+1. The item template is removed from the output.
+2. If a child has `data-voodbuilder-repeat-empty`, that markup is kept (bindings inside it are resolved).
+3. Repeat attributes are stripped from the container.
+
+Without an empty-state node, the container renders nothing.
+
+Configure list repeat in the editor: select the grid/container → Inspector → **List repeat**.
+
+---
+
 ## Vtuts: `vtuts.latest`
 
 Registered by `Voodflow\Vtuts\Support\VtutsGrapesJsBlocks`.

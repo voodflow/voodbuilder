@@ -77,6 +77,8 @@ final class GrapesJsRepeatRenderer
         $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null);
 
         if ($records === []) {
+            $this->renderEmptyRepeat($container, $page);
+
             return;
         }
 
@@ -112,17 +114,77 @@ final class GrapesJsRepeatRenderer
         }
 
         $insertHost->removeChild($template);
-        $container->removeAttribute('data-voodbuilder-repeat');
-        $container->removeAttribute('data-voodbuilder-repeat-limit');
-        $container->removeAttribute('data-voodbuilder-repeat-sort');
-        $container->removeAttribute('data-voodbuilder-repeat-sort-dir');
+        $this->stripRepeatAttributes($container);
 
         if ($insertHost !== $container && $insertHost instanceof DOMElement) {
-            $insertHost->removeAttribute('data-voodbuilder-repeat');
-            $insertHost->removeAttribute('data-voodbuilder-repeat-limit');
-            $insertHost->removeAttribute('data-voodbuilder-repeat-sort');
-            $insertHost->removeAttribute('data-voodbuilder-repeat-sort-dir');
-            $insertHost->removeAttribute('data-voodbuilder-repeat-item');
+            $this->stripRepeatAttributes($insertHost);
+        }
+    }
+
+    protected function renderEmptyRepeat(DOMElement $container, ?SitePage $page): void
+    {
+        $template = $this->resolveTemplateNode($container);
+
+        if ($template instanceof DOMElement && $template->parentNode !== null) {
+            $template->parentNode->removeChild($template);
+        }
+
+        $emptyNode = $this->resolveEmptyNode($container);
+
+        if ($emptyNode instanceof DOMElement) {
+            $emptyNode->removeAttribute('data-voodbuilder-repeat-empty');
+
+            $emptyHtml = $container->ownerDocument?->saveHTML($emptyNode) ?? '';
+
+            if (
+                str_contains($emptyHtml, 'data-voodbuilder-bind')
+                && $emptyNode->parentNode instanceof DOMElement
+            ) {
+                $rendered = app(GrapesJsBindingRenderer::class)->render($emptyHtml, $page);
+                $insertBefore = $emptyNode->nextSibling;
+                $parent = $emptyNode->parentNode;
+                $parent->removeChild($emptyNode);
+                $this->appendHtmlNodes($parent, $rendered, $insertBefore);
+            }
+        }
+
+        $this->stripRepeatAttributesFromTree($container);
+    }
+
+    protected function resolveEmptyNode(DOMElement $container): ?DOMElement
+    {
+        foreach ($container->childNodes as $child) {
+            if ($child instanceof DOMElement && $child->hasAttribute('data-voodbuilder-repeat-empty')) {
+                return $child;
+            }
+        }
+
+        foreach ($container->getElementsByTagName('*') as $element) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-repeat-empty')) {
+                return $element;
+            }
+        }
+
+        return null;
+    }
+
+    protected function stripRepeatAttributes(DOMElement $element): void
+    {
+        $element->removeAttribute('data-voodbuilder-repeat');
+        $element->removeAttribute('data-voodbuilder-repeat-limit');
+        $element->removeAttribute('data-voodbuilder-repeat-sort');
+        $element->removeAttribute('data-voodbuilder-repeat-sort-dir');
+        $element->removeAttribute('data-voodbuilder-repeat-item');
+    }
+
+    protected function stripRepeatAttributesFromTree(DOMElement $root): void
+    {
+        $this->stripRepeatAttributes($root);
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if ($element instanceof DOMElement) {
+                $this->stripRepeatAttributes($element);
+            }
         }
     }
 
