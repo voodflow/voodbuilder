@@ -323,7 +323,7 @@
 }
 
 /* Text / number inputs (simple fields — not integer+unit groups) */
-.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(.gjs-field-integer):not(:has(.voodbuilder-gjs-select-wrap)),
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:not(.gjs-field-color):not(.gjs-field-checkbox):not(.gjs-field-integer):not(:has(.voodbuilder-gjs-select-wrap)):not(:has(.gjs-radio-items)),
 .voodbuilder-gjs-shell__right .gjs-trt-trait .gjs-field:not(.gjs-field-checkbox):not(.gjs-field-integer):not(:has(.voodbuilder-gjs-select-wrap)) {
     display: flex;
     align-items: center;
@@ -890,23 +890,33 @@
     padding: 0;
 }
 
+.voodbuilder-gjs-shell__right .gjs-sm-property .gjs-field:has(.gjs-radio-items) {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-height: 0;
+    overflow: visible;
+}
+
 .voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-items {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 0;
     width: 100%;
     padding: 0;
     border: 1px solid var(--vb-inspector-control-border);
-    border-radius: 0.375rem;
+    border-radius: var(--vb-inspector-control-radius);
     background: var(--vb-inspector-control-bg-muted);
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item {
-    flex: none;
+    flex: 1 1 0;
     min-width: 0;
     max-width: none;
-    width: auto;
+    width: 100%;
     margin: 0;
     border: none !important;
     border-right: 1px solid var(--vb-inspector-control-border) !important;
@@ -920,9 +930,10 @@
 .voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item-label {
     display: block;
     width: 100%;
-    padding: 0.4375rem 0.125rem;
+    padding: 0.4375rem 0.25rem;
     font-size: 0.6875rem;
     font-weight: 500;
+    line-height: 1.35;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -930,10 +941,12 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+    color: var(--color-vp-text-2, #64748b);
+    cursor: pointer;
 }
 
 .voodbuilder-gjs-shell__right .gjs-sm-property:has(.gjs-radio-items) .gjs-radio-item input:checked + .gjs-radio-item-label {
-    background: #ffffff;
+    background: var(--vb-inspector-control-bg);
     color: var(--color-vp-brand-1, #6366f1);
     box-shadow: none;
 }
