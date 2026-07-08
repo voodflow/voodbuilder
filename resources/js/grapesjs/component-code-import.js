@@ -10,6 +10,11 @@ import { stripEmbeddableMediaFromHtml } from './component-media.js';
 import { migrateImportedTailwindHtml } from './imported-tailwind-support.js';
 import { renderCompatibilityPlaceholder, renderCompatibilityReport } from './import-compatibility-report.js';
 import { lucideIcon } from './editor-icons.js';
+import {
+    createCodeEditorField,
+    destroyCodeEditorFields,
+    formatCodeForEditor,
+} from './code-editor-field.js';
 
 let activeModal = null;
 let previewTimer = null;
@@ -64,6 +69,94 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+function createFallbackCodeField({
+    mount,
+    value = '',
+    minHeight = '12rem',
+    lineWrapping = false,
+    onChange = null,
+}) {
+    if (! mount) {
+        return null;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'voodbuilder-gjs-input voodbuilder-gjs-input--textarea voodbuilder-gjs-component-code-modal__textarea';
+    textarea.spellcheck = false;
+    textarea.value = value;
+    textarea.style.minHeight = minHeight;
+    textarea.wrap = lineWrapping ? 'soft' : 'off';
+    mount.replaceChildren(textarea);
+
+    let wrapping = lineWrapping;
+
+    textarea.addEventListener('input', () => {
+        onChange?.(textarea.value);
+    });
+
+    const field = {
+        get lineWrapping() {
+            return wrapping;
+        },
+        getValue: () => textarea.value,
+        setValue: (nextValue) => {
+            textarea.value = nextValue;
+        },
+        setLineWrapping(enabled) {
+            wrapping = Boolean(enabled);
+            textarea.wrap = wrapping ? 'soft' : 'off';
+        },
+        toggleLineWrapping() {
+            field.setLineWrapping(! wrapping);
+        },
+        setReviewClasses() {},
+        scrollToClass(className) {
+            const text = textarea.value;
+            const index = text.indexOf(className);
+
+            if (index < 0) {
+                return false;
+            }
+
+            textarea.focus();
+            textarea.setSelectionRange(index, index + className.length);
+
+            return true;
+        },
+        focus: () => {
+            textarea.focus();
+        },
+        destroy: () => {
+            textarea.remove();
+        },
+    };
+
+    return field;
+}
+
+function mountCodeField(options) {
+    try {
+        return createCodeEditorField(options) ?? createFallbackCodeField(options);
+    } catch (error) {
+        console.error('Voodbuilder: falling back to textarea code field.', error);
+
+        return createFallbackCodeField(options);
+    }
+}
+
+function syncWrapToggleButton(button, enabled) {
+    if (! button) {
+        return;
+    }
+
+    button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    button.classList.toggle('is-active', enabled);
+}
+
+function syncCompatibilityReview(editor, reviewClasses) {
+    editor?.setReviewClasses?.(reviewClasses ?? []);
+}
+
 function buildPreviewDocument({ html, css, canvasStyles = [] }) {
     const links = canvasStyles
         .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
@@ -102,6 +195,7 @@ function closeModal() {
 
     window.clearTimeout(previewTimer);
     window.clearTimeout(compileTimer);
+    destroyCodeEditorFields();
     activeModal.remove();
     activeModal = null;
 }
@@ -180,7 +274,7 @@ function openComponentCodeDialog({
                     <p class="voodbuilder-gjs-hint voodbuilder-gjs-component-code-modal__hint">
                         ${escapeHtml(modalHint)}
                     </p>
-                    <div class="voodbuilder-gjs-component-code-modal__meta${isCanvasEdit ? ' hidden' : ''}">
+                    <div class="voodbuilder-gjs-component-code-modal__meta${isCanvasEdit ? ' voodbuilder-gjs-is-hidden' : ''}">
                         <label class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                             <span class="voodbuilder-gjs-form-field__label">${escapeHtml(labels.componentsNamePrompt ?? 'Component name')}</span>
                             <input type="text" class="voodbuilder-gjs-input" data-voodbuilder-code-name placeholder="${escapeHtml(labels.componentsCodeImportNamePlaceholder ?? 'Hero · Pagedone')}" required />
@@ -192,16 +286,28 @@ function openComponentCodeDialog({
                             </select>
                         </label>
                     </div>
+                    <div class="voodbuilder-gjs-component-code-modal__compatibility-top" data-voodbuilder-code-compatibility></div>
                     <div class="voodbuilder-gjs-component-code-modal__workspace">
                         <div class="voodbuilder-gjs-component-code-modal__editor">
-                            <label class="voodbuilder-gjs-form-field">
-                                <span class="voodbuilder-gjs-form-field__label">HTML</span>
-                                <textarea class="voodbuilder-gjs-input voodbuilder-gjs-input--textarea voodbuilder-gjs-component-code-modal__textarea" rows="14" data-voodbuilder-code-html placeholder="${escapeHtml(labels.componentsCodeImportHtmlPlaceholder ?? 'Paste HTML here…')}"></textarea>
-                            </label>
-                            <label class="voodbuilder-gjs-form-field">
+                            <div class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
+                                <div class="voodbuilder-gjs-code-editor-toolbar">
+                                    <span class="voodbuilder-gjs-form-field__label">HTML</span>
+                                    <button
+                                        type="button"
+                                        class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-code-editor-wrap-toggle"
+                                        data-voodbuilder-code-wrap-toggle
+                                        aria-pressed="false"
+                                        title="${escapeHtml(labels.codeEditorWrapOff ?? 'Word wrap off')}"
+                                    >
+                                        ${escapeHtml(labels.codeEditorWrap ?? 'Word wrap')}
+                                    </button>
+                                </div>
+                                <div class="voodbuilder-gjs-code-editor-host voodbuilder-gjs-component-code-modal__code-editor voodbuilder-gjs-component-code-modal__code-editor--html" data-voodbuilder-code-html-host></div>
+                            </div>
+                            <div class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                                 <span class="voodbuilder-gjs-form-field__label">CSS <span class="voodbuilder-gjs-component-code-modal__optional">${escapeHtml(labels.componentsCodeImportCssOptional ?? 'optional')}</span></span>
-                                <textarea class="voodbuilder-gjs-input voodbuilder-gjs-input--textarea voodbuilder-gjs-component-code-modal__textarea" rows="5" data-voodbuilder-code-css placeholder="${escapeHtml(labels.componentsCodeImportCssPlaceholder ?? 'Custom CSS or leave empty to auto-extract <style> blocks')}"></textarea>
-                            </label>
+                                <div class="voodbuilder-gjs-code-editor-host voodbuilder-gjs-component-code-modal__code-editor voodbuilder-gjs-component-code-modal__code-editor--css" data-voodbuilder-code-css-host></div>
+                            </div>
                         </div>
                         <div class="voodbuilder-gjs-component-code-modal__preview-wrap">
                             <div class="voodbuilder-gjs-component-code-modal__preview-head">
@@ -214,7 +320,6 @@ function openComponentCodeDialog({
                                     <span>${escapeHtml(compileLabel)}</span>
                                 </div>
                             </div>
-                            <div data-voodbuilder-code-compatibility></div>
                         </div>
                     </div>
                 </div>
@@ -236,8 +341,9 @@ function openComponentCodeDialog({
 
         const nameInput = modal.querySelector('[data-voodbuilder-code-name]');
         const categoryInput = modal.querySelector('[data-voodbuilder-code-category]');
-        const htmlInput = modal.querySelector('[data-voodbuilder-code-html]');
-        const cssInput = modal.querySelector('[data-voodbuilder-code-css]');
+        const htmlHost = modal.querySelector('[data-voodbuilder-code-html-host]');
+        const cssHost = modal.querySelector('[data-voodbuilder-code-css-host]');
+        const wrapToggle = modal.querySelector('[data-voodbuilder-code-wrap-toggle]');
         const previewFrame = modal.querySelector('[data-voodbuilder-code-preview]');
         const previewLoading = modal.querySelector('[data-voodbuilder-code-preview-loading]');
         const compatibilityMount = modal.querySelector('[data-voodbuilder-code-compatibility]');
@@ -249,11 +355,26 @@ function openComponentCodeDialog({
         let normalizedPreviewHtml = '';
         let compileReady = false;
         let isCompiling = false;
+        let htmlEditor = null;
+        let cssEditor = null;
+
+        const getHtmlValue = () => htmlEditor?.getValue?.() ?? '';
+        const getCssValue = () => cssEditor?.getValue?.() ?? '';
+
+        const reportCompatibility = (report) => {
+            const reviewClasses = renderCompatibilityReport(compatibilityMount, report, labels, {
+                onReviewClassClick: (className) => {
+                    htmlEditor?.scrollToClass?.(className);
+                },
+            });
+
+            syncCompatibilityReview(htmlEditor, reviewClasses);
+        };
 
         renderCompatibilityPlaceholder(compatibilityMount, labels);
 
         const updateSubmitState = () => {
-            const hasHtml = htmlInput.value.trim() !== '';
+            const hasHtml = getHtmlValue().trim() !== '';
 
             if (isCanvasEdit) {
                 submitButton.disabled = ! hasHtml || ! compileReady || isCompiling;
@@ -272,12 +393,12 @@ function openComponentCodeDialog({
         };
 
         const readValues = () => {
-            const manualCss = cssInput.value.trim();
+            const manualCss = getCssValue().trim();
 
             return {
                 name: nameInput.value.trim(),
                 category: normalizeComponentCategory(categoryInput?.value, categories, defaultCategory),
-                html: normalizedPreviewHtml || parsePastedComponentSource(htmlInput.value).html,
+                html: normalizedPreviewHtml || parsePastedComponentSource(getHtmlValue()).html,
                 css: [manualCss, compiledTailwindCss].filter(Boolean).join('\n\n'),
             };
         };
@@ -296,6 +417,7 @@ function openComponentCodeDialog({
                 compileReady = false;
                 setCompiling(false);
                 renderCompatibilityPlaceholder(compatibilityMount, labels);
+                syncCompatibilityReview(htmlEditor, []);
                 refreshPreview();
                 updateSubmitState();
 
@@ -335,7 +457,7 @@ function openComponentCodeDialog({
                 normalizedPreviewHtml = String(payload.html ?? parsePastedComponentSource(trimmed).html);
                 compiledTailwindCss = String(payload.css ?? '');
                 compileReady = payload.compiled === true;
-                renderCompatibilityReport(compatibilityMount, payload.compatibility ?? null, labels);
+                reportCompatibility(payload.compatibility ?? null);
             } catch (error) {
                 if (requestId !== compileRequestId) {
                     return;
@@ -345,6 +467,7 @@ function openComponentCodeDialog({
                 normalizedPreviewHtml = parsePastedComponentSource(trimmed).html;
                 compileReady = false;
                 renderCompatibilityPlaceholder(compatibilityMount, labels);
+                syncCompatibilityReview(htmlEditor, []);
 
                 await alertDialog({
                     message: error instanceof Error
@@ -373,40 +496,70 @@ function openComponentCodeDialog({
             resolve(result);
         };
 
-        if (isEdit) {
-            nameInput.value = String(component.name ?? '');
-            htmlInput.value = String(component.html ?? '');
-            cssInput.value = String(component.css ?? '');
-            categoryInput.value = normalizeComponentCategory(component.category, categories, defaultCategory);
-        } else if (isCanvasEdit) {
-            htmlInput.value = String(initialHtml ?? '');
-        } else if (categoryInput) {
-            categoryInput.value = defaultCategory;
-        }
-
-        htmlInput.addEventListener('input', () => {
-            const parsed = parsePastedComponentSource(htmlInput.value);
-
-            if (! cssInput.value.trim() && parsed.extractedCss) {
-                cssInput.value = parsed.extractedCss;
-            }
-
-            scheduleCompile(htmlInput.value);
-        });
-
-        cssInput.addEventListener('input', () => {
-            refreshPreview();
-        });
-
-        nameInput.addEventListener('input', updateSubmitState);
-
         modal.querySelectorAll('[data-voodbuilder-code-cancel]').forEach((element) => {
             element.addEventListener('click', () => finish(null));
         });
 
+        if (isEdit) {
+            nameInput.value = String(component.name ?? '');
+            categoryInput.value = normalizeComponentCategory(component.category, categories, defaultCategory);
+        } else if (categoryInput) {
+            categoryInput.value = defaultCategory;
+        }
+
+        const initialHtmlValue = isEdit
+            ? String(component.html ?? '')
+            : isCanvasEdit
+                ? String(initialHtml ?? '')
+                : '';
+        const initialCssValue = isEdit ? String(component.css ?? '') : '';
+
+        try {
+            htmlEditor = mountCodeField({
+                mount: htmlHost,
+                value: formatCodeForEditor(initialHtmlValue, 'html'),
+                language: 'html',
+                minHeight: isCanvasEdit ? '18rem' : '14rem',
+                lineWrapping: false,
+                onChange: (value) => {
+                    const parsed = parsePastedComponentSource(value);
+
+                    if (! getCssValue().trim() && parsed.extractedCss) {
+                        cssEditor?.setValue(formatCodeForEditor(parsed.extractedCss, 'css'));
+                    }
+
+                    scheduleCompile(value);
+                },
+            });
+
+            cssEditor = mountCodeField({
+                mount: cssHost,
+                value: formatCodeForEditor(initialCssValue, 'css'),
+                language: 'css',
+                minHeight: '6rem',
+                onChange: () => {
+                    refreshPreview();
+                },
+            });
+        } catch (error) {
+            console.error('Voodbuilder: could not mount code editor fields.', error);
+        }
+
+        wrapToggle?.addEventListener('click', () => {
+            htmlEditor?.toggleLineWrapping?.();
+            const enabled = Boolean(htmlEditor?.lineWrapping);
+            syncWrapToggleButton(wrapToggle, enabled);
+            wrapToggle.title = enabled
+                ? (labels.codeEditorWrapOn ?? 'Word wrap on')
+                : (labels.codeEditorWrapOff ?? 'Word wrap off');
+        });
+        syncWrapToggleButton(wrapToggle, false);
+
+        nameInput?.addEventListener('input', updateSubmitState);
+
         submitButton.addEventListener('click', async () => {
-            const parsed = parsePastedComponentSource(htmlInput.value);
-            const manualCss = cssInput.value.trim();
+            const parsed = parsePastedComponentSource(getHtmlValue());
+            const manualCss = getCssValue().trim();
             const values = {
                 name: nameInput.value.trim(),
                 category: normalizeComponentCategory(categoryInput?.value, categories, defaultCategory),
@@ -420,7 +573,7 @@ function openComponentCodeDialog({
                         message: labels.componentsCodeImportHtmlRequired ?? 'Paste some HTML markup first.',
                         labels,
                     });
-                    htmlInput.focus();
+                    htmlEditor?.focus?.();
 
                     return;
                 }
@@ -469,7 +622,7 @@ function openComponentCodeDialog({
                     message: labels.componentsCodeImportHtmlRequired ?? 'Paste some HTML markup first.',
                     labels,
                 });
-                htmlInput.focus();
+                htmlEditor?.focus?.();
 
                 return;
             }
@@ -529,13 +682,13 @@ function openComponentCodeDialog({
 
         window.requestAnimationFrame(() => {
             if (isCanvasEdit) {
-                htmlInput.focus();
+                htmlEditor?.focus?.();
             } else {
                 nameInput.focus();
             }
 
-            if (htmlInput.value.trim() !== '') {
-                scheduleCompile(htmlInput.value);
+            if (getHtmlValue().trim() !== '') {
+                scheduleCompile(getHtmlValue());
             } else {
                 updateSubmitState();
             }

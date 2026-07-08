@@ -31,22 +31,23 @@ function statusLabel(labels, status) {
     return map[status] ?? labels.componentsCompatibilityStatusPartial ?? 'Partial compatibility';
 }
 
-export function renderCompatibilityReport(mount, report, labels = {}) {
+export function renderCompatibilityReport(mount, report, labels = {}, options = {}) {
     if (! mount) {
-        return;
+        return [];
     }
 
     if (! report || ! report.totals) {
         mount.hidden = true;
         mount.replaceChildren();
 
-        return;
+        return [];
     }
 
     mount.hidden = false;
 
     const { totals, status, adaptations = [], review = [], ready_sample: readySample = [] } = report;
     const statusText = statusLabel(labels, status);
+    const onReviewClassClick = options.onReviewClassClick ?? null;
 
     const statsParts = [
         formatLabel(labels.componentsCompatibilityClasses ?? ':count classes detected', { count: totals.classes }),
@@ -68,22 +69,24 @@ export function renderCompatibilityReport(mount, report, labels = {}) {
 
     const reviewHtml = review.length === 0
         ? ''
-        : `<ul class="voodbuilder-gjs-compatibility__chips" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">${review.slice(0, 16).map((item) => (
-            `<li class="voodbuilder-gjs-compatibility__chip"><code>${escapeHtml(item)}</code></li>`
-        )).join('')}${review.length > 16 ? `<li class="voodbuilder-gjs-compatibility__chip voodbuilder-gjs-compatibility__chip--more">+${review.length - 16}</li>` : ''}</ul>`;
+        : `<ul class="voodbuilder-gjs-compatibility__chips" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">${review.slice(0, 24).map((item) => (
+            `<li class="voodbuilder-gjs-compatibility__chip">
+                <button type="button" class="voodbuilder-gjs-compatibility__chip-btn" data-voodbuilder-review-class="${escapeHtml(item)}" title="${escapeHtml(labels.componentsCompatibilityReviewJump ?? 'Jump to class in editor')}">
+                    <code>${escapeHtml(item)}</code>
+                </button>
+            </li>`
+        )).join('')}${review.length > 24 ? `<li class="voodbuilder-gjs-compatibility__chip voodbuilder-gjs-compatibility__chip--more">+${review.length - 24}</li>` : ''}</ul>`;
 
-    const reviewSectionHtml = review.length === 0
+    const reviewBannerHtml = review.length === 0
         ? ''
-        : `<details class="voodbuilder-gjs-compatibility__section voodbuilder-gjs-compatibility__section--review" open>
-                <summary>
-                    <span>${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}</span>
+        : `<section class="voodbuilder-gjs-compatibility__review-banner" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">
+                <div class="voodbuilder-gjs-compatibility__review-banner-head">
+                    <h4 class="voodbuilder-gjs-compatibility__review-banner-title">${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}</h4>
                     <span class="voodbuilder-gjs-compatibility__count">${review.length}</span>
-                </summary>
-                <div class="voodbuilder-gjs-compatibility__section-body">
-                    <p class="voodbuilder-gjs-compatibility__review-hint">${escapeHtml(labels.componentsCompatibilityReviewHint ?? 'These classes were not found in the compiled CSS and may render without styles.')}</p>
-                    ${reviewHtml}
                 </div>
-            </details>`;
+                <p class="voodbuilder-gjs-compatibility__review-hint">${escapeHtml(labels.componentsCompatibilityReviewHint ?? 'These classes were not found in the compiled CSS and may render without styles. Click a class to jump to it in the editor.')}</p>
+                ${reviewHtml}
+            </section>`;
 
     const sampleHtml = readySample.length > 0
         ? `<p class="voodbuilder-gjs-compatibility__sample">${escapeHtml(labels.componentsCompatibilityReadySample ?? 'Examples:')} ${readySample.map((item) => `<code>${escapeHtml(item)}</code>`).join(' ')}</p>`
@@ -91,6 +94,7 @@ export function renderCompatibilityReport(mount, report, labels = {}) {
 
     mount.innerHTML = `
         <div class="voodbuilder-gjs-compatibility">
+            ${reviewBannerHtml}
             <div class="voodbuilder-gjs-compatibility__head">
                 <div>
                     <h3 class="voodbuilder-gjs-compatibility__title">${escapeHtml(labels.componentsCompatibilityTitle ?? 'Compatibility report')}</h3>
@@ -105,9 +109,16 @@ export function renderCompatibilityReport(mount, report, labels = {}) {
                     ${adaptationsHtml}
                 </div>
             </details>
-            ${reviewSectionHtml}
         </div>
     `;
+
+    mount.querySelectorAll('[data-voodbuilder-review-class]').forEach((button) => {
+        button.addEventListener('click', () => {
+            onReviewClassClick?.(button.getAttribute('data-voodbuilder-review-class'));
+        });
+    });
+
+    return review;
 }
 
 export function renderCompatibilityPlaceholder(mount, labels = {}) {

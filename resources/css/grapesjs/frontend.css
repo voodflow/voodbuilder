@@ -2653,6 +2653,31 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     line-height: 1.45;
 }
 
+.voodbuilder-gjs-is-hidden {
+    display: none !important;
+}
+
+.voodbuilder-gjs-code-editor-host {
+    width: 100%;
+    min-width: 0;
+}
+
+.voodbuilder-gjs-component-code-modal__code-editor--html .cm-editor {
+    min-height: 14rem;
+}
+
+.voodbuilder-gjs-component-code-modal__code-editor--css .cm-editor {
+    min-height: 6rem;
+}
+
+.voodbuilder-gjs-component-code-modal__code-editor .cm-editor {
+    font-size: 0.75rem;
+}
+
+.voodbuilder-gjs-component-code-modal__code-editor .cm-scroller {
+    overflow: auto;
+}
+
 .voodbuilder-gjs-component-code-modal__optional {
     font-size: 0.6875rem;
     font-weight: 500;
@@ -2749,11 +2774,35 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     background: #fff;
 }
 
-.voodbuilder-gjs-component-code-modal [data-voodbuilder-code-compatibility] {
+.voodbuilder-gjs-component-code-modal [data-voodbuilder-code-compatibility],
+.voodbuilder-gjs-component-code-modal__compatibility-top {
     flex: 0 0 auto;
     min-height: 0;
-    max-height: 12rem;
-    overflow-y: auto;
+    overflow: visible;
+}
+
+.voodbuilder-gjs-component-code-modal__compatibility-top {
+    margin-bottom: 0.25rem;
+}
+
+.voodbuilder-gjs-code-editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.voodbuilder-gjs-code-editor-wrap-toggle {
+    min-height: 1.75rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.voodbuilder-gjs-code-editor-wrap-toggle.is-active {
+    color: var(--color-vp-brand-1, #3451b2);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 12%, transparent);
 }
 
 @media (max-width: 960px) {
@@ -2769,8 +2818,32 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 
 .voodbuilder-gjs-compatibility {
     padding: 0.75rem 0.85rem 0.85rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
+    border-radius: 0.625rem;
     background: var(--color-vp-bg-elv, #fff);
+}
+
+.voodbuilder-gjs-compatibility__review-banner {
+    margin-bottom: 0.75rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, #d97706 28%, transparent);
+    background: color-mix(in srgb, #f59e0b 10%, var(--color-vp-bg-elv, #fff));
+}
+
+.voodbuilder-gjs-compatibility__review-banner-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.voodbuilder-gjs-compatibility__review-banner-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #b45309;
 }
 
 .voodbuilder-gjs-compatibility--placeholder {
@@ -2937,6 +3010,21 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 .voodbuilder-gjs-compatibility__chip {
     display: inline-flex;
     max-width: 100%;
+}
+
+.voodbuilder-gjs-compatibility__chip-btn {
+    display: inline-flex;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-compatibility__chip-btn:hover code,
+.voodbuilder-gjs-compatibility__chip-btn:focus-visible code {
+    background: color-mix(in srgb, #f59e0b 24%, transparent);
+    outline: 2px solid color-mix(in srgb, #d97706 35%, transparent);
+    outline-offset: 1px;
 }
 
 .voodbuilder-gjs-compatibility__chip code {

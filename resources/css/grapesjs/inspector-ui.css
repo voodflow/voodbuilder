@@ -190,6 +190,74 @@
     border-bottom: none;
 }
 
+/* ── Decorations sector: gruppi visivi e border-radius unificato ── */
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border-radius,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__box-shadow,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__fill {
+    margin-top: 0.625rem;
+}
+
+/* Nascondi sotto-proprietà duplicate se compaiono fuori dal composite */
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-top-left-radius,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-top-right-radius,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-bottom-left-radius,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-bottom-right-radius,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-width,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-style,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations > .gjs-sm-properties > .gjs-sm-property__border-color {
+    display: none;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border-radius.gjs-sm-composite,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border.gjs-sm-composite {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--vb-inspector-control-border);
+    border-radius: var(--vb-inspector-control-radius);
+    background: var(--vb-inspector-control-bg-muted);
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border-radius .gjs-sm-properties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem 0.5rem;
+    padding: 0;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border-radius .gjs-sm-property {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border-radius .gjs-sm-label {
+    flex: none;
+    width: 100%;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border .gjs-sm-properties {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property__border .gjs-sm-property {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.5rem;
+    padding: 0;
+}
+
 /* ── Unified control surface (single border, no nested boxes) ── */
 .voodbuilder-gjs-shell__right {
     --vb-inspector-control-h: 2rem;

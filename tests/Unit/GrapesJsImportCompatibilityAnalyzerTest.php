@@ -48,6 +48,22 @@ class GrapesJsImportCompatibilityAnalyzerTest extends TestCase
         $this->assertGreaterThan(0, $report['totals']['review']);
     }
 
+    public function test_ignores_voodbuilder_infrastructure_classes_in_review(): void
+    {
+        $raw = '<section class="voodbuilder-gjs-section"><div class="voodbuilder-gjs-container px-5 py-24"><p class="text-vp-text-2">Hello</p></div></section>';
+        $normalized = GrapesJsPastedComponentNormalizer::normalize($raw);
+        $css = GrapesJsPastedComponentNormalizer::compileTailwindCss((string) $normalized['html']);
+
+        if ($css === '') {
+            $this->markTestSkipped('Node.js Tailwind compiler is not available in this environment.');
+        }
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, (string) $normalized['html'], $css);
+
+        $this->assertNotContains('voodbuilder-gjs-section', $report['review']);
+        $this->assertNotContains('voodbuilder-gjs-container', $report['review']);
+    }
+
     public function test_css_includes_utility_detects_escaped_variants(): void
     {
         $css = '.voodbuilder-pasted-component .hover\\:bg-primary-hover:hover { background-color: red; }';

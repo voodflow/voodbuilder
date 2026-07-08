@@ -70,6 +70,7 @@ final class VoodbuilderThemeTokenMigrator
     public static function migrateHtml(string $html): string
     {
         $html = self::migrateSectionElements($html);
+        $html = self::ensureSectionBlockContainers($html);
         $html = self::stripConflictingInlineTextColors($html);
         $html = self::migrateInlineStyles($html);
 
@@ -529,6 +530,7 @@ final class VoodbuilderThemeTokenMigrator
         $tokens = self::normalizeBrandBackgroundClasses($tokens);
         $tokens = self::normalizeLegacyFlexColumnWidths($tokens);
         $tokens = self::migrateContainerClass($tokens);
+        $tokens = self::syncContainerTailwindUtilities($tokens);
 
         return implode(' ', $tokens);
     }
@@ -601,6 +603,65 @@ final class VoodbuilderThemeTokenMigrator
             $tokens,
             static fn (string $token): bool => $token !== 'mx-auto',
         ));
+    }
+
+    /**
+     * @var list<string>
+     */
+    private const CONTAINER_TAILWIND_UTILITIES = [
+        'mx-auto',
+        'w-full',
+        'max-w-[var(--width-vp-layout)]',
+    ];
+
+    /**
+     * Keep layout when `voodbuilder-gjs-container` is present: mirror its global CSS
+     * as Tailwind utilities so per-block JIT compile also constrains width.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function syncContainerTailwindUtilities(array $tokens): array
+    {
+        if (! in_array('voodbuilder-gjs-container', $tokens, true)) {
+            return $tokens;
+        }
+
+        foreach (self::CONTAINER_TAILWIND_UTILITIES as $utility) {
+            if (! in_array($utility, $tokens, true)) {
+                $tokens[] = $utility;
+            }
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * Catalog section blocks always wrap content in a container div. Restore it when
+     * editors remove `voodbuilder-gjs-container` from the code modal.
+     */
+    private static function ensureSectionBlockContainers(string $html): string
+    {
+        if (! str_contains($html, 'data-voodbuilder-section-block')) {
+            return $html;
+        }
+
+        return preg_replace_callback(
+            '/<section\b([^>]*\bdata-voodbuilder-section-block=(["\'])[^"\']+\2[^>]*)>(\s*)<div\b([^>]*)\bclass=(["\'])(.*?)\5([^>]*)>/i',
+            static function (array $matches): string {
+                $tokens = preg_split('/\s+/', trim($matches[6]), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                if (in_array('voodbuilder-gjs-container', $tokens, true) || in_array('container', $tokens, true)) {
+                    return $matches[0];
+                }
+
+                $tokens = self::syncContainerTailwindUtilities(array_merge(['voodbuilder-gjs-container'], $tokens));
+                $classes = implode(' ', $tokens);
+
+                return '<section'.$matches[1].'>'.$matches[3].'<div'.$matches[4].'class='.$matches[5].$classes.$matches[5].$matches[7].'>';
+            },
+            $html,
+        ) ?? $html;
     }
 
     /**

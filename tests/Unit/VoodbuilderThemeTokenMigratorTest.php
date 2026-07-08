@@ -291,7 +291,27 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $migrated);
         $this->assertStringNotContainsString('class="container', $migrated);
+    }
+
+    public function test_restores_container_on_section_catalog_blocks(): void
+    {
+        $html = '<section data-voodbuilder-section-block="vb-blog-1" class="text-vp-text-2 voodbuilder-gjs-section"><div class="px-5 py-24">Content</div></section>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $migrated);
+    }
+
+    public function test_expands_voodbuilder_container_with_tailwind_utilities(): void
+    {
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-gjs-container px-5 py-24');
+
+        $this->assertStringContainsString('mx-auto', $classes);
+        $this->assertStringContainsString('w-full', $classes);
+        $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $classes);
     }
 
     public function test_preserves_columns_that_already_have_responsive_widths(): void

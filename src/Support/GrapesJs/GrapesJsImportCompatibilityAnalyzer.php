@@ -31,6 +31,12 @@ final class GrapesJsImportCompatibilityAnalyzer
     private const IGNORED_CLASSES = [
         'dark',
         'voodbuilder-pasted-component',
+        'voodbuilder-gjs-section',
+        'voodbuilder-gjs-container',
+        'voodbuilder-gjs-bound',
+        'voodbuilder-gjs-component-instance',
+        'body-font',
+        'title-font',
         'group',
         'peer',
     ];
