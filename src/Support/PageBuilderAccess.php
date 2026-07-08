@@ -9,8 +9,20 @@ use Spatie\Permission\Models\Permission;
 
 final class PageBuilderAccess
 {
+    /** @var (callable(): bool)|null */
+    private static $authorizer = null;
+
+    public static function authorizeUsing(?callable $callback): void
+    {
+        self::$authorizer = $callback;
+    }
+
     public static function userCanUsePageBuilder(): bool
     {
+        if (self::$authorizer !== null) {
+            return (bool) (self::$authorizer)();
+        }
+
         if (! auth()->check()) {
             return false;
         }
