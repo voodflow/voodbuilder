@@ -46,6 +46,7 @@ import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from './bindings-ui.js';
 import { registerCanvasComponentToolbar } from './canvas-component-toolbar.js';
+import { registerCanvasBlockCodeEditor } from './canvas-block-code-editor.js';
 import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport } from './canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from './conditions-ui.js';
 import {
@@ -58,6 +59,7 @@ import { registerComponentTailwindAutobuild } from './component-tailwind-autobui
 import { registerPageTailwindAutobuild } from './page-tailwind-autobuild.js';
 import { registerGlobalClassesUi } from './global-classes-ui.js';
 import { registerRevisionsUi } from './revisions-ui.js';
+import { registerPageTemplatesUi } from './page-templates-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
 import {
@@ -117,7 +119,7 @@ function normalizeVpressDynamicComponents(editor) {
     });
 }
 
-function buildPayload(editor) {
+export function buildPayload(editor) {
     const runExportStep = (label, step) => {
         try {
             step();
@@ -457,6 +459,7 @@ function registerInspectorExtensions(editor, shell, options, labels) {
         drag: labels.drag,
         clone: labels.clone,
         delete: labels.delete,
+        editBlockCode: labels.editBlockCode,
     });
 
     registerCanvasBlockDrag(editor);
@@ -613,6 +616,13 @@ export function initVpressGrapesJs(container, options = {}) {
     }
 
     if (shell && options.componentsUrl) {
+        registerCanvasBlockCodeEditor(editor, {
+            componentsUrl: options.componentsUrl,
+            csrf: options.csrf,
+            labels,
+            canvasStyles: options.canvasStyles ?? [],
+        });
+
         try {
             registerComponentsUi(editor, {
                 componentsUrl: options.componentsUrl,
@@ -725,6 +735,15 @@ export function initVpressGrapesJs(container, options = {}) {
             revisionsRestoreUrl: options.revisionsRestoreUrl,
             csrf: options.csrf,
             labels,
+            toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
+        });
+
+        registerPageTemplatesUi(editor, {
+            pageTemplatesUrl: options.pageTemplatesUrl,
+            csrf: options.csrf,
+            labels,
+            templateCategories: options.componentCategories ?? [],
+            defaultTemplateCategory: options.componentCategories?.[0] ?? 'General',
             toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
         });
 
@@ -1114,6 +1133,7 @@ function mountFrontendEditor() {
         componentCategories: config.componentCategories ?? [],
         revisionsUrl: config.revisionsUrl,
         revisionsRestoreUrl: config.revisionsRestoreUrl,
+        pageTemplatesUrl: config.pageTemplatesUrl,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',

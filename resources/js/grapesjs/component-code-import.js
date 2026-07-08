@@ -4,6 +4,7 @@
 
 import { alertDialog } from './editor-dialog.js';
 import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
+import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import { normalizeComponentCategory, resolveComponentCategories } from './component-categories.js';
 import { stripEmbeddableMediaFromHtml } from './component-media.js';
 import { migrateImportedTailwindHtml } from './imported-tailwind-support.js';
@@ -128,6 +129,9 @@ function openComponentCodeDialog({
     canvasStyles = [],
     componentCategories = [],
     component = null,
+    grapesComponent = null,
+    initialHtml = '',
+    onApply = null,
     onCreated,
     onUpdated,
 }) {
@@ -135,21 +139,28 @@ function openComponentCodeDialog({
         closeModal();
     }
 
-    const isEdit = component != null && component.id != null;
+    const isCanvasEdit = grapesComponent == null && typeof onApply === 'function';
+    const isEdit = ! isCanvasEdit && component != null && component.id != null;
     const categories = resolveComponentCategories(componentCategories);
     const defaultCategory = normalizeComponentCategory(null, categories, labels.componentsUncategorized ?? 'General');
     const categoryOptions = categories.map((category) => (
         `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
     )).join('');
-    const modalTitle = isEdit
-        ? (labels.componentsEditTitle ?? 'Edit component')
-        : (labels.componentsCodeImportTitle ?? 'Import from code');
-    const modalHint = isEdit
-        ? (labels.componentsEditHint ?? 'Update the component markup, styles, or library metadata.')
-        : (labels.componentsCodeImportHint ?? 'Paste HTML from Pagedone or any Tailwind snippet. Optional CSS is extracted from <style> tags automatically.');
-    const submitLabel = isEdit
-        ? (labels.componentsEditSubmit ?? 'Save changes')
-        : (labels.componentsCodeImportSubmit ?? 'Create component');
+    const modalTitle = isCanvasEdit
+        ? (labels.canvasBlockEditTitle ?? 'Edit block code')
+        : isEdit
+            ? (labels.componentsEditTitle ?? 'Edit component')
+            : (labels.componentsCodeImportTitle ?? 'Import from code');
+    const modalHint = isCanvasEdit
+        ? (labels.canvasBlockEditHint ?? 'Edit the markup for this block. Preview updates as you type.')
+        : isEdit
+            ? (labels.componentsEditHint ?? 'Update the component markup, styles, or library metadata.')
+            : (labels.componentsCodeImportHint ?? 'Paste HTML from Pagedone or any Tailwind snippet. Optional CSS is extracted from <style> tags automatically.');
+    const submitLabel = isCanvasEdit
+        ? (labels.canvasBlockEditApply ?? 'Apply to canvas')
+        : isEdit
+            ? (labels.componentsEditSubmit ?? 'Save changes')
+            : (labels.componentsCodeImportSubmit ?? 'Create component');
     const submitIcon = isEdit ? 'save' : 'plus';
     const compileLabel = labels.componentsCodeImportCompiling ?? 'Compiling Tailwind styles…';
 
@@ -169,14 +180,14 @@ function openComponentCodeDialog({
                     <p class="voodbuilder-gjs-hint voodbuilder-gjs-component-code-modal__hint">
                         ${escapeHtml(modalHint)}
                     </p>
-                    <div class="voodbuilder-gjs-component-code-modal__meta">
-                        <label class="voodbuilder-gjs-form-field">
+                    <div class="voodbuilder-gjs-component-code-modal__meta${isCanvasEdit ? ' hidden' : ''}">
+                        <label class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                             <span class="voodbuilder-gjs-form-field__label">${escapeHtml(labels.componentsNamePrompt ?? 'Component name')}</span>
                             <input type="text" class="voodbuilder-gjs-input" data-voodbuilder-code-name placeholder="${escapeHtml(labels.componentsCodeImportNamePlaceholder ?? 'Hero · Pagedone')}" required />
                         </label>
-                        <label class="voodbuilder-gjs-form-field">
+                        <label class="voodbuilder-gjs-form-field voodbuilder-gjs-form-field--stacked">
                             <span class="voodbuilder-gjs-form-field__label">${escapeHtml(labels.componentsCodeImportCategory ?? 'Category')}</span>
-                            <select class="voodbuilder-gjs-input" data-voodbuilder-code-category>
+                            <select class="voodbuilder-gjs-input voodbuilder-gjs-input--select" data-voodbuilder-code-category>
                                 ${categoryOptions}
                             </select>
                         </label>
@@ -221,6 +232,7 @@ function openComponentCodeDialog({
 
         document.body.appendChild(modal);
         activeModal = modal;
+        enhanceInspectorSelects(modal);
 
         const nameInput = modal.querySelector('[data-voodbuilder-code-name]');
         const categoryInput = modal.querySelector('[data-voodbuilder-code-category]');
@@ -241,8 +253,15 @@ function openComponentCodeDialog({
         renderCompatibilityPlaceholder(compatibilityMount, labels);
 
         const updateSubmitState = () => {
-            const hasName = nameInput.value.trim() !== '';
             const hasHtml = htmlInput.value.trim() !== '';
+
+            if (isCanvasEdit) {
+                submitButton.disabled = ! hasHtml || ! compileReady || isCompiling;
+
+                return;
+            }
+
+            const hasName = nameInput.value.trim() !== '';
             submitButton.disabled = ! hasName || ! hasHtml || ! compileReady || isCompiling;
         };
 
@@ -359,6 +378,8 @@ function openComponentCodeDialog({
             htmlInput.value = String(component.html ?? '');
             cssInput.value = String(component.css ?? '');
             categoryInput.value = normalizeComponentCategory(component.category, categories, defaultCategory);
+        } else if (isCanvasEdit) {
+            htmlInput.value = String(initialHtml ?? '');
         } else if (categoryInput) {
             categoryInput.value = defaultCategory;
         }
@@ -392,6 +413,46 @@ function openComponentCodeDialog({
                 html: normalizedPreviewHtml || parsed.html,
                 css: [manualCss, compiledTailwindCss].filter(Boolean).join('\n\n') || null,
             };
+
+            if (isCanvasEdit) {
+                if (! values.html) {
+                    await alertDialog({
+                        message: labels.componentsCodeImportHtmlRequired ?? 'Paste some HTML markup first.',
+                        labels,
+                    });
+                    htmlInput.focus();
+
+                    return;
+                }
+
+                if (! compileReady || isCompiling) {
+                    await alertDialog({
+                        message: labels.componentsCompilePending ?? 'Wait for Tailwind styles to finish compiling before saving.',
+                        labels,
+                    });
+
+                    return;
+                }
+
+                submitButton.disabled = true;
+
+                try {
+                    onApply?.({
+                        html: values.html,
+                        css: values.css ?? '',
+                    });
+                    finish(true);
+                } catch (error) {
+                    submitButton.disabled = false;
+                    updateSubmitState();
+                    await alertDialog({
+                        message: error instanceof Error ? error.message : (labels.componentsSaveError ?? 'Could not apply block changes.'),
+                        labels,
+                    });
+                }
+
+                return;
+            }
 
             if (! values.name) {
                 await alertDialog({
@@ -467,7 +528,11 @@ function openComponentCodeDialog({
         });
 
         window.requestAnimationFrame(() => {
-            nameInput.focus();
+            if (isCanvasEdit) {
+                htmlInput.focus();
+            } else {
+                nameInput.focus();
+            }
 
             if (htmlInput.value.trim() !== '') {
                 scheduleCompile(htmlInput.value);
@@ -483,5 +548,9 @@ export function openComponentCodeImportDialog(options = {}) {
 }
 
 export function openComponentCodeEditorDialog(options = {}) {
+    return openComponentCodeDialog(options);
+}
+
+export function openCanvasBlockCodeEditorDialog(options = {}) {
     return openComponentCodeDialog(options);
 }

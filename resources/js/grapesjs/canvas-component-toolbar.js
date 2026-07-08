@@ -3,6 +3,10 @@
  * @see https://grapesjs.com/docs/api/component.html#toolbar
  */
 
+import {
+    canEditBlockCode,
+    CMD_EDIT_BLOCK_CODE,
+} from './canvas-block-code-editor.js';
 import { lucideIcon } from './editor-icons.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
@@ -88,6 +92,19 @@ function buildComponentToolbar(editor, component, labels = {}) {
             },
             label: lucideIcon('copy', 16),
             command: 'tlb-clone',
+        });
+    }
+
+    if (canEditBlockCode(component, editor)) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--code',
+                [TOOLBAR_FLAG]: 'edit-code',
+                title: labels.editBlockCode ?? 'Edit code',
+                'aria-label': labels.editBlockCode ?? 'Edit code',
+            },
+            label: lucideIcon('code', 16),
+            command: CMD_EDIT_BLOCK_CODE,
         });
     }
 
