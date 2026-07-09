@@ -2,28 +2,18 @@
  * Page templates — save and apply full-page layouts from the editor top bar.
  */
 
-import { alertDialog, componentMetaDialog, confirmDialog } from './editor-dialog.js';
+import { alertDialog, componentMetaDialog, confirmDialog, promptDialog } from './editor-dialog.js';
 import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
 import { buildPayload } from './editor.js';
 import { lucideIcon } from './editor-icons.js';
+import { applyPageTemplateWithPrompt } from './page-template-apply.js';
 
-function applyTemplatePayload(editor, template) {
-    const payload = template?.builder_payload ?? template ?? {};
-
-    editor.setComponents(payload.html ?? '');
-    editor.setStyle(payload.css ?? '');
-
-    if (typeof payload.js === 'string' && payload.js.trim() !== '') {
-        editor.setJs?.(payload.js);
-    }
-
-    editor.__voodbuilderApplyPageLiveCss?.(payload.css ?? '');
-    editor.__voodbuilderSchedulePageCssRebuild?.(0);
-}
+export { applyTemplatePayload } from './page-template-apply.js';
 
 export function registerPageTemplatesUi(editor, options = {}) {
     const {
         pageTemplatesUrl,
+        pageTemplatesCatalogUrl = null,
         csrf,
         labels = {},
         toolbarMount,
@@ -66,7 +56,18 @@ export function registerPageTemplatesUi(editor, options = {}) {
                     <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--primary" data-voodbuilder-page-template-save>
                         ${labels.pageTemplatesSave ?? 'Save current page'}
                     </button>
+                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost" data-voodbuilder-page-template-import>
+                        ${labels.pageTemplatesImport ?? 'Import bundle'}
+                    </button>
+                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost" data-voodbuilder-page-template-import-url>
+                        ${labels.pageTemplatesImportUrl ?? 'Install from URL'}
+                    </button>
+                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost" data-voodbuilder-page-template-export>
+                        ${labels.pageTemplatesExport ?? 'Export all'}
+                    </button>
+                    <input type="file" accept="application/json,.json" hidden data-voodbuilder-page-template-import-input />
                 </div>
+                <div class="voodbuilder-gjs-page-templates-catalog" data-voodbuilder-page-templates-catalog hidden></div>
                 <div data-voodbuilder-page-templates-list></div>
             </div>
         </div>
@@ -74,7 +75,12 @@ export function registerPageTemplatesUi(editor, options = {}) {
     document.body.appendChild(modal);
 
     const listEl = modal.querySelector('[data-voodbuilder-page-templates-list]');
+    const catalogEl = modal.querySelector('[data-voodbuilder-page-templates-catalog]');
     const saveBtn = modal.querySelector('[data-voodbuilder-page-template-save]');
+    const importBtn = modal.querySelector('[data-voodbuilder-page-template-import]');
+    const importUrlBtn = modal.querySelector('[data-voodbuilder-page-template-import-url]');
+    const exportBtn = modal.querySelector('[data-voodbuilder-page-template-export]');
+    const importInput = modal.querySelector('[data-voodbuilder-page-template-import-input]');
 
     const closeModal = () => {
         modal.hidden = true;
@@ -127,19 +133,11 @@ export function registerPageTemplatesUi(editor, options = {}) {
             applyBtn.className = 'voodbuilder-gjs-btn voodbuilder-gjs-btn--primary';
             applyBtn.textContent = labels.pageTemplatesApply ?? 'Apply';
             applyBtn.addEventListener('click', async () => {
-                const confirmed = await confirmDialog({
-                    title: labels.dialogConfirmTitle ?? 'Confirm',
-                    message: labels.pageTemplatesApplyConfirm ?? 'Replace the current page content with this template?',
-                    labels,
-                    confirmLabel: labels.pageTemplatesApply ?? 'Apply',
-                });
+                const applied = await applyPageTemplateWithPrompt(editor, template, labels);
 
-                if (! confirmed) {
-                    return;
+                if (applied) {
+                    closeModal();
                 }
-
-                applyTemplatePayload(editor, template);
-                closeModal();
             });
 
             const deleteBtn = document.createElement('button');
@@ -187,9 +185,127 @@ export function registerPageTemplatesUi(editor, options = {}) {
         modal.hidden = false;
 
         try {
-            renderList(await loadTemplates());
+            await loadTemplates().then(renderList);
         } catch {
             listEl.innerHTML = `<p class="voodbuilder-gjs-hint">${labels.pageTemplatesLoadError ?? 'Could not load page templates.'}</p>`;
+        }
+
+        try {
+            await loadCatalog();
+        } catch {
+            if (catalogEl && pageTemplatesCatalogUrl) {
+                catalogEl.hidden = false;
+                catalogEl.innerHTML = `<p class="voodbuilder-gjs-hint">${labels.pageTemplatesCatalogInstallError ?? 'Could not install that template.'}</p>`;
+            }
+        }
+    }
+
+    async function loadCatalog() {
+        if (! catalogEl || ! pageTemplatesCatalogUrl) {
+            catalogEl?.replaceChildren();
+            if (catalogEl) {
+                catalogEl.hidden = true;
+            }
+
+            return;
+        }
+
+        catalogEl.hidden = false;
+        catalogEl.innerHTML = `<p class="voodbuilder-gjs-hint">${labels.pageTemplatesLoading ?? 'Loading…'}</p>`;
+
+        const response = await fetch(pageTemplatesCatalogUrl, {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+
+        if (! response.ok) {
+            throw new Error('catalog failed');
+        }
+
+        const payload = await response.json();
+        const entries = payload.templates ?? [];
+
+        if (entries.length === 0) {
+            catalogEl.innerHTML = `<p class="voodbuilder-gjs-hint">${labels.pageTemplatesCatalogEmpty ?? 'No remote templates are available.'}</p>`;
+
+            return;
+        }
+
+        catalogEl.innerHTML = `
+            <h3 class="voodbuilder-gjs-subtitle">${labels.pageTemplatesCatalogTitle ?? 'Template marketplace'}</h3>
+            <div class="voodbuilder-gjs-page-templates-catalog__grid"></div>
+        `;
+
+        const grid = catalogEl.querySelector('.voodbuilder-gjs-page-templates-catalog__grid');
+
+        for (const entry of entries) {
+            const card = document.createElement('article');
+            card.className = 'voodbuilder-gjs-page-templates-catalog__card';
+
+            const title = document.createElement('h4');
+            title.className = 'voodbuilder-gjs-page-templates-catalog__title';
+            title.textContent = entry.name ?? '';
+
+            const meta = document.createElement('p');
+            meta.className = 'voodbuilder-gjs-hint';
+            const metaParts = [entry.category, entry.price_label].filter(Boolean);
+            meta.textContent = metaParts.join(' · ');
+
+            const description = document.createElement('p');
+            description.className = 'voodbuilder-gjs-page-templates-catalog__description';
+            description.textContent = entry.description ?? '';
+
+            const actions = document.createElement('div');
+            actions.className = 'voodbuilder-gjs-revision-row__actions';
+
+            const installBtn = document.createElement('button');
+            installBtn.type = 'button';
+            installBtn.className = 'voodbuilder-gjs-btn voodbuilder-gjs-btn--primary';
+            installBtn.textContent = labels.pageTemplatesCatalogInstall ?? 'Install';
+            installBtn.addEventListener('click', async () => {
+                if (! entry.bundle_url) {
+                    await alertDialog({
+                        message: labels.pageTemplatesCatalogInstallError ?? 'Could not install that template.',
+                        labels,
+                    });
+
+                    return;
+                }
+
+                installBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`${baseUrl}/install`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: editorApiHeaders(csrf, { json: true }),
+                        body: JSON.stringify({ bundle_url: entry.bundle_url }),
+                    });
+
+                    if (! response.ok) {
+                        throw new Error('install failed');
+                    }
+
+                    await alertDialog({
+                        message: (labels.pageTemplatesCatalogInstallSuccess ?? 'Installed :name.')
+                            .replace(':name', String(entry.name ?? '')),
+                        labels,
+                    });
+
+                    renderList(await loadTemplates());
+                } catch {
+                    await alertDialog({
+                        message: labels.pageTemplatesCatalogInstallError ?? 'Could not install that template.',
+                        labels,
+                    });
+                } finally {
+                    installBtn.disabled = false;
+                }
+            });
+
+            actions.append(installBtn);
+            card.append(title, meta, description, actions);
+            grid?.appendChild(card);
         }
     }
 
@@ -249,5 +365,116 @@ export function registerPageTemplatesUi(editor, options = {}) {
         }
 
         await openModal();
+    });
+
+    exportBtn?.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`${baseUrl}/export`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({}),
+            });
+
+            if (! response.ok) {
+                throw new Error('export failed');
+            }
+
+            const payload = await response.json();
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `voodbuilder-page-templates-${new Date().toISOString().slice(0, 10)}.json`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            await alertDialog({
+                message: labels.pageTemplatesExportError ?? 'Could not export page templates.',
+                labels,
+            });
+        }
+    });
+
+    importBtn?.addEventListener('click', () => importInput?.click());
+
+    importUrlBtn?.addEventListener('click', async () => {
+        const url = await promptDialog({
+            title: labels.pageTemplatesImportUrl ?? 'Install from URL',
+            message: labels.pageTemplatesImportUrlPrompt ?? 'Paste the HTTPS URL of a VoodBuilder page template bundle (.json).',
+            labels,
+            confirmLabel: labels.pageTemplatesCatalogInstall ?? 'Install',
+        });
+
+        if (! url) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${baseUrl}/import-url`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({ url: String(url).trim() }),
+            });
+
+            if (! response.ok) {
+                throw new Error('import url failed');
+            }
+
+            const payload = await response.json();
+            const count = (payload.templates ?? []).length;
+
+            await alertDialog({
+                message: (labels.pageTemplatesImportUrlSuccess ?? 'Installed :count page template(s) from URL.')
+                    .replace(':count', String(count)),
+                labels,
+            });
+
+            await openModal();
+        } catch {
+            await alertDialog({
+                message: labels.pageTemplatesImportUrlError ?? 'Could not install templates from that URL.',
+                labels,
+            });
+        }
+    });
+
+    importInput?.addEventListener('change', async () => {
+        const file = importInput.files?.[0];
+        importInput.value = '';
+
+        if (! file) {
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(await file.text());
+            const response = await fetch(`${baseUrl}/import`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({ import: parsed }),
+            });
+
+            if (! response.ok) {
+                throw new Error('import failed');
+            }
+
+            const payload = await response.json();
+            const count = (payload.templates ?? []).length;
+
+            await alertDialog({
+                message: (labels.pageTemplatesImportSuccess ?? 'Imported :count page template(s).').replace(':count', String(count)),
+                labels,
+            });
+
+            await openModal();
+        } catch {
+            await alertDialog({
+                message: labels.pageTemplatesImportError ?? 'Could not import page templates.',
+                labels,
+            });
+        }
     });
 }

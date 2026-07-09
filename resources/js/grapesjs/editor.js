@@ -59,7 +59,8 @@ import { registerComponentTailwindAutobuild } from './component-tailwind-autobui
 import { registerPageTailwindAutobuild } from './page-tailwind-autobuild.js';
 import { registerGlobalClassesUi } from './global-classes-ui.js';
 import { registerRevisionsUi } from './revisions-ui.js';
-import { registerPageTemplatesUi } from './page-templates-ui.js';
+import { registerPageTemplatesSidebar } from './page-templates-sidebar.js';
+import { registerPopupsUi } from './popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
 import {
@@ -500,6 +501,9 @@ export function initVpressGrapesJs(container, options = {}) {
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
+        editingBadge: options.popupMode && options.popupName
+            ? (labels.popupsEditingBadge ?? 'Editing popup: {name}').replace('{name}', String(options.popupName))
+            : null,
     }) : null;
 
     if (shell?.mounts) {
@@ -730,22 +734,37 @@ export function initVpressGrapesJs(container, options = {}) {
             console.error('Voodbuilder GrapesJS: inspector menus failed.', error);
         }
 
-        registerRevisionsUi(editor, {
-            revisionsUrl: options.revisionsUrl,
-            revisionsRestoreUrl: options.revisionsRestoreUrl,
-            csrf: options.csrf,
-            labels,
-            toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
-        });
+        if (! options.popupMode) {
+            registerRevisionsUi(editor, {
+                revisionsUrl: options.revisionsUrl,
+                revisionsRestoreUrl: options.revisionsRestoreUrl,
+                csrf: options.csrf,
+                labels,
+                toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
+            });
+        }
 
-        registerPageTemplatesUi(editor, {
-            pageTemplatesUrl: options.pageTemplatesUrl,
-            csrf: options.csrf,
-            labels,
-            templateCategories: options.componentCategories ?? [],
-            defaultTemplateCategory: options.componentCategories?.[0] ?? 'General',
-            toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
-        });
+        if (! options.popupMode) {
+            registerPageTemplatesSidebar(editor, {
+                pageTemplatesUrl: options.pageTemplatesUrl,
+                pageTemplatesCatalogUrl: options.pageTemplatesCatalogUrl ?? null,
+                csrf: options.csrf,
+                labels,
+                templateCategories: options.templateCategories ?? [],
+                defaultTemplateCategory: 'Ecommerce',
+                templatesMount: shell?.mounts?.templates ?? null,
+                popupMode: options.popupMode ?? false,
+            });
+
+            registerPopupsUi(editor, {
+                popupsUrl: options.popupsUrl,
+                popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
+                csrf: options.csrf,
+                labels,
+                popupMode: options.popupMode ?? false,
+                toolbarMount: shell?.shell?.querySelector('.voodbuilder-gjs-topbar__actions') ?? null,
+            });
+        }
 
         if (! options.blocksRenderUrl) {
             dynamicBlocksGate.resolve();
@@ -1131,9 +1150,15 @@ function mountFrontendEditor() {
         globalClassesUrl: config.globalClassesUrl,
         componentsUrl: config.componentsUrl,
         componentCategories: config.componentCategories ?? [],
+        templateCategories: config.templateCategories ?? [],
         revisionsUrl: config.revisionsUrl,
         revisionsRestoreUrl: config.revisionsRestoreUrl,
         pageTemplatesUrl: config.pageTemplatesUrl,
+        pageTemplatesCatalogUrl: config.pageTemplatesCatalogUrl ?? null,
+        popupsUrl: config.popupsUrl ?? null,
+        popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,
+        popupMode: config.popupMode ?? false,
+        popupName: config.popupName ?? null,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',

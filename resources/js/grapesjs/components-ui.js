@@ -25,6 +25,7 @@ import {
 import { refreshBlockPinUi } from './block-pins.js';
 import { saveComponentToCatalog } from './component-catalog-actions.js';
 import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
+import { tagPageTemplateBlockElements } from './page-template-block-utils.js';
 import {
     extractBackgroundUtilityClasses,
     isBackgroundUtilityClass,
@@ -110,8 +111,7 @@ export function registerComponentsUi(editor, options = {}) {
             <div class="voodbuilder-gjs-components-library__toolbar">
                 <div class="voodbuilder-gjs-components-library__header">
                     <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--primary voodbuilder-gjs-components-library__save" data-voodbuilder-save-component>
-                        ${lucideIcon('plus', 15)}
-                        <span>${labels.componentsSave ?? 'Save selection as component'}</span>
+                        <span>${labels.componentsSave ?? 'Save'}</span>
                     </button>
                     <div class="voodbuilder-gjs-components-library__icon-actions" role="group" aria-label="${escapeHtml(labels.componentsTitle ?? 'Components')}">
                         <button
@@ -1507,23 +1507,32 @@ function exportComponentFilename(name) {
 
 function markLibraryMounts(mounts, libraryId) {
     const shell = mounts.blocks?.closest('.voodbuilder-gjs-shell')
-        ?? mounts.componentsBlocks?.closest('.voodbuilder-gjs-shell');
+        ?? mounts.componentsBlocks?.closest('.voodbuilder-gjs-shell')
+        ?? mounts.templateBlocks?.closest('.voodbuilder-gjs-shell');
 
     shell?.setAttribute('data-voodbuilder-active-library', libraryId);
 
+    mounts.blocks?.removeAttribute('data-voodbuilder-blocks-library');
+    mounts.componentsBlocks?.removeAttribute('data-voodbuilder-blocks-library');
+    mounts.templateBlocks?.removeAttribute('data-voodbuilder-blocks-library');
+
     if (libraryId === 'blocks') {
         mounts.blocks?.setAttribute('data-voodbuilder-blocks-library', 'blocks');
-        mounts.componentsBlocks?.removeAttribute('data-voodbuilder-blocks-library');
+    } else if (libraryId === 'templates') {
+        mounts.templateBlocks?.setAttribute('data-voodbuilder-blocks-library', 'templates');
     } else {
         mounts.componentsBlocks?.setAttribute('data-voodbuilder-blocks-library', 'components');
-        mounts.blocks?.removeAttribute('data-voodbuilder-blocks-library');
     }
 }
 
 
 export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     const container = editor.BlockManager?.getContainer?.();
-    const target = libraryId === 'components' ? mounts.componentsBlocks : mounts.blocks;
+    const target = libraryId === 'components'
+        ? mounts.componentsBlocks
+        : libraryId === 'templates'
+            ? mounts.templateBlocks
+            : mounts.blocks;
 
     if (! container || ! target) {
         return;
@@ -1540,8 +1549,8 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     tagComponentBlockElements(editor);
     tagComponentCategoryElements(editor);
 
-    if (libraryId === 'components') {
-        collapseLibraryCategories(editor, 'components');
+    if (libraryId === 'components' || libraryId === 'templates') {
+        collapseLibraryCategories(editor, libraryId);
     }
 
     scheduleTagComponentBlockElements(editor);
@@ -1554,6 +1563,11 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
         syncComponentBlockDragState(editor, editor.__voodbuilderComponentSelectionMode === true);
         syncComponentBlockQuickActions(editor);
         bindComponentLibraryBlockInteractions(editor);
+    }
+
+    if (libraryId === 'templates') {
+        tagPageTemplateBlockElements(editor);
+        editor.__voodbuilderOnTemplateLibraryRefresh?.();
     }
 
     applyBlocksLibraryUi(editor, readBlocksSearchQuery());

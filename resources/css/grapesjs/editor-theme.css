@@ -97,14 +97,16 @@
 
 /* ── Block library categories (Elements / Components) — match inspector sectors ── */
 .voodbuilder-gjs-blocks-mount .gjs-block-categories,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-categories {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-categories,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-categories {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category {
     margin: 0;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
     border-radius: 0.625rem;
@@ -114,12 +116,14 @@
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category.gjs-open,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category.gjs-open {
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-title,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category .gjs-title {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -137,17 +141,20 @@
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category:not(.gjs-open) .gjs-title {
     border-bottom: none;
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-title:hover,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title:hover {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-title:hover,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category .gjs-title:hover {
     color: var(--color-vp-text-1, #0f172a);
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-caret-icon,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category .gjs-caret-icon {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
@@ -161,7 +168,8 @@
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-caret-icon::before,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon::before {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-caret-icon::before,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category .gjs-caret-icon::before {
     content: '';
     display: block;
     width: 0;
@@ -173,12 +181,14 @@
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category.gjs-open .gjs-caret-icon::before {
     transform: rotate(90deg);
 }
 
 .voodbuilder-gjs-blocks-mount .gjs-block-category .gjs-blocks-c,
-.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-blocks-c {
+.voodbuilder-gjs-components-blocks-mount .gjs-block-category .gjs-blocks-c,
+.voodbuilder-gjs-template-blocks-mount .gjs-block-category .gjs-blocks-c {
     padding: 0.625rem 0.75rem 0.75rem;
 }
 

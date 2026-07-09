@@ -123,18 +123,18 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ## Fase 2 — Medio termine (🟡 M, priorità 3–5)
 
-### 2.1 Template pagina: salva / importa — 🟡 M · P3 ✅ RC
+### 2.1 Template pagina: salva / importa — 🟡 M · P3 ✅ GA (solo editor GrapesJS)
 
-**Stato:** release candidate (luglio 2026) — tabella `voodbuilder_page_templates`, API CRUD + import/export JSON, pulsante topbar editor (icona layers).
+**Stato:** GA (luglio 2026) — tabella `voodbuilder_page_templates`, API CRUD + import/export JSON, pulsante topbar editor (icona layers). **Solo nell'editor GrapesJS** (`?edit=1`), non in creazione pagina Filament.
 
 **Cosa:** salvare una pagina intera come template e inserirla in un nuovo documento (come componenti ma scope pagina: html + css + js + conditions).
 
 **Approccio:**
-- Modello `voodbuilder_page_templates` o riuso `voodbuilder_components` con `type=page`.
-- Export/import JSON simmetrico a `GrapesJsComponentBundle`.
-- UI: azione in topbar editor + wizard “Nuova pagina da template”.
+- Modello `voodbuilder_page_templates`.
+- Export/import JSON simmetrico a `GrapesJsPageTemplateBundle`.
+- UI: azione in topbar editor (save / apply / delete / import bundle / export all).
 
-**Manca per GA:** select template opzionale in creazione pagina Filament (`SitePageResource`).
+**Prossimo passo marketplace:** catalogo remoto in editor (`VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL`) + install da URL/bundle con un click. ✅ fase A (luglio 2026).
 
 **Riferimento Bricks:** [Builder templates](https://bricksbuilder.io/builder/).
 
@@ -223,12 +223,18 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ## Fase 3 — Strategico (🔴 L, priorità 6+)
 
-### 3.1 Popup builder — 🔴 L · P6
+### 3.1 Popup builder — 🔴 L · P6 ✅ MVP
+
+**Stato:** MVP (luglio 2026) — `voodbuilder_popups`, Filament CRUD regole, editor GrapesJS dedicato, runtime frontend con trigger load/delay/scroll/exit intent/click, frequency cap, targeting audience/path.
 
 **Cosa:** modali/popup con trigger (load, exit intent, click, tempo), frequenza, audience (logged, ruolo, pagina).
 
+**Manca per GA:**
+- Marketplace: licensing pagamenti, rating, aggiornamenti automatici
+- Screenshot anteprima template (2.2)
+
 **Approccio:**
-- Nuovo modello `voodbuilder_popups` + payload GrapesJS.
+- Modello `voodbuilder_popups` + payload GrapesJS.
 - Script leggero frontend per trigger e cookie frequency cap.
 - Integrazione conditions esistenti.
 
@@ -340,4 +346,4 @@ Backlog prodotto
 
 ---
 
-*Ultimo aggiornamento: 8 luglio 2026*
+*Ultimo aggiornamento: 9 luglio 2026*

@@ -204,6 +204,15 @@ return [
         'route_prefix' => 'pages',
     ],
 
+    'popups' => [
+        'enabled' => env('VOODBUILDER_POPUPS_ENABLED', true),
+        'editor_sub_theme' => env('VOODBUILDER_POPUPS_EDITOR_SUB_THEME', 'site'),
+    ],
+
+    'page_templates' => [
+        'catalog_url' => env('VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL'),
+    ],
+
     'search' => [
         'enabled' => true,
         'route' => 'search',

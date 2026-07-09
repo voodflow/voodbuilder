@@ -44,7 +44,11 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
 use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
+use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
+use Voodflow\Voodbuilder\Http\Controllers\PopupsPublicController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
@@ -226,8 +230,31 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('page-templates', [GrapesJsPageTemplatesController::class, 'index'])->name('page-templates.index');
                 Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])->name('page-templates.store');
                 Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])->name('page-templates.import');
+                Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])->name('page-templates.import-url');
+                Route::get('page-templates/catalog', [GrapesJsPageTemplatesController::class, 'catalog'])->name('page-templates.catalog');
+                Route::post('page-templates/install', [GrapesJsPageTemplatesController::class, 'installCatalogEntry'])->name('page-templates.install');
                 Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])->name('page-templates.export');
                 Route::delete('page-templates/{pageTemplate}', [GrapesJsPageTemplatesController::class, 'destroy'])->name('page-templates.destroy');
+                Route::get('popups', [GrapesJsPopupsController::class, 'index'])->name('popups.index');
+                Route::get('popups/page-paths', [GrapesJsPopupsController::class, 'pagePaths'])->name('popups.page-paths');
+                Route::post('popups', [GrapesJsPopupsController::class, 'store'])->name('popups.store');
+                Route::put('popups/{popup}', [GrapesJsPopupsController::class, 'update'])->name('popups.update');
+                Route::delete('popups/{popup}', [GrapesJsPopupsController::class, 'destroy'])->name('popups.destroy');
+                Route::match(['put', 'post'], 'popups/{popup}/content', [GrapesJsPopupController::class, 'update'])->name('popups.content.update');
+            });
+
+        Route::middleware(['web', 'throttle:120,1'])
+            ->prefix('voodbuilder')
+            ->name('voodbuilder.')
+            ->group(function (): void {
+                Route::get('popups/data', [PopupsPublicController::class, 'index'])->name('popups.public');
+            });
+
+        Route::middleware(['web', 'auth', 'throttle:60,1'])
+            ->prefix('voodbuilder')
+            ->name('voodbuilder.')
+            ->group(function (): void {
+                Route::get('popups/{popup}/editor', [PopupEditorController::class, 'show'])->name('popups.editor');
             });
     }
 

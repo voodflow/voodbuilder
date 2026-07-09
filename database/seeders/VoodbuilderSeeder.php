@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -15,6 +16,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\DefaultHomeContent;
 use Voodflow\Voodbuilder\Support\DemoSubThemeContent;
+use Voodflow\Voodbuilder\Support\GrapesJs\StarterPageTemplates;
 use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\SitePageSection;
 
@@ -51,10 +53,20 @@ class VoodbuilderSeeder extends Seeder
 
         $this->seedHomePage();
         $this->seedThemeDemoPages();
+        $this->seedPageTemplates();
         $this->seedPermissions();
 
         $this->seedMenus();
         $this->seedCookieConsentSettings();
+    }
+
+    protected function seedPageTemplates(): void
+    {
+        if (! Schema::hasTable('voodbuilder_page_templates')) {
+            return;
+        }
+
+        StarterPageTemplates::seed();
     }
 
     protected function seedHomePage(): void

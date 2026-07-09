@@ -13,6 +13,7 @@ use Voodflow\Voodbuilder\Models\PageTemplate;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateBundle;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateRemoteImporter;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsPageTemplatesController extends Controller
@@ -85,6 +86,96 @@ class GrapesJsPageTemplatesController extends Controller
 
         $entries = GrapesJsPageTemplateBundle::extractTemplates($validated['import']);
 
+        return response()->json([
+            'templates' => $this->persistEntries($entries),
+        ], 201);
+    }
+
+    public function importFromUrl(Request $request): JsonResponse
+    {
+        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+
+        $validated = $request->validate([
+            'url' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $bundle = GrapesJsPageTemplateRemoteImporter::fetchBundle($validated['url']);
+        $entries = GrapesJsPageTemplateBundle::extractTemplates($bundle);
+
+        if ($entries === []) {
+            throw ValidationException::withMessages([
+                'url' => __('voodbuilder::pro.page_templates.import_empty'),
+            ]);
+        }
+
+        return response()->json([
+            'templates' => $this->persistEntries($entries),
+        ], 201);
+    }
+
+    public function catalog(): JsonResponse
+    {
+        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+
+        $catalogUrl = trim((string) config('voodbuilder.page_templates.catalog_url', ''));
+
+        if ($catalogUrl === '') {
+            return response()->json(['templates' => []]);
+        }
+
+        return response()->json([
+            'templates' => GrapesJsPageTemplateRemoteImporter::fetchCatalog($catalogUrl),
+        ]);
+    }
+
+    public function installCatalogEntry(Request $request): JsonResponse
+    {
+        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+
+        $validated = $request->validate([
+            'bundle_url' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $bundle = GrapesJsPageTemplateRemoteImporter::fetchBundle($validated['bundle_url']);
+        $entries = GrapesJsPageTemplateBundle::extractTemplates($bundle);
+
+        if ($entries === []) {
+            throw ValidationException::withMessages([
+                'bundle_url' => __('voodbuilder::pro.page_templates.import_empty'),
+            ]);
+        }
+
+        return response()->json([
+            'templates' => $this->persistEntries($entries),
+        ], 201);
+    }
+
+    public function export(Request $request): JsonResponse
+    {
+        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+
+        $validated = $request->validate([
+            'ids' => ['nullable', 'array'],
+            'ids.*' => ['uuid'],
+        ]);
+
+        $query = PageTemplate::query()->orderBy('name');
+
+        if (filled($validated['ids'] ?? null)) {
+            $query->whereIn('id', $validated['ids']);
+        }
+
+        $payload = GrapesJsPageTemplateBundle::buildExportPayload($query->get()->all());
+
+        return response()->json($payload);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $entries
+     * @return list<array<string, mixed>>
+     */
+    protected function persistEntries(array $entries): array
+    {
         if ($entries === []) {
             throw ValidationException::withMessages([
                 'import' => __('voodbuilder::pro.page_templates.import_empty'),
@@ -119,27 +210,7 @@ class GrapesJsPageTemplatesController extends Controller
             $created[] = $this->toArray($template);
         }
 
-        return response()->json(['templates' => $created], 201);
-    }
-
-    public function export(Request $request): JsonResponse
-    {
-        abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
-
-        $validated = $request->validate([
-            'ids' => ['nullable', 'array'],
-            'ids.*' => ['uuid'],
-        ]);
-
-        $query = PageTemplate::query()->orderBy('name');
-
-        if (filled($validated['ids'] ?? null)) {
-            $query->whereIn('id', $validated['ids']);
-        }
-
-        $payload = GrapesJsPageTemplateBundle::buildExportPayload($query->get()->all());
-
-        return response()->json($payload);
+        return $created;
     }
 
     /**

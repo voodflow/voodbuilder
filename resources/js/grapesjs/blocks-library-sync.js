@@ -3,15 +3,28 @@
  */
 
 import { isComponentBlock, isComponentBlockElement, isComponentCategoryElement, isComponentCategoryId } from './component-block-utils.js';
+import {
+    isPageTemplateBlock,
+    isPageTemplateBlockElement,
+    isPageTemplateCategoryElement,
+    isPageTemplateCategoryId,
+} from './page-template-block-utils.js';
 
 export function collapseLibraryCategories(editor, libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks') {
     const showComponents = libraryId === 'components';
+    const showTemplates = libraryId === 'templates';
 
     editor.BlockManager.getCategories?.()?.each?.((category) => {
         const categoryId = String(category.get('id') ?? '');
         const isComponentCategory = isComponentCategoryId(categoryId);
+        const isTemplateCategory = isPageTemplateCategoryId(categoryId);
+        const inActiveLibrary = showComponents
+            ? isComponentCategory
+            : showTemplates
+                ? isTemplateCategory
+                : ! isComponentCategory && ! isTemplateCategory;
 
-        if (showComponents !== isComponentCategory) {
+        if (! inActiveLibrary) {
             return;
         }
 
@@ -47,11 +60,17 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
     const libraryId = editor.__voodbuilderActiveLibrary ?? 'blocks';
     const query = String(searchQuery ?? '').trim().toLowerCase();
     const showComponents = libraryId === 'components';
+    const showTemplates = libraryId === 'templates';
     const openCategories = new Set();
 
     editor.BlockManager.getAll().forEach((block) => {
         const isComponent = isComponentBlock(block);
-        const inActiveLibrary = showComponents ? isComponent : ! isComponent;
+        const isTemplate = isPageTemplateBlock(block);
+        const inActiveLibrary = showComponents
+            ? isComponent
+            : showTemplates
+                ? isTemplate
+                : ! isComponent && ! isTemplate;
         const label = String(block.get('label') ?? '').toLowerCase();
         const matchesQuery = ! query || label.includes(query);
 
@@ -69,7 +88,12 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
 
     container.querySelectorAll('.gjs-block').forEach((blockEl) => {
         const isComponent = isComponentBlockElement(editor, blockEl);
-        const inActiveLibrary = showComponents ? isComponent : ! isComponent;
+        const isTemplate = isPageTemplateBlockElement(editor, blockEl);
+        const inActiveLibrary = showComponents
+            ? isComponent
+            : showTemplates
+                ? isTemplate
+                : ! isComponent && ! isTemplate;
         const label = blockEl.textContent?.toLowerCase() ?? '';
         const matchesQuery = ! query || label.includes(query);
 
@@ -79,6 +103,7 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
     editor.BlockManager.getCategories?.()?.each?.((category) => {
         const categoryId = String(category.get('id') ?? '');
         const isComponentCategory = isComponentCategoryId(categoryId);
+        const isTemplateCategory = isPageTemplateCategoryId(categoryId);
         const categoryEl = category.view?.el;
 
         if (! categoryEl) {
@@ -86,16 +111,25 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
         }
 
         categoryEl.classList.toggle('voodbuilder-gjs-component-category', isComponentCategory);
+        categoryEl.classList.toggle('voodbuilder-gjs-page-template-category', isTemplateCategory);
 
         if (isComponentCategory) {
             categoryEl.setAttribute('data-voodbuilder-component-category', '1');
             categoryEl.setAttribute('data-voodbuilder-category-id', categoryId);
+        } else if (isTemplateCategory) {
+            categoryEl.setAttribute('data-voodbuilder-page-template-category', '1');
+            categoryEl.setAttribute('data-voodbuilder-category-id', categoryId);
         } else {
             categoryEl.removeAttribute('data-voodbuilder-component-category');
+            categoryEl.removeAttribute('data-voodbuilder-page-template-category');
             categoryEl.removeAttribute('data-voodbuilder-category-id');
         }
 
-        const inActiveLibrary = showComponents ? isComponentCategory : ! isComponentCategory;
+        const inActiveLibrary = showComponents
+            ? isComponentCategory
+            : showTemplates
+                ? isTemplateCategory
+                : ! isComponentCategory && ! isTemplateCategory;
 
         if (! inActiveLibrary) {
             setBlockDisplay(categoryEl, false);
@@ -116,10 +150,16 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
 
     container.querySelectorAll('.gjs-block-category').forEach((categoryEl) => {
         const isComponentCategory = isComponentCategoryElement(categoryEl, editor);
+        const isTemplateCategory = isPageTemplateCategoryElement(categoryEl);
 
         categoryEl.classList.toggle('voodbuilder-gjs-component-category', isComponentCategory);
+        categoryEl.classList.toggle('voodbuilder-gjs-page-template-category', isTemplateCategory);
 
-        const inActiveLibrary = showComponents ? isComponentCategory : ! isComponentCategory;
+        const inActiveLibrary = showComponents
+            ? isComponentCategory
+            : showTemplates
+                ? isTemplateCategory
+                : ! isComponentCategory && ! isTemplateCategory;
 
         if (! inActiveLibrary) {
             setBlockDisplay(categoryEl, false);
@@ -171,6 +211,7 @@ export function registerBlocksLibraryRenderHook(editor) {
         const result = originalRender(...args);
 
         reapply();
+        editor.__voodbuilderOnTemplateLibraryRefresh?.();
 
         return result;
     };

@@ -100,6 +100,29 @@ class GrapesJsPageTemplatesControllerTest extends TestCase
         ])->assertUnauthorized();
     }
 
+    public function test_rejects_invalid_import_url(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->postJson(route('voodbuilder.grapesjs.page-templates.import-url'), [
+                'url' => 'http://insecure.example.com/template.json',
+            ])
+            ->assertUnprocessable();
+    }
+
+    public function test_catalog_returns_empty_when_not_configured(): void
+    {
+        config(['voodbuilder.page_templates.catalog_url' => null]);
+
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->getJson(route('voodbuilder.grapesjs.page-templates.catalog'))
+            ->assertOk()
+            ->assertJsonPath('templates', []);
+    }
+
     private function adminUser(): User
     {
         $user = new class extends User implements FilamentUser

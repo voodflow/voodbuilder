@@ -14,6 +14,8 @@ final class GrapesJsPageTemplateBundle
 
     public const string FORMAT = 'voodbuilder-page-templates';
 
+    public const string CATALOG_FORMAT = 'voodbuilder-page-template-catalog';
+
     /**
      * @param  list<PageTemplate>  $templates
      * @return array<string, mixed>
@@ -66,7 +68,7 @@ final class GrapesJsPageTemplateBundle
 
         $format = (string) ($meta['format'] ?? '');
 
-        if ($format !== '' && $format !== self::FORMAT) {
+        if ($format !== '' && ! in_array($format, [self::FORMAT, self::CATALOG_FORMAT], true)) {
             throw ValidationException::withMessages([
                 'import_meta' => __('voodbuilder::pro.page_templates.import_unsupported_format'),
             ]);
@@ -101,5 +103,23 @@ final class GrapesJsPageTemplateBundle
         }
 
         return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
+    public static function extractCatalogEntries(array $payload): array
+    {
+        if (($payload['format'] ?? '') === self::CATALOG_FORMAT && is_array($payload['templates'] ?? null)) {
+            self::assertImportable($payload);
+
+            return array_values(array_filter(
+                $payload['templates'],
+                static fn (mixed $entry): bool => is_array($entry) && filled($entry['name'] ?? null),
+            ));
+        }
+
+        return self::extractTemplates($payload);
     }
 }

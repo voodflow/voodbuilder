@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
+use Voodflow\Voodbuilder\Filament\Resources\PopupResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
 class VoodbuilderPlugin implements Plugin
@@ -34,6 +35,10 @@ class VoodbuilderPlugin implements Plugin
 
         if (config('voodbuilder.pages.enabled', true)) {
             $resources[] = SitePageResource::class;
+        }
+
+        if (config('voodbuilder.popups.enabled', true)) {
+            $resources[] = PopupResource::class;
         }
 
         $panel

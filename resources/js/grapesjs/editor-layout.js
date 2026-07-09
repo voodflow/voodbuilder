@@ -5,7 +5,7 @@
 
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
 import { registerBlockPins } from './block-pins.js';
-import { lucideIcon } from './editor-icons.js';
+import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
@@ -13,11 +13,17 @@ import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCatego
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
+const LIBRARY_TAB_ICONS = {
+    blocks: 'wall',
+    components: 'components',
+    templates: 'template',
+};
+
 const INSPECTOR_TAB_ICONS = {
     content: 'pencil',
-    style: 'palette',
+    style: 'color-swatch',
     dynamic: 'database',
-    conditions: 'eye',
+    conditions: 'directions',
     layers: 'layers',
 };
 
@@ -34,7 +40,10 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
     container.innerHTML = `
         <div class="voodbuilder-gjs-shell" data-voodbuilder-device="desktop">
             <header class="voodbuilder-gjs-topbar">
-                <div class="voodbuilder-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
+                <div class="voodbuilder-gjs-topbar__brand-wrap">
+                    <div class="voodbuilder-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
+                    ${meta.editingBadge ? `<span class="voodbuilder-gjs-topbar__editing-badge">${escapeHtml(meta.editingBadge)}</span>` : ''}
+                </div>
                 <div class="voodbuilder-gjs-topbar__tools"></div>
                 <div class="voodbuilder-gjs-topbar__actions">
                     <span class="voodbuilder-gjs-topbar__saved" data-voodbuilder-grapesjs-saved hidden>${escapeHtml(labels.saved ?? 'Saved')}</span>
@@ -54,11 +63,14 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             <div class="voodbuilder-gjs-shell__workspace">
                 <aside class="voodbuilder-gjs-shell__left" aria-label="${escapeHtml(labels.panelLibrary ?? labels.panelBlocks ?? 'Library')}">
                     <div class="voodbuilder-gjs-library-tabs" role="tablist">
-                        <button type="button" class="voodbuilder-gjs-library-tab voodbuilder-gjs-library-tab--active" data-voodbuilder-library="blocks" role="tab" aria-selected="true">
-                            ${escapeHtml(labels.tabElements ?? 'Elements')}
+                        <button type="button" class="voodbuilder-gjs-library-tab voodbuilder-gjs-library-tab--active" data-voodbuilder-library="blocks" role="tab" aria-selected="true" title="${escapeHtml(labels.tabElements ?? 'Elements')}" aria-label="${escapeHtml(labels.tabElements ?? 'Elements')}">
+                            ${tablerIcon(LIBRARY_TAB_ICONS.blocks, 17)}
                         </button>
-                        <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="components" role="tab" aria-selected="false">
-                            ${escapeHtml(labels.tabComponents ?? 'Components')}
+                        <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="components" role="tab" aria-selected="false" title="${escapeHtml(labels.tabComponents ?? 'Components')}" aria-label="${escapeHtml(labels.tabComponents ?? 'Components')}">
+                            ${tablerIcon(LIBRARY_TAB_ICONS.components, 17)}
+                        </button>
+                        <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="templates" role="tab" aria-selected="false" title="${escapeHtml(labels.tabTemplates ?? 'Templates')}" aria-label="${escapeHtml(labels.tabTemplates ?? 'Templates')}">
+                            ${tablerIcon(LIBRARY_TAB_ICONS.templates, 17)}
                         </button>
                     </div>
                     <label class="voodbuilder-gjs-blocks-search-wrap">
@@ -77,6 +89,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         </div>
                         <div class="voodbuilder-gjs-library-panel" data-voodbuilder-library-panel="components" hidden>
                             <div class="voodbuilder-gjs-components-mount"></div>
+                        </div>
+                        <div class="voodbuilder-gjs-library-panel" data-voodbuilder-library-panel="templates" hidden>
+                            <div class="voodbuilder-gjs-templates-mount"></div>
                         </div>
                     </div>
                 </aside>
@@ -130,7 +145,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         button.setAttribute('aria-selected', tabId === 'content' ? 'true' : 'false');
         button.setAttribute('aria-label', tabLabels[tabId]);
         button.title = tabLabels[tabId];
-        button.innerHTML = lucideIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17);
+        button.innerHTML = tabId === 'style' || tabId === 'conditions'
+            ? tablerIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17)
+            : lucideIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17);
         tablist.appendChild(button);
     }
 
@@ -143,6 +160,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             canvasToolbar: container.querySelector('.voodbuilder-gjs-topbar__tools'),
             blocks: container.querySelector('.voodbuilder-gjs-blocks-mount'),
             components: container.querySelector('.voodbuilder-gjs-components-mount'),
+            templates: container.querySelector('.voodbuilder-gjs-templates-mount'),
             componentProps: container.querySelector('.voodbuilder-gjs-component-props-mount'),
             libraryTabs: container.querySelector('.voodbuilder-gjs-library-tabs'),
             libraryPanels: container.querySelector('.voodbuilder-gjs-library-panels'),
@@ -204,6 +222,7 @@ function setupLibraryTabs(mounts, labels = {}, editor = null) {
     const placeholders = {
         blocks: labels.blockSearch ?? 'Search blocks…',
         components: labels.componentSearch ?? 'Search components…',
+        templates: labels.templateSearch ?? 'Search templates…',
     };
 
     const activateLibrary = (libraryId) => {
