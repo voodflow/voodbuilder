@@ -13,55 +13,58 @@
     $avatarUrl = $user ? UserAvatar::url($user) : null;
 @endphp
 
-@if ($canvasPreview)
-    <div
-        class="voodbuilder-nav-profile-menu relative"
-        data-voodbuilder-profile-menu
-        data-gjs-selectable="false"
-    >
-        <button
-            type="button"
-            class="voodbuilder-header-icon-btn text-vp-text-2"
-            data-voodbuilder-profile-menu-toggle
+<div
+    class="voodbuilder-nav-profile-menu relative"
+    data-voodbuilder-profile-menu
+    @if ($canvasPreview) data-gjs-selectable="false" @endif
+>
+    <button
+        type="button"
+        @class([
+            'voodbuilder-header-icon-btn',
+            'text-vp-text-2' => $canvasPreview,
+        ])
+        data-voodbuilder-profile-menu-toggle
+        @if ($canvasPreview)
             data-gjs-type="voodbuilder-chrome-button"
             data-gjs-selectable="false"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
-        >
+        @endif
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
+    >
+        @if (! $canvasPreview && $avatarUrl)
+            <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
+        @else
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-        </button>
-    </div>
-@else
-    <div
-        class="voodbuilder-nav-profile-menu relative"
-        data-voodbuilder-profile-menu
-    >
-        <button
-            type="button"
-            class="voodbuilder-header-icon-btn"
-            data-voodbuilder-profile-menu-toggle
-            aria-haspopup="menu"
-            aria-expanded="false"
-            aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
-        >
-            @if ($avatarUrl)
-                <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
-            @else
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            @endif
-        </button>
+        @endif
+    </button>
 
-        <div
-            data-voodbuilder-profile-menu-panel
-            role="menu"
-            hidden
-            class="voodbuilder-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
-        >
+    <div
+        data-voodbuilder-profile-menu-panel
+        role="menu"
+        hidden
+        class="voodbuilder-nav-profile-menu__dropdown absolute top-[calc(100%+0.5rem)] right-0 z-50 min-w-48 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+    >
+        @if ($canvasPreview)
+            <p class="px-3 py-2 text-xs text-vp-text-3">
+                {{ __('voodbuilder::pro.grapesjs.blocks.site_nav_preview') }}
+            </p>
+            <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+            <span role="menuitem" class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-2" data-gjs-type="default" data-gjs-selectable="false">
+                {{ __('voodbuilder::account.nav') }}
+            </span>
+            @if ($showThemeToggle)
+                <span role="menuitem" class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-2" data-gjs-type="default" data-gjs-selectable="false">
+                    Light / dark
+                </span>
+            @endif
+            <span role="menuitem" class="flex items-center gap-2 px-3 py-2 text-sm text-vp-text-2" data-gjs-type="default" data-gjs-selectable="false">
+                {{ __('voodbuilder::auth.login') }}
+            </span>
+        @else
             @auth
                 @if ($accountEnabled)
                     <a
@@ -138,6 +141,6 @@
                     </a>
                 @endif
             @endauth
-        </div>
+        @endif
     </div>
-@endif
+</div>

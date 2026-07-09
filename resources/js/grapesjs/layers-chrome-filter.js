@@ -1,46 +1,17 @@
 /**
- * Hide site chrome and obsolete top-level header/footer nodes from the Layers panel.
+ * Keep layout chrome nodes out of the Layers panel.
  */
 
-import { isSiteFooterBlock, isSiteNavBlock } from './plugins/voodbuilder-grapesjs.js';
 import { walkComponentTree } from './tailwind-visual-style.js';
-
-function isWrapperChild(component, editor) {
-    const parent = component.parent?.();
-
-    if (! parent) {
-        return false;
-    }
-
-    const wrapper = editor.getWrapper?.();
-
-    return parent === wrapper || parent.get?.('type') === 'wrapper';
-}
 
 function shouldHideFromLayers(component, editor) {
     const attrs = component.getAttributes?.() ?? {};
-    const blockId = String(attrs['data-voodbuilder-block'] ?? '');
-    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
-
-    if (isSiteNavBlock(blockId) || isSiteFooterBlock(blockId)) {
-        return true;
-    }
 
     if (attrs['data-voodbuilder-gjs-site-header']) {
         return true;
     }
 
-    if (! isWrapperChild(component, editor)) {
-        return false;
-    }
-
-    if (tag === 'header' || tag === 'footer') {
-        return true;
-    }
-
-    const name = String(component.getName?.() ?? '').trim().toLowerCase();
-
-    return name === 'header' || name === 'footer';
+    return false;
 }
 
 function applyLayersChromeFilter(component, editor) {
@@ -52,6 +23,11 @@ function applyLayersChromeFilter(component, editor) {
         component.set({
             layerable: false,
             draggable: false,
+        });
+    } else if (component.get('layerable') === false && component.get('draggable') === false) {
+        component.set({
+            layerable: true,
+            draggable: true,
         });
     }
 
