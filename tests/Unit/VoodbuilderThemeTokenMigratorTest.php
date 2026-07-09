@@ -314,6 +314,24 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $classes);
     }
 
+    public function test_migrates_border_opacity_to_tailwind_v4_slash_modifier(): void
+    {
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('border-2 border-gray-200 border-opacity-60 rounded-lg');
+
+        $this->assertStringContainsString('border-vp-divider/60', $classes);
+        $this->assertStringNotContainsString('border-opacity-60', $classes);
+    }
+
+    public function test_migrates_theme_border_opacity_after_token_migration(): void
+    {
+        $html = '<div class="border-2 border-gray-200 border-opacity-60"></div>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('border-vp-divider/60', $migrated);
+        $this->assertStringNotContainsString('border-opacity-60', $migrated);
+    }
+
     public function test_preserves_columns_that_already_have_responsive_widths(): void
     {
         $classes = VoodbuilderThemeTokenMigrator::migrateClassList('p-2 lg:w-1/3 md:w-1/2 w-full');

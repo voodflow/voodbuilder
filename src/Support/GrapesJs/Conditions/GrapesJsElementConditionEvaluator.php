@@ -75,6 +75,7 @@ final class GrapesJsElementConditionEvaluator
             'user_role' => $this->compareRole($compare, (string) $value),
             'locale' => $this->compareString(app()->getLocale(), $compare, (string) $value),
             'route_name' => $this->compareString((string) request()->route()?->getName(), $compare, (string) $value),
+            'page_path' => $this->compareString('/'.ltrim(request()->path(), '/'), $compare, '/'.ltrim((string) $value, '/')),
             'date_before' => $this->compareDateBefore((string) $value),
             'date_after' => $this->compareDateAfter((string) $value),
             default => GrapesJsConditionHooks::evaluate($key, $condition, $page) ?? false,

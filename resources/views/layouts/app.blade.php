@@ -56,6 +56,7 @@
 
     @include('cookie-consent::cookie-consent-body')
     <x-voodbuilder::monitoring-scripts />
+    <x-voodbuilder::popups-boot />
 
     @stack('scripts-before-livewire')
     @livewireScripts

@@ -40,15 +40,45 @@ export function createSelectField({ label, name, value, options, onChange }) {
 
     const select = document.createElement('select');
     select.id = id;
+    select.name = name;
     select.className = 'voodbuilder-gjs-select';
     select.dataset.setting = name;
 
-    for (const option of options) {
-        const node = document.createElement('option');
-        node.value = option.value;
-        node.textContent = option.label;
-        node.selected = option.value === value;
-        select.appendChild(node);
+    const groups = [...new Set(options.map((option) => option.group).filter(Boolean))];
+
+    if (groups.length > 0) {
+        const ungrouped = options.filter((option) => ! option.group);
+
+        for (const option of ungrouped) {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.label;
+            node.selected = option.value === value;
+            select.appendChild(node);
+        }
+
+        for (const group of groups) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = group;
+
+            for (const option of options.filter((item) => item.group === group)) {
+                const node = document.createElement('option');
+                node.value = option.value;
+                node.textContent = option.label;
+                node.selected = option.value === value;
+                optgroup.appendChild(node);
+            }
+
+            select.appendChild(optgroup);
+        }
+    } else {
+        for (const option of options) {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.label;
+            node.selected = option.value === value;
+            select.appendChild(node);
+        }
     }
 
     const chevron = document.createElement('span');
@@ -68,6 +98,38 @@ export function createSelectField({ label, name, value, options, onChange }) {
     return field;
 }
 
+export function createTextField({ label, name, value = '', type = 'text', placeholder = '', required = false, min, max }) {
+    const id = fieldId(name);
+    const field = document.createElement('div');
+    field.className = 'voodbuilder-gjs-form-field';
+
+    const labelEl = document.createElement('label');
+    labelEl.className = 'voodbuilder-gjs-form-label';
+    labelEl.htmlFor = id;
+    labelEl.textContent = label;
+
+    const input = document.createElement('input');
+    input.id = id;
+    input.type = type;
+    input.name = name;
+    input.className = 'voodbuilder-gjs-input';
+    input.value = value ?? '';
+    input.placeholder = placeholder;
+    input.required = required;
+
+    if (min != null) {
+        input.min = String(min);
+    }
+
+    if (max != null) {
+        input.max = String(max);
+    }
+
+    field.append(labelEl, input);
+
+    return { field, input };
+}
+
 export function createCheckboxField({ label, name, checked, onChange }) {
     const id = fieldId(name);
     const field = document.createElement('div');
@@ -79,9 +141,9 @@ export function createCheckboxField({ label, name, checked, onChange }) {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.id = id;
+    input.name = name;
     input.className = 'voodbuilder-gjs-checkbox';
     input.checked = checked;
-    input.dataset.setting = name;
 
     const labelEl = document.createElement('label');
     labelEl.className = 'voodbuilder-gjs-form-label voodbuilder-gjs-form-label--checkbox';

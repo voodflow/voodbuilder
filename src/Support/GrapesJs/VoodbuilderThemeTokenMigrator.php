@@ -531,8 +531,65 @@ final class VoodbuilderThemeTokenMigrator
         $tokens = self::normalizeLegacyFlexColumnWidths($tokens);
         $tokens = self::migrateContainerClass($tokens);
         $tokens = self::syncContainerTailwindUtilities($tokens);
+        $tokens = self::migrateLegacyOpacityUtilities($tokens);
 
         return implode(' ', $tokens);
+    }
+
+    /**
+     * Tailwind v3 `border-opacity-*` / `bg-opacity-*` → v4 slash modifier on the color utility.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function migrateLegacyOpacityUtilities(array $tokens): array
+    {
+        $slots = [
+            'border-opacity-' => 'border-',
+            'divide-opacity-' => 'divide-',
+            'bg-opacity-' => 'bg-',
+            'text-opacity-' => 'text-',
+        ];
+
+        foreach ($tokens as $index => $token) {
+            foreach ($slots as $opacityPrefix => $colorPrefix) {
+                if (! str_starts_with($token, $opacityPrefix)) {
+                    continue;
+                }
+
+                $opacity = substr($token, strlen($opacityPrefix));
+
+                if ($opacity === '') {
+                    continue;
+                }
+
+                $colorIndex = null;
+
+                foreach ($tokens as $candidateIndex => $candidate) {
+                    if ($candidateIndex === $index) {
+                        continue;
+                    }
+
+                    if (
+                        str_starts_with($candidate, $colorPrefix)
+                        && ! str_contains($candidate, '/')
+                    ) {
+                        $colorIndex = $candidateIndex;
+                    }
+                }
+
+                if ($colorIndex === null) {
+                    continue;
+                }
+
+                $tokens[$colorIndex] = $tokens[$colorIndex].'/'.$opacity;
+                unset($tokens[$index]);
+
+                break;
+            }
+        }
+
+        return array_values($tokens);
     }
 
     /**

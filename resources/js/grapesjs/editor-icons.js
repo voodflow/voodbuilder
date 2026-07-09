@@ -47,7 +47,28 @@ const PATHS = {
     palette: '<path d="M12 22a1 1 0 0 1 0-20 10 4 0 0 0 0 20Z"/><path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M19 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M5 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M16 16a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M8 16a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/>',
     layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
     database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>',
+    'message-square': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 };
+
+/** Tabler icons (MIT — https://tabler.io/icons) for library tabs. */
+const TABLER_PATHS = {
+    wall: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12"/><path d="M4 8h16"/><path d="M20 12h-16"/><path d="M4 16h16"/><path d="M9 4v4"/><path d="M14 8v4"/><path d="M8 12v4"/><path d="M16 12v4"/><path d="M11 16v4"/>',
+    components: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12l3 3l3 -3l-3 -3l-3 3"/><path d="M15 12l3 3l3 -3l-3 -3l-3 3"/><path d="M9 6l3 3l3 -3l-3 -3l-3 3"/><path d="M9 18l3 3l3 -3l-3 -3l-3 3"/>',
+    template: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 5a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1l0 -2"/><path d="M4 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6"/><path d="M14 12l6 0"/><path d="M14 16l6 0"/><path d="M14 20l6 0"/>',
+    'color-swatch': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 3h-4a2 2 0 0 0 -2 2v12a4 4 0 0 0 8 0v-12a2 2 0 0 0 -2 -2"/><path d="M13 7.35l-2 -2a2 2 0 0 0 -2.828 0l-2.828 2.828a2 2 0 0 0 0 2.828l9 9"/><path d="M7.3 13h-2.3a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h12"/><path d="M17 17l0 .01"/>',
+    directions: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 21v-4"/><path d="M12 13v-4"/><path d="M12 5v-2"/><path d="M10 21h4"/><path d="M8 5v4h11l2 -2l-2 -2l-11 0"/><path d="M14 13v4h-8l-2 -2l2 -2l8 0"/>',
+    'box-margin': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8h8v8h-8l0 -8"/><path d="M4 4v.01"/><path d="M8 4v.01"/><path d="M12 4v.01"/><path d="M16 4v.01"/><path d="M20 4v.01"/><path d="M4 20v.01"/><path d="M8 20v.01"/><path d="M12 20v.01"/><path d="M16 20v.01"/><path d="M20 20v.01"/><path d="M20 16v.01"/><path d="M20 12v.01"/><path d="M20 8v.01"/><path d="M4 16v.01"/><path d="M4 12v.01"/><path d="M4 8v.01"/>',
+};
+
+export function tablerIcon(name, size = 18) {
+    const paths = TABLER_PATHS[name];
+
+    if (! paths) {
+        return '';
+    }
+
+    return `<svg ${BASE} width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" class="voodbuilder-gjs-icon voodbuilder-gjs-icon--tabler">${paths}</svg>`;
+}
 
 export function lucideIcon(name, size = 18) {
     const paths = PATHS[name];

@@ -3,7 +3,7 @@
  * Uses only the public GrapesJS API (Commands, Devices, Canvas).
  */
 
-import { lucideIcon } from './editor-icons.js';
+import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { registerEditorPanelToggles } from './editor-panel-toggles.js';
 
 const CMD_DEVICE_DESKTOP = 'voodbuilder-set-device-desktop';
@@ -323,7 +323,7 @@ function registerDeviceCommands(editor) {
     });
 }
 
-function createToolButton({ id, icon, title, active = false }) {
+function createToolButton({ id, icon, title, active = false, iconSet = 'lucide' }) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'voodbuilder-gjs-topbar-tool-btn';
@@ -334,7 +334,9 @@ function createToolButton({ id, icon, title, active = false }) {
     }
 
     button.title = title;
-    button.innerHTML = lucideIcon(icon, 18);
+    button.innerHTML = iconSet === 'tabler'
+        ? tablerIcon(icon, 18)
+        : lucideIcon(icon, 18);
 
     return button;
 }
@@ -454,7 +456,8 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
 
     const outlineButton = createToolButton({
         id: 'outline',
-        icon: 'box-select',
+        icon: 'box-margin',
+        iconSet: 'tabler',
         title: labels.outline ?? 'Show element outlines',
     });
     setupComponentOutlineToggle(editor, outlineButton, shellRoot);
