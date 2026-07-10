@@ -90,6 +90,8 @@ class GrapesJsAssetUploadTest extends TestCase
     {
         $this->post(route('voodbuilder.grapesjs.upload'), [
             'file' => UploadedFile::fake()->image('hero.jpg'),
+        ], [
+            'Accept' => 'application/json',
         ])->assertUnauthorized();
     }
 }

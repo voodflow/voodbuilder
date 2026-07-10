@@ -114,6 +114,13 @@ final class VoodbuilderPaths
             return substr($target, strlen($base) + 1);
         }
 
+        $package = realpath(self::packagePath()) ?: self::packagePath();
+        $package = rtrim(str_replace('\\', '/', $package), '/');
+
+        if (str_starts_with($target, $package.'/')) {
+            return substr($target, strlen($package) + 1);
+        }
+
         return $target;
     }
 }

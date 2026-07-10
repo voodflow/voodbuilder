@@ -69,6 +69,16 @@ class VoodbuilderSettings extends Model
         ];
     }
 
+    /**
+     * Backwards-compatible alias used by tests to build initial `data` payloads.
+     *
+     * @return array<string, mixed>
+     */
+    public static function docss(): array
+    {
+        return static::defaults();
+    }
+
     public static function data(): array
     {
         return Cache::rememberForever('voodbuilder.settings', function (): array {

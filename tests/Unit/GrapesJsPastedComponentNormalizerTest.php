@@ -341,6 +341,16 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertStringNotContainsString('bg-blue-200', $resolved);
     }
 
+    public function test_resolve_published_page_css_for_save_strips_wrapper_theme_token_rules(): void
+    {
+        $html = '<section>Updated</section>';
+        $storedCss = '.updated { color: red; }';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $storedCss);
+
+        $this->assertSame('.updated {color: red;}', $resolved);
+    }
+
     public function test_grapes_composer_rules_from_stored_css_extracts_id_selectors_only(): void
     {
         $storedCss = '#iabc { color: red; } .bg-blue-200 { background-color: blue; }';

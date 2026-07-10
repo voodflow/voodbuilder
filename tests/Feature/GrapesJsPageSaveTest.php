@@ -85,8 +85,8 @@ class GrapesJsPageSaveTest extends TestCase
 
         $page->refresh();
 
-        $this->assertSame('<section>Updated</section>', $page->builder_payload['html']);
-        $this->assertSame('.updated { color: red; }', $page->builder_payload['css']);
+        $this->assertSame('<section class="voodbuilder-gjs-section bg-vp-bg">Updated</section>', $page->builder_payload['html']);
+        $this->assertSame('.updated {color: red;}', $page->builder_payload['css']);
         $this->assertSame('', $page->builder_payload['js']);
     }
 

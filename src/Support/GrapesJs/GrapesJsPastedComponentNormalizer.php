@@ -189,6 +189,10 @@ final class GrapesJsPastedComponentNormalizer
 
         $compiled = self::compilePageTailwindCss($pageHtml);
 
+        if ($compiled !== '') {
+            $compiled = self::stripPublishedPageCssRuntimeStyles($compiled);
+        }
+
         if ($compiled === '') {
             return $manualCss !== ''
                 ? GrapesJsCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migratePublishedPageCss($manualCss))
@@ -202,6 +206,28 @@ final class GrapesJsPastedComponentNormalizer
                 self::stripTailwindPreflightFromPageCss((string) $merged),
             ),
         );
+    }
+
+    public static function stripPublishedPageCssRuntimeStyles(string $css): string
+    {
+        $css = trim($css);
+
+        if ($css === '') {
+            return '';
+        }
+
+        $patterns = [
+            '/\/\*! tailwindcss.*?\*\//s',
+            '/:root[^{]*\{[^}]*\}\s*/s',
+            '/:host[^{]*\{[^}]*\}\s*/s',
+            '/(?:^|\n)\s*\.[^{]*\b(?:bg|text|border|fill|from|to|via|ring|outline|shadow|divide|accent|placeholder|stroke)-vp-[^{}]*\{[^}]*\}\s*/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $css = preg_replace($pattern, '', $css) ?? $css;
+        }
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $css) ?? $css);
     }
 
     public static function pageCssIncludesTailwindPreflight(string $css): bool

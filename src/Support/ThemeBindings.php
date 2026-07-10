@@ -127,11 +127,23 @@ final class ThemeBindings
      */
     public static function expandChannelThemesForForm(array $overrides): array
     {
+        $registry = app(ContentChannelRegistry::class);
         $expanded = [];
 
-        foreach ($overrides as $channelId => $theme) {
-            if (is_string($channelId) && is_string($theme) && filled($theme)) {
-                $expanded[$channelId] = $theme;
+        foreach ($registry->all() as $channelId => $channel) {
+            // Use explicit override when provided and valid
+            $override = is_string($overrides[$channelId] ?? null) ? trim((string) $overrides[$channelId]) : null;
+
+            if ($override !== null && $override !== '' && ThemeBindings::isValidChannelBinding($channelId, $override)) {
+                $expanded[$channelId] = SubThemeResolver::normalize($override);
+                continue;
+            }
+
+            // Fall back to configured/package default for the channel
+            $configured = ContentChannelThemes::configuredDefaultFor($channelId);
+
+            if ($configured !== null) {
+                $expanded[$channelId] = $configured;
             }
         }
 

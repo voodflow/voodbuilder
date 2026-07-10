@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Tests\TestCase;
+use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBrandingNormalizer;
 
 class GrapesJsBrandingNormalizerTest extends TestCase

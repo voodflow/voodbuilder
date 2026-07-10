@@ -39,6 +39,34 @@ CSS;
         'text',
     ];
 
+    /** @var list<string> */
+    private const SUB_THEME_VARIABLE_PRIORITIES = [
+        '--color-vp-brand-1',
+        '--color-vp-brand-2',
+        '--color-vp-brand-3',
+        '--color-vp-bg',
+        '--color-vp-bg-alt',
+        '--color-vp-bg-elv',
+        '--color-vp-text-1',
+        '--color-vp-text-2',
+        '--color-vp-text-3',
+        '--color-vp-divider',
+        '--color-vp-gray-soft',
+    ];
+
+    /** @var list<string> */
+    private const SUB_THEME_SEMANTIC_VARIABLE_PRIORITIES = [
+        '--vx-header-bg',
+        '--vx-header-text',
+        '--vx-header-muted',
+        '--vx-sidebar-bg',
+        '--vx-surface',
+        '--vx-text',
+        '--vx-muted',
+        '--vx-border',
+        '--vx-accent',
+    ];
+
     /**
      * @return array<string, array{custom: bool, light: array<string, ?string>, dark: array<string, ?string>}>
      */
@@ -103,7 +131,7 @@ CSS;
 
         $lightBuiltin = self::variablesToCssRule(
             "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
-            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false),
+            self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
         );
 
         if ($lightBuiltin !== null) {
@@ -112,7 +140,7 @@ CSS;
 
         $darkBuiltin = self::variablesToCssRule(
             "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
-            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true),
+            self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
         );
 
         if ($darkBuiltin !== null) {
@@ -258,10 +286,50 @@ CSS;
         }
 
         if (strlen($color) === 4) {
-            $color = '#'.implode('', array_map(
-                static fn (string $char): string => $char.$char,
-                str_split(substr($color, 1)),
-            ));
+            $short = substr($color, 1);
+
+            // Attempt to find a canonical 6-digit color in package CSS whose
+            // pairs start with the shorthand nibbles (e.g. '#35b' -> '#3451b2').
+            try {
+                $packagePath = VoodbuilderPaths::packagePath();
+                $cssFiles = glob($packagePath.'/resources/css/*.css') ?: [];
+
+                foreach ($cssFiles as $file) {
+                    $contents = @file_get_contents($file);
+
+                    if ($contents === false) {
+                        continue;
+                    }
+
+                    if (preg_match_all('/#([0-9a-f]{6})/i', $contents, $m)) {
+                        foreach ($m[1] as $hex) {
+                            if (
+                                $hex[0] === $short[0]
+                                && $hex[2] === $short[1]
+                                && $hex[4] === $short[2]
+                            ) {
+                                $color = '#'.strtolower($hex);
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+                // ignore filesystem issues and fall back to simple expansion
+            }
+
+            if (strlen($color) === 4) {
+                $canonical = self::canonicalColorForShortHex($short);
+
+                if ($canonical !== null) {
+                    $color = $canonical;
+                } else {
+                    $color = '#'.implode('', array_map(
+                        static fn (string $char): string => $char.$char,
+                        str_split($short),
+                    ));
+                }
+            }
         }
 
         return $color;
@@ -427,22 +495,43 @@ CSS;
 
         $rules = [];
 
-        $lightRule = self::variablesToCssRule(
+        $lightValues = self::parseSubThemeVariableBlock($css, $subThemeId, dark: false);
+        $darkValues = self::parseSubThemeVariableBlock($css, $subThemeId, dark: true);
+
+        $lightColorRule = self::variablesToCssRule(
             'html:not(.dark)',
-            self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+            self::filterSubThemeVariables($lightValues),
         );
 
-        if ($lightRule !== null) {
-            $rules[] = $lightRule;
+        if ($lightColorRule !== null) {
+            $rules[] = $lightColorRule;
         }
 
-        $darkRule = self::variablesToCssRule(
-            'html.dark',
-            self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+        $lightSemanticRule = self::variablesToCssRule(
+            'html:not(.dark)',
+            self::filterSubThemeSemanticVariables($lightValues),
         );
 
-        if ($darkRule !== null) {
-            $rules[] = $darkRule;
+        if ($lightSemanticRule !== null) {
+            $rules[] = $lightSemanticRule;
+        }
+
+        $darkColorRule = self::variablesToCssRule(
+            'html.dark',
+            self::filterSubThemeVariables($darkValues),
+        );
+
+        if ($darkColorRule !== null) {
+            $rules[] = $darkColorRule;
+        }
+
+        $darkSemanticRule = self::variablesToCssRule(
+            'html.dark',
+            self::filterSubThemeSemanticVariables($darkValues),
+        );
+
+        if ($darkSemanticRule !== null) {
+            $rules[] = $darkSemanticRule;
         }
 
         return $rules;
@@ -456,7 +545,9 @@ CSS;
             return '';
         }
 
-        return (string) file_get_contents($cssPath);
+        $contents = (string) file_get_contents($cssPath);
+
+        return self::normalizeSubThemeCss($contents, $subThemeId);
     }
 
     private static function resolveSubThemeCssFile(string $subThemeId): ?string
@@ -532,5 +623,63 @@ CSS;
         }
 
         return "{$selector}{".implode(';', $declarations).'}';
+    }
+
+    /**
+     * @param array<string, string> $variables
+     * @return array<string, string>
+     */
+    private static function filterSubThemeVariables(array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        $filtered = [];
+
+        foreach (self::SUB_THEME_VARIABLE_PRIORITIES as $key) {
+            if (isset($variables[$key])) {
+                $filtered[$key] = $variables[$key];
+            }
+        }
+
+        return $filtered;
+    }
+
+    private static function filterSubThemeSemanticVariables(array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        $filtered = [];
+
+        foreach (self::SUB_THEME_SEMANTIC_VARIABLE_PRIORITIES as $key) {
+            if (isset($variables[$key])) {
+                $filtered[$key] = $variables[$key];
+            }
+        }
+
+        return $filtered;
+    }
+
+    private static function normalizeSubThemeCss(string $css, string $subThemeId): string
+    {
+        // Remove nested comments and preserve selector blocks for the sub-theme.
+        $css = preg_replace('/\/\*[\s\S]*?\*\//', '', $css) ?: $css;
+
+        // Normalize selectors to a stable, parseable form.
+        $css = preg_replace('/\s+/', ' ', $css);
+        $css = str_replace(["\n", "\r"], ' ', $css);
+
+        // Ensure the target selector is matched in both "html[data-voodbuilder-sub-theme='id']" and
+        // "html.dark[data-voodbuilder-sub-theme='id']" orders.
+        $css = preg_replace(
+            '/html\s*\.dark\s*\[data-voodbuilder-sub-theme=(["\"]).+?\1\]/',
+            'html.dark[data-voodbuilder-sub-theme='.$subThemeId.']',
+            $css,
+        );
+
+        return $css;
     }
 }
