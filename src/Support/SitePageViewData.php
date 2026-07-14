@@ -20,7 +20,9 @@ final class SitePageViewData
 
         return array_merge([
             'page' => $page,
-            'voodbuilderSubTheme' => $page->resolvedSubTheme(),
+            'voodbuilderSubTheme' => ChromeLayoutManagedContent::sitePageUsesChromeShell($page)
+                ? ChromeLayoutSubThemeResolver::forSitePage($page)
+                : $page->resolvedSubTheme(),
             'hideSiteNav' => SiteChrome::shouldHideNav($page, $grapesJsEditor),
             'hideSiteFooter' => SiteChrome::shouldHideFooter($page, $grapesJsEditor),
             'canEditGrapesJs' => $canEditGrapesJs,

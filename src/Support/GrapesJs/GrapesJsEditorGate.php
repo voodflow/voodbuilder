@@ -121,7 +121,12 @@ final class GrapesJsEditorGate
                 'stickyNav' => (bool) VoodbuilderSettings::get('sticky_nav', false),
             ],
             'footerColumnOptions' => SiteFooterColumnPlacements::columnOptionLabels(),
-            'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
+            'themePaletteCss' => $chromeShellMode
+                ? trim(implode("\n\n", array_filter([
+                    ThemePalette::cssForCanvas($subTheme),
+                    ThemePalette::criticalChromeShellCss($subTheme),
+                ])))
+                : ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => self::sharedEditorLabels(),
         ];

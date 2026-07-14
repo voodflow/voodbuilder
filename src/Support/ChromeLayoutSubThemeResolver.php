@@ -27,7 +27,7 @@ final class ChromeLayoutSubThemeResolver
             return $theme;
         }
 
-        return SubThemeResolver::siteDefault();
+        return self::forPagesChannel();
     }
 
     public static function forChromeLayout(ChromeLayout $layout): string

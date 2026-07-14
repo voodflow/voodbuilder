@@ -89,6 +89,28 @@ export function looksLikeSiteChromeStructure(component) {
     ));
 }
 
+export const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
+
+export function isChromeDropZoneComponent(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return Boolean(attrs[CHROME_DROP_ZONE_ATTR]);
+}
+
+export function isInsideChromeDropZoneComponent(component) {
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isChromeDropZoneComponent(current)) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
 export function isChromeShellEditorProtectedComponent(component, editor) {
     if (! component || ! isChromeShellModeEditor(editor)) {
         return false;
@@ -102,11 +124,37 @@ export function isChromeShellEditorProtectedComponent(component, editor) {
         return true;
     }
 
-    if (isInsidePageContentSlotComponent(component) && looksLikeSiteChromeStructure(component)) {
+    if (isInsidePageContentSlotComponent(component)) {
         return true;
     }
 
     return false;
+}
+
+export function shouldBlockChromeLayerContextMenu(component, editor) {
+    if (! component || ! editor) {
+        return false;
+    }
+
+    if (isChromeShellModeEditor(editor)) {
+        return isChromeShellEditorProtectedComponent(component, editor);
+    }
+
+    if (! isChromeLayoutModeEditor(editor)) {
+        return false;
+    }
+
+    if (isChromeDropZoneComponent(component) || isChromeLayoutContentSlot(component)) {
+        return true;
+    }
+
+    return false;
+}
+
+function isChromeLayoutContentSlot(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs[PAGE_CONTENT_ATTR];
 }
 
 function isInsidePageContentSlotComponent(component) {
@@ -196,6 +244,38 @@ export function registerChromeContentSlotType(editor) {
             },
         },
     });
+
+    editor.DomComponents.addType('voodbuilder-chrome-drop-zone', {
+        isComponent: (element) => {
+            if (element?.hasAttribute?.(CHROME_DROP_ZONE_ATTR)) {
+                return { type: 'voodbuilder-chrome-drop-zone' };
+            }
+
+            return false;
+        },
+        model: {
+            defaults: {
+                tagName: 'div',
+                name: 'Drop zone',
+                draggable: false,
+                droppable: true,
+                removable: false,
+                copyable: false,
+                selectable: false,
+                hoverable: true,
+                highlightable: true,
+                editable: false,
+                stylable: false,
+                layerable: true,
+                badgable: false,
+                toolbar: [],
+            },
+        },
+    });
+}
+
+export function registerChromeDropZoneType(editor) {
+    registerChromeContentSlotType(editor);
 }
 
 export function purgeChromeBleedFromContentSlot(slot) {

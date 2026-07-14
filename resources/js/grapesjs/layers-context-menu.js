@@ -6,6 +6,7 @@ import {
     openComponentContextMenu,
     resolveComponentFromLayerElement,
 } from './component-context-menu.js';
+import { shouldBlockChromeLayerContextMenu } from './chrome-content-slot-utils.js';
 
 export function registerLayersContextMenu(editor, options = {}) {
     const mount = options.mount;
@@ -32,6 +33,13 @@ export function registerLayersContextMenu(editor, options = {}) {
         const wrapper = editor.getWrapper?.();
 
         if (! wrapper || component === wrapper) {
+            return;
+        }
+
+        if (shouldBlockChromeLayerContextMenu(component, editor)) {
+            event.preventDefault();
+            event.stopPropagation();
+
             return;
         }
 

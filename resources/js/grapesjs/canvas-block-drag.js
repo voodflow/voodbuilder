@@ -3,6 +3,7 @@
  */
 
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
+import { findDropZoneAtPointer } from './editor-chrome-layout.js';
 
 const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
@@ -134,13 +135,10 @@ function insertBlockAtTop(editor, block) {
     }
 
     if (editor.__voodbuilderChromeLayoutMode) {
-        const blockId = String(block?.get?.('id') ?? block?.id ?? '');
-        const navZone = wrapper.find?.('[data-voodbuilder-chrome-drop-zone="nav"]')?.[0];
-        const footerZone = wrapper.find?.('[data-voodbuilder-chrome-drop-zone="footer"]')?.[0];
-        const slot = wrapper.find?.('[data-voodbuilder-content-slot]')?.[0];
+        const zone = findDropZoneAtPointer(editor);
 
-        if ((blockId.startsWith('site_nav_') || blockId === 'site_header') && navZone) {
-            const added = navZone.append(content);
+        if (zone) {
+            const added = zone.append(content);
             const component = Array.isArray(added) ? added[0] : added;
 
             if (component) {
@@ -149,25 +147,6 @@ function insertBlockAtTop(editor, block) {
             }
 
             return component ?? null;
-        }
-
-        if (blockId.startsWith('site_footer_') && footerZone) {
-            const added = footerZone.append(content);
-            const component = Array.isArray(added) ? added[0] : added;
-
-            if (component) {
-                markTopDropHandled(editor);
-                editor.select?.(component);
-            }
-
-            return component ?? null;
-        }
-
-        if (blockId === 'chrome_content_slot' && slot) {
-            markTopDropHandled(editor);
-            editor.select?.(slot);
-
-            return slot;
         }
     }
 
@@ -186,6 +165,11 @@ function insertBlockAtTop(editor, block) {
 
 function bindBlockDragPointerTracking(editor) {
     const track = (event) => {
+        editor.__voodbuilderLastDragPoint = {
+            x: event.clientX,
+            y: event.clientY,
+        };
+
         editor.__voodbuilderPointerOverTopSpacer = isPointerOverTopSpacer(
             editor,
             event.clientX,

@@ -1,51 +1,42 @@
 /**
- * Chrome layout editor — fixed NAV / CONTENT / FOOTER zones.
+ * Chrome layout editor — fixed Header / Page content / Footer drop zones.
+ * Any block type can be dropped into header and footer zones.
  */
 
 import {
+    CHROME_DROP_ZONE_ATTR,
     CONTENT_SLOT_ATTR,
     findChromeContentSlotComponents,
+    isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
     sanitizeChromeContentSlotChildren,
 } from './chrome-content-slot-utils.js';
 import {
-    isChromeLayoutContentSlot,
-    isChromeLayoutFooterBlock,
-    isChromeLayoutNavBlock,
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
 } from './chrome-editor-guards.js';
 import { refreshBlocksLibraryUi } from './editor-layout.js';
-import { isSiteFooterBlock, isSiteNavBlock } from './plugins/voodbuilder-grapesjs.js';
 
 const CONTENT_SLOT_BLOCK_ID = 'chrome_content_slot';
 const CHROME_SHELL_ATTR = 'data-voodbuilder-chrome-shell';
 const EDITOR_SCOPE_ATTR = 'data-voodbuilder-editor-scope';
 const CHROME_LAYOUT_SCOPE = 'chrome_layout';
-const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 
-const CHROME_LAYOUT_BLOCK_PREFIXES = ['site_header', 'site_nav_', 'site_footer_'];
-const NAV_ZONE_PLACEHOLDER = 'Drop a navbar block here';
-const FOOTER_ZONE_PLACEHOLDER = 'Drop a footer block here';
+const NAV_ZONE_PLACEHOLDER = 'Drop blocks here';
+const FOOTER_ZONE_PLACEHOLDER = 'Drop blocks here';
 
 function isChromeLayoutMode(editor) {
     return isChromeLayoutModeEditor(editor);
 }
 
 function isContentSlot(component) {
-    return isChromeLayoutContentSlot(component);
-}
-
-function isChromeShellWrapper(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
-    return Boolean(attrs[CHROME_SHELL_ATTR]) && ! attrs['data-voodbuilder-chrome-shell-part'];
+    return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs['data-voodbuilder-page-content'];
 }
 
 function isDropZone(component) {
-    const attrs = component?.getAttributes?.() ?? {};
-
-    return Boolean(attrs[CHROME_DROP_ZONE_ATTR]);
+    return isChromeDropZoneComponent(component);
 }
 
 function findContentSlot(editor) {
@@ -57,7 +48,7 @@ function findContentSlot(editor) {
 
     const slots = findChromeContentSlotComponents(wrapper, `[${CONTENT_SLOT_ATTR}]`);
 
-    return slots[0] ?? null;
+    return slots.find((slot) => isContentSlot(slot)) ?? slots[0] ?? null;
 }
 
 function findDropZone(editor, zone) {
@@ -77,21 +68,21 @@ function unwrapChromeShellWrapper(editor) {
         return;
     }
 
-    const shellWrappers = wrapper.components().filter((component) => isChromeShellWrapper(component));
+    wrapper.components().filter((component) => {
+        const attrs = component.getAttributes?.() ?? {};
 
-    for (const shell of shellWrappers) {
-        const children = [...shell.components().models ?? shell.components()];
-
-        for (const child of children) {
+        return Boolean(attrs[CHROME_SHELL_ATTR]) && ! attrs['data-voodbuilder-chrome-shell-part'];
+    }).forEach((shell) => {
+        [...shell.components().models ?? shell.components()].forEach((child) => {
             child.move(wrapper, { at: wrapper.components().length });
-        }
+        });
 
         shell.remove();
-    }
+    });
 }
 
-function buildDropZoneMarkup(zone, placeholder) {
-    return `<div data-voodbuilder-chrome-drop-zone="${zone}" data-placeholder="${placeholder}" class="voodbuilder-chrome-drop-zone voodbuilder-chrome-drop-zone--${zone}"></div>`;
+function buildDropZoneMarkup(zone, placeholder, name) {
+    return `<div data-voodbuilder-chrome-drop-zone="${zone}" data-placeholder="${placeholder}" class="voodbuilder-chrome-drop-zone voodbuilder-chrome-drop-zone--${zone}" data-gjs-type="voodbuilder-chrome-drop-zone"></div>`;
 }
 
 function configureDropZone(component, zone, placeholder, name) {
@@ -156,21 +147,13 @@ function configureLayoutContentSlot(slot) {
     sanitizeChromeContentSlotChildren(slot);
 }
 
-function collectTopLevelNavBlocks(wrapper) {
-    return wrapper.components().filter((component) => isChromeLayoutNavBlock(component));
-}
-
-function collectTopLevelFooterBlocks(wrapper) {
-    return wrapper.components().filter((component) => isChromeLayoutFooterBlock(component));
-}
-
 function ensureDropZone(editor, wrapper, zone, placeholder, name) {
     let dropZone = findDropZone(editor, zone);
 
     if (! dropZone) {
         const at = zone === 'nav' ? 0 : wrapper.components().length;
 
-        wrapper.append(buildDropZoneMarkup(zone, placeholder), { at });
+        wrapper.append(buildDropZoneMarkup(zone, placeholder, name), { at });
         dropZone = findDropZone(editor, zone);
     }
 
@@ -181,36 +164,78 @@ function ensureDropZone(editor, wrapper, zone, placeholder, name) {
     return dropZone;
 }
 
-function moveNavBlocksIntoZone(wrapper, navZone) {
-    if (! navZone) {
-        return;
+function isDefaultWrapper(component) {
+    if (! component?.get) {
+        return false;
     }
 
-    collectTopLevelNavBlocks(wrapper).forEach((component) => {
-        if (component.parent?.() === navZone) {
-            return;
-        }
+    const name = String(component.getName?.() ?? component.get('name') ?? '');
+    const type = String(component.get('type') ?? '');
 
-        component.move(navZone, { at: navZone.components().length });
-    });
-
-    navZone.components().slice(1).forEach((duplicate) => duplicate.remove());
+    return type === 'default' || name === 'Default';
 }
 
-function moveFooterBlocksIntoZone(wrapper, footerZone) {
-    if (! footerZone) {
+function flattenDefaultWrappers(zone) {
+    if (! zone?.components) {
         return;
     }
 
-    collectTopLevelFooterBlocks(wrapper).forEach((component) => {
-        if (component.parent?.() === footerZone) {
+    [...zone.components().models ?? zone.components()].forEach((child) => {
+        if (! isDefaultWrapper(child)) {
             return;
         }
 
-        component.move(footerZone, { at: footerZone.components().length });
-    });
+        const inner = child.components();
 
-    footerZone.components().slice(1).forEach((duplicate) => duplicate.remove());
+        if (inner.length !== 1) {
+            return;
+        }
+
+        const nested = inner.at(0);
+
+        nested.move(zone, { at: child.index() });
+        child.remove();
+    });
+}
+
+function normalizeZoneChildren(zone) {
+    if (! zone?.components) {
+        return;
+    }
+
+    flattenDefaultWrappers(zone);
+
+    const children = [...zone.components().models ?? zone.components()];
+
+    children.forEach((child) => {
+        if (isDefaultWrapper(child) && child.components().length === 0) {
+            child.remove();
+        }
+    });
+}
+
+function relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone) {
+    const keep = new Set([navZone, slot, footerZone].filter(Boolean));
+
+    wrapper.components().forEach((child) => {
+        if (keep.has(child) || isDropZone(child)) {
+            return;
+        }
+
+        if (isContentSlot(child)) {
+            return;
+        }
+
+        if (navZone && child.index() < slot.index()) {
+            child.move(navZone, { at: navZone.components().length });
+
+            return;
+        }
+
+        if (footerZone) {
+            child.move(footerZone, { at: footerZone.components().length });
+        }
+    });
 }
 
 function ensureContentSlot(editor, wrapper) {
@@ -221,7 +246,7 @@ function ensureContentSlot(editor, wrapper) {
         const at = navZone ? navZone.index() + 1 : 0;
 
         wrapper.append(
-            '<div data-voodbuilder-content-slot="main" class="voodbuilder-chrome-content-slot flex min-h-[12rem] flex-1 flex-col items-center justify-center border border-dashed border-vp-divider bg-vp-bg-alt/40 px-6 py-10 text-center text-sm text-vp-text-3"></div>',
+            '<div data-voodbuilder-content-slot="main" data-gjs-type="voodbuilder-chrome-content-slot" class="voodbuilder-chrome-content-slot flex min-h-[12rem] flex-1 flex-col items-center justify-center border border-dashed border-vp-divider bg-vp-bg-alt/40 px-6 py-10 text-center text-sm text-vp-text-3"></div>',
             { at },
         );
         slot = findContentSlot(editor);
@@ -247,8 +272,7 @@ function ensureChromeLayoutStructure(editor) {
     const slot = ensureContentSlot(editor, wrapper);
     const footerZone = ensureDropZone(editor, wrapper, 'footer', FOOTER_ZONE_PLACEHOLDER, 'Footer');
 
-    moveNavBlocksIntoZone(wrapper, navZone);
-    moveFooterBlocksIntoZone(wrapper, footerZone);
+    relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone);
 
     [navZone, slot, footerZone].filter(Boolean).forEach((component, index) => {
         if (component.index() !== index) {
@@ -256,21 +280,8 @@ function ensureChromeLayoutStructure(editor) {
         }
     });
 
-    wrapper.components().forEach((child) => {
-        if (child === navZone || child === slot || child === footerZone || isDropZone(child)) {
-            return;
-        }
-
-        if (isChromeLayoutNavBlock(child) && navZone) {
-            child.move(navZone, { at: navZone.components().length });
-
-            return;
-        }
-
-        if (isChromeLayoutFooterBlock(child) && footerZone) {
-            child.move(footerZone, { at: footerZone.components().length });
-        }
-    });
+    normalizeZoneChildren(navZone);
+    normalizeZoneChildren(footerZone);
 
     return { navZone, slot, footerZone };
 }
@@ -302,22 +313,70 @@ function applyChromeLayoutBlockFilter(editor) {
         return;
     }
 
+    const hasSlot = Boolean(findContentSlot(editor));
+
     blockManager.getAll().forEach((block) => {
         const id = String(block.get('id') ?? block.id ?? '');
         const scope = String(block.get('attributes')?.[EDITOR_SCOPE_ATTR] ?? '');
 
-        if (scope === CHROME_LAYOUT_SCOPE) {
-            block.set('visible', true);
+        if (id === CONTENT_SLOT_BLOCK_ID) {
+            block.set('visible', ! hasSlot);
 
             return;
         }
 
-        const allowed = CHROME_LAYOUT_BLOCK_PREFIXES.some(
-            (prefix) => id === prefix || id.startsWith(prefix),
-        );
-
-        block.set('visible', allowed);
+        if (scope === CHROME_LAYOUT_SCOPE) {
+            block.set('visible', true);
+        }
     });
+}
+
+function resolveTargetDropZone(editor, component) {
+    if (! component) {
+        return null;
+    }
+
+    let current = component;
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isDropZone(current)) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    const parent = component.parent?.();
+
+    if (isDropZone(parent)) {
+        return parent;
+    }
+
+    return findDropZoneAtPointer(editor);
+}
+
+export function findDropZoneAtPointer(editor) {
+    const doc = editor.Canvas?.getDocument?.();
+    const frame = editor.Canvas?.getFrameEl?.();
+    const point = editor.__voodbuilderLastDragPoint;
+
+    if (! doc || ! frame || ! point) {
+        return null;
+    }
+
+    const rect = frame.getBoundingClientRect();
+    const x = point.x - rect.left + (frame.contentWindow?.scrollX ?? 0);
+    const y = point.y - rect.top + (frame.contentWindow?.scrollY ?? 0);
+    const target = doc.elementFromPoint(x, y);
+    const zoneEl = target?.closest?.('[data-voodbuilder-chrome-drop-zone]');
+
+    if (! zoneEl) {
+        return null;
+    }
+
+    const zone = zoneEl.getAttribute('data-voodbuilder-chrome-drop-zone');
+
+    return findDropZone(editor, zone);
 }
 
 function relocateLayoutBlock(editor, component) {
@@ -325,45 +384,20 @@ function relocateLayoutBlock(editor, component) {
         return false;
     }
 
-    const wrapper = editor.getWrapper?.();
-    const blockId = String(component.getAttributes?.()['data-voodbuilder-block'] ?? '');
+    const zone = resolveTargetDropZone(editor, component);
 
-    if (! wrapper || ! blockId) {
+    if (! zone || component.parent?.() === zone) {
+        if (isDropZone(component.parent?.())) {
+            normalizeZoneChildren(component.parent?.());
+        }
+
         return false;
     }
 
-    const navZone = findDropZone(editor, 'nav');
-    const footerZone = findDropZone(editor, 'footer');
+    component.move(zone, { at: zone.components().length });
+    normalizeZoneChildren(zone);
 
-    if ((blockId.startsWith('site_nav_') || blockId === 'site_header' || isSiteNavBlock(blockId)) && navZone) {
-        if (component.parent?.() !== navZone) {
-            component.move(navZone, { at: navZone.components().length });
-        }
-
-        navZone.components().forEach((sibling) => {
-            if (sibling !== component && isChromeLayoutNavBlock(sibling)) {
-                sibling.remove();
-            }
-        });
-
-        return true;
-    }
-
-    if (blockId.startsWith('site_footer_') && footerZone) {
-        if (component.parent?.() !== footerZone) {
-            component.move(footerZone, { at: footerZone.components().length });
-        }
-
-        footerZone.components().forEach((sibling) => {
-            if (sibling !== component && isSiteFooterBlock(blockId)) {
-                sibling.remove();
-            }
-        });
-
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
 export function applyEditorScopeBlockVisibility(editor) {
@@ -375,15 +409,7 @@ export function refreshChromeLayoutBlockCatalog(editor) {
         return;
     }
 
-    const block = editor.BlockManager?.get(CONTENT_SLOT_BLOCK_ID);
-
-    if (! block) {
-        return;
-    }
-
-    const hasSlot = Boolean(findContentSlot(editor));
-
-    block.set('visible', ! hasSlot);
+    applyChromeLayoutBlockFilter(editor);
     refreshBlocksLibraryUi(editor);
 }
 
@@ -484,12 +510,11 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     });
 
     editor.on('block:drag:stop', (component) => {
-        if (! component) {
-            return;
-        }
-
         window.requestAnimationFrame(() => {
-            relocateLayoutBlock(editor, component);
+            if (component) {
+                relocateLayoutBlock(editor, component);
+            }
+
             scheduleRefresh();
         });
     });

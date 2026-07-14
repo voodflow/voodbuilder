@@ -15,8 +15,11 @@ class ChromeLayoutDefaultsTest extends TestCase
         $html = ChromeLayoutDefaults::starterHtml();
 
         $this->assertStringContainsString('data-voodbuilder-content-slot="main"', $html);
-        $this->assertStringContainsString('site_header', $html);
-        $this->assertStringContainsString('site_footer_columns_simple', $html);
+        $this->assertStringContainsString('data-voodbuilder-chrome-drop-zone="nav"', $html);
+        $this->assertStringContainsString('data-voodbuilder-chrome-drop-zone="footer"', $html);
+        $this->assertStringContainsString('data-gjs-type="voodbuilder-chrome-drop-zone"', $html);
+        $this->assertStringNotContainsString('site_header', $html);
+        $this->assertStringNotContainsString('site_footer_columns_simple', $html);
     }
 
     public function test_content_slot_block_uses_shared_markup(): void

@@ -6,13 +6,12 @@ import { lucideIcon } from './editor-icons.js';
 import {
     CHROME_SHELL_PART_ATTR,
     CONTENT_SLOT_ATTR,
+    isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
-    isChromeShellEditorProtectedComponent,
     isChromeShellModeEditor,
     isChromeShellPartComponent,
     isPageContentSlotComponent,
-    looksLikeSiteChromeStructure,
-    PAGE_CONTENT_ATTR,
+    shouldBlockChromeLayerContextMenu,
 } from './chrome-content-slot-utils.js';
 import { isSiteFooterBlock, isSiteNavBlock } from './plugins/voodbuilder-grapesjs.js';
 
@@ -33,7 +32,7 @@ export function isChromeLayoutFooterBlock(component) {
 export function isChromeLayoutContentSlot(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
-    return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs[PAGE_CONTENT_ATTR];
+    return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs['data-voodbuilder-page-content'];
 }
 
 export function isTopLevelChromeLayoutZone(component, wrapper) {
@@ -47,75 +46,25 @@ export function isTopLevelChromeLayoutZone(component, wrapper) {
         return true;
     }
 
-    if (isChromeLayoutContentSlot(component)) {
-        return true;
-    }
-
-    if (isChromeLayoutNavBlock(component)) {
-        return true;
-    }
-
-    if (isChromeLayoutFooterBlock(component)) {
-        return true;
-    }
-
-    return isChromeShellPartComponent(component) || isPageContentSlotComponent(component);
+    return isChromeLayoutContentSlot(component)
+        || isChromeShellPartComponent(component)
+        || isPageContentSlotComponent(component);
 }
 
 export function isChromeEditorProtectedComponent(component, editor) {
-    if (! component || ! editor) {
-        return false;
-    }
-
-    if (isChromeShellModeEditor(editor) && isChromeShellEditorProtectedComponent(component, editor)) {
-        return true;
-    }
-
-    if (! isChromeLayoutModeEditor(editor)) {
-        return false;
-    }
-
-    const wrapper = editor.getWrapper?.();
-
-    if (! wrapper || component === wrapper) {
-        return false;
-    }
-
-    if (isChromeLayoutContentSlot(component)) {
-        return true;
-    }
-
-    if (component.parent?.() === wrapper && (isChromeLayoutNavBlock(component) || isChromeLayoutFooterBlock(component))) {
-        return true;
-    }
-
-    if (looksLikeSiteChromeStructure(component)) {
-        const parent = component.parent?.();
-
-        if (parent === wrapper || isChromeLayoutNavBlock(parent) || isChromeLayoutFooterBlock(parent)) {
-            return true;
-        }
-    }
-
-    return false;
+    return shouldBlockChromeLayerContextMenu(component, editor);
 }
 
 export function canRemoveChromeEditorComponent(component, editor) {
-    return ! isChromeEditorProtectedComponent(component, editor);
+    return ! shouldBlockChromeLayerContextMenu(component, editor);
 }
 
 export function canDuplicateChromeEditorComponent(component, editor) {
-    return ! isChromeEditorProtectedComponent(component, editor);
+    return ! shouldBlockChromeLayerContextMenu(component, editor);
 }
 
 export function canRenameChromeEditorLayer(component, editor) {
-    if (! isChromeEditorProtectedComponent(component, editor)) {
-        return true;
-    }
-
-    const wrapper = editor.getWrapper?.();
-
-    if (! wrapper || component.parent?.() !== wrapper) {
+    if (! shouldBlockChromeLayerContextMenu(component, editor)) {
         return true;
     }
 
@@ -123,36 +72,11 @@ export function canRenameChromeEditorLayer(component, editor) {
 }
 
 export function filterChromeContextMenuItems(editor, component, items) {
-    if (! isChromeEditorProtectedComponent(component, editor)) {
-        return items;
+    if (shouldBlockChromeLayerContextMenu(component, editor)) {
+        return [];
     }
 
-    const wrapper = editor.getWrapper?.();
-    const isTopLevelZone = wrapper && component.parent?.() === wrapper && (
-        isTopLevelChromeLayoutZone(component, wrapper)
-        || isChromeShellPartComponent(component)
-        || isPageContentSlotComponent(component)
-    );
-
-    return items.filter((item) => {
-        if (item.id === 'delete' && ! canRemoveChromeEditorComponent(component, editor)) {
-            return false;
-        }
-
-        if (item.id === 'duplicate' && ! canDuplicateChromeEditorComponent(component, editor)) {
-            return false;
-        }
-
-        if (item.id === 'save-catalog' && isTopLevelZone) {
-            return false;
-        }
-
-        if (item.id === 'rename-layer' && ! canRenameChromeEditorLayer(component, editor)) {
-            return false;
-        }
-
-        return true;
-    });
+    return items;
 }
 
 export function patchChromeZoneLayerIcons(editor) {
@@ -167,7 +91,7 @@ export function patchChromeZoneLayerIcons(editor) {
             isTopLevelChromeLayoutZone(component, wrapper)
             || isChromeShellPartComponent(component)
             || isPageContentSlotComponent(component)
-            || component.getAttributes?.()['data-voodbuilder-chrome-drop-zone']
+            || isChromeDropZoneComponent(component)
         );
 
         if (! isShellZone) {

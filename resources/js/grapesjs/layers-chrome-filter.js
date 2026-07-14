@@ -4,7 +4,11 @@
  */
 
 import { walkComponentTree } from './tailwind-visual-style.js';
-import { isChromeLayoutModeEditor, isChromeShellModeEditor } from './chrome-content-slot-utils.js';
+import {
+    isChromeDropZoneComponent,
+    isChromeLayoutModeEditor,
+    isChromeShellModeEditor,
+} from './chrome-content-slot-utils.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
@@ -41,20 +45,37 @@ function isTopLevelShellNode(component, wrapper) {
     );
 }
 
+function isInsideLayoutDropZone(component) {
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isChromeDropZoneComponent(current)) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
 function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) {
     if (! component || component.get?.('type') === 'wrapper') {
         return;
     }
 
     if (isTopLevelShellNode(component, wrapper)) {
+        const isDropZone = isChromeDropZoneComponent(component);
+
         component.components?.().forEach((child) => {
-            applyLayersChromeFilter(child, wrapper, true);
+            applyLayersChromeFilter(child, wrapper, isDropZone ? false : true);
         });
 
         return;
     }
 
-    const inChromeShell = insideChromeShell || shouldHideFromLayers(component);
+    const inChromeShell = (insideChromeShell || shouldHideFromLayers(component))
+        && ! isInsideLayoutDropZone(component);
 
     if (inChromeShell) {
         component.set({
