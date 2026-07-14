@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Filament\Notifications\DatabaseNotification as FilamentDatabaseNotification;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Notifications\DatabaseNotification;
@@ -42,13 +44,70 @@ final class SiteNotificationPresenter
                 data: $data,
                 icon: 'mention',
             ),
-            default => [
-                'title' => __('voodbuilder::notifications.generic_title'),
-                'body' => Str::limit((string) json_encode($data), 120),
+            default => self::presentDefault($notification),
+        };
+    }
+
+    /**
+     * @return array{title: string, body: string, url: ?string, icon: string}
+     */
+    protected static function presentDefault(DatabaseNotification $notification): array
+    {
+        if (self::isFilamentNotification($notification)) {
+            return self::presentFilamentNotification($notification);
+        }
+
+        $data = $notification->data;
+
+        return [
+            'title' => __('voodbuilder::notifications.generic_title'),
+            'body' => Str::limit(is_array($data)
+                ? (string) ($data['message'] ?? $data['body'] ?? json_encode($data))
+                : (string) $data, 240),
+            'url' => null,
+            'icon' => 'bell',
+        ];
+    }
+
+    protected static function isFilamentNotification(DatabaseNotification $notification): bool
+    {
+        if ($notification->type === FilamentDatabaseNotification::class) {
+            return true;
+        }
+
+        $data = $notification->data;
+
+        return is_array($data) && ($data['format'] ?? null) === 'filament';
+    }
+
+    /**
+     * @return array{title: string, body: string, url: ?string, icon: string}
+     */
+    protected static function presentFilamentNotification(DatabaseNotification $notification): array
+    {
+        try {
+            $parsed = FilamentNotification::fromDatabase($notification);
+
+            return [
+                'title' => filled($parsed->getTitle())
+                    ? (string) $parsed->getTitle()
+                    : __('voodbuilder::notifications.generic_title'),
+                'body' => (string) ($parsed->getBody() ?? ''),
                 'url' => null,
                 'icon' => 'bell',
-            ],
-        };
+            ];
+        } catch (\Throwable) {
+            $data = $notification->data;
+
+            return [
+                'title' => is_array($data)
+                    ? (string) ($data['title'] ?? __('voodbuilder::notifications.generic_title'))
+                    : __('voodbuilder::notifications.generic_title'),
+                'body' => is_array($data) ? (string) ($data['body'] ?? '') : '',
+                'url' => null,
+                'icon' => 'bell',
+            ];
+        }
     }
 
     /**
