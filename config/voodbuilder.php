@@ -9,6 +9,7 @@ return [
 
     'layouts' => [
         'app' => 'voodbuilder::layouts.app',
+        'chrome_app' => 'voodbuilder::layouts.chrome-app',
         'doc' => 'voodbuilder::layouts.doc',
         'full_width' => 'voodbuilder::layouts.full-width',
         'home' => 'voodbuilder::layouts.home',
@@ -202,6 +203,16 @@ return [
     'pages' => [
         'enabled' => true,
         'route_prefix' => 'pages',
+        /*
+        | When true, new pages use GrapesJS only (no Rich editor toggle in admin).
+        | Existing rich-editor pages stay editable until converted manually.
+        */
+        'grapesjs_only' => env('VOODBUILDER_PAGES_GRAPESJS_ONLY', false),
+        'default_builder' => env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'grapesjs'),
+        /*
+        | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
+        */
+        'allow_sub_theme_override' => env('VOODBUILDER_PAGES_ALLOW_SUB_THEME_OVERRIDE', true),
     ],
 
     'popups' => [
@@ -233,6 +244,15 @@ return [
     */
     'content_channels' => [
         //
+    ],
+
+    /*
+    | GrapesJS chrome layouts — header/footer shell around plugin content.
+    */
+    'chrome_layouts' => [
+        'enabled' => env('VOODBUILDER_CHROME_LAYOUTS_ENABLED', true),
+        'editor_sub_theme' => 'site',
+        'shell_sub_theme' => 'site',
     ],
 
     /*

@@ -9,6 +9,12 @@
         voodbuilder-grapesjs-editing
     @endsection
 
+    @if ($grapesJsEditor ?? false)
+    @push('head')
+        <style id="voodbuilder-grapesjs-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHostChrome::criticalHideCss() !!}</style>
+    @endpush
+    @endif
+
     @push('scripts-before-livewire')
         <style>
             .voodbuilder-grapesjs-mode .voodbuilder-landing-shell,

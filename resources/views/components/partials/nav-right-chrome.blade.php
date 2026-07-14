@@ -99,7 +99,7 @@
             $mobileToggleClass,
         ])
         data-mobile-nav-toggle
-        data-gjs-type="default"
+        data-gjs-type="voodbuilder-chrome-button"
         data-gjs-selectable="false"
         aria-controls="voodbuilder-mobile-nav"
         aria-expanded="false"

@@ -29,7 +29,7 @@
         data-voodbuilder-chrome="footer-col-{{ $index }}"
         {!! $columnChrome['attr'] !!}
     >
-        <h2 class="title-font font-medium text-vp-text-1 tracking-widest text-sm mb-3" data-voodbuilder-footer-title>
+        <h2 class="title-font font-medium text-vp-text-1 text-sm mb-3" data-voodbuilder-footer-title>
             {{ $columnTitle }}
         </h2>
         <nav class="list-none" data-voodbuilder-menu="{{ $menuSlug }}" aria-label="{{ $columnTitle }}"></nav>

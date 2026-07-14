@@ -7,7 +7,7 @@
     $menuColumnsAlign = $redistribute && count($visibleMenuColumns) === 1 ? 'md:justify-end' : '';
 @endphp
 
-<div class="container mx-auto px-5 py-24">
+<div class="voodbuilder-gjs-container px-5 py-24">
     <div
         @class([
             'mb-12 flex flex-col items-center gap-4 rounded-2xl border border-vp-divider bg-vp-bg-alt px-6 py-8 text-center md:flex-row md:justify-between md:text-left',

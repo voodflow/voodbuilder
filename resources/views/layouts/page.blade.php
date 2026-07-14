@@ -1,4 +1,4 @@
-@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
+@extends(\Voodflow\Voodbuilder\Support\PluginLayout::appShell())
 
 @section('content')
     <div class="mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-12 md:px-8 md:py-24">

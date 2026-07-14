@@ -21,15 +21,11 @@ HTML;
         $this->assertStringNotContainsString(' menu":"footer"}"=""', $normalized);
         $this->assertStringNotContainsString(' menu=', $normalized);
 
-        preg_match('/data-voodbuilder-config=\'([^\']+)\'/', $normalized, $matches);
-
-        if ($matches === []) {
-            preg_match('/data-voodbuilder-config="([^"]+)"/', $normalized, $matches);
-        }
+        preg_match('/data-voodbuilder-config=(["\'])(.+?)\1/', $normalized, $matches);
 
         $this->assertSame(
             ['menu' => 'footer'],
-            GrapesJsDynamicBlockAttributeNormalizer::decodeConfig($matches[1] ?? ''),
+            GrapesJsDynamicBlockAttributeNormalizer::decodeConfig($matches[2] ?? ''),
         );
     }
 
@@ -41,9 +37,9 @@ HTML;
 
         $this->assertStringContainsString('data-voodbuilder-block="latest_vtuts"', $normalized);
 
-        preg_match('/data-voodbuilder-config="([^"]+)"/', $normalized, $matches);
+        preg_match('/data-voodbuilder-config=(["\'])(.+?)\1/', $normalized, $matches);
 
-        $config = GrapesJsDynamicBlockAttributeNormalizer::decodeConfig($matches[1] ?? '');
+        $config = GrapesJsDynamicBlockAttributeNormalizer::decodeConfig($matches[2] ?? '');
 
         $this->assertSame(6, $config['limit'] ?? null);
         $this->assertSame(3, $config['columns'] ?? null);

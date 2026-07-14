@@ -31,7 +31,7 @@ final class GrapesJsCodeBlockNormalizer
         }
 
         return (string) preg_replace_callback(
-            '/<div(?=[^>]*\bdata-code-block\b)(?=[^>]*\bclass="[^"]*vp-code-block[^"]*")[^>]*>[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/',
+            '/<div(?=[^>]*\bdata-code-block\b)(?=[^>]*\bvp-code-block\b)[^>]*>[\s\S]*?<\/div>\s*<\/div>/',
             static function (array $matches): string {
                 $block = $matches[0];
 

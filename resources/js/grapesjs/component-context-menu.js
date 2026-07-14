@@ -12,6 +12,12 @@ import {
     applyLayerDisplayName,
     resolveLayerDisplayName,
 } from './layer-display-name.js';
+import {
+    canDuplicateChromeEditorComponent,
+    canRemoveChromeEditorComponent,
+    filterChromeContextMenuItems,
+    isChromeEditorProtectedComponent,
+} from './chrome-editor-guards.js';
 
 export function resolveComponentFromElement(editor, element) {
     const doc = editor.Canvas?.getDocument?.();
@@ -167,28 +173,32 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         });
     }
 
-    items.push({
-        id: 'duplicate',
-        label: labels.canvasDuplicate ?? 'Duplicate',
-        onSelect: () => {
-            const clone = duplicateCanvasComponent(component);
+    if (canDuplicateChromeEditorComponent(component, editor)) {
+        items.push({
+            id: 'duplicate',
+            label: labels.canvasDuplicate ?? 'Duplicate',
+            onSelect: () => {
+                const clone = duplicateCanvasComponent(component);
 
-            if (clone) {
-                editor.select(clone);
-            }
-        },
-    });
+                if (clone) {
+                    editor.select(clone);
+                }
+            },
+        });
+    }
 
-    items.push({
-        id: 'delete',
-        label: labels.canvasDelete ?? labels.componentsCanvasDelete ?? 'Remove from canvas',
-        danger: true,
-        onSelect: () => {
-            component.remove();
-        },
-    });
+    if (canRemoveChromeEditorComponent(component, editor)) {
+        items.push({
+            id: 'delete',
+            label: labels.canvasDelete ?? labels.componentsCanvasDelete ?? 'Remove from canvas',
+            danger: true,
+            onSelect: () => {
+                component.remove();
+            },
+        });
+    }
 
-    return items;
+    return filterChromeContextMenuItems(editor, component, items);
 }
 
 export function openComponentContextMenu(editor, component, x, y) {

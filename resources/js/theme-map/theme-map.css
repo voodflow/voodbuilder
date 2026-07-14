@@ -152,6 +152,46 @@
     background: rgb(51 65 85);
 }
 
+.voodbuilder-tm-node__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+}
+
+.voodbuilder-tm-node__tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: rgb(51 65 85);
+    background: rgb(241 245 249);
+}
+
+.dark .voodbuilder-tm-node__tag {
+    color: rgb(226 232 240);
+    background: rgb(51 65 85);
+}
+
+.voodbuilder-tm-node__tag--required {
+    margin-top: 0.15rem;
+    color: rgb(30 64 175);
+    background: rgb(219 234 254);
+}
+
+.dark .voodbuilder-tm-node__tag--required {
+    color: rgb(191 219 254);
+    background: rgb(30 58 138);
+}
+
+.voodbuilder-tm-node__meta--layout {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+}
+
 .voodbuilder-tm-node__actions {
     display: flex;
     justify-content: flex-end;

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class NavigationMenuPreviewTest extends TestCase
@@ -73,11 +74,12 @@ class NavigationMenuPreviewTest extends TestCase
 
     public function test_canvas_block_code_toolbar_command_is_registered_in_editor_bundle(): void
     {
-        $editorJs = file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/editor.js'));
+        $packagePath = VoodbuilderPaths::packagePath();
+        $editorJs = file_get_contents($packagePath.'/resources/js/grapesjs/editor.js');
 
         $this->assertIsString($editorJs);
         $this->assertStringContainsString('registerCanvasBlockCodeEditor', $editorJs);
-        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/canvas-component-toolbar.js')));
+        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', file_get_contents($packagePath.'/resources/js/grapesjs/canvas-component-toolbar.js'));
     }
 
     public function test_site_nav_block_uses_full_width_row_by_default(): void

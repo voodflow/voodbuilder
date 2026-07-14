@@ -711,6 +711,21 @@
     cursor: grab;
 }
 
+.voodbuilder-gjs-root .gjs-layer-move[data-voodbuilder-shell-locked] {
+    cursor: default;
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-root .gjs-layer-move[data-voodbuilder-shell-locked]:hover {
+    color: var(--color-vp-text-3, #94a3b8);
+    background: transparent;
+}
+
+.voodbuilder-gjs-root .gjs-layer-item[data-toggle-select]:has(.gjs-layer-move[data-voodbuilder-shell-locked]) {
+    cursor: default;
+}
+
 .voodbuilder-gjs-layers-mount {
     position: relative;
     z-index: 1;
@@ -743,6 +758,7 @@
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
     border-radius: 0.5rem;
     box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+    z-index: 10040;
 }
 
 .voodbuilder-gjs-root .gjs-toolbar-item {

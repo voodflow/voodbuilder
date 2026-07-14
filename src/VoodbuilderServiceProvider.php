@@ -44,6 +44,8 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
+use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
 use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
@@ -62,11 +64,13 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\ChromeLayoutContentSlotBlock;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
+use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
@@ -75,6 +79,7 @@ use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\ThemeMapAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
@@ -134,6 +139,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
+        IntegrationRegistrar::boot();
 
         if (config('voodbuilder.pages.enabled', true)) {
             Voodbuilder::contentChannel('pages', new SitePagesContentChannel);
@@ -151,6 +157,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         Livewire::component('voodbuilder.theme-map-bridge', ThemeMapBridge::class);
 
         ThemeMapAssets::register();
+        FilamentAdminAssets::register();
 
         if (config('voodbuilder.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
@@ -241,6 +248,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::put('popups/{popup}', [GrapesJsPopupsController::class, 'update'])->name('popups.update');
                 Route::delete('popups/{popup}', [GrapesJsPopupsController::class, 'destroy'])->name('popups.destroy');
                 Route::match(['put', 'post'], 'popups/{popup}/content', [GrapesJsPopupController::class, 'update'])->name('popups.content.update');
+                Route::match(['put', 'post'], 'chrome-layouts/{chromeLayout}/content', [GrapesJsChromeLayoutController::class, 'update'])->name('chrome-layouts.content.update');
             });
 
         Route::middleware(['web', 'throttle:120,1'])
@@ -255,6 +263,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->name('voodbuilder.')
             ->group(function (): void {
                 Route::get('popups/{popup}/editor', [PopupEditorController::class, 'show'])->name('popups.editor');
+                Route::get('chrome-layouts/{chromeLayout}/editor', [ChromeLayoutEditorController::class, 'show'])->name('chrome-layouts.editor');
             });
     }
 
@@ -291,6 +300,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
             if (config('voodbuilder.grapesjs.include_landing_blocks', false)) {
                 VoodbuilderLandingGrapesJsBlocks::register();
+            }
+
+            if (config('voodbuilder.chrome_layouts.enabled', true)) {
+                $registry->register(ChromeLayoutContentSlotBlock::definition());
             }
 
             if (config('voodbuilder.grapesjs.sections.enabled', true)) {

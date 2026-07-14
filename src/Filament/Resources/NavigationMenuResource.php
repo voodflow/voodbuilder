@@ -17,7 +17,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
@@ -26,6 +25,10 @@ use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
 use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
+use Voodflow\Voodbuilder\Filament\Actions\DeleteNavigationMenuTranslationsAction;
+use Voodflow\Voodbuilder\Filament\Columns\TranslationLocaleColumn;
+use Voodflow\Voodbuilder\Filament\Concerns\ConfiguresTranslatableLocaleField;
+use Voodflow\Voodbuilder\Filament\Concerns\ListsCanonicalTranslationGroups;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
@@ -41,6 +44,9 @@ use Voodflow\Vtuts\Support\Locales;
 
 class NavigationMenuResource extends Resource
 {
+    use ConfiguresTranslatableLocaleField;
+    use ListsCanonicalTranslationGroups;
+
     protected static ?string $model = NavigationMenu::class;
 
     protected static function resolveMenuItemType(Get $get): ?MenuItemType
@@ -155,13 +161,17 @@ class NavigationMenuResource extends Resource
                             ->visible(fn (Get $get): bool => $get('slug') === 'social')
                             ->required(fn (Get $get): bool => $get('slug') === 'social')
                             ->helperText(__('voodbuilder::admin.navigation.link_display_help')),
-                        Select::make('locale')
-                            ->label(__('voodbuilder::admin.fields.language'))
-                            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
-                            ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
-                            ->required()
-                            ->native(false)
-                            ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                        static::translatableLocaleSelect(
+                            Select::make('locale')
+                                ->label(__('voodbuilder::admin.fields.language'))
+                                ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
+                                ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                                ->required()
+                                ->native(false)
+                                ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                            NavigationMenu::class,
+                            static::class,
+                        ),
                         Placeholder::make('translation_links')
                             ->label(__('voodbuilder::admin.fields.translations'))
                             ->content(function (?NavigationMenu $record): HtmlString|string {
@@ -351,40 +361,25 @@ class NavigationMenuResource extends Resource
                 TextColumn::make('slug')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => NavigationMenuPlacements::label($state)),
-                TextColumn::make('locale')
-                    ->label(__('voodbuilder::admin.fields.language'))
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => class_exists(Locales::class) && is_string($state)
-                        ? (Locales::options()[$state] ?? strtoupper($state))
-                        : (string) $state)
-                    ->sortable()
-                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
-                TextColumn::make('translations')
-                    ->label(__('voodbuilder::admin.fields.translations'))
-                    ->badge()
-                    ->state(fn (NavigationMenu $record): array => $record->otherTranslationLocaleCodes())
-                    ->placeholder('—')
-                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                TranslationLocaleColumn::make(static::class),
                 TextColumn::make('root_items_count')->counts('rootItems')->label(__('Items')),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->recordUrl(fn (NavigationMenu $record): string => static::getUrl('edit', ['record' => $record]))
             ->filters([
-                SelectFilter::make('locale')
-                    ->label(__('voodbuilder::admin.fields.language'))
-                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
-                    ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
+                static::translationLocaleFilter(),
             ])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
                     CreateNavigationMenuTranslationAction::make(),
+                    DeleteNavigationMenuTranslationsAction::make(fromTable: true),
                     CloneNavigationMenuAction::make(),
                     DeleteAction::make(),
                 ])
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->iconButton()
-                    ->tooltip(__('voodbuilder::admin.actions.more')),
+                    ->tooltip(__('voodbuilder::admin.actions.actions')),
             ])
             ->recordActionsColumnLabel(null);
     }

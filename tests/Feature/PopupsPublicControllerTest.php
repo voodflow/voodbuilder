@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Feature;
 
-use App\Models\User;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Gate;
 use Voodflow\Voodbuilder\Models\BuilderPopup;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -38,10 +38,11 @@ class PopupsPublicControllerTest extends TestCase
 
     public function test_authenticated_builder_user_can_save_popup_content(): void
     {
-        $user = User::query()->create([
+        $user = new User;
+        $user->forceFill([
             'name' => 'Editor',
             'email' => 'editor@example.com',
-        ]);
+        ])->save();
 
         Gate::define('usePageBuilder', static fn (): bool => true);
         PageBuilderAccess::authorizeUsing(static fn (): bool => true);

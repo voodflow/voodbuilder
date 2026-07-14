@@ -10,7 +10,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterABlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsServerBlockRendererTest extends TestCase
@@ -19,11 +19,11 @@ class GrapesJsServerBlockRendererTest extends TestCase
     {
         $richRegistry = new GrapesJsDynamicBlockRegistry;
         $serverRegistry = new GrapesJsServerBlockRegistry;
-        $serverRegistry->register('Voodbuilder', SiteFooterABlock::class);
+        $serverRegistry->register('Voodbuilder', SiteFooterColumnsSimpleBlock::class);
 
-        $config = SiteFooterABlock::defaultConfig();
+        $config = SiteFooterColumnsSimpleBlock::defaultConfig();
         $wrapped = GrapesJsRichContentBlockAdapter::wrap(
-            SiteFooterABlock::getId(),
+            SiteFooterColumnsSimpleBlock::getId(),
             $config,
             '<p>placeholder</p>',
         );
@@ -38,6 +38,6 @@ class GrapesJsServerBlockRendererTest extends TestCase
         $html = $renderer->render($wrapped, $page);
 
         $this->assertStringNotContainsString('data-voodbuilder-block', $html);
-        $this->assertStringContainsString('data-voodbuilder-gjs-site-footer', $html);
+        $this->assertStringContainsString('voodbuilder-gjs-footer', $html);
     }
 }

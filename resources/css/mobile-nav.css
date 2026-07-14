@@ -4,23 +4,17 @@
 @reference "tailwindcss";
 
 .voodbuilder-mobile-nav {
-    --voodbuilder-mobile-bg: #ffffff;
-    --voodbuilder-mobile-bg-muted: #f6f6f7;
-    --voodbuilder-mobile-text: #3c3c43;
-    --voodbuilder-mobile-text-muted: #67676c;
-    --voodbuilder-mobile-border: #e2e2e3;
-    --voodbuilder-mobile-accent: #3451b2;
+    --voodbuilder-mobile-bg: var(--color-vp-bg-elv, #ffffff);
+    --voodbuilder-mobile-bg-muted: var(--color-vp-bg-alt, #f6f6f7);
+    --voodbuilder-mobile-text: var(--color-vp-text-1, #3c3c43);
+    --voodbuilder-mobile-text-muted: var(--color-vp-text-2, #67676c);
+    --voodbuilder-mobile-border: var(--color-vp-divider, #e2e2e3);
+    --voodbuilder-mobile-accent: var(--color-vp-brand-1, #3451b2);
     --voodbuilder-mobile-overlay: rgb(15 15 20 / 0.52);
     --voodbuilder-mobile-width: min(100vw, 22rem);
 }
 
 .dark .voodbuilder-mobile-nav {
-    --voodbuilder-mobile-bg: #1b1b1f;
-    --voodbuilder-mobile-bg-muted: #202127;
-    --voodbuilder-mobile-text: #dfdfd6;
-    --voodbuilder-mobile-text-muted: #98989f;
-    --voodbuilder-mobile-border: #2e2e32;
-    --voodbuilder-mobile-accent: #a8b1ff;
     --voodbuilder-mobile-overlay: rgb(0 0 0 / 0.62);
 }
 

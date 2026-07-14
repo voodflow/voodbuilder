@@ -28,19 +28,7 @@ final class SubThemeResolver
 
     public static function forPage(SitePage $page): string
     {
-        $raw = is_string($page->sub_theme) ? trim($page->sub_theme) : null;
-
-        if ($raw === '') {
-            $raw = null;
-        }
-
-        $theme = self::resolveId($raw);
-
-        if ($theme !== null) {
-            return $theme;
-        }
-
-        return self::siteDefault();
+        return ChromeLayoutSubThemeResolver::forSitePage($page);
     }
 
     public static function normalize(?string $theme): string

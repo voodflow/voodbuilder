@@ -146,7 +146,7 @@ final class SectionBlocksCatalogBuilder
         $category = (string) ($definition['category'] ?? '');
         $id = (string) ($definition['id'] ?? '');
 
-        if (preg_match('#/(\\w+)\\s*$#', $category, $matches)) {
+        if (preg_match('#/\\s*(\\w+)\\s*$#', $category, $matches)) {
             return Str::lower($matches[1]);
         }
 

@@ -6,7 +6,7 @@
     $menuColumnsAlign = $redistribute && count($visibleMenuColumns) === 1 ? 'md:justify-end' : '';
 @endphp
 
-<div class="container mx-auto px-5 py-24">
+<div class="voodbuilder-gjs-container px-5 py-24">
     <div class="flex flex-col flex-wrap md:flex-row md:flex-nowrap md:items-start lg:items-start">
         @include('voodbuilder::grapesjs.blocks.footers._brand_column', ['config' => $config, 'preview' => $preview])
         <div @class([

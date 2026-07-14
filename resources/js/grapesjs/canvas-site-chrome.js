@@ -2,7 +2,7 @@
  * Boot site header interactions inside the GrapesJS canvas iframe.
  */
 
-import { initSiteChrome } from './site-chrome-runtime.js';
+import { initSiteChrome, setMobileNavOpen } from './site-chrome-runtime.js';
 
 function syncCanvasDeviceMode(editor) {
     const deviceId = editor.Devices?.getSelected?.()?.get?.('id') ?? 'desktop';
@@ -14,6 +14,10 @@ function syncCanvasDeviceMode(editor) {
 
     doc.documentElement.dataset.voodbuilderGjsDevice = deviceId;
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
+
+    if (deviceId === 'desktop' || deviceId === 'tablet') {
+        setMobileNavOpen(doc, false);
+    }
 }
 
 export function bootCanvasSiteChrome(editor) {

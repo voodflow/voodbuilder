@@ -11,6 +11,7 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
@@ -50,7 +51,9 @@ class HomeController extends Controller
             ));
         }
 
-        return view(config('voodbuilder.home.fallback_view', 'voodbuilder::pages.welcome'));
+        return view(config('voodbuilder.home.fallback_view', 'voodbuilder::pages.welcome'), [
+            'voodbuilderSubTheme' => SubThemeResolver::siteDefault(),
+        ]);
     }
 
     protected function resolvedHomeLocale(): ?string

@@ -4,7 +4,7 @@
     $brandChrome = SiteFooterConfig::chromeAttributes($config, 'brand', $preview);
 @endphp
 
-<div class="container mx-auto px-5 py-8">
+<div class="voodbuilder-gjs-container px-5 py-8">
     <div class="flex flex-col items-center sm:flex-row sm:items-center">
         <div class="flex shrink-0 flex-col items-center sm:items-start">
             <div @class([$brandChrome['class']]) data-voodbuilder-chrome="brand" {!! $brandChrome['attr'] !!}>

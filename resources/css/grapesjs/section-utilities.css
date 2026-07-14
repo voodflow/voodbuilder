@@ -7,6 +7,9 @@
 @source '../grapesjs/section-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
+@source '../../views/grapesjs/blocks/footers/**/*.blade.php';
+@source '../../views/grapesjs/blocks/nav/**/*.blade.php';
+@source '../../views/grapesjs/blocks/partials/footer*.blade.php';
 
 @layer components {
     .body-font {

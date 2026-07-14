@@ -13,8 +13,12 @@ final class GrapesJsCssSanitizer
 {
     public static function sanitize(string $css): string
     {
-        if ($css === '' || ! str_contains($css, 'background')) {
+        if ($css === '') {
             return $css;
+        }
+
+        if (! str_contains($css, 'background')) {
+            return self::collapseDuplicateResets($css);
         }
 
         $sanitized = preg_replace_callback(

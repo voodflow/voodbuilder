@@ -23,7 +23,7 @@ class SectionBlocksCatalogBuilderTest extends TestCase
 
         $this->assertNotEmpty($blocks);
 
-        $footer = collect($blocks)->first(fn (array $block): bool => str_contains((string) ($block['id'] ?? ''), 'footer'));
+        $footer = collect($blocks)->first(fn (array $block): bool => ($block['category'] ?? '') === 'Footer');
 
         $this->assertNotNull($footer);
         $this->assertStringContainsString('VoodBuilder', (string) $footer['content']);

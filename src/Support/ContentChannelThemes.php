@@ -67,7 +67,13 @@ final class ContentChannelThemes
             return null;
         }
 
-        return SubThemeResolver::normalize($default);
+        $normalized = SubThemeResolver::normalize($default);
+
+        if (! ThemeBindings::isValidChannelBinding($channelId, $normalized)) {
+            return null;
+        }
+
+        return $normalized;
     }
 
     /**

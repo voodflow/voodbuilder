@@ -22,7 +22,7 @@ class SitePageLandingLayoutTest extends TestCase
         $this->assertTrue($page->shouldHideSiteFooter());
         $this->assertTrue($page->shouldHideSiteNav());
         $this->assertSame('full_width', $page->contentSection());
-        $this->assertStringContainsString('full-width', $page->layoutView());
+        $this->assertStringContainsString('layouts.landing', $page->layoutView());
     }
 
     public function test_home_layout_maps_to_full_width_shell(): void
@@ -33,6 +33,6 @@ class SitePageLandingLayoutTest extends TestCase
 
         $this->assertTrue($page->usesFullWidthLayout());
         $this->assertSame('full_width', $page->contentSection());
-        $this->assertStringContainsString('full-width', $page->layoutView());
+        $this->assertStringContainsString('layouts.landing', $page->layoutView());
     }
 }

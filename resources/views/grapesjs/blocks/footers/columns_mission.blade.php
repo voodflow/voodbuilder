@@ -1,4 +1,4 @@
-<div class="container mx-auto px-5 py-24">
+<div class="voodbuilder-gjs-container px-5 py-24">
     <div class="flex flex-col flex-wrap md:flex-row md:flex-nowrap md:items-center lg:items-start">
         <div class="mx-auto w-64 shrink-0 px-4 text-center md:mx-0 md:text-left">
             <div data-voodbuilder-brand></div>

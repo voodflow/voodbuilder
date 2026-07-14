@@ -17,7 +17,7 @@ class CreateSitePage extends CreateRecord
 
     protected static string $resource = SitePageResource::class;
 
-    protected function getHeaderActions(): array
+    protected function getActions(): array
     {
         return [
             $this->confirmHomeTakeoverAction(),

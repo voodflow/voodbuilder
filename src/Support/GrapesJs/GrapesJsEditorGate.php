@@ -10,8 +10,13 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
+use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
+use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
+use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
+use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
@@ -52,10 +57,26 @@ final class GrapesJsEditorGate
      */
     public static function config(SitePage $page): array
     {
-        $subTheme = $page->resolvedSubTheme();
+        $chromeLayout = ChromeLayoutManagedContent::chromeLayoutForSitePage($page);
+        $chromeShellMode = $chromeLayout !== null && self::isEditing($page);
+        $subTheme = $chromeShellMode
+            ? ChromeLayoutSubThemeResolver::forSitePage($page)
+            : $page->resolvedSubTheme();
+        $chromeShellParts = null;
+
+        if ($chromeShellMode && $chromeLayout !== null) {
+            $rendered = app(ChromeLayoutRenderer::class)->render($chromeLayout, canvasPreview: true);
+            $chromeShellParts = [
+                'before' => $rendered['before'],
+                'after' => $rendered['after'],
+            ];
+        }
 
         return [
             'pageId' => $page->getKey(),
+            'chromeShellMode' => $chromeShellMode,
+            'chromeShellName' => $chromeLayout?->name,
+            'chromeShellParts' => $chromeShellParts,
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -143,6 +164,8 @@ final class GrapesJsEditorGate
                 'repeatList' => __('voodbuilder::pro.bindings.repeat_list'),
                 'repeatContainerHint' => __('voodbuilder::pro.bindings.repeat_container_hint'),
                 'bindingNeedsLeaf' => __('voodbuilder::pro.bindings.binding_needs_leaf'),
+                'buttonUrlOnly' => __('voodbuilder::pro.bindings.button_url_only'),
+                'buttonUrlHint' => __('voodbuilder::pro.bindings.button_url_hint'),
                 'repeatListInstead' => __('voodbuilder::pro.bindings.repeat_list_instead'),
                 'repeatItemHint' => __('voodbuilder::pro.bindings.repeat_item_hint'),
                 'repeatContainerNoBind' => __('voodbuilder::pro.bindings.repeat_container_no_bind'),
@@ -415,6 +438,9 @@ final class GrapesJsEditorGate
         'popupsFieldCloseOverlay' => __('voodbuilder::popups.fields.close_on_overlay'),
         'popupsFieldCloseEscape' => __('voodbuilder::popups.fields.close_on_escape'),
         'popupsEditingBadge' => __('voodbuilder::popups.editor.editing_badge'),
+        'chromeLayoutEditingBadge' => __('voodbuilder::chrome_layouts.editor.layout_editing_badge'),
+        'chromeLayoutEditingHint' => __('voodbuilder::chrome_layouts.editor.layout_editing_hint'),
+        'pageContentPlaceholder' => __('voodbuilder::chrome_layouts.editor.page_content_placeholder'),
         'popupsPagePathCustom' => __('voodbuilder::popups.page_paths.custom'),
         'dialogOk' => __('voodbuilder::pro.editor_ui.dialog_ok'),
                 'dialogCancel' => __('voodbuilder::pro.editor_ui.dialog_cancel'),
@@ -436,6 +462,7 @@ final class GrapesJsEditorGate
                 'newsletterList' => __('voodbuilder::pro.grapesjs.newsletter_settings.list'),
                 'newsletterTitle' => __('voodbuilder::pro.grapesjs.newsletter_settings.title'),
                 'newsletterHint' => __('voodbuilder::pro.grapesjs.newsletter_settings.hint'),
+                'buttonLinkLabel' => __('voodbuilder::pro.grapesjs.button_link.label'),
                 'buttonLinkUrl' => __('voodbuilder::pro.grapesjs.button_link.url'),
                 'buttonLinkUrlPlaceholder' => __('voodbuilder::pro.grapesjs.button_link.url_placeholder'),
                 'buttonLinkTarget' => __('voodbuilder::pro.grapesjs.button_link.target'),
@@ -450,9 +477,18 @@ final class GrapesJsEditorGate
     public static function initialPayload(SitePage $page): array
     {
         $payload = $page->builder_payload ?? [];
+        $html = (string) ($payload['html'] ?? '');
+        $css = (string) ($payload['css'] ?? '');
+
+        if (ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
+            $html = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($html);
+        } else {
+            $html = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
+        }
+
         $normalized = self::normalizePayload([
-            'html' => $payload['html'] ?? '',
-            'css' => $payload['css'] ?? '',
+            'html' => $html,
+            'css' => $css,
             'js' => $payload['js'] ?? '',
             'project' => $payload['project'] ?? null,
         ]);
@@ -467,6 +503,15 @@ final class GrapesJsEditorGate
 
         if (self::isEditing($page)) {
             $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
+        }
+
+        if (self::isEditing($page) && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
+            $composed = ChromeLayoutEditorPreview::composeForPage($page, $html, $css);
+
+            if ($composed !== null) {
+                $html = $composed['html'];
+                $css = $composed['css'];
+            }
         }
 
         $pageManager = self::pageManagerFromHtml($html, $css);
@@ -553,6 +598,11 @@ final class GrapesJsEditorGate
     private static function editorRoute(string $name, mixed $parameters = []): string
     {
         return route($name, $parameters, absolute: false);
+    }
+
+    public static function chromeShellPreviewSubTheme(): string
+    {
+        return ChromeLayoutSubThemeResolver::forPagesChannel();
     }
 
     public static function hasPersistedProject(mixed $project): bool

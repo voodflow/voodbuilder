@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 
 final class SiteChrome
 {
     public static function shouldHideNav(?SitePage $page = null, bool $grapesJsEditor = false): bool
     {
+        if ($page !== null && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
+            return true;
+        }
+
         if ($grapesJsEditor) {
             return false;
         }
@@ -45,6 +50,10 @@ final class SiteChrome
 
     public static function shouldHideFooter(?SitePage $page = null, bool $grapesJsEditor = false): bool
     {
+        if ($page !== null && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
+            return true;
+        }
+
         if ($grapesJsEditor) {
             return true;
         }

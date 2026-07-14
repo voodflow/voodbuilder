@@ -38,6 +38,7 @@ return [
         'sub_theme' => 'Tema visivo',
         'sub_theme_inherit' => 'Predefinito sito',
         'layout_auto' => 'Automatico',
+        'canvas_width' => 'Larghezza contenuto',
         'layout_standard' => 'Pagina standard',
         'layout_full_width' => 'Tutta larghezza (marketing)',
         'excerpt' => 'Estratto',
@@ -46,8 +47,10 @@ return [
         'section_home' => 'Home sezione',
         'sub_items' => 'Sotto-voci',
         'language' => 'Lingua',
+        'lang' => 'Traduzioni',
         'target_language' => 'Lingua di destinazione',
         'translations' => 'Traduzioni',
+        'translations_to_delete' => 'Traduzioni da eliminare',
         'menu_clone_name' => 'Nome menu',
     ],
 
@@ -56,6 +59,8 @@ return [
         'translate_menu' => 'Traduci in…',
         'clone_menu' => 'Clona menu',
         'clone_menu_placement' => 'Copia in placement…',
+        'delete_translations' => 'Elimina traduzioni',
+        'actions' => 'Azioni',
         'more' => 'Azioni',
     ],
 
@@ -64,6 +69,9 @@ return [
         'modal_heading' => 'Crea traduzione pagina',
         'modal_description' => 'Verrà creata una bozza con lo stesso layout e contenuto. Aggiorna titolo, slug e testi per la lingua scelta.',
         'none_yet' => 'Nessuna traduzione collegata.',
+        'delete_translations_heading' => 'Elimina traduzioni',
+        'delete_translations_modal_description' => 'Seleziona quali traduzioni rimuovere. La riga canonica del gruppo viene sempre mantenuta.',
+        'canonical_kept_notice' => 'Originale mantenuto: :locale — :title',
     ],
 
     'menu_translation' => [
@@ -87,6 +95,9 @@ return [
         'menu_cloned' => 'Menu clonato',
         'home_reassigned' => 'Altre home aggiornate',
         'home_reassigned_body' => ':count altra/e pagina/e non sono più contrassegnate come home.',
+        'translations_delete_none_selected' => 'Seleziona almeno una traduzione da eliminare.',
+        'translations_deleted' => 'Traduzioni eliminate',
+        'translations_deleted_body' => ':count traduzione/i rimossa/e: :list',
     ],
 
     'home_takeover' => [

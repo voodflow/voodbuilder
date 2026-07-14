@@ -151,6 +151,10 @@ final class GrapesJsBindingRenderer
 
     protected function applyTextBinding(DOMElement $element, string $text, string $tag): void
     {
+        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
+            return;
+        }
+
         if ($tag === 'img') {
             $element->setAttribute('alt', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 

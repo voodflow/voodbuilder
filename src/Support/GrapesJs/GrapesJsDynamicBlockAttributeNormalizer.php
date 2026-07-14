@@ -15,6 +15,8 @@ final class GrapesJsDynamicBlockAttributeNormalizer
             return $html;
         }
 
+        $html = self::repairCorruptedDynamicBlockMarkup($html);
+
         $document = self::loadDocument($html);
 
         foreach (self::dynamicNodes($document) as $node) {
@@ -25,6 +27,10 @@ final class GrapesJsDynamicBlockAttributeNormalizer
             }
 
             $config = self::decodeConfig((string) $node->getAttribute('data-voodbuilder-config'));
+
+            if ($config === []) {
+                $config = self::salvageCorruptedConfig($node);
+            }
 
             if ($config === []) {
                 $config = self::defaultConfigFor($blockId);
@@ -119,6 +125,78 @@ final class GrapesJsDynamicBlockAttributeNormalizer
         }
 
         return $nodes;
+    }
+
+    /**
+     * GrapesJS can split JSON config into stray attributes (menu="", limit="", …).
+     *
+     * @return array<string, mixed>
+     */
+    protected static function salvageCorruptedConfig(DOMElement $node): array
+    {
+        $allowed = ['data-voodbuilder-block', 'data-voodbuilder-config', 'class', 'id'];
+        $config = [];
+
+        foreach ($node->attributes ?? [] as $attribute) {
+            if (in_array($attribute->name, $allowed, true)) {
+                continue;
+            }
+
+            $value = html_entity_decode($attribute->value, ENT_QUOTES | ENT_HTML5);
+
+            if ($value === '' && is_numeric($attribute->name)) {
+                $config[$attribute->name] = (int) $attribute->name;
+
+                continue;
+            }
+
+            if ($value === '') {
+                continue;
+            }
+
+            if ($value === 'true') {
+                $config[$attribute->name] = true;
+
+                continue;
+            }
+
+            if ($value === 'false') {
+                $config[$attribute->name] = false;
+
+                continue;
+            }
+
+            if (is_numeric($value)) {
+                $config[$attribute->name] = str_contains($value, '.') ? (float) $value : (int) $value;
+
+                continue;
+            }
+
+            $config[$attribute->name] = $value;
+        }
+
+        return $config;
+    }
+
+    protected static function repairCorruptedDynamicBlockMarkup(string $html): string
+    {
+        $repaired = preg_replace(
+            '/data-voodbuilder-config="\{"\s+menu":"([^"]+)"\}"=""/',
+            'data-voodbuilder-config=\'{"menu":"$1"}\'',
+            $html,
+        );
+
+        if (is_string($repaired)) {
+            $html = $repaired;
+        }
+
+        $repaired = preg_replace(
+            '/data-voodbuilder-config="\{"\s+class="/',
+            'data-voodbuilder-config="{}" class="',
+            $html,
+        );
+
+        return is_string($repaired) ? $repaired : $html;
     }
 
     /**

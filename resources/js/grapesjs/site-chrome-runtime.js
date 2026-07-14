@@ -205,7 +205,7 @@ export function initMobileNavSections(scope = document) {
     });
 }
 
-function setMobileNavOpen(doc, open) {
+export function setMobileNavOpen(doc, open) {
     const mobileNav = doc.querySelector('[data-mobile-nav]');
     const mobileToggle = doc.querySelector('[data-mobile-nav-toggle]');
 

@@ -116,6 +116,10 @@ final class GrapesJsBindingStorageNormalizer
 
     protected function resetTextElement(DOMElement $element, string $sourceLabel, string $fieldLabel, string $tag): void
     {
+        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
+            return;
+        }
+
         if ($tag === 'img') {
             $element->setAttribute('alt', BindingPlaceholders::text($sourceLabel, $fieldLabel));
 

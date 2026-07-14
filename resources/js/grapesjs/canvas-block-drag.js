@@ -2,6 +2,8 @@
  * Block drag UX: compact label chip, top drop spacer, scroll room above first block.
  */
 
+import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
+
 const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
@@ -115,6 +117,60 @@ function insertBlockAtTop(editor, block) {
         return null;
     }
 
+    if (editor.__voodbuilderChromeShellMode) {
+        const slot = findPageContentSlotInEditor(editor);
+
+        if (slot) {
+            const added = slot.append(content);
+            const component = Array.isArray(added) ? added[0] : added;
+
+            if (component) {
+                markTopDropHandled(editor);
+                editor.select?.(component);
+            }
+
+            return component ?? null;
+        }
+    }
+
+    if (editor.__voodbuilderChromeLayoutMode) {
+        const blockId = String(block?.get?.('id') ?? block?.id ?? '');
+        const navZone = wrapper.find?.('[data-voodbuilder-chrome-drop-zone="nav"]')?.[0];
+        const footerZone = wrapper.find?.('[data-voodbuilder-chrome-drop-zone="footer"]')?.[0];
+        const slot = wrapper.find?.('[data-voodbuilder-content-slot]')?.[0];
+
+        if ((blockId.startsWith('site_nav_') || blockId === 'site_header') && navZone) {
+            const added = navZone.append(content);
+            const component = Array.isArray(added) ? added[0] : added;
+
+            if (component) {
+                markTopDropHandled(editor);
+                editor.select?.(component);
+            }
+
+            return component ?? null;
+        }
+
+        if (blockId.startsWith('site_footer_') && footerZone) {
+            const added = footerZone.append(content);
+            const component = Array.isArray(added) ? added[0] : added;
+
+            if (component) {
+                markTopDropHandled(editor);
+                editor.select?.(component);
+            }
+
+            return component ?? null;
+        }
+
+        if (blockId === 'chrome_content_slot' && slot) {
+            markTopDropHandled(editor);
+            editor.select?.(slot);
+
+            return slot;
+        }
+    }
+
     const first = wrapper.components?.().at?.(0);
     const at = first?.getAttributes?.()?.[SPACER_ATTR] ? 1 : 0;
     const added = wrapper.append(content, { at });
@@ -181,6 +237,10 @@ function endTopDropSession(editor) {
     setCanvasDragState(editor, false);
     setTopDropSpacerActive(editor, false);
     unbindBlockDragPointerTracking(editor);
+
+    editor.Canvas?.getDocument?.()?.querySelectorAll?.('[data-voodbuilder-chrome-drop-active]')?.forEach((zone) => {
+        zone.classList.remove('voodbuilder-chrome-drop-active');
+    });
     delete editor.__voodbuilderActiveBlockDrag;
     delete editor.__voodbuilderTopDropHandled;
 }
@@ -219,10 +279,37 @@ function createDragChipElement(label) {
     return chip;
 }
 
+function shouldSkipDragChip(element) {
+    if (! element?.closest) {
+        return false;
+    }
+
+    return Boolean(
+        element.closest('[data-voodbuilder-chrome-shell-locked]')
+        || element.closest('[data-voodbuilder-gjs-site-header]')
+        || element.closest('[data-voodbuilder-block^="site_nav_"]')
+        || element.closest('[data-voodbuilder-block^="site_footer_"]')
+        || element.closest('[data-mobile-nav]')
+        || element.closest('button[data-mobile-nav-toggle]'),
+    );
+}
+
+function isChromeDropTargetElement(element) {
+    if (! element?.closest) {
+        return false;
+    }
+
+    return Boolean(
+        element.closest('[data-voodbuilder-page-content]')
+        || element.closest('[data-voodbuilder-content-slot]')
+        || element.closest('[data-voodbuilder-chrome-drop-zone]'),
+    );
+}
+
 function applyDragChip(editor, element) {
     const label = editor.__voodbuilderDragBlockLabel;
 
-    if (! label || ! element?.classList) {
+    if (! label || ! element?.classList || shouldSkipDragChip(element)) {
         return;
     }
 
@@ -238,6 +325,24 @@ function findDragElements(editor) {
     }
 
     const elements = new Set();
+
+    if (editor.__voodbuilderChromeLayoutMode || editor.__voodbuilderChromeShellMode) {
+        doc.querySelectorAll(`.${DRAG_CHIP_CLASS}`).forEach((node) => elements.add(node));
+
+        doc.querySelectorAll('.gjs-plh').forEach((node) => {
+            if (isChromeDropTargetElement(node)) {
+                elements.add(node);
+            }
+        });
+
+        doc.querySelectorAll('[data-voodbuilder-page-content], [data-voodbuilder-content-slot], [data-voodbuilder-chrome-drop-zone]').forEach((zone) => {
+            if (editor.__voodbuilderActiveBlockDrag) {
+                zone.classList.add('voodbuilder-chrome-drop-active');
+            }
+        });
+
+        return [...elements];
+    }
 
     doc.querySelectorAll(`.${DRAG_CHIP_CLASS}`).forEach((node) => elements.add(node));
 
@@ -338,6 +443,12 @@ export function registerTopDropSpacerType(editor) {
 }
 
 function ensureTopDropSpacer(editor) {
+    if (editor.__voodbuilderChromeShellMode) {
+        removeTopDropSpacer(editor);
+
+        return;
+    }
+
     const wrapper = editor.getWrapper?.();
 
     if (! wrapper) {
@@ -354,6 +465,18 @@ function ensureTopDropSpacer(editor) {
     wrapper.append({
         type: SPACER_TYPE,
     }, { at: 0 });
+}
+
+export function removeTopDropSpacer(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    wrapper.find?.(`[${SPACER_ATTR}]`)?.forEach((spacer) => {
+        spacer.remove();
+    });
 }
 
 export function detachTopDropSpacerForExport(editor) {

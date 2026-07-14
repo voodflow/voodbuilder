@@ -35,6 +35,19 @@ class GrapesJsBindingStorageNormalizerTest extends TestCase
         $this->assertStringNotContainsString('https://example.test/tutorial', $normalized);
         $this->assertStringNotContainsString('https://cdn.test/hero.jpg', $normalized);
     }
+
+    public function test_text_binding_on_cta_button_preserves_label_on_save(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new StorageFakeBindingSource);
+
+        $html = '<button type="button" data-voodbuilder-cta="true" data-voodbuilder-bind="demo.latest.title">Read more</button>';
+
+        $normalized = (new GrapesJsBindingStorageNormalizer($registry))->normalizeHtml($html);
+
+        $this->assertStringContainsString('>Read more<', $normalized);
+        $this->assertStringNotContainsString('[Latest item: Title]', $normalized);
+    }
 }
 
 final class StorageFakeBindingSource implements GrapesJsBindingSource

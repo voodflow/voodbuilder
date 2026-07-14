@@ -58,6 +58,19 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertStringContainsString('alt="Hello world"', $rendered);
         $this->assertStringNotContainsString('[Latest item: Cover]', $rendered);
     }
+
+    public function test_text_binding_on_cta_button_keeps_static_label(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<button type="button" data-voodbuilder-cta="true" data-voodbuilder-bind="demo.latest.title">Read more</button>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('>Read more<', $rendered);
+        $this->assertStringNotContainsString('>Hello world<', $rendered);
+    }
 }
 
 final class FakeLatestBindingSource implements GrapesJsBindingSource

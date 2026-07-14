@@ -38,7 +38,7 @@ class SiteFooterGrapesJsBlockTest extends TestCase
         $this->assertStringContainsString('data-voodbuilder-footer-col="4"', $html);
         $this->assertStringContainsString('data-voodbuilder-brand', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome="brand"', $html);
-        $this->assertStringContainsString('data-voodbuilder-chrome="tagline"', $html);
+        $this->assertStringContainsString('data-voodbuilder-chrome="footer-tagline"', $html);
         $this->assertStringContainsString('hidden', $html);
     }
 

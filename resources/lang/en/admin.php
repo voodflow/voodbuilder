@@ -38,6 +38,7 @@ return [
         'sub_theme' => 'Visual theme',
         'sub_theme_inherit' => 'Site default',
         'layout_auto' => 'Automatic',
+        'canvas_width' => 'Content width',
         'layout_standard' => 'Standard page',
         'layout_full_width' => 'Full width (marketing)',
         'excerpt' => 'Excerpt',
@@ -46,8 +47,10 @@ return [
         'section_home' => 'Section home',
         'sub_items' => 'Sub-items',
         'language' => 'Language',
+        'lang' => 'Translations',
         'target_language' => 'Target language',
         'translations' => 'Translations',
+        'translations_to_delete' => 'Translations to delete',
         'menu_clone_name' => 'Menu name',
     ],
 
@@ -56,6 +59,8 @@ return [
         'translate_menu' => 'Translate to…',
         'clone_menu' => 'Clone menu',
         'clone_menu_placement' => 'Copy to placement…',
+        'delete_translations' => 'Delete translations',
+        'actions' => 'Actions',
         'more' => 'Actions',
     ],
 
@@ -64,6 +69,9 @@ return [
         'modal_heading' => 'Create page translation',
         'modal_description' => 'A draft copy will be created with the same layout and content. Update the title, slug, and body for the target language.',
         'none_yet' => 'No linked translations yet.',
+        'delete_translations_heading' => 'Delete translations',
+        'delete_translations_modal_description' => 'Select which translations to remove. The canonical row in the group is always kept.',
+        'canonical_kept_notice' => 'Original kept: :locale — :title',
     ],
 
     'menu_translation' => [
@@ -87,6 +95,9 @@ return [
         'menu_cloned' => 'Menu cloned',
         'home_reassigned' => 'Other home pages updated',
         'home_reassigned_body' => ':count other page(s) are no longer marked as home.',
+        'translations_delete_none_selected' => 'Select at least one translation to delete.',
+        'translations_deleted' => 'Translations deleted',
+        'translations_deleted_body' => ':count translation(s) removed: :list',
     ],
 
     'home_takeover' => [

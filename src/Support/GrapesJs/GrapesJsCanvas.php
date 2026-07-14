@@ -175,6 +175,38 @@ final class GrapesJsCanvas
             margin-inline: auto;
         }
 
+        footer.voodbuilder-gjs-footer :is(.container, .voodbuilder-gjs-container),
+        footer.voodbuilder-gjs-dynamic :is(.container, .voodbuilder-gjs-container) {
+            width: 100%;
+            max-width: var(--width-vp-layout, 90rem);
+            margin-inline: auto;
+            padding-inline: 1.25rem;
+            box-sizing: border-box;
+        }
+
+        .voodbuilder-mobile-nav {
+            --voodbuilder-mobile-bg: var(--color-vp-bg-elv, #ffffff);
+            --voodbuilder-mobile-bg-muted: var(--color-vp-bg-alt, #f6f6f7);
+            --voodbuilder-mobile-text: var(--color-vp-text-1, #3c3c43);
+            --voodbuilder-mobile-text-muted: var(--color-vp-text-2, #67676c);
+            --voodbuilder-mobile-border: var(--color-vp-divider, #e2e2e3);
+            --voodbuilder-mobile-accent: var(--color-vp-brand-1, #3451b2);
+        }
+
+        .voodbuilder-nav--canvas-preview [data-mobile-nav-toggle] {
+            color: var(--vx-header-text, var(--color-vp-text-1, #3c3c43)) !important;
+        }
+
+        .voodbuilder-nav--canvas-preview [data-mobile-nav-toggle] svg {
+            stroke: currentColor;
+        }
+
+        .voodbuilder-mobile-nav__tool svg,
+        .voodbuilder-mobile-nav__close svg {
+            stroke: currentColor;
+            fill: none;
+        }
+
         body[data-voodbuilder-gjs-device='mobilePortrait'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav],
         body[data-voodbuilder-gjs-device='mobilePortrait'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-chrome],
         body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav],
@@ -191,6 +223,29 @@ final class GrapesJsCanvas
             display: none !important;
         }
 
+        body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-mobile-nav.is-open,
+        body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-mobile-nav.is-open {
+            pointer-events: none !important;
+        }
+
+        body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__panel,
+        body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__panel {
+            transform: translateX(100%) !important;
+        }
+
+        body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__overlay,
+        body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__overlay {
+            opacity: 0 !important;
+        }
+
+        .voodbuilder-mobile-nav {
+            pointer-events: none;
+        }
+
+        .voodbuilder-mobile-nav.is-open {
+            pointer-events: auto;
+        }
+
         .voodbuilder-nav--canvas-preview [data-voodbuilder-chrome][data-voodbuilder-chrome-hidden] {
             display: none !important;
         }
@@ -204,6 +259,14 @@ final class GrapesJsCanvas
         }
 
         [data-voodbuilder-gjs-site-header] .voodbuilder-nav-profile-menu__dropdown[hidden] {
+            display: none !important;
+        }
+
+        [data-voodbuilder-chrome-shell-locked] .gjs-badge,
+        [data-voodbuilder-gjs-site-header] .gjs-badge,
+        [data-voodbuilder-block^='site_nav_'] .gjs-badge,
+        [data-voodbuilder-block^='site_footer_'] .gjs-badge,
+        button[data-mobile-nav-toggle] .gjs-badge {
             display: none !important;
         }
 

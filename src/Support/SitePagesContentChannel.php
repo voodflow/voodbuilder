@@ -23,7 +23,7 @@ final class SitePagesContentChannel implements PublicContentChannel
 
     public function routePatterns(): array
     {
-        return ['voodbuilder.pages.*'];
+        return ['voodbuilder.pages.*', 'home', 'home.localized'];
     }
 
     public function subTheme(): ?string

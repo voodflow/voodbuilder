@@ -4,11 +4,13 @@
 
 import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import { ensureTextLabel, extractButtonLabel } from './grapesjs-button-link.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import {
     CMD_CLEAR_DYNAMIC,
     CMD_MAKE_DYNAMIC,
 } from './canvas-component-toolbar.js';
+import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -23,6 +25,42 @@ let bindingsPreviewListValues = null;
 
 function componentTag(component) {
     return String(component.get('tagName') ?? '').toLowerCase();
+}
+
+function isCtaButton(component) {
+    return component?.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
+}
+
+function isLinkableInteractive(component) {
+    const tag = componentTag(component);
+
+    return tag === 'button' || tag === 'a';
+}
+
+function fieldTypeMatchesComponent(fieldType, component) {
+    const tag = componentTag(component);
+
+    if (fieldType === 'image') {
+        return tag === 'img';
+    }
+
+    if (fieldType === 'url') {
+        return tag === 'a' || tag === 'button';
+    }
+
+    if (tag === 'button' || isCtaButton(component)) {
+        return false;
+    }
+
+    if (tag === 'a') {
+        return true;
+    }
+
+    if (TEXT_BINDING_TAGS.has(tag)) {
+        return ! hasBindBlockingChildren(component);
+    }
+
+    return ! hasBindBlockingChildren(component);
 }
 
 function fieldTypeLabel(type, labels = {}) {
@@ -258,21 +296,11 @@ function boundComponentLabel(bindingKey, catalog) {
 }
 
 function extractInteractiveLabel(component) {
-    const element = component.getView()?.el;
+    return extractButtonLabel(component);
+}
 
-    if (element?.textContent?.trim()) {
-        return element.textContent.trim();
-    }
-
-    if (component.get('text')) {
-        return String(component.get('text'));
-    }
-
-    if (component.get('content')) {
-        return String(component.get('content'));
-    }
-
-    return 'Button';
+function ensureInteractiveLabel(component, label) {
+    ensureTextLabel(component, label);
 }
 
 function resolveLinkComponentType(editor) {
@@ -299,6 +327,7 @@ function morphUrlButtonToAnchor(editor, component) {
     }
 
     const label = extractInteractiveLabel(component);
+    const isCta = isCtaButton(component);
     const attributes = { ...component.getAttributes() };
 
     delete attributes.type;
@@ -307,9 +336,13 @@ function morphUrlButtonToAnchor(editor, component) {
     attributes.href = attributes.href && attributes.href !== '' ? attributes.href : '#';
     attributes.role = 'button';
 
+    if (isCta) {
+        attributes['data-voodbuilder-cta'] = 'true';
+    }
+
     component.set({
         tagName: 'a',
-        type: resolveLinkComponentType(editor),
+        type: isCta ? 'voodbuilder-cta-button' : resolveLinkComponentType(editor),
         editable: true,
         highlightable: true,
         selectable: true,
@@ -317,8 +350,7 @@ function morphUrlButtonToAnchor(editor, component) {
         name: 'Dynamic link',
     });
     component.setAttributes(attributes);
-    component.components(label);
-    component.set('content', label);
+    ensureInteractiveLabel(component, label);
 }
 
 function placeholderForBinding(sourceLabel, fieldLabel) {
@@ -536,10 +568,28 @@ function bindingRejectionMessage(component, fieldType, labels) {
             ?? 'This looks like a list. Use the List repeat section in the Dynamic tab, then bind title, text and links inside each card with “List item”.';
     }
 
+    if (fieldType !== 'url' && (componentTag(component) === 'button' || isCtaButton(component))) {
+        return labels.buttonUrlOnly
+            ?? 'Buttons keep a static label such as “Read more”. Bind a URL field to make the link dynamic, then double-click the button to edit the label.';
+    }
+
     const tag = componentTag(component);
 
     return labels.bindingNeedsLeaf
         ?? `Bind text and images on the inner element (h2, p, img, a), not on the ${tag || 'container'}.`;
+}
+
+function preferredFieldIdForComponent(fields, component) {
+    const compatible = (fields ?? []).filter((field) => fieldTypeMatchesComponent(field?.type ?? 'text', component));
+
+    if (compatible.length === 0) {
+        return null;
+    }
+
+    const urlField = compatible.find((field) => field.type === 'url'
+        || ['url', 'slug', 'link', 'permalink', 'href'].includes(String(field.id ?? '').toLowerCase()));
+
+    return urlField?.id ?? compatible[0]?.id ?? null;
 }
 
 function findLayoutRowDescendant(component) {
@@ -771,25 +821,7 @@ function defaultItemSourceId(component, catalog) {
 }
 
 function canAcceptFieldBinding(component, fieldType) {
-    const tag = componentTag(component);
-
-    if (fieldType === 'url') {
-        return tag === 'a' || tag === 'button';
-    }
-
-    if (fieldType === 'image') {
-        return tag === 'img';
-    }
-
-    if (tag === 'a' || tag === 'button') {
-        return true;
-    }
-
-    if (TEXT_BINDING_TAGS.has(tag)) {
-        return ! hasBindBlockingChildren(component);
-    }
-
-    return ! hasBindBlockingChildren(component);
+    return fieldTypeMatchesComponent(fieldType, component);
 }
 
 function resolveFieldBindingTarget(component, fieldType) {
@@ -1219,6 +1251,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     if (fieldType === 'url') {
         bindTarget.addAttributes({ href: '#' });
         bindTarget.removeAttributes('onclick');
+        ensureInteractiveLabel(bindTarget, extractInteractiveLabel(bindTarget));
 
         return bindTarget;
     }
@@ -1234,7 +1267,14 @@ function clearBindingFromComponent(component) {
     component.removeAttributes('data-voodbuilder-bind');
     component.removeAttributes('onclick');
     component.removeClass('voodbuilder-gjs-bound');
-    component.set({ editable: true });
+
+    const tag = componentTag(component);
+    const isCta = isCtaButton(component);
+
+    component.set({
+        editable: isCta || tag === 'a' || tag === 'button',
+        name: isCta ? 'Button' : component.get('name'),
+    });
 }
 
 function configureBoundComponent(editor, component, catalog) {
@@ -1245,6 +1285,19 @@ function configureBoundComponent(editor, component, catalog) {
     }
 
     const fieldType = resolveBindingFieldType(bindingKey, catalog);
+
+    if (fieldType !== 'url' && (componentTag(component) === 'button' || isCtaButton(component))) {
+        component.set({
+            editable: true,
+            highlightable: true,
+            selectable: true,
+            layerable: true,
+            name: 'Button',
+        });
+        ensureInteractiveLabel(component, extractInteractiveLabel(component));
+
+        return;
+    }
 
     if (fieldType === 'url' && componentTag(component) === 'button') {
         morphUrlButtonToAnchor(editor, component);
@@ -1262,6 +1315,10 @@ function configureBoundComponent(editor, component, catalog) {
         name: urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`,
     });
     component.addClass('voodbuilder-gjs-bound');
+
+    if (fieldType === 'url' && (tag === 'button' || tag === 'a')) {
+        ensureInteractiveLabel(component, extractInteractiveLabel(component));
+    }
 }
 
 export function registerBoundComponentType(editor) {
@@ -1448,9 +1505,11 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
         host.querySelector('.voodbuilder-gjs-dynamic-panel__hint').textContent = isRepeatHost(component)
             ? (labels.repeatContainerHint ?? labels.inspectorHint ?? 'Use List repeat on this container, then bind fields inside each card with “List item”.')
-            : isInsideRepeatTemplate(component)
-                ? (labels.repeatItemHint ?? 'Choose List item and pick the field for this element (title, description, slug…).')
-                : (labels.inspectorHint ?? 'Connect the selected element to live data from your packages.');
+            : isLinkableInteractive(component) && (componentTag(component) === 'button' || isCtaButton(component))
+                ? (labels.buttonUrlHint ?? 'Bind a URL field to make the button link dynamic. The label (e.g. “Read more”) stays editable with a double-click.')
+                : isInsideRepeatTemplate(component)
+                    ? (labels.repeatItemHint ?? 'Choose List item and pick the field for this element (title, description, slug…).')
+                    : (labels.inspectorHint ?? 'Connect the selected element to live data from your packages.');
 
         const fieldBindPanel = host.querySelector('[data-field-bind-panel]');
 
@@ -1528,6 +1587,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         fieldSelect.disabled = ! source;
 
         for (const field of source?.fields ?? []) {
+            if (! fieldTypeMatchesComponent(field?.type ?? 'text', component)) {
+                continue;
+            }
+
             const haystack = `${field.label} ${field.id} ${field.type ?? ''}`.toLowerCase();
 
             if (query && ! haystack.includes(query)) {
@@ -1543,9 +1606,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         const canRestorePrevious = ! query
             && previousValue
             && [...fieldSelect.options].some((option) => option.value === previousValue);
+        const preferredFieldId = preferredFieldIdForComponent(source?.fields ?? [], component);
 
         if (canRestorePrevious) {
             fieldSelect.value = previousValue;
+        } else if (preferredFieldId && [...fieldSelect.options].some((option) => option.value === preferredFieldId)) {
+            fieldSelect.value = preferredFieldId;
         } else if (fieldSelect.options.length > 0) {
             fieldSelect.value = fieldSelect.options[0].value;
         }
@@ -1878,7 +1944,7 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
 
         mount.innerHTML = '';
 
-        if (! selected) {
+        if (! selected || shouldSuppressChromeSlotInspector(selected, editor)) {
             const empty = document.createElement('p');
             empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
             empty.textContent = labels.selectComponent ?? 'Select an element on the canvas first.';

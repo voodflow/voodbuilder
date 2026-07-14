@@ -42,7 +42,12 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             <header class="voodbuilder-gjs-topbar">
                 <div class="voodbuilder-gjs-topbar__brand-wrap">
                     <div class="voodbuilder-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
-                    ${meta.editingBadge ? `<span class="voodbuilder-gjs-topbar__editing-badge">${escapeHtml(meta.editingBadge)}</span>` : ''}
+                    ${meta.editingBadgeTitle ? `
+                        <div class="voodbuilder-gjs-topbar__editing-context">
+                            <span class="voodbuilder-gjs-topbar__editing-badge">${escapeHtml(meta.editingBadgeTitle)}</span>
+                            ${meta.editingBadgeHint ? `<span class="voodbuilder-gjs-topbar__editing-hint">${escapeHtml(meta.editingBadgeHint)}</span>` : ''}
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="voodbuilder-gjs-topbar__tools"></div>
                 <div class="voodbuilder-gjs-topbar__actions">

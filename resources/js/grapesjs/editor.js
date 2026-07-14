@@ -28,6 +28,7 @@ import vpressGrapesJsPlugin, {
     pruneEmptySections,
     refreshDynamicSlots,
     registerBlocks,
+    registerSiteNavChromeButtonType,
     sanitizeBlockHtml,
     syncVpressDynamicAttributes,
     syncSiteHeaderConfig,
@@ -36,11 +37,8 @@ import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from './grapesjs-button-link.js';
 import { registerNewsletterFormSettings } from './grapesjs-forms-blocks.js';
-
-function voodbuilderEarlyTypesPlugin(editor, pluginOpts = {}) {
-    editor.__voodbuilderLabels = pluginOpts.labels ?? editor.__voodbuilderLabels ?? {};
-    registerLinkableButtonTypes(editor);
-}
+import { registerChromeContentSlotType } from './chrome-content-slot-utils.js';
+import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtime.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from './theme-tokens.js';
@@ -63,6 +61,8 @@ import { registerPageTemplatesSidebar } from './page-templates-sidebar.js';
 import { registerPopupsUi } from './popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from './tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from './editor-chrome.js';
+import { extractChromeShellPageHtml, registerChromeShellEditor } from './editor-chrome-shell.js';
+import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog } from './editor-chrome-layout.js';
 import {
     buildEditorShell,
     collapseBlockCategories,
@@ -89,6 +89,13 @@ import { registerBlocksContextMenu } from './blocks-context-menu.js';
 import { registerBlocksLibraryRenderHook } from './blocks-library-sync.js';
 import { registerSectionBlockTagging } from './section-block-tagging.js';
 import { registerSectionNestingGuard } from './section-nesting-guard.js';
+
+function voodbuilderEarlyTypesPlugin(editor, pluginOpts = {}) {
+    editor.__voodbuilderLabels = pluginOpts.labels ?? editor.__voodbuilderLabels ?? {};
+    registerLinkableButtonTypes(editor);
+    registerSiteNavChromeButtonType(editor);
+    registerChromeContentSlotType(editor);
+}
 
 function hasProjectData(project) {
     if (project == null || typeof project !== 'object') {
@@ -145,12 +152,26 @@ export function buildPayload(editor) {
     runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
     runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
 
+    let html = editor.getHtml({
+        cleanId: false,
+        withProps: true,
+        keepInlineStyle: true,
+    });
+
+    if (editor.__voodbuilderChromeShellMode) {
+        const slotHtml = extractChromeShellPageHtml(editor);
+
+        if (slotHtml !== null) {
+            html = slotHtml;
+        }
+    }
+
+    if (editor.__voodbuilderChromeLayoutMode) {
+        html = extractChromeLayoutHtml(editor);
+    }
+
     const payload = {
-        html: editor.getHtml({
-            cleanId: false,
-            withProps: true,
-            keepInlineStyle: true,
-        }),
+        html,
         css: editor.getCss(),
         js: editor.getJs(),
     };
@@ -492,6 +513,7 @@ function registerInspectorExtensions(editor, shell, options, labels) {
     registerSiteFooterSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerSiteNavSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerNewsletterFormSettings(editor);
+    registerInspectorColorFix(editor, shell?.mounts ?? {});
 }
 
 export function initVpressGrapesJs(container, options = {}) {
@@ -501,9 +523,10 @@ export function initVpressGrapesJs(container, options = {}) {
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
-        editingBadge: options.popupMode && options.popupName
+        editingBadgeTitle: options.popupMode && options.popupName
             ? (labels.popupsEditingBadge ?? 'Editing popup: {name}').replace('{name}', String(options.popupName))
             : null,
+        editingBadgeHint: null,
     }) : null;
 
     if (shell?.mounts) {
@@ -602,6 +625,8 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init(editorOptions);
 
     editor.__voodbuilderLabels = labels;
+    editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
+    editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
     registerLinkableButtonTypes(editor);
 
     const dynamicBlocksGate = createDynamicBlocksPending();
@@ -705,6 +730,17 @@ export function initVpressGrapesJs(container, options = {}) {
 
         registerInspectorExtensions(editor, shell, options, labels);
 
+        registerChromeShellEditor(editor, {
+            chromeShellMode: options.chromeShellMode ?? false,
+            chromeShellParts: options.chromeShellParts ?? null,
+            subTheme: options.subTheme ?? null,
+            pageContentPlaceholder: labels.pageContentPlaceholder ?? 'Drag blocks here to build your page',
+        });
+
+        registerChromeLayoutEditor(editor, {
+            chromeLayoutMode: options.chromeLayoutMode ?? false,
+        });
+
         editor.__voodbuilderLabels = labels;
         editor.__voodbuilderNewsletterLists = options.newsletterLists ?? {};
 
@@ -768,6 +804,29 @@ export function initVpressGrapesJs(container, options = {}) {
 
         if (! options.blocksRenderUrl) {
             dynamicBlocksGate.resolve();
+        } else if (options.chromeShellMode) {
+            dynamicBlocksGate.resolve();
+            editor.on('load', () => {
+                window.requestAnimationFrame(() => {
+                    for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
+                        try {
+                            lockDynamicPreviewContent(component);
+
+                            if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                                configureSiteFooterTraits(component, editor);
+                                applySiteFooterSettingsPreview(component, editor);
+                            }
+
+                            if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                                configureSiteNavTraits(component, editor);
+                                applySiteNavSettingsPreview(component, editor);
+                            }
+                        } catch (lockError) {
+                            console.warn('Voodbuilder GrapesJS: could not lock chrome shell block.', lockError);
+                        }
+                    }
+                });
+            });
         } else {
             editor.on('voodbuilder:refresh-dynamic-block', (component) => {
                 if (! component) {
@@ -777,7 +836,13 @@ export function initVpressGrapesJs(container, options = {}) {
                 void refreshDynamicBlockComponent(editor, options.blocksRenderUrl, component);
             });
 
-            const refresh = refreshDynamicBlocks(editor, options.blocksRenderUrl);
+            const componentsToRefresh = options.chromeLayoutMode
+                ? collectTopLevelDynamicBlocks(editor)
+                : null;
+
+            const refresh = componentsToRefresh
+                ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
+                : refreshDynamicBlocks(editor, options.blocksRenderUrl);
             editor.__voodbuilderDynamicBlocksRefresh = Promise.resolve(refresh);
             void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
                 dynamicBlocksGate.resolve();
@@ -983,6 +1048,43 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
     }
 }
 
+async function refreshDynamicBlockList(editor, renderUrl, components) {
+    if (! renderUrl || components.length === 0) {
+        return;
+    }
+
+    await Promise.all(components.map((component) => refreshDynamicBlockComponent(editor, renderUrl, component)));
+}
+
+function collectTopLevelDynamicBlocks(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return [];
+    }
+
+    const topLevel = wrapper.components().models ?? [...wrapper.components()];
+    const blocks = [];
+
+    for (const component of topLevel) {
+        if (component.getAttributes?.()['data-voodbuilder-block']) {
+            blocks.push(component);
+
+            continue;
+        }
+
+        if (component.getAttributes?.()['data-voodbuilder-chrome-shell']) {
+            for (const child of component.components().models ?? [...component.components()]) {
+                if (child.getAttributes?.()['data-voodbuilder-block']) {
+                    blocks.push(child);
+                }
+            }
+        }
+    }
+
+    return blocks;
+}
+
 async function refreshDynamicBlocks(editor, renderUrl) {
     if (! renderUrl) {
         return;
@@ -1018,6 +1120,9 @@ async function loadBlocks(editor, blocksUrl, labels = {}) {
         registerBlocks(editor, payload.blocks ?? []);
         prioritizeBlockCategories(editor);
         collapseBlockCategories(editor);
+
+        applyEditorScopeBlockVisibility(editor);
+        refreshChromeLayoutBlockCatalog(editor);
 
         try {
             applyLightBlockPreviews(editor);
@@ -1159,6 +1264,11 @@ function mountFrontendEditor() {
         popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,
         popupMode: config.popupMode ?? false,
         popupName: config.popupName ?? null,
+        chromeShellMode: config.chromeShellMode ?? false,
+        chromeShellName: config.chromeShellName ?? null,
+        chromeShellParts: config.chromeShellParts ?? null,
+        chromeLayoutMode: config.chromeLayoutMode ?? false,
+        chromeLayoutName: config.chromeLayoutName ?? null,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',

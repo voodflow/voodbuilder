@@ -20,6 +20,7 @@ use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -266,7 +267,7 @@ class SitePage extends Model implements HasRichContent
 
     public function resolvedSubTheme(): string
     {
-        return SubThemeResolver::forPage($this);
+        return ChromeLayoutSubThemeResolver::forSitePage($this);
     }
 
     public function isSectionHome(): bool

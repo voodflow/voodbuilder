@@ -163,4 +163,29 @@ class ThemePaletteTest extends TestCase
         $this->assertStringContainsString('--color-vp-text-2:color-mix', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
     }
+
+    public function test_critical_chrome_shell_css_prefers_admin_header_bg_over_bundled_semantic(): void
+    {
+        VoodbuilderSettings::saveData([
+            'sub_theme_colors' => ThemePalette::normalize([
+                'landing-fra' => [
+                    'custom' => true,
+                    'light' => [
+                        'header_bg' => '#4f46e5',
+                        'header_text' => '#ffffff',
+                    ],
+                    'dark' => [],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::criticalChromeShellCss('landing-fra');
+        $adminPos = strrpos($css, '--vx-header-bg:#4f46e5');
+        $bundledPos = strrpos($css, '--vx-header-bg:#0f172a');
+
+        $this->assertNotFalse($adminPos);
+        $this->assertNotFalse($bundledPos);
+        $this->assertGreaterThan($bundledPos, $adminPos);
+    }
 }

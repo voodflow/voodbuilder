@@ -10,6 +10,15 @@ use Illuminate\Support\Str;
 
 final class GrapesJsComponentTailwindCompiler
 {
+    public static function isAvailable(): bool
+    {
+        if (! is_file(self::scriptPath())) {
+            return false;
+        }
+
+        return self::resolveNodeBinary() !== null;
+    }
+
     public static function compile(string $html, string $scope = 'component'): ?string
     {
         $html = trim($html);

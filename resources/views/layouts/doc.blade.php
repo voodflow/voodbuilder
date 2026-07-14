@@ -1,4 +1,4 @@
-@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
+@extends(\Voodflow\Voodbuilder\Support\PluginLayout::appShell())
 
 @php
     $voodbuilderBodyClasses = trim(implode(' ', array_filter([

@@ -3,14 +3,37 @@
  */
 
 import { resolveComponentFromLayerElement } from './component-context-menu.js';
+import {
+    isChromeLayoutContentSlot,
+    isChromeLayoutFooterBlock,
+    isChromeLayoutNavBlock,
+} from './chrome-editor-guards.js';
 
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 
 function isSiteChromeBlock(component) {
     const attrs = component.getAttributes?.() ?? {};
     const blockId = String(attrs['data-voodbuilder-block'] ?? '');
 
+    if (attrs['data-voodbuilder-page-content'] || attrs['data-voodbuilder-content-slot']) {
+        return true;
+    }
+
+    if (attrs['data-voodbuilder-chrome-shell-part']) {
+        return true;
+    }
+
+    if (attrs[CHROME_DROP_ZONE_ATTR]) {
+        return true;
+    }
+
+    if (isChromeLayoutContentSlot(component) || isChromeLayoutNavBlock(component) || isChromeLayoutFooterBlock(component)) {
+        return true;
+    }
+
     return Boolean(attrs['data-voodbuilder-gjs-site-header'])
+        || attrs['data-voodbuilder-chrome-shell-locked']
         || blockId.startsWith('site_nav_')
         || blockId.startsWith('site_footer_')
         || blockId === 'site_header';

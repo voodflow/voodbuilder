@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Filament\Resources;
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -20,6 +22,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -28,13 +31,21 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Filament\Actions\CreateSitePageTranslationAction;
+use Voodflow\Voodbuilder\Filament\Actions\DeleteSitePageTranslationsAction;
+use Voodflow\Voodbuilder\Filament\Columns\TranslationLocaleColumn;
+use Voodflow\Voodbuilder\Filament\Concerns\ConfiguresTranslatableLocaleField;
+use Voodflow\Voodbuilder\Filament\Concerns\ListsCanonicalTranslationGroups;
+use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SitePageForm;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
@@ -43,6 +54,9 @@ use Voodflow\Vtuts\Support\Locales;
 
 class SitePageResource extends Resource
 {
+    use ConfiguresTranslatableLocaleField;
+    use ListsCanonicalTranslationGroups;
+
     protected static ?string $model = SitePage::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-window';
@@ -77,7 +91,14 @@ class SitePageResource extends Resource
                                 TextInput::make('title')
                                     ->required()
                                     ->maxLength(255)
-                                    ->live(onBlur: true),
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (?string $state, Set $set, Get $get, ?SitePage $record): void {
+                                        if ($record !== null || filled($get('slug'))) {
+                                            return;
+                                        }
+
+                                        $set('slug', Str::slug((string) $state));
+                                    }),
 
                                 TextInput::make('slug')
                                     ->maxLength(255)
@@ -100,11 +121,17 @@ class SitePageResource extends Resource
                                 Select::make('builder')
                                     ->label(__('voodbuilder::pro.fields.builder'))
                                     ->options(PageBuilder::options())
-                                    ->default(PageBuilder::RichEditor)
+                                    ->default(SitePageForm::defaultBuilder())
                                     ->native(false)
                                     ->live()
                                     ->helperText(__('voodbuilder::pro.helpers.builder'))
+                                    ->visible(fn (): bool => ! SitePageForm::grapesJsOnly())
                                     ->columnSpanFull(),
+
+                                Hidden::make('builder')
+                                    ->default(SitePageForm::defaultBuilder()->value)
+                                    ->dehydrated()
+                                    ->visible(fn (): bool => SitePageForm::grapesJsOnly()),
 
                                 RichEditor::make('content')
                                     ->label(__('Page content'))
@@ -114,7 +141,13 @@ class SitePageResource extends Resource
                                         ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
                                         ['customBlocks'],
                                     ])
-                                    ->visible(fn (Get $get): bool => PageBuilder::matches($get('builder'), PageBuilder::RichEditor))
+                                    ->visible(function (Get $get, ?SitePage $record): bool {
+                                        if (SitePageForm::grapesJsOnly()) {
+                                            return $record !== null && ! $record->usesGrapesJsBuilder();
+                                        }
+
+                                        return PageBuilder::matches($get('builder'), PageBuilder::RichEditor);
+                                    })
                                     ->columnSpanFull(),
 
                                 Placeholder::make('grapesjs_frontend_hint')
@@ -133,7 +166,7 @@ class SitePageResource extends Resource
                                             .'</a>'
                                         );
                                     })
-                                    ->visible(fn (Get $get): bool => PageBuilder::matches($get('builder'), PageBuilder::GrapesJs))
+                                    ->visible(fn (?SitePage $record): bool => SitePageForm::showGrapesJsHint($record))
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
@@ -163,14 +196,17 @@ class SitePageResource extends Resource
                                     ->helperText(__('voodbuilder::admin.helpers.home_page_locale'))
                                     ->live(),
 
-                                Select::make('locale')
-                                    ->label(__('voodbuilder::admin.fields.language'))
-                                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
-                                    ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
-                                    ->required()
-                                    ->native(false)
-                                    ->live()
-                                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                                static::translatableLocaleSelect(
+                                    Select::make('locale')
+                                        ->label(__('voodbuilder::admin.fields.language'))
+                                        ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
+                                        ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                                        ->required()
+                                        ->native(false)
+                                        ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                                    SitePage::class,
+                                    static::class,
+                                ),
 
                                 Placeholder::make('translation_links')
                                     ->label(__('voodbuilder::admin.fields.translations'))
@@ -206,10 +242,33 @@ class SitePageResource extends Resource
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
 
                                 Section::make(__('voodbuilder::admin.sections.appearance'))
-                                    ->collapsed()
+                                    ->collapsed(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
                                     ->schema([
+                                        Placeholder::make('chrome_layout_info')
+                                            ->label(__('voodbuilder::chrome_layouts.page_form.shell'))
+                                            ->content(function (): HtmlString|string {
+                                                $layout = SitePageForm::chromeLayoutForPages();
+
+                                                if ($layout === null) {
+                                                    return __('voodbuilder::chrome_layouts.page_form.none');
+                                                }
+
+                                                $editUrl = ChromeLayoutResource::getUrl('edit', ['record' => $layout]);
+
+                                                return new HtmlString(
+                                                    e($layout->name)
+                                                    .' — <a class="text-primary-600 underline" href="'
+                                                    .e($editUrl)
+                                                    .'">'
+                                                    .e(__('voodbuilder::chrome_layouts.page_form.edit_shell'))
+                                                    .'</a>'
+                                                );
+                                            })
+                                            ->visible(fn (): bool => SitePageForm::chromeLayoutManagesShell())
+                                            ->columnSpanFull(),
+
                                         Select::make('layout')
-                                            ->label(__('voodbuilder::admin.filters.layout'))
+                                            ->label(__('voodbuilder::admin.fields.canvas_width'))
                                             ->options([
                                                 self::LAYOUT_AUTO => __('voodbuilder::admin.fields.layout_auto'),
                                                 'page' => __('voodbuilder::admin.fields.layout_standard'),
@@ -218,6 +277,7 @@ class SitePageResource extends Resource
                                             ->default(self::LAYOUT_AUTO)
                                             ->native(false)
                                             ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
+                                                SitePageForm::chromeLayoutManagesShell() => __('voodbuilder::chrome_layouts.page_form.canvas_width_help'),
                                                 ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
                                                     && ($record?->is_home || (bool) $get('is_home')) => __('voodbuilder::admin.helpers.layout_auto_home'),
                                                 $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('voodbuilder::admin.helpers.layout_auto_page'),
@@ -259,12 +319,14 @@ class SitePageResource extends Resource
                                         Toggle::make('hide_site_footer')
                                             ->label(__('voodbuilder::landing.layouts.hide_site_footer'))
                                             ->helperText(__('voodbuilder::landing.layouts.hide_site_footer_help'))
-                                            ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
+                                            ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
+                                                && static::formUsesFullWidthLayout($get, $record)),
 
                                         Toggle::make('hide_site_nav')
                                             ->label(__('voodbuilder::landing.layouts.hide_site_nav'))
                                             ->helperText(__('voodbuilder::landing.layouts.hide_site_nav_help'))
-                                            ->visible(fn (Get $get, ?SitePage $record): bool => static::formUsesFullWidthLayout($get, $record)),
+                                            ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
+                                                && static::formUsesFullWidthLayout($get, $record)),
 
                                         Select::make('sub_theme')
                                             ->label(__('voodbuilder::admin.fields.sub_theme'))
@@ -276,6 +338,7 @@ class SitePageResource extends Resource
                                             ->nullable()
                                             ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
                                             ->native(false)
+                                            ->visible(fn (): bool => SitePageForm::allowsSubThemeOverride())
                                             ->helperText(function (Get $get, ?SitePage $record): string {
                                                 $siteTheme = ThemeBindings::siteThemeLabel();
                                                 $message = __('voodbuilder::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
@@ -308,19 +371,7 @@ class SitePageResource extends Resource
                 TextColumn::make('slug')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('locale')
-                    ->label(__('voodbuilder::admin.fields.language'))
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => class_exists(Locales::class) && is_string($state)
-                        ? (Locales::options()[$state] ?? strtoupper($state))
-                        : (string) $state)
-                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
-                TextColumn::make('translations')
-                    ->label(__('voodbuilder::admin.fields.translations'))
-                    ->badge()
-                    ->state(fn (SitePage $record): array => $record->otherTranslationLocaleCodes())
-                    ->placeholder('—')
-                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                TranslationLocaleColumn::make(static::class),
                 TextColumn::make('builder')
                     ->label(__('voodbuilder::pro.fields.builder'))
                     ->badge()
@@ -348,10 +399,26 @@ class SitePageResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->recordUrl(fn (SitePage $record): string => static::getUrl('edit', ['record' => $record]))
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make()->hidden(fn (SitePage $record): bool => $record->is_home),
+                ActionGroup::make([
+                    EditAction::make(),
+                    Action::make('openVisualEditor')
+                        ->label(__('voodbuilder::pro.actions.open_visual_editor'))
+                        ->icon('heroicon-o-paint-brush')
+                        ->color('gray')
+                        ->url(fn (SitePage $record): string => $record->getUrl().(str_contains($record->getUrl(), '?') ? '&' : '?').'edit=1')
+                        ->openUrlInNewTab()
+                        ->visible(fn (SitePage $record): bool => $record->usesGrapesJsBuilder()),
+                    CreateSitePageTranslationAction::make(),
+                    DeleteSitePageTranslationsAction::make(fromTable: true),
+                    DeleteAction::make()->hidden(fn (SitePage $record): bool => $record->is_home),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->iconButton()
+                    ->tooltip(__('voodbuilder::admin.actions.actions')),
             ])
+            ->recordActionsColumnLabel(null)
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
@@ -411,10 +478,7 @@ class SitePageResource extends Resource
 
                         return $query->where('sub_theme', $value);
                     }),
-                SelectFilter::make('locale')
-                    ->label(__('voodbuilder::admin.fields.language'))
-                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
-                    ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                static::translationLocaleFilter(),
             ])
             ->filtersFormColumns(2)
             ->defaultSort('title');

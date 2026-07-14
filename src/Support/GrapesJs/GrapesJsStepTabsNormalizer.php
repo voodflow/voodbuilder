@@ -124,8 +124,14 @@ final class GrapesJsStepTabsNormalizer
                 $node->parentNode?->removeChild($node);
             }
 
-            if ($contentParent->nextSibling) {
-                $contentParent->insertBefore($contentsWrapper, $contentParent->nextSibling);
+            $parent = $contentParent->parentNode;
+
+            if ($parent instanceof DOMElement) {
+                if ($contentParent->nextSibling) {
+                    $parent->insertBefore($contentsWrapper, $contentParent->nextSibling);
+                } else {
+                    $parent->appendChild($contentsWrapper);
+                }
             } else {
                 $contentParent->appendChild($contentsWrapper);
             }

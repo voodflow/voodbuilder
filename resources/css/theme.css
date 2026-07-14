@@ -200,6 +200,21 @@
         @apply h-5 w-5;
     }
 
+    .site-notification-bell [role='menu'] {
+        overflow-x: hidden;
+        width: min(24rem, calc(100vw - 1.5rem));
+    }
+
+    .site-notification-bell [role='menu'] :is(a, button) {
+        white-space: normal;
+    }
+
+    .site-notification-bell [role='menu'] :is(a, button, p, span) {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+    }
+
     .voodbuilder-nav-profile-menu__dropdown {
         transform-origin: top right;
         transition:
@@ -221,6 +236,31 @@
 
     .voodbuilder-nav-profile-menu__dropdown[hidden] {
         display: none !important;
+    }
+
+    .voodbuilder-gjs-container {
+        @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+    }
+
+    .body-font {
+        @apply font-sans text-vp-text-2 antialiased;
+    }
+
+    .title-font {
+        @apply font-sans tracking-tight;
+    }
+
+    footer.voodbuilder-gjs-footer > :is(.container, .voodbuilder-gjs-container),
+    footer.voodbuilder-gjs-dynamic > :is(.container, .voodbuilder-gjs-container),
+    [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-gjs-container) {
+        @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+        box-sizing: border-box;
+        padding-inline: 1.25rem;
+    }
+
+    footer.voodbuilder-gjs-footer,
+    footer.voodbuilder-gjs-dynamic {
+        @apply w-full;
     }
 
     .vp-doc {
@@ -576,6 +616,18 @@ summary,
  * Header link/icon colors: nav uses Tailwind text-vp-text-* (utilities layer).
  * These rules are intentionally unlayered so --vx-header-text from admin wins.
  */
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt,
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt {
+    background-color: var(--vx-header-bg, var(--color-vp-bg)) !important;
+}
+
+html[data-voodbuilder-sub-theme] header[role='banner'],
+[data-voodbuilder-chrome-shell] header[role='banner'] {
+    border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 12%, transparent);
+}
+
 html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
@@ -595,8 +647,5 @@ html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:h
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
-
-
-
-
-@import '../../../../../resources/voodbuilder/themes/seires/theme.css';
+@import '../../../../../resources/voodbuilder/themes/landing-fra/theme.css';
+@import '../../../../../resources/voodbuilder/themes/docs-copy/theme.css';

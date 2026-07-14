@@ -479,10 +479,27 @@ function registerSiteNavMenuButtonType(editor) {
 }
 
 function normalizeSiteNavChromeButtons(root) {
-    safeFindComponents(root, 'button.voodbuilder-header-icon-btn').forEach((button) => {
-        if (button.get('type') === 'button') {
-            button.set('type', 'default');
+    safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-theme-toggle], button.voodbuilder-header-icon-btn').forEach((button) => {
+        const type = button.get('type');
+
+        if (type === 'button' || type === 'default') {
+            button.set('type', 'voodbuilder-chrome-button');
         }
+
+        button.set({
+            name: '',
+            text: '',
+            content: '',
+            badgable: false,
+            selectable: false,
+            hoverable: false,
+            highlightable: false,
+            layerable: false,
+            editable: false,
+            removable: false,
+            draggable: false,
+            copyable: false,
+        }, { silent: true });
 
         const text = String(button.get('text') ?? '').trim();
 
@@ -1260,6 +1277,11 @@ function refreshDynamicSlots(component, freshRoot) {
 
 function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
     component.set('vpressConfig', freshConfig, { silent: true });
+
+    if (fresh.tagName === 'FOOTER' && component.get('tagName') !== 'footer') {
+        component.set('tagName', 'footer', { silent: true });
+    }
+
     component.addAttributes({
         'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
         'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
@@ -1281,7 +1303,7 @@ function registerSiteNavChromeButtonType(editor) {
                 return false;
             }
 
-            if (element.classList?.contains('voodbuilder-header-icon-btn')) {
+            if (element.classList?.contains('voodbuilder-header-icon-btn') || element.hasAttribute('data-mobile-nav-toggle') || element.hasAttribute('data-theme-toggle')) {
                 return { type: 'voodbuilder-chrome-button' };
             }
 
@@ -1290,6 +1312,7 @@ function registerSiteNavChromeButtonType(editor) {
         model: {
             defaults: {
                 tagName: 'button',
+                name: '',
                 draggable: false,
                 droppable: false,
                 selectable: false,
@@ -1300,6 +1323,7 @@ function registerSiteNavChromeButtonType(editor) {
                 stylable: false,
                 layerable: false,
                 highlightable: false,
+                badgable: false,
             },
         },
     });
@@ -1572,6 +1596,8 @@ export {
     applySiteNavSettingsPreview,
     applySiteFooterSettingsPreview,
     normalizeSiteNavMenuButtons,
+    normalizeSiteNavChromeButtons,
+    registerSiteNavChromeButtonType,
     refreshDynamicSlots,
     isSiteFooterBlock,
     isSiteNavBlock,

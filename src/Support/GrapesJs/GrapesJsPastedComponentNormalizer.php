@@ -33,7 +33,7 @@ final class GrapesJsPastedComponentNormalizer
         $html = VoodbuilderThemeTokenMigrator::migrateHtml($html);
         $html = GrapesJsHtmlSanitizer::sanitize(trim($html));
 
-        $importedCss = self::compileTailwindCss($html);
+        $importedCss = self::compileTailwindCss($html, migrateLegacyPaletteUtilities: true);
 
         if ($importedCss !== '') {
             $importedCss = VoodbuilderThemeTokenMigrator::migrateCss($importedCss);
@@ -51,8 +51,12 @@ final class GrapesJsPastedComponentNormalizer
         ];
     }
 
-    public static function compileTailwindCss(string $html): string
+    public static function compileTailwindCss(string $html, bool $migrateLegacyPaletteUtilities = false): string
     {
+        if ($migrateLegacyPaletteUtilities && self::htmlReferencesLegacyBrandUtilities($html)) {
+            $html = self::migrateLegacyPaletteUtilitiesForCompile($html);
+        }
+
         return self::compileTailwindCssForScope($html, 'component');
     }
 
@@ -106,7 +110,13 @@ final class GrapesJsPastedComponentNormalizer
             return self::publishedCssForStoredHtml($html, $storedCss);
         }
 
-        $compiled = self::compileTailwindCss($html);
+        $htmlForCompile = $html;
+
+        if (self::htmlReferencesLegacyBrandUtilities($html) || self::cssReferencesLegacyBrandUtilities($storedCss)) {
+            $htmlForCompile = self::migrateLegacyPaletteUtilitiesForCompile($html);
+        }
+
+        $compiled = self::compileTailwindCss($htmlForCompile);
 
         if ($compiled !== '') {
             $manualCss = self::manualCssFromStoredComponentCss($storedCss);
@@ -300,7 +310,7 @@ final class GrapesJsPastedComponentNormalizer
 
         $withoutMedia = preg_replace('/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}/s', '', $storedCss) ?? $storedCss;
 
-        if (! preg_match_all('/(?:^|[\n}])([^{}\n@]+)\{([^{}]*)\}/s', $withoutMedia, $matches, PREG_SET_ORDER)) {
+        if (! preg_match_all('/([^{}@]+)\{([^{}]*)\}/s', $withoutMedia, $matches, PREG_SET_ORDER)) {
             return self::grapesComposerRulesFromStoredCss($storedCss);
         }
 
@@ -723,6 +733,30 @@ CSS;
             '/\b(?:hover:|focus:|focus-visible:|active:|group-hover:)?(?:bg|text|border|ring|outline|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+/i',
             $html,
         );
+    }
+
+    private static function migrateLegacyPaletteUtilitiesForCompile(string $html): string
+    {
+        return preg_replace_callback(
+            '/\bclass=(["\'])([^"\']+)\1/i',
+            static function (array $matches): string {
+                $tokens = preg_split('/\s+/', trim($matches[2])) ?: [];
+                $migrated = array_map(static function (string $token): string {
+                    if (preg_match('/^((?:hover:|focus:|focus-visible:|active:|group-hover:)?)(bg|text|border|ring|outline|from|to|via)-(?:indigo|yellow|red|purple|violet|pink|blue|green)-\d+$/i', $token, $parts) !== 1) {
+                        return $token;
+                    }
+
+                    $prefix = $parts[1];
+                    $property = strtolower($parts[2]);
+                    $brand = ($prefix === 'hover:' && $property === 'bg') ? 'vp-brand-2' : 'vp-brand-3';
+
+                    return $prefix.$property.'-'.$brand;
+                }, $tokens);
+
+                return 'class='.$matches[1].implode(' ', $migrated).$matches[1];
+            },
+            $html,
+        ) ?? $html;
     }
 
     public static function cssReferencesLegacyPaletteVariables(string $css): bool

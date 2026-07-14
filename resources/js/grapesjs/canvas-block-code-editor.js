@@ -6,6 +6,7 @@ import { prepareComponentHtmlForSave } from './component-catalog-actions.js';
 import { openCanvasBlockCodeEditorDialog } from './component-code-import.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
+import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 
 export const CMD_EDIT_BLOCK_CODE = 'voodbuilder:edit-block-code';
 
@@ -17,6 +18,7 @@ const BLOCKED_TYPES = new Set([
     'voodbuilder-bound-image',
     'voodbuilder-nav-menu-button',
     'voodbuilder-chrome-button',
+    'voodbuilder-chrome-content-slot',
 ]);
 
 const BLOCKED_BLOCK_IDS = new Set([
@@ -30,8 +32,12 @@ function componentAttributes(component) {
     return component?.getAttributes?.() ?? {};
 }
 
-function isBlockedComponent(component) {
+function isBlockedComponent(component, editor = null) {
     if (! component) {
+        return true;
+    }
+
+    if (editor && shouldSuppressChromeSlotInspector(component, editor)) {
         return true;
     }
 
@@ -69,6 +75,10 @@ function isCodeEditableRoot(component, editor) {
     const parent = component.parent?.();
     const isTopLevel = parent === editor.getWrapper?.();
 
+    if (attrs['data-voodbuilder-content-slot'] && ! attrs['data-voodbuilder-page-content']) {
+        return false;
+    }
+
     return tag === 'section'
         || attrs[COMPONENT_ATTR] != null
         || attrs['data-voodbuilder-section-block'] != null
@@ -86,7 +96,7 @@ export function resolveCodeEditableRoot(component, editor) {
     const wrapper = editor.getWrapper();
 
     while (current && current !== wrapper) {
-        if (! isBlockedComponent(current) && isCodeEditableRoot(current, editor)) {
+        if (! isBlockedComponent(current, editor) && isCodeEditableRoot(current, editor)) {
             candidate = current;
         }
 

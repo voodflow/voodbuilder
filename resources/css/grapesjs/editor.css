@@ -81,3 +81,78 @@
     background: var(--color-vp-brand-1, #6366f1);
     color: #fff;
 }
+
+/* Chrome layout shell preview — editable page content slot */
+.gjs-frame .voodbuilder-chrome-content-slot {
+    min-height: 12rem;
+    outline: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    outline-offset: 4px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
+}
+
+.gjs-frame .voodbuilder-page-content-slot:empty::before,
+.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:empty::before,
+.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-content-slot]:empty::before {
+    content: attr(data-placeholder);
+    display: block;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: color-mix(in srgb, var(--color-vp-text-2, #4b5563) 70%, transparent);
+    font-size: 0.875rem;
+    pointer-events: none;
+    white-space: normal;
+}
+
+.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-content-slot]:not([data-voodbuilder-page-content]) > * {
+    display: none !important;
+}
+
+.gjs-frame [data-voodbuilder-page-content] .gjs-badge {
+    display: none !important;
+}
+
+.gjs-frame [data-voodbuilder-chrome-shell-locked] [role='menu'],
+.gjs-frame [data-voodbuilder-chrome-shell-locked] [x-cloak],
+.gjs-frame [data-voodbuilder-chrome-shell-locked] [data-mobile-nav] {
+    display: none !important;
+}
+
+.gjs-frame [data-voodbuilder-chrome-shell-locked] [data-theme-toggle],
+.gjs-frame [data-voodbuilder-chrome-shell-locked] [data-voodbuilder-notification-bell-preview] {
+    pointer-events: none;
+}
+
+.gjs-frame [data-voodbuilder-chrome-shell-locked] {
+    pointer-events: none;
+}
+
+.gjs-frame .voodbuilder-chrome-drop-zone {
+    min-height: 5rem;
+    outline: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    outline-offset: 4px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
+}
+
+.gjs-frame .voodbuilder-chrome-drop-zone:empty::before,
+.gjs-frame .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block]))::before {
+    content: attr(data-placeholder);
+    display: block;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: color-mix(in srgb, var(--color-vp-text-2, #4b5563) 70%, transparent);
+    font-size: 0.875rem;
+    pointer-events: none;
+    white-space: normal;
+}
+
+.gjs-frame .voodbuilder-chrome-drop-zone.voodbuilder-chrome-drop-active,
+.gjs-frame .voodbuilder-page-content-slot.voodbuilder-chrome-drop-active,
+.gjs-frame .voodbuilder-chrome-content-slot.voodbuilder-chrome-drop-active {
+    outline-color: var(--color-vp-brand-1, #6366f1);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
+.gjs-frame [data-voodbuilder-page-content],
+.gjs-frame [data-voodbuilder-content-slot][data-voodbuilder-page-content] {
+    pointer-events: auto;
+}

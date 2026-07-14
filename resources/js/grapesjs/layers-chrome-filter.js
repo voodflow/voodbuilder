@@ -1,38 +1,73 @@
 /**
- * Keep layout chrome nodes out of the Layers panel.
+ * Simplify the Layers panel for chrome layout shells.
+ * Top-level header/footer/page-content stay visible (locked in editor-chrome-shell.js).
  */
 
 import { walkComponentTree } from './tailwind-visual-style.js';
+import { isChromeLayoutModeEditor, isChromeShellModeEditor } from './chrome-content-slot-utils.js';
 
-function shouldHideFromLayers(component, editor) {
+const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
+const CONTENT_SLOT_ATTR = 'data-voodbuilder-content-slot';
+const CHROME_SHELL_PART_ATTR = 'data-voodbuilder-chrome-shell-part';
+const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
+
+function shouldHideFromLayers(component) {
     const attrs = component.getAttributes?.() ?? {};
 
     if (attrs['data-voodbuilder-gjs-site-header']) {
         return true;
     }
 
+    if (attrs[TOP_DROP_SPACER_ATTR]) {
+        return true;
+    }
+
     return false;
 }
 
-function applyLayersChromeFilter(component, editor) {
+function isTopLevelShellNode(component, wrapper) {
+    if (! component || ! wrapper || component.parent?.() !== wrapper) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    return Boolean(
+        attrs[CHROME_SHELL_PART_ATTR]
+        || attrs[PAGE_CONTENT_ATTR]
+        || attrs[CONTENT_SLOT_ATTR]
+        || attrs[CHROME_DROP_ZONE_ATTR],
+    );
+}
+
+function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) {
     if (! component || component.get?.('type') === 'wrapper') {
         return;
     }
 
-    if (shouldHideFromLayers(component, editor)) {
+    if (isTopLevelShellNode(component, wrapper)) {
+        component.components?.().forEach((child) => {
+            applyLayersChromeFilter(child, wrapper, true);
+        });
+
+        return;
+    }
+
+    const inChromeShell = insideChromeShell || shouldHideFromLayers(component);
+
+    if (inChromeShell) {
         component.set({
             layerable: false,
             draggable: false,
-        });
-    } else if (component.get('layerable') === false && component.get('draggable') === false) {
-        component.set({
-            layerable: true,
-            draggable: true,
+            selectable: false,
+            hoverable: false,
+            highlightable: false,
         });
     }
 
     component.components?.().forEach((child) => {
-        applyLayersChromeFilter(child, editor);
+        applyLayersChromeFilter(child, wrapper, inChromeShell);
     });
 }
 
@@ -56,7 +91,13 @@ export function registerLayersChromeFilter(editor) {
         });
     };
 
+    const shouldSync = () => isChromeShellModeEditor(editor) || isChromeLayoutModeEditor(editor);
+
     const syncAll = () => {
+        if (! shouldSync()) {
+            return;
+        }
+
         const wrapper = editor.getWrapper?.();
 
         if (! wrapper) {
@@ -64,18 +105,24 @@ export function registerLayersChromeFilter(editor) {
         }
 
         walkComponentTree(wrapper, (component) => {
-            applyLayersChromeFilter(component, editor);
+            applyLayersChromeFilter(component, wrapper);
         });
 
         scheduleLayersRender();
     };
 
     const syncSubtree = (component) => {
-        if (! component) {
+        if (! shouldSync()) {
             return;
         }
 
-        applyLayersChromeFilter(component, editor);
+        const wrapper = editor.getWrapper?.();
+
+        if (! component || ! wrapper) {
+            return;
+        }
+
+        applyLayersChromeFilter(component, wrapper);
         scheduleLayersRender();
     };
 

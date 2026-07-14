@@ -1,4 +1,4 @@
-@extends(config('voodbuilder.layouts.app', 'voodbuilder::layouts.app'))
+@extends(\Voodflow\Voodbuilder\Support\PluginLayout::appShell())
 
 @section('body_class')
     @yield('body_class_extra')

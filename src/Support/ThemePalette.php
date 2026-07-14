@@ -9,11 +9,13 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-muted)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)):not(.voodbuilder-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--color-vp-brand-1)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+html[data-voodbuilder-sub-theme] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-muted)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)):not(.voodbuilder-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--color-vp-brand-1)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
@@ -25,8 +27,10 @@ html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menu
 CSS;
 
     private const CANVAS_HEADER_BACKGROUND_CSS = <<<'CSS'
-html header[role='banner'] .bg-vp-bg,html header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg)!important}
-html header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text) 12%,transparent)}
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+[data-voodbuilder-chrome-shell] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
+header[role='banner'] .bg-vp-bg,header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
 CSS;
 
     /** @var list<string> */
@@ -56,6 +60,8 @@ CSS;
 
     /** @var list<string> */
     private const SUB_THEME_SEMANTIC_VARIABLE_PRIORITIES = [
+        '--width-vp-layout',
+        '--width-vp-content',
         '--vx-header-bg',
         '--vx-header-text',
         '--vx-header-muted',
@@ -165,6 +171,87 @@ CSS;
         }
 
         return implode("\n", array_filter($rules));
+    }
+
+    public static function criticalChromeShellCss(string $subThemeId): string
+    {
+        $scoped = str_replace(
+            [
+                "html[data-voodbuilder-sub-theme='{$subThemeId}']",
+                "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
+                'html[data-voodbuilder-sub-theme]',
+            ],
+            [
+                "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                '[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme]',
+            ],
+            self::criticalDocumentCss($subThemeId),
+        );
+
+        $css = self::readSubThemeCss($subThemeId);
+        $semanticRules = [];
+
+        if ($css !== '') {
+            $lightSemanticRule = self::variablesToCssRule(
+                "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+                self::filterSubThemeSemanticVariables(
+                    self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+                ),
+            );
+
+            if ($lightSemanticRule !== null) {
+                $semanticRules[] = $lightSemanticRule;
+            }
+
+            $darkSemanticRule = self::variablesToCssRule(
+                ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                self::filterSubThemeSemanticVariables(
+                    self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+                ),
+            );
+
+            if ($darkSemanticRule !== null) {
+                $semanticRules[] = $darkSemanticRule;
+            }
+        }
+
+        return $scoped.implode("\n", $semanticRules).self::CANVAS_HEADER_BACKGROUND_CSS.self::chromeShellAdminOverrideCss($subThemeId);
+    }
+
+    public static function chromeShellAdminOverrideCss(string $subThemeId): string
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $palette = $colors[$subThemeId] ?? null;
+
+        if (! is_array($palette)) {
+            return '';
+        }
+
+        $rules = [];
+        $lightRule = self::buildRule(
+            $subThemeId,
+            $palette['light'],
+            false,
+            "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+        );
+
+        if ($lightRule !== null) {
+            $rules[] = $lightRule;
+        }
+
+        $darkRule = self::buildRule(
+            $subThemeId,
+            $palette['dark'],
+            true,
+            ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+        );
+
+        if ($darkRule !== null) {
+            $rules[] = $darkRule;
+        }
+
+        return implode("\n", $rules);
     }
 
     /**

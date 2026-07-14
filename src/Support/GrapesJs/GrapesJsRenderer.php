@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
 
@@ -18,6 +19,12 @@ final class GrapesJsRenderer
         if ($html === '') {
             return '';
         }
+
+        if (ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
+            $html = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($html);
+        }
+
+        $html = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
 
         $html = GrapesJsHtmlSanitizer::stripEditorOnlyElements($html);
 

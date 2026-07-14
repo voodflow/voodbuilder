@@ -1,12 +1,19 @@
 /**
  * Link traits for CTA buttons in section blocks (URL + same/new tab).
+ * Editor uses <a role="button"> so double-click edits the label (GrapesJS buttons are not inline-editable).
  */
 
-function extractButtonLabel(component) {
+export function extractButtonLabel(component) {
     const element = component.getView?.()?.el;
 
     if (element?.textContent?.trim()) {
         return element.textContent.trim();
+    }
+
+    const ctaLabel = component.get?.('ctaLabel');
+
+    if (ctaLabel) {
+        return String(ctaLabel).trim();
     }
 
     if (component.get('text')) {
@@ -32,6 +39,12 @@ function extractButtonLabel(component) {
 
 function buttonLinkTraitSchema(labels = {}) {
     return [
+        {
+            type: 'text',
+            name: 'ctaLabel',
+            label: labels.buttonLinkLabel ?? 'Button label',
+            changeProp: true,
+        },
         {
             type: 'text',
             name: 'href',
@@ -85,6 +98,12 @@ function hydrateLinkPropsFromAttributes(component) {
         updates.target = target;
     }
 
+    const label = extractButtonLabel(component);
+
+    if (label !== '' && component.get('ctaLabel') !== label) {
+        updates.ctaLabel = label;
+    }
+
     if (Object.keys(updates).length > 0) {
         component.set(updates, { silent: true });
     }
@@ -99,7 +118,7 @@ function isExcludedLinkableButton(component) {
 
     const tag = String(component.get('tagName') ?? '').toLowerCase();
 
-    if (tag !== 'button') {
+    if (tag !== 'button' && tag !== 'a') {
         return false;
     }
 
@@ -122,6 +141,10 @@ function isExcludedLinkableButton(component) {
         return true;
     }
 
+    if (tag !== 'button') {
+        return false;
+    }
+
     const form = component.closest?.('form');
 
     if (! form) {
@@ -142,15 +165,17 @@ function isExcludedLinkableButton(component) {
     return false;
 }
 
-function ensureTextLabel(component, label) {
-    if (label === '') {
+export function ensureTextLabel(component, label) {
+    const text = String(label ?? '').trim();
+
+    if (text === '') {
         return;
     }
 
     const children = component.components?.();
 
     if (! children || children.length === 0) {
-        component.components(label);
+        component.components(text);
 
         return;
     }
@@ -159,11 +184,14 @@ function ensureTextLabel(component, label) {
         const child = children.at(0);
 
         if (child?.get('type') === 'textnode') {
-            child.set('content', label);
+            child.set('content', text);
 
             return;
         }
     }
+
+    component.components(text);
+    component.set('content', text, { silent: true });
 }
 
 function applyCtaButtonLink(component) {
@@ -171,74 +199,38 @@ function applyCtaButtonLink(component) {
     const hasLink = href !== '' && href !== '#';
     const tag = String(component.get('tagName') ?? '').toLowerCase();
     const classes = [...(component.getClasses?.() ?? [])];
+    const label = extractButtonLabel(component);
 
-    if (hasLink && tag === 'button') {
-        const label = extractButtonLabel(component);
-
-        component.set({
-            tagName: 'a',
-            type: 'voodbuilder-cta-button',
-            editable: true,
-            highlightable: true,
-            selectable: true,
-            href,
-            target,
-        });
-
-        if (classes.length > 0) {
-            component.setClass(classes);
-        }
-
-        component.setAttributes({
-            href,
-            target: target || null,
-            rel: target === '_blank' ? 'noopener noreferrer' : null,
-            role: 'button',
-            'data-voodbuilder-cta': 'true',
-        });
-        component.removeAttributes(['type', 'onclick']);
-
-        ensureTextLabel(component, label);
-
+    if (tag !== 'button' && ! (tag === 'a' && component.getAttributes()?.['data-voodbuilder-cta'] === 'true')) {
         return;
     }
 
-    if (! hasLink && tag === 'a' && component.getAttributes()?.role === 'button') {
-        const label = extractButtonLabel(component);
+    component.set({
+        tagName: 'a',
+        type: 'voodbuilder-cta-button',
+        editable: true,
+        highlightable: true,
+        selectable: true,
+        layerable: true,
+        href: hasLink ? href : '#',
+        target,
+        ctaLabel: label,
+    });
 
-        component.set({
-            tagName: 'button',
-            type: 'voodbuilder-cta-button',
-            editable: false,
-            href: '',
-            target: '',
-        });
-
-        if (classes.length > 0) {
-            component.setClass(classes);
-        }
-
-        component.setAttributes({
-            type: 'button',
-            'data-voodbuilder-cta': 'true',
-        });
-        component.removeAttributes(['href', 'target', 'rel', 'role']);
-
-        ensureTextLabel(component, label);
-
-        return;
+    if (classes.length > 0) {
+        component.setClass(classes);
     }
 
-    if (tag === 'a') {
-        component.set({ href, target });
-        component.addAttributes({
-            href: hasLink ? href : '#',
-            target: target || null,
-            rel: target === '_blank' ? 'noopener noreferrer' : null,
-            role: 'button',
-            'data-voodbuilder-cta': 'true',
-        });
-    }
+    component.setAttributes({
+        href: hasLink ? href : '#',
+        target: target || null,
+        rel: target === '_blank' ? 'noopener noreferrer' : null,
+        role: 'button',
+        'data-voodbuilder-cta': 'true',
+    });
+    component.removeAttributes(['type', 'onclick']);
+
+    ensureTextLabel(component, label);
 }
 
 function assignLinkableButtonType(component) {
@@ -278,6 +270,8 @@ function upgradeLinkableButton(component, editor) {
     syncLinkableButtonTraits(component, editor);
 
     if (component.get('type') === 'voodbuilder-cta-button' && component.__vbLinkMorphApplied) {
+        ensureTextLabel(component, extractButtonLabel(component));
+
         return;
     }
 
@@ -308,18 +302,27 @@ function registerLinkableButtonType(editor) {
         },
         model: {
             defaults: {
-                tagName: 'button',
+                tagName: 'a',
                 attributes: {
-                    type: 'button',
+                    href: '#',
+                    role: 'button',
                     'data-voodbuilder-cta': 'true',
                 },
                 traits: buttonLinkTraitSchema(labels),
-                href: '',
+                href: '#',
                 target: '',
+                ctaLabel: 'Button',
+                editable: true,
+                layerable: true,
                 name: 'Button',
             },
             init() {
                 hydrateLinkPropsFromAttributes(this);
+                ensureTextLabel(this, extractButtonLabel(this));
+
+                this.on('change:ctaLabel', () => {
+                    ensureTextLabel(this, this.get('ctaLabel') || 'Button');
+                });
 
                 this.on('change:href change:target', () => {
                     this.__vbLinkMorphApplied = true;
@@ -443,6 +446,7 @@ export function configureLinkableButtons(editor) {
 
         assignLinkableButtonType(component);
         hydrateLinkPropsFromAttributes(component);
+        ensureTextLabel(component, extractButtonLabel(component));
         syncLinkableButtonTraits(component, editor);
     });
 

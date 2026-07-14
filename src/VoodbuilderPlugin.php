@@ -9,6 +9,7 @@ use Filament\Panel;
 use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
+use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\PopupResource;
@@ -39,6 +40,10 @@ class VoodbuilderPlugin implements Plugin
 
         if (config('voodbuilder.popups.enabled', true)) {
             $resources[] = PopupResource::class;
+        }
+
+        if (config('voodbuilder.chrome_layouts.enabled', true)) {
+            $resources[] = ChromeLayoutResource::class;
         }
 
         $panel

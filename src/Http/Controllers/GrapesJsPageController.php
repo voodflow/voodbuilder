@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
@@ -39,6 +40,12 @@ class GrapesJsPageController extends Controller
         ], recompilePageCss: true);
 
         $normalized['html'] = app(GrapesJsBindingStorageNormalizer::class)->normalizeHtml($normalized['html']);
+
+        if (ChromeLayoutManagedContent::sitePageUsesChromeShell($sitePage)) {
+            $normalized['html'] = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($normalized['html']);
+        } else {
+            $normalized['html'] = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($normalized['html']);
+        }
 
         $previousPayload = $sitePage->builder_payload ?? [];
 

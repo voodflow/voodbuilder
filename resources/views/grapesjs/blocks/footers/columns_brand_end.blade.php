@@ -1,4 +1,4 @@
-<div class="container mx-auto px-5 py-24">
+<div class="voodbuilder-gjs-container px-5 py-24">
     <div class="flex flex-col flex-wrap md:flex-row md:flex-nowrap md:items-center lg:items-start">
         <div class="order-first flex grow flex-wrap md:order-none md:pr-12 md:text-left text-center">
             @include('voodbuilder::grapesjs.blocks.footers._columns', ['config' => $config])

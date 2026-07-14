@@ -12,6 +12,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
 use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 
 abstract class TestCase extends BaseTestCase
@@ -65,6 +66,13 @@ abstract class TestCase extends BaseTestCase
         $this->withoutVite();
 
         $this->seedCookieConsentSettings();
+    }
+
+    protected function tearDown(): void
+    {
+        PageBuilderAccess::authorizeUsing(null);
+
+        parent::tearDown();
     }
 
     protected function seedCookieConsentSettings(): void

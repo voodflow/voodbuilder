@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Feature;
 
-use App\Models\User;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Gate;
 use Voodflow\Voodbuilder\Models\BuilderPopup;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -14,10 +14,11 @@ class GrapesJsPopupsControllerTest extends TestCase
 {
     public function test_builder_user_can_create_popup_from_editor_api(): void
     {
-        $user = User::query()->create([
+        $user = new User;
+        $user->forceFill([
             'name' => 'Editor',
             'email' => 'popup-editor@example.com',
-        ]);
+        ])->save();
 
         Gate::define('usePageBuilder', static fn (): bool => true);
         PageBuilderAccess::authorizeUsing(static fn (): bool => true);
@@ -46,10 +47,11 @@ class GrapesJsPopupsControllerTest extends TestCase
 
     public function test_builder_user_can_load_popup_page_paths(): void
     {
-        $user = User::query()->create([
+        $user = new User;
+        $user->forceFill([
             'name' => 'Editor',
             'email' => 'popup-paths@example.com',
-        ]);
+        ])->save();
 
         Gate::define('usePageBuilder', static fn (): bool => true);
         PageBuilderAccess::authorizeUsing(static fn (): bool => true);

@@ -17,7 +17,7 @@ final class GrapesJsDynamicBlockRenderer
         protected GrapesJsServerBlockRegistry $serverRegistry,
     ) {}
 
-    public function render(string $html, SitePage $page): string
+    public function render(string $html, ?SitePage $page = null, bool $canvasPreview = false): string
     {
         if (blank($html) || ! str_contains($html, 'data-voodbuilder-block')) {
             return $html;
@@ -25,7 +25,7 @@ final class GrapesJsDynamicBlockRenderer
 
         $eventId = null;
 
-        if (class_exists(EventRichContentContext::class)) {
+        if ($page !== null && class_exists(EventRichContentContext::class)) {
             try {
                 $eventId = EventRichContentContext::resolveEventIdForPageSlug((string) $page->slug);
             } catch (\Throwable) {
@@ -41,7 +41,7 @@ final class GrapesJsDynamicBlockRenderer
         $renderData = GrapesJsRichContentBlockAdapter::renderData($eventId);
 
         foreach ($this->dynamicNodes($document) as $node) {
-            $this->replaceNode($document, $node, $eventId, $renderData);
+            $this->replaceNode($document, $node, $eventId, $renderData, $canvasPreview);
         }
 
         return $this->extractBodyHtml($document) ?? $html;
@@ -87,6 +87,7 @@ final class GrapesJsDynamicBlockRenderer
         DOMElement $node,
         ?int $eventId,
         array $renderData,
+        bool $canvasPreview = false,
     ): void {
         $blockId = (string) $node->getAttribute('data-voodbuilder-block');
         $config = $this->decodeConfig((string) $node->getAttribute('data-voodbuilder-config'));
@@ -96,13 +97,17 @@ final class GrapesJsDynamicBlockRenderer
         }
 
         if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->alwaysFullRenderFooterBlock($blockId)) {
-            $rendered = $this->renderBlockId($blockId, $config, $renderData);
+            $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
             if ($rendered === null) {
                 return;
             }
 
-            $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+            $this->replaceNodeWithRenderedHtml(
+                $document,
+                $node,
+                $this->stripPublishedBlockWrapperAttributes($rendered),
+            );
 
             return;
         }
@@ -113,13 +118,32 @@ final class GrapesJsDynamicBlockRenderer
             return;
         }
 
-        $rendered = $this->renderBlockId($blockId, $config, $renderData);
+        $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
         if ($rendered === null) {
             return;
         }
 
+        $rendered = $this->stripPublishedBlockWrapperAttributes($rendered);
+
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+    }
+
+    protected function stripPublishedBlockWrapperAttributes(string $html): string
+    {
+        if (! str_contains($html, 'data-voodbuilder-block')) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+
+        foreach ($this->dynamicNodes($document) as $node) {
+            $node->removeAttribute('data-voodbuilder-block');
+            $node->removeAttribute('data-voodbuilder-config');
+            $node->removeAttribute('data-voodbuilder-hydrate-slots');
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
     }
 
     protected function alwaysFullRenderFooterBlock(string $blockId): bool
@@ -171,20 +195,27 @@ final class GrapesJsDynamicBlockRenderer
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $data
      */
-    protected function renderBlockId(string $blockId, array $config, array $data): ?string
+    protected function renderBlockId(string $blockId, array $config, array $data, bool $canvasPreview = false): ?string
     {
         $richBlockClass = $this->registry->resolve($blockId);
 
         if ($richBlockClass !== null) {
-            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($richBlockClass::toHtml($config, $data));
+            $html = $canvasPreview
+                ? GrapesJsRichContentBlockAdapter::editorPreviewHtml($richBlockClass, $config)
+                : $richBlockClass::toHtml($config, $data);
+
+            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($html);
         }
 
         $serverBlockClass = $this->serverRegistry->resolve($blockId);
 
         if ($serverBlockClass !== null) {
             $mergedConfig = $config !== [] ? $config : $serverBlockClass::defaultConfig();
+            $html = $canvasPreview
+                ? $serverBlockClass::toPreviewHtml($mergedConfig, $data)
+                : $serverBlockClass::toHtml($mergedConfig, $data);
 
-            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($serverBlockClass::toHtml($mergedConfig, $data));
+            return GrapesJsRichContentBlockAdapter::prepareBlockHtml($html);
         }
 
         return null;

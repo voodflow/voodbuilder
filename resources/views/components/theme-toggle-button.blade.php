@@ -13,6 +13,8 @@
     type="button"
     @if ($variant === 'menu') role="menuitem" @endif
     data-theme-toggle
+    data-gjs-type="voodbuilder-chrome-button"
+    data-gjs-selectable="false"
     data-theme-label-dark="{{ __('voodbuilder::nav.enable_dark_mode') }}"
     data-theme-label-light="{{ __('voodbuilder::nav.enable_light_mode') }}"
     {{ $attributes->merge(['class' => $buttonClass]) }}

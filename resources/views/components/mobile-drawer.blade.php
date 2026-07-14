@@ -37,6 +37,11 @@
 <div
     class="voodbuilder-mobile-nav"
     data-mobile-nav
+    data-gjs-selectable="false"
+    data-gjs-editable="false"
+    data-gjs-droppable="false"
+    data-gjs-removable="false"
+    data-gjs-copyable="false"
     hidden
     aria-hidden="true"
 >
@@ -154,7 +159,7 @@
 
                 <div class="voodbuilder-mobile-nav__actions">
                     @if ($canvasPreview)
-                        <span class="voodbuilder-mobile-nav__action text-vp-text-2">{{ __('voodbuilder::account.nav') }}</span>
+                        <span class="voodbuilder-mobile-nav__action">{{ __('voodbuilder::account.nav') }}</span>
                     @else
                         @if ($showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account'))
                             <a href="{{ route('voodbuilder.account') }}" class="voodbuilder-mobile-nav__account" data-mobile-nav-close>
