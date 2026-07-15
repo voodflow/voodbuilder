@@ -10,6 +10,7 @@ import {
     normalizeSiteNavChromeButtons,
 } from './plugins/voodbuilder-grapesjs.js';
 import { removeTopDropSpacer, clearCanvasDragArtifacts } from './canvas-block-drag.js';
+import { resolveBlockSettingsTarget } from './block-settings/index.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
@@ -710,6 +711,12 @@ export function registerChromeShellEditor(editor, options = {}) {
 
     editor.on('component:selected', (component) => {
         if (! component || ! isChromeShellEditorProtectedComponent(component, editor)) {
+            return;
+        }
+
+        const { descriptor } = resolveBlockSettingsTarget(component, editor);
+
+        if (descriptor) {
             return;
         }
 

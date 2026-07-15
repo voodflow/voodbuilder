@@ -19,7 +19,7 @@ import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-co
 import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
-import { registerBlockSettings } from '../block-settings-registry.js';
+import { registerBlockSettings } from '../block-settings/index.js';
 import {
     CHROME_DROP_ZONE_ATTR,
     findPrimaryBlockInChromeDropZone,
@@ -1165,8 +1165,7 @@ function registerSiteFooterSettingsUi(editor) {
 
     registerBlockSettings({
             id: 'site_footer',
-            findRoot: (component) => findSiteFooterRootComponent(component),
-            matchesRoot: (root) => isSiteFooterBlock(root.getAttributes()['data-voodbuilder-block']),
+            matchBlockId: (blockId) => isSiteFooterBlock(blockId),
             render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
                 configureSiteFooterTraits(root, gjsEditor);
 
@@ -1465,8 +1464,8 @@ function registerSiteNavSettingsUi(editor) {
 
     registerBlockSettings({
             id: 'site_nav',
-            findRoot: (component) => findSiteNavRootComponent(component),
-            matchesRoot: (root) => isSiteHeaderBlock(root.getAttributes()['data-voodbuilder-block']),
+            blockIds: ['site_nav_simple', 'site_header'],
+            matchBlockId: (blockId) => typeof blockId === 'string' && blockId.startsWith('site_nav_'),
             render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
                 configureSiteNavTraits(root, gjsEditor);
 

@@ -8,7 +8,7 @@ namespace Voodflow\Voodbuilder\Contracts;
  * Optional extension for server-rendered GrapesJS blocks with ad-hoc editor settings.
  *
  * Blocks implementing this contract expose a normalized config schema used by
- * the JS block-settings registry (see block-settings-registry.js).
+ * the JS block-settings module (see resources/js/grapesjs/block-settings/).
  */
 interface GrapesJsConfigurableBlock extends GrapesJsServerBlock
 {

@@ -37,8 +37,12 @@ import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from './grapesjs-button-link.js';
 import { registerNewsletterFormSettings } from './grapesjs-forms-blocks.js';
-import { registerChromeContentSlotType, resolveChromeNavFooterSettingsRoot } from './chrome-content-slot-utils.js';
-import { registerBlockSettingsUi, refreshBlockSettingsUi } from './block-settings-registry.js';
+import { registerChromeContentSlotType } from './chrome-content-slot-utils.js';
+import {
+    promoteInspectableBlockSelection,
+    registerBlockSettingsUi,
+    refreshBlockSettingsUi,
+} from './block-settings-registry.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtime.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
@@ -480,21 +484,7 @@ function registerChromeLayoutInspectorSelection(editor) {
             return;
         }
 
-        const resolved = resolveChromeNavFooterSettingsRoot(component);
-
-        if (
-            resolved
-            && resolved !== component
-            && typeof resolved.isRemoved !== 'function'
-            && ! resolved.isRemoved?.()
-        ) {
-            editor.select(resolved, { scroll: false });
-            window.requestAnimationFrame(() => refreshBlockSettingsUi(editor));
-
-            return;
-        }
-
-        window.requestAnimationFrame(() => refreshBlockSettingsUi(editor));
+        promoteInspectableBlockSelection(editor, component);
     });
 }
 

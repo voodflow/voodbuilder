@@ -4,7 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
-import { registerBlockSettings } from './block-settings-registry.js';
+import { registerBlockSettings } from './block-settings/index.js';
 
 export const FORMS_BLOCK_CATEGORY = 'Forms';
 
