@@ -9,6 +9,7 @@ export {
     findPrimaryBlockInModelTree,
     findPrimaryBlockInContainer,
     findInspectableRoot,
+    findLayoutChromeZoneBlockRoot,
     resolveInspectableBlockRoot,
     shouldPromoteSelectionToRoot,
     isBlockRoot,

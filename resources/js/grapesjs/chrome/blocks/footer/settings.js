@@ -3,6 +3,7 @@
  */
 
 import { registerBlockSettings } from '../../../blocks/settings/index.js';
+import { findLayoutChromeZoneBlockRoot } from '../../../blocks/settings/select.js';
 import { createCheckboxField, createFormSection } from '../../../editor-form-ui.js';
 import { isFooterBlock } from '../../ids.js';
 import {
@@ -31,6 +32,7 @@ export function registerFooterSettings(editor) {
         id: 'site_footer',
         layoutOnly: true,
         matchBlockId: (blockId) => isFooterBlock(blockId),
+        findRoot: findLayoutChromeZoneBlockRoot,
         render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
             if (traitsConfiguredFor !== root) {
                 configureSiteFooterTraits(root, gjsEditor);

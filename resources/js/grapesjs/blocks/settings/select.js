@@ -9,6 +9,7 @@ import {
     findBlockRoot,
     findPrimaryBlock,
     findPrimaryBlockInContainer,
+    findPrimaryBlockInChromeDropZone,
 } from '../../core/block-tree.js';
 import {
     isChromeLayoutContentSlotComponent,
@@ -24,6 +25,61 @@ export {
 } from '../../core/block-tree.js';
 
 export { BLOCK_ID_ATTR, ATTR } from '../../core/attrs.js';
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isInsideChromeDropZone(component) {
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (current.getAttributes?.()?.[ATTR.dropZone]) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+/**
+ * Resolve nav/footer block root when selection is inside a layout chrome drop zone.
+ *
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} editor
+ * @returns {object|null}
+ */
+export function findLayoutChromeZoneBlockRoot(component, editor) {
+    if (! component || ! isChromeLayoutModeEditor(editor)) {
+        return null;
+    }
+
+    let current = component;
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        const zone = current.getAttributes?.()?.[ATTR.dropZone];
+
+        if (zone === 'nav' || zone === 'footer') {
+            return findPrimaryBlockInChromeDropZone(current, (container) => {
+                const blocks = safeFindComponents(container, `[${ATTR.block}]`);
+
+                return blocks[0] ?? null;
+            });
+        }
+
+        const blockId = readBlockId(current);
+
+        if (blockId !== '' && isInsideChromeDropZone(current)) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
 
 /**
  * @param {object|null|undefined} component
@@ -77,7 +133,7 @@ export function findInspectableRoot(component, editor) {
     const zone = component.getAttributes?.()?.[ATTR.dropZone];
 
     if (zone) {
-        return findPrimaryBlockInContainer(component, (container) => {
+        return findPrimaryBlockInChromeDropZone(component, (container) => {
             const blocks = safeFindComponents(container, `[${ATTR.block}]`);
 
             return blocks[0] ?? null;
@@ -124,7 +180,7 @@ export function findInspectableRoot(component, editor) {
         current = current.parent?.();
     }
 
-    return null;
+    return findLayoutChromeZoneBlockRoot(component, editor);
 }
 
 /** @deprecated */

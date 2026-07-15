@@ -312,8 +312,9 @@ function suppressChromeBlockDescendants(component) {
     });
 }
 
-function lockDynamicPreviewContent(component) {
-    const locked = lockChromePreview(component, component.em, {
+function lockDynamicPreviewContent(component, editor = null) {
+    const resolvedEditor = editor ?? component?.em ?? null;
+    const locked = lockChromePreview(component, resolvedEditor, {
         resolveBlockLayerLabel,
         normalizeMenuButtons: normalizeSiteNavMenuButtons,
         normalizeChromeButtons: normalizeSiteNavChromeButtons,
@@ -779,6 +780,7 @@ function configureSiteNavTraits(component, editor) {
 
     if (
         editor?.TraitManager
+        && ! editor.__voodbuilderChromeLayoutMode
         && editor.getSelected?.() === component
         && ! resolveSettings(component, editor).descriptor
     ) {

@@ -327,8 +327,16 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
         }
 
         if (! descriptor) {
-            editor.TraitManager.select(component);
+            const layoutTarget = editor.__voodbuilderChromeLayoutMode
+                ? resolveBlockSettingsTarget(component, editor)
+                : { descriptor: null };
+
+            if (! layoutTarget.descriptor?.layoutOnly) {
+                editor.TraitManager.select(component);
+            }
         }
+    } else if (tabId !== 'content' && editor.__voodbuilderChromeLayoutMode) {
+        editor.__voodbuilderBlockSettingsRender?.();
     }
 
     if (tabId === 'layers') {
@@ -364,8 +372,13 @@ function setupInspectorTabs(mounts, editor) {
         return;
     }
 
-    const activateTab = (tabId) => {
+    const activateTab = (tabId, { userInitiated = false } = {}) => {
         activeTab = tabId;
+        editor.__voodbuilderInspectorActiveTab = tabId;
+
+        if (userInitiated) {
+            editor.__voodbuilderInspectorTabUserChoice = true;
+        }
 
         tablist.querySelectorAll('.voodbuilder-gjs-inspector-tab').forEach((button) => {
             const active = button.dataset.voodbuilderTab === tabId;
@@ -399,15 +412,22 @@ function setupInspectorTabs(mounts, editor) {
             return;
         }
 
-        activateTab(button.dataset.voodbuilderTab);
+        activateTab(button.dataset.voodbuilderTab, { userInitiated: true });
     });
 
     editor.on('component:selected', (component) => {
-        if (component) {
-            const { descriptor } = resolveBlockSettingsTarget(component, editor);
+        if (component && editor.__voodbuilderChromeLayoutMode) {
+            const { descriptor, root } = resolveBlockSettingsTarget(component, editor);
 
-            if (descriptor?.layoutOnly && editor.__voodbuilderChromeLayoutMode) {
-                activateTab('content');
+            if (descriptor?.layoutOnly && root) {
+                const lastRoot = editor.__voodbuilderLayoutSettingsAutoTabRoot ?? null;
+
+                if (lastRoot !== root) {
+                    editor.__voodbuilderLayoutSettingsAutoTabRoot = root;
+                    activateTab('content');
+                }
+            } else if (! descriptor?.layoutOnly) {
+                editor.__voodbuilderLayoutSettingsAutoTabRoot = null;
             }
         }
 

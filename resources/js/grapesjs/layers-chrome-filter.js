@@ -193,6 +193,7 @@ export function registerLayersChromeFilter(editor) {
             applyLayersChromeFilter(component, wrapper, editor);
         });
 
+        editor.__voodbuilderAfterLayersChromeFilterSync?.();
         scheduleLayersRender();
     };
 

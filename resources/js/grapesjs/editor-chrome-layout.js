@@ -25,7 +25,13 @@ import {
     insertBlockIntoLayoutZone,
 } from './chrome/layout/drag.js';
 import { resolveBlockLayerLabel } from './layer-display-name.js';
-import { ensureRootInspectable, refreshBlockSettingsUi } from './blocks/settings/index.js';
+import {
+    ensureRootInspectable,
+    findInspectableRoot,
+    readBlockId,
+    refreshBlockSettingsUi,
+} from './blocks/settings/index.js';
+import { findPrimaryBlock } from './core/block-tree.js';
 import { safeRenderEditorLayers, safeFindComponents } from './tailwind-visual-style.js';
 import {
     canIndexGrapesComponent,
@@ -457,29 +463,43 @@ export function lockLayoutChromeBlocks(editor) {
  *
  * @param {object} editor
  */
+function ensureLayoutChromeRootsInspectable(editor) {
+    if (! isChromeLayoutModeEditor(editor)) {
+        return;
+    }
+
+    for (const zoneName of ['nav', 'footer']) {
+        const dropZone = findDropZone(editor, zoneName);
+
+        if (! dropZone) {
+            continue;
+        }
+
+        const block = findPrimaryBlock(dropZone);
+
+        if (! block || ! isValidGrapesComponent(block) || readBlockId(block) === '') {
+            continue;
+        }
+
+        try {
+            lockChromePreview(block, editor, {
+                resolveBlockLayerLabel,
+            });
+        } catch (lockError) {
+            console.warn('Voodbuilder: could not lock chrome layout block.', lockError);
+        }
+
+        ensureRootInspectable(block);
+    }
+}
+
 export function reconcileLayoutChromeBlockSettings(editor) {
     if (! isChromeLayoutModeEditor(editor)) {
         return;
     }
 
     lockLayoutChromeBlocks(editor);
-
-    for (const zone of ['nav', 'footer']) {
-        const dropZone = findDropZone(editor, zone);
-
-        if (! dropZone) {
-            continue;
-        }
-
-        dropZone.components().forEach((child) => {
-            if (! isValidGrapesComponent(child)) {
-                return;
-            }
-
-            ensureRootInspectable(child);
-        });
-    }
-
+    ensureLayoutChromeRootsInspectable(editor);
     refreshBlockSettingsUi(editor);
 }
 
@@ -684,12 +704,21 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     editor.__voodbuilderChromeLayoutMode = true;
     editor.__voodbuilderChromeLayoutReady = false;
 
+    if (editor.em) {
+        editor.em.__voodbuilderChromeLayoutMode = true;
+    }
+
+    editor.__voodbuilderAfterLayersChromeFilterSync = () => {
+        ensureLayoutChromeRootsInspectable(editor);
+    };
+
     const placeholders = layoutPlaceholders(options);
 
     registerChromeLayerIconPatch(editor);
 
     let refreshTimer = null;
     let bootstrapping = true;
+    let bootstrapped = false;
 
     const refresh = () => {
         if (editor.__voodbuilderActiveBlockDrag) {
@@ -701,6 +730,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         refreshChromeLayoutBlockCatalog(editor);
 
         if (editor.__voodbuilderChromeLayoutReady) {
+            ensureLayoutChromeRootsInspectable(editor);
             safeRenderEditorLayers(editor);
         }
 
@@ -717,6 +747,11 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     };
 
     const finishBootstrap = () => {
+        if (bootstrapped) {
+            return;
+        }
+
+        bootstrapped = true;
         refresh();
         bootstrapping = false;
         editor.__voodbuilderChromeLayoutReady = true;
@@ -727,9 +762,21 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
     editor.on('load', finishBootstrap);
     editor.on('canvas:frame:load', scheduleRefresh);
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        ensureLayoutChromeRootsInspectable(editor);
+        refreshBlockSettingsUi(editor);
+    });
     editor.on('voodbuilder:site-chrome-updated', () => {
         patchChromeZoneLayerIcons(editor);
     });
+
+    window.setTimeout(() => {
+        if (! editor.__voodbuilderChromeLayoutReady) {
+            return;
+        }
+
+        reconcileLayoutChromeBlockSettings(editor);
+    }, 500);
 
     // Registration may happen after the first GrapesJS load/frame events.
     window.requestAnimationFrame(() => {
@@ -739,11 +786,38 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     });
 
     editor.on('component:selected', (component) => {
-        if (! isValidGrapesComponent(component) || (! isContentSlot(component) && ! isDropZone(component))) {
+        if (! isValidGrapesComponent(component)) {
             return;
         }
 
-        component.set('toolbar', []);
+        if (isContentSlot(component) || isDropZone(component)) {
+            if (isDropZone(component)) {
+                const block = findPrimaryBlock(component);
+
+                if (block && readBlockId(block) !== '') {
+                    ensureRootInspectable(block);
+                    editor.select(block, { scroll: false });
+                    refreshBlockSettingsUi(editor);
+                }
+            }
+
+            component.set('toolbar', []);
+
+            return;
+        }
+
+        if (! editor.__voodbuilderChromeLayoutReady) {
+            return;
+        }
+
+        const root = findInspectableRoot(component, editor);
+
+        if (! root || readBlockId(root) === '') {
+            return;
+        }
+
+        ensureRootInspectable(root);
+        refreshBlockSettingsUi(editor);
     });
 
     editor.on('component:add', (component) => {

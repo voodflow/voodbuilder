@@ -104,6 +104,14 @@ function isLayoutOnlyDescriptor(descriptor) {
 
 /**
  * @param {object} editor
+ * @returns {boolean}
+ */
+function isContentInspectorTabActive(editor) {
+    return (editor.__voodbuilderInspectorActiveTab ?? 'content') === 'content';
+}
+
+/**
+ * @param {object} editor
  * @param {object|null|undefined} component
  * @returns {boolean}
  */
@@ -243,6 +251,17 @@ export function registerSettingsUi(editor, mount) {
                 return;
             }
 
+            if (
+                isChromeLayoutModeEditor(editor)
+                && isLayoutOnlyDescriptor(descriptor)
+                && ! isContentInspectorTabActive(editor)
+            ) {
+                mount.hidden = true;
+                traitsMount?.classList.add('hidden');
+
+                return;
+            }
+
             ensureRootInspectable(root);
 
             if (
@@ -253,10 +272,6 @@ export function registerSettingsUi(editor, mount) {
                 mount.hidden = false;
                 traitsMount?.classList.add('hidden');
                 syncSettingsFormValues(mount, root);
-
-                if (isChromeLayoutModeEditor(editor)) {
-                    editor.__voodbuilderActivateInspectorTab?.('content');
-                }
 
                 return;
             }
@@ -270,10 +285,6 @@ export function registerSettingsUi(editor, mount) {
 
             renderedRoot = root;
             renderedDescriptorId = descriptor.id;
-
-            if (isChromeLayoutModeEditor(editor)) {
-                editor.__voodbuilderActivateInspectorTab?.('content');
-            }
         } finally {
             editor.__voodbuilderBlockSettingsRendering = false;
         }
@@ -300,6 +311,7 @@ export function registerSettingsUi(editor, mount) {
     editor.on('component:deselected', render);
     editor.on('load', scheduleRender);
     editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
+    editor.on('voodbuilder:dynamic-blocks-refreshed', scheduleRender);
     editor.on('component:update', (component) => {
         if (editor.__voodbuilderSettingsChange) {
             return;

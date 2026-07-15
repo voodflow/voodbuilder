@@ -524,6 +524,12 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderLabels = labels;
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
+
+    if (editor.em) {
+        editor.em.__voodbuilderChromeShellMode = editor.__voodbuilderChromeShellMode;
+        editor.em.__voodbuilderChromeLayoutMode = editor.__voodbuilderChromeLayoutMode;
+    }
+
     registerChromeLayoutInspectorSelection(editor);
     registerLinkableButtonTypes(editor);
 
@@ -646,7 +652,7 @@ export function initVpressGrapesJs(container, options = {}) {
             const runInitialDynamicRefresh = () => {
                 const componentsToRefresh = collectTopLevelDynamicBlocks(editor);
 
-                return componentsToRefresh
+                return componentsToRefresh.length > 0
                     ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
                     : refreshDynamicBlocks(editor, options.blocksRenderUrl);
             };
@@ -700,6 +706,7 @@ export function initVpressGrapesJs(container, options = {}) {
                 }
 
                 editor.trigger('voodbuilder:site-chrome-updated');
+                editor.trigger('voodbuilder:dynamic-blocks-refreshed');
             });
         };
 
@@ -801,7 +808,7 @@ export function initVpressGrapesJs(container, options = {}) {
             const lockChromeShellDynamicBlocks = () => {
                 for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
                     try {
-                        lockDynamicPreviewContent(component);
+                        lockDynamicPreviewContent(component, editor);
 
                         if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
                             configureSiteFooterTraits(component, editor);
@@ -873,7 +880,7 @@ export function initVpressGrapesJs(container, options = {}) {
                 scanLinkableButtons(editor);
                 for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
                     try {
-                        lockDynamicPreviewContent(component);
+                        lockDynamicPreviewContent(component, editor);
 
                         if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
                             configureSiteFooterTraits(component, editor);
@@ -973,7 +980,11 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         const hasDynamicBindings = safeFindComponents(component, '[data-voodbuilder-bind], [data-voodbuilder-repeat]').length > 0;
 
         if (hasDynamicBindings) {
-            lockDynamicPreviewContent(component);
+            lockDynamicPreviewContent(component, editor);
+
+            if (editor.__voodbuilderChromeLayoutMode) {
+                reconcileLayoutChromeBlockSettings(editor);
+            }
 
             return;
         }
@@ -1035,7 +1046,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             const preserveSelection = editor.getSelected?.();
 
             window.requestAnimationFrame(() => {
-                lockDynamicPreviewContent(component);
+                lockDynamicPreviewContent(component, editor);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
@@ -1048,6 +1059,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
                 bootCanvasSiteChrome(editor);
                 editor.trigger('voodbuilder:site-chrome-updated');
+                editor.trigger('voodbuilder:dynamic-blocks-refreshed');
 
                 window.requestAnimationFrame(() => {
                     if (preserveSelection && ! preserveSelection.isRemoved?.()) {
@@ -1096,7 +1108,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         window.requestAnimationFrame(() => {
             try {
-                lockDynamicPreviewContent(component);
+                lockDynamicPreviewContent(component, editor);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
@@ -1105,6 +1117,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                         configureSiteFooterTraits(component, editor);
                         applySiteFooterSettingsPreview(component, editor);
                     }
+
+                    editor.trigger('voodbuilder:dynamic-blocks-refreshed');
                 } else if (footerBlock) {
                     configureSiteFooterTraits(component, editor);
                     applySiteFooterSettingsPreview(component, editor);

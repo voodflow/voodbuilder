@@ -16,6 +16,7 @@ import { findPrimaryBlock, readBlockId } from '../../resources/js/grapesjs/core/
 import {
     ensureRootInspectable,
     findInspectableRoot,
+    findLayoutChromeZoneBlockRoot,
     shouldPromoteSelectionToRoot,
 } from '../../resources/js/grapesjs/blocks/settings/select.js';
 import {
@@ -116,6 +117,20 @@ describe('blocks/settings/select', () => {
         const editor = { __voodbuilderChromeLayoutMode: true };
 
         expect(shouldPromoteSelectionToRoot(inner, root, editor)).toBe(true);
+    });
+
+    it('findLayoutChromeZoneBlockRoot resolves block inside default wrapper', () => {
+        const footer = mockComponent({ [ATTR.block]: 'site_footer_centered' });
+        const wrapper = mockComponent({}, [footer.getAttributes()]);
+        const zone = mockComponent(
+            { [ATTR.dropZone]: 'footer', type: 'voodbuilder-chrome-drop-zone' },
+            [{ attrs: wrapper.getAttributes(), children: [{ attrs: footer.getAttributes() }] }],
+        );
+        const inner = mockComponent({ class: 'footer-link' }, [], footer);
+        const editor = { __voodbuilderChromeLayoutMode: true };
+
+        expect(readBlockId(findLayoutChromeZoneBlockRoot(inner, editor))).toBe('site_footer_centered');
+        expect(readBlockId(findLayoutChromeZoneBlockRoot(zone, editor))).toBe('site_footer_centered');
     });
 
     it('ensureRootInspectable restores selection flags on block root', () => {

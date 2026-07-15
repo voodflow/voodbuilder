@@ -3,6 +3,7 @@
  */
 
 import { registerBlockSettings } from '../../../blocks/settings/index.js';
+import { findLayoutChromeZoneBlockRoot } from '../../../blocks/settings/select.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../../../editor-form-ui.js';
 import { configureSiteNavTraits, applySiteNavSettingChange } from './config.js';
 
@@ -23,6 +24,7 @@ export function registerNavSettings(editor) {
         layoutOnly: true,
         blockIds: ['site_nav_simple', 'site_header'],
         matchBlockId: (blockId) => typeof blockId === 'string' && blockId.startsWith('site_nav_'),
+        findRoot: findLayoutChromeZoneBlockRoot,
         render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
             if (traitsConfiguredFor !== root) {
                 configureSiteNavTraits(root, gjsEditor);
