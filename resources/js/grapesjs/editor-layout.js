@@ -10,7 +10,7 @@ import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
-import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi } from './blocks/settings/index.js';
+import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi, findInspectableRoot, ensureRootInspectable } from './blocks/settings/index.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -315,7 +315,16 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
         component = editor.getSelected();
         refreshBlockSettingsUi(editor);
 
-        const { descriptor } = resolveBlockSettingsTarget(component, editor);
+        let { descriptor } = resolveBlockSettingsTarget(component, editor);
+
+        if (! descriptor && editor.__voodbuilderChromeLayoutMode) {
+            const root = findInspectableRoot(component, editor);
+
+            if (root) {
+                ensureRootInspectable(root);
+                ({ descriptor } = resolveBlockSettingsTarget(root, editor));
+            }
+        }
 
         if (! descriptor) {
             editor.TraitManager.select(component);

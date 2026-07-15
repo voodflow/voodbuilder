@@ -70,7 +70,7 @@ import { registerPopupsUi } from '../popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
-import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog } from '../editor-chrome-layout.js';
+import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
 import {
     buildEditorShell,
     collapseBlockCategories,
@@ -540,6 +540,11 @@ export function initVpressGrapesJs(container, options = {}) {
         registerCanvasBootGate(editor, shellRoot, shell);
         configureEditorLayout(editor, shell, labels);
         wireInspector(editor, shell, options, labels);
+
+        if (shell?.mounts?.layers) {
+            guardEditorLayersRender(editor);
+            registerLayersChromeFilter(editor);
+        }
     }
 
     if (shell && options.componentsUrl) {
@@ -622,6 +627,89 @@ export function initVpressGrapesJs(container, options = {}) {
             ?? 'Drop footer blocks here',
     });
 
+    if (options.blocksRenderUrl && options.chromeLayoutMode && ! options.chromeShellMode) {
+        const setupLayoutDynamicRefresh = () => {
+            if (editor.__voodbuilderLayoutDynamicRefreshSetup) {
+                return;
+            }
+
+            editor.__voodbuilderLayoutDynamicRefreshSetup = true;
+
+            editor.on('voodbuilder:refresh-dynamic-block', (component) => {
+                if (! component) {
+                    return;
+                }
+
+                scheduleDynamicBlockRefresh(editor, options.blocksRenderUrl, component);
+            });
+
+            const runInitialDynamicRefresh = () => {
+                const componentsToRefresh = collectTopLevelDynamicBlocks(editor);
+
+                return componentsToRefresh
+                    ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
+                    : refreshDynamicBlocks(editor, options.blocksRenderUrl);
+            };
+
+            const refresh = new Promise((resolve) => {
+                let started = false;
+
+                const start = () => {
+                    if (started) {
+                        return;
+                    }
+
+                    started = true;
+                    void runInitialDynamicRefresh().then(resolve);
+                };
+
+                if (editor.__voodbuilderChromeLayoutReady) {
+                    start();
+                } else if (typeof editor.once === 'function') {
+                    editor.once('voodbuilder:chrome-layout-ready', start);
+                } else {
+                    editor.on('voodbuilder:chrome-layout-ready', start);
+                }
+
+                window.setTimeout(start, 300);
+            });
+
+            editor.__voodbuilderDynamicBlocksRefresh = refresh;
+            void refresh.finally(() => {
+                dynamicBlocksGate.resolve();
+                migrateEditorComponents(editor);
+                scanLinkableButtons(editor);
+                reconcileLayoutChromeBlockSettings(editor);
+
+                for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
+                    try {
+                        const blockId = component.getAttributes()['data-voodbuilder-block'];
+
+                        if (isSiteFooterBlock(blockId)) {
+                            configureSiteFooterTraits(component, editor);
+                            applySiteFooterSettingsPreview(component, editor);
+                        }
+
+                        if (isSiteNavBlock(blockId)) {
+                            configureSiteNavTraits(component, editor);
+                            applySiteNavSettingsPreview(component, editor);
+                        }
+                    } catch (lockError) {
+                        console.warn('Voodbuilder GrapesJS: could not configure layout chrome block.', lockError);
+                    }
+                }
+
+                editor.trigger('voodbuilder:site-chrome-updated');
+            });
+        };
+
+        if (editor.getWrapper?.()) {
+            setupLayoutDynamicRefresh();
+        } else {
+            editor.on('load', setupLayoutDynamicRefresh);
+        }
+    }
+
     editor.on('load', () => {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
@@ -657,8 +745,6 @@ export function initVpressGrapesJs(container, options = {}) {
 
         try {
             if (shell?.mounts?.layers) {
-                guardEditorLayersRender(editor);
-                registerLayersChromeFilter(editor);
                 registerLayersContextMenu(editor, { mount: shell.mounts.layers, labels });
                 registerLayersDrag(editor, { mount: shell.mounts.layers });
             }
@@ -769,7 +855,9 @@ export function initVpressGrapesJs(container, options = {}) {
 
                 scheduleDynamicBlockRefresh(editor, options.blocksRenderUrl, component);
             });
-        } else {
+        } else if (! options.chromeLayoutMode) {
+            const runInitialDynamicRefresh = () => refreshDynamicBlocks(editor, options.blocksRenderUrl);
+
             editor.on('voodbuilder:refresh-dynamic-block', (component) => {
                 if (! component) {
                     return;
@@ -778,40 +866,7 @@ export function initVpressGrapesJs(container, options = {}) {
                 scheduleDynamicBlockRefresh(editor, options.blocksRenderUrl, component);
             });
 
-            const runInitialDynamicRefresh = () => {
-                const componentsToRefresh = options.chromeLayoutMode
-                    ? collectTopLevelDynamicBlocks(editor)
-                    : null;
-
-                return componentsToRefresh
-                    ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
-                    : refreshDynamicBlocks(editor, options.blocksRenderUrl);
-            };
-
-            const refresh = options.chromeLayoutMode
-                ? new Promise((resolve) => {
-                    let started = false;
-
-                    const start = () => {
-                        if (started) {
-                            return;
-                        }
-
-                        started = true;
-                        void runInitialDynamicRefresh().then(resolve);
-                    };
-
-                    if (typeof editor.once === 'function') {
-                        editor.once('voodbuilder:chrome-layout-ready', start);
-                    } else {
-                        editor.on('voodbuilder:chrome-layout-ready', start);
-                    }
-
-                    window.setTimeout(start, 300);
-                })
-                : runInitialDynamicRefresh();
-
-            editor.__voodbuilderDynamicBlocksRefresh = Promise.resolve(refresh);
+            editor.__voodbuilderDynamicBlocksRefresh = runInitialDynamicRefresh();
             void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
                 dynamicBlocksGate.resolve();
                 migrateEditorComponents(editor);
@@ -981,8 +1036,16 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
             window.requestAnimationFrame(() => {
                 lockDynamicPreviewContent(component);
-                configureSiteNavTraits(component, editor);
-                applySiteNavSettingsPreview(component, editor);
+
+                if (editor.__voodbuilderChromeLayoutMode) {
+                    reconcileLayoutChromeBlockSettings(editor);
+                    configureSiteNavTraits(component, editor);
+                    applySiteNavSettingsPreview(component, editor);
+                } else {
+                    configureSiteNavTraits(component, editor);
+                    applySiteNavSettingsPreview(component, editor);
+                }
+
                 bootCanvasSiteChrome(editor);
                 editor.trigger('voodbuilder:site-chrome-updated');
 
@@ -991,7 +1054,9 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                         editor.select(preserveSelection);
                     }
 
-                    applySiteNavSettingsPreview(component, editor);
+                    if (! editor.__voodbuilderChromeLayoutMode) {
+                        applySiteNavSettingsPreview(component, editor);
+                    }
                 });
             });
 
@@ -1033,7 +1098,14 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             try {
                 lockDynamicPreviewContent(component);
 
-                if (footerBlock) {
+                if (editor.__voodbuilderChromeLayoutMode) {
+                    reconcileLayoutChromeBlockSettings(editor);
+
+                    if (footerBlock) {
+                        configureSiteFooterTraits(component, editor);
+                        applySiteFooterSettingsPreview(component, editor);
+                    }
+                } else if (footerBlock) {
                     configureSiteFooterTraits(component, editor);
                     applySiteFooterSettingsPreview(component, editor);
                     bootCanvasSiteChrome(editor);

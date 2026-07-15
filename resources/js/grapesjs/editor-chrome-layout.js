@@ -25,7 +25,7 @@ import {
     insertBlockIntoLayoutZone,
 } from './chrome/layout/drag.js';
 import { resolveBlockLayerLabel } from './layer-display-name.js';
-import { refreshBlockSettingsUi } from './blocks/settings/index.js';
+import { ensureRootInspectable, refreshBlockSettingsUi } from './blocks/settings/index.js';
 import { safeRenderEditorLayers, safeFindComponents } from './tailwind-visual-style.js';
 import {
     canIndexGrapesComponent,
@@ -422,7 +422,7 @@ function removeTopDropSpacerFromWrapper(wrapper) {
     }
 }
 
-function lockLayoutChromeBlocks(editor) {
+export function lockLayoutChromeBlocks(editor) {
     const wrapper = editor.getWrapper?.();
 
     if (! wrapper) {
@@ -450,6 +450,37 @@ function lockLayoutChromeBlocks(editor) {
             }
         });
     }
+}
+
+/**
+ * Re-lock nav/footer blocks and restore inspector selection flags after load or dynamic refresh.
+ *
+ * @param {object} editor
+ */
+export function reconcileLayoutChromeBlockSettings(editor) {
+    if (! isChromeLayoutModeEditor(editor)) {
+        return;
+    }
+
+    lockLayoutChromeBlocks(editor);
+
+    for (const zone of ['nav', 'footer']) {
+        const dropZone = findDropZone(editor, zone);
+
+        if (! dropZone) {
+            continue;
+        }
+
+        dropZone.components().forEach((child) => {
+            if (! isValidGrapesComponent(child)) {
+                return;
+            }
+
+            ensureRootInspectable(child);
+        });
+    }
+
+    refreshBlockSettingsUi(editor);
 }
 
 function configureLayoutCanvas(editor, placeholders) {
@@ -689,6 +720,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         refresh();
         bootstrapping = false;
         editor.__voodbuilderChromeLayoutReady = true;
+        reconcileLayoutChromeBlockSettings(editor);
         editor.trigger('voodbuilder:chrome-layout-ready');
         editor.trigger('voodbuilder:site-chrome-updated');
     };

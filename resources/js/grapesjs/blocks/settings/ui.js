@@ -299,6 +299,7 @@ export function registerSettingsUi(editor, mount) {
     editor.on('component:selected', scheduleRender);
     editor.on('component:deselected', render);
     editor.on('load', scheduleRender);
+    editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
     editor.on('component:update', (component) => {
         if (editor.__voodbuilderSettingsChange) {
             return;

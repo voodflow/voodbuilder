@@ -15,6 +15,8 @@ import { registerFooterSettings } from '../chrome/blocks/footer/settings.js';
 import {
     promoteRoot,
     registerSettingsUi,
+    findInspectableRoot,
+    ensureRootInspectable,
 } from '../blocks/settings/index.js';
 
 /**
@@ -30,6 +32,12 @@ export function registerChromeLayoutInspectorSelection(editor) {
     editor.on('component:selected', (component) => {
         if (! editor.__voodbuilderChromeLayoutMode || ! component) {
             return;
+        }
+
+        const root = findInspectableRoot(component, editor);
+
+        if (root) {
+            ensureRootInspectable(root);
         }
 
         promoteRoot(editor, component);
