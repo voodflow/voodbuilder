@@ -22,6 +22,7 @@ class ChromeLayoutEditorController extends Controller
         return view('voodbuilder::pages.chrome-layout-editor', [
             'layout' => $chromeLayout,
             'grapesJsEditor' => true,
+            'chromeLayoutEditor' => true,
             'grapesJsConfig' => $config,
         ]);
     }

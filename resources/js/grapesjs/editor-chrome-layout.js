@@ -17,12 +17,32 @@ import {
 } from './chrome-editor-guards.js';
 import { refreshBlocksLibraryUi } from './editor-layout.js';
 import { clearCanvasDragArtifacts } from './canvas-block-drag.js';
+import { isFooterBlock, isNavBlock } from './chrome/ids.js';
+import { lockChromePreview } from './chrome/blocks/preview.js';
 import {
-    isSiteFooterBlock,
-    isSiteNavBlock,
-    lockDynamicPreviewContent,
-} from './plugins/voodbuilder-grapesjs.js';
-import { refreshBlockSettingsUi } from './block-settings-registry.js';
+    findDropZoneAtPointer,
+    findLayoutDropZoneForPointer,
+    insertBlockIntoLayoutZone,
+} from './chrome/layout/drag.js';
+import { resolveBlockLayerLabel } from './layer-display-name.js';
+import { refreshBlockSettingsUi } from './blocks/settings/index.js';
+import { safeRenderEditorLayers, safeFindComponents } from './tailwind-visual-style.js';
+import {
+    canIndexGrapesComponent,
+    canMoveGrapesComponent,
+    isValidGrapesComponent,
+    isValidMoveTarget,
+    safeComponentIndex,
+    safeComponentMove,
+    safeMoveToEnd,
+    safeReorderComponent,
+} from './core/component-model.js';
+
+export {
+    findDropZoneAtPointer,
+    findLayoutDropZoneForPointer,
+    insertBlockIntoLayoutZone,
+} from './chrome/layout/drag.js';
 
 const CONTENT_SLOT_BLOCK_ID = 'chrome_content_slot';
 const CHROME_SHELL_ATTR = 'data-voodbuilder-chrome-shell';
@@ -109,11 +129,19 @@ function unwrapChromeShellWrapper(editor) {
 
         return Boolean(attrs[CHROME_SHELL_ATTR]) && ! attrs['data-voodbuilder-chrome-shell-part'];
     }).forEach((shell) => {
+        if (! isValidGrapesComponent(shell)) {
+            return;
+        }
+
         [...shell.components().models ?? shell.components()].forEach((child) => {
-            child.move(wrapper, { at: wrapper.components().length });
+            safeMoveToEnd(child, wrapper);
         });
 
-        shell.remove();
+        try {
+            shell.remove();
+        } catch {
+            // Shell may already be detached during concurrent layout refresh.
+        }
     });
 }
 
@@ -154,6 +182,10 @@ function unlockDropZoneChildren(editor, zone) {
     }
 
     zone.components().forEach((child) => {
+        if (! isValidGrapesComponent(child)) {
+            return;
+        }
+
         child.set({ locked: false }, { silent: true });
         editor.Layers?.setLocked?.(child, false);
     });
@@ -261,14 +293,25 @@ function flattenDefaultWrappers(zone) {
 
         const nested = inner.at(0);
 
-        if (! nested || typeof nested.move !== 'function' || typeof child.index !== 'function') {
+        if (! canMoveGrapesComponent(nested) || ! canIndexGrapesComponent(child) || ! isValidMoveTarget(zone)) {
             return;
         }
 
-        const at = child.index();
+        const at = safeComponentIndex(child);
 
-        nested.move(zone, { at });
-        child.remove();
+        if (at < 0) {
+            return;
+        }
+
+        if (! safeComponentMove(nested, zone, { at })) {
+            return;
+        }
+
+        try {
+            child.remove();
+        } catch {
+            // Wrapper may already be removed during flatten.
+        }
     });
 }
 
@@ -289,25 +332,32 @@ function normalizeZoneChildren(zone) {
 }
 
 function relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone) {
-    const keep = new Set([navZone, slot, footerZone].filter(Boolean));
+    if (! isValidMoveTarget(wrapper)) {
+        return;
+    }
 
-    wrapper.components().forEach((child) => {
-        if (keep.has(child) || isDropZone(child)) {
+    const keep = new Set([navZone, slot, footerZone].filter((component) => isValidGrapesComponent(component)));
+    const slotIndex = safeComponentIndex(slot);
+    const children = [...wrapper.components().models ?? wrapper.components()];
+
+    children.forEach((child) => {
+        if (! isValidGrapesComponent(child) || keep.has(child) || isDropZone(child) || isContentSlot(child)) {
             return;
         }
 
-        if (isContentSlot(child)) {
+        if (
+            isValidMoveTarget(navZone)
+            && slotIndex >= 0
+            && canIndexGrapesComponent(child)
+            && safeComponentIndex(child) < slotIndex
+        ) {
+            safeMoveToEnd(child, navZone);
+
             return;
         }
 
-        if (navZone && slot && typeof slot.index === 'function' && typeof child.index === 'function' && child.index() < slot.index()) {
-            child.move(navZone, { at: navZone.components().length });
-
-            return;
-        }
-
-        if (footerZone) {
-            child.move(footerZone, { at: footerZone.components().length });
+        if (isValidMoveTarget(footerZone)) {
+            safeMoveToEnd(child, footerZone);
         }
     });
 }
@@ -317,7 +367,8 @@ function ensureContentSlot(editor, wrapper, placeholder) {
 
     if (! slot) {
         const navZone = findDropZone(editor, 'nav');
-        const at = navZone ? navZone.index() + 1 : 0;
+        const navIndex = safeComponentIndex(navZone);
+        const at = navIndex >= 0 ? navIndex + 1 : 0;
         const escapedPlaceholder = String(placeholder ?? '').replace(/"/g, '&quot;');
 
         wrapper.append(
@@ -350,22 +401,10 @@ function ensureChromeLayoutStructure(editor, placeholders) {
 
     relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone);
 
-    const zoneOrder = [navZone, slot, footerZone].filter((component) => {
-        return component
-            && typeof component.move === 'function'
-            && ! component.isRemoved?.();
-    });
+    const zoneOrder = [navZone, slot, footerZone].filter((component) => canMoveGrapesComponent(component));
 
     zoneOrder.forEach((component, index) => {
-        try {
-            if (typeof component.index === 'function' && component.index() === index) {
-                return;
-            }
-
-            component.move(wrapper, { at: index });
-        } catch (error) {
-            console.warn('Voodbuilder: could not reorder chrome layout zone.', error);
-        }
+        safeReorderComponent(component, wrapper, index);
     });
 
     normalizeZoneChildren(navZone);
@@ -378,13 +417,39 @@ function ensureChromeLayoutStructure(editor, placeholders) {
 }
 
 function removeTopDropSpacerFromWrapper(wrapper) {
-    if (! wrapper?.find) {
+    for (const spacer of safeFindComponents(wrapper, '[data-voodbuilder-top-drop-spacer]')) {
+        spacer.remove();
+    }
+}
+
+function lockLayoutChromeBlocks(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
         return;
     }
 
-    wrapper.find('[data-voodbuilder-top-drop-spacer]').forEach((spacer) => {
-        spacer.remove();
-    });
+    for (const zone of ['nav', 'footer']) {
+        const dropZone = findDropZone(editor, zone);
+
+        if (! dropZone) {
+            continue;
+        }
+
+        dropZone.components().forEach((child) => {
+            if (! isValidGrapesComponent(child)) {
+                return;
+            }
+
+            try {
+                lockChromePreview(child, editor, {
+                    resolveBlockLayerLabel,
+                });
+            } catch (lockError) {
+                console.warn('Voodbuilder: could not lock chrome layout block.', lockError);
+            }
+        });
+    }
 }
 
 function configureLayoutCanvas(editor, placeholders) {
@@ -396,6 +461,7 @@ function configureLayoutCanvas(editor, placeholders) {
 
     removeTopDropSpacerFromWrapper(wrapper);
     ensureChromeLayoutStructure(editor, placeholders);
+    lockLayoutChromeBlocks(editor);
 
     wrapper.set({
         droppable: false,
@@ -475,110 +541,6 @@ function resolveTargetDropZone(editor, component) {
     return findDropZoneAtPointer(editor);
 }
 
-export function findDropZoneAtPointer(editor) {
-    const doc = editor.Canvas?.getDocument?.();
-    const frame = editor.Canvas?.getFrameEl?.();
-    const point = getLastDragPoint(editor);
-
-    if (! doc || ! frame || ! point) {
-        return null;
-    }
-
-    const rect = frame.getBoundingClientRect();
-    const x = point.x - rect.left + (frame.contentWindow?.scrollX ?? 0);
-    const y = point.y - rect.top + (frame.contentWindow?.scrollY ?? 0);
-    const target = doc.elementFromPoint(x, y);
-    const zoneEl = target?.closest?.('[data-voodbuilder-chrome-drop-zone]');
-
-    if (! zoneEl) {
-        return null;
-    }
-
-    const zone = zoneEl.getAttribute('data-voodbuilder-chrome-drop-zone');
-
-    return findDropZone(editor, zone);
-}
-
-export function findLayoutDropZoneForPointer(editor) {
-    const pointerZone = findDropZoneAtPointer(editor);
-
-    if (pointerZone) {
-        return pointerZone;
-    }
-
-    const doc = editor.Canvas?.getDocument?.();
-    const frame = editor.Canvas?.getFrameEl?.();
-    const point = getLastDragPoint(editor);
-    const navZone = findDropZone(editor, 'nav');
-    const slot = findContentSlot(editor);
-    const footerZone = findDropZone(editor, 'footer');
-
-    if (! doc || ! frame || ! point || ! slot) {
-        return null;
-    }
-
-    const slotEl = slot.getEl?.() ?? doc.querySelector('[data-voodbuilder-content-slot]');
-
-    if (! slotEl) {
-        return null;
-    }
-
-    const rect = frame.getBoundingClientRect();
-    const y = point.y - rect.top + (frame.contentWindow?.scrollY ?? 0);
-    const slotTop = slotEl.offsetTop;
-    const slotBottom = slotTop + slotEl.offsetHeight;
-
-    if (y < slotTop) {
-        return navZone;
-    }
-
-    if (y > slotBottom) {
-        return footerZone;
-    }
-
-    return null;
-}
-
-function resolveLayoutDropZone(editor, block) {
-    const pointerZone = findLayoutDropZoneForPointer(editor);
-
-    if (pointerZone) {
-        return pointerZone;
-    }
-
-    const navZone = findDropZone(editor, 'nav');
-    const footerZone = findDropZone(editor, 'footer');
-
-    if (blockTargetsFooterZone(block)) {
-        return footerZone ?? navZone;
-    }
-
-    return navZone ?? footerZone;
-}
-
-export function insertBlockIntoLayoutZone(editor, block) {
-    const content = block?.get?.('content') ?? block?.getContent?.();
-
-    if (! content) {
-        return null;
-    }
-
-    const zone = resolveLayoutDropZone(editor, block);
-
-    if (! zone) {
-        return null;
-    }
-
-    const added = zone.append(content);
-    const component = Array.isArray(added) ? added[0] : added;
-
-    if (component) {
-        editor.select?.(component);
-    }
-
-    return component ?? null;
-}
-
 function isMisplacedLayoutBlock(editor, component) {
     if (! component) {
         return true;
@@ -598,7 +560,7 @@ function isMisplacedLayoutBlock(editor, component) {
 }
 
 function relocateLayoutBlock(editor, component) {
-    if (! component || isDropZone(component) || isContentSlot(component)) {
+    if (! isValidGrapesComponent(component) || isDropZone(component) || isContentSlot(component)) {
         return false;
     }
 
@@ -616,7 +578,14 @@ function relocateLayoutBlock(editor, component) {
         return false;
     }
 
-    component.move(zone, { at: zone.components().length });
+    if (! canMoveGrapesComponent(component) || ! isValidMoveTarget(zone)) {
+        return false;
+    }
+
+    if (! safeMoveToEnd(component, zone)) {
+        return false;
+    }
+
     normalizeZoneChildren(zone);
 
     return true;
@@ -642,8 +611,12 @@ function dedupeContentSlots(editor, component) {
 
     const existing = findContentSlot(editor);
 
-    if (existing && existing !== component) {
-        component.remove();
+    if (existing && existing !== component && isValidGrapesComponent(component)) {
+        try {
+            component.remove();
+        } catch {
+            // Duplicate slot may already be detached.
+        }
     }
 }
 
@@ -678,6 +651,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
     editor.__voodbuilderChromeLayoutRegistered = true;
     editor.__voodbuilderChromeLayoutMode = true;
+    editor.__voodbuilderChromeLayoutReady = false;
 
     const placeholders = layoutPlaceholders(options);
 
@@ -694,7 +668,11 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         configureLayoutCanvas(editor, placeholders);
         applyEditorScopeBlockVisibility(editor);
         refreshChromeLayoutBlockCatalog(editor);
-        editor.Layers?.render?.();
+
+        if (editor.__voodbuilderChromeLayoutReady) {
+            safeRenderEditorLayers(editor);
+        }
+
         patchChromeZoneLayerIcons(editor);
     };
 
@@ -704,12 +682,13 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         }
 
         window.clearTimeout(refreshTimer);
-        refreshTimer = window.setTimeout(refresh, 32);
+        refreshTimer = window.setTimeout(refresh, 64);
     };
 
     const finishBootstrap = () => {
         refresh();
         bootstrapping = false;
+        editor.__voodbuilderChromeLayoutReady = true;
         editor.trigger('voodbuilder:chrome-layout-ready');
         editor.trigger('voodbuilder:site-chrome-updated');
     };
@@ -728,13 +707,19 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     });
 
     editor.on('component:selected', (component) => {
-        if (isContentSlot(component) || isDropZone(component)) {
-            component.set('toolbar', []);
+        if (! isValidGrapesComponent(component) || (! isContentSlot(component) && ! isDropZone(component))) {
+            return;
         }
+
+        component.set('toolbar', []);
     });
 
     editor.on('component:add', (component) => {
         window.requestAnimationFrame(() => {
+            if (! isValidGrapesComponent(component)) {
+                return;
+            }
+
             if (isContentSlot(component)) {
                 dedupeContentSlots(editor, component);
             }
@@ -771,16 +756,20 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
         window.requestAnimationFrame(() => {
             if (block && isMisplacedLayoutBlock(editor, component)) {
-                if (component?.remove) {
-                    component.remove();
+                if (isValidGrapesComponent(component)) {
+                    try {
+                        component.remove();
+                    } catch {
+                        // Misplaced block may already be detached.
+                    }
                 }
 
                 component = insertBlockIntoLayoutZone(editor, block);
-            } else if (component) {
+            } else if (isValidGrapesComponent(component)) {
                 relocateLayoutBlock(editor, component);
             }
 
-            if (component) {
+            if (isValidGrapesComponent(component)) {
                 const blockId = String(
                     block?.get?.('attributes')?.['data-voodbuilder-block']
                     ?? component.getAttributes?.()['data-voodbuilder-block']
@@ -788,13 +777,14 @@ export function registerChromeLayoutEditor(editor, options = {}) {
                 );
 
                 try {
-                    lockDynamicPreviewContent(component);
+                    lockChromePreview(component, editor, {
+                        resolveBlockLayerLabel,
+                    });
                 } catch (lockError) {
                     console.warn('Voodbuilder: could not lock chrome layout block.', lockError);
                 }
 
-                if (blockId.startsWith('site_nav_') || blockId.startsWith('site_footer_') || isSiteNavBlock(blockId) || isSiteFooterBlock(blockId)) {
-                    editor.trigger('voodbuilder:refresh-dynamic-block', component);
+                if (blockId.startsWith('site_nav_') || blockId.startsWith('site_footer_') || isNavBlock(blockId) || isFooterBlock(blockId)) {
                     refreshBlockSettingsUi(editor);
                 }
             }
@@ -805,7 +795,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     });
 
     editor.on('sorter:drag:end', ({ target }) => {
-        if (! target) {
+        if (! isValidGrapesComponent(target)) {
             return;
         }
 

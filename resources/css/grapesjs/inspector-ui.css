@@ -533,6 +533,8 @@
 .voodbuilder-gjs-form-field--checkbox .voodbuilder-gjs-checkbox {
     flex-shrink: 0;
     margin: 0;
+    accent-color: var(--color-vp-brand-1, #6366f1);
+    cursor: pointer;
 }
 
 .voodbuilder-gjs-form-label--checkbox {

@@ -9,6 +9,11 @@
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
     $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $suppressHostChrome = GrapesJsHostChrome::shouldSuppressHostRender($grapesJsEditor ?? null);
+    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
+        $grapesJsEditor ?? false,
+        $chromeLayoutEditor ?? false,
+    );
+    $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
     $chromeLayout = $voodbuilderChromeLayout ?? ChromeLayoutResolver::activeLayout();
     $chromeRendered = $chromeLayout && ! $suppressHostChrome
         ? app(ChromeLayoutRenderer::class)->render($chromeLayout)
@@ -47,7 +52,11 @@
 
     @include('cookie-consent::cookie-consent-head')
 
-    @vite(config('voodbuilder.assets.vite', \Voodflow\Voodbuilder\Support\VoodbuilderPaths::defaultViteEntries()))
+    @if ($voodbuilderEditorAssetsReady)
+        @vite($voodbuilderViteEntries)
+    @elseif ($grapesJsEditor ?? false)
+        <style>.voodbuilder-grapesjs-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
+    @endif
     @if ($suppressHostChrome)
         <style id="voodbuilder-grapesjs-host-chrome-critical">{!! GrapesJsHostChrome::criticalHideCss() !!}</style>
     @endif

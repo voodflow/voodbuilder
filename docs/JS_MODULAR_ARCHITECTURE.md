@@ -3,6 +3,8 @@
 This document describes the modularization strategy for the GrapesJS integration layer.
 All paths are relative to `resources/js/grapesjs/`.
 
+**Master plan:** see [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) (branch `modular`).
+
 ## Principles
 
 1. **Never patch GrapesJS core** — extend via plugins, events, and CSS variables.
@@ -10,43 +12,34 @@ All paths are relative to `resources/js/grapesjs/`.
 3. **Atomic modules** — small files with a single responsibility.
 4. **English documentation** in code comments and README files.
 
-## Module map
+## Layer map (post-refactor)
 
-| Module | Responsibility |
-|--------|----------------|
-| `block-settings/` | Generic inspector settings for blocks with `data-voodbuilder-block` |
-| `editor.js` | Bootstrap only — wires modules, no business logic |
-| `editor-layout.js` | Shell DOM + GrapesJS `appendTo` mounts |
-| `editor-chrome-layout.js` | Chrome **layout** editor behaviour |
-| `editor-chrome-shell.js` | Chrome **page** editor shell (read-only header/footer) |
-| `plugins/voodbuilder-grapesjs.js` | DomComponent types + block registration (being slimmed) |
+| Layer | Path | Responsibility |
+|-------|------|----------------|
+| `core/` | `attrs.js`, `block-tree.js` | Pure helpers, no GrapesJS |
+| `chrome/` | `ids`, `slots`, `zones`, `layout/*`, `page/*`, `blocks/*` | Site chrome domain |
+| `blocks/` | `settings/`, `dynamic/` | Inspector settings + dynamic type |
+| `editor/` | `init.js`, `payload.js`, `inspector.js` | Bootstrap + wiring |
+| `plugins/` | `voodbuilder.js` | GrapesJS plugin entry |
 
-## Block settings (implemented)
+## Legacy shims (temporary)
 
-See `block-settings/README.md`. Any block can register settings with:
+- `editor.js` → re-exports `editor/init.js`
+- `block-settings/` → re-exports `blocks/settings/`
+- `editor-chrome-layout.js` / `editor-chrome-shell.js` → being replaced by `chrome/layout/*`, `chrome/page/*`
+- `_legacy/` — deprecated paths for one release cycle
 
-```js
-registerBlockSettings({
-  id: 'my_block',
-  blockIds: ['my_block_id'],
-  render: ({ mount, root, editor }) => { /* ... */ },
-});
-```
+## Block settings
 
-Selection uses `resolveInspectableBlockRoot()` which:
+See `blocks/settings/README.md` (copied from `block-settings/README.md`).
 
-- Climbs to `[data-voodbuilder-block]`
-- Descends into containers (drop zones, locked shell wrappers)
-- Works in page + layout editors
+Selection uses `findInspectableRoot()` which:
 
-## Next extraction targets
-
-1. `site-chrome/nav-block.js` — nav preview + traits (from `voodbuilder-grapesjs.js`)
-2. `site-chrome/footer-block.js` — footer preview + traits
-3. `editor/init-dynamic-blocks.js` — dynamic block refresh pipeline
-4. `editor/init-inspector.js` — inspector extension registration
+- Climbs to `[data-voodbuilder-block]` via model tree (no DOM)
+- Descends into chrome drop zones
+- Nav/footer descriptors use `layoutOnly: true` (layout editor only)
 
 ## PHP contract
 
 `Voodflow\Voodbuilder\Contracts\GrapesJsConfigurableBlock` documents server-side config
-normalization. JS `block-settings` registry is the runtime inspector source of truth.
+normalization. JS `blocks/settings` registry is the runtime inspector source of truth.

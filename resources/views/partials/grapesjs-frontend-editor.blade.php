@@ -10,13 +10,9 @@
     <div class="voodbuilder-grapesjs-frontend__canvas" data-voodbuilder-grapesjs-canvas></div>
 </div>
 
-@push('scripts')
-    @if (\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt())
-        @vite(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::viteEntries())
-    @else
-        <div class="voodbuilder-grapesjs-frontend__notice" role="alert">
-            <p>{{ __('voodbuilder::pro.frontend.assets_missing') }}</p>
-            <p><code>{{ \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::buildInstructions() }}</code></p>
-        </div>
-    @endif
-@endpush
+@if (! \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt())
+    <div class="voodbuilder-grapesjs-frontend__notice" role="alert">
+        <p>{{ __('voodbuilder::pro.frontend.assets_missing') }}</p>
+        <p><code>{{ \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::buildInstructions() }}</code></p>
+    </div>
+@endif

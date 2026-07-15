@@ -2,13 +2,30 @@
  * Shared helpers for chrome layout content slot (layout editor middle marker).
  */
 
+import { isValidGrapesComponent } from './core/component-model.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
+import {
+    ATTR,
+    BLOCK_ID_ATTR,
+    CHROME_DROP_ZONE_ATTR,
+    CONTENT_SLOT_ATTR,
+    PAGE_CONTENT_ATTR,
+    CHROME_SHELL_PART_ATTR,
+    CHROME_SHELL_LOCKED_ATTR,
+} from './core/attrs.js';
+import {
+    findPrimaryBlockInChromeDropZone as findPrimaryInZone,
+} from './core/block-tree.js';
 
-export const CONTENT_SLOT_ATTR = 'data-voodbuilder-content-slot';
-export const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
-export const CHROME_SHELL_PART_ATTR = 'data-voodbuilder-chrome-shell-part';
-export const CHROME_SHELL_LOCKED_ATTR = 'data-voodbuilder-chrome-shell-locked';
-export const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
+export {
+    ATTR,
+    BLOCK_ID_ATTR,
+    CHROME_DROP_ZONE_ATTR,
+    CONTENT_SLOT_ATTR,
+    PAGE_CONTENT_ATTR,
+    CHROME_SHELL_PART_ATTR,
+    CHROME_SHELL_LOCKED_ATTR,
+} from './core/attrs.js';
 
 export function isChromeLayoutModeEditor(editor) {
     return Boolean(editor?.__voodbuilderChromeLayoutMode);
@@ -27,13 +44,11 @@ export function isChromeLayoutContentSlotComponent(component) {
 }
 
 export function findPrimaryBlockInChromeDropZone(zone) {
-    if (! zone) {
-        return null;
-    }
+    return findPrimaryInZone(zone, (container) => {
+        const blocks = safeFindComponents(container, `[${BLOCK_ID_ATTR}]`);
 
-    const blocks = safeFindComponents(zone, '[data-voodbuilder-block]');
-
-    return blocks[0] ?? null;
+        return blocks[0] ?? null;
+    });
 }
 
 export function isChromeShellModeEditor(editor) {
@@ -328,6 +343,9 @@ function isChromeBleedComponent(component) {
         blockId.startsWith('site_nav_')
         || blockId.startsWith('site_footer_')
         || blockId === 'site_header'
+        || attrs[ATTR.dropZone]
+        || type === 'voodbuilder-chrome-drop-zone'
+        || gjsType === 'voodbuilder-chrome-drop-zone'
         || attrs['data-mobile-nav']
         || attrs['data-mobile-nav-toggle']
         || attrs['data-theme-toggle']
@@ -342,6 +360,10 @@ function isChromeBleedComponent(component) {
 
     if (tag === 'button') {
         return true;
+    }
+
+    if (! component?.get) {
+        return false;
     }
 
     const text = String(component.get('content') ?? component.get('text') ?? '').trim();
@@ -370,6 +392,10 @@ function collectChromeBleedComponents(component, removable) {
     }
 
     component.components?.().forEach((child) => {
+        if (! isValidGrapesComponent(child)) {
+            return;
+        }
+
         collectChromeBleedComponents(child, removable);
     });
 }
@@ -382,7 +408,11 @@ export function sanitizeChromeContentSlotChildren(slot) {
     const removable = [];
 
     slot.components().forEach((component) => {
-        const attrs = component?.getAttributes?.() ?? {};
+        if (! isValidGrapesComponent(component)) {
+            return;
+        }
+
+        const attrs = component.getAttributes?.() ?? {};
         const tag = String(component.get?.('tagName') ?? '').toLowerCase();
         const blockId = String(attrs['data-voodbuilder-block'] ?? '');
         const type = String(component.get?.('type') ?? '');
@@ -409,7 +439,7 @@ export function sanitizeChromeContentSlotChildren(slot) {
             return;
         }
 
-        if (tag === 'p') {
+        if (tag === 'p' && component?.get) {
             const text = String(component.get('content') ?? '').trim();
 
             if (text.includes('Plugin content loads')) {

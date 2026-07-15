@@ -1,11 +1,4 @@
 /**
- * Backward-compatible re-export — prefer `./block-settings/index.js` for new code.
+ * Backward-compatible re-export — prefer `blocks/settings/index.js`.
  */
-
-export {
-    registerBlockSettings,
-    registerBlockSettingsUi,
-    refreshBlockSettingsUi,
-    resolveInspectableBlockRoot,
-    promoteInspectableBlockSelection,
-} from './block-settings/index.js';
+export * from './blocks/settings/index.js';

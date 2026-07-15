@@ -28,4 +28,15 @@ class GrapesJsHtmlSanitizerTest extends TestCase
             GrapesJsHtmlSanitizer::encodeMalformedPercentSequences($value),
         );
     }
+
+    public function test_strips_uncompiled_blade_attributes(): void
+    {
+        $html = '<div data-voodbuilder-nav-mobile-panel @hidden(!$isActive)><span>Menu</span></div>';
+
+        $sanitized = GrapesJsHtmlSanitizer::sanitize($html);
+
+        $this->assertStringNotContainsString('@hidden', $sanitized);
+        $this->assertStringContainsString('data-voodbuilder-nav-mobile-panel', $sanitized);
+        $this->assertStringContainsString('<span>Menu</span>', $sanitized);
+    }
 }

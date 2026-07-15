@@ -1,25 +1,4 @@
 /**
- * Block settings — public module API.
+ * @deprecated Shim — use `blocks/settings/index.js`.
  */
-
-export {
-    readBlockId,
-    findBlockRoot,
-    findPrimaryBlockInContainer,
-    resolveInspectableBlockRoot,
-    shouldPromoteSelectionToRoot,
-    BLOCK_ID_ATTR,
-} from './selection.js';
-
-export {
-    registerBlockSettings,
-    resolveBlockSettingsTarget,
-    resolveDescriptorForRoot,
-    listRegisteredBlockSettings,
-} from './registry.js';
-
-export {
-    registerBlockSettingsUi,
-    refreshBlockSettingsUi,
-    promoteInspectableBlockSelection,
-} from './ui.js';
+export * from '../blocks/settings/index.js';

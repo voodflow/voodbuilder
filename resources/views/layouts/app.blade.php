@@ -7,6 +7,11 @@
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
+    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
+        $grapesJsEditor ?? false,
+        $chromeLayoutEditor ?? false,
+    );
+    $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
 @endphp
 <!doctype html>
 <html
@@ -34,7 +39,11 @@
 
     @include('cookie-consent::cookie-consent-head')
 
-    @vite(config('voodbuilder.assets.vite', \Voodflow\Voodbuilder\Support\VoodbuilderPaths::defaultViteEntries()))
+    @if ($voodbuilderEditorAssetsReady)
+        @vite($voodbuilderViteEntries)
+    @elseif ($grapesJsEditor ?? false)
+        <style>.voodbuilder-grapesjs-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
+    @endif
     @livewireStyles
     @stack('head')
 </head>

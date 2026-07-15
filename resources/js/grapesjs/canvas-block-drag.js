@@ -3,7 +3,8 @@
  */
 
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
-import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './editor-chrome-layout.js';
+import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
+import { safeFindComponents } from './tailwind-visual-style.js';
 
 const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
@@ -83,10 +84,18 @@ function relocateBlockFromTopSpacer(editor, component) {
         return false;
     }
 
+    if (editor.__voodbuilderChromeShellMode || editor.__voodbuilderChromeLayoutMode) {
+        return false;
+    }
+
     const wrapper = editor.getWrapper?.();
     const parent = component.parent?.();
 
     if (! wrapper || ! parent) {
+        return false;
+    }
+
+    if (typeof component.move !== 'function' || component.isRemoved?.()) {
         return false;
     }
 
@@ -354,9 +363,13 @@ function syncChromeDropZoneHighlight(editor) {
     }
 }
 
-function isChromeDropTargetElement(element) {
+function isChromeDropTargetElement(element, editor) {
     if (! element?.closest) {
         return false;
+    }
+
+    if (editor?.__voodbuilderChromeShellMode) {
+        return Boolean(element.closest('[data-voodbuilder-page-content]'));
     }
 
     return Boolean(
@@ -390,7 +403,7 @@ function findDragElements(editor) {
         doc.querySelectorAll(`.${DRAG_CHIP_CLASS}`).forEach((node) => elements.add(node));
 
         doc.querySelectorAll('.gjs-plh').forEach((node) => {
-            if (isChromeDropTargetElement(node)) {
+            if (isChromeDropTargetElement(node, editor)) {
                 elements.add(node);
             }
         });
@@ -555,9 +568,9 @@ export function removeTopDropSpacer(editor) {
         return;
     }
 
-    wrapper.find?.(`[${SPACER_ATTR}]`)?.forEach((spacer) => {
+    for (const spacer of safeFindComponents(wrapper, `[${SPACER_ATTR}]`)) {
         spacer.remove();
-    });
+    }
 }
 
 export function detachTopDropSpacerForExport(editor) {
@@ -567,7 +580,7 @@ export function detachTopDropSpacerForExport(editor) {
         return;
     }
 
-    const spacer = wrapper.find?.(`[${SPACER_ATTR}]`)?.[0];
+    const spacer = safeFindComponents(wrapper, `[${SPACER_ATTR}]`)[0];
 
     if (! spacer) {
         return;
@@ -663,6 +676,18 @@ export function registerCanvasBlockDrag(editor) {
     });
 
     editor.on('block:drag:stop', (component, block) => {
+        if (editor.__voodbuilderChromeShellMode && component) {
+            const slot = findPageContentSlotInEditor(editor);
+
+            if (slot && component.parent?.() !== slot && ! component.getAttributes?.()?.['data-voodbuilder-page-content']) {
+                if (typeof component.remove === 'function') {
+                    component.remove();
+                }
+
+                component = null;
+            }
+        }
+
         if (component) {
             markTopDropHandled(editor);
             window.requestAnimationFrame(() => relocateBlockFromTopSpacer(editor, component));

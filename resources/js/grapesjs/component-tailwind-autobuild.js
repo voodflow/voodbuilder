@@ -74,7 +74,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     const componentsUrl = String(options.componentsUrl ?? '').replace(/\/$/, '');
     const csrf = options.csrf ?? '';
 
-    if (! componentsUrl) {
+    if (! componentsUrl || editor.__voodbuilderChromeLayoutMode) {
         editor.__voodbuilderInitialComponentBuild = Promise.resolve();
 
         return;
@@ -147,8 +147,9 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         try {
             const response = await fetch(`${componentsUrl}/compile-css`, {
                 method: 'POST',
-                headers: editorApiHeaders(csrf, { 'Content-Type': 'application/json' }),
+                headers: editorApiHeaders(csrf, { json: true }),
                 credentials: 'same-origin',
+                mode: 'same-origin',
                 signal: controller.signal,
                 body: JSON.stringify({ html, scope: 'component' }),
             });

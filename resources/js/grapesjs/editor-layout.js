@@ -10,6 +10,7 @@ import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
+import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi } from './blocks/settings/index.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -307,10 +308,18 @@ export function refreshBlocksLibraryUi(editor) {
 }
 
 function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false } = {}) {
-    const component = editor.getSelected();
+    let component = editor.getSelected();
 
     if (tabId === 'content' && component) {
-        editor.TraitManager.select(component);
+        promoteRoot(editor, component);
+        component = editor.getSelected();
+        refreshBlockSettingsUi(editor);
+
+        const { descriptor } = resolveBlockSettingsTarget(component, editor);
+
+        if (! descriptor) {
+            editor.TraitManager.select(component);
+        }
     }
 
     if (tabId === 'layers') {
@@ -372,6 +381,8 @@ function setupInspectorTabs(mounts, editor) {
         }));
     };
 
+    editor.__voodbuilderActivateInspectorTab = activateTab;
+
     tablist.addEventListener('click', (event) => {
         const button = event.target.closest('.voodbuilder-gjs-inspector-tab');
 
@@ -383,6 +394,14 @@ function setupInspectorTabs(mounts, editor) {
     });
 
     editor.on('component:selected', (component) => {
+        if (component) {
+            const { descriptor } = resolveBlockSettingsTarget(component, editor);
+
+            if (descriptor?.layoutOnly && editor.__voodbuilderChromeLayoutMode) {
+                activateTab('content');
+            }
+        }
+
         syncInspectorManagers(editor, activeTab);
 
         if (component?.getAttributes?.()['data-voodbuilder-bind']) {

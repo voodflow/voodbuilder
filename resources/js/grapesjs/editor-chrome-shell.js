@@ -3,19 +3,22 @@
  * Layout chrome is read-only; only the content slot is editable.
  */
 
-import {
-    isSiteFooterBlock,
-    isSiteNavBlock,
-    lockDynamicPreviewContent,
-    normalizeSiteNavChromeButtons,
-} from './plugins/voodbuilder-grapesjs.js';
+import { isFooterBlock, isNavBlock } from './chrome/ids.js';
+import { lockChromePreview } from './chrome/blocks/preview.js';
+import { normalizeSiteNavChromeButtons } from './plugins/voodbuilder-grapesjs.js';
 import { removeTopDropSpacer, clearCanvasDragArtifacts } from './canvas-block-drag.js';
-import { resolveBlockSettingsTarget } from './block-settings/index.js';
+import {
+    forEachGrapesComponent,
+    isGrapesComponent,
+    safeFindComponents,
+    safeRenderEditorLayers,
+} from './tailwind-visual-style.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
 } from './chrome-editor-guards.js';
 import {
+    CHROME_DROP_ZONE_ATTR,
     CHROME_SHELL_LOCKED_ATTR,
     CHROME_SHELL_PART_ATTR,
     CONTENT_SLOT_ATTR,
@@ -29,6 +32,13 @@ import {
     PAGE_CONTENT_ATTR,
     purgeChromeBleedFromContentSlot,
 } from './chrome-content-slot-utils.js';
+import {
+    canMoveGrapesComponent,
+    isValidMoveTarget,
+    safeComponentIndex,
+    safeMoveToEnd,
+    safeReorderComponent,
+} from './core/component-model.js';
 
 const CHROME_SHELL_ATTR = 'data-voodbuilder-chrome-shell';
 const CHROME_SHELL_BLOCK_PREFIXES = ['site_nav_', 'site_footer_', 'site_header'];
@@ -109,7 +119,7 @@ function isTopLevelShellZone(component, wrapper) {
 }
 
 function setLayerLocked(editor, component, locked = true) {
-    if (! component) {
+    if (! isGrapesComponent(component)) {
         return;
     }
 
@@ -118,7 +128,7 @@ function setLayerLocked(editor, component, locked = true) {
 }
 
 function unlockPageContentChildren(editor, slot) {
-    slot.components().forEach((child) => {
+    forEachGrapesComponent(slot, (child) => {
         ensurePageContentBlockEditable(editor, child);
     });
 }
@@ -153,10 +163,14 @@ function ensurePageContentBlockEditable(editor, component) {
         layerable: true,
     }, { silent: true });
     editor.Layers?.setLocked?.(component, false);
-    lockDynamicPreviewContent(component);
+    lockChromePreview(component);
 }
 
 function lockChromeShellComponent(component) {
+    if (! isGrapesComponent(component)) {
+        return;
+    }
+
     component.addAttributes({
         [CHROME_SHELL_LOCKED_ATTR]: '1',
     });
@@ -175,7 +189,7 @@ function lockChromeShellComponent(component) {
         toolbar: [],
     }, { silent: true });
 
-    component.components().forEach((child) => {
+    forEachGrapesComponent(component, (child) => {
         if (isPageContentSlot(child)) {
             return;
         }
@@ -185,6 +199,10 @@ function lockChromeShellComponent(component) {
 }
 
 function configureChromeShellPartWrapper(editor, component, part) {
+    if (! isGrapesComponent(component)) {
+        return;
+    }
+
     const name = part === 'before' ? 'Header' : 'Footer';
 
     component.addAttributes({
@@ -210,13 +228,13 @@ function configureChromeShellPartWrapper(editor, component, part) {
 
     setLayerLocked(editor, component, true);
 
-    component.components().forEach((child) => {
+    forEachGrapesComponent(component, (child) => {
         lockChromeShellComponent(child);
 
         const blockId = child.getAttributes?.()['data-voodbuilder-block'];
 
-        if (isSiteNavBlock(blockId) || isSiteFooterBlock(blockId)) {
-            lockDynamicPreviewContent(child);
+        if (isNavBlock(blockId) || isFooterBlock(blockId)) {
+            lockChromePreview(child);
         }
     });
 }
@@ -260,13 +278,21 @@ function configurePageContentSlot(editor, slot, placeholderLabel = '') {
 }
 
 function purgeChromeBleedFromSlot(slot) {
+    if (! isGrapesComponent(slot)) {
+        return;
+    }
+
     purgeChromeBleedFromContentSlot(slot);
 
-    slot.components().forEach((component) => {
+    const removable = [];
+
+    forEachGrapesComponent(slot, (component) => {
         if (isChromeShellBlock(component) || isChromeShellPart(component) || looksLikeSiteChromeStructure(component)) {
-            component.remove();
+            removable.push(component);
         }
     });
+
+    removable.forEach((component) => component.remove());
 }
 
 function dedupePageContentSlots(editor) {
@@ -309,13 +335,17 @@ function chromeShellPartNeedsSync(partComponent, innerHtml) {
     }
 
     return ! partComponent.components().some((child) => {
+        if (! isGrapesComponent(child)) {
+            return false;
+        }
+
         if (isChromeShellBlock(child) || looksLikeSiteChromeStructure(child)) {
             return true;
         }
 
         const blockId = child.getAttributes?.()['data-voodbuilder-block'];
 
-        return isSiteNavBlock(blockId) || isSiteFooterBlock(blockId);
+        return isNavBlock(blockId) || isFooterBlock(blockId);
     });
 }
 
@@ -369,10 +399,12 @@ function ensureChromeShellPart(editor, wrapper, part, innerHtml, subTheme = '') 
 }
 
 function ensureChromeShellOrder(wrapper, before, slot, after) {
-    [before, slot, after].filter(Boolean).forEach((component, index) => {
-        if (component.index() !== index) {
-            component.move(wrapper, { at: index });
-        }
+    if (! isValidMoveTarget(wrapper)) {
+        return;
+    }
+
+    [before, slot, after].filter((component) => canMoveGrapesComponent(component)).forEach((component, index) => {
+        safeReorderComponent(component, wrapper, index);
     });
 }
 
@@ -380,36 +412,36 @@ function wrapTopLevelChromeBlocks(editor, wrapper, before, after) {
     const navBlocks = [];
     const footerBlocks = [];
 
-    wrapper.components().forEach((child) => {
+    forEachGrapesComponent(wrapper, (child) => {
         if (isPageContentSlot(child) || isChromeShellPart(child)) {
             return;
         }
 
         const blockId = String(child.getAttributes?.()['data-voodbuilder-block'] ?? '');
 
-        if (isSiteNavBlock(blockId) || blockId === 'site_header' || blockId.startsWith('site_nav_')) {
+        if (isNavBlock(blockId) || blockId === 'site_header' || blockId.startsWith('site_nav_')) {
             navBlocks.push(child);
 
             return;
         }
 
-        if (isSiteFooterBlock(blockId) || looksLikeSiteChromeStructure(child)) {
+        if (isFooterBlock(blockId) || looksLikeSiteChromeStructure(child)) {
             footerBlocks.push(child);
         }
     });
 
-    if (navBlocks.length && before) {
+    if (navBlocks.length && isValidMoveTarget(before)) {
         navBlocks.forEach((block) => {
             if (block.parent?.() !== before) {
-                block.move(before, { at: before.components().length });
+                safeMoveToEnd(block, before);
             }
         });
     }
 
-    if (footerBlocks.length && after) {
+    if (footerBlocks.length && isValidMoveTarget(after)) {
         footerBlocks.forEach((block) => {
             if (block.parent?.() !== after) {
-                block.move(after, { at: after.components().length });
+                safeMoveToEnd(block, after);
             }
         });
     }
@@ -419,14 +451,15 @@ function relocateTopLevelOrphans(editor, wrapper, slot, before, after) {
     wrapTopLevelChromeBlocks(editor, wrapper, before, after);
 
     const orphans = [];
+    const staleShellParts = [];
 
-    wrapper.components().forEach((child) => {
+    forEachGrapesComponent(wrapper, (child) => {
         if (child === slot || child === before || child === after) {
             return;
         }
 
         if (isChromeShellWrapper(child) || isChromeShellPart(child)) {
-            child.remove();
+            staleShellParts.push(child);
 
             return;
         }
@@ -438,8 +471,14 @@ function relocateTopLevelOrphans(editor, wrapper, slot, before, after) {
         orphans.push(child);
     });
 
+    staleShellParts.forEach((child) => child.remove());
+
     orphans.forEach((child) => {
-        child.move(slot, { at: slot.components().length });
+        if (! isValidMoveTarget(slot)) {
+            return;
+        }
+
+        safeMoveToEnd(child, slot);
     });
 }
 
@@ -469,10 +508,36 @@ function ensureChromeShellStructure(editor, options = {}) {
     return { before, slot, after };
 }
 
+function purgeLayoutDropZonesFromTree(root) {
+    for (const zone of safeFindComponents(root, `[${CHROME_DROP_ZONE_ATTR}]`)) {
+        const parent = zone.parent?.();
+
+        if (! parent) {
+            zone.remove();
+
+            continue;
+        }
+
+        [...zone.components().models ?? zone.components()]
+            .filter((child) => canMoveGrapesComponent(child))
+            .forEach((child) => {
+                safeMoveToEnd(child, parent);
+            });
+
+        try {
+            zone.remove();
+        } catch {
+            // Drop zone may already be detached during shell refresh.
+        }
+    }
+}
+
 function applyChromeShellLocks(editor, options = {}) {
     const structure = ensureChromeShellStructure(editor, options);
     const wrapper = editor.getWrapper?.();
     const slot = structure?.slot ?? dedupePageContentSlots(editor);
+    const before = structure?.before ?? null;
+    const after = structure?.after ?? null;
 
     if (! wrapper || ! slot) {
         return;
@@ -480,6 +545,7 @@ function applyChromeShellLocks(editor, options = {}) {
 
     configurePageContentSlot(editor, slot, String(options.pageContentPlaceholder ?? ''));
     purgeChromeBleedFromSlot(slot);
+    purgeLayoutDropZonesFromTree(wrapper);
     normalizeSiteNavChromeButtons(wrapper);
 
     wrapper.set({
@@ -489,7 +555,9 @@ function applyChromeShellLocks(editor, options = {}) {
         copyable: false,
     }, { silent: true });
 
-    wrapper.components().forEach((child) => {
+    const staleTopLevelChrome = [];
+
+    forEachGrapesComponent(wrapper, (child) => {
         if (child === slot || isPageContentSlot(child)) {
             return;
         }
@@ -516,7 +584,7 @@ function applyChromeShellLocks(editor, options = {}) {
                 droppable: false,
             }, { silent: true });
 
-            child.components().forEach((shellChild) => {
+            forEachGrapesComponent(child, (shellChild) => {
                 const shellPart = shellChild.getAttributes?.()[CHROME_SHELL_PART_ATTR];
 
                 if (shellPart === 'before' || shellPart === 'after') {
@@ -536,19 +604,31 @@ function applyChromeShellLocks(editor, options = {}) {
         }
 
         if (isChromeShellBlock(child) || looksLikeSiteChromeStructure(child)) {
-            if (before && (isSiteNavBlock(String(child.getAttributes?.()['data-voodbuilder-block'] ?? '')) || String(child.getAttributes?.()['data-voodbuilder-block'] ?? '').startsWith('site_nav_'))) {
-                child.move(before, { at: before.components().length });
+            const blockId = String(child.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
 
+            if (isValidMoveTarget(before) && (isNavBlock(blockId) || blockId.startsWith('site_nav_'))) {
+                if (safeMoveToEnd(child, before)) {
+                    return;
+                }
+            }
+
+            if (isValidMoveTarget(after) && safeMoveToEnd(child, after)) {
                 return;
             }
 
-            if (after) {
-                child.move(after, { at: after.components().length });
+            staleTopLevelChrome.push(child);
+        }
+    });
 
-                return;
-            }
+    staleTopLevelChrome.forEach((child) => {
+        if (! isGrapesComponent(child)) {
+            return;
+        }
 
+        try {
             child.remove();
+        } catch {
+            // Stale chrome block may already be detached.
         }
     });
 
@@ -556,7 +636,7 @@ function applyChromeShellLocks(editor, options = {}) {
 }
 
 function isChromeBleedComponent(component) {
-    if (! component) {
+    if (! component?.get) {
         return false;
     }
 
@@ -572,6 +652,9 @@ function isChromeBleedComponent(component) {
     if (
         type === 'voodbuilder-chrome-button'
         || gjsType === 'voodbuilder-chrome-button'
+        || attrs[CHROME_DROP_ZONE_ATTR]
+        || type === 'voodbuilder-chrome-drop-zone'
+        || gjsType === 'voodbuilder-chrome-drop-zone'
         || attrs['data-mobile-nav-toggle']
         || attrs['data-theme-toggle']
         || attrs['data-voodbuilder-notification-bell-preview']
@@ -580,7 +663,7 @@ function isChromeBleedComponent(component) {
         return true;
     }
 
-    const text = String(component.get('content') ?? component.get('text') ?? '').replace(/\s+/g, '');
+    const text = String(component.get?.('content') ?? component.get?.('text') ?? '').replace(/\s+/g, '');
 
     return /^(?:Button|Notifications)+$/.test(text);
 }
@@ -616,7 +699,14 @@ function promoteComponentIntoContentSlot(editor, component) {
         return true;
     }
 
-    component.move(slot, { at: slot.components().length });
+    if (! canMoveGrapesComponent(component) || ! isValidMoveTarget(slot)) {
+        return false;
+    }
+
+    if (! safeMoveToEnd(component, slot)) {
+        return false;
+    }
+
     component.set({ locked: false }, { silent: true });
     editor.Layers?.setLocked?.(component, false);
     editor.select(component);
@@ -632,6 +722,10 @@ function hideChromeShellBlocks(editor) {
     }
 
     blockManager.getAll().forEach((block) => {
+        if (! block?.get) {
+            return;
+        }
+
         const blockId = String(block.get('id') ?? block.id ?? '');
 
         if (
@@ -653,7 +747,7 @@ export function extractChromeShellPageHtml(editor) {
 
     const parts = [];
 
-    slot.components().forEach((component) => {
+    forEachGrapesComponent(slot, (component) => {
         parts.push(component.toHTML());
     });
 
@@ -685,7 +779,7 @@ export function registerChromeShellEditor(editor, options = {}) {
         removeTopDropSpacer(editor);
         applyChromeShellLocks(editor, shellOptions);
         hideChromeShellBlocks(editor);
-        editor.Layers?.render?.();
+        safeRenderEditorLayers(editor);
         patchChromeZoneLayerIcons(editor);
     };
 
@@ -711,12 +805,6 @@ export function registerChromeShellEditor(editor, options = {}) {
 
     editor.on('component:selected', (component) => {
         if (! component || ! isChromeShellEditorProtectedComponent(component, editor)) {
-            return;
-        }
-
-        const { descriptor } = resolveBlockSettingsTarget(component, editor);
-
-        if (descriptor) {
             return;
         }
 
@@ -766,14 +854,16 @@ export function registerChromeShellEditor(editor, options = {}) {
         clearCanvasDragArtifacts(editor);
 
         window.requestAnimationFrame(() => {
-            const slot = findPageContentSlot(editor);
+            window.requestAnimationFrame(() => {
+                const slot = findPageContentSlot(editor);
 
-            if (slot) {
-                purgeChromeBleedFromSlot(slot);
-            }
+                if (slot) {
+                    purgeChromeBleedFromSlot(slot);
+                }
 
-            promoteComponentIntoContentSlot(editor, component);
-            scheduleRefresh();
+                promoteComponentIntoContentSlot(editor, component);
+                scheduleRefresh();
+            });
         });
     });
 

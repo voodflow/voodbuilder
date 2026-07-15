@@ -2,7 +2,9 @@
  * Layer tree reorder — enable drag handles on page blocks and delegate to GrapesJS sorter.
  */
 
+import { safeRenderEditorLayers } from './tailwind-visual-style.js';
 import { resolveComponentFromLayerElement } from './component-context-menu.js';
+import { isValidGrapesComponent, sanitizeEditorLayerTree } from './core/component-model.js';
 import {
     isChromeLayoutContentSlot,
     isChromeLayoutFooterBlock,
@@ -193,7 +195,7 @@ export function registerLayersDrag(editor, options = {}) {
         syncAllLayerDraggable(editor);
 
         window.requestAnimationFrame(() => {
-            editor.Layers?.render?.();
+            safeRenderEditorLayers(editor);
         });
     };
 
@@ -214,4 +216,23 @@ export function registerLayersDrag(editor, options = {}) {
     mount.addEventListener('mousedown', (event) => {
         handleLayerMouseDown(editor, event);
     });
+
+    mount.addEventListener('click', (event) => {
+        const layer = event.target.closest?.('.gjs-layer');
+
+        if (! layer) {
+            return;
+        }
+
+        const model = layer.__gjsv?.model ?? resolveComponentFromLayerElement(layer, editor);
+
+        if (isValidGrapesComponent(model)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        sanitizeEditorLayerTree(editor);
+        safeRenderEditorLayers(editor);
+    }, true);
 }

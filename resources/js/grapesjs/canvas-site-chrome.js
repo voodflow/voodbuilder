@@ -2,9 +2,17 @@
  * Boot site header interactions inside the GrapesJS canvas iframe.
  */
 
-import { initSiteChrome, setMobileNavOpen } from './site-chrome-runtime.js';
+let siteChromeRuntimePromise = null;
 
-function syncCanvasDeviceMode(editor) {
+function loadSiteChromeRuntime() {
+    if (! siteChromeRuntimePromise) {
+        siteChromeRuntimePromise = import('./site-chrome-runtime.js');
+    }
+
+    return siteChromeRuntimePromise;
+}
+
+async function syncCanvasDeviceMode(editor) {
     const deviceId = editor.Devices?.getSelected?.()?.get?.('id') ?? 'desktop';
     const doc = editor.Canvas?.getDocument?.();
 
@@ -16,18 +24,21 @@ function syncCanvasDeviceMode(editor) {
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
 
     if (deviceId === 'desktop' || deviceId === 'tablet') {
+        const { setMobileNavOpen } = await loadSiteChromeRuntime();
         setMobileNavOpen(doc, false);
     }
 }
 
-export function bootCanvasSiteChrome(editor) {
+export async function bootCanvasSiteChrome(editor) {
     const frameWindow = editor.Canvas?.getWindow?.();
 
     if (! frameWindow?.document) {
         return;
     }
 
-    syncCanvasDeviceMode(editor);
+    await syncCanvasDeviceMode(editor);
+
+    const { initSiteChrome } = await loadSiteChromeRuntime();
     initSiteChrome(frameWindow.document);
 }
 
@@ -40,7 +51,7 @@ export function registerCanvasSiteChrome(editor) {
 
     const boot = () => {
         window.requestAnimationFrame(() => {
-            bootCanvasSiteChrome(editor);
+            void bootCanvasSiteChrome(editor);
         });
     };
 

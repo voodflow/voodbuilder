@@ -85,7 +85,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     const componentsUrl = String(options.componentsUrl ?? '').replace(/\/$/, '');
     const csrf = options.csrf ?? '';
 
-    if (! componentsUrl) {
+    if (! componentsUrl || editor.__voodbuilderChromeLayoutMode) {
         return;
     }
 
@@ -96,7 +96,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let editorLoaded = false;
 
     const schedule = (delay = DEBOUNCE_MS) => {
-        if (! frameReady) {
+        if (! frameReady || editor.__voodbuilderSettingsChange) {
             return;
         }
 
@@ -131,8 +131,9 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         try {
             const response = await fetch(`${componentsUrl}/compile-css`, {
                 method: 'POST',
-                headers: editorApiHeaders(csrf, { 'Content-Type': 'application/json' }),
+                headers: editorApiHeaders(csrf, { json: true }),
                 credentials: 'same-origin',
+                mode: 'same-origin',
                 signal: controller.signal,
                 body: JSON.stringify({ html, scope: 'page' }),
             });

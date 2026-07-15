@@ -41,3 +41,12 @@ export function parseVpressConfig(raw) {
 export function serializeVpressConfig(config) {
     return JSON.stringify(config ?? {});
 }
+
+/** @deprecated Use serializeVpressConfig — alias kept for in-progress renames. */
+export const serializeBlockConfig = serializeVpressConfig;
+
+/** @deprecated Use parseVpressConfig — alias kept for in-progress renames. */
+export const parseBlockConfig = parseVpressConfig;
+
+/** @deprecated Use encodeVpressConfig — alias kept for in-progress renames. */
+export const encodeBlockConfig = encodeVpressConfig;

@@ -3,6 +3,7 @@
  */
 
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+import { safeFindComponents } from './tailwind-visual-style.js';
 
 const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
 
@@ -35,13 +36,13 @@ const COMMON_TAILWIND_CLASSES = [
 function pageCompiledClassNames(editor) {
     const names = new Set();
 
-    editor.getWrapper()?.find?.('*')?.forEach?.((component) => {
+    for (const component of safeFindComponents(editor.getWrapper?.(), '*')) {
         for (const className of component.getClasses?.() ?? []) {
             if (className) {
                 names.add(className);
             }
         }
-    });
+    }
 
     return names;
 }

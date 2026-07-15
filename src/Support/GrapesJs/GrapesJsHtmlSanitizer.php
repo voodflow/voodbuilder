@@ -33,7 +33,25 @@ final class GrapesJsHtmlSanitizer
             return $html;
         }
 
-        return $sanitized;
+        return self::stripInvalidAttributes($sanitized);
+    }
+
+    /**
+     * Remove uncompiled Blade fragments and other invalid attribute names from HTML.
+     */
+    public static function stripInvalidAttributes(string $html): string
+    {
+        if ($html === '' || (! str_contains($html, '@') && ! str_contains($html, '(@'))) {
+            return $html;
+        }
+
+        $stripped = preg_replace(
+            '/\s+(?:@\w+(?:\([^)]*\))?(?:=(?:"[^"]*"|\'[^\']*\'|[^\s>]*))?|\([^)]*\)(?:=(?:"[^"]*"|\'[^\']*\'|[^\s>]*))?)/',
+            '',
+            $html,
+        );
+
+        return is_string($stripped) ? $stripped : $html;
     }
 
     public static function encodeMalformedPercentSequences(string $value): string

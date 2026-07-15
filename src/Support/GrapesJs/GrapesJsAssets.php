@@ -42,6 +42,47 @@ final class GrapesJsAssets
         return $entries;
     }
 
+    /**
+     * Vite entries for GrapesJS editor pages (layout, page, popup).
+     * Excludes site runtime bundles that are unused while editing.
+     *
+     * @return list<string>
+     */
+    public static function editorPageViteEntries(bool $chromeLayoutEditor = false): array
+    {
+        $entries = [
+            self::editorScriptEntry(),
+            self::editorStyleEntry(),
+        ];
+
+        if (! $chromeLayoutEditor && VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
+            $entries[] = self::blockPreviewStyleEntry();
+        }
+
+        return array_values(array_unique(array_merge(
+            [VoodbuilderPaths::themeCssRelativePath()],
+            $entries,
+        )));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function pageViteEntries(bool $grapesJsEditor = false, bool $chromeLayoutEditor = false): array
+    {
+        if ($grapesJsEditor) {
+            return self::editorPageViteEntries($chromeLayoutEditor);
+        }
+
+        $configured = config('voodbuilder.assets.vite');
+
+        if (is_array($configured) && $configured !== []) {
+            return array_values($configured);
+        }
+
+        return VoodbuilderPaths::defaultViteEntries();
+    }
+
     public static function isBuilt(): bool
     {
         if (class_exists(Vite::class) && Vite::isRunningHot()) {

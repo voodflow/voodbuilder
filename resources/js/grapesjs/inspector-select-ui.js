@@ -278,19 +278,35 @@ function enhanceSelect(select) {
     }
 
     if (select.closest('.voodbuilder-gjs-select-wrap')) {
-        return;
+        const existingWrap = select.closest('.voodbuilder-gjs-select-wrap');
+
+        if (existingWrap?.querySelector('.voodbuilder-gjs-select-trigger')) {
+            return;
+        }
+
+        if (! select.closest('.voodbuilder-gjs-form')) {
+            return;
+        }
     }
 
     const compact = isUnitSelect(select);
     const fontList = ! compact && isFontFamilySelect(select);
+    const existingFormWrap = select.closest('.voodbuilder-gjs-form .voodbuilder-gjs-select-wrap');
+    const reuseWrap = Boolean(
+        existingFormWrap
+        && ! existingFormWrap.querySelector('.voodbuilder-gjs-select-trigger'),
+    );
 
     select.dataset.vbInspectorSelect = '1';
     select.classList.add('voodbuilder-gjs-select', 'voodbuilder-gjs-select--native');
     select.tabIndex = -1;
     select.setAttribute('aria-hidden', 'true');
 
-    const wrap = document.createElement('div');
-    wrap.className = 'voodbuilder-gjs-select-wrap';
+    const wrap = reuseWrap ? existingFormWrap : document.createElement('div');
+
+    if (! reuseWrap) {
+        wrap.className = 'voodbuilder-gjs-select-wrap';
+    }
 
     if (compact) {
         wrap.classList.add('voodbuilder-gjs-select-wrap--compact');
@@ -324,8 +340,14 @@ function enhanceSelect(select) {
     list.role = 'listbox';
     list.hidden = true;
 
-    select.parentNode?.insertBefore(wrap, select);
-    wrap.append(trigger, select, chevron, list);
+    if (reuseWrap) {
+        wrap.querySelector('.voodbuilder-gjs-select-chevron')?.remove();
+        wrap.prepend(trigger);
+        wrap.append(chevron, list);
+    } else {
+        select.parentNode?.insertBefore(wrap, select);
+        wrap.append(trigger, select, chevron, list);
+    }
 
     const openDropdown = () => {
         closeOpenSelects(wrap);

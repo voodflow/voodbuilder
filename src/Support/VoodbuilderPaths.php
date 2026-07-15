@@ -37,7 +37,7 @@ final class VoodbuilderPaths
 
     public static function grapesJsViteEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/js/grapesjs/editor.js');
+        return self::relativeToBasePath(self::packagePath().'/resources/js/grapesjs/editor/init.js');
     }
 
     public static function grapesJsEditorCssEntry(): string

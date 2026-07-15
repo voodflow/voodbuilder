@@ -49,6 +49,10 @@ body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-content-slot[data-voodbu
     position: relative;
 }
 
+body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block])) {
+    min-height: 2.5rem;
+}
+
 .voodbuilder-chrome-drop-zone:empty::before,
 .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block]))::before {
     content: none;

@@ -44,7 +44,7 @@
             </svg>
         </button>
 
-        <div data-voodbuilder-nav-mobile-panel @hidden(!$isActive)>
+        <div data-voodbuilder-nav-mobile-panel @unless($isActive) hidden @endunless>
             <ul class="mt-1 space-y-1 pl-3">
                 @if ($hasParentLink)
                     <li>

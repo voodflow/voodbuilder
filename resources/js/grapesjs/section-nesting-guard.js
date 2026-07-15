@@ -3,6 +3,8 @@
  * Nested sections export correctly in the editor but break layout on the live page.
  */
 
+import { forEachGrapesComponent, safeFindComponents } from './tailwind-visual-style.js';
+
 export function isCatalogSection(component) {
     if (! component?.get) {
         return false;
@@ -63,17 +65,30 @@ export function promoteNestedCatalogSection(editor, component) {
     return true;
 }
 
+function findCatalogSectionInTree(component) {
+    if (isCatalogSection(component)) {
+        return component;
+    }
+
+    let found = null;
+
+    forEachGrapesComponent(component, (child) => {
+        if (found || ! isCatalogSection(child)) {
+            return;
+        }
+
+        found = child;
+    });
+
+    return found;
+}
+
 function draggedComponentContainsCatalogSection(component) {
     if (! component?.get) {
         return false;
     }
 
-    if (isCatalogSection(component)) {
-        return true;
-    }
-
-    return (component.find?.('section[data-voodbuilder-section-block]') ?? []).length > 0
-        || (component.find?.('section') ?? []).some((section) => isCatalogSection(section));
+    return Boolean(findCatalogSectionInTree(component));
 }
 
 export function configureSectionDropTarget(section) {
@@ -86,9 +101,15 @@ export function configureSectionDropTarget(section) {
 }
 
 function bindAllSectionDropTargets(editor) {
-    editor.getWrapper?.()?.find?.('section')?.forEach?.((section) => {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    for (const section of safeFindComponents(wrapper, 'section')) {
         configureSectionDropTarget(section);
-    });
+    }
 }
 
 function guardNestedSection(editor, component) {
@@ -115,9 +136,9 @@ export function registerSectionNestingGuard(editor) {
     editor.on('load', () => {
         bindAllSectionDropTargets(editor);
 
-        editor.getWrapper?.()?.find?.('section[data-voodbuilder-section-block]')?.forEach?.((section) => {
+        for (const section of safeFindComponents(editor.getWrapper?.(), 'section[data-voodbuilder-section-block]')) {
             promoteNestedCatalogSection(editor, section);
-        });
+        }
     });
 
     editor.on('component:add', (component) => {
@@ -148,12 +169,5 @@ export function registerSectionNestingGuard(editor) {
 }
 
 function findAddedCatalogSection(component) {
-    if (isCatalogSection(component)) {
-        return component;
-    }
-
-    const nested = component.find?.('section[data-voodbuilder-section-block]')?.[0]
-        ?? component.find?.('section')?.find?.((section) => isCatalogSection(section));
-
-    return nested ?? null;
+    return findCatalogSectionInTree(component);
 }

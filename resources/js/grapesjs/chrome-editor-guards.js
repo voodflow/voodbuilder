@@ -3,6 +3,7 @@
  */
 
 import { lucideIcon } from './editor-icons.js';
+import { isGrapesComponent } from './tailwind-visual-style.js';
 import {
     CHROME_SHELL_PART_ATTR,
     CONTENT_SLOT_ATTR,
@@ -13,20 +14,20 @@ import {
     isPageContentSlotComponent,
     shouldBlockChromeLayerContextMenu,
 } from './chrome-content-slot-utils.js';
-import { isSiteFooterBlock, isSiteNavBlock } from './plugins/voodbuilder-grapesjs.js';
+import { isFooterBlock, isNavBlock } from './chrome/ids.js';
 
 export const SHELL_LAYER_LOCK_ATTR = 'data-voodbuilder-shell-locked';
 
 export function isChromeLayoutNavBlock(component) {
     const blockId = String(component?.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
 
-    return blockId === 'site_header' || blockId.startsWith('site_nav_') || isSiteNavBlock(blockId);
+    return blockId === 'site_header' || blockId.startsWith('site_nav_') || isNavBlock(blockId);
 }
 
 export function isChromeLayoutFooterBlock(component) {
     const blockId = String(component?.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
 
-    return isSiteFooterBlock(blockId);
+    return isFooterBlock(blockId);
 }
 
 export function isChromeLayoutContentSlot(component) {
@@ -87,6 +88,10 @@ export function patchChromeZoneLayerIcons(editor) {
     }
 
     wrapper.components().forEach((component) => {
+        if (! isGrapesComponent(component)) {
+            return;
+        }
+
         const isShellZone = component.parent?.() === wrapper && (
             isTopLevelChromeLayoutZone(component, wrapper)
             || isChromeShellPartComponent(component)

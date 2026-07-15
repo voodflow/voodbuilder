@@ -3,7 +3,9 @@
  * Top-level header/footer/page-content stay visible (locked in editor-chrome-shell.js).
  */
 
-import { walkComponentTree } from './tailwind-visual-style.js';
+import { readBlockId } from './core/block-tree.js';
+import { forEachGrapesComponent, walkComponentTree, safeRenderEditorLayers } from './tailwind-visual-style.js';
+import { sanitizeEditorLayerTree } from './core/component-model.js';
 import {
     isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
@@ -84,8 +86,27 @@ function isNestedPageContentDescendant(component) {
     return false;
 }
 
-function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) {
+function isLayoutBlockRoot(component, editor) {
+    return isChromeLayoutModeEditor(editor) && readBlockId(component) !== '';
+}
+
+function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell = false) {
     if (! component || component.get?.('type') === 'wrapper') {
+        return;
+    }
+
+    if (isLayoutBlockRoot(component, editor)) {
+        component.set({
+            selectable: true,
+            hoverable: true,
+            highlightable: true,
+            layerable: true,
+        }, { silent: true });
+
+        forEachGrapesComponent(component, (child) => {
+            applyLayersChromeFilter(child, wrapper, editor, true);
+        });
+
         return;
     }
 
@@ -98,8 +119,8 @@ function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) 
     if (isTopLevelShellNode(component, wrapper)) {
         const isDropZone = isChromeDropZoneComponent(component);
 
-        component.components?.().forEach((child) => {
-            applyLayersChromeFilter(child, wrapper, isDropZone ? false : true);
+        forEachGrapesComponent(component, (child) => {
+            applyLayersChromeFilter(child, wrapper, editor, isDropZone ? false : true);
         });
 
         return;
@@ -118,8 +139,8 @@ function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) 
         });
     }
 
-    component.components?.().forEach((child) => {
-        applyLayersChromeFilter(child, wrapper, inChromeShell);
+    forEachGrapesComponent(component, (child) => {
+        applyLayersChromeFilter(child, wrapper, editor, inChromeShell);
     });
 }
 
@@ -131,6 +152,7 @@ export function registerLayersChromeFilter(editor) {
     editor.__voodbuilderLayersChromeFilterRegistered = true;
 
     let layersRenderFrame = null;
+    let syncAllTimer = null;
 
     const scheduleLayersRender = () => {
         if (layersRenderFrame != null) {
@@ -139,11 +161,22 @@ export function registerLayersChromeFilter(editor) {
 
         layersRenderFrame = window.requestAnimationFrame(() => {
             layersRenderFrame = null;
-            editor.Layers?.render?.();
+            sanitizeEditorLayerTree(editor);
+            safeRenderEditorLayers(editor);
         });
     };
 
-    const shouldSync = () => isChromeShellModeEditor(editor) || isChromeLayoutModeEditor(editor);
+    const shouldSync = () => {
+        if (! isChromeShellModeEditor(editor) && ! isChromeLayoutModeEditor(editor)) {
+            return false;
+        }
+
+        if (isChromeLayoutModeEditor(editor) && ! editor.__voodbuilderChromeLayoutReady) {
+            return false;
+        }
+
+        return true;
+    };
 
     const syncAll = () => {
         if (! shouldSync()) {
@@ -157,7 +190,7 @@ export function registerLayersChromeFilter(editor) {
         }
 
         walkComponentTree(wrapper, (component) => {
-            applyLayersChromeFilter(component, wrapper);
+            applyLayersChromeFilter(component, wrapper, editor);
         });
 
         scheduleLayersRender();
@@ -174,12 +207,18 @@ export function registerLayersChromeFilter(editor) {
             return;
         }
 
-        applyLayersChromeFilter(component, wrapper);
+        applyLayersChromeFilter(component, wrapper, editor);
         scheduleLayersRender();
     };
 
+    const debouncedSyncAll = () => {
+        window.clearTimeout(syncAllTimer);
+        syncAllTimer = window.setTimeout(syncAll, 48);
+    };
+
     editor.on('load', syncAll);
+    editor.on('voodbuilder:chrome-layout-ready', syncAll);
     editor.on('component:add', syncSubtree);
-    editor.on('component:remove', syncAll);
-    editor.on('voodbuilder:site-chrome-updated', syncAll);
+    editor.on('component:remove', debouncedSyncAll);
+    editor.on('voodbuilder:site-chrome-updated', debouncedSyncAll);
 }

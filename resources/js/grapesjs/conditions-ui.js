@@ -136,13 +136,13 @@ function syncConditionAttributeToDom(component) {
     const value = readConditionAttribute(component);
     const element = component.getView?.()?.el;
 
-    if (! element) {
+    if (! element || typeof element.setAttribute !== 'function') {
         return;
     }
 
     if (value) {
         element.setAttribute(ATTR, value);
-    } else {
+    } else if (typeof element.removeAttribute === 'function') {
         element.removeAttribute(ATTR);
     }
 }

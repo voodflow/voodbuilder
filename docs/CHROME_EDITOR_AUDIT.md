@@ -19,6 +19,21 @@ All GrapesJS customizations live under `resources/js/grapesjs/` — **never patc
 4. **Layer panel** — Delete/duplicate hidden for protected zones; drag handle replaced with lock icon.
 5. **Block drag** — Drop placeholders visible again inside content/drop zones during drag (previously suppressed in chrome modes).
 6. **Save pipeline** — `extractChromeLayoutHtml()` / `extractChromeShellPageHtml()` strip editor-only wrappers before persist.
+7. **Modular refactor (branch `modular`)** — `core/block-tree`, `blocks/settings`, `chrome/ids`, `chrome/layout/drag`; import cycle plugin↔canvas-drag broken; nav/footer settings with `layoutOnly: true`; trait bridge removed.
+
+## Post-refactor status (July 2026)
+
+| Item | Status |
+|------|--------|
+| Inspector nav/footer in layout editor | Fixed — `layoutOnly` descriptors + `findInspectableRoot` |
+| Page editor chrome non-selectable | Unchanged (correct) |
+| Import cycle plugin ↔ chrome-layout | Broken via `chrome/layout/drag.js` |
+| `findPrimaryBlock` single source | `core/block-tree.js` |
+| `isChromeBleed` consolidation | `chrome/slots.js` (+ utils purge helpers) |
+| Vite entry | `editor/init.js` |
+| Vitest smoke | `tests/js/modular-refactor.test.js` |
+
+See [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) for full tree and import rules.
 
 ## Bottlenecks
 
@@ -32,7 +47,7 @@ All GrapesJS customizations live under `resources/js/grapesjs/` — **never patc
 
 ## Code quality concerns
 
-1. **Duplicated chrome detection** — `isChromeBleedComponent` exists in both `editor-chrome-shell.js` and `chrome-content-slot-utils.js`. Consolidate in utils only.
+1. **Duplicated chrome detection** — Consolidated in `chrome/slots.js` (`isChromeBleed`); `chrome-content-slot-utils.js` purge helpers remain for slot sanitization.
 2. **Silent refresh loops** — `component:remove` → `scheduleRefresh` → DOM rewrites can fight user actions during bootstrap; `bootstrapping` flag helps but is fragile.
 3. **`removable: false` not enforced everywhere** — GrapesJS still allows delete via some commands; guards rely on re-sync. Prefer `editor.on('component:remove:before')` when upgrading GrapesJS.
 4. **Layout save without drop zones** — JS export unwraps zones; PHP `ChromeLayoutHtmlSanitizer::unwrapDropZones()` is a safety net. Keep both.
@@ -67,7 +82,7 @@ After any `grapesjs` semver bump:
 
 ## Recommended follow-ups
 
-- [ ] Extract `chrome-editor-guards` tests (Vitest or Playwright smoke)
+- [x] Extract `chrome-editor-guards` tests (Vitest smoke in `tests/js/modular-refactor.test.js`)
 - [ ] Server-side validation: reject page HTML containing `site_nav_*` / `site_footer_*`
 - [ ] Unify footer/nav width CSS variables across layout editor, page editor, live (`ThemePalette` audit — in progress)
-- [ ] Split `editor.js` into `editor-boot.js` + mode plugins
+- [x] Split `editor.js` into `editor/init.js` + `editor/payload.js` + `editor/inspector.js`

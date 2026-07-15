@@ -3,7 +3,16 @@
  * (rounded-lg, bg-gray-100). Forward decoration styles to that inner element.
  */
 
+import {
+    guardEditorLayersRender,
+    hasInvalidLayerChildren,
+    sanitizeComponentTreeForLayers,
+    sanitizeEditorLayerTree,
+} from './core/component-model.js';
+import { isChromeLayoutModeEditor } from './chrome-content-slot-utils.js';
 import { isClearedBackground } from './theme-tokens.js';
+
+export { guardEditorLayersRender, sanitizeEditorLayerTree } from './core/component-model.js';
 
 const NAMED_CSS_COLORS = {
     black: '#000000',
@@ -17,7 +26,11 @@ const NAMED_CSS_COLORS = {
 export function componentHasRenderableView(component) {
     const el = component?.getEl?.();
 
-    return Boolean(el && typeof el.querySelectorAll === 'function');
+    return Boolean(
+        el
+        && el.nodeType === 1
+        && typeof el.querySelectorAll === 'function',
+    );
 }
 
 function isSiteNavBlockId(blockId) {
@@ -32,14 +45,78 @@ function isSiteNavBlockId(blockId) {
     return blockId.startsWith('site_nav_');
 }
 
+export function isGrapesComponent(component) {
+    return Boolean(component?.get && typeof component.get === 'function');
+}
+
+export function forEachGrapesComponent(parent, callback) {
+    if (! parent?.components) {
+        return;
+    }
+
+    const collection = parent.components();
+
+    if (! collection?.forEach) {
+        return;
+    }
+
+    collection.forEach((child) => {
+        if (! isGrapesComponent(child)) {
+            return;
+        }
+
+        callback(child);
+    });
+}
+
+export function isEditorLayersReady(editor) {
+    if (isChromeLayoutModeEditor(editor) && ! editor.__voodbuilderChromeLayoutReady) {
+        return false;
+    }
+
+    return true;
+}
+
+export function safeRenderEditorLayers(editor) {
+    if (! editor?.Layers?.render || ! isEditorLayersReady(editor)) {
+        return false;
+    }
+
+    guardEditorLayersRender(editor);
+
+    const wrapper = editor.getWrapper?.();
+
+    if (! isGrapesComponent(wrapper)) {
+        return false;
+    }
+
+    sanitizeEditorLayerTree(editor);
+
+    if (hasInvalidLayerChildren(wrapper)) {
+        sanitizeComponentTreeForLayers(wrapper);
+    }
+
+    if (hasInvalidLayerChildren(wrapper)) {
+        return false;
+    }
+
+    try {
+        editor.Layers.render();
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export function walkComponentTree(component, callback) {
-    if (! component) {
+    if (! isGrapesComponent(component)) {
         return;
     }
 
     callback(component);
 
-    component.components?.()?.forEach((child) => {
+    forEachGrapesComponent(component, (child) => {
         walkComponentTree(child, callback);
     });
 }

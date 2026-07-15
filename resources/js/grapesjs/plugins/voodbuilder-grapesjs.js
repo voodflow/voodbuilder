@@ -19,12 +19,18 @@ import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-co
 import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
-import { registerBlockSettings } from '../block-settings/index.js';
+import { registerBlockSettings, resolveSettings } from '../blocks/settings/index.js';
 import {
     CHROME_DROP_ZONE_ATTR,
     findPrimaryBlockInChromeDropZone,
 } from '../chrome-content-slot-utils.js';
+import { isFooterBlock, isHeaderBlock, isNavBlock, resolveNavId } from '../chrome/ids.js';
+import { lockChromePreview } from '../chrome/blocks/preview.js';
+import { registerNavSettings } from '../chrome/blocks/nav/settings.js';
+import { registerFooterSettings } from '../chrome/blocks/footer/settings.js';
+import { runWithSettingsChangeGuard } from '../blocks/settings/ui.js';
 import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
+import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
 import {
     isClearedBackground,
     restoreBackgroundClasses,
@@ -35,7 +41,7 @@ import {
 } from '../theme-tokens.js';
 
 function isSiteFooterBlock(blockId) {
-    return blockId === 'site_footer' || (typeof blockId === 'string' && blockId.startsWith('site_footer_'));
+    return isFooterBlock(blockId);
 }
 
 const SECTION_PADDING_CLASSES = ['py-0', 'py-8', 'py-12', 'py-16', 'py-20', 'py-24'];
@@ -160,7 +166,9 @@ function sanitizeBlockHtml(html) {
 
     const normalized = normalizePlaceholderHtml(html);
 
-    return normalized.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`);
+    return stripInvalidDomAttributesFromHtml(
+        normalized.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`),
+    );
 }
 
 function sectionCatalogBlockId(section) {
@@ -195,7 +203,7 @@ function registerLayoutSectionType(editor) {
                         return false;
                     }
 
-                    return (srcComponent.find?.('section[data-voodbuilder-section-block]') ?? []).length === 0;
+                    return safeFindComponents(srcComponent, 'section[data-voodbuilder-section-block]').length === 0;
                 },
             },
             init() {
@@ -305,54 +313,13 @@ function suppressChromeBlockDescendants(component) {
 }
 
 function lockDynamicPreviewContent(component) {
-    const blockId = component.getAttributes()['data-voodbuilder-block'];
-    const layoutMode = Boolean(component.em?.__voodbuilderChromeLayoutMode);
+    const locked = lockChromePreview(component, component.em, {
+        resolveBlockLayerLabel,
+        normalizeMenuButtons: normalizeSiteNavMenuButtons,
+        normalizeChromeButtons: normalizeSiteNavChromeButtons,
+    });
 
-    if (isSiteFooterBlock(blockId)) {
-        if (layoutMode) {
-            component.set({
-                selectable: true,
-                highlightable: true,
-                hoverable: true,
-                layerable: true,
-                name: resolveBlockLayerLabel(blockId),
-            }, { silent: true });
-            suppressChromeBlockDescendants(component);
-
-            return;
-        }
-
-        safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').forEach((slot) => {
-            lockComponentTree(slot);
-        });
-
-        return;
-    }
-
-    if (isSiteNavBlock(blockId)) {
-        component.set({
-            selectable: true,
-            highlightable: true,
-            hoverable: true,
-            layerable: true,
-            name: resolveBlockLayerLabel(blockId),
-        });
-        migrateSiteNavBlockComponent(component);
-
-        if (layoutMode) {
-            suppressChromeBlockDescendants(component);
-            normalizeSiteNavMenuButtons(component);
-            normalizeSiteNavChromeButtons(component);
-
-            return;
-        }
-
-        component.components().forEach((child) => {
-            lockSiteNavPreviewTree(child);
-        });
-        normalizeSiteNavMenuButtons(component);
-        normalizeSiteNavChromeButtons(component);
-
+    if (locked) {
         return;
     }
 
@@ -406,23 +373,15 @@ function lockSiteNavPreviewTree(component) {
 }
 
 function isSiteNavBlock(blockId) {
-    return resolveSiteNavBlockId(blockId) === 'site_nav_simple';
+    return isNavBlock(blockId);
 }
 
 function isSiteHeaderBlock(blockId) {
-    return isSiteNavBlock(blockId) || blockId === 'site_header';
+    return isHeaderBlock(blockId);
 }
 
 function resolveSiteNavBlockId(blockId) {
-    if (typeof blockId !== 'string' || blockId === '') {
-        return blockId;
-    }
-
-    if (blockId === 'site_header' || (blockId.startsWith('site_nav_') && blockId !== 'site_nav_simple')) {
-        return 'site_nav_simple';
-    }
-
-    return blockId;
+    return resolveNavId(blockId);
 }
 
 function migrateSiteNavBlockComponent(component) {
@@ -585,6 +544,10 @@ function registerSiteNavMenuButtonType(editor) {
 
 function normalizeSiteNavChromeButtons(root) {
     safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-theme-toggle], button.voodbuilder-header-icon-btn').forEach((button) => {
+        if (! button?.get) {
+            return;
+        }
+
         const type = button.get('type');
 
         if (type === 'button' || type === 'default') {
@@ -774,22 +737,24 @@ function applySiteNavSettingsPreview(root, editor = null) {
 }
 
 function applySiteNavSettingChange(editor, root, name, value) {
-    if (typeof value === 'boolean') {
-        root.set(name, value, { silent: true });
-    } else if (typeof value === 'string' && value !== '') {
-        root.set(name, value, { silent: true });
-    }
+    runWithSettingsChangeGuard(editor, () => {
+        if (typeof value === 'boolean') {
+            root.set(name, value, { silent: true });
+        } else if (typeof value === 'string' && value !== '') {
+            root.set(name, value, { silent: true });
+        }
 
-    syncSiteHeaderConfig(root);
+        syncSiteHeaderConfig(root);
 
-    if (STRUCTURAL_SITE_NAV_PROPS.has(name)) {
+        if (STRUCTURAL_SITE_NAV_PROPS.has(name)) {
+            applySiteNavSettingsPreview(root, editor);
+            scheduleSiteNavBlockRefresh(editor, root);
+
+            return;
+        }
+
         applySiteNavSettingsPreview(root, editor);
-        scheduleSiteNavBlockRefresh(editor, root);
-
-        return;
-    }
-
-    applySiteNavSettingsPreview(root, editor);
+    });
 }
 
 function configureSiteNavTraits(component, editor) {
@@ -808,57 +773,21 @@ function configureSiteNavTraits(component, editor) {
     component.set('vpressShowSearch', config.show_search === true, { silent: true });
     component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
     component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
-    component.set('traits', siteHeaderTraitOptions());
+    component.set('traits', siteHeaderTraitOptions(), { silent: true });
 
     applySiteNavSettingsPreview(component, editor);
 
-    if (editor?.TraitManager && editor.getSelected?.() === component) {
+    if (
+        editor?.TraitManager
+        && editor.getSelected?.() === component
+        && ! resolveSettings(component, editor).descriptor
+    ) {
         editor.TraitManager.select(component);
     }
 }
 
 function registerSiteNavTraitBridge(editor) {
-    if (editor.__voodbuilderSiteNavTraitBridgeRegistered) {
-        return;
-    }
-
-    editor.__voodbuilderSiteNavTraitBridgeRegistered = true;
-
-    editor.on('component:selected', (component) => {
-        const root = findSiteNavRootComponent(component);
-
-        if (! root) {
-            return;
-        }
-
-        configureSiteNavTraits(root, editor);
-
-        if (root !== component && isSiteNavInteractiveComponent(component)) {
-            return;
-        }
-    });
-
-    editor.on('trait:value', ({ trait, component, value }) => {
-        const blockId = component?.getAttributes?.()?.['data-voodbuilder-block'];
-
-        if (! isSiteNavBlock(blockId)) {
-            return;
-        }
-
-        const traitName = trait?.get?.('name');
-
-        if (traitName !== 'vpressMainNavAlign'
-            && traitName !== 'vpressStickyNav'
-            && traitName !== 'vpressShowSearch'
-            && traitName !== 'vpressShowNotifications'
-            && traitName !== 'vpressShowProfileMenu') {
-            return;
-        }
-
-        window.requestAnimationFrame(() => {
-            applySiteNavSettingChange(editor, component, traitName, value);
-        });
-    });
+    void editor;
 }
 
 function setFooterChromeVisible(node, visible) {
@@ -1157,108 +1086,7 @@ function configureSiteFooterTraits(component, editor = null) {
 }
 
 function registerSiteFooterSettingsUi(editor) {
-    if (editor.__voodbuilderSiteFooterSettingsRegistered) {
-        return;
-    }
-
-    editor.__voodbuilderSiteFooterSettingsRegistered = true;
-
-    registerBlockSettings({
-            id: 'site_footer',
-            matchBlockId: (blockId) => isSiteFooterBlock(blockId),
-            render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
-                configureSiteFooterTraits(root, gjsEditor);
-
-                const blockId = root.getAttributes()['data-voodbuilder-block'];
-                const applyChange = (name, value) => {
-                    applySiteFooterSettingChange(gjsEditor, root, name, value);
-                };
-
-                const { section, fields } = createFormSection('Footer settings');
-
-                fields.append(
-                    createCheckboxField({
-                        label: footerSettingLabel(gjsEditor, 'footerShowLogo', 'Show logo'),
-                        name: 'vpressShowBrand',
-                        checked: root.get('vpressShowBrand') === true,
-                        onChange: (checked) => applyChange('vpressShowBrand', checked),
-                    }),
-                );
-
-                fields.append(
-                    createCheckboxField({
-                        label: footerSettingLabel(gjsEditor, 'footerShowTagline', 'Show tagline'),
-                        name: 'vpressShowTagline',
-                        checked: root.get('vpressShowTagline') === true,
-                        onChange: (checked) => applyChange('vpressShowTagline', checked),
-                    }),
-                );
-
-                if (footerBlockHasMenu(blockId)) {
-                    fields.append(
-                        createCheckboxField({
-                            label: footerSettingLabel(gjsEditor, 'footerShowMenu', 'Show footer menu'),
-                            name: 'vpressShowFooterMenu',
-                            checked: root.get('vpressShowFooterMenu') === true,
-                            onChange: (checked) => applyChange('vpressShowFooterMenu', checked),
-                        }),
-                    );
-                }
-
-                fields.append(
-                    createCheckboxField({
-                        label: footerSettingLabel(gjsEditor, 'footerShowSocial', 'Show social icons'),
-                        name: 'vpressShowSocial',
-                        checked: root.get('vpressShowSocial') === true,
-                        onChange: (checked) => applyChange('vpressShowSocial', checked),
-                    }),
-                );
-
-                if (footerBlockHasColumns(blockId)) {
-                    for (let index = 1; index <= 4; index++) {
-                        fields.append(
-                            createCheckboxField({
-                                label: footerColumnLabel(index, gjsEditor),
-                                name: `vpressShowFooterCol${index}`,
-                                checked: root.get(`vpressShowFooterCol${index}`) === true,
-                                onChange: (checked) => applyChange(`vpressShowFooterCol${index}`, checked),
-                            }),
-                        );
-                    }
-
-                    fields.append(
-                        createCheckboxField({
-                            label: footerSettingLabel(gjsEditor, 'footerColumnsRedistribute', 'Redistribute visible columns'),
-                            name: 'vpressFooterColumnsRedistribute',
-                            checked: root.get('vpressFooterColumnsRedistribute') === true,
-                            onChange: (checked) => applyChange('vpressFooterColumnsRedistribute', checked),
-                        }),
-                    );
-                }
-
-                if (footerBlockHasNewsletter(blockId)) {
-                    fields.append(
-                        createCheckboxField({
-                            label: footerSettingLabel(gjsEditor, 'footerShowNewsletter', 'Show newsletter'),
-                            name: 'vpressShowNewsletter',
-                            checked: root.get('vpressShowNewsletter') === true,
-                            onChange: (checked) => applyChange('vpressShowNewsletter', checked),
-                        }),
-                    );
-                }
-
-                fields.append(
-                    createCheckboxField({
-                        label: footerSettingLabel(gjsEditor, 'footerShowCopyright', 'Show copyright'),
-                        name: 'vpressShowCopyright',
-                        checked: root.get('vpressShowCopyright') === true,
-                        onChange: (checked) => applyChange('vpressShowCopyright', checked),
-                    }),
-                );
-
-                settingsMount.appendChild(section);
-            },
-        });
+    registerFooterSettings(editor);
 }
 
 function findVpressDynamicAncestor(component) {
@@ -1456,70 +1284,7 @@ function registerSiteNavChromeButtonType(editor) {
 }
 
 function registerSiteNavSettingsUi(editor) {
-    if (editor.__voodbuilderSiteNavSettingsRegistered) {
-        return;
-    }
-
-    editor.__voodbuilderSiteNavSettingsRegistered = true;
-
-    registerBlockSettings({
-            id: 'site_nav',
-            blockIds: ['site_nav_simple', 'site_header'],
-            matchBlockId: (blockId) => typeof blockId === 'string' && blockId.startsWith('site_nav_'),
-            render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
-                configureSiteNavTraits(root, gjsEditor);
-
-                const applyChange = (name, value) => {
-                    applySiteNavSettingChange(gjsEditor, root, name, value);
-                };
-
-                const { section, fields } = createFormSection('Navbar settings');
-
-                fields.append(
-                    createSelectField({
-                        label: 'Menu position',
-                        name: 'vpressMainNavAlign',
-                        value: root.get('vpressMainNavAlign') === 'center' ? 'center' : 'start',
-                        options: [
-                            { value: 'start', label: 'Left (next to logo)' },
-                            { value: 'center', label: 'Center' },
-                        ],
-                        onChange: (value) => applyChange('vpressMainNavAlign', value),
-                    }),
-                    createSelectField({
-                        label: 'Sticky',
-                        name: 'vpressStickyNav',
-                        value: root.get('vpressStickyNav') ?? 'inherit',
-                        options: [
-                            { value: 'inherit', label: 'Site default' },
-                            { value: 'sticky', label: 'Sticky' },
-                            { value: 'static', label: 'Scrolls with page' },
-                        ],
-                        onChange: (value) => applyChange('vpressStickyNav', value),
-                    }),
-                    createCheckboxField({
-                        label: 'Show search',
-                        name: 'vpressShowSearch',
-                        checked: root.get('vpressShowSearch') === true,
-                        onChange: (checked) => applyChange('vpressShowSearch', checked),
-                    }),
-                    createCheckboxField({
-                        label: 'Show notifications',
-                        name: 'vpressShowNotifications',
-                        checked: root.get('vpressShowNotifications') === true,
-                        onChange: (checked) => applyChange('vpressShowNotifications', checked),
-                    }),
-                    createCheckboxField({
-                        label: 'Show account menu',
-                        name: 'vpressShowProfileMenu',
-                        checked: root.get('vpressShowProfileMenu') === true,
-                        onChange: (checked) => applyChange('vpressShowProfileMenu', checked),
-                    }),
-                );
-
-                settingsMount.appendChild(section);
-            },
-        });
+    registerNavSettings(editor);
 }
 
 function registerDynamicBlockType(editor) {
@@ -1745,7 +1510,6 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     registerDynamicBlockType(editor);
     registerSiteNavMenuButtonType(editor);
     registerSiteNavChromeButtonType(editor);
-    registerSiteNavTraitBridge(editor);
     registerLayoutSectionType(editor);
     registerSpacingStyleSync(editor);
     registerTailwindStyleSync(editor);
