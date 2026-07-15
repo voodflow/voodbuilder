@@ -529,6 +529,8 @@ async function main() {
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:where(.dark, .dark *));
 @theme {
+    --breakpoint-vp: 60rem;
+
     --color-vp-brand-1: #3451b2;
     --color-vp-brand-2: #3a5ccc;
     --color-vp-brand-3: #5672cd;
@@ -560,6 +562,11 @@ async function main() {
     --color-muted-focus: var(--color-vp-bg-alt);
     --color-travia-transparent: transparent;
     --spacing-120: 30rem;
+    --spacing-vp-nav: 4rem;
+    --spacing-vp-sidebar: 17rem;
+    --spacing-vp-aside: 14rem;
+    --width-vp-content: 43rem;
+    --width-vp-layout: 90rem;
 }
 `;
 

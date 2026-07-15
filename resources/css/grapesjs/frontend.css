@@ -3363,12 +3363,39 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     background: var(--color-vp-bg-elv, #fff);
 }
 
+.voodbuilder-gjs-compatibility__chrome-banner {
+    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 24%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 8%, var(--color-vp-bg-elv, #fff));
+}
+
+.voodbuilder-gjs-compatibility__chrome-banner-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--color-vp-text-2, #67676c);
+}
+
+.voodbuilder-gjs-compatibility__theme-note {
+    margin: 0 0 0.65rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-vp-text-3, #929295);
+}
+
 .voodbuilder-gjs-compatibility__review-banner {
     margin-bottom: 0.75rem;
     padding: 0.7rem 0.8rem;
     border-radius: 0.55rem;
     border: 1px solid color-mix(in srgb, #d97706 28%, transparent);
     background: color-mix(in srgb, #f59e0b 10%, var(--color-vp-bg-elv, #fff));
+}
+
+.voodbuilder-gjs-compatibility__review-banner--chrome {
+    border-color: color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 22%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 7%, var(--color-vp-bg-elv, #fff));
 }
 
 .voodbuilder-gjs-compatibility__review-banner-head {

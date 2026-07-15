@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
+
 final class GrapesJsImportCompatibilityAnalyzer
 {
     /**
@@ -31,6 +33,7 @@ final class GrapesJsImportCompatibilityAnalyzer
     private const IGNORED_CLASSES = [
         'dark',
         'voodbuilder-pasted-component',
+        'relative',
         'voodbuilder-gjs-section',
         'voodbuilder-gjs-container',
         'voodbuilder-gjs-bound',
@@ -42,22 +45,41 @@ final class GrapesJsImportCompatibilityAnalyzer
     ];
 
     /**
+     * @var list<string>
+     */
+    private const THEME_UTILITY_PATTERNS = [
+        '/^(?:max-)?vp:/',
+        '/^(?:hover:|focus:|focus-visible:|active:|group-hover:|group-focus:|peer-focus:)?(?:bg|text|border|ring|outline|from|to|via)-vp-/',
+        '/^(?:hover:|focus:|focus-visible:|active:|group-hover:)?(?:bg|text|border)-(?:primary|foreground|layer|surface|plain|inverse|muted)(?:-|$)/',
+        '/\[(?:var\(--(?:vp-|spacing-vp-|width-vp-|color-vp-)[^]]*)\]/',
+        '/^(?:pointer-events-(?:auto|none)|shrink-0|grow|antialiased|sr-only|not-sr-only)$/',
+        '/^gap-/',
+        '/^(?:items|justify|self|place)-/',
+    ];
+
+    private static ?string $themeReferenceCss = null;
+
+    /**
      * @return array{
      *     status: 'excellent'|'good'|'partial'|'poor',
-     *     totals: array{classes: int, ready: int, adapted: int, review: int},
+     *     totals: array{classes: int, ready: int, adapted: int, review: int, theme_ready: int},
      *     adaptations: list<array{from: string, to: string}>,
      *     review: list<string>,
      *     ready_sample: list<string>,
+     *     context: array{chrome_block: bool, block_id: string|null},
      * }
      */
-    public static function analyze(string $rawHtml, string $normalizedHtml, string $compiledCss): array
+    public static function analyze(string $rawHtml, string $normalizedHtml, string $compiledCss, ?string $themeCss = null): array
     {
         $rawClasses = GrapesJsImportedTailwindSupport::extractClassNames($rawHtml);
         $normalizedClasses = GrapesJsImportedTailwindSupport::extractClassNames($normalizedHtml);
         $adaptations = self::detectAdaptations($rawHtml, $rawClasses, $normalizedClasses);
         $adaptedFrom = array_column($adaptations, 'from');
+        $themeReferenceCss = $themeCss ?? self::themeReferenceCss();
+        $context = self::detectChromeContext($normalizedHtml);
 
         $ready = [];
+        $themeReady = [];
         $review = [];
 
         foreach ($normalizedClasses as $class) {
@@ -71,12 +93,21 @@ final class GrapesJsImportCompatibilityAnalyzer
                 continue;
             }
 
+            if (self::isThemeCoveredUtility($class, $themeReferenceCss)) {
+                $ready[] = $class;
+                $themeReady[] = $class;
+
+                continue;
+            }
+
             $review[] = $class;
         }
 
         $ready = array_values(array_unique($ready));
+        $themeReady = array_values(array_unique($themeReady));
         $review = array_values(array_unique($review));
         sort($ready);
+        sort($themeReady);
         sort($review);
 
         $totals = [
@@ -84,15 +115,88 @@ final class GrapesJsImportCompatibilityAnalyzer
             'ready' => count($ready),
             'adapted' => count($adaptations),
             'review' => count($review),
+            'theme_ready' => count($themeReady),
         ];
 
         return [
-            'status' => self::resolveStatus($totals),
+            'status' => self::resolveStatus($totals, $context),
             'totals' => $totals,
             'adaptations' => $adaptations,
             'review' => $review,
             'ready_sample' => array_slice($ready, 0, 8),
+            'context' => $context,
         ];
+    }
+
+    public static function themeReferenceCss(): string
+    {
+        if (self::$themeReferenceCss !== null) {
+            return self::$themeReferenceCss;
+        }
+
+        $paths = [
+            VoodbuilderPaths::themeCssAbsolutePath(),
+            VoodbuilderPaths::packagePath().'/resources/css/grapesjs/section-utilities.css',
+            VoodbuilderPaths::packagePath().'/resources/css/mobile-nav.css',
+        ];
+
+        $chunks = [];
+
+        foreach ($paths as $path) {
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $contents = file_get_contents($path);
+
+            if (is_string($contents) && $contents !== '') {
+                $chunks[] = $contents;
+            }
+        }
+
+        self::$themeReferenceCss = implode("\n", $chunks);
+
+        return self::$themeReferenceCss;
+    }
+
+    /**
+     * @return array{chrome_block: bool, block_id: string|null}
+     */
+    public static function detectChromeContext(string $html): array
+    {
+        if (preg_match('/\bdata-voodbuilder-block=(["\'])([^"\']+)\1/i', $html, $matches) !== 1) {
+            return [
+                'chrome_block' => false,
+                'block_id' => null,
+            ];
+        }
+
+        $blockId = trim($matches[2]);
+        $chromeBlock = str_starts_with($blockId, 'site_nav_') || str_starts_with($blockId, 'site_footer_');
+
+        return [
+            'chrome_block' => $chromeBlock,
+            'block_id' => $blockId !== '' ? $blockId : null,
+        ];
+    }
+
+    public static function isThemeCoveredUtility(string $class, string $themeCss): bool
+    {
+        if ($class === '') {
+            return false;
+        }
+
+        if ($themeCss !== '' && self::cssIncludesUtility($themeCss, $class)) {
+            return true;
+        }
+
+        foreach (self::THEME_UTILITY_PATTERNS as $pattern) {
+            if (preg_match($pattern, $class) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -203,9 +307,10 @@ final class GrapesJsImportCompatibilityAnalyzer
     }
 
     /**
-     * @param  array{classes: int, ready: int, adapted: int, review: int}  $totals
+     * @param  array{classes: int, ready: int, adapted: int, review: int, theme_ready: int}  $totals
+     * @param  array{chrome_block: bool, block_id: string|null}  $context
      */
-    private static function resolveStatus(array $totals): string
+    private static function resolveStatus(array $totals, array $context): string
     {
         if ($totals['classes'] === 0) {
             return 'poor';
@@ -222,14 +327,20 @@ final class GrapesJsImportCompatibilityAnalyzer
         $supported = $totals['ready'] + $totals['adapted'];
         $ratio = $supported / max(1, $totals['classes']);
 
-        if ($ratio >= 0.9) {
-            return 'good';
+        $status = match (true) {
+            $ratio >= 0.9 => 'good',
+            $ratio >= 0.7 => 'partial',
+            default => 'poor',
+        };
+
+        if ($context['chrome_block'] && in_array($status, ['poor', 'partial'], true)) {
+            $themeBackedRatio = ($totals['theme_ready'] + $totals['adapted']) / max(1, $totals['classes']);
+
+            if ($themeBackedRatio >= 0.6 || $totals['theme_ready'] >= 8) {
+                return 'good';
+            }
         }
 
-        if ($ratio >= 0.7) {
-            return 'partial';
-        }
-
-        return 'poor';
+        return $status;
     }
 }

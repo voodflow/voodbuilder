@@ -70,4 +70,65 @@ class GrapesJsImportCompatibilityAnalyzerTest extends TestCase
 
         $this->assertTrue(GrapesJsImportCompatibilityAnalyzer::cssIncludesUtility($css, 'hover:bg-primary-hover'));
     }
+
+    public function test_treats_vp_and_theme_utilities_as_ready_from_theme_reference(): void
+    {
+        $raw = '<header class="hidden vp:flex bg-vp-bg gap-3 text-vp-text-1 shrink-0">Nav</header>';
+        $normalized = GrapesJsPastedComponentNormalizer::normalize($raw);
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, (string) $normalized['html'], '');
+
+        $this->assertNotContains('vp:flex', $report['review']);
+        $this->assertNotContains('bg-vp-bg', $report['review']);
+        $this->assertNotContains('text-vp-text-1', $report['review']);
+        $this->assertNotContains('shrink-0', $report['review']);
+        $this->assertGreaterThan(0, $report['totals']['theme_ready']);
+    }
+
+    public function test_compiles_standard_utilities_in_jit_css(): void
+    {
+        $raw = '<header class="hidden gap-3 relative">Nav</header>';
+        $normalized = GrapesJsPastedComponentNormalizer::normalize($raw);
+        $css = GrapesJsPastedComponentNormalizer::compileTailwindCss((string) $normalized['html']);
+
+        if ($css === '') {
+            $this->markTestSkipped('Node.js Tailwind compiler is not available in this environment.');
+        }
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, (string) $normalized['html'], $css);
+
+        $this->assertNotContains('hidden', $report['review']);
+        $this->assertNotContains('gap-3', $report['review']);
+        $this->assertContains($report['status'], ['excellent', 'good']);
+    }
+
+    public function test_detects_chrome_block_context_and_boosts_status_for_theme_only_review(): void
+    {
+        $raw = '<div data-voodbuilder-block="site_nav_simple" class="hidden max-vp:flex bg-vp-bg-alt vp:gap-3">Nav</div>';
+        $normalized = GrapesJsPastedComponentNormalizer::normalize($raw);
+        $css = GrapesJsPastedComponentNormalizer::compileTailwindCss((string) $normalized['html']);
+
+        if ($css === '') {
+            $this->markTestSkipped('Node.js Tailwind compiler is not available in this environment.');
+        }
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, (string) $normalized['html'], $css);
+
+        $this->assertTrue($report['context']['chrome_block']);
+        $this->assertSame('site_nav_simple', $report['context']['block_id']);
+        $this->assertNotContains('max-vp:flex', $report['review']);
+        $this->assertNotContains('bg-vp-bg-alt', $report['review']);
+        $this->assertContains($report['status'], ['excellent', 'good']);
+    }
+
+    public function test_chrome_footer_block_gets_context(): void
+    {
+        $raw = '<footer data-voodbuilder-block="site_footer_centered" class="bg-vp-bg text-vp-text-2">Footer</footer>';
+        $normalized = GrapesJsPastedComponentNormalizer::normalize($raw);
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, (string) $normalized['html'], '');
+
+        $this->assertTrue($report['context']['chrome_block']);
+        $this->assertSame('site_footer_centered', $report['context']['block_id']);
+    }
 }

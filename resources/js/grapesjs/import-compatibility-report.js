@@ -45,7 +45,21 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
 
     mount.hidden = false;
 
-    const { totals, status, adaptations = [], review = [], ready_sample: readySample = [] } = report;
+    const {
+        totals,
+        status,
+        adaptations = [],
+        review = [],
+        ready_sample: readySample = [],
+        context = {},
+    } = report;
+    const chromeBlock = Boolean(context.chrome_block);
+    const themeReadyCount = Number(totals.theme_ready ?? 0);
+    const reviewHint = chromeBlock && review.length > 0
+        ? (labels.componentsCompatibilityChromeReviewHint
+            ?? 'These classes are not in the block JIT CSS but are usually covered by the canvas theme (nav/footer chrome). Click a class to jump to it in the editor.')
+        : (labels.componentsCompatibilityReviewHint
+            ?? 'These classes were not found in the block JIT CSS and may be covered by the canvas theme. Click a class to jump to it in the editor.');
     const statusText = statusLabel(labels, status);
     const onReviewClassClick = options.onReviewClassClick ?? null;
 
@@ -77,14 +91,24 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
             </li>`
         )).join('')}${review.length > 24 ? `<li class="voodbuilder-gjs-compatibility__chip voodbuilder-gjs-compatibility__chip--more">+${review.length - 24}</li>` : ''}</ul>`;
 
+    const chromeBannerHtml = chromeBlock
+        ? `<section class="voodbuilder-gjs-compatibility__chrome-banner" aria-label="${escapeHtml(labels.componentsCompatibilityChromeBannerTitle ?? 'Chrome block theme coverage')}">
+                <p class="voodbuilder-gjs-compatibility__chrome-banner-text">${escapeHtml(labels.componentsCompatibilityChromeBanner ?? 'Nav/footer chrome blocks rely on the global canvas theme. Remaining review items are often theme utilities, not missing block styles.')}</p>
+            </section>`
+        : '';
+
+    const reviewBannerClass = chromeBlock && review.length > 0
+        ? 'voodbuilder-gjs-compatibility__review-banner voodbuilder-gjs-compatibility__review-banner--chrome'
+        : 'voodbuilder-gjs-compatibility__review-banner';
+
     const reviewBannerHtml = review.length === 0
         ? ''
-        : `<section class="voodbuilder-gjs-compatibility__review-banner" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">
+        : `<section class="${reviewBannerClass}" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">
                 <div class="voodbuilder-gjs-compatibility__review-banner-head">
                     <h4 class="voodbuilder-gjs-compatibility__review-banner-title">${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}</h4>
                     <span class="voodbuilder-gjs-compatibility__count">${review.length}</span>
                 </div>
-                <p class="voodbuilder-gjs-compatibility__review-hint">${escapeHtml(labels.componentsCompatibilityReviewHint ?? 'These classes were not found in the compiled CSS and may render without styles. Click a class to jump to it in the editor.')}</p>
+                <p class="voodbuilder-gjs-compatibility__review-hint">${escapeHtml(reviewHint)}</p>
                 ${reviewHtml}
             </section>`;
 
@@ -92,8 +116,13 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
         ? `<p class="voodbuilder-gjs-compatibility__sample">${escapeHtml(labels.componentsCompatibilityReadySample ?? 'Examples:')} ${readySample.map((item) => `<code>${escapeHtml(item)}</code>`).join(' ')}</p>`
         : '';
 
+    const themeReadyHtml = themeReadyCount > 0
+        ? `<p class="voodbuilder-gjs-compatibility__theme-note">${escapeHtml(formatLabel(labels.componentsCompatibilityThemeReady ?? ':count covered by canvas theme', { count: themeReadyCount }))}</p>`
+        : '';
+
     mount.innerHTML = `
         <div class="voodbuilder-gjs-compatibility">
+            ${chromeBannerHtml}
             ${reviewBannerHtml}
             <div class="voodbuilder-gjs-compatibility__head">
                 <div>
@@ -102,6 +131,7 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
                 </div>
                 <span class="voodbuilder-gjs-compatibility__badge voodbuilder-gjs-compatibility__badge--${escapeHtml(status)}">${escapeHtml(statusText)}</span>
             </div>
+            ${themeReadyHtml}
             ${sampleHtml}
             <details class="voodbuilder-gjs-compatibility__section" ${adaptations.length > 0 ? 'open' : ''}>
                 <summary>${escapeHtml(labels.componentsCompatibilityAdaptations ?? 'Automatic adaptations')}</summary>
