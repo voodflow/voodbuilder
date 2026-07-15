@@ -33,3 +33,15 @@ export {
     promoteInspectableBlockSelection,
     runWithSettingsChangeGuard,
 } from './ui.js';
+
+export {
+    rebuildLayoutChromeBlockRegistry,
+    getLayoutChromeBlock,
+    setActiveLayoutSettingsRoot,
+    clearActiveLayoutSettingsRoot,
+    getActiveLayoutSettingsRoot,
+    finalizeLayoutInspectorBootstrap,
+    isLayoutInspectorReady,
+    resolveLayoutChromeZone,
+    findLayoutDropZone,
+} from './layout-chrome-registry.js';

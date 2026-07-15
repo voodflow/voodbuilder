@@ -6,7 +6,14 @@ import {
     findBlockRoot,
     readBlockId,
 } from '../../core/block-tree.js';
+import { isChromeLayoutModeEditor } from '../../chrome-content-slot-utils.js';
 import { findInspectableRoot } from './select.js';
+import {
+    getActiveLayoutSettingsRoot,
+    getLayoutChromeBlock,
+    resolveLayoutChromeBlockFromSelection,
+    resolveLayoutChromeZone,
+} from './layout-chrome-registry.js';
 
 /** @type {Map<string, object>} */
 const registry = new Map();
@@ -78,7 +85,7 @@ export function resolveSettings(component, editor) {
     const seen = new Set();
 
     const pushRoot = (candidate) => {
-        if (! candidate || seen.has(candidate)) {
+        if (! candidate || seen.has(candidate) || candidate.isRemoved?.()) {
             return;
         }
 
@@ -89,6 +96,23 @@ export function resolveSettings(component, editor) {
     pushRoot(findInspectableRoot(component, editor));
     pushRoot(findBlockRoot(component));
     pushRoot(component);
+    pushRoot(getActiveLayoutSettingsRoot(editor));
+
+    if (isChromeLayoutModeEditor(editor)) {
+        pushRoot(resolveLayoutChromeBlockFromSelection(component, editor));
+
+        const zone = resolveLayoutChromeZone(component);
+
+        if (zone === 'nav' || zone === 'footer') {
+            pushRoot(getLayoutChromeBlock(editor, zone));
+        }
+
+        const activeZone = editor.__voodbuilderActiveSettingsZone;
+
+        if (activeZone === 'nav' || activeZone === 'footer') {
+            pushRoot(getLayoutChromeBlock(editor, activeZone));
+        }
+    }
 
     for (const descriptor of registry.values()) {
         if (typeof descriptor.findRoot !== 'function') {
@@ -110,7 +134,9 @@ export function resolveSettings(component, editor) {
 
     return {
         descriptor: null,
-        root: findInspectableRoot(component, editor),
+        root: findInspectableRoot(component, editor)
+            ?? getActiveLayoutSettingsRoot(editor)
+            ?? resolveLayoutChromeBlockFromSelection(component, editor),
     };
 }
 

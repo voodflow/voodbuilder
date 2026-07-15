@@ -2,6 +2,7 @@
  * Inspector UI for registered block settings descriptors.
  */
 
+import { ATTR } from '../../core/attrs.js';
 import {
     isChromeLayoutContentSlotComponent,
     isChromeLayoutModeEditor,
@@ -11,6 +12,9 @@ import {
     registerBlockSettings,
     resolveSettings,
 } from './registry.js';
+import {
+    isLayoutInspectorReady,
+} from './layout-chrome-registry.js';
 import {
     ensureRootInspectable,
     findInspectableRoot,
@@ -111,6 +115,31 @@ function isContentInspectorTabActive(editor) {
 }
 
 /**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function shouldAllowTraitsInLayoutMode(component) {
+    let current = component;
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        const attrs = current.getAttributes?.() ?? {};
+        const zone = attrs[ATTR.dropZone];
+
+        if (zone === 'nav' || zone === 'footer') {
+            return false;
+        }
+
+        if (attrs[ATTR.contentSlot]) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+/**
  * @param {object} editor
  * @param {object|null|undefined} component
  * @returns {boolean}
@@ -146,6 +175,16 @@ function guardTraitManagerForBlockSettings(editor) {
     const originalSelect = editor.TraitManager.select.bind(editor.TraitManager);
 
     editor.TraitManager.select = (component, ...args) => {
+        if (isChromeLayoutModeEditor(editor)) {
+            if (component && shouldAllowTraitsInLayoutMode(component)) {
+                return originalSelect(component, ...args);
+            }
+
+            editor.__voodbuilderBlockSettingsRender?.();
+
+            return;
+        }
+
         if (shouldRenderCustomSettings(editor, component)) {
             editor.__voodbuilderBlockSettingsRender?.();
 
@@ -175,6 +214,17 @@ export function registerSettingsUi(editor, mount) {
     const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
         ?.querySelector('.voodbuilder-gjs-traits-mount');
 
+    const renderLayoutInspectorLoading = () => {
+        mount.hidden = false;
+        traitsMount?.classList.add('hidden');
+        mount.replaceChildren();
+
+        const hint = document.createElement('p');
+        hint.className = 'voodbuilder-gjs-inspector-empty-hint';
+        hint.textContent = 'Loading header and footer settings…';
+        mount.appendChild(hint);
+    };
+
     const renderLayoutSlotHint = (traitsPanel) => {
         if (! traitsPanel) {
             return;
@@ -195,6 +245,22 @@ export function registerSettingsUi(editor, mount) {
         traitsMount?.classList.remove('hidden');
     };
 
+    const maybePromoteSelectionForHighlight = (rawSelected, root) => {
+        if (
+            ! root
+            || ! rawSelected
+            || ! shouldPromoteSelectionToRoot(rawSelected, root, editor)
+            || editor.getSelected?.() === root
+        ) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            ensureRootInspectable(root);
+            editor.select(root, { scroll: false });
+        });
+    };
+
     const render = () => {
         if (editor.__voodbuilderBlockSettingsRendering) {
             return;
@@ -203,6 +269,12 @@ export function registerSettingsUi(editor, mount) {
         editor.__voodbuilderBlockSettingsRendering = true;
 
         try {
+            if (isChromeLayoutModeEditor(editor) && ! isLayoutInspectorReady(editor)) {
+                renderLayoutInspectorLoading();
+
+                return;
+            }
+
             const rawSelected = editor.getSelected();
 
             if (
@@ -229,20 +301,6 @@ export function registerSettingsUi(editor, mount) {
                 return;
             }
 
-            if (
-                root
-                && rawSelected
-                && shouldPromoteSelectionToRoot(rawSelected, root, editor)
-            ) {
-                if (editor.getSelected?.() !== root) {
-                    ensureRootInspectable(root);
-                    editor.select(root, { scroll: false });
-                    window.requestAnimationFrame(render);
-                }
-
-                return;
-            }
-
             if (! descriptor || ! root) {
                 showTraitsFallback();
                 renderedRoot = null;
@@ -263,6 +321,7 @@ export function registerSettingsUi(editor, mount) {
             }
 
             ensureRootInspectable(root);
+            maybePromoteSelectionForHighlight(rawSelected, root);
 
             if (
                 renderedRoot === root
@@ -311,6 +370,7 @@ export function registerSettingsUi(editor, mount) {
     editor.on('component:deselected', render);
     editor.on('load', scheduleRender);
     editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
+    editor.on('voodbuilder:layout-inspector-ready', scheduleRender);
     editor.on('voodbuilder:dynamic-blocks-refreshed', scheduleRender);
     editor.on('component:update', (component) => {
         if (editor.__voodbuilderSettingsChange) {
@@ -354,6 +414,8 @@ export function promoteRoot(editor, component) {
     const root = findInspectableRoot(component, editor);
 
     if (! root || ! shouldPromoteSelectionToRoot(component, root, editor)) {
+        refreshBlockSettingsUi(editor);
+
         return root;
     }
 

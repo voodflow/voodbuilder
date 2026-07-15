@@ -17,7 +17,13 @@ import {
     registerSettingsUi,
     findInspectableRoot,
     ensureRootInspectable,
+    readBlockId,
+    setActiveLayoutSettingsRoot,
+    getLayoutChromeBlock,
+    rebuildLayoutChromeBlockRegistry,
 } from '../blocks/settings/index.js';
+import { isChromeDropZoneComponent } from '../chrome-content-slot-utils.js';
+import { ATTR } from '../core/attrs.js';
 
 /**
  * @param {object} editor
@@ -36,11 +42,34 @@ export function registerChromeLayoutInspectorSelection(editor) {
 
         const root = findInspectableRoot(component, editor);
 
-        if (root) {
+        if (root && readBlockId(root) !== '') {
             ensureRootInspectable(root);
+            setActiveLayoutSettingsRoot(editor, root);
+        } else if (isChromeDropZoneComponent(component)) {
+            const zone = component.getAttributes?.()?.[ATTR.dropZone];
+            const block = (zone === 'nav' || zone === 'footer')
+                ? getLayoutChromeBlock(editor, zone)
+                : null;
+
+            if (block) {
+                ensureRootInspectable(block);
+                setActiveLayoutSettingsRoot(editor, block, zone);
+            }
         }
 
         promoteRoot(editor, component);
+    });
+
+    editor.on('component:add', () => {
+        if (editor.__voodbuilderChromeLayoutMode) {
+            rebuildLayoutChromeBlockRegistry(editor);
+        }
+    });
+
+    editor.on('component:remove', () => {
+        if (editor.__voodbuilderChromeLayoutMode) {
+            rebuildLayoutChromeBlockRegistry(editor);
+        }
     });
 }
 

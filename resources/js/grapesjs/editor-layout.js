@@ -331,7 +331,10 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
                 ? resolveBlockSettingsTarget(component, editor)
                 : { descriptor: null };
 
-            if (! layoutTarget.descriptor?.layoutOnly) {
+            if (
+                ! layoutTarget.descriptor?.layoutOnly
+                && ! editor.__voodbuilderChromeLayoutMode
+            ) {
                 editor.TraitManager.select(component);
             }
         }

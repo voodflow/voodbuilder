@@ -71,6 +71,7 @@ import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeD
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
 import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
+import { finalizeLayoutInspectorBootstrap } from '../blocks/settings/index.js';
 import {
     buildEditorShell,
     collapseBlockCategories,
@@ -623,6 +624,10 @@ export function initVpressGrapesJs(container, options = {}) {
         pageContentPlaceholder: labels.pageContentPlaceholder ?? 'Drag blocks here to build your page',
     });
 
+    if (options.blocksRenderUrl && options.chromeLayoutMode && ! options.chromeShellMode) {
+        editor.__voodbuilderLayoutDynamicRefreshPending = true;
+    }
+
     registerChromeLayoutEditor(editor, {
         chromeLayoutMode: options.chromeLayoutMode ?? false,
         layoutContentSlotPlaceholder: labels.layoutContentSlotPlaceholder
@@ -686,6 +691,8 @@ export function initVpressGrapesJs(container, options = {}) {
                 migrateEditorComponents(editor);
                 scanLinkableButtons(editor);
                 reconcileLayoutChromeBlockSettings(editor);
+                finalizeLayoutInspectorBootstrap(editor);
+                refreshBlockSettingsUi(editor);
 
                 for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
                     try {

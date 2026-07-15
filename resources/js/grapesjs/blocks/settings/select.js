@@ -1,8 +1,8 @@
 /**
  * Inspector selection resolution for block settings.
+ * Layout chrome resolution uses the component model tree only (no DOM).
  */
 
-import { safeFindComponents } from '../../tailwind-visual-style.js';
 import { ATTR } from '../../core/attrs.js';
 import {
     readBlockId,
@@ -62,11 +62,7 @@ export function findLayoutChromeZoneBlockRoot(component, editor) {
         const zone = current.getAttributes?.()?.[ATTR.dropZone];
 
         if (zone === 'nav' || zone === 'footer') {
-            return findPrimaryBlockInChromeDropZone(current, (container) => {
-                const blocks = safeFindComponents(container, `[${ATTR.block}]`);
-
-                return blocks[0] ?? null;
-            });
+            return findPrimaryBlockInChromeDropZone(current);
         }
 
         const blockId = readBlockId(current);
@@ -90,7 +86,8 @@ export function isBlockRoot(component) {
 }
 
 /**
- * Restore layer/selection flags on a block root so inspector settings can target it.
+ * Restore layer/selection flags on a block root for canvas highlight only.
+ * Settings rendering does not require these flags.
  *
  * @param {object} root
  */
@@ -132,19 +129,11 @@ export function findInspectableRoot(component, editor) {
 
     const zone = component.getAttributes?.()?.[ATTR.dropZone];
 
-    if (zone) {
-        return findPrimaryBlockInChromeDropZone(component, (container) => {
-            const blocks = safeFindComponents(container, `[${ATTR.block}]`);
-
-            return blocks[0] ?? null;
-        }) ?? findBlockRoot(component);
+    if (zone === 'nav' || zone === 'footer') {
+        return findPrimaryBlockInChromeDropZone(component) ?? findBlockRoot(component);
     }
 
-    const nestedInSelection = findPrimaryBlockInContainer(component, (container) => {
-        const blocks = safeFindComponents(container, `[${ATTR.block}]`);
-
-        return blocks[0] ?? null;
-    });
+    const nestedInSelection = findPrimaryBlockInContainer(component);
 
     if (nestedInSelection) {
         return nestedInSelection;
@@ -159,19 +148,13 @@ export function findInspectableRoot(component, editor) {
     let current = component?.parent?.();
 
     while (current && current.get?.('type') !== 'wrapper') {
-        if (current.getAttributes?.()?.[ATTR.dropZone]) {
-            return findPrimaryBlockInContainer(current, (container) => {
-                const blocks = safeFindComponents(container, `[${ATTR.block}]`);
+        const parentZone = current.getAttributes?.()?.[ATTR.dropZone];
 
-                return blocks[0] ?? null;
-            });
+        if (parentZone === 'nav' || parentZone === 'footer') {
+            return findPrimaryBlockInChromeDropZone(current);
         }
 
-        const nested = findPrimaryBlockInContainer(current, (container) => {
-            const blocks = safeFindComponents(container, `[${ATTR.block}]`);
-
-            return blocks[0] ?? null;
-        });
+        const nested = findPrimaryBlockInContainer(current);
 
         if (nested) {
             return nested;

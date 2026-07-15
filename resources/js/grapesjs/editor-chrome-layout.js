@@ -30,6 +30,10 @@ import {
     findInspectableRoot,
     readBlockId,
     refreshBlockSettingsUi,
+    rebuildLayoutChromeBlockRegistry,
+    finalizeLayoutInspectorBootstrap,
+    setActiveLayoutSettingsRoot,
+    getLayoutChromeBlock,
 } from './blocks/settings/index.js';
 import { findPrimaryBlock } from './core/block-tree.js';
 import { safeRenderEditorLayers, safeFindComponents } from './tailwind-visual-style.js';
@@ -500,6 +504,7 @@ export function reconcileLayoutChromeBlockSettings(editor) {
 
     lockLayoutChromeBlocks(editor);
     ensureLayoutChromeRootsInspectable(editor);
+    rebuildLayoutChromeBlockRegistry(editor);
     refreshBlockSettingsUi(editor);
 }
 
@@ -703,6 +708,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     editor.__voodbuilderChromeLayoutRegistered = true;
     editor.__voodbuilderChromeLayoutMode = true;
     editor.__voodbuilderChromeLayoutReady = false;
+    editor.__voodbuilderLayoutInspectorReady = false;
 
     if (editor.em) {
         editor.em.__voodbuilderChromeLayoutMode = true;
@@ -756,6 +762,12 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         bootstrapping = false;
         editor.__voodbuilderChromeLayoutReady = true;
         reconcileLayoutChromeBlockSettings(editor);
+
+        if (! editor.__voodbuilderLayoutDynamicRefreshPending) {
+            finalizeLayoutInspectorBootstrap(editor);
+            refreshBlockSettingsUi(editor);
+        }
+
         editor.trigger('voodbuilder:chrome-layout-ready');
         editor.trigger('voodbuilder:site-chrome-updated');
     };
@@ -764,6 +776,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     editor.on('canvas:frame:load', scheduleRefresh);
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
         ensureLayoutChromeRootsInspectable(editor);
+        rebuildLayoutChromeBlockRegistry(editor);
         refreshBlockSettingsUi(editor);
     });
     editor.on('voodbuilder:site-chrome-updated', () => {
@@ -792,10 +805,14 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
         if (isContentSlot(component) || isDropZone(component)) {
             if (isDropZone(component)) {
-                const block = findPrimaryBlock(component);
+                const zone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
+                const block = (zone === 'nav' || zone === 'footer')
+                    ? getLayoutChromeBlock(editor, zone)
+                    : findPrimaryBlock(component);
 
                 if (block && readBlockId(block) !== '') {
                     ensureRootInspectable(block);
+                    setActiveLayoutSettingsRoot(editor, block, zone);
                     editor.select(block, { scroll: false });
                     refreshBlockSettingsUi(editor);
                 }
@@ -846,6 +863,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
                 && ! editor.__voodbuilderActiveBlockDrag
                 && (isDropZone(component) || isContentSlot(component) || parent === wrapper)
             ) {
+                rebuildLayoutChromeBlockRegistry(editor);
                 scheduleRefresh();
             }
         });
@@ -853,6 +871,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
     editor.on('component:remove', () => {
         if (! bootstrapping) {
+            rebuildLayoutChromeBlockRegistry(editor);
             scheduleRefresh();
         }
     });
