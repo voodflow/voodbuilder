@@ -19,7 +19,11 @@ import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-co
 import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
-import { registerBlockSettings, registerBlockSettingsUi } from '../block-settings-registry.js';
+import { registerBlockSettings } from '../block-settings-registry.js';
+import {
+    CHROME_DROP_ZONE_ATTR,
+    findPrimaryBlockInChromeDropZone,
+} from '../chrome-content-slot-utils.js';
 import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
 import {
     isClearedBackground,
@@ -273,7 +277,7 @@ function lockComponentTree(component) {
         copyable: false,
         selectable: ! protectedSlot,
         hoverable: ! protectedSlot,
-        layerable: ! protectedSlot,
+        layerable: false,
         editable: false,
         stylable: ! protectedSlot,
     });
@@ -283,10 +287,41 @@ function lockComponentTree(component) {
     });
 }
 
+function suppressChromeBlockDescendants(component) {
+    component.components().forEach((child) => {
+        child.set({
+            removable: false,
+            draggable: false,
+            copyable: false,
+            selectable: false,
+            hoverable: false,
+            highlightable: false,
+            layerable: false,
+            editable: false,
+            stylable: false,
+        }, { silent: true });
+        suppressChromeBlockDescendants(child);
+    });
+}
+
 function lockDynamicPreviewContent(component) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
+    const layoutMode = Boolean(component.em?.__voodbuilderChromeLayoutMode);
 
     if (isSiteFooterBlock(blockId)) {
+        if (layoutMode) {
+            component.set({
+                selectable: true,
+                highlightable: true,
+                hoverable: true,
+                layerable: true,
+                name: resolveBlockLayerLabel(blockId),
+            }, { silent: true });
+            suppressChromeBlockDescendants(component);
+
+            return;
+        }
+
         safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').forEach((slot) => {
             lockComponentTree(slot);
         });
@@ -300,8 +335,18 @@ function lockDynamicPreviewContent(component) {
             highlightable: true,
             hoverable: true,
             layerable: true,
+            name: resolveBlockLayerLabel(blockId),
         });
         migrateSiteNavBlockComponent(component);
+
+        if (layoutMode) {
+            suppressChromeBlockDescendants(component);
+            normalizeSiteNavMenuButtons(component);
+            normalizeSiteNavChromeButtons(component);
+
+            return;
+        }
+
         component.components().forEach((child) => {
             lockSiteNavPreviewTree(child);
         });
@@ -394,7 +439,35 @@ function migrateSiteNavBlockComponent(component) {
     }
 }
 
+function findChromeDropZoneAncestor(component) {
+    let current = component?.parent?.();
+
+    while (current) {
+        if (current.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR]) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
 function findSiteNavRootComponent(component) {
+    if (! component) {
+        return null;
+    }
+
+    const dropZone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
+
+    if (dropZone === 'nav') {
+        const primary = findPrimaryBlockInChromeDropZone(component);
+
+        if (primary) {
+            return findSiteNavRootComponent(primary) ?? primary;
+        }
+    }
+
     let current = component;
 
     while (current) {
@@ -407,7 +480,39 @@ function findSiteNavRootComponent(component) {
         }
 
         if (current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
-            return findVpressDynamicAncestor(current) ?? current;
+            const dynamicRoot = findVpressDynamicAncestor(current);
+
+            if (dynamicRoot && isSiteHeaderBlock(dynamicRoot.getAttributes?.()?.['data-voodbuilder-block'])) {
+                migrateSiteNavBlockComponent(dynamicRoot);
+
+                return dynamicRoot;
+            }
+
+            let parent = current.parent?.();
+
+            while (parent) {
+                const parentBlockId = parent.getAttributes?.()?.['data-voodbuilder-block'];
+
+                if (isSiteHeaderBlock(parentBlockId)) {
+                    migrateSiteNavBlockComponent(parent);
+
+                    return parent;
+                }
+
+                parent = parent.parent?.();
+            }
+
+            const zone = findChromeDropZoneAncestor(current);
+
+            if (zone) {
+                const primary = findPrimaryBlockInChromeDropZone(zone);
+
+                if (primary) {
+                    return findSiteNavRootComponent(primary) ?? primary;
+                }
+            }
+
+            return dynamicRoot ?? current;
         }
 
         current = current.parent();
@@ -811,6 +916,20 @@ function countVisibleFooterColumns(root) {
 }
 
 function findSiteFooterRootComponent(component) {
+    if (! component) {
+        return null;
+    }
+
+    const dropZone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
+
+    if (dropZone === 'footer') {
+        const primary = findPrimaryBlockInChromeDropZone(component);
+
+        if (primary) {
+            return findSiteFooterRootComponent(primary) ?? primary;
+        }
+    }
+
     let current = component;
 
     while (current) {
@@ -821,6 +940,16 @@ function findSiteFooterRootComponent(component) {
         }
 
         current = current.parent();
+    }
+
+    const zone = findChromeDropZoneAncestor(component);
+
+    if (zone?.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR] === 'footer') {
+        const primary = findPrimaryBlockInChromeDropZone(zone);
+
+        if (primary) {
+            return findSiteFooterRootComponent(primary) ?? primary;
+        }
     }
 
     return null;
@@ -1027,15 +1156,14 @@ function configureSiteFooterTraits(component, editor = null) {
     applySiteFooterSettingsPreview(component, editor);
 }
 
-function registerSiteFooterSettingsUi(editor, mount) {
-    if (! mount) {
+function registerSiteFooterSettingsUi(editor) {
+    if (editor.__voodbuilderSiteFooterSettingsRegistered) {
         return;
     }
 
-    if (! editor.__voodbuilderSiteFooterSettingsRegistered) {
-        editor.__voodbuilderSiteFooterSettingsRegistered = true;
+    editor.__voodbuilderSiteFooterSettingsRegistered = true;
 
-        registerBlockSettings({
+    registerBlockSettings({
             id: 'site_footer',
             findRoot: (component) => findSiteFooterRootComponent(component),
             matchesRoot: (root) => isSiteFooterBlock(root.getAttributes()['data-voodbuilder-block']),
@@ -1132,7 +1260,6 @@ function registerSiteFooterSettingsUi(editor, mount) {
                 settingsMount.appendChild(section);
             },
         });
-    }
 }
 
 function findVpressDynamicAncestor(component) {
@@ -1329,18 +1456,17 @@ function registerSiteNavChromeButtonType(editor) {
     });
 }
 
-function registerSiteNavSettingsUi(editor, mount) {
-    if (! mount) {
+function registerSiteNavSettingsUi(editor) {
+    if (editor.__voodbuilderSiteNavSettingsRegistered) {
         return;
     }
 
-    if (! editor.__voodbuilderSiteNavSettingsRegistered) {
-        editor.__voodbuilderSiteNavSettingsRegistered = true;
+    editor.__voodbuilderSiteNavSettingsRegistered = true;
 
-        registerBlockSettings({
+    registerBlockSettings({
             id: 'site_nav',
             findRoot: (component) => findSiteNavRootComponent(component),
-            matchesRoot: (root) => isSiteNavBlock(root.getAttributes()['data-voodbuilder-block']),
+            matchesRoot: (root) => isSiteHeaderBlock(root.getAttributes()['data-voodbuilder-block']),
             render: ({ mount: settingsMount, root, editor: gjsEditor }) => {
                 configureSiteNavTraits(root, gjsEditor);
 
@@ -1395,9 +1521,6 @@ function registerSiteNavSettingsUi(editor, mount) {
                 settingsMount.appendChild(section);
             },
         });
-    }
-
-    registerBlockSettingsUi(editor, mount);
 }
 
 function registerDynamicBlockType(editor) {
@@ -1602,6 +1725,8 @@ export {
     isSiteFooterBlock,
     isSiteNavBlock,
     isSiteHeaderBlock,
+    findSiteNavRootComponent,
+    findSiteFooterRootComponent,
     applyFreshFooterAttributes,
     prioritizeBlockCategories,
     ensureLayoutSectionTraits,

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use RalphJSmit\Laravel\SEO\Support\AlternateTag;
@@ -20,6 +21,7 @@ use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
@@ -47,6 +49,7 @@ class SitePage extends Model implements HasRichContent
         'builder',
         'builder_payload',
         'layout',
+        'chrome_layout_id',
         'hide_site_footer',
         'hide_site_nav',
         'sub_theme',
@@ -92,6 +95,12 @@ class SitePage extends Model implements HasRichContent
                 $page->translation_group_id = (string) Str::uuid();
             }
         });
+    }
+
+    /** @return BelongsTo<ChromeLayout, $this> */
+    public function chromeLayout(): BelongsTo
+    {
+        return $this->belongsTo(ChromeLayout::class, 'chrome_layout_id');
     }
 
     /** @return HasMany<SitePage, $this> */

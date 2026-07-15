@@ -19,6 +19,16 @@ final class ChromeLayoutManagedContent
 {
     public static function chromeLayoutForSitePage(SitePage $page): ?ChromeLayout
     {
+        if (filled($page->chrome_layout_id)) {
+            $layout = ChromeLayout::query()
+                ->where('enabled', true)
+                ->find($page->chrome_layout_id);
+
+            if ($layout instanceof ChromeLayout) {
+                return $layout;
+            }
+        }
+
         return ChromeLayoutResolver::resolveForChannel('pages');
     }
 

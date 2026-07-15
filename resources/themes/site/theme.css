@@ -108,6 +108,10 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
     @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
 }
 
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell {
+    min-height: auto;
+}
+
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content {
     @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 py-10 md:px-8 md:py-14;
 }

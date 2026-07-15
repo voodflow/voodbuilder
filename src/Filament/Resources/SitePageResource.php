@@ -39,7 +39,6 @@ use Voodflow\Voodbuilder\Filament\Actions\DeleteSitePageTranslationsAction;
 use Voodflow\Voodbuilder\Filament\Columns\TranslationLocaleColumn;
 use Voodflow\Voodbuilder\Filament\Concerns\ConfiguresTranslatableLocaleField;
 use Voodflow\Voodbuilder\Filament\Concerns\ListsCanonicalTranslationGroups;
-use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
@@ -242,29 +241,17 @@ class SitePageResource extends Resource
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
 
                                 Section::make(__('voodbuilder::admin.sections.appearance'))
-                                    ->collapsed(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
+                                    ->collapsed(false)
                                     ->schema([
-                                        Placeholder::make('chrome_layout_info')
-                                            ->label(__('voodbuilder::chrome_layouts.page_form.shell'))
-                                            ->content(function (): HtmlString|string {
-                                                $layout = SitePageForm::chromeLayoutForPages();
-
-                                                if ($layout === null) {
-                                                    return __('voodbuilder::chrome_layouts.page_form.none');
-                                                }
-
-                                                $editUrl = ChromeLayoutResource::getUrl('edit', ['record' => $layout]);
-
-                                                return new HtmlString(
-                                                    e($layout->name)
-                                                    .' — <a class="text-primary-600 underline" href="'
-                                                    .e($editUrl)
-                                                    .'">'
-                                                    .e(__('voodbuilder::chrome_layouts.page_form.edit_shell'))
-                                                    .'</a>'
-                                                );
-                                            })
-                                            ->visible(fn (): bool => SitePageForm::chromeLayoutManagesShell())
+                                        Select::make('chrome_layout_id')
+                                            ->label(__('voodbuilder::chrome_layouts.page_form.layout'))
+                                            ->options(fn (): array => SitePageForm::chromeLayoutSelectOptions())
+                                            ->default(fn (): ?string => SitePageForm::chromeLayoutForPages()?->id)
+                                            ->nullable()
+                                            ->native(false)
+                                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
+                                            ->helperText(__('voodbuilder::chrome_layouts.page_form.layout_help'))
+                                            ->visible(fn (): bool => SitePageForm::chromeLayoutsEnabled())
                                             ->columnSpanFull(),
 
                                         Select::make('layout')
@@ -277,13 +264,13 @@ class SitePageResource extends Resource
                                             ->default(self::LAYOUT_AUTO)
                                             ->native(false)
                                             ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
-                                                SitePageForm::chromeLayoutManagesShell() => __('voodbuilder::chrome_layouts.page_form.canvas_width_help'),
                                                 ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
                                                     && ($record?->is_home || (bool) $get('is_home')) => __('voodbuilder::admin.helpers.layout_auto_home'),
                                                 $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('voodbuilder::admin.helpers.layout_auto_page'),
                                                 static::formUsesFullWidthLayout($get, $record) => __('voodbuilder::landing.layouts.full_width_help'),
                                                 default => null,
                                             })
+                                            ->visible(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
                                             ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
                                                 if ($record === null) {
                                                     return;

@@ -37,7 +37,8 @@ import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from './
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from './editor-plugins.js';
 import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from './grapesjs-button-link.js';
 import { registerNewsletterFormSettings } from './grapesjs-forms-blocks.js';
-import { registerChromeContentSlotType } from './chrome-content-slot-utils.js';
+import { registerChromeContentSlotType, resolveChromeNavFooterSettingsRoot } from './chrome-content-slot-utils.js';
+import { registerBlockSettingsUi, refreshBlockSettingsUi } from './block-settings-registry.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { initReadingTime, initSocialShare, initCarousels } from './bricks-runtime.js';
 import { configureVpressCodeBlock } from './editor-code-block.js';
@@ -467,6 +468,36 @@ function createDynamicBlocksPending() {
     };
 }
 
+function registerChromeLayoutInspectorSelection(editor) {
+    if (editor.__voodbuilderChromeLayoutInspectorSelectionRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderChromeLayoutInspectorSelectionRegistered = true;
+
+    editor.on('component:selected', (component) => {
+        if (! editor.__voodbuilderChromeLayoutMode || ! component) {
+            return;
+        }
+
+        const resolved = resolveChromeNavFooterSettingsRoot(component);
+
+        if (
+            resolved
+            && resolved !== component
+            && typeof resolved.isRemoved !== 'function'
+            && ! resolved.isRemoved?.()
+        ) {
+            editor.select(resolved, { scroll: false });
+            window.requestAnimationFrame(() => refreshBlockSettingsUi(editor));
+
+            return;
+        }
+
+        window.requestAnimationFrame(() => refreshBlockSettingsUi(editor));
+    });
+}
+
 function registerInspectorExtensions(editor, shell, options, labels) {
     if (editor.__voodbuilderInspectorExtensionsRegistered) {
         return;
@@ -510,8 +541,9 @@ function registerInspectorExtensions(editor, shell, options, labels) {
         mount: shell?.mounts?.globalClasses ?? null,
     });
 
-    registerSiteFooterSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
-    registerSiteNavSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
+    registerSiteFooterSettingsUi(editor);
+    registerSiteNavSettingsUi(editor);
+    registerBlockSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerNewsletterFormSettings(editor);
     registerInspectorColorFix(editor, shell?.mounts ?? {});
 }
@@ -627,6 +659,7 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderLabels = labels;
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
+    registerChromeLayoutInspectorSelection(editor);
     registerLinkableButtonTypes(editor);
 
     const dynamicBlocksGate = createDynamicBlocksPending();
@@ -705,6 +738,23 @@ export function initVpressGrapesJs(container, options = {}) {
     });
     ensureInitialContent(editor, initial);
 
+    registerChromeShellEditor(editor, {
+        chromeShellMode: options.chromeShellMode ?? false,
+        chromeShellParts: options.chromeShellParts ?? null,
+        subTheme: options.subTheme ?? null,
+        pageContentPlaceholder: labels.pageContentPlaceholder ?? 'Drag blocks here to build your page',
+    });
+
+    registerChromeLayoutEditor(editor, {
+        chromeLayoutMode: options.chromeLayoutMode ?? false,
+        layoutContentSlotPlaceholder: labels.layoutContentSlotPlaceholder
+            ?? 'Page content — filled automatically by each page.',
+        layoutNavZonePlaceholder: labels.layoutNavZonePlaceholder
+            ?? 'Drop header blocks here',
+        layoutFooterZonePlaceholder: labels.layoutFooterZonePlaceholder
+            ?? 'Drop footer blocks here',
+    });
+
     editor.on('load', () => {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
@@ -729,17 +779,6 @@ export function initVpressGrapesJs(container, options = {}) {
         syncAllLayerDisplayNames(editor);
 
         registerInspectorExtensions(editor, shell, options, labels);
-
-        registerChromeShellEditor(editor, {
-            chromeShellMode: options.chromeShellMode ?? false,
-            chromeShellParts: options.chromeShellParts ?? null,
-            subTheme: options.subTheme ?? null,
-            pageContentPlaceholder: labels.pageContentPlaceholder ?? 'Drag blocks here to build your page',
-        });
-
-        registerChromeLayoutEditor(editor, {
-            chromeLayoutMode: options.chromeLayoutMode ?? false,
-        });
 
         editor.__voodbuilderLabels = labels;
         editor.__voodbuilderNewsletterLists = options.newsletterLists ?? {};
@@ -805,27 +844,62 @@ export function initVpressGrapesJs(container, options = {}) {
         if (! options.blocksRenderUrl) {
             dynamicBlocksGate.resolve();
         } else if (options.chromeShellMode) {
-            dynamicBlocksGate.resolve();
-            editor.on('load', () => {
-                window.requestAnimationFrame(() => {
-                    for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
-                        try {
-                            lockDynamicPreviewContent(component);
+            const lockChromeShellDynamicBlocks = () => {
+                for (const component of safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]')) {
+                    try {
+                        lockDynamicPreviewContent(component);
 
-                            if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                                configureSiteFooterTraits(component, editor);
-                                applySiteFooterSettingsPreview(component, editor);
-                            }
-
-                            if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
-                                configureSiteNavTraits(component, editor);
-                                applySiteNavSettingsPreview(component, editor);
-                            }
-                        } catch (lockError) {
-                            console.warn('Voodbuilder GrapesJS: could not lock chrome shell block.', lockError);
+                        if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                            configureSiteFooterTraits(component, editor);
+                            applySiteFooterSettingsPreview(component, editor);
                         }
+
+                        if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+                            configureSiteNavTraits(component, editor);
+                            applySiteNavSettingsPreview(component, editor);
+                        }
+                    } catch (lockError) {
+                        console.warn('Voodbuilder GrapesJS: could not lock chrome shell block.', lockError);
                     }
-                });
+                }
+            };
+
+            const runShellDynamicRefresh = () => {
+                const componentsToRefresh = collectTopLevelDynamicBlocks(editor);
+
+                return componentsToRefresh.length > 0
+                    ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
+                    : Promise.resolve();
+            };
+
+            const refresh = new Promise((resolve) => {
+                let started = false;
+
+                const start = () => {
+                    if (started) {
+                        return;
+                    }
+
+                    started = true;
+                    void runShellDynamicRefresh().then(resolve);
+                };
+
+                editor.on('load', () => window.setTimeout(start, 120));
+                window.setTimeout(start, 400);
+            });
+
+            editor.__voodbuilderDynamicBlocksRefresh = refresh;
+            void refresh.finally(() => {
+                dynamicBlocksGate.resolve();
+                lockChromeShellDynamicBlocks();
+            });
+
+            editor.on('voodbuilder:refresh-dynamic-block', (component) => {
+                if (! component) {
+                    return;
+                }
+
+                void refreshDynamicBlockComponent(editor, options.blocksRenderUrl, component);
             });
         } else {
             editor.on('voodbuilder:refresh-dynamic-block', (component) => {
@@ -836,13 +910,39 @@ export function initVpressGrapesJs(container, options = {}) {
                 void refreshDynamicBlockComponent(editor, options.blocksRenderUrl, component);
             });
 
-            const componentsToRefresh = options.chromeLayoutMode
-                ? collectTopLevelDynamicBlocks(editor)
-                : null;
+            const runInitialDynamicRefresh = () => {
+                const componentsToRefresh = options.chromeLayoutMode
+                    ? collectTopLevelDynamicBlocks(editor)
+                    : null;
 
-            const refresh = componentsToRefresh
-                ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
-                : refreshDynamicBlocks(editor, options.blocksRenderUrl);
+                return componentsToRefresh
+                    ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
+                    : refreshDynamicBlocks(editor, options.blocksRenderUrl);
+            };
+
+            const refresh = options.chromeLayoutMode
+                ? new Promise((resolve) => {
+                    let started = false;
+
+                    const start = () => {
+                        if (started) {
+                            return;
+                        }
+
+                        started = true;
+                        void runInitialDynamicRefresh().then(resolve);
+                    };
+
+                    if (typeof editor.once === 'function') {
+                        editor.once('voodbuilder:chrome-layout-ready', start);
+                    } else {
+                        editor.on('voodbuilder:chrome-layout-ready', start);
+                    }
+
+                    window.setTimeout(start, 300);
+                })
+                : runInitialDynamicRefresh();
+
             editor.__voodbuilderDynamicBlocksRefresh = Promise.resolve(refresh);
             void editor.__voodbuilderDynamicBlocksRefresh.finally(() => {
                 dynamicBlocksGate.resolve();
@@ -1056,6 +1156,24 @@ async function refreshDynamicBlockList(editor, renderUrl, components) {
     await Promise.all(components.map((component) => refreshDynamicBlockComponent(editor, renderUrl, component)));
 }
 
+function collectDynamicBlocksInTree(component) {
+    if (! component?.getAttributes) {
+        return [];
+    }
+
+    if (component.getAttributes()['data-voodbuilder-block']) {
+        return [component];
+    }
+
+    const blocks = [];
+
+    for (const child of component.components().models ?? [...component.components()]) {
+        blocks.push(...collectDynamicBlocksInTree(child));
+    }
+
+    return blocks;
+}
+
 function collectTopLevelDynamicBlocks(editor) {
     const wrapper = editor.getWrapper?.();
 
@@ -1073,12 +1191,17 @@ function collectTopLevelDynamicBlocks(editor) {
             continue;
         }
 
-        if (component.getAttributes?.()['data-voodbuilder-chrome-shell']) {
-            for (const child of component.components().models ?? [...component.components()]) {
-                if (child.getAttributes?.()['data-voodbuilder-block']) {
-                    blocks.push(child);
-                }
-            }
+        if (component.getAttributes?.()['data-voodbuilder-chrome-drop-zone']) {
+            blocks.push(...collectDynamicBlocksInTree(component));
+
+            continue;
+        }
+
+        if (
+            component.getAttributes?.()['data-voodbuilder-chrome-shell']
+            || component.getAttributes?.()['data-voodbuilder-chrome-shell-part']
+        ) {
+            blocks.push(...collectDynamicBlocksInTree(component));
         }
     }
 

@@ -70,6 +70,7 @@ final class GrapesJsCanvas
         $paletteCss = ThemePalette::cssForCanvas($subTheme);
         $tabsCss = self::readPackageCanvasCss('tabs.css');
         $formsCss = self::readPackageCanvasCss('forms.css');
+        $chromeLayoutCss = self::readPackageCanvasCss('chrome-layout-canvas.css');
 
         return <<<CSS
         body {
@@ -384,6 +385,7 @@ final class GrapesJsCanvas
         {$paletteCss}
         {$tabsCss}
         {$formsCss}
+        {$chromeLayoutCss}
         CSS;
     }
 

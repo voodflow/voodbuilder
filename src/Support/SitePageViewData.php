@@ -20,6 +20,7 @@ final class SitePageViewData
 
         return array_merge([
             'page' => $page,
+            'voodbuilderChromeLayout' => ChromeLayoutManagedContent::chromeLayoutForSitePage($page),
             'voodbuilderSubTheme' => ChromeLayoutManagedContent::sitePageUsesChromeShell($page)
                 ? ChromeLayoutSubThemeResolver::forSitePage($page)
                 : $page->resolvedSubTheme(),

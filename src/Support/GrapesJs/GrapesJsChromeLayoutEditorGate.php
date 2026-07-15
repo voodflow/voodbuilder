@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Support\GrapesJs\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
@@ -36,7 +37,6 @@ final class GrapesJsChromeLayoutEditorGate
         $subTheme = ChromeLayoutSubThemeResolver::forChromeLayout($layout);
 
         return [
-            'popupMode' => true,
             'chromeLayoutMode' => true,
             'chromeLayoutName' => $layout->name,
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.chrome-layouts.content.update', $layout),
@@ -51,6 +51,11 @@ final class GrapesJsChromeLayoutEditorGate
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
+            'pageTemplatesUrl' => self::editorRoute('voodbuilder.grapesjs.page-templates.index'),
+            'pageTemplatesCatalogUrl' => filled(config('voodbuilder.page_templates.catalog_url'))
+                ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
+                : null,
+            'templateCategories' => PageTemplateCategories::all(),
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),

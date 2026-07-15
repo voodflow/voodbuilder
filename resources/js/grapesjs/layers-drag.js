@@ -8,19 +8,20 @@ import {
     isChromeLayoutFooterBlock,
     isChromeLayoutNavBlock,
 } from './chrome-editor-guards.js';
+import { isInsideChromeDropZoneComponent, isPageContentSlotComponent, isChromeShellPartComponent } from './chrome-content-slot-utils.js';
 
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 
-function isSiteChromeBlock(component) {
+function isSiteChromeBlock(component, editor) {
     const attrs = component.getAttributes?.() ?? {};
     const blockId = String(attrs['data-voodbuilder-block'] ?? '');
 
-    if (attrs['data-voodbuilder-page-content'] || attrs['data-voodbuilder-content-slot']) {
-        return true;
+    if (editor?.__voodbuilderChromeLayoutMode && isInsideChromeDropZoneComponent(component)) {
+        return false;
     }
 
-    if (attrs['data-voodbuilder-chrome-shell-part']) {
+    if (isPageContentSlotComponent(component) || isChromeShellPartComponent(component)) {
         return true;
     }
 
@@ -54,7 +55,7 @@ function shouldEnableLayerReorder(component, editor) {
         return false;
     }
 
-    if (isProtectedSlot(component) || isSiteChromeBlock(component)) {
+    if (isProtectedSlot(component) || isSiteChromeBlock(component, editor)) {
         return false;
     }
 

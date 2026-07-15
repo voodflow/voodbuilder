@@ -10,12 +10,14 @@ final class ChromeLayoutDefaults
 {
     public static function contentSlotHtml(): string
     {
-        return <<<'HTML'
+        $placeholder = e(__('voodbuilder::chrome_layouts.editor.layout_content_slot_placeholder'));
+
+        return <<<HTML
 <div
     data-voodbuilder-content-slot="main"
-    data-placeholder="Plugin content loads in this area (docs, tutorials, blog, pages…)."
+    data-placeholder="{$placeholder}"
     data-gjs-type="voodbuilder-chrome-content-slot"
-    class="voodbuilder-chrome-content-slot flex min-h-[12rem] flex-1 flex-col items-center justify-center border border-dashed border-vp-divider bg-vp-bg-alt/40 px-6 py-10 text-center text-sm text-vp-text-3"
+    class="voodbuilder-chrome-content-slot"
     aria-hidden="true"
 ></div>
 HTML;
@@ -34,10 +36,12 @@ HTML;
 
     public static function navZoneHtml(): string
     {
-        return <<<'HTML'
+        $placeholder = e(__('voodbuilder::chrome_layouts.editor.layout_nav_zone_placeholder'));
+
+        return <<<HTML
 <div
     data-voodbuilder-chrome-drop-zone="nav"
-    data-placeholder="Drop header blocks here"
+    data-placeholder="{$placeholder}"
     data-gjs-type="voodbuilder-chrome-drop-zone"
     class="voodbuilder-chrome-drop-zone voodbuilder-chrome-drop-zone--nav"
 ></div>
@@ -46,10 +50,12 @@ HTML;
 
     public static function footerZoneHtml(): string
     {
-        return <<<'HTML'
+        $placeholder = e(__('voodbuilder::chrome_layouts.editor.layout_footer_zone_placeholder'));
+
+        return <<<HTML
 <div
     data-voodbuilder-chrome-drop-zone="footer"
-    data-placeholder="Drop footer blocks here"
+    data-placeholder="{$placeholder}"
     data-gjs-type="voodbuilder-chrome-drop-zone"
     class="voodbuilder-chrome-drop-zone voodbuilder-chrome-drop-zone--footer"
 ></div>

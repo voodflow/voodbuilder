@@ -81,7 +81,7 @@ final class ChromeLayoutEditorPreview
         $slot = '<div'
             .' data-voodbuilder-content-slot="main"'
             .' data-voodbuilder-page-content="1"'
-            .' class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot min-h-[12rem]"'
+            .' class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot"'
             .'>'
             .$pageHtml
             .'</div>';

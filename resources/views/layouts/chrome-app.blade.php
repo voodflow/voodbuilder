@@ -9,7 +9,7 @@
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
     $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $suppressHostChrome = GrapesJsHostChrome::shouldSuppressHostRender($grapesJsEditor ?? null);
-    $chromeLayout = ChromeLayoutResolver::activeLayout();
+    $chromeLayout = $voodbuilderChromeLayout ?? ChromeLayoutResolver::activeLayout();
     $chromeRendered = $chromeLayout && ! $suppressHostChrome
         ? app(ChromeLayoutRenderer::class)->render($chromeLayout)
         : ['before' => '', 'after' => '', 'css' => '', 'js' => ''];

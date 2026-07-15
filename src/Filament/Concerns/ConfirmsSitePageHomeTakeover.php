@@ -16,6 +16,7 @@ trait ConfirmsSitePageHomeTakeover
     public function confirmHomeTakeoverAction(): Action
     {
         return Action::make('confirmHomeTakeover')
+            ->hidden()
             ->modalHeading(__('voodbuilder::admin.home_takeover.heading'))
             ->modalDescription(fn (): string => __('voodbuilder::admin.home_takeover.description', [
                 'pages' => SitePageHome::conflictSummary($this->homeTakeoverCandidate()),

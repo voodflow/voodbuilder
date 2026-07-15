@@ -494,11 +494,13 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 
 .voodbuilder-gjs-shell__left,
 .voodbuilder-gjs-shell__right {
+    --voodbuilder-gjs-sidebar-bg: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 38%, var(--color-vp-bg-elv, #fff));
+    --gjs-primary-color: var(--voodbuilder-gjs-sidebar-bg);
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
     min-height: 0;
-    background: var(--color-vp-bg-elv, #fff);
+    background: var(--voodbuilder-gjs-sidebar-bg);
 }
 
 .voodbuilder-gjs-shell__left {
@@ -667,6 +669,14 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     flex-shrink: 0;
     display: block;
     margin: 0 1.125rem 0.5rem;
+    padding: 0 0 0.5rem;
+    background: transparent;
+}
+
+.voodbuilder-gjs-shell[data-voodbuilder-active-library='blocks'] .voodbuilder-gjs-blocks-search-wrap {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
 }
 
 .voodbuilder-gjs-blocks-search-icon {
@@ -684,7 +694,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     padding: 0.4375rem 0.625rem 0.4375rem 2rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
     border-radius: 0.4375rem;
-    background: var(--color-vp-bg-alt, #f8fafc);
+    background: var(--color-vp-bg-elv, #fff);
     color: var(--color-vp-text-1, #0f172a);
     font-size: 0.75rem;
     font-weight: 450;
@@ -707,6 +717,14 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
 .voodbuilder-gjs-site-chrome-settings-mount {
     flex: 0 0 auto;
     overflow: visible;
+}
+
+.voodbuilder-gjs-inspector-empty-hint {
+    margin: 0;
+    padding: 0.75rem 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-vp-text-2, #64748b);
 }
 
 /* Editor form controls — Tailwind UI input-group patterns */
@@ -2453,6 +2471,14 @@ body.voodbuilder-grapesjs-editing main {
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
+}
+
+body.voodbuilder-grapesjs-editing:has([data-voodbuilder-chrome-shell-part]) .voodbuilder-site-shell,
+body.voodbuilder-grapesjs-editing:has([data-voodbuilder-chrome-shell-part]) .voodbuilder-landing-shell,
+body.voodbuilder-grapesjs-editing:has([data-voodbuilder-chrome-shell-part]) .VPRichPage--landing,
+body.voodbuilder-grapesjs-editing:has([data-voodbuilder-chrome-shell-part]) .voodbuilder-grapesjs-mode {
+    flex: 0 0 auto;
+    min-height: auto;
 }
 
 body.voodbuilder-grapesjs-editing .voodbuilder-site-shell,

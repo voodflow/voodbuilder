@@ -129,7 +129,7 @@
     gap: 0.4rem;
     margin: 0;
     padding: 0.55rem 0.75rem;
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff));
+    background: transparent;
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
     font-size: 0.6875rem;
     font-weight: 600;
@@ -730,6 +730,16 @@
     position: relative;
     z-index: 1;
     pointer-events: auto;
+}
+
+/* Layers / traits: inherit column surface — no darker GrapesJS panel fill */
+.voodbuilder-gjs-shell__left .gjs-layers,
+.voodbuilder-gjs-shell__right .gjs-layers,
+.voodbuilder-gjs-layers-mount .gjs-layers,
+.voodbuilder-gjs-traits-mount,
+.voodbuilder-gjs-traits-mount .gjs-traits,
+.voodbuilder-gjs-root .gjs-trt-traits {
+    background: transparent !important;
 }
 
 .voodbuilder-gjs-root .gjs-cv-canvas {

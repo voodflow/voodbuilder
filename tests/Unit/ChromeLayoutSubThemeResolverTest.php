@@ -23,6 +23,18 @@ class ChromeLayoutSubThemeResolverTest extends TestCase
         $this->assertSame('site', ChromeLayoutSubThemeResolver::forChromeLayout($layout));
     }
 
+    public function test_it_prefers_pages_channel_theme_when_layout_serves_multiple_channels(): void
+    {
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Shared shell',
+            'slug' => 'shared-shell',
+            'enabled' => true,
+            'channel_ids' => ['docs', 'pages', 'tutorials'],
+        ]);
+
+        $this->assertSame('site', ChromeLayoutSubThemeResolver::forChromeLayout($layout));
+    }
+
     public function test_it_uses_page_sub_theme_for_site_pages(): void
     {
         $page = new SitePage([

@@ -54,6 +54,33 @@ HTML;
         $this->assertStringNotContainsString('>Button<', $stripped);
     }
 
+    public function test_chrome_layout_for_site_page_uses_page_override(): void
+    {
+        $channelLayout = ChromeLayout::query()->create([
+            'name' => 'Channel shell',
+            'slug' => 'channel-shell',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'channel_ids' => ['pages'],
+        ]);
+
+        $pageLayout = ChromeLayout::query()->create([
+            'name' => 'Page shell',
+            'slug' => 'page-shell',
+            'html' => '<header>Custom</header><div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+        ]);
+
+        ChromeLayoutResolver::forgetCache();
+
+        $page = new SitePage([
+            'chrome_layout_id' => $pageLayout->id,
+        ]);
+
+        $this->assertSame($pageLayout->id, ChromeLayoutManagedContent::chromeLayoutForSitePage($page)?->id);
+        $this->assertNotSame($channelLayout->id, ChromeLayoutManagedContent::chromeLayoutForSitePage($page)?->id);
+    }
+
     public function test_site_chrome_hidden_when_chrome_layout_assigned_to_pages_channel(): void
     {
         ChromeLayout::query()->create([

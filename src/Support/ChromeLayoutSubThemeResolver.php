@@ -32,9 +32,21 @@ final class ChromeLayoutSubThemeResolver
 
     public static function forChromeLayout(ChromeLayout $layout): string
     {
+        $channels = $layout->assignedChannelIds();
+
+        if (in_array('pages', $channels, true)) {
+            return self::forPagesChannel();
+        }
+
+        $configured = config('voodbuilder.chrome_layouts.editor_sub_theme');
+
+        if (is_string($configured) && trim($configured) !== '') {
+            return SubThemeResolver::normalize($configured);
+        }
+
         $registry = app(ContentChannelRegistry::class);
 
-        foreach ($layout->assignedChannelIds() as $channelId) {
+        foreach ($channels as $channelId) {
             $theme = self::themeForChannelId($registry->get($channelId));
 
             if ($theme !== null) {

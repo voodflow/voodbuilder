@@ -8,6 +8,7 @@ import {
     isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
     isChromeShellModeEditor,
+    isPageContentSlotComponent,
 } from './chrome-content-slot-utils.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
@@ -59,9 +60,39 @@ function isInsideLayoutDropZone(component) {
     return false;
 }
 
+function isDirectPageContentChild(component) {
+    const parent = component?.parent?.();
+
+    return isPageContentSlotComponent(parent);
+}
+
+function isNestedPageContentDescendant(component) {
+    if (! component || isDirectPageContentChild(component)) {
+        return false;
+    }
+
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isPageContentSlotComponent(current)) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
 function applyLayersChromeFilter(component, wrapper, insideChromeShell = false) {
     if (! component || component.get?.('type') === 'wrapper') {
         return;
+    }
+
+    if (isNestedPageContentDescendant(component)) {
+        component.set({
+            layerable: false,
+        }, { silent: true });
     }
 
     if (isTopLevelShellNode(component, wrapper)) {

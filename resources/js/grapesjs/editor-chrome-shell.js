@@ -9,7 +9,7 @@ import {
     lockDynamicPreviewContent,
     normalizeSiteNavChromeButtons,
 } from './plugins/voodbuilder-grapesjs.js';
-import { removeTopDropSpacer } from './canvas-block-drag.js';
+import { removeTopDropSpacer, clearCanvasDragArtifacts } from './canvas-block-drag.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
@@ -23,6 +23,7 @@ import {
     isChromeShellEditorProtectedComponent,
     isChromeShellPartComponent,
     isInsideChromeShellPartComponent,
+    isPageContentSlotComponent,
     looksLikeSiteChromeStructure,
     PAGE_CONTENT_ATTR,
     purgeChromeBleedFromContentSlot,
@@ -32,9 +33,7 @@ const CHROME_SHELL_ATTR = 'data-voodbuilder-chrome-shell';
 const CHROME_SHELL_BLOCK_PREFIXES = ['site_nav_', 'site_footer_', 'site_header'];
 
 function isPageContentSlot(component) {
-    const attrs = component?.getAttributes?.() ?? {};
-
-    return Boolean(attrs[PAGE_CONTENT_ATTR] || attrs[CONTENT_SLOT_ATTR]);
+    return isPageContentSlotComponent(component);
 }
 
 function findPageContentSlots(editor) {
@@ -119,9 +118,41 @@ function setLayerLocked(editor, component, locked = true) {
 
 function unlockPageContentChildren(editor, slot) {
     slot.components().forEach((child) => {
-        child.set({ locked: false }, { silent: true });
-        editor.Layers?.setLocked?.(child, false);
+        ensurePageContentBlockEditable(editor, child);
     });
+}
+
+function ensurePageContentBlockEditable(editor, component) {
+    if (! component || isPageContentSlot(component)) {
+        return;
+    }
+
+    if (! isInsidePageContentSlot(component)) {
+        return;
+    }
+
+    const parent = component.parent?.();
+
+    if (! isPageContentSlot(parent)) {
+        component.set({
+            layerable: false,
+        }, { silent: true });
+
+        return;
+    }
+
+    component.set({
+        locked: false,
+        removable: true,
+        copyable: true,
+        draggable: true,
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
+        layerable: true,
+    }, { silent: true });
+    editor.Layers?.setLocked?.(component, false);
+    lockDynamicPreviewContent(component);
 }
 
 function lockChromeShellComponent(component) {
@@ -215,10 +246,15 @@ function configurePageContentSlot(editor, slot, placeholderLabel = '') {
             'voodbuilder-page-content-slot',
             'voodbuilder-chrome-content-slot',
             String(slot.getAttributes().class ?? '').trim(),
-        ].filter(Boolean).join(' '),
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .split(/\s+/)
+            .filter((token) => ! ['min-h-[12rem]', 'min-h-[4rem]', 'flex-1'].includes(token))
+            .join(' '),
     });
 
-    setLayerLocked(editor, slot, true);
+    editor.Layers?.setLocked?.(slot, false);
     unlockPageContentChildren(editor, slot);
 }
 
@@ -299,7 +335,7 @@ function ensurePageContentSlot(editor, wrapper, placeholderLabel = '') {
         return slot;
     }
 
-    const slotHtml = `<div data-voodbuilder-content-slot="main" data-voodbuilder-page-content="1" class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot min-h-[12rem]"></div>`;
+    const slotHtml = `<div data-voodbuilder-content-slot="main" data-voodbuilder-page-content="1" class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot"></div>`;
 
     wrapper.append(slotHtml);
     slot = findPageContentSlot(editor);
@@ -657,12 +693,20 @@ export function registerChromeShellEditor(editor, options = {}) {
         refreshTimer = window.setTimeout(refresh, 32);
     };
 
-    editor.on('load', () => {
+    const finishBootstrap = () => {
         refresh();
         bootstrapping = false;
-    });
+    };
+
+    editor.on('load', finishBootstrap);
     editor.on('canvas:frame:load', scheduleRefresh);
     editor.on('voodbuilder:site-chrome-updated', scheduleRefresh);
+
+    window.requestAnimationFrame(() => {
+        if (editor.getWrapper?.()) {
+            finishBootstrap();
+        }
+    });
 
     editor.on('component:selected', (component) => {
         if (! component || ! isChromeShellEditorProtectedComponent(component, editor)) {
@@ -680,10 +724,7 @@ export function registerChromeShellEditor(editor, options = {}) {
 
     editor.on('component:add', (component) => {
         window.requestAnimationFrame(() => {
-            if (isInsidePageContentSlot(component)) {
-                component.set({ locked: false }, { silent: true });
-                editor.Layers?.setLocked?.(component, false);
-            }
+            ensurePageContentBlockEditable(editor, component);
 
             if (promoteComponentIntoContentSlot(editor, component)) {
                 if (! bootstrapping) {
@@ -715,11 +756,15 @@ export function registerChromeShellEditor(editor, options = {}) {
     });
 
     editor.on('block:drag:stop', (component) => {
-        if (! component) {
-            return;
-        }
+        clearCanvasDragArtifacts(editor);
 
         window.requestAnimationFrame(() => {
+            const slot = findPageContentSlot(editor);
+
+            if (slot) {
+                purgeChromeBleedFromSlot(slot);
+            }
+
             promoteComponentIntoContentSlot(editor, component);
             scheduleRefresh();
         });

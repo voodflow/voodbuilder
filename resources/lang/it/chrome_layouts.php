@@ -46,10 +46,17 @@ return [
         'layout_editing_badge' => 'Modifica layout: {name}',
         'layout_editing_hint' => 'Mantieni un solo slot contenuto tra header e footer',
         'page_content_placeholder' => 'Trascina qui i blocchi per costruire la pagina',
+        'layout_content_slot_placeholder' => 'Contenuto pagina — riempito automaticamente da ogni pagina.',
+        'layout_nav_zone_placeholder' => 'Trascina qui i blocchi header',
+        'layout_footer_zone_placeholder' => 'Trascina qui i blocchi footer',
     ],
 
     'page_form' => [
-        'shell' => 'Guscio sito',
+        'layout' => 'Layout',
+        'layout_inherit_default' => 'Predefinito del sito',
+        'layout_inherit_named' => 'Predefinito del canale (:name)',
+        'layout_help' => 'Header e footer condivisi attorno al contenuto della pagina. Modifica nav e footer in Admin → Layout.',
+        'shell' => 'Layout',
         'none' => 'Nessun layout chrome assegnato al canale Pages. Nav e footer usano il guscio classico.',
         'edit_shell' => 'Modifica layout',
         'canvas_width_help' => 'Nav e footer arrivano da Admin → Layout. Qui scegli solo quanto è larga l’area contenuto della pagina.',

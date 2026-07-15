@@ -293,7 +293,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     $serverRegistry->register('Site', $footerBlockClass);
                 }
 
-                if (Schema::hasTable('voodbuilder_settings')) {
+                if (Schema::hasTable('voodbuilder_settings') && ! $this->app->runningInConsole()) {
                     $serverRegistry->registerEditorBlocks($registry);
                 }
             }
@@ -306,7 +306,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 $registry->register(ChromeLayoutContentSlotBlock::definition());
             }
 
-            if (config('voodbuilder.grapesjs.sections.enabled', true)) {
+            if (config('voodbuilder.grapesjs.sections.enabled', true) && ! $this->app->runningInConsole()) {
                 VoodbuilderSectionGrapesJsBlocks::register($registry);
             }
         });

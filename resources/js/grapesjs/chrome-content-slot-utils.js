@@ -8,6 +8,7 @@ export const CONTENT_SLOT_ATTR = 'data-voodbuilder-content-slot';
 export const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
 export const CHROME_SHELL_PART_ATTR = 'data-voodbuilder-chrome-shell-part';
 export const CHROME_SHELL_LOCKED_ATTR = 'data-voodbuilder-chrome-shell-locked';
+export const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 
 export function isChromeLayoutModeEditor(editor) {
     return Boolean(editor?.__voodbuilderChromeLayoutMode);
@@ -17,6 +18,125 @@ export function isChromeContentSlotComponent(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
     return Boolean(attrs[CONTENT_SLOT_ATTR] || attrs['data-voodbuilder-page-content']);
+}
+
+export function isChromeLayoutContentSlotComponent(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs['data-voodbuilder-page-content'];
+}
+
+export function findPrimaryBlockInChromeDropZone(zone) {
+    if (! zone) {
+        return null;
+    }
+
+    const blocks = safeFindComponents(zone, '[data-voodbuilder-block]');
+
+    return blocks[0] ?? null;
+}
+
+function isSiteNavBlockId(blockId) {
+    const id = String(blockId ?? '');
+
+    return id === 'site_nav_simple' || id === 'site_header' || id.startsWith('site_nav_');
+}
+
+function isSiteFooterBlockId(blockId) {
+    const id = String(blockId ?? '');
+
+    return id === 'site_footer' || id.startsWith('site_footer_');
+}
+
+function findChromeDropZoneAncestor(component) {
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isChromeDropZoneComponent(current)) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
+/**
+ * Resolve navbar/footer block root for inspector settings (layout + page editors).
+ */
+export function resolveChromeNavFooterSettingsRoot(component) {
+    if (! component) {
+        return null;
+    }
+
+    const ownZone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
+
+    if (ownZone === 'nav' || ownZone === 'footer') {
+        return findPrimaryBlockInChromeDropZone(component);
+    }
+
+    let current = component;
+
+    while (current) {
+        const blockId = String(current.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
+
+        if (isSiteFooterBlockId(blockId) || isSiteNavBlockId(blockId)) {
+            return current;
+        }
+
+        if (current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
+            const zone = findChromeDropZoneAncestor(current);
+
+            if (zone) {
+                const primary = findPrimaryBlockInChromeDropZone(zone);
+
+                if (primary) {
+                    return primary;
+                }
+            }
+        }
+
+        current = current.parent?.();
+    }
+
+    const zone = findChromeDropZoneAncestor(component);
+
+    if (zone) {
+        return findPrimaryBlockInChromeDropZone(zone);
+    }
+
+    return null;
+}
+
+export function isChromeNavFooterSettingsRoot(component) {
+    const blockId = String(component?.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
+
+    return isSiteNavBlockId(blockId) || isSiteFooterBlockId(blockId);
+}
+
+export function resolveBlockSettingsSelection(component, editor) {
+    if (! component) {
+        return component;
+    }
+
+    const chromeRoot = resolveChromeNavFooterSettingsRoot(component);
+
+    if (chromeRoot) {
+        return chromeRoot;
+    }
+
+    const dropZone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
+
+    if (dropZone) {
+        return findPrimaryBlockInChromeDropZone(component) ?? component;
+    }
+
+    if (isChromeLayoutModeEditor(editor) && isChromeLayoutContentSlotComponent(component)) {
+        return null;
+    }
+
+    return component;
 }
 
 export function isChromeShellModeEditor(editor) {
@@ -89,8 +209,6 @@ export function looksLikeSiteChromeStructure(component) {
     ));
 }
 
-export const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
-
 export function isChromeDropZoneComponent(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
@@ -121,10 +239,6 @@ export function isChromeShellEditorProtectedComponent(component, editor) {
     }
 
     if (isInsideChromeShellPartComponent(component)) {
-        return true;
-    }
-
-    if (isInsidePageContentSlotComponent(component)) {
         return true;
     }
 
@@ -241,6 +355,16 @@ export function registerChromeContentSlotType(editor) {
                 layerable: true,
                 badgable: false,
                 toolbar: [],
+            },
+            init() {
+                if (this.getAttributes()[PAGE_CONTENT_ATTR]) {
+                    this.set({
+                        droppable: true,
+                        locked: false,
+                        hoverable: true,
+                        highlightable: true,
+                    });
+                }
             },
         },
     });

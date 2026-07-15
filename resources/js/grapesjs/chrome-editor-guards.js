@@ -98,6 +98,9 @@ export function patchChromeZoneLayerIcons(editor) {
             return;
         }
 
+        const shouldShowLock = isChromeShellModeEditor(editor)
+            || (isChromeLayoutModeEditor(editor) && isChromeLayoutContentSlot(component));
+
         const layerEl = component.viewLayer?.el;
 
         if (! layerEl) {
@@ -107,6 +110,15 @@ export function patchChromeZoneLayerIcons(editor) {
         const moveEl = layerEl.querySelector('[data-toggle-move]');
 
         if (! moveEl) {
+            return;
+        }
+
+        if (! shouldShowLock) {
+            moveEl.style.display = '';
+            moveEl.removeAttribute(SHELL_LAYER_LOCK_ATTR);
+            moveEl.style.cursor = '';
+            moveEl.style.pointerEvents = '';
+
             return;
         }
 

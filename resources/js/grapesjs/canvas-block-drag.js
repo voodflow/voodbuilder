@@ -3,7 +3,7 @@
  */
 
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
-import { findDropZoneAtPointer } from './editor-chrome-layout.js';
+import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './editor-chrome-layout.js';
 
 const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
@@ -148,6 +148,8 @@ function insertBlockAtTop(editor, block) {
 
             return component ?? null;
         }
+
+        return insertBlockIntoLayoutZone(editor, block);
     }
 
     const first = wrapper.components?.().at?.(0);
@@ -176,6 +178,7 @@ function bindBlockDragPointerTracking(editor) {
             event.clientY,
         );
         updateTopDropSpacerState(editor, event.clientX, event.clientY);
+        syncChromeDropZoneHighlight(editor);
     };
 
     editor.__voodbuilderBlockDragPointerTrack = track;
@@ -210,6 +213,7 @@ function beginTopDropSession(editor, block) {
     ).trim();
     setCanvasDragState(editor, true);
     bindBlockDragPointerTracking(editor);
+    startDragHighlightLoop(editor);
 
     if (editor.__voodbuilderDragBlockLabel) {
         startDragChipLoop(editor);
@@ -218,13 +222,17 @@ function beginTopDropSession(editor, block) {
 
 function endTopDropSession(editor) {
     clearDragChip(editor);
+    clearDragHighlightLoop(editor);
+    clearCanvasDragArtifacts(editor);
     setCanvasDragState(editor, false);
     setTopDropSpacerActive(editor, false);
-    unbindBlockDragPointerTracking(editor);
 
-    editor.Canvas?.getDocument?.()?.querySelectorAll?.('[data-voodbuilder-chrome-drop-active]')?.forEach((zone) => {
-        zone.classList.remove('voodbuilder-chrome-drop-active');
-    });
+    if (editor.__voodbuilderLastDragPoint) {
+        editor.__voodbuilderLastDropPoint = { ...editor.__voodbuilderLastDragPoint };
+    }
+
+    unbindBlockDragPointerTracking(editor);
+    clearChromeDropZoneHighlight(editor);
     delete editor.__voodbuilderActiveBlockDrag;
     delete editor.__voodbuilderTopDropHandled;
 }
@@ -278,6 +286,74 @@ function shouldSkipDragChip(element) {
     );
 }
 
+function clearChromeDropZoneHighlight(editor) {
+    const doc = editor.Canvas?.getDocument?.();
+
+    doc?.querySelectorAll?.('.voodbuilder-chrome-drop-active').forEach((zone) => {
+        zone.classList.remove('voodbuilder-chrome-drop-active');
+    });
+}
+
+export function clearCanvasDragArtifacts(editor) {
+    const doc = editor.Canvas?.getDocument?.();
+
+    doc?.querySelectorAll?.('.gjs-plh').forEach((node) => {
+        node.remove();
+    });
+
+    doc?.body?.classList?.remove?.(DRAG_BODY_CLASS);
+    clearChromeDropZoneHighlight(editor);
+}
+
+function syncChromeDropZoneHighlight(editor) {
+    if (! editor.__voodbuilderChromeLayoutMode && ! editor.__voodbuilderChromeShellMode) {
+        return;
+    }
+
+    const doc = editor.Canvas?.getDocument?.();
+
+    if (! doc || ! editor.__voodbuilderActiveBlockDrag) {
+        clearChromeDropZoneHighlight(editor);
+
+        return;
+    }
+
+    clearChromeDropZoneHighlight(editor);
+
+    if (editor.__voodbuilderChromeLayoutMode) {
+        const activeZone = findLayoutDropZoneForPointer(editor);
+        const activeEl = activeZone?.getEl?.() ?? null;
+
+        if (activeEl) {
+            activeEl.classList.add('voodbuilder-chrome-drop-active');
+        }
+
+        return;
+    }
+
+    const pageSlot = doc.querySelector('[data-voodbuilder-page-content]');
+
+    if (! pageSlot) {
+        return;
+    }
+
+    const frame = editor.Canvas?.getFrameEl?.();
+    const point = editor.__voodbuilderLastDragPoint ?? editor.__voodbuilderLastDropPoint;
+
+    if (! frame || ! point) {
+        return;
+    }
+
+    const rect = frame.getBoundingClientRect();
+    const x = point.x - rect.left + (frame.contentWindow?.scrollX ?? 0);
+    const y = point.y - rect.top + (frame.contentWindow?.scrollY ?? 0);
+    const target = doc.elementFromPoint(x, y);
+
+    if (target?.closest?.('[data-voodbuilder-page-content]')) {
+        pageSlot.classList.add('voodbuilder-chrome-drop-active');
+    }
+}
+
 function isChromeDropTargetElement(element) {
     if (! element?.closest) {
         return false;
@@ -316,12 +392,6 @@ function findDragElements(editor) {
         doc.querySelectorAll('.gjs-plh').forEach((node) => {
             if (isChromeDropTargetElement(node)) {
                 elements.add(node);
-            }
-        });
-
-        doc.querySelectorAll('[data-voodbuilder-page-content], [data-voodbuilder-content-slot], [data-voodbuilder-chrome-drop-zone]').forEach((zone) => {
-            if (editor.__voodbuilderActiveBlockDrag) {
-                zone.classList.add('voodbuilder-chrome-drop-active');
             }
         });
 
@@ -377,6 +447,33 @@ function clearDragChip(editor) {
     }
 }
 
+function startDragHighlightLoop(editor) {
+    if (editor.__voodbuilderDragHighlightRaf) {
+        cancelAnimationFrame(editor.__voodbuilderDragHighlightRaf);
+    }
+
+    const tick = () => {
+        if (! editor.__voodbuilderActiveBlockDrag) {
+            return;
+        }
+
+        syncChromeDropZoneHighlight(editor);
+        editor.__voodbuilderDragHighlightRaf = requestAnimationFrame(tick);
+    };
+
+    syncChromeDropZoneHighlight(editor);
+    tick();
+}
+
+function clearDragHighlightLoop(editor) {
+    if (editor.__voodbuilderDragHighlightRaf) {
+        cancelAnimationFrame(editor.__voodbuilderDragHighlightRaf);
+        delete editor.__voodbuilderDragHighlightRaf;
+    }
+
+    clearChromeDropZoneHighlight(editor);
+}
+
 function startDragChipLoop(editor) {
     if (editor.__voodbuilderDragChipRaf) {
         cancelAnimationFrame(editor.__voodbuilderDragChipRaf);
@@ -427,7 +524,7 @@ export function registerTopDropSpacerType(editor) {
 }
 
 function ensureTopDropSpacer(editor) {
-    if (editor.__voodbuilderChromeShellMode) {
+    if (editor.__voodbuilderChromeShellMode || editor.__voodbuilderChromeLayoutMode) {
         removeTopDropSpacer(editor);
 
         return;
