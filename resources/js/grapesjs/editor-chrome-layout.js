@@ -700,6 +700,60 @@ export function extractChromeLayoutHtml(editor) {
     return parts.join('');
 }
 
+function wireLayoutChromeDropZoneCanvasClicks(editor) {
+    if (editor.__voodbuilderLayoutZoneCanvasClickWired) {
+        return;
+    }
+
+    editor.__voodbuilderLayoutZoneCanvasClickWired = true;
+
+    const attach = () => {
+        const doc = editor.Canvas?.getDocument?.();
+
+        if (! doc || doc.__voodbuilderLayoutZoneClickDelegate) {
+            return;
+        }
+
+        doc.__voodbuilderLayoutZoneClickDelegate = true;
+
+        doc.addEventListener('click', (event) => {
+            if (! isChromeLayoutMode(editor)) {
+                return;
+            }
+
+            const zoneEl = event.target?.closest?.('[data-voodbuilder-chrome-drop-zone]');
+
+            if (! zoneEl || event.target?.closest?.('[data-voodbuilder-block]')) {
+                return;
+            }
+
+            const zone = zoneEl.getAttribute('data-voodbuilder-chrome-drop-zone');
+
+            if (zone !== 'nav' && zone !== 'footer') {
+                return;
+            }
+
+            const dropZone = findDropZone(editor, zone);
+            const block = findPrimaryBlock(dropZone);
+
+            if (! block || readBlockId(block) === '') {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            ensureRootInspectable(block);
+            setActiveLayoutSettingsRoot(editor, block, zone);
+            editor.select(block, { scroll: false });
+            refreshBlockSettingsUi(editor);
+        }, true);
+    };
+
+    editor.on('canvas:frame:load', attach);
+    attach();
+}
+
 export function registerChromeLayoutEditor(editor, options = {}) {
     if (! options.chromeLayoutMode || editor.__voodbuilderChromeLayoutRegistered) {
         return;
@@ -721,6 +775,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     const placeholders = layoutPlaceholders(options);
 
     registerChromeLayerIconPatch(editor);
+    wireLayoutChromeDropZoneCanvasClicks(editor);
 
     let refreshTimer = null;
     let bootstrapping = true;
@@ -765,8 +820,9 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
         if (! editor.__voodbuilderLayoutDynamicRefreshPending) {
             finalizeLayoutInspectorBootstrap(editor);
-            refreshBlockSettingsUi(editor);
         }
+
+        refreshBlockSettingsUi(editor);
 
         editor.trigger('voodbuilder:chrome-layout-ready');
         editor.trigger('voodbuilder:site-chrome-updated');
@@ -777,6 +833,9 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
         ensureLayoutChromeRootsInspectable(editor);
         rebuildLayoutChromeBlockRegistry(editor);
+        refreshBlockSettingsUi(editor);
+    });
+    editor.on('voodbuilder:layout-inspector-ready', () => {
         refreshBlockSettingsUi(editor);
     });
     editor.on('voodbuilder:site-chrome-updated', () => {
@@ -820,10 +879,6 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
             component.set('toolbar', []);
 
-            return;
-        }
-
-        if (! editor.__voodbuilderChromeLayoutReady) {
             return;
         }
 

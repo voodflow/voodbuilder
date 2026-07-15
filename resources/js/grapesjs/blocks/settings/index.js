@@ -36,12 +36,14 @@ export {
 
 export {
     rebuildLayoutChromeBlockRegistry,
+    resolveLayoutChromeBlock,
     getLayoutChromeBlock,
     setActiveLayoutSettingsRoot,
     clearActiveLayoutSettingsRoot,
     getActiveLayoutSettingsRoot,
     finalizeLayoutInspectorBootstrap,
     isLayoutInspectorReady,
+    getLayoutInspectorForceRenderMs,
     resolveLayoutChromeZone,
     findLayoutDropZone,
 } from './layout-chrome-registry.js';

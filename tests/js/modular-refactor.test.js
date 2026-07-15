@@ -25,6 +25,7 @@ import {
 } from '../../resources/js/grapesjs/blocks/settings/registry.js';
 import {
     rebuildLayoutChromeBlockRegistry,
+    resolveLayoutChromeBlock,
     getLayoutChromeBlock,
     setActiveLayoutSettingsRoot,
     resolveLayoutChromeZone,
@@ -273,10 +274,47 @@ describe('blocks/settings/layout-chrome-registry', () => {
 
         const registry = rebuildLayoutChromeBlockRegistry(editor);
 
-        expect(readBlockId(registry.nav)).toBe('site_nav_simple');
-        expect(readBlockId(registry.footer)).toBe('site_footer_centered');
+        expect(registry.nav).toBe('site_nav_simple');
+        expect(registry.footer).toBe('site_footer_centered');
+        expect(readBlockId(resolveLayoutChromeBlock(editor, 'nav'))).toBe('site_nav_simple');
+        expect(readBlockId(getLayoutChromeBlock(editor, 'footer'))).toBe('site_footer_centered');
         expect(resolveLayoutChromeZone(navZone)).toBe('nav');
         expect(resolveLayoutChromeZone(footerBlock)).toBe('footer');
+    });
+
+    it('resolveLayoutChromeBlock walks the live tree after block replacement', () => {
+        const navBlock = mockComponent({ [ATTR.block]: 'site_nav_simple' });
+        const navZone = mockComponent(
+            { [ATTR.dropZone]: 'nav' },
+            [{ attrs: navBlock.getAttributes() }],
+        );
+        const initialBlock = navZone.components().models[0];
+        const wrapper = mockComponent({ type: 'wrapper' }, []);
+
+        wrapper.components = () => ({
+            models: [navZone],
+            forEach: (fn) => [navZone].forEach(fn),
+        });
+        navZone.parent = () => wrapper;
+
+        const editor = {
+            __voodbuilderChromeLayoutMode: true,
+            getWrapper: () => wrapper,
+        };
+
+        expect(readBlockId(getLayoutChromeBlock(editor, 'nav'))).toBe('site_nav_simple');
+        expect(getLayoutChromeBlock(editor, 'nav')).toBe(initialBlock);
+
+        const replacement = mockComponent({ [ATTR.block]: 'site_nav_simple' });
+        navZone.components = () => ({
+            models: [replacement],
+            forEach: (fn) => [replacement].forEach(fn),
+        });
+        replacement.parent = () => navZone;
+
+        expect(readBlockId(getLayoutChromeBlock(editor, 'nav'))).toBe('site_nav_simple');
+        expect(getLayoutChromeBlock(editor, 'nav')).toBe(replacement);
+        expect(getLayoutChromeBlock(editor, 'nav')).not.toBe(initialBlock);
     });
 });
 

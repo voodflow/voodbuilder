@@ -1,20 +1,29 @@
 /**
  * Persistent nav/footer block registry for layout editor settings.
  * Settings resolution does not depend on selection flags or DOM queries.
+ *
+ * Manual regression checklist (layout editor):
+ * 1. Save layout with nav block → hard refresh.
+ * 2. Wait for canvas boot (dynamic blocks refresh completes).
+ * 3. Select nav in canvas or Layers → Content tab shows "Navbar settings".
+ * 4. Change a setting → save → refresh → setting persists and panel still opens.
+ * 5. Repeat for footer block settings.
+ * 6. Click empty header/footer drop zone → selects block root and opens settings.
  */
 
 import { ATTR } from '../../core/attrs.js';
 import { findPrimaryBlock, readBlockId } from '../../core/block-tree.js';
-import { isChromeDropZoneComponent, isChromeLayoutModeEditor } from '../../chrome-content-slot-utils.js';
+import { isChromeLayoutModeEditor } from '../../chrome-content-slot-utils.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
 
 /** @typedef {'nav'|'footer'} LayoutChromeZone */
 
 export const LAYOUT_CHROME_ZONES = /** @type {const} */ (['nav', 'footer']);
 
+const LAYOUT_INSPECTOR_FORCE_RENDER_MS = 2000;
+
 /**
- * @param {object|null|undefined} editor
- * @returns {{ nav: object|null, footer: object|null }}
+ * @returns {{ nav: string|null, footer: string|null }}
  */
 export function emptyLayoutChromeBlockRegistry() {
     return { nav: null, footer: null };
@@ -64,10 +73,43 @@ export function resolveLayoutChromeZone(component) {
 }
 
 /**
- * Scan layout drop zones and cache nav/footer block roots on the editor.
+ * Resolve the current nav/footer block root by walking the live component tree.
+ * Never returns a cached Component reference.
  *
  * @param {object|null|undefined} editor
- * @returns {{ nav: object|null, footer: object|null }}
+ * @param {LayoutChromeZone} zone
+ * @returns {object|null}
+ */
+export function resolveLayoutChromeBlock(editor, zone) {
+    if (! isChromeLayoutModeEditor(editor)) {
+        return null;
+    }
+
+    const dropZone = findLayoutDropZone(editor, zone);
+
+    if (! dropZone) {
+        return null;
+    }
+
+    const block = findPrimaryBlock(dropZone);
+
+    if (
+        ! block
+        || ! isValidGrapesComponent(block)
+        || block.isRemoved?.()
+        || readBlockId(block) === ''
+    ) {
+        return null;
+    }
+
+    return block;
+}
+
+/**
+ * Scan layout drop zones and cache nav/footer block ids on the editor (not Component refs).
+ *
+ * @param {object|null|undefined} editor
+ * @returns {{ nav: string|null, footer: string|null }}
  */
 export function rebuildLayoutChromeBlockRegistry(editor) {
     if (! isChromeLayoutModeEditor(editor)) {
@@ -76,26 +118,12 @@ export function rebuildLayoutChromeBlockRegistry(editor) {
         return editor.__voodbuilderLayoutChromeBlocks;
     }
 
-    /** @type {{ nav: object|null, footer: object|null }} */
+    /** @type {{ nav: string|null, footer: string|null }} */
     const registry = emptyLayoutChromeBlockRegistry();
 
     for (const zone of LAYOUT_CHROME_ZONES) {
-        const dropZone = findLayoutDropZone(editor, zone);
-
-        if (! dropZone) {
-            continue;
-        }
-
-        const block = findPrimaryBlock(dropZone);
-
-        if (
-            block
-            && isValidGrapesComponent(block)
-            && ! block.isRemoved?.()
-            && readBlockId(block) !== ''
-        ) {
-            registry[zone] = block;
-        }
+        const block = resolveLayoutChromeBlock(editor, zone);
+        registry[zone] = block ? readBlockId(block) : null;
     }
 
     editor.__voodbuilderLayoutChromeBlocks = registry;
@@ -109,23 +137,7 @@ export function rebuildLayoutChromeBlockRegistry(editor) {
  * @returns {object|null}
  */
 export function getLayoutChromeBlock(editor, zone) {
-    if (! isChromeLayoutModeEditor(editor)) {
-        return null;
-    }
-
-    const cached = editor.__voodbuilderLayoutChromeBlocks?.[zone];
-
-    if (cached && isValidGrapesComponent(cached) && ! cached.isRemoved?.()) {
-        return cached;
-    }
-
-    rebuildLayoutChromeBlockRegistry(editor);
-
-    const refreshed = editor.__voodbuilderLayoutChromeBlocks?.[zone];
-
-    return refreshed && isValidGrapesComponent(refreshed) && ! refreshed.isRemoved?.()
-        ? refreshed
-        : null;
+    return resolveLayoutChromeBlock(editor, zone);
 }
 
 /**
@@ -133,9 +145,39 @@ export function getLayoutChromeBlock(editor, zone) {
  * @returns {object|null}
  */
 export function getActiveLayoutSettingsRoot(editor) {
+    const zone = editor?.__voodbuilderActiveSettingsZone;
+
+    if (zone === 'nav' || zone === 'footer') {
+        const fresh = resolveLayoutChromeBlock(editor, zone);
+
+        if (fresh) {
+            editor.__voodbuilderActiveSettingsRoot = fresh;
+
+            return fresh;
+        }
+    }
+
     const root = editor?.__voodbuilderActiveSettingsRoot;
 
     if (root && isValidGrapesComponent(root) && ! root.isRemoved?.()) {
+        const blockId = readBlockId(root);
+
+        if (blockId === '') {
+            return null;
+        }
+
+        const zoneFromRoot = resolveLayoutChromeZone(root);
+
+        if (zoneFromRoot) {
+            const fresh = resolveLayoutChromeBlock(editor, zoneFromRoot);
+
+            if (fresh && readBlockId(fresh) === blockId) {
+                editor.__voodbuilderActiveSettingsRoot = fresh;
+
+                return fresh;
+            }
+        }
+
         return root;
     }
 
@@ -159,8 +201,13 @@ export function setActiveLayoutSettingsRoot(editor, root, zone = null) {
         return;
     }
 
-    editor.__voodbuilderActiveSettingsRoot = root;
-    editor.__voodbuilderActiveSettingsZone = zone ?? resolveLayoutChromeZone(root);
+    const resolvedZone = zone ?? resolveLayoutChromeZone(root);
+    const fresh = (resolvedZone === 'nav' || resolvedZone === 'footer')
+        ? resolveLayoutChromeBlock(editor, resolvedZone)
+        : root;
+
+    editor.__voodbuilderActiveSettingsRoot = fresh ?? root;
+    editor.__voodbuilderActiveSettingsZone = resolvedZone;
 }
 
 /**
@@ -184,6 +231,14 @@ export function isLayoutInspectorReady(editor) {
 }
 
 /**
+ * @param {object|null|undefined} editor
+ * @returns {number}
+ */
+export function getLayoutInspectorForceRenderMs() {
+    return LAYOUT_INSPECTOR_FORCE_RENDER_MS;
+}
+
+/**
  * Mark layout inspector bootstrap complete after structure, registry, and reconcile.
  *
  * @param {object|null|undefined} editor
@@ -195,6 +250,7 @@ export function finalizeLayoutInspectorBootstrap(editor) {
 
     rebuildLayoutChromeBlockRegistry(editor);
     editor.__voodbuilderLayoutInspectorReady = true;
+    editor.__voodbuilderLayoutDynamicRefreshPending = false;
     editor.trigger?.('voodbuilder:layout-inspector-ready');
 }
 
@@ -228,5 +284,7 @@ export function resolveLayoutChromeBlockFromSelection(component, editor) {
  * @returns {boolean}
  */
 export function isLayoutChromeDropZoneSelection(component) {
-    return isChromeDropZoneComponent(component);
+    const zone = component?.getAttributes?.()?.[ATTR.dropZone];
+
+    return zone === 'nav' || zone === 'footer';
 }

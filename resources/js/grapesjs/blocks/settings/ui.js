@@ -13,11 +13,13 @@ import {
     resolveSettings,
 } from './registry.js';
 import {
+    getLayoutInspectorForceRenderMs,
     isLayoutInspectorReady,
 } from './layout-chrome-registry.js';
 import {
     ensureRootInspectable,
     findInspectableRoot,
+    readBlockId,
     shouldPromoteSelectionToRoot,
 } from './select.js';
 
@@ -209,7 +211,9 @@ export function registerSettingsUi(editor, mount) {
     guardTraitManagerForBlockSettings(editor);
 
     let renderedRoot = null;
+    let renderedRootBlockId = '';
     let renderedDescriptorId = null;
+    let layoutInspectorLoadingSince = 0;
 
     const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
         ?.querySelector('.voodbuilder-gjs-traits-mount');
@@ -261,6 +265,28 @@ export function registerSettingsUi(editor, mount) {
         });
     };
 
+    const shouldDeferLayoutInspectorRender = (rawSelected) => {
+        if (! isChromeLayoutModeEditor(editor) || isLayoutInspectorReady(editor)) {
+            layoutInspectorLoadingSince = 0;
+
+            return false;
+        }
+
+        const { descriptor, root } = resolveSettings(rawSelected, editor);
+
+        if (descriptor && root) {
+            layoutInspectorLoadingSince = 0;
+
+            return false;
+        }
+
+        if (! layoutInspectorLoadingSince) {
+            layoutInspectorLoadingSince = Date.now();
+        }
+
+        return Date.now() - layoutInspectorLoadingSince < getLayoutInspectorForceRenderMs();
+    };
+
     const render = () => {
         if (editor.__voodbuilderBlockSettingsRendering) {
             return;
@@ -269,13 +295,13 @@ export function registerSettingsUi(editor, mount) {
         editor.__voodbuilderBlockSettingsRendering = true;
 
         try {
-            if (isChromeLayoutModeEditor(editor) && ! isLayoutInspectorReady(editor)) {
+            const rawSelected = editor.getSelected();
+
+            if (shouldDeferLayoutInspectorRender(rawSelected)) {
                 renderLayoutInspectorLoading();
 
                 return;
             }
-
-            const rawSelected = editor.getSelected();
 
             if (
                 isChromeLayoutModeEditor(editor)
@@ -304,10 +330,13 @@ export function registerSettingsUi(editor, mount) {
             if (! descriptor || ! root) {
                 showTraitsFallback();
                 renderedRoot = null;
+                renderedRootBlockId = '';
                 renderedDescriptorId = null;
 
                 return;
             }
+
+            const rootBlockId = readBlockId(root);
 
             if (
                 isChromeLayoutModeEditor(editor)
@@ -324,12 +353,14 @@ export function registerSettingsUi(editor, mount) {
             maybePromoteSelectionForHighlight(rawSelected, root);
 
             if (
-                renderedRoot === root
+                renderedRootBlockId !== ''
+                && renderedRootBlockId === rootBlockId
                 && renderedDescriptorId === descriptor.id
                 && mount.querySelector('.voodbuilder-gjs-form')
             ) {
                 mount.hidden = false;
                 traitsMount?.classList.add('hidden');
+                renderedRoot = root;
                 syncSettingsFormValues(mount, root);
 
                 return;
@@ -343,6 +374,7 @@ export function registerSettingsUi(editor, mount) {
             descriptor.render({ mount, root, editor, traitsMount });
 
             renderedRoot = root;
+            renderedRootBlockId = rootBlockId;
             renderedDescriptorId = descriptor.id;
         } finally {
             editor.__voodbuilderBlockSettingsRendering = false;

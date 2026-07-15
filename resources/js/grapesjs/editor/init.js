@@ -37,7 +37,9 @@ import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButt
 import { registerNewsletterFormSettings } from '../grapesjs-forms-blocks.js';
 import { registerChromeContentSlotType } from '../chrome-content-slot-utils.js';
 import {
+    finalizeLayoutInspectorBootstrap,
     promoteInspectableBlockSelection,
+    rebuildLayoutChromeBlockRegistry,
     registerBlockSettingsUi,
     refreshBlockSettingsUi,
 } from '../blocks/settings/index.js';
@@ -71,7 +73,6 @@ import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeD
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
 import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
-import { finalizeLayoutInspectorBootstrap } from '../blocks/settings/index.js';
 import {
     buildEditorShell,
     collapseBlockCategories,
@@ -687,10 +688,12 @@ export function initVpressGrapesJs(container, options = {}) {
 
             editor.__voodbuilderDynamicBlocksRefresh = refresh;
             void refresh.finally(() => {
+                editor.__voodbuilderLayoutDynamicRefreshPending = false;
                 dynamicBlocksGate.resolve();
                 migrateEditorComponents(editor);
                 scanLinkableButtons(editor);
                 reconcileLayoutChromeBlockSettings(editor);
+                rebuildLayoutChromeBlockRegistry(editor);
                 finalizeLayoutInspectorBootstrap(editor);
                 refreshBlockSettingsUi(editor);
 
@@ -1140,6 +1143,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId || 'unknown', error);
     } finally {
         component.__voodbuilderRefreshing = false;
+
+        if (editor.__voodbuilderChromeLayoutMode) {
+            rebuildLayoutChromeBlockRegistry(editor);
+        }
     }
 }
 
