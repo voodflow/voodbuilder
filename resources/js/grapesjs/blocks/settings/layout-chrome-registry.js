@@ -41,12 +41,21 @@ export function findLayoutDropZone(editor, zoneName) {
         return null;
     }
 
-    const children = wrapper.components()?.models ?? [...(wrapper.components() ?? [])];
+    const queue = [...(wrapper.components()?.models ?? [...(wrapper.components() ?? [])])];
 
-    for (const component of children) {
-        if (component?.getAttributes?.()?.[ATTR.dropZone] === zoneName) {
+    while (queue.length > 0) {
+        const component = queue.shift();
+
+        if (! component) {
+            continue;
+        }
+
+        if (component.getAttributes?.()?.[ATTR.dropZone] === zoneName) {
             return component;
         }
+
+        const children = component.components?.()?.models ?? [...(component.components?.() ?? [])];
+        queue.push(...children);
     }
 
     return null;
@@ -91,7 +100,26 @@ export function resolveLayoutChromeBlock(editor, zone) {
         return null;
     }
 
-    const block = findPrimaryBlock(dropZone);
+    let block = findPrimaryBlock(dropZone);
+
+    if (
+        ! block
+        || ! isValidGrapesComponent(block)
+        || block.isRemoved?.()
+        || readBlockId(block) === ''
+    ) {
+        // Model tree can lag behind the canvas DOM after dynamic refresh.
+        try {
+            const matches = dropZone.find?.(`[${ATTR.block}]`);
+            const fallback = matches?.[0] ?? (typeof matches?.[Symbol.iterator] === 'function' ? [...matches][0] : null);
+
+            if (fallback && readBlockId(fallback) !== '') {
+                block = fallback;
+            }
+        } catch {
+            block = null;
+        }
+    }
 
     if (
         ! block

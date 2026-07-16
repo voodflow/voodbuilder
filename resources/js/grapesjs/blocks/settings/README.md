@@ -74,8 +74,10 @@ Set `layoutOnly: true` on descriptors that must appear only in the chrome **layo
 (nav/footer). The page shell editor keeps chrome blocks read-only and falls back to default
 traits without custom settings.
 
-When a `layoutOnly` descriptor matches in layout mode, the Content tab is activated
-automatically.
+When a settings descriptor matches a **newly selected** block root (by block id),
+the Content tab opens once. The user can then freely switch to Style / Dynamic /
+Conditions / Layers — switching tabs must never force Content again. After dynamic
+refresh the auto-tab key is cleared so the next selection can reopen Content once.
 
 ### TraitManager guard
 

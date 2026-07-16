@@ -48,7 +48,7 @@ import {
     registerChromeLayoutInspectorSelection,
     wireInspector,
 } from './inspector.js';
-import { registerInspectorColorFix } from '../inspector-color-fix.js';
+import { registerInspectorColorFix, installGlobalColorInputValueFix } from '../inspector-color-fix.js';
 import { guardEditorLayersRender } from '../tailwind-visual-style.js';
 import { configureVpressCodeBlock } from '../editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from '../theme-tokens.js';
@@ -416,6 +416,9 @@ function createDynamicBlocksPending() {
 }
 
 export function initVpressGrapesJs(container, options = {}) {
+    // Before grapesjs.init — StyleManager sets color inputs during construction.
+    installGlobalColorInputValueFix();
+
     const initial = options.initial ?? {};
     const labels = options.labels ?? {};
     const useLayout = options.layout !== false;

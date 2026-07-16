@@ -9,7 +9,38 @@ import { ATTR } from './attrs.js';
  * @returns {string}
  */
 export function readBlockId(component) {
-    return String(component?.getAttributes?.()?.[ATTR.block] ?? '').trim();
+    if (! component) {
+        return '';
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const fromAttrs = attrs[ATTR.block] ?? attrs['data-voodbuilder-block'] ?? '';
+
+    if (String(fromAttrs).trim() !== '') {
+        return String(fromAttrs).trim();
+    }
+
+    try {
+        const fromGet = component.get?.(ATTR.block) ?? component.get?.('attributes')?.[ATTR.block];
+
+        if (fromGet != null && String(fromGet).trim() !== '') {
+            return String(fromGet).trim();
+        }
+    } catch {
+        // Ignore model get failures.
+    }
+
+    try {
+        const fromEl = component.getEl?.()?.getAttribute?.(ATTR.block);
+
+        if (fromEl != null && String(fromEl).trim() !== '') {
+            return String(fromEl).trim();
+        }
+    } catch {
+        // Canvas frame may not be ready yet.
+    }
+
+    return '';
 }
 
 /**

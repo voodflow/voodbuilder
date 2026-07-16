@@ -46,6 +46,8 @@ function isInsideChromeDropZone(component) {
 
 /**
  * Resolve nav/footer block root when selection is inside a layout chrome drop zone.
+ * Also accepts the block root itself (with or without a drop-zone ancestor) so
+ * settings keep working after load / dynamic refresh before zones are reconciled.
  *
  * @param {object|null|undefined} component
  * @param {object|null|undefined} editor
@@ -67,7 +69,12 @@ export function findLayoutChromeZoneBlockRoot(component, editor) {
 
         const blockId = readBlockId(current);
 
-        if (blockId !== '' && isInsideChromeDropZone(current)) {
+        if (blockId !== '') {
+            if (isInsideChromeDropZone(current)) {
+                return current;
+            }
+
+            // Top-level / pre-wrap load: block root still owns settings.
             return current;
         }
 

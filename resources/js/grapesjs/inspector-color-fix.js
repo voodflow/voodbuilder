@@ -238,6 +238,81 @@ export function fixInspectorColorInputs(root = document) {
     scope.querySelectorAll?.('input[type="color"]').forEach(fixColorInput);
 }
 
+/**
+ * Patch HTMLInputElement.prototype.value once so GrapesJS StyleManager never
+ * assigns named colors ("black"/"white") to <input type="color">.
+ * Must run before grapesjs.init().
+ */
+export function installGlobalColorInputValueFix() {
+    if (typeof window === 'undefined' || window.__voodbuilderColorInputValueFixed) {
+        return;
+    }
+
+    const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+    if (! valueDescriptor?.set || ! valueDescriptor?.get) {
+        return;
+    }
+
+    window.__voodbuilderColorInputValueFixed = true;
+
+    Object.defineProperty(HTMLInputElement.prototype, 'value', {
+        configurable: true,
+        enumerable: valueDescriptor.enumerable,
+        get() {
+            return valueDescriptor.get.call(this);
+        },
+        set(next) {
+            if (this.type === 'color') {
+                valueDescriptor.set.call(this, normalizeHex(next) || '#000000');
+
+                return;
+            }
+
+            valueDescriptor.set.call(this, next);
+        },
+    });
+
+    const originalSetAttribute = Element.prototype.setAttribute;
+
+    Element.prototype.setAttribute = function setAttribute(name, value) {
+        if (
+            this instanceof HTMLInputElement
+            && this.type === 'color'
+            && String(name).toLowerCase() === 'value'
+        ) {
+            return originalSetAttribute.call(this, name, normalizeHex(value) || '#000000');
+        }
+
+        return originalSetAttribute.call(this, name, value);
+    };
+
+    // GrapesJS sometimes sets value before type="color". Normalize on type change too.
+    const typeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'type');
+
+    if (typeDescriptor?.set && typeDescriptor?.get) {
+        Object.defineProperty(HTMLInputElement.prototype, 'type', {
+            configurable: true,
+            enumerable: typeDescriptor.enumerable,
+            get() {
+                return typeDescriptor.get.call(this);
+            },
+            set(next) {
+                typeDescriptor.set.call(this, next);
+
+                if (String(next).toLowerCase() === 'color') {
+                    const current = valueDescriptor.get.call(this);
+                    const normalized = normalizeHex(current);
+
+                    if (normalized && normalized !== current) {
+                        valueDescriptor.set.call(this, normalized);
+                    }
+                }
+            },
+        });
+    }
+}
+
 export function registerInspectorColorFix(editor, mounts = {}) {
     if (editor.__voodbuilderInspectorColorFixRegistered) {
         return;
@@ -245,7 +320,9 @@ export function registerInspectorColorFix(editor, mounts = {}) {
 
     editor.__voodbuilderInspectorColorFixRegistered = true;
 
-    const roots = [mounts.styles, mounts.traits].filter(Boolean);
+    installGlobalColorInputValueFix();
+
+    const roots = [mounts.styles, mounts.traits, mounts.siteChromeSettings].filter(Boolean);
     let timer = null;
 
     const refresh = () => {

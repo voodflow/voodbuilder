@@ -505,6 +505,15 @@ export function reconcileLayoutChromeBlockSettings(editor) {
     lockLayoutChromeBlocks(editor);
     ensureLayoutChromeRootsInspectable(editor);
     rebuildLayoutChromeBlockRegistry(editor);
+
+    const selected = editor.getSelected?.();
+    const root = selected ? findInspectableRoot(selected, editor) : null;
+
+    if (root && readBlockId(root) !== '') {
+        ensureRootInspectable(root);
+        setActiveLayoutSettingsRoot(editor, root);
+    }
+
     refreshBlockSettingsUi(editor);
 }
 
@@ -889,6 +898,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         }
 
         ensureRootInspectable(root);
+        setActiveLayoutSettingsRoot(editor, root);
         refreshBlockSettingsUi(editor);
     });
 

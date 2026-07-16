@@ -14,7 +14,10 @@ import {
 } from './registry.js';
 import {
     getLayoutInspectorForceRenderMs,
+    getLayoutChromeBlock,
     isLayoutInspectorReady,
+    resolveLayoutChromeZone,
+    setActiveLayoutSettingsRoot,
 } from './layout-chrome-registry.js';
 import {
     ensureRootInspectable,
@@ -114,6 +117,15 @@ function isLayoutOnlyDescriptor(descriptor) {
  */
 function isContentInspectorTabActive(editor) {
     return (editor.__voodbuilderInspectorActiveTab ?? 'content') === 'content';
+}
+
+/**
+ * Reset cached render state so the next selection always rebuilds the form.
+ *
+ * @param {object|null|undefined} editor
+ */
+export function invalidateBlockSettingsUi(editor) {
+    editor?.__voodbuilderBlockSettingsInvalidate?.();
 }
 
 /**
@@ -217,6 +229,17 @@ export function registerSettingsUi(editor, mount) {
 
     const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
         ?.querySelector('.voodbuilder-gjs-traits-mount');
+
+    const invalidateRenderCache = () => {
+        renderedRoot = null;
+        renderedRootBlockId = '';
+        renderedDescriptorId = null;
+        layoutInspectorLoadingSince = 0;
+        mount.hidden = true;
+        mount.replaceChildren();
+    };
+
+    editor.__voodbuilderBlockSettingsInvalidate = invalidateRenderCache;
 
     const renderLayoutInspectorLoading = () => {
         mount.hidden = false;
@@ -328,6 +351,85 @@ export function registerSettingsUi(editor, mount) {
             }
 
             if (! descriptor || ! root) {
+                const chromeZone = isChromeLayoutModeEditor(editor)
+                    ? resolveLayoutChromeZone(rawSelected)
+                    : null;
+
+                if (chromeZone === 'nav' || chromeZone === 'footer') {
+                    editor.__voodbuilderEnsureChromeBlockSettings?.(editor);
+
+                    const zoneBlock = getLayoutChromeBlock(editor, chromeZone)
+                        ?? findInspectableRoot(rawSelected, editor);
+                    const zoneDescriptor = zoneBlock
+                        ? resolveSettings(zoneBlock, editor).descriptor
+                        : null;
+
+                    if (zoneDescriptor && zoneBlock) {
+                        ensureRootInspectable(zoneBlock);
+                        setActiveLayoutSettingsRoot(editor, zoneBlock, chromeZone);
+
+                        if (isContentInspectorTabActive(editor)) {
+                            mount.hidden = false;
+                            traitsMount?.classList.add('hidden');
+                            traitsMount?.replaceChildren?.();
+                            mount.replaceChildren();
+                            zoneDescriptor.render({
+                                mount,
+                                root: zoneBlock,
+                                editor,
+                                traitsMount,
+                            });
+                            renderedRoot = zoneBlock;
+                            renderedRootBlockId = readBlockId(zoneBlock);
+                            renderedDescriptorId = zoneDescriptor.id;
+                        }
+
+                        return;
+                    }
+
+                    const retries = Number(editor.__voodbuilderChromeSettingsResolveRetries ?? 0);
+
+                    if (retries < 8) {
+                        editor.__voodbuilderChromeSettingsResolveRetries = retries + 1;
+                        mount.hidden = false;
+                        traitsMount?.classList.add('hidden');
+                        traitsMount?.replaceChildren?.();
+
+                        if (! mount.querySelector('.voodbuilder-gjs-inspector-empty-hint')) {
+                            mount.replaceChildren();
+                            const hint = document.createElement('p');
+                            hint.className = 'voodbuilder-gjs-inspector-empty-hint';
+                            hint.textContent = chromeZone === 'nav'
+                                ? 'Loading header settings…'
+                                : 'Loading footer settings…';
+                            mount.appendChild(hint);
+                        }
+
+                        window.setTimeout(() => {
+                            editor.__voodbuilderBlockSettingsRender?.();
+                        }, 120);
+
+                        return;
+                    }
+
+                    editor.__voodbuilderChromeSettingsResolveRetries = 0;
+                    mount.hidden = false;
+                    traitsMount?.classList.add('hidden');
+                    traitsMount?.replaceChildren?.();
+                    mount.replaceChildren();
+                    const hint = document.createElement('p');
+                    hint.className = 'voodbuilder-gjs-inspector-empty-hint';
+                    hint.textContent = chromeZone === 'nav'
+                        ? 'Header block settings are unavailable. Try re-dropping the header block.'
+                        : 'Footer block settings are unavailable. Try re-dropping the footer block.';
+                    mount.appendChild(hint);
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
+
+                    return;
+                }
+
                 showTraitsFallback();
                 renderedRoot = null;
                 renderedRootBlockId = '';
@@ -336,31 +438,32 @@ export function registerSettingsUi(editor, mount) {
                 return;
             }
 
+            editor.__voodbuilderChromeSettingsResolveRetries = 0;
+
             const rootBlockId = readBlockId(root);
 
-            if (
-                isChromeLayoutModeEditor(editor)
-                && isLayoutOnlyDescriptor(descriptor)
-                && ! isContentInspectorTabActive(editor)
-            ) {
-                mount.hidden = true;
-                traitsMount?.classList.add('hidden');
-
+            // Settings UI lives on the Content tab only.
+            // Never force-activate Content here — that trapped users on this tab.
+            if (! isContentInspectorTabActive(editor)) {
                 return;
             }
 
             ensureRootInspectable(root);
             maybePromoteSelectionForHighlight(rawSelected, root);
 
-            if (
-                renderedRootBlockId !== ''
+            const existingForm = mount.querySelector('.voodbuilder-gjs-form');
+            const canReuseForm = Boolean(
+                existingForm
+                && ! mount.hidden
+                && renderedRootBlockId !== ''
                 && renderedRootBlockId === rootBlockId
                 && renderedDescriptorId === descriptor.id
-                && mount.querySelector('.voodbuilder-gjs-form')
-            ) {
+                && renderedRoot === root
+            );
+
+            if (canReuseForm) {
                 mount.hidden = false;
                 traitsMount?.classList.add('hidden');
-                renderedRoot = root;
                 syncSettingsFormValues(mount, root);
 
                 return;
@@ -403,7 +506,10 @@ export function registerSettingsUi(editor, mount) {
     editor.on('load', scheduleRender);
     editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
     editor.on('voodbuilder:layout-inspector-ready', scheduleRender);
-    editor.on('voodbuilder:dynamic-blocks-refreshed', scheduleRender);
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        invalidateRenderCache();
+        scheduleRender();
+    });
     editor.on('component:update', (component) => {
         if (editor.__voodbuilderSettingsChange) {
             return;

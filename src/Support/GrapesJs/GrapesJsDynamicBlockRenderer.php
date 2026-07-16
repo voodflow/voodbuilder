@@ -103,6 +103,12 @@ final class GrapesJsDynamicBlockRenderer
                 return;
             }
 
+            if ($canvasPreview) {
+                $this->replaceNodeInnerHtmlForEditor($document, $node, $rendered);
+
+                return;
+            }
+
             $this->replaceNodeWithRenderedHtml(
                 $document,
                 $node,
@@ -124,9 +130,88 @@ final class GrapesJsDynamicBlockRenderer
             return;
         }
 
+        if ($canvasPreview) {
+            $this->replaceNodeInnerHtmlForEditor($document, $node, $rendered);
+
+            return;
+        }
+
         $rendered = $this->stripPublishedBlockWrapperAttributes($rendered);
 
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+    }
+
+    /**
+     * Keep data-voodbuilder-block / config on the original node for the GrapesJS editor.
+     * Published HTML still strips those attributes (see stripPublishedBlockWrapperAttributes).
+     */
+    protected function replaceNodeInnerHtmlForEditor(DOMDocument $document, DOMElement $node, string $rendered): void
+    {
+        $innerHtml = $this->unwrapEditorPreviewRoot($rendered);
+
+        while ($node->firstChild) {
+            $node->removeChild($node->firstChild);
+        }
+
+        $class = trim((string) $node->getAttribute('class'));
+
+        if ($class === '' || ! str_contains($class, 'voodbuilder-gjs-dynamic')) {
+            $node->setAttribute('class', trim($class.' voodbuilder-gjs-dynamic'));
+        }
+
+        if ($innerHtml === '') {
+            return;
+        }
+
+        $fragmentDocument = $this->loadDocument($innerHtml);
+        $body = $fragmentDocument->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return;
+        }
+
+        foreach (iterator_to_array($body->childNodes) as $child) {
+            if ($child instanceof DOMNode) {
+                $node->appendChild($document->importNode($child, true));
+            }
+        }
+    }
+
+    /**
+     * If preview HTML already includes a block wrapper, use its children to avoid nesting.
+     */
+    protected function unwrapEditorPreviewRoot(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-block')) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $elementChildren = [];
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $elementChildren[] = $child;
+            }
+        }
+
+        if (count($elementChildren) !== 1 || ! $elementChildren[0]->hasAttribute('data-voodbuilder-block')) {
+            return $this->stripPublishedBlockWrapperAttributes($html);
+        }
+
+        $output = '';
+
+        foreach ($elementChildren[0]->childNodes as $child) {
+            $output .= $document->saveHTML($child);
+        }
+
+        return $output;
     }
 
     protected function stripPublishedBlockWrapperAttributes(string $html): string

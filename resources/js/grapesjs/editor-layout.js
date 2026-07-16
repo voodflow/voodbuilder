@@ -10,7 +10,7 @@ import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
-import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi, findInspectableRoot, ensureRootInspectable } from './blocks/settings/index.js';
+import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi, findInspectableRoot, ensureRootInspectable, readBlockId } from './blocks/settings/index.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -419,29 +419,53 @@ function setupInspectorTabs(mounts, editor) {
     });
 
     editor.on('component:selected', (component) => {
-        if (component && editor.__voodbuilderChromeLayoutMode) {
+        if (component) {
             const { descriptor, root } = resolveBlockSettingsTarget(component, editor);
 
-            if (descriptor?.layoutOnly && root) {
-                const lastRoot = editor.__voodbuilderLayoutSettingsAutoTabRoot ?? null;
+            if (descriptor && root) {
+                // Prefer block id over object identity so a post-refresh re-select
+                // still opens Content once, without locking the user on that tab.
+                const rootKey = readBlockId(root) || `cid:${component.cid ?? ''}`;
+                const lastKey = editor.__voodbuilderLayoutSettingsAutoTabKey ?? null;
 
-                if (lastRoot !== root) {
-                    editor.__voodbuilderLayoutSettingsAutoTabRoot = root;
+                editor.__voodbuilderLayoutSettingsAutoTabRoot = root;
+
+                if (lastKey !== rootKey) {
+                    editor.__voodbuilderLayoutSettingsAutoTabKey = rootKey;
+                    editor.__voodbuilderInspectorTabUserChoice = false;
                     activateTab('content');
                 }
-            } else if (! descriptor?.layoutOnly) {
+            } else {
                 editor.__voodbuilderLayoutSettingsAutoTabRoot = null;
+                editor.__voodbuilderLayoutSettingsAutoTabKey = null;
             }
+
+            syncInspectorManagers(editor, activeTab);
+
+            // Prefer block settings over bind/conditions tabs when a descriptor matches.
+            if (! descriptor) {
+                if (component.getAttributes?.()['data-voodbuilder-bind']) {
+                    activateTab('dynamic');
+                }
+
+                if (component.getAttributes?.()['data-voodbuilder-conditions']) {
+                    activateTab('conditions');
+                }
+            }
+
+            return;
         }
 
         syncInspectorManagers(editor, activeTab);
+    });
 
-        if (component?.getAttributes?.()['data-voodbuilder-bind']) {
-            activateTab('dynamic');
-        }
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        // Allow the next selection to re-open Content once after refresh.
+        editor.__voodbuilderLayoutSettingsAutoTabKey = null;
+        editor.__voodbuilderLayoutSettingsAutoTabRoot = null;
 
-        if (component?.getAttributes?.()['data-voodbuilder-conditions']) {
-            activateTab('conditions');
+        if (activeTab === 'content') {
+            refreshBlockSettingsUi(editor);
         }
     });
 

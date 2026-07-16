@@ -11,6 +11,8 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRichContentBlockAdapter;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class GrapesJsDynamicBlockRendererTest extends TestCase
@@ -39,5 +41,50 @@ class GrapesJsDynamicBlockRendererTest extends TestCase
 
         $this->assertStringNotContainsString('data-voodbuilder-block', $html);
         $this->assertStringContainsString('Fast', $html);
+    }
+
+    public function test_canvas_preview_preserves_block_identity_attributes(): void
+    {
+        $serverRegistry = new GrapesJsServerBlockRegistry;
+        $serverRegistry->register('Voodbuilder', SiteNavSimpleBlock::class);
+
+        $config = [
+            'variant' => 'simple',
+            'main_nav_align' => 'start',
+            'sticky_nav' => 'inherit',
+            'show_search' => true,
+            'show_notifications' => true,
+            'show_profile_menu' => true,
+        ];
+        $wrapped = GrapesJsRichContentBlockAdapter::wrap('site_nav_simple', $config, '<p>placeholder</p>');
+
+        $renderer = new GrapesJsDynamicBlockRenderer(new GrapesJsDynamicBlockRegistry, $serverRegistry);
+        $html = $renderer->render($wrapped, null, canvasPreview: true);
+
+        $this->assertStringContainsString('data-voodbuilder-block="site_nav_simple"', $html);
+        $this->assertStringContainsString('data-voodbuilder-config', $html);
+        $this->assertStringContainsString('voodbuilder-gjs-dynamic', $html);
+    }
+
+    public function test_canvas_preview_preserves_footer_block_identity(): void
+    {
+        $serverRegistry = new GrapesJsServerBlockRegistry;
+        $serverRegistry->register('Voodbuilder', SiteFooterColumnsSimpleBlock::class);
+
+        $config = SiteFooterColumnsSimpleBlock::defaultConfig();
+        $wrapped = GrapesJsRichContentBlockAdapter::wrap(
+            SiteFooterColumnsSimpleBlock::getId(),
+            $config,
+            '<p>placeholder</p>',
+        );
+
+        $renderer = new GrapesJsDynamicBlockRenderer(new GrapesJsDynamicBlockRegistry, $serverRegistry);
+        $html = $renderer->render($wrapped, null, canvasPreview: true);
+
+        $this->assertStringContainsString(
+            'data-voodbuilder-block="'.SiteFooterColumnsSimpleBlock::getId().'"',
+            $html,
+        );
+        $this->assertStringContainsString('data-voodbuilder-config', $html);
     }
 }

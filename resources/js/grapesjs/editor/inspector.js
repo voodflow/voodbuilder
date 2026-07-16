@@ -124,6 +124,10 @@ export function wireInspector(editor, shell, options, labels) {
 
     registerFooterSettings(editor);
     registerNavSettings(editor);
+    editor.__voodbuilderEnsureChromeBlockSettings = (targetEditor = editor) => {
+        registerFooterSettings(targetEditor);
+        registerNavSettings(targetEditor);
+    };
     registerSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerNewsletterFormSettings(editor);
     registerInspectorColorFix(editor, shell?.mounts ?? {});

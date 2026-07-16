@@ -32,6 +32,7 @@ export {
     promoteRoot,
     promoteInspectableBlockSelection,
     runWithSettingsChangeGuard,
+    invalidateBlockSettingsUi,
 } from './ui.js';
 
 export {

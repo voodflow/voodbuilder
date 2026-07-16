@@ -171,6 +171,58 @@ describe('blocks/settings/select', () => {
         expect(root.get('highlightable')).toBe(true);
         expect(root.get('layerable')).toBe(true);
     });
+
+    it('findLayoutChromeZoneBlockRoot resolves block root even without drop-zone ancestor', () => {
+        const navBlock = mockComponent({ [ATTR.block]: 'site_nav_simple' });
+        const inner = mockComponent({ class: 'nav-link' }, [], navBlock);
+        const editor = { __voodbuilderChromeLayoutMode: true };
+
+        expect(readBlockId(findLayoutChromeZoneBlockRoot(inner, editor))).toBe('site_nav_simple');
+        expect(readBlockId(findLayoutChromeZoneBlockRoot(navBlock, editor))).toBe('site_nav_simple');
+    });
+
+    it('resolveSettings still matches after selecting the same root twice (refresh identity)', () => {
+        registerBlockSettings({
+            id: 'test_nav_refresh_identity',
+            layoutOnly: true,
+            matchBlockId: (blockId) => blockId === 'site_nav_refresh_identity',
+            findRoot: findLayoutChromeZoneBlockRoot,
+            render: () => {},
+        });
+
+        const navBlock = mockComponent({ [ATTR.block]: 'site_nav_refresh_identity' });
+        const zone = mockComponent(
+            { [ATTR.dropZone]: 'nav', type: 'voodbuilder-chrome-drop-zone' },
+            [],
+        );
+        const wrapper = mockComponent({ type: 'wrapper' }, []);
+        zone.parent = () => wrapper;
+        navBlock.parent = () => zone;
+        zone.components = () => ({
+            models: [navBlock],
+            forEach: (fn) => [navBlock].forEach(fn),
+        });
+        wrapper.components = () => ({
+            models: [zone],
+            forEach: (fn) => [zone].forEach(fn),
+        });
+
+        const editor = {
+            __voodbuilderChromeLayoutMode: true,
+            getWrapper: () => wrapper,
+        };
+
+        rebuildLayoutChromeBlockRegistry(editor);
+        setActiveLayoutSettingsRoot(editor, navBlock, 'nav');
+
+        const first = resolveSettings(navBlock, editor);
+        const second = resolveSettings(navBlock, editor);
+
+        expect(first.descriptor?.id).toBe('test_nav_refresh_identity');
+        expect(second.descriptor?.id).toBe('test_nav_refresh_identity');
+        expect(first.root).toBe(navBlock);
+        expect(second.root).toBe(navBlock);
+    });
 });
 
 describe('blocks/settings/registry', () => {
