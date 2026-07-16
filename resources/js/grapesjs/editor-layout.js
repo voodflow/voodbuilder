@@ -528,9 +528,36 @@ function observeSelectorManagerDedupe(mounts) {
         return;
     }
 
-    const dedupe = () => dedupeSelectorManagerPanels(mounts.selectors, mounts.styles);
+    let dedupeTimer = null;
+    let deduping = false;
+
+    const dedupe = () => {
+        if (deduping) {
+            return;
+        }
+
+        deduping = true;
+
+        try {
+            dedupeSelectorManagerPanels(mounts.selectors, mounts.styles);
+        } finally {
+            window.queueMicrotask(() => {
+                deduping = false;
+            });
+        }
+    };
+
+    const scheduleDedupe = () => {
+        if (deduping) {
+            return;
+        }
+
+        window.clearTimeout(dedupeTimer);
+        dedupeTimer = window.setTimeout(dedupe, 80);
+    };
+
     const observer = new MutationObserver(() => {
-        dedupe();
+        scheduleDedupe();
     });
 
     for (const target of targets) {

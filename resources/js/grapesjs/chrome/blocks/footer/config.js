@@ -4,6 +4,7 @@
 
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
+import { setChromeVisible } from '../../visibility.js';
 import { isFooterBlock } from '../../ids.js';
 
 export function footerBlockHasColumns(blockId) {
@@ -61,15 +62,7 @@ function resolveShowTaglineFromConfig(config, blockId) {
 }
 
 function setFooterChromeVisible(node, visible) {
-    if (! node) {
-        return;
-    }
-
-    if (visible) {
-        node.removeAttribute('data-voodbuilder-chrome-hidden');
-    } else {
-        node.setAttribute('data-voodbuilder-chrome-hidden', '');
-    }
+    setChromeVisible(node, visible);
 }
 
 function applySiteFooterMenuColumnsLayout(root) {
@@ -245,7 +238,13 @@ export function configureSiteFooterTraits(component, editor = null) {
     component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
     component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
     component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
-    component.set('traits', []);
+
+    if (typeof component.setTraits === 'function') {
+        component.setTraits([]);
+    } else {
+        component.set('traits', []);
+        component.getTraits?.();
+    }
 
     ensureSiteFooterTaglineSlot(component, editor);
     applySiteFooterSettingsPreview(component, editor);

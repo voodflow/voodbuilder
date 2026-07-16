@@ -19,7 +19,7 @@ final class GrapesJsSlotHydrator
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
             self::applyFooterChromeVisibility($document, $root, $normalized, $preview);
-            self::applyFooterColumnsVisibility($document, $root, $normalized);
+            self::applyFooterColumnsVisibility($document, $root, $normalized, $preview);
         }
     }
 
@@ -37,7 +37,7 @@ final class GrapesJsSlotHydrator
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
             self::applyFooterChromeVisibility($document, $document->documentElement, $normalized, $preview);
-            self::applyFooterColumnsVisibility($document, $document->documentElement, $normalized);
+            self::applyFooterColumnsVisibility($document, $document->documentElement, $normalized, $preview);
         }
 
         return self::extractBodyHtml($document) ?? $html;
@@ -113,6 +113,10 @@ final class GrapesJsSlotHydrator
             $visible = SiteFooterConfig::isChromeVisible($config, $kind);
 
             if ($preview) {
+                // Canvas preview must not use Tailwind `hidden` — the editor toggles
+                // data-voodbuilder-chrome-hidden only (layout + page editors).
+                self::toggleElementClass($element, 'hidden', false);
+
                 if ($visible) {
                     $element->removeAttribute('data-voodbuilder-chrome-hidden');
                 } else {
@@ -130,8 +134,12 @@ final class GrapesJsSlotHydrator
     /**
      * @param  array<string, mixed>  $config
      */
-    protected static function applyFooterColumnsVisibility(DOMDocument $document, DOMElement $root, array $config): void
-    {
+    protected static function applyFooterColumnsVisibility(
+        DOMDocument $document,
+        DOMElement $root,
+        array $config,
+        bool $preview = false,
+    ): void {
         foreach ($root->getElementsByTagName('*') as $element) {
             if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-footer-col')) {
                 continue;
@@ -139,6 +147,15 @@ final class GrapesJsSlotHydrator
 
             $index = (int) $element->getAttribute('data-voodbuilder-footer-col');
             $visible = SiteFooterConfig::isFooterColumnVisible($config, $index);
+
+            if ($preview) {
+                // Editor canvas uses data-voodbuilder-chrome-hidden (see applyFooterChromeVisibility).
+                // Never stamp Tailwind `hidden` in preview — settings UI only toggles the
+                // chrome-hidden attribute and would leave `hidden` stuck after reload.
+                self::toggleElementClass($element, 'hidden', false);
+
+                continue;
+            }
 
             self::toggleElementClass($element, 'hidden', ! $visible);
         }

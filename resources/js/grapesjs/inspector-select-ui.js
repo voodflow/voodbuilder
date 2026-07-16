@@ -174,6 +174,24 @@ function closeOpenSelects(exceptWrap = null) {
             }
         }
     });
+
+    // Orphan portal lists (wrap destroyed while open) would otherwise stay on <body>.
+    document.querySelectorAll('.voodbuilder-gjs-select-list--portal').forEach((list) => {
+        if (exceptWrap && (list.parentElement === exceptWrap || PORTAL_LISTS.get(exceptWrap) === list)) {
+            return;
+        }
+
+        list.hidden = true;
+        list.remove();
+    });
+}
+
+/**
+ * Close every custom select, including orphaned portal menus.
+ * Call before remounting inspector/settings DOM.
+ */
+export function closeAllInspectorSelects() {
+    closeOpenSelects();
 }
 
 function isSelectUiTarget(target) {
@@ -245,9 +263,10 @@ function buildOptionList(select, list, wrap) {
         item.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            // Close before change handlers — settings remounts must not leave a portal open.
+            closeOpenSelects();
             commitSelectValue(select, option.value);
             syncCustomSelect(wrap);
-            closeOpenSelects();
         });
 
         list.appendChild(item);
@@ -526,6 +545,8 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
         mounts.siteChromeSettings,
     ].filter(Boolean);
 
+    let enhancing = false;
+
     const refresh = () => {
         if (document.querySelector('.voodbuilder-gjs-select-wrap.is-open')) {
             return;
@@ -537,15 +558,28 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
 
         refreshFrame = window.requestAnimationFrame(() => {
             refreshFrame = null;
+            enhancing = true;
 
-            for (const root of roots) {
-                enhanceInspectorInputGroups(root);
-                enhanceInspectorSelects(root);
+            try {
+                for (const root of roots) {
+                    enhanceInspectorInputGroups(root);
+                    enhanceInspectorSelects(root);
+                }
+            } finally {
+                window.queueMicrotask(() => {
+                    enhancing = false;
+                });
             }
         });
     };
 
-    const debouncedRefresh = () => scheduleInspectorSelectRefresh(refresh);
+    const debouncedRefresh = () => {
+        if (enhancing) {
+            return;
+        }
+
+        scheduleInspectorSelectRefresh(refresh);
+    };
 
     editor.on('component:selected', debouncedRefresh);
     editor.on('trait:select', debouncedRefresh);
@@ -567,7 +601,7 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
         }
 
         const observer = new MutationObserver((mutations) => {
-            if (! hasRelevantMutation(mutations)) {
+            if (enhancing || ! hasRelevantMutation(mutations)) {
                 return;
             }
 

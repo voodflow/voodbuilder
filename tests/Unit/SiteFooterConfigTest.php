@@ -259,6 +259,31 @@ class SiteFooterConfigTest extends TestCase
     }
 
     #[Test]
+    public function editor_preview_does_not_stamp_tailwind_hidden_on_disabled_columns(): void
+    {
+        $html = SiteFooterColumnsSimpleBlock::toPreviewHtml([
+            'show_footer_col_1' => true,
+            'show_footer_col_2' => false,
+            'show_footer_col_3' => false,
+            'show_footer_col_4' => true,
+        ], []);
+
+        $this->assertStringContainsString('data-voodbuilder-chrome-hidden', $html);
+
+        $document = new \DOMDocument;
+        @$document->loadHTML($html);
+        $xpath = new \DOMXPath($document);
+        $column = $xpath->query('//*[@data-voodbuilder-footer-col="2"]')->item(0);
+
+        $this->assertInstanceOf(\DOMElement::class, $column);
+        $this->assertTrue($column->hasAttribute('data-voodbuilder-chrome-hidden'));
+        $this->assertDoesNotMatchRegularExpression(
+            '/(^|\s)hidden(\s|$)/',
+            (string) $column->getAttribute('class'),
+        );
+    }
+
+    #[Test]
     public function it_applies_footer_chrome_visibility_when_hydrating_saved_html(): void
     {
         $saved = SiteFooterCenteredBlock::toPreviewHtml([], []);

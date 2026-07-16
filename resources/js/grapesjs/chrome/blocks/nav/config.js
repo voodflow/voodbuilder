@@ -5,10 +5,11 @@
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { resolveSettings } from '../../../blocks/settings/index.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
+import { setChromeVisible } from '../../visibility.js';
 import { isNavBlock } from '../../ids.js';
 import { migrateNavId } from './preview.js';
 
-const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressMainNavAlign', 'vpressStickyNav']);
+const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressStickyNav']);
 
 const siteNavRefreshTimers = new WeakMap();
 
@@ -71,14 +72,80 @@ function resolveSiteNavStickyState(stickyMode, editor) {
 }
 
 function setNavChromeVisible(node, visible) {
-    if (! node) {
+    setChromeVisible(node, visible);
+}
+
+/**
+ * Blade renders different DOM for start vs center align — CSS class toggles alone
+ * cannot move the menu. Reshape the live canvas DOM so the settings preview updates instantly.
+ *
+ * @param {ParentNode} scope
+ * @param {boolean} alignCenter
+ */
+function reshapeSiteNavAlignDom(scope, alignCenter) {
+    const header = scope.querySelector?.('header[role="banner"], header');
+    const row = header?.querySelector?.('.voodbuilder-nav__row') ?? scope.querySelector?.('.voodbuilder-nav__row');
+
+    if (! row) {
         return;
     }
 
-    if (visible) {
-        node.removeAttribute('data-voodbuilder-chrome-hidden');
+    const desktopNav = row.querySelector('[data-voodbuilder-desktop-nav]');
+    const actions = row.querySelector('.ml-auto');
+
+    if (! desktopNav || ! actions) {
+        return;
+    }
+
+    const brand = row.querySelector('[data-voodbuilder-brand], [data-voodbuilder-chrome="brand"], a[href].flex, a[href].inline-flex')
+        ?? desktopNav.previousElementSibling;
+
+    // Prefer the brand wrapper that sits beside the desktop nav in start layout.
+    let brandEl = null;
+    const startGroup = desktopNav.parentElement !== row ? desktopNav.parentElement : null;
+
+    if (startGroup && startGroup !== row && startGroup.contains(desktopNav)) {
+        brandEl = [...startGroup.children].find((child) => child !== desktopNav) ?? null;
     } else {
-        node.setAttribute('data-voodbuilder-chrome-hidden', '');
+        brandEl = [...row.children].find((child) => (
+            child !== desktopNav
+            && child !== actions
+            && ! child.hasAttribute?.('data-voodbuilder-desktop-nav')
+            && ! child.classList?.contains('ml-auto')
+        )) ?? brand;
+    }
+
+    if (! brandEl || brandEl === desktopNav || brandEl === actions) {
+        return;
+    }
+
+    if (alignCenter) {
+        row.classList.add('justify-between');
+        desktopNav.classList.add('flex-1', 'justify-center', 'min-w-0');
+        desktopNav.classList.remove('shrink-0');
+
+        if (startGroup && startGroup !== row) {
+            row.insertBefore(brandEl, actions);
+            row.insertBefore(desktopNav, actions);
+
+            if (startGroup.childNodes.length === 0) {
+                startGroup.remove();
+            }
+        } else if (brandEl.parentElement === row) {
+            row.insertBefore(brandEl, actions);
+            row.insertBefore(desktopNav, actions);
+        }
+    } else {
+        row.classList.remove('justify-between');
+        desktopNav.classList.remove('flex-1', 'justify-center');
+
+        if (desktopNav.parentElement === row && brandEl.parentElement === row) {
+            const group = document.createElement('div');
+            group.className = 'flex min-w-0 shrink-0 items-center gap-3 md:gap-4';
+            row.insertBefore(group, actions);
+            group.appendChild(brandEl);
+            group.appendChild(desktopNav);
+        }
     }
 }
 
@@ -120,6 +187,8 @@ export function applySiteNavSettingsPreview(root, editor = null) {
         }
     }
 
+    reshapeSiteNavAlignDom(scope, alignCenter);
+
     scope.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
         const kind = node.getAttribute('data-voodbuilder-chrome');
 
@@ -142,8 +211,10 @@ function scheduleSiteNavBlockRefresh(editor, root) {
 
     siteNavRefreshTimers.set(root, window.setTimeout(() => {
         siteNavRefreshTimers.delete(root);
+        delete root.__voodbuilderLastDynamicRenderFingerprint;
+        delete root.__voodbuilderLastDynamicRenderHtml;
         editor.trigger('voodbuilder:refresh-dynamic-block', root);
-    }, 280));
+    }, 120));
 }
 
 export function syncSiteHeaderConfig(component) {
@@ -204,7 +275,13 @@ export function configureSiteNavTraits(component, editor) {
     component.set('vpressShowSearch', config.show_search === true, { silent: true });
     component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
     component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
-    component.set('traits', siteHeaderTraitOptions(), { silent: true });
+
+    if (typeof component.setTraits === 'function') {
+        component.setTraits(siteHeaderTraitOptions());
+    } else {
+        component.set('traits', siteHeaderTraitOptions());
+        component.getTraits?.();
+    }
 
     applySiteNavSettingsPreview(component, editor);
 

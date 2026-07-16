@@ -128,7 +128,7 @@ export function lockNavPreview(component, editor, opts = {}) {
         name: typeof resolveBlockLayerLabel === 'function'
             ? resolveBlockLayerLabel(blockId)
             : component.get('name'),
-    });
+    }, { silent: true });
     migrateNavId(component);
 
     if (layoutMode) {

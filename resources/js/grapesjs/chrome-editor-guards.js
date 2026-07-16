@@ -127,6 +127,11 @@ export function patchChromeZoneLayerIcons(editor) {
             return;
         }
 
+        // Idempotent: avoid rewriting layer DOM on every layer:render (reflow storms).
+        if (moveEl.getAttribute(SHELL_LAYER_LOCK_ATTR) === '1' && moveEl.querySelector('svg')) {
+            return;
+        }
+
         moveEl.style.display = '';
         moveEl.setAttribute(SHELL_LAYER_LOCK_ATTR, '1');
         moveEl.innerHTML = lucideIcon('lock', 14);
@@ -142,18 +147,28 @@ export function registerChromeLayerIconPatch(editor) {
 
     editor.__voodbuilderChromeLayerIconPatchRegistered = true;
 
+    let patchFrame = null;
+
     const patch = () => {
         if (! isChromeShellModeEditor(editor) && ! isChromeLayoutModeEditor(editor)) {
             return;
         }
 
-        window.requestAnimationFrame(() => patchChromeZoneLayerIcons(editor));
+        if (patchFrame != null) {
+            return;
+        }
+
+        patchFrame = window.requestAnimationFrame(() => {
+            patchFrame = null;
+            patchChromeZoneLayerIcons(editor);
+        });
     };
 
     editor.on('load', patch);
     editor.on('layer:render', patch);
-    editor.on('component:add', patch);
-    editor.on('component:remove', patch);
-    editor.on('component:update', patch);
+    // Do NOT listen to component:update — it re-enters on every model tweak and
+    // keeps scheduling rAF work while the tab is focused.
     editor.on('voodbuilder:layers-panel:show', patch);
+    editor.on('voodbuilder:chrome-layout-ready', patch);
+    editor.on('voodbuilder:dynamic-blocks-refreshed', patch);
 }

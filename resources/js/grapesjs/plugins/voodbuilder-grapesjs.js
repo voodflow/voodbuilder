@@ -28,6 +28,7 @@ import { isFooterBlock, isHeaderBlock, isNavBlock, resolveNavId } from '../chrom
 import { lockChromePreview } from '../chrome/blocks/preview.js';
 import { registerNavSettings } from '../chrome/blocks/nav/settings.js';
 import { registerFooterSettings } from '../chrome/blocks/footer/settings.js';
+import { setChromeVisible } from '../chrome/visibility.js';
 import { runWithSettingsChangeGuard } from '../blocks/settings/ui.js';
 import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
@@ -645,7 +646,7 @@ function syncSiteHeaderConfig(component) {
 
 const siteNavRefreshTimers = new WeakMap();
 
-const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressMainNavAlign', 'vpressStickyNav']);
+const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressStickyNav']);
 
 function resolveSiteNavStickyState(stickyMode, editor) {
     const siteDefaultSticky = editor?.__voodbuilderSiteNavDefaults?.stickyNav === true;
@@ -670,19 +671,82 @@ function scheduleSiteNavBlockRefresh(editor, root) {
 
     siteNavRefreshTimers.set(root, window.setTimeout(() => {
         siteNavRefreshTimers.delete(root);
+        delete root.__voodbuilderLastDynamicRenderFingerprint;
+        delete root.__voodbuilderLastDynamicRenderHtml;
         editor.trigger('voodbuilder:refresh-dynamic-block', root);
-    }, 280));
+    }, 120));
 }
 
 function setNavChromeVisible(node, visible) {
-    if (! node) {
+    setChromeVisible(node, visible);
+}
+
+/**
+ * Blade renders different DOM for start vs center — reshape canvas DOM for instant preview.
+ *
+ * @param {ParentNode} scope
+ * @param {boolean} alignCenter
+ */
+function reshapeSiteNavAlignDom(scope, alignCenter) {
+    const header = scope.querySelector?.('header[role="banner"], header');
+    const row = header?.querySelector?.('.voodbuilder-nav__row') ?? scope.querySelector?.('.voodbuilder-nav__row');
+
+    if (! row) {
         return;
     }
 
-    if (visible) {
-        node.removeAttribute('data-voodbuilder-chrome-hidden');
+    const desktopNav = row.querySelector('[data-voodbuilder-desktop-nav]');
+    const actions = row.querySelector('.ml-auto');
+
+    if (! desktopNav || ! actions) {
+        return;
+    }
+
+    let brandEl = null;
+    const startGroup = desktopNav.parentElement !== row ? desktopNav.parentElement : null;
+
+    if (startGroup && startGroup !== row && startGroup.contains(desktopNav)) {
+        brandEl = [...startGroup.children].find((child) => child !== desktopNav) ?? null;
     } else {
-        node.setAttribute('data-voodbuilder-chrome-hidden', '');
+        brandEl = [...row.children].find((child) => (
+            child !== desktopNav
+            && child !== actions
+            && ! child.hasAttribute?.('data-voodbuilder-desktop-nav')
+            && ! child.classList?.contains('ml-auto')
+        )) ?? null;
+    }
+
+    if (! brandEl || brandEl === desktopNav || brandEl === actions) {
+        return;
+    }
+
+    if (alignCenter) {
+        row.classList.add('justify-between');
+        desktopNav.classList.add('flex-1', 'justify-center', 'min-w-0');
+        desktopNav.classList.remove('shrink-0');
+
+        if (startGroup && startGroup !== row) {
+            row.insertBefore(brandEl, actions);
+            row.insertBefore(desktopNav, actions);
+
+            if (startGroup.childNodes.length === 0) {
+                startGroup.remove();
+            }
+        } else if (brandEl.parentElement === row) {
+            row.insertBefore(brandEl, actions);
+            row.insertBefore(desktopNav, actions);
+        }
+    } else {
+        row.classList.remove('justify-between');
+        desktopNav.classList.remove('flex-1', 'justify-center');
+
+        if (desktopNav.parentElement === row && brandEl.parentElement === row) {
+            const group = document.createElement('div');
+            group.className = 'flex min-w-0 shrink-0 items-center gap-3 md:gap-4';
+            row.insertBefore(group, actions);
+            group.appendChild(brandEl);
+            group.appendChild(desktopNav);
+        }
     }
 }
 
@@ -723,6 +787,8 @@ function applySiteNavSettingsPreview(root, editor = null) {
             header.classList.add('relative');
         }
     }
+
+    reshapeSiteNavAlignDom(scope, alignCenter);
 
     scope.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
         const kind = node.getAttribute('data-voodbuilder-chrome');
@@ -774,7 +840,15 @@ function configureSiteNavTraits(component, editor) {
     component.set('vpressShowSearch', config.show_search === true, { silent: true });
     component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
     component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
-    component.set('traits', siteHeaderTraitOptions(), { silent: true });
+
+    // Never set('traits', plainObjects, { silent: true }) — that leaves a raw array and
+    // TraitManager crashes with "e.get is not a function" on select/render.
+    if (typeof component.setTraits === 'function') {
+        component.setTraits(siteHeaderTraitOptions());
+    } else {
+        component.set('traits', siteHeaderTraitOptions());
+        component.getTraits?.();
+    }
 
     applySiteNavSettingsPreview(component, editor);
 
@@ -1081,7 +1155,13 @@ function configureSiteFooterTraits(component, editor = null) {
     component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
     component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
     component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
-    component.set('traits', []);
+
+    if (typeof component.setTraits === 'function') {
+        component.setTraits([]);
+    } else {
+        component.set('traits', []);
+        component.getTraits?.();
+    }
 
     ensureSiteFooterTaglineSlot(component, editor);
     applySiteFooterSettingsPreview(component, editor);
@@ -1132,7 +1212,42 @@ function registerDynamicBlockRefreshOnDrop(editor) {
 
     editor.__voodbuilderDynamicBlockRefreshOnDrop = true;
 
+    const footerOrNavHasPreviewStructure = (component) => {
+        if ((component?.components?.()?.length ?? 0) > 0) {
+            return true;
+        }
+
+        const el = component?.getEl?.();
+
+        if (! el) {
+            return false;
+        }
+
+        return Boolean(el.querySelector([
+            '.container',
+            '.voodbuilder-gjs-container',
+            '[data-voodbuilder-footer-col]',
+            '[data-voodbuilder-chrome]',
+            'header[role="banner"]',
+            '[data-voodbuilder-gjs-site-header]',
+        ].join(', ')));
+    };
+
+    const shouldIgnoreAutoRefresh = (component) => Boolean(
+        ! component
+        || component.isRemoved?.()
+        || component.__voodbuilderRefreshing
+        || editor.__voodbuilderDynamicBlockRefreshing
+        || editor.__voodbuilderLayoutStructureRefreshing
+        || editor.__voodbuilderLayoutDynamicRefreshPending
+        || editor.__voodbuilderActiveBlockDrag,
+    );
+
     const scheduleRefresh = (component) => {
+        if (shouldIgnoreAutoRefresh(component)) {
+            return;
+        }
+
         const blockId = component?.getAttributes?.()?.['data-voodbuilder-block'];
 
         if (! blockId) {
@@ -1143,7 +1258,7 @@ function registerDynamicBlockRefreshOnDrop(editor) {
             ? component
             : (findSiteFooterRootComponent(component) ?? findSiteNavRootComponent(component));
 
-        if (! root) {
+        if (! root || shouldIgnoreAutoRefresh(root) || footerOrNavHasPreviewStructure(root)) {
             return;
         }
 
@@ -1165,9 +1280,15 @@ function registerDynamicBlockRefreshOnDrop(editor) {
             return;
         }
 
+        // Do not refresh when the model already has children or the DOM is not mounted yet.
+        // A null getEl() used to fall through and re-fetch forever (maps remount storm).
+        if (shouldIgnoreAutoRefresh(component) || footerOrNavHasPreviewStructure(component)) {
+            return;
+        }
+
         const el = component.getEl?.();
 
-        if (el?.querySelector('.container, [data-voodbuilder-footer-col], header[role="banner"], [data-voodbuilder-gjs-site-header]')) {
+        if (! el) {
             return;
         }
 

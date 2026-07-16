@@ -16,7 +16,7 @@ import {
     registerChromeLayerIconPatch,
 } from './chrome-editor-guards.js';
 import { refreshBlocksLibraryUi } from './editor-layout.js';
-import { clearCanvasDragArtifacts } from './canvas-block-drag.js';
+import { clearCanvasDragArtifacts, stopEditorIdleMotionLoops } from './canvas-block-drag.js';
 import { isFooterBlock, isNavBlock } from './chrome/ids.js';
 import { lockChromePreview } from './chrome/blocks/preview.js';
 import {
@@ -778,7 +778,10 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     }
 
     editor.__voodbuilderAfterLayersChromeFilterSync = () => {
-        ensureLayoutChromeRootsInspectable(editor);
+        // Intentionally light: full ensureLayoutChromeRootsInspectable on every layers
+        // sync re-entered lock/select churn. Roots are reconciled on layout-ready /
+        // dynamic-blocks-refreshed instead.
+        patchChromeZoneLayerIcons(editor);
     };
 
     const placeholders = layoutPlaceholders(options);
@@ -790,25 +793,59 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     let bootstrapping = true;
     let bootstrapped = false;
 
+    const shouldSuppressStructureRefresh = () => Boolean(
+        bootstrapping
+        || editor.__voodbuilderActiveBlockDrag
+        || editor.__voodbuilderLayoutStructureRefreshing
+        || editor.__voodbuilderLayoutDynamicRefreshPending
+        || editor.__voodbuilderDynamicBlockRefreshing
+    );
+
+    /**
+     * Nested nav/footer DOM churn (dynamic block refresh, slot hydrate) must not
+     * re-enter ensureChromeLayoutStructure — that was a silent idle CPU loop.
+     */
+    const isStructureRefreshTarget = (component) => {
+        if (isDropZone(component) || isContentSlot(component)) {
+            return true;
+        }
+
+        if (readBlockId(component) !== '') {
+            return true;
+        }
+
+        const parent = component?.parent?.();
+
+        return parent === editor.getWrapper?.()
+            || isDropZone(parent)
+            || isContentSlot(parent);
+    };
+
     const refresh = () => {
-        if (editor.__voodbuilderActiveBlockDrag) {
+        if (editor.__voodbuilderLayoutStructureRefreshing || editor.__voodbuilderActiveBlockDrag) {
             return;
         }
 
-        configureLayoutCanvas(editor, placeholders);
-        applyEditorScopeBlockVisibility(editor);
-        refreshChromeLayoutBlockCatalog(editor);
+        editor.__voodbuilderLayoutStructureRefreshing = true;
 
-        if (editor.__voodbuilderChromeLayoutReady) {
-            ensureLayoutChromeRootsInspectable(editor);
-            safeRenderEditorLayers(editor);
+        try {
+            configureLayoutCanvas(editor, placeholders);
+            applyEditorScopeBlockVisibility(editor);
+            refreshChromeLayoutBlockCatalog(editor);
+
+            if (editor.__voodbuilderChromeLayoutReady) {
+                ensureLayoutChromeRootsInspectable(editor);
+                safeRenderEditorLayers(editor);
+            }
+
+            patchChromeZoneLayerIcons(editor);
+        } finally {
+            editor.__voodbuilderLayoutStructureRefreshing = false;
         }
-
-        patchChromeZoneLayerIcons(editor);
     };
 
     const scheduleRefresh = () => {
-        if (editor.__voodbuilderActiveBlockDrag) {
+        if (shouldSuppressStructureRefresh()) {
             return;
         }
 
@@ -826,6 +863,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         bootstrapping = false;
         editor.__voodbuilderChromeLayoutReady = true;
         reconcileLayoutChromeBlockSettings(editor);
+        stopEditorIdleMotionLoops(editor);
 
         if (! editor.__voodbuilderLayoutDynamicRefreshPending) {
             finalizeLayoutInspectorBootstrap(editor);
@@ -838,7 +876,8 @@ export function registerChromeLayoutEditor(editor, options = {}) {
     };
 
     editor.on('load', finishBootstrap);
-    editor.on('canvas:frame:load', scheduleRefresh);
+    // Frame reloads during chrome boot are noisy; structure is owned by finishBootstrap
+    // and explicit drop/remove handlers — avoid scheduleRefresh on every frame:load.
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
         ensureLayoutChromeRootsInspectable(editor);
         rebuildLayoutChromeBlockRegistry(editor);
@@ -924,9 +963,8 @@ export function registerChromeLayoutEditor(editor, options = {}) {
             }
 
             if (
-                ! bootstrapping
-                && ! editor.__voodbuilderActiveBlockDrag
-                && (isDropZone(component) || isContentSlot(component) || parent === wrapper)
+                ! shouldSuppressStructureRefresh()
+                && isStructureRefreshTarget(component)
             ) {
                 rebuildLayoutChromeBlockRegistry(editor);
                 scheduleRefresh();
@@ -934,11 +972,13 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         });
     });
 
-    editor.on('component:remove', () => {
-        if (! bootstrapping) {
-            rebuildLayoutChromeBlockRegistry(editor);
-            scheduleRefresh();
+    editor.on('component:remove', (component) => {
+        if (shouldSuppressStructureRefresh() || ! isStructureRefreshTarget(component)) {
+            return;
         }
+
+        rebuildLayoutChromeBlockRegistry(editor);
+        scheduleRefresh();
     });
 
     editor.on('block:drag:stop', (component, block) => {

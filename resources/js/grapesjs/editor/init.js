@@ -4,6 +4,7 @@
  * Customise behaviour via init options, events, and plugins (voodbuilder-grapesjs.js).
  * Never patch node_modules/grapesjs: changes there are lost on npm update.
  */
+import '../inspector-color-preload.js';
 import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapesjs/dist/css/grapes.min.css';
@@ -55,7 +56,7 @@ import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyE
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
 import { registerCanvasComponentToolbar } from '../canvas-component-toolbar.js';
 import { registerCanvasBlockCodeEditor } from '../canvas-block-code-editor.js';
-import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport } from '../canvas-block-drag.js';
+import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport, gateGrapesAutoscrollToRealDrags } from '../canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from '../conditions-ui.js';
 import {
     ensureComponentInstancesForExport,
@@ -535,6 +536,8 @@ export function initVpressGrapesJs(container, options = {}) {
         editor.em.__voodbuilderChromeLayoutMode = editor.__voodbuilderChromeLayoutMode;
     }
 
+    gateGrapesAutoscrollToRealDrags(editor);
+
     registerChromeLayoutInspectorSelection(editor);
     registerLinkableButtonTypes(editor);
 
@@ -957,6 +960,14 @@ function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
         return;
     }
 
+    if (
+        component.__voodbuilderRefreshing
+        || editor.__voodbuilderDynamicBlockRefreshing
+        || editor.__voodbuilderLayoutStructureRefreshing
+    ) {
+        return;
+    }
+
     const existing = dynamicBlockRefreshTimers.get(component);
 
     if (existing) {
@@ -969,6 +980,10 @@ function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
     }, 80));
 }
 
+function dynamicBlockRenderFingerprint(blockId, config) {
+    return `${blockId}::${serializeVpressConfig(config ?? {})}`;
+}
+
 async function refreshDynamicBlockComponent(editor, renderUrl, component) {
     if (! renderUrl || ! component || component.isRemoved?.()) {
         return;
@@ -979,6 +994,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
     }
 
     component.__voodbuilderRefreshing = true;
+    editor.__voodbuilderDynamicBlockRefreshing = (editor.__voodbuilderDynamicBlockRefreshing ?? 0) + 1;
 
     let blockId = '';
 
@@ -1007,6 +1023,16 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         }
 
         const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
+        const fingerprint = dynamicBlockRenderFingerprint(blockId, config);
+
+        // Skip identical re-fetch/remount (footer refresh was remounting Google Maps forever).
+        if (
+            component.__voodbuilderLastDynamicRenderFingerprint === fingerprint
+            && (component.components?.()?.length ?? 0) > 0
+        ) {
+            return;
+        }
+
         const params = new URLSearchParams({
             block: blockId,
             config: serializeVpressConfig(config),
@@ -1047,6 +1073,18 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         const freshConfig = parseVpressConfig(
             fresh.getAttribute('data-voodbuilder-config') ?? serializeVpressConfig(config),
         );
+        const freshFingerprint = dynamicBlockRenderFingerprint(
+            fresh.getAttribute('data-voodbuilder-block') ?? blockId,
+            freshConfig,
+        );
+
+        if (
+            component.__voodbuilderLastDynamicRenderFingerprint === freshFingerprint
+            && (component.components?.()?.length ?? 0) > 0
+            && component.__voodbuilderLastDynamicRenderHtml === fresh.innerHTML
+        ) {
+            return;
+        }
 
         if (isSiteNavBlock(blockId)) {
             component.set('vpressConfig', freshConfig, { silent: true });
@@ -1056,6 +1094,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
             });
             component.components(fresh.innerHTML);
+            component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
+            component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
             const preserveSelection = editor.getSelected?.();
 
             window.requestAnimationFrame(() => {
@@ -1119,6 +1159,9 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             }
         }
 
+        component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
+        component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
+
         window.requestAnimationFrame(() => {
             try {
                 lockDynamicPreviewContent(component, editor);
@@ -1146,6 +1189,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         console.error('Voodbuilder GrapesJS: could not refresh dynamic block.', blockId || 'unknown', error);
     } finally {
         component.__voodbuilderRefreshing = false;
+        editor.__voodbuilderDynamicBlockRefreshing = Math.max(
+            0,
+            (editor.__voodbuilderDynamicBlockRefreshing ?? 1) - 1,
+        );
 
         if (editor.__voodbuilderChromeLayoutMode) {
             rebuildLayoutChromeBlockRegistry(editor);

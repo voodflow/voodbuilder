@@ -45,6 +45,10 @@ function isSiteNavBlockId(blockId) {
     return blockId.startsWith('site_nav_');
 }
 
+function isSiteFooterBlockId(blockId) {
+    return typeof blockId === 'string' && blockId.startsWith('site_footer_');
+}
+
 export function isGrapesComponent(component) {
     return Boolean(component?.get && typeof component.get === 'function');
 }
@@ -1563,9 +1567,15 @@ export function registerVisualStyleInspector(editor) {
             return;
         }
 
+        // Layout chrome editor: Style Manager updates on every select were thrashing
+        // the main thread (color defaults black/white + full sector re-render).
+        if (editor.__voodbuilderChromeLayoutMode) {
+            return;
+        }
+
         const blockId = component.getAttributes?.()?.['data-voodbuilder-block'];
 
-        if (blockId === 'site_header' || isSiteNavBlockId(blockId)) {
+        if (blockId === 'site_header' || isSiteNavBlockId(blockId) || isSiteFooterBlockId(blockId)) {
             return;
         }
 

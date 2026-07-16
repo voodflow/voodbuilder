@@ -215,7 +215,7 @@ function unbindBlockDragPointerTracking(editor) {
 }
 
 function beginTopDropSession(editor, block) {
-    editor.__voodbuilderActiveBlockDrag = block ?? null;
+    editor.__voodbuilderActiveBlockDrag = block ?? true;
     delete editor.__voodbuilderTopDropHandled;
     editor.__voodbuilderDragBlockLabel = String(
         block?.get?.('label') ?? block?.getLabel?.() ?? editor.__voodbuilderDragBlockLabel ?? '',
@@ -227,9 +227,17 @@ function beginTopDropSession(editor, block) {
     if (editor.__voodbuilderDragBlockLabel) {
         startDragChipLoop(editor);
     }
+
+    // Safety net: never leave the rAF highlight loop running after a missed drag:stop.
+    window.clearTimeout(editor.__voodbuilderDragSessionWatchdog);
+    editor.__voodbuilderDragSessionWatchdog = window.setTimeout(() => {
+        stopEditorIdleMotionLoops(editor);
+    }, 2500);
 }
 
 function endTopDropSession(editor) {
+    window.clearTimeout(editor.__voodbuilderDragSessionWatchdog);
+    delete editor.__voodbuilderDragSessionWatchdog;
     clearDragChip(editor);
     clearDragHighlightLoop(editor);
     clearCanvasDragArtifacts(editor);
@@ -312,6 +320,172 @@ export function clearCanvasDragArtifacts(editor) {
 
     doc?.body?.classList?.remove?.(DRAG_BODY_CLASS);
     clearChromeDropZoneHighlight(editor);
+}
+
+/**
+ * Only allow GrapesJS AutoScroller during a real user drag.
+ * Programmatic sorter/move during layout boot left `dragging=true` and spun
+ * setTimeout(50)+rAF forever while the tab was focused.
+ *
+ * @param {object} editor
+ */
+export function gateGrapesAutoscrollToRealDrags(editor) {
+    const canvas = editor?.Canvas;
+
+    if (! canvas || canvas.__voodbuilderAutoscrollGated) {
+        return;
+    }
+
+    canvas.__voodbuilderAutoscrollGated = true;
+
+    const originalStart = typeof canvas.startAutoscroll === 'function'
+        ? canvas.startAutoscroll.bind(canvas)
+        : null;
+
+    if (! originalStart) {
+        return;
+    }
+
+    canvas.startAutoscroll = (frame) => {
+        if (! isRealCanvasPointerDrag(editor)) {
+            return;
+        }
+
+        hardenGrapesAutoScrollers(editor);
+        originalStart(frame);
+    };
+}
+
+function isRealCanvasPointerDrag(editor) {
+    if (editor?.__voodbuilderActiveBlockDrag) {
+        return true;
+    }
+
+    try {
+        const body = editor?.Canvas?.getBody?.();
+
+        if (body?.classList?.contains('gjs-is__grabbing')) {
+            return true;
+        }
+    } catch {
+        // Canvas body may not exist yet.
+    }
+
+    return Boolean(document.querySelector('.gjs-is__grabbing'));
+}
+
+function collectGrapesAutoScrollers(editor) {
+    const scrollers = [];
+
+    try {
+        const frameView = editor.Canvas?.getFrame?.()?.view
+            ?? editor.em?.getCurrentFrame?.()?.view
+            ?? editor.Canvas?.getCanvasView?.()?.frame;
+
+        if (frameView?.autoScroller) {
+            scrollers.push(frameView.autoScroller);
+        }
+    } catch {
+        // Frame not ready.
+    }
+
+    try {
+        if (editor.Canvas?.autoScroller) {
+            scrollers.push(editor.Canvas.autoScroller);
+        }
+    } catch {
+        // Canvas module not ready.
+    }
+
+    return scrollers;
+}
+
+/**
+ * GrapesJS AutoScroller.autoscroll() keeps scheduling setTimeout(50)+rAF while
+ * `dragging === true` even when `lastClientY` is undefined (no pointer yet).
+ * That loop only runs while the tab is focused (rAF pauses in background).
+ * Patch instances so a stuck idle scroll self-terminates.
+ *
+ * @param {object} editor
+ */
+export function hardenGrapesAutoScrollers(editor) {
+    if (! editor) {
+        return;
+    }
+
+    collectGrapesAutoScrollers(editor).forEach((scroller) => {
+        if (! scroller || scroller.__voodbuilderIdleAutoscrollPatched) {
+            return;
+        }
+
+        scroller.__voodbuilderIdleAutoscrollPatched = true;
+        const originalAutoscroll = scroller.autoscroll.bind(scroller);
+        let idleWithoutPointer = 0;
+
+        scroller.autoscroll = function voodbuilderGuardedAutoscroll() {
+            // Stop stuck scrollers even when lastClientY is set (mouse over canvas).
+            if (this.dragging && ! isRealCanvasPointerDrag(editor)) {
+                idleWithoutPointer = 0;
+                this.stop();
+
+                return;
+            }
+
+            if (this.dragging && this.lastClientY === undefined) {
+                idleWithoutPointer += 1;
+
+                // ~150–250ms of "waiting for pointer" with no real drag → stuck loop.
+                if (idleWithoutPointer >= 4 && ! editor.__voodbuilderActiveBlockDrag) {
+                    idleWithoutPointer = 0;
+                    this.stop();
+
+                    return;
+                }
+            } else {
+                idleWithoutPointer = 0;
+            }
+
+            return originalAutoscroll();
+        };
+    });
+}
+
+/**
+ * Force-stop GrapesJS AutoScroller + our drag rAF loops.
+ *
+ * @param {object} editor
+ */
+export function stopEditorIdleMotionLoops(editor) {
+    if (! editor) {
+        return;
+    }
+
+    endTopDropSession(editor);
+    hardenGrapesAutoScrollers(editor);
+
+    try {
+        editor.Canvas?.stopAutoscroll?.();
+    } catch {
+        // Canvas/frame may not be ready yet.
+    }
+
+    collectGrapesAutoScrollers(editor).forEach((scroller) => {
+        try {
+            scroller.stop?.();
+        } catch {
+            // Ignore.
+        }
+    });
+
+    try {
+        const frameView = editor.Canvas?.getFrame?.()?.view
+            ?? editor.em?.getCurrentFrame?.()?.view
+            ?? editor.Canvas?.getCanvasView?.()?.frame;
+
+        frameView?.stopAutoscroll?.();
+    } catch {
+        // Ignore missing frame helpers across GrapesJS versions.
+    }
 }
 
 function syncChromeDropZoneHighlight(editor) {
@@ -609,10 +783,69 @@ export function registerCanvasBlockDrag(editor) {
     editor.__voodbuilderCanvasBlockDragRegistered = true;
 
     registerTopDropSpacerType(editor);
+    gateGrapesAutoscrollToRealDrags(editor);
 
     editor.on('load', () => {
         ensureTopDropSpacer(editor);
+        gateGrapesAutoscrollToRealDrags(editor);
+        hardenGrapesAutoScrollers(editor);
+        stopEditorIdleMotionLoops(editor);
     });
+
+    editor.on('canvas:frame:load', () => {
+        hardenGrapesAutoScrollers(editor);
+    });
+
+    editor.on('voodbuilder:chrome-layout-ready', () => {
+        hardenGrapesAutoScrollers(editor);
+        stopEditorIdleMotionLoops(editor);
+    });
+
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        stopEditorIdleMotionLoops(editor);
+    });
+
+    editor.on('sorter:drag:end', () => {
+        if (! editor.__voodbuilderActiveBlockDrag) {
+            stopEditorIdleMotionLoops(editor);
+        }
+    });
+
+    editor.on('block:drag:stop', () => {
+        // endTopDropSession is also called below; still kill AutoScroller.
+        window.setTimeout(() => {
+            if (! editor.__voodbuilderActiveBlockDrag) {
+                stopEditorIdleMotionLoops(editor);
+            }
+        }, 0);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && ! editor.__voodbuilderActiveBlockDrag) {
+            hardenGrapesAutoScrollers(editor);
+            stopEditorIdleMotionLoops(editor);
+        }
+    });
+
+    // Watchdog: kill stuck AutoScroller if no real block drag is active.
+    window.clearInterval(editor.__voodbuilderIdleMotionWatchdog);
+    editor.__voodbuilderIdleMotionWatchdog = window.setInterval(() => {
+        if (document.visibilityState !== 'visible' || editor.__voodbuilderActiveBlockDrag) {
+            return;
+        }
+
+        try {
+            hardenGrapesAutoScrollers(editor);
+            editor.Canvas?.stopAutoscroll?.();
+            collectGrapesAutoScrollers(editor).forEach((scroller) => {
+                if (scroller?.dragging && scroller.lastClientY === undefined) {
+                    scroller.stop();
+                }
+            });
+        } catch {
+            // Ignore.
+        }
+    }, 750);
 
     editor.on('component:add', (component) => {
         if (component?.getAttributes?.()?.[SPACER_ATTR]) {
@@ -656,13 +889,13 @@ export function registerCanvasBlockDrag(editor) {
     });
 
     editor.on('sorter:drag:start', (source) => {
-        const dragContent = source?.dragSource?.content ?? editor.get?.('dragSource')?.content;
+        hardenGrapesAutoScrollers(editor);
 
-        if (dragContent && ! editor.__voodbuilderActiveBlockDrag) {
-            const block = editor.BlockManager?._dragBlock
-                ?? editor.Canvas?.getSorter?.()?.__currentBlock
-                ?? null;
-            beginTopDropSession(editor, block);
+        // Never start a top-drop session from sorter events alone — GrapesJS fires
+        // sorter:drag:start during programmatic move/reorder (layout bootstrap,
+        // dynamic block refresh), which left the drag highlight rAF loop running forever.
+        if (! editor.__voodbuilderActiveBlockDrag) {
+            return;
         }
 
         const label = editor.__voodbuilderDragBlockLabel;

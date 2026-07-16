@@ -25,6 +25,7 @@ import {
     readBlockId,
     shouldPromoteSelectionToRoot,
 } from './select.js';
+import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
 
 /**
  * @param {HTMLElement} mount
@@ -464,11 +465,13 @@ export function registerSettingsUi(editor, mount) {
             if (canReuseForm) {
                 mount.hidden = false;
                 traitsMount?.classList.add('hidden');
+                closeAllInspectorSelects();
                 syncSettingsFormValues(mount, root);
 
                 return;
             }
 
+            closeAllInspectorSelects();
             mount.hidden = false;
             traitsMount?.classList.add('hidden');
             traitsMount?.replaceChildren?.();
@@ -507,6 +510,7 @@ export function registerSettingsUi(editor, mount) {
     editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
     editor.on('voodbuilder:layout-inspector-ready', scheduleRender);
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        closeAllInspectorSelects();
         invalidateRenderCache();
         scheduleRender();
     });

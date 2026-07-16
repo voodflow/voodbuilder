@@ -242,6 +242,9 @@ export function fixInspectorColorInputs(root = document) {
  * Patch HTMLInputElement.prototype.value once so GrapesJS StyleManager never
  * assigns named colors ("black"/"white") to <input type="color">.
  * Must run before grapesjs.init().
+ *
+ * Also sanitizes innerHTML snippets from Grapick (style-bg), which embeds
+ * value="black" in markup and bypasses the value setter.
  */
 export function installGlobalColorInputValueFix() {
     if (typeof window === 'undefined' || window.__voodbuilderColorInputValueFixed) {
@@ -286,6 +289,33 @@ export function installGlobalColorInputValueFix() {
 
         return originalSetAttribute.call(this, name, value);
     };
+
+    // Grapick builds handlers via innerHTML with value="black"/"white" — rewrite before parse.
+    const innerHtmlDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+
+    if (innerHtmlDescriptor?.set && innerHtmlDescriptor?.get) {
+        Object.defineProperty(Element.prototype, 'innerHTML', {
+            configurable: true,
+            enumerable: innerHtmlDescriptor.enumerable,
+            get() {
+                return innerHtmlDescriptor.get.call(this);
+            },
+            set(html) {
+                if (typeof html === 'string' && /type\s*=\s*["']color["']/i.test(html)) {
+                    html = html.replace(
+                        /(type\s*=\s*["']color["'][^>]*?\svalue\s*=\s*["'])(black|white)(["'])/gi,
+                        (_, start, named, end) => `${start}${named.toLowerCase() === 'white' ? '#ffffff' : '#000000'}${end}`,
+                    );
+                    html = html.replace(
+                        /(\svalue\s*=\s*["'])(black|white)(["'][^>]*?\stype\s*=\s*["']color["'])/gi,
+                        (_, start, named, end) => `${start}${named.toLowerCase() === 'white' ? '#ffffff' : '#000000'}${end}`,
+                    );
+                }
+
+                innerHtmlDescriptor.set.call(this, html);
+            },
+        });
+    }
 
     // GrapesJS sometimes sets value before type="color". Normalize on type change too.
     const typeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'type');

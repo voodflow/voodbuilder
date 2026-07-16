@@ -51,16 +51,28 @@ export function resolveGrapesJsPlugins(enabled = {}) {
         pluginsOpts[plugin] = {};
     }
 
-    if (enabled.tailwind !== false) {
+    // Opt-in only. Defaulting to on caused a MutationObserver ↔ style rebuild loop
+    // (canvas already uses pre-built utilities + page-tailwind-autobuild).
+    if (enabled.tailwind === true) {
         plugins.push(registerGrapesJsTailwindPlugin);
         pluginsOpts[registerGrapesJsTailwindPlugin] = {
-            autobuild: true,
+            // Never enable MutationObserver autobuild unless explicitly requested —
+            // it rebuilds on every canvas DOM mutation and can spin forever at boot.
+            autobuild: optionsTailwindAutobuild(enabled),
             autocomplete: false,
             buildButton: false,
         };
     }
 
     return { plugins, pluginsOpts };
+}
+
+function optionsTailwindAutobuild(enabled) {
+    if (typeof enabled.tailwind === 'object' && enabled.tailwind !== null) {
+        return enabled.tailwind.autobuild === true;
+    }
+
+    return false;
 }
 
 function patchFormComponent(component, formSubmitUrl, csrf) {

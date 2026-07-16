@@ -776,14 +776,32 @@ export function registerChromeShellEditor(editor, options = {}) {
     };
 
     const refresh = () => {
-        removeTopDropSpacer(editor);
-        applyChromeShellLocks(editor, shellOptions);
-        hideChromeShellBlocks(editor);
-        safeRenderEditorLayers(editor);
-        patchChromeZoneLayerIcons(editor);
+        if (editor.__voodbuilderChromeShellRefreshing || editor.__voodbuilderActiveBlockDrag) {
+            return;
+        }
+
+        editor.__voodbuilderChromeShellRefreshing = true;
+
+        try {
+            removeTopDropSpacer(editor);
+            applyChromeShellLocks(editor, shellOptions);
+            hideChromeShellBlocks(editor);
+            safeRenderEditorLayers(editor);
+            patchChromeZoneLayerIcons(editor);
+        } finally {
+            editor.__voodbuilderChromeShellRefreshing = false;
+        }
     };
 
     const scheduleRefresh = () => {
+        if (
+            bootstrapping
+            || editor.__voodbuilderChromeShellRefreshing
+            || editor.__voodbuilderActiveBlockDrag
+        ) {
+            return;
+        }
+
         window.clearTimeout(refreshTimer);
         refreshTimer = window.setTimeout(refresh, 32);
     };
@@ -822,7 +840,7 @@ export function registerChromeShellEditor(editor, options = {}) {
             ensurePageContentBlockEditable(editor, component);
 
             if (promoteComponentIntoContentSlot(editor, component)) {
-                if (! bootstrapping) {
+                if (! bootstrapping && ! editor.__voodbuilderChromeShellRefreshing) {
                     scheduleRefresh();
                 }
 
@@ -838,16 +856,27 @@ export function registerChromeShellEditor(editor, options = {}) {
                 component.remove();
             }
 
-            if (! bootstrapping) {
+            if (! bootstrapping && ! editor.__voodbuilderChromeShellRefreshing) {
                 scheduleRefresh();
             }
         });
     });
 
-    editor.on('component:remove', () => {
-        if (! bootstrapping) {
-            scheduleRefresh();
+    editor.on('component:remove', (component) => {
+        if (bootstrapping || editor.__voodbuilderChromeShellRefreshing) {
+            return;
         }
+
+        // Ignore nested chrome churn (nav/footer refresh); only reshuffle for page-content tree.
+        if (
+            isInsideChromeShellPart(component)
+            && ! isInsidePageContentSlot(component)
+            && ! isPageContentSlotComponent(component)
+        ) {
+            return;
+        }
+
+        scheduleRefresh();
     });
 
     editor.on('block:drag:stop', (component) => {
