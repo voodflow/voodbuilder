@@ -444,7 +444,9 @@ function setupInspectorTabs(mounts, editor) {
 
             // Prefer block settings over bind/conditions tabs when a descriptor matches.
             if (! descriptor) {
-                if (component.getAttributes?.()['data-voodbuilder-bind']) {
+                const hasBindingSources = (editor.__voodbuilderBindingsCatalog?.groups ?? []).length > 0;
+
+                if (hasBindingSources && component.getAttributes?.()['data-voodbuilder-bind']) {
                     activateTab('dynamic');
                 }
 

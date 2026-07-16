@@ -1435,6 +1435,18 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const groups = catalog?.groups ?? [];
 
     if (groups.length === 0) {
+        // Inline Dynamic tab: never block the editor with a modal when no sources exist.
+        if (mode === 'inline' && mount) {
+            mount.replaceChildren();
+            const empty = document.createElement('p');
+            empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
+            empty.textContent = labels.noSources
+                ?? 'No dynamic data sources are registered yet.';
+            mount.appendChild(empty);
+
+            return null;
+        }
+
         void alertDialog({
             message: labels.noSources,
             labels,
