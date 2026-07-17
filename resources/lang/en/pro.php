@@ -92,7 +92,7 @@ return [
         'tab_style' => 'Style',
         'style_classes_title' => 'Classes',
         'class_input_placeholder' => 'Add Tailwind class…',
-        'class_pending_compile' => 'Compiling… included in page CSS when you save.',
+        'class_pending_compile' => 'Compiling for canvas preview…',
         'tab_dynamic' => 'Dynamic',
         'tab_layers' => 'Layers',
         'tab_conditions' => 'Conditions',

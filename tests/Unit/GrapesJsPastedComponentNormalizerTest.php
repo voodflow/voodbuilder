@@ -493,6 +493,23 @@ CSS;
         $this->assertStringContainsString('md:w-1/3', str_replace('\\', '', $css));
     }
 
+    public function test_page_tailwind_compile_keeps_default_palette_color_tokens(): void
+    {
+        if (! GrapesJsComponentTailwindCompiler::isAvailable()) {
+            $this->markTestSkipped('Node Tailwind compiler is not available.');
+        }
+
+        $html = '<section class="bg-red-800 p-4">Hero</section>';
+        $css = GrapesJsPastedComponentNormalizer::compilePageTailwindCss($html);
+
+        $this->assertStringContainsString('bg-red-800', str_replace('\\', '', $css));
+        $this->assertStringContainsString('--color-red-800', $css);
+        $this->assertMatchesRegularExpression(
+            '/\.bg-red-800\s*\{[^}]*background-color:\s*var\(--color-red-800\)/s',
+            $css,
+        );
+    }
+
     public function test_stored_css_is_current_when_checksum_matches(): void
     {
         $html = '<div class="voodbuilder-pasted-component"><div class="bg-vp-brand-3">Box</div></div>';

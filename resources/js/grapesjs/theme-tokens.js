@@ -243,9 +243,13 @@ export function isClearedBackground(value) {
         return true;
     }
 
-    const normalized = String(value).trim().toLowerCase();
+    const normalized = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s*!important\s*$/i, '')
+        .trim();
 
-    if (['none', 'transparent', 'unset', 'initial'].includes(normalized)) {
+    if (['none', 'transparent', 'unset', 'initial', 'inherit'].includes(normalized)) {
         return true;
     }
 
@@ -253,6 +257,158 @@ export function isClearedBackground(value) {
 
     if (rgbaMatch && Number.parseFloat(rgbaMatch[1]) === 0) {
         return true;
+    }
+
+    return false;
+}
+
+/**
+ * True when a background-image (or shorthand) value means "no image".
+ */
+export function isClearedBackgroundImage(value) {
+    if (value == null || value === '') {
+        return true;
+    }
+
+    const normalized = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s*!important\s*$/i, '')
+        .trim();
+
+    if (['none', 'unset', 'initial', 'inherit'].includes(normalized)) {
+        return true;
+    }
+
+    // url() with empty / none payload
+    if (/^url\(\s*(?:['"]\s*['"])?\s*\)$/i.test(normalized)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Any author background paint still present on a style object
+ * (color, image, or shorthand with either).
+ */
+export function styleHasAuthorBackgroundPaint(style) {
+    if (! style || typeof style !== 'object') {
+        return false;
+    }
+
+    const color = style['background-color'];
+
+    if (typeof color === 'string'
+        && color.trim() !== ''
+        && ! isClearedBackground(color)
+        && ! isStyleManagerDefaultWhiteBackground(color)) {
+        return true;
+    }
+
+    const image = style['background-image'];
+
+    if (typeof image === 'string'
+        && image.trim() !== ''
+        && ! isClearedBackgroundImage(image)
+        && /url\s*\(|gradient\s*\(/i.test(image)) {
+        return true;
+    }
+
+    const shorthand = style.background;
+
+    if (typeof shorthand === 'string' && shorthand.trim() !== '') {
+        if (! isClearedBackgroundImage(shorthand) && /url\s*\(|gradient\s*\(/i.test(shorthand)) {
+            return true;
+        }
+
+        if (! /url\s*\(|gradient\s*\(/i.test(shorthand)
+            && ! isClearedBackground(shorthand)
+            && ! isStyleManagerDefaultWhiteBackground(shorthand)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Style Manager used to default background-color to #ffffff on clear. That is not a
+ * real author color — treat reset-to-white the same as a clear when detecting clears.
+ */
+export function isStyleManagerDefaultWhiteBackground(value) {
+    if (value == null || value === '') {
+        return false;
+    }
+
+    const normalized = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s*!important\s*$/i, '')
+        .replace(/\s+/g, '')
+        .trim();
+
+    if (normalized === '#fff' || normalized === '#ffffff' || normalized === 'white') {
+        return true;
+    }
+
+    return /^rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)$/.test(normalized)
+        || normalized === 'rgb(255,255,255)';
+}
+
+/**
+ * Generic "this Style Manager value means cleared / not authored".
+ */
+export function isClearedStyleValue(property, value) {
+    if (value == null || value === '') {
+        return true;
+    }
+
+    const normalized = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s*!important\s*$/i, '')
+        .trim();
+
+    if (normalized === '') {
+        return true;
+    }
+
+    if (['unset', 'initial', 'inherit'].includes(normalized)) {
+        return true;
+    }
+
+    if (normalized === 'none') {
+        // `none` is a real authored value for display/visibility/float/etc.
+        if (
+            property === 'display'
+            || property === 'visibility'
+            || property === 'float'
+            || property === 'clear'
+            || property === 'position'
+            || property === 'flex-wrap'
+            || property === 'text-decoration'
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    if (typeof property === 'string' && /^background/i.test(property)) {
+        return isClearedBackground(value) || isClearedBackgroundImage(value);
+    }
+
+    if (property === 'color' || property === 'fill' || property === 'stroke' || property === 'outline-color' || property === 'border-color') {
+        return isClearedBackground(value);
+    }
+
+    if (property === 'box-shadow' || property === 'text-shadow') {
+        return normalized === 'none';
+    }
+
+    if (property === 'opacity' && (normalized === '1' || normalized === '1.0')) {
+        return false;
     }
 
     return false;
@@ -324,6 +480,63 @@ export function stripTextColorClasses(component) {
     });
 
     component.setClass(classes);
+}
+
+function readAuthoredColor(component) {
+    if (! component) {
+        return null;
+    }
+
+    const style = {
+        ...(component.getStyle?.() ?? {}),
+        ...(component.getStyle?.({ inline: true }) ?? {}),
+    };
+    const color = style.color;
+
+    if (color == null || color === '' || isClearedStyleValue('color', color)) {
+        return null;
+    }
+
+    return color;
+}
+
+function forEachDirectChild(component, callback) {
+    const collection = component?.components?.();
+
+    if (! collection?.forEach) {
+        return;
+    }
+
+    collection.forEach((child) => {
+        if (child) {
+            callback(child);
+        }
+    });
+}
+
+/**
+ * Style Manager `color` must win over Tailwind text-* color utilities.
+ *
+ * Classes on the same node are stripped immediately. Descendants that only have
+ * theme utilities (text-vp-text-2, text-white, …) are also stripped so the
+ * authored color inherits on the front — otherwise the canvas can look white
+ * while published HTML keeps dark text-* on headings/paragraphs.
+ */
+export function enforceStyleManagerColorOverUtilities(component) {
+    if (! readAuthoredColor(component)) {
+        return;
+    }
+
+    const visit = (node) => {
+        if (! node) {
+            return;
+        }
+
+        stripTextColorClasses(node);
+        forEachDirectChild(node, visit);
+    };
+
+    visit(component);
 }
 
 const BORDER_WIDTH_CLASSES = new Set(['border', 'border-0', 'border-2', 'border-4', 'border-8']);

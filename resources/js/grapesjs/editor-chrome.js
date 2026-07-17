@@ -104,14 +104,15 @@ export const STYLE_MANAGER_SECTORS = [
         ],
         extendBuilded: true,
         properties: [
-            { property: 'font-family', important: true },
-            { property: 'font-size', important: true },
-            { property: 'font-weight', important: true },
-            { property: 'letter-spacing', important: true },
-            { property: 'color', important: true, default: '#000000', defaults: '#000000' },
-            { property: 'line-height', important: true },
-            { property: 'text-align', important: true },
-            { property: 'text-shadow', important: true },
+            { property: 'font-family', important: true, default: '', defaults: '' },
+            { property: 'font-size', important: true, default: '', defaults: '' },
+            { property: 'font-weight', important: true, default: '', defaults: '' },
+            { property: 'letter-spacing', important: true, default: '', defaults: '' },
+            // Empty default: clear must remove, not paint #000 (stuck on the front).
+            { property: 'color', important: true, default: '', defaults: '' },
+            { property: 'line-height', important: true, default: '', defaults: '' },
+            { property: 'text-align', important: true, default: '', defaults: '' },
+            { property: 'text-shadow', important: true, default: '', defaults: '' },
         ],
     },
     {
@@ -129,13 +130,14 @@ export const STYLE_MANAGER_SECTORS = [
         ],
         extendBuilded: true,
         properties: [
-            { property: 'background-color', important: true, default: '#ffffff', defaults: '#ffffff' },
-            { property: 'background', important: true },
-            { property: 'border-radius', important: true },
-            { property: 'border', important: true },
-            { property: 'box-shadow', important: true },
-            { property: 'fill', important: true, default: '#000000', defaults: '#000000' },
-            { property: 'stroke', important: true, default: '#000000', defaults: '#000000' },
+            // Empty default: clearing must remove the property, not paint a fallback.
+            { property: 'background-color', important: true, default: '', defaults: '' },
+            { property: 'background', important: true, default: '', defaults: '' },
+            { property: 'border-radius', important: true, default: '', defaults: '' },
+            { property: 'border', important: true, default: '', defaults: '' },
+            { property: 'box-shadow', important: true, default: '', defaults: '' },
+            { property: 'fill', important: true, default: '', defaults: '' },
+            { property: 'stroke', important: true, default: '', defaults: '' },
         ],
     },
     {
@@ -143,7 +145,11 @@ export const STYLE_MANAGER_SECTORS = [
         open: false,
         buildProps: ['opacity', 'transition', 'transform'],
         extendBuilded: true,
-        properties: stylePropsImportant(['opacity', 'transition', 'transform']),
+        properties: [
+            { property: 'opacity', important: true, default: '', defaults: '' },
+            { property: 'transition', important: true, default: '', defaults: '' },
+            { property: 'transform', important: true, default: '', defaults: '' },
+        ],
     },
 ];
 

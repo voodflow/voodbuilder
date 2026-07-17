@@ -10,7 +10,57 @@ import {
     sanitizeEditorLayerTree,
 } from './core/component-model.js';
 import { isChromeLayoutModeEditor } from './chrome-content-slot-utils.js';
-import { isClearedBackground } from './theme-tokens.js';
+import {
+    isClearedBackground,
+    isClearedBackgroundImage,
+    isClearedStyleValue,
+    isStyleManagerDefaultWhiteBackground,
+    styleHasAuthorBackgroundPaint,
+    enforceStyleManagerColorOverUtilities,
+} from './theme-tokens.js';
+
+const BACKGROUND_STYLE_PROPERTIES = [
+    'background',
+    'background-color',
+    'background-image',
+    'background-size',
+    'background-position',
+    'background-repeat',
+    'background-attachment',
+    'background-origin',
+    'background-clip',
+];
+
+function isBackgroundStyleProperty(property) {
+    return typeof property === 'string' && /^background([A-Z-]|$)/i.test(property);
+}
+
+const BACKGROUND_PAINT_PROPERTIES = new Set([
+    'background',
+    'background-color',
+    'background-image',
+]);
+
+function isBackgroundPaintProperty(property) {
+    return BACKGROUND_PAINT_PROPERTIES.has(property);
+}
+
+function isBackgroundClearValue(value, opts = {}) {
+    if (opts?.__clear === true) {
+        return true;
+    }
+
+    if (isClearedBackground(value) || isClearedBackgroundImage(value)) {
+        return true;
+    }
+
+    // Legacy SM default on clear was #ffffff — treat as remove, not as a paint.
+    if (isStyleManagerDefaultWhiteBackground(value) && opts?.__fromCustom === true) {
+        return true;
+    }
+
+    return false;
+}
 
 export { guardEditorLayersRender, sanitizeEditorLayerTree } from './core/component-model.js';
 
@@ -226,7 +276,220 @@ function ensureImportantStyleValue(value) {
 }
 
 function isPurgingBackground(editor) {
-    return editor?.__voodbuilderPurgingBackground === true;
+    return editor?.__voodbuilderPurgingBackground === true
+        || editor?.__voodbuilderPurgingStyles === true;
+}
+
+function setPurgingStyles(editor, active) {
+    editor.__voodbuilderPurgingStyles = active;
+    editor.__voodbuilderPurgingBackground = active;
+}
+
+function stripPropertyFromRule(editor, rule, property) {
+    const style = { ...(rule.getStyle?.() ?? {}) };
+
+    if (! Object.prototype.hasOwnProperty.call(style, property)) {
+        return;
+    }
+
+    delete style[property];
+
+    if (Object.keys(style).length === 0) {
+        editor.Css.remove(rule);
+    } else {
+        rule.setStyle(style);
+    }
+}
+
+function wipePropertyFromTarget(target, property) {
+    target.removeStyle?.(property);
+
+    const rewrite = (style) => {
+        if (! style || typeof style !== 'object' || ! Object.prototype.hasOwnProperty.call(style, property)) {
+            return null;
+        }
+
+        const next = { ...style };
+        delete next[property];
+
+        return next;
+    };
+
+    const inline = rewrite(target.getStyle?.({ inline: true }));
+
+    if (inline) {
+        target.setStyle?.(inline, { inline: true });
+    }
+
+    const merged = rewrite(target.getStyle?.());
+
+    if (merged) {
+        target.setStyle?.(merged);
+    }
+
+    const attrs = target.getAttributes?.() ?? {};
+    const rawStyle = typeof attrs.style === 'string' ? attrs.style : '';
+
+    if (rawStyle !== '') {
+        const propPattern = new RegExp(`^${property.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\s*:`, 'i');
+        const cleaned = rawStyle
+            .split(';')
+            .map((chunk) => chunk.trim())
+            .filter((chunk) => chunk !== '' && ! propPattern.test(chunk))
+            .join('; ');
+
+        if (cleaned === '') {
+            target.removeAttributes?.('style');
+        } else {
+            target.addAttributes?.({ style: cleaned.endsWith(';') ? cleaned : `${cleaned};` });
+        }
+    }
+
+    target.view?.updateStyles?.();
+}
+
+/**
+ * Force-remove one Style Manager property from component inline styles,
+ * Styles model, and CssComposer #id / private-class rules.
+ */
+export function clearStyleProperty(editor, component, property, options = {}) {
+    if (! editor || ! component || ! property) {
+        return;
+    }
+
+    const properties = options.family === true && isBackgroundPaintProperty(property)
+        ? BACKGROUND_STYLE_PROPERTIES
+        : [property];
+
+    const targets = resolveVisualStyleTarget(component) === component
+        ? [component]
+        : [component, resolveVisualStyleTarget(component)];
+
+    for (const target of targets) {
+        for (const prop of properties) {
+            wipePropertyFromTarget(target, prop);
+
+            const styleModel = editor.Styles?.getModelToStyle?.(target);
+
+            if (styleModel && styleModel !== target) {
+                wipePropertyFromTarget(styleModel, prop);
+            }
+
+            if (editor.Css) {
+                for (const rule of collectComponentStyleRules(editor, target)) {
+                    stripPropertyFromRule(editor, rule, prop);
+                }
+            }
+        }
+
+        if (properties === BACKGROUND_STYLE_PROPERTIES || isBackgroundPaintProperty(property)) {
+            pruneEmptyPrivateClassRules(editor, target);
+        }
+    }
+}
+
+/**
+ * Persist Style Manager paints for save/export.
+ *
+ * Dual storage is valid: component inline (avoidInlineStyle:false) and/or CssComposer
+ * #id rules (loaded CSS, SM in some modes). Never delete composer-only styles just
+ * because component live style looks empty — that wiped SM paints on every update/save.
+ *
+ * Strategy: union(component live, existing #id rule) → write both #id rule and inline
+ * so getHtml() and getCss() both carry author styles to the front and through reload.
+ */
+export function bakeAuthorStylesToComposerForExport(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper || ! editor.Css) {
+        return;
+    }
+
+    const seen = new Set();
+
+    wrapper.onAll((component) => {
+        if (seen.has(component.cid)) {
+            return;
+        }
+
+        seen.add(component.cid);
+
+        const id = component.getId?.();
+
+        if (! id) {
+            return;
+        }
+
+        const live = {
+            ...(component.getStyle?.() ?? {}),
+            ...(component.getStyle?.({ inline: true }) ?? {}),
+        };
+
+        const existingRule = editor.Css.getIdRule?.(id);
+        const existing = { ...(existingRule?.getStyle?.() ?? {}) };
+        const merged = { ...existing };
+
+        for (const [property, value] of Object.entries(live)) {
+            if (value == null || value === '') {
+                continue;
+            }
+
+            if (isClearedStyleValue(property, value)) {
+                delete merged[property];
+
+                continue;
+            }
+
+            merged[property] = value;
+        }
+
+        // Live explicitly cleared a key that still exists only on the component model.
+        for (const property of Object.keys(live)) {
+            if (isClearedStyleValue(property, live[property])) {
+                delete merged[property];
+            }
+        }
+
+        if (Object.keys(merged).length === 0) {
+            if (existingRule && Object.keys(existing).length > 0) {
+                // Author cleared everything that was on the #id rule.
+                const stillLive = Object.entries(live).some(([property, value]) => {
+                    return value != null
+                        && value !== ''
+                        && ! isClearedStyleValue(property, value);
+                });
+
+                if (! stillLive && Object.keys(live).length > 0) {
+                    editor.Css.remove(existingRule);
+                }
+            }
+
+            return;
+        }
+
+        // Style Manager paints beat utility classes (same node + inheritance).
+        for (const [property, value] of Object.entries(merged)) {
+            if (
+                property === 'color'
+                || property === 'fill'
+                || property === 'stroke'
+                || property === 'background'
+                || property === 'background-color'
+                || property === 'background-image'
+                || property === 'border-color'
+                || property === 'box-shadow'
+                || property === 'text-shadow'
+            ) {
+                merged[property] = ensureImportantStyleValue(value);
+            }
+        }
+
+        editor.Css.setIdRule(id, merged);
+
+        // Ensure HTML serialization carries the same paints (reload + front without CSS).
+        component.addStyle?.(merged, { inline: true });
+        enforceStyleManagerColorOverUtilities(component);
+    });
 }
 
 const UTILITY_CLASS_PATTERN = /^(?:container|flex(?:-|$)|grid|mx-|my-|mt-|mb-|ml-|mr-|px-|py-|pt-|pb-|pl-|pr-|md:|lg:|sm:|xl:|2xl:|items-|justify-|gap-|text-|bg-|rounded|w-|h-|max-|min-|object-|overflow-|border(?:-|$)|hidden|block|inline|relative|absolute|static|sticky|grow|shrink|basis-|col-|row-|place-|self-|order-|z-|opacity-|shadow|ring-|aspect-|space-|divide-|font-|leading-|tracking-|list-|uppercase|lowercase|capitalize|italic|antialiased|voodbuilder-|vb-|gjs-)/;
@@ -251,12 +514,76 @@ function backgroundStyleTargets(component) {
     return target === component ? [component] : [component, target];
 }
 
-function readInlineBackground(component) {
+function readInlineBackgroundStyle(component) {
     const inline = component.getStyle?.({ inline: true });
 
     if (! inline || typeof inline !== 'object') {
+        return {};
+    }
+
+    return inline;
+}
+
+function readMergedBackgroundStyle(editor, component) {
+    const merged = { ...readInlineBackgroundStyle(component) };
+
+    for (const rule of collectBackgroundRules(editor, component)) {
+        Object.assign(merged, rule.getStyle?.() ?? {});
+    }
+
+    return merged;
+}
+
+function componentHasAuthorBackgroundPaint(editor, component) {
+    return styleHasAuthorBackgroundPaint(readMergedBackgroundStyle(editor, component));
+}
+
+/**
+ * What the author sees on the canvas for this element (computed style).
+ * null = cannot determine (no mounted view).
+ */
+function canvasShowsAuthorBackgroundPaint(component) {
+    const el = component?.getEl?.();
+
+    if (! el || el.nodeType !== 1) {
         return null;
     }
+
+    const view = el.ownerDocument?.defaultView;
+
+    if (! view?.getComputedStyle) {
+        return null;
+    }
+
+    let computed;
+
+    try {
+        computed = view.getComputedStyle(el);
+    } catch {
+        return null;
+    }
+
+    const image = String(computed.backgroundImage ?? '').trim().toLowerCase();
+    const color = String(computed.backgroundColor ?? '').trim().toLowerCase();
+
+    const hasImage = image !== ''
+        && image !== 'none'
+        && /url\s*\(|gradient\s*\(/i.test(image);
+
+    if (hasImage) {
+        return true;
+    }
+
+    if (isClearedBackground(color) || isStyleManagerDefaultWhiteBackground(color)) {
+        return false;
+    }
+
+    // Non-white solid color still visible on canvas.
+    return color !== '' && color !== 'transparent';
+}
+
+function readInlineBackground(component) {
+    const inline = readInlineBackgroundStyle(component);
 
     return inline['background-color'] ?? inline.background ?? null;
 }
@@ -1453,16 +1780,76 @@ export function clearBackgroundCssRules(editor, component, options = {}) {
         return;
     }
 
+    const wipeInlineBackground = (target) => {
+        for (const property of BACKGROUND_STYLE_PROPERTIES) {
+            target.removeStyle?.(property);
+        }
+
+        const inline = { ...(target.getStyle?.({ inline: true }) ?? {}) };
+        let changed = false;
+
+        for (const key of Object.keys(inline)) {
+            if (! /^background/i.test(key)) {
+                continue;
+            }
+
+            delete inline[key];
+            changed = true;
+        }
+
+        if (changed) {
+            if (typeof target.setStyle === 'function') {
+                target.setStyle(inline, { inline: true });
+            } else if (Object.keys(inline).length > 0) {
+                target.addStyle?.(inline, { inline: true });
+            }
+        }
+
+        const merged = { ...(target.getStyle?.() ?? {}) };
+        let mergedChanged = false;
+
+        for (const key of Object.keys(merged)) {
+            if (! /^background/i.test(key)) {
+                continue;
+            }
+
+            delete merged[key];
+            mergedChanged = true;
+        }
+
+        if (mergedChanged && typeof target.setStyle === 'function') {
+            target.setStyle(merged);
+        }
+
+        // Also clear raw style attribute leftovers Grapes may not track as props.
+        const attrs = target.getAttributes?.() ?? {};
+        const rawStyle = typeof attrs.style === 'string' ? attrs.style : '';
+
+        if (rawStyle && /background/i.test(rawStyle)) {
+            const cleaned = rawStyle
+                .split(';')
+                .map((chunk) => chunk.trim())
+                .filter((chunk) => chunk !== '' && ! /^background(?:-[\w-]+)?\s*:/i.test(chunk))
+                .join('; ');
+
+            if (cleaned === '') {
+                target.removeAttributes?.('style');
+            } else if (cleaned !== rawStyle.trim().replace(/;\s*$/, '')) {
+                target.addAttributes?.({ style: cleaned.endsWith(';') ? cleaned : `${cleaned};` });
+            }
+        }
+
+        target.view?.updateStyles?.();
+    };
+
     for (const target of backgroundStyleTargets(component)) {
         if (! rulesOnly) {
-            target.removeStyle('background');
-            target.removeStyle('background-color');
+            wipeInlineBackground(target);
 
             const styleModel = editor.Styles?.getModelToStyle?.(target);
 
             if (styleModel && styleModel !== target) {
-                styleModel.removeStyle?.('background');
-                styleModel.removeStyle?.('background-color');
+                wipeInlineBackground(styleModel);
             }
         }
 
@@ -1474,16 +1861,23 @@ export function clearBackgroundCssRules(editor, component, options = {}) {
     }
 }
 
+/**
+ * True when inline background is empty but CssComposer still has author paint.
+ * Kept for diagnostics; export no longer treats this as a clear (dual storage).
+ */
 export function hasStaleBackgroundRule(editor, component) {
     if (! component) {
         return false;
     }
 
     for (const target of backgroundStyleTargets(component)) {
-        const inlineBackground = readInlineBackground(target);
-        const ruleBackground = readRuleBackground(editor, target);
+        const inlineStyle = readInlineBackgroundStyle(target);
+        const inlineHasPaint = styleHasAuthorBackgroundPaint(inlineStyle);
+        const ruleHasPaint = collectBackgroundRules(editor, target).some((rule) => {
+            return styleHasAuthorBackgroundPaint(rule.getStyle?.() ?? {});
+        });
 
-        if (isClearedBackground(inlineBackground) && ! isClearedBackground(ruleBackground)) {
+        if (! inlineHasPaint && ruleHasPaint) {
             return true;
         }
     }
@@ -1491,49 +1885,64 @@ export function hasStaleBackgroundRule(editor, component) {
     return false;
 }
 
+/**
+ * On select: if CssComposer still has background paint but the component inline
+ * style is empty (typical after reload from saved CSS), hydrate inline from the
+ * rule so Style Manager / getHtml see the same paints. Never wipe composer-only
+ * styles — that made customizations vanish on reload/select.
+ */
 export function syncStaleBackgroundRules(editor, component) {
-    if (! component) {
+    if (! component || isPurgingBackground(editor)) {
         return;
     }
 
     const target = resolveVisualStyleTarget(component);
-    const inlineBackground = readInlineBackground(target);
-    const hasGhostBackground = collectBackgroundRules(editor, target).some((rule) => {
-        const style = rule.getStyle?.() ?? {};
-        const background = style['background-color'] ?? style.background;
+    const rules = collectBackgroundRules(editor, target);
+    const ruleStyle = {};
 
-        return ! isClearedBackground(background);
-    });
+    for (const rule of rules) {
+        Object.assign(ruleStyle, rule.getStyle?.() ?? {});
+    }
 
-    if (! hasGhostBackground) {
+    if (! styleHasAuthorBackgroundPaint(ruleStyle)) {
         return;
     }
 
-    if (! isClearedBackground(inlineBackground) && ! isPurgingBackground(editor)) {
+    if (styleHasAuthorBackgroundPaint(readInlineBackgroundStyle(target))) {
         return;
     }
 
-    clearBackgroundCssRules(editor, component);
+    const hydrate = {};
 
-    window.requestAnimationFrame(() => {
-        const selected = editor.getSelected();
+    for (const property of BACKGROUND_STYLE_PROPERTIES) {
+        const value = ruleStyle[property];
 
-        if (! selected) {
-            return;
+        if (value == null || value === '' || isClearedStyleValue(property, value)) {
+            continue;
         }
 
-        editor.StyleManager.select(target, { component: selected });
-    });
+        hydrate[property] = value;
+    }
+
+    if (Object.keys(hydrate).length === 0) {
+        return;
+    }
+
+    target.addStyle?.(hydrate, { inline: true });
 }
 
+/**
+ * Strip only cleared *tokens* (none / transparent / empty) left on background
+ * rules. Do not treat "composer has paint, inline empty" as a clear — dual storage.
+ */
 export function purgeDesyncedBackgroundCssRules(editor) {
     const wrapper = editor.getWrapper?.();
 
-    if (! wrapper) {
+    if (! wrapper || ! editor.Css) {
         return;
     }
 
-    editor.__voodbuilderPurgingBackground = true;
+    setPurgingStyles(editor, true);
 
     try {
         const seen = new Set();
@@ -1550,14 +1959,82 @@ export function purgeDesyncedBackgroundCssRules(editor) {
 
                 seen.add(target.cid);
 
-                if (hasStaleBackgroundRule(editor, target)
-                    || (isClearedBackground(readInlineBackground(target)) && collectBackgroundRules(editor, target).length > 0)) {
-                    clearBackgroundCssRules(editor, target, { rulesOnly: true });
+                for (const rule of collectBackgroundRules(editor, target)) {
+                    const style = { ...(rule.getStyle?.() ?? {}) };
+                    let changed = false;
+
+                    for (const property of Object.keys(style)) {
+                        if (! /^background/i.test(property)) {
+                            continue;
+                        }
+
+                        if (isClearedStyleValue(property, style[property])) {
+                            delete style[property];
+                            changed = true;
+                        }
+                    }
+
+                    if (! changed) {
+                        continue;
+                    }
+
+                    if (Object.keys(style).length === 0) {
+                        editor.Css.remove(rule);
+                    } else {
+                        rule.setStyle(style);
+                    }
                 }
             }
         });
     } finally {
-        editor.__voodbuilderPurgingBackground = false;
+        setPurgingStyles(editor, false);
+    }
+}
+
+/**
+ * Before getHtml(): only strip background when the canvas proves the author
+ * cleared it (computed style has no paint) while the model still claims paint.
+ * Never delete composer-only backgrounds when inline is empty — that is valid
+ * dual storage after reload from saved CSS.
+ */
+export function purgeClearedBackgroundInlineForExport(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    setPurgingStyles(editor, true);
+
+    try {
+        const seen = new Set();
+
+        wrapper.onAll((component) => {
+            if (seen.has(component.cid)) {
+                return;
+            }
+
+            for (const target of backgroundStyleTargets(component)) {
+                if (seen.has(target.cid)) {
+                    continue;
+                }
+
+                seen.add(target.cid);
+
+                if (! componentHasAuthorBackgroundPaint(editor, target)) {
+                    continue;
+                }
+
+                const canvasPaint = canvasShowsAuthorBackgroundPaint(target);
+
+                // Canvas clearly shows no bg (cleared in SM) while model still has paint.
+                if (canvasPaint === false) {
+                    clearBackgroundCssRules(editor, target);
+                }
+            }
+        });
+    } finally {
+        setPurgingStyles(editor, false);
     }
 }
 
@@ -1601,37 +2078,45 @@ export function registerVisualStyleInspector(editor) {
         const value = event?.value ?? event?.to?.value ?? '';
         const selected = editor.getSelected();
 
-        if (selected && EXPORT_PAINT_PROPERTIES.includes(propertyName)) {
+        if (! propertyName || ! selected) {
+            return;
+        }
+
+        if (EXPORT_PAINT_PROPERTIES.includes(propertyName)) {
             propagateSvgExportStyle(editor, selected, propertyName, value);
         }
 
-        if (propertyName !== 'background-color' && propertyName !== 'background') {
+        // Only wipe on explicit Style Manager clear (__clear). Intermediate empty
+        // values while picking a color used to call clearStyleProperty and erase
+        // paints from the model while the canvas still showed cached CSS.
+        const explicitClear = event?.opts?.__clear === true;
+
+        if (! explicitClear) {
             return;
         }
 
-        const isClear = event?.opts?.__clear === true || isClearedBackground(value);
+        clearStyleProperty(editor, selected, propertyName, {
+            family: isBackgroundPaintProperty(propertyName),
+        });
 
-        if (! isClear) {
-            return;
-        }
-
-        if (selected) {
+        if (isBackgroundPaintProperty(propertyName)) {
             clearBackgroundCssRules(editor, selected);
-
-            window.requestAnimationFrame(() => {
-                const target = resolveVisualStyleTarget(selected);
-                editor.StyleManager.select(target, { component: selected });
-            });
         }
+
+        window.requestAnimationFrame(() => {
+            const target = resolveVisualStyleTarget(selected);
+            editor.StyleManager.select(target, { component: selected });
+        });
     });
 }
 
 function clearForwardedStyle(target, property) {
     target.removeStyle(property);
 
-    if (property === 'background' || property === 'background-color') {
-        target.removeStyle('background');
-        target.removeStyle('background-color');
+    if (isBackgroundPaintProperty(property)) {
+        for (const backgroundProperty of BACKGROUND_STYLE_PROPERTIES) {
+            target.removeStyle(backgroundProperty);
+        }
     }
 }
 
@@ -1661,17 +2146,19 @@ export function registerVisualStyleTarget(editor) {
 
         const style = component.getStyle?.() ?? {};
         const value = style[property];
-        const isBackground = property === 'background' || property === 'background-color';
+        const isBackgroundPaint = isBackgroundPaintProperty(property);
         const shouldClear = value == null
             || value === ''
-            || (isBackground && isClearedBackground(value));
+            || (isBackgroundPaint && isBackgroundClearValue(value));
 
         if (shouldClear) {
             component.removeStyle(property);
             clearForwardedStyle(target, property);
 
-            if (isBackground) {
+            if (isBackgroundPaint) {
                 clearBackgroundCssRules(editor, component);
+            } else {
+                clearStyleProperty(editor, component, property);
             }
 
             target.view?.updateStyles?.();

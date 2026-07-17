@@ -1,5 +1,6 @@
 /**
  * Recompiles scoped Tailwind utilities for pasted components in the canvas iframe.
+ * Triggered by class changes only — Style Manager inline styles do not need compile-css.
  * Uses the same compile-css API as code import (Tailwind v4 via compile-component-tailwind.mjs).
  */
 import { editorApiHeaders } from './editor-api.js';
@@ -177,7 +178,9 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         }
     };
 
-    editor.on('component:update', (component) => {
+    // Pasted library components: recompile only when their Tailwind classes change.
+    // Style Manager inline edits must not hit compile-css.
+    editor.on('component:update:classes', (component) => {
         if (isInsidePastedComponent(component)) {
             schedule();
         }
@@ -188,8 +191,6 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             schedule();
         }
     });
-
-    editor.on('style:change', () => schedule());
 
     editor.on('load', () => {
         editorLoaded = true;

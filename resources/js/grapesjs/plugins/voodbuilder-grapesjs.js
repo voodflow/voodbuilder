@@ -34,11 +34,12 @@ import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
 import {
     isClearedBackground,
+    isClearedBackgroundImage,
     restoreBackgroundClasses,
     stripBackgroundClasses,
     stripBorderColorClasses,
     stripRoundedClasses,
-    stripTextColorClasses,
+    enforceStyleManagerColorOverUtilities,
 } from '../theme-tokens.js';
 
 function isSiteFooterBlock(blockId) {
@@ -101,24 +102,33 @@ function registerTailwindStyleSync(editor) {
         const wrapperStyle = component.getStyle?.() ?? {};
         const targetStyle = target?.getStyle?.() ?? {};
 
-        if (property === 'background-color' || property === 'background') {
+        if (property === 'background'
+            || property === 'background-color'
+            || property === 'background-image') {
             const background = wrapperStyle[property]
                 ?? wrapperStyle['background-color']
+                ?? wrapperStyle['background-image']
                 ?? wrapperStyle.background
                 ?? targetStyle[property]
                 ?? targetStyle['background-color']
+                ?? targetStyle['background-image']
                 ?? targetStyle.background;
 
-            if (isClearedBackground(background)) {
+            const cleared = background == null
+                || background === ''
+                || isClearedBackground(background)
+                || isClearedBackgroundImage(background);
+
+            if (cleared) {
                 restoreBackgroundClasses(target);
                 clearBackgroundCssRules(editor, component);
-            } else if (background != null && background !== '') {
+            } else {
                 stripBackgroundClasses(target);
             }
         }
 
         if (property === 'color') {
-            stripTextColorClasses(target);
+            enforceStyleManagerColorOverUtilities(target);
         }
 
         if (isBorderRadiusProperty(property)) {

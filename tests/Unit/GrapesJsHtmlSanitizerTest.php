@@ -54,4 +54,36 @@ class GrapesJsHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('class="w-full h-auto object-cover"', $cleaned);
         $this->assertStringContainsString('alt="hero"', $cleaned);
     }
+
+    public function test_normalize_payload_strips_data_gjs_so_cta_labels_survive_reload(): void
+    {
+        $html = '<a href="#" role="button" data-voodbuilder-cta="true" '
+            .'class="inline-flex text-white bg-indigo-500" '
+            .'data-gjs-type="voodbuilder-cta-button" data-gjs-ctaLabel="Submit" '
+            .'data-gjs-droppable="e=>!x7(e)">Submit</a>';
+
+        $normalized = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate::normalizePayload([
+            'html' => $html,
+            'css' => '',
+            'js' => '',
+            'project' => null,
+        ]);
+
+        $this->assertStringNotContainsString('data-gjs-', $normalized['html']);
+        $this->assertStringNotContainsString('e=>!x7(e)', $normalized['html']);
+        $this->assertStringContainsString('data-voodbuilder-cta="true"', $normalized['html']);
+        $this->assertStringContainsString('>Submit</a>', $normalized['html']);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Submit"', $normalized['html']);
+    }
+
+    public function test_restore_empty_cta_labels_from_data_attribute(): void
+    {
+        $html = '<a href="#" role="button" data-voodbuilder-cta="true" '
+            .'data-voodbuilder-cta-label="Accept" class="inline-flex"></a>';
+
+        $restored = GrapesJsHtmlSanitizer::restoreEmptyCtaLabels($html);
+
+        $this->assertStringContainsString('>Accept</a>', $restored);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Accept"', $restored);
+    }
 }

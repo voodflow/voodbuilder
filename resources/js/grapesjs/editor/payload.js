@@ -12,6 +12,7 @@ import {
 import { syncConditionsForExport } from '../conditions-ui.js';
 import { findPageContentSlotInEditor } from '../chrome-content-slot-utils.js';
 import { extractChromeLayoutHtml } from '../editor-chrome-layout.js';
+import { ensureCtaButtonsForExport } from '../grapesjs-button-link.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -21,6 +22,7 @@ import {
 import { syncSiteHeaderConfig } from '../chrome/blocks/nav/config.js';
 import { isNavBlock } from '../chrome/ids.js';
 import {
+    bakeAuthorStylesToComposerForExport,
     bakeSvgPaintForExport,
     pruneRedundantSpacingZerosForExport,
     purgeDesyncedBackgroundCssRules,
@@ -30,6 +32,55 @@ import {
     syncPaintStylesForExport,
     syncSpacingStylesForExport,
 } from '../tailwind-visual-style.js';
+
+/**
+ * Keep Style Manager #id / private-class rules from getCss() without the full
+ * Tailwind/theme bundle (that baked stale --vx-header-bg on the frontend).
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function extractGrapesComposerCss(css) {
+    const source = String(css ?? '').trim();
+
+    if (source === '') {
+        return '';
+    }
+
+    // Strip @media blocks (utilities / responsive bundles are regenerated server-side).
+    let withoutMedia = source;
+    let guard = 0;
+
+    while (guard < 50) {
+        const next = withoutMedia.replace(/@media[^{]*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g, ' ');
+
+        if (next === withoutMedia) {
+            break;
+        }
+
+        withoutMedia = next;
+        guard += 1;
+    }
+
+    const kept = [];
+
+    for (const match of withoutMedia.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+        const selectors = match[1].trim();
+        const body = match[2].trim();
+
+        if (selectors === '' || body === '') {
+            continue;
+        }
+
+        if (! selectors.includes('#')) {
+            continue;
+        }
+
+        kept.push(`${selectors} {${body}}`);
+    }
+
+    return kept.join('\n');
+}
 
 function normalizeVpressDynamicComponents(editor) {
     safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]').forEach((component) => {
@@ -68,8 +119,13 @@ export function encodeJsonDataGjsAttributes(html) {
 
 /**
  * @param {object} editor
+ * @param {{ mutate?: boolean }} [options]
+ *   mutate=false → read-only snapshot for onUpdate (must not wipe CssComposer / styles).
+ *   mutate=true (default) → save path: sync/bake/purge then serialize.
  */
-export function buildPayload(editor) {
+export function buildPayload(editor, options = {}) {
+    const mutate = options.mutate !== false;
+
     const runExportStep = (label, step) => {
         try {
             step();
@@ -78,21 +134,28 @@ export function buildPayload(editor) {
         }
     };
 
-    runExportStep('normalizeVpressDynamicComponents', () => normalizeVpressDynamicComponents(editor));
-    runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
-    runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
-    runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
-    runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
-    runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor));
-    runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor));
-    runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
-    runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
-    runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
-    runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
-    runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
-    runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
-    runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
-    runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
+    if (mutate) {
+        runExportStep('normalizeVpressDynamicComponents', () => normalizeVpressDynamicComponents(editor));
+        runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
+        runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
+        runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
+        runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
+        runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor));
+        runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor));
+        // Persist Style Manager paints into #id CssComposer rules (and keep inline).
+        runExportStep('bakeAuthorStylesToComposerForExport', () => bakeAuthorStylesToComposerForExport(editor));
+        runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
+        runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
+        runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
+        runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
+        runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
+        runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
+        runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
+        runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
+        runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));
+        // Final bake after other syncs may have touched styles.
+        runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));
+    }
 
     let html = editor.getHtml({
         cleanId: false,
@@ -114,12 +177,14 @@ export function buildPayload(editor) {
                 const childCount = findPageContentSlotInEditor(editor)?.components?.()?.length ?? 0;
 
                 if (childCount === 0) {
+                    // Author cleared the page content slot — empty save is intentional.
                     html = '';
                 } else {
                     console.error(
                         'VoodBuilder: chrome shell HTML extract was empty while the content slot still has children — keeping full canvas HTML for server strip.',
                         { childCount },
                     );
+                    // Keep `html` from getHtml(); server stripSiteChromeFromPageHtml removes chrome.
                 }
             }
         }
@@ -131,29 +196,17 @@ export function buildPayload(editor) {
 
     html = encodeJsonDataGjsAttributes(html);
 
-    // Chrome shell: if slot serialization came back empty but the live canvas still
-    // has page sections, refuse to publish a blank page (regression that wiped Home).
-    if (
-        editor.__voodbuilderChromeShellMode
-        && String(html).trim() === ''
-        && ! editor.__voodbuilderChromeLayoutMode
-    ) {
-        const previousHtml = String(editor.__voodbuilderLastSavedPageHtml ?? '').trim();
-
-        if (previousHtml !== '') {
-            console.error(
-                'VoodBuilder: refusing to save empty chrome-shell page HTML; keeping previous page content.',
-            );
-            html = previousHtml;
-        }
-    }
-
+    // Intentionally empty page content must persist (delete-all / remove last block).
+    // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
+    // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // they bake stale --vx-header-bg (e.g. purple) over the admin palette on the frontend.
+    // Chrome shell: keep Style Manager #id paints from getCss(), but not the full
+    // composer bundle (that baked stale --vx-header-bg over the admin palette).
     const liveCss = String(editor.__voodbuilderPageLiveCss ?? '').trim();
     const composerCss = String(editor.getCss?.() ?? '').trim();
+    const styleManagerCss = extractGrapesComposerCss(composerCss);
     const css = editor.__voodbuilderChromeShellMode
-        ? liveCss
+        ? [styleManagerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n')
         : [composerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n');
 
     const payload = {

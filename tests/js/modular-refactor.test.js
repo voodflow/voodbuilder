@@ -386,3 +386,106 @@ describe('core/component-model', () => {
         expect(collection.models).toHaveLength(1);
     });
 });
+
+describe('theme-tokens background clear', () => {
+    it('treats transparent and empty as cleared', async () => {
+        const {
+            isClearedBackground,
+            isClearedBackgroundImage,
+            isStyleManagerDefaultWhiteBackground,
+            styleHasAuthorBackgroundPaint,
+        } = await import(
+            '../../resources/js/grapesjs/theme-tokens.js'
+        );
+
+        expect(isClearedBackground('')).toBe(true);
+        expect(isClearedBackground('transparent')).toBe(true);
+        expect(isClearedBackground('none')).toBe(true);
+        expect(isClearedBackground('#ff0000')).toBe(false);
+        expect(isStyleManagerDefaultWhiteBackground('#ffffff')).toBe(true);
+        expect(isStyleManagerDefaultWhiteBackground('#fff !important')).toBe(true);
+        expect(isStyleManagerDefaultWhiteBackground('#ff0000')).toBe(false);
+        expect(isClearedBackgroundImage('none')).toBe(true);
+        expect(isClearedBackgroundImage('url(/bg.jpg)')).toBe(false);
+        expect(styleHasAuthorBackgroundPaint({ 'background-image': 'url(/s.png)' })).toBe(true);
+        expect(styleHasAuthorBackgroundPaint({ 'background-image': 'none' })).toBe(false);
+        expect(styleHasAuthorBackgroundPaint({ 'background-color': '#ffffff' })).toBe(false);
+
+        const { isClearedStyleValue } = await import(
+            '../../resources/js/grapesjs/theme-tokens.js'
+        );
+
+        expect(isClearedStyleValue('color', '')).toBe(true);
+        expect(isClearedStyleValue('display', 'none')).toBe(false);
+        expect(isClearedStyleValue('box-shadow', 'none')).toBe(true);
+        expect(isClearedStyleValue('color', '#ff0000')).toBe(false);
+
+        const { enforceStyleManagerColorOverUtilities } = await import(
+            '../../resources/js/grapesjs/theme-tokens.js'
+        );
+
+        const child = {
+            classes: ['text-vp-text-2', 'text-lg'],
+            getClasses() {
+                return this.classes;
+            },
+            setClass(next) {
+                this.classes = next;
+            },
+            getStyle() {
+                return {};
+            },
+            components() {
+                return { forEach() {} };
+            },
+        };
+
+        const parent = {
+            classes: ['text-white', 'p-10'],
+            getClasses() {
+                return this.classes;
+            },
+            setClass(next) {
+                this.classes = next;
+            },
+            getStyle() {
+                return { color: '#ffffff' };
+            },
+            components() {
+                return {
+                    forEach(fn) {
+                        fn(child);
+                    },
+                };
+            },
+        };
+
+        enforceStyleManagerColorOverUtilities(parent);
+        expect(parent.classes).not.toContain('text-white');
+        expect(parent.classes).toContain('p-10');
+        expect(child.classes).not.toContain('text-vp-text-2');
+        expect(child.classes).toContain('text-lg');
+    });
+
+    it('extractGrapesComposerCss keeps only #id Style Manager rules', async () => {
+        const { extractGrapesComposerCss } = await import(
+            '../../resources/js/grapesjs/editor/payload.js'
+        );
+
+        const css = `
+.flex { display: flex }
+#hero-title { color: #ff0000 !important; }
+@media (min-width: 768px) { #hero-title { font-size: 2rem } }
+.c123 { margin: 0 }
+#section-1 { background-color: #0ea5e9 }
+`;
+
+        const extracted = extractGrapesComposerCss(css);
+
+        expect(extracted).toContain('#hero-title');
+        expect(extracted).toContain('color: #ff0000');
+        expect(extracted).toContain('#section-1');
+        expect(extracted).not.toContain('.flex');
+        expect(extracted).not.toContain('@media');
+    });
+});

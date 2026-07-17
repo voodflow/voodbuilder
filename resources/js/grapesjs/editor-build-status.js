@@ -86,6 +86,12 @@ export function endEditorBuild(editor, scope = 'default') {
     syncClassesOverlay(editor);
 }
 
+/** Clear stuck compile overlays (e.g. after a failed/aborted build storm). */
+export function resetEditorBuildStatus(editor) {
+    BUILD_SCOPES.clear();
+    syncClassesOverlay(editor);
+}
+
 export function registerEditorBuildStatus(editor, shell, labels = {}) {
     const selectorsMount = shell?.mounts?.selectors;
     const compilingLabel = labels.compilingStyles ?? 'Compiling styles…';

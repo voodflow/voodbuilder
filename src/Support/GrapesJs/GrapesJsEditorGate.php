@@ -582,6 +582,10 @@ final class GrapesJsEditorGate
     public static function normalizePayload(array $payload, bool $recompilePageCss = false): array
     {
         $html = GrapesJsHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
+        // Drop data-gjs-* before editor reload/save. Stale props (e.g. corrupted
+        // data-gjs-droppable="e=>!x7(e)") and content/ctaLabel fights blank CTAs.
+        $html = GrapesJsHtmlSanitizer::stripEditorOnlyAttributes($html);
+        $html = GrapesJsHtmlSanitizer::restoreEmptyCtaLabels($html);
         $html = GrapesJsDynamicBlockAttributeNormalizer::normalize($html);
         $html = GrapesJsConditionsAttributeNormalizer::normalize($html);
         $html = GrapesJsCustomCodeSanitizer::sanitize($html);

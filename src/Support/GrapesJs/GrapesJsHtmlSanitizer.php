@@ -37,6 +37,87 @@ final class GrapesJsHtmlSanitizer
     }
 
     /**
+     * Recover CTA button text wiped by the GrapesJS editor (empty
+     * <a data-voodbuilder-cta> with a surviving data-voodbuilder-cta-label).
+     */
+    public static function restoreEmptyCtaLabels(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-cta')) {
+            return $html;
+        }
+
+        $document = new \DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-cta-root">'.$html.'</div>';
+            $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if ($loaded !== true) {
+            return $html;
+        }
+
+        $root = $document->getElementById('voodbuilder-cta-root');
+
+        if (! $root instanceof \DOMElement) {
+            return $html;
+        }
+
+        $changed = false;
+
+        foreach ($root->getElementsByTagName('a') as $anchor) {
+            if (! $anchor instanceof \DOMElement) {
+                continue;
+            }
+
+            if ($anchor->getAttribute('data-voodbuilder-cta') !== 'true') {
+                continue;
+            }
+
+            $text = trim(preg_replace('/\s+/u', ' ', $anchor->textContent) ?? '');
+
+            if ($text !== '') {
+                if (! $anchor->hasAttribute('data-voodbuilder-cta-label')) {
+                    $anchor->setAttribute('data-voodbuilder-cta-label', $text);
+                    $changed = true;
+                }
+
+                continue;
+            }
+
+            $label = trim($anchor->getAttribute('data-voodbuilder-cta-label'));
+
+            if ($label === '') {
+                $label = 'Button';
+                $anchor->setAttribute('data-voodbuilder-cta-label', $label);
+            }
+
+            while ($anchor->firstChild !== null) {
+                $anchor->removeChild($anchor->firstChild);
+            }
+
+            $anchor->appendChild($document->createTextNode($label));
+            $changed = true;
+        }
+
+        if (! $changed) {
+            return $html;
+        }
+
+        $inner = '';
+
+        foreach ($root->childNodes as $child) {
+            $inner .= $document->saveHTML($child);
+        }
+
+        return $inner !== '' ? $inner : $html;
+    }
+
+    /**
      * Remove uncompiled Blade fragments and other invalid attribute names from HTML.
      */
     public static function stripInvalidAttributes(string $html): string

@@ -127,24 +127,37 @@ final class GrapesJsCanvas
 
         .voodbuilder-gjs-top-drop-spacer {
             box-sizing: border-box;
-            height: 0;
-            min-height: 0;
-            margin: 0;
-            padding: 0;
-            border: 0;
-            overflow: hidden;
-            opacity: 0;
-            pointer-events: none;
-            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            visibility: hidden;
+            pointer-events: none !important;
+            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease, visibility 0s linear 0.12s;
+        }
+
+        .voodbuilder-gjs-top-drop-spacer.gjs-hovered,
+        .voodbuilder-gjs-top-drop-spacer.gjs-selected {
+            outline: none !important;
+            box-shadow: none !important;
         }
 
         .voodbuilder-gjs-top-drop-spacer.is-active {
-            min-height: 4.5rem;
-            height: 4.5rem;
-            opacity: 1;
-            pointer-events: auto;
+            min-height: 4.5rem !important;
+            height: 4.5rem !important;
+            max-height: none !important;
+            opacity: 1 !important;
+            visibility: visible;
+            pointer-events: auto !important;
             background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 8%, transparent);
             border-radius: 0.375rem;
+            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
         }
 
         .voodbuilder-gjs-top-drop-spacer.is-active::after {

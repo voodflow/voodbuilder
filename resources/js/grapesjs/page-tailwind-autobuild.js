@@ -1,20 +1,72 @@
 /**
  * Recompiles page-level Tailwind utilities in the canvas iframe when classes change.
- * Component library instances keep their own scoped compile (component-tailwind-autobuild.js).
+ * Style Manager paints are inline — they must NOT trigger compile-css.
+ * Rebuild when: Classes panel, Global Classes applied to a component, structure drops.
  */
 import { editorApiHeaders } from './editor-api.js';
-import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
+import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
+import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-page-live-css';
-const DEBOUNCE_MS = 280;
+const DEBOUNCE_MS = 450;
 const BUILD_SCOPE = 'page-css';
-const INITIAL_BUILD_DELAY_MS = 80;
-const DROP_BUILD_DELAY_MS = 60;
+const INITIAL_BUILD_DELAY_MS = 200;
+const DROP_BUILD_DELAY_MS = 160;
+const SETTINGS_RETRY_MS = 100;
+const MAX_SETTINGS_RETRIES = 40;
+
+/** Attribute noise that must not retrigger live CSS compile. */
+const IGNORED_ATTR_KEYS = new Set([
+    'style', // Style Manager → inline styles (avoidInlineStyle:false)
+    'id',
+]);
+
+const IGNORED_ATTR_PREFIXES = [
+    'data-gjs-',
+    'data-voodbuilder-cta-label',
+    'data-voodbuilder-cta',
+    'data-highlightable',
+];
+
+function shouldIgnoreAttributeUpdate(component, event) {
+    const changed = event?.attributes
+        ?? event?.changed
+        ?? component?.changed
+        ?? null;
+
+    if (! changed || typeof changed !== 'object') {
+        return false;
+    }
+
+    const keys = Object.keys(changed);
+
+    if (keys.length === 0) {
+        return false;
+    }
+
+    return keys.every((key) => {
+        if (IGNORED_ATTR_KEYS.has(key)) {
+            return true;
+        }
+
+        return IGNORED_ATTR_PREFIXES.some((prefix) => key.startsWith(prefix) || key === prefix);
+    });
+}
 
 function collectPageLevelHtml(editor) {
+    // Chrome-shell page editor: compile only the page content slot — full getHtml()
+    // includes locked nav/footer and is slower / noisier for attribute churn.
+    if (editor.__voodbuilderChromeShellMode) {
+        const slotHtml = String(extractChromeShellPageHtml(editor) ?? '').trim();
+
+        if (slotHtml !== '') {
+            return stripComponentInstances(slotHtml);
+        }
+    }
+
     const raw = String(editor.getHtml?.({
         cleanId: false,
-        withProps: true,
+        withProps: false,
         keepInlineStyle: true,
     }) ?? '').trim();
 
@@ -22,15 +74,26 @@ function collectPageLevelHtml(editor) {
         return raw;
     }
 
+    return stripChromeAndComponents(editor, raw);
+}
+
+function stripComponentInstances(html) {
+    const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+
+    doc.querySelectorAll('[data-voodbuilder-component]').forEach((node) => {
+        node.remove();
+    });
+
+    return doc.body.innerHTML.trim();
+}
+
+function stripChromeAndComponents(editor, raw) {
     const doc = new DOMParser().parseFromString(`<body>${raw}</body>`, 'text/html');
 
     doc.querySelectorAll('[data-voodbuilder-component]').forEach((node) => {
         node.remove();
     });
 
-    // Chrome shell preview includes locked nav/footer — those are styled by layout CSS
-    // + theme sheets, not by page-level live compile. Including them bloated JIT CSS and
-    // could fight chrome rules after save.
     if (editor.__voodbuilderChromeShellMode) {
         doc.querySelectorAll([
             '[data-voodbuilder-chrome-shell-part]',
@@ -111,20 +174,31 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let frameReady = false;
     let editorLoaded = false;
     let pendingInvalidate = false;
+    let building = false;
+    let queuedWhileBuilding = false;
+    let settingsRetries = 0;
 
     const schedule = (delay = DEBOUNCE_MS) => {
         if (! frameReady) {
             return;
         }
 
-        // Footer/nav settings batches set this flag; retry shortly so live CSS still builds.
+        // Footer/nav settings batches set this flag; retry a bounded number of times.
         if (editor.__voodbuilderSettingsChange) {
+            if (settingsRetries >= MAX_SETTINGS_RETRIES) {
+                settingsRetries = 0;
+
+                return;
+            }
+
+            settingsRetries += 1;
             clearTimeout(timer);
-            timer = setTimeout(() => schedule(delay), 80);
+            timer = setTimeout(() => schedule(delay), SETTINGS_RETRY_MS);
 
             return;
         }
 
+        settingsRetries = 0;
         clearTimeout(timer);
         timer = setTimeout(() => {
             void rebuild();
@@ -132,10 +206,25 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     };
 
     const rebuild = async () => {
-        const html = collectPageLevelHtml(editor);
+        if (building) {
+            queuedWhileBuilding = true;
+
+            return;
+        }
+
+        let html = '';
+
+        try {
+            html = collectPageLevelHtml(editor);
+        } catch (error) {
+            console.warn('VoodBuilder page CSS: collect HTML failed', error);
+
+            return;
+        }
 
         if (html === '') {
             applyPageLiveCss(editor, '');
+            lastHtml = '';
             editor.trigger('voodbuilder:page-css-compiled', { css: '', html: '' });
 
             return;
@@ -154,6 +243,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
         pendingInvalidate = false;
         const currentRequest = ++requestId;
+        building = true;
+        queuedWhileBuilding = false;
 
         beginEditorBuild(editor, BUILD_SCOPE);
 
@@ -189,6 +280,12 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         } finally {
             window.clearTimeout(fetchTimeout);
             endEditorBuild(editor, BUILD_SCOPE);
+            building = false;
+
+            if (queuedWhileBuilding) {
+                queuedWhileBuilding = false;
+                schedule(DEBOUNCE_MS);
+            }
         }
     };
 
@@ -203,12 +300,20 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Prefer narrow events — blanket component:update floods compile + console noise.
+    // Tailwind compile only when utility classes enter/leave the HTML.
+    // Style Manager (Styles tab) writes inline styles — never schedule from those.
     editor.on('component:add', () => schedule(DROP_BUILD_DELAY_MS));
     editor.on('component:remove', () => schedule());
-    editor.on('component:styleUpdate', () => schedule());
     editor.on('component:update:classes', () => schedule());
-    editor.on('component:update:attributes', () => schedule());
+    editor.on('component:update:attributes', (component, event) => {
+        // Ignore Style Manager → style="" churn; still compile if class/other attrs change.
+        if (shouldIgnoreAttributeUpdate(component, event)) {
+            return;
+        }
+
+        schedule();
+    });
+    // Selector Manager = Classes panel (add/rename/remove class selectors).
     editor.on('selector:add', () => schedule());
     editor.on('selector:remove', () => schedule());
     editor.on('selector:update', () => schedule());
@@ -229,6 +334,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
     editor.on('load', () => {
         editorLoaded = true;
+        resetEditorBuildStatus(editor);
         schedule(INITIAL_BUILD_DELAY_MS);
     });
 

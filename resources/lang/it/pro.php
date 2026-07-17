@@ -92,7 +92,7 @@ return [
         'tab_style' => 'Stile',
         'style_classes_title' => 'Classi',
         'class_input_placeholder' => 'Aggiungi classe Tailwind…',
-        'class_pending_compile' => 'In compilazione… verrà inclusa nel CSS al salvataggio.',
+        'class_pending_compile' => 'Compilazione in corso per l\'anteprima…',
         'tab_dynamic' => 'Dinamico',
         'tab_layers' => 'Layers',
         'tab_conditions' => 'Condizioni',

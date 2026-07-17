@@ -109,7 +109,16 @@ const PAGE_THEME_FALLBACKS = {
 };
 
 function rememberThemeVariable(variables, prop, value) {
-    if (! prop.startsWith('--') || prop.startsWith('--color-vp-') || isLegacyPaletteColorVariable(prop)) {
+    if (! prop.startsWith('--')) {
+        return;
+    }
+
+    // Site brand tokens (--color-vp-*) come from the canvas/admin theme — do not
+    // bake them into the JIT bundle (would override the live palette).
+    // Default Tailwind palette tokens (--color-red-800, --color-blue-500, …) MUST
+    // be kept: stripScopedVpThemeOverrides removes @theme, and utilities like
+    // bg-red-800 resolve to var(--color-red-800) — without the token, nothing paints.
+    if (prop.startsWith('--color-vp-')) {
         return;
     }
 

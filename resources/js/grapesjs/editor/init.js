@@ -70,7 +70,7 @@ import { registerGlobalClassesUi } from '../global-classes-ui.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
 import { registerPopupsUi } from '../popups-ui.js';
-import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from '../tailwind-visual-style.js';
+import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
 import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
@@ -189,6 +189,13 @@ function applyInitialContent(editor, initial) {
 
     if (initial.css) {
         editor.setStyle(initial.css);
+    }
+
+    // CssComposer #id paints → component inline so Style Manager / reload keep them.
+    try {
+        bakeAuthorStylesToComposerForExport(editor);
+    } catch {
+        // Ignore hydrate errors during early boot.
     }
 }
 
@@ -796,6 +803,11 @@ export function initVpressGrapesJs(container, options = {}) {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
+        try {
+            bakeAuthorStylesToComposerForExport(editor);
+        } catch {
+            // Ignore hydrate errors during early boot.
+        }
         ensureLayoutSectionTraits(editor);
         pruneEmptySections(editor);
 
@@ -1003,7 +1015,15 @@ export function initVpressGrapesJs(container, options = {}) {
     });
 
     if (typeof options.onUpdate === 'function') {
-        const notify = () => options.onUpdate(buildPayload(editor));
+        // Read-only snapshot: mutate:false must not run export purges/bakes that
+        // wipe CssComposer while the author is still editing.
+        let updateTimer = null;
+        const notify = () => {
+            window.clearTimeout(updateTimer);
+            updateTimer = window.setTimeout(() => {
+                options.onUpdate(buildPayload(editor, { mutate: false }));
+            }, 250);
+        };
 
         editor.on('update', notify);
         editor.on('component:add', notify);

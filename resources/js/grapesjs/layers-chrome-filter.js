@@ -119,6 +119,11 @@ function isChromeStructureComponent(component) {
     );
 }
 
+function isPageContentShellNode(component) {
+    return isPageContentSlotComponent(component)
+        || Boolean(component?.getAttributes?.()?.[PAGE_CONTENT_ATTR]);
+}
+
 function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell = false) {
     if (! component || component.get?.('type') === 'wrapper') {
         return;
@@ -144,16 +149,25 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
 
     if (isTopLevelShellNode(component, wrapper)) {
         const isDropZone = isChromeDropZoneComponent(component);
+        const isPageContent = isPageContentShellNode(component);
 
         forEachGrapesComponent(component, (child) => {
-            applyLayersChromeFilter(child, wrapper, editor, isDropZone ? false : true);
+            // Header/footer chrome: nest as chrome (hide inner DOM from Layers).
+            // Page content + layout drop zones: keep nested blocks fully layerable.
+            const nestAsChrome = ! isDropZone && ! isPageContent;
+
+            applyLayersChromeFilter(child, wrapper, editor, nestAsChrome);
         });
 
         return;
     }
 
+    const inPageContentTree = isDirectPageContentChild(component)
+        || isNestedPageContentDescendant(component);
+
     const inChromeShell = (insideChromeShell || shouldHideFromLayers(component))
-        && ! isInsideLayoutDropZone(component);
+        && ! isInsideLayoutDropZone(component)
+        && ! inPageContentTree;
 
     if (inChromeShell) {
         component.set({
@@ -163,6 +177,17 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
             hoverable: false,
             highlightable: false,
         }, { silent: true });
+    } else if (inPageContentTree && ! shouldHideFromLayers(component)) {
+        // Undo a previous chrome pass that blanked page-content descendants
+        // (Hero looked “flat” with no expandable children).
+        if (component.get('layerable') === false) {
+            component.set({
+                layerable: true,
+                selectable: true,
+                hoverable: true,
+                highlightable: true,
+            }, { silent: true });
+        }
     }
 
     forEachGrapesComponent(component, (child) => {

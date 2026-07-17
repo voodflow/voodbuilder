@@ -192,7 +192,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             return;
         }
 
-        const compiled = pageCssCoversClass(editor, value) || pageCompiledClassNames(editor).has(value);
+        const compiled = pageCssCoversClass(editor, value);
 
         if (compiled) {
             hintEl.hidden = true;
@@ -202,7 +202,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
 
         hintEl.hidden = false;
         hintEl.textContent = labels.classPendingCompile
-            ?? 'Questa classe verrà compilata in anteprima e salvata con la pagina.';
+            ?? 'Compiling for canvas preview…';
     };
 
     const refresh = () => {

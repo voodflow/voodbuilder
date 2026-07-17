@@ -703,7 +703,11 @@ export function registerTopDropSpacerType(editor) {
                 droppable: true,
                 selectable: false,
                 highlightable: false,
-                hoverable: true,
+                // Never hoverable/badgable: at high zoom a height:0 spacer still
+                // paints a 1px GrapesJS outline (black square under the header).
+                hoverable: false,
+                badgable: false,
+                highlightable: false,
                 removable: false,
                 copyable: false,
                 layerable: false,
