@@ -1,11 +1,22 @@
 /**
  * Tailwind utility autocomplete for the GrapesJS class manager (selector panel).
+ * Also: Copy all classes, multi-class paste, and animation helpers (Shuffle-style).
  */
 
+import { componentClassString, copyTextToClipboard, splitClassTokens } from './clipboard.js';
+import { lucideIcon } from './editor-icons.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
+
+const ANIMATION_CLASSES = [
+    'animate-none',
+    'animate-spin',
+    'animate-ping',
+    'animate-pulse',
+    'animate-bounce',
+];
 
 const COMMON_TAILWIND_CLASSES = [
     'container', 'mx-auto', 'px-4', 'px-6', 'px-8', 'py-4', 'py-6', 'py-8', 'py-12', 'py-16', 'py-24',
@@ -28,6 +39,7 @@ const COMMON_TAILWIND_CLASSES = [
     'divide-y', 'divide-x', 'overflow-hidden', 'overflow-auto', 'truncate', 'line-clamp-2', 'line-clamp-3',
     'object-cover', 'object-contain', 'opacity-0', 'opacity-50', 'opacity-100',
     'transition', 'duration-200', 'duration-300', 'ease-in-out', 'hover:opacity-80',
+    ...ANIMATION_CLASSES,
     'md:flex', 'md:grid', 'md:hidden', 'md:block', 'md:grid-cols-2', 'md:grid-cols-3', 'md:px-8', 'md:py-24',
     'lg:grid-cols-3', 'lg:grid-cols-4', 'lg:px-12', 'lg:text-5xl',
     'relative', 'absolute', 'fixed', 'sticky', 'inset-0', 'top-0', 'z-10', 'z-20', 'z-50',
@@ -163,6 +175,199 @@ function renderSuggestList(list, suggestions, compiled, onPick) {
     list.hidden = false;
 }
 
+function scheduleClassCompile(editor) {
+    editor.__voodbuilderInvalidatePageCss?.()
+        ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
+}
+
+export function addClassesToComponent(editor, component, tokens) {
+    if (! component || ! Array.isArray(tokens) || tokens.length === 0) {
+        return 0;
+    }
+
+    const existing = new Set(component.getClasses?.() ?? []);
+    let added = 0;
+
+    for (const token of tokens) {
+        const name = String(token ?? '').trim().replace(/^\./, '');
+
+        if (name === '' || existing.has(name)) {
+            continue;
+        }
+
+        component.addClass(name);
+        existing.add(name);
+        added += 1;
+    }
+
+    if (added > 0) {
+        scheduleClassCompile(editor);
+    }
+
+    return added;
+}
+
+function applyClassTokensFromInput(editor, input, labels) {
+    const selected = editor.getSelected();
+    const tokens = splitClassTokens(input.value);
+
+    if (! selected || tokens.length === 0) {
+        return false;
+    }
+
+    addClassesToComponent(editor, selected, tokens);
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    if (tokens.length > 1) {
+        showCopyToast(
+            labels.classPasteApplied ?? 'Classes added and compiling…',
+            tokens.join(' '),
+        );
+    }
+
+    return true;
+}
+
+function showCopyToast(title, detail = '') {
+    let toast = document.getElementById('voodbuilder-gjs-classes-toast');
+
+    if (! toast) {
+        toast = document.createElement('div');
+        toast.id = 'voodbuilder-gjs-classes-toast';
+        toast.className = 'voodbuilder-gjs-classes-toast';
+        document.body.appendChild(toast);
+    }
+
+    toast.innerHTML = `
+        <div class="voodbuilder-gjs-classes-toast__title">${escapeHtml(title)}</div>
+        ${detail ? `<div class="voodbuilder-gjs-classes-toast__detail">${escapeHtml(detail)}</div>` : ''}
+    `;
+    toast.hidden = false;
+    window.clearTimeout(toast._hideTimer);
+    toast._hideTimer = window.setTimeout(() => {
+        toast.hidden = true;
+    }, 2200);
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+export async function copySelectedComponentClasses(editor, labels = {}) {
+    const selected = editor?.getSelected?.();
+    const text = componentClassString(selected);
+
+    if (! text) {
+        showCopyToast(labels.classCopyEmpty ?? 'No classes to copy');
+
+        return false;
+    }
+
+    const ok = await copyTextToClipboard(text);
+
+    showCopyToast(
+        ok
+            ? (labels.classCopySuccess ?? 'Classes copied to clipboard!')
+            : (labels.classCopyFailed ?? 'Could not copy classes'),
+        ok ? text : '',
+    );
+
+    return ok;
+}
+
+export async function copySelectedComponentAllStyles(editor, labels = {}) {
+    const selected = editor?.getSelected?.();
+
+    if (! selected) {
+        showCopyToast(labels.classCopyEmpty ?? 'No classes to copy');
+
+        return false;
+    }
+
+    const classes = componentClassString(selected);
+    const style = {
+        ...(selected.getStyle?.() ?? {}),
+        ...(selected.getStyle?.({ inline: true }) ?? {}),
+    };
+    const styleParts = Object.entries(style)
+        .filter(([, value]) => value != null && String(value).trim() !== '')
+        .map(([property, value]) => `${property}: ${value}`);
+
+    const chunks = [];
+
+    if (classes) {
+        chunks.push(`class="${classes}"`);
+    }
+
+    if (styleParts.length > 0) {
+        chunks.push(`style="${styleParts.join('; ')}"`);
+    }
+
+    if (chunks.length === 0) {
+        showCopyToast(labels.classCopyAllEmpty ?? 'Nothing to copy');
+
+        return false;
+    }
+
+    const text = chunks.join(' ');
+    const ok = await copyTextToClipboard(text);
+
+    showCopyToast(
+        ok
+            ? (labels.classCopyAllSuccess ?? 'Classes + styles copied!')
+            : (labels.classCopyFailed ?? 'Could not copy'),
+        ok ? text : '',
+    );
+
+    return ok;
+}
+
+function ensureClassesCopyButtons(mount, editor, labels) {
+    const sector = mount.closest('.voodbuilder-gjs-inspector-sector');
+    const title = sector?.querySelector('.voodbuilder-gjs-inspector-sector__title');
+
+    if (! title || title.querySelector('[data-voodbuilder-copy-classes]')) {
+        return;
+    }
+
+    title.classList.add('voodbuilder-gjs-inspector-sector__title--with-actions');
+
+    const actions = document.createElement('div');
+    actions.className = 'voodbuilder-gjs-classes-copy-actions';
+
+    const copyClassesBtn = document.createElement('button');
+    copyClassesBtn.type = 'button';
+    copyClassesBtn.className = 'voodbuilder-gjs-classes-copy-btn';
+    copyClassesBtn.dataset.voodbuilderCopyClasses = '';
+    copyClassesBtn.title = labels.classCopy ?? 'Copy classes';
+    copyClassesBtn.innerHTML = `${lucideIcon('copy', 13)}<span>${labels.classCopy ?? 'Copy classes'}</span>`;
+    copyClassesBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await copySelectedComponentClasses(editor, labels);
+    });
+
+    const copyAllBtn = document.createElement('button');
+    copyAllBtn.type = 'button';
+    copyAllBtn.className = 'voodbuilder-gjs-classes-copy-btn voodbuilder-gjs-classes-copy-btn--all';
+    copyAllBtn.dataset.voodbuilderCopyAll = '';
+    copyAllBtn.title = labels.classCopyAll ?? 'Copy all';
+    copyAllBtn.innerHTML = `${lucideIcon('clipboard', 13)}<span>${labels.classCopyAll ?? 'Copy all'}</span>`;
+    copyAllBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await copySelectedComponentAllStyles(editor, labels);
+    });
+
+    actions.append(copyClassesBtn, copyAllBtn);
+    title.appendChild(actions);
+}
+
 function wireClassInput(editor, input, hintEl, labels = {}) {
     if (! input || input.dataset.voodbuilderTwSuggest === '1') {
         return;
@@ -170,7 +375,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
 
     input.dataset.voodbuilderTwSuggest = '1';
     input.setAttribute('autocomplete', 'off');
-    input.placeholder = labels.classInputPlaceholder ?? 'Add Tailwind class…';
+    input.placeholder = labels.classInputPlaceholder ?? 'Add new class…';
 
     const list = ensureSuggestList(input);
     const field = input.closest('.gjs-field, .clm-tags, .gjs-clm-tags') ?? input.parentElement;
@@ -192,6 +397,16 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             return;
         }
 
+        const tokens = splitClassTokens(value);
+
+        if (tokens.length > 1) {
+            hintEl.hidden = false;
+            hintEl.textContent = labels.classPasteHint
+                ?? 'Paste or Enter to add all classes and compile.';
+
+            return;
+        }
+
         const compiled = pageCssCoversClass(editor, value);
 
         if (compiled) {
@@ -207,9 +422,12 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
 
     const refresh = () => {
         const value = String(input.value ?? '').trim();
+        const tokens = splitClassTokens(value);
         const compiled = pageCompiledClassNames(editor);
         const pool = allSuggestionPool(editor);
-        const suggestions = filterSuggestions(pool, value);
+        const suggestions = tokens.length > 1
+            ? []
+            : filterSuggestions(pool, value);
 
         renderSuggestList(list, suggestions, compiled, (className) => {
             input.value = className;
@@ -232,11 +450,57 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             }
         }, 140);
     });
+
+    input.addEventListener('paste', (event) => {
+        const text = event.clipboardData?.getData('text') ?? '';
+        const tokens = splitClassTokens(text);
+
+        if (tokens.length <= 1) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const selected = editor.getSelected();
+
+        if (! selected) {
+            return;
+        }
+
+        addClassesToComponent(editor, selected, tokens);
+        input.value = '';
+        list.hidden = true;
+        refreshHint();
+        showCopyToast(
+            labels.classPasteApplied ?? 'Classes added and compiling…',
+            tokens.join(' '),
+        );
+    });
+
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && list) {
             list.hidden = true;
+
+            return;
         }
-    });
+
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        const tokens = splitClassTokens(input.value);
+
+        if (tokens.length <= 1) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        applyClassTokensFromInput(editor, input, labels);
+        list.hidden = true;
+        refreshHint();
+    }, true);
 
     refresh();
 }
@@ -262,6 +526,8 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
     }
 
     const scan = () => {
+        ensureClassesCopyButtons(mount, editor, labels);
+
         for (const input of mount.querySelectorAll('[data-input]')) {
             wireClassInput(editor, input, hintEl, labels);
         }

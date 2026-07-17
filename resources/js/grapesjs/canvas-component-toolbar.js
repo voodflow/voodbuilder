@@ -6,13 +6,18 @@
 import {
     canEditBlockCode,
     CMD_EDIT_BLOCK_CODE,
+    extractBlockCodeHtml,
 } from './canvas-block-code-editor.js';
+import { copyTextToClipboard } from './clipboard.js';
+import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
 import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
+export const CMD_COPY_COMPONENT_CLASSES = 'voodbuilder:copy-component-classes';
+export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 
@@ -112,7 +117,29 @@ function buildComponentToolbar(editor, component, labels = {}) {
             label: lucideIcon('code', 16),
             command: CMD_EDIT_BLOCK_CODE,
         });
+
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--copy-code',
+                [TOOLBAR_FLAG]: 'copy-code',
+                title: labels.copyComponentCode ?? 'Copy code',
+                'aria-label': labels.copyComponentCode ?? 'Copy code',
+            },
+            label: lucideIcon('clipboard', 16),
+            command: CMD_COPY_COMPONENT_CODE,
+        });
     }
+
+    toolbar.push({
+        attributes: {
+            class: 'voodbuilder-gjs-toolbar-item--copy-classes',
+            [TOOLBAR_FLAG]: 'copy-classes',
+            title: labels.copyComponentClasses ?? 'Copy classes',
+            'aria-label': labels.copyComponentClasses ?? 'Copy classes',
+        },
+        label: lucideIcon('copy', 16),
+        command: CMD_COPY_COMPONENT_CLASSES,
+    });
 
     toolbar.push(...buildDynamicToolbarButtons(labels));
 
@@ -240,6 +267,54 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
     editor.__voodbuilderCanvasToolbarRegistered = true;
 
     registerCanvasDropAffordance(editor);
+
+    if (! editor.Commands.get(CMD_COPY_COMPONENT_CLASSES)) {
+        editor.Commands.add(CMD_COPY_COMPONENT_CLASSES, {
+            run: async (ed) => {
+                await copySelectedComponentClasses(ed, labels);
+            },
+        });
+    }
+
+    if (! editor.Commands.get(CMD_COPY_COMPONENT_CODE)) {
+        editor.Commands.add(CMD_COPY_COMPONENT_CODE, {
+            run: async (ed) => {
+                const selected = ed.getSelected();
+
+                if (! selected) {
+                    return;
+                }
+
+                const html = canEditBlockCode(selected, ed)
+                    ? extractBlockCodeHtml(ed, selected)
+                    : String(selected.toHTML?.() ?? '');
+
+                const ok = await copyTextToClipboard(html.trim());
+
+                // Reuse classes toast styling via a tiny ephemeral notice.
+                const toast = document.getElementById('voodbuilder-gjs-classes-toast')
+                    ?? Object.assign(document.createElement('div'), {
+                        id: 'voodbuilder-gjs-classes-toast',
+                        className: 'voodbuilder-gjs-classes-toast',
+                    });
+
+                if (! toast.parentElement) {
+                    document.body.appendChild(toast);
+                }
+
+                toast.innerHTML = `<div class="voodbuilder-gjs-classes-toast__title">${
+                    ok
+                        ? (labels.copyComponentCodeSuccess ?? 'Code copied to clipboard!')
+                        : (labels.copyComponentCodeFailed ?? 'Could not copy code')
+                }</div>`;
+                toast.hidden = false;
+                window.clearTimeout(toast._hideTimer);
+                toast._hideTimer = window.setTimeout(() => {
+                    toast.hidden = true;
+                }, 2000);
+            },
+        });
+    }
 
     editor.on('component:selected', (component) => {
         ensureCanvasComponentToolbarButtons(editor, component, labels);

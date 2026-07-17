@@ -467,6 +467,19 @@ describe('theme-tokens background clear', () => {
         expect(child.classes).toContain('text-lg');
     });
 
+    it('splitClassTokens splits pasted class blobs', async () => {
+        const { splitClassTokens } = await import(
+            '../../resources/js/grapesjs/clipboard.js'
+        );
+
+        expect(splitClassTokens('bg-red-800 p-4 text-white')).toEqual([
+            'bg-red-800',
+            'p-4',
+            'text-white',
+        ]);
+        expect(splitClassTokens('a, b\nc')).toEqual(['a', 'b', 'c']);
+    });
+
     it('extractGrapesComposerCss keeps only #id Style Manager rules', async () => {
         const { extractGrapesComposerCss } = await import(
             '../../resources/js/grapesjs/editor/payload.js'

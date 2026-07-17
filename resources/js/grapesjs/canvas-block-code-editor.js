@@ -202,11 +202,13 @@ export function registerCanvasBlockCodeEditor(editor, options = {}) {
                 csrf: opts.csrf,
                 labels: opts.labels ?? {},
                 canvasStyles: opts.canvasStyles ?? [],
+                editor: ed,
                 initialHtml: extractBlockCodeHtml(ed, root),
                 onApply: ({ html, css }) => {
                     applyBlockCodeHtml(ed, root, html, css);
                     ed.select(root);
                     ed.trigger('update');
+                    ed.__voodbuilderInvalidatePageCss?.();
                 },
             });
         },

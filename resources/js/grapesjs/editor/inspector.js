@@ -94,6 +94,13 @@ export function wireInspector(editor, shell, options, labels) {
         clone: labels.clone,
         delete: labels.delete,
         editBlockCode: labels.editBlockCode,
+        copyComponentCode: labels.copyComponentCode,
+        copyComponentClasses: labels.copyComponentClasses,
+        copyComponentCodeSuccess: labels.copyComponentCodeSuccess,
+        copyComponentCodeFailed: labels.copyComponentCodeFailed,
+        classCopySuccess: labels.classCopySuccess,
+        classCopyEmpty: labels.classCopyEmpty,
+        classCopyFailed: labels.classCopyFailed,
     });
 
     registerCanvasBlockDrag(editor);

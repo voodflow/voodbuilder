@@ -157,10 +157,12 @@ function syncCompatibilityReview(editor, reviewClasses) {
     editor?.setReviewClasses?.(reviewClasses ?? []);
 }
 
-function buildPreviewDocument({ html, css, canvasStyles = [] }) {
+function buildPreviewDocument({ html, css, canvasStyles = [], pageLiveCss = '' }) {
     const links = canvasStyles
         .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
         .join('');
+    const live = String(pageLiveCss ?? '').trim();
+    const blockCss = String(css ?? '').trim();
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -169,16 +171,28 @@ function buildPreviewDocument({ html, css, canvasStyles = [] }) {
 <meta name="viewport" content="width=1280">
 ${links}
 <style>
-html, body { margin: 0; padding: 0; background: var(--color-vp-bg, #fff); }
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background:
+        linear-gradient(45deg, #f1f5f9 25%, transparent 25%) 0 0 / 16px 16px,
+        linear-gradient(-45deg, #f1f5f9 25%, transparent 25%) 0 0 / 16px 16px,
+        linear-gradient(45deg, transparent 75%, #f1f5f9 75%) 0 0 / 16px 16px,
+        linear-gradient(-45deg, transparent 75%, #f1f5f9 75%) 0 0 / 16px 16px,
+        #fff;
+}
 .voodbuilder-code-import-preview-viewport {
     width: 1280px;
     min-height: 100%;
     transform: scale(0.58);
     transform-origin: top left;
+    background: var(--color-vp-bg, #fff);
 }
 .voodbuilder-component-code-preview { min-height: 100%; }
 </style>
-${css ? `<style>${css}</style>` : ''}
+${live ? `<style id="voodbuilder-page-live-css">${live}</style>` : ''}
+${blockCss ? `<style id="voodbuilder-block-preview-css">${blockCss}</style>` : ''}
 </head>
 <body>
 <div class="voodbuilder-code-import-preview-viewport">
@@ -200,7 +214,7 @@ function closeModal() {
     activeModal = null;
 }
 
-function schedulePreviewUpdate(iframe, getValues, canvasStyles) {
+function schedulePreviewUpdate(iframe, getValues, canvasStyles, getPageLiveCss) {
     window.clearTimeout(previewTimer);
     previewTimer = window.setTimeout(() => {
         const { html, css } = getValues();
@@ -211,7 +225,12 @@ function schedulePreviewUpdate(iframe, getValues, canvasStyles) {
         }
 
         doc.open();
-        doc.write(buildPreviewDocument({ html, css, canvasStyles }));
+        doc.write(buildPreviewDocument({
+            html,
+            css,
+            canvasStyles,
+            pageLiveCss: typeof getPageLiveCss === 'function' ? getPageLiveCss() : '',
+        }));
         doc.close();
     }, 180);
 }
@@ -225,6 +244,7 @@ function openComponentCodeDialog({
     component = null,
     grapesComponent = null,
     initialHtml = '',
+    editor = null,
     onApply = null,
     onCreated,
     onUpdated,
@@ -312,6 +332,9 @@ function openComponentCodeDialog({
                         <div class="voodbuilder-gjs-component-code-modal__preview-wrap">
                             <div class="voodbuilder-gjs-component-code-modal__preview-head">
                                 <span>${escapeHtml(labels.componentsCodeImportPreview ?? 'Preview')}</span>
+                                <span class="voodbuilder-gjs-component-code-modal__preview-badge" data-voodbuilder-preview-badge hidden>
+                                    ${escapeHtml(labels.codePreviewIncludesPageCss ?? 'Page CSS')}
+                                </span>
                             </div>
                             <div class="voodbuilder-gjs-component-code-modal__preview-stage">
                                 <iframe class="voodbuilder-gjs-component-code-modal__preview" data-voodbuilder-code-preview title="${escapeHtml(labels.componentsCodeImportPreview ?? 'Preview')}"></iframe>
@@ -346,9 +369,19 @@ function openComponentCodeDialog({
         const wrapToggle = modal.querySelector('[data-voodbuilder-code-wrap-toggle]');
         const previewFrame = modal.querySelector('[data-voodbuilder-code-preview]');
         const previewLoading = modal.querySelector('[data-voodbuilder-code-preview-loading]');
+        const previewBadge = modal.querySelector('[data-voodbuilder-preview-badge]');
         const compatibilityMount = modal.querySelector('[data-voodbuilder-code-compatibility]');
         const submitButton = modal.querySelector('[data-voodbuilder-code-submit]');
         const baseUrl = componentsUrl.replace(/\/$/, '');
+        const grapesEditor = editor
+            ?? grapesComponent?.em?.get?.('Editor')
+            ?? null;
+
+        const getPageLiveCss = () => String(grapesEditor?.__voodbuilderPageLiveCss ?? '').trim();
+
+        if (previewBadge && getPageLiveCss() !== '') {
+            previewBadge.hidden = false;
+        }
 
         let compileRequestId = 0;
         let compiledTailwindCss = '';
@@ -404,7 +437,11 @@ function openComponentCodeDialog({
         };
 
         const refreshPreview = () => {
-            schedulePreviewUpdate(previewFrame, readValues, canvasStyles);
+            if (previewBadge) {
+                previewBadge.hidden = getPageLiveCss() === '';
+            }
+
+            schedulePreviewUpdate(previewFrame, readValues, canvasStyles, getPageLiveCss);
         };
 
         const requestCompile = async (rawHtml) => {

@@ -5,6 +5,7 @@
 
 @import './fonts.css';
 @import 'tailwindcss';
+@import 'tailwindcss-animated';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
 @import '../themes/blog/theme.css';

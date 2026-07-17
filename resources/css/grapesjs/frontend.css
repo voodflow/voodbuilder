@@ -957,19 +957,25 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     border-color: color-mix(in srgb, #e2e8f0 92%, transparent);
 }
 
-.dark .voodbuilder-gjs-select-list--portal {
-    background: #1e293b;
-    color: #f8fafc;
-    border-color: color-mix(in srgb, #475569 70%, transparent);
+/* Keep inspector dropdowns light even when Filament/admin is dark. */
+.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: color-mix(in srgb, #e2e8f0 92%, transparent) !important;
 }
 
-.dark .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option {
-    color: #f8fafc;
+.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option {
+    color: #334155 !important;
 }
 
-.dark .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option:hover,
-.dark .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option.is-selected {
-    color: #a5b4fc;
+.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option:hover,
+.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option.is-selected,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option:hover,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option.is-selected {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 10%, #ffffff) !important;
+    color: var(--color-vp-brand-1, #0d9488) !important;
 }
 
 .voodbuilder-gjs-select-list[hidden] {
@@ -3320,6 +3326,10 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 }
 
 .voodbuilder-gjs-component-code-modal__preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
     padding: 0.45rem 0.65rem;
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
     font-size: 0.6875rem;
@@ -3328,6 +3338,19 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     text-transform: uppercase;
     color: var(--color-vp-text-2, #64748b);
     background: var(--color-vp-bg-elv, #fff);
+}
+
+.voodbuilder-gjs-component-code-modal__preview-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--color-vp-brand-1, #0d9488);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 12%, transparent);
 }
 
 .voodbuilder-gjs-component-code-modal__preview {

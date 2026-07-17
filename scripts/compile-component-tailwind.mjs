@@ -498,62 +498,128 @@ function removeEmptyRules(root) {
     });
 }
 
-function flattenNestedMediaQueries(root) {
-    const rulesToProcess = [];
+/**
+ * Resolve nested selector lists (`&:hover` → `.foo:hover`).
+ */
+function resolveNestedSelector(parentSelector, nestedSelector) {
+    const parents = String(parentSelector).split(',').map((part) => part.trim()).filter(Boolean);
+    const nesteds = String(nestedSelector).split(',').map((part) => part.trim()).filter(Boolean);
+    const resolved = [];
 
-    root.walkRules((rule) => {
-        if (rule.parent?.type === 'atrule' && rule.parent.name === 'media') {
+    for (const parent of parents) {
+        for (const nested of nesteds) {
+            if (nested.includes('&')) {
+                resolved.push(nested.replaceAll('&', parent));
+            } else {
+                resolved.push(`${parent} ${nested}`);
+            }
+        }
+    }
+
+    return resolved.join(', ');
+}
+
+/**
+ * Tailwind v4 emits nested CSS like:
+ *   .hover\:spin { &:hover { @media (hover:hover) { ... } } }
+ * Older flatten copied decls onto the parent selector and dropped `&:hover`,
+ * so hover utilities applied permanently on hover-capable devices.
+ */
+function flattenNestedMediaQueries(root) {
+    const jobs = [];
+
+    root.walkAtRules('media', (atRule) => {
+        const ruleChain = [];
+        let node = atRule.parent;
+
+        while (node && node.type === 'rule') {
+            ruleChain.unshift(node);
+            node = node.parent;
+        }
+
+        if (ruleChain.length === 0) {
             return;
         }
 
-        const nestedMedia = [];
-
-        rule.walkAtRules('media', (atRule) => {
-            nestedMedia.push(atRule);
-        });
-
-        if (nestedMedia.length > 0) {
-            rulesToProcess.push({ rule, nestedMedia });
-        }
+        jobs.push({ atRule, ruleChain });
     });
 
-    for (const { rule, nestedMedia } of rulesToProcess) {
-        for (const atRule of nestedMedia) {
-            const declarations = [];
+    for (const { atRule, ruleChain } of jobs) {
+        if (! atRule.parent) {
+            continue;
+        }
 
+        let selector = ruleChain[0].selector;
+
+        for (let index = 1; index < ruleChain.length; index += 1) {
+            selector = resolveNestedSelector(selector, ruleChain[index].selector);
+        }
+
+        const declarations = [];
+
+        atRule.each((child) => {
+            if (child.type === 'decl') {
+                declarations.push(child.clone());
+            }
+        });
+
+        // Declarations may sit only inside deeper nested rules inside the media.
+        if (declarations.length === 0) {
             atRule.walkDecls((decl) => {
                 declarations.push(decl.clone());
             });
-
-            if (declarations.length === 0) {
-                atRule.remove();
-
-                continue;
-            }
-
-            const flattenedRule = postcss.rule({
-                selector: rule.selector,
-                nodes: declarations,
-            });
-            const outerMedia = postcss.atRule({
-                name: 'media',
-                params: atRule.params,
-                nodes: [flattenedRule],
-            });
-
-            rule.parent?.insertAfter(rule, outerMedia);
-            atRule.remove();
         }
 
-        let hasDeclarations = false;
+        if (declarations.length === 0) {
+            atRule.remove();
 
-        rule.walkDecls(() => {
-            hasDeclarations = true;
+            continue;
+        }
+
+        const flattenedRule = postcss.rule({
+            selector,
+            nodes: declarations,
+        });
+        const outerMedia = postcss.atRule({
+            name: 'media',
+            params: atRule.params,
+            nodes: [flattenedRule],
         });
 
-        if (! hasDeclarations) {
+        ruleChain[0].parent?.insertAfter(ruleChain[0], outerMedia);
+        atRule.remove();
+    }
+
+    // Drop emptied nesting shells left behind (e.g. `&:hover { }` then `.hover\:x { }`).
+    let removed = true;
+
+    while (removed) {
+        removed = false;
+
+        root.walkRules((rule) => {
+            let hasDeclarations = false;
+            let hasAtRules = false;
+
+            rule.walkDecls(() => {
+                hasDeclarations = true;
+            });
+
+            rule.each((child) => {
+                if (child.type === 'atrule') {
+                    hasAtRules = true;
+                }
+            });
+
+            const nestedRules = (rule.nodes ?? []).filter((child) => child.type === 'rule');
+            const hasLiveNestedRules = nestedRules.some((nested) => (nested.nodes ?? []).length > 0);
+
+            if (hasDeclarations || hasAtRules || hasLiveNestedRules) {
+                return;
+            }
+
             rule.remove();
-        }
+            removed = true;
+        });
     }
 }
 
@@ -638,6 +704,7 @@ async function main() {
     }
 
     const entryCss = `@import 'tailwindcss';
+@import 'tailwindcss-animated';
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:where(.dark, .dark *));
 @theme {

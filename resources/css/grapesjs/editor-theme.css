@@ -221,7 +221,7 @@
     margin: 0 0 0.75rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
     border-radius: 0.625rem;
-    overflow: hidden;
+    overflow: visible;
     background: var(--color-vp-bg-elv, #fff);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
@@ -261,7 +261,7 @@
     margin: 0;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
     border-radius: 0.625rem;
-    overflow: hidden;
+    overflow: visible;
     background: var(--color-vp-bg-elv, #fff);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
@@ -414,6 +414,26 @@
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 82%, transparent);
     border-radius: 0.5rem;
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 35%, var(--color-vp-bg-elv, #fff));
+}
+
+/* Decorations: no nested composite cards — flat like Typography */
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-composite.gjs-sm-field,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property.gjs-sm-composite,
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property.gjs-sm-stack {
+    padding: 0.35rem 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-composite .gjs-sm-properties {
+    gap: 0.15rem;
+    padding: 0;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-composite .gjs-sm-property {
+    width: 100%;
 }
 
 .voodbuilder-gjs-root .gjs-sm-composite .gjs-sm-properties {
@@ -980,4 +1000,369 @@
 .voodbuilder-gjs-root .gjs-am-file-uploader {
     background: var(--color-vp-bg-elv, #fff);
     color: var(--color-vp-text-1, #0f172a);
+}
+
+/* Classes sector: Copy button (Shuffle-style) */
+.voodbuilder-gjs-inspector-sector__title--with-actions {
+    justify-content: flex-start;
+}
+
+.voodbuilder-gjs-inspector-sector__title--with-actions .voodbuilder-gjs-inspector-sector__label {
+    flex: 1 1 auto;
+}
+
+.voodbuilder-gjs-classes-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: auto;
+    padding: 0.2rem 0.45rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--color-vp-brand-1, #0d9488);
+    font: inherit;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-classes-copy-btn:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 12%, transparent);
+}
+
+.voodbuilder-gjs-animation-row {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
+}
+
+.voodbuilder-gjs-animation-row__label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-gjs-animation-row__controls {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.voodbuilder-gjs-animation-row__select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.voodbuilder-gjs-animation-row__add {
+    flex: 0 0 auto;
+    padding: 0.35rem 0.65rem;
+}
+
+.voodbuilder-gjs-classes-toast {
+    position: fixed;
+    z-index: 10050;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: min(22rem, calc(100vw - 2rem));
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.625rem;
+    background: #1e293b;
+    color: #f8fafc;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-classes-toast[hidden] {
+    display: none !important;
+}
+
+.voodbuilder-gjs-classes-toast__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.voodbuilder-gjs-classes-toast__detail {
+    margin-top: 0.35rem;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: #cbd5e1;
+    word-break: break-word;
+}
+
+.voodbuilder-gjs-class-hover-popover {
+    position: fixed;
+    z-index: 10040;
+    max-width: min(20rem, calc(100vw - 1.5rem));
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.5rem;
+    background: #1e293b;
+    color: #f1f5f9;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.35);
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-class-hover-popover[hidden] {
+    display: none !important;
+}
+
+.voodbuilder-gjs-class-hover-popover__tag {
+    margin-bottom: 0.4rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.voodbuilder-gjs-class-hover-popover__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.voodbuilder-gjs-class-hover-popover__chip {
+    display: inline-flex;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.3125rem;
+    background: #334155;
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    color: #e2e8f0;
+}
+
+.voodbuilder-gjs-class-hover-popover__empty {
+    font-size: 0.6875rem;
+    color: #94a3b8;
+}
+
+.voodbuilder-gjs-classes-copy-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: auto;
+}
+
+.voodbuilder-gjs-sm-sector-animation .gjs-sm-sector-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-sm-sector-animation.gjs-sm-open .voodbuilder-gjs-inspector-sector__caret::before {
+    transform: rotate(90deg);
+}
+
+.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-sm-sector-animation__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.45rem 0.65rem 0.7rem;
+    background: transparent;
+}
+
+.voodbuilder-gjs-anim-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.15rem;
+    margin: 0 0 0.4rem;
+    padding: 0.2rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 85%, transparent);
+}
+
+.voodbuilder-gjs-anim-tab {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 1.85rem;
+    margin: 0;
+    padding: 0.25rem;
+    border: none;
+    border-radius: 0.3125rem;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.voodbuilder-gjs-anim-tab svg {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+.voodbuilder-gjs-anim-tab:hover {
+    color: var(--color-vp-text-1, #0f172a);
+    background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 4%, transparent);
+}
+
+.voodbuilder-gjs-anim-tab.is-active {
+    color: var(--color-vp-brand-1, #0d9488);
+    background: var(--color-vp-bg-elv, #fff);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.voodbuilder-gjs-anim-panels {
+    display: flex;
+    flex-direction: column;
+}
+
+.voodbuilder-gjs-anim-panel {
+    display: none;
+    flex-direction: column;
+}
+
+.voodbuilder-gjs-anim-panel.is-active {
+    display: flex;
+}
+
+.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-anim-property {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.375rem 0.5rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.3rem 0;
+    border: none;
+    background: transparent;
+}
+
+.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-anim-property .gjs-sm-label {
+    flex: 0 0 38%;
+    max-width: 7.5rem;
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-anim-property .gjs-fields {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Combobox: select + Add — single shell (Tailwind Plus input+action) */
+.voodbuilder-gjs-anim-combobox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    min-height: 2rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);
+    border-radius: 0.4375rem;
+    background: var(--color-vp-bg-elv, #fff);
+    overflow: hidden;
+    color-scheme: light;
+}
+
+.voodbuilder-gjs-anim-combobox:focus-within {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 55%, var(--color-vp-divider, #e2e8f0));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 12%, transparent);
+}
+
+.voodbuilder-gjs-anim-combobox > select,
+.voodbuilder-gjs-anim-combobox > select.voodbuilder-gjs-input,
+.voodbuilder-gjs-anim-combobox .voodbuilder-gjs-select-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 2rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-anim-combobox > select,
+.voodbuilder-gjs-anim-combobox > select.voodbuilder-gjs-input,
+.voodbuilder-gjs-anim-combobox .voodbuilder-gjs-select-trigger {
+    width: 100%;
+    min-height: 2rem;
+    margin: 0;
+    padding: 0.25rem 0.5rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 0.75rem;
+    color: var(--color-vp-text-1, #0f172a) !important;
+    color-scheme: light;
+}
+
+.voodbuilder-gjs-anim-combobox > select:focus,
+.voodbuilder-gjs-anim-combobox .voodbuilder-gjs-select-trigger:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-anim-combobox > select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.voodbuilder-gjs-anim-combobox .voodbuilder-gjs-select-chevron {
+    right: 0.45rem;
+}
+
+.voodbuilder-gjs-anim-combobox__add {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    min-width: 2.85rem;
+    margin: 0 !important;
+    padding: 0 0.65rem;
+    border: none !important;
+    border-left: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent) !important;
+    border-radius: 0 !important;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 92%, #fff) !important;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.voodbuilder-gjs-anim-combobox__add:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 10%, var(--color-vp-bg-alt, #f8fafc)) !important;
+    color: var(--color-vp-brand-1, #0d9488);
+}
+
+.voodbuilder-gjs-anim-hint {
+    margin: 0.55rem 0 0;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f1f5f9) 88%, transparent);
+    font-size: 0.625rem;
+    line-height: 1.45;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+/* Opacity is unitless (0–1): hide empty units slot that mirrors Dimension's px/% box. */
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-units,
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer .gjs-field-units,
+.voodbuilder-gjs-shell__right .gjs-sm-sector__extra .gjs-sm-property__opacity .gjs-field-units {
+    display: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer .gjs-input-holder,
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-input-holder {
+    flex: 1 1 100%;
 }

@@ -1,4 +1,5 @@
 @import 'grapesjs/dist/css/grapes.min.css';
+@import 'grapick/dist/grapick.min.css';
 @import './editor-theme.css';
 @import './frontend.css';
 @import './inspector-ui.css';

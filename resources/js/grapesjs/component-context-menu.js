@@ -2,6 +2,7 @@
  * Shared context-menu actions for canvas and layer tree selections.
  */
 
+import { canEditBlockCode, CMD_EDIT_BLOCK_CODE, extractBlockCodeHtml } from './canvas-block-code-editor.js';
 import { openContextMenu } from './context-menu.js';
 import { promptDialog } from './editor-dialog.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
@@ -18,6 +19,8 @@ import {
     filterChromeContextMenuItems,
     isChromeEditorProtectedComponent,
 } from './chrome-editor-guards.js';
+import { copyTextToClipboard } from './clipboard.js';
+import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
 
 export function resolveComponentFromElement(editor, element) {
     const doc = editor.Canvas?.getDocument?.();
@@ -131,6 +134,33 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
             },
         });
     }
+
+    if (canEditBlockCode(component, editor)) {
+        items.push({
+            id: 'edit-block-code',
+            label: labels.editBlockCode ?? 'Edit code',
+            onSelect: () => {
+                editor.runCommand(CMD_EDIT_BLOCK_CODE);
+            },
+        });
+        items.push({
+            id: 'copy-code',
+            label: labels.copyComponentCode ?? 'Copy code',
+            onSelect: async () => {
+                const html = extractBlockCodeHtml(editor, component);
+                await copyTextToClipboard(String(html ?? '').trim());
+            },
+        });
+    }
+
+    items.push({
+        id: 'copy-classes',
+        label: labels.copyComponentClasses ?? 'Copy classes',
+        onSelect: async () => {
+            editor.select(component);
+            await copySelectedComponentClasses(editor, labels);
+        },
+    });
 
     items.push({
         id: 'rename-layer',
