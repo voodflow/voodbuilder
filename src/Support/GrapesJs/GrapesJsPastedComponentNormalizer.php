@@ -226,15 +226,36 @@ final class GrapesJsPastedComponentNormalizer
             return '';
         }
 
-        $patterns = [
-            '/\/\*! tailwindcss.*?\*\//s',
-            '/:root[^{]*\{[^}]*\}\s*/s',
-            '/:host[^{]*\{[^}]*\}\s*/s',
-            '/(?:^|\n)\s*\.[^{]*\b(?:bg|text|border|fill|from|to|via|ring|outline|shadow|divide|accent|placeholder|stroke)-vp-[^{}]*\{[^}]*\}\s*/i',
-        ];
+        // Keep structural Tailwind theme tokens (:root --spacing, --text-*, --color-white, …).
+        // Only strip palette/brand declarations — deleting whole :root blocks removed
+        // --color-white / typography tokens and broke .text-white / fonts on the frontend.
+        $css = preg_replace('/\/\*! tailwindcss.*?\*\//s', '', $css) ?? $css;
 
-        foreach ($patterns as $pattern) {
-            $css = preg_replace($pattern, '', $css) ?? $css;
+        if (preg_match_all('/((?:\:root|\:host)[^{]*\{)([^{}]*)(\})/s', $css, $matches, PREG_SET_ORDER) > 0) {
+            foreach ($matches as $match) {
+                $declarations = $match[2];
+                $cleaned = preg_replace(
+                    '/--(?:color-vp-[a-z0-9-]+|color-(?:indigo|purple|violet|blue|pink)-\d+|vx-header-[a-z0-9-]+)\s*:\s*[^;]+;?\s*/i',
+                    '',
+                    $declarations,
+                );
+
+                if (! is_string($cleaned)) {
+                    continue;
+                }
+
+                $cleaned = trim($cleaned);
+
+                if ($cleaned === '') {
+                    $css = str_replace($match[0], '', $css);
+
+                    continue;
+                }
+
+                if ($cleaned !== trim($declarations)) {
+                    $css = str_replace($match[0], $match[1].$cleaned.$match[3], $css);
+                }
+            }
         }
 
         return trim(preg_replace("/\n{3,}/", "\n\n", $css) ?? $css);

@@ -8,6 +8,10 @@
 
 import { encodeVpressConfig } from './voodbuilder-dynamic-config.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
+import {
+    inspectorSelectionNotice,
+} from './chrome-editor-guards.js';
+import { inspectorEmptyStateHtml, inspectorSelectElementMessage } from './inspector-empty-state.js';
 
 const ATTR = 'data-voodbuilder-conditions';
 
@@ -400,11 +404,49 @@ export function registerConditionsUi(editor, options = {}) {
 
     const render = () => {
         const component = workingTarget();
+        const panelRoot = mount.querySelector('.voodbuilder-gjs-conditions');
+        const actions = mount.querySelector('.voodbuilder-gjs-conditions-actions');
+        const hint = mount.querySelector('.voodbuilder-gjs-hint:not(.voodbuilder-gjs-chrome-layout-notice)');
+        const subtitle = mount.querySelector('.voodbuilder-gjs-panel-subtitle');
 
-        if (! component) {
-            setsMount.innerHTML = `<p class="voodbuilder-gjs-hint voodbuilder-gjs-conditions-select-hint">${labels.selectComponent ?? 'Select an element on the canvas first.'}</p>`;
+        const selectionNotice = inspectorSelectionNotice(component, editor, labels);
+
+        if (selectionNotice !== null) {
+            if (actions) {
+                actions.hidden = true;
+            }
+
+            if (hint) {
+                hint.hidden = true;
+            }
+
+            if (subtitle) {
+                subtitle.hidden = true;
+            }
+
+            if (panelRoot) {
+                panelRoot.classList.add('voodbuilder-gjs-conditions--chrome-layout-notice');
+            }
+
+            setsMount.innerHTML = inspectorEmptyStateHtml(selectionNotice, labels);
 
             return;
+        }
+
+        if (actions) {
+            actions.hidden = false;
+        }
+
+        if (hint) {
+            hint.hidden = false;
+        }
+
+        if (subtitle) {
+            subtitle.hidden = false;
+        }
+
+        if (panelRoot) {
+            panelRoot.classList.remove('voodbuilder-gjs-conditions--chrome-layout-notice');
         }
 
         const definition = parseConditions(readConditionAttribute(component));
@@ -451,7 +493,15 @@ export function registerConditionsUi(editor, options = {}) {
         const component = workingTarget();
 
         if (! component) {
-            showFeedback(labels.conditionsSelectFirst ?? labels.selectComponent ?? 'Select an element on the canvas first.');
+            showFeedback(labels.conditionsSelectFirst ?? inspectorSelectElementMessage(labels));
+
+            return;
+        }
+
+        const blockedNotice = inspectorSelectionNotice(component, editor, labels);
+
+        if (blockedNotice !== null) {
+            showFeedback(blockedNotice);
 
             return;
         }
@@ -468,7 +518,15 @@ export function registerConditionsUi(editor, options = {}) {
         const component = workingTarget();
 
         if (! component) {
-            showFeedback(labels.conditionsSelectFirst ?? labels.selectComponent ?? 'Select an element on the canvas first.');
+            showFeedback(labels.conditionsSelectFirst ?? inspectorSelectElementMessage(labels));
+
+            return;
+        }
+
+        const blockedNotice = inspectorSelectionNotice(component, editor, labels);
+
+        if (blockedNotice !== null) {
+            showFeedback(blockedNotice);
 
             return;
         }

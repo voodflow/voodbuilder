@@ -26,11 +26,25 @@ function totalBuildCount() {
 function syncClassesOverlay(editor) {
     const overlay = editor?.__voodbuilderClassesBuildOverlay;
 
+    if (overlay) {
+        const busy = totalBuildCount() > 0;
+        overlay.hidden = ! busy;
+        overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
+    }
+
+    syncCanvasCompileOverlay(editor);
+}
+
+function syncCanvasCompileOverlay(editor) {
+    const overlay = editor?.__voodbuilderCanvasBuildOverlay;
+
     if (! overlay) {
         return;
     }
 
-    const busy = totalBuildCount() > 0;
+    const busy = (BUILD_SCOPES.get('page-css') ?? 0) > 0
+        || (BUILD_SCOPES.get('component-css') ?? 0) > 0;
+
     overlay.hidden = ! busy;
     overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
 }
@@ -86,6 +100,21 @@ export function registerEditorBuildStatus(editor, shell, labels = {}) {
         overlay.innerHTML = spinnerMarkup(compilingLabel);
         selectorsMount.appendChild(overlay);
         editor.__voodbuilderClassesBuildOverlay = overlay;
+    }
+
+    const canvasHost = shell?.mounts?.canvas
+        ?? shell?.shell?.querySelector?.('.voodbuilder-gjs-shell__center')
+        ?? null;
+
+    if (canvasHost && ! canvasHost.querySelector('[data-voodbuilder-canvas-build-overlay]')) {
+        canvasHost.classList.add('voodbuilder-gjs-canvas-compile-host');
+        const overlay = document.createElement('div');
+        overlay.className = 'voodbuilder-gjs-build-overlay voodbuilder-gjs-build-overlay--canvas';
+        overlay.dataset.voodbuilderCanvasBuildOverlay = '';
+        overlay.hidden = true;
+        overlay.innerHTML = spinnerMarkup(compilingLabel);
+        canvasHost.appendChild(overlay);
+        editor.__voodbuilderCanvasBuildOverlay = overlay;
     }
 
     const bootHost = shell?.shell ?? shell?.mounts?.canvas?.closest('.voodbuilder-gjs-shell');

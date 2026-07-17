@@ -87,7 +87,24 @@ function isNestedPageContentDescendant(component) {
 }
 
 function isLayoutBlockRoot(component, editor) {
-    return isChromeLayoutModeEditor(editor) && readBlockId(component) !== '';
+    if (readBlockId(component) === '') {
+        return false;
+    }
+
+    // Layout editor: any block root. Page editor chrome-shell: nav/footer block roots.
+    if (isChromeLayoutModeEditor(editor)) {
+        return true;
+    }
+
+    if (! isChromeShellModeEditor(editor)) {
+        return false;
+    }
+
+    const blockId = readBlockId(component);
+
+    return blockId.startsWith('site_nav_')
+        || blockId.startsWith('site_footer_')
+        || blockId === 'site_header';
 }
 
 function isChromeStructureComponent(component) {
@@ -122,11 +139,8 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
         return;
     }
 
-    if (isNestedPageContentDescendant(component)) {
-        component.set({
-            layerable: false,
-        }, { silent: true });
-    }
+    // Page content nested nodes stay in Layers so authors can edit buttons/links/text.
+    // Do not force layerable:false here — chrome shell locking handles nav/footer only.
 
     if (isTopLevelShellNode(component, wrapper)) {
         const isDropZone = isChromeDropZoneComponent(component);
@@ -285,7 +299,15 @@ export function registerLayersChromeFilter(editor) {
 
     editor.on('load', syncAll);
     editor.on('voodbuilder:chrome-layout-ready', syncAll);
-    editor.on('voodbuilder:dynamic-blocks-refreshed', debouncedSyncAll);
+    editor.on('voodbuilder:site-chrome-updated', debouncedSyncAll);
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        // Page editor chrome-shell: dynamic remounts already skipped; avoid layer thrash.
+        if (isChromeShellModeEditor(editor)) {
+            return;
+        }
+
+        debouncedSyncAll();
+    });
     editor.on('component:add', syncSubtree);
     editor.on('component:remove', (component) => {
         if (shouldSuppress()) {
@@ -301,5 +323,4 @@ export function registerLayersChromeFilter(editor) {
 
         debouncedSyncAll();
     });
-    editor.on('voodbuilder:site-chrome-updated', debouncedSyncAll);
 }

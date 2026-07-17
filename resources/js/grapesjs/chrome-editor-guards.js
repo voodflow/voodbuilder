@@ -11,12 +11,111 @@ import {
     isChromeLayoutModeEditor,
     isChromeShellModeEditor,
     isChromeShellPartComponent,
+    isInsideChromeDropZoneComponent,
+    isInsideChromeShellPartComponent,
     isPageContentSlotComponent,
     shouldBlockChromeLayerContextMenu,
 } from './chrome-content-slot-utils.js';
 import { isFooterBlock, isNavBlock } from './chrome/ids.js';
+import {
+    getLayoutChromeBlock,
+    resolveLayoutChromeZone,
+} from './blocks/settings/layout-chrome-registry.js';
+import {
+    createInspectorEmptyState,
+    inspectorSelectElementMessage,
+} from './inspector-empty-state.js';
 
 export const SHELL_LAYER_LOCK_ATTR = 'data-voodbuilder-shell-locked';
+
+export { createInspectorEmptyState, inspectorSelectElementMessage };
+
+/**
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+export function chromeShellLayoutName(editor) {
+    return String(
+        editor?.__voodbuilderChromeShellName
+        ?? editor?.__voodbuilderChromeLayoutName
+        ?? '',
+    ).trim();
+}
+
+/**
+ * Page editor: selected nav/footer comes from a chrome layout — point authors there.
+ *
+ * @param {object|null|undefined} editor
+ * @param {object|null|undefined} [labels]
+ * @returns {string}
+ */
+export function chromeShellManagedInspectorNotice(editor, labels = {}) {
+    const name = chromeShellLayoutName(editor);
+    const withName = labels.chromeShellManagedInspectorNotice
+        ?? 'To edit this element, open the layout “{name}”.';
+    const withoutName = labels.chromeShellManagedInspectorNoticeFallback
+        ?? 'To edit this element, open its layout in the admin.';
+
+    if (name === '') {
+        return withoutName;
+    }
+
+    return withName.replaceAll('{name}', name);
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} editor
+ * @returns {boolean}
+ */
+export function isChromeShellManagedInspectorSelection(component, editor) {
+    if (
+        ! component
+        || ! isChromeShellModeEditor(editor)
+        || isChromeLayoutModeEditor(editor)
+        || isPageContentSlotComponent(component)
+    ) {
+        return false;
+    }
+
+    return isChromeShellPartComponent(component)
+        || isInsideChromeShellPartComponent(component);
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} editor
+ * @param {object|null|undefined} [labels]
+ * @returns {string|null} Notice for inspector empty state, or null when selection is normal.
+ */
+export function inspectorSelectionNotice(component, editor, labels = {}) {
+    if (! component || component.isRemoved?.()) {
+        return inspectorSelectElementMessage(labels);
+    }
+
+    // Empty header/footer zone (block removed) → courtesy empty state, not chrome notices
+    // or leftover Style/Content controls for a ghost selection.
+    if (isChromeLayoutModeEditor(editor)) {
+        const zone = resolveLayoutChromeZone(component);
+
+        if (
+            (zone === 'nav' || zone === 'footer')
+            && ! getLayoutChromeBlock(editor, zone)
+        ) {
+            return inspectorSelectElementMessage(labels);
+        }
+    }
+
+    if (isChromeShellManagedInspectorSelection(component, editor)) {
+        return chromeShellManagedInspectorNotice(editor, labels);
+    }
+
+    if (isChromeLayoutAdvancedInspectorLimited(component, editor)) {
+        return chromeLayoutAdvancedInspectorNotice(component, labels);
+    }
+
+    return null;
+}
 
 export function isChromeLayoutNavBlock(component) {
     const blockId = String(component?.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
@@ -34,6 +133,64 @@ export function isChromeLayoutContentSlot(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
     return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs['data-voodbuilder-page-content'];
+}
+
+function isInsideLayoutChromeZone(component) {
+    return isChromeDropZoneComponent(component) || isInsideChromeDropZoneComponent(component);
+}
+
+/**
+ * Layout editor only: Style / Dynamic / Conditions stay locked on the chrome
+ * zones (header/footer drop zones + page-content slot) and their nested blocks.
+ * A second nav/footer dropped outside those zones is editable like any block.
+ */
+export function isChromeLayoutAdvancedInspectorLimited(component, editor) {
+    if (! component || ! isChromeLayoutModeEditor(editor)) {
+        return false;
+    }
+
+    if (
+        isChromeDropZoneComponent(component)
+        || isChromeLayoutContentSlot(component)
+    ) {
+        return true;
+    }
+
+    if (! isInsideLayoutChromeZone(component)) {
+        return false;
+    }
+
+    if (
+        isChromeLayoutNavBlock(component)
+        || isChromeLayoutFooterBlock(component)
+    ) {
+        return true;
+    }
+
+    let current = component.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isChromeLayoutNavBlock(current) || isChromeLayoutFooterBlock(current)) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+export function chromeLayoutAdvancedInspectorNotice(component, labels = {}) {
+    if (
+        isChromeDropZoneComponent(component)
+        || isChromeLayoutContentSlot(component)
+    ) {
+        return labels.chromeLayoutContentSlotInspectorNotice
+            ?? 'Layout editor: this slot is filled by each page — use Style, Dynamic, and Conditions inside page content.';
+    }
+
+    return labels.chromeLayoutStructureInspectorNotice
+        ?? 'Layout editor: use the Content tab for navbar/footer in the header and footer zones.';
 }
 
 export function isTopLevelChromeLayoutZone(component, wrapper) {

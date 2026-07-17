@@ -34,14 +34,10 @@ final class ChromeLayoutSubThemeResolver
     {
         $channels = $layout->assignedChannelIds();
 
-        if (in_array('pages', $channels, true)) {
+        // Unassigned shells preview as the site-pages theme (same as live default),
+        // not a hardcoded "site" id from config.
+        if ($channels === [] || in_array('pages', $channels, true)) {
             return self::forPagesChannel();
-        }
-
-        $configured = config('voodbuilder.chrome_layouts.editor_sub_theme');
-
-        if (is_string($configured) && trim($configured) !== '') {
-            return SubThemeResolver::normalize($configured);
         }
 
         $registry = app(ContentChannelRegistry::class);
@@ -52,6 +48,12 @@ final class ChromeLayoutSubThemeResolver
             if ($theme !== null) {
                 return $theme;
             }
+        }
+
+        $configured = config('voodbuilder.chrome_layouts.editor_sub_theme');
+
+        if (is_string($configured) && trim($configured) !== '') {
+            return SubThemeResolver::normalize($configured);
         }
 
         return self::forPagesChannel();

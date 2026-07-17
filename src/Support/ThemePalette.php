@@ -9,7 +9,7 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'
-html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg-alt,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
 html[data-voodbuilder-sub-theme] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
 html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-muted)!important}
@@ -27,9 +27,9 @@ html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menu
 CSS;
 
     private const CANVAS_HEADER_BACKGROUND_CSS = <<<'CSS'
-[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+[data-voodbuilder-chrome-shell] header[role='banner'].bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'].bg-vp-bg-alt,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
 [data-voodbuilder-chrome-shell] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
-header[role='banner'] .bg-vp-bg,header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+header[role='banner'].bg-vp-bg,header[role='banner'].bg-vp-bg-alt,header[role='banner'] .bg-vp-bg,header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
 header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
 CSS;
 
@@ -144,6 +144,19 @@ CSS;
             $rules[] = $lightBuiltin;
         }
 
+        $lightSemantic = self::variablesToCssRule(
+            "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeSemanticVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
+            ),
+        );
+
+        if ($lightSemantic !== null) {
+            $rules[] = $lightSemantic;
+        }
+
         $darkBuiltin = self::variablesToCssRule(
             "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
             self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
@@ -151,6 +164,19 @@ CSS;
 
         if ($darkBuiltin !== null) {
             $rules[] = $darkBuiltin;
+        }
+
+        $darkSemantic = self::variablesToCssRule(
+            "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeSemanticVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
+            ),
+        );
+
+        if ($darkSemantic !== null) {
+            $rules[] = $darkSemantic;
         }
 
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
@@ -195,8 +221,12 @@ CSS;
         if ($css !== '') {
             $lightSemanticRule = self::variablesToCssRule(
                 "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
-                self::filterSubThemeSemanticVariables(
-                    self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+                self::withoutAdminOverriddenSemanticVariables(
+                    $subThemeId,
+                    false,
+                    self::filterSubThemeSemanticVariables(
+                        self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+                    ),
                 ),
             );
 
@@ -206,8 +236,12 @@ CSS;
 
             $darkSemanticRule = self::variablesToCssRule(
                 ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
-                self::filterSubThemeSemanticVariables(
-                    self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+                self::withoutAdminOverriddenSemanticVariables(
+                    $subThemeId,
+                    true,
+                    self::filterSubThemeSemanticVariables(
+                        self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+                    ),
                 ),
             );
 
@@ -229,11 +263,14 @@ CSS;
         }
 
         $rules = [];
+        // Higher specificity than page/layout-embedded canvas CSS (same chrome-shell
+        // selector without the html[data-voodbuilder-sub-theme] ancestor), so admin
+        // palette colors always win on the live frontend.
         $lightRule = self::buildRule(
             $subThemeId,
             $palette['light'],
             false,
-            "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+            "html[data-voodbuilder-sub-theme='{$subThemeId}'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
         );
 
         if ($lightRule !== null) {
@@ -244,14 +281,60 @@ CSS;
             $subThemeId,
             $palette['dark'],
             true,
-            ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+            "html.dark[data-voodbuilder-sub-theme='{$subThemeId}'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
         );
 
         if ($darkRule !== null) {
             $rules[] = $darkRule;
         }
 
+        // Also win against stale layout CSS that stamps tokens on html:not(.dark).
+        $htmlLight = self::buildRule($subThemeId, $palette['light'], false);
+        $htmlDark = self::buildRule($subThemeId, $palette['dark'], true);
+
+        if ($htmlLight !== null) {
+            $rules[] = $htmlLight;
+        }
+
+        if ($htmlDark !== null) {
+            $rules[] = $htmlDark;
+        }
+
         return implode("\n", $rules);
+    }
+
+    /**
+     * Remove palette custom-properties baked into saved GrapesJS CSS so live
+     * ThemePalette / admin overrides control the editor canvas.
+     */
+    public static function stripEmbeddedPaletteOverrides(string $css): string
+    {
+        if ($css === '') {
+            return '';
+        }
+
+        $tokens = [
+            '--vx-header-bg',
+            '--vx-header-text',
+            '--vx-header-muted',
+            '--vx-menu-text',
+            '--vx-menu-text-muted',
+            '--vx-menu-text-subtle',
+            '--color-vp-brand-1',
+            '--color-vp-brand-2',
+            '--color-vp-brand-3',
+            '--color-vp-bg',
+            '--color-vp-bg-alt',
+            '--color-vp-bg-elv',
+            '--color-vp-text-1',
+            '--color-vp-text-2',
+            '--color-vp-text-3',
+        ];
+
+        $pattern = '/(?:'.implode('|', array_map(static fn (string $token): string => preg_quote($token, '/'), $tokens)).')\s*:\s*[^;}{]+;?/i';
+        $stripped = preg_replace($pattern, '', $css);
+
+        return is_string($stripped) ? $stripped : $css;
     }
 
     /**
@@ -271,13 +354,27 @@ CSS;
         $palette = $colors[$subThemeId] ?? null;
 
         if (is_array($palette)) {
-            $lightRule = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+            // Early rule (before data-voodbuilder-sub-theme is stamped on the iframe).
+            $earlyLight = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+
+            if ($earlyLight !== null) {
+                $rules[] = $earlyLight;
+            }
+
+            $earlyDark = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+
+            if ($earlyDark !== null) {
+                $rules[] = $earlyDark;
+            }
+
+            // Specific rule beats bundled theme.css (html[data-voodbuilder-sub-theme=…]).
+            $lightRule = self::buildRule($subThemeId, $palette['light'], false);
 
             if ($lightRule !== null) {
                 $rules[] = $lightRule;
             }
 
-            $darkRule = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+            $darkRule = self::buildRule($subThemeId, $palette['dark'], true);
 
             if ($darkRule !== null) {
                 $rules[] = $darkRule;
@@ -596,7 +693,11 @@ CSS;
 
         $lightSemanticRule = self::variablesToCssRule(
             'html:not(.dark)',
-            self::filterSubThemeSemanticVariables($lightValues),
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeSemanticVariables($lightValues),
+            ),
         );
 
         if ($lightSemanticRule !== null) {
@@ -614,7 +715,11 @@ CSS;
 
         $darkSemanticRule = self::variablesToCssRule(
             'html.dark',
-            self::filterSubThemeSemanticVariables($darkValues),
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeSemanticVariables($darkValues),
+            ),
         );
 
         if ($darkSemanticRule !== null) {
@@ -748,6 +853,54 @@ CSS;
         }
 
         return $filtered;
+    }
+
+    /**
+     * Drop bundled semantic tokens that admin palette already overrides, so saved
+     * GrapesJS / chrome-layout CSS cannot re-apply the theme default later in the cascade.
+     *
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private static function withoutAdminOverriddenSemanticVariables(string $subThemeId, bool $dark, array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        foreach (self::adminOverriddenSemanticVariableNames($subThemeId, $dark) as $name) {
+            unset($variables[$name]);
+        }
+
+        return $variables;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function adminOverriddenSemanticVariableNames(string $subThemeId, bool $dark): array
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $mode = is_array($colors[$subThemeId] ?? null)
+            ? ($colors[$subThemeId][$dark ? 'dark' : 'light'] ?? [])
+            : [];
+
+        if (! is_array($mode)) {
+            return [];
+        }
+
+        $names = [];
+
+        if (($mode['header_bg'] ?? null) !== null) {
+            $names[] = '--vx-header-bg';
+        }
+
+        if (($mode['header_text'] ?? null) !== null) {
+            $names[] = '--vx-header-text';
+            $names[] = '--vx-header-muted';
+        }
+
+        return $names;
     }
 
     private static function normalizeSubThemeCss(string $css, string $subThemeId): string

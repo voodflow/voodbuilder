@@ -61,6 +61,10 @@
                 'grapesJsConfig' => $grapesJsConfig,
             ])
         @else
+            @foreach (\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsCanvas::publishedStyleUrls() as $publishedStyleUrl)
+                <link rel="stylesheet" href="{{ $publishedStyleUrl }}">
+            @endforeach
+
             @php($grapesJsStyles = $page->usesGrapesJsBuilder() ? $page->renderedStyles() : null)
             @if (filled($grapesJsStyles))
                 <style>{!! $grapesJsStyles !!}</style>

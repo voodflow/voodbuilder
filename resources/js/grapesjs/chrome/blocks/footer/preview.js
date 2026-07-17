@@ -51,21 +51,23 @@ function suppressChromeBlockDescendants(component) {
 export function lockFooterPreview(component, editor, opts = {}) {
     const blockId = component.getAttributes()[ATTR.block];
     const layoutMode = Boolean(component.em?.__voodbuilderChromeLayoutMode ?? editor?.__voodbuilderChromeLayoutMode);
+    const shellMode = Boolean(component.em?.__voodbuilderChromeShellMode ?? editor?.__voodbuilderChromeShellMode);
 
     if (! isFooterBlock(blockId)) {
         return false;
     }
 
-    if (layoutMode) {
-        component.set({
-            selectable: true,
-            highlightable: true,
-            hoverable: true,
-            layerable: true,
-            name: typeof opts.resolveBlockLayerLabel === 'function'
-                ? opts.resolveBlockLayerLabel(blockId)
-                : component.get('name'),
-        }, { silent: true });
+    component.set({
+        selectable: true,
+        highlightable: true,
+        hoverable: true,
+        layerable: true,
+        name: typeof opts.resolveBlockLayerLabel === 'function'
+            ? opts.resolveBlockLayerLabel(blockId)
+            : component.get('name'),
+    }, { silent: true });
+
+    if (layoutMode || shellMode) {
         suppressChromeBlockDescendants(component);
 
         return true;

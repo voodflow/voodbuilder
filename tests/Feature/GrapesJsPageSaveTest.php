@@ -86,7 +86,9 @@ class GrapesJsPageSaveTest extends TestCase
         $page->refresh();
 
         $this->assertSame('<section class="voodbuilder-gjs-section bg-vp-bg">Updated</section>', $page->builder_payload['html']);
-        $this->assertSame('.updated {color: red;}', $page->builder_payload['css']);
+        $this->assertStringContainsString('.updated {color: red;}', $page->builder_payload['css']);
+        $this->assertStringContainsString('.bg-vp-bg', $page->builder_payload['css']);
+        $this->assertStringContainsString('var(--color-vp-bg)', $page->builder_payload['css']);
         $this->assertSame('', $page->builder_payload['js']);
     }
 
@@ -167,7 +169,52 @@ class GrapesJsPageSaveTest extends TestCase
         $page->refresh();
 
         $this->assertStringContainsString('bg-indigo-500', $page->builder_payload['html']);
-        $this->assertStringContainsString('var(--color-vp-brand-1)', $page->builder_payload['css']);
+        $this->assertStringContainsString('var(--color-vp-brand-', $page->builder_payload['css']);
+    }
+
+    public function test_admin_can_clear_page_html_on_save(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-clear@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Grapes clear',
+            'slug' => 'grapes-clear',
+            'builder' => PageBuilder::GrapesJs,
+            'layout' => 'landing',
+            'published' => true,
+            'builder_payload' => [
+                'html' => '<section data-voodbuilder-section-block="vb-hero-1">Hero</section>',
+                'css' => '.hero { color: red; }',
+                'js' => '',
+                'project' => null,
+            ],
+        ]);
+
+        $this->actingAs($user);
+
+        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
+            'html' => '',
+            'css' => '',
+            'project' => ['pages' => []],
+        ])->assertOk()->assertJson(['saved' => true]);
+
+        $page->refresh();
+
+        $this->assertSame('', $page->builder_payload['html']);
+        $this->assertStringNotContainsString('vb-hero-1', (string) ($page->builder_payload['html'] ?? ''));
     }
 
     public function test_guest_cannot_save_grapesjs_payload(): void

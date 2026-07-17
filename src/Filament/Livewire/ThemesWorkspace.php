@@ -79,6 +79,13 @@ class ThemesWorkspace extends Component
     /** @var TemporaryUploadedFile|null */
     public $importArchive = null;
 
+    /**
+     * Color scheme copied for paste onto another custom theme.
+     *
+     * @var array{version: int, type: string, source_id: string, light: array<string, ?string>, dark: array<string, ?string>}|null
+     */
+    public ?array $copiedColorScheme = null;
+
     /** @var array{custom: list<array<string, mixed>>, plugin: list<array<string, mixed>>} */
     public array $groups = [
         'custom' => [],
@@ -318,6 +325,83 @@ class ThemesWorkspace extends Component
         Notification::make()->title(__('voodbuilder::settings.reset_theme_colors_success'))->success()->send();
     }
 
+    public function copyColorScheme(): void
+    {
+        if ($this->selectedId === null) {
+            return;
+        }
+
+        $payload = [
+            'version' => 1,
+            'type' => 'voodbuilder-color-scheme',
+            'source_id' => $this->selectedId,
+            'light' => $this->normalizeModeColors($this->light),
+            'dark' => $this->normalizeModeColors($this->dark),
+        ];
+
+        $this->copiedColorScheme = $payload;
+
+        try {
+            $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+            $this->js('void navigator.clipboard.writeText('.json_encode($json).').catch(() => {})');
+        } catch (\JsonException) {
+            // Livewire state still holds the scheme for paste.
+        }
+
+        Notification::make()
+            ->title(__('voodbuilder::settings.copy_color_scheme_success'))
+            ->body(__('voodbuilder::settings.copy_color_scheme_success_body'))
+            ->success()
+            ->send();
+    }
+
+    public function pasteColorScheme(?string $clipboardJson = null): void
+    {
+        if ($this->selectedId === null || ! $this->canEditColors) {
+            return;
+        }
+
+        $scheme = $this->resolveColorSchemePayload($clipboardJson);
+
+        if ($scheme === null) {
+            Notification::make()
+                ->title(__('voodbuilder::settings.paste_color_scheme_failed'))
+                ->body(__('voodbuilder::settings.paste_color_scheme_empty'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        if (($scheme['source_id'] ?? null) === $this->selectedId) {
+            Notification::make()
+                ->title(__('voodbuilder::settings.paste_color_scheme_failed'))
+                ->body(__('voodbuilder::settings.paste_color_scheme_same_theme'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->light = $this->normalizeModeColors($scheme['light'] ?? []);
+        $this->dark = $this->normalizeModeColors($scheme['dark'] ?? []);
+        $this->persistColors();
+
+        Notification::make()
+            ->title(__('voodbuilder::settings.paste_color_scheme_success'))
+            ->success()
+            ->send();
+    }
+
+    public function canPasteColorScheme(): bool
+    {
+        if (! $this->canEditColors || $this->selectedId === null || $this->copiedColorScheme === null) {
+            return false;
+        }
+
+        return ($this->copiedColorScheme['source_id'] ?? null) !== $this->selectedId;
+    }
+
     public function openCloneModal(string $sourceId): void
     {
         $this->cloneSourceId = $sourceId;
@@ -522,12 +606,49 @@ class ThemesWorkspace extends Component
                 ->reject(fn (string $label, string $id): bool => $this->showDeleteModal && $id === $this->selectedId)
                 ->all(),
             'colorKeyLabel' => ThemePresenter::colorLabel($this->colorKey),
+            'canPasteColorScheme' => $this->canPasteColorScheme(),
         ]);
     }
 
     private function syncThemeGroups(): void
     {
         $this->groups = ThemePresenter::groupedCards();
+    }
+
+    /**
+     * @param  array<string, mixed>  $colors
+     * @return array<string, ?string>
+     */
+    private function normalizeModeColors(array $colors): array
+    {
+        $resolved = [];
+
+        foreach (ThemePresenter::COLOR_KEYS as $key) {
+            $value = $colors[$key] ?? null;
+            $resolved[$key] = ThemePalette::sanitizeColor(is_string($value) ? $value : null);
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * @return array{version?: int, type?: string, source_id?: string, light?: array<string, mixed>, dark?: array<string, mixed>}|null
+     */
+    private function resolveColorSchemePayload(?string $clipboardJson): ?array
+    {
+        if (filled($clipboardJson)) {
+            try {
+                $decoded = json_decode($clipboardJson, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                $decoded = null;
+            }
+
+            if (is_array($decoded) && ($decoded['type'] ?? null) === 'voodbuilder-color-scheme') {
+                return $decoded;
+            }
+        }
+
+        return $this->copiedColorScheme;
     }
 
     private function notify(Notification $notification): void

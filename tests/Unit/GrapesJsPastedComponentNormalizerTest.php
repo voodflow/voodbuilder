@@ -351,6 +351,54 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
         $this->assertSame('.updated {color: red;}', $resolved);
     }
 
+    public function test_resolve_published_page_css_keeps_typography_tokens_for_frontend(): void
+    {
+        $html = '<h1 class="text-3xl sm:text-4xl font-semibold">Hero</h1>';
+
+        $resolved = GrapesJsPastedComponentNormalizer::resolvePublishedPageCssForSave($html, '');
+
+        $this->assertStringContainsString('text-3xl', $resolved);
+        $this->assertTrue(
+            str_contains($resolved, '--text-3xl:')
+            || str_contains($resolved, 'var(--text-3xl,'),
+            'Published CSS must define or fallback --text-3xl so frontend is not flat.',
+        );
+        $this->assertTrue(
+            str_contains($resolved, '--text-4xl:')
+            || str_contains($resolved, 'var(--text-4xl,'),
+            'Published CSS must define or fallback --text-4xl for sm:text-4xl.',
+        );
+    }
+
+    public function test_strip_published_page_css_keeps_structural_root_tokens(): void
+    {
+        $css = <<<'CSS'
+:root {
+    --spacing: 0.25rem;
+    --text-3xl: 1.875rem;
+    --color-white: #fff;
+    --color-indigo-500: #6366f1;
+    --color-vp-brand-1: #ff0000;
+}
+.text-white {
+    color: var(--color-white);
+}
+.text-3xl {
+    font-size: var(--text-3xl);
+}
+CSS;
+
+        $stripped = GrapesJsPastedComponentNormalizer::stripPublishedPageCssRuntimeStyles($css);
+
+        $this->assertStringContainsString('--spacing', $stripped);
+        $this->assertStringContainsString('--text-3xl', $stripped);
+        $this->assertStringContainsString('--color-white', $stripped);
+        $this->assertStringNotContainsString('--color-vp-brand-1', $stripped);
+        $this->assertStringNotContainsString('--color-indigo-500', $stripped);
+        $this->assertStringContainsString('.text-white', $stripped);
+        $this->assertStringContainsString('.text-3xl', $stripped);
+    }
+
     public function test_grapes_composer_rules_from_stored_css_extracts_id_selectors_only(): void
     {
         $storedCss = '#iabc { color: red; } .bg-blue-200 { background-color: blue; }';

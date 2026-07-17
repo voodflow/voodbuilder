@@ -14,6 +14,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormali
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 use Voodflow\Voodbuilder\Support\GrapesJs\SitePageRevisionRecorder;
+use Voodflow\Voodbuilder\Support\ThemePalette;
 
 class GrapesJsPageController extends Controller
 {
@@ -48,6 +49,11 @@ class GrapesJsPageController extends Controller
         }
 
         $previousPayload = $sitePage->builder_payload ?? [];
+
+        // Empty HTML is intentional (author cleared the page content slot). The editor
+        // already guards against false-empty extracts when the slot still has children.
+
+        $normalized['css'] = ThemePalette::stripEmbeddedPaletteOverrides($normalized['css']);
 
         $sitePage->update([
             'builder' => PageBuilder::GrapesJs,

@@ -11,6 +11,13 @@ import {
     CMD_MAKE_DYNAMIC,
 } from './canvas-component-toolbar.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
+import {
+    inspectorSelectionNotice,
+} from './chrome-editor-guards.js';
+import {
+    createInspectorEmptyState,
+    inspectorSelectElementMessage,
+} from './inspector-empty-state.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -1644,7 +1651,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         if (! component) {
             if (isModal) {
                 void alertDialog({
-                    message: labels.selectComponent ?? 'Select an element on the canvas first.',
+                    message: labels.selectComponent ?? inspectorSelectElementMessage(labels),
                     labels,
                 });
             }
@@ -1956,11 +1963,31 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
 
         mount.innerHTML = '';
 
-        if (! selected || shouldSuppressChromeSlotInspector(selected, editor)) {
-            const empty = document.createElement('p');
-            empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
-            empty.textContent = labels.selectComponent ?? 'Select an element on the canvas first.';
-            mount.appendChild(empty);
+        if (! selected) {
+            mount.appendChild(createInspectorEmptyState({
+                classNameExtra: 'voodbuilder-gjs-dynamic-panel__empty',
+                labels,
+            }));
+
+            return;
+        }
+
+        const selectionNotice = inspectorSelectionNotice(selected, editor, labels);
+
+        if (selectionNotice !== null) {
+            mount.appendChild(createInspectorEmptyState({
+                classNameExtra: 'voodbuilder-gjs-dynamic-panel__empty voodbuilder-gjs-chrome-layout-notice',
+                message: selectionNotice,
+            }));
+
+            return;
+        }
+
+        if (shouldSuppressChromeSlotInspector(selected, editor)) {
+            mount.appendChild(createInspectorEmptyState({
+                classNameExtra: 'voodbuilder-gjs-dynamic-panel__empty',
+                labels,
+            }));
 
             return;
         }
@@ -2240,7 +2267,7 @@ export async function registerBindingsUi(editor, options = {}) {
 
             if (! selected) {
                 void alertDialog({
-                    message: labels.selectComponent ?? 'Select an element first.',
+                    message: labels.selectComponent ?? inspectorSelectElementMessage(labels),
                     labels,
                 });
 

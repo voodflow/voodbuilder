@@ -1016,11 +1016,15 @@ export function registerChromeLayoutEditor(editor, options = {}) {
 
                 if (blockId.startsWith('site_nav_') || blockId.startsWith('site_footer_') || isNavBlock(blockId) || isFooterBlock(blockId)) {
                     refreshBlockSettingsUi(editor);
+
+                    // One CSS rebuild after settings/DOM settle — avoid 50/350/900 storm.
+                    window.setTimeout(() => editor.trigger('voodbuilder:page-css-invalidate'), 200);
                 }
             }
 
             delete editor.__voodbuilderLastDropPoint;
             scheduleRefresh();
+            editor.trigger('voodbuilder:page-css-invalidate');
         });
     });
 
@@ -1032,6 +1036,7 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         window.requestAnimationFrame(() => {
             relocateLayoutBlock(editor, target);
             scheduleRefresh();
+            editor.trigger('voodbuilder:page-css-invalidate');
         });
     });
 }

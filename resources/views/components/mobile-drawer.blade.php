@@ -203,7 +203,7 @@
                 </div>
             @endauth
 
-            @if ($cookieConsent && filled($cookieConsent->content_href))
+            @if (! $canvasPreview && $cookieConsent && filled($cookieConsent->content_href))
                 <div class="voodbuilder-mobile-nav__legal">
                     <a
                         href="{{ $cookieConsent->content_href }}"

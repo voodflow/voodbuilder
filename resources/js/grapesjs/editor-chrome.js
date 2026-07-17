@@ -156,7 +156,10 @@ export function editorChromeInitOptions() {
                 {
                     id: 'desktop',
                     name: 'Desktop',
-                    width: '100%',
+                    // Fixed width so lg:/md: breakpoints match a typical browser home page.
+                    // width:100% of the (narrow) canvas panel skipped lg: and made hero images smaller than front.
+                    width: '1280px',
+                    widthMedia: '1280px',
                 },
                 {
                     id: 'tablet',

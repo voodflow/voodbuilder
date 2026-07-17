@@ -71,16 +71,24 @@
     color: var(--color-vp-text-1, #f8fafc);
 }
 
-/* ── Panel padding (content panels use frontend.css mount padding) ── */
+/* ── Panel padding: Content / Dynamic / Conditions / Style empty-state share spacing ── */
+.voodbuilder-gjs-site-chrome-settings-mount,
 .voodbuilder-gjs-component-props-mount,
 .voodbuilder-gjs-dynamic-mount,
 .voodbuilder-gjs-conditions-mount {
     padding: 0.625rem 0.75rem 1rem;
 }
 
+/* Empty / chrome notices share .voodbuilder-gjs-inspector-empty-state styles in frontend.css */
+
 .voodbuilder-gjs-inspector-panel--active[data-voodbuilder-inspector='style'] {
     padding: 0.625rem 0.75rem 1rem;
     gap: 0.5rem;
+}
+
+/* Style empty-state is a direct panel child — no extra margin beyond panel padding. */
+.voodbuilder-gjs-inspector-panel[data-voodbuilder-inspector='style'] > .voodbuilder-gjs-inspector-empty-state {
+    margin: 0;
 }
 
 /* ── Style manager sectors (accordion headers) ── */

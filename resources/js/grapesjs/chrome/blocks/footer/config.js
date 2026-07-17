@@ -102,6 +102,12 @@ function applySiteFooterMenuColumnsLayout(root) {
 }
 
 export function applySiteFooterSettingsPreview(root, editor = null) {
+    // Page editor chrome shell: server HTML already has the correct utilities.
+    // Mutating grid/flex classes here without a chrome CSS rebuild leaves the footer unstyled.
+    if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
+        return;
+    }
+
     void editor;
 
     const blockId = root.getAttributes()['data-voodbuilder-block'];
@@ -146,6 +152,10 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
 
     if (footerBlockHasColumns(blockId)) {
         applySiteFooterMenuColumnsLayout(root);
+    }
+
+    if (editor?.__voodbuilderChromeLayoutMode) {
+        editor.trigger?.('voodbuilder:page-css-invalidate');
     }
 }
 

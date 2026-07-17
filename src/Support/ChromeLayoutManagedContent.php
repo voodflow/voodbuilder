@@ -94,6 +94,11 @@ final class ChromeLayoutManagedContent
                 continue;
             }
 
+            // Real CTAs often say "Button"; only strip unmarked chrome UI leftovers.
+            if (self::looksLikeRealPageContent($node)) {
+                continue;
+            }
+
             if (self::isChromeEditorBleedText(trim($node->textContent))) {
                 $toRemove[] = $node;
             }
@@ -115,6 +120,31 @@ final class ChromeLayoutManagedContent
         $normalized = preg_replace('/\s+/', '', $text) ?? $text;
 
         return preg_match('/^(?:Button|Notifications)+$/', $normalized) === 1;
+    }
+
+    protected static function looksLikeRealPageContent(DOMElement $node): bool
+    {
+        if (trim($node->getAttribute('class')) !== '') {
+            return true;
+        }
+
+        if (trim($node->getAttribute('href')) !== '') {
+            return true;
+        }
+
+        if (trim($node->getAttribute('id')) !== '') {
+            return true;
+        }
+
+        foreach ($node->attributes ?? [] as $attribute) {
+            $name = strtolower((string) $attribute->name);
+
+            if (str_starts_with($name, 'data-') || str_starts_with($name, 'aria-')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected static function isManagedBlockId(string $blockId): bool

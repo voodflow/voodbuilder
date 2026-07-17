@@ -917,7 +917,9 @@ export function registerComponentsUi(editor, options = {}) {
 
         if (! selected) {
             await alertDialog({
-                message: labels.selectComponent ?? 'Select an element first.',
+                message: labels.componentsSaveNeedSelection
+                    ?? labels.selectComponent
+                    ?? 'Select an element on the canvas to save it as a reusable component.',
                 labels,
             });
 
@@ -965,7 +967,9 @@ export function registerComponentsUi(editor, options = {}) {
 
             if (! target) {
                 await alertDialog({
-                    message: labels.selectComponent ?? 'Select an element first.',
+                    message: labels.componentsSaveNeedSelection
+                        ?? labels.selectComponent
+                        ?? 'Select an element on the canvas to save it as a reusable component.',
                     labels,
                 });
 
@@ -1782,6 +1786,7 @@ function registerComponentPropsUi(editor, options = {}) {
 
         if (! selected || ! componentId) {
             mount.replaceChildren();
+            mount.hidden = true;
 
             return;
         }
@@ -1791,9 +1796,12 @@ function registerComponentPropsUi(editor, options = {}) {
 
         if (! component?.properties?.length) {
             mount.replaceChildren();
+            mount.hidden = true;
 
             return;
         }
+
+        mount.hidden = false;
 
         mount.innerHTML = `
             <section class="voodbuilder-gjs-component-props">

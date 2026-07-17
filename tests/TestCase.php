@@ -37,6 +37,7 @@ abstract class TestCase extends BaseTestCase
             'prefix' => '',
             'foreign_key_constraints' => true,
         ]);
+        $app['config']->set('cache.default', 'array');
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('voodbuilder.pages.enabled', true);

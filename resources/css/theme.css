@@ -10,6 +10,7 @@
 @import '../themes/blog/theme.css';
 @import '../themes/news/theme.css';
 @import './landing.css';
+@import './grapesjs/chrome-block-utilities.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -55,7 +56,7 @@
     --spacing-vp-sidebar: 17rem;
     --spacing-vp-aside: 14rem;
     --width-vp-content: 43rem;
-    --width-vp-layout: 90rem;
+    --width-vp-layout: 80rem;
 }
 
 .dark {
@@ -156,6 +157,8 @@
         --vx-header-muted: var(--color-vp-text-2);
     }
 
+    html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg,
+    html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg-alt,
     html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
     html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt {
         background-color: var(--vx-header-bg) !important;
@@ -649,6 +652,20 @@ html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:h
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     color: var(--vx-header-text) !important;
 }
+
+/*
+ * Chrome layouts render header/footer as body siblings around <main>.
+ * Theme shells often use min-h-[calc(100vh-…)] for non-chrome pages; with chrome that
+ * stacks on top of main.flex-1 and pushes the footer below the fold. Sticky footer =
+ * body min-h-screen flex-col + main flex-1 only.
+ */
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-home-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-landing-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
+    min-height: auto;
+}
+
 @import '../../../../../resources/voodbuilder/themes/docs-copy/theme.css';
 
 

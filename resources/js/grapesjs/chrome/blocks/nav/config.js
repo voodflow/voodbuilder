@@ -150,6 +150,11 @@ function reshapeSiteNavAlignDom(scope, alignCenter) {
 }
 
 export function applySiteNavSettingsPreview(root, editor = null) {
+    // Same as footer: do not mutate chrome-shell nav classes in the page editor.
+    if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
+        return;
+    }
+
     const el = root.getEl?.();
 
     if (! el) {

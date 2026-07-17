@@ -751,6 +751,10 @@ function reshapeSiteNavAlignDom(scope, alignCenter) {
 }
 
 function applySiteNavSettingsPreview(root, editor = null) {
+    if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
+        return;
+    }
+
     const el = root.getEl?.();
 
     if (! el) {
@@ -1026,6 +1030,12 @@ function syncSiteFooterConfig(component) {
 }
 
 function applySiteFooterSettingsPreview(root, editor = null) {
+    // Page editor chrome shell: keep server-rendered utilities. Preview class toggles
+    // (grid/flex) are not recompiled into page live CSS (chrome HTML is excluded).
+    if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
+        return;
+    }
+
     void editor;
 
     const blockId = root.getAttributes()['data-voodbuilder-block'];
@@ -1071,6 +1081,10 @@ function applySiteFooterSettingsPreview(root, editor = null) {
 
     if (footerBlockHasColumns(blockId)) {
         applySiteFooterMenuColumnsLayout(root);
+    }
+
+    if (editor?.__voodbuilderChromeLayoutMode) {
+        editor.trigger?.('voodbuilder:page-css-invalidate');
     }
 }
 

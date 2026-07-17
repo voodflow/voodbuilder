@@ -142,28 +142,26 @@ function ensurePageContentBlockEditable(editor, component) {
         return;
     }
 
+    // Keep nested structure visible/selectable in Layers (headings, buttons, links).
+    // Only top-level page blocks stay draggable as whole sections.
     const parent = component.parent?.();
-
-    if (! isPageContentSlot(parent)) {
-        component.set({
-            layerable: false,
-        }, { silent: true });
-
-        return;
-    }
+    const isTopLevelBlock = isPageContentSlot(parent);
 
     component.set({
         locked: false,
-        removable: true,
-        copyable: true,
-        draggable: true,
+        removable: isTopLevelBlock,
+        copyable: isTopLevelBlock,
+        draggable: isTopLevelBlock,
         selectable: true,
         hoverable: true,
         highlightable: true,
         layerable: true,
     }, { silent: true });
     editor.Layers?.setLocked?.(component, false);
-    lockChromePreview(component);
+
+    if (isTopLevelBlock) {
+        lockChromePreview(component);
+    }
 }
 
 function lockChromeShellComponent(component) {
@@ -215,9 +213,10 @@ function configureChromeShellPartWrapper(editor, component, part) {
         removable: false,
         draggable: false,
         copyable: false,
-        selectable: false,
-        hoverable: false,
-        highlightable: false,
+        // Selectable so the page editor can show “edit this in layout X”.
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
         editable: false,
         stylable: false,
         layerable: true,
@@ -287,12 +286,44 @@ function purgeChromeBleedFromSlot(slot) {
     const removable = [];
 
     forEachGrapesComponent(slot, (component) => {
-        if (isChromeShellBlock(component) || isChromeShellPart(component) || looksLikeSiteChromeStructure(component)) {
+        if (
+            isChromeShellBlock(component)
+            || isChromeShellPart(component)
+            || looksLikeSiteChromeStructure(component)
+            || isEditorHostBleedComponent(component)
+            || isCookieSettingsCtaClone(component)
+        ) {
             removable.push(component);
         }
     });
 
     removable.forEach((component) => component.remove());
+}
+
+/**
+ * Cookie consent / legal chrome belongs to another plugin — keep it out of the page editor.
+ */
+function sanitizeChromeShellHtmlForEditor(html) {
+    let sanitized = String(html ?? '').trim();
+
+    if (sanitized === '') {
+        return '';
+    }
+
+    sanitized = sanitized.replace(
+        /<div\b[^>]*\bvoodbuilder-mobile-nav__legal\b[^>]*>[\s\S]*?<\/div>/gi,
+        '',
+    );
+    sanitized = sanitized.replace(
+        /<button\b[^>]*\bdata-cookie-preferences\b[^>]*>[\s\S]*?<\/button>/gi,
+        '',
+    );
+    sanitized = sanitized.replace(
+        /<a\b[^>]*\bvoodbuilder-mobile-nav__cookie-link\b[^>]*>[\s\S]*?<\/a>/gi,
+        '',
+    );
+
+    return sanitized.trim();
 }
 
 function dedupePageContentSlots(editor) {
@@ -350,7 +381,7 @@ function chromeShellPartNeedsSync(partComponent, innerHtml) {
 }
 
 function syncChromeShellPartInnerHtml(partComponent, innerHtml) {
-    const html = String(innerHtml ?? '').trim();
+    const html = sanitizeChromeShellHtmlForEditor(innerHtml);
 
     if (! partComponent || ! html) {
         return;
@@ -379,10 +410,22 @@ function ensurePageContentSlot(editor, wrapper, placeholderLabel = '') {
 }
 
 function ensureChromeShellPart(editor, wrapper, part, innerHtml, subTheme = '') {
-    const html = String(innerHtml ?? '').trim();
+    const html = sanitizeChromeShellHtmlForEditor(innerHtml);
     let component = findChromeShellPartAtWrapper(wrapper, part);
 
     if (! html && ! component) {
+        return null;
+    }
+
+    // Drop stale shell parts when the layout no longer provides HTML for this zone
+    // (e.g. footer removed/unsaved → empty after would otherwise keep a broken ghost).
+    if (! html && component) {
+        try {
+            component.remove();
+        } catch {
+            // Already detached.
+        }
+
         return null;
     }
 
@@ -677,6 +720,13 @@ function promoteComponentIntoContentSlot(editor, component) {
         return false;
     }
 
+    // Never yank nodes out of locked header/footer chrome into page content.
+    // Doing so (e.g. cookie-settings <button> morph → <a>) emptied the nav and
+    // spawned thousands of voodbuilder-cta-button layers.
+    if (isInsideChromeShellPart(component) || isChromeShellPart(component) || isChromeShellWrapper(component)) {
+        return false;
+    }
+
     const slot = findPageContentSlot(editor);
 
     if (! slot) {
@@ -693,7 +743,7 @@ function promoteComponentIntoContentSlot(editor, component) {
         return true;
     }
 
-    if (isChromeBleedComponent(component)) {
+    if (isChromeBleedComponent(component) || isEditorHostBleedComponent(component)) {
         component.remove();
 
         return true;
@@ -712,6 +762,100 @@ function promoteComponentIntoContentSlot(editor, component) {
     editor.select(component);
 
     return true;
+}
+
+function isEditorHostBleedComponent(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const classes = component.getClasses?.() ?? [];
+    const type = String(component.get?.('type') ?? '');
+
+    if (
+        attrs['data-cookie-preferences']
+        || attrs['data-cc']
+        || classes.includes('cc-revoke')
+        || classes.includes('cc-window')
+        || classes.includes('cc-banner')
+        || classes.includes('voodbuilder-mobile-nav__cookie-link')
+    ) {
+        return true;
+    }
+
+    if (type === 'voodbuilder-cta-button') {
+        const label = String(component.get?.('ctaLabel') ?? component.get?.('content') ?? '')
+            .trim()
+            .toLowerCase();
+
+        if (label === 'cookie settings' || label === 'impostazioni cookie') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Remove cookie-settings CTA clones that leaked into the page-content slot.
+ */
+export function purgeLeakedChromeCtaButtons(editor) {
+    const slot = findPageContentSlot(editor);
+
+    if (! slot) {
+        return 0;
+    }
+
+    const leaked = [];
+
+    const visit = (component) => {
+        if (! component) {
+            return;
+        }
+
+        if (isEditorHostBleedComponent(component) || isCookieSettingsCtaClone(component)) {
+            leaked.push(component);
+        }
+
+        component.components?.().forEach?.((child) => visit(child));
+    };
+
+    visit(slot);
+
+    leaked.forEach((component) => {
+        try {
+            component.remove();
+        } catch {
+            // Already detached.
+        }
+    });
+
+    return leaked.length;
+}
+
+function isCookieSettingsCtaClone(component) {
+    if (String(component.get?.('type') ?? '') !== 'voodbuilder-cta-button') {
+        return false;
+    }
+
+    const label = String(
+        component.get?.('ctaLabel')
+        ?? extractButtonLabelSafe(component)
+        ?? '',
+    ).trim().toLowerCase();
+
+    return label === 'cookie settings' || label === 'impostazioni cookie';
+}
+
+function extractButtonLabelSafe(component) {
+    try {
+        const el = component.getEl?.();
+
+        if (el?.textContent?.trim()) {
+            return el.textContent.trim();
+        }
+    } catch {
+        // Canvas view may be missing.
+    }
+
+    return String(component.get?.('content') ?? component.get?.('text') ?? '');
 }
 
 function hideChromeShellBlocks(editor) {
@@ -738,6 +882,27 @@ function hideChromeShellBlocks(editor) {
     });
 }
 
+function chromeShellStructureFingerprint(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return '';
+    }
+
+    const parts = [];
+
+    forEachGrapesComponent(wrapper, (child) => {
+        const attrs = child.getAttributes?.() ?? {};
+        const part = attrs[CHROME_SHELL_PART_ATTR] ?? attrs[CONTENT_SLOT_ATTR] ?? '';
+        const childCount = child.components?.()?.length ?? 0;
+        const cid = child.cid ?? child.getId?.() ?? '';
+
+        parts.push(`${part}:${cid}:${childCount}`);
+    });
+
+    return parts.join('|');
+}
+
 export function extractChromeShellPageHtml(editor) {
     const slot = findPageContentSlot(editor);
 
@@ -746,12 +911,52 @@ export function extractChromeShellPageHtml(editor) {
     }
 
     const parts = [];
+    const collection = slot.components?.();
 
-    forEachGrapesComponent(slot, (component) => {
-        parts.push(component.toHTML());
-    });
+    if (collection?.forEach) {
+        collection.forEach((component) => {
+            if (! isGrapesComponent(component)) {
+                return;
+            }
 
-    return parts.join('');
+            parts.push(component.toHTML({
+                keepInlineStyle: true,
+                withProps: true,
+            }));
+        });
+    } else {
+        forEachGrapesComponent(slot, (component) => {
+            parts.push(component.toHTML({
+                keepInlineStyle: true,
+                withProps: true,
+            }));
+        });
+    }
+
+    const joined = parts.join('');
+
+    if (joined.trim() !== '') {
+        return joined;
+    }
+
+    // Grapes sometimes reports children while forEach yields nothing — unwrap slot HTML.
+    const wrapped = String(slot.toHTML?.({
+        keepInlineStyle: true,
+        withProps: true,
+    }) ?? '').trim();
+
+    if (wrapped === '') {
+        return '';
+    }
+
+    const doc = new DOMParser().parseFromString(`<body>${wrapped}</body>`, 'text/html');
+    const root = doc.body.firstElementChild;
+
+    if (! root) {
+        return '';
+    }
+
+    return root.innerHTML.trim();
 }
 
 export function registerChromeShellEditor(editor, options = {}) {
@@ -782,11 +987,23 @@ export function registerChromeShellEditor(editor, options = {}) {
 
         editor.__voodbuilderChromeShellRefreshing = true;
 
+        let structureChanged = false;
+
         try {
             removeTopDropSpacer(editor);
+            const beforeIds = chromeShellStructureFingerprint(editor);
             applyChromeShellLocks(editor, shellOptions);
             hideChromeShellBlocks(editor);
-            safeRenderEditorLayers(editor);
+            purgeLeakedChromeCtaButtons(editor);
+            structureChanged = beforeIds !== chromeShellStructureFingerprint(editor);
+
+            // Re-render layers only when the shell tree actually changed — otherwise
+            // Layers.render() rebinds touchstart on every idle refresh and floods the console.
+            if (structureChanged || ! editor.__voodbuilderChromeShellLayersReady) {
+                safeRenderEditorLayers(editor);
+                editor.__voodbuilderChromeShellLayersReady = true;
+            }
+
             patchChromeZoneLayerIcons(editor);
         } finally {
             editor.__voodbuilderChromeShellRefreshing = false;
@@ -798,21 +1015,32 @@ export function registerChromeShellEditor(editor, options = {}) {
             bootstrapping
             || editor.__voodbuilderChromeShellRefreshing
             || editor.__voodbuilderActiveBlockDrag
+            || editor.__voodbuilderDynamicBlockRefreshing
         ) {
             return;
         }
 
         window.clearTimeout(refreshTimer);
-        refreshTimer = window.setTimeout(refresh, 32);
+        refreshTimer = window.setTimeout(refresh, 48);
     };
 
     const finishBootstrap = () => {
+        if (! bootstrapping && editor.__voodbuilderChromeShellLayersReady) {
+            return;
+        }
+
         refresh();
+        purgeLeakedChromeCtaButtons(editor);
         bootstrapping = false;
     };
 
     editor.on('load', finishBootstrap);
-    editor.on('canvas:frame:load', scheduleRefresh);
+    // Frame reloads (stylesheet link settle) must not reshuffle chrome forever.
+    editor.on('canvas:frame:load', () => {
+        if (bootstrapping) {
+            scheduleRefresh();
+        }
+    });
     editor.on('voodbuilder:site-chrome-updated', scheduleRefresh);
 
     window.requestAnimationFrame(() => {
@@ -837,6 +1065,21 @@ export function registerChromeShellEditor(editor, options = {}) {
 
     editor.on('component:add', (component) => {
         window.requestAnimationFrame(() => {
+            if (! component) {
+                return;
+            }
+
+            // Drop cookie/CTA bleed immediately — do not promote into page content.
+            if (isEditorHostBleedComponent(component) || isCookieSettingsCtaClone(component)) {
+                try {
+                    component.remove();
+                } catch {
+                    // Already detached.
+                }
+
+                return;
+            }
+
             ensurePageContentBlockEditable(editor, component);
 
             if (promoteComponentIntoContentSlot(editor, component)) {
@@ -856,7 +1099,20 @@ export function registerChromeShellEditor(editor, options = {}) {
                 component.remove();
             }
 
-            if (! bootstrapping && ! editor.__voodbuilderChromeShellRefreshing) {
+            // Nested nav/footer remounts must not reshuffle the shell (Layers.render loop).
+            if (
+                isInsideChromeShellPart(component)
+                && ! isInsidePageContentSlot(component)
+                && ! isPageContentSlotComponent(component)
+            ) {
+                return;
+            }
+
+            if (
+                ! bootstrapping
+                && ! editor.__voodbuilderChromeShellRefreshing
+                && ! editor.__voodbuilderDynamicBlockRefreshing
+            ) {
                 scheduleRefresh();
             }
         });

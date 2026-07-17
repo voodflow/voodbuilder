@@ -39,4 +39,19 @@ class GrapesJsHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('data-voodbuilder-nav-mobile-panel', $sanitized);
         $this->assertStringContainsString('<span>Menu</span>', $sanitized);
     }
+
+    public function test_strips_data_gjs_attributes_including_json_resizable(): void
+    {
+        $html = '<div class="lg:max-w-lg">'
+            .'<img alt="hero" class="w-full h-auto object-cover" '
+            .'data-gjs-type="image" data-gjs-resizable="{"ratioDefault":1}" data-gjs-locked="false"/>'
+            .'</div>';
+
+        $cleaned = GrapesJsHtmlSanitizer::stripEditorOnlyAttributes($html);
+
+        $this->assertStringNotContainsString('data-gjs-', $cleaned);
+        $this->assertStringNotContainsString('ratioDefault', $cleaned);
+        $this->assertStringContainsString('class="w-full h-auto object-cover"', $cleaned);
+        $this->assertStringContainsString('alt="hero"', $cleaned);
+    }
 }

@@ -87,8 +87,9 @@ final class GrapesJsChromeLayoutEditorGate
         return [
             'html' => $html,
             'css' => trim(implode("\n\n", array_filter([
-                $payload['css'],
+                ThemePalette::stripEmbeddedPaletteOverrides($payload['css']),
                 ThemePalette::cssForCanvas($subTheme),
+                ThemePalette::criticalChromeShellCss($subTheme),
             ]))),
             'js' => $payload['js'],
             'project' => null,

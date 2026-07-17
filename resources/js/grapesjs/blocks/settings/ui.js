@@ -2,17 +2,24 @@
  * Inspector UI for registered block settings descriptors.
  */
 
-import { ATTR } from '../../core/attrs.js';
+import {
+    ATTR,
+} from '../../core/attrs.js';
 import {
     isChromeLayoutContentSlotComponent,
     isChromeLayoutModeEditor,
     isChromeShellModeEditor,
 } from '../../chrome-content-slot-utils.js';
 import {
+    isChromeShellManagedInspectorSelection,
+    chromeShellManagedInspectorNotice,
+} from '../../chrome-editor-guards.js';
+import {
     registerBlockSettings,
     resolveSettings,
 } from './registry.js';
 import {
+    clearActiveLayoutSettingsRoot,
     getLayoutInspectorForceRenderMs,
     getLayoutChromeBlock,
     isLayoutInspectorReady,
@@ -26,6 +33,8 @@ import {
     shouldPromoteSelectionToRoot,
 } from './select.js';
 import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
+import { createInspectorEmptyState } from '../../inspector-empty-state.js';
+import { isValidGrapesComponent } from '../../core/component-model.js';
 
 /**
  * @param {HTMLElement} mount
@@ -100,6 +109,8 @@ export function runWithSettingsChangeGuard(editor, callback) {
         if (nextDepth <= 0) {
             editor.__voodbuilderSettingsChange = false;
             delete editor.__voodbuilderSettingsChangeDepth;
+            // Dropping nav/footer opens settings immediately — rebuild live CSS once the batch ends.
+            editor.__voodbuilderSchedulePageCssRebuild?.(80);
         }
     }
 }
@@ -178,6 +189,38 @@ function shouldRenderCustomSettings(editor, component) {
 }
 
 /**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function componentHasContentTraits(component) {
+    if (! component) {
+        return false;
+    }
+
+    try {
+        const traits = typeof component.getTraits === 'function'
+            ? component.getTraits()
+            : component.get?.('traits');
+
+        if (! traits) {
+            return false;
+        }
+
+        if (typeof traits.length === 'number') {
+            return traits.length > 0;
+        }
+
+        if (Array.isArray(traits.models)) {
+            return traits.models.length > 0;
+        }
+    } catch {
+        // Ignore incomplete GrapesJS models.
+    }
+
+    return false;
+}
+
+/**
  * @param {object} editor
  */
 function guardTraitManagerForBlockSettings(editor) {
@@ -201,6 +244,13 @@ function guardTraitManagerForBlockSettings(editor) {
         }
 
         if (shouldRenderCustomSettings(editor, component)) {
+            editor.__voodbuilderBlockSettingsRender?.();
+
+            return;
+        }
+
+        // Empty GrapesJS traits leave a blank Content panel — show our notice instead.
+        if (! componentHasContentTraits(component)) {
             editor.__voodbuilderBlockSettingsRender?.();
 
             return;
@@ -247,9 +297,9 @@ export function registerSettingsUi(editor, mount) {
         traitsMount?.classList.add('hidden');
         mount.replaceChildren();
 
-        const hint = document.createElement('p');
-        hint.className = 'voodbuilder-gjs-inspector-empty-hint';
-        hint.textContent = 'Loading header and footer settings…';
+        const hint = createInspectorEmptyState({
+            message: 'Loading header and footer settings…',
+        });
         mount.appendChild(hint);
     };
 
@@ -261,9 +311,9 @@ export function registerSettingsUi(editor, mount) {
         traitsPanel.classList.remove('hidden');
         traitsPanel.replaceChildren();
 
-        const hint = document.createElement('p');
-        hint.className = 'voodbuilder-gjs-inspector-empty-hint';
-        hint.textContent = 'Select a block in the header or footer zone to configure its settings.';
+        const hint = createInspectorEmptyState({
+            message: 'Select a block in the header or footer zone to configure its settings.',
+        });
         traitsPanel.appendChild(hint);
     };
 
@@ -271,6 +321,27 @@ export function registerSettingsUi(editor, mount) {
         mount.hidden = true;
         mount.replaceChildren();
         traitsMount?.classList.remove('hidden');
+    };
+
+    const showNoContentSettings = (labels = {}) => {
+        mount.hidden = false;
+        traitsMount?.classList.add('hidden');
+        traitsMount?.replaceChildren?.();
+        mount.replaceChildren();
+        mount.appendChild(createInspectorEmptyState({
+            message: labels.contentNoSettings
+                ?? 'No settings for this element. Use the Style tab to change appearance.',
+        }));
+    };
+
+    const showTraitsOrNoSettings = (component, labels = {}) => {
+        if (componentHasContentTraits(component)) {
+            showTraitsFallback();
+
+            return;
+        }
+
+        showNoContentSettings(labels);
     };
 
     const maybePromoteSelectionForHighlight = (rawSelected, root) => {
@@ -311,6 +382,17 @@ export function registerSettingsUi(editor, mount) {
         return Date.now() - layoutInspectorLoadingSince < getLayoutInspectorForceRenderMs();
     };
 
+    const showCourtesyEmptyState = (labels = {}) => {
+        mount.hidden = false;
+        traitsMount?.classList.add('hidden');
+        traitsMount?.replaceChildren?.();
+        mount.replaceChildren();
+        mount.appendChild(createInspectorEmptyState({ labels }));
+        renderedRoot = null;
+        renderedRootBlockId = '';
+        renderedDescriptorId = null;
+    };
+
     const render = () => {
         if (editor.__voodbuilderBlockSettingsRendering) {
             return;
@@ -320,6 +402,30 @@ export function registerSettingsUi(editor, mount) {
 
         try {
             const rawSelected = editor.getSelected();
+            const labels = editor.__voodbuilderLabels ?? {};
+
+            if (! rawSelected || ! isValidGrapesComponent(rawSelected)) {
+                clearActiveLayoutSettingsRoot(editor);
+                showCourtesyEmptyState(labels);
+
+                return;
+            }
+
+            if (isChromeShellManagedInspectorSelection(rawSelected, editor)) {
+                mount.hidden = false;
+                traitsMount?.classList.add('hidden');
+                traitsMount?.replaceChildren?.();
+                mount.replaceChildren();
+                mount.appendChild(createInspectorEmptyState({
+                    message: chromeShellManagedInspectorNotice(editor, labels),
+                    classNameExtra: 'voodbuilder-gjs-chrome-layout-notice',
+                }));
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
 
             if (shouldDeferLayoutInspectorRender(rawSelected)) {
                 renderLayoutInspectorLoading();
@@ -346,12 +452,22 @@ export function registerSettingsUi(editor, mount) {
                 && ! isChromeLayoutModeEditor(editor)
                 && isLayoutOnlyDescriptor(descriptor)
             ) {
-                showTraitsFallback();
+                mount.hidden = false;
+                traitsMount?.classList.add('hidden');
+                traitsMount?.replaceChildren?.();
+                mount.replaceChildren();
+                mount.appendChild(createInspectorEmptyState({
+                    message: chromeShellManagedInspectorNotice(editor, labels),
+                    classNameExtra: 'voodbuilder-gjs-chrome-layout-notice',
+                }));
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
 
                 return;
             }
 
-            if (! descriptor || ! root) {
+            if (! descriptor || ! root || ! isValidGrapesComponent(root)) {
                 const chromeZone = isChromeLayoutModeEditor(editor)
                     ? resolveLayoutChromeZone(rawSelected)
                     : null;
@@ -359,13 +475,20 @@ export function registerSettingsUi(editor, mount) {
                 if (chromeZone === 'nav' || chromeZone === 'footer') {
                     editor.__voodbuilderEnsureChromeBlockSettings?.(editor);
 
-                    const zoneBlock = getLayoutChromeBlock(editor, chromeZone)
-                        ?? findInspectableRoot(rawSelected, editor);
-                    const zoneDescriptor = zoneBlock
-                        ? resolveSettings(zoneBlock, editor).descriptor
-                        : null;
+                    const zoneBlock = getLayoutChromeBlock(editor, chromeZone);
 
-                    if (zoneDescriptor && zoneBlock) {
+                    // Zone empty (nav/footer removed): courtesy empty state, not stale forms.
+                    if (! zoneBlock || ! isValidGrapesComponent(zoneBlock)) {
+                        editor.__voodbuilderChromeSettingsResolveRetries = 0;
+                        clearActiveLayoutSettingsRoot(editor);
+                        showCourtesyEmptyState(labels);
+
+                        return;
+                    }
+
+                    const zoneDescriptor = resolveSettings(zoneBlock, editor).descriptor;
+
+                    if (zoneDescriptor) {
                         ensureRootInspectable(zoneBlock);
                         setActiveLayoutSettingsRoot(editor, zoneBlock, chromeZone);
 
@@ -390,20 +513,19 @@ export function registerSettingsUi(editor, mount) {
 
                     const retries = Number(editor.__voodbuilderChromeSettingsResolveRetries ?? 0);
 
-                    if (retries < 8) {
+                    if (retries < 8 && ! isLayoutInspectorReady(editor)) {
                         editor.__voodbuilderChromeSettingsResolveRetries = retries + 1;
                         mount.hidden = false;
                         traitsMount?.classList.add('hidden');
                         traitsMount?.replaceChildren?.();
 
-                        if (! mount.querySelector('.voodbuilder-gjs-inspector-empty-hint')) {
+                        if (! mount.querySelector('[data-voodbuilder-inspector-empty-state]')) {
                             mount.replaceChildren();
-                            const hint = document.createElement('p');
-                            hint.className = 'voodbuilder-gjs-inspector-empty-hint';
-                            hint.textContent = chromeZone === 'nav'
-                                ? 'Loading header settings…'
-                                : 'Loading footer settings…';
-                            mount.appendChild(hint);
+                            mount.appendChild(createInspectorEmptyState({
+                                message: chromeZone === 'nav'
+                                    ? 'Loading header settings…'
+                                    : 'Loading footer settings…',
+                            }));
                         }
 
                         window.setTimeout(() => {
@@ -414,24 +536,13 @@ export function registerSettingsUi(editor, mount) {
                     }
 
                     editor.__voodbuilderChromeSettingsResolveRetries = 0;
-                    mount.hidden = false;
-                    traitsMount?.classList.add('hidden');
-                    traitsMount?.replaceChildren?.();
-                    mount.replaceChildren();
-                    const hint = document.createElement('p');
-                    hint.className = 'voodbuilder-gjs-inspector-empty-hint';
-                    hint.textContent = chromeZone === 'nav'
-                        ? 'Header block settings are unavailable. Try re-dropping the header block.'
-                        : 'Footer block settings are unavailable. Try re-dropping the footer block.';
-                    mount.appendChild(hint);
-                    renderedRoot = null;
-                    renderedRootBlockId = '';
-                    renderedDescriptorId = null;
+                    clearActiveLayoutSettingsRoot(editor);
+                    showCourtesyEmptyState(labels);
 
                     return;
                 }
 
-                showTraitsFallback();
+                showTraitsOrNoSettings(rawSelected, labels);
                 renderedRoot = null;
                 renderedRootBlockId = '';
                 renderedDescriptorId = null;
@@ -460,6 +571,7 @@ export function registerSettingsUi(editor, mount) {
                 && renderedRootBlockId === rootBlockId
                 && renderedDescriptorId === descriptor.id
                 && renderedRoot === root
+                && isValidGrapesComponent(root)
             );
 
             if (canReuseForm) {
@@ -504,8 +616,64 @@ export function registerSettingsUi(editor, mount) {
         });
     };
 
+    const clearInspectorAfterChromeRemoval = (removed) => {
+        if (! isChromeLayoutModeEditor(editor) || ! removed) {
+            return;
+        }
+
+        const selected = editor.getSelected?.();
+        const activeRoot = editor.__voodbuilderActiveSettingsRoot;
+        const removedContains = (candidate) => {
+            if (! candidate) {
+                return false;
+            }
+
+            if (candidate === removed || candidate.isRemoved?.()) {
+                return true;
+            }
+
+            if (! isValidGrapesComponent(candidate)) {
+                return true;
+            }
+
+            let current = candidate;
+
+            while (current && current.get?.('type') !== 'wrapper') {
+                if (current === removed) {
+                    return true;
+                }
+
+                current = current.parent?.();
+            }
+
+            return false;
+        };
+
+        if (
+            removedContains(selected)
+            || removedContains(activeRoot)
+            || (renderedRoot && removedContains(renderedRoot))
+        ) {
+            clearActiveLayoutSettingsRoot(editor);
+            invalidateRenderCache();
+
+            try {
+                editor.select?.(null);
+            } catch {
+                // Grapes may already have cleared selection.
+            }
+
+            scheduleRender();
+            editor.trigger?.('voodbuilder:inspector-panel:refresh', {
+                tabId: editor.__voodbuilderInspectorActiveTab ?? 'content',
+                component: null,
+            });
+        }
+    };
+
     editor.on('component:selected', scheduleRender);
     editor.on('component:deselected', render);
+    editor.on('component:remove', clearInspectorAfterChromeRemoval);
     editor.on('load', scheduleRender);
     editor.on('voodbuilder:chrome-layout-ready', scheduleRender);
     editor.on('voodbuilder:layout-inspector-ready', scheduleRender);

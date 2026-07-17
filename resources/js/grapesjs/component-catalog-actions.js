@@ -10,6 +10,96 @@ import {
     PROPS_ATTR,
 } from './component-instance-type.js';
 import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
+import {
+    isChromeDropZoneComponent,
+    isChromeLayoutContentSlotComponent,
+    isPageContentSlotComponent,
+} from './chrome-content-slot-utils.js';
+import { isFooterBlock, isNavBlock } from './chrome/ids.js';
+import { readBlockId } from './core/block-tree.js';
+
+/**
+ * Navbar/footer chrome blocks (and their zones) are layout structure — saving them
+ * as catalog components produces unstyled “Live menu…” snapshots that steal settings
+ * from the real header when re-inserted.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isChromeStructureCatalogSaveBlocked(component) {
+    if (! component) {
+        return false;
+    }
+
+    if (
+        isChromeDropZoneComponent(component)
+        || isChromeLayoutContentSlotComponent(component)
+        || isPageContentSlotComponent(component)
+    ) {
+        return true;
+    }
+
+    if (component.get?.('type') === 'wrapper') {
+        return true;
+    }
+
+    const blockId = readBlockId(component);
+
+    if (
+        blockId === 'site_header'
+        || blockId.startsWith('site_nav_')
+        || blockId.startsWith('site_footer_')
+        || isNavBlock(blockId)
+        || isFooterBlock(blockId)
+    ) {
+        return true;
+    }
+
+    try {
+        const nested = component.find?.('[data-voodbuilder-block]') ?? [];
+
+        for (const child of nested) {
+            const nestedId = readBlockId(child);
+
+            if (
+                nestedId === 'site_header'
+                || nestedId.startsWith('site_nav_')
+                || nestedId.startsWith('site_footer_')
+                || isNavBlock(nestedId)
+                || isFooterBlock(nestedId)
+            ) {
+                return true;
+            }
+        }
+    } catch {
+        // Ignore find() failures on incomplete models.
+    }
+
+    if (component.getAttributes?.()?.['data-voodbuilder-gjs-site-header']) {
+        return true;
+    }
+
+    let current = component.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        const parentId = readBlockId(current);
+
+        if (
+            parentId === 'site_header'
+            || parentId.startsWith('site_nav_')
+            || parentId.startsWith('site_footer_')
+            || isNavBlock(parentId)
+            || isFooterBlock(parentId)
+            || current.getAttributes?.()?.['data-voodbuilder-gjs-site-header']
+        ) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
 
 export function inferComponentProperties(component) {
     const properties = [];
@@ -69,8 +159,18 @@ export async function saveComponentToCatalog(editor, component, options = {}) {
         return null;
     }
 
+    if (isChromeStructureCatalogSaveBlocked(component)) {
+        await alertDialog({
+            message: labels.componentsSaveChromeBlocked
+                ?? 'Navbar and footer are layout structure — configure them from the Content tab. Save a content section instead.',
+            labels,
+        });
+
+        return null;
+    }
+
     const meta = await componentMetaDialog({
-        title: labels.componentsSave ?? 'Save selection as component',
+        title: labels.componentsSaveAs ?? labels.componentsSave ?? 'Save selection as component',
         labels,
         categories,
         defaultCategory: uncategorizedLabel,

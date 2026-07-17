@@ -233,6 +233,25 @@
             border-color: rgb(71 85 105);
         }
 
+        .voodbuilder-themes-ws__import-action {
+            position: relative;
+            margin: 0;
+        }
+
+        .voodbuilder-themes-ws__import-action input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .voodbuilder-themes-ws__import-action.is-importing {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
         .voodbuilder-themes-ws__section-title {
             font-size: 0.875rem;
             font-weight: 600;
@@ -658,6 +677,35 @@
                     <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="exportTheme('{{ $selectedId }}')">
                         {{ __('voodbuilder::settings.export_theme') }}
                     </button>
+                    <label class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost voodbuilder-themes-ws__import-action" wire:loading.class="is-importing" wire:target="importArchive">
+                        <span wire:loading.remove wire:target="importArchive">{{ __('voodbuilder::settings.import_theme') }}</span>
+                        <span wire:loading wire:target="importArchive">{{ __('voodbuilder::settings.theme_workspace_importing') }}</span>
+                        <input type="file" wire:model="importArchive" accept=".zip,application/zip" />
+                    </label>
+                    @if ($canEditColors)
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="copyColorScheme">
+                            {{ __('voodbuilder::settings.copy_color_scheme') }}
+                        </button>
+                        @if ($canPasteColorScheme)
+                            <button
+                                type="button"
+                                class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost"
+                                style="border-color:#93c5fd;color:#1d4ed8"
+                                x-data
+                                x-on:click="
+                                    if (navigator.clipboard?.readText) {
+                                        navigator.clipboard.readText()
+                                            .then((text) => $wire.pasteColorScheme(text))
+                                            .catch(() => $wire.pasteColorScheme())
+                                    } else {
+                                        $wire.pasteColorScheme()
+                                    }
+                                "
+                            >
+                                {{ __('voodbuilder::settings.paste_color_scheme') }}
+                            </button>
+                        @endif
+                    @endif
                     <button
                         type="button"
                         class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost"

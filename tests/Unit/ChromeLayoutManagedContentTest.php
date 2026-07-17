@@ -54,6 +54,16 @@ HTML;
         $this->assertStringNotContainsString('>Button<', $stripped);
     }
 
+    public function test_keeps_styled_button_cta_labeled_button(): void
+    {
+        $html = '<a class="bg-indigo-500 text-white">Button</a>';
+
+        $stripped = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
+
+        $this->assertStringContainsString('bg-indigo-500', $stripped);
+        $this->assertStringContainsString('>Button<', $stripped);
+    }
+
     public function test_chrome_layout_for_site_page_uses_page_override(): void
     {
         $channelLayout = ChromeLayout::query()->create([

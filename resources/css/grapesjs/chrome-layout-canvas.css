@@ -44,19 +44,44 @@ body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-content-slot[data-voodbu
     opacity: 0.45;
 }
 
-/* Drop zones: hidden until pointer is over the target area */
+/* Drop zones: always show an empty affordance; stronger highlight on drag-over */
 .voodbuilder-chrome-drop-zone {
     position: relative;
 }
 
-body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block])) {
-    min-height: 2.5rem;
+.voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block])) {
+    min-height: 2.75rem;
 }
 
 .voodbuilder-chrome-drop-zone:empty::before,
 .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block]))::before {
-    content: none;
-    display: none;
+    content: attr(data-placeholder);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    width: 100%;
+    margin: 0.25rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px dashed color-mix(in srgb, var(--color-vp-text-3, #9ca3af) 55%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 92%, transparent);
+    text-align: center;
+    color: color-mix(in srgb, var(--color-vp-text-3, #9ca3af) 90%, transparent);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block])) {
+    min-height: 3.5rem;
+}
+
+body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [data-voodbuilder-block]))::before {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+    color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent);
 }
 
 .voodbuilder-chrome-drop-zone.voodbuilder-chrome-drop-active {
@@ -84,7 +109,11 @@ body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [da
     position: absolute;
     inset: 0;
     z-index: 21;
+    margin: 0;
+    min-height: 0;
     padding: 1rem;
+    border: none;
+    background: transparent;
     text-align: center;
     color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 80%, transparent);
     font-size: 0.8125rem;

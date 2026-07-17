@@ -527,6 +527,10 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     position: relative;
 }
 
+.voodbuilder-gjs-canvas-compile-host {
+    position: relative;
+}
+
 .voodbuilder-gjs-build-overlay {
     position: absolute;
     inset: 0;
@@ -537,6 +541,12 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     background: color-mix(in srgb, var(--color-vp-bg-elv, #fff) 78%, transparent);
     backdrop-filter: blur(2px);
     pointer-events: none;
+}
+
+.voodbuilder-gjs-build-overlay--canvas {
+    z-index: 20;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--color-vp-bg, #eef2f6) 72%, transparent);
 }
 
 .voodbuilder-gjs-build-overlay[hidden] {
@@ -719,12 +729,20 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     overflow: visible;
 }
 
-.voodbuilder-gjs-inspector-empty-hint {
+.voodbuilder-gjs-inspector-empty-hint,
+.voodbuilder-gjs-inspector-empty-state,
+.voodbuilder-gjs-dynamic-panel__empty,
+.voodbuilder-gjs-conditions-select-hint,
+.voodbuilder-gjs-chrome-layout-notice {
     margin: 0;
-    padding: 0.75rem 0;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 88%, var(--color-vp-brand-1, #6366f1) 12%);
     font-size: 0.8125rem;
-    line-height: 1.5;
+    line-height: 1.45;
     color: var(--color-vp-text-2, #64748b);
+    text-align: left;
 }
 
 /* Editor form controls — Tailwind UI input-group patterns */
@@ -1156,7 +1174,7 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
 .voodbuilder-gjs-layers-mount,
 .voodbuilder-gjs-dynamic-mount,
 .voodbuilder-gjs-conditions-mount {
-    padding: 1rem 1.125rem 1.25rem;
+    padding: 0.625rem 0.75rem 1rem;
 }
 
 .voodbuilder-gjs-selectors-mount {
@@ -1939,6 +1957,13 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 75%, transparent);
 }
 
+/* Empty props mount still painted a divider under Content empty-state — hide it. */
+.voodbuilder-gjs-component-props-mount:empty {
+    display: none;
+    padding: 0;
+    border: none;
+}
+
 .voodbuilder-gjs-component-props {
     padding-top: 0.75rem;
 }
@@ -2398,8 +2423,7 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
 }
 
-.voodbuilder-gjs-dynamic-panel__hint,
-.voodbuilder-gjs-dynamic-panel__empty {
+.voodbuilder-gjs-dynamic-panel__hint {
     margin: 0 0 1rem;
     font-size: 0.8125rem;
     line-height: 1.5;
@@ -2407,7 +2431,7 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
 }
 
 .voodbuilder-gjs-dynamic-panel__empty {
-    padding: 1rem;
+    margin-bottom: 1rem;
 }
 
 .voodbuilder-gjs-dynamic-panel__current {
@@ -3653,6 +3677,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     color: var(--color-vp-text-3, #94a3b8);
 }
 
+
 .voodbuilder-gjs-btn {
     display: inline-flex;
     align-items: center;
@@ -3933,12 +3958,6 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     line-height: 1.45;
 }
 
-.voodbuilder-gjs-conditions-select-hint {
-    padding: 0.75rem;
-    border: 1px dashed var(--color-vp-divider, #e2e8f0);
-    border-radius: 0.5rem;
-    text-align: center;
-}
 
 .voodbuilder-gjs-global-class-chip {
     display: inline-flex;

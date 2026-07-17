@@ -50,7 +50,9 @@
 
     <x-voodbuilder::geo-ai-meta />
 
-    @include('cookie-consent::cookie-consent-head')
+    @unless ($grapesJsEditor ?? false)
+        @include('cookie-consent::cookie-consent-head')
+    @endunless
 
     @if ($voodbuilderEditorAssetsReady)
         @vite($voodbuilderViteEntries)
@@ -86,7 +88,9 @@
         </div>
     @endif
 
-    @include('cookie-consent::cookie-consent-body')
+    @unless ($grapesJsEditor ?? false)
+        @include('cookie-consent::cookie-consent-body')
+    @endunless
     <x-voodbuilder::monitoring-scripts />
     <x-voodbuilder::popups-boot />
 

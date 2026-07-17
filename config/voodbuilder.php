@@ -251,8 +251,9 @@ return [
     */
     'chrome_layouts' => [
         'enabled' => env('VOODBUILDER_CHROME_LAYOUTS_ENABLED', true),
-        'editor_sub_theme' => 'site',
-        'shell_sub_theme' => 'site',
+        // Prefer null: unassigned layouts use the pages-channel / site-default theme.
+        'editor_sub_theme' => env('VOODBUILDER_CHROME_LAYOUTS_EDITOR_SUB_THEME'),
+        'shell_sub_theme' => env('VOODBUILDER_CHROME_LAYOUTS_SHELL_SUB_THEME'),
     ],
 
     /*

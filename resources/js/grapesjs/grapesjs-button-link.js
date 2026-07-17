@@ -3,6 +3,8 @@
  * Editor uses <a role="button"> so double-click edits the label (GrapesJS buttons are not inline-editable).
  */
 
+import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js';
+
 export function extractButtonLabel(component) {
     const element = component.getView?.()?.el;
 
@@ -129,7 +131,34 @@ function isExcludedLinkableButton(component) {
         return true;
     }
 
-    if (attrs['data-voodbuilder-nav-dropdown-toggle'] || attrs['data-voodbuilder-nav-mobile-toggle']) {
+    if (classes.includes('voodbuilder-mobile-nav__cookie-link') || classes.includes('cc-revoke') || classes.includes('cc-btn')) {
+        return true;
+    }
+
+    if (
+        attrs['data-voodbuilder-nav-dropdown-toggle']
+        || attrs['data-voodbuilder-nav-mobile-toggle']
+        || attrs['data-cookie-preferences']
+        || attrs['data-mobile-nav-close']
+        || attrs['data-mobile-nav-toggle']
+        || attrs['data-theme-toggle']
+        || attrs['data-cc']
+        || attrs['aria-label'] === 'cookieconsent'
+    ) {
+        return true;
+    }
+
+    // Cookie Consent / legal chrome — never morph into page CTA buttons.
+    if (
+        attrs['data-voodbuilder-chrome'] === 'cookie'
+        || (attrs.role === 'button' && classes.some((name) => String(name).startsWith('cc-')))
+    ) {
+        return true;
+    }
+
+    const label = String(attrs['aria-label'] ?? component.get?.('ctaLabel') ?? '').trim().toLowerCase();
+
+    if (label === 'cookie settings' || label === 'impostazioni cookie') {
         return true;
     }
 
@@ -190,8 +219,33 @@ export function ensureTextLabel(component, label) {
         }
     }
 
-    component.components(text);
-    component.set('content', text, { silent: true });
+    // Never wipe icon+label (or other nested markup) by replacing all children.
+    let textNode = null;
+
+    children.forEach((child) => {
+        if (textNode || child?.get?.('type') !== 'textnode') {
+            return;
+        }
+
+        textNode = child;
+    });
+
+    if (textNode) {
+        textNode.set('content', text);
+
+        return;
+    }
+
+    const onlyTextChildren = [...(children.models ?? children)].every((child) => {
+        const type = child?.get?.('type');
+
+        return type === 'textnode' || type === 'text';
+    });
+
+    if (onlyTextChildren) {
+        component.components(text);
+        component.set('content', text, { silent: true });
+    }
 }
 
 function applyCtaButtonLink(component) {
@@ -242,6 +296,10 @@ function assignLinkableButtonType(component) {
 }
 
 function isLinkableCtaComponent(component) {
+    if (isExcludedLinkableButton(component) || isInsideChromeShellPartComponent(component)) {
+        return false;
+    }
+
     const tag = String(component.get('tagName') ?? '').toLowerCase();
 
     if (tag === 'button') {
@@ -256,10 +314,6 @@ function upgradeLinkableButton(component, editor) {
         return;
     }
 
-    if (isExcludedLinkableButton(component)) {
-        return;
-    }
-
     if (! isLinkableCtaComponent(component)) {
         return;
     }
@@ -270,7 +324,7 @@ function upgradeLinkableButton(component, editor) {
     syncLinkableButtonTraits(component, editor);
 
     if (component.get('type') === 'voodbuilder-cta-button' && component.__vbLinkMorphApplied) {
-        ensureTextLabel(component, extractButtonLabel(component));
+        syncLinkableButtonTraits(component, editor);
 
         return;
     }
@@ -290,11 +344,23 @@ function registerLinkableButtonType(editor) {
 
     editor.DomComponents.addType('voodbuilder-cta-button', {
         isComponent: (element) => {
-            if (element?.getAttribute?.('data-voodbuilder-cta') === 'true') {
-                return { type: 'voodbuilder-cta-button' };
+            if (! element?.getAttribute) {
+                return false;
             }
 
-            if (element?.tagName === 'A' && element.getAttribute('role') === 'button') {
+            // Never treat cookie/legal chrome as page CTAs (was matching bare a[role=button]).
+            if (
+                element.hasAttribute('data-cookie-preferences')
+                || element.hasAttribute('data-cc')
+                || element.classList?.contains('cc-revoke')
+                || element.classList?.contains('cc-btn')
+                || element.classList?.contains('voodbuilder-mobile-nav__cookie-link')
+                || element.closest?.('[data-voodbuilder-chrome-shell-part], [data-mobile-nav], .voodbuilder-mobile-nav__legal')
+            ) {
+                return false;
+            }
+
+            if (element.getAttribute('data-voodbuilder-cta') === 'true') {
                 return { type: 'voodbuilder-cta-button' };
             }
 
@@ -444,10 +510,7 @@ export function configureLinkableButtons(editor) {
             return;
         }
 
-        assignLinkableButtonType(component);
-        hydrateLinkPropsFromAttributes(component);
-        ensureTextLabel(component, extractButtonLabel(component));
-        syncLinkableButtonTraits(component, editor);
+        upgradeLinkableButton(component, editor);
     });
 
     scanLinkableButtons(editor);

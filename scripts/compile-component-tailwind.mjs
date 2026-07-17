@@ -67,11 +67,49 @@ const PAGE_THEME_FALLBACKS = {
     '--spacing': '0.25rem',
     '--radius-lg': '0.5rem',
     '--radius-md': '0.375rem',
+    '--radius-sm': '0.25rem',
+    '--color-white': '#fff',
+    '--color-black': '#000',
+    '--font-sans': 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
     '--default-font-family': 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+    '--text-xs': '0.75rem',
+    '--text-xs--line-height': 'calc(1 / 0.75)',
+    '--text-sm': '0.875rem',
+    '--text-sm--line-height': 'calc(1.25 / 0.875)',
+    '--text-base': '1rem',
+    '--text-base--line-height': 'calc(1.5 / 1)',
+    '--text-lg': '1.125rem',
+    '--text-lg--line-height': 'calc(1.75 / 1.125)',
+    '--text-xl': '1.25rem',
+    '--text-xl--line-height': 'calc(1.75 / 1.25)',
+    '--text-2xl': '1.5rem',
+    '--text-2xl--line-height': 'calc(2 / 1.5)',
+    '--text-3xl': '1.875rem',
+    '--text-3xl--line-height': 'calc(2.25 / 1.875)',
+    '--text-4xl': '2.25rem',
+    '--text-4xl--line-height': 'calc(2.5 / 2.25)',
+    '--text-5xl': '3rem',
+    '--text-5xl--line-height': '1',
+    '--text-6xl': '3.75rem',
+    '--text-6xl--line-height': '1',
+    '--width-vp-layout': '80rem',
+    '--container-3xs': '16rem',
+    '--container-2xs': '18rem',
+    '--container-xs': '20rem',
+    '--container-sm': '24rem',
+    '--container-md': '28rem',
+    '--container-lg': '32rem',
+    '--container-xl': '36rem',
+    '--container-2xl': '42rem',
+    '--container-3xl': '48rem',
+    '--container-4xl': '56rem',
+    '--container-5xl': '64rem',
+    '--container-6xl': '72rem',
+    '--container-7xl': '80rem',
 };
 
 function rememberThemeVariable(variables, prop, value) {
-    if (! prop.startsWith('--') || prop.startsWith('--color-vp-')) {
+    if (! prop.startsWith('--') || prop.startsWith('--color-vp-') || isLegacyPaletteColorVariable(prop)) {
         return;
     }
 
@@ -137,6 +175,29 @@ function prependPageThemeVariables(root, themeVariables) {
 }
 
 function rewriteThemeVarFallbacks(root) {
+    const textFallbacks = {
+        '--text-xs': '0.75rem',
+        '--text-sm': '0.875rem',
+        '--text-base': '1rem',
+        '--text-lg': '1.125rem',
+        '--text-xl': '1.25rem',
+        '--text-2xl': '1.5rem',
+        '--text-3xl': '1.875rem',
+        '--text-4xl': '2.25rem',
+        '--text-5xl': '3rem',
+        '--text-6xl': '3.75rem',
+        '--text-xs--line-height': 'calc(1 / 0.75)',
+        '--text-sm--line-height': 'calc(1.25 / 0.875)',
+        '--text-base--line-height': 'calc(1.5 / 1)',
+        '--text-lg--line-height': 'calc(1.75 / 1.125)',
+        '--text-xl--line-height': 'calc(1.75 / 1.25)',
+        '--text-2xl--line-height': 'calc(2 / 1.5)',
+        '--text-3xl--line-height': 'calc(2.25 / 1.875)',
+        '--text-4xl--line-height': 'calc(2.5 / 2.25)',
+        '--text-5xl--line-height': '1',
+        '--text-6xl--line-height': '1',
+    };
+
     root.walkDecls((decl) => {
         const value = String(decl.value ?? '');
 
@@ -148,6 +209,47 @@ function rewriteThemeVarFallbacks(root) {
 
         next = next.replace(/var\(--radius-lg\)/g, 'var(--radius-lg, 0.5rem)');
         next = next.replace(/var\(--radius-md\)/g, 'var(--radius-md, 0.375rem)');
+        next = next.replace(/var\(--radius-sm\)/g, 'var(--radius-sm, 0.25rem)');
+        next = next.replace(/var\(--width-vp-layout\)/g, 'var(--width-vp-layout, 80rem)');
+        next = next.replace(/var\(--color-white\)/g, 'var(--color-white, #fff)');
+        next = next.replace(/var\(--color-black\)/g, 'var(--color-black, #000)');
+        next = next.replace(/var\(--font-sans\)/g, 'var(--font-sans, ui-sans-serif, system-ui, sans-serif)');
+        next = next.replace(
+            /var\(--default-font-family\)/g,
+            'var(--default-font-family, ui-sans-serif, system-ui, sans-serif)',
+        );
+
+        const containerFallbacks = {
+            '--container-3xs': '16rem',
+            '--container-2xs': '18rem',
+            '--container-xs': '20rem',
+            '--container-sm': '24rem',
+            '--container-md': '28rem',
+            '--container-lg': '32rem',
+            '--container-xl': '36rem',
+            '--container-2xl': '42rem',
+            '--container-3xl': '48rem',
+            '--container-4xl': '56rem',
+            '--container-5xl': '64rem',
+            '--container-6xl': '72rem',
+            '--container-7xl': '80rem',
+        };
+
+        for (const [token, fallback] of Object.entries(containerFallbacks)) {
+            const needle = `var(${token})`;
+
+            if (next.includes(needle)) {
+                next = next.split(needle).join(`var(${token}, ${fallback})`);
+            }
+        }
+
+        for (const [token, fallback] of Object.entries(textFallbacks)) {
+            const needle = `var(${token})`;
+
+            if (next.includes(needle)) {
+                next = next.split(needle).join(`var(${token}, ${fallback})`);
+            }
+        }
 
         if (next !== value) {
             decl.value = next;
@@ -173,8 +275,8 @@ function rewriteLegacyPaletteUtilityColors(root) {
 
         if (/var\(--color-(?:indigo|purple|violet)-\d+\)/i.test(value)) {
             decl.value = decl.prop === 'background-color'
-                ? 'var(--color-vp-brand-3)'
-                : 'var(--color-vp-brand-2)';
+                ? 'var(--color-vp-brand-3, var(--color-vp-brand-1, #0d9488))'
+                : 'var(--color-vp-brand-2, var(--color-vp-brand-1, #0d9488))';
         }
     });
 }
@@ -488,7 +590,8 @@ function optimizePageCss(css) {
     rewriteThemeVarFallbacks(root);
     flattenNestedMediaQueries(root);
     normalizeMediaRangeSyntax(root);
-    stripChromeConflictingDisplayUtilities(root);
+    // Keep .flex / .inline-flex / .grid — page blocks need them. Stripping caused
+    // "styles lost on save" when live CSS was replaced with the published bundle.
     stripPropertyAtRules(root);
     stripContainerUtilityFromPageCss(root);
     removeEmptyRules(root);

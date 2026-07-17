@@ -63,6 +63,7 @@ final class GrapesJsEditorGate
             ? ChromeLayoutSubThemeResolver::forSitePage($page)
             : $page->resolvedSubTheme();
         $chromeShellParts = null;
+        $chromeLayoutCss = '';
 
         if ($chromeShellMode && $chromeLayout !== null) {
             $rendered = app(ChromeLayoutRenderer::class)->render($chromeLayout, canvasPreview: true);
@@ -70,6 +71,7 @@ final class GrapesJsEditorGate
                 'before' => $rendered['before'],
                 'after' => $rendered['after'],
             ];
+            $chromeLayoutCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
         }
 
         return [
@@ -77,6 +79,8 @@ final class GrapesJsEditorGate
             'chromeShellMode' => $chromeShellMode,
             'chromeShellName' => $chromeLayout?->name,
             'chromeShellParts' => $chromeShellParts,
+            'chromeLayoutCss' => $chromeLayoutCss,
+            'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -200,6 +204,11 @@ final class GrapesJsEditorGate
                 'tabDynamic' => __('voodbuilder::pro.editor_ui.tab_dynamic'),
                 'tabLayers' => __('voodbuilder::pro.editor_ui.tab_layers'),
                 'tabConditions' => __('voodbuilder::pro.editor_ui.tab_conditions'),
+                'chromeLayoutStructureInspectorNotice' => __('voodbuilder::pro.editor_ui.chrome_layout_structure_inspector_notice'),
+                'chromeLayoutContentSlotInspectorNotice' => __('voodbuilder::pro.editor_ui.chrome_layout_content_slot_inspector_notice'),
+                'chromeShellManagedInspectorNotice' => __('voodbuilder::pro.editor_ui.chrome_shell_managed_inspector_notice'),
+                'chromeShellManagedInspectorNoticeFallback' => __('voodbuilder::pro.editor_ui.chrome_shell_managed_inspector_notice_fallback'),
+                'contentNoSettings' => __('voodbuilder::pro.editor_ui.content_no_settings'),
                 'exitEditor' => __('voodbuilder::pro.frontend.exit_editor'),
                 'deviceDesktop' => __('voodbuilder::pro.editor_ui.device_desktop'),
                 'deviceTablet' => __('voodbuilder::pro.editor_ui.device_tablet'),
@@ -260,6 +269,9 @@ final class GrapesJsEditorGate
                 'globalClassesSaveError' => __('voodbuilder::pro.global_classes.save_error'),
                 'componentsTitle' => __('voodbuilder::pro.components.title'),
                 'componentsSave' => __('voodbuilder::pro.components.save_button'),
+                'componentsSaveAs' => __('voodbuilder::pro.components.save_as'),
+                'componentsSaveNeedSelection' => __('voodbuilder::pro.components.save_need_selection'),
+                'componentsSaveChromeBlocked' => __('voodbuilder::pro.components.save_chrome_blocked'),
                 'componentsInsert' => __('voodbuilder::pro.components.insert'),
                 'componentsProps' => __('voodbuilder::pro.components.props'),
                 'componentsEmpty' => __('voodbuilder::pro.components.empty'),
@@ -594,7 +606,7 @@ final class GrapesJsEditorGate
 
         return [
             'html' => $migratedHtml,
-            'css' => $resolvedCss,
+            'css' => ThemePalette::stripEmbeddedPaletteOverrides($resolvedCss),
             'js' => GrapesJsJsSanitizer::sanitize($js),
             'project' => is_array($project)
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)

@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -78,11 +79,11 @@ class ThemePaletteTest extends TestCase
         $css = ThemePalette::cssForCanvas('site');
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
+        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#47cc49!important", $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
         $this->assertStringContainsString('html header[role=\'banner\'] .bg-vp-bg', $css);
-        $this->assertStringContainsString('--vx-header-bg)!important', $css);
+        $this->assertStringContainsString('--vx-header-bg,var(--color-vp-bg))!important', $css);
         $this->assertStringContainsString('html header[role=\'banner\'] .voodbuilder-header-icon-btn', $css);
-        $this->assertStringNotContainsString("data-voodbuilder-sub-theme='site'", $css);
     }
 
     #[Test]
@@ -98,7 +99,7 @@ class ThemePaletteTest extends TestCase
         $css = ThemePalette::cssForCanvas('site');
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#c8102e!important', $css);
-        $this->assertStringContainsString('html:not(.dark){--vx-header-bg:#0f172a!important', $css);
+        $this->assertStringContainsString('--vx-header-bg:#0f172a!important', $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
     }
 
@@ -166,9 +167,20 @@ class ThemePaletteTest extends TestCase
 
     public function test_critical_chrome_shell_css_prefers_admin_header_bg_over_bundled_semantic(): void
     {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => [
+                'label' => 'Site',
+                'css' => 'themes/site/theme.css',
+            ],
+        ]);
+        app(SubThemeRegistry::class)->register('site', [
+            'label' => 'Site',
+            'css' => 'themes/site/theme.css',
+        ]);
+
         VoodbuilderSettings::saveData([
             'sub_theme_colors' => ThemePalette::normalize([
-                'landing-fra' => [
+                'site' => [
                     'custom' => true,
                     'light' => [
                         'header_bg' => '#4f46e5',
@@ -180,12 +192,66 @@ class ThemePaletteTest extends TestCase
         ]);
         VoodbuilderSettings::clearCache();
 
-        $css = ThemePalette::criticalChromeShellCss('landing-fra');
-        $adminPos = strrpos($css, '--vx-header-bg:#4f46e5');
-        $bundledPos = strrpos($css, '--vx-header-bg:#0f172a');
+        $css = ThemePalette::criticalChromeShellCss('site');
 
-        $this->assertNotFalse($adminPos);
-        $this->assertNotFalse($bundledPos);
-        $this->assertGreaterThan($bundledPos, $adminPos);
+        $this->assertStringContainsString('--vx-header-bg:#4f46e5', $css);
+        // Bundled default must not be re-emitted once admin overrides header_bg,
+        // otherwise page-embedded GrapesJS CSS can win later in the cascade.
+        $this->assertStringNotContainsString('--vx-header-bg:#0f172a', $css);
+        $this->assertStringContainsString(
+            "html[data-voodbuilder-sub-theme='site'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='site']:not(.dark)",
+            $css,
+        );
+        $this->assertStringContainsString("header[role='banner'].bg-vp-bg", $css);
+    }
+
+    #[Test]
+    public function it_omits_bundled_header_bg_from_canvas_css_when_admin_overrides(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => [
+                'label' => 'Site',
+                'css' => 'themes/site/theme.css',
+            ],
+        ]);
+        app(SubThemeRegistry::class)->register('site', [
+            'label' => 'Site',
+            'css' => 'themes/site/theme.css',
+        ]);
+
+        VoodbuilderSettings::saveData([
+            'sub_theme_colors' => ThemePalette::normalize([
+                'site' => [
+                    'custom' => true,
+                    'light' => [
+                        'header_bg' => '#9e2ca0',
+                        'header_text' => '#ffffff',
+                    ],
+                    'dark' => [],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::cssForCanvas('site');
+
+        $this->assertStringContainsString('--vx-header-bg:#9e2ca0', $css);
+        $this->assertStringNotContainsString('--vx-header-bg:#0f172a', $css);
+        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
+    }
+
+    #[Test]
+    public function it_strips_embedded_palette_overrides_from_saved_css(): void
+    {
+        $css = <<<'CSS'
+html:not(.dark){--vx-header-bg:#0f172a !important;--color-vp-brand-1:#c8102e !important}
+.hero{color:red}
+CSS;
+
+        $stripped = ThemePalette::stripEmbeddedPaletteOverrides($css);
+
+        $this->assertStringNotContainsString('--vx-header-bg', $stripped);
+        $this->assertStringNotContainsString('--color-vp-brand-1', $stripped);
+        $this->assertStringContainsString('.hero{color:red}', $stripped);
     }
 }

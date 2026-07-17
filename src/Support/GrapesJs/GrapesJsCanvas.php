@@ -51,10 +51,41 @@ final class GrapesJsCanvas
         }
 
         try {
-            return Vite::asset($entry);
+            $url = Vite::asset($entry);
         } catch (\Throwable) {
             return null;
         }
+
+        // GrapesJS canvas loads styles inside an iframe on the current host.
+        // Absolute APP_URL assets break when the browser hits a different port
+        // than APP_URL (e.g. admin on :8010 while APP_URL still points at :8006).
+        if (Vite::isRunningHot()) {
+            return $url;
+        }
+
+        return self::toRootRelativeAssetUrl($url) ?? $url;
+    }
+
+    /**
+     * Prefer same-origin root-relative URLs so canvas CSS follows the request host/port.
+     */
+    public static function toRootRelativeAssetUrl(string $url): ?string
+    {
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (! is_string($path) || $path === '' || ! str_starts_with($path, '/')) {
+            return null;
+        }
+
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        return is_string($query) && $query !== ''
+            ? $path.'?'.$query
+            : $path;
     }
 
     public static function pageBackgroundColor(string $subTheme): string
@@ -71,20 +102,27 @@ final class GrapesJsCanvas
         $tabsCss = self::readPackageCanvasCss('tabs.css');
         $formsCss = self::readPackageCanvasCss('forms.css');
         $chromeLayoutCss = self::readPackageCanvasCss('chrome-layout-canvas.css');
+        $chromeBlockUtilitiesCss = self::readPackageCanvasCss('chrome-block-utilities.css');
 
         return <<<CSS
         body {
             margin: 0;
             background-color: var(--color-vp-bg, #ffffff);
             color: var(--color-vp-text-1, #3c3c43);
+            /* Match public theme tokens so max-w-* / containers resolve like the frontend. */
+            --container-sm: 24rem;
+            --container-md: 28rem;
+            --container-lg: 32rem;
+            --container-xl: 36rem;
         }
 
         [data-gjs-type="wrapper"] {
             background-color: var(--color-vp-bg, #ffffff);
             box-sizing: border-box;
             min-height: 100vh;
-            padding-top: 0.5rem;
-            padding-bottom: 2.5rem;
+            /* No extra chrome padding — public pages do not pad the document wrapper. */
+            padding-top: 0;
+            padding-bottom: 0;
         }
 
         .voodbuilder-gjs-top-drop-spacer {
@@ -170,16 +208,34 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
+        .voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container),
         .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
             width: 100%;
-            max-width: var(--width-vp-layout, 90rem);
+            max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        /* Match landing.css — section images must fill the column, not intrinsic SVG width.
+         * Do not apply to all body imgs: canvas body is .VPRichPage--landing and would
+         * override nav logo height utilities (h-8 / md:h-10). */
+        .voodbuilder-gjs-section img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        header[role='banner'] a img,
+        .voodbuilder-mobile-nav__brand img {
+            max-height: 2.5rem;
+            width: auto;
+            max-width: min(100%, 13.75rem);
+            object-fit: contain;
         }
 
         footer.voodbuilder-gjs-footer :is(.container, .voodbuilder-gjs-container),
         footer.voodbuilder-gjs-dynamic :is(.container, .voodbuilder-gjs-container) {
             width: 100%;
-            max-width: var(--width-vp-layout, 90rem);
+            max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;
             padding-inline: 1.25rem;
             box-sizing: border-box;
@@ -386,6 +442,7 @@ final class GrapesJsCanvas
         {$tabsCss}
         {$formsCss}
         {$chromeLayoutCss}
+        {$chromeBlockUtilitiesCss}
         CSS;
     }
 

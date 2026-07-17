@@ -94,9 +94,13 @@ final class ChromeLayoutEditorPreview
             : '';
 
         $chromeHtml = $before.$slot.$after;
-        $chromeCss = trim($rendered['css']);
-        $componentCss = app(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssRenderer::class)
-            ->cssForHtml($rendered['before'].$rendered['after']);
+        $chromeCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
+        $componentCss = ThemePalette::stripEmbeddedPaletteOverrides(
+            app(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssRenderer::class)
+                ->cssForHtml($rendered['before'].$rendered['after']),
+        );
+        // Page CSS can bake stale --vx-header-bg etc.; strip so admin/canvas palette wins.
+        $safePageCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($pageCss));
 
         return [
             'html' => $chromeHtml,
@@ -104,7 +108,7 @@ final class ChromeLayoutEditorPreview
                 $chromeCss,
                 $componentCss,
                 ThemePalette::criticalChromeShellCss($resolvedSubTheme),
-                $pageCss,
+                $safePageCss,
             ]))),
         ];
     }

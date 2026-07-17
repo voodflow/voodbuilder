@@ -74,7 +74,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     const componentsUrl = String(options.componentsUrl ?? '').replace(/\/$/, '');
     const csrf = options.csrf ?? '';
 
-    if (! componentsUrl || editor.__voodbuilderChromeLayoutMode) {
+    if (! componentsUrl) {
         editor.__voodbuilderInitialComponentBuild = Promise.resolve();
 
         return;

@@ -423,21 +423,28 @@ export function hardenGrapesAutoScrollers(editor) {
         let idleWithoutPointer = 0;
 
         scroller.autoscroll = function voodbuilderGuardedAutoscroll() {
+            // Grapes may call autoscroll without a bound `this` (detached timer/rAF).
+            const self = scroller;
+
+            if (! self) {
+                return;
+            }
+
             // Stop stuck scrollers even when lastClientY is set (mouse over canvas).
-            if (this.dragging && ! isRealCanvasPointerDrag(editor)) {
+            if (self.dragging && ! isRealCanvasPointerDrag(editor)) {
                 idleWithoutPointer = 0;
-                this.stop();
+                self.stop?.();
 
                 return;
             }
 
-            if (this.dragging && this.lastClientY === undefined) {
+            if (self.dragging && self.lastClientY === undefined) {
                 idleWithoutPointer += 1;
 
                 // ~150–250ms of "waiting for pointer" with no real drag → stuck loop.
                 if (idleWithoutPointer >= 4 && ! editor.__voodbuilderActiveBlockDrag) {
                     idleWithoutPointer = 0;
-                    this.stop();
+                    self.stop?.();
 
                     return;
                 }

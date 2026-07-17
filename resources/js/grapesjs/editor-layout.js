@@ -11,6 +11,12 @@ import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
 import { applyBlocksLibraryUi, collapseAllBlockCategories, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import { resolveBlockSettingsTarget, promoteRoot, refreshBlockSettingsUi, findInspectableRoot, ensureRootInspectable, readBlockId } from './blocks/settings/index.js';
+import {
+    inspectorSelectionNotice,
+} from './chrome-editor-guards.js';
+import {
+    createInspectorEmptyState,
+} from './inspector-empty-state.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -342,6 +348,10 @@ function syncInspectorManagers(editor, tabId, { refreshInspectorPanels = false }
         editor.__voodbuilderBlockSettingsRender?.();
     }
 
+    if (tabId === 'style') {
+        syncChromeLayoutStylePanel(editor, editor.__voodbuilderShellMounts);
+    }
+
     if (tabId === 'layers') {
         window.requestAnimationFrame(() => {
             editor.trigger('voodbuilder:layers-panel:show');
@@ -567,18 +577,77 @@ function observeSelectorManagerDedupe(mounts) {
     dedupe();
 }
 
+function syncChromeLayoutStylePanel(editor, mounts) {
+    if (! mounts?.styles) {
+        return;
+    }
+
+    const panel = mounts.styles.closest('[data-voodbuilder-inspector="style"]');
+
+    if (! panel) {
+        return;
+    }
+
+    const labels = editor.__voodbuilderLabels ?? {};
+    const selected = editor.getSelected?.();
+    const noticeText = inspectorSelectionNotice(selected, editor, labels);
+    const hideControls = noticeText !== null;
+    const styleMounts = [mounts.selectors, mounts.globalClasses, mounts.styles].filter(Boolean);
+
+    styleMounts.forEach((el) => {
+        el.hidden = hideControls;
+        const sector = el.closest?.('.voodbuilder-gjs-inspector-sector');
+
+        if (sector) {
+            sector.hidden = hideControls;
+        }
+    });
+
+    let notice = panel.querySelector('[data-voodbuilder-chrome-layout-notice]');
+
+    if (! hideControls) {
+        if (notice) {
+            notice.hidden = true;
+        }
+
+        return;
+    }
+
+    if (! notice) {
+        notice = createInspectorEmptyState({ labels });
+        notice.dataset.voodbuilderChromeLayoutNotice = '1';
+        panel.insertBefore(notice, panel.firstChild);
+    }
+
+    notice.hidden = false;
+    notice.className = 'voodbuilder-gjs-inspector-empty-state voodbuilder-gjs-chrome-layout-notice';
+    notice.textContent = noticeText;
+}
+
 function setupStyleInspector(editor, mounts) {
     const dedupe = () => dedupeSelectorManagerPanels(mounts.selectors, mounts.styles);
+
+    editor.__voodbuilderShellMounts = mounts;
 
     editor.on('load', () => {
         mountSelectorManagerPanel(editor, mounts.selectors);
         observeSelectorManagerDedupe(mounts);
         dedupe();
+        syncChromeLayoutStylePanel(editor, mounts);
     });
     editor.on('component:selected', () => {
         window.requestAnimationFrame(() => {
             dedupe();
             window.requestAnimationFrame(dedupe);
+            syncChromeLayoutStylePanel(editor, mounts);
+        });
+    });
+    editor.on('component:deselected', () => {
+        syncChromeLayoutStylePanel(editor, mounts);
+    });
+    editor.on('component:remove', () => {
+        window.requestAnimationFrame(() => {
+            syncChromeLayoutStylePanel(editor, mounts);
         });
     });
     editor.on('selector:add', dedupe);

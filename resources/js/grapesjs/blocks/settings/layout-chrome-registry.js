@@ -294,16 +294,12 @@ export function resolveLayoutChromeBlockFromSelection(component, editor) {
 
     const zone = resolveLayoutChromeZone(component);
 
-    if (zone) {
+    if (zone === 'nav' || zone === 'footer') {
         return getLayoutChromeBlock(editor, zone);
     }
 
-    const activeZone = editor.__voodbuilderActiveSettingsZone;
-
-    if (activeZone === 'nav' || activeZone === 'footer') {
-        return getLayoutChromeBlock(editor, activeZone);
-    }
-
+    // Outside chrome zones: never fall back to the active header/footer block —
+    // that stole settings from a second nav/footer placed on the canvas.
     return null;
 }
 

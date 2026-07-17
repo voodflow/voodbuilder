@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
+use Voodflow\Voodbuilder\Support\ThemePalette;
 
 final class GrapesJsRenderer
 {
@@ -53,6 +54,10 @@ final class GrapesJsRenderer
             $html,
             filled($storedPageCss) ? (string) $storedPageCss : null,
         );
+
+        // Stale page CSS may bake --vx-header-bg from an old palette save; strip so
+        // ThemePalette / admin colors (e.g. header blue) win on the frontend.
+        $pageCss = ThemePalette::stripEmbeddedPaletteOverrides((string) ($pageCss ?? ''));
 
         $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
 

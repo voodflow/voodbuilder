@@ -37,7 +37,7 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
 }
 
 .VPRichPage--landing {
-    @apply w-full max-w-none;
+    @apply w-full max-w-none font-sans text-vp-text-1 antialiased;
 }
 
 /*
@@ -77,8 +77,46 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply max-w-none px-0 pt-0;
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
-    @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+/*
+ * Contained width must match the GrapesJS canvas (GrapesJsCanvas::frameStyle).
+ * Do not rely only on .VPRichPage--landing ancestry — editor chrome-shell has no such wrapper.
+ */
+.voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container),
+.VPRichPage--landing .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container),
+footer.voodbuilder-gjs-footer :is(.container, .voodbuilder-gjs-container),
+footer.voodbuilder-gjs-dynamic :is(.container, .voodbuilder-gjs-container),
+[data-voodbuilder-chrome-shell] :is(footer.voodbuilder-gjs-footer, footer.voodbuilder-gjs-dynamic) :is(.container, .voodbuilder-gjs-container) {
+    width: 100%;
+    max-width: var(--width-vp-layout, 80rem);
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+/*
+ * Keep section media 1:1 between GrapesJS canvas and published pages.
+ * Intrinsic SVG/placeholder widths (e.g. 800px) must not outgrow their column.
+ *
+ * Do NOT target `.VPRichPage--landing img`: the canvas body always has that
+ * class, so an unlayered `height: auto` would beat `@layer utilities` (h-8 /
+ * h-10) and blow up the nav logo. On the published site the header sits
+ * outside `.VPRichPage--landing`, which is why the front looked fine.
+ */
+.voodbuilder-gjs-section img,
+[data-voodbuilder-chrome-shell] .voodbuilder-gjs-section img {
+    max-width: 100%;
+    height: auto;
+}
+
+/*
+ * Nav brand logos: keep intrinsic bitmap size from overflowing the header
+ * bar in the editor canvas (same visual target as nav-title h-8 / md:h-10).
+ */
+header[role='banner'] a img,
+.voodbuilder-mobile-nav__brand img {
+    max-height: 2.5rem;
+    width: auto;
+    max-width: min(100%, 13.75rem);
+    object-fit: contain;
 }
 
 .VPRichPage--landing > .vp-landing-section--bleed {

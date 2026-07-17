@@ -238,6 +238,52 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         return document.documentElement.classList.contains('dark');
     };
 
+    const ensurePaletteStyle = (doc) => {
+        const css = String(themeOptions.themePaletteCss ?? '').trim();
+
+        if (! css || ! doc?.head) {
+            return;
+        }
+
+        let style = doc.getElementById('voodbuilder-canvas-theme-palette');
+
+        if (! style) {
+            style = doc.createElement('style');
+            style.id = 'voodbuilder-canvas-theme-palette';
+            doc.head.appendChild(style);
+        }
+
+        if (style.textContent !== css) {
+            style.textContent = css;
+        }
+    };
+
+    const ensureChromeLayoutStyle = (doc) => {
+        const css = String(themeOptions.chromeLayoutCss ?? '').trim();
+
+        if (! doc?.head) {
+            return;
+        }
+
+        let style = doc.getElementById('voodbuilder-canvas-chrome-layout-css');
+
+        if (css === '') {
+            style?.remove();
+
+            return;
+        }
+
+        if (! style) {
+            style = doc.createElement('style');
+            style.id = 'voodbuilder-canvas-chrome-layout-css';
+            doc.head.appendChild(style);
+        }
+
+        if (style.textContent !== css) {
+            style.textContent = css;
+        }
+    };
+
     const apply = (isDark = null) => {
         const doc = editor.Canvas.getDocument();
 
@@ -252,9 +298,13 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         } else {
             doc.documentElement.classList.remove('dark');
         }
+
+        ensurePaletteStyle(doc);
+        ensureChromeLayoutStyle(doc);
     };
 
     editor.on('canvas:frame:load', () => apply());
+    editor.on('load', () => apply());
     window.addEventListener('voodbuilder:theme-changed', (event) => {
         apply(event?.detail?.isDark);
     });
@@ -474,7 +524,9 @@ export function initVpressGrapesJs(container, options = {}) {
         },
         canvas: {
             styles: options.canvasStyles ?? [],
-            frameStyle: options.canvasFrameStyle,
+            frameStyle: [options.canvasFrameStyle, options.themePaletteCss]
+                .filter((part) => typeof part === 'string' && part.trim() !== '')
+                .join('\n'),
         },
         assetManager: options.uploadUrl
             ? {
@@ -530,6 +582,13 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderLabels = labels;
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
+    editor.__voodbuilderChromeShellName = options.chromeShellName ?? options.chromeLayoutName ?? null;
+    editor.__voodbuilderChromeLayoutName = options.chromeLayoutName ?? options.chromeShellName ?? null;
+    editor.__voodbuilderLastSavedPageHtml = String(
+        options.pageContentHtml
+        ?? options.savedPageHtml
+        ?? (options.chromeShellMode ? '' : (initial.html ?? '')),
+    );
 
     if (editor.em) {
         editor.em.__voodbuilderChromeShellMode = editor.__voodbuilderChromeShellMode;
@@ -588,12 +647,10 @@ export function initVpressGrapesJs(container, options = {}) {
             csrf: options.csrf,
         });
 
-        if (! options.chromeLayoutMode) {
-            registerPageTailwindAutobuild(editor, {
-                componentsUrl: options.componentsUrl,
-                csrf: options.csrf,
-            });
-        }
+        registerPageTailwindAutobuild(editor, {
+            componentsUrl: options.componentsUrl,
+            csrf: options.csrf,
+        });
     }
 
     configureEditorChrome(editor, {
@@ -621,6 +678,8 @@ export function initVpressGrapesJs(container, options = {}) {
 
     applyCanvasDocumentTheme(editor, options.subTheme, {
         canvasPrefersDark: options.canvasPrefersDark,
+        themePaletteCss: options.themePaletteCss ?? '',
+        chromeLayoutCss: options.chromeLayoutCss ?? '',
     });
     ensureInitialContent(editor, initial);
 
@@ -826,14 +885,18 @@ export function initVpressGrapesJs(container, options = {}) {
                     try {
                         lockDynamicPreviewContent(component, editor);
 
+                        // Chrome shell is server-rendered + read-only. Do NOT run
+                        // applySiteFooter/NavSettingsPreview here: those toggle grid/flex
+                        // utility classes that are not in the frozen layout CssComposer,
+                        // and page live CSS intentionally excludes chrome HTML — so the
+                        // footer/nav look unstyled until Save (layout editor) or forever
+                        // (page editor / front when page CSS was the only compile path).
                         if (isSiteFooterBlock(component.getAttributes()['data-voodbuilder-block'])) {
                             configureSiteFooterTraits(component, editor);
-                            applySiteFooterSettingsPreview(component, editor);
                         }
 
                         if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
                             configureSiteNavTraits(component, editor);
-                            applySiteNavSettingsPreview(component, editor);
                         }
                     } catch (lockError) {
                         console.warn('Voodbuilder GrapesJS: could not lock chrome shell block.', lockError);
@@ -842,11 +905,9 @@ export function initVpressGrapesJs(container, options = {}) {
             };
 
             const runShellDynamicRefresh = () => {
-                const componentsToRefresh = collectTopLevelDynamicBlocks(editor);
-
-                return componentsToRefresh.length > 0
-                    ? refreshDynamicBlockList(editor, options.blocksRenderUrl, componentsToRefresh)
-                    : Promise.resolve();
+                // Chrome shell parts already ship server-rendered nav/footer HTML.
+                // Re-fetching remounts Maps embeds and retriggers Layers.render (console spam).
+                return Promise.resolve();
             };
 
             const refresh = new Promise((resolve) => {
@@ -1111,8 +1172,13 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 }
 
                 bootCanvasSiteChrome(editor);
-                editor.trigger('voodbuilder:site-chrome-updated');
                 editor.trigger('voodbuilder:dynamic-blocks-refreshed');
+
+                // In chrome-shell page editor, site-chrome-updated reshuffles layers forever
+                // after every nav remount (touchstart spam). Layout editor still needs it.
+                if (! editor.__voodbuilderChromeShellMode) {
+                    editor.trigger('voodbuilder:site-chrome-updated');
+                }
 
                 window.requestAnimationFrame(() => {
                     if (preserveSelection && ! preserveSelection.isRemoved?.()) {
@@ -1179,7 +1245,11 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                     configureSiteFooterTraits(component, editor);
                     applySiteFooterSettingsPreview(component, editor);
                     bootCanvasSiteChrome(editor);
-                    editor.trigger('voodbuilder:site-chrome-updated');
+                    editor.trigger('voodbuilder:dynamic-blocks-refreshed');
+
+                    if (! editor.__voodbuilderChromeShellMode) {
+                        editor.trigger('voodbuilder:site-chrome-updated');
+                    }
                 }
             } catch (lockError) {
                 console.error('Voodbuilder GrapesJS: could not lock dynamic block.', blockId, lockError);
@@ -1419,6 +1489,7 @@ function mountFrontendEditor() {
         initial: config.initial ?? {},
         canvasStyles: config.canvasStyles ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
+        themePaletteCss: config.themePaletteCss ?? '',
         subTheme: config.subTheme,
         canvasPrefersDark: config.canvasPrefersDark,
         uploadUrl: config.uploadUrl,
@@ -1442,6 +1513,7 @@ function mountFrontendEditor() {
         chromeShellMode: config.chromeShellMode ?? false,
         chromeShellName: config.chromeShellName ?? null,
         chromeShellParts: config.chromeShellParts ?? null,
+        chromeLayoutCss: config.chromeLayoutCss ?? '',
         chromeLayoutMode: config.chromeLayoutMode ?? false,
         chromeLayoutName: config.chromeLayoutName ?? null,
         labels: config.labels ?? {},
@@ -1519,10 +1591,23 @@ function mountFrontendEditor() {
             const saved = await response.json().catch(() => ({}));
 
             if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
-                editor.__voodbuilderApplyPageLiveCss?.(saved.css);
-                editor.setStyle(saved.css);
+                // Layout editor: CssComposer must get the compiled utilities.
+                // Page chrome-shell: never wipe live CSS with a possibly-stale/partial
+                // server bundle first — invalidate and recompile from current HTML so
+                // drop-time styles (theme buttons, flex layouts) stay intact.
+                if (editor.__voodbuilderChromeShellMode) {
+                    editor.__voodbuilderInvalidatePageCss?.()
+                        ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
+                } else if (editor.__voodbuilderChromeLayoutMode) {
+                    editor.setStyle(saved.css);
+                    editor.__voodbuilderApplyPageLiveCss?.(saved.css);
+                } else {
+                    editor.setStyle(saved.css);
+                    editor.__voodbuilderApplyPageLiveCss?.(saved.css);
+                }
             } else {
-                editor.__voodbuilderSchedulePageCssRebuild?.(0);
+                editor.__voodbuilderInvalidatePageCss?.()
+                    ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }
 
             if (savedIndicator) {

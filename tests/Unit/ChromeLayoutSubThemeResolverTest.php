@@ -23,6 +23,21 @@ class ChromeLayoutSubThemeResolverTest extends TestCase
         $this->assertSame('site', ChromeLayoutSubThemeResolver::forChromeLayout($layout));
     }
 
+    public function test_it_uses_pages_channel_theme_when_layout_has_no_channels(): void
+    {
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Orphan shell',
+            'slug' => 'orphan-shell',
+            'enabled' => true,
+            'channel_ids' => [],
+        ]);
+
+        $this->assertSame(
+            ChromeLayoutSubThemeResolver::forPagesChannel(),
+            ChromeLayoutSubThemeResolver::forChromeLayout($layout),
+        );
+    }
+
     public function test_it_prefers_pages_channel_theme_when_layout_serves_multiple_channels(): void
     {
         $layout = ChromeLayout::query()->create([

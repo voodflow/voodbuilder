@@ -10,6 +10,7 @@ import {
     syncComponentInstancesForExport,
 } from '../components-ui.js';
 import { syncConditionsForExport } from '../conditions-ui.js';
+import { findPageContentSlotInEditor } from '../chrome-content-slot-utils.js';
 import { extractChromeLayoutHtml } from '../editor-chrome-layout.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { syncVideoComponentsForExport } from '../editor-video.js';
@@ -38,6 +39,31 @@ function normalizeVpressDynamicComponents(editor) {
             syncSiteHeaderConfig(component);
         }
     });
+}
+
+/**
+ * GrapesJS getHtml({ withProps: true }) serializes object props as
+ * data-gjs-resizable="{"ratioDefault":1}" which is invalid HTML and leaks
+ * junk onto the published page. Prefer single-quoted JSON attributes.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function encodeJsonDataGjsAttributes(html) {
+    if (typeof html !== 'string' || html === '' || ! html.includes('data-gjs-')) {
+        return html;
+    }
+
+    return html.replace(
+        /\s+data-gjs-([a-zA-Z0-9_-]+)="(\{[\s\S]*?\})"/g,
+        (match, name, json) => {
+            if (! json.includes('"')) {
+                return match;
+            }
+
+            return ` data-gjs-${name}='${json.replace(/'/g, '&#39;')}'`;
+        },
+    );
 }
 
 /**
@@ -78,7 +104,24 @@ export function buildPayload(editor) {
         const slotHtml = extractChromeShellPageHtml(editor);
 
         if (slotHtml !== null) {
-            html = slotHtml;
+            const trimmed = slotHtml.trim();
+
+            // Never wipe page content when the slot still has Grapes children but
+            // serialization returned an empty string (regression that blanked Home).
+            if (trimmed !== '') {
+                html = slotHtml;
+            } else {
+                const childCount = findPageContentSlotInEditor(editor)?.components?.()?.length ?? 0;
+
+                if (childCount === 0) {
+                    html = '';
+                } else {
+                    console.error(
+                        'VoodBuilder: chrome shell HTML extract was empty while the content slot still has children — keeping full canvas HTML for server strip.',
+                        { childCount },
+                    );
+                }
+            }
         }
     }
 
@@ -86,9 +129,36 @@ export function buildPayload(editor) {
         html = extractChromeLayoutHtml(editor);
     }
 
+    html = encodeJsonDataGjsAttributes(html);
+
+    // Chrome shell: if slot serialization came back empty but the live canvas still
+    // has page sections, refuse to publish a blank page (regression that wiped Home).
+    if (
+        editor.__voodbuilderChromeShellMode
+        && String(html).trim() === ''
+        && ! editor.__voodbuilderChromeLayoutMode
+    ) {
+        const previousHtml = String(editor.__voodbuilderLastSavedPageHtml ?? '').trim();
+
+        if (previousHtml !== '') {
+            console.error(
+                'VoodBuilder: refusing to save empty chrome-shell page HTML; keeping previous page content.',
+            );
+            html = previousHtml;
+        }
+    }
+
+    editor.__voodbuilderLastSavedPageHtml = String(html);
+    // they bake stale --vx-header-bg (e.g. purple) over the admin palette on the frontend.
+    const liveCss = String(editor.__voodbuilderPageLiveCss ?? '').trim();
+    const composerCss = String(editor.getCss?.() ?? '').trim();
+    const css = editor.__voodbuilderChromeShellMode
+        ? liveCss
+        : [composerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n');
+
     const payload = {
         html,
-        css: editor.getCss(),
+        css,
         js: editor.getJs(),
     };
 

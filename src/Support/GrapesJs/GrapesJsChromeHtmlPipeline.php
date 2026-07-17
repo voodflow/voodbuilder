@@ -34,6 +34,8 @@ final class GrapesJsChromeHtmlPipeline
         $html = app(GrapesJsComponentRenderer::class)->render($html, null);
         $html = app(GrapesJsBindingRenderer::class)->render($html, null);
 
-        return app(GrapesJsDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
+        $html = app(GrapesJsDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
+
+        return $html;
     }
 }

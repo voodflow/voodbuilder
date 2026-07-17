@@ -96,22 +96,17 @@ export function resolveSettings(component, editor) {
     pushRoot(findInspectableRoot(component, editor));
     pushRoot(findBlockRoot(component));
     pushRoot(component);
-    pushRoot(getActiveLayoutSettingsRoot(editor));
 
     if (isChromeLayoutModeEditor(editor)) {
-        pushRoot(resolveLayoutChromeBlockFromSelection(component, editor));
-
         const zone = resolveLayoutChromeZone(component);
 
         if (zone === 'nav' || zone === 'footer') {
+            pushRoot(resolveLayoutChromeBlockFromSelection(component, editor));
             pushRoot(getLayoutChromeBlock(editor, zone));
+            pushRoot(getActiveLayoutSettingsRoot(editor));
         }
-
-        const activeZone = editor.__voodbuilderActiveSettingsZone;
-
-        if (activeZone === 'nav' || activeZone === 'footer') {
-            pushRoot(getLayoutChromeBlock(editor, activeZone));
-        }
+    } else {
+        pushRoot(getActiveLayoutSettingsRoot(editor));
     }
 
     for (const descriptor of registry.values()) {
