@@ -251,6 +251,8 @@ final class GrapesJsEditorGate
                 'redo' => __('voodbuilder::pro.editor_ui.redo'),
                 'outline' => __('voodbuilder::pro.editor_ui.outline'),
                 'preview' => __('voodbuilder::pro.editor_ui.preview'),
+                'themeDark' => __('voodbuilder::pro.editor_ui.theme_dark'),
+                'themeLight' => __('voodbuilder::pro.editor_ui.theme_light'),
                 'viewPage' => __('voodbuilder::pro.editor_ui.view_page'),
                 'zoomIn' => __('voodbuilder::pro.editor_ui.zoom_in'),
                 'zoomOut' => __('voodbuilder::pro.editor_ui.zoom_out'),

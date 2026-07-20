@@ -142,6 +142,8 @@ return [
         'redo' => 'Redo',
         'outline' => 'Show outlines',
         'preview' => 'Preview',
+        'theme_dark' => 'Dark mode',
+        'theme_light' => 'Light mode',
         'view_page' => 'View page',
         'zoom_in' => 'Zoom in',
         'zoom_out' => 'Zoom out',

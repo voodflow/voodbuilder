@@ -98,10 +98,12 @@ function buildComponentToolbar(editor, component, labels = {}) {
     if (component.get('copyable') && canDuplicateChromeEditorComponent(component, editor)) {
         toolbar.push({
             attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--duplicate',
+                [TOOLBAR_FLAG]: 'duplicate',
                 title: labels.clone ?? 'Duplicate',
                 'aria-label': labels.clone ?? 'Duplicate',
             },
-            label: lucideIcon('copy', 16),
+            label: lucideIcon('copy-plus', 16),
             command: 'tlb-clone',
         });
     }
@@ -137,7 +139,7 @@ function buildComponentToolbar(editor, component, labels = {}) {
             title: labels.copyComponentClasses ?? 'Copy classes',
             'aria-label': labels.copyComponentClasses ?? 'Copy classes',
         },
-        label: lucideIcon('copy', 16),
+        label: lucideIcon('tags', 16),
         command: CMD_COPY_COMPONENT_CLASSES,
     });
 

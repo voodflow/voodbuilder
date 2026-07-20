@@ -12,6 +12,7 @@
 @import '../themes/news/theme.css';
 @import './landing.css';
 @import './grapesjs/chrome-block-utilities.css';
+@import './grapesjs/animated-blocks.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -28,6 +29,8 @@
 @source '../grapesjs/section-catalog.html';
 @source '../grapesjs/soundmit-landing-catalog.html';
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
+@source '../js/grapesjs/**/*.js';
+@source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source not '../../tests/**/*';
 @source not '../../../../../packages/**/tests/**/*';
 @source not '../../../../../vendor/**/tests/**/*';
@@ -58,6 +61,19 @@
     --spacing-vp-aside: 14rem;
     --width-vp-content: 43rem;
     --width-vp-layout: 80rem;
+
+    /* Logo marquee — used by Logo scroll blocks via animate-logo-marquee */
+    --animate-logo-marquee: logo-marquee var(--logo-marquee-duration, 28s) linear infinite;
+}
+
+@keyframes logo-marquee {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
 }
 
 .dark {

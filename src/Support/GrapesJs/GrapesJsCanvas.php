@@ -440,15 +440,24 @@ final class GrapesJsCanvas
             outline-offset: -1px;
         }
 
-        body.voodbuilder-gjs-block-dragging section[data-voodbuilder-section-block] + section[data-voodbuilder-section-block]::before {
+        body.voodbuilder-gjs-block-dragging section[data-voodbuilder-section-block] + section[data-voodbuilder-section-block]::before,
+        body.voodbuilder-gjs-block-dragging [data-voodbuilder-page-content] > section + section::before {
             content: '';
             display: block;
             height: 2.75rem;
             margin: -0.375rem 0;
             border-radius: 0.375rem;
             background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
-            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, transparent);
             pointer-events: none;
+        }
+
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder,
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder-int {
+            min-height: 2.75rem !important;
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent) !important;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 16%, transparent) !important;
+            border-radius: 0.375rem;
         }
 
         {$paletteCss}

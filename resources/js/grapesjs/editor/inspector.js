@@ -12,6 +12,8 @@ import { registerNewsletterFormSettings } from '../grapesjs-forms-blocks.js';
 import { registerInspectorColorFix } from '../inspector-color-fix.js';
 import { registerNavSettings } from '../chrome/blocks/nav/settings.js';
 import { registerFooterSettings } from '../chrome/blocks/footer/settings.js';
+import { registerSectionItemCountSettings } from '../section-item-count.js';
+import { registerLogoScrollSettings } from '../logo-scroll-settings.js';
 import {
     promoteRoot,
     registerSettingsUi,
@@ -131,9 +133,13 @@ export function wireInspector(editor, shell, options, labels) {
 
     registerFooterSettings(editor);
     registerNavSettings(editor);
+    registerSectionItemCountSettings(editor);
+    registerLogoScrollSettings(editor);
     editor.__voodbuilderEnsureChromeBlockSettings = (targetEditor = editor) => {
         registerFooterSettings(targetEditor);
         registerNavSettings(targetEditor);
+        registerSectionItemCountSettings(targetEditor);
+        registerLogoScrollSettings(targetEditor);
     };
     registerSettingsUi(editor, shell?.mounts?.siteChromeSettings ?? null);
     registerNewsletterFormSettings(editor);

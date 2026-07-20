@@ -134,7 +134,9 @@ function portalList(wrap, list) {
     const compact = wrap.classList.contains('voodbuilder-gjs-select-wrap--compact');
 
     list.classList.add('voodbuilder-gjs-select-list--portal');
-    document.body.appendChild(list);
+    // Keep portal inside the editor root so chrome palette tokens (not site theme) apply.
+    const host = wrap.closest('.voodbuilder-gjs-root') ?? document.body;
+    host.appendChild(list);
 
     const width = compact ? Math.max(rect.width, 72) : rect.width;
 

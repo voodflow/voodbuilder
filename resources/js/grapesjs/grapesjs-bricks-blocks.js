@@ -159,6 +159,67 @@ function registerLinkableType(editor, typeName, defaults = {}) {
     });
 }
 
+function syncImageGalleryCount(component) {
+    const count = Math.max(2, Math.min(12, Number(component.get('data-vb-item-count') ?? 6) || 6));
+    const children = [...(component.components?.() ?? [])];
+    const template = children[0];
+
+    component.addAttributes({
+        'data-voodbuilder-image-gallery': '',
+        'data-vb-item-count': String(count),
+    });
+
+    if (! template) {
+        return;
+    }
+
+    while (children.length > count) {
+        children.pop()?.remove?.();
+    }
+
+    while (children.length < count) {
+        const index = children.length + 1;
+        component.append({
+            type: 'image',
+            classes: ['w-full', 'rounded-lg', 'object-cover', 'aspect-square'],
+            attributes: {
+                'data-vb-item': '',
+                src: galleryPlaceholderSrc(index),
+                alt: `Gallery image ${index}`,
+            },
+        });
+        children.push(component.components().at(component.components().length - 1));
+    }
+}
+
+function registerImageGalleryType(editor) {
+    if (editor.DomComponents.getType('voodbuilder-image-gallery')) {
+        return;
+    }
+
+    editor.DomComponents.addType('voodbuilder-image-gallery', {
+        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-image-gallery') === true,
+        model: {
+            defaults: {
+                tagName: 'div',
+                name: 'Image gallery',
+                attributes: {
+                    'data-voodbuilder-image-gallery': '',
+                    'data-vb-item-count': '6',
+                    class: 'grid grid-cols-2 gap-3 md:grid-cols-3 vb-image-gallery',
+                },
+                traits: [
+                    { type: 'number', name: 'data-vb-item-count', label: 'Images', min: 2, max: 12, changeProp: true },
+                ],
+                'data-vb-item-count': 6,
+            },
+            init() {
+                this.on('change:data-vb-item-count', () => syncImageGalleryCount(this));
+            },
+        },
+    });
+}
+
 function registerReadingTimeType(editor) {
     if (editor.DomComponents.getType('voodbuilder-reading-time')) {
         return;
@@ -294,13 +355,18 @@ const BLOCKS = [
         label: 'Image gallery',
         category: MEDIA_BLOCK_CATEGORY,
         content: {
-            tagName: 'div',
+            type: 'voodbuilder-image-gallery',
             classes: ['grid', 'grid-cols-2', 'gap-3', 'md:grid-cols-3', 'vb-image-gallery'],
-            attributes: { 'data-voodbuilder-image-gallery': '' },
+            attributes: {
+                'data-voodbuilder-image-gallery': '',
+                'data-vb-item-count': '6',
+            },
+            'data-vb-item-count': 6,
             components: [1, 2, 3, 4, 5, 6].map((index) => ({
                 type: 'image',
                 classes: ['w-full', 'rounded-lg', 'object-cover', 'aspect-square'],
                 attributes: {
+                    'data-vb-item': '',
                     src: galleryPlaceholderSrc(index),
                     alt: `Gallery image ${index}`,
                 },
@@ -474,6 +540,7 @@ export function registerBricksComponentTypes(editor) {
         name: 'Text link',
     });
     registerReadingTimeType(editor);
+    registerImageGalleryType(editor);
 }
 
 export function registerBricksBlocks(editor) {

@@ -109,13 +109,13 @@
     font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.06em;
-    color: var(--color-vp-brand-1, #6366f1);
+    color: var(--color-vp-text-2, #67676c);
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, var(--color-vp-bg-elv, #fff));
 }
 
 .dark .voodbuilder-gjs-root .gjs-sm-sector .gjs-sm-sector-title,
 .dark .voodbuilder-gjs-inspector-sector__title {
-    color: color-mix(in srgb, var(--color-vp-brand-1, #818cf8) 85%, #fbbf24);
+    color: var(--color-vp-text-2, #98989f);
 }
 
 /* ── Style properties: linear label + control rows ── */

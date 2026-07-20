@@ -509,7 +509,82 @@ function listItemChildren(component) {
     return (component?.components?.()?.models ?? []).filter((child) => ! isTextNodeComponent(child));
 }
 
+/**
+ * Logo scroll track is a horizontal marquee (`flex` without flex-wrap) that still
+ * needs List repeat for dynamic partner logos.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isLogoScrollItemsTrack(component) {
+    if (! component) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-items-root')) {
+        let current = component;
+
+        while (current) {
+            const currentAttrs = current.getAttributes?.() ?? {};
+
+            if (Object.prototype.hasOwnProperty.call(currentAttrs, 'data-voodbuilder-logo-scroll')) {
+                return true;
+            }
+
+            current = current.parent?.();
+        }
+    }
+
+    return /\bvb-logo-scroll__track\b/.test(componentClassNames(component));
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+function findLogoScrollRootFrom(component) {
+    let current = component;
+
+    while (current) {
+        const attrs = current.getAttributes?.() ?? {};
+
+        if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-logo-scroll')) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
+/**
+ * Keep Logo scroll settings Source in sync when List repeat is applied/cleared.
+ *
+ * @param {object|null|undefined} component
+ * @param {'static'|'dynamic'} source
+ */
+function syncLogoScrollSourceNear(component, source) {
+    const root = findLogoScrollRootFrom(component);
+
+    if (! root) {
+        return;
+    }
+
+    root.set?.('data-vb-logo-source', source);
+    root.addAttributes?.({ 'data-vb-logo-source': source });
+}
+
 function isListRepeatContainer(component) {
+    if (isLogoScrollItemsTrack(component)) {
+        const children = listItemChildren(component);
+
+        return children.length >= 1
+            || Boolean(component.getAttributes?.()['data-voodbuilder-repeat']);
+    }
+
     const children = listItemChildren(component);
 
     if (children.length < 2) {
@@ -1869,6 +1944,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                     migrateBindingsInTree(editor, template, catalog);
                 }
 
+                syncLogoScrollSourceNear(repeatTarget, 'dynamic');
+
                 editor.select(template ?? repeatTarget);
 
                 if (repeatCurrentEl) {
@@ -1902,6 +1979,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 if (component !== repeatTarget) {
                     clearRepeatAttributes(component);
                 }
+
+                syncLogoScrollSourceNear(repeatTarget, 'static');
 
                 editor.select(component);
 

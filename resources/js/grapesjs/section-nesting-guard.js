@@ -17,9 +17,14 @@ export function isCatalogSection(component) {
     }
 
     const attrs = component.getAttributes?.() ?? {};
+    const type = String(component.get('type') ?? '');
 
     return Boolean(attrs['data-voodbuilder-section-block'])
-        || component.get('type') === 'voodbuilder-section';
+        || type === 'voodbuilder-section'
+        || type === 'voodbuilder-logo-grid'
+        || type === 'voodbuilder-logo-split'
+        || type === 'voodbuilder-animated-stats'
+        || type === 'voodbuilder-animated-cta';
 }
 
 export function findHostingCatalogSection(component) {

@@ -142,6 +142,8 @@ return [
         'redo' => 'Ripeti',
         'outline' => 'Mostra contorni',
         'preview' => 'Anteprima',
+        'theme_dark' => 'Modalità scura',
+        'theme_light' => 'Modalità chiara',
         'view_page' => 'Apri pagina',
         'zoom_in' => 'Zoom avanti',
         'zoom_out' => 'Zoom indietro',

@@ -86,4 +86,21 @@ class GrapesJsHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('>Accept</a>', $restored);
         $this->assertStringContainsString('data-voodbuilder-cta-label="Accept"', $restored);
     }
+
+    public function test_strips_logo_scroll_runtime_clones(): void
+    {
+        $html = '<div data-voodbuilder-logo-scroll>'
+            .'<div data-vb-logo-mover>'
+            .'<div data-vb-items-root class="vb-logo-scroll__track"><div data-vb-item>A</div></div>'
+            .'<div data-vb-logo-clone="1" class="vb-logo-scroll__track vb-logo-scroll__track--clone" aria-hidden="true"><div data-vb-item>A</div></div>'
+            .'</div>'
+            .'</div>';
+
+        $sanitized = GrapesJsHtmlSanitizer::sanitize($html);
+
+        $this->assertStringNotContainsString('data-vb-logo-clone', $sanitized);
+        $this->assertStringNotContainsString('vb-logo-scroll__track--clone', $sanitized);
+        $this->assertStringContainsString('data-vb-items-root', $sanitized);
+        $this->assertStringContainsString('>A</div>', $sanitized);
+    }
 }

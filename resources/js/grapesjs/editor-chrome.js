@@ -426,6 +426,83 @@ function createToolDivider() {
     return divider;
 }
 
+/**
+ * @returns {boolean}
+ */
+function isEditorDarkMode() {
+    return document.documentElement.classList.contains('dark');
+}
+
+/**
+ * @param {boolean} isDark
+ * @param {HTMLButtonElement} button
+ * @param {{ themeDark?: string, themeLight?: string }} labels
+ */
+function syncThemeToggleButton(button, isDark, labels = {}) {
+    const darkLabel = labels.themeDark ?? 'Dark mode';
+    const lightLabel = labels.themeLight ?? 'Light mode';
+    const nextLabel = isDark ? lightLabel : darkLabel;
+
+    button.classList.toggle('is-active', isDark);
+    button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    button.setAttribute('aria-label', nextLabel);
+    button.title = nextLabel;
+
+    const moon = button.querySelector('[data-theme-icon="moon"]');
+    const sun = button.querySelector('[data-theme-icon="sun"]');
+
+    moon?.toggleAttribute('hidden', isDark);
+    sun?.toggleAttribute('hidden', ! isDark);
+}
+
+/**
+ * @param {{ themeDark?: string, themeLight?: string }} labels
+ * @returns {HTMLButtonElement}
+ */
+function createThemeToggleButton(labels = {}) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'voodbuilder-gjs-topbar-tool-btn';
+    button.dataset.voodbuilderTopbarTool = 'theme';
+    button.dataset.themeToggle = '';
+    button.innerHTML = [
+        lucideIcon('moon', 18).replace('<svg ', '<svg data-theme-icon="moon" '),
+        lucideIcon('sun', 18).replace('<svg ', '<svg data-theme-icon="sun" hidden '),
+    ].join('');
+
+    const applyTheme = (isDark) => {
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+        try {
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        } catch {
+            // Ignore storage failures.
+        }
+
+        syncThemeToggleButton(button, isDark, labels);
+        window.dispatchEvent(new CustomEvent('voodbuilder:theme-changed', {
+            detail: { isDark },
+        }));
+    };
+
+    button.addEventListener('click', () => {
+        applyTheme(! isEditorDarkMode());
+    });
+
+    window.addEventListener('voodbuilder:theme-changed', (event) => {
+        const isDark = event?.detail?.isDark;
+
+        if (typeof isDark === 'boolean') {
+            syncThemeToggleButton(button, isDark, labels);
+        }
+    });
+
+    syncThemeToggleButton(button, isEditorDarkMode(), labels);
+
+    return button;
+}
+
 function wireToggleCommand(editor, button, commandId) {
     const sync = () => {
         button.classList.toggle('is-active', editor.Commands.isActive(commandId));
@@ -538,7 +615,9 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
     });
     wireToggleCommand(editor, previewButton, CMD_PREVIEW);
 
-    const canvasGroup = createToolGroup([outlineButton, previewButton]);
+    const themeButton = createThemeToggleButton(labels);
+
+    const canvasGroup = createToolGroup([outlineButton, previewButton, themeButton]);
 
     const zoomOutButton = createToolButton({
         id: 'zoom-out',

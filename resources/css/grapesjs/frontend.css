@@ -1009,68 +1009,40 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     list-style: none;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 92%, transparent);
     border-radius: 0.5rem;
-    background: #ffffff;
-    color: #0f172a;
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #3c3c43);
     box-shadow:
-        0 10px 15px -3px rgba(15, 23, 42, 0.08),
-        0 4px 6px -4px rgba(15, 23, 42, 0.08);
+        0 10px 15px -3px color-mix(in srgb, var(--color-vp-text-1, #0f172a) 8%, transparent),
+        0 4px 6px -4px color-mix(in srgb, var(--color-vp-text-1, #0f172a) 8%, transparent);
 }
 
 .voodbuilder-gjs-select-list--portal {
     position: fixed;
     z-index: 10050;
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border-color: color-mix(in srgb, #e2e8f0 92%, transparent) !important;
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #3c3c43);
+    border-color: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 92%, transparent);
 }
 
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list,
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent) !important;
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #3c3c43);
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);
     box-shadow:
-        0 8px 20px -6px rgba(15, 23, 42, 0.12),
-        0 2px 6px -2px rgba(15, 23, 42, 0.08) !important;
+        0 8px 20px -6px color-mix(in srgb, var(--color-vp-text-1, #0f172a) 12%, transparent),
+        0 2px 6px -2px color-mix(in srgb, var(--color-vp-text-1, #0f172a) 8%, transparent);
 }
 
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-option {
-    color: #334155 !important;
+    color: var(--color-vp-text-2, #67676c);
     font-weight: 400;
 }
 
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-option:hover,
 .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-option.is-selected {
-    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, #ffffff) !important;
-    color: var(--color-vp-brand-1, #6366f1) !important;
-}
-
-.dark .voodbuilder-gjs-select-list,
-.voodbuilder-gjs-select-list--portal {
-    background: #ffffff;
-    color: #0f172a;
-    border-color: color-mix(in srgb, #e2e8f0 92%, transparent);
-}
-
-/* Keep inspector dropdowns light even when Filament/admin is dark. */
-.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal,
-.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border-color: color-mix(in srgb, #e2e8f0 92%, transparent) !important;
-}
-
-.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option,
-.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option {
-    color: #334155 !important;
-}
-
-.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option:hover,
-.dark .voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option.is-selected,
-.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option:hover,
-.voodbuilder-gjs-shell__right .voodbuilder-gjs-select-list--portal .voodbuilder-gjs-select-option.is-selected {
-    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 10%, #ffffff) !important;
-    color: var(--color-vp-brand-1, #0d9488) !important;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 10%, var(--color-vp-bg-elv, #fff));
+    color: var(--color-vp-brand-1, #3451b2);
 }
 
 .voodbuilder-gjs-select-list[hidden] {
@@ -4180,4 +4152,63 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 .gjs-dashed .vb-slider__slide.is-active,
 .voodbuilder-gjs-canvas-mount .vb-slider__slide.is-active {
     opacity: 1;
+}
+
+/* Animated elements */
+.vb-animated-cta [data-vb-anim-child] {
+    opacity: 0;
+    transform: translateY(1.25rem);
+    transition:
+        opacity var(--vb-anim-duration, 700ms) ease,
+        transform var(--vb-anim-duration, 700ms) ease;
+    transition-delay: calc(var(--vb-anim-delay, 0ms) + (var(--vb-anim-child-index, 0) * 90ms));
+}
+
+.vb-animated-cta [data-vb-anim-child="1"] { --vb-anim-child-index: 0; }
+.vb-animated-cta [data-vb-anim-child="2"] { --vb-anim-child-index: 1; }
+.vb-animated-cta [data-vb-anim-child="3"] { --vb-anim-child-index: 2; }
+
+.vb-animated-cta.is-visible [data-vb-anim-child],
+.gjs-dashed .vb-animated-cta [data-vb-anim-child],
+.voodbuilder-gjs-canvas-mount .vb-animated-cta [data-vb-anim-child] {
+    opacity: 1;
+    transform: none;
+}
+
+.vb-animated-counter {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Logo scroll marquee: Tailwind animate-logo-marquee (theme.css) — no custom keyframes here. */
+
+.vb-logo-scroll__link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.vb-animated-cta[data-vb-anim="fade-in"] [data-vb-anim-child] {
+    transform: none;
+}
+
+.vb-animated-cta[data-vb-anim="scale-in"] [data-vb-anim-child] {
+    transform: scale(0.96);
+}
+
+.vb-animated-cta[data-vb-anim="scale-in"].is-visible [data-vb-anim-child],
+.gjs-dashed .vb-animated-cta[data-vb-anim="scale-in"] [data-vb-anim-child],
+.voodbuilder-gjs-canvas-mount .vb-animated-cta[data-vb-anim="scale-in"] [data-vb-anim-child] {
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-logo-marquee {
+        animation: none !important;
+        transform: translateX(0) !important;
+    }
+
+    .vb-animated-cta [data-vb-anim-child] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }

@@ -1004,10 +1004,23 @@ export function initVpressGrapesJs(container, options = {}) {
     });
 
     editor.on('canvas:frame:load', () => {
-        void import('../bricks-runtime.js').then(({ initReadingTime, initSocialShare, initCarousels }) => {
+        void import('../bricks-runtime.js').then(({
+            initReadingTime,
+            initSocialShare,
+            initCarousels,
+            initAnimatedCounters,
+            initAnimatedCtas,
+            initLogoScroll,
+        }) => {
+            const frameDoc = editor.Canvas?.getDocument?.() ?? document;
+
             initReadingTime();
             initSocialShare();
             initCarousels();
+            // Replay animations in the editor canvas so authors can preview them.
+            initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
+            initAnimatedCtas({ root: frameDoc, force: true });
+            initLogoScroll({ root: frameDoc });
         }).catch(() => {
             // Bricks runtime is optional in the editor canvas.
         });

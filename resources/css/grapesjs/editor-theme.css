@@ -3,6 +3,42 @@
  * Never fork grapes.min.css; remap --gjs-* to Voodbuilder design tokens.
  */
 
+/**
+ * Editor chrome (topbar + left/right sidebars) uses a neutral VitePress palette
+ * that follows html.dark / light — not the site sub-theme brand colors.
+ * The canvas iframe keeps the real site theme for WYSIWYG.
+ */
+.voodbuilder-gjs-root {
+    --color-vp-bg: #ffffff;
+    --color-vp-bg-alt: #f6f6f7;
+    --color-vp-bg-elv: #ffffff;
+    --color-vp-text-1: #3c3c43;
+    --color-vp-text-2: #67676c;
+    --color-vp-text-3: #929295;
+    --color-vp-brand-1: #3451b2;
+    --color-vp-brand-2: #3a5ccc;
+    --color-vp-brand-3: #5672cd;
+    --color-vp-divider: #e2e2e3;
+    --color-vp-gray-soft: rgba(142, 150, 170, 0.14);
+    --vx-sidebar-bg: #f6f6f7;
+    color: var(--color-vp-text-1);
+}
+
+.dark .voodbuilder-gjs-root {
+    --color-vp-bg: #1b1b1f;
+    --color-vp-bg-alt: #161618;
+    --color-vp-bg-elv: #202127;
+    --color-vp-text-1: #dfdfd6;
+    --color-vp-text-2: #98989f;
+    --color-vp-text-3: #6a6a71;
+    --color-vp-brand-1: #a8b1ff;
+    --color-vp-brand-2: #5c73e7;
+    --color-vp-brand-3: #3e63dd;
+    --color-vp-divider: #2e2e32;
+    --color-vp-gray-soft: rgba(101, 117, 133, 0.16);
+    --vx-sidebar-bg: #161618;
+}
+
 .voodbuilder-gjs-root,
 .voodbuilder-gjs-root .gjs-editor,
 .voodbuilder-grapesjs-field .gjs-editor {
@@ -1331,7 +1367,7 @@
     box-shadow: none !important;
     font-size: 0.75rem;
     color: var(--color-vp-text-1, #0f172a) !important;
-    color-scheme: light;
+    color-scheme: light dark;
 }
 
 .voodbuilder-gjs-anim-combobox > select:focus,
@@ -1341,8 +1377,8 @@
 }
 
 .voodbuilder-gjs-anim-combobox > select option {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
+    background-color: var(--color-vp-bg-elv, #fff) !important;
+    color: var(--color-vp-text-1, #0f172a) !important;
 }
 
 .voodbuilder-gjs-anim-combobox .voodbuilder-gjs-select-chevron {

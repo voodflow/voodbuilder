@@ -71,17 +71,25 @@ final class VoodbuilderSectionGrapesJsBlocks
      */
     protected static function shouldRegisterBlock(array $definition): bool
     {
-        if (config('voodbuilder.grapesjs.site_blocks.hide_section_chrome', true)) {
-            $id = (string) ($definition['id'] ?? '');
+        $id = (string) ($definition['id'] ?? '');
 
+        if ($id !== '' && SectionItemCountAnnotator::isRedundant($id)) {
+            return false;
+        }
+
+        $excluded = array_map('strval', (array) config('voodbuilder.grapesjs.excluded_editor_blocks', []));
+
+        if ($id !== '' && in_array($id, $excluded, true)) {
+            return false;
+        }
+
+        if (config('voodbuilder.grapesjs.site_blocks.hide_section_chrome', true)) {
             if (str_contains($id, '-header-') || str_contains($id, '-footer-')) {
                 return false;
             }
         }
 
         if (config('voodbuilder.grapesjs.voodbuilder_footers.enabled', true)) {
-            $id = (string) ($definition['id'] ?? '');
-
             if (str_contains($id, '-footer-')) {
                 return false;
             }
@@ -119,6 +127,10 @@ final class VoodbuilderSectionGrapesJsBlocks
             $attribute = ' data-voodbuilder-section-block="'.htmlspecialchars($blockId, ENT_QUOTES, 'UTF-8').'"';
 
             $html = (string) preg_replace('/<section\b/i', '<section'.$attribute, $html, 1);
+        }
+
+        if ($blockId !== '') {
+            $html = SectionItemCountAnnotator::annotate($html, $blockId);
         }
 
         return $html;

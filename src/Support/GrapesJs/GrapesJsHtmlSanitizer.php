@@ -33,7 +33,70 @@ final class GrapesJsHtmlSanitizer
             return $html;
         }
 
-        return self::stripInvalidAttributes($sanitized);
+        return self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized));
+    }
+
+    /**
+     * Runtime duplicates logo tracks in the canvas for a seamless marquee.
+     * Strip those clones if they ever leak into saved HTML.
+     */
+    public static function stripLogoScrollRuntimeClones(string $html): string
+    {
+        if ($html === '' || (! str_contains($html, 'data-vb-logo-clone') && ! str_contains($html, 'vb-logo-scroll__track--clone'))) {
+            return $html;
+        }
+
+        $document = new \DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-logo-scroll-root">'.$html.'</div>';
+            $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if ($loaded !== true) {
+            return $html;
+        }
+
+        $root = $document->getElementById('voodbuilder-logo-scroll-root');
+
+        if (! $root instanceof \DOMElement) {
+            return $html;
+        }
+
+        $xpath = new \DOMXPath($document);
+        $clones = $xpath->query(
+            './/*[@data-vb-logo-clone or contains(concat(" ", normalize-space(@class), " "), " vb-logo-scroll__track--clone ")]',
+            $root,
+        );
+
+        if ($clones === false || $clones->length === 0) {
+            return $html;
+        }
+
+        /** @var list<\DOMElement> $toRemove */
+        $toRemove = [];
+
+        foreach ($clones as $clone) {
+            if ($clone instanceof \DOMElement) {
+                $toRemove[] = $clone;
+            }
+        }
+
+        foreach ($toRemove as $clone) {
+            $clone->parentNode?->removeChild($clone);
+        }
+
+        $output = '';
+
+        foreach ($root->childNodes as $child) {
+            $output .= $document->saveHTML($child);
+        }
+
+        return $output !== '' ? $output : $html;
     }
 
     /**

@@ -180,6 +180,7 @@ function bindBlockDragPointerTracking(editor) {
             x: event.clientX,
             y: event.clientY,
         };
+        editor.__voodbuilderLastDragPointAt = Date.now();
 
         editor.__voodbuilderPointerOverTopSpacer = isPointerOverTopSpacer(
             editor,
@@ -188,6 +189,10 @@ function bindBlockDragPointerTracking(editor) {
         );
         updateTopDropSpacerState(editor, event.clientX, event.clientY);
         syncChromeDropZoneHighlight(editor);
+
+        if (editor.__voodbuilderActiveBlockDrag) {
+            armDragSessionWatchdog(editor);
+        }
     };
 
     editor.__voodbuilderBlockDragPointerTrack = track;
@@ -228,11 +233,108 @@ function beginTopDropSession(editor, block) {
         startDragChipLoop(editor);
     }
 
-    // Safety net: never leave the rAF highlight loop running after a missed drag:stop.
+    armDragSessionWatchdog(editor);
+}
+
+/**
+ * Keep the drop-zone UI alive for long drags; force-clean if the session goes stale.
+ *
+ * @param {object} editor
+ */
+function armDragSessionWatchdog(editor) {
     window.clearTimeout(editor.__voodbuilderDragSessionWatchdog);
     editor.__voodbuilderDragSessionWatchdog = window.setTimeout(() => {
+        const lastMoveAt = Number(editor.__voodbuilderLastDragPointAt ?? 0);
+        const recentlyMoved = (Date.now() - lastMoveAt) < 2500;
+
+        // Still an active drag with recent pointer motion — keep affordances, re-arm once.
+        if (editor.__voodbuilderActiveBlockDrag && recentlyMoved) {
+            armDragSessionWatchdog(editor);
+
+            return;
+        }
+
+        // Stale session (missed drag:stop) or idle — clear so later blocks stay visible/interactive.
         stopEditorIdleMotionLoops(editor);
-    }, 2500);
+    }, 5000);
+}
+
+/**
+ * If a block lands nested under the page content slot (inside another section),
+ * promote it to a sibling of that section instead of discarding it.
+ *
+ * @param {object} editor
+ * @param {object} component
+ * @returns {object|null}
+ */
+function ensurePageContentSlotPlacement(editor, component) {
+    if (! editor?.__voodbuilderChromeShellMode || ! component) {
+        return component;
+    }
+
+    const slot = findPageContentSlotInEditor(editor);
+
+    if (! slot) {
+        return component;
+    }
+
+    if (component.parent?.() === slot) {
+        return component;
+    }
+
+    if (component.getAttributes?.()?.['data-voodbuilder-page-content']) {
+        return component;
+    }
+
+    let ancestor = component.parent?.();
+    let hostSection = null;
+    let underSlot = false;
+
+    while (ancestor && ancestor.get?.('type') !== 'wrapper') {
+        if (ancestor === slot) {
+            underSlot = true;
+            break;
+        }
+
+        const tag = String(ancestor.get?.('tagName') ?? '').toLowerCase();
+
+        if (! hostSection && tag === 'section') {
+            hostSection = ancestor;
+        }
+
+        ancestor = ancestor.parent?.();
+    }
+
+    if (! underSlot) {
+        // Dropped outside the page content (nav/footer/chrome) — move into the slot.
+        try {
+            const at = slot.components?.()?.length ?? 0;
+            component.move(slot, { at });
+            editor.select?.(component);
+
+            return component;
+        } catch {
+            component.remove?.();
+
+            return null;
+        }
+    }
+
+    // Nested inside a section: promote as sibling after the host section.
+    try {
+        const insertAt = hostSection
+            ? (slot.components().indexOf(hostSection) + 1)
+            : (slot.components?.()?.length ?? 0);
+
+        component.move(slot, { at: Math.max(0, insertAt) });
+        editor.select?.(component);
+
+        return component;
+    } catch {
+        component.remove?.();
+
+        return null;
+    }
 }
 
 function endTopDropSession(editor) {
@@ -920,16 +1022,8 @@ export function registerCanvasBlockDrag(editor) {
     });
 
     editor.on('block:drag:stop', (component, block) => {
-        if (editor.__voodbuilderChromeShellMode && component) {
-            const slot = findPageContentSlotInEditor(editor);
-
-            if (slot && component.parent?.() !== slot && ! component.getAttributes?.()?.['data-voodbuilder-page-content']) {
-                if (typeof component.remove === 'function') {
-                    component.remove();
-                }
-
-                component = null;
-            }
+        if (component) {
+            component = ensurePageContentSlotPlacement(editor, component);
         }
 
         if (component) {
@@ -940,6 +1034,14 @@ export function registerCanvasBlockDrag(editor) {
         }
 
         endTopDropSession(editor);
+
+        // Belt-and-suspenders: never leave the canvas stuck in drag mode
+        // (pointer-events:none on section children hides / blocks the next block).
+        window.requestAnimationFrame(() => {
+            if (! editor.__voodbuilderActiveBlockDrag) {
+                setCanvasDragState(editor, false);
+            }
+        });
 
         document.querySelectorAll('[data-voodbuilder-component-block-toolbar]').forEach((toolbar) => {
             toolbar.hidden = editor.__voodbuilderComponentSelectionMode === true;

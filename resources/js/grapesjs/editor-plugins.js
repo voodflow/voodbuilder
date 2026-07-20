@@ -16,6 +16,14 @@ import {
     configureBricksCanvas,
     registerBricksBlocks,
 } from './grapesjs-bricks-blocks.js';
+import {
+    configureAnimatedCanvas,
+    registerAnimatedBlocks,
+} from './grapesjs-animated-blocks.js';
+import {
+    configureLogoCloudCanvas,
+    registerLogoCloudBlocks,
+} from './grapesjs-logo-cloud-blocks.js';
 import registerGrapesJsTailwindPlugin from './grapesjs-tailwind-plugin.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
@@ -174,4 +182,16 @@ export function configureGrapesJsPlugins(editor, options = {}) {
     editor.on('load', registerBricks);
     registerBricks();
     configureBricksCanvas(editor);
+
+    const registerAnimated = () => registerAnimatedBlocks(editor);
+
+    editor.on('load', registerAnimated);
+    registerAnimated();
+    configureAnimatedCanvas(editor);
+
+    const registerLogoCloud = () => registerLogoCloudBlocks(editor);
+
+    editor.on('load', registerLogoCloud);
+    registerLogoCloud();
+    configureLogoCloudCanvas(editor);
 }
