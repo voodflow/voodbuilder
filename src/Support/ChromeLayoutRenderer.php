@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsChromeHtmlPipeline;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSlotHydrator;
 
 /**
@@ -26,7 +27,9 @@ final class ChromeLayoutRenderer
 
         return [
             ...$this->splitAroundContentSlot($html),
-            'css' => trim($payload['css']),
+            'css' => GrapesJsPastedComponentNormalizer::dedupeCssRules(
+                ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
+            ),
             'js' => trim($payload['js']),
         ];
     }

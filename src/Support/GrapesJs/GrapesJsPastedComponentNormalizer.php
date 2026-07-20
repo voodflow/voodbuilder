@@ -87,14 +87,50 @@ final class GrapesJsPastedComponentNormalizer
         $autoCss = filled($autoCss) ? trim($autoCss) : '';
 
         if ($manualCss === '') {
-            return $autoCss !== '' ? $autoCss : null;
+            return $autoCss !== '' ? self::dedupeCssRules($autoCss) : null;
         }
 
         if ($autoCss === '' || str_contains($manualCss, $autoCss)) {
-            return $manualCss;
+            return self::dedupeCssRules($manualCss);
         }
 
-        return trim($manualCss."\n\n".$autoCss);
+        return self::dedupeCssRules(trim($manualCss."\n\n".$autoCss));
+    }
+
+    /**
+     * Collapse identical CSS rules (common after repeated chrome-layout saves).
+     */
+    public static function dedupeCssRules(string $css): string
+    {
+        $css = trim($css);
+
+        if ($css === '') {
+            return '';
+        }
+
+        if (! preg_match_all(
+            '/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}|[^{}@]+\{[^{}]*\}/s',
+            $css,
+            $matches,
+        )) {
+            return $css;
+        }
+
+        $kept = [];
+        $seen = [];
+
+        foreach ($matches[0] as $rule) {
+            $normalized = preg_replace('/\s+/', ' ', trim($rule)) ?? trim($rule);
+
+            if ($normalized === '' || isset($seen[$normalized])) {
+                continue;
+            }
+
+            $seen[$normalized] = true;
+            $kept[] = trim($rule);
+        }
+
+        return trim(implode("\n", $kept));
     }
 
     public static function resolvedCssForStoredHtml(
@@ -354,7 +390,7 @@ final class GrapesJsPastedComponentNormalizer
             }
         }
 
-        return trim(implode("\n", $kept));
+        return self::dedupeCssRules(trim(implode("\n", $kept)));
     }
 
     private static function shouldPreserveManualPageCssRule(string $selectors, string $body = ''): bool
@@ -365,6 +401,10 @@ final class GrapesJsPastedComponentNormalizer
 
         foreach (array_map('trim', explode(',', $selectors)) as $selector) {
             if ($selector === '') {
+                continue;
+            }
+
+            if (self::isThemeManagedChromeSelector($selector)) {
                 continue;
             }
 
@@ -390,6 +430,20 @@ final class GrapesJsPastedComponentNormalizer
         }
 
         return false;
+    }
+
+    /**
+     * ThemePalette header/chrome rules are injected live — never keep them in stored CSS.
+     */
+    private static function isThemeManagedChromeSelector(string $selector): bool
+    {
+        if (! str_contains($selector, 'header[role=')) {
+            return false;
+        }
+
+        return str_contains($selector, 'data-voodbuilder-sub-theme')
+            || str_contains($selector, 'data-voodbuilder-chrome-shell')
+            || preg_match('/^header\[role=[\'"]banner[\'"]/', $selector) === 1;
     }
 
     public static function isTailwindUtilityClassName(string $className): bool

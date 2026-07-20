@@ -78,19 +78,16 @@ final class GrapesJsChromeLayoutEditorGate
      */
     public static function initialPayload(ChromeLayout $layout): array
     {
-        $subTheme = ChromeLayoutSubThemeResolver::forChromeLayout($layout);
         $payload = $layout->builderPayload();
         $html = $payload['html'] !== '' ? $payload['html'] : ChromeLayoutDefaults::starterHtml();
         $html = ChromeLayoutHtmlSanitizer::normalizeStoredHtml($html);
         $html = GrapesJsChromeHtmlPipeline::render($html, canvasPreview: true);
 
+        // Theme / critical chrome CSS is injected via themePaletteCss + canvas styles —
+        // never bake it into the CssComposer payload (that caused massive save duplication).
         return [
             'html' => $html,
-            'css' => trim(implode("\n\n", array_filter([
-                ThemePalette::stripEmbeddedPaletteOverrides($payload['css']),
-                ThemePalette::cssForCanvas($subTheme),
-                ThemePalette::criticalChromeShellCss($subTheme),
-            ]))),
+            'css' => ThemePalette::stripEmbeddedPaletteOverrides($payload['css']),
             'js' => $payload['js'],
             'project' => null,
         ];

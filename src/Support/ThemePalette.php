@@ -304,8 +304,8 @@ CSS;
     }
 
     /**
-     * Remove palette custom-properties baked into saved GrapesJS CSS so live
-     * ThemePalette / admin overrides control the editor canvas.
+     * Remove palette custom-properties and ThemePalette chrome rules baked into
+     * saved GrapesJS CSS so live ThemePalette / admin overrides control the canvas.
      */
     public static function stripEmbeddedPaletteOverrides(string $css): string
     {
@@ -333,8 +333,51 @@ CSS;
 
         $pattern = '/(?:'.implode('|', array_map(static fn (string $token): string => preg_quote($token, '/'), $tokens)).')\s*:\s*[^;}{]+;?/i';
         $stripped = preg_replace($pattern, '', $css);
+        $stripped = is_string($stripped) ? $stripped : $css;
 
-        return is_string($stripped) ? $stripped : $css;
+        return self::stripThemeManagedChromeRules($stripped);
+    }
+
+    /**
+     * Drop header/chrome ThemePalette rules that are re-injected on every render.
+     */
+    private static function stripThemeManagedChromeRules(string $css): string
+    {
+        if ($css === '' || ! str_contains($css, 'header[role=')) {
+            return $css;
+        }
+
+        $filtered = preg_replace_callback(
+            '/([^{}@]+)\{([^{}]*)\}/s',
+            static function (array $matches): string {
+                $selectors = trim($matches[1]);
+
+                if ($selectors === '') {
+                    return $matches[0];
+                }
+
+                foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                    if ($selector === '' || ! str_contains($selector, 'header[role=')) {
+                        continue;
+                    }
+
+                    if (
+                        str_contains($selector, 'data-voodbuilder-sub-theme')
+                        || str_contains($selector, 'data-voodbuilder-chrome-shell')
+                        || preg_match('/^header\[role=[\'"]banner[\'"]/', $selector) === 1
+                    ) {
+                        return '';
+                    }
+                }
+
+                return $matches[0];
+            },
+            $css,
+        );
+
+        $filtered = is_string($filtered) ? $filtered : $css;
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $filtered) ?? $filtered);
     }
 
     /**

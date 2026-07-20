@@ -1,16 +1,11 @@
 /**
  * Boot site header interactions inside the GrapesJS canvas iframe.
+ *
+ * Static import (not dynamic): shared site-chrome-runtime must not become an
+ * async chunk of editor/init.js, or public site-runtime would modulepreload GrapesJS.
  */
 
-let siteChromeRuntimePromise = null;
-
-function loadSiteChromeRuntime() {
-    if (! siteChromeRuntimePromise) {
-        siteChromeRuntimePromise = import('./site-chrome-runtime.js');
-    }
-
-    return siteChromeRuntimePromise;
-}
+import { initSiteChrome, setMobileNavOpen } from './site-chrome-runtime.js';
 
 async function syncCanvasDeviceMode(editor) {
     const deviceId = editor.Devices?.getSelected?.()?.get?.('id') ?? 'desktop';
@@ -24,7 +19,6 @@ async function syncCanvasDeviceMode(editor) {
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
 
     if (deviceId === 'desktop' || deviceId === 'tablet') {
-        const { setMobileNavOpen } = await loadSiteChromeRuntime();
         setMobileNavOpen(doc, false);
     }
 }
@@ -38,7 +32,6 @@ export async function bootCanvasSiteChrome(editor) {
 
     await syncCanvasDeviceMode(editor);
 
-    const { initSiteChrome } = await loadSiteChromeRuntime();
     initSiteChrome(frameWindow.document);
 }
 

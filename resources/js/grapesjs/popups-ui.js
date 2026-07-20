@@ -11,6 +11,7 @@ import {
     createSelectField,
     createTextField,
 } from './editor-form-ui.js';
+import { previewPopup } from '../popups-runtime.js';
 
 const PAGE_PATH_CUSTOM = '__custom__';
 
@@ -534,7 +535,6 @@ export function registerPopupsUi(editor, options = {}) {
             testBtn.textContent = labels.popupsTest ?? 'Test popup';
             testBtn.addEventListener('click', async () => {
                 modal.hidden = true;
-                const { previewPopup } = await import('../popups-runtime.js');
                 previewPopup(popup);
             });
 

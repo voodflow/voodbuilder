@@ -5,6 +5,8 @@
  * @see https://github.com/new-data-services/tailwindcss-animated
  */
 
+import { replayEditorCanvasAnimations } from './vb-runtime.js';
+
 const INTERACTION_OPTIONS = [
     { value: '', label: 'always' },
     { value: 'hover:', label: 'on hover' },
@@ -288,7 +290,7 @@ function scheduleEditorAnimationReplay(editor, delayMs = 80) {
     editor.__voodbuilderAnimReplayTimer = window.setTimeout(() => {
         editor.__voodbuilderAnimReplayTimer = null;
 
-        void import('./vb-runtime.js').then(({ replayEditorCanvasAnimations }) => {
+        try {
             const frameDoc = editor.Canvas?.getDocument?.();
 
             if (! frameDoc) {
@@ -296,9 +298,9 @@ function scheduleEditorAnimationReplay(editor, delayMs = 80) {
             }
 
             replayEditorCanvasAnimations({ root: frameDoc });
-        }).catch(() => {
+        } catch {
             // Optional in editor.
-        });
+        }
     }, delayMs);
 }
 

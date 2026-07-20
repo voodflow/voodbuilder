@@ -5,6 +5,12 @@
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { widthClassesForItemCount } from './section-item-count.js';
+import {
+    initAnimatedCounters,
+    initAnimatedCtas,
+    initLogoScroll,
+    replayEditorCanvasAnimations,
+} from './vb-runtime.js';
 
 export const ANIMATED_BLOCK_CATEGORY = 'Animated';
 
@@ -1053,21 +1059,16 @@ export function registerAnimatedBlocks(editor) {
 
 export function configureAnimatedCanvas(editor) {
     const replayAnimations = () => {
-        void import('./vb-runtime.js').then(({
-            initAnimatedCounters,
-            initAnimatedCtas,
-            initLogoScroll,
-            replayEditorCanvasAnimations,
-        }) => {
+        try {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
             initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
             initAnimatedCtas({ root: frameDoc, force: true });
             replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
-        }).catch(() => {
+        } catch {
             // Optional in editor.
-        });
+        }
     };
 
     editor.on('voodbuilder:logo-scroll-config', (component) => {

@@ -41,7 +41,24 @@ HTML;
 
         $this->assertStringContainsString('Nav', $rendered['before']);
         $this->assertStringContainsString('Foot', $rendered['after']);
-        $this->assertSame('.chrome { color: red; }', $rendered['css']);
+        $this->assertStringContainsString('.chrome { color: red; }', $rendered['css']);
         $this->assertSame('console.log("chrome");', $rendered['js']);
+    }
+
+    public function test_render_dedupes_repeated_chrome_css_rules(): void
+    {
+        $rule = '.chrome { color: red; }';
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Duped shell',
+            'slug' => 'duped-shell',
+            'html' => '<header>Nav</header><div data-voodbuilder-content-slot="main"></div>',
+            'css' => $rule."\n".$rule."\n".$rule,
+            'js' => '',
+            'enabled' => true,
+        ]);
+
+        $rendered = app(ChromeLayoutRenderer::class)->render($layout);
+
+        $this->assertSame($rule, $rendered['css']);
     }
 }

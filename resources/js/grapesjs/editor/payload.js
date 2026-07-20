@@ -200,12 +200,15 @@ export function buildPayload(editor, options = {}) {
     // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
     // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Chrome shell: keep Style Manager #id paints from getCss(), but not the full
-    // composer bundle (that baked stale --vx-header-bg over the admin palette).
+    // Chrome shell/layout: keep Style Manager #id paints from getCss(), but not the
+    // full composer bundle (that baked ThemePalette + utilities and exploded on re-save).
     const liveCss = String(editor.__voodbuilderPageLiveCss ?? '').trim();
     const composerCss = String(editor.getCss?.() ?? '').trim();
     const styleManagerCss = extractGrapesComposerCss(composerCss);
-    const css = editor.__voodbuilderChromeShellMode
+    const preferComposerSubset = Boolean(
+        editor.__voodbuilderChromeShellMode || editor.__voodbuilderChromeLayoutMode,
+    );
+    const css = preferComposerSubset
         ? [styleManagerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n')
         : [composerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n');
 

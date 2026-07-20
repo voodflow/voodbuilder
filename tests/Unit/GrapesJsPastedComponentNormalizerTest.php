@@ -420,6 +420,25 @@ CSS;
         $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 
+    public function test_dedupe_css_rules_collapses_identical_rules(): void
+    {
+        $css = ".hero { color: red; }\n.hero { color: red; }\n.other { color: blue; }";
+
+        $deduped = GrapesJsPastedComponentNormalizer::dedupeCssRules($css);
+
+        $this->assertSame(".hero { color: red; }\n.other { color: blue; }", $deduped);
+    }
+
+    public function test_manual_page_css_from_stored_css_strips_theme_header_chrome(): void
+    {
+        $storedCss = "html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn { color: red; } #hero { color: blue; }";
+
+        $manual = GrapesJsPastedComponentNormalizer::manualPageCssFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('#hero', $manual);
+        $this->assertStringNotContainsString('voodbuilder-header-icon-btn', $manual);
+    }
+
     public function test_page_css_includes_tailwind_preflight_detects_button_reset(): void
     {
         $preflight = '* { box-sizing: border-box; } button, input, ::file-selector-button { border-radius: 0; } .p-4 { padding: 1rem; }';

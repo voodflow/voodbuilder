@@ -254,4 +254,18 @@ CSS;
         $this->assertStringNotContainsString('--color-vp-brand-1', $stripped);
         $this->assertStringContainsString('.hero{color:red}', $stripped);
     }
+
+    #[Test]
+    public function it_strips_theme_managed_header_chrome_rules_from_saved_css(): void
+    {
+        $css = <<<'CSS'
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn{color:red}
+.hero{color:blue}
+CSS;
+
+        $stripped = ThemePalette::stripEmbeddedPaletteOverrides($css);
+
+        $this->assertStringNotContainsString('voodbuilder-header-icon-btn', $stripped);
+        $this->assertStringContainsString('.hero{color:blue}', $stripped);
+    }
 }

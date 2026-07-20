@@ -90,6 +90,15 @@ import {
 } from '../editor-build-status.js';
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from '../editor-video.js';
+import {
+    initAnimatedCounters,
+    initAnimatedCtas,
+    initCarousels,
+    initLogoScroll,
+    initReadingTime,
+    initSocialShare,
+    replayEditorCanvasAnimations,
+} from '../vb-runtime.js';
 import { registerCanvasContextMenu } from '../canvas-context-menu.js';
 import { bootCanvasSiteChrome, registerCanvasSiteChrome } from '../canvas-site-chrome.js';
 import { registerLayersContextMenu } from '../layers-context-menu.js';
@@ -1053,15 +1062,7 @@ export function initVpressGrapesJs(container, options = {}) {
     });
 
     editor.on('canvas:frame:load', () => {
-        void import('../vb-runtime.js').then(({
-            initReadingTime,
-            initSocialShare,
-            initCarousels,
-            initAnimatedCounters,
-            initAnimatedCtas,
-            initLogoScroll,
-            replayEditorCanvasAnimations,
-        }) => {
+        try {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
             initReadingTime();
@@ -1072,9 +1073,9 @@ export function initVpressGrapesJs(container, options = {}) {
             initAnimatedCtas({ root: frameDoc, force: true });
             replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
-        }).catch(() => {
+        } catch {
             // VB runtime is optional in the editor canvas.
-        });
+        }
 
         try {
             hydrateSvgPaintFromAttributes(editor);
