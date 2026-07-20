@@ -59,6 +59,154 @@ function extractClassNames(html) {
     return [...classes];
 }
 
+function extractClassListsPerElement(html) {
+    const lists = [];
+    const pattern = /\bclass=(["'])(.*?)\1/gis;
+
+    for (const match of html.matchAll(pattern)) {
+        const tokens = String(match[2] ?? '')
+            .split(/\s+/)
+            .map((token) => token.trim())
+            .filter((token) => token !== '');
+
+        if (tokens.length > 0) {
+            lists.push(tokens);
+        }
+    }
+
+    return lists;
+}
+
+function escapeTailwindClassSelector(className) {
+    return `.${String(className).replace(/([^a-zA-Z0-9_-])/g, '\\$1')}`;
+}
+
+/**
+ * hover:/active:animate-* re-applies the animation shorthand (incl. infinite / normal).
+ * Emit compound overrides so bare (or same-variant) modifiers still win on interaction.
+ */
+function appendInteractionAnimationModifierOverrides(css, html) {
+    const ANIMATION_BASES = new Set([
+        'animate-spin', 'animate-ping', 'animate-pulse', 'animate-bounce',
+        'animate-wiggle', 'animate-wiggle-more', 'animate-rotate-y', 'animate-rotate-x',
+        'animate-jump', 'animate-jump-in', 'animate-jump-out', 'animate-shake',
+        'animate-fade', 'animate-fade-down', 'animate-fade-up', 'animate-fade-left', 'animate-fade-right',
+        'animate-flip-up', 'animate-flip-down',
+    ]);
+
+    const MODIFIER_DECLS = {
+        'animate-infinite': 'animation-iteration-count: infinite',
+        'animate-once': 'animation-iteration-count: 1',
+        'animate-twice': 'animation-iteration-count: 2',
+        'animate-thrice': 'animation-iteration-count: 3',
+        'animate-normal': 'animation-direction: normal',
+        'animate-reverse': 'animation-direction: reverse',
+        'animate-alternate': 'animation-direction: alternate',
+        'animate-alternate-reverse': 'animation-direction: alternate-reverse',
+        'animate-duration-75': 'animation-duration: 75ms',
+        'animate-duration-100': 'animation-duration: 0.1s',
+        'animate-duration-150': 'animation-duration: 150ms',
+        'animate-duration-200': 'animation-duration: 0.2s',
+        'animate-duration-300': 'animation-duration: 0.3s',
+        'animate-duration-500': 'animation-duration: 0.5s',
+        'animate-duration-700': 'animation-duration: 0.7s',
+        'animate-duration-1000': 'animation-duration: 1s',
+        'animate-delay-none': 'animation-delay: 0s',
+        'animate-delay-75': 'animation-delay: 75ms',
+        'animate-delay-100': 'animation-delay: 0.1s',
+        'animate-delay-150': 'animation-delay: 150ms',
+        'animate-delay-200': 'animation-delay: 0.2s',
+        'animate-delay-300': 'animation-delay: 0.3s',
+        'animate-delay-500': 'animation-delay: 0.5s',
+        'animate-delay-700': 'animation-delay: 0.7s',
+        'animate-delay-1000': 'animation-delay: 1s',
+        'animate-ease': 'animation-timing-function: ease',
+        'animate-ease-linear': 'animation-timing-function: linear',
+        'animate-ease-in': 'animation-timing-function: cubic-bezier(0.4, 0, 1, 1)',
+        'animate-ease-out': 'animation-timing-function: cubic-bezier(0, 0, 0.2, 1)',
+        'animate-ease-in-out': 'animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1)',
+        'animate-fill-none': 'animation-fill-mode: none',
+        'animate-fill-forwards': 'animation-fill-mode: forwards',
+        'animate-fill-backwards': 'animation-fill-mode: backwards',
+        'animate-fill-both': 'animation-fill-mode: both',
+    };
+
+    const hoverRules = new Map();
+    const activeRules = new Map();
+
+    for (const tokens of extractClassListsPerElement(html)) {
+        const set = new Set(tokens);
+        let interactionAnim = null;
+        let variant = null;
+
+        for (const token of set) {
+            if (token.startsWith('hover:') && ANIMATION_BASES.has(token.slice(6))) {
+                interactionAnim = token;
+                variant = 'hover';
+                break;
+            }
+
+            if (token.startsWith('active:') && ANIMATION_BASES.has(token.slice(7))) {
+                interactionAnim = token;
+                variant = 'active';
+                break;
+            }
+        }
+
+        if (! interactionAnim || ! variant) {
+            continue;
+        }
+
+        const animSelector = escapeTailwindClassSelector(interactionAnim);
+        const bucket = variant === 'hover' ? hoverRules : activeRules;
+        const pseudo = variant === 'hover' ? ':hover' : ':active';
+
+        for (const token of set) {
+            let base = token;
+
+            if (token.startsWith('hover:')) {
+                base = token.slice(6);
+            } else if (token.startsWith('active:')) {
+                base = token.slice(7);
+            }
+
+            const decl = MODIFIER_DECLS[base];
+
+            if (! decl) {
+                continue;
+            }
+
+            const compound = token.startsWith(`${variant}:`)
+                ? `${animSelector}${pseudo}${escapeTailwindClassSelector(token)}${pseudo}`
+                : `${animSelector}${pseudo}${escapeTailwindClassSelector(token)}`;
+
+            bucket.set(compound, decl);
+        }
+    }
+
+    const chunks = [];
+
+    if (hoverRules.size > 0) {
+        const body = [...hoverRules.entries()]
+            .map(([selector, decl]) => `${selector}{${decl};}`)
+            .join('\n');
+        chunks.push(`@media (hover: hover){\n${body}\n}`);
+    }
+
+    if (activeRules.size > 0) {
+        const body = [...activeRules.entries()]
+            .map(([selector, decl]) => `${selector}{${decl};}`)
+            .join('\n');
+        chunks.push(body);
+    }
+
+    if (chunks.length === 0) {
+        return css;
+    }
+
+    return `${css}\n/* voodbuilder: keep animation modifiers after hover/active shorthand */\n${chunks.join('\n')}\n`;
+}
+
 function htmlUsesClassDarkVariant(html) {
     return /\bdark:[a-z0-9_\-!/\[\]#%.]+/i.test(html);
 }
@@ -755,9 +903,11 @@ async function main() {
     });
 
     const rawCss = compiled.build(candidates);
-    const css = SCOPE_MODE === 'page'
+    let css = SCOPE_MODE === 'page'
         ? optimizePageCss(rawCss)
         : optimizeComponentCss(scopeCss(rawCss, COMPONENT_SCOPE), COMPONENT_SCOPE);
+
+    css = appendInteractionAnimationModifierOverrides(css, html);
 
     process.stdout.write(JSON.stringify({
         success: true,

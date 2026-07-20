@@ -560,8 +560,8 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--color-vp-bg, #eef2f6) 88%, transparent);
-    backdrop-filter: blur(3px);
+    background: #101218;
+    backdrop-filter: none;
     pointer-events: none;
 }
 
@@ -579,6 +579,78 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     display: none !important;
 }
 
+/* Boot splash — Bricks-inspired layout, VoodBuilder mark + palette */
+.voodbuilder-gjs-boot-splash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    user-select: none;
+}
+
+.voodbuilder-gjs-boot-splash__mark {
+    display: grid;
+    place-items: center;
+    width: 6.5rem;
+    height: 6.5rem;
+}
+
+.voodbuilder-gjs-boot-splash__mark .voodbuilder-gjs-mark {
+    width: 5.5rem;
+    height: 5.5rem;
+    display: block;
+    filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.22));
+}
+
+.voodbuilder-gjs-boot-splash__logo {
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: contain;
+    filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.22));
+}
+
+.voodbuilder-gjs-boot-splash__brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.voodbuilder-gjs-boot-splash__name {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.voodbuilder-gjs-boot-splash__version {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.35rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #a78bfa 0%, #2dd4bf 100%);
+    color: #0f172a;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1;
+}
+
+.voodbuilder-gjs-boot-splash__hint {
+    margin: 0.15rem 0 0;
+    color: #94a3b8;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
 .voodbuilder-gjs-status-spinner {
     display: flex;
     flex-direction: column;
@@ -591,6 +663,25 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     text-align: center;
 }
 
+.voodbuilder-gjs-status-spinner__mark {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.voodbuilder-gjs-status-spinner__mark .voodbuilder-gjs-mark {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: block;
+}
+
+.voodbuilder-gjs-status-spinner__logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: contain;
+}
+
 .voodbuilder-gjs-status-spinner__ring {
     width: 1.75rem;
     height: 1.75rem;
@@ -598,6 +689,10 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     border-top-color: var(--color-vp-brand-1, #6366f1);
     border-radius: 9999px;
     animation: voodbuilder-gjs-spin 0.75s linear infinite;
+}
+
+.voodbuilder-gjs-status-spinner__label {
+    max-width: 16rem;
 }
 
 .voodbuilder-gjs-shell__center {

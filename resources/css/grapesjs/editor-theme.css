@@ -235,10 +235,16 @@
     padding: 0.55rem 0.75rem;
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff));
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+    border-radius: 0.625rem;
+}
+
+.voodbuilder-gjs-root .gjs-sm-sector.gjs-sm-open .gjs-sm-sector-title {
+    border-radius: 0.625rem 0.625rem 0 0;
 }
 
 .voodbuilder-gjs-root .gjs-sm-sector:not(.gjs-sm-open) .gjs-sm-sector-title {
     border-bottom: none;
+    border-radius: 0.625rem;
 }
 
 /* ── Custom collapsible sectors (Classes, Global classes) ── */
@@ -416,19 +422,20 @@
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 35%, var(--color-vp-bg-elv, #fff));
 }
 
-/* Decorations: no nested composite cards — flat like Typography */
+/* Decorations: flat composites (no cards); padding/hr come from inspector-ui Typography pattern */
 .voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-composite.gjs-sm-field,
 .voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property.gjs-sm-composite,
 .voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-property.gjs-sm-stack {
-    padding: 0.35rem 0;
+    padding: 0.4375rem 0.625rem;
     border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
     border-radius: 0;
     background: transparent;
     box-shadow: none;
 }
 
 .voodbuilder-gjs-root .gjs-sm-sector__decorations .gjs-sm-composite .gjs-sm-properties {
-    gap: 0.15rem;
+    gap: 0.35rem;
     padding: 0;
 }
 
@@ -1154,44 +1161,61 @@
     cursor: pointer;
 }
 
+.voodbuilder-gjs-sm-sector-animation.gjs-sm-open .gjs-sm-sector-title {
+    border-radius: 0.625rem 0.625rem 0 0;
+}
+
 .voodbuilder-gjs-sm-sector-animation.gjs-sm-open .voodbuilder-gjs-inspector-sector__caret::before {
     transform: rotate(90deg);
 }
 
-.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-sm-sector-animation__body {
+.voodbuilder-gjs-root .voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-sm-sector-animation__body,
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-sm-sector-animation__body {
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 0.45rem 0.65rem 0.7rem;
+    padding: 0.65rem 0.75rem 0.75rem;
     background: transparent;
 }
 
+/* Tab bar: Text-align style, with margin to detach from title and side edges */
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-anim-tabs,
+.voodbuilder-gjs-root .voodbuilder-gjs-anim-tabs,
 .voodbuilder-gjs-anim-tabs {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.15rem;
-    margin: 0 0 0.4rem;
-    padding: 0.2rem;
-    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);
-    border-radius: 0 0 0.5rem 0.5rem;
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 85%, transparent);
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    width: auto;
+    margin: 0.15rem 0.15rem 0.7rem;
+    padding: 0;
+    border: 1px solid var(--vb-inspector-control-border, color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 92%, transparent));
+    border-radius: var(--vb-inspector-control-radius, 0.375rem);
+    background: var(--vb-inspector-control-bg-muted, color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 50%, var(--color-vp-bg-elv, #fff)));
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-anim-tab,
 .voodbuilder-gjs-anim-tab {
     flex: 1 1 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 0;
-    min-height: 1.85rem;
+    min-height: 2rem;
     margin: 0;
-    padding: 0.25rem;
+    padding: 0.375rem 0.2rem;
     border: none;
-    border-radius: 0.3125rem;
+    border-right: 1px solid var(--vb-inspector-control-border, color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 92%, transparent));
+    border-radius: 0;
     background: transparent;
     color: var(--color-vp-text-2, #64748b);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
+}
+
+.voodbuilder-gjs-anim-tab:last-child {
+    border-right: none;
 }
 
 .voodbuilder-gjs-anim-tab svg {
@@ -1201,13 +1225,14 @@
 
 .voodbuilder-gjs-anim-tab:hover {
     color: var(--color-vp-text-1, #0f172a);
-    background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 4%, transparent);
+    background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 3%, transparent);
 }
 
+.voodbuilder-gjs-shell__right .voodbuilder-gjs-anim-tab.is-active,
 .voodbuilder-gjs-anim-tab.is-active {
     color: var(--color-vp-brand-1, #0d9488);
-    background: var(--color-vp-bg-elv, #fff);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    background: var(--vb-inspector-control-bg, var(--color-vp-bg-elv, #fff));
+    box-shadow: none;
 }
 
 .voodbuilder-gjs-anim-panels {
@@ -1232,9 +1257,14 @@
     gap: 0.375rem 0.5rem;
     width: 100%;
     margin: 0;
-    padding: 0.3rem 0;
+    padding: 0.4375rem 0;
     border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
     background: transparent;
+}
+
+.voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-anim-property:last-child {
+    border-bottom: none;
 }
 
 .voodbuilder-gjs-sm-sector-animation .voodbuilder-gjs-anim-property .gjs-sm-label {
@@ -1345,24 +1375,84 @@
     color: var(--color-vp-brand-1, #0d9488);
 }
 
-.voodbuilder-gjs-anim-hint {
-    margin: 0.55rem 0 0;
-    padding: 0.5rem 0.6rem;
-    border-radius: 0.375rem;
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f1f5f9) 88%, transparent);
-    font-size: 0.625rem;
-    line-height: 1.45;
-    color: var(--color-vp-text-2, #64748b);
+/* ── Extra / Opacity: unitless 0–1 (no Dimension-style units box) ── */
+.voodbuilder-gjs-shell__right .gjs-sm-sector__extra > .gjs-sm-properties > .gjs-sm-property {
+    margin: 0;
+    padding: 0.4375rem 0.625rem;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
+    background: transparent;
 }
 
-/* Opacity is unitless (0–1): hide empty units slot that mirrors Dimension's px/% box. */
+.voodbuilder-gjs-shell__right .gjs-sm-sector__extra > .gjs-sm-properties > .gjs-sm-property:last-child {
+    border-bottom: none;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity.gjs-sm-slider {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity > .gjs-sm-label {
+    flex: none;
+    width: 100%;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-fields {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-range {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    min-height: var(--vb-inspector-control-h, 2rem);
+    margin: 0;
+    padding: 0 0.15rem;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-range input[type='range'] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--color-vp-brand-1, #0d9488);
+}
+
+/* Compact number only — mirrors slider, no units “combo” */
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer {
+    flex: 0 0 3.75rem;
+    width: 3.75rem;
+    max-width: 3.75rem;
+}
+
 .voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-units,
 .voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer .gjs-field-units,
-.voodbuilder-gjs-shell__right .gjs-sm-sector__extra .gjs-sm-property__opacity .gjs-field-units {
+.voodbuilder-gjs-shell__right .gjs-sm-sector__extra .gjs-sm-property__opacity .gjs-field-units,
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-units .voodbuilder-gjs-select-wrap {
     display: none !important;
 }
 
 .voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer .gjs-input-holder,
 .voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-input-holder {
     flex: 1 1 100%;
+    min-width: 0;
+}
+
+.voodbuilder-gjs-shell__right .gjs-sm-property__opacity .gjs-field-integer input {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    padding: 0 0.35rem !important;
 }

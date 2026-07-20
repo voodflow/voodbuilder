@@ -214,7 +214,6 @@ final class GrapesJsEditorGate
                 'classAnimationGroupDirection' => __('voodbuilder::pro.editor_ui.class_animation_group_direction'),
                 'classAnimationGroupFill' => __('voodbuilder::pro.editor_ui.class_animation_group_fill'),
                 'classAnimationGroupTransition' => __('voodbuilder::pro.editor_ui.class_animation_group_transition'),
-                'classAnimationHint' => __('voodbuilder::pro.editor_ui.class_animation_hint'),
                 'copyComponentClasses' => __('voodbuilder::pro.editor_ui.copy_component_classes'),
                 'copyComponentCode' => __('voodbuilder::pro.editor_ui.copy_component_code'),
                 'copyComponentCodeSuccess' => __('voodbuilder::pro.editor_ui.copy_component_code_success'),

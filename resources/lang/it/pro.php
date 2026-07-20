@@ -122,7 +122,6 @@ return [
         'class_animation_group_direction' => 'Direction',
         'class_animation_group_fill' => 'Fill mode',
         'class_animation_group_transition' => 'Transitions',
-        'class_animation_hint' => 'Durata = un ciclo. Ripetizioni = quante volte (spin di default è infinito).',
         'copy_component_classes' => 'Copia classi',
         'copy_component_code' => 'Copia codice',
         'copy_component_code_success' => 'Codice copiato negli appunti!',

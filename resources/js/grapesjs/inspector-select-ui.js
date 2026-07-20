@@ -488,6 +488,43 @@ function enhanceIntegerField(field) {
     }
 
     syncIntegerFieldUnits(field);
+    syncOpacityNumberFromSlider(field);
+}
+
+/** Opacity: keep the number field readable (show slider value when GrapesJS leaves it empty). */
+function syncOpacityNumberFromSlider(field) {
+    const property = field.closest('.gjs-sm-property__opacity');
+
+    if (! property) {
+        return;
+    }
+
+    const input = field.querySelector('.gjs-input-holder input');
+    const range = property.querySelector('.gjs-field-range input[type="range"]');
+
+    if (! input || ! range) {
+        return;
+    }
+
+    const paint = () => {
+        const raw = String(input.value ?? '').trim();
+
+        if (raw === '') {
+            input.placeholder = range.value || '1';
+        } else {
+            input.placeholder = '';
+        }
+    };
+
+    if (input.dataset.vbOpacitySync !== '1') {
+        input.dataset.vbOpacitySync = '1';
+        range.addEventListener('input', paint);
+        range.addEventListener('change', paint);
+        input.addEventListener('input', paint);
+        input.addEventListener('change', paint);
+    }
+
+    paint();
 }
 
 export function enhanceInspectorInputGroups(root = document) {

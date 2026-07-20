@@ -159,16 +159,38 @@ const INTERACTION_PREFIXES = INTERACTION_OPTIONS.map((o) => o.value);
 const ANIMATION_CLASS_SET = new Set(
     ANIMATION_BASES.flatMap((base) => INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)),
 );
-const ITERATION_CLASS_SET = new Set(ITERATION_OPTIONS.map((o) => o.value).filter(Boolean));
-const DURATION_CLASS_SET = new Set(DURATION_OPTIONS.map((o) => o.value).filter(Boolean));
-const DELAY_CLASS_SET = new Set(DELAY_OPTIONS.map((o) => o.value).filter(Boolean));
-const EASE_CLASS_SET = new Set(EASE_OPTIONS.map((o) => o.value).filter(Boolean));
-const DIRECTION_CLASS_SET = new Set(DIRECTION_OPTIONS.map((o) => o.value).filter(Boolean));
-const FILL_CLASS_SET = new Set(FILL_OPTIONS.map((o) => o.value).filter(Boolean));
+
+const ITERATION_BASES = ITERATION_OPTIONS.map((o) => o.value).filter(Boolean);
+const DURATION_BASES = DURATION_OPTIONS.map((o) => o.value).filter(Boolean);
+const DELAY_BASES = DELAY_OPTIONS.map((o) => o.value).filter(Boolean);
+const EASE_BASES = EASE_OPTIONS.map((o) => o.value).filter(Boolean);
+const DIRECTION_BASES = DIRECTION_OPTIONS.map((o) => o.value).filter(Boolean);
+const FILL_BASES = FILL_OPTIONS.map((o) => o.value).filter(Boolean);
+
+/** hover:animate-spin resets the animation shorthand — modifiers must share the same variant. */
+function prefixedClassSet(bases) {
+    return new Set(bases.flatMap((base) => INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)));
+}
+
+const ITERATION_CLASS_SET = prefixedClassSet(ITERATION_BASES);
+const DURATION_CLASS_SET = prefixedClassSet(DURATION_BASES);
+const DELAY_CLASS_SET = prefixedClassSet(DELAY_BASES);
+const EASE_CLASS_SET = prefixedClassSet(EASE_BASES);
+const DIRECTION_CLASS_SET = prefixedClassSet(DIRECTION_BASES);
+const FILL_CLASS_SET = prefixedClassSet(FILL_BASES);
 const TRANSITION_CLASS_SET = new Set(TRANSITION_OPTIONS.map((o) => o.value).filter(Boolean));
 const TRANSITION_DURATION_CLASS_SET = new Set(TRANSITION_DURATION_OPTIONS.map((o) => o.value).filter(Boolean));
 const TRANSITION_EASE_CLASS_SET = new Set(TRANSITION_EASE_OPTIONS.map((o) => o.value).filter(Boolean));
 const TRANSITION_DELAY_CLASS_SET = new Set(TRANSITION_DELAY_OPTIONS.map((o) => o.value).filter(Boolean));
+
+const ANIMATION_MODIFIER_GROUPS = [
+    { bases: ITERATION_BASES, set: ITERATION_CLASS_SET },
+    { bases: DURATION_BASES, set: DURATION_CLASS_SET },
+    { bases: DELAY_BASES, set: DELAY_CLASS_SET },
+    { bases: EASE_BASES, set: EASE_CLASS_SET },
+    { bases: DIRECTION_BASES, set: DIRECTION_CLASS_SET },
+    { bases: FILL_BASES, set: FILL_CLASS_SET },
+];
 
 function optionsHtml(options) {
     return options.map((opt) => (
@@ -299,10 +321,28 @@ function findPrefixedAnimation(classes) {
     return { base: '', prefix: '', full: '' };
 }
 
+function stripInteractionPrefix(className) {
+    const name = String(className ?? '');
+
+    for (const prefix of INTERACTION_PREFIXES) {
+        if (prefix !== '' && name.startsWith(prefix)) {
+            return { prefix, base: name.slice(prefix.length) };
+        }
+    }
+
+    return { prefix: '', base: name };
+}
+
 function resolveMappedClass(classes, options, legacyMap = {}, { useLegacy = true } = {}) {
     for (const opt of options) {
-        if (opt.value && classes.has(opt.value)) {
-            return opt.value;
+        if (! opt.value) {
+            continue;
+        }
+
+        for (const prefix of INTERACTION_PREFIXES) {
+            if (classes.has(`${prefix}${opt.value}`)) {
+                return opt.value;
+            }
         }
     }
 
@@ -317,6 +357,76 @@ function resolveMappedClass(classes, options, legacyMap = {}, { useLegacy = true
     }
 
     return '';
+}
+
+/**
+ * Keep iteration/direction/duration/… on the same variant as the animation
+ * (hover:animate-spin + hover:animate-twice). Bare modifiers lose to the
+ * animation shorthand when it is re-applied on :hover/:active.
+ */
+function reprefixAnimationModifiers(component, prefix) {
+    if (! component) {
+        return;
+    }
+
+    let next = componentClassList(component);
+    let changed = false;
+
+    for (const { bases, set } of ANIMATION_MODIFIER_GROUPS) {
+        const current = next.find((name) => set.has(name));
+
+        if (! current) {
+            continue;
+        }
+
+        const { base } = stripInteractionPrefix(current);
+
+        if (! bases.includes(base)) {
+            continue;
+        }
+
+        const desired = `${prefix}${base}`;
+
+        if (current === desired && next.filter((name) => set.has(name)).length === 1) {
+            continue;
+        }
+
+        next = next.filter((name) => ! set.has(name));
+        next.push(desired);
+        changed = true;
+    }
+
+    if (! changed) {
+        return;
+    }
+
+    if (typeof component.setClass === 'function') {
+        component.setClass(next);
+
+        return;
+    }
+
+    for (const name of componentClassList(component)) {
+        if (ANIMATION_MODIFIER_GROUPS.some(({ set }) => set.has(name))) {
+            component.removeClass?.(name);
+        }
+    }
+
+    for (const name of next) {
+        if (ANIMATION_MODIFIER_GROUPS.some(({ set }) => set.has(name))) {
+            component.addClass?.(name);
+        }
+    }
+}
+
+function interactionPrefixForComponent(component, root) {
+    const found = findPrefixedAnimation(new Set(componentClassList(component)));
+
+    if (found.base) {
+        return found.prefix;
+    }
+
+    return root?.querySelector?.('[data-voodbuilder-anim-interaction]')?.value ?? '';
 }
 
 function hasTransitionUtility(classes) {
@@ -355,6 +465,14 @@ function applyAnimationWithInteraction(component, root) {
     const prefix = root.querySelector('[data-voodbuilder-anim-interaction]')?.value ?? '';
     const next = base ? `${prefix}${base}` : null;
     replaceClassGroup(component, ANIMATION_CLASS_SET, next);
+    reprefixAnimationModifiers(component, prefix);
+}
+
+function applyModifierWithInteraction(component, root, groupSet, selectAttr) {
+    const prefix = interactionPrefixForComponent(component, root);
+    const base = root.querySelector(selectAttr)?.value ?? '';
+    const next = base ? `${prefix}${base}` : null;
+    replaceClassGroup(component, groupSet, next);
 }
 
 function buildAnimationSector(editor, labels = {}) {
@@ -482,7 +600,6 @@ function buildAnimationSector(editor, labels = {}) {
                     })}
                 `)}
             </div>
-            <p class="voodbuilder-gjs-anim-hint">${labels.classAnimationHint ?? 'Duration = length of one cycle. Iterations control how many times it runs (spin defaults to infinite).'}</p>
         </div>
     `;
 
@@ -551,24 +668,41 @@ function buildAnimationSector(editor, labels = {}) {
         sector.querySelector(addAttr)?.addEventListener('click', apply);
     };
 
+    const bindModifierField = (selectAttr, addAttr, groupSet) => {
+        bindField(selectAttr, addAttr, groupSet, {
+            transform: (component, root) => applyModifierWithInteraction(component, root, groupSet, selectAttr),
+        });
+    };
+
     bindField('[data-voodbuilder-anim-type]', '[data-voodbuilder-anim-type-add]', ANIMATION_CLASS_SET, {
         transform: applyAnimationWithInteraction,
     });
     bindField('[data-voodbuilder-anim-interaction]', '[data-voodbuilder-anim-interaction-add]', ANIMATION_CLASS_SET, {
         transform: applyAnimationWithInteraction,
     });
-    bindField('[data-voodbuilder-anim-iteration]', '[data-voodbuilder-anim-iteration-add]', ITERATION_CLASS_SET);
-    bindField('[data-voodbuilder-anim-duration]', '[data-voodbuilder-anim-duration-add]', DURATION_CLASS_SET);
-    bindField('[data-voodbuilder-anim-delay]', '[data-voodbuilder-anim-delay-add]', DELAY_CLASS_SET);
-    bindField('[data-voodbuilder-anim-ease]', '[data-voodbuilder-anim-ease-add]', EASE_CLASS_SET);
-    bindField('[data-voodbuilder-anim-direction]', '[data-voodbuilder-anim-direction-add]', DIRECTION_CLASS_SET);
-    bindField('[data-voodbuilder-anim-fill]', '[data-voodbuilder-anim-fill-add]', FILL_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-iteration]', '[data-voodbuilder-anim-iteration-add]', ITERATION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-duration]', '[data-voodbuilder-anim-duration-add]', DURATION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-delay]', '[data-voodbuilder-anim-delay-add]', DELAY_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-ease]', '[data-voodbuilder-anim-ease-add]', EASE_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-direction]', '[data-voodbuilder-anim-direction-add]', DIRECTION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-fill]', '[data-voodbuilder-anim-fill-add]', FILL_CLASS_SET);
     bindField('[data-voodbuilder-anim-transition]', '[data-voodbuilder-anim-transition-add]', TRANSITION_CLASS_SET);
     bindField('[data-voodbuilder-anim-transition-duration]', '[data-voodbuilder-anim-transition-duration-add]', TRANSITION_DURATION_CLASS_SET);
     bindField('[data-voodbuilder-anim-transition-ease]', '[data-voodbuilder-anim-transition-ease-add]', TRANSITION_EASE_CLASS_SET);
     bindField('[data-voodbuilder-anim-transition-delay]', '[data-voodbuilder-anim-transition-delay-add]', TRANSITION_DELAY_CLASS_SET);
 
     editor.on('component:selected', (component) => {
+        const prefix = interactionPrefixForComponent(component, sector);
+
+        if (prefix !== '') {
+            const before = componentClassList(component).join(' ');
+            reprefixAnimationModifiers(component, prefix);
+
+            if (before !== componentClassList(component).join(' ')) {
+                scheduleClassCompile(editor);
+            }
+        }
+
         syncSelectsFromComponent(sector, component);
     });
 

@@ -619,7 +619,10 @@ export function initVpressGrapesJs(container, options = {}) {
     if (shell) {
         const shellRoot = shell.shell?.closest('.voodbuilder-gjs-root') ?? container;
         shellRoot.classList.add('voodbuilder-gjs-root--booting');
-        registerEditorBuildStatus(editor, shell, labels);
+        registerEditorBuildStatus(editor, shell, labels, {
+            brand: options.builderBrand ?? 'VoodBuilder',
+            version: options.packageVersion ?? '',
+        });
         registerCanvasBootGate(editor, shellRoot, shell);
         configureEditorLayout(editor, shell, labels);
         wireInspector(editor, shell, options, labels);
@@ -1551,6 +1554,7 @@ function mountFrontendEditor() {
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',
+        packageVersion: config.packageVersion ?? '',
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
         siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },

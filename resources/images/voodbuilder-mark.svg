@@ -1,0 +1,42 @@
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="voodGradAnim" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a78bfa" />
+      <stop offset="1" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="flowGradAnim" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34d399" />
+      <stop offset="1" stop-color="#059669" />
+    </linearGradient>
+    <filter id="glowAnim" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Ambience -->
+  <circle cx="50" cy="50" r="40" fill="#7c3aed" opacity="0.05" />
+
+  <!-- Connection Lines (Underlay) -->
+  <path d="M25 25 Q 25 75 50 85" stroke="#4c1d95" stroke-width="8" stroke-linecap="round" opacity="0.2" />
+  <path d="M75 25 Q 75 75 50 85" stroke="#064e3b" stroke-width="8" stroke-linecap="round" opacity="0.2" />
+
+  <!-- Main Paths -->
+  <path d="M25 25 Q 25 75 50 85" stroke="url(#voodGradAnim)" stroke-width="6" stroke-linecap="round" />
+  <path d="M75 25 Q 75 75 50 85" stroke="url(#flowGradAnim)" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Animated Particles (SMIL) -->
+  <path d="M25 25 Q 25 75 50 85" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 20" opacity="0.8">
+    <animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite" />
+  </path>
+  <path d="M75 25 Q 75 75 50 85" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 20" opacity="0.8">
+    <animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Nodes -->
+  <circle cx="25" cy="25" r="7" fill="#8b5cf6" stroke="#2e1065" stroke-width="2" />
+  <circle cx="75" cy="25" r="7" fill="#10b981" stroke="#2e1065" stroke-width="2" />
+  <circle cx="50" cy="85" r="7" fill="#ffffff" stroke="#2e1065" stroke-width="2" filter="url(#glowAnim)">
+    <animate attributeName="r" values="7;8;7" dur="2s" repeatCount="indefinite" />
+  </circle>
+</svg>

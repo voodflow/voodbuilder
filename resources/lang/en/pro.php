@@ -122,7 +122,6 @@ return [
         'class_animation_group_direction' => 'Direction',
         'class_animation_group_fill' => 'Fill mode',
         'class_animation_group_transition' => 'Transitions',
-        'class_animation_hint' => 'Duration = one cycle. Iterations = how many times (spin defaults to infinite).',
         'copy_component_classes' => 'Copy classes',
         'copy_component_code' => 'Copy code',
         'copy_component_code_success' => 'Code copied to clipboard!',
