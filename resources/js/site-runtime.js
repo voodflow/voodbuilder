@@ -1,11 +1,11 @@
 import { initVideoFacades } from './grapesjs/video-runtime.js';
-import { initBricksRuntime } from './grapesjs/bricks-runtime.js';
+import { initVbRuntime } from './grapesjs/vb-runtime.js';
 import { initSiteChrome } from './grapesjs/site-chrome-runtime.js';
 import { initPopups } from './popups-runtime.js';
 
 function bootSiteRuntime() {
     initVideoFacades();
-    initBricksRuntime();
+    initVbRuntime();
     initSiteChrome();
     initPopups();
 }

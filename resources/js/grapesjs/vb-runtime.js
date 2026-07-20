@@ -1,5 +1,5 @@
 /**
- * Frontend runtime for Bricks-style GrapesJS blocks.
+ * Frontend runtime for VoodBuilder GrapesJS utility blocks (carousel, counters, CTA, logos, …).
  */
 
 function wordsInElement(element) {
@@ -165,13 +165,14 @@ export function initSliders() {
     });
 }
 
-export function initBricksRuntime() {
+export function initVbRuntime() {
     initReadingTime();
     initSocialShare();
     initCarousels();
     initSliders();
     initAnimatedCounters();
     initAnimatedCtas();
+    initViewportAnimations();
     initLogoScroll();
 }
 
@@ -321,6 +322,117 @@ export function initAnimatedCounters(options = {}) {
     }, { threshold: 0.2, rootMargin: '0px 0px -5% 0px' });
 
     deferred.forEach((node) => observer.observe(node));
+}
+
+/**
+ * Style Manager “on visible” animations — play when the element enters the viewport.
+ * Marker class: .vb-animate-on-visible (paired with animate-* utilities).
+ *
+ * @param {{ root?: ParentNode, force?: boolean, preferImmediate?: boolean }} [options]
+ */
+export function initViewportAnimations(options = {}) {
+    const root = options.root ?? document;
+    const force = options.force === true;
+    const preferImmediate = options.preferImmediate === true;
+    const nodes = [...root.querySelectorAll('.vb-animate-on-visible')];
+
+    if (nodes.length === 0) {
+        return;
+    }
+
+    const reveal = (node) => {
+        if (force) {
+            node.classList.remove('is-visible');
+            void node.offsetWidth;
+        }
+
+        window.requestAnimationFrame(() => {
+            node.classList.add('is-visible');
+        });
+    };
+
+    if (prefersReducedMotion()) {
+        nodes.forEach((node) => node.classList.add('is-visible'));
+
+        return;
+    }
+
+    if (preferImmediate || typeof IntersectionObserver === 'undefined') {
+        nodes.forEach((node) => reveal(node));
+
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (! entry.isIntersecting) {
+                return;
+            }
+
+            reveal(entry.target);
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
+
+    nodes.forEach((node) => {
+        if (node.classList.contains('is-visible') && ! force) {
+            return;
+        }
+
+        observer.observe(node);
+    });
+}
+
+function shouldSkipEditorAnimationReplay(element) {
+    if (! (element instanceof Element)) {
+        return true;
+    }
+
+    if (element.closest('.vb-logo-scroll')) {
+        return true;
+    }
+
+    const className = element.getAttribute('class') ?? '';
+
+    return /(?:^|\s)animate-logo-marquee(?:\s|$)/.test(className);
+}
+
+/**
+ * Restart Tailwind `animate-*` keyframes on a subtree (editor canvas preview).
+ *
+ * @param {ParentNode} root
+ */
+export function restartCssKeyframeAnimations(root) {
+    const scope = root ?? document;
+
+    scope.querySelectorAll('[class*="animate-"]').forEach((element) => {
+        if (shouldSkipEditorAnimationReplay(element)) {
+            return;
+        }
+
+        const className = element.getAttribute('class') ?? '';
+
+        if (! /(?:^|\s)(?:hover:|active:)?animate-[\w-]+/.test(className)) {
+            return;
+        }
+
+        element.style.animation = 'none';
+        void element.offsetWidth;
+        element.style.removeProperty('animation');
+    });
+}
+
+/**
+ * Editor-only: reveal on-visible markers and replay Style Manager animations
+ * so fade/slide effects are visible while authoring.
+ *
+ * @param {{ root?: ParentNode }} [options]
+ */
+export function replayEditorCanvasAnimations(options = {}) {
+    const root = options.root ?? document;
+
+    initViewportAnimations({ root, force: true, preferImmediate: true });
+    restartCssKeyframeAnimations(root);
 }
 
 /**

@@ -34,6 +34,7 @@
         :show-search="(bool) ($config['show_search'] ?? true)"
         :show-notifications="(bool) ($config['show_notifications'] ?? true)"
         :show-profile-menu="(bool) ($config['show_profile_menu'] ?? true)"
+        :brand-config="$config"
         :in-page-block="true"
     />
 

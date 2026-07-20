@@ -1,5 +1,5 @@
 /**
- * Reusable components library — draggable instances like blocks (Bricks-style).
+ * Reusable components library — draggable instances like blocks.
  */
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';

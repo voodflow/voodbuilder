@@ -18,11 +18,13 @@ final class SiteNavConfig
             'variant' => 'simple',
         ]);
 
-        foreach (['show_search', 'show_notifications', 'show_profile_menu'] as $flag) {
+        foreach (['show_search', 'show_notifications', 'show_profile_menu', 'show_logo', 'show_site_name'] as $flag) {
             if (array_key_exists($flag, $config)) {
                 $normalized[$flag] = (bool) $config[$flag];
             }
         }
+
+        $normalized = array_merge($normalized, ChromeBrandLogos::normalizeConfigKeys($config));
 
         if ($legacyVariant !== 'simple') {
             if ($legacyVariant === 'centered_links') {
@@ -57,6 +59,12 @@ final class SiteNavConfig
             'show_search' => true,
             'show_notifications' => true,
             'show_profile_menu' => true,
+            'show_logo' => true,
+            'show_site_name' => true,
+            'logo_desktop_light' => null,
+            'logo_desktop_dark' => null,
+            'logo_mobile_light' => null,
+            'logo_mobile_dark' => null,
         ];
     }
 }

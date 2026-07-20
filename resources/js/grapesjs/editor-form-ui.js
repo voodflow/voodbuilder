@@ -161,3 +161,161 @@ export function createCheckboxField({ label, name, checked, onChange }) {
 
     return field;
 }
+
+const LOGO_FIELD_KEYS = [
+    { key: 'logo_desktop_light', prop: 'vpressLogoDesktopLight', labelKey: 'logoDesktopLight', fallback: 'Logo desktop light' },
+    { key: 'logo_desktop_dark', prop: 'vpressLogoDesktopDark', labelKey: 'logoDesktopDark', fallback: 'Logo desktop dark' },
+    { key: 'logo_mobile_light', prop: 'vpressLogoMobileLight', labelKey: 'logoMobileLight', fallback: 'Logo mobile light' },
+    { key: 'logo_mobile_dark', prop: 'vpressLogoMobileDark', labelKey: 'logoMobileDark', fallback: 'Logo mobile dark' },
+];
+
+export function chromeLogoFieldDefs() {
+    return LOGO_FIELD_KEYS;
+}
+
+/**
+ * Image URL field with optional GrapesJS AssetManager picker.
+ */
+export function createImageUrlField({
+    label,
+    name,
+    value = '',
+    editor = null,
+    chooseLabel = 'Choose',
+    clearLabel = 'Clear',
+    onChange,
+}) {
+    const id = fieldId(name);
+    const field = document.createElement('div');
+    field.className = 'voodbuilder-gjs-form-field';
+
+    const labelEl = document.createElement('label');
+    labelEl.className = 'voodbuilder-gjs-form-label';
+    labelEl.htmlFor = id;
+    labelEl.textContent = label;
+
+    const row = document.createElement('div');
+    row.className = 'voodbuilder-gjs-image-url-row';
+
+    const preview = document.createElement('div');
+    preview.className = 'voodbuilder-gjs-image-url-preview';
+    preview.setAttribute('aria-hidden', 'true');
+
+    const input = document.createElement('input');
+    input.id = id;
+    input.type = 'url';
+    input.name = name;
+    input.className = 'voodbuilder-gjs-input';
+    input.value = value ?? '';
+    input.placeholder = 'https://… or /storage/…';
+    input.dataset.setting = name;
+
+    const actions = document.createElement('div');
+    actions.className = 'voodbuilder-gjs-image-url-actions';
+
+    const chooseBtn = document.createElement('button');
+    chooseBtn.type = 'button';
+    chooseBtn.className = 'voodbuilder-gjs-topbar__btn voodbuilder-gjs-topbar__btn--ghost';
+    chooseBtn.textContent = chooseLabel;
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'voodbuilder-gjs-topbar__btn voodbuilder-gjs-topbar__btn--ghost';
+    clearBtn.textContent = clearLabel;
+
+    const syncPreview = () => {
+        const src = String(input.value ?? '').trim();
+
+        if (src === '') {
+            preview.replaceChildren();
+            preview.hidden = true;
+
+            return;
+        }
+
+        preview.hidden = false;
+        let img = preview.querySelector('img');
+
+        if (! img) {
+            img = document.createElement('img');
+            img.alt = '';
+            preview.replaceChildren(img);
+        }
+
+        img.src = src;
+    };
+
+    const emit = () => {
+        syncPreview();
+
+        if (typeof onChange === 'function') {
+            onChange(String(input.value ?? '').trim());
+        }
+    };
+
+    input.addEventListener('change', emit);
+    input.addEventListener('blur', emit);
+
+    chooseBtn.addEventListener('click', () => {
+        const assets = editor?.Assets ?? editor?.AssetManager;
+
+        if (! assets || typeof assets.open !== 'function') {
+            input.focus();
+
+            return;
+        }
+
+        assets.open({
+            types: ['image'],
+            select(asset, complete) {
+                const src = typeof asset?.getSrc === 'function'
+                    ? asset.getSrc()
+                    : (asset?.get?.('src') ?? asset?.src ?? '');
+
+                if (src) {
+                    input.value = src;
+                    emit();
+                }
+
+                if (complete && typeof assets.close === 'function') {
+                    assets.close();
+                }
+            },
+        });
+    });
+
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        emit();
+    });
+
+    actions.append(chooseBtn, clearBtn);
+    row.append(preview, input, actions);
+    field.append(labelEl, row);
+    syncPreview();
+
+    return field;
+}
+
+/**
+ * Append the four chrome logo fields to a settings fields container.
+ */
+export function appendChromeLogoFields({ fields, root, editor, applyChange, labelFn }) {
+    const resolveLabel = typeof labelFn === 'function'
+        ? labelFn
+        : (_key, fallback) => fallback;
+
+    for (const def of LOGO_FIELD_KEYS) {
+        fields.append(
+            createImageUrlField({
+                label: resolveLabel(def.labelKey, def.fallback),
+                name: def.prop,
+                value: root.get(def.prop) ?? '',
+                editor,
+                chooseLabel: resolveLabel('logoChoose', 'Choose'),
+                clearLabel: resolveLabel('logoClear', 'Clear'),
+                onChange: (url) => applyChange(def.prop, url),
+            }),
+        );
+    }
+}

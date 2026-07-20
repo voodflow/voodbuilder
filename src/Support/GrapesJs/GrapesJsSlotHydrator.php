@@ -13,7 +13,7 @@ final class GrapesJsSlotHydrator
 {
     public static function hydrateSubtree(DOMDocument $document, DOMElement $root, bool $preview = false, array $config = []): void
     {
-        self::hydrateBrands($document, $root, $preview);
+        self::hydrateBrands($document, $root, $preview, $config);
         self::hydrateMenus($document, $root, $preview);
 
         if ($config !== []) {
@@ -31,7 +31,7 @@ final class GrapesJsSlotHydrator
 
         $document = self::loadDocument($html);
 
-        self::hydrateBrands($document, $document->documentElement, $preview);
+        self::hydrateBrands($document, $document->documentElement, $preview, $config);
         self::hydrateMenus($document, $document->documentElement, $preview);
 
         if ($config !== []) {
@@ -43,11 +43,14 @@ final class GrapesJsSlotHydrator
         return self::extractBodyHtml($document) ?? $html;
     }
 
-    public static function renderBrand(bool $preview = false): string
+    public static function renderBrand(bool $preview = false, array $config = []): string
     {
+        $normalized = SiteFooterConfig::normalize($config);
+
         return view('voodbuilder::grapesjs.blocks.partials.footer-brand', [
             'brandName' => VoodbuilderSettings::brandName(),
-            'logoUrl' => VoodbuilderSettings::logoUrl(),
+            'config' => $normalized,
+            'showBrand' => (bool) ($normalized['show_brand'] ?? true),
             'preview' => $preview,
         ])->render();
     }
@@ -67,14 +70,14 @@ final class GrapesJsSlotHydrator
         ])->render();
     }
 
-    protected static function hydrateBrands(DOMDocument $document, DOMElement $root, bool $preview): void
+    protected static function hydrateBrands(DOMDocument $document, DOMElement $root, bool $preview, array $config = []): void
     {
         foreach ($root->getElementsByTagName('*') as $element) {
             if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-brand')) {
                 continue;
             }
 
-            self::replaceElementInnerHtml($document, $element, self::renderBrand($preview));
+            self::replaceElementInnerHtml($document, $element, self::renderBrand($preview, $config));
         }
     }
 

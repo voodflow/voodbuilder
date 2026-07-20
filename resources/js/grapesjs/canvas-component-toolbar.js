@@ -128,7 +128,9 @@ function buildComponentToolbar(editor, component, labels = {}) {
                 'aria-label': labels.copyComponentCode ?? 'Copy code',
             },
             label: lucideIcon('clipboard', 16),
-            command: CMD_COPY_COMPONENT_CODE,
+            command: async (ed) => {
+                await runCopyComponentCode(ed, labels);
+            },
         });
     }
 
@@ -140,7 +142,9 @@ function buildComponentToolbar(editor, component, labels = {}) {
             'aria-label': labels.copyComponentClasses ?? 'Copy classes',
         },
         label: lucideIcon('tags', 16),
-        command: CMD_COPY_COMPONENT_CLASSES,
+        command: async (ed) => {
+            await copySelectedComponentClasses(ed, labels);
+        },
     });
 
     toolbar.push(...buildDynamicToolbarButtons(labels));
@@ -209,11 +213,91 @@ function clampCanvasToolbarPosition(editor) {
     });
 }
 
+function showToolbarToast(message) {
+    const toast = document.getElementById('voodbuilder-gjs-classes-toast')
+        ?? Object.assign(document.createElement('div'), {
+            id: 'voodbuilder-gjs-classes-toast',
+            className: 'voodbuilder-gjs-classes-toast',
+        });
+
+    if (! toast.parentElement) {
+        document.body.appendChild(toast);
+    }
+
+    toast.innerHTML = `<div class="voodbuilder-gjs-classes-toast__title">${message}</div>`;
+    toast.hidden = false;
+    window.clearTimeout(toast._hideTimer);
+    toast._hideTimer = window.setTimeout(() => {
+        toast.hidden = true;
+    }, 2000);
+}
+
+async function runCopyComponentCode(editor, labels = {}) {
+    const selected = editor.getSelected();
+
+    if (! selected) {
+        return false;
+    }
+
+    const html = canEditBlockCode(selected, editor)
+        ? extractBlockCodeHtml(editor, selected)
+        : String(selected.toHTML?.() ?? '');
+
+    const ok = await copyTextToClipboard(html.trim());
+
+    showToolbarToast(
+        ok
+            ? (labels.copyComponentCodeSuccess ?? 'Code copied to clipboard!')
+            : (labels.copyComponentCodeFailed ?? 'Could not copy code'),
+    );
+
+    return ok;
+}
+
+function ensureCopyComponentCommands(editor, labels = {}) {
+    if (! editor?.Commands) {
+        return;
+    }
+
+    const commands = editor.Commands;
+    const hasCommand = (id) => (typeof commands.has === 'function'
+        ? commands.has(id)
+        : Boolean(commands.getAll?.()?.[id]));
+
+    // Never use Commands.get() for existence checks — missing ids log a warning.
+    if (! hasCommand(CMD_COPY_COMPONENT_CLASSES)) {
+        commands.add(CMD_COPY_COMPONENT_CLASSES, {
+            run: async (ed) => {
+                await copySelectedComponentClasses(ed, labels);
+            },
+        });
+    }
+
+    if (! hasCommand(CMD_COPY_COMPONENT_CODE)) {
+        commands.add(CMD_COPY_COMPONENT_CODE, {
+            run: async (ed) => {
+                await runCopyComponentCode(ed, labels);
+            },
+        });
+    }
+}
+
+/**
+ * GrapesJS plugin — register copy commands before project hydration.
+ *
+ * @param {object} editor
+ * @param {{ labels?: object }} [opts]
+ */
+export function voodbuilderCopyCommandsPlugin(editor, opts = {}) {
+    ensureCopyComponentCommands(editor, opts.labels ?? {});
+}
+
 export function ensureCanvasComponentToolbarButtons(editor, component, labels = {}) {
     if (! component) {
         return;
     }
 
+    ensureCopyComponentCommands(editor, labels);
     component.set('toolbar', buildComponentToolbar(editor, component, labels));
 
     window.requestAnimationFrame(() => {
@@ -262,6 +346,9 @@ export function registerCanvasDropAffordance(editor) {
 }
 
 export function registerCanvasComponentToolbar(editor, labels = {}) {
+    // Always (re)register copy commands — early returns must not leave toolbar IDs unresolved.
+    ensureCopyComponentCommands(editor, labels);
+
     if (editor.__voodbuilderCanvasToolbarRegistered) {
         return;
     }
@@ -269,54 +356,6 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
     editor.__voodbuilderCanvasToolbarRegistered = true;
 
     registerCanvasDropAffordance(editor);
-
-    if (! editor.Commands.get(CMD_COPY_COMPONENT_CLASSES)) {
-        editor.Commands.add(CMD_COPY_COMPONENT_CLASSES, {
-            run: async (ed) => {
-                await copySelectedComponentClasses(ed, labels);
-            },
-        });
-    }
-
-    if (! editor.Commands.get(CMD_COPY_COMPONENT_CODE)) {
-        editor.Commands.add(CMD_COPY_COMPONENT_CODE, {
-            run: async (ed) => {
-                const selected = ed.getSelected();
-
-                if (! selected) {
-                    return;
-                }
-
-                const html = canEditBlockCode(selected, ed)
-                    ? extractBlockCodeHtml(ed, selected)
-                    : String(selected.toHTML?.() ?? '');
-
-                const ok = await copyTextToClipboard(html.trim());
-
-                // Reuse classes toast styling via a tiny ephemeral notice.
-                const toast = document.getElementById('voodbuilder-gjs-classes-toast')
-                    ?? Object.assign(document.createElement('div'), {
-                        id: 'voodbuilder-gjs-classes-toast',
-                        className: 'voodbuilder-gjs-classes-toast',
-                    });
-
-                if (! toast.parentElement) {
-                    document.body.appendChild(toast);
-                }
-
-                toast.innerHTML = `<div class="voodbuilder-gjs-classes-toast__title">${
-                    ok
-                        ? (labels.copyComponentCodeSuccess ?? 'Code copied to clipboard!')
-                        : (labels.copyComponentCodeFailed ?? 'Could not copy code')
-                }</div>`;
-                toast.hidden = false;
-                window.clearTimeout(toast._hideTimer);
-                toast._hideTimer = window.setTimeout(() => {
-                    toast.hidden = true;
-                }, 2000);
-            },
-        });
-    }
 
     editor.on('component:selected', (component) => {
         ensureCanvasComponentToolbarButtons(editor, component, labels);
@@ -329,6 +368,8 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
     });
 
     editor.on('load', () => {
+        ensureCopyComponentCommands(editor, labels);
+
         const canvasView = editor.Canvas?.getCanvasView?.()?.el;
 
         if (! canvasView) {

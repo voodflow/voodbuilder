@@ -5,52 +5,76 @@
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { resolveSettings } from '../../../blocks/settings/index.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
+import { chromeLogoFieldDefs } from '../../../editor-form-ui.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isNavBlock } from '../../ids.js';
 import { migrateNavId } from './preview.js';
 
-const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressStickyNav']);
+const STRUCTURAL_SITE_NAV_PROPS = new Set([
+    'vpressStickyNav',
+    'vpressShowLogo',
+    'vpressShowSiteName',
+    ...chromeLogoFieldDefs().map((def) => def.prop),
+]);
 
 const siteNavRefreshTimers = new WeakMap();
 
-function siteHeaderTraitOptions() {
+export function navSettingLabel(editor, key, fallback) {
+    return editor?.__voodbuilderLabels?.[key] ?? fallback;
+}
+
+function siteHeaderTraitOptions(editor = null) {
+    const label = (key, fallback) => navSettingLabel(editor, key, fallback);
+
     return [
         {
+            type: 'checkbox',
+            label: label('navShowLogo', 'Show logo'),
+            name: 'vpressShowLogo',
+            changeProp: true,
+        },
+        {
+            type: 'checkbox',
+            label: label('navShowSiteName', 'Show site name'),
+            name: 'vpressShowSiteName',
+            changeProp: true,
+        },
+        {
             type: 'select',
-            label: 'Menu position',
+            label: label('navMenuPosition', 'Menu position'),
             name: 'vpressMainNavAlign',
             changeProp: true,
             options: [
-                { value: 'start', id: 'start', name: 'Left (next to logo)' },
-                { value: 'center', id: 'center', name: 'Center' },
+                { value: 'start', id: 'start', name: label('navMenuLeft', 'Left (next to logo)') },
+                { value: 'center', id: 'center', name: label('navMenuCenter', 'Center') },
             ],
         },
         {
             type: 'select',
-            label: 'Sticky',
+            label: label('navSticky', 'Sticky'),
             name: 'vpressStickyNav',
             changeProp: true,
             options: [
-                { value: 'inherit', id: 'inherit', name: 'Site default' },
-                { value: 'sticky', id: 'sticky', name: 'Sticky' },
-                { value: 'static', id: 'static', name: 'Scrolls with page' },
+                { value: 'inherit', id: 'inherit', name: label('navStickyInherit', 'Site default') },
+                { value: 'sticky', id: 'sticky', name: label('navStickyOn', 'Sticky') },
+                { value: 'static', id: 'static', name: label('navStickyOff', 'Scrolls with page') },
             ],
         },
         {
             type: 'checkbox',
-            label: 'Show search',
+            label: label('navShowSearch', 'Show search'),
             name: 'vpressShowSearch',
             changeProp: true,
         },
         {
             type: 'checkbox',
-            label: 'Show notifications',
+            label: label('navShowNotifications', 'Show notifications'),
             name: 'vpressShowNotifications',
             changeProp: true,
         },
         {
             type: 'checkbox',
-            label: 'Show account menu',
+            label: label('navShowProfile', 'Show account menu'),
             name: 'vpressShowProfileMenu',
             changeProp: true,
         },
@@ -164,6 +188,8 @@ export function applySiteNavSettingsPreview(root, editor = null) {
     const showSearch = root.get('vpressShowSearch') === true;
     const showNotifications = root.get('vpressShowNotifications') === true;
     const showProfile = root.get('vpressShowProfileMenu') === true;
+    const showLogo = root.get('vpressShowLogo') !== false;
+    const showSiteName = root.get('vpressShowSiteName') !== false;
     const alignCenter = root.get('vpressMainNavAlign') === 'center';
     const stickyMode = root.get('vpressStickyNav') ?? 'inherit';
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
@@ -203,6 +229,8 @@ export function applySiteNavSettingsPreview(root, editor = null) {
             setNavChromeVisible(node, showNotifications);
         } else if (kind === 'profile') {
             setNavChromeVisible(node, showProfile);
+        } else if (kind === 'brand') {
+            setNavChromeVisible(node, showLogo || showSiteName);
         }
     });
 }
@@ -235,7 +263,14 @@ export function syncSiteHeaderConfig(component) {
         show_search: component.get('vpressShowSearch') === true,
         show_notifications: component.get('vpressShowNotifications') === true,
         show_profile_menu: component.get('vpressShowProfileMenu') === true,
+        show_logo: component.get('vpressShowLogo') !== false,
+        show_site_name: component.get('vpressShowSiteName') !== false,
     };
+
+    for (const def of chromeLogoFieldDefs()) {
+        const value = String(component.get(def.prop) ?? '').trim();
+        config[def.key] = value !== '' ? value : null;
+    }
 
     component.set('vpressConfig', config, { silent: true });
     component.addAttributes({
@@ -247,7 +282,7 @@ export function applySiteNavSettingChange(editor, root, name, value) {
     runWithSettingsChangeGuard(editor, () => {
         if (typeof value === 'boolean') {
             root.set(name, value, { silent: true });
-        } else if (typeof value === 'string' && value !== '') {
+        } else if (typeof value === 'string') {
             root.set(name, value, { silent: true });
         }
 
@@ -280,11 +315,17 @@ export function configureSiteNavTraits(component, editor) {
     component.set('vpressShowSearch', config.show_search === true, { silent: true });
     component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
     component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
+    component.set('vpressShowLogo', config.show_logo !== false, { silent: true });
+    component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
+
+    for (const def of chromeLogoFieldDefs()) {
+        component.set(def.prop, config[def.key] ?? '', { silent: true });
+    }
 
     if (typeof component.setTraits === 'function') {
-        component.setTraits(siteHeaderTraitOptions());
+        component.setTraits(siteHeaderTraitOptions(editor));
     } else {
-        component.set('traits', siteHeaderTraitOptions());
+        component.set('traits', siteHeaderTraitOptions(editor));
         component.getTraits?.();
     }
 

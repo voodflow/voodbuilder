@@ -1,5 +1,5 @@
 /**
- * Pin frequently used blocks to a dedicated "Pinned" category (Bricks-style).
+ * Pin frequently used blocks to a dedicated "Pinned" category.
  */
 
 import { isComponentBlockElement, isComponentBlockId, resolveBlockFromElement } from './component-block-utils.js';

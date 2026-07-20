@@ -1331,7 +1331,8 @@
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 88%, transparent);
     border-radius: 0.4375rem;
     background: var(--color-vp-bg-elv, #fff);
-    overflow: hidden;
+    /* Do not clip the custom select trigger; the menu itself is portaled. */
+    overflow: visible;
     color-scheme: light;
 }
 

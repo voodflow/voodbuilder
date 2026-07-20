@@ -1053,15 +1053,17 @@ export function registerAnimatedBlocks(editor) {
 
 export function configureAnimatedCanvas(editor) {
     const replayAnimations = () => {
-        void import('./bricks-runtime.js').then(({
+        void import('./vb-runtime.js').then(({
             initAnimatedCounters,
             initAnimatedCtas,
             initLogoScroll,
+            replayEditorCanvasAnimations,
         }) => {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
             initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
             initAnimatedCtas({ root: frameDoc, force: true });
+            replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
         }).catch(() => {
             // Optional in editor.

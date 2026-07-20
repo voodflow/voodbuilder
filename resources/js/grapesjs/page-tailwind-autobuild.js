@@ -1,7 +1,8 @@
 /**
  * Recompiles page-level Tailwind utilities in the canvas iframe when classes change.
  * Style Manager paints are inline — they must NOT trigger compile-css.
- * Rebuild when: Classes panel, Global Classes applied to a component, structure drops.
+ * Rebuild only from Classes / Selector Manager (add/remove/rename class), not from
+ * generic page edits (content, traits, settings, structure drops).
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
@@ -11,47 +12,8 @@ const LIVE_STYLE_ID = 'voodbuilder-page-live-css';
 const DEBOUNCE_MS = 450;
 const BUILD_SCOPE = 'page-css';
 const INITIAL_BUILD_DELAY_MS = 200;
-const DROP_BUILD_DELAY_MS = 160;
 const SETTINGS_RETRY_MS = 100;
 const MAX_SETTINGS_RETRIES = 40;
-
-/** Attribute noise that must not retrigger live CSS compile. */
-const IGNORED_ATTR_KEYS = new Set([
-    'style', // Style Manager → inline styles (avoidInlineStyle:false)
-    'id',
-]);
-
-const IGNORED_ATTR_PREFIXES = [
-    'data-gjs-',
-    'data-voodbuilder-cta-label',
-    'data-voodbuilder-cta',
-    'data-highlightable',
-];
-
-function shouldIgnoreAttributeUpdate(component, event) {
-    const changed = event?.attributes
-        ?? event?.changed
-        ?? component?.changed
-        ?? null;
-
-    if (! changed || typeof changed !== 'object') {
-        return false;
-    }
-
-    const keys = Object.keys(changed);
-
-    if (keys.length === 0) {
-        return false;
-    }
-
-    return keys.every((key) => {
-        if (IGNORED_ATTR_KEYS.has(key)) {
-            return true;
-        }
-
-        return IGNORED_ATTR_PREFIXES.some((prefix) => key.startsWith(prefix) || key === prefix);
-    });
-}
 
 function collectPageLevelHtml(editor) {
     // Chrome-shell page editor: compile only the page content slot — full getHtml()
@@ -300,19 +262,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Tailwind compile only when utility classes enter/leave the HTML.
-    // Style Manager (Styles tab) writes inline styles — never schedule from those.
-    editor.on('component:add', () => schedule(DROP_BUILD_DELAY_MS));
-    editor.on('component:remove', () => schedule());
+    // Live compile only when Classes change — not on content/style/settings/structure.
     editor.on('component:update:classes', () => schedule());
-    editor.on('component:update:attributes', (component, event) => {
-        // Ignore Style Manager → style="" churn; still compile if class/other attrs change.
-        if (shouldIgnoreAttributeUpdate(component, event)) {
-            return;
-        }
-
-        schedule();
-    });
     // Selector Manager = Classes panel (add/rename/remove class selectors).
     editor.on('selector:add', () => schedule());
     editor.on('selector:remove', () => schedule());
@@ -324,11 +275,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // One invalidate after drop settle — avoid 0/400/900 storm.
-    editor.on('block:drag:stop', () => {
-        schedule(DROP_BUILD_DELAY_MS);
-        window.setTimeout(invalidate, 180);
-    });
+    // Explicit rebuilds (save, code import, templates) — not routine canvas edits.
     editor.on('voodbuilder:chrome-layout-ready', invalidate);
     editor.on('voodbuilder:page-css-invalidate', invalidate);
 

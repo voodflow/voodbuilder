@@ -48,8 +48,8 @@ function mountRulesForm(container, labels, pagePathOptions = []) {
         name: 'enabled',
         checked: true,
     });
-    enabledField.field.classList.add('voodbuilder-gjs-popup-form__enabled');
-    basics.fields.append(nameField.field, enabledField.field, priorityField.field);
+    enabledField.classList.add('voodbuilder-gjs-popup-form__enabled');
+    basics.fields.append(nameField.field, enabledField, priorityField.field);
     root.appendChild(basics.section);
 
     const timing = createFormSection(labels.popupsSectionTrigger ?? 'When to show');
@@ -150,8 +150,8 @@ function mountRulesForm(container, labels, pagePathOptions = []) {
         value: '',
         options: pathOptions,
     });
-    pagePathSelect.field.setAttribute('data-popup-field', 'page_path_select');
-    targeting.fields.append(pagePathSelect.field);
+    pagePathSelect.setAttribute('data-popup-field', 'page_path_select');
+    targeting.fields.append(pagePathSelect);
 
     const pagePathCustom = createTextField({
         label: labels.popupsPagePathCustom ?? 'Custom path',
@@ -180,17 +180,17 @@ function mountRulesForm(container, labels, pagePathOptions = []) {
             label: labels.popupsFieldOverlay ?? 'Dim background',
             name: 'display_overlay',
             checked: true,
-        }).field,
+        }),
         createCheckboxField({
             label: labels.popupsFieldCloseOverlay ?? 'Close on overlay click',
             name: 'close_on_overlay',
             checked: true,
-        }).field,
+        }),
         createCheckboxField({
             label: labels.popupsFieldCloseEscape ?? 'Close on Escape',
             name: 'close_on_escape',
             checked: true,
-        }).field,
+        }),
     );
 
     const grid = document.createElement('div');
@@ -340,11 +340,20 @@ async function openPopupFormDialog({ title, labels, initial = null, pagePathOpti
         const body = modal.querySelector('[data-popup-form-body]');
         const panel = modal.querySelector('.voodbuilder-gjs-modal__panel');
 
-        mountRulesForm(body, labels, pagePathOptions);
-        bindRulesFormVisibility(form);
+        try {
+            mountRulesForm(body, labels, pagePathOptions);
+            bindRulesFormVisibility(form);
 
-        if (initial) {
-            fillRulesForm(form, initial, pagePathOptions);
+            if (initial) {
+                fillRulesForm(form, initial, pagePathOptions);
+            }
+        } catch (error) {
+            console.error('Voodbuilder: could not mount popup form.', error);
+            body.replaceChildren();
+            const hint = document.createElement('p');
+            hint.className = 'voodbuilder-gjs-hint';
+            hint.textContent = labels.popupsFormError ?? 'Could not load the popup form.';
+            body.appendChild(hint);
         }
 
         const close = (value = null) => {
@@ -375,6 +384,8 @@ async function openPopupFormDialog({ title, labels, initial = null, pagePathOpti
             const payload = readRulesForm(form);
 
             if (! payload.name) {
+                form.querySelector('[name="name"]')?.focus?.();
+
                 return;
             }
 

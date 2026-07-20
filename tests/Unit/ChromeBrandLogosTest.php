@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Tests\Unit;
+
+use Voodflow\Voodbuilder\Support\GrapesJs\ChromeBrandLogos;
+use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavConfig;
+use Voodflow\Voodbuilder\Tests\TestCase;
+
+class ChromeBrandLogosTest extends TestCase
+{
+    public function test_falls_back_across_slots_when_one_is_missing(): void
+    {
+        $resolved = ChromeBrandLogos::resolve([
+            'logo_desktop_light' => 'https://cdn.test/light.svg',
+        ]);
+
+        $this->assertSame('https://cdn.test/light.svg', $resolved['desktop_light']);
+        $this->assertSame('https://cdn.test/light.svg', $resolved['desktop_dark']);
+        $this->assertSame('https://cdn.test/light.svg', $resolved['mobile_light']);
+        $this->assertSame('https://cdn.test/light.svg', $resolved['mobile_dark']);
+        $this->assertTrue($resolved['has_any']);
+    }
+
+    public function test_prefers_dedicated_dark_and_mobile_slots(): void
+    {
+        $resolved = ChromeBrandLogos::resolve([
+            'logo_desktop_light' => 'https://cdn.test/desk-light.svg',
+            'logo_desktop_dark' => 'https://cdn.test/desk-dark.svg',
+            'logo_mobile_light' => 'https://cdn.test/mob-light.svg',
+            'logo_mobile_dark' => 'https://cdn.test/mob-dark.svg',
+        ]);
+
+        $this->assertSame('https://cdn.test/desk-light.svg', $resolved['desktop_light']);
+        $this->assertSame('https://cdn.test/desk-dark.svg', $resolved['desktop_dark']);
+        $this->assertSame('https://cdn.test/mob-light.svg', $resolved['mobile_light']);
+        $this->assertSame('https://cdn.test/mob-dark.svg', $resolved['mobile_dark']);
+    }
+
+    public function test_site_nav_config_normalizes_logo_and_visibility_flags(): void
+    {
+        $normalized = SiteNavConfig::normalize([
+            'show_logo' => 0,
+            'show_site_name' => 1,
+            'logo_desktop_dark' => '  /storage/logos/dark.png  ',
+            'logo_mobile_light' => '',
+        ]);
+
+        $this->assertFalse($normalized['show_logo']);
+        $this->assertTrue($normalized['show_site_name']);
+        $this->assertSame('/storage/logos/dark.png', $normalized['logo_desktop_dark']);
+        $this->assertNull($normalized['logo_mobile_light']);
+    }
+}

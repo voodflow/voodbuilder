@@ -9,7 +9,13 @@ const INTERACTION_OPTIONS = [
     { value: '', label: 'always' },
     { value: 'hover:', label: 'on hover' },
     { value: 'active:', label: 'on click' },
+    { value: 'visible', label: 'on visible' },
 ];
+
+/** Real Tailwind variant prefixes (not the “on visible” marker). */
+const CSS_INTERACTION_PREFIXES = ['', 'hover:', 'active:'];
+const VISIBLE_INTERACTION = 'visible';
+const VISIBLE_MARKER_CLASS = 'vb-animate-on-visible';
 
 const ANIMATION_OPTIONS = [
     { value: '', label: 'none' },
@@ -155,9 +161,8 @@ const LEGACY_EASE_MAP = {
 };
 
 const ANIMATION_BASES = ANIMATION_OPTIONS.map((o) => o.value).filter(Boolean);
-const INTERACTION_PREFIXES = INTERACTION_OPTIONS.map((o) => o.value);
 const ANIMATION_CLASS_SET = new Set(
-    ANIMATION_BASES.flatMap((base) => INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)),
+    ANIMATION_BASES.flatMap((base) => CSS_INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)),
 );
 
 const ITERATION_BASES = ITERATION_OPTIONS.map((o) => o.value).filter(Boolean);
@@ -169,7 +174,7 @@ const FILL_BASES = FILL_OPTIONS.map((o) => o.value).filter(Boolean);
 
 /** hover:animate-spin resets the animation shorthand — modifiers must share the same variant. */
 function prefixedClassSet(bases) {
-    return new Set(bases.flatMap((base) => INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)));
+    return new Set(bases.flatMap((base) => CSS_INTERACTION_PREFIXES.map((prefix) => `${prefix}${base}`)));
 }
 
 const ITERATION_CLASS_SET = prefixedClassSet(ITERATION_BASES);
@@ -269,8 +274,36 @@ function scheduleClassCompile(editor) {
         ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
 }
 
+function scheduleEditorAnimationReplay(editor, delayMs = 80) {
+    if (! editor) {
+        return;
+    }
+
+    const previous = editor.__voodbuilderAnimReplayTimer;
+
+    if (previous) {
+        window.clearTimeout(previous);
+    }
+
+    editor.__voodbuilderAnimReplayTimer = window.setTimeout(() => {
+        editor.__voodbuilderAnimReplayTimer = null;
+
+        void import('./vb-runtime.js').then(({ replayEditorCanvasAnimations }) => {
+            const frameDoc = editor.Canvas?.getDocument?.();
+
+            if (! frameDoc) {
+                return;
+            }
+
+            replayEditorCanvasAnimations({ root: frameDoc });
+        }).catch(() => {
+            // Optional in editor.
+        });
+    }, delayMs);
+}
+
 function componentClassList(component) {
-    return [...(component.getClasses?.() ?? [])]
+    return [...(component?.getClasses?.() ?? [])]
         .map((name) => String(name ?? '').trim())
         .filter((name) => name !== '');
 }
@@ -309,7 +342,7 @@ function replaceClassGroup(component, groupSet, nextClass) {
 
 function findPrefixedAnimation(classes) {
     for (const base of ANIMATION_BASES) {
-        for (const prefix of INTERACTION_PREFIXES) {
+        for (const prefix of CSS_INTERACTION_PREFIXES) {
             const full = `${prefix}${base}`;
 
             if (classes.has(full)) {
@@ -324,7 +357,7 @@ function findPrefixedAnimation(classes) {
 function stripInteractionPrefix(className) {
     const name = String(className ?? '');
 
-    for (const prefix of INTERACTION_PREFIXES) {
+    for (const prefix of CSS_INTERACTION_PREFIXES) {
         if (prefix !== '' && name.startsWith(prefix)) {
             return { prefix, base: name.slice(prefix.length) };
         }
@@ -333,13 +366,52 @@ function stripInteractionPrefix(className) {
     return { prefix: '', base: name };
 }
 
+function isVisibleInteraction(value) {
+    return value === VISIBLE_INTERACTION;
+}
+
+function cssPrefixForInteraction(value) {
+    return isVisibleInteraction(value) ? '' : String(value ?? '');
+}
+
+function syncVisibleMarker(component, interaction) {
+    if (! component) {
+        return;
+    }
+
+    const classes = new Set(componentClassList(component));
+    const wantsMarker = isVisibleInteraction(interaction);
+
+    if (wantsMarker && ! classes.has(VISIBLE_MARKER_CLASS)) {
+        component.addClass?.(VISIBLE_MARKER_CLASS);
+    } else if (! wantsMarker && classes.has(VISIBLE_MARKER_CLASS)) {
+        component.removeClass?.(VISIBLE_MARKER_CLASS);
+    }
+}
+
+function interactionSelectValue(component, root) {
+    const classes = new Set(componentClassList(component));
+
+    if (classes.has(VISIBLE_MARKER_CLASS)) {
+        return VISIBLE_INTERACTION;
+    }
+
+    const found = findPrefixedAnimation(classes);
+
+    if (found.base) {
+        return found.prefix;
+    }
+
+    return root?.querySelector?.('[data-voodbuilder-anim-interaction]')?.value ?? '';
+}
+
 function resolveMappedClass(classes, options, legacyMap = {}, { useLegacy = true } = {}) {
     for (const opt of options) {
         if (! opt.value) {
             continue;
         }
 
-        for (const prefix of INTERACTION_PREFIXES) {
+        for (const prefix of CSS_INTERACTION_PREFIXES) {
             if (classes.has(`${prefix}${opt.value}`)) {
                 return opt.value;
             }
@@ -420,13 +492,9 @@ function reprefixAnimationModifiers(component, prefix) {
 }
 
 function interactionPrefixForComponent(component, root) {
-    const found = findPrefixedAnimation(new Set(componentClassList(component)));
+    const selectValue = interactionSelectValue(component, root);
 
-    if (found.base) {
-        return found.prefix;
-    }
-
-    return root?.querySelector?.('[data-voodbuilder-anim-interaction]')?.value ?? '';
+    return cssPrefixForInteraction(selectValue);
 }
 
 function hasTransitionUtility(classes) {
@@ -434,6 +502,10 @@ function hasTransitionUtility(classes) {
 }
 
 function syncSelectsFromComponent(root, component) {
+    if (! root) {
+        return;
+    }
+
     const classes = new Set(component?.getClasses?.() ?? []);
     const found = findPrefixedAnimation(classes);
     const useLegacyTiming = ! hasTransitionUtility(classes);
@@ -446,7 +518,7 @@ function syncSelectsFromComponent(root, component) {
         }
     };
 
-    setSelect('[data-voodbuilder-anim-interaction]', found.prefix);
+    setSelect('[data-voodbuilder-anim-interaction]', interactionSelectValue(component, root));
     setSelect('[data-voodbuilder-anim-type]', found.base);
     setSelect('[data-voodbuilder-anim-iteration]', resolveMappedClass(classes, ITERATION_OPTIONS));
     setSelect('[data-voodbuilder-anim-duration]', resolveMappedClass(classes, DURATION_OPTIONS, LEGACY_DURATION_MAP, { useLegacy: useLegacyTiming }));
@@ -462,10 +534,12 @@ function syncSelectsFromComponent(root, component) {
 
 function applyAnimationWithInteraction(component, root) {
     const base = root.querySelector('[data-voodbuilder-anim-type]')?.value ?? '';
-    const prefix = root.querySelector('[data-voodbuilder-anim-interaction]')?.value ?? '';
+    const interaction = root.querySelector('[data-voodbuilder-anim-interaction]')?.value ?? '';
+    const prefix = cssPrefixForInteraction(interaction);
     const next = base ? `${prefix}${base}` : null;
     replaceClassGroup(component, ANIMATION_CLASS_SET, next);
     reprefixAnimationModifiers(component, prefix);
+    syncVisibleMarker(component, base ? interaction : '');
 }
 
 function applyModifierWithInteraction(component, root, groupSet, selectAttr) {
@@ -662,6 +736,7 @@ function buildAnimationSector(editor, labels = {}) {
             }
 
             scheduleClassCompile(editor);
+            scheduleEditorAnimationReplay(editor);
             syncSelectsFromComponent(sector, selected);
         };
 
@@ -692,11 +767,19 @@ function buildAnimationSector(editor, labels = {}) {
     bindField('[data-voodbuilder-anim-transition-delay]', '[data-voodbuilder-anim-transition-delay-add]', TRANSITION_DELAY_CLASS_SET);
 
     editor.on('component:selected', (component) => {
-        const prefix = interactionPrefixForComponent(component, sector);
+        if (! component) {
+            syncSelectsFromComponent(sector, null);
 
-        if (prefix !== '') {
+            return;
+        }
+
+        const selectValue = interactionSelectValue(component, sector);
+        const prefix = cssPrefixForInteraction(selectValue);
+
+        if (isVisibleInteraction(selectValue) || prefix !== '') {
             const before = componentClassList(component).join(' ');
             reprefixAnimationModifiers(component, prefix);
+            syncVisibleMarker(component, selectValue);
 
             if (before !== componentClassList(component).join(' ')) {
                 scheduleClassCompile(editor);
@@ -706,8 +789,13 @@ function buildAnimationSector(editor, labels = {}) {
         syncSelectsFromComponent(sector, component);
     });
 
-    editor.on('component:update:classes', () => {
-        syncSelectsFromComponent(sector, editor.getSelected());
+    editor.on('component:update:classes', (component) => {
+        syncSelectsFromComponent(sector, component ?? editor.getSelected());
+        scheduleEditorAnimationReplay(editor, 120);
+    });
+
+    editor.on('voodbuilder:page-css-compiled', () => {
+        scheduleEditorAnimationReplay(editor, 40);
     });
 
     syncSelectsFromComponent(sector, editor.getSelected());

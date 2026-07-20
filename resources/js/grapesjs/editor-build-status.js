@@ -1,6 +1,6 @@
 /**
  * Build / boot loading indicators for the GrapesJS editor.
- * Boot splash: brand mark + name + version (Bricks-inspired, our animated logo).
+ * Boot splash: brand mark + name + version (animated VoodBuilder logo).
  */
 
 const BUILD_SCOPES = new Map();

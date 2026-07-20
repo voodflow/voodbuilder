@@ -13,9 +13,9 @@ import {
     registerVoodbuilderFormBlock,
 } from './grapesjs-forms-blocks.js';
 import {
-    configureBricksCanvas,
-    registerBricksBlocks,
-} from './grapesjs-bricks-blocks.js';
+    configureUtilityBlocksCanvas,
+    registerUtilityBlocks,
+} from './grapesjs-utility-blocks.js';
 import {
     configureAnimatedCanvas,
     registerAnimatedBlocks,
@@ -177,11 +177,11 @@ export function configureGrapesJsPlugins(editor, options = {}) {
         editor.on('component:add', applyToForms);
     }
 
-    const registerBricks = () => registerBricksBlocks(editor);
+    const registerUtility = () => registerUtilityBlocks(editor);
 
-    editor.on('load', registerBricks);
-    registerBricks();
-    configureBricksCanvas(editor);
+    editor.on('load', registerUtility);
+    registerUtility();
+    configureUtilityBlocksCanvas(editor);
 
     const registerAnimated = () => registerAnimatedBlocks(editor);
 

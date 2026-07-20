@@ -55,7 +55,7 @@ import { guardEditorLayersRender } from '../tailwind-visual-style.js';
 import { configureVpressCodeBlock } from '../editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from '../theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
-import { registerCanvasComponentToolbar } from '../canvas-component-toolbar.js';
+import { registerCanvasComponentToolbar, voodbuilderCopyCommandsPlugin } from '../canvas-component-toolbar.js';
 import { registerCanvasBlockCodeEditor } from '../canvas-block-code-editor.js';
 import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport, gateGrapesAutoscrollToRealDrags } from '../canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from '../conditions-ui.js';
@@ -231,21 +231,51 @@ function ensureInitialContent(editor, initial) {
     });
 }
 
+function resolveEditorChromePrefersDark(fallback = false) {
+    try {
+        const stored = window.localStorage?.getItem('theme');
+
+        if (stored === 'dark') {
+            return true;
+        }
+
+        if (stored === 'light') {
+            return false;
+        }
+    } catch {
+        // Ignore storage failures.
+    }
+
+    if (document.documentElement.classList.contains('dark')) {
+        return true;
+    }
+
+    const scheme = document.documentElement.style.colorScheme;
+
+    if (scheme === 'dark') {
+        return true;
+    }
+
+    if (scheme === 'light') {
+        return false;
+    }
+
+    return Boolean(fallback);
+}
+
 function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     if (! subTheme) {
         return;
     }
 
     const resolveDark = (isDark = null) => {
-        if (isDark != null) {
-            return Boolean(isDark);
+        if (typeof isDark === 'boolean') {
+            return isDark;
         }
 
-        if (themeOptions.canvasPrefersDark != null) {
-            return Boolean(themeOptions.canvasPrefersDark);
-        }
-
-        return document.documentElement.classList.contains('dark');
+        // Prefer live editor chrome (theme-script / localStorage) over SSR
+        // canvasPrefersDark — PHP cannot see the user's stored preference.
+        return resolveEditorChromePrefersDark(themeOptions.canvasPrefersDark);
     };
 
     const ensurePaletteStyle = (doc) => {
@@ -303,11 +333,10 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
 
         doc.documentElement.setAttribute('data-voodbuilder-sub-theme', subTheme);
 
-        if (resolveDark(isDark)) {
-            doc.documentElement.classList.add('dark');
-        } else {
-            doc.documentElement.classList.remove('dark');
-        }
+        const prefersDark = resolveDark(isDark);
+
+        doc.documentElement.classList.toggle('dark', prefersDark);
+        doc.documentElement.style.colorScheme = prefersDark ? 'dark' : 'light';
 
         ensurePaletteStyle(doc);
         ensureChromeLayoutStyle(doc);
@@ -514,8 +543,11 @@ export function initVpressGrapesJs(container, options = {}) {
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
-        plugins: [voodbuilderEarlyTypesPlugin, grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
+        plugins: [voodbuilderCopyCommandsPlugin, voodbuilderEarlyTypesPlugin, grapesjsBlocksBasic, ...pluginBundle.plugins, vpressGrapesJsPlugin],
         pluginsOpts: {
+            [voodbuilderCopyCommandsPlugin]: {
+                labels: options.labels ?? {},
+            },
             [voodbuilderEarlyTypesPlugin]: {
                 labels: options.labels ?? {},
             },
@@ -590,6 +622,23 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init(editorOptions);
 
     editor.__voodbuilderLabels = labels;
+    // Register copy toolbar commands before project hydration / first selection.
+    registerCanvasComponentToolbar(editor, {
+        makeDynamic: labels.makeDynamic,
+        clearDynamic: labels.clearDynamic,
+        selectParent: labels.selectParent,
+        drag: labels.drag,
+        clone: labels.clone,
+        delete: labels.delete,
+        editBlockCode: labels.editBlockCode,
+        copyComponentCode: labels.copyComponentCode,
+        copyComponentClasses: labels.copyComponentClasses,
+        copyComponentCodeSuccess: labels.copyComponentCodeSuccess,
+        copyComponentCodeFailed: labels.copyComponentCodeFailed,
+        classCopySuccess: labels.classCopySuccess,
+        classCopyEmpty: labels.classCopyEmpty,
+        classCopyFailed: labels.classCopyFailed,
+    });
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
     editor.__voodbuilderChromeShellName = options.chromeShellName ?? options.chromeLayoutName ?? null;
@@ -1004,13 +1053,14 @@ export function initVpressGrapesJs(container, options = {}) {
     });
 
     editor.on('canvas:frame:load', () => {
-        void import('../bricks-runtime.js').then(({
+        void import('../vb-runtime.js').then(({
             initReadingTime,
             initSocialShare,
             initCarousels,
             initAnimatedCounters,
             initAnimatedCtas,
             initLogoScroll,
+            replayEditorCanvasAnimations,
         }) => {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
@@ -1020,9 +1070,10 @@ export function initVpressGrapesJs(container, options = {}) {
             // Replay animations in the editor canvas so authors can preview them.
             initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
             initAnimatedCtas({ root: frameDoc, force: true });
+            replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
         }).catch(() => {
-            // Bricks runtime is optional in the editor canvas.
+            // VB runtime is optional in the editor canvas.
         });
 
         try {

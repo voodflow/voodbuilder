@@ -109,8 +109,8 @@ export function runWithSettingsChangeGuard(editor, callback) {
         if (nextDepth <= 0) {
             editor.__voodbuilderSettingsChange = false;
             delete editor.__voodbuilderSettingsChangeDepth;
-            // Dropping nav/footer opens settings immediately — rebuild live CSS once the batch ends.
-            editor.__voodbuilderSchedulePageCssRebuild?.(80);
+            // Do not schedule compile-css here: settings/content edits are not class changes.
+            // Class edits still trigger page-tailwind-autobuild via component:update:classes.
         }
     }
 }

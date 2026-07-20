@@ -9,6 +9,7 @@
     'showSearch' => true,
     'showNotifications' => true,
     'showProfileMenu' => true,
+    'brandConfig' => [],
 ])
 
 @php
@@ -51,7 +52,7 @@
         @if ($hasDocSidebar)
             <div class="pointer-events-auto absolute top-0 left-0 z-[2] hidden h-16 w-[var(--vp-sidebar-outer-width)] bg-vp-bg-alt vp:flex">
                 <div class="ml-auto flex h-16 w-[var(--spacing-vp-sidebar)] shrink-0 items-center px-8">
-                    <x-voodbuilder::nav-title />
+                    <x-voodbuilder::nav-title :config="$brandConfig" />
                 </div>
             </div>
         @endif
@@ -67,8 +68,8 @@
                 'justify-between' => $mainNavCentered,
             ])>
                 @if ($mainNavCentered)
-                    <div @class(['min-w-0 shrink-0', $inlineBrandClass])>
-                        <x-voodbuilder::nav-title />
+                    <div @class(['min-w-0 shrink-0', $inlineBrandClass]) data-voodbuilder-chrome="brand">
+                        <x-voodbuilder::nav-title :config="$brandConfig" />
                     </div>
 
                     <div @class(['hidden min-w-0 flex-1 items-center justify-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
@@ -77,8 +78,8 @@
                     </div>
                 @else
                     <div class="flex min-w-0 shrink-0 items-center gap-3 md:gap-4">
-                        <div @class($inlineBrandClass)>
-                            <x-voodbuilder::nav-title />
+                        <div @class($inlineBrandClass) data-voodbuilder-chrome="brand">
+                            <x-voodbuilder::nav-title :config="$brandConfig" />
                         </div>
 
                         <div @class(['hidden min-w-0 items-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
@@ -123,6 +124,7 @@
             :has-doc-sidebar="$hasDocSidebar"
             :enable-notifications="$showNotifications"
             :canvas-preview="$canvasPreview"
+            :brand-config="$brandConfig"
         />
     @endunless
 </header>

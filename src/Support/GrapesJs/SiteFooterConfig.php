@@ -20,6 +20,8 @@ final class SiteFooterConfig
             }
         }
 
+        $normalized = array_merge($normalized, ChromeBrandLogos::normalizeConfigKeys($config));
+
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
             [1, 2, 3, 4],
@@ -47,6 +49,10 @@ final class SiteFooterConfig
             'show_footer_col_3' => true,
             'show_footer_col_4' => true,
             'footer_columns_redistribute' => false,
+            'logo_desktop_light' => null,
+            'logo_desktop_dark' => null,
+            'logo_mobile_light' => null,
+            'logo_mobile_dark' => null,
         ];
     }
 

@@ -64,4 +64,23 @@
         transform: none;
         transition: none;
     }
+
+    .vb-animate-on-visible {
+        animation-play-state: running !important;
+    }
+}
+
+/**
+ * Style Manager animations with Interaction = “on visible”.
+ * Keep paused until .is-visible (IntersectionObserver in vb-runtime).
+ * In the GrapesJS canvas, always run so authors can preview (same idea as CTA).
+ */
+.vb-animate-on-visible:not(.is-visible) {
+    animation-play-state: paused !important;
+}
+
+.vb-animate-on-visible.is-visible,
+.gjs-dashed .vb-animate-on-visible,
+.voodbuilder-gjs-canvas-mount .vb-animate-on-visible {
+    animation-play-state: running !important;
 }

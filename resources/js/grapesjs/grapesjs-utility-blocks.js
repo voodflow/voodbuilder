@@ -1,5 +1,5 @@
 /**
- * Bricks-inspired utility blocks — Basic, Media, and Single (post) elements.
+ * VoodBuilder utility blocks — Basic, Media, and Single (post) elements.
  */
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
@@ -39,7 +39,7 @@ function wireframe(paths) {
     return thumbWrap(previewSvg(paths));
 }
 
-export const BRICKS_BLOCK_WIREFRAMES = {
+export const UTILITY_BLOCK_WIREFRAMES = {
     'voodbuilder-icon': wireframe(
         '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>',
     ),
@@ -531,7 +531,7 @@ const BLOCKS = [
     },
 ];
 
-export function registerBricksComponentTypes(editor) {
+export function registerUtilityBlockComponentTypes(editor) {
     registerLinkableType(editor, 'voodbuilder-icon', {
         name: 'Icon',
         droppable: false,
@@ -543,10 +543,10 @@ export function registerBricksComponentTypes(editor) {
     registerImageGalleryType(editor);
 }
 
-export function registerBricksBlocks(editor) {
+export function registerUtilityBlocks(editor) {
     const blockManager = editor.BlockManager;
 
-    registerBricksComponentTypes(editor);
+    registerUtilityBlockComponentTypes(editor);
 
     for (const block of BLOCKS) {
         if (blockManager.get(block.id)) {
@@ -557,7 +557,7 @@ export function registerBricksBlocks(editor) {
             label: resolveBlockLabel(block.id, block.label),
             category: block.category,
             content: block.content,
-            media: BRICKS_BLOCK_WIREFRAMES[block.id] ?? wireframe('<rect x="10" y="14" width="28" height="20" rx="2"/>'),
+            media: UTILITY_BLOCK_WIREFRAMES[block.id] ?? wireframe('<rect x="10" y="14" width="28" height="20" rx="2"/>'),
             attributes: {
                 title: block.label,
             },
@@ -565,7 +565,7 @@ export function registerBricksBlocks(editor) {
     }
 }
 
-export function configureBricksCanvas(editor) {
+export function configureUtilityBlocksCanvas(editor) {
     const bindLinkables = (component) => {
         const type = component.get('type');
 

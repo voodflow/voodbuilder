@@ -132,6 +132,10 @@ function commitSelectValue(select, value) {
 function portalList(wrap, list) {
     const rect = wrap.getBoundingClientRect();
     const compact = wrap.classList.contains('voodbuilder-gjs-select-wrap--compact');
+    const fontList = list.classList.contains('voodbuilder-gjs-select-list--font');
+    const gutter = 8;
+    const gap = 4;
+    const preferredMax = fontList ? 16 * 16 : 12 * 16;
 
     list.classList.add('voodbuilder-gjs-select-list--portal');
     // Keep portal inside the editor root so chrome palette tokens (not site theme) apply.
@@ -139,12 +143,33 @@ function portalList(wrap, list) {
     host.appendChild(list);
 
     const width = compact ? Math.max(rect.width, 72) : rect.width;
+    let left = Math.max(gutter, compact ? rect.right - width : rect.left);
+
+    if (left + width > window.innerWidth - gutter) {
+        left = Math.max(gutter, window.innerWidth - gutter - width);
+    }
+
+    const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - gutter);
+    const spaceAbove = Math.max(0, rect.top - gutter);
+    const openUp = spaceBelow < Math.min(preferredMax, 168) && spaceAbove > spaceBelow;
+    const available = Math.max(0, (openUp ? spaceAbove : spaceBelow) - gap);
+    const maxHeight = Math.max(96, Math.min(preferredMax, available || preferredMax));
 
     list.style.position = 'fixed';
-    list.style.left = `${Math.max(8, compact ? rect.right - width : rect.left)}px`;
-    list.style.top = `${rect.bottom + 4}px`;
+    list.style.left = `${left}px`;
     list.style.width = `${width}px`;
     list.style.zIndex = '10050';
+    list.style.maxHeight = `${maxHeight}px`;
+    list.style.overflow = 'auto';
+    list.style.overscrollBehavior = 'contain';
+
+    if (openUp) {
+        list.style.top = 'auto';
+        list.style.bottom = `${Math.max(gutter, window.innerHeight - rect.top + gap)}px`;
+    } else {
+        list.style.bottom = 'auto';
+        list.style.top = `${rect.bottom + gap}px`;
+    }
 
     PORTAL_LISTS.set(wrap, list);
 }
@@ -633,6 +658,24 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
     });
 
     window.addEventListener('resize', () => closeOpenSelects());
+    // Inspector panels scroll independently — keep portal menus from detaching mid-scroll.
+    document.addEventListener('scroll', (event) => {
+        if (! document.querySelector('.voodbuilder-gjs-select-wrap.is-open')) {
+            return;
+        }
+
+        const target = event.target;
+
+        if (target === document || target === document.documentElement || target === document.body) {
+            closeOpenSelects();
+
+            return;
+        }
+
+        if (target instanceof Element && target.closest?.('.voodbuilder-gjs-shell__right, .voodbuilder-gjs-styles-mount, .voodbuilder-gjs-inspector-panel')) {
+            closeOpenSelects();
+        }
+    }, true);
 
     for (const root of roots) {
         if (! root || root.__vbSelectObserver) {

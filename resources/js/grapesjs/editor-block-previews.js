@@ -10,7 +10,7 @@ import {
     resolveBlockWireframe,
     unifyBlockCategories,
 } from './section-block-meta.js';
-import { BRICKS_BLOCK_WIREFRAMES } from './grapesjs-bricks-blocks.js';
+import { UTILITY_BLOCK_WIREFRAMES } from './grapesjs-utility-blocks.js';
 
 export const LIGHT_BLOCK_PREVIEWS = {
     column1: previewSvg('<rect x="11" y="13" width="26" height="22" rx="2.5" />'),
@@ -336,10 +336,10 @@ function applyFormsBlockPreviews(blockManager) {
     });
 }
 
-function applyBricksBlockPreviews(blockManager) {
+function applyUtilityBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
-        const wireframe = BRICKS_BLOCK_WIREFRAMES[blockId] ?? resolveBlockWireframe(blockId);
+        const wireframe = UTILITY_BLOCK_WIREFRAMES[blockId] ?? resolveBlockWireframe(blockId);
         const htmlPreview = resolveHtmlPreviewForBlock(block);
 
         if (htmlPreview) {
@@ -369,7 +369,7 @@ export function applyLightBlockPreviews(editor) {
     applyBasicBlockPreviews(blockManager);
     applySectionBlockPreviews(blockManager);
     applyFormsBlockPreviews(blockManager);
-    applyBricksBlockPreviews(blockManager);
+    applyUtilityBlockPreviews(blockManager);
 
     if (blockManager.getContainer()) {
         blockManager.render();

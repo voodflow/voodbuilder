@@ -4,8 +4,13 @@
 
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
+import { chromeLogoFieldDefs } from '../../../editor-form-ui.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isFooterBlock } from '../../ids.js';
+
+const footerRefreshTimers = new WeakMap();
+
+const FOOTER_LOGO_PROPS = new Set(chromeLogoFieldDefs().map((def) => def.prop));
 
 export function footerBlockHasColumns(blockId) {
     return blockId === 'site_footer_columns_simple' || blockId === 'site_footer_columns_newsletter';
@@ -171,6 +176,11 @@ export function syncSiteFooterConfig(component) {
         show_brand: component.get('vpressShowBrand') === true,
     };
 
+    for (const def of chromeLogoFieldDefs()) {
+        const value = String(component.get(def.prop) ?? '').trim();
+        config[def.key] = value !== '' ? value : null;
+    }
+
     if (footerBlockHasColumns(blockId)) {
         config.footer_columns_redistribute = component.get('vpressFooterColumnsRedistribute') === true;
 
@@ -187,16 +197,35 @@ export function syncSiteFooterConfig(component) {
     }, { silent: true });
 }
 
+function scheduleSiteFooterBlockRefresh(editor, root) {
+    const existing = footerRefreshTimers.get(root);
+
+    if (existing) {
+        window.clearTimeout(existing);
+    }
+
+    footerRefreshTimers.set(root, window.setTimeout(() => {
+        footerRefreshTimers.delete(root);
+        delete root.__voodbuilderLastDynamicRenderFingerprint;
+        delete root.__voodbuilderLastDynamicRenderHtml;
+        editor.trigger('voodbuilder:refresh-dynamic-block', root);
+    }, 120));
+}
+
 export function applySiteFooterSettingChange(editor, root, name, value) {
     runWithSettingsChangeGuard(editor, () => {
         if (typeof value === 'boolean') {
             root.set(name, value, { silent: true });
-        } else if (typeof value === 'string' && value !== '') {
+        } else if (typeof value === 'string') {
             root.set(name, value, { silent: true });
         }
 
         syncSiteFooterConfig(root);
         applySiteFooterSettingsPreview(root, editor);
+
+        if (FOOTER_LOGO_PROPS.has(name) || name === 'vpressShowBrand') {
+            scheduleSiteFooterBlockRefresh(editor, root);
+        }
     });
 }
 
@@ -248,6 +277,10 @@ export function configureSiteFooterTraits(component, editor = null) {
     component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
     component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
     component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
+
+    for (const def of chromeLogoFieldDefs()) {
+        component.set(def.prop, config[def.key] ?? '', { silent: true });
+    }
 
     if (typeof component.setTraits === 'function') {
         component.setTraits([]);

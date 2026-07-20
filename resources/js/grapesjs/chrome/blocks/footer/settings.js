@@ -4,7 +4,7 @@
 
 import { registerBlockSettings } from '../../../blocks/settings/index.js';
 import { findLayoutChromeZoneBlockRoot } from '../../../blocks/settings/select.js';
-import { createCheckboxField, createFormSection } from '../../../editor-form-ui.js';
+import { appendChromeLogoFields, createCheckboxField, createFormSection } from '../../../editor-form-ui.js';
 import { isFooterBlock } from '../../ids.js';
 import {
     configureSiteFooterTraits,
@@ -60,6 +60,14 @@ export function registerFooterSettings(editor) {
                     onChange: (checked) => applyChange('vpressShowTagline', checked),
                 }),
             );
+
+            appendChromeLogoFields({
+                fields,
+                root,
+                editor: gjsEditor,
+                applyChange,
+                labelFn: (key, fallback) => footerSettingLabel(gjsEditor, key, fallback),
+            });
 
             if (footerBlockHasMenu(blockId)) {
                 fields.append(

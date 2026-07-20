@@ -2,6 +2,7 @@
     'hasDocSidebar' => false,
     'enableNotifications' => true,
     'canvasPreview' => false,
+    'brandConfig' => [],
 ])
 
 @php
@@ -28,9 +29,7 @@
     $searchEnabled = Route::has('voodbuilder.search');
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
-    $brandName = VoodbuilderSettings::brandName();
-    $logoMobileUrl = VoodbuilderSettings::logoMobileUrl();
-    $logoUrl = VoodbuilderSettings::logoUrl();
+    $brandConfig = is_array($brandConfig) ? $brandConfig : [];
     $cookieConsent = function_exists('cookie_consent_settings') ? cookie_consent_settings() : null;
 @endphp
 
@@ -60,18 +59,13 @@
     >
         <div class="voodbuilder-mobile-nav__header">
             <div class="voodbuilder-mobile-nav__brand">
-                <a href="{{ VoodbuilderUrls::home() }}" data-mobile-nav-close>
-                    @if ($logoMobileUrl || $logoUrl)
-                        <img
-                            src="{{ $logoMobileUrl ?? $logoUrl }}"
-                            alt=""
-                            class="h-8 w-auto max-w-[140px] object-contain object-left"
-                        >
-                        <span class="sr-only">{{ $brandName }}</span>
-                    @else
-                        <span>{{ $brandName }}</span>
-                    @endif
-                </a>
+                <x-voodbuilder::nav-title
+                    :config="$brandConfig"
+                    link-class="inline-flex items-center gap-2 text-base font-semibold text-vp-text-1"
+                    desktop-logo-class="h-8 w-auto max-w-[140px] object-contain object-left"
+                    mobile-logo-class="h-8 w-auto max-w-[140px] object-contain object-left"
+                    data-mobile-nav-close
+                />
             </div>
 
             <button
