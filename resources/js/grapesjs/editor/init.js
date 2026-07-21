@@ -637,6 +637,8 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init(editorOptions);
 
     editor.__voodbuilderLabels = labels;
+    editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
+    editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
     // Register copy toolbar commands before project hydration / first selection.
     registerCanvasComponentToolbar(editor, {
         makeDynamic: labels.makeDynamic,
@@ -1468,6 +1470,31 @@ async function refreshDynamicBlocks(editor, renderUrl) {
     }
 }
 
+async function loadLinkTargets(editor, linkTargetsUrl) {
+    if (! linkTargetsUrl) {
+        return;
+    }
+
+    try {
+        const response = await fetch(linkTargetsUrl, {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+
+        if (! response.ok) {
+            throw new Error(`Link targets request failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        editor.__voodbuilderLinkTargets = {
+            pages: Array.isArray(payload.pages) ? payload.pages : [],
+            menuItems: Array.isArray(payload.menuItems) ? payload.menuItems : [],
+        };
+    } catch (error) {
+        console.error('Voodbuilder GrapesJS: could not load link targets.', error);
+    }
+}
+
 async function loadBlocks(editor, blocksUrl, labels = {}) {
     try {
         const response = await fetch(blocksUrl, {
@@ -1616,6 +1643,7 @@ function mountFrontendEditor() {
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,
         bindingsUrl: config.bindingsUrl,
+        linkTargetsUrl: config.linkTargetsUrl,
         bindingsPreviewUrl: config.bindingsPreviewUrl,
         conditionOptions: config.conditionOptions ?? [],
         globalClassesUrl: config.globalClassesUrl,
@@ -1656,6 +1684,10 @@ function mountFrontendEditor() {
             refreshEditorLayout(editor);
         });
     });
+
+    if (config.linkTargetsUrl) {
+        void loadLinkTargets(editor, config.linkTargetsUrl);
+    }
 
     if (config.blocksUrl) {
         void loadBlocks(editor, config.blocksUrl, config.labels ?? {});

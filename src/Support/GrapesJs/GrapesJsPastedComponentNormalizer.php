@@ -32,6 +32,7 @@ final class GrapesJsPastedComponentNormalizer
         $html = self::stripEmbeddableMedia($html);
         $html = VoodbuilderThemeTokenMigrator::migrateHtml($html);
         $html = GrapesJsHtmlSanitizer::sanitize(trim($html));
+        $html = GrapesJsSmartButtonAnnotator::annotate($html);
 
         $importedCss = self::compileTailwindCss($html, migrateLegacyPaletteUtilities: true);
 

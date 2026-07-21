@@ -35,6 +35,8 @@ import {
 import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
 import { createInspectorEmptyState } from '../../inspector-empty-state.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
+import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
+import { ensureSmartCtaButton } from '../../grapesjs-button-link.js';
 
 /**
  * @param {HTMLElement} mount
@@ -243,6 +245,11 @@ function guardTraitManagerForBlockSettings(editor) {
             return;
         }
 
+        // Smart CTA buttons always use GrapesJS traits (link type / URL / page / menu).
+        if (component?.get?.('type') === 'voodbuilder-cta-button') {
+            return originalSelect(component, ...args);
+        }
+
         if (shouldRenderCustomSettings(editor, component)) {
             editor.__voodbuilderBlockSettingsRender?.();
 
@@ -407,6 +414,24 @@ export function registerSettingsUi(editor, mount) {
             if (! rawSelected || ! isValidGrapesComponent(rawSelected)) {
                 clearActiveLayoutSettingsRoot(editor);
                 showCourtesyEmptyState(labels);
+
+                return;
+            }
+
+            ensureSmartCtaButton(rawSelected, editor);
+
+            if (isCtaButtonComponent(rawSelected) || rawSelected.get?.('type') === 'voodbuilder-cta-button') {
+                closeAllInspectorSelects();
+                renderCtaButtonSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
 
                 return;
             }

@@ -44,6 +44,10 @@ export const UTILITY_BLOCK_WIREFRAMES = {
         '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>',
     ),
     'voodbuilder-text-link': wireframe('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/>'),
+    'voodbuilder-button': wireframe(
+        '<rect x="8" y="16" width="32" height="14" rx="3"/>'
+        + '<path d="M14 23h20"/>',
+    ),
     'voodbuilder-reading-time': wireframe('<circle cx="24" cy="24" r="10"/><path d="M24 18v6l4 2"/>'),
     'voodbuilder-reading-progress': wireframe('<path d="M8 28h32"/><rect x="8" y="26" width="18" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>'),
     'voodbuilder-social-share': wireframe(
@@ -314,6 +318,40 @@ const BLOCKS = [
                 'data-vb-link-type': 'url',
             },
             components: 'Text link',
+        },
+    },
+    {
+        id: 'voodbuilder-button',
+        label: 'Button',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'voodbuilder-cta-button',
+            tagName: 'a',
+            classes: [
+                'inline-flex',
+                'items-center',
+                'justify-center',
+                'rounded',
+                'border-0',
+                'bg-indigo-500',
+                'px-8',
+                'py-2',
+                'text-lg',
+                'text-white',
+                'hover:bg-indigo-600',
+                'focus:outline-none',
+            ],
+            attributes: {
+                href: '#',
+                role: 'button',
+                'data-voodbuilder-cta': 'true',
+                'data-voodbuilder-cta-label': 'Button',
+                'data-vb-link-type': 'url',
+            },
+            ctaLabel: 'Button',
+            linkType: 'url',
+            href: '#',
+            components: 'Button',
         },
     },
     {

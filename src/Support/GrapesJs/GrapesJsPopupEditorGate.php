@@ -56,6 +56,7 @@ final class GrapesJsPopupEditorGate
             'initial' => self::initialPayload($popup),
             'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),
             'bindingsUrl' => self::editorRoute('voodbuilder.grapesjs.bindings'),
+            'linkTargetsUrl' => self::editorRoute('voodbuilder.grapesjs.link-targets'),
             'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),

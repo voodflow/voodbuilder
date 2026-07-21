@@ -163,7 +163,10 @@ export function ensureTextLabel(component, label) {
     persistCtaLabel(component, label);
 }
 
-function buttonLinkTraitSchema(labels = {}) {
+function buttonLinkTraitSchema(labels = {}, editor = null) {
+    const linkTargets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const linkType = 'url';
+
     return [
         {
             type: 'text',
@@ -172,10 +175,31 @@ function buttonLinkTraitSchema(labels = {}) {
             changeProp: true,
         },
         {
+            type: 'select',
+            name: 'linkType',
+            label: labels.buttonLinkType ?? 'Link type',
+            options: [
+                { id: 'url', name: labels.buttonLinkTypeUrl ?? 'URL' },
+                { id: 'page', name: labels.buttonLinkTypePage ?? 'Site page' },
+                { id: 'menu', name: labels.buttonLinkTypeMenu ?? 'Menu item' },
+            ],
+            changeProp: true,
+        },
+        {
             type: 'text',
             name: 'href',
             label: labels.buttonLinkUrl ?? 'Link URL',
             placeholder: labels.buttonLinkUrlPlaceholder ?? 'https:// or /page',
+            changeProp: true,
+        },
+        {
+            type: 'select',
+            name: 'linkRef',
+            label: labels.buttonLinkPage ?? 'Page',
+            options: [
+                { id: '', name: '—' },
+                ...(linkTargets.pages ?? []).map((item) => ({ id: item.id, name: item.label })),
+            ],
             changeProp: true,
         },
         {
@@ -191,14 +215,113 @@ function buttonLinkTraitSchema(labels = {}) {
     ];
 }
 
-function linkTraitsFor(editor) {
-    return buttonLinkTraitSchema(editor.__voodbuilderLabels ?? {});
+function linkTraitsFor(editor, component = null) {
+    const labels = editor?.__voodbuilderLabels ?? {};
+    const linkTargets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const linkType = String(component?.get?.('linkType') ?? component?.getAttributes?.()?.['data-vb-link-type'] ?? 'url');
+    const traits = [
+        {
+            type: 'text',
+            name: 'ctaLabel',
+            label: labels.buttonLinkLabel ?? 'Button label',
+            changeProp: true,
+        },
+        {
+            type: 'select',
+            name: 'linkType',
+            label: labels.buttonLinkType ?? 'Link type',
+            options: [
+                { id: 'url', name: labels.buttonLinkTypeUrl ?? 'URL' },
+                { id: 'page', name: labels.buttonLinkTypePage ?? 'Site page' },
+                { id: 'menu', name: labels.buttonLinkTypeMenu ?? 'Menu item' },
+            ],
+            changeProp: true,
+        },
+    ];
+
+    if (linkType === 'page') {
+        traits.push({
+            type: 'select',
+            name: 'linkRef',
+            label: labels.buttonLinkPage ?? 'Page',
+            options: [
+                { id: '', name: '—' },
+                ...(linkTargets.pages ?? []).map((item) => ({ id: String(item.id), name: item.label })),
+            ],
+            changeProp: true,
+        });
+    } else if (linkType === 'menu') {
+        traits.push({
+            type: 'select',
+            name: 'linkRef',
+            label: labels.buttonLinkMenu ?? 'Menu item',
+            options: [
+                { id: '', name: '—' },
+                ...(linkTargets.menuItems ?? []).map((item) => ({ id: String(item.id), name: item.label })),
+            ],
+            changeProp: true,
+        });
+    } else {
+        traits.push({
+            type: 'text',
+            name: 'href',
+            label: labels.buttonLinkUrl ?? 'Link URL',
+            placeholder: labels.buttonLinkUrlPlaceholder ?? 'https:// or /page',
+            changeProp: true,
+        });
+    }
+
+    traits.push({
+        type: 'select',
+        name: 'target',
+        label: labels.buttonLinkTarget ?? 'Open in',
+        options: [
+            { id: '', name: labels.buttonLinkSameTab ?? 'Same tab' },
+            { id: '_blank', name: labels.buttonLinkNewTab ?? 'New tab' },
+        ],
+        changeProp: true,
+    });
+
+    return traits;
+}
+
+function resolveLinkHref(editor, linkType, linkRef, href) {
+    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+
+    if (linkType === 'page') {
+        const page = (targets.pages ?? []).find((item) => String(item.id) === String(linkRef));
+
+        return page?.url || '#';
+    }
+
+    if (linkType === 'menu') {
+        const item = (targets.menuItems ?? []).find((entry) => String(entry.id) === String(linkRef));
+
+        return item?.url || '#';
+    }
+
+    return String(href ?? '#').trim() || '#';
 }
 
 function syncLinkableButtonTraits(component, editor) {
-    component.set('traits', linkTraitsFor(editor));
+    component.set('traits', linkTraitsFor(editor, component));
 
-    if (editor?.getSelected?.() === component && editor.TraitManager) {
+    if (editor?.getSelected?.() !== component) {
+        return;
+    }
+
+    const traitsMount = editor.getContainer?.()
+        ?.closest?.('.voodbuilder-gjs-shell')
+        ?.querySelector?.('.voodbuilder-gjs-traits-mount')
+        ?? document.querySelector('.voodbuilder-gjs-traits-mount');
+    const settingsMount = traitsMount
+        ?.closest?.('[data-voodbuilder-inspector="content"]')
+        ?.querySelector?.('.voodbuilder-gjs-site-chrome-settings-mount');
+
+    settingsMount && (settingsMount.hidden = true);
+    traitsMount?.classList.remove('hidden');
+
+    if (editor.TraitManager?.select) {
         editor.TraitManager.select(component);
     }
 }
@@ -209,11 +332,13 @@ function readLinkProps(component) {
     return {
         href: String(component.get('href') ?? attrs.href ?? '').trim(),
         target: String(component.get('target') ?? attrs.target ?? '').trim(),
+        linkType: String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url').trim() || 'url',
+        linkRef: String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '').trim(),
     };
 }
 
 function hydrateLinkPropsFromAttributes(component) {
-    const { href, target } = readLinkProps(component);
+    const { href, target, linkType, linkRef } = readLinkProps(component);
     const updates = {};
 
     if (href !== '' && component.get('href') !== href) {
@@ -222,6 +347,14 @@ function hydrateLinkPropsFromAttributes(component) {
 
     if (target !== component.get('target')) {
         updates.target = target;
+    }
+
+    if (component.get('linkType') !== linkType) {
+        updates.linkType = linkType;
+    }
+
+    if (component.get('linkRef') !== linkRef) {
+        updates.linkRef = linkRef;
     }
 
     const label = extractButtonLabel(component);
@@ -361,13 +494,13 @@ function escapeHtmlText(value) {
         .replace(/"/g, '&quot;');
 }
 
-function applyCtaButtonLink(component) {
-    const { href, target } = readLinkProps(component);
-    const hasLink = href !== '' && href !== '#';
+function applyCtaButtonLink(component, editor = null) {
+    const ed = editor ?? component?.em ?? null;
+    const { href, target, linkType, linkRef } = readLinkProps(component);
     const tag = String(component.get('tagName') ?? '').toLowerCase();
     const classes = [...(component.getClasses?.() ?? [])];
     const label = extractButtonLabel(component);
-    const resolvedHref = hasLink ? href : '#';
+    const resolvedHref = resolveLinkHref(ed, linkType, linkRef, href);
 
     if (tag !== 'button' && ! (tag === 'a' && component.getAttributes()?.['data-voodbuilder-cta'] === 'true')) {
         return;
@@ -382,6 +515,8 @@ function applyCtaButtonLink(component) {
         layerable: true,
         href: resolvedHref,
         target,
+        linkType,
+        linkRef,
         ctaLabel: label,
     };
 
@@ -403,6 +538,8 @@ function applyCtaButtonLink(component) {
         role: 'button',
         'data-voodbuilder-cta': 'true',
         [CTA_LABEL_ATTR]: label,
+        'data-vb-link-type': linkType || 'url',
+        'data-vb-link': linkType === 'url' ? null : (linkRef || null),
     };
     const attrsChanged = Object.entries(nextAttrs).some(([key, value]) => {
         const current = attrs[key] ?? null;
@@ -464,7 +601,7 @@ function upgradeLinkableButton(component, editor) {
         return;
     }
 
-    applyCtaButtonLink(component);
+    applyCtaButtonLink(component, editor);
     component.__vbLinkMorphApplied = true;
 }
 
@@ -510,10 +647,13 @@ function registerLinkableButtonType(editor) {
                     href: '#',
                     role: 'button',
                     'data-voodbuilder-cta': 'true',
+                    'data-vb-link-type': 'url',
                 },
-                traits: buttonLinkTraitSchema(labels),
+                traits: buttonLinkTraitSchema(labels, editor),
                 href: '#',
                 target: '',
+                linkType: 'url',
+                linkRef: '',
                 ctaLabel: 'Button',
                 editable: false,
                 layerable: true,
@@ -522,6 +662,7 @@ function registerLinkableButtonType(editor) {
             init() {
                 hydrateLinkPropsFromAttributes(this);
                 persistCtaLabel(this, extractButtonLabel(this));
+                syncLinkableButtonTraits(this, editor);
 
                 this.on('change:ctaLabel', () => {
                     if (this.__vbPersistingCtaLabel) {
@@ -535,9 +676,16 @@ function registerLinkableButtonType(editor) {
                 // restore fought each other and made "Button" flicker on every
                 // getHtml/toHTML during page CSS compile.
 
-                this.on('change:href change:target', () => {
+                this.on('change:href change:target change:linkRef', () => {
                     this.__vbLinkMorphApplied = true;
-                    applyCtaButtonLink(this);
+                    applyCtaButtonLink(this, editor);
+                });
+
+                this.on('change:linkType', () => {
+                    this.__vbLinkMorphApplied = true;
+                    this.set('linkRef', '', { silent: true });
+                    syncLinkableButtonTraits(this, editor);
+                    applyCtaButtonLink(this, editor);
                 });
             },
             toHTML(opts) {
@@ -558,10 +706,15 @@ function registerLinkableButtonType(editor) {
                     : { ...(this.getAttributes?.() ?? {}) };
 
                 const label = extractButtonLabel(this);
+                const linkType = String(this.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url');
+                const linkRef = String(this.get('linkRef') ?? attrs['data-vb-link'] ?? '');
 
                 attrs['data-voodbuilder-cta'] = 'true';
                 attrs[CTA_LABEL_ATTR] = label;
                 attrs.role = attrs.role || 'button';
+                attrs['data-vb-link-type'] = linkType;
+                attrs['data-vb-link'] = linkType === 'url' ? null : (linkRef || null);
+                attrs.href = this.get('href') || attrs.href || '#';
 
                 return attrs;
             },
@@ -641,6 +794,83 @@ export function scanLinkableButtons(editor, root = editor.getWrapper?.()) {
     visit(root);
 }
 
+/** Upgrade one selected component to a smart CTA when applicable. */
+export function ensureSmartCtaButton(component, editor) {
+    if (! component || ! editor) {
+        return false;
+    }
+
+    promoteButtonLikeAnchor(component);
+
+    if (! isLinkableCtaComponent(component) && component.get?.('type') !== 'voodbuilder-cta-button') {
+        return false;
+    }
+
+    upgradeLinkableButton(component, editor);
+    persistCtaLabel(component);
+
+    return component.get?.('type') === 'voodbuilder-cta-button'
+        || component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
+}
+
+function classesLookLikeCtaButton(classes) {
+    const c = String(classes ?? '').toLowerCase();
+
+    if (c === '') {
+        return false;
+    }
+
+    if (/\bbtn(?:-|\s|$)/.test(c)) {
+        return true;
+    }
+
+    const hasPad = c.includes('px-') && (c.includes('py-') || /(?:^|\s)p-\d/.test(c));
+    const hasRounded = c.includes('rounded');
+
+    if (! hasPad || ! hasRounded) {
+        return false;
+    }
+
+    const hasFill = /bg-(indigo|vp-brand|blue|gray-8|black|green|teal|emerald)/.test(c);
+    const hasOutline = c.includes('border') && ! c.includes('border-0');
+    const hasInlineFlex = c.includes('inline-flex');
+
+    return hasFill || hasOutline || hasInlineFlex;
+}
+
+function promoteButtonLikeAnchor(component) {
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+    const type = String(component.get?.('type') ?? '');
+
+    if (tag !== 'a' && tag !== 'button' && type !== 'link') {
+        return;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-cta'] === 'true') {
+        return;
+    }
+
+    if (tag === 'button') {
+        const buttonType = String(attrs.type ?? '').toLowerCase();
+
+        if (buttonType === 'submit' || buttonType === 'reset') {
+            return;
+        }
+
+        component.addAttributes({ 'data-voodbuilder-cta': 'true' });
+
+        return;
+    }
+
+    const classes = `${attrs.class ?? ''} ${(component.getClasses?.() ?? []).join(' ')}`;
+
+    if (classesLookLikeCtaButton(classes) || attrs.role === 'button') {
+        component.addAttributes({ 'data-voodbuilder-cta': 'true' });
+    }
+}
+
 /**
  * Before getHtml / chrome-shell extract: guarantee every CTA has a textnode label.
  */
@@ -703,6 +933,7 @@ export function configureLinkableButtons(editor) {
 
         upgradeLinkableButton(component, editor);
         persistCtaLabel(component);
+        syncLinkableButtonTraits(component, editor);
     });
 
     scanLinkableButtons(editor);

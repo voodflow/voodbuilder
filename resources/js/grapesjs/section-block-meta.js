@@ -144,6 +144,7 @@ export const SECTION_BLOCK_LABELS = {
     'voodbuilder-tabs-segmented': 'Tabs · segmented',
     'voodbuilder-icon': 'Icon',
     'voodbuilder-text-link': 'Text link',
+    'voodbuilder-button': 'Button',
     'voodbuilder-reading-time': 'Reading time',
     'voodbuilder-reading-progress': 'Reading progress',
     'voodbuilder-social-share': 'Social sharing',

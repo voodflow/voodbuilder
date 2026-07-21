@@ -122,6 +122,7 @@ final class VoodbuilderSectionGrapesJsBlocks
                 ),
             ),
         );
+        $html = GrapesJsSmartButtonAnnotator::annotate($html);
 
         if ($blockId !== '' && preg_match('/<section\b/i', $html) === 1) {
             $attribute = ' data-voodbuilder-section-block="'.htmlspecialchars($blockId, ENT_QUOTES, 'UTF-8').'"';

@@ -192,6 +192,23 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         return false;
     }
 
+    // Keep smart CTA buttons selectable — they own Content traits (URL / page / menu).
+    const rawType = String(raw.get?.('type') ?? '');
+
+    if (rawType === 'voodbuilder-cta-button') {
+        return false;
+    }
+
+    const rawTag = String(raw.get?.('tagName') ?? '').toLowerCase();
+    const rawAttrs = raw.getAttributes?.() ?? {};
+
+    if (
+        (rawTag === 'a' && rawAttrs['data-voodbuilder-cta'] === 'true')
+        || (rawTag === 'button' && rawAttrs['data-voodbuilder-cta'] === 'true')
+    ) {
+        return false;
+    }
+
     const rawId = readBlockId(raw);
     const rootId = readBlockId(root);
 

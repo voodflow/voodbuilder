@@ -162,6 +162,10 @@ export function shouldPromoteSelectionToRoot(raw, root) {
         return false;
     }
 
+    if (String(raw.get?.('type') ?? '') === 'voodbuilder-cta-button') {
+        return false;
+    }
+
     if (root.get?.('selectable') === false) {
         return false;
     }
