@@ -25,19 +25,16 @@ final class GrapesJsCanvas
     }
 
     /**
-     * Stylesheets required on published GrapesJS pages (section Tailwind utilities).
+     * Stylesheets required on published GrapesJS pages.
+     *
+     * Intentionally empty: `theme.css` already covers section utilities (section-utilities.css
+     * @imports theme and is ~100% duplicate on the public site — keep it for the editor canvas only).
      *
      * @return list<string>
      */
     public static function publishedStyleUrls(): array
     {
-        if (! VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
-            return [];
-        }
-
-        $utilities = self::resolveViteAsset(VoodbuilderSectionGrapesJsBlocks::utilitiesCssEntry());
-
-        return $utilities ? [$utilities] : [];
+        return [];
     }
 
     protected static function resolveViteAsset(string $entry): ?string
@@ -96,13 +93,15 @@ final class GrapesJsCanvas
         };
     }
 
-    public static function frameStyle(string $subTheme): string
+    public static function frameStyle(string $subTheme, bool $popupMode = false): string
     {
         $paletteCss = ThemePalette::cssForCanvas($subTheme);
         $tabsCss = self::readPackageCanvasCss('tabs.css');
         $formsCss = self::readPackageCanvasCss('forms.css');
         $chromeLayoutCss = self::readPackageCanvasCss('chrome-layout-canvas.css');
         $chromeBlockUtilitiesCss = self::readPackageCanvasCss('chrome-block-utilities.css');
+        $wrapperMinHeight = $popupMode ? 'auto' : '100vh';
+        $popupShellCss = $popupMode ? self::readPackageCanvasCss('popup-shell.css') : '';
 
         return <<<CSS
         body {
@@ -116,10 +115,15 @@ final class GrapesJsCanvas
             --container-xl: 36rem;
         }
 
+        body.voodbuilder-popup-editor-canvas {
+            --width-vp-layout: 100%;
+            --width-vp-content: 100%;
+        }
+
         [data-gjs-type="wrapper"] {
             background-color: var(--color-vp-bg, #ffffff);
             box-sizing: border-box;
-            min-height: 100vh;
+            min-height: {$wrapperMinHeight};
             /* No extra chrome padding — public pages do not pad the document wrapper. */
             padding-top: 0;
             padding-bottom: 0;
@@ -465,6 +469,7 @@ final class GrapesJsCanvas
         {$formsCss}
         {$chromeLayoutCss}
         {$chromeBlockUtilitiesCss}
+        {$popupShellCss}
         CSS;
     }
 

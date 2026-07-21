@@ -10,6 +10,7 @@
     $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
         $grapesJsEditor ?? false,
         $chromeLayoutEditor ?? false,
+        $voodbuilderSubTheme,
     );
     $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
 @endphp
@@ -46,7 +47,6 @@
     @elseif ($grapesJsEditor ?? false)
         <style>.voodbuilder-grapesjs-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
-    @livewireStyles
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
@@ -72,7 +72,7 @@
     <x-voodbuilder::popups-boot />
 
     @stack('scripts-before-livewire')
-    @livewireScripts
+    {{-- Livewire JS/CSS auto-inject when a component is rendered; avoid shipping 500KB+ on static pages. --}}
     <x-voodbuilder::site-scripts />
     @stack('scripts')
     @stack('overlays')

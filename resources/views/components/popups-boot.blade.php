@@ -1,4 +1,8 @@
-@if (config('voodbuilder.popups.enabled', true))
+@if (
+    config('voodbuilder.popups.enabled', true)
+    && \Illuminate\Support\Facades\Schema::hasTable('voodbuilder_popups')
+    && \Voodflow\Voodbuilder\Models\BuilderPopup::query()->where('enabled', true)->exists()
+)
     <script type="application/json" data-voodbuilder-popups-config>
         {!! json_encode([
             'endpoint' => route('voodbuilder.popups.public', absolute: false),

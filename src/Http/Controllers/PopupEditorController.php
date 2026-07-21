@@ -17,11 +17,18 @@ class PopupEditorController extends Controller
         abort_unless(GrapesJsPopupEditorGate::isEditing($popup), 403);
 
         $config = GrapesJsPopupEditorGate::config($popup);
-        $config['exitUrl'] = PopupResource::getUrl('edit', ['record' => $popup]);
+
+        try {
+            $config['exitUrl'] = PopupResource::getUrl('edit', ['record' => $popup]);
+        } catch (\Throwable) {
+            // Filament panel may be unavailable (e.g. package tests); keep gate exitUrl.
+        }
 
         return view('voodbuilder::pages.popup-editor', [
             'popup' => $popup,
+            'grapesJsEditor' => true,
             'grapesJsConfig' => $config,
+            'voodbuilderSubTheme' => $config['subTheme'] ?? null,
         ]);
     }
 }

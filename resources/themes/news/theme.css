@@ -2,6 +2,9 @@
  * News sub-theme — editorial / magazine layout.
  */
 
+/* Standalone Vite entry: reference main theme tokens for @apply (bg-vp-*, text-vp-*, …). */
+@reference "../../css/theme.css";
+
 html[data-voodbuilder-sub-theme='news'] {
     --width-vp-content: 50rem;
     --width-vp-layout: 96rem;

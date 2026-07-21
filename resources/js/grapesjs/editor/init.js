@@ -347,6 +347,12 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         doc.documentElement.classList.toggle('dark', prefersDark);
         doc.documentElement.style.colorScheme = prefersDark ? 'dark' : 'light';
 
+        if (themeOptions.popupMode) {
+            doc.body?.classList.add('voodbuilder-popup-editor-canvas');
+        } else {
+            doc.body?.classList.remove('voodbuilder-popup-editor-canvas');
+        }
+
         ensurePaletteStyle(doc);
         ensureChromeLayoutStyle(doc);
     };
@@ -751,7 +757,21 @@ export function initVpressGrapesJs(container, options = {}) {
         canvasPrefersDark: options.canvasPrefersDark,
         themePaletteCss: options.themePaletteCss ?? '',
         chromeLayoutCss: options.chromeLayoutCss ?? '',
+        popupMode: Boolean(options.popupMode),
     });
+    editor.__voodbuilderPopupMode = Boolean(options.popupMode);
+    editor.__voodbuilderPopupDisplayWidthPx = (() => {
+        const raw = String(options.popupDisplayWidth ?? '').trim();
+        const rem = raw.endsWith('rem') ? Number.parseFloat(raw) : Number.NaN;
+
+        if (Number.isFinite(rem) && rem > 0) {
+            return Math.round(rem * 16);
+        }
+
+        const px = Number.parseFloat(raw);
+
+        return Number.isFinite(px) && px > 0 ? Math.round(px) : 672;
+    })();
     ensureInitialContent(editor, initial);
 
     registerChromeShellEditor(editor, {
@@ -1610,6 +1630,7 @@ function mountFrontendEditor() {
         popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,
         popupMode: config.popupMode ?? false,
         popupName: config.popupName ?? null,
+        popupDisplayWidth: config.popupDisplayWidth ?? null,
         chromeShellMode: config.chromeShellMode ?? false,
         chromeShellName: config.chromeShellName ?? null,
         chromeShellParts: config.chromeShellParts ?? null,

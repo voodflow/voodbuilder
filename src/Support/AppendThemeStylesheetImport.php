@@ -6,31 +6,56 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Registers a CSS file as a Vite input so it can be loaded on demand
+ * via GrapesJsAssets::pageViteEntries() (not bundled into theme.css).
+ */
 final class AppendThemeStylesheetImport
 {
     public static function append(string $absoluteCssPath): bool
     {
-        $importPath = ThemeConvention::cssImportPathFromBundle($absoluteCssPath);
+        $relative = VoodbuilderPaths::relativeToBasePath($absoluteCssPath);
 
-        if ($importPath === null) {
+        if ($relative === '' || ! is_file($absoluteCssPath)) {
             return false;
         }
 
-        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
+        $viteConfig = base_path('vite.config.js');
 
-        if (! is_file($bundlePath)) {
+        if (! is_file($viteConfig)) {
             return false;
         }
 
-        $importLine = "@import '{$importPath}';";
-        $contents = File::get($bundlePath);
+        $contents = File::get($viteConfig);
+        $needle = "'{$relative}'";
+        $doubleNeedle = "\"{$relative}\"";
 
-        if (str_contains($contents, $importLine)) {
+        if (str_contains($contents, $needle) || str_contains($contents, $doubleNeedle)) {
             return false;
         }
 
-        File::put($bundlePath, rtrim($contents)."\n{$importLine}\n");
+        // Insert after the main theme.css input when present; otherwise after `input: [`.
+        $themeEntry = VoodbuilderPaths::themeCssRelativePath();
+        $insertLine = "                '{$relative}',";
 
-        return true;
+        if (preg_match('/([\'"])'.preg_quote($themeEntry, '/').'\1,?\s*\n/', $contents, $matches, PREG_OFFSET_CAPTURE) === 1) {
+            $match = $matches[0];
+            $offset = $match[1] + strlen($match[0]);
+            $updated = substr($contents, 0, $offset).$insertLine."\n".substr($contents, $offset);
+            File::put($viteConfig, $updated);
+
+            return true;
+        }
+
+        if (preg_match('/(input:\s*\[\s*\n)/', $contents, $matches, PREG_OFFSET_CAPTURE) === 1) {
+            $match = $matches[1];
+            $offset = $match[1] + strlen($match[0]);
+            $updated = substr($contents, 0, $offset).$insertLine."\n".substr($contents, $offset);
+            File::put($viteConfig, $updated);
+
+            return true;
+        }
+
+        return false;
     }
 }

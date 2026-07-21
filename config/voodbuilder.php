@@ -217,7 +217,8 @@ return [
 
     'popups' => [
         'enabled' => env('VOODBUILDER_POPUPS_ENABLED', true),
-        'editor_sub_theme' => env('VOODBUILDER_POPUPS_EDITOR_SUB_THEME', 'site'),
+        // null = use site default sub-theme (Settings → Appearance), same as page/layout editors.
+        'editor_sub_theme' => env('VOODBUILDER_POPUPS_EDITOR_SUB_THEME'),
     ],
 
     'page_templates' => [

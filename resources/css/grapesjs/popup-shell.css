@@ -1,0 +1,95 @@
+/**
+ * Popup shell — keep page/section blocks readable inside a narrow modal.
+ * Used by popups-runtime (production) and GrapesJS popup editor canvas.
+ */
+
+.voodbuilder-popup-body,
+.voodbuilder-popup-editor-canvas {
+    --width-vp-layout: 100%;
+    --width-vp-content: 100%;
+}
+
+.voodbuilder-popup-body .voodbuilder-gjs-container,
+.voodbuilder-popup-editor-canvas .voodbuilder-gjs-container {
+    max-width: 100%;
+}
+
+/* Page CTAs ship with py-24 / lg:w-2/3 — too much air inside a modal. */
+.voodbuilder-popup-body .py-24,
+.voodbuilder-popup-editor-canvas .py-24 {
+    padding-block: 2.5rem;
+}
+
+.voodbuilder-popup-body .py-10,
+.voodbuilder-popup-editor-canvas .py-10 {
+    padding-block: 1.25rem;
+}
+
+.voodbuilder-popup-body .mb-12,
+.voodbuilder-popup-editor-canvas .mb-12 {
+    margin-bottom: 1.5rem;
+}
+
+.voodbuilder-popup-body .mb-20,
+.voodbuilder-popup-editor-canvas .mb-20 {
+    margin-bottom: 1.5rem;
+}
+
+.voodbuilder-popup-body .px-8,
+.voodbuilder-popup-editor-canvas .px-8 {
+    padding-inline: 0;
+}
+
+/*
+ * Viewport is the full page in production, so lg:* still fires inside a 32–42rem panel.
+ * Force form/CTA rows to use the panel width (matches the popup editor iframe).
+ */
+.voodbuilder-popup-body .lg\:w-2\/3,
+.voodbuilder-popup-editor-canvas .lg\:w-2\/3,
+.voodbuilder-popup-body .lg\:w-1\/2,
+.voodbuilder-popup-editor-canvas .lg\:w-1\/2,
+.voodbuilder-popup-body .md\:w-2\/3,
+.voodbuilder-popup-editor-canvas .md\:w-2\/3 {
+    width: 100%;
+}
+
+.voodbuilder-popup-body .lg\:w-1\/3,
+.voodbuilder-popup-editor-canvas .lg\:w-1\/3 {
+    width: 100%;
+}
+
+/*
+ * Form CTAs: keep field+button on one row in a narrow panel.
+ * Markup uses items-start + sm:mt-7 on the CTA (matches label leading-7).
+ */
+.voodbuilder-popup-body .flex.items-start:has(input),
+.voodbuilder-popup-editor-canvas .flex.items-start:has(input),
+.voodbuilder-popup-body .flex.items-end:has(input),
+.voodbuilder-popup-editor-canvas .flex.items-end:has(input) {
+    flex-wrap: nowrap;
+}
+
+.voodbuilder-popup-body .flex.items-start:has(input) > .grow,
+.voodbuilder-popup-editor-canvas .flex.items-start:has(input) > .grow,
+.voodbuilder-popup-body .flex.items-end:has(input) > .grow,
+.voodbuilder-popup-editor-canvas .flex.items-end:has(input) > .grow {
+    width: auto;
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.voodbuilder-popup-body .flex.items-end:has(input) > a[data-voodbuilder-cta],
+.voodbuilder-popup-body .flex.items-end:has(input) > button,
+.voodbuilder-popup-editor-canvas .flex.items-end:has(input) > a[data-voodbuilder-cta],
+.voodbuilder-popup-editor-canvas .flex.items-end:has(input) > button {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 1.75rem;
+}
+
+.voodbuilder-popup-body .flex.items-start:has(input) > a[data-voodbuilder-cta],
+.voodbuilder-popup-body .flex.items-start:has(input) > button,
+.voodbuilder-popup-editor-canvas .flex.items-start:has(input) > a[data-voodbuilder-cta],
+.voodbuilder-popup-editor-canvas .flex.items-start:has(input) > button {
+    flex-shrink: 0;
+}

@@ -8,8 +8,6 @@
 @import 'tailwindcss-animated';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
-@import '../themes/blog/theme.css';
-@import '../themes/news/theme.css';
 @import './landing.css';
 @import './grapesjs/chrome-block-utilities.css';
 @import './grapesjs/animated-blocks.css';
@@ -17,6 +15,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
 
+/*
+ * Public theme scan: chrome/views only.
+ * Section-block catalogs and GrapesJS JS stay in section-utilities.css (canvas/editor).
+ */
 @source '../views/**/*.blade.php';
 @source '../../../../../resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vtuts/resources/views/**/*.blade.php';
@@ -26,10 +28,6 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
-@source '../grapesjs/section-catalog.html';
-@source '../grapesjs/soundmit-landing-catalog.html';
-@source '../grapesjs/voodbuilder-home-landing-catalog.html';
-@source '../js/grapesjs/**/*.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source not '../../tests/**/*';
 @source not '../../../../../packages/**/tests/**/*';
@@ -631,12 +629,12 @@ summary,
     }
 }
 
-@import './grapesjs/tabs.css';
-@import './grapesjs/forms.css';
-
 /*
  * Header link/icon colors: nav uses Tailwind text-vp-text-* (utilities layer).
  * These rules are intentionally unlayered so --vx-header-text from admin wins.
+ *
+ * Sub-themes (blog/news/landing-fra/…) and tabs/forms are separate Vite entries
+ * loaded only when needed — see GrapesJsAssets::pageViteEntries().
  */
 html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
 html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt,
@@ -682,10 +680,3 @@ body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-landing-shell,
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
     min-height: auto;
 }
-
-@import '../../../../../resources/voodbuilder/themes/docs-copy/theme.css';
-
-
-
-
-@import '../../../../../resources/voodbuilder/themes/landing-fra/theme.css';

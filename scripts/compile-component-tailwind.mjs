@@ -485,6 +485,11 @@ function optimizeComponentCss(css, scope) {
         }
     }
 
+    flattenNestedMediaQueries(root);
+    flattenNestedAmpersandRules(root);
+    normalizeMediaRangeSyntax(root);
+    removeEmptyRules(root);
+
     root.prepend(postcss.rule({ selector: scope, nodes: scopedDeclarations }));
 
     return root.toString();
@@ -739,20 +744,115 @@ function flattenNestedMediaQueries(root) {
     }
 
     // Drop emptied nesting shells left behind (e.g. `&:hover { }` then `.hover\:x { }`).
+    removeEmptyNestingShells(root);
+}
+
+/**
+ * Flatten Tailwind nested rules (`.focus\:x { &:focus { … } }`) to flat selectors.
+ * Also drops orphan `&:…` rules that would be invalid at the document root.
+ */
+function flattenNestedAmpersandRules(root) {
+    let changed = true;
+    let guard = 0;
+
+    while (changed && guard < 50) {
+        changed = false;
+        guard += 1;
+        const jobs = [];
+
+        root.walkRules((rule) => {
+            if (! String(rule.selector ?? '').includes('&')) {
+                return;
+            }
+
+            const parent = rule.parent;
+
+            if (! parent || parent.type !== 'rule') {
+                // Invalid at root / inside @media without a parent rule — drop.
+                jobs.push({ type: 'drop', rule });
+
+                return;
+            }
+
+            jobs.push({ type: 'flatten', rule, parent });
+        });
+
+        for (const job of jobs) {
+            if (job.type === 'drop') {
+                job.rule.remove();
+                changed = true;
+
+                continue;
+            }
+
+            const { rule, parent } = job;
+
+            if (! rule.parent) {
+                continue;
+            }
+
+            const selector = resolveNestedSelector(parent.selector, rule.selector);
+            const declarations = [];
+            const nestedAtRules = [];
+
+            for (const child of [...(rule.nodes ?? [])]) {
+                if (child.type === 'decl') {
+                    declarations.push(child.clone());
+                } else if (child.type === 'atrule') {
+                    nestedAtRules.push(child.clone());
+                } else if (child.type === 'rule') {
+                    // Deeper nesting handled on a later pass after hoist.
+                    const deeper = child.clone();
+                    deeper.selector = resolveNestedSelector(selector, deeper.selector);
+                    parent.parent?.insertAfter(parent, deeper);
+                    changed = true;
+                }
+            }
+
+            if (declarations.length > 0) {
+                parent.parent?.insertAfter(parent, postcss.rule({
+                    selector,
+                    nodes: declarations,
+                }));
+                changed = true;
+            }
+
+            for (const atRule of nestedAtRules) {
+                const wrapped = postcss.atRule({
+                    name: atRule.name,
+                    params: atRule.params,
+                    nodes: [postcss.rule({
+                        selector,
+                        nodes: (atRule.nodes ?? []).map((node) => node.clone()),
+                    })],
+                });
+                parent.parent?.insertAfter(parent, wrapped);
+                changed = true;
+            }
+
+            rule.remove();
+            changed = true;
+        }
+
+        removeEmptyNestingShells(root);
+    }
+}
+
+function removeEmptyNestingShells(root) {
     let removed = true;
 
     while (removed) {
         removed = false;
 
         root.walkRules((rule) => {
-            let hasDeclarations = false;
+            let hasOwnDeclarations = false;
             let hasAtRules = false;
 
-            rule.walkDecls(() => {
-                hasDeclarations = true;
-            });
-
             rule.each((child) => {
+                if (child.type === 'decl') {
+                    hasOwnDeclarations = true;
+                }
+
                 if (child.type === 'atrule') {
                     hasAtRules = true;
                 }
@@ -761,7 +861,7 @@ function flattenNestedMediaQueries(root) {
             const nestedRules = (rule.nodes ?? []).filter((child) => child.type === 'rule');
             const hasLiveNestedRules = nestedRules.some((nested) => (nested.nodes ?? []).length > 0);
 
-            if (hasDeclarations || hasAtRules || hasLiveNestedRules) {
+            if (hasOwnDeclarations || hasAtRules || hasLiveNestedRules) {
                 return;
             }
 
@@ -812,6 +912,7 @@ function optimizePageCss(css) {
     rewriteLegacyPaletteUtilityColors(root);
     rewriteThemeVarFallbacks(root);
     flattenNestedMediaQueries(root);
+    flattenNestedAmpersandRules(root);
     normalizeMediaRangeSyntax(root);
     // Keep .flex / .inline-flex / .grid — page blocks need them. Stripping caused
     // "styles lost on save" when live CSS was replaced with the published bundle.

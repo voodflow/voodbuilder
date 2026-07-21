@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\File;
 final class SyncThemeStylesheetImports
 {
     /**
-     * Drop @import lines that point to missing files and add imports for app themes that exist.
+     * Drop @import lines that point to missing files.
+     * App sub-themes are Vite entries (GrapesJsAssets), not bundled into theme.css.
      */
     public static function sync(): bool
     {
@@ -40,6 +41,15 @@ final class SyncThemeStylesheetImports
                 continue;
             }
 
+            // Legacy app-theme @imports: prune (loaded on demand via Vite).
+            if (str_contains($importPath, 'resources/voodbuilder/themes/')
+                || str_contains($importPath, '../themes/blog/')
+                || str_contains($importPath, '../themes/news/')) {
+                $changed = true;
+
+                continue;
+            }
+
             $absolute = self::resolveImportAbsolute($bundlePath, $importPath);
 
             if ($absolute === null || ! is_file($absolute)) {
@@ -50,19 +60,6 @@ final class SyncThemeStylesheetImports
 
             $presentImports[$importPath] = true;
             $kept[] = $line;
-        }
-
-        foreach (self::appThemeCssPaths() as $absoluteCssPath) {
-            $importPath = ThemeConvention::cssImportPathFromBundle($absoluteCssPath);
-
-            if ($importPath === null || isset($presentImports[$importPath])) {
-                continue;
-            }
-
-            $kept[] = '';
-            $kept[] = "@import '{$importPath}';";
-            $presentImports[$importPath] = true;
-            $changed = true;
         }
 
         foreach (self::optionalChannelCssPaths() as $absoluteCssPath) {
@@ -90,33 +87,6 @@ final class SyncThemeStylesheetImports
         return true;
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function appThemeCssPaths(): array
-    {
-        $paths = [];
-
-        foreach (config('voodbuilder.sub_themes', []) as $definition) {
-            if (! is_array($definition)) {
-                continue;
-            }
-
-            $css = $definition['css'] ?? null;
-
-            if (! is_string($css) || ! str_contains($css, 'resources/voodbuilder/themes/')) {
-                continue;
-            }
-
-            $absolute = base_path($css);
-
-            if (is_file($absolute)) {
-                $paths[] = $absolute;
-            }
-        }
-
-        return $paths;
-    }
 
     /**
      * Optional voodbuilder channel stylesheets shipped by other voodflow packages.

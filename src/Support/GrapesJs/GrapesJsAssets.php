@@ -6,6 +6,8 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
+use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 final class GrapesJsAssets
@@ -48,7 +50,7 @@ final class GrapesJsAssets
      *
      * @return list<string>
      */
-    public static function editorPageViteEntries(bool $chromeLayoutEditor = false): array
+    public static function editorPageViteEntries(bool $chromeLayoutEditor = false, ?string $subTheme = null): array
     {
         $entries = [
             self::editorScriptEntry(),
@@ -59,28 +61,81 @@ final class GrapesJsAssets
             $entries[] = self::blockPreviewStyleEntry();
         }
 
-        return array_values(array_unique(array_merge(
-            [VoodbuilderPaths::themeCssRelativePath()],
-            $entries,
-        )));
+        return self::withOptionalPublicCss(
+            array_merge([VoodbuilderPaths::themeCssRelativePath()], $entries),
+            $subTheme,
+            includeTabsAndForms: false,
+        );
     }
 
     /**
+     * Public page / editor host Vite entries.
+     *
      * @return list<string>
      */
-    public static function pageViteEntries(bool $grapesJsEditor = false, bool $chromeLayoutEditor = false): array
-    {
+    public static function pageViteEntries(
+        bool $grapesJsEditor = false,
+        bool $chromeLayoutEditor = false,
+        ?string $subTheme = null,
+    ): array {
         if ($grapesJsEditor) {
-            return self::editorPageViteEntries($chromeLayoutEditor);
+            return self::editorPageViteEntries($chromeLayoutEditor, $subTheme);
         }
 
         $configured = config('voodbuilder.assets.vite');
 
         if (is_array($configured) && $configured !== []) {
-            return array_values($configured);
+            return self::withOptionalPublicCss(array_values($configured), $subTheme);
         }
 
-        return VoodbuilderPaths::defaultViteEntries();
+        return self::withOptionalPublicCss(VoodbuilderPaths::defaultViteEntries(), $subTheme);
+    }
+
+    /**
+     * Active sub-theme CSS as a Vite entry (null when already bundled in theme.css = site).
+     */
+    public static function subThemeCssViteEntry(?string $subTheme): ?string
+    {
+        $id = SubThemeResolver::normalize($subTheme ?? SubThemeResolver::siteDefault());
+
+        if (in_array($id, [SubThemeResolver::SITE, 'events'], true)) {
+            return null;
+        }
+
+        $absolute = self::resolveSubThemeCssAbsolutePath($id);
+
+        if ($absolute === null || ! is_file($absolute)) {
+            return null;
+        }
+
+        return VoodbuilderPaths::relativeToBasePath($absolute);
+    }
+
+    /**
+     * Known optional CSS inputs that should be listed in vite.config.js.
+     *
+     * @return list<string>
+     */
+    public static function optionalPublicCssViteInputs(): array
+    {
+        $entries = [
+            VoodbuilderPaths::grapesJsTabsCssEntry(),
+            VoodbuilderPaths::grapesJsFormsCssEntry(),
+        ];
+
+        foreach (app(SubThemeRegistry::class)->ids() as $id) {
+            if (in_array($id, [SubThemeResolver::SITE, 'events'], true)) {
+                continue;
+            }
+
+            $entry = self::subThemeCssViteEntry($id);
+
+            if ($entry !== null) {
+                $entries[] = $entry;
+            }
+        }
+
+        return array_values(array_unique($entries));
     }
 
     public static function isBuilt(): bool
@@ -113,6 +168,57 @@ final class GrapesJsAssets
 
         return "Add `{$script}` and `{$style}` to vite.config.js input, then run `npm install --legacy-peer-deps && npm run build`. "
             .'Or run `php artisan voodbuilder:install --skip-migrate --skip-seed --with-npm-build`.';
+    }
+
+    /**
+     * @param  list<string>  $entries
+     * @return list<string>
+     */
+    protected static function withOptionalPublicCss(
+        array $entries,
+        ?string $subTheme,
+        bool $includeTabsAndForms = true,
+    ): array {
+        if ($includeTabsAndForms) {
+            $entries[] = VoodbuilderPaths::grapesJsTabsCssEntry();
+            $entries[] = VoodbuilderPaths::grapesJsFormsCssEntry();
+        }
+
+        $subThemeEntry = self::subThemeCssViteEntry($subTheme);
+
+        if ($subThemeEntry !== null) {
+            $entries[] = $subThemeEntry;
+        }
+
+        return array_values(array_unique(array_filter(
+            $entries,
+            static fn (mixed $entry): bool => is_string($entry) && $entry !== '',
+        )));
+    }
+
+    protected static function resolveSubThemeCssAbsolutePath(string $subThemeId): ?string
+    {
+        $cssPath = app(SubThemeRegistry::class)->cssPath($subThemeId);
+
+        if (! is_string($cssPath) || $cssPath === '') {
+            return null;
+        }
+
+        if (str_starts_with($cssPath, 'themes/')) {
+            $absolute = VoodbuilderPaths::packagePath().'/resources/'.$cssPath;
+
+            return is_file($absolute) ? $absolute : null;
+        }
+
+        if (str_starts_with($cssPath, 'resources/')) {
+            $absolute = base_path($cssPath);
+
+            return is_file($absolute) ? $absolute : null;
+        }
+
+        $absolute = base_path($cssPath);
+
+        return is_file($absolute) ? $absolute : null;
     }
 
     protected static function hasBuiltAsset(string $entry): bool

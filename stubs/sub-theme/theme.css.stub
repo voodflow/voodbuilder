@@ -1,7 +1,12 @@
 /**
  * {{ name }} sub-theme — layout shell for Site Pages.
  * Colors can be set in Admin → Settings → Layouts without editing this file.
+ *
+ * Standalone Vite entry: reference main theme tokens for @apply utilities.
+ * Vendor installs: use ../../../../vendor/voodflow/voodbuilder/resources/css/theme.css
  */
+
+@reference "../../../../packages/voodflow/voodbuilder/resources/css/theme.css";
 
 html[data-voodbuilder-sub-theme='{{ id }}'] {
     --width-vp-content: 43rem;

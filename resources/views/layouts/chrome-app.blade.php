@@ -12,6 +12,7 @@
     $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
         $grapesJsEditor ?? false,
         $chromeLayoutEditor ?? false,
+        $voodbuilderSubTheme,
     );
     $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
     $chromeLayout = $voodbuilderChromeLayout ?? ChromeLayoutResolver::activeLayout();
@@ -68,7 +69,7 @@
     @if ($chromeShellCss !== '')
         <style id="voodbuilder-chrome-shell-theme">{!! $chromeShellCss !!}</style>
     @endif
-    @livewireStyles
+    {{-- Livewire assets auto-inject only when a component is on the page (inject_assets=true). --}}
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
@@ -95,7 +96,7 @@
     <x-voodbuilder::popups-boot />
 
     @stack('scripts-before-livewire')
-    @livewireScripts
+    {{-- Livewire JS/CSS auto-inject when a component is rendered; avoid shipping 500KB+ on static pages. --}}
     <x-voodbuilder::site-scripts />
     @if ($chromeRendered['js'] !== '')
         <script>{!! $chromeRendered['js'] !!}</script>

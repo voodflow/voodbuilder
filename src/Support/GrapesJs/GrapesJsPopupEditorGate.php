@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Models\BuilderPopup;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Popups\GrapesJsPopupHtmlNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
@@ -30,12 +31,23 @@ final class GrapesJsPopupEditorGate
      */
     public static function config(BuilderPopup $popup): array
     {
-        $subTheme = (string) config('voodbuilder.popups.editor_sub_theme', 'site');
+        $subTheme = filled(config('voodbuilder.popups.editor_sub_theme'))
+            ? SubThemeResolver::normalize((string) config('voodbuilder.popups.editor_sub_theme'))
+            : SubThemeResolver::siteDefault();
+
+        $display = is_array($popup->rules['display'] ?? null) ? $popup->rules['display'] : [];
+        $displayWidth = match ((string) ($display['width'] ?? 'md')) {
+            'sm' => '24rem',
+            'lg' => '42rem',
+            'xl' => '56rem',
+            default => '32rem',
+        };
 
         return [
             'popupMode' => true,
             'popupId' => $popup->getKey(),
             'popupName' => $popup->name,
+            'popupDisplayWidth' => $displayWidth,
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.popups.content.update', $popup),
             'exitUrl' => route('voodbuilder.popups.editor', $popup),
             'viewPageUrl' => route('voodbuilder.popups.editor', ['popup' => $popup, 'edit' => 1]),
@@ -52,7 +64,7 @@ final class GrapesJsPopupEditorGate
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
-            'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
+            'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme, popupMode: true),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => true,

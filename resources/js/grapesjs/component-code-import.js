@@ -157,23 +157,62 @@ function syncCompatibilityReview(editor, reviewClasses) {
     editor?.setReviewClasses?.(reviewClasses ?? []);
 }
 
-function buildPreviewDocument({ html, css, canvasStyles = [], pageLiveCss = '' }) {
+function buildPreviewDocument({ html, css, canvasStyles = [], pageLiveCss = '', previewWidth = null }) {
     const links = canvasStyles
         .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
         .join('');
     const live = String(pageLiveCss ?? '').trim();
     const blockCss = String(css ?? '').trim();
+    const designWidth = Number.parseInt(String(previewWidth ?? ''), 10);
+    const usePopupPreview = Number.isFinite(designWidth) && designWidth > 0;
+    const viewportWidth = usePopupPreview ? designWidth : 1280;
+    const scale = usePopupPreview ? 1 : 0.58;
+    const shellClass = usePopupPreview
+        ? 'voodbuilder-code-import-preview-viewport voodbuilder-popup-body'
+        : 'voodbuilder-code-import-preview-viewport';
+    const shellCss = usePopupPreview
+        ? `
+.voodbuilder-code-import-preview-viewport {
+    width: ${viewportWidth}px;
+    max-width: 100%;
+    min-height: 100%;
+    margin: 0 auto;
+    background: var(--color-vp-bg, #fff);
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.2);
+    overflow: hidden;
+}
+.voodbuilder-popup-body { --width-vp-layout: 100%; --width-vp-content: 100%; }
+.voodbuilder-popup-body .voodbuilder-gjs-container { max-width: 100%; }
+.voodbuilder-popup-body .py-24 { padding-block: 2.5rem; }
+.voodbuilder-popup-body .py-10 { padding-block: 1.25rem; }
+.voodbuilder-popup-body .mb-12, .voodbuilder-popup-body .mb-20 { margin-bottom: 1.5rem; }
+.voodbuilder-popup-body .px-8 { padding-inline: 0; }
+.voodbuilder-popup-body .lg\\:w-2\\/3,
+.voodbuilder-popup-body .lg\\:w-1\\/2,
+.voodbuilder-popup-body .md\\:w-2\\/3,
+.voodbuilder-popup-body .lg\\:w-1\\/3 { width: 100%; }
+`
+        : `
+.voodbuilder-code-import-preview-viewport {
+    width: 1280px;
+    min-height: 100%;
+    transform: scale(${scale});
+    transform-origin: top left;
+    background: var(--color-vp-bg, #fff);
+}
+`;
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1280">
+<meta name="viewport" content="width=${viewportWidth}">
 ${links}
 <style>
 html, body {
     margin: 0;
-    padding: 0;
+    padding: ${usePopupPreview ? '1rem' : '0'};
     min-height: 100%;
     background:
         linear-gradient(45deg, #f1f5f9 25%, transparent 25%) 0 0 / 16px 16px,
@@ -182,20 +221,14 @@ html, body {
         linear-gradient(-45deg, transparent 75%, #f1f5f9 75%) 0 0 / 16px 16px,
         #fff;
 }
-.voodbuilder-code-import-preview-viewport {
-    width: 1280px;
-    min-height: 100%;
-    transform: scale(0.58);
-    transform-origin: top left;
-    background: var(--color-vp-bg, #fff);
-}
+${shellCss}
 .voodbuilder-component-code-preview { min-height: 100%; }
 </style>
 ${live ? `<style id="voodbuilder-page-live-css">${live}</style>` : ''}
 ${blockCss ? `<style id="voodbuilder-block-preview-css">${blockCss}</style>` : ''}
 </head>
 <body>
-<div class="voodbuilder-code-import-preview-viewport">
+<div class="${shellClass}">
 <div class="voodbuilder-component-code-preview">${html}</div>
 </div>
 </body>
@@ -214,7 +247,7 @@ function closeModal() {
     activeModal = null;
 }
 
-function schedulePreviewUpdate(iframe, getValues, canvasStyles, getPageLiveCss) {
+function schedulePreviewUpdate(iframe, getValues, canvasStyles, getPageLiveCss, previewWidth = null) {
     window.clearTimeout(previewTimer);
     previewTimer = window.setTimeout(() => {
         const { html, css } = getValues();
@@ -230,6 +263,7 @@ function schedulePreviewUpdate(iframe, getValues, canvasStyles, getPageLiveCss) 
             css,
             canvasStyles,
             pageLiveCss: typeof getPageLiveCss === 'function' ? getPageLiveCss() : '',
+            previewWidth,
         }));
         doc.close();
     }, 180);
@@ -248,6 +282,7 @@ function openComponentCodeDialog({
     onApply = null,
     onCreated,
     onUpdated,
+    previewWidth = null,
 }) {
     if (activeModal) {
         closeModal();
@@ -376,6 +411,10 @@ function openComponentCodeDialog({
         const grapesEditor = editor
             ?? grapesComponent?.em?.get?.('Editor')
             ?? null;
+        const resolvedPreviewWidth = previewWidth
+            ?? (grapesEditor?.__voodbuilderPopupMode
+                ? Math.round(Number.parseFloat(String(grapesEditor.__voodbuilderPopupDisplayWidthPx ?? '')) || 672)
+                : null);
 
         const getPageLiveCss = () => String(grapesEditor?.__voodbuilderPageLiveCss ?? '').trim();
 
@@ -441,7 +480,7 @@ function openComponentCodeDialog({
                 previewBadge.hidden = getPageLiveCss() === '';
             }
 
-            schedulePreviewUpdate(previewFrame, readValues, canvasStyles, getPageLiveCss);
+            schedulePreviewUpdate(previewFrame, readValues, canvasStyles, getPageLiveCss, resolvedPreviewWidth);
         };
 
         const requestCompile = async (rawHtml) => {

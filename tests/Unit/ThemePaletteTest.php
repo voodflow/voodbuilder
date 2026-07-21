@@ -81,6 +81,7 @@ class ThemePaletteTest extends TestCase
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#47cc49!important", $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
+        $this->assertStringContainsString('--color-indigo-500:var(--color-vp-brand-3)', $css);
         $this->assertStringContainsString('html header[role=\'banner\'] .bg-vp-bg', $css);
         $this->assertStringContainsString('--vx-header-bg,var(--color-vp-bg))!important', $css);
         $this->assertStringContainsString('html header[role=\'banner\'] .voodbuilder-header-icon-btn', $css);

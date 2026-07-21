@@ -2,7 +2,10 @@
  * Frontend popup runtime — triggers, frequency caps, overlay shell.
  */
 
+import popupShellCss from '../css/grapesjs/popup-shell.css?inline';
+
 const STORAGE_PREFIX = 'voodbuilder-popup:';
+const POPUP_SHELL_CSS = String(popupShellCss ?? '');
 
 function readConfig() {
     const node = document.querySelector('[data-voodbuilder-popups-config]');
@@ -163,6 +166,15 @@ function mountPopup(popup, { preview = false } = {}) {
         const style = document.createElement('style');
         style.textContent = popup.css;
         root.appendChild(style);
+    }
+
+    const shellStyleId = 'voodbuilder-popup-shell-css';
+
+    if (! document.getElementById(shellStyleId)) {
+        const shellLink = document.createElement('style');
+        shellLink.id = shellStyleId;
+        shellLink.textContent = POPUP_SHELL_CSS;
+        document.head.appendChild(shellLink);
     }
 
     panel.append(closeButton, body);

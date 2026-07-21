@@ -108,18 +108,16 @@ final class GrapesJsPastedComponentNormalizer
             return '';
         }
 
-        if (! preg_match_all(
-            '/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}|[^{}@]+\{[^{}]*\}/s',
-            $css,
-            $matches,
-        )) {
+        $rules = self::splitTopLevelCssRules($css);
+
+        if ($rules === []) {
             return $css;
         }
 
         $kept = [];
         $seen = [];
 
-        foreach ($matches[0] as $rule) {
+        foreach ($rules as $rule) {
             $normalized = preg_replace('/\s+/', ' ', trim($rule)) ?? trim($rule);
 
             if ($normalized === '' || isset($seen[$normalized])) {
@@ -131,6 +129,62 @@ final class GrapesJsPastedComponentNormalizer
         }
 
         return trim(implode("\n", $kept));
+    }
+
+    /**
+     * Split CSS into top-level rules, preserving nested `{ … }` (@media, @supports, …).
+     *
+     * @return list<string>
+     */
+    private static function splitTopLevelCssRules(string $css): array
+    {
+        $rules = [];
+        $length = strlen($css);
+        $index = 0;
+
+        while ($index < $length) {
+            while ($index < $length && ctype_space($css[$index])) {
+                $index++;
+            }
+
+            if ($index >= $length) {
+                break;
+            }
+
+            $start = $index;
+            $depth = 0;
+            $foundBrace = false;
+
+            while ($index < $length) {
+                $char = $css[$index];
+
+                if ($char === '{') {
+                    $depth++;
+                    $foundBrace = true;
+                } elseif ($char === '}') {
+                    $depth--;
+
+                    if ($foundBrace && $depth === 0) {
+                        $index++;
+                        $rules[] = substr($css, $start, $index - $start);
+
+                        break;
+                    }
+
+                    if ($depth < 0) {
+                        return [];
+                    }
+                }
+
+                $index++;
+            }
+
+            if (! $foundBrace) {
+                break;
+            }
+        }
+
+        return $rules;
     }
 
     public static function resolvedCssForStoredHtml(

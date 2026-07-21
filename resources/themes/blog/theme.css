@@ -2,6 +2,9 @@
  * Blog sub-theme — Ghost-inspired reading experience.
  */
 
+/* Standalone Vite entry: reference main theme tokens for @apply (bg-vp-*, text-vp-*, …). */
+@reference "../../css/theme.css";
+
 html[data-voodbuilder-sub-theme='blog'] {
     --width-vp-content: 42rem;
     --width-vp-layout: 72rem;

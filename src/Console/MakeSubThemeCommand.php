@@ -39,9 +39,9 @@ class MakeSubThemeCommand extends Command
         }
 
         if ($result->importAppended) {
-            $this->components->info('Added @import to the voodbuilder theme bundle.');
+            $this->components->info('Registered CSS as a Vite input (loaded only when this sub-theme is active).');
         } else {
-            $this->components->warn('Could not append @import automatically — run npm run build after adding the import.');
+            $this->components->warn('Add the theme CSS path to vite.config.js `input`, then run npm run build.');
         }
 
         $viewsRoot = ThemeConvention::appViewsPath($result->id).'/layouts';
@@ -51,6 +51,7 @@ class MakeSubThemeCommand extends Command
         $this->line("  CSS:     {$result->cssPath}");
         $this->line("  Layouts: {$viewsRoot}/");
         $this->line('Customize colors in Admin → Settings → Layouts, or edit the theme CSS file.');
+
 
         return self::SUCCESS;
     }

@@ -36,7 +36,31 @@ class GrapesJsAssetsTest extends TestCase
         $public = GrapesJsAssets::pageViteEntries(false);
         $editor = GrapesJsAssets::pageViteEntries(true);
 
-        $this->assertSame(VoodbuilderPaths::defaultViteEntries(), $public);
-        $this->assertSame(GrapesJsAssets::editorPageViteEntries(), $editor);
+        $this->assertContains(VoodbuilderPaths::themeCssRelativePath(), $public);
+        $this->assertContains(VoodbuilderPaths::grapesJsTabsCssEntry(), $public);
+        $this->assertContains(VoodbuilderPaths::grapesJsFormsCssEntry(), $public);
+        $this->assertTrue(collect($public)->contains(
+            fn (string $entry): bool => str_ends_with($entry, 'site-runtime.js'),
+        ));
+        $this->assertContains(VoodbuilderPaths::grapesJsViteEntry(), $editor);
+        $this->assertFalse(collect($editor)->contains(
+            fn (string $entry): bool => str_ends_with($entry, 'site-runtime.js'),
+        ));
+    }
+
+    public function test_page_vite_entries_include_active_sub_theme_css(): void
+    {
+        $this->assertNull(GrapesJsAssets::subThemeCssViteEntry('site'));
+
+        $landing = GrapesJsAssets::subThemeCssViteEntry('landing-fra');
+
+        if ($landing !== null) {
+            $public = GrapesJsAssets::pageViteEntries(false, false, 'landing-fra');
+            $this->assertContains($landing, $public);
+        }
+
+        $blog = GrapesJsAssets::subThemeCssViteEntry('blog');
+        $this->assertNotNull($blog);
+        $this->assertStringEndsWith('themes/blog/theme.css', $blog);
     }
 }

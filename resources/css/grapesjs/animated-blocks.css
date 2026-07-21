@@ -84,3 +84,21 @@
 .voodbuilder-gjs-canvas-mount .vb-animate-on-visible {
     animation-play-state: running !important;
 }
+
+/* Section catalog brand mark — kept in theme so public pages need no section-utilities.css */
+.voodbuilder-brand-mark__glyph {
+    animation: voodbuilder-brand-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes voodbuilder-brand-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.82;
+    }
+}
