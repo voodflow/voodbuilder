@@ -445,27 +445,31 @@ function revealCanvasDocument(frameWindow, options = {}) {
     const canvasChromeWidth = editorScope === 'page' ? 'full' : chromeWidth;
 
     doc.body.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
-    doc.body.dataset.voodbuilderPageWidth = mode;
-    doc.documentElement.dataset.voodbuilderPageWidth = mode;
+    // Canvas-only attrs — do NOT set data-voodbuilder-page-width on the iframe body.
+    // Frontend landing.css uses that attr to set --width-vp-layout on the whole document,
+    // which would shrink nav/chrome inside the editor.
+    doc.body.dataset.voodbuilderCanvasContentWidth = mode;
+    doc.documentElement.dataset.voodbuilderCanvasContentWidth = mode;
+    delete doc.body.dataset.voodbuilderPageWidth;
+    delete doc.documentElement.dataset.voodbuilderPageWidth;
     doc.body.dataset.voodbuilderChromeWidth = canvasChromeWidth;
     doc.documentElement.dataset.voodbuilderChromeWidth = canvasChromeWidth;
     doc.body.dataset.voodbuilderEditorScope = editorScope;
     doc.documentElement.dataset.voodbuilderEditorScope = editorScope;
 
+    // Canvas root always uses full layout token; only the page-content slot is constrained.
+    // Use !important so theme palette / theme.css cannot shrink the whole iframe.
+    doc.body.style.setProperty('--width-vp-layout', '100%', 'important');
+    doc.documentElement.style.setProperty('--width-vp-layout', '100%', 'important');
+    doc.documentElement.classList.add('voodbuilder-canvas-ready');
+
     if (isFull || ! maxWidth) {
         doc.body.style.removeProperty('--voodbuilder-page-content-max');
         doc.documentElement.style.removeProperty('--voodbuilder-page-content-max');
     } else {
-        // Only the content-max token — do NOT override --width-vp-layout on the canvas
-        // root or the whole iframe (and chrome) collapses to the site column.
         doc.body.style.setProperty('--voodbuilder-page-content-max', maxWidth);
         doc.documentElement.style.setProperty('--voodbuilder-page-content-max', maxWidth);
     }
-
-    // Keep layout token at full canvas width so nav/chrome stay edge-to-edge unless
-    // chrome_width=content (handled via CSS on chrome shell nodes only).
-    doc.body.style.removeProperty('--width-vp-layout');
-    doc.documentElement.style.removeProperty('--width-vp-layout');
 
     return true;
 }

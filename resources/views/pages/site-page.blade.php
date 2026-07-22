@@ -20,16 +20,11 @@
 
     @push('scripts-before-livewire')
         <style>
-            .voodbuilder-grapesjs-mode .voodbuilder-landing-shell,
-            .voodbuilder-grapesjs-mode .voodbuilder-site-shell,
-            .voodbuilder-grapesjs-mode .voodbuilder-polito-content {
-                max-width: none;
-                padding: 0;
-            }
-
-            .voodbuilder-grapesjs-mode .VPRichPage--landing {
-                width: 100%;
-                max-width: none;
+            body.voodbuilder-grapesjs-editing :is(main, .voodbuilder-landing-shell, .voodbuilder-site-shell, .voodbuilder-site-content, .voodbuilder-polito-content, .VPRichPage, .VPRichPage--landing) {
+                max-width: none !important;
+                width: 100% !important;
+                margin-inline: 0 !important;
+                padding-inline: 0;
             }
         </style>
     @endpush

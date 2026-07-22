@@ -28,18 +28,30 @@
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
-    $pageContentWidth = isset($page) && $page instanceof SitePage
-        ? ChromeLayoutContentWidth::resolve($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null, $page)
-        : ($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout
-            ? ChromeLayoutContentWidth::fromLayout($chromeLayout)
-            : ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]);
+    $isGrapesJsEditor = (bool) ($grapesJsEditor ?? false)
+        || (bool) ($chromeLayoutEditor ?? false)
+        || request()->boolean('edit');
+    // Host document must stay full-bleed while editing — content width applies inside the
+    // canvas iframe / published page only. Otherwise landing.css max-width on site-shell
+    // shrinks the entire GrapesJS workspace.
+    $pageContentWidth = $isGrapesJsEditor
+        ? ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]
+        : (isset($page) && $page instanceof SitePage
+            ? ChromeLayoutContentWidth::resolve($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null, $page)
+            : ($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout
+                ? ChromeLayoutContentWidth::fromLayout($chromeLayout)
+                : ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]));
     $pageContentMaxWidth = ChromeLayoutContentWidth::cssMaxWidth($pageContentWidth);
-    $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth(
-        $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
-    );
-    $pageWidthStyle = filled($pageContentMaxWidth)
-        ? '--voodbuilder-page-content-max: '.$pageContentMaxWidth.'; --width-vp-layout: '.$pageContentMaxWidth.' !important'
-        : null;
+    $chromeWidth = $isGrapesJsEditor
+        ? ChromeLayoutContentWidth::CHROME_FULL
+        : ChromeLayoutContentWidth::resolveChromeWidth(
+            $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
+        );
+    $pageWidthStyle = $isGrapesJsEditor
+        ? '--width-vp-layout: 100% !important'
+        : (filled($pageContentMaxWidth)
+            ? '--voodbuilder-page-content-max: '.$pageContentMaxWidth.'; --width-vp-layout: '.$pageContentMaxWidth.' !important'
+            : null);
 @endphp
 <!doctype html>
 <html

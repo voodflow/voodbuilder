@@ -57,13 +57,23 @@ body[data-voodbuilder-page-width='contained'] {
     --width-vp-layout: var(--voodbuilder-page-content-max, 80rem) !important;
 }
 
-:is(html, body)[data-voodbuilder-page-width='standard'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-:is(html, body)[data-voodbuilder-page-width='custom'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-:is(html, body)[data-voodbuilder-page-width='contained'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+/* Published page only — never shrink the GrapesJS host workspace. */
+html[data-voodbuilder-page-width='standard']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='custom']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='contained']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='standard']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='custom']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='contained']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
     width: 100%;
     max-width: var(--voodbuilder-page-content-max, 80rem) !important;
     margin-inline: auto;
     box-sizing: border-box;
+}
+
+body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+    max-width: none !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
 }
 
 :is(html, body)[data-voodbuilder-page-width='standard'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
