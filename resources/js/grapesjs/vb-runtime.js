@@ -436,6 +436,35 @@ export function replayEditorCanvasAnimations(options = {}) {
 }
 
 /**
+ * Editor load / large template apply: show the final motion state without
+ * restarting keyframes or spinning counters (avoids jank + touchstart spam).
+ *
+ * @param {{ root?: ParentNode }} [options]
+ */
+export function settleEditorCanvasPreview(options = {}) {
+    const root = options.root ?? document;
+
+    root.querySelectorAll('[data-voodbuilder-animated-cta]').forEach((node) => {
+        node.classList.add('is-visible');
+    });
+
+    root.querySelectorAll('.vb-animate-on-visible').forEach((node) => {
+        node.classList.add('is-visible');
+    });
+
+    root.querySelectorAll('[data-voodbuilder-animated-counter]').forEach((node) => {
+        if (node.__vbCountRaf) {
+            window.cancelAnimationFrame(node.__vbCountRaf);
+            node.__vbCountRaf = 0;
+        }
+
+        node.dataset.vbCountPlayed = '1';
+        node.dataset.vbCountAnimating = '0';
+        node.textContent = counterFinalLabel(node);
+    });
+}
+
+/**
  * @param {{ root?: ParentNode, force?: boolean }} [options]
  */
 export function initAnimatedCtas(options = {}) {

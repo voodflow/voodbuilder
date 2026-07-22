@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
-use Voodflow\Voodbuilder\Support\GrapesJs\PageTemplateCategories;
+use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
-use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
+use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\GrapesJs\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsChromeHtmlPipeline;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -35,10 +36,14 @@ final class GrapesJsChromeLayoutEditorGate
     public static function config(ChromeLayout $layout): array
     {
         $subTheme = ChromeLayoutSubThemeResolver::forChromeLayout($layout);
+        $contentWidth = ChromeLayoutContentWidth::fromLayout($layout);
 
         return [
             'chromeLayoutMode' => true,
             'chromeLayoutName' => $layout->name,
+            'pageContentWidth' => $contentWidth,
+            'chromeWidth' => ChromeLayoutContentWidth::resolveChromeWidth($layout),
+            'fullWidthPage' => ChromeLayoutContentWidth::isFull($contentWidth),
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.chrome-layouts.content.update', $layout),
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
@@ -52,10 +57,9 @@ final class GrapesJsChromeLayoutEditorGate
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
-            'pageTemplatesUrl' => self::editorRoute('voodbuilder.grapesjs.page-templates.index'),
-            'pageTemplatesCatalogUrl' => filled(config('voodbuilder.page_templates.catalog_url'))
-                ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
-                : null,
+            // Page templates are page-only — keep them out of the layout editor.
+            'pageTemplatesUrl' => null,
+            'pageTemplatesCatalogUrl' => null,
             'templateCategories' => PageTemplateCategories::all(),
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),

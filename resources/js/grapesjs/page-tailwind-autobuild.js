@@ -141,7 +141,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let settingsRetries = 0;
 
     const schedule = (delay = DEBOUNCE_MS) => {
-        if (! frameReady) {
+        if (! frameReady || editor.__voodbuilderBulkStructureUpdate) {
             return;
         }
 

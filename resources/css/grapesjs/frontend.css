@@ -2363,10 +2363,23 @@ body.voodbuilder-canvas-ready .voodbuilder-gjs-component-instance:has(.voodbuild
     height: 100%;
 }
 
+/*
+ * Do not force width/height with !important — GrapesJS animates device widths via
+ * .gjs-frame-wrapper--anim (width/height .35s). Overriding to 100% made switches jump.
+ */
+.voodbuilder-gjs-root .gjs-frame-wrapper {
+    max-width: 100%;
+    transition: width 0.35s ease, height 0.35s ease;
+}
+
 .voodbuilder-gjs-shell[data-voodbuilder-device='desktop'] .gjs-frame-wrapper {
+    /* Page/layout content width must never shrink the editing frame. */
     width: 100% !important;
-    max-width: none !important;
+    max-width: 100% !important;
     height: 100% !important;
+    margin-inline: 0 !important;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .voodbuilder-gjs-shell[data-voodbuilder-device='tablet'] .gjs-frame-wrapper,
@@ -4259,6 +4272,15 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     .vb-animate-on-visible {
         animation-play-state: running !important;
     }
+}
+
+/* Editor canvas: freeze infinite loops while authoring large templates */
+.gjs-dashed .animate-logo-marquee {
+    animation-play-state: paused !important;
+}
+
+.gjs-dashed .voodbuilder-brand-mark__glyph {
+    animation: none !important;
 }
 
 .vb-animate-on-visible:not(.is-visible) {

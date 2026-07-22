@@ -3,44 +3,10 @@
  */
 
 import { componentClassString } from './clipboard.js';
+import { resolveComponentFromElement } from './component-context-menu.js';
 
 const POPOVER_ID = 'voodbuilder-gjs-class-hover-popover';
-const HIDE_DELAY_MS = 160;
-
-function resolveComponentFromElement(editor, el) {
-    if (! el || el.nodeType !== 1) {
-        return null;
-    }
-
-    const body = editor.Canvas?.getBody?.();
-    let current = el;
-
-    while (current && current !== body) {
-        const id = current.getAttribute?.('id');
-
-        if (id) {
-            const byId = editor.Components?.getById?.(id)
-                ?? editor.DomComponents?.getById?.(id);
-
-            if (byId) {
-                return byId;
-            }
-
-            try {
-                const matches = editor.getWrapper?.()?.find?.(`#${CSS.escape(id)}`) ?? [];
-                if (matches[0]) {
-                    return matches[0];
-                }
-            } catch {
-                // Invalid selector — skip.
-            }
-        }
-
-        current = current.parentElement;
-    }
-
-    return null;
-}
+const HIDE_DELAY_MS = 120;
 
 function ensurePopover() {
     let popover = document.getElementById(POPOVER_ID);
@@ -99,6 +65,19 @@ function positionPopover(popover, clientX, clientY) {
     popover.style.top = `${top}px`;
 }
 
+function pointerInsideFrame(frame, clientX, clientY) {
+    if (! frame) {
+        return false;
+    }
+
+    const rect = frame.getBoundingClientRect();
+
+    return clientX >= rect.left
+        && clientX <= rect.right
+        && clientY >= rect.top
+        && clientY <= rect.bottom;
+}
+
 export function registerCanvasClassHoverPopover(editor, options = {}) {
     if (! editor || editor.__voodbuilderClassHoverPopoverRegistered) {
         return;
@@ -110,13 +89,29 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
     const popover = ensurePopover();
     let hideTimer = null;
     let lastCid = null;
+    let raf = 0;
+    let pending = null;
+    let wiredFrame = null;
+
+    const clearPending = () => {
+        pending = null;
+
+        if (raf) {
+            window.cancelAnimationFrame(raf);
+            raf = 0;
+        }
+    };
 
     const hide = () => {
+        clearPending();
+        window.clearTimeout(hideTimer);
+        hideTimer = null;
         popover.hidden = true;
         lastCid = null;
     };
 
     const scheduleHide = () => {
+        clearPending();
         window.clearTimeout(hideTimer);
         hideTimer = window.setTimeout(hide, HIDE_DELAY_MS);
     };
@@ -129,6 +124,7 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
         }
 
         window.clearTimeout(hideTimer);
+        hideTimer = null;
 
         if (lastCid !== component.cid) {
             lastCid = component.cid;
@@ -139,47 +135,110 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
         positionPopover(popover, clientX, clientY);
     };
 
+    const flushPending = () => {
+        raf = 0;
+        const next = pending;
+        pending = null;
+
+        if (! next) {
+            return;
+        }
+
+        if (editor.__voodbuilderBooting || editor.Canvas?.isDragging?.()) {
+            hide();
+
+            return;
+        }
+
+        const frame = editor.Canvas?.getFrameEl?.();
+
+        // Pointer already left the canvas (iframe leave is unreliable across docs).
+        if (! pointerInsideFrame(frame, next.x, next.y)) {
+            hide();
+
+            return;
+        }
+
+        const component = resolveComponentFromElement(editor, next.target);
+
+        if (! component) {
+            scheduleHide();
+
+            return;
+        }
+
+        showFor(component, next.x, next.y);
+    };
+
+    const onParentPointerMove = (event) => {
+        if (popover.hidden) {
+            return;
+        }
+
+        const frame = editor.Canvas?.getFrameEl?.();
+
+        if (! pointerInsideFrame(frame, event.clientX, event.clientY)) {
+            hide();
+        }
+    };
+
     const wireFrame = () => {
         const frame = editor.Canvas?.getFrameEl?.();
         const doc = frame?.contentDocument;
 
-        if (! doc?.body || doc.body.dataset.voodbuilderClassHoverWired === '1') {
+        if (! doc?.body) {
             return;
         }
 
+        // Parent-document leave detection (iframe → sidebar/panels).
+        if (! editor.__voodbuilderClassHoverParentWired) {
+            editor.__voodbuilderClassHoverParentWired = true;
+            document.addEventListener('mousemove', onParentPointerMove, { passive: true });
+            document.addEventListener('mouseleave', hide, { passive: true });
+            window.addEventListener('blur', hide);
+            editor.on('component:selected', hide);
+            editor.on('block:drag:start', hide);
+        }
+
+        if (wiredFrame === frame && doc.body.dataset.voodbuilderClassHoverWired === '1') {
+            return;
+        }
+
+        wiredFrame = frame;
         doc.body.dataset.voodbuilderClassHoverWired = '1';
 
         doc.body.addEventListener('mousemove', (event) => {
-            if (editor.__voodbuilderBooting || editor.Canvas?.isDragging?.()) {
-                hide();
-
-                return;
-            }
-
-            const component = resolveComponentFromElement(editor, event.target);
-
-            if (! component) {
-                scheduleHide();
-
-                return;
-            }
-
             const frameRect = frame.getBoundingClientRect();
-            showFor(
-                component,
-                frameRect.left + event.clientX,
-                frameRect.top + event.clientY,
-            );
-        });
 
+            pending = {
+                target: event.target,
+                x: frameRect.left + event.clientX,
+                y: frameRect.top + event.clientY,
+            };
+
+            if (! raf) {
+                raf = window.requestAnimationFrame(flushPending);
+            }
+        }, { passive: true });
+
+        // mouseleave on iframe body often does not fire when leaving to parent doc.
         doc.body.addEventListener('mouseleave', scheduleHide);
+        frame.addEventListener('mouseleave', hide);
+        frame.addEventListener('mouseout', (event) => {
+            if (! frame.contains(event.relatedTarget)) {
+                hide();
+            }
+        });
     };
 
-    editor.on('canvas:frame:load', wireFrame);
+    editor.on('canvas:frame:load', () => {
+        // Frame remounts — clear sticky hint from previous document.
+        hide();
+        wireFrame();
+    });
     editor.on('load', () => window.setTimeout(wireFrame, 80));
     wireFrame();
 
-    // Expose for toolbar “copy classes” feedback reuse.
     editor.__voodbuilderClassHoverPopover = {
         hide,
         describe: (component) => componentClassString(component) || (labels.classHoverEmpty ?? 'No classes'),

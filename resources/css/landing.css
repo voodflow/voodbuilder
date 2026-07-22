@@ -40,6 +40,72 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply w-full max-w-none font-sans text-vp-text-1 antialiased;
 }
 
+/* Layout content width: constrain page body (wrappers between main and VPRichPage are ok).
+ * Beat theme palette `--width-vp-layout: … !important` with equal/higher specificity. */
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard']:not(.dark),
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom']:not(.dark),
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained']:not(.dark),
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard'],
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom'],
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained'],
+body[data-voodbuilder-page-width='standard'],
+body[data-voodbuilder-page-width='custom'],
+body[data-voodbuilder-page-width='contained'] {
+    --width-vp-layout: var(--voodbuilder-page-content-max, 80rem) !important;
+}
+
+:is(html, body)[data-voodbuilder-page-width='standard'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+:is(html, body)[data-voodbuilder-page-width='custom'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+:is(html, body)[data-voodbuilder-page-width='contained'] :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+    width: 100%;
+    max-width: var(--voodbuilder-page-content-max, 80rem) !important;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+:is(html, body)[data-voodbuilder-page-width='standard'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='custom'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='contained'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+}
+
+/* Optional: nav/footer follow the same content max width (only when content is constrained). */
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] {
+    width: 100%;
+    max-width: var(--voodbuilder-page-content-max, 80rem);
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+/*
+ * Fixed site headers escape parent max-width (positioned against the viewport).
+ * When chrome matches content, pin the bar to the same content column.
+ */
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] header[role='banner'].fixed,
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] header[role='banner'].sticky {
+    left: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+    right: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
 /*
  * Embedded site nav (GrapesJS block) keeps horizontal gutters.
  * vp:px-0 in saved markup is for doc-sidebar layout only and must not zero in-page nav padding.

@@ -191,10 +191,8 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
     editor.__voodbuilderRelocateLibrary = (libraryId) => {
         previousRelocate?.(libraryId);
         refreshComponentBlocksLibrary(editor, libraryId ?? editor.__voodbuilderActiveLibrary ?? 'blocks', libraryMounts);
-
-        if ((libraryId ?? editor.__voodbuilderActiveLibrary) === 'templates') {
-            collapseLibraryCategories(editor, 'templates');
-        }
+        collapseLibraryCategories(editor, libraryId ?? editor.__voodbuilderActiveLibrary ?? 'blocks');
+        applyBlocksLibraryUi(editor, readBlocksSearchQuery());
     };
 
     let catalog = [];
@@ -231,6 +229,30 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         refreshComponentBlocksLibrary(editor, editor.__voodbuilderActiveLibrary ?? 'blocks', libraryMounts);
         applyBlocksLibraryUi(editor, readBlocksSearchQuery());
         refreshTemplateLibraryUi();
+        renderEmptyState();
+    }
+
+    function renderEmptyState() {
+        let emptyEl = blocksMountNode?.querySelector('[data-voodbuilder-templates-empty]');
+
+        if (catalog.length > 0) {
+            emptyEl?.remove();
+
+            return;
+        }
+
+        if (! blocksMountNode) {
+            return;
+        }
+
+        if (! emptyEl) {
+            emptyEl = document.createElement('p');
+            emptyEl.className = 'voodbuilder-gjs-hint';
+            emptyEl.dataset.voodbuilderTemplatesEmpty = '';
+            blocksMountNode.prepend(emptyEl);
+        }
+
+        emptyEl.textContent = labels.pageTemplatesEmpty ?? 'No page templates yet.';
     }
 
     function refreshTemplateLibraryUi() {

@@ -43,6 +43,7 @@ function escapeHtml(value) {
 }
 
 export function buildEditorShell(container, labels = {}, meta = {}) {
+    const hideTemplates = Boolean(meta.hideTemplates);
     container.classList.add('voodbuilder-gjs-root');
     container.innerHTML = `
         <div class="voodbuilder-gjs-shell" data-voodbuilder-device="desktop">
@@ -81,9 +82,11 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="components" role="tab" aria-selected="false" title="${escapeHtml(labels.tabComponents ?? 'Components')}" aria-label="${escapeHtml(labels.tabComponents ?? 'Components')}">
                             ${tablerIcon(LIBRARY_TAB_ICONS.components, 17)}
                         </button>
+                        ${hideTemplates ? '' : `
                         <button type="button" class="voodbuilder-gjs-library-tab" data-voodbuilder-library="templates" role="tab" aria-selected="false" title="${escapeHtml(labels.tabTemplates ?? 'Templates')}" aria-label="${escapeHtml(labels.tabTemplates ?? 'Templates')}">
                             ${tablerIcon(LIBRARY_TAB_ICONS.templates, 17)}
                         </button>
+                        `}
                     </div>
                     <label class="voodbuilder-gjs-blocks-search-wrap">
                         <span class="voodbuilder-gjs-blocks-search-icon">${lucideIcon('search', 16)}</span>
@@ -102,9 +105,11 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         <div class="voodbuilder-gjs-library-panel" data-voodbuilder-library-panel="components" hidden>
                             <div class="voodbuilder-gjs-components-mount"></div>
                         </div>
+                        ${hideTemplates ? '' : `
                         <div class="voodbuilder-gjs-library-panel" data-voodbuilder-library-panel="templates" hidden>
                             <div class="voodbuilder-gjs-templates-mount"></div>
                         </div>
+                        `}
                     </div>
                 </aside>
                 <div class="voodbuilder-gjs-shell__center">

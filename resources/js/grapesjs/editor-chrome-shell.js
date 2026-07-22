@@ -1000,7 +1000,7 @@ export function registerChromeShellEditor(editor, options = {}) {
             // Re-render layers only when the shell tree actually changed — otherwise
             // Layers.render() rebinds touchstart on every idle refresh and floods the console.
             if (structureChanged || ! editor.__voodbuilderChromeShellLayersReady) {
-                safeRenderEditorLayers(editor);
+                safeRenderEditorLayers(editor, { immediate: true });
                 editor.__voodbuilderChromeShellLayersReady = true;
             }
 
@@ -1016,6 +1016,7 @@ export function registerChromeShellEditor(editor, options = {}) {
             || editor.__voodbuilderChromeShellRefreshing
             || editor.__voodbuilderActiveBlockDrag
             || editor.__voodbuilderDynamicBlockRefreshing
+            || editor.__voodbuilderBulkStructureUpdate
         ) {
             return;
         }
@@ -1064,8 +1065,12 @@ export function registerChromeShellEditor(editor, options = {}) {
     });
 
     editor.on('component:add', (component) => {
+        if (editor.__voodbuilderBulkStructureUpdate) {
+            return;
+        }
+
         window.requestAnimationFrame(() => {
-            if (! component) {
+            if (! component || editor.__voodbuilderBulkStructureUpdate) {
                 return;
             }
 
@@ -1119,7 +1124,11 @@ export function registerChromeShellEditor(editor, options = {}) {
     });
 
     editor.on('component:remove', (component) => {
-        if (bootstrapping || editor.__voodbuilderChromeShellRefreshing) {
+        if (
+            bootstrapping
+            || editor.__voodbuilderChromeShellRefreshing
+            || editor.__voodbuilderBulkStructureUpdate
+        ) {
             return;
         }
 

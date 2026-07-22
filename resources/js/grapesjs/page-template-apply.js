@@ -1,8 +1,17 @@
 /**
  * Apply full-page templates to the GrapesJS canvas.
+ *
+ * In chrome-shell page editors, templates replace only the page-content slot
+ * (nav/footer come from the layout shell). A bulk flag suspends expensive
+ * per-node handlers during setComponents / slot.components().
  */
 
 import { choiceDialog } from './editor-dialog.js';
+import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
+import { settleEditorCanvasPreview } from './vb-runtime.js';
+import { scanLinkableButtons } from './grapesjs-button-link.js';
+
+const CHROME_PLACEHOLDER_BLOCK_RE = /data-voodbuilder-block="(?:site_nav_simple|site_footer_columns_simple|site_header|site_footer[^"]*)"/i;
 
 export function templatePayload(template) {
     if (template?.builder_payload) {
@@ -16,7 +25,67 @@ export function templatePayload(template) {
     };
 }
 
+/**
+ * Drop nav/footer placeholders — chrome shell already owns those regions.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripChromePlaceholdersFromTemplateHtml(html) {
+    const raw = String(html ?? '').trim();
+
+    if (raw === '') {
+        return '';
+    }
+
+    try {
+        const doc = new DOMParser().parseFromString(`<body>${raw}</body>`, 'text/html');
+
+        doc.body.querySelectorAll('[data-voodbuilder-block]').forEach((node) => {
+            const blockId = String(node.getAttribute('data-voodbuilder-block') ?? '');
+
+            if (
+                blockId === 'site_nav_simple'
+                || blockId === 'site_header'
+                || blockId.startsWith('site_footer')
+            ) {
+                node.remove();
+            }
+        });
+
+        return doc.body.innerHTML.trim();
+    } catch {
+        if (! CHROME_PLACEHOLDER_BLOCK_RE.test(raw)) {
+            return raw;
+        }
+
+        return raw
+            .replace(/<div\b[^>]*data-voodbuilder-block="site_nav_simple"[^>]*>\s*<\/div>/gi, '')
+            .replace(/<div\b[^>]*data-voodbuilder-block="site_header"[^>]*>\s*<\/div>/gi, '')
+            .replace(/<div\b[^>]*data-voodbuilder-block="site_footer[^"]*"[^>]*>\s*<\/div>/gi, '')
+            .trim();
+    }
+}
+
 export function pageHasContent(editor) {
+    if (editor?.__voodbuilderChromeShellMode) {
+        const slot = findPageContentSlotInEditor(editor);
+
+        if (! slot) {
+            return false;
+        }
+
+        return slot.components().some((component) => {
+            if (component.components().length > 0) {
+                return true;
+            }
+
+            const text = String(component.get('content') ?? '').trim();
+
+            return text.length > 0;
+        });
+    }
+
     const wrapper = editor?.getWrapper?.();
 
     if (! wrapper) {
@@ -34,10 +103,77 @@ export function pageHasContent(editor) {
     });
 }
 
-export function applyTemplatePayload(editor, template) {
-    const payload = templatePayload(template);
+function settleTemplateCanvas(editor) {
+    try {
+        const frameDoc = editor.Canvas?.getDocument?.();
 
-    editor.setComponents(payload.html ?? '');
+        if (frameDoc) {
+            settleEditorCanvasPreview({ root: frameDoc });
+        }
+    } catch {
+        // Optional preview settle.
+    }
+}
+
+/**
+ * @param {object} editor
+ * @param {() => void} work
+ */
+function runBulkStructureUpdate(editor, work) {
+    editor.__voodbuilderBulkStructureUpdate = true;
+
+    try {
+        work();
+    } finally {
+        window.requestAnimationFrame(() => {
+            editor.__voodbuilderBulkStructureUpdate = false;
+            settleTemplateCanvas(editor);
+
+            try {
+                const root = editor.__voodbuilderChromeShellMode
+                    ? findPageContentSlotInEditor(editor)
+                    : editor.getWrapper?.();
+
+                scanLinkableButtons(editor, root);
+            } catch {
+                // Optional CTA upgrade after bulk apply.
+            }
+
+            editor.trigger('voodbuilder:site-chrome-updated');
+            editor.__voodbuilderSchedulePageCssRebuild?.(200);
+            editor.__voodbuilderAfterBulkStructureUpdate?.();
+        });
+    }
+}
+
+function resolveTemplateHtml(editor, template) {
+    const payload = templatePayload(template);
+    let html = String(payload.html ?? '');
+
+    if (editor.__voodbuilderChromeShellMode) {
+        html = stripChromePlaceholdersFromTemplateHtml(html);
+    }
+
+    return { payload, html };
+}
+
+export function applyTemplatePayload(editor, template) {
+    const { payload, html } = resolveTemplateHtml(editor, template);
+
+    runBulkStructureUpdate(editor, () => {
+        if (editor.__voodbuilderChromeShellMode) {
+            const slot = findPageContentSlotInEditor(editor);
+
+            if (slot?.components) {
+                slot.components(html);
+
+                return;
+            }
+        }
+
+        editor.setComponents(html);
+    });
+
     editor.setStyle(payload.css ?? '');
 
     if (typeof payload.js === 'string' && payload.js.trim() !== '') {
@@ -45,23 +181,34 @@ export function applyTemplatePayload(editor, template) {
     }
 
     editor.__voodbuilderApplyPageLiveCss?.(payload.css ?? '');
-    editor.__voodbuilderSchedulePageCssRebuild?.(0);
 }
 
 export function appendTemplatePayload(editor, template) {
-    const payload = templatePayload(template);
-    const wrapper = editor.getWrapper();
+    const { payload, html } = resolveTemplateHtml(editor, template);
 
-    if (payload.html) {
-        wrapper.append(payload.html);
-    }
+    runBulkStructureUpdate(editor, () => {
+        if (editor.__voodbuilderChromeShellMode) {
+            const slot = findPageContentSlotInEditor(editor);
+
+            if (slot?.append && html) {
+                slot.append(html);
+
+                return;
+            }
+        }
+
+        const wrapper = editor.getWrapper();
+
+        if (html) {
+            wrapper.append(html);
+        }
+    });
 
     if (payload.css) {
         const existingCss = String(editor.getCss?.() ?? '').trim();
         const mergedCss = [existingCss, payload.css].filter((chunk) => chunk !== '').join('\n');
         editor.setStyle(mergedCss);
         editor.__voodbuilderApplyPageLiveCss?.(mergedCss);
-        editor.__voodbuilderSchedulePageCssRebuild?.(0);
     }
 
     if (typeof payload.js === 'string' && payload.js.trim() !== '') {
@@ -108,10 +255,6 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {})
     } else {
         applyTemplatePayload(editor, template);
     }
-
-    window.requestAnimationFrame(() => {
-        editor.trigger('voodbuilder:site-chrome-updated');
-    });
 
     return true;
 }

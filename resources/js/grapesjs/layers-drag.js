@@ -195,7 +195,7 @@ export function registerLayersDrag(editor, options = {}) {
         syncAllLayerDraggable(editor);
 
         window.requestAnimationFrame(() => {
-            safeRenderEditorLayers(editor);
+            safeRenderEditorLayers(editor, { immediate: true });
         });
     };
 
@@ -233,6 +233,6 @@ export function registerLayersDrag(editor, options = {}) {
         event.preventDefault();
         event.stopImmediatePropagation();
         sanitizeEditorLayerTree(editor);
-        safeRenderEditorLayers(editor);
+        safeRenderEditorLayers(editor, { immediate: true });
     }, true);
 }

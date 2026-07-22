@@ -71,6 +71,18 @@
 }
 
 /**
+ * Editor canvas: freeze infinite loops (marquee / brand pulse).
+ * Full replay still runs when an animated block is added via configureAnimatedCanvas.
+ */
+.gjs-dashed .animate-logo-marquee {
+    animation-play-state: paused !important;
+}
+
+.gjs-dashed .voodbuilder-brand-mark__glyph {
+    animation: none !important;
+}
+
+/**
  * Style Manager animations with Interaction = “on visible”.
  * Keep paused until .is-visible (IntersectionObserver in vb-runtime).
  * In the GrapesJS canvas, always run so authors can preview (same idea as CTA).

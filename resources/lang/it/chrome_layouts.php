@@ -24,6 +24,17 @@ return [
         'is_default_help' => 'Usato quando nessun layout specifico per canale corrisponde alla richiesta corrente.',
         'channels' => 'Canali contenuto',
         'channels_help' => 'Assegna questo layout chrome a docs, tutorial, blog o altri canali registrati.',
+        'content_width' => 'Larghezza contenuto',
+        'content_width_help' => 'Full, standard (~80rem) o max personalizzata per il contenuto pagina.',
+        'content_width_full' => 'Tutta larghezza',
+        'content_width_standard' => 'Pagina standard',
+        'content_width_custom' => 'Personalizzata',
+        'content_max_width' => 'Larghezza max contenuto',
+        'content_max_width_help' => 'Valore CSS, es. 72rem o 1200px.',
+        'chrome_width' => 'Larghezza nav e footer',
+        'chrome_width_help' => 'Nav/footer a tutta larghezza, oppure allineati al contenuto sopra.',
+        'chrome_width_full' => 'Tutta larghezza',
+        'chrome_width_content' => 'Come il contenuto',
     ],
 
     'actions' => [
@@ -59,6 +70,6 @@ return [
         'shell' => 'Layout',
         'none' => 'Nessun layout chrome assegnato al canale Pages. Nav e footer usano il guscio classico.',
         'edit_shell' => 'Modifica layout',
-        'canvas_width_help' => 'Nav e footer arrivano da Admin → Layout. Qui scegli solo quanto è larga l’area contenuto della pagina.',
+        'canvas_width_help' => 'Nav e footer restano a tutta larghezza. Qui scegli se il contenuto pagina è edge-to-edge oppure contenuto (~80rem). Non ridimensiona l’area di editing.',
     ],
 ];

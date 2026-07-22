@@ -1,5 +1,8 @@
 @php
+    use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $page->resolvedSubTheme();
+    $pageContentWidth = ChromeLayoutContentWidth::resolve($voodbuilderChromeLayout ?? null, $page);
 @endphp
 
 @extends($page->layoutView())
@@ -53,7 +56,10 @@
 
     <div @class([
         'VPRichPage',
-        'VPRichPage--landing' => $page->usesFullWidthLayout(),
+        // Landing section styles stay available; width is controlled by layout data-voodbuilder-page-width.
+        'VPRichPage--landing' => ($voodbuilderChromeLayout ?? null) !== null
+            || ChromeLayoutContentWidth::isFull($pageContentWidth)
+            || $page->usesGrapesJsBuilder(),
         'voodbuilder-grapesjs-mode' => $grapesJsEditor ?? false,
     ])>
         @if ($grapesJsEditor ?? false)

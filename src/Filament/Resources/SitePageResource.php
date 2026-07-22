@@ -270,6 +270,7 @@ class SitePageResource extends Resource
                                                 static::formUsesFullWidthLayout($get, $record) => __('voodbuilder::landing.layouts.full_width_help'),
                                                 default => null,
                                             })
+                                            // Content width lives on the chrome layout when layouts manage the shell.
                                             ->visible(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
                                             ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
                                                 if ($record === null) {

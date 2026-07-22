@@ -205,60 +205,101 @@ export function initMobileNavSections(scope = document) {
     });
 }
 
+const MOBILE_NAV_CLOSE_MS = 300;
+
+function mobileNavRoot(doc) {
+    return doc?.documentElement ?? doc;
+}
+
+function isMobileNavOpen(mobileNav, doc) {
+    if (! mobileNav) {
+        return false;
+    }
+
+    return mobileNav.classList.contains('is-open')
+        || mobileNavRoot(doc)?.classList?.contains('voodbuilder-mobile-nav-open')
+        || doc?.body?.classList?.contains('voodbuilder-mobile-nav-open');
+}
+
 export function setMobileNavOpen(doc, open) {
     const mobileNav = doc.querySelector('[data-mobile-nav]');
     const mobileToggle = doc.querySelector('[data-mobile-nav-toggle]');
 
-    if (! mobileNav || ! mobileToggle) {
+    if (! mobileNav) {
         return;
     }
 
+    const root = mobileNavRoot(doc);
+
     if (open) {
         mobileNav.hidden = false;
+        mobileNav.removeAttribute('hidden');
         mobileNav.setAttribute('aria-hidden', 'false');
-        requestAnimationFrame(() => {
-            mobileNav.classList.add('is-open');
-        });
+        // Sync class before paint so CSS transition + GrapesJS model sync see the open state.
+        void mobileNav.offsetWidth;
+        mobileNav.classList.add('is-open');
+        root?.classList?.add('voodbuilder-mobile-nav-open');
+        doc.body?.classList?.add('voodbuilder-mobile-nav-open');
     } else {
         mobileNav.classList.remove('is-open');
+        root?.classList?.remove('voodbuilder-mobile-nav-open');
+        doc.body?.classList?.remove('voodbuilder-mobile-nav-open');
         mobileNav.setAttribute('aria-hidden', 'true');
         window.setTimeout(() => {
-            if (! mobileNav.classList.contains('is-open')) {
+            if (! isMobileNavOpen(mobileNav, doc)) {
                 mobileNav.hidden = true;
+                mobileNav.setAttribute('hidden', '');
             }
-        }, 300);
+        }, MOBILE_NAV_CLOSE_MS);
     }
 
-    mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    doc.body.classList.toggle('voodbuilder-mobile-nav-open', open);
+    mobileToggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 export function initMobileNav(scope = document) {
     const mobileNav = scope.querySelector('[data-mobile-nav]');
     const mobileToggle = scope.querySelector('[data-mobile-nav-toggle]');
+    const root = mobileNavRoot(scope);
 
-    if (! mobileNav || ! mobileToggle || mobileToggle.dataset.voodbuilderMobileNavBound === 'true') {
+    if (! mobileNav || ! mobileToggle) {
         return;
     }
 
-    mobileToggle.dataset.voodbuilderMobileNavBound = 'true';
+    if (mobileToggle.dataset.voodbuilderMobileNavBound !== 'true') {
+        mobileToggle.dataset.voodbuilderMobileNavBound = 'true';
 
-    mobileToggle.addEventListener('click', () => {
-        setMobileNavOpen(scope, ! mobileNav.classList.contains('is-open'));
-    });
+        mobileToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMobileNavOpen(scope, ! isMobileNavOpen(mobileNav, scope));
+        });
+    }
 
+    if (root?.dataset?.voodbuilderMobileNavDismissBound === 'true') {
+        return;
+    }
+
+    if (root?.dataset) {
+        root.dataset.voodbuilderMobileNavDismissBound = 'true';
+    }
+
+    // Capture phase: GrapesJS canvas handlers must not swallow close clicks.
     scope.addEventListener('click', (event) => {
         const target = event.target instanceof Element
             ? event.target.closest('[data-mobile-nav-close]')
             : null;
 
-        if (target) {
-            setMobileNavOpen(scope, false);
+        if (! target) {
+            return;
         }
-    });
+
+        event.preventDefault();
+        event.stopPropagation();
+        setMobileNavOpen(scope, false);
+    }, true);
 
     scope.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && mobileNav.classList.contains('is-open')) {
+        if (event.key === 'Escape' && isMobileNavOpen(mobileNav, scope)) {
             setMobileNavOpen(scope, false);
         }
     });

@@ -1,4 +1,6 @@
 @php
+    use Voodflow\Voodbuilder\Models\SitePage;
+    use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
     use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
     use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -26,13 +28,30 @@
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
+    $pageContentWidth = isset($page) && $page instanceof SitePage
+        ? ChromeLayoutContentWidth::resolve($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null, $page)
+        : ($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout
+            ? ChromeLayoutContentWidth::fromLayout($chromeLayout)
+            : ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]);
+    $pageContentMaxWidth = ChromeLayoutContentWidth::cssMaxWidth($pageContentWidth);
+    $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth(
+        $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
+    );
+    $pageWidthStyle = filled($pageContentMaxWidth)
+        ? '--voodbuilder-page-content-max: '.$pageContentMaxWidth.'; --width-vp-layout: '.$pageContentMaxWidth.' !important'
+        : null;
 @endphp
 <!doctype html>
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     data-voodbuilder-sub-theme="{{ $voodbuilderSubTheme }}"
+    data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
+    data-voodbuilder-chrome-width="{{ $chromeWidth }}"
     @if (filled($voodbuilderContentChannel))
         data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
+    @endif
+    @if (filled($pageWidthStyle))
+        style="{{ $pageWidthStyle }}"
     @endif
     @class(['dark' => \Voodflow\Voodbuilder\Support\VoodbuilderTheme::serverInitialDark()])
 >
@@ -72,7 +91,14 @@
     {{-- Livewire assets auto-inject only when a component is on the page (inject_assets=true). --}}
     @stack('head')
 </head>
-<body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
+<body
+    class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}"
+    data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
+    data-voodbuilder-chrome-width="{{ $chromeWidth }}"
+    @if (filled($pageWidthStyle))
+        style="{{ $pageWidthStyle }}"
+    @endif
+>
     @if ($chromeRendered['before'] !== '')
         <div data-voodbuilder-chrome-shell data-voodbuilder-sub-theme="{{ $chromeShellSubTheme }}">
             {!! $chromeRendered['before'] !!}

@@ -69,6 +69,7 @@ final class GrapesJsPopupEditorGate
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => true,
+            'fullWidthPage' => true,
             'themePaletteCss' => ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
             'labels' => GrapesJsEditorGate::sharedEditorLabels(),

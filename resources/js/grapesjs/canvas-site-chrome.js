@@ -7,6 +7,34 @@
 
 import { initSiteChrome, setMobileNavOpen } from './site-chrome-runtime.js';
 
+function findMobileNavComponent(editor, el) {
+    if (el?.__gjsv?.model) {
+        return el.__gjsv.model;
+    }
+
+    const matches = editor.DomComponents?.getWrapper?.()?.find?.('[data-mobile-nav]');
+
+    return Array.isArray(matches) ? matches[0] : matches?.at?.(0) ?? null;
+}
+
+function syncMobileNavComponentClasses(editor, open) {
+    const doc = editor.Canvas?.getDocument?.();
+    const el = doc?.querySelector?.('[data-mobile-nav]');
+    const model = findMobileNavComponent(editor, el);
+
+    if (! model?.addClass || ! model?.removeClass) {
+        return;
+    }
+
+    if (open) {
+        model.addClass('is-open');
+        model.removeAttributes?.('hidden');
+    } else {
+        model.removeClass('is-open');
+        model.addAttributes?.({ hidden: true });
+    }
+}
+
 async function syncCanvasDeviceMode(editor) {
     const deviceId = editor.Devices?.getSelected?.()?.get?.('id') ?? 'desktop';
     const doc = editor.Canvas?.getDocument?.();
@@ -18,9 +46,9 @@ async function syncCanvasDeviceMode(editor) {
     doc.documentElement.dataset.voodbuilderGjsDevice = deviceId;
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
 
-    if (deviceId === 'desktop' || deviceId === 'tablet') {
-        setMobileNavOpen(doc, false);
-    }
+    // Always close the drawer when switching viewport — avoids a stuck open panel.
+    setMobileNavOpen(doc, false);
+    syncMobileNavComponentClasses(editor, false);
 }
 
 export async function bootCanvasSiteChrome(editor) {
@@ -53,4 +81,48 @@ export function registerCanvasSiteChrome(editor) {
     editor.on('device:select', boot);
     editor.on('sorter:drag:end', boot);
     editor.on('voodbuilder:site-chrome-updated', boot);
+
+    // Keep GrapesJS component model in sync when the runtime toggles the drawer,
+    // otherwise a later render restores `is-open` and the menu never closes.
+    editor.on('load', () => {
+        const frame = editor.Canvas?.getFrameEl?.();
+        const doc = frame?.contentDocument;
+
+        if (! doc || doc.documentElement.dataset.voodbuilderMobileNavModelSync === 'true') {
+            return;
+        }
+
+        doc.documentElement.dataset.voodbuilderMobileNavModelSync = 'true';
+
+        doc.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+
+            if (! target) {
+                return;
+            }
+
+            const isClose = Boolean(target.closest('[data-mobile-nav-close]'));
+            const isToggle = Boolean(target.closest('[data-mobile-nav-toggle]'));
+
+            if (! isClose && ! isToggle) {
+                return;
+            }
+
+            // Defer until after site-chrome-runtime toggles the DOM classes.
+            queueMicrotask(() => {
+                if (isClose) {
+                    syncMobileNavComponentClasses(editor, false);
+
+                    return;
+                }
+
+                const nav = doc.querySelector('[data-mobile-nav]');
+                const open = Boolean(
+                    nav?.classList.contains('is-open')
+                    || doc.documentElement.classList.contains('voodbuilder-mobile-nav-open'),
+                );
+                syncMobileNavComponentClasses(editor, open);
+            });
+        }, true);
+    });
 }

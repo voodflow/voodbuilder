@@ -211,7 +211,8 @@ export function registerLayersChromeFilter(editor) {
         || editor.__voodbuilderLayoutStructureRefreshing
         || editor.__voodbuilderLayoutDynamicRefreshPending
         || editor.__voodbuilderChromeShellRefreshing
-        || editor.__voodbuilderActiveBlockDrag,
+        || editor.__voodbuilderActiveBlockDrag
+        || editor.__voodbuilderBulkStructureUpdate,
     );
 
     const scheduleLayersRender = () => {

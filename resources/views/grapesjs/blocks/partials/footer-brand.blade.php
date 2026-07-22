@@ -18,28 +18,28 @@
             <img
                 src="{{ $logos['mobile_light'] }}"
                 alt="{{ $brandName }}"
-                class="h-10 w-10 rounded-full object-cover block md:hidden dark:hidden"
+                class="vb-brand-logo vb-brand-logo--mobile vb-brand-logo--light h-10 w-10 rounded-full object-cover"
             >
         @endif
         @if ($logos['mobile_dark'])
             <img
                 src="{{ $logos['mobile_dark'] }}"
                 alt="{{ $brandName }}"
-                class="h-10 w-10 rounded-full object-cover hidden dark:block md:hidden"
+                class="vb-brand-logo vb-brand-logo--mobile vb-brand-logo--dark h-10 w-10 rounded-full object-cover"
             >
         @endif
         @if ($logos['desktop_light'])
             <img
                 src="{{ $logos['desktop_light'] }}"
                 alt="{{ $brandName }}"
-                class="h-10 w-10 rounded-full object-cover hidden md:block dark:hidden"
+                class="vb-brand-logo vb-brand-logo--desktop vb-brand-logo--light h-10 w-10 rounded-full object-cover"
             >
         @endif
         @if ($logos['desktop_dark'])
             <img
                 src="{{ $logos['desktop_dark'] }}"
                 alt="{{ $brandName }}"
-                class="h-10 w-10 rounded-full object-cover hidden dark:md:block"
+                class="vb-brand-logo vb-brand-logo--desktop vb-brand-logo--dark h-10 w-10 rounded-full object-cover"
             >
         @endif
     @elseif ($showName)

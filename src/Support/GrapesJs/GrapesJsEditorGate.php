@@ -6,14 +6,15 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
-use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
-use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
+use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
+use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
+use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
@@ -59,6 +60,7 @@ final class GrapesJsEditorGate
     {
         $chromeLayout = ChromeLayoutManagedContent::chromeLayoutForSitePage($page);
         $chromeShellMode = $chromeLayout !== null && self::isEditing($page);
+        $contentWidth = ChromeLayoutContentWidth::resolve($chromeLayout, $page);
         $subTheme = $chromeShellMode
             ? ChromeLayoutSubThemeResolver::forSitePage($page)
             : $page->resolvedSubTheme();
@@ -80,6 +82,9 @@ final class GrapesJsEditorGate
             'chromeShellName' => $chromeLayout?->name,
             'chromeShellParts' => $chromeShellParts,
             'chromeLayoutCss' => $chromeLayoutCss,
+            'pageContentWidth' => $contentWidth,
+            'chromeWidth' => ChromeLayoutContentWidth::resolveChromeWidth($chromeLayout),
+            'fullWidthPage' => ChromeLayoutContentWidth::isFull($contentWidth),
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => $page->getUrl(),
@@ -121,7 +126,7 @@ final class GrapesJsEditorGate
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
-            'landingCanvas' => $page->usesLandingCanvas() || $subTheme === 'site',
+            'landingCanvas' => ChromeLayoutContentWidth::isFull($contentWidth) || $subTheme === 'site',
             'siteNavDefaults' => [
                 'stickyNav' => (bool) VoodbuilderSettings::get('sticky_nav', false),
             ],

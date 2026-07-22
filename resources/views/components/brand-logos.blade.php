@@ -36,28 +36,28 @@
             <img
                 src="{{ $logos['mobile_light'] }}"
                 alt=""
-                @class([$mobileLogoClass, 'block md:hidden dark:hidden'])
+                @class([$mobileLogoClass, 'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--light'])
             >
         @endif
         @if ($logos['mobile_dark'])
             <img
                 src="{{ $logos['mobile_dark'] }}"
                 alt=""
-                @class([$mobileLogoClass, 'hidden dark:block md:hidden'])
+                @class([$mobileLogoClass, 'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--dark'])
             >
         @endif
         @if ($logos['desktop_light'])
             <img
                 src="{{ $logos['desktop_light'] }}"
                 alt=""
-                @class([$desktopLogoClass, 'hidden md:block dark:hidden'])
+                @class([$desktopLogoClass, 'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--light'])
             >
         @endif
         @if ($logos['desktop_dark'])
             <img
                 src="{{ $logos['desktop_dark'] }}"
                 alt=""
-                @class([$desktopLogoClass, 'hidden dark:md:block'])
+                @class([$desktopLogoClass, 'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--dark'])
             >
         @endif
     @endif

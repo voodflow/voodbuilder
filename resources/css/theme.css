@@ -623,6 +623,34 @@ summary,
     }
 }
 
+/*
+ * Brand logos (nav/footer): dedicated visibility — do not rely on md: utilities,
+ * which can compile unscoped in this Tailwind build and show desktop+mobile together.
+ */
+.vb-brand-logo {
+    display: none !important;
+}
+
+@media (width < 60rem) {
+    html:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light {
+        display: block !important;
+    }
+
+    html.dark .vb-brand-logo--mobile.vb-brand-logo--dark {
+        display: block !important;
+    }
+}
+
+@media (width >= 60rem) {
+    html:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light {
+        display: block !important;
+    }
+
+    html.dark .vb-brand-logo--desktop.vb-brand-logo--dark {
+        display: block !important;
+    }
+}
+
 @media (width >= 80rem) {
     .xl\:block {
         display: block !important;

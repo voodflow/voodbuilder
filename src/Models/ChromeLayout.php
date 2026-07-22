@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 
 class ChromeLayout extends Model
 {
@@ -22,6 +23,9 @@ class ChromeLayout extends Model
         'enabled',
         'is_default',
         'channel_ids',
+        'content_width',
+        'content_max_width',
+        'chrome_width',
     ];
 
     /**
@@ -34,6 +38,14 @@ class ChromeLayout extends Model
             'is_default' => 'boolean',
             'channel_ids' => 'array',
         ];
+    }
+
+    /**
+     * @return array{mode: string, maxWidth: string|null}
+     */
+    public function resolvedContentWidth(): array
+    {
+        return ChromeLayoutContentWidth::fromLayout($this);
     }
 
     /**

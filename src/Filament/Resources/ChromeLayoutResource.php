@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -23,6 +24,7 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource\Pages\CreateChr
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource\Pages\EditChromeLayout;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource\Pages\ListChromeLayouts;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -95,6 +97,26 @@ class ChromeLayoutResource extends Resource
                                 ->mapWithKeys(fn ($channel, $id) => [$id => $channel->label()])
                                 ->all())
                             ->helperText(__('voodbuilder::chrome_layouts.fields.channels_help')),
+                        Select::make('content_width')
+                            ->label(__('voodbuilder::chrome_layouts.fields.content_width'))
+                            ->options(fn (): array => ChromeLayoutContentWidth::modeOptions())
+                            ->default(ChromeLayoutContentWidth::MODE_FULL)
+                            ->native(false)
+                            ->live()
+                            ->helperText(__('voodbuilder::chrome_layouts.fields.content_width_help')),
+                        TextInput::make('content_max_width')
+                            ->label(__('voodbuilder::chrome_layouts.fields.content_max_width'))
+                            ->placeholder('72rem')
+                            ->helperText(__('voodbuilder::chrome_layouts.fields.content_max_width_help'))
+                            ->visible(fn (Get $get): bool => $get('content_width') === ChromeLayoutContentWidth::MODE_CUSTOM)
+                            ->dehydrateStateUsing(fn (?string $state): ?string => ChromeLayoutContentWidth::normalizeMaxWidth($state))
+                            ->required(fn (Get $get): bool => $get('content_width') === ChromeLayoutContentWidth::MODE_CUSTOM),
+                        Select::make('chrome_width')
+                            ->label(__('voodbuilder::chrome_layouts.fields.chrome_width'))
+                            ->options(fn (): array => ChromeLayoutContentWidth::chromeWidthOptions())
+                            ->default(ChromeLayoutContentWidth::CHROME_FULL)
+                            ->native(false)
+                            ->helperText(__('voodbuilder::chrome_layouts.fields.chrome_width_help')),
                     ]),
             ]);
     }
@@ -120,6 +142,15 @@ class ChromeLayoutResource extends Resource
                     ->label(__('voodbuilder::chrome_layouts.fields.channels'))
                     ->badge()
                     ->formatStateUsing(fn ($state): string => is_array($state) ? implode(', ', $state) : '')
+                    ->toggleable(),
+                TextColumn::make('content_width')
+                    ->label(__('voodbuilder::chrome_layouts.fields.content_width'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match (ChromeLayoutContentWidth::normalizeMode((string) ($state ?? ''))) {
+                        ChromeLayoutContentWidth::MODE_STANDARD => __('voodbuilder::chrome_layouts.fields.content_width_standard'),
+                        ChromeLayoutContentWidth::MODE_CUSTOM => __('voodbuilder::chrome_layouts.fields.content_width_custom'),
+                        default => __('voodbuilder::chrome_layouts.fields.content_width_full'),
+                    })
                     ->toggleable(),
             ])
             ->recordActions([

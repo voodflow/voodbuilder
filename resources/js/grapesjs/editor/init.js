@@ -91,13 +91,10 @@ import {
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from '../editor-video.js';
 import {
-    initAnimatedCounters,
-    initAnimatedCtas,
     initCarousels,
-    initLogoScroll,
     initReadingTime,
     initSocialShare,
-    replayEditorCanvasAnimations,
+    settleEditorCanvasPreview,
 } from '../vb-runtime.js';
 import { registerCanvasContextMenu } from '../canvas-context-menu.js';
 import { bootCanvasSiteChrome, registerCanvasSiteChrome } from '../canvas-site-chrome.js';
@@ -404,19 +401,81 @@ function waitForCanvasStyles(frameWindow, timeoutMs = 4_000) {
     ]);
 }
 
-function revealCanvasDocument(frameWindow) {
+function normalizePageContentWidth(options = {}) {
+    const raw = options.pageContentWidth;
+
+    if (raw && typeof raw === 'object' && typeof raw.mode === 'string') {
+        const mode = ['full', 'standard', 'custom', 'contained'].includes(raw.mode)
+            ? raw.mode
+            : 'full';
+        const maxWidth = typeof raw.maxWidth === 'string' && raw.maxWidth.trim() !== ''
+            ? raw.maxWidth.trim()
+            : (mode === 'full' ? null : '80rem');
+
+        return { mode: mode === 'contained' ? 'standard' : mode, maxWidth };
+    }
+
+    const fullWidthPage = options.fullWidthPage !== false;
+
+    return {
+        mode: fullWidthPage ? 'full' : 'standard',
+        maxWidth: fullWidthPage ? null : '80rem',
+    };
+}
+
+function normalizeChromeWidth(options = {}) {
+    return options.chromeWidth === 'content' ? 'content' : 'full';
+}
+
+function revealCanvasDocument(frameWindow, options = {}) {
     const doc = frameWindow?.document;
 
     if (! doc?.body) {
         return false;
     }
 
+    const { mode, maxWidth } = normalizePageContentWidth(options);
+    const chromeWidth = normalizeChromeWidth(options);
+    const isFull = mode === 'full';
+    // Page editor: keep chrome full-bleed in the canvas so the workspace never looks
+    // “shrunk”. Match-content for nav/footer is previewed in the layout editor + frontend.
+    const editorScope = options.chromeLayoutMode
+        ? 'layout'
+        : (options.chromeShellMode ? 'page' : 'page');
+    const canvasChromeWidth = editorScope === 'page' ? 'full' : chromeWidth;
+
     doc.body.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
+    doc.body.dataset.voodbuilderPageWidth = mode;
+    doc.documentElement.dataset.voodbuilderPageWidth = mode;
+    doc.body.dataset.voodbuilderChromeWidth = canvasChromeWidth;
+    doc.documentElement.dataset.voodbuilderChromeWidth = canvasChromeWidth;
+    doc.body.dataset.voodbuilderEditorScope = editorScope;
+    doc.documentElement.dataset.voodbuilderEditorScope = editorScope;
+
+    if (isFull || ! maxWidth) {
+        doc.body.style.removeProperty('--voodbuilder-page-content-max');
+        doc.documentElement.style.removeProperty('--voodbuilder-page-content-max');
+    } else {
+        // Only the content-max token — do NOT override --width-vp-layout on the canvas
+        // root or the whole iframe (and chrome) collapses to the site column.
+        doc.body.style.setProperty('--voodbuilder-page-content-max', maxWidth);
+        doc.documentElement.style.setProperty('--voodbuilder-page-content-max', maxWidth);
+    }
+
+    // Keep layout token at full canvas width so nav/chrome stay edge-to-edge unless
+    // chrome_width=content (handled via CSS on chrome shell nodes only).
+    doc.body.style.removeProperty('--width-vp-layout');
+    doc.documentElement.style.removeProperty('--width-vp-layout');
 
     return true;
 }
 
-function waitForCanvasPresentation(editor) {
+function waitForCanvasPresentation(editor, options = {}) {
+    const pageContentWidth = normalizePageContentWidth(options);
+    const chromeWidth = normalizeChromeWidth(options);
+    const chromeLayoutMode = Boolean(options.chromeLayoutMode);
+    const chromeShellMode = Boolean(options.chromeShellMode);
+
     return waitForEditorBootTasks(editor, [
         waitForCanvasFrame(editor).then(() => {
             const frameWindow = editor.Canvas?.getWindow?.();
@@ -424,9 +483,16 @@ function waitForCanvasPresentation(editor) {
             return waitForCanvasStyles(frameWindow);
         }),
     ]).then(() => {
-        if (! revealCanvasDocument(editor.Canvas?.getWindow?.())) {
+        const revealOptions = {
+            pageContentWidth,
+            chromeWidth,
+            chromeLayoutMode,
+            chromeShellMode,
+        };
+
+        if (! revealCanvasDocument(editor.Canvas?.getWindow?.(), revealOptions)) {
             window.requestAnimationFrame(() => {
-                revealCanvasDocument(editor.Canvas?.getWindow?.());
+                revealCanvasDocument(editor.Canvas?.getWindow?.(), revealOptions);
             });
         }
     });
@@ -468,7 +534,7 @@ function waitForCanvasFrame(editor, timeoutMs = 10_000) {
     });
 }
 
-function registerCanvasBootGate(editor, shellRoot, shell) {
+function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
     if (! shellRoot) {
         return;
     }
@@ -476,12 +542,20 @@ function registerCanvasBootGate(editor, shellRoot, shell) {
     startEditorBoot(editor);
 
     let revealPromise = null;
+    const pageContentWidth = normalizePageContentWidth(options);
+    const chromeWidth = normalizeChromeWidth(options);
+    const revealOptions = {
+        pageContentWidth,
+        chromeWidth,
+        chromeLayoutMode: Boolean(options.chromeLayoutMode),
+        chromeShellMode: Boolean(options.chromeShellMode),
+    };
 
     const reveal = () => {
         if (! revealPromise) {
             revealPromise = (async () => {
                 try {
-                    await waitForCanvasPresentation(editor);
+                    await waitForCanvasPresentation(editor, revealOptions);
                 } finally {
                     finishEditorBoot(editor);
                     shellRoot.classList.remove('voodbuilder-gjs-root--booting');
@@ -493,6 +567,7 @@ function registerCanvasBootGate(editor, shellRoot, shell) {
     };
 
     editor.on('canvas:frame:load', () => {
+        revealCanvasDocument(editor.Canvas?.getWindow?.(), revealOptions);
         void reveal();
     });
 
@@ -530,6 +605,7 @@ export function initVpressGrapesJs(container, options = {}) {
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
+        hideTemplates: Boolean(options.chromeLayoutMode),
         editingBadgeTitle: options.popupMode && options.popupName
             ? (labels.popupsEditingBadge ?? 'Editing popup: {name}').replace('{name}', String(options.popupName))
             : null,
@@ -689,7 +765,13 @@ export function initVpressGrapesJs(container, options = {}) {
             brand: options.builderBrand ?? 'VoodBuilder',
             version: options.packageVersion ?? '',
         });
-        registerCanvasBootGate(editor, shellRoot, shell);
+        registerCanvasBootGate(editor, shellRoot, shell, {
+            pageContentWidth: options.pageContentWidth,
+            chromeWidth: options.chromeWidth,
+            chromeLayoutMode: options.chromeLayoutMode ?? false,
+            chromeShellMode: options.chromeShellMode ?? false,
+            fullWidthPage: options.fullWidthPage !== false,
+        });
         configureEditorLayout(editor, shell, labels);
         wireInspector(editor, shell, options, labels);
 
@@ -963,16 +1045,18 @@ export function initVpressGrapesJs(container, options = {}) {
         }
 
         if (! options.popupMode) {
-            registerPageTemplatesSidebar(editor, {
-                pageTemplatesUrl: options.pageTemplatesUrl,
-                pageTemplatesCatalogUrl: options.pageTemplatesCatalogUrl ?? null,
-                csrf: options.csrf,
-                labels,
-                templateCategories: options.templateCategories ?? [],
-                defaultTemplateCategory: 'Ecommerce',
-                templatesMount: shell?.mounts?.templates ?? null,
-                popupMode: options.popupMode ?? false,
-            });
+            if (! options.chromeLayoutMode) {
+                registerPageTemplatesSidebar(editor, {
+                    pageTemplatesUrl: options.pageTemplatesUrl,
+                    pageTemplatesCatalogUrl: options.pageTemplatesCatalogUrl ?? null,
+                    csrf: options.csrf,
+                    labels,
+                    templateCategories: options.templateCategories ?? [],
+                    defaultTemplateCategory: 'Ecommerce',
+                    templatesMount: shell?.mounts?.templates ?? null,
+                    popupMode: options.popupMode ?? false,
+                });
+            }
 
             registerPopupsUi(editor, {
                 popupsUrl: options.popupsUrl,
@@ -1090,11 +1174,9 @@ export function initVpressGrapesJs(container, options = {}) {
             initReadingTime();
             initSocialShare();
             initCarousels();
-            // Replay animations in the editor canvas so authors can preview them.
-            initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
-            initAnimatedCtas({ root: frameDoc, force: true });
-            replayEditorCanvasAnimations({ root: frameDoc });
-            initLogoScroll({ root: frameDoc });
+            // Large page templates: settle to final state — do not force-replay
+            // counters/keyframes/logo-scroll (that janks the editor + spam Layers).
+            settleEditorCanvasPreview({ root: frameDoc });
         } catch {
             // VB runtime is optional in the editor canvas.
         }
@@ -1110,8 +1192,16 @@ export function initVpressGrapesJs(container, options = {}) {
     let pruneEmptySectionsTimer = null;
 
     editor.on('component:add', () => {
+        if (editor.__voodbuilderBulkStructureUpdate) {
+            return;
+        }
+
         window.clearTimeout(pruneEmptySectionsTimer);
         pruneEmptySectionsTimer = window.setTimeout(() => {
+            if (editor.__voodbuilderBulkStructureUpdate) {
+                return;
+            }
+
             pruneEmptySections(editor);
         }, 180);
     });
@@ -1121,8 +1211,16 @@ export function initVpressGrapesJs(container, options = {}) {
         // wipe CssComposer while the author is still editing.
         let updateTimer = null;
         const notify = () => {
+            if (editor.__voodbuilderBulkStructureUpdate) {
+                return;
+            }
+
             window.clearTimeout(updateTimer);
             updateTimer = window.setTimeout(() => {
+                if (editor.__voodbuilderBulkStructureUpdate) {
+                    return;
+                }
+
                 options.onUpdate(buildPayload(editor, { mutate: false }));
             }, 250);
         };
@@ -1147,6 +1245,7 @@ function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
         component.__voodbuilderRefreshing
         || editor.__voodbuilderDynamicBlockRefreshing
         || editor.__voodbuilderLayoutStructureRefreshing
+        || editor.__voodbuilderBulkStructureUpdate
     ) {
         return;
     }
@@ -1665,6 +1764,9 @@ function mountFrontendEditor() {
         chromeLayoutCss: config.chromeLayoutCss ?? '',
         chromeLayoutMode: config.chromeLayoutMode ?? false,
         chromeLayoutName: config.chromeLayoutName ?? null,
+        pageContentWidth: config.pageContentWidth ?? null,
+        chromeWidth: config.chromeWidth ?? 'full',
+        fullWidthPage: config.fullWidthPage !== false,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',

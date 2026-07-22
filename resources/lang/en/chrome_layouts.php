@@ -24,6 +24,17 @@ return [
         'is_default_help' => 'Used when no channel-specific layout matches the current request.',
         'channels' => 'Content channels',
         'channels_help' => 'Assign this chrome layout to docs, tutorials, blog, or other registered channels.',
+        'content_width' => 'Content width',
+        'content_width_help' => 'Full, standard (~80rem), or a custom max for page content.',
+        'content_width_full' => 'Full width',
+        'content_width_standard' => 'Standard page',
+        'content_width_custom' => 'Custom',
+        'content_max_width' => 'Max content width',
+        'content_max_width_help' => 'CSS length, e.g. 72rem or 1200px.',
+        'chrome_width' => 'Nav & footer width',
+        'chrome_width_help' => 'Keep nav/footer edge-to-edge, or match the content width above.',
+        'chrome_width_full' => 'Full width',
+        'chrome_width_content' => 'Match content',
     ],
 
     'actions' => [
@@ -59,6 +70,6 @@ return [
         'shell' => 'Layout',
         'none' => 'No chrome layout assigned to the Pages channel. Nav and footer use the classic site shell.',
         'edit_shell' => 'Edit layout',
-        'canvas_width_help' => 'Nav and footer come from Admin → Layouts. This only controls how wide the page content area is.',
+        'canvas_width_help' => 'Nav and footer stay full width. This only chooses whether page content is edge-to-edge or contained (~80rem). It does not resize the editing workspace.',
     ],
 ];

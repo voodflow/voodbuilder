@@ -555,7 +555,7 @@ function registerSiteNavMenuButtonType(editor) {
 }
 
 function normalizeSiteNavChromeButtons(root) {
-    safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-theme-toggle], button.voodbuilder-header-icon-btn').forEach((button) => {
+    safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-mobile-nav-close], button[data-theme-toggle], button.voodbuilder-header-icon-btn').forEach((button) => {
         if (! button?.get) {
             return;
         }
@@ -1404,7 +1404,12 @@ function registerSiteNavChromeButtonType(editor) {
                 return false;
             }
 
-            if (element.classList?.contains('voodbuilder-header-icon-btn') || element.hasAttribute('data-mobile-nav-toggle') || element.hasAttribute('data-theme-toggle')) {
+            if (
+                element.classList?.contains('voodbuilder-header-icon-btn')
+                || element.hasAttribute('data-mobile-nav-toggle')
+                || element.hasAttribute('data-mobile-nav-close')
+                || element.hasAttribute('data-theme-toggle')
+            ) {
                 return { type: 'voodbuilder-chrome-button' };
             }
 

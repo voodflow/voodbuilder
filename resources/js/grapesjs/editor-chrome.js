@@ -222,9 +222,9 @@ export function editorChromeInitOptions() {
                 {
                     id: 'desktop',
                     name: 'Desktop',
-                    // Fixed width so lg:/md: breakpoints match a typical browser home page.
-                    // width:100% of the (narrow) canvas panel skipped lg: and made hero images smaller than front.
-                    width: '1280px',
+                    // Always fill the editor workspace. Page “content width” is a
+                    // layout concern inside the iframe — never shrink this frame.
+                    width: '',
                     widthMedia: '1280px',
                 },
                 {
@@ -720,6 +720,9 @@ function syncDeviceShellAttribute(editor, shellRoot) {
     shellRoot.dataset.voodbuilderDevice = deviceId;
 }
 
+/** GrapesJS frame width/height transition (.gjs-frame-wrapper--anim). */
+const DEVICE_FRAME_TRANSITION_MS = 360;
+
 export function configureEditorChrome(editor, options = {}) {
     const shellRoot = options.shellRoot ?? null;
 
@@ -737,14 +740,27 @@ export function configureEditorChrome(editor, options = {}) {
         registerEditorPanelToggles(options.shell, options.labels ?? {}, topbar?.root ?? null);
     }
 
-    const sync = () => {
+    let deviceRefreshTimer = 0;
+
+    const sync = ({ deferRefresh = false } = {}) => {
         topbar?.syncDevices?.();
         syncDeviceShellAttribute(editor, shellRoot);
-        window.requestAnimationFrame(() => editor.refresh());
+
+        if (! deferRefresh) {
+            window.requestAnimationFrame(() => editor.refresh());
+
+            return;
+        }
+
+        // Refresh mid-transition cancels .gjs-frame-wrapper--anim and feels like a jump.
+        window.clearTimeout(deviceRefreshTimer);
+        deviceRefreshTimer = window.setTimeout(() => {
+            editor.refresh();
+        }, DEVICE_FRAME_TRANSITION_MS);
     };
 
-    editor.on('load', sync);
-    editor.on('device:select', sync);
+    editor.on('load', () => sync({ deferRefresh: false }));
+    editor.on('device:select', () => sync({ deferRefresh: true }));
 
     for (const commandId of TOGGLE_COMMANDS) {
         editor.on(`run:${commandId}`, sync);

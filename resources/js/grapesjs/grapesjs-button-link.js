@@ -915,7 +915,7 @@ export function configureLinkableButtons(editor) {
     };
 
     editor.on('component:add', (component) => {
-        if (! component) {
+        if (! component || editor.__voodbuilderBulkStructureUpdate) {
             return;
         }
 

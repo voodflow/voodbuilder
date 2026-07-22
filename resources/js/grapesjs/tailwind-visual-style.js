@@ -131,36 +131,93 @@ export function isEditorLayersReady(editor) {
     return true;
 }
 
-export function safeRenderEditorLayers(editor) {
+/**
+ * Cheap tree fingerprint so rapid identical Layers.render calls can be skipped.
+ * GrapesJS rebinds non-passive touchstart listeners on every render.
+ *
+ * @param {object} editor
+ * @returns {string}
+ */
+function editorLayersFingerprint(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! isGrapesComponent(wrapper)) {
+        return '0';
+    }
+
+    let count = 0;
+
+    walkComponentTree(wrapper, () => {
+        count += 1;
+    });
+
+    return String(count);
+}
+
+/**
+ * @param {object} editor
+ * @param {{ immediate?: boolean }} [options]
+ * @returns {boolean}
+ */
+export function safeRenderEditorLayers(editor, options = {}) {
     if (! editor?.Layers?.render || ! isEditorLayersReady(editor)) {
         return false;
     }
 
     guardEditorLayersRender(editor);
 
-    const wrapper = editor.getWrapper?.();
+    const immediate = options.immediate === true;
 
-    if (! isGrapesComponent(wrapper)) {
-        return false;
+    const run = () => {
+        const wrapper = editor.getWrapper?.();
+
+        if (! isGrapesComponent(wrapper)) {
+            return false;
+        }
+
+        sanitizeEditorLayerTree(editor);
+
+        if (hasInvalidLayerChildren(wrapper)) {
+            sanitizeComponentTreeForLayers(wrapper);
+        }
+
+        if (hasInvalidLayerChildren(wrapper)) {
+            return false;
+        }
+
+        const fingerprint = editorLayersFingerprint(editor);
+
+        if (
+            ! immediate
+            && editor.__voodbuilderLayersFingerprint === fingerprint
+            && editor.__voodbuilderLayersRenderedOnce
+        ) {
+            return true;
+        }
+
+        try {
+            editor.Layers.render();
+            editor.__voodbuilderLayersFingerprint = fingerprint;
+            editor.__voodbuilderLayersRenderedOnce = true;
+
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    if (immediate) {
+        window.clearTimeout(editor.__voodbuilderLayersRenderTimer);
+
+        return run();
     }
 
-    sanitizeEditorLayerTree(editor);
+    window.clearTimeout(editor.__voodbuilderLayersRenderTimer);
+    editor.__voodbuilderLayersRenderTimer = window.setTimeout(() => {
+        run();
+    }, 120);
 
-    if (hasInvalidLayerChildren(wrapper)) {
-        sanitizeComponentTreeForLayers(wrapper);
-    }
-
-    if (hasInvalidLayerChildren(wrapper)) {
-        return false;
-    }
-
-    try {
-        editor.Layers.render();
-
-        return true;
-    } catch {
-        return false;
-    }
+    return true;
 }
 
 export function walkComponentTree(component, callback) {

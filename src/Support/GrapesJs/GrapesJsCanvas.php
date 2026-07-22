@@ -297,6 +297,123 @@ final class GrapesJsCanvas
             display: none !important;
         }
 
+        /* Brand logos: ignore theme media queries in the canvas — device attr is source of truth.
+         * Theme `@media (width < 60rem)` can still win on specificity and show mobile+desktop
+         * together when the editor center column is narrower than 60rem. */
+        .vb-brand-logo {
+            display: none !important;
+        }
+
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile,
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile.vb-brand-logo--dark {
+            display: none !important;
+        }
+
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--light {
+            display: block !important;
+        }
+
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop,
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop.vb-brand-logo--dark {
+            display: none !important;
+        }
+
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--light {
+            display: block !important;
+        }
+
+        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--light,
+        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--light,
+        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--light {
+            display: none !important;
+        }
+
+        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--dark {
+            display: block !important;
+        }
+
+        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--dark {
+            display: block !important;
+        }
+
+        /* Page content width: constrain the page-content / layout content slot only.
+         * Never shrink the GrapesJS device frame / canvas body — editor stays full-bleed. */
+        body[data-voodbuilder-page-width='standard'] [data-voodbuilder-page-content],
+        body[data-voodbuilder-page-width='custom'] [data-voodbuilder-page-content],
+        body[data-voodbuilder-page-width='contained'] [data-voodbuilder-page-content],
+        body[data-voodbuilder-page-width='standard'] .voodbuilder-chrome-content-slot[data-voodbuilder-page-content],
+        body[data-voodbuilder-page-width='custom'] .voodbuilder-chrome-content-slot[data-voodbuilder-page-content],
+        body[data-voodbuilder-page-width='contained'] .voodbuilder-chrome-content-slot[data-voodbuilder-page-content],
+        /* Layout editor content slot (no page-content attr). */
+        body[data-voodbuilder-page-width='standard'] [data-voodbuilder-content-slot]:not([data-voodbuilder-chrome-drop-zone]),
+        body[data-voodbuilder-page-width='custom'] [data-voodbuilder-content-slot]:not([data-voodbuilder-chrome-drop-zone]),
+        body[data-voodbuilder-page-width='contained'] [data-voodbuilder-content-slot]:not([data-voodbuilder-chrome-drop-zone]) {
+            --width-vp-layout: var(--voodbuilder-page-content-max, 80rem);
+            width: 100%;
+            max-width: var(--voodbuilder-page-content-max, 80rem);
+            margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        /* Cancel 100vw hero breakout inside a constrained content column. */
+        body[data-voodbuilder-page-width='standard'] [data-voodbuilder-page-content] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+        body[data-voodbuilder-page-width='custom'] [data-voodbuilder-page-content] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+        body[data-voodbuilder-page-width='contained'] [data-voodbuilder-page-content] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+        body[data-voodbuilder-page-width='standard'] [data-voodbuilder-content-slot] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+        body[data-voodbuilder-page-width='custom'] [data-voodbuilder-content-slot] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
+        body[data-voodbuilder-page-width='contained'] [data-voodbuilder-content-slot] :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-inline: 0 !important;
+        }
+
+        /* Nav/footer match content — chrome shell parts + layout-editor drop zones. */
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-page-width='standard'],
+            [data-voodbuilder-page-width='custom'],
+            [data-voodbuilder-page-width='contained']
+        ) [data-voodbuilder-chrome-shell],
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-page-width='standard'],
+            [data-voodbuilder-page-width='custom'],
+            [data-voodbuilder-page-width='contained']
+        ) [data-voodbuilder-chrome-shell-part],
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-page-width='standard'],
+            [data-voodbuilder-page-width='custom'],
+            [data-voodbuilder-page-width='contained']
+        ) [data-voodbuilder-chrome-drop-zone] {
+            --width-vp-layout: var(--voodbuilder-page-content-max, 80rem);
+            width: 100%;
+            max-width: var(--voodbuilder-page-content-max, 80rem);
+            margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        /* Fixed headers ignore parent max-width — pin to the content column in-canvas too. */
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-page-width='standard'],
+            [data-voodbuilder-page-width='custom'],
+            [data-voodbuilder-page-width='contained']
+        ) :is([data-voodbuilder-chrome-shell], [data-voodbuilder-chrome-shell-part], [data-voodbuilder-chrome-drop-zone]) header[role='banner'].fixed,
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-page-width='standard'],
+            [data-voodbuilder-page-width='custom'],
+            [data-voodbuilder-page-width='contained']
+        ) :is([data-voodbuilder-chrome-shell], [data-voodbuilder-chrome-shell-part], [data-voodbuilder-chrome-drop-zone]) header[role='banner'].sticky {
+            left: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+            right: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+            width: auto !important;
+            max-width: none !important;
+        }
+
         body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-mobile-nav.is-open,
         body[data-voodbuilder-gjs-device='tablet'] .voodbuilder-mobile-nav.is-open {
             pointer-events: none !important;
@@ -316,8 +433,22 @@ final class GrapesJsCanvas
             pointer-events: none;
         }
 
-        .voodbuilder-mobile-nav.is-open {
-            pointer-events: auto;
+        .voodbuilder-mobile-nav.is-open,
+        html.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav,
+        body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav {
+            pointer-events: auto !important;
+        }
+
+        html.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel,
+        body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel,
+        .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__panel {
+            transform: translateX(0) !important;
+        }
+
+        html.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__overlay,
+        body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__overlay,
+        .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__overlay {
+            opacity: 1 !important;
         }
 
         .voodbuilder-nav--canvas-preview [data-voodbuilder-chrome][data-voodbuilder-chrome-hidden] {

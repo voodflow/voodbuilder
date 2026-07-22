@@ -1545,7 +1545,7 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     editor.__voodbuilderActiveLibrary = libraryId;
     markLibraryMounts(mounts, libraryId);
 
-    if (container.parentElement !== target) {
+    if (container.parentElement !== target && target instanceof Element && container instanceof Node) {
         target.appendChild(container);
     }
 
@@ -1553,9 +1553,7 @@ export function refreshComponentBlocksLibrary(editor, libraryId, mounts = {}) {
     tagComponentBlockElements(editor);
     tagComponentCategoryElements(editor);
 
-    if (libraryId === 'components' || libraryId === 'templates') {
-        collapseLibraryCategories(editor, libraryId);
-    }
+    collapseLibraryCategories(editor, libraryId);
 
     scheduleTagComponentBlockElements(editor);
 

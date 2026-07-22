@@ -1062,6 +1062,7 @@ export function configureAnimatedCanvas(editor) {
         try {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
+            // Only when an animated block is added/configured — not on every frame load.
             initAnimatedCounters({ root: frameDoc, force: true, preferImmediate: true });
             initAnimatedCtas({ root: frameDoc, force: true });
             replayEditorCanvasAnimations({ root: frameDoc });
