@@ -3,6 +3,41 @@
  * Used by popups-runtime (production) and GrapesJS popup editor canvas.
  */
 
+.voodbuilder-popup-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 28%, var(--color-vp-divider, #e2e8f0));
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 12%, var(--color-vp-bg-elv, #fff));
+    color: var(--color-vp-brand-1, #0d9488);
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.voodbuilder-popup-close:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 20%, var(--color-vp-bg-elv, #fff));
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 45%, var(--color-vp-divider, #e2e8f0));
+    color: var(--color-vp-brand-1, #0d9488);
+}
+
+.voodbuilder-popup-close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #0d9488) 28%, transparent);
+}
+
 .voodbuilder-popup-body,
 .voodbuilder-popup-editor-canvas {
     --width-vp-layout: 100%;
