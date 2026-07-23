@@ -4,6 +4,7 @@
 
 import { canEditBlockCode, CMD_EDIT_BLOCK_CODE, extractBlockCodeHtml } from './canvas-block-code-editor.js';
 import { openContextMenu } from './context-menu.js';
+import { buildContextInsertSubmenu } from './context-insert-elements.js';
 import { promptDialog } from './editor-dialog.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import {
@@ -17,7 +18,6 @@ import {
     canDuplicateChromeEditorComponent,
     canRemoveChromeEditorComponent,
     filterChromeContextMenuItems,
-    isChromeEditorProtectedComponent,
 } from './chrome-editor-guards.js';
 import { copyTextToClipboard } from './clipboard.js';
 import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
@@ -108,6 +108,20 @@ function hasSelectableParent(component, editor) {
     return false;
 }
 
+function pushSeparator(items) {
+    if (items.length === 0) {
+        return;
+    }
+
+    const last = items[items.length - 1];
+
+    if (last?.type === 'separator') {
+        return;
+    }
+
+    items.push({ type: 'separator', id: `sep-${items.length}` });
+}
+
 export function buildComponentContextMenuItems(editor, component, labels = {}) {
     const catalog = editor.__voodbuilderComponentsCatalog ?? [];
     const libraryActions = editor.__voodbuilderComponentLibraryActions ?? {};
@@ -117,6 +131,94 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         : null;
 
     const items = [];
+
+    if (canDuplicateChromeEditorComponent(component, editor)) {
+        items.push({
+            id: 'duplicate',
+            label: labels.canvasDuplicate ?? 'Duplicate',
+            onSelect: () => {
+                const clone = duplicateCanvasComponent(component);
+
+                if (clone) {
+                    editor.select(clone);
+                }
+            },
+        });
+    }
+
+    if (canRemoveChromeEditorComponent(component, editor)) {
+        items.push({
+            id: 'delete',
+            label: labels.canvasDelete ?? labels.componentsCanvasDelete ?? 'Delete',
+            danger: true,
+            onSelect: () => {
+                component.remove();
+            },
+        });
+    }
+
+    const insertSubmenu = buildContextInsertSubmenu(editor, component, labels);
+
+    if (insertSubmenu) {
+        pushSeparator(items);
+        items.push(insertSubmenu);
+    }
+
+    pushSeparator(items);
+
+    if (hasSelectableParent(component, editor)) {
+        items.push({
+            id: 'select-parent',
+            label: labels.selectParent ?? 'Select parent',
+            onSelect: () => {
+                editor.runCommand('core:component-exit', { force: true });
+            },
+        });
+    }
+
+    items.push({
+        id: 'rename-layer',
+        label: labels.layerRename ?? 'Rename layer',
+        onSelect: async () => {
+            const current = resolveLayerDisplayName(component, editor);
+            const next = await promptDialog({
+                title: labels.layerRename ?? 'Rename layer',
+                message: labels.layerRenameHint ?? 'Changes the label in the layer tree only. Element ids are not modified.',
+                labels,
+                defaultValue: current,
+                placeholder: labels.layerRenamePlaceholder ?? 'Layer name',
+                confirmLabel: labels.dialogSave ?? 'Save',
+            });
+
+            if (! next?.trim()) {
+                return;
+            }
+
+            applyLayerDisplayName(editor, component, next.trim());
+            component.addAttributes({ 'data-voodbuilder-layer-label': 'custom' });
+        },
+    });
+
+    items.push({
+        id: 'copy-classes',
+        label: labels.copyComponentClasses ?? 'Copy classes',
+        onSelect: async () => {
+            editor.select(component);
+            await copySelectedComponentClasses(editor, labels);
+        },
+    });
+
+    items.push({
+        id: 'save-catalog',
+        label: labels.componentsCanvasSave ?? labels.componentsSave ?? 'Save to catalog',
+        onSelect: async () => {
+            await libraryActions.saveFromCanvas?.(component);
+        },
+    });
+
+    if (catalogItem || canEditBlockCode(component, editor)) {
+        pushSeparator(items);
+    }
 
     if (catalogItem) {
         items.push({
@@ -149,81 +251,6 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
             onSelect: async () => {
                 const html = extractBlockCodeHtml(editor, component);
                 await copyTextToClipboard(String(html ?? '').trim());
-            },
-        });
-    }
-
-    items.push({
-        id: 'copy-classes',
-        label: labels.copyComponentClasses ?? 'Copy classes',
-        onSelect: async () => {
-            editor.select(component);
-            await copySelectedComponentClasses(editor, labels);
-        },
-    });
-
-    items.push({
-        id: 'rename-layer',
-        label: labels.layerRename ?? 'Rename layer',
-        onSelect: async () => {
-            const current = resolveLayerDisplayName(component, editor);
-            const next = await promptDialog({
-                title: labels.layerRename ?? 'Rename layer',
-                message: labels.layerRenameHint ?? 'Changes the label in the layer tree only. Element ids are not modified.',
-                labels,
-                defaultValue: current,
-                placeholder: labels.layerRenamePlaceholder ?? 'Layer name',
-                confirmLabel: labels.dialogSave ?? 'Save',
-            });
-
-            if (! next?.trim()) {
-                return;
-            }
-
-            applyLayerDisplayName(editor, component, next.trim());
-            component.addAttributes({ 'data-voodbuilder-layer-label': 'custom' });
-        },
-    });
-
-    items.push({
-        id: 'save-catalog',
-        label: labels.componentsCanvasSave ?? labels.componentsSave ?? 'Save to catalog',
-        onSelect: async () => {
-            await libraryActions.saveFromCanvas?.(component);
-        },
-    });
-
-    if (hasSelectableParent(component, editor)) {
-        items.push({
-            id: 'select-parent',
-            label: labels.selectParent ?? 'Select parent',
-            onSelect: () => {
-                editor.runCommand('core:component-exit', { force: true });
-            },
-        });
-    }
-
-    if (canDuplicateChromeEditorComponent(component, editor)) {
-        items.push({
-            id: 'duplicate',
-            label: labels.canvasDuplicate ?? 'Duplicate',
-            onSelect: () => {
-                const clone = duplicateCanvasComponent(component);
-
-                if (clone) {
-                    editor.select(clone);
-                }
-            },
-        });
-    }
-
-    if (canRemoveChromeEditorComponent(component, editor)) {
-        items.push({
-            id: 'delete',
-            label: labels.canvasDelete ?? labels.componentsCanvasDelete ?? 'Remove from canvas',
-            danger: true,
-            onSelect: () => {
-                component.remove();
             },
         });
     }
