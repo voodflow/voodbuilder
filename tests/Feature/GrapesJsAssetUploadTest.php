@@ -79,7 +79,8 @@ class GrapesJsAssetUploadTest extends TestCase
         $url = $response->json('data.0');
 
         $this->assertIsString($url);
-        $this->assertStringStartsWith('/storage/voodbuilder/grapesjs/', $url);
+        $this->assertStringStartsWith('/storage/voodbuilder/', $url);
+        $this->assertStringNotContainsString('/grapesjs/', $url);
         $this->assertStringEndsWith('.jpg', $url);
         $this->assertStringNotContainsString('http://', $url);
 

@@ -74,7 +74,8 @@ final class GrapesJsRepeatRenderer
         $limit = (int) ($container->getAttribute('data-voodbuilder-repeat-limit') ?: 6);
         $sort = $container->getAttribute('data-voodbuilder-repeat-sort') ?: null;
         $sortDir = $container->getAttribute('data-voodbuilder-repeat-sort-dir') ?: null;
-        $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null);
+        $offset = (int) ($container->getAttribute('data-voodbuilder-repeat-offset') ?: 0);
+        $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null, $offset);
 
         if ($records === []) {
             $this->renderEmptyRepeat($container, $page);
@@ -172,6 +173,7 @@ final class GrapesJsRepeatRenderer
     {
         $element->removeAttribute('data-voodbuilder-repeat');
         $element->removeAttribute('data-voodbuilder-repeat-limit');
+        $element->removeAttribute('data-voodbuilder-repeat-offset');
         $element->removeAttribute('data-voodbuilder-repeat-sort');
         $element->removeAttribute('data-voodbuilder-repeat-sort-dir');
         $element->removeAttribute('data-voodbuilder-repeat-item');

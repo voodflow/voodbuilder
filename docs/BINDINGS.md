@@ -261,12 +261,22 @@ Repeat a container for each record returned by a registered model integration li
 |-----------|---------|
 | `data-voodbuilder-repeat` | List key from a model integration (same registry as Dynamic panel → List repeat) |
 | `data-voodbuilder-repeat-limit` | Max items (1–24, default 6) |
+| `data-voodbuilder-repeat-offset` | Skip the first N records (0–100). Use with a separate “Latest” binding or a second repeat (`limit=1`) for featured+list layouts |
 | `data-voodbuilder-repeat-sort` | Optional sort column |
 | `data-voodbuilder-repeat-sort-dir` | `asc` or `desc` |
 | `data-voodbuilder-repeat-item` | Marks the template node duplicated for each record |
 | `data-voodbuilder-repeat-empty` | Optional fallback shown when the list returns zero records |
 
 Inside the item template, bind fields with **List item** sources (not “Latest record”).
+
+### Featured + sidebar list
+
+For a block with one large story and a list of the next items, use **two** bindings (same sort):
+
+1. Large card: bind fields with **Latest record** (or List repeat with `limit=1`, `offset=0`).
+2. Sidebar: List repeat with `offset=1` and `limit=3`, then bind each field with **List item**.
+
+Do not put “Latest record” on the list container itself — use the List repeat panel.
 
 ### Empty state
 

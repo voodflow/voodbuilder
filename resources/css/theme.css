@@ -213,6 +213,56 @@
 }
 
 @layer components {
+    /**
+     * Full-bleed hero media — must ship on the public theme (not only canvas
+     * section-utilities), otherwise editor cover ≠ live letterboxed image.
+     */
+    .voodbuilder-hero-media {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+    }
+
+    .voodbuilder-hero-media__img,
+    .voodbuilder-hero-media__video {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        object-fit: var(--vb-object-fit, cover);
+        object-position: var(--vb-object-position, center);
+    }
+
+    .voodbuilder-hero-media__shade {
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+    }
+
+    .voodbuilder-media-frame {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+    }
+
+    .voodbuilder-media-frame > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .voodbuilder-media-frame--thumb {
+        aspect-ratio: 7 / 6;
+        width: 7rem;
+        height: 6rem;
+        flex-shrink: 0;
+        border-radius: 0.5rem;
+    }
+
     .voodbuilder-header-icon-btn {
         @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1;
     }

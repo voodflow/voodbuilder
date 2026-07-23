@@ -40,4 +40,18 @@ HTML;
         $this->assertStringNotContainsString('<h2>Item</h2>', $rendered);
         $this->assertStringNotContainsString('data-voodbuilder-repeat', $rendered);
     }
+
+    public function test_strips_offset_attribute_after_empty_render(): void
+    {
+        $html = <<<'HTML'
+<div data-voodbuilder-repeat="nonexistent.list" data-voodbuilder-repeat-limit="3" data-voodbuilder-repeat-offset="1">
+    <article data-voodbuilder-repeat-item><h2>Item</h2></article>
+</div>
+HTML;
+
+        $rendered = app(GrapesJsRepeatRenderer::class)->render($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-repeat-offset', $rendered);
+        $this->assertStringNotContainsString('<h2>Item</h2>', $rendered);
+    }
 }

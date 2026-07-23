@@ -49,6 +49,7 @@ return [
         'current_binding' => 'Collegamento attuale',
         'repeat_source' => 'Lista repeat',
         'repeat_limit' => 'Elementi',
+        'repeat_offset' => 'Salta i primi',
         'repeat_sort' => 'Ordina per',
         'repeat_sort_dir' => 'Direzione',
         'repeat_sort_asc' => 'Crescente',

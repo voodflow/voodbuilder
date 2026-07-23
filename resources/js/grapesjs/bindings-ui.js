@@ -700,6 +700,7 @@ function repeatMetaFromAttributes(attrs = {}) {
     return {
         key,
         limit: attrs['data-voodbuilder-repeat-limit'] ?? '3',
+        offset: attrs['data-voodbuilder-repeat-offset'] ?? '0',
         sort: attrs['data-voodbuilder-repeat-sort'] ?? 'id',
         sortDir: attrs['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
     };
@@ -714,6 +715,7 @@ function applyRepeatMetaToComponent(component, meta) {
     component.addAttributes({
         'data-voodbuilder-repeat': meta.key,
         'data-voodbuilder-repeat-limit': String(meta.limit ?? '3'),
+        'data-voodbuilder-repeat-offset': String(meta.offset ?? '0'),
         'data-voodbuilder-repeat-sort': meta.sort ?? 'id',
         'data-voodbuilder-repeat-sort-dir': meta.sortDir ?? 'desc',
     });
@@ -758,6 +760,7 @@ function syncRepeatAttributesToDom(component) {
 
     element.setAttribute('data-voodbuilder-repeat', meta.key);
     element.setAttribute('data-voodbuilder-repeat-limit', String(meta.limit));
+    element.setAttribute('data-voodbuilder-repeat-offset', String(meta.offset ?? '0'));
     element.setAttribute('data-voodbuilder-repeat-sort', meta.sort);
     element.setAttribute('data-voodbuilder-repeat-sort-dir', meta.sortDir);
 }
@@ -785,6 +788,7 @@ function migrateRepeatPlacement(component) {
     repeatTarget.removeAttributes('data-voodbuilder-repeat-item');
     component.removeAttributes('data-voodbuilder-repeat');
     component.removeAttributes('data-voodbuilder-repeat-limit');
+    component.removeAttributes('data-voodbuilder-repeat-offset');
     component.removeAttributes('data-voodbuilder-repeat-sort');
     component.removeAttributes('data-voodbuilder-repeat-sort-dir');
 
@@ -794,6 +798,7 @@ function migrateRepeatPlacement(component) {
 function clearRepeatAttributes(component) {
     component.removeAttributes('data-voodbuilder-repeat');
     component.removeAttributes('data-voodbuilder-repeat-limit');
+    component.removeAttributes('data-voodbuilder-repeat-offset');
     component.removeAttributes('data-voodbuilder-repeat-sort');
     component.removeAttributes('data-voodbuilder-repeat-sort-dir');
     safeFindComponents(component, '[data-voodbuilder-repeat-item]').forEach((child) => {
@@ -808,8 +813,12 @@ function repeatSortFromContainer(container) {
     };
 }
 
-function repeatListValuesKey(repeatKey, sort, sortDir) {
-    return `${repeatKey}|${sort || 'id'}|${sortDir || 'desc'}`;
+function repeatOffsetFromContainer(container) {
+    return Number(container?.getAttributes?.()['data-voodbuilder-repeat-offset'] || 0);
+}
+
+function repeatListValuesKey(repeatKey, sort, sortDir, offset = 0) {
+    return `${repeatKey}|${sort || 'id'}|${sortDir || 'desc'}|${Number(offset) || 0}`;
 }
 
 function sortFieldsForRepeatSource(catalog, repeatSourceId) {
@@ -839,31 +848,36 @@ function collectRepeatPreviewConfigs(editor) {
         const repeatTarget = component;
 
         const { sort, sortDir } = repeatSortFromContainer(repeatTarget);
+        const offset = repeatOffsetFromContainer(repeatTarget);
         const limit = Math.max(
             12,
             Number(repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] || 12),
         );
-        const cacheKey = repeatListValuesKey(repeatKey, sort, sortDir);
+        const cacheKey = repeatListValuesKey(repeatKey, sort, sortDir, offset);
 
         configs.set(cacheKey, {
             key: repeatKey,
             sort,
             dir: sortDir,
             limit,
+            offset,
         });
     });
 
     return [...configs.values()];
 }
 
-function formatRepeatSummary(repeatKey, limit, sort, sortDir, catalog, labels) {
+function formatRepeatSummary(repeatKey, limit, sort, sortDir, catalog, labels, offset = 0) {
     const sortLabel = sortFieldsForRepeatSource(catalog, repeatKey)
         .find((field) => field.id === sort)?.label ?? sort;
     const dirLabel = sortDir === 'asc'
         ? (labels.repeatSortAsc ?? 'Ascending')
         : (labels.repeatSortDesc ?? 'Descending');
+    const offsetPart = Number(offset) > 0
+        ? ` · ${labels.repeatOffset ?? 'Offset'} ${offset}`
+        : '';
 
-    return `${repeatKey} (${limit}) · ${sortLabel} · ${dirLabel}`;
+    return `${repeatKey} (${limit})${offsetPart} · ${sortLabel} · ${dirLabel}`;
 }
 
 function shouldOfferBindingSource(sourceId, component) {
@@ -973,6 +987,7 @@ function repeatCardIndex(component) {
                 container,
                 repeatKey,
                 index: index >= 0 ? index : 0,
+                offset: repeatOffsetFromContainer(container),
                 ...repeatSortFromContainer(container),
             };
         }
@@ -1007,6 +1022,7 @@ function repeatCardIndex(component) {
         container,
         repeatKey,
         index: index >= 0 ? index : 0,
+        offset: repeatOffsetFromContainer(container),
         ...repeatSortFromContainer(container),
     };
 }
@@ -1074,6 +1090,7 @@ function resolvePreviewValue(bindingKey, component, values, listValues, catalog)
             repeatKey,
             repeatContext?.sort,
             repeatContext?.sortDir,
+            repeatContext?.offset,
         );
         const row = listValues?.[listKey]?.[index] ?? listValues?.[repeatKey]?.[index];
 
@@ -1129,6 +1146,7 @@ function ensureRepeatContainers(editor, catalog) {
         applyRepeatMetaToComponent(repeatTarget, {
             key: repeatKey,
             limit: storedMeta?.limit ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] ?? '3',
+            offset: storedMeta?.offset ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-offset'] ?? '0',
             sort: storedMeta?.sort ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
             sortDir: storedMeta?.sortDir ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
         });
@@ -1431,6 +1449,7 @@ export function registerBoundComponentType(editor) {
                     for (const attribute of [
                         'data-voodbuilder-repeat',
                         'data-voodbuilder-repeat-limit',
+                        'data-voodbuilder-repeat-offset',
                         'data-voodbuilder-repeat-sort',
                         'data-voodbuilder-repeat-sort-dir',
                     ]) {
@@ -1578,6 +1597,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                         <input type="number" min="1" max="24" class="voodbuilder-gjs-bindings-modal__input" data-repeat-limit value="3" />
                     </label>
                     <label class="voodbuilder-gjs-bindings-modal__label">
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-offset-label></span>
+                        <input type="number" min="0" max="100" class="voodbuilder-gjs-bindings-modal__input" data-repeat-offset value="0" />
+                    </label>
+                    <label class="voodbuilder-gjs-bindings-modal__label">
                         <span class="voodbuilder-gjs-bindings-modal__label-text" data-repeat-sort-label></span>
                         <select class="voodbuilder-gjs-bindings-modal__select" data-repeat-sort></select>
                     </label>
@@ -1621,6 +1644,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             repeatPanel.querySelector('.voodbuilder-gjs-dynamic-panel__repeat-title').textContent = labels.repeatList ?? 'List repeat';
             repeatPanel.querySelector('[data-repeat-source-label]').textContent = labels.repeatSource ?? 'Repeat list';
             repeatPanel.querySelector('[data-repeat-limit-label]').textContent = labels.repeatLimit ?? 'Items';
+            const offsetLabel = repeatPanel.querySelector('[data-repeat-offset-label]');
+
+            if (offsetLabel) {
+                offsetLabel.textContent = labels.repeatOffset ?? 'Skip first';
+            }
+
             repeatPanel.querySelector('[data-repeat-sort-label]').textContent = labels.repeatSort ?? 'Sort by';
             repeatPanel.querySelector('[data-repeat-sort-dir-label]').textContent = labels.repeatSortDir ?? 'Direction';
             repeatPanel.querySelector('[data-repeat-sort-dir] option[value="desc"]').textContent = labels.repeatSortDesc ?? 'Descending';
@@ -1633,6 +1662,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const repeatPanel = host.querySelector('[data-repeat-panel]');
     const repeatSourceSelect = host.querySelector('[data-repeat-source]');
     const repeatLimitInput = host.querySelector('[data-repeat-limit]');
+    const repeatOffsetInput = host.querySelector('[data-repeat-offset]');
     const repeatSortSelect = host.querySelector('[data-repeat-sort]');
     const repeatSortDirSelect = host.querySelector('[data-repeat-sort-dir]');
     const repeatApplyButton = host.querySelector('[data-repeat-apply]');
@@ -1879,6 +1909,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             const existingSort = repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] || 'id';
             const existingSortDir = repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] || 'desc';
             const existingLimit = repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'];
+            const existingOffset = repeatTarget.getAttributes()['data-voodbuilder-repeat-offset'] || '0';
 
             if (existingRepeat) {
                 repeatSourceSelect.value = existingRepeat;
@@ -1891,6 +1922,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                     existingSortDir,
                     catalog,
                     labels,
+                    existingOffset,
                 )}`;
             } else {
                 populateRepeatSortFields(repeatSourceSelect.value || repeatSources[0]?.id);
@@ -1898,6 +1930,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
             if (existingLimit) {
                 repeatLimitInput.value = existingLimit;
+            }
+
+            if (repeatOffsetInput) {
+                repeatOffsetInput.value = existingOffset;
             }
 
             if (repeatSortDirSelect) {
@@ -1914,6 +1950,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 }
 
                 const limit = Math.max(1, Math.min(24, Number(repeatLimitInput.value || 3)));
+                const offset = Math.max(0, Math.min(100, Number(repeatOffsetInput?.value || 0)));
                 const sort = repeatSortSelect?.value || 'id';
                 const sortDir = repeatSortDirSelect?.value || 'desc';
 
@@ -1928,12 +1965,14 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 repeatTarget.addAttributes({
                     'data-voodbuilder-repeat': repeatSourceSelect.value,
                     'data-voodbuilder-repeat-limit': String(limit),
+                    'data-voodbuilder-repeat-offset': String(offset),
                     'data-voodbuilder-repeat-sort': sort,
                     'data-voodbuilder-repeat-sort-dir': sortDir,
                 });
                 applyRepeatMetaToComponent(repeatTarget, {
                     key: repeatSourceSelect.value,
                     limit: String(limit),
+                    offset: String(offset),
                     sort,
                     sortDir,
                 });
@@ -1957,6 +1996,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                         sortDir,
                         catalog,
                         labels,
+                        offset,
                     )}`;
                 }
 

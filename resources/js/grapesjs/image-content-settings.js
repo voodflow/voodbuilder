@@ -252,7 +252,14 @@ function applyHeroPresentation(image, section, values) {
     const fit = values.fit != null ? String(values.fit) : null;
     const position = values.position != null ? String(values.position) : null;
 
-    const styles = {};
+    const styles = {
+        position: 'absolute',
+        inset: '0',
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        'max-width': 'none',
+    };
 
     if (opacity != null) {
         styles.opacity = opacity;
@@ -260,6 +267,7 @@ function applyHeroPresentation(image, section, values) {
 
     if (fit != null) {
         styles['object-fit'] = fit;
+        styles['--vb-object-fit'] = fit;
     }
 
     if (position != null) {
@@ -267,11 +275,10 @@ function applyHeroPresentation(image, section, values) {
             ? 'center top'
             : (position === 'bottom' ? 'center bottom' : 'center');
         styles['object-position'] = objectPosition;
+        styles['--vb-object-position'] = objectPosition;
     }
 
-    if (Object.keys(styles).length > 0) {
-        image.addStyle(styles);
-    }
+    image.addStyle(styles);
 
     if (section) {
         const attrs = {};

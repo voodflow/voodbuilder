@@ -11,14 +11,14 @@ class GrapesJsCssSanitizerTest extends TestCase
 {
     public function test_removes_broad_section_layout_background_image_rules(): void
     {
-        $css = '.text-vp-text-2.body-font.voodbuilder-gjs-section.bg-vp-bg{background-image:url("/storage/voodbuilder/grapesjs/test.jpg");}';
+        $css = '.text-vp-text-2.body-font.voodbuilder-gjs-section.bg-vp-bg{background-image:url("/storage/voodbuilder/test.jpg");}';
 
         $this->assertSame('', GrapesJsCssSanitizer::sanitize($css));
     }
 
     public function test_keeps_id_scoped_background_rules(): void
     {
-        $css = '#iyeh{background-image:url("/storage/voodbuilder/grapesjs/test.jpg");}';
+        $css = '#iyeh{background-image:url("/storage/voodbuilder/test.jpg");}';
 
         $this->assertSame($css, GrapesJsCssSanitizer::sanitize($css));
     }

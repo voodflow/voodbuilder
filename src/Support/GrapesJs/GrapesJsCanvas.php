@@ -27,8 +27,9 @@ final class GrapesJsCanvas
     /**
      * Stylesheets required on published GrapesJS pages.
      *
-     * Intentionally empty: `theme.css` already covers section utilities (section-utilities.css
-     * @imports theme and is ~100% duplicate on the public site — keep it for the editor canvas only).
+     * Intentionally empty: critical section chrome (hero media cover, media frames) lives in
+     * `theme.css`, which the public site already loads. `section-utilities.css` stays canvas-only
+     * (Tailwind JIT for block catalogs).
      *
      * @return list<string>
      */

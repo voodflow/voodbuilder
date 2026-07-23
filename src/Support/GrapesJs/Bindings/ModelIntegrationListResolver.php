@@ -21,6 +21,7 @@ final class ModelIntegrationListResolver
         int $limit = 6,
         ?string $sort = null,
         ?string $direction = null,
+        int $offset = 0,
     ): array {
         $integration = $this->integrations->findByListKey($repeatKey);
 
@@ -42,9 +43,11 @@ final class ModelIntegrationListResolver
 
         $column = $this->sortFields->resolveColumn($integration, $sort);
         $dir = $this->sortFields->resolveDirection($direction);
+        $skip = max(0, min($offset, 100));
 
         return $query
             ->orderBy($column, $dir)
+            ->offset($skip)
             ->limit(max(1, min($limit, 24)))
             ->get()
             ->all();

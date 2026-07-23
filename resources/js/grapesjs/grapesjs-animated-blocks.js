@@ -494,6 +494,7 @@ function clearLogoScrollRepeatMarkers(track) {
 
     track.removeAttributes?.('data-voodbuilder-repeat');
     track.removeAttributes?.('data-voodbuilder-repeat-limit');
+    track.removeAttributes?.('data-voodbuilder-repeat-offset');
     track.removeAttributes?.('data-voodbuilder-repeat-sort');
     track.removeAttributes?.('data-voodbuilder-repeat-sort-dir');
 

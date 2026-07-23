@@ -97,9 +97,9 @@ final class VoodbuilderLanding03Sections
 
         return <<<HTML
 <section class="voodbuilder-gjs-section relative overflow-hidden bg-zinc-950 text-white" data-voodbuilder-section-block="vb-nasa-hero" data-vb-bg-size="cover" data-vb-bg-position="center" data-vb-bg-opacity="0.55" data-vb-bg-src="" style="min-height:70vh;">
-  <div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">
-    <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="opacity:0.55;object-fit:cover;object-position:center;" loading="eager" />
-    <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade"></div>
+  <div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;">
+    <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;opacity:0.55;object-fit:cover;object-position:center;" loading="eager" />
+    <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade" style="pointer-events:none;position:absolute;inset:0;"></div>
   </div>
   <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" style="min-height:70vh;">
     <div class="max-w-3xl">
@@ -165,8 +165,8 @@ HTML;
     </div>
     <div class="grid gap-8 lg:grid-cols-3">
       <a href="#" class="group flex flex-col no-underline lg:col-span-2">
-        <div class="overflow-hidden rounded-xl border border-vp-divider">
-          <img src="{$image}" alt="" class="aspect-[16/9] w-full object-cover transition duration-500 group-hover:scale-105" width="1200" height="675" loading="lazy" />
+        <div class="voodbuilder-media-frame overflow-hidden rounded-xl border border-vp-divider" style="aspect-ratio:16/9;overflow:hidden;">
+          <img src="{$image}" alt="" class="w-full object-cover transition duration-500 group-hover:scale-105" style="display:block;width:100%;height:100%;object-fit:cover;" width="1200" height="675" loading="lazy" />
         </div>
         <p class="mt-4 text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Product</p>
         <h3 class="mt-2 text-2xl font-bold text-vp-text-1 group-hover:text-vp-brand-1 lg:text-3xl">Theme tokens that travel from canvas to production</h3>
@@ -174,21 +174,27 @@ HTML;
       </a>
       <div class="flex flex-col gap-6">
         <a href="#" class="group flex gap-4 no-underline border-b border-vp-divider pb-6">
-          <img src="{$image}" alt="" class="h-24 w-28 shrink-0 rounded-lg object-cover" width="112" height="96" loading="lazy" />
+          <div class="voodbuilder-media-frame voodbuilder-media-frame--thumb overflow-hidden rounded-lg" style="aspect-ratio:7/6;width:7rem;height:6rem;flex-shrink:0;overflow:hidden;border-radius:0.5rem;">
+            <img src="{$image}" alt="" class="h-full w-full object-cover" style="display:block;width:100%;height:100%;object-fit:cover;" width="112" height="96" loading="lazy" />
+          </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-vp-text-3">Editor</p>
             <h3 class="mt-1 text-lg font-bold text-vp-text-1 group-hover:text-vp-brand-1">Visual editing on Site Pages without a headless CMS</h3>
           </div>
         </a>
         <a href="#" class="group flex gap-4 no-underline border-b border-vp-divider pb-6">
-          <img src="{$image}" alt="" class="h-24 w-28 shrink-0 rounded-lg object-cover" width="112" height="96" loading="lazy" />
+          <div class="voodbuilder-media-frame voodbuilder-media-frame--thumb overflow-hidden rounded-lg" style="aspect-ratio:7/6;width:7rem;height:6rem;flex-shrink:0;overflow:hidden;border-radius:0.5rem;">
+            <img src="{$image}" alt="" class="h-full w-full object-cover" style="display:block;width:100%;height:100%;object-fit:cover;" width="112" height="96" loading="lazy" />
+          </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-vp-text-3">Templates</p>
             <h3 class="mt-1 text-lg font-bold text-vp-text-1 group-hover:text-vp-brand-1">Apply a landing, keep or replace existing content</h3>
           </div>
         </a>
         <a href="#" class="group flex gap-4 no-underline">
-          <img src="{$image}" alt="" class="h-24 w-28 shrink-0 rounded-lg object-cover" width="112" height="96" loading="lazy" />
+          <div class="voodbuilder-media-frame voodbuilder-media-frame--thumb overflow-hidden rounded-lg" style="aspect-ratio:7/6;width:7rem;height:6rem;flex-shrink:0;overflow:hidden;border-radius:0.5rem;">
+            <img src="{$image}" alt="" class="h-full w-full object-cover" style="display:block;width:100%;height:100%;object-fit:cover;" width="112" height="96" loading="lazy" />
+          </div>
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-vp-text-3">Admin</p>
             <h3 class="mt-1 text-lg font-bold text-vp-text-1 group-hover:text-vp-brand-1">Filament panel for pages, menus and themes</h3>

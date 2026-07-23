@@ -49,6 +49,7 @@ return [
         'current_binding' => 'Current binding',
         'repeat_source' => 'Repeat list',
         'repeat_limit' => 'Items',
+        'repeat_offset' => 'Skip first',
         'repeat_sort' => 'Sort by',
         'repeat_sort_dir' => 'Direction',
         'repeat_sort_asc' => 'Ascending',

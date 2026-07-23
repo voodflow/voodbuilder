@@ -268,7 +268,8 @@ return [
         'canvas_styles' => VoodbuilderPaths::grapesJsCanvasStyleEntries(),
         'upload' => [
             'disk' => 'public',
-            'directory' => 'voodbuilder/grapesjs',
+            // Public files land under storage/app/public/voodbuilder (URL /storage/voodbuilder/…).
+            'directory' => 'voodbuilder',
             // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
             'max_size' => (int) env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192),
         ],

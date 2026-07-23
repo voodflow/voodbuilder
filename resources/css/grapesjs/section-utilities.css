@@ -32,43 +32,7 @@
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
     }
 
-    /**
-     * Full-bleed hero media (NASA-style cover). Inline-friendly so GrapesJS/JIT
-     * gaps never leave the photo letterboxed at intrinsic size.
-     */
-    .voodbuilder-hero-media {
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-    }
-
-    .voodbuilder-hero-media__img {
-        position: absolute;
-        inset: 0;
-        display: block;
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        object-fit: cover;
-        object-position: center;
-    }
-
-    .voodbuilder-hero-media__shade {
-        pointer-events: none;
-        position: absolute;
-        inset: 0;
-    }
-
-    .voodbuilder-hero-media__video {
-        position: absolute;
-        inset: 0;
-        display: block;
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        object-fit: cover;
-        object-position: center;
-    }
+    /* Hero media + media frames: defined in theme.css (public + canvas via @import). */
 
     .voodbuilder-slider__track {
         display: flex;

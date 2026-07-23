@@ -82,6 +82,7 @@ class GrapesJsBindingsPreviewController extends Controller
             $sort = (string) ($config['sort'] ?? 'id');
             $dir = (string) ($config['dir'] ?? 'desc');
             $limit = max(1, min(24, (int) ($config['limit'] ?? 12)));
+            $offset = max(0, min(100, (int) ($config['offset'] ?? 0)));
             $itemSourceId = preg_replace('/\.list$/', '.item', $repeatKey) ?? '';
 
             if ($repeatKey === '' || $itemSourceId === '') {
@@ -95,13 +96,13 @@ class GrapesJsBindingsPreviewController extends Controller
             }
 
             $rows = [];
-            $listKey = self::listValuesKey($repeatKey, $sort, $dir);
+            $listKey = self::listValuesKey($repeatKey, $sort, $dir, $offset);
 
             if (isset($listValues[$listKey])) {
                 continue;
             }
 
-            foreach ($lists->resolve($repeatKey, $limit, $sort, $dir) as $record) {
+            foreach ($lists->resolve($repeatKey, $limit, $sort, $dir, $offset) as $record) {
                 $row = [];
                 $context = BindingContext::forEditorPreview($sitePage)->withRepeatItem($record);
 
@@ -161,15 +162,16 @@ class GrapesJsBindingsPreviewController extends Controller
                 'sort' => (string) ($config['sort'] ?? 'id'),
                 'dir' => (string) ($config['dir'] ?? 'desc'),
                 'limit' => (int) ($config['limit'] ?? 12),
+                'offset' => (int) ($config['offset'] ?? 0),
             ];
         }
 
         return $configs;
     }
 
-    public static function listValuesKey(string $repeatKey, string $sort, string $dir): string
+    public static function listValuesKey(string $repeatKey, string $sort, string $dir, int $offset = 0): string
     {
-        return $repeatKey.'|'.$sort.'|'.$dir;
+        return $repeatKey.'|'.$sort.'|'.$dir.'|'.$offset;
     }
 
     protected function normalizePreviewValue(string $value, string $fieldType): string

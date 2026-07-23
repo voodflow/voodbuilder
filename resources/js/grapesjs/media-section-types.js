@@ -88,9 +88,17 @@ function syncBackgroundImageSection(section) {
 
     if (image) {
         const imageStyles = {
+            position: 'absolute',
+            inset: '0',
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            'max-width': 'none',
             opacity,
             'object-fit': objectFit,
             'object-position': objectPosition,
+            '--vb-object-fit': objectFit,
+            '--vb-object-position': objectPosition,
         };
 
         image.addStyle(imageStyles);

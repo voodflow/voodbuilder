@@ -133,6 +133,7 @@ Problema tipico: in editor Vite ha tutte le utility; in pubblico l’img resta l
 ```
 
 - Aggiungere `@source` al file PHP/HTML del blocco in `section-utilities.css`.
+- Regole cover hero (`.voodbuilder-hero-media*`) e frame media (`.voodbuilder-media-frame`) vivono in **`theme.css`** così editor e sito pubblico condividono lo stesso CSS.
 - Non affidarsi solo a `h-full w-full object-cover` senza la classe stabile.
 - Evitare `width`/`height` HTML grandi sull’img cover (confondono il layout se il CSS manca).
 

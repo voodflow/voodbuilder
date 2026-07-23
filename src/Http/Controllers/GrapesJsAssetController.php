@@ -20,7 +20,7 @@ class GrapesJsAssetController extends Controller
         ]);
 
         $disk = (string) config('voodbuilder.grapesjs.upload.disk', 'public');
-        $directory = trim((string) config('voodbuilder.grapesjs.upload.directory', 'voodbuilder/grapesjs'), '/');
+        $directory = trim((string) config('voodbuilder.grapesjs.upload.directory', 'voodbuilder'), '/');
         $file = $validated['file'];
 
         $path = $file->storePubliclyAs($directory, $file->hashName(), $disk);

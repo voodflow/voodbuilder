@@ -198,6 +198,7 @@ final class GrapesJsEditorGate
                 'currentBinding' => __('voodbuilder::pro.bindings.current_binding'),
                 'repeatSource' => __('voodbuilder::pro.bindings.repeat_source'),
                 'repeatLimit' => __('voodbuilder::pro.bindings.repeat_limit'),
+                'repeatOffset' => __('voodbuilder::pro.bindings.repeat_offset'),
                 'repeatSort' => __('voodbuilder::pro.bindings.repeat_sort'),
                 'repeatSortDir' => __('voodbuilder::pro.bindings.repeat_sort_dir'),
                 'repeatSortAsc' => __('voodbuilder::pro.bindings.repeat_sort_asc'),
