@@ -399,6 +399,7 @@ return [
             'load_error' => 'Could not load this image for editing (missing source or blocked by CORS).',
             'upload_error' => 'Could not upload the edited image.',
             'upload_missing' => 'Image upload is not configured.',
+            'placeholder_hint' => 'Upload a real image first (Assets / Content panel). SVG placeholders cannot be edited.',
         ],
         'layer_rename' => 'Rename layer',
         'layer_rename_hint' => 'Changes the label in the layer tree only. Element ids are not modified.',

@@ -2,6 +2,8 @@
  * In-canvas image editing via @jodit/image-editor (MIT).
  * Opens from the component toolbar on <img> / image components (and vb-bg-image sections).
  * On save, uploads the blob through the GrapesJS asset endpoint and updates src.
+ *
+ * Not available for: SVG / placeholder sources, or images with dynamic bindings.
  */
 
 import { ImageEditor } from '@jodit/image-editor';
@@ -11,6 +13,7 @@ import { safeFindComponents } from './tailwind-visual-style.js';
 export const CMD_EDIT_IMAGE = 'voodbuilder:edit-image';
 
 const MODAL_FLAG = 'data-voodbuilder-image-editor';
+const MAX_UPLOAD_ATTEMPTS = 3;
 
 /** @type {HTMLElement | null} */
 let activeModal = null;
@@ -36,6 +39,61 @@ export function isEditableImageComponent(component) {
     const tag = String(component.get?.('tagName') ?? '').toLowerCase();
 
     return tag === 'img';
+}
+
+/**
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @returns {boolean}
+ */
+export function isDynamicallyBoundImage(component) {
+    if (! component) {
+        return false;
+    }
+
+    let current = component;
+
+    while (current) {
+        const attrs = current.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-bind'] || attrs['data-voodbuilder-repeat'] || attrs['data-voodbuilder-repeat-item']) {
+            return true;
+        }
+
+        current = current.parent?.() ?? null;
+    }
+
+    return false;
+}
+
+/**
+ * @param {string} src
+ * @returns {boolean}
+ */
+export function isRasterEditableSrc(src) {
+    const value = String(src ?? '').trim();
+
+    if (value === '' || value === '#' || value === 'about:blank') {
+        return false;
+    }
+
+    if (/^data:image\/svg\+xml/i.test(value)) {
+        return false;
+    }
+
+    if (/^data:image\/(png|jpe?g|webp|gif|bmp)/i.test(value)) {
+        return true;
+    }
+
+    if (/^data:/i.test(value)) {
+        return false;
+    }
+
+    // Neutral SVG placeholders sometimes survive without the data: prefix quirks.
+    if (/Image placeholder/i.test(value)) {
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -73,6 +131,26 @@ export function resolveImageEditTarget(component) {
 }
 
 /**
+ * Toolbar / command gate: real raster src, not dynamically bound.
+ *
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @returns {import('grapesjs').Component | null}
+ */
+export function resolveEditableImageTarget(component) {
+    const target = resolveImageEditTarget(component);
+
+    if (! target || isDynamicallyBoundImage(target)) {
+        return null;
+    }
+
+    if (! isRasterEditableSrc(resolveImageSrc(target))) {
+        return null;
+    }
+
+    return target;
+}
+
+/**
  * @param {import('grapesjs').Component} component
  * @returns {string}
  */
@@ -87,12 +165,50 @@ function resolveImageSrc(component) {
 }
 
 /**
+ * @param {Blob} blob
+ * @returns {Promise<void>}
+ */
+async function assertDecodableRaster(blob) {
+    const type = String(blob.type || '').toLowerCase();
+
+    if (type.includes('svg')) {
+        throw new Error('svg-placeholder');
+    }
+
+    if (typeof createImageBitmap === 'function') {
+        const bitmap = await createImageBitmap(blob);
+        bitmap.close();
+
+        return;
+    }
+
+    await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve();
+        };
+        image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('decode-failed'));
+        };
+        image.src = url;
+    });
+}
+
+/**
  * @param {string} src
  * @returns {Promise<Blob>}
  */
 async function blobFromSrc(src) {
     if (src === '') {
         throw new Error('missing-src');
+    }
+
+    if (/^data:image\/svg\+xml/i.test(src)) {
+        throw new Error('svg-placeholder');
     }
 
     const response = await fetch(src, {
@@ -104,41 +220,173 @@ async function blobFromSrc(src) {
         throw new Error(`fetch-failed:${response.status}`);
     }
 
-    return response.blob();
+    const blob = await response.blob();
+    await assertDecodableRaster(blob);
+
+    return blob;
+}
+
+/**
+ * Prefer the live <img> in the canvas when fetch/CORS would fail.
+ *
+ * @param {import('grapesjs').Component} component
+ * @returns {Promise<Blob | null>}
+ */
+async function blobFromComponentElement(component) {
+    const element = component.getEl?.() ?? component.view?.el ?? null;
+
+    if (! (element instanceof HTMLImageElement) || ! element.naturalWidth) {
+        return null;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = element.naturalWidth;
+    canvas.height = element.naturalHeight;
+    const context = canvas.getContext('2d');
+
+    if (! context) {
+        return null;
+    }
+
+    try {
+        context.drawImage(element, 0, 0);
+    } catch {
+        return null;
+    }
+
+    const blob = await new Promise((resolve) => {
+        canvas.toBlob((result) => resolve(result), 'image/png');
+    });
+
+    if (! blob) {
+        return null;
+    }
+
+    await assertDecodableRaster(blob);
+
+    return blob;
+}
+
+/**
+ * @param {import('grapesjs').Component} component
+ * @param {string} src
+ * @returns {Promise<Blob>}
+ */
+async function loadImageBlob(component, src) {
+    try {
+        return await blobFromSrc(src);
+    } catch (error) {
+        const fromElement = await blobFromComponentElement(component);
+
+        if (fromElement) {
+            return fromElement;
+        }
+
+        throw error;
+    }
+}
+
+/**
+ * @param {Response} response
+ * @param {Record<string, string>} labels
+ * @returns {Promise<string>}
+ */
+async function resolveUploadErrorMessage(response, labels = {}) {
+    try {
+        const payload = await response.clone().json();
+        const fileError = payload?.errors?.file;
+
+        if (Array.isArray(fileError) && typeof fileError[0] === 'string' && fileError[0].trim() !== '') {
+            return fileError[0];
+        }
+
+        if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
+            return payload.message;
+        }
+    } catch {
+        // fall through
+    }
+
+    return resolveApiErrorMessage(
+        response,
+        labels.imageEditorUploadError ?? 'Could not upload the edited image.',
+        labels,
+    );
 }
 
 /**
  * @param {Blob} blob
+ * @param {string} type
+ * @param {number} quality
+ * @returns {Promise<File>}
+ */
+async function blobToUploadFile(blob, type = 'image/jpeg', quality = 0.88) {
+    let output = blob;
+
+    if (blob.type !== type || type === 'image/jpeg') {
+        output = await reencodeBlob(blob, type, quality);
+    }
+
+    const extension = type === 'image/png' ? 'png' : (type === 'image/webp' ? 'webp' : 'jpg');
+    const mime = output.type || type;
+
+    return new File([output], `edited.${extension}`, { type: mime });
+}
+
+/**
+ * @param {Blob} blob
+ * @param {string} type
+ * @param {number} quality
+ * @returns {Promise<Blob>}
+ */
+async function reencodeBlob(blob, type, quality) {
+    if (typeof createImageBitmap !== 'function') {
+        return blob;
+    }
+
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d');
+
+    if (! context) {
+        bitmap.close();
+
+        return blob;
+    }
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    const encoded = await new Promise((resolve) => {
+        canvas.toBlob((result) => resolve(result), type, quality);
+    });
+
+    return encoded ?? blob;
+}
+
+/**
+ * @param {File} file
  * @param {{ uploadUrl: string, csrf?: string }} options
  * @param {Record<string, string>} labels
  * @returns {Promise<string>}
  */
-async function uploadEditedBlob(blob, options, labels = {}) {
+async function uploadFile(file, options, labels = {}) {
     const form = new FormData();
-    const extension = blob.type === 'image/png'
-        ? 'png'
-        : (blob.type === 'image/webp' ? 'webp' : 'jpg');
-
-    form.append('file', blob, `edited.${extension}`);
+    form.append('file', file);
 
     const response = await fetch(options.uploadUrl, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: editorApiHeaders(options.csrf, {
-            // Let the browser set multipart boundary.
-            extra: {},
-        }),
+        headers: editorApiHeaders(options.csrf),
         body: form,
     });
 
     if (! response.ok) {
-        const message = await resolveApiErrorMessage(
-            response,
-            labels.imageEditorUploadError ?? 'Could not upload the edited image.',
-            labels,
-        );
-
-        throw new Error(message);
+        throw new Error(await resolveUploadErrorMessage(response, labels));
     }
 
     const payload = await response.json();
@@ -149,6 +397,92 @@ async function uploadEditedBlob(blob, options, labels = {}) {
     }
 
     return url.trim();
+}
+
+/**
+ * GrapesJS AssetManager uploader (same path as the Assets panel).
+ *
+ * @param {import('grapesjs').Editor} editor
+ * @param {File} file
+ * @returns {Promise<string | null>}
+ */
+function uploadViaAssetManager(editor, file) {
+    const uploader = editor.Assets?.FileUploader?.();
+
+    if (! uploader || typeof uploader.uploadFile !== 'function') {
+        return Promise.resolve(null);
+    }
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const finish = (url) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            resolve(typeof url === 'string' && url.trim() !== '' ? url.trim() : null);
+        };
+
+        try {
+            uploader.uploadFile(
+                {
+                    dataTransfer: { files: [file] },
+                },
+                (res) => {
+                    const obj = res?.data?.[0];
+                    const src = typeof obj === 'string' ? obj : obj?.src;
+                    finish(src ?? null);
+                },
+            );
+        } catch {
+            finish(null);
+        }
+
+        window.setTimeout(() => finish(null), 20000);
+    });
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {Blob} blob
+ * @param {{ uploadUrl: string, csrf?: string }} options
+ * @param {Record<string, string>} labels
+ * @returns {Promise<string>}
+ */
+async function uploadEditedBlob(editor, blob, options, labels = {}) {
+    let lastError = labels.imageEditorUploadError ?? 'Could not upload the edited image.';
+    let quality = 0.88;
+
+    for (let attempt = 0; attempt < MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+        const file = await blobToUploadFile(blob, 'image/jpeg', quality);
+
+        try {
+            return await uploadFile(file, options, labels);
+        } catch (error) {
+            lastError = error instanceof Error && error.message
+                ? error.message
+                : lastError;
+
+            const viaAssets = await uploadViaAssetManager(editor, file);
+
+            if (viaAssets) {
+                return viaAssets;
+            }
+
+            // Retry smaller JPEG when validation complains about size.
+            if (/kilobytes|max|too large|grande/i.test(lastError) && attempt < MAX_UPLOAD_ATTEMPTS - 1) {
+                quality = Math.max(0.55, quality - 0.15);
+
+                continue;
+            }
+
+            throw new Error(lastError);
+        }
+    }
+
+    throw new Error(lastError);
 }
 
 /**
@@ -226,6 +560,23 @@ function escapeHtml(value) {
 }
 
 /**
+ * @param {unknown} error
+ * @param {Record<string, string>} labels
+ * @returns {string}
+ */
+function resolveLoadErrorMessage(error, labels = {}) {
+    const code = error instanceof Error ? error.message : '';
+
+    if (code === 'svg-placeholder' || code === 'missing-src') {
+        return labels.imageEditorPlaceholderHint
+            ?? 'Upload a real image first (Assets / Content panel). SVG placeholders cannot be edited.';
+    }
+
+    return labels.imageEditorLoadError
+        ?? 'Could not load this image for editing (missing source or blocked by CORS).';
+}
+
+/**
  * @param {import('grapesjs').Editor} editor
  * @param {import('grapesjs').Component} target
  * @param {{ uploadUrl?: string, csrf?: string, labels?: Record<string, string> }} options
@@ -237,9 +588,7 @@ async function openImageEditorModal(editor, target, options = {}) {
     const src = resolveImageSrc(target);
 
     if (uploadUrl === '') {
-        setModalStatus(labels.imageEditorUploadMissing ?? 'Image upload is not configured.');
-
-        return;
+        // Still open a minimal modal so the user sees the message.
     }
 
     closeImageEditorModal();
@@ -287,6 +636,18 @@ async function openImageEditorModal(editor, target, options = {}) {
         el.addEventListener('click', onClose);
     });
 
+    if (uploadUrl === '') {
+        setModalStatus(labels.imageEditorUploadMissing ?? 'Image upload is not configured.');
+
+        return;
+    }
+
+    if (! isRasterEditableSrc(src)) {
+        setModalStatus(resolveLoadErrorMessage(new Error('svg-placeholder'), labels));
+
+        return;
+    }
+
     setModalStatus(loadingLabel);
 
     let saving = false;
@@ -308,7 +669,7 @@ async function openImageEditorModal(editor, target, options = {}) {
         setModalStatus(labels.imageEditorSaving ?? 'Saving…');
 
         try {
-            const url = await uploadEditedBlob(blob, { uploadUrl, csrf }, labels);
+            const url = await uploadEditedBlob(editor, blob, { uploadUrl, csrf }, labels);
             applyEditedSrc(editor, target, url);
             onClose();
         } catch (error) {
@@ -326,7 +687,7 @@ async function openImageEditorModal(editor, target, options = {}) {
     };
 
     try {
-        const blob = await blobFromSrc(src);
+        const blob = await loadImageBlob(target, src);
         setModalStatus('');
 
         activeEditor = new ImageEditor({
@@ -349,11 +710,8 @@ async function openImageEditorModal(editor, target, options = {}) {
                 void activeEditor?.save();
             });
         }
-    } catch {
-        setModalStatus(
-            labels.imageEditorLoadError
-                ?? 'Could not load this image for editing (missing source or blocked by CORS).',
-        );
+    } catch (error) {
+        setModalStatus(resolveLoadErrorMessage(error, labels));
 
         if (applyButton instanceof HTMLButtonElement) {
             applyButton.disabled = true;
@@ -400,6 +758,10 @@ export function registerJoditImageEditor(editor, options = {}) {
                 const target = resolveImageEditTarget(selected);
 
                 if (! target) {
+                    return;
+                }
+
+                if (isDynamicallyBoundImage(target)) {
                     return;
                 }
 

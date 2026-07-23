@@ -399,6 +399,7 @@ return [
             'load_error' => 'Impossibile caricare questa immagine (sorgente assente o bloccata da CORS).',
             'upload_error' => 'Impossibile caricare l\'immagine modificata.',
             'upload_missing' => 'Upload immagini non configurato.',
+            'placeholder_hint' => 'Carica prima un\'immagine reale (Assets / pannello Content). I segnaposto SVG non si possono modificare.',
         ],
         'layer_rename' => 'Rinomina layer',
         'layer_rename_hint' => 'Modifica solo l\'etichetta nel pannello layer. Gli id degli elementi non vengono cambiati.',

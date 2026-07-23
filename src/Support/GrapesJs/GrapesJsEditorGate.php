@@ -167,6 +167,7 @@ final class GrapesJsEditorGate
                 'imageEditorLoadError' => __('voodbuilder::pro.grapesjs.image_editor.load_error'),
                 'imageEditorUploadError' => __('voodbuilder::pro.grapesjs.image_editor.upload_error'),
                 'imageEditorUploadMissing' => __('voodbuilder::pro.grapesjs.image_editor.upload_missing'),
+                'imageEditorPlaceholderHint' => __('voodbuilder::pro.grapesjs.image_editor.placeholder_hint'),
                 'modalTitle' => __('voodbuilder::pro.bindings.modal_title'),
                 'modalSource' => __('voodbuilder::pro.bindings.modal_source'),
                 'modalField' => __('voodbuilder::pro.bindings.modal_field'),

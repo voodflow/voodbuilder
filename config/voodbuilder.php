@@ -269,7 +269,8 @@ return [
         'upload' => [
             'disk' => 'public',
             'directory' => 'voodbuilder/grapesjs',
-            'max_size' => 4096,
+            // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
+            'max_size' => (int) env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192),
         ],
         /*
         | In-canvas image editor (@jodit/image-editor, MIT). Requires the host app

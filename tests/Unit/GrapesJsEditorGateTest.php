@@ -65,6 +65,7 @@ class GrapesJsEditorGateTest extends TestCase
         $this->assertTrue($config['imageEditor']);
         $this->assertArrayHasKey('editImage', $config['labels']);
         $this->assertArrayHasKey('imageEditorTitle', $config['labels']);
+        $this->assertArrayHasKey('imageEditorPlaceholderHint', $config['labels']);
     }
 
     public function test_image_editor_can_be_disabled_via_config(): void

@@ -13,7 +13,7 @@ import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
 import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
-import { CMD_EDIT_IMAGE, resolveImageEditTarget } from './jodit-image-editor.js';
+import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
@@ -110,7 +110,7 @@ function buildComponentToolbar(editor, component, labels = {}) {
         });
     }
 
-    if (editor.__voodbuilderImageEditorEnabled && resolveImageEditTarget(component)) {
+    if (editor.__voodbuilderImageEditorEnabled && resolveEditableImageTarget(component)) {
         toolbar.push({
             attributes: {
                 class: 'voodbuilder-gjs-toolbar-item--edit-image',

@@ -743,6 +743,7 @@ export function initVpressGrapesJs(container, options = {}) {
         imageEditorLoadError: labels.imageEditorLoadError,
         imageEditorUploadError: labels.imageEditorUploadError,
         imageEditorUploadMissing: labels.imageEditorUploadMissing,
+        imageEditorPlaceholderHint: labels.imageEditorPlaceholderHint,
         dialogCancel: labels.dialogCancel,
         modalCancel: labels.modalCancel,
     });
