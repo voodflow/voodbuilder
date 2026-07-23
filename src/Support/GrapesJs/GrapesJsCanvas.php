@@ -381,13 +381,46 @@ final class GrapesJsCanvas
             box-sizing: border-box;
         }
 
-        /* Chrome stays edge-to-edge in the page editor (scope=page forces chrome-width=full). */
-        body[data-voodbuilder-editor-scope='page'] [data-voodbuilder-chrome-shell],
-        body[data-voodbuilder-editor-scope='page'] [data-voodbuilder-chrome-shell-part] {
-            width: 100% !important;
+        /* Chrome match-content: constrain nav/footer shells (page + layout editors).
+         * Workspace/frame stays full-bleed via --width-vp-layout: 100% on the canvas root. */
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-canvas-content-width='standard'],
+            [data-voodbuilder-canvas-content-width='custom'],
+            [data-voodbuilder-canvas-content-width='contained']
+        ) :is(
+            [data-voodbuilder-chrome-shell],
+            [data-voodbuilder-chrome-shell-part],
+            [data-voodbuilder-chrome-drop-zone]
+        ) {
+            --width-vp-layout: var(--voodbuilder-page-content-max, 80rem);
+            width: 100%;
+            max-width: var(--voodbuilder-page-content-max, 80rem);
+            margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-canvas-content-width='standard'],
+            [data-voodbuilder-canvas-content-width='custom'],
+            [data-voodbuilder-canvas-content-width='contained']
+        ) :is(
+            [data-voodbuilder-chrome-shell],
+            [data-voodbuilder-chrome-shell-part],
+            [data-voodbuilder-chrome-drop-zone]
+        ) header[role='banner'].fixed,
+        body[data-voodbuilder-chrome-width='content']:is(
+            [data-voodbuilder-canvas-content-width='standard'],
+            [data-voodbuilder-canvas-content-width='custom'],
+            [data-voodbuilder-canvas-content-width='contained']
+        ) :is(
+            [data-voodbuilder-chrome-shell],
+            [data-voodbuilder-chrome-shell-part],
+            [data-voodbuilder-chrome-drop-zone]
+        ) header[role='banner'].sticky {
+            left: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+            right: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+            width: auto !important;
             max-width: none !important;
-            margin-inline: 0 !important;
-            --width-vp-layout: 100% !important;
         }
 
         /* Cancel 100vw hero breakout inside a constrained content column. */
@@ -400,35 +433,6 @@ final class GrapesJsCanvas
             width: 100% !important;
             max-width: 100% !important;
             margin-inline: 0 !important;
-        }
-
-        /* Layout editor only: nav/footer match content (page editor forces chrome-width=full). */
-        body[data-voodbuilder-editor-scope='layout'][data-voodbuilder-chrome-width='content']:is(
-            [data-voodbuilder-canvas-content-width='standard'],
-            [data-voodbuilder-canvas-content-width='custom'],
-            [data-voodbuilder-canvas-content-width='contained']
-        ) [data-voodbuilder-chrome-drop-zone] {
-            --width-vp-layout: var(--voodbuilder-page-content-max, 80rem);
-            width: 100%;
-            max-width: var(--voodbuilder-page-content-max, 80rem);
-            margin-inline: auto;
-            box-sizing: border-box;
-        }
-
-        body[data-voodbuilder-editor-scope='layout'][data-voodbuilder-chrome-width='content']:is(
-            [data-voodbuilder-canvas-content-width='standard'],
-            [data-voodbuilder-canvas-content-width='custom'],
-            [data-voodbuilder-canvas-content-width='contained']
-        ) [data-voodbuilder-chrome-drop-zone] header[role='banner'].fixed,
-        body[data-voodbuilder-editor-scope='layout'][data-voodbuilder-chrome-width='content']:is(
-            [data-voodbuilder-canvas-content-width='standard'],
-            [data-voodbuilder-canvas-content-width='custom'],
-            [data-voodbuilder-canvas-content-width='contained']
-        ) [data-voodbuilder-chrome-drop-zone] header[role='banner'].sticky {
-            left: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
-            right: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
-            width: auto !important;
-            max-width: none !important;
         }
 
         body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-mobile-nav.is-open,

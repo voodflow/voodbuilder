@@ -437,12 +437,11 @@ function revealCanvasDocument(frameWindow, options = {}) {
     const { mode, maxWidth } = normalizePageContentWidth(options);
     const chromeWidth = normalizeChromeWidth(options);
     const isFull = mode === 'full';
-    // Page editor: keep chrome full-bleed in the canvas so the workspace never looks
-    // “shrunk”. Match-content for nav/footer is previewed in the layout editor + frontend.
     const editorScope = options.chromeLayoutMode
         ? 'layout'
         : (options.chromeShellMode ? 'page' : 'page');
-    const canvasChromeWidth = editorScope === 'page' ? 'full' : chromeWidth;
+    // Respect layout setting in both editors — only the workspace frame stays full-bleed.
+    const canvasChromeWidth = chromeWidth;
 
     doc.body.classList.add('voodbuilder-canvas-ready', 'VPRichPage', 'VPRichPage--landing');
     // Canvas-only attrs — do NOT set data-voodbuilder-page-width on the iframe body.

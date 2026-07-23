@@ -91,7 +91,7 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
     [data-voodbuilder-page-width='contained']
 ) [data-voodbuilder-chrome-shell] {
     width: 100%;
-    max-width: var(--voodbuilder-page-content-max, 80rem);
+    max-width: var(--voodbuilder-page-content-max, 80rem) !important;
     margin-inline: auto;
     box-sizing: border-box;
 }
