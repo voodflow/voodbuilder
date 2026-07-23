@@ -25,10 +25,13 @@ class PopupsPublicController extends Controller
 
         $popups = BuilderPopup::query()
             ->where('enabled', true)
+            ->where('paused', false)
             ->orderByDesc('priority')
             ->orderBy('name')
             ->get()
+            ->filter(fn (BuilderPopup $popup): bool => $this->rules->matchesLocale($popup))
             ->filter(fn (BuilderPopup $popup): bool => $this->rules->passesTargeting($popup))
+            ->filter(fn (BuilderPopup $popup): bool => $this->rules->isActiveNow($popup))
             ->filter(fn (BuilderPopup $popup): bool => filled($popup->html))
             ->map(fn (BuilderPopup $popup): array => [
                 'id' => $popup->getKey(),

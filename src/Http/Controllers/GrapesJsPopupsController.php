@@ -38,21 +38,30 @@ class GrapesJsPopupsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'locale' => ['nullable', 'string', 'max:12'],
             'enabled' => ['nullable', 'boolean'],
+            'paused' => ['nullable', 'boolean'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:999'],
             'rules' => ['nullable', 'array'],
         ]);
 
         $data = PopupResource::normalizeFormData([
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'locale' => $validated['locale'] ?? null,
             'enabled' => $validated['enabled'] ?? true,
+            'paused' => $validated['paused'] ?? false,
             'priority' => $validated['priority'] ?? 0,
             'rules' => $validated['rules'] ?? BuilderPopup::defaultRules(),
         ]);
 
         $popup = BuilderPopup::query()->create([
             'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'locale' => $data['locale'] ?? null,
             'enabled' => (bool) ($data['enabled'] ?? true),
+            'paused' => (bool) ($data['paused'] ?? false),
             'priority' => (int) ($data['priority'] ?? 0),
             'rules' => $data['rules'],
             'html' => $this->defaultHtml((string) $data['name']),
@@ -67,15 +76,21 @@ class GrapesJsPopupsController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'locale' => ['sometimes', 'nullable', 'string', 'max:12'],
             'enabled' => ['sometimes', 'boolean'],
+            'paused' => ['sometimes', 'boolean'],
             'priority' => ['sometimes', 'integer', 'min:0', 'max:999'],
             'rules' => ['sometimes', 'array'],
         ]);
 
-        $data = PopupResource::normalizeFormData(array_replace_recursive(
+        $data = PopupResource::normalizeFormData(PopupResource::mergeEditorPayload(
             [
                 'name' => $popup->name,
+                'description' => $popup->description,
+                'locale' => $popup->locale,
                 'enabled' => $popup->enabled,
+                'paused' => $popup->paused,
                 'priority' => $popup->priority,
                 'rules' => $popup->normalizedRules(),
             ],
@@ -84,7 +99,10 @@ class GrapesJsPopupsController extends Controller
 
         $popup->update([
             'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'locale' => $data['locale'] ?? null,
             'enabled' => (bool) ($data['enabled'] ?? true),
+            'paused' => (bool) ($data['paused'] ?? false),
             'priority' => (int) ($data['priority'] ?? 0),
             'rules' => $data['rules'],
         ]);
@@ -127,7 +145,10 @@ class GrapesJsPopupsController extends Controller
         $hydrated = PopupResource::hydrateFormData([
             'id' => $popup->getKey(),
             'name' => $popup->name,
+            'description' => $popup->description,
+            'locale' => $popup->locale,
             'enabled' => $popup->enabled,
+            'paused' => $popup->paused,
             'priority' => $popup->priority,
             'rules' => $popup->normalizedRules(),
             'updated_at' => $popup->updated_at?->toIso8601String(),
@@ -136,7 +157,10 @@ class GrapesJsPopupsController extends Controller
         return [
             'id' => $popup->getKey(),
             'name' => $popup->name,
+            'description' => $popup->description,
+            'locale' => $popup->locale,
             'enabled' => $popup->enabled,
+            'paused' => $popup->paused,
             'priority' => $popup->priority,
             'rules' => $hydrated['rules'],
             'html' => GrapesJsPopupHtmlNormalizer::normalize((string) $popup->html),

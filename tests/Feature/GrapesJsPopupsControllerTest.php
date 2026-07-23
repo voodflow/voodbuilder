@@ -27,10 +27,12 @@ class GrapesJsPopupsControllerTest extends TestCase
             ->postJson(route('voodbuilder.grapesjs.popups.store'), [
                 'name' => 'Newsletter signup',
                 'enabled' => true,
+                'paused' => false,
                 'priority' => 5,
                 'rules' => [
                     'trigger' => ['type' => 'load'],
                     'frequency' => ['mode' => 'always'],
+                    'schedule' => ['start_at' => '', 'end_at' => '', 'weekly_day' => '', 'weekly_start_time' => '', 'weekly_end_time' => ''],
                     'targeting' => ['logged_in' => 'any', 'page_path' => ''],
                     'display' => ['width' => 'md', 'overlay' => true, 'close_on_overlay' => true, 'close_on_escape' => true],
                 ],
@@ -42,6 +44,7 @@ class GrapesJsPopupsControllerTest extends TestCase
 
         $this->assertNotNull($popup);
         $this->assertTrue($popup->enabled);
+        $this->assertFalse($popup->paused);
         $this->assertStringContainsString('Newsletter signup', (string) $popup->html);
     }
 
@@ -106,5 +109,62 @@ class GrapesJsPopupsControllerTest extends TestCase
             ->getJson(route('voodbuilder.grapesjs.popups.page-paths'))
             ->assertOk()
             ->assertJsonStructure(['paths' => [['value', 'label', 'group']]]);
+    }
+
+    public function test_updating_popup_replaces_weekly_days_instead_of_merging_indexes(): void
+    {
+        $user = new User;
+        $user->forceFill([
+            'name' => 'Editor',
+            'email' => 'popup-days@example.com',
+        ])->save();
+
+        Gate::define('usePageBuilder', static fn (): bool => true);
+        PageBuilderAccess::authorizeUsing(static fn (): bool => true);
+
+        $popup = BuilderPopup::query()->create([
+            'name' => 'Weekly days popup',
+            'enabled' => true,
+            'paused' => false,
+            'priority' => 1,
+            'html' => '<section></section>',
+            'css' => '',
+            'js' => '',
+            'rules' => [
+                'schedule' => [
+                    'weekly_days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                    'weekly_day' => 'monday',
+                    'timezone' => 'UTC',
+                ],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->putJson(route('voodbuilder.grapesjs.popups.update', $popup), [
+                'name' => 'Weekly days popup',
+                'enabled' => true,
+                'paused' => false,
+                'priority' => 1,
+                'rules' => [
+                    'trigger' => ['type' => 'load'],
+                    'frequency' => ['mode' => 'always'],
+                    'schedule' => [
+                        'start_at' => '',
+                        'end_at' => '',
+                        'weekly_days' => ['thursday'],
+                        'weekly_day' => 'thursday',
+                        'timezone' => 'UTC',
+                    ],
+                    'targeting' => ['logged_in' => 'any', 'page_path' => ''],
+                    'display' => ['width' => 'md', 'overlay' => true, 'close_on_overlay' => true, 'close_on_escape' => true],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('popup.rules.schedule.weekly_days', ['thursday']);
+
+        $popup->refresh();
+
+        $this->assertSame(['thursday'], $popup->rules['schedule']['weekly_days'] ?? null);
+        $this->assertSame('thursday', $popup->rules['schedule']['weekly_day'] ?? null);
     }
 }
