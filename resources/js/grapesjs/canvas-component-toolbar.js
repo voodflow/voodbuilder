@@ -13,11 +13,13 @@ import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
 import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
+import { CMD_EDIT_IMAGE, resolveImageEditTarget } from './jodit-image-editor.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 export const CMD_COPY_COMPONENT_CLASSES = 'voodbuilder:copy-component-classes';
 export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
+export { CMD_EDIT_IMAGE };
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 
@@ -105,6 +107,19 @@ function buildComponentToolbar(editor, component, labels = {}) {
             },
             label: lucideIcon('copy-plus', 16),
             command: 'tlb-clone',
+        });
+    }
+
+    if (editor.__voodbuilderImageEditorEnabled && resolveImageEditTarget(component)) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--edit-image',
+                [TOOLBAR_FLAG]: 'edit-image',
+                title: labels.editImage ?? 'Edit image',
+                'aria-label': labels.editImage ?? 'Edit image',
+            },
+            label: lucideIcon('pencil', 16),
+            command: CMD_EDIT_IMAGE,
         });
     }
 

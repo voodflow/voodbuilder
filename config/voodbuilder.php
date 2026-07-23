@@ -271,6 +271,11 @@ return [
             'directory' => 'voodbuilder/grapesjs',
             'max_size' => 4096,
         ],
+        /*
+        | In-canvas image editor (@jodit/image-editor, MIT). Requires the host app
+        | npm dependency `@jodit/image-editor`. Disable with env or config.
+        */
+        'image_editor' => env('VOODBUILDER_GRAPESJS_IMAGE_EDITOR', true),
         'include_voodbuilder_blocks' => false,
         'include_landing_blocks' => false,
         'site_blocks' => [

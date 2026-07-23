@@ -3710,6 +3710,43 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     flex-direction: column;
 }
 
+.voodbuilder-gjs-image-editor-modal__panel {
+    width: min(72rem, calc(100vw - 1.5rem));
+    max-height: min(92vh, 56rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.voodbuilder-gjs-image-editor-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.voodbuilder-gjs-image-editor-host {
+    flex: 1 1 auto;
+    min-height: 28rem;
+    height: min(78vh, 48rem);
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #0f172a0a;
+}
+
+.voodbuilder-gjs-image-editor-modal__foot,
+.voodbuilder-gjs-modal__foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-vp-divider, #e2e8f0);
+}
+
 .voodbuilder-gjs-component-code-modal__body {
     display: flex;
     flex-direction: column;
@@ -4365,6 +4402,12 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 
 .voodbuilder-gjs-btn--primary:hover:not(:disabled) {
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 88%, #000);
+}
+
+.voodbuilder-gjs-btn:disabled,
+.voodbuilder-gjs-btn--primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .voodbuilder-gjs-btn--ghost {

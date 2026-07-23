@@ -48,6 +48,7 @@ final class GrapesJsChromeLayoutEditorGate
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
             'uploadUrl' => self::editorRoute('voodbuilder.grapesjs.upload'),
+            'imageEditor' => (bool) config('voodbuilder.grapesjs.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($layout),
             'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),

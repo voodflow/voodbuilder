@@ -56,6 +56,7 @@ import { configureVpressCodeBlock } from '../editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from '../theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
 import { registerCanvasComponentToolbar, voodbuilderCopyCommandsPlugin } from '../canvas-component-toolbar.js';
+import { registerJoditImageEditor } from '../jodit-image-editor.js';
 import { registerCanvasBlockCodeEditor } from '../canvas-block-code-editor.js';
 import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport, gateGrapesAutoscrollToRealDrags } from '../canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from '../conditions-ui.js';
@@ -727,6 +728,7 @@ export function initVpressGrapesJs(container, options = {}) {
         clone: labels.clone,
         delete: labels.delete,
         editBlockCode: labels.editBlockCode,
+        editImage: labels.editImage,
         copyComponentCode: labels.copyComponentCode,
         copyComponentClasses: labels.copyComponentClasses,
         copyComponentCodeSuccess: labels.copyComponentCodeSuccess,
@@ -734,6 +736,21 @@ export function initVpressGrapesJs(container, options = {}) {
         classCopySuccess: labels.classCopySuccess,
         classCopyEmpty: labels.classCopyEmpty,
         classCopyFailed: labels.classCopyFailed,
+        imageEditorTitle: labels.imageEditorTitle,
+        imageEditorApply: labels.imageEditorApply,
+        imageEditorLoading: labels.imageEditorLoading,
+        imageEditorSaving: labels.imageEditorSaving,
+        imageEditorLoadError: labels.imageEditorLoadError,
+        imageEditorUploadError: labels.imageEditorUploadError,
+        imageEditorUploadMissing: labels.imageEditorUploadMissing,
+        dialogCancel: labels.dialogCancel,
+        modalCancel: labels.modalCancel,
+    });
+    registerJoditImageEditor(editor, {
+        enabled: options.imageEditor !== false,
+        uploadUrl: options.uploadUrl ?? '',
+        csrf: options.csrf ?? '',
+        labels,
     });
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
@@ -1742,6 +1759,7 @@ function mountFrontendEditor() {
         subTheme: config.subTheme,
         canvasPrefersDark: config.canvasPrefersDark,
         uploadUrl: config.uploadUrl,
+        imageEditor: config.imageEditor !== false,
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,
         bindingsUrl: config.bindingsUrl,

@@ -52,6 +52,7 @@ final class GrapesJsPopupEditorGate
             'exitUrl' => route('voodbuilder.popups.editor', $popup),
             'viewPageUrl' => route('voodbuilder.popups.editor', ['popup' => $popup, 'edit' => 1]),
             'uploadUrl' => self::editorRoute('voodbuilder.grapesjs.upload'),
+            'imageEditor' => (bool) config('voodbuilder.grapesjs.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($popup),
             'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),

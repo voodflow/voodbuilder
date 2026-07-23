@@ -62,5 +62,34 @@ class GrapesJsEditorGateTest extends TestCase
         $this->assertArrayHasKey('pageManager', $config['initial']);
         $this->assertArrayHasKey('blocksUrl', $config);
         $this->assertArrayNotHasKey('blocks', $config);
+        $this->assertTrue($config['imageEditor']);
+        $this->assertArrayHasKey('editImage', $config['labels']);
+        $this->assertArrayHasKey('imageEditorTitle', $config['labels']);
+    }
+
+    public function test_image_editor_can_be_disabled_via_config(): void
+    {
+        GrapesJsEditorGate::authorizeUsing(
+            static fn (SitePage $page): bool => $page->usesGrapesJsBuilder(),
+        );
+
+        config(['voodbuilder.grapesjs.image_editor' => false]);
+
+        $page = SitePage::query()->create([
+            'title' => 'Landing',
+            'slug' => 'landing-gate-image-editor-off',
+            'builder' => PageBuilder::GrapesJs,
+            'published' => true,
+            'builder_payload' => [
+                'html' => '<section>Hero</section>',
+                'css' => '',
+            ],
+        ]);
+
+        $this->app->instance('request', Request::create('/pages/landing-page?edit=1', 'GET'));
+
+        $config = GrapesJsEditorGate::config($page);
+
+        $this->assertFalse($config['imageEditor']);
     }
 }

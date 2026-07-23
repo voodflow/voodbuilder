@@ -92,6 +92,7 @@ Per hero / banner / card con foto, **non** obbligare l’utente a cacciare l’`
 Quando è selezionata la **section** (o lo slot `content`), esporre trait tipo:
 
 - `Hero image` → apre Asset Manager / aggiorna `src` dell’img in `[data-voodbuilder-role="media"] img`
+- Toolbar canvas **Modifica immagine** (Jodit) → crop/filtri sull’`img` selezionata (o sulla section `vb-bg-image`); al salvataggio fa upload e aggiorna `src` / `data-vb-bg-src`
 - opzionale: `Image opacity`, `Object position`
 
 Pattern consigliato:

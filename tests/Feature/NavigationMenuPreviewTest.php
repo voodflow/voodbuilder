@@ -75,11 +75,15 @@ class NavigationMenuPreviewTest extends TestCase
     public function test_canvas_block_code_toolbar_command_is_registered_in_editor_bundle(): void
     {
         $packagePath = VoodbuilderPaths::packagePath();
-        $editorJs = file_get_contents($packagePath.'/resources/js/grapesjs/editor.js');
+        $initJs = file_get_contents($packagePath.'/resources/js/grapesjs/editor/init.js');
+        $toolbarJs = file_get_contents($packagePath.'/resources/js/grapesjs/canvas-component-toolbar.js');
 
-        $this->assertIsString($editorJs);
-        $this->assertStringContainsString('registerCanvasBlockCodeEditor', $editorJs);
-        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', file_get_contents($packagePath.'/resources/js/grapesjs/canvas-component-toolbar.js'));
+        $this->assertIsString($initJs);
+        $this->assertStringContainsString('registerCanvasBlockCodeEditor', $initJs);
+        $this->assertStringContainsString('registerJoditImageEditor', $initJs);
+        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', $toolbarJs);
+        $this->assertStringContainsString('CMD_EDIT_IMAGE', $toolbarJs);
+        $this->assertFileExists($packagePath.'/resources/js/grapesjs/jodit-image-editor.js');
     }
 
     public function test_site_nav_block_uses_full_width_row_by_default(): void

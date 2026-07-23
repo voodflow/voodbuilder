@@ -18,11 +18,14 @@ Install npm dependencies (host app):
 
 ```bash
 npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code
+npm install -D @jodit/image-editor   # in-canvas image crop / filters (MIT)
 npm install -D esbuild react react-dom prop-types   # only for voodbuilder:build-tailblocks
 npm run build
 ```
 
 Optional GrapesJS plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/voodbuilder.php` → `grapesjs.plugins`.
+
+The **image editor** (`@jodit/image-editor`) opens from the canvas toolbar on selected images (and background-image sections). Toggle with `grapesjs.image_editor` / `VOODBUILDER_GRAPESJS_IMAGE_EDITOR`.
 
 `php artisan voodbuilder:install` patches `vite.config.js` with GrapesJS entries when possible.
 
@@ -296,10 +299,10 @@ The theme remaps GrapesJS `--gjs-*` variables to Voodbuilder tokens (`--color-vp
 
 ### Surviving GrapesJS upgrades
 
-1. Pin `grapesjs` in `package.json` (semver range, not `*`)
-2. Never edit files inside `node_modules/grapesjs`
-3. Customise only via public APIs: `Panels`, `Commands`, `appendTo`, events
-4. After `npm update`, smoke-test: open `?edit=1`, drag a block, bind a field, save, reload
+1. Pin `grapesjs` (and `@jodit/image-editor`) in `package.json` (semver range, not `*`)
+2. Never edit files inside `node_modules/grapesjs` or `node_modules/@jodit`
+3. Customise only via public APIs: `Panels`, `Commands`, `appendTo`, events, and our plugins under `resources/js/grapesjs/`
+4. After `npm update`, smoke-test: open `?edit=1`, drag a block, edit an image (toolbar pencil), bind a field, save, reload
 
 ---
 
