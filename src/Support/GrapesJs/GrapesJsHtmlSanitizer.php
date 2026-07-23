@@ -219,6 +219,16 @@ final class GrapesJsHtmlSanitizer
             $html = is_string($stripped) ? $stripped : $html;
         }
 
+        if (str_contains($html, 'data-voodbuilder-inner-drop')) {
+            $stripped = preg_replace(
+                '/<div\b[^>]*\bdata-voodbuilder-inner-drop\b[^>]*>\s*<\/div>/i',
+                '',
+                $html,
+            );
+
+            $html = is_string($stripped) ? $stripped : $html;
+        }
+
         return self::stripEditorOnlyAttributes($html);
     }
 

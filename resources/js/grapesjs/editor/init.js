@@ -113,10 +113,12 @@ import { registerSectionBlockTagging } from '../section-block-tagging.js';
 import { registerSectionNestingGuard } from '../section-nesting-guard.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from '../voodbuilder-dynamic-config.js';
 import { registerDropzoneTypes } from '../dropzone-types.js';
+import { registerInnerDropSlots } from '../inner-drop-slots.js';
 
 function voodbuilderEarlyTypesPlugin(editor, pluginOpts = {}) {
     editor.__voodbuilderLabels = pluginOpts.labels ?? editor.__voodbuilderLabels ?? {};
     registerDropzoneTypes(editor);
+    registerInnerDropSlots(editor);
     registerLinkableButtonTypes(editor);
     registerSiteNavChromeButtonType(editor);
     registerChromeContentSlotType(editor);

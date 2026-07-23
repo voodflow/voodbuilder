@@ -175,6 +175,27 @@ final class GrapesJsCanvas
             box-sizing: border-box;
         }
 
+        .voodbuilder-gjs-inner-drop-slot {
+            box-sizing: border-box;
+            display: block !important;
+            width: 100%;
+            min-height: 2.75rem !important;
+            margin: 0.25rem 0 !important;
+            padding: 0 !important;
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent) !important;
+            border-radius: 0.5rem;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+        .voodbuilder-gjs-inner-drop-slot.gjs-selected {
+            border-color: var(--color-vp-brand-1, #6366f1) !important;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
+            outline: none !important;
+        }
+
         .voodbuilder-gjs-drag-chip {
             position: relative !important;
             display: inline-flex !important;

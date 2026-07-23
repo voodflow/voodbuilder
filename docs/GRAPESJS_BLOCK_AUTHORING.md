@@ -76,6 +76,7 @@ Quando registri un `DomComponents` type custom, mappa questi attributi a:
    - la dropzone content non è riconosciuta / non è droppable;
    - oppure un overlay cattura l’hit-test;
    - oppure il blocco trascinato è tipizzato come qualcosa che la section rifiuta e GrapesJS lo appoggia sul parent sbagliato.
+5. **Drop interni** — GrapesJS, se un container ha già figli, mostra solo linee *tra* elementi. In editor VoodBuilder monta slot temporanei `data-voodbuilder-inner-drop` (flex/grid/dropzone) durante il drag così puoi annidare in fondo al container; vengono rimossi al drop/export.
 
 ### Checklist drop prima di shippare un blocco
 

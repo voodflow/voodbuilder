@@ -1056,6 +1056,16 @@
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
 }
 
+/* Inner drop slots are injected only while dragging (canvas frame CSS mirrors this). */
+.voodbuilder-gjs-inner-drop-slot {
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    margin: 0.25rem 0;
+    border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
 .voodbuilder-gjs-drag-chip {
     display: inline-flex !important;
     align-items: center;

@@ -3,6 +3,7 @@
  */
 
 import { detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport } from '../canvas-block-drag.js';
+import { detachInnerDropSlotsForExport } from '../inner-drop-slots.js';
 import { syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
 import {
     ensureComponentInstancesForExport,
@@ -152,6 +153,7 @@ export function buildPayload(editor, options = {}) {
         runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
         runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
         runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
+        runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
         runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));
         // Final bake after other syncs may have touched styles.
         runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));

@@ -86,6 +86,8 @@ class NavigationMenuPreviewTest extends TestCase
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/jodit-image-editor.js');
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/dropzone-types.js');
         $this->assertStringContainsString('registerDropzoneTypes', $initJs);
+        $this->assertFileExists($packagePath.'/resources/js/grapesjs/inner-drop-slots.js');
+        $this->assertStringContainsString('registerInnerDropSlots', $initJs);
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/image-content-settings.js');
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/image-canvas-dblclick.js');
         $this->assertStringContainsString('renderImageContentSettings', file_get_contents($packagePath.'/resources/js/grapesjs/blocks/settings/ui.js'));

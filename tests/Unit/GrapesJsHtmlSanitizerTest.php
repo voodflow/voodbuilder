@@ -103,4 +103,18 @@ class GrapesJsHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('data-vb-items-root', $sanitized);
         $this->assertStringContainsString('>A</div>', $sanitized);
     }
+
+    public function test_strips_inner_drop_slot_editor_artifacts(): void
+    {
+        $html = '<div class="flex gap-4">'
+            .'<button type="button">CTA</button>'
+            .'<div data-voodbuilder-inner-drop="1" class="voodbuilder-gjs-inner-drop-slot" aria-hidden="true"></div>'
+            .'</div>';
+
+        $cleaned = GrapesJsHtmlSanitizer::stripEditorOnlyElements($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-inner-drop', $cleaned);
+        $this->assertStringNotContainsString('voodbuilder-gjs-inner-drop-slot', $cleaned);
+        $this->assertStringContainsString('>CTA</button>', $cleaned);
+    }
 }

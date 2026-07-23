@@ -1,9 +1,10 @@
 /**
- * GrapesJS types for data-voodbuilder-dropzone="content|copy|actions".
- * Without these, tall content wrappers steal Button drops (siblings of the copy column).
+ * GrapesJS types for data-voodbuilder-dropzone="content|copy|actions"
+ * and common layout containers (flex/grid) so nesting is possible.
  */
 
 import { safeFindComponents } from './tailwind-visual-style.js';
+import { isInnerDropLayoutContainer } from './inner-drop-slots.js';
 
 function componentTag(component) {
     return String(component?.get?.('tagName') ?? '').toLowerCase();
@@ -209,6 +210,57 @@ export function registerDropzoneTypes(editor) {
                     if (isCtaLikeComponent(child) || componentTag(child) === 'a') {
                         child.set('droppable', false);
                     }
+                });
+            },
+        },
+    });
+
+    // Layout wrappers (flex/grid/gap) without an explicit dropzone attribute.
+    editor.DomComponents.addType('voodbuilder-layout-container', {
+        isComponent: (element) => {
+            if (element?.tagName !== 'DIV') {
+                return false;
+            }
+
+            if (element.getAttribute?.('data-voodbuilder-dropzone')) {
+                return false;
+            }
+
+            if (element.getAttribute?.('data-voodbuilder-inner-drop')) {
+                return false;
+            }
+
+            const className = String(element.getAttribute?.('class') ?? '');
+            const looksLikeLayout = /\b(flex|inline-flex|grid|gap-|space-[xy]-|voodbuilder-gjs-container)\b/.test(className)
+                || element.getAttribute?.('data-voodbuilder-role') === 'content';
+
+            if (! looksLikeLayout) {
+                return false;
+            }
+
+            return { type: 'voodbuilder-layout-container' };
+        },
+        extend: 'default',
+        model: {
+            defaults: {
+                tagName: 'div',
+                droppable: true,
+                highlightable: true,
+                selectable: true,
+                hoverable: true,
+                name: 'Layout',
+            },
+            init() {
+                if (! isInnerDropLayoutContainer(this)) {
+                    return;
+                }
+
+                this.set('droppable', (srcComponent) => {
+                    if (isSectionLikeComponent(srcComponent)) {
+                        return false;
+                    }
+
+                    return true;
                 });
             },
         },

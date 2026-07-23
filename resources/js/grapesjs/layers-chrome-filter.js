@@ -14,6 +14,7 @@ import {
 } from './chrome-content-slot-utils.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+const INNER_DROP_SLOT_ATTR = 'data-voodbuilder-inner-drop';
 const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
 const CONTENT_SLOT_ATTR = 'data-voodbuilder-content-slot';
 const CHROME_SHELL_PART_ATTR = 'data-voodbuilder-chrome-shell-part';
@@ -26,7 +27,7 @@ function shouldHideFromLayers(component) {
         return true;
     }
 
-    if (attrs[TOP_DROP_SPACER_ATTR]) {
+    if (attrs[TOP_DROP_SPACER_ATTR] || attrs[INNER_DROP_SLOT_ATTR]) {
         return true;
     }
 
