@@ -140,7 +140,14 @@ function runBulkStructureUpdate(editor, work) {
             }
 
             editor.trigger('voodbuilder:site-chrome-updated');
-            editor.__voodbuilderSchedulePageCssRebuild?.(200);
+
+            if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
+                // Prompt/drop still owns the suspend lock — compile after it releases.
+                editor.__voodbuilderFlushCssRebuildOnResume = true;
+            } else {
+                editor.__voodbuilderSchedulePageCssRebuild?.(200);
+            }
+
             editor.__voodbuilderAfterBulkStructureUpdate?.();
         });
     }
@@ -217,44 +224,56 @@ export function appendTemplatePayload(editor, template) {
     }
 }
 
-export async function applyPageTemplateWithPrompt(editor, template, labels = {}) {
-    let mode = 'replace';
+export async function applyPageTemplateWithPrompt(editor, template, labels = {}, options = {}) {
+    const manageSuspend = options.alreadySuspended !== true;
 
-    if (pageHasContent(editor)) {
-        const choice = await choiceDialog({
-            title: labels.pageTemplatesApplyChoiceTitle ?? 'Apply page template',
-            message: labels.pageTemplatesApplyChoiceMessage ?? 'This page already has content. Replace it or add the template below the existing content?',
-            labels,
-            choices: [
-                {
-                    id: 'replace',
-                    label: labels.pageTemplatesApplyReplace ?? 'Replace existing content',
-                    primary: true,
-                },
-                {
-                    id: 'keep',
-                    label: labels.pageTemplatesApplyKeep ?? 'Keep existing content',
-                },
-                {
-                    id: 'cancel',
-                    label: labels.dialogCancel ?? 'Cancel',
-                    ghost: true,
-                },
-            ],
-        });
+    if (manageSuspend) {
+        editor.__voodbuilderSetCssRebuildSuspended?.(true);
+    }
 
-        if (! choice || choice === 'cancel') {
-            return false;
+    try {
+        let mode = 'replace';
+
+        if (pageHasContent(editor)) {
+            const choice = await choiceDialog({
+                title: labels.pageTemplatesApplyChoiceTitle ?? 'Apply page template',
+                message: labels.pageTemplatesApplyChoiceMessage ?? 'This page already has content. Replace it or add the template below the existing content?',
+                labels,
+                choices: [
+                    {
+                        id: 'replace',
+                        label: labels.pageTemplatesApplyReplace ?? 'Replace existing content',
+                        primary: true,
+                    },
+                    {
+                        id: 'keep',
+                        label: labels.pageTemplatesApplyKeep ?? 'Keep existing content',
+                    },
+                    {
+                        id: 'cancel',
+                        label: labels.dialogCancel ?? 'Cancel',
+                        ghost: true,
+                    },
+                ],
+            });
+
+            if (! choice || choice === 'cancel') {
+                return false;
+            }
+
+            mode = choice;
         }
 
-        mode = choice;
-    }
+        if (mode === 'keep') {
+            appendTemplatePayload(editor, template);
+        } else {
+            applyTemplatePayload(editor, template);
+        }
 
-    if (mode === 'keep') {
-        appendTemplatePayload(editor, template);
-    } else {
-        applyTemplatePayload(editor, template);
+        return true;
+    } finally {
+        if (manageSuspend) {
+            editor.__voodbuilderSetCssRebuildSuspended?.(false);
+        }
     }
-
-    return true;
 }

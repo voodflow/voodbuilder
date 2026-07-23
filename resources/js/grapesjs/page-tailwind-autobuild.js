@@ -142,7 +142,11 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let settingsRetries = 0;
 
     const schedule = (delay = DEBOUNCE_MS) => {
-        if (! frameReady || editor.__voodbuilderBulkStructureUpdate) {
+        if (
+            ! frameReady
+            || editor.__voodbuilderBulkStructureUpdate
+            || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+        ) {
             return;
         }
 
@@ -172,6 +176,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         if (building) {
             queuedWhileBuilding = true;
 
+            return;
+        }
+
+        if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
             return;
         }
 
@@ -253,6 +261,34 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     };
 
     editor.__voodbuilderSchedulePageCssRebuild = schedule;
+    editor.__voodbuilderSetCssRebuildSuspended = (suspended) => {
+        const depth = Number(editor.__voodbuilderCssRebuildSuspendDepth ?? 0);
+
+        if (suspended) {
+            editor.__voodbuilderCssRebuildSuspendDepth = depth + 1;
+            clearTimeout(timer);
+            requestId += 1;
+            building = false;
+            queuedWhileBuilding = false;
+            (editor.__voodbuilderCssRebuildCancelHooks ?? []).forEach((hook) => {
+                try {
+                    hook();
+                } catch {
+                    // Ignore cancel-hook failures.
+                }
+            });
+
+            return;
+        }
+
+        const nextDepth = Math.max(0, depth - 1);
+        editor.__voodbuilderCssRebuildSuspendDepth = nextDepth;
+
+        if (nextDepth === 0 && editor.__voodbuilderFlushCssRebuildOnResume) {
+            editor.__voodbuilderFlushCssRebuildOnResume = false;
+            schedule(200);
+        }
+    };
     editor.__voodbuilderApplyPageLiveCss = (css) => {
         lastHtml = collectPageLevelHtml(editor);
         applyPageLiveCss(editor, css);

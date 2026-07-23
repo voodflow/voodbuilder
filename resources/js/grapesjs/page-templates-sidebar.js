@@ -837,18 +837,20 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
         const template = catalog.find((entry) => String(entry.id) === String(templateId));
 
-        component.remove({ children: true });
-
-        if (! template) {
-            return;
-        }
-
         applyingTemplate = true;
+        editor.__voodbuilderSetCssRebuildSuspended?.(true);
 
         try {
-            await applyPageTemplateWithPrompt(editor, template, labels);
+            component.remove({ children: true });
+
+            if (! template) {
+                return;
+            }
+
+            await applyPageTemplateWithPrompt(editor, template, labels, { alreadySuspended: true });
         } finally {
             applyingTemplate = false;
+            editor.__voodbuilderSetCssRebuildSuspended?.(false);
         }
     });
 

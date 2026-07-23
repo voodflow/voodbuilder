@@ -106,7 +106,11 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     window.setTimeout(finishInitialBuild, 5_000);
 
     const schedule = (delay = DEBOUNCE_MS) => {
-        if (! frameReady) {
+        if (
+            ! frameReady
+            || editor.__voodbuilderBulkStructureUpdate
+            || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+        ) {
             return;
         }
 
@@ -116,7 +120,17 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         }, delay);
     };
 
+    editor.__voodbuilderCssRebuildCancelHooks = editor.__voodbuilderCssRebuildCancelHooks ?? [];
+    editor.__voodbuilderCssRebuildCancelHooks.push(() => {
+        clearTimeout(timer);
+        requestId += 1;
+    });
+
     const rebuild = async () => {
+        if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
+            return;
+        }
+
         const html = collectPastedComponentsHtml(editor);
         initialBuildAttempts += 1;
 
