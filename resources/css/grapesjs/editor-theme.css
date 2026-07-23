@@ -4,11 +4,12 @@
  */
 
 /**
- * Editor chrome (topbar + left/right sidebars) uses a neutral VitePress palette
- * that follows html.dark / light — not the site sub-theme brand colors.
- * The canvas iframe keeps the real site theme for WYSIWYG.
+ * Editor chrome (topbar + left/right sidebars + editor modals) uses a neutral
+ * VitePress palette that follows html.dark / light — not the site sub-theme
+ * brand colors. The canvas iframe keeps the real site theme for WYSIWYG.
  */
-.voodbuilder-gjs-root {
+.voodbuilder-gjs-root,
+.voodbuilder-gjs-modal {
     --color-vp-bg: #ffffff;
     --color-vp-bg-alt: #f6f6f7;
     --color-vp-bg-elv: #ffffff;
@@ -24,7 +25,8 @@
     color: var(--color-vp-text-1);
 }
 
-.dark .voodbuilder-gjs-root {
+.dark .voodbuilder-gjs-root,
+.dark .voodbuilder-gjs-modal {
     --color-vp-bg: #1b1b1f;
     --color-vp-bg-alt: #161618;
     --color-vp-bg-elv: #202127;

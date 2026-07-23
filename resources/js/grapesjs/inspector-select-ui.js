@@ -138,8 +138,9 @@ function portalList(wrap, list) {
     const preferredMax = fontList ? 16 * 16 : 12 * 16;
 
     list.classList.add('voodbuilder-gjs-select-list--portal');
-    // Keep portal inside the editor root so chrome palette tokens (not site theme) apply.
-    const host = wrap.closest('.voodbuilder-gjs-root') ?? document.body;
+    // Prefer modal / editor root so chrome palette tokens (not site theme) apply.
+    const modalHost = wrap.closest('.voodbuilder-gjs-modal');
+    const host = modalHost ?? wrap.closest('.voodbuilder-gjs-root') ?? document.body;
     host.appendChild(list);
 
     const width = compact ? Math.max(rect.width, 72) : rect.width;
@@ -158,7 +159,7 @@ function portalList(wrap, list) {
     list.style.position = 'fixed';
     list.style.left = `${left}px`;
     list.style.width = `${width}px`;
-    list.style.zIndex = '10050';
+    list.style.zIndex = modalHost ? '10120' : '10050';
     list.style.maxHeight = `${maxHeight}px`;
     list.style.overflow = 'auto';
     list.style.overscrollBehavior = 'contain';

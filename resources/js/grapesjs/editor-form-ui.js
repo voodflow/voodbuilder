@@ -130,6 +130,30 @@ export function createTextField({ label, name, value = '', type = 'text', placeh
     return { field, input };
 }
 
+export function createTextareaField({ label, name, value = '', placeholder = '', rows = 3, required = false }) {
+    const id = fieldId(name);
+    const field = document.createElement('div');
+    field.className = 'voodbuilder-gjs-form-field';
+
+    const labelEl = document.createElement('label');
+    labelEl.className = 'voodbuilder-gjs-form-label';
+    labelEl.htmlFor = id;
+    labelEl.textContent = label;
+
+    const input = document.createElement('textarea');
+    input.id = id;
+    input.name = name;
+    input.className = 'voodbuilder-gjs-input voodbuilder-gjs-input--textarea';
+    input.value = value ?? '';
+    input.placeholder = placeholder;
+    input.rows = rows;
+    input.required = required;
+
+    field.append(labelEl, input);
+
+    return { field, input };
+}
+
 export function createCheckboxField({ label, name, checked, onChange }) {
     const id = fieldId(name);
     const field = document.createElement('div');
