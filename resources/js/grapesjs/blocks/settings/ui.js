@@ -36,6 +36,7 @@ import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
 import { createInspectorEmptyState } from '../../inspector-empty-state.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
 import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
+import { isImageSettingsComponent, renderImageContentSettings } from '../../image-content-settings.js';
 import { ensureSmartCtaButton } from '../../grapesjs-button-link.js';
 
 /**
@@ -423,6 +424,22 @@ export function registerSettingsUi(editor, mount) {
             if (isCtaButtonComponent(rawSelected) || rawSelected.get?.('type') === 'voodbuilder-cta-button') {
                 closeAllInspectorSelects();
                 renderCtaButtonSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isImageSettingsComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderImageContentSettings({
                     mount,
                     traitsMount,
                     component: rawSelected,

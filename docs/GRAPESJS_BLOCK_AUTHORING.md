@@ -12,6 +12,7 @@ Contesto tipico del problema: hero a strati (media assoluto + shade + contenuto 
 2. **Una responsabilità per layer** — media, shade, contenuto editabile sono nodi distinti e nominati.
 3. **Drop solo dove ha senso** — zone drop esplicite; layer decorativi non droppable.
 4. **Content panel prima del click sul canvas** — media e CTA devono avere trait/opzioni quando selezioni la section o lo slot contenuto.
+5. **Immagini statiche** — nel pannello Content (colonna destra): URL + Scegli/Rimuovi (Asset Manager), alt per img inline, opacità/fit/posizione per hero background. Niente controlli se l’immagine ha binding dinamico.
 5. **Token tema** — `bg-vp-*`, `text-vp-*`, `border-vp-*` (niente `dark:` hardcoded). Eccezione: bande cinematiche sempre scure (`bg-zinc-950`) se intenzionali.
 6. **Niente nav/footer** nei page template starter (chrome-shell già li fornisce).
 

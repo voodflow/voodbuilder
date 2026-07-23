@@ -86,6 +86,8 @@ class NavigationMenuPreviewTest extends TestCase
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/jodit-image-editor.js');
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/dropzone-types.js');
         $this->assertStringContainsString('registerDropzoneTypes', $initJs);
+        $this->assertFileExists($packagePath.'/resources/js/grapesjs/image-content-settings.js');
+        $this->assertStringContainsString('renderImageContentSettings', file_get_contents($packagePath.'/resources/js/grapesjs/blocks/settings/ui.js'));
     }
 
     public function test_site_nav_block_uses_full_width_row_by_default(): void
