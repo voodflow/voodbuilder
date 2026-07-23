@@ -11,17 +11,15 @@ use Voodflow\Voodbuilder\Voodbuilder;
  */
 final class VoodbuilderLanding01Sections
 {
-    public const TEMPLATE_NAME = 'VoodBuilder landing 01';
+    public const TEMPLATE_NAME = 'Landing 01';
 
     public static function registerBlocks(): void
     {
-        $category = 'Voodbuilder / Landing 01';
-
         foreach (self::blockDefinitions() as $definition) {
             Voodbuilder::grapesJsBlock(
                 $definition['id'],
                 $definition['label'],
-                $category,
+                $definition['category'],
                 $definition['content'],
                 ['title' => $definition['label']],
             );
@@ -29,39 +27,45 @@ final class VoodbuilderLanding01Sections
     }
 
     /**
-     * @return list<array{id: string, label: string, content: string}>
+     * @return list<array{id: string, label: string, category: string, content: string}>
      */
     public static function blockDefinitions(): array
     {
         return [
             [
                 'id' => 'vb-landing01-hero',
-                'label' => 'Landing 01 · Hero',
+                'label' => 'Gradient hero',
+                'category' => 'Hero',
                 'content' => self::hero(),
             ],
             [
                 'id' => 'vb-landing01-features',
-                'label' => 'Landing 01 · Features',
+                'label' => 'Feature cards · 4',
+                'category' => 'Features',
                 'content' => self::features(),
             ],
             [
                 'id' => 'vb-landing01-solution',
-                'label' => 'Landing 01 · Solution',
+                'label' => 'Solution split',
+                'category' => 'Content',
                 'content' => self::solution(),
             ],
             [
                 'id' => 'vb-landing01-testimonials',
-                'label' => 'Landing 01 · Testimonials',
+                'label' => 'Testimonials masonry',
+                'category' => 'Testimonials',
                 'content' => self::testimonials(),
             ],
             [
                 'id' => 'vb-landing01-articles',
-                'label' => 'Landing 01 · Articles',
+                'label' => 'Article cards · 3',
+                'category' => 'Articles',
                 'content' => self::articles(),
             ],
             [
                 'id' => 'vb-landing01-cta',
-                'label' => 'Landing 01 · CTA',
+                'label' => 'Community CTA',
+                'category' => 'CTA',
                 'content' => self::cta(),
             ],
         ];
@@ -88,7 +92,7 @@ final class VoodbuilderLanding01Sections
   <div class="voodbuilder-gjs-container relative px-5 pb-16 pt-28">
     <div class="mx-auto max-w-3xl text-center">
       <h1 class="text-balance text-5xl font-bold text-vp-text-1 md:text-6xl xl:text-7xl">Ship marketing pages with <span class="text-vp-brand-1">VoodBuilder.</span></h1>
-      <p class="mt-8 text-lg leading-relaxed text-vp-text-2">Visual landings for Laravel teams — GrapesJS editing, Filament admin, and theme tokens that follow light and dark mode automatically.</p>
+      <p class="mt-8 text-lg leading-relaxed text-vp-text-2">Visual landings for Laravel teams — visual editing, Filament admin, and theme tokens that follow light and dark mode automatically.</p>
       <div class="mt-12 flex flex-wrap justify-center gap-4">
         <a href="#" class="inline-flex h-11 items-center justify-center rounded-full bg-vp-brand-1 px-8 text-base font-semibold text-white transition hover:bg-vp-brand-2">Get started</a>
         <a href="#" class="inline-flex h-11 items-center justify-center rounded-full border border-vp-divider bg-vp-bg-alt px-8 text-base font-semibold text-vp-text-1 transition hover:bg-vp-bg-elv">Learn more</a>
@@ -112,7 +116,7 @@ final class VoodbuilderLanding01Sections
       <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Laravel</div>
       <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Filament</div>
       <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Livewire</div>
-      <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">GrapesJS</div>
+      <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Builder</div>
       <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Tailwind</div>
       <div class="flex items-center justify-center rounded-xl border border-vp-divider bg-vp-bg-elv px-3 py-4 text-xs font-semibold uppercase tracking-wide text-vp-text-3">Vite</div>
     </div>
@@ -133,7 +137,7 @@ HTML;
     </div>
     <div class="mt-16 grid overflow-hidden rounded-3xl border border-vp-divider sm:grid-cols-2 lg:grid-cols-4">
       <div class="group relative border-vp-divider bg-vp-bg-elv p-8 transition hover:z-[1] hover:shadow-xl sm:border-r lg:border-b-0">
-        <h5 class="text-xl font-semibold text-vp-text-1 transition group-hover:text-vp-brand-1">GrapesJS editor</h5>
+        <h5 class="text-xl font-semibold text-vp-text-1 transition group-hover:text-vp-brand-1">Visual editor</h5>
         <p class="mt-3 text-sm leading-relaxed text-vp-text-2">Edit published pages in the browser with drag-and-drop sections and live preview.</p>
         <a href="#" class="mt-6 inline-flex items-center text-sm font-medium text-vp-brand-1">Read more</a>
       </div>
@@ -217,7 +221,7 @@ HTML;
             <p class="text-sm text-vp-text-3">Product designer</p>
           </div>
         </div>
-        <p class="mt-8 leading-relaxed">We replaced scattered landing repos with VoodBuilder. Marketing iterates in GrapesJS while engineering keeps Laravel and Filament as the source of truth.</p>
+        <p class="mt-8 leading-relaxed">We replaced scattered landing repos with VoodBuilder. Marketing iterates in the visual editor while engineering keeps Laravel and Filament as the source of truth.</p>
       </div>
       <div class="break-inside-avoid rounded-3xl border border-vp-divider bg-vp-bg-elv p-8 shadow-sm">
         <div class="flex gap-4">
@@ -307,7 +311,7 @@ HTML;
         <div class="overflow-hidden rounded-xl">
           <img src="{$image}" alt="" class="h-56 w-full object-cover transition duration-500 hover:scale-105" width="800" height="500" loading="lazy" />
         </div>
-        <h3 class="mt-6 text-2xl font-semibold text-vp-text-1">GrapesJS in production Laravel apps</h3>
+        <h3 class="mt-6 text-2xl font-semibold text-vp-text-1">Visual builder in production Laravel apps</h3>
         <p class="mt-4 mb-6 text-vp-text-2">Permissions, publish flow and keeping the public chrome in sync with the canvas.</p>
         <a href="#" class="inline-block text-sm font-medium text-vp-brand-1">Read more</a>
       </article>

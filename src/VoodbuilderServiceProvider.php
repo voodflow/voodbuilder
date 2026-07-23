@@ -74,7 +74,10 @@ use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding01Sections;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding02Sections;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding03Sections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
+use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
 use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
@@ -308,6 +311,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             }
 
             VoodbuilderLanding01Sections::registerBlocks();
+            VoodbuilderLanding02Sections::registerBlocks();
+            VoodbuilderLanding03Sections::registerBlocks();
+            VoodbuilderMediaSections::registerBlocks();
 
             if (config('voodbuilder.chrome_layouts.enabled', true)) {
                 $registry->register(ChromeLayoutContentSlotBlock::definition());

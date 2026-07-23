@@ -2,6 +2,8 @@
  * Frontend runtime for VoodBuilder GrapesJS utility blocks (carousel, counters, CTA, logos, …).
  */
 
+import { initScrollSliders } from './slider-runtime.js';
+
 function wordsInElement(element) {
     const text = element?.innerText ?? element?.textContent ?? '';
 
@@ -131,6 +133,10 @@ export function initCarousels() {
 
 export function initSliders() {
     document.querySelectorAll('[data-voodbuilder-slider]').forEach((root) => {
+        if (root.classList.contains('voodbuilder-slider') || root.querySelector('.voodbuilder-slider__track')) {
+            return;
+        }
+
         if (root.dataset.vbSliderReady === '1') {
             return;
         }
@@ -170,6 +176,7 @@ export function initVbRuntime() {
     initSocialShare();
     initCarousels();
     initSliders();
+    initScrollSliders();
     initAnimatedCounters();
     initAnimatedCtas();
     initViewportAnimations();

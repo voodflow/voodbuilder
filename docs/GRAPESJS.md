@@ -94,6 +94,8 @@ HTML,
 
 Blocks are **global** (all pages). Group by `category` (e.g. your theme name) for clarity.
 
+For layered heroes, dropzones, Content-panel media traits, and editor≈public CSS rules, see **[GRAPESJS_BLOCK_AUTHORING.md](./GRAPESJS_BLOCK_AUTHORING.md)**.
+
 ---
 
 ## Register dynamic blocks (server-rendered)
