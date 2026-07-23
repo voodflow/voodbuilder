@@ -9,7 +9,7 @@
 @source '../grapesjs/voodbuilder-home-landing-catalog.html';
 @source '../../src/Support/GrapesJs/VoodbuilderLanding01Sections.php';
 @source '../../src/Support/GrapesJs/VoodbuilderLanding02Sections.php';
-@source '../../src/Support/GrapesJs/VoodbuilderNasaSections.php';
+@source '../../src/Support/GrapesJs/VoodbuilderLanding03Sections.php';
 @source '../../src/Support/GrapesJs/VoodbuilderMediaSections.php';
 @source '../../views/grapesjs/blocks/footers/**/*.blade.php';
 @source '../../views/grapesjs/blocks/nav/**/*.blade.php';

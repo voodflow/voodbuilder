@@ -93,7 +93,7 @@ final class VoodbuilderLanding01Sections
     <div class="mx-auto max-w-3xl text-center">
       <h1 class="text-balance text-5xl font-bold text-vp-text-1 md:text-6xl xl:text-7xl">Ship marketing pages with <span class="text-vp-brand-1">VoodBuilder.</span></h1>
       <p class="mt-8 text-lg leading-relaxed text-vp-text-2">Visual landings for Laravel teams — visual editing, Filament admin, and theme tokens that follow light and dark mode automatically.</p>
-      <div class="mt-12 flex flex-wrap justify-center gap-4">
+      <div class="mt-12 flex flex-wrap justify-center gap-4" data-voodbuilder-dropzone="actions">
         <a href="#" class="inline-flex h-11 items-center justify-center rounded-full bg-vp-brand-1 px-8 text-base font-semibold text-white transition hover:bg-vp-brand-2">Get started</a>
         <a href="#" class="inline-flex h-11 items-center justify-center rounded-full border border-vp-divider bg-vp-bg-alt px-8 text-base font-semibold text-vp-text-1 transition hover:bg-vp-bg-elv">Learn more</a>
       </div>

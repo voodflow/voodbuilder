@@ -21,6 +21,9 @@ class VoodbuilderLanding03SectionsTest extends TestCase
         $this->assertStringContainsString('vb-nasa-hero', $html);
         $this->assertStringContainsString('vb-nasa-missions', $html);
         $this->assertStringContainsString('voodbuilder-hero-media__img', $html);
+        $this->assertStringContainsString('data-voodbuilder-dropzone="actions"', $html);
+        $this->assertStringContainsString('data-voodbuilder-dropzone="copy"', $html);
+        $this->assertStringNotContainsString('data-voodbuilder-dropzone="content"', $html);
         $this->assertStringNotContainsString('GrapesJS', $html);
         $this->assertStringNotContainsString('dark:', $html);
         $this->assertStringNotContainsString('jpl.nasa.gov', $html);

@@ -84,6 +84,8 @@ class NavigationMenuPreviewTest extends TestCase
         $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', $toolbarJs);
         $this->assertStringContainsString('CMD_EDIT_IMAGE', $toolbarJs);
         $this->assertFileExists($packagePath.'/resources/js/grapesjs/jodit-image-editor.js');
+        $this->assertFileExists($packagePath.'/resources/js/grapesjs/dropzone-types.js');
+        $this->assertStringContainsString('registerDropzoneTypes', $initJs);
     }
 
     public function test_site_nav_block_uses_full_width_row_by_default(): void

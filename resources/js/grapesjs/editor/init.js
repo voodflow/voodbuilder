@@ -111,9 +111,11 @@ import { registerBlocksLibraryRenderHook } from '../blocks-library-sync.js';
 import { registerSectionBlockTagging } from '../section-block-tagging.js';
 import { registerSectionNestingGuard } from '../section-nesting-guard.js';
 import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from '../voodbuilder-dynamic-config.js';
+import { registerDropzoneTypes } from '../dropzone-types.js';
 
 function voodbuilderEarlyTypesPlugin(editor, pluginOpts = {}) {
     editor.__voodbuilderLabels = pluginOpts.labels ?? editor.__voodbuilderLabels ?? {};
+    registerDropzoneTypes(editor);
     registerLinkableButtonTypes(editor);
     registerSiteNavChromeButtonType(editor);
     registerChromeContentSlotType(editor);

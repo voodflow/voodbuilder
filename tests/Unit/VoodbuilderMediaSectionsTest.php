@@ -32,7 +32,10 @@ class VoodbuilderMediaSectionsTest extends TestCase
 
         $this->assertStringContainsString('data-voodbuilder-role="media"', $html);
         $this->assertStringContainsString('data-voodbuilder-role="shade"', $html);
-        $this->assertStringContainsString('data-voodbuilder-dropzone="content"', $html);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $html);
+        $this->assertStringContainsString('data-voodbuilder-dropzone="actions"', $html);
+        $this->assertStringContainsString('data-voodbuilder-dropzone="copy"', $html);
+        $this->assertStringNotContainsString('data-voodbuilder-dropzone="content"', $html);
         $this->assertStringContainsString('voodbuilder-hero-media__img', $html);
         $this->assertStringContainsString('data-vb-bg-size="cover"', $html);
         $this->assertStringContainsString('data-vb-min-height="70vh"', $html);

@@ -101,14 +101,14 @@ final class VoodbuilderLanding03Sections
     <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="opacity:0.55;" loading="eager" />
     <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent"></div>
   </div>
-  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" data-voodbuilder-dropzone="content" style="min-height:70vh;">
+  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" style="min-height:70vh;">
     <div class="max-w-3xl">
       <div data-voodbuilder-dropzone="copy">
         <p class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-vp-brand-2">Featured</p>
         <h1 class="mb-5 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-7xl">Build pages that go where your stack already is</h1>
         <p class="max-w-xl text-lg leading-relaxed text-zinc-200 lg:text-2xl lg:leading-snug">VoodBuilder is the visual surface for Laravel sites — visual landings, Filament admin, and theme tokens that survive light and dark mode.</p>
       </div>
-      <div class="mt-8" data-voodbuilder-dropzone="actions">
+      <div class="mt-8 flex min-h-12 flex-wrap items-center gap-4" data-voodbuilder-dropzone="actions">
         <a href="#" class="inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-vp-brand-1 decoration-2 underline-offset-4 hover:text-vp-brand-2">Explore VoodBuilder</a>
       </div>
     </div>

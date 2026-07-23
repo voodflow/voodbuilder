@@ -656,6 +656,7 @@ function registerLinkableButtonType(editor) {
                 linkRef: '',
                 ctaLabel: 'Button',
                 editable: false,
+                droppable: false,
                 layerable: true,
                 name: 'Button',
             },

@@ -35,5 +35,7 @@ class StarterPageTemplatesTest extends TestCase
         $this->assertStringContainsString('vb-nasa-hero', $landing03['html']);
         $this->assertStringContainsString('voodbuilder-hero-media__img', $landing03['html']);
         $this->assertStringContainsString('data-voodbuilder-dropzone="actions"', $landing03['html']);
+        $this->assertStringContainsString('data-voodbuilder-dropzone="copy"', $landing03['html']);
+        $this->assertStringNotContainsString('data-voodbuilder-dropzone="content"', $landing03['html']);
     }
 }

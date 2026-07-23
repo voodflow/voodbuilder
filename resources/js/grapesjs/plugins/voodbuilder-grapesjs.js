@@ -32,6 +32,7 @@ import { setChromeVisible } from '../chrome/visibility.js';
 import { runWithSettingsChangeGuard } from '../blocks/settings/ui.js';
 import { registerLinkableButtonTypes } from '../grapesjs-button-link.js';
 import { registerMediaSectionTypes } from '../media-section-types.js';
+import { registerDropzoneTypes } from '../dropzone-types.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
 import {
     isClearedBackground,
@@ -1656,6 +1657,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     editor.__voodbuilderLabels = options.labels ?? {};
 
     registerTopDropSpacerType(editor);
+    registerDropzoneTypes(editor);
     registerLinkableButtonTypes(editor);
     registerMediaSectionTypes(editor);
     registerBoundComponentType(editor);

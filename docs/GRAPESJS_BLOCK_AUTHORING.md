@@ -79,6 +79,7 @@ Quando registri un `DomComponents` type custom, mappa questi attributi a:
 ### Checklist drop prima di shippare un blocco
 
 - [ ] Posso droppare un **Button** della libreria **dentro** `data-voodbuilder-dropzone="actions"` senza che finisca fuori dalla section.
+- [ ] Il contenitore hero a tutta altezza **non** ha `data-voodbuilder-dropzone="content"` (solo `data-voodbuilder-role="content"`): altrimenti ruba i drop dei Button.
 - [ ] Posso droppare testo/heading in `copy`.
 - [ ] Shade e media **non** accettano drop (nessun highlight di drop su di loro).
 - [ ] In Layers i nomi sono chiari (niente tre `Div` anonimi di fila).

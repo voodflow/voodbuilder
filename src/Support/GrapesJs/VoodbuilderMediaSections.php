@@ -67,14 +67,14 @@ final class VoodbuilderMediaSections
     <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="opacity:0.55;object-fit:cover;object-position:center;" loading="eager" />
     <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade"></div>
   </div>
-  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" data-voodbuilder-dropzone="content" style="min-height:70vh;">
+  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" style="min-height:70vh;">
     <div class="max-w-3xl">
       <div data-voodbuilder-dropzone="copy">
         <p class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-vp-brand-2">Featured</p>
         <h1 class="mb-5 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">Tell your story on a full-bleed canvas</h1>
         <p class="max-w-xl text-lg leading-relaxed text-zinc-200">Drop headings, copy, and buttons into the content area. The background image stays behind your message in the page builder and on the live site.</p>
       </div>
-      <div class="mt-8" data-voodbuilder-dropzone="actions">
+      <div class="mt-8 flex min-h-12 flex-wrap items-center gap-4" data-voodbuilder-dropzone="actions">
         <a href="#" class="inline-flex items-center gap-2 rounded-lg bg-vp-brand-1 px-6 py-3 text-sm font-semibold text-white hover:bg-vp-brand-2">Get started</a>
       </div>
     </div>
@@ -93,14 +93,14 @@ HTML;
     <video class="voodbuilder-hero-media__video" poster="{$poster}" muted autoplay loop playsinline></video>
     <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade"></div>
   </div>
-  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" data-voodbuilder-dropzone="content" style="min-height:70vh;">
+  <div class="voodbuilder-gjs-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" style="min-height:70vh;">
     <div class="max-w-3xl">
       <div data-voodbuilder-dropzone="copy">
         <p class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-vp-brand-2">Showreel</p>
         <h1 class="mb-5 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">Hero with background video</h1>
         <p class="max-w-xl text-lg leading-relaxed text-zinc-200">Set the video source from the content panel. Muted autoplay keeps motion accessible while visitors read your headline.</p>
       </div>
-      <div class="mt-8" data-voodbuilder-dropzone="actions">
+      <div class="mt-8 flex min-h-12 flex-wrap items-center gap-4" data-voodbuilder-dropzone="actions">
         <a href="#" class="inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-vp-brand-1 decoration-2 underline-offset-4 hover:text-vp-brand-2">Watch the full story</a>
       </div>
     </div>
