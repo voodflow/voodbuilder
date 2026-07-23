@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Filament\Livewire;
 
 use Filament\Actions\Action;
-use Filament\Notifications\Livewire\DatabaseNotifications as BaseDatabaseNotifications;
+use Filament\Livewire\DatabaseNotifications as PanelDatabaseNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -14,7 +14,13 @@ use Relaticle\Comments\Notifications\CommentRepliedNotification;
 use Relaticle\Comments\Notifications\UserMentionedNotification;
 use Voodflow\Voodbuilder\Support\SiteNotificationPresenter;
 
-class AdminDatabaseNotifications extends BaseDatabaseNotifications
+/**
+ * Admin panel database notifications.
+ *
+ * Extends Filament's panel Livewire component (not the base notifications one)
+ * so the topbar/sidebar bell trigger is rendered.
+ */
+class AdminDatabaseNotifications extends PanelDatabaseNotifications
 {
     public function getNotificationsQuery(): Builder|Relation
     {
