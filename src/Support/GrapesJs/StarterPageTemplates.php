@@ -142,6 +142,14 @@ class StarterPageTemplates
                 'css' => null,
                 'js' => null,
             ],
+            [
+                'name' => VoodbuilderLanding01Sections::TEMPLATE_NAME,
+                'category' => 'Landing pages',
+                'description' => 'Astrolus-style VoodBuilder landing: hero, features, solution, testimonials, articles and CTA.',
+                'html' => VoodbuilderLanding01Sections::pageHtml(),
+                'css' => null,
+                'js' => null,
+            ],
         ];
     }
 
