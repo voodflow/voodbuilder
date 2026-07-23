@@ -652,11 +652,62 @@ function removeEmptyRules(root) {
 }
 
 /**
+ * Split a selector list on top-level commas only (ignore commas inside :where/:is/:not/…).
+ *
+ * @param {string} selectorList
+ * @returns {string[]}
+ */
+function splitSelectorList(selectorList) {
+    const parts = [];
+    let current = '';
+    let depth = 0;
+
+    for (const char of String(selectorList)) {
+        if (char === '(') {
+            depth += 1;
+            current += char;
+
+            continue;
+        }
+
+        if (char === ')') {
+            depth = Math.max(0, depth - 1);
+            current += char;
+
+            continue;
+        }
+
+        if (char === ',' && depth === 0) {
+            const trimmed = current.trim();
+
+            if (trimmed !== '') {
+                parts.push(trimmed);
+            }
+
+            current = '';
+
+            continue;
+        }
+
+        current += char;
+    }
+
+    const trimmed = current.trim();
+
+    if (trimmed !== '') {
+        parts.push(trimmed);
+    }
+
+    return parts;
+}
+
+/**
  * Resolve nested selector lists (`&:hover` → `.foo:hover`).
+ * Must not split commas inside functional pseudo-classes (:where, :is, :not).
  */
 function resolveNestedSelector(parentSelector, nestedSelector) {
-    const parents = String(parentSelector).split(',').map((part) => part.trim()).filter(Boolean);
-    const nesteds = String(nestedSelector).split(',').map((part) => part.trim()).filter(Boolean);
+    const parents = splitSelectorList(parentSelector);
+    const nesteds = splitSelectorList(nestedSelector);
     const resolved = [];
 
     for (const parent of parents) {
@@ -955,7 +1006,7 @@ async function main() {
     const entryCss = `@import 'tailwindcss';
 @import 'tailwindcss-animated';
 @plugin '@tailwindcss/typography';
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 @theme {
     --breakpoint-vp: 60rem;
 

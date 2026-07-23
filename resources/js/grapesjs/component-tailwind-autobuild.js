@@ -49,9 +49,10 @@ function injectLiveComponentCss(editor, css) {
     if (! styleEl) {
         styleEl = doc.createElement('style');
         styleEl.id = LIVE_STYLE_ID;
-        doc.head.appendChild(styleEl);
     }
 
+    // Keep live JIT last so dark:/responsive utilities win over canvas theme sheets.
+    doc.head.appendChild(styleEl);
     styleEl.textContent = String(css ?? '').trim();
 }
 

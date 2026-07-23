@@ -117,7 +117,7 @@ class GrapesJsPastedComponentNormalizerTest extends TestCase
 
         $this->assertStringContainsString('voodbuilder-pasted-component', $result['html']);
         $this->assertMatchesRegularExpression('/\bclass="[^"]*\bdark\b[^"]*voodbuilder-pasted-component/', $result['html']);
-        $this->assertStringContainsString(':where(.dark', (string) $result['css']);
+        $this->assertStringContainsString(':is(.dark', (string) $result['css']);
         $this->assertStringNotContainsString('prefers-color-scheme: dark', (string) $result['css']);
     }
 

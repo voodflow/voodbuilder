@@ -12,7 +12,7 @@
 @import './grapesjs/chrome-block-utilities.css';
 @import './grapesjs/animated-blocks.css';
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
 
 /*
@@ -28,6 +28,7 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
+@source '../js/grapesjs/popups-ui.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source not '../../tests/**/*';
 @source not '../../../../../packages/**/tests/**/*';
