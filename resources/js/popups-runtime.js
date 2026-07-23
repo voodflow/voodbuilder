@@ -3,9 +3,11 @@
  */
 
 import popupShellCss from '../css/grapesjs/popup-shell.css?inline';
+import { scopePopupCss } from './popup-css-scope.js';
 
 const STORAGE_PREFIX = 'voodbuilder-popup:';
 const POPUP_SHELL_CSS = String(popupShellCss ?? '');
+const POPUP_SHELL_STYLE_ID = 'voodbuilder-popup-shell-css';
 
 let eventsEndpoint = null;
 
@@ -158,6 +160,19 @@ function closeMountedPopups() {
     document.documentElement.classList.remove('voodbuilder-popup-open');
 }
 
+function ensurePopupShellCss() {
+    let shellStyle = document.getElementById(POPUP_SHELL_STYLE_ID);
+
+    if (! shellStyle) {
+        shellStyle = document.createElement('style');
+        shellStyle.id = POPUP_SHELL_STYLE_ID;
+        shellStyle.textContent = POPUP_SHELL_CSS;
+    }
+
+    // Keep shell after popup utilities in the cascade (layout overrides must win).
+    document.body.appendChild(shellStyle);
+}
+
 function mountPopup(popup, { preview = false, onClose = null } = {}) {
     if (! preview && hasSeen(popup)) {
         return null;
@@ -202,17 +217,10 @@ function mountPopup(popup, { preview = false, onClose = null } = {}) {
 
     if (popup.css) {
         const style = document.createElement('style');
-        style.textContent = popup.css;
-        root.appendChild(style);
-    }
-
-    const shellStyleId = 'voodbuilder-popup-shell-css';
-
-    if (! document.getElementById(shellStyleId)) {
-        const shellLink = document.createElement('style');
-        shellLink.id = shellStyleId;
-        shellLink.textContent = POPUP_SHELL_CSS;
-        document.head.appendChild(shellLink);
+        style.setAttribute('data-voodbuilder-popup-css', '');
+        // Scope utilities under the popup body so page md:/lg: layout cannot be overridden.
+        style.textContent = scopePopupCss(popup.css);
+        body.prepend(style);
     }
 
     panel.append(closeButton, body);
@@ -307,6 +315,7 @@ function mountPopup(popup, { preview = false, onClose = null } = {}) {
     }
 
     document.body.appendChild(root);
+    ensurePopupShellCss();
     document.documentElement.classList.add('voodbuilder-popup-open');
     root.hidden = false;
 
