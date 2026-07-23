@@ -1092,6 +1092,21 @@
     color: var(--color-vp-text-1, #0f172a);
 }
 
+/*
+ * GrapesJS Asset Manager / Modal defaults to z-index: 100, which sits under our
+ * editor shell (toolbar ~10040). Without this, dblclick-on-image looks broken.
+ */
+.gjs-mdl-container {
+    z-index: 10100 !important;
+}
+
+.gjs-mdl-dialog {
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #0f172a);
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    box-shadow: 0 20px 45px rgb(15 23 42 / 25%);
+}
+
 /* Classes sector: Copy button (Shuffle-style) */
 .voodbuilder-gjs-inspector-sector__title--with-actions {
     justify-content: flex-start;

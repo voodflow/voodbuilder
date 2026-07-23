@@ -57,6 +57,7 @@ import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyE
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
 import { registerCanvasComponentToolbar, voodbuilderCopyCommandsPlugin } from '../canvas-component-toolbar.js';
 import { registerJoditImageEditor } from '../jodit-image-editor.js';
+import { registerImageCanvasDblClick } from '../image-canvas-dblclick.js';
 import { registerCanvasBlockCodeEditor } from '../canvas-block-code-editor.js';
 import { registerCanvasBlockDrag, detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport, gateGrapesAutoscrollToRealDrags } from '../canvas-block-drag.js';
 import { registerConditionsUi, registerConditionsPersistence, syncConditionsForExport } from '../conditions-ui.js';
@@ -755,6 +756,7 @@ export function initVpressGrapesJs(container, options = {}) {
         csrf: options.csrf ?? '',
         labels,
     });
+    registerImageCanvasDblClick(editor);
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
     editor.__voodbuilderChromeShellName = options.chromeShellName ?? options.chromeLayoutName ?? null;
