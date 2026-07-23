@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BuilderPopup extends Model
 {
@@ -15,7 +16,10 @@ class BuilderPopup extends Model
 
     protected $fillable = [
         'name',
+        'description',
+        'locale',
         'enabled',
+        'paused',
         'priority',
         'rules',
         'html',
@@ -30,9 +34,18 @@ class BuilderPopup extends Model
     {
         return [
             'enabled' => 'boolean',
+            'paused' => 'boolean',
             'priority' => 'integer',
             'rules' => 'array',
         ];
+    }
+
+    /**
+     * @return HasMany<BuilderPopupEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(BuilderPopupEvent::class, 'popup_id');
     }
 
     /**
@@ -72,6 +85,15 @@ class BuilderPopup extends Model
             'frequency' => [
                 'mode' => 'session',
                 'days' => 7,
+            ],
+            'schedule' => [
+                'start_at' => null,
+                'end_at' => null,
+                'weekly_days' => [],
+                'weekly_day' => '',
+                'timezone' => null,
+                'weekly_start_time' => '',
+                'weekly_end_time' => '',
             ],
             'targeting' => [
                 'match' => 'any',

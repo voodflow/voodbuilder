@@ -7,6 +7,8 @@ import popupShellCss from '../css/grapesjs/popup-shell.css?inline';
 const STORAGE_PREFIX = 'voodbuilder-popup:';
 const POPUP_SHELL_CSS = String(popupShellCss ?? '');
 
+let eventsEndpoint = null;
+
 function readConfig() {
     const node = document.querySelector('[data-voodbuilder-popups-config]');
 
@@ -18,6 +20,42 @@ function readConfig() {
         return JSON.parse(node.textContent ?? '{}');
     } catch {
         return null;
+    }
+}
+
+function csrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function trackPopupEvent(popupId, event, extra = {}) {
+    if (! eventsEndpoint || ! popupId) {
+        return;
+    }
+
+    const payload = {
+        popup_id: popupId,
+        event,
+        page_path: window.location.pathname || '',
+        ...extra,
+    };
+
+    try {
+        fetch(eventsEndpoint, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-XSRF-TOKEN': csrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+            keepalive: true,
+        }).catch(() => {});
+    } catch {
+        // Ignore analytics failures.
     }
 }
 
@@ -120,7 +158,7 @@ function closeMountedPopups() {
     document.documentElement.classList.remove('voodbuilder-popup-open');
 }
 
-function mountPopup(popup, { preview = false } = {}) {
+function mountPopup(popup, { preview = false, onClose = null } = {}) {
     if (! preview && hasSeen(popup)) {
         return null;
     }
@@ -153,7 +191,7 @@ function mountPopup(popup, { preview = false } = {}) {
 
     const closeButton = document.createElement('button');
     closeButton.type = 'button';
-    closeButton.className = 'absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-vp-bg-elv text-vp-text-2 hover:text-vp-text-1';
+    closeButton.className = 'voodbuilder-popup-close';
     closeButton.dataset.voodbuilderPopupClose = '';
     closeButton.innerHTML = '&times;';
     closeButton.setAttribute('aria-label', 'Close');
@@ -186,8 +224,9 @@ function mountPopup(popup, { preview = false } = {}) {
     }
 
     let closed = false;
+    let trackedCta = false;
 
-    const close = () => {
+    const close = (reason = 'button') => {
         if (closed) {
             return;
         }
@@ -198,31 +237,59 @@ function mountPopup(popup, { preview = false } = {}) {
 
         if (! preview) {
             markSeen(popup);
+            trackPopupEvent(popup.id, 'closed', { close_reason: reason });
+        }
+
+        if (typeof onClose === 'function') {
+            onClose();
         }
     };
 
-    const bindClose = (element) => {
+    const bindClose = (element, reason) => {
         element.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            close();
+            close(reason);
         });
     };
 
     if (overlayEnabled && display.close_on_overlay !== false) {
-        bindClose(overlay);
+        bindClose(overlay, 'overlay');
     }
 
-    bindClose(closeButton);
+    bindClose(closeButton, 'button');
 
     body.querySelectorAll('[data-voodbuilder-popup-close]').forEach((element) => {
-        bindClose(element);
+        bindClose(element, 'content');
     });
+
+    if (! preview) {
+        body.addEventListener('click', (event) => {
+            const target = event.target instanceof Element
+                ? event.target.closest('a[href], button, [data-voodbuilder-popup-cta], [role="button"]')
+                : null;
+
+            if (! target || trackedCta) {
+                return;
+            }
+
+            if (target.matches('[data-voodbuilder-popup-close]') || target.closest('[data-voodbuilder-popup-close]')) {
+                return;
+            }
+
+            if (target === closeButton || closeButton.contains(target)) {
+                return;
+            }
+
+            trackedCta = true;
+            trackPopupEvent(popup.id, 'cta_click');
+        });
+    }
 
     if (display.close_on_escape !== false) {
         const onKeydown = (event) => {
             if (event.key === 'Escape') {
-                close();
+                close('escape');
                 window.removeEventListener('keydown', onKeydown);
             }
         };
@@ -242,6 +309,10 @@ function mountPopup(popup, { preview = false } = {}) {
     document.body.appendChild(root);
     document.documentElement.classList.add('voodbuilder-popup-open');
     root.hidden = false;
+
+    if (! preview) {
+        trackPopupEvent(popup.id, 'shown');
+    }
 
     return { root, close };
 }
@@ -320,10 +391,10 @@ function scheduleTrigger(popup, show) {
     }
 }
 
-export function previewPopup(popup) {
+export function previewPopup(popup, options = {}) {
     closeMountedPopups();
 
-    return mountPopup(popup, { preview: true });
+    return mountPopup(popup, { preview: true, onClose: options.onClose ?? null });
 }
 
 async function bootPopups() {
@@ -340,6 +411,8 @@ async function bootPopups() {
     if (! config?.endpoint) {
         return;
     }
+
+    eventsEndpoint = config.eventsEndpoint ?? null;
 
     let payload;
 

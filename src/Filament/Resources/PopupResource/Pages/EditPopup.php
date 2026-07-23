@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Filament\Resources\PopupResource\Pages;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Voodflow\Voodbuilder\Filament\Actions\ViewPopupStatsAction;
 use Voodflow\Voodbuilder\Filament\Resources\PopupResource;
 
 class EditPopup extends EditRecord
@@ -16,6 +17,7 @@ class EditPopup extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ViewPopupStatsAction::make(),
             Action::make('openVisualEditor')
                 ->label(__('voodbuilder::popups.actions.open_visual_editor'))
                 ->icon('heroicon-o-paint-brush')

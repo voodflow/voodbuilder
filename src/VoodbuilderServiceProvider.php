@@ -51,6 +51,7 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
 use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
+use Voodflow\Voodbuilder\Http\Controllers\PopupsAnalyticsController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupsPublicController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
@@ -258,6 +259,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->name('voodbuilder.')
             ->group(function (): void {
                 Route::get('popups/data', [PopupsPublicController::class, 'index'])->name('popups.public');
+                Route::post('popups/events', [PopupsAnalyticsController::class, 'store'])->name('popups.events');
             });
 
         Route::middleware(['web', 'auth', 'throttle:60,1'])
