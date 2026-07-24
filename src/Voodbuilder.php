@@ -13,6 +13,7 @@ use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
@@ -94,6 +95,30 @@ class Voodbuilder
     public static function grapesJsBindingSource(GrapesJsBindingSource $source): void
     {
         app(BindingRegistry::class)->register($source);
+    }
+
+    /**
+     * Register a List repeat query (package lists outside Model Integrations).
+     *
+     * @param  callable(int $limit, int $offset, string $sort, string $direction): list<Model>  $resolver
+     * @param  list<array{id: string, label: string}>  $sortFields
+     * @param  list<string>  $aliases  Legacy repeat keys mapped to this list (e.g. vtuts.latest_list)
+     */
+    public static function grapesJsRepeatList(
+        string $id,
+        string $label,
+        callable $resolver,
+        array $sortFields = [],
+        string $defaultSort = 'id',
+        string $defaultDirection = 'desc',
+        array $aliases = [],
+    ): void {
+        $registry = app(RepeatListRegistry::class);
+        $registry->register($id, $label, $resolver, $sortFields, $defaultSort, $defaultDirection);
+
+        foreach ($aliases as $alias) {
+            $registry->alias((string) $alias, $id);
+        }
     }
 
     /**

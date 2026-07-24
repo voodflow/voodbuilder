@@ -213,6 +213,8 @@ final class GrapesJsEditorGate
             'buttonUrlHint' => __('voodbuilder::pro.bindings.button_url_hint'),
             'repeatListInstead' => __('voodbuilder::pro.bindings.repeat_list_instead'),
             'repeatItemHint' => __('voodbuilder::pro.bindings.repeat_item_hint'),
+            'repeatTemplateHint' => __('voodbuilder::pro.bindings.repeat_template_hint'),
+            'repeatFilterAny' => __('voodbuilder::pro.bindings.repeat_filter_any'),
             'repeatContainerNoBind' => __('voodbuilder::pro.bindings.repeat_container_no_bind'),
             'repeatListNotField' => __('voodbuilder::pro.bindings.repeat_list_not_field'),
             'fieldSearch' => __('voodbuilder::pro.bindings.field_search'),

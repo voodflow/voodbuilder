@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsBindingsController extends Controller
@@ -21,7 +22,10 @@ class GrapesJsBindingsController extends Controller
         return response()->json([
             'groups' => $registry->catalogGroupedByPackage(),
             'sources' => $registry->catalog(),
-            'repeatSources' => app(ModelIntegrationRegistry::class)->repeatCatalog(),
+            'repeatSources' => array_values(array_merge(
+                app(ModelIntegrationRegistry::class)->repeatCatalog(),
+                app(RepeatListRegistry::class)->catalog(),
+            )),
         ]);
     }
 }

@@ -230,6 +230,11 @@ export function registerDropzoneTypes(editor) {
                 return false;
             }
 
+            // List repeat hosts are a dedicated type (Must win over generic Layout).
+            if (element.getAttribute?.('data-voodbuilder-repeat')) {
+                return false;
+            }
+
             const className = String(element.getAttribute?.('class') ?? '');
             const looksLikeLayout = /\b(flex|inline-flex|grid|gap-|space-[xy]-|voodbuilder-gjs-container)\b/.test(className)
                 || element.getAttribute?.('data-voodbuilder-role') === 'content';

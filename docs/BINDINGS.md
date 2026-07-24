@@ -248,10 +248,10 @@ Repeat a container for each record returned by a registered model integration li
 ### HTML contract
 
 ```html
-<div data-voodbuilder-repeat="vtuts.latest_list" data-voodbuilder-repeat-limit="6">
+<div data-voodbuilder-repeat="vtuts.list" data-voodbuilder-repeat-limit="6" data-voodbuilder-repeat-offset="0" data-voodbuilder-repeat-sort="published_at" data-voodbuilder-repeat-sort-dir="desc">
   <article data-voodbuilder-repeat-item>
-    <h2 data-voodbuilder-bind="vtuts.list_item.title">Title</h2>
-    <a data-voodbuilder-bind="vtuts.list_item.url" href="#">Read more</a>
+    <h2 data-voodbuilder-bind="vtuts.item.title">Title</h2>
+    <a data-voodbuilder-bind="vtuts.item.url" href="#">Read more</a>
   </article>
   <p data-voodbuilder-repeat-empty>No tutorials published yet.</p>
 </div>
@@ -259,11 +259,12 @@ Repeat a container for each record returned by a registered model integration li
 
 | Attribute | Purpose |
 |-----------|---------|
-| `data-voodbuilder-repeat` | List key from a model integration (same registry as Dynamic panel → List repeat) |
+| `data-voodbuilder-repeat` | List key (`vtuts.list`, or a Model Integration `alias.list`) |
 | `data-voodbuilder-repeat-limit` | Max items (1–24, default 6) |
 | `data-voodbuilder-repeat-offset` | Skip the first N records (0–100). Use with a separate “Latest” binding or a second repeat (`limit=1`) for featured+list layouts |
 | `data-voodbuilder-repeat-sort` | Optional sort column |
 | `data-voodbuilder-repeat-sort-dir` | `asc` or `desc` |
+| `data-voodbuilder-repeat-filter` | Optional JSON object of BelongsTo filters (`{"category":"3"}`) from Model Integration relations |
 | `data-voodbuilder-repeat-item` | Marks the template node duplicated for each record |
 | `data-voodbuilder-repeat-empty` | Optional fallback shown when the list returns zero records |
 
@@ -273,10 +274,12 @@ Inside the item template, bind fields with **List item** sources (not “Latest 
 
 For a block with one large story and a list of the next items, use **two** bindings (same sort):
 
-1. Large card: bind fields with **Latest record** (or List repeat with `limit=1`, `offset=0`).
-2. Sidebar: List repeat with `offset=1` and `limit=3`, then bind each field with **List item**.
+1. Large card: bind fields with **Latest tutorial** / **Latest record**.
+2. Sidebar container (`flex-col` with the small cards): open the **Dynamic** tab → **List repeat** → `Tutorials · Repeat list`, set **Skip first = 1**, **Items = 3**, sort `published_at` desc. Then select title/image/link **inside** the first card and bind with **List item (tutorial)**.
 
-Do not put “Latest record” on the list container itself — use the List repeat panel.
+Do not put “Latest tutorial” on each sidebar row — that always resolves to the same newest record. Do not put “Latest” on the list container itself — use the List repeat panel.
+
+**Legacy:** `vtuts.latest_list` still resolves as an alias of `vtuts.list`.
 
 ### Empty state
 

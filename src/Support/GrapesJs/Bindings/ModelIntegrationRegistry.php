@@ -40,12 +40,20 @@ final class ModelIntegrationRegistry
     }
 
     /**
-     * @return list<array{id: string, label: string, sortFields: list<array{id: string, label: string}>, defaultSort: string, defaultDirection: string}>
+     * @return list<array{
+     *     id: string,
+     *     label: string,
+     *     sortFields: list<array{id: string, label: string}>,
+     *     defaultSort: string,
+     *     defaultDirection: string,
+     *     filters: list<array{id: string, label: string, foreign_key: string, options: list<array{value: string, label: string}>}>
+     * }>
      */
     public function repeatCatalog(): array
     {
         $items = [];
         $sortFields = app(ModelIntegrationSortFields::class);
+        $relationFilters = app(ModelIntegrationRelationFilters::class);
 
         foreach ($this->byAlias as $alias => $integration) {
             $items[] = [
@@ -54,6 +62,7 @@ final class ModelIntegrationRegistry
                 'sortFields' => $sortFields->forIntegration($integration),
                 'defaultSort' => 'id',
                 'defaultDirection' => 'desc',
+                'filters' => $relationFilters->forIntegration($integration),
             ];
         }
 

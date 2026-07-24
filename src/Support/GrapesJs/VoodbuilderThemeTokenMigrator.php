@@ -531,9 +531,35 @@ final class VoodbuilderThemeTokenMigrator
         $tokens = self::normalizeLegacyFlexColumnWidths($tokens);
         $tokens = self::migrateContainerClass($tokens);
         $tokens = self::syncContainerTailwindUtilities($tokens);
+        $tokens = self::stripContainerLayoutFromHeroMedia($tokens);
         $tokens = self::migrateLegacyOpacityUtilities($tokens);
 
         return implode(' ', $tokens);
+    }
+
+    /**
+     * Hero media is a full-bleed absolute layer. Treating it as
+     * `voodbuilder-gjs-container` (max-width + mx-auto) letterboxes the image
+     * on the public site while the editor component tree can still look correct.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function stripContainerLayoutFromHeroMedia(array $tokens): array
+    {
+        if (! in_array('voodbuilder-hero-media', $tokens, true)) {
+            return $tokens;
+        }
+
+        $deny = array_merge(
+            ['voodbuilder-gjs-container', 'container'],
+            self::CONTAINER_TAILWIND_UTILITIES,
+        );
+
+        return array_values(array_filter(
+            $tokens,
+            static fn (string $token): bool => ! in_array($token, $deny, true),
+        ));
     }
 
     /**
@@ -696,6 +722,9 @@ final class VoodbuilderThemeTokenMigrator
     /**
      * Catalog section blocks always wrap content in a container div. Restore it when
      * editors remove `voodbuilder-gjs-container` from the code modal.
+     *
+     * Hero / media sections put a full-bleed `.voodbuilder-hero-media` layer first;
+     * that must never become the layout container (content is the following div).
      */
     private static function ensureSectionBlockContainers(string $html): string
     {
@@ -707,6 +736,14 @@ final class VoodbuilderThemeTokenMigrator
             '/<section\b([^>]*\bdata-voodbuilder-section-block=(["\'])[^"\']+\2[^>]*)>(\s*)<div\b([^>]*)\bclass=(["\'])(.*?)\5([^>]*)>/i',
             static function (array $matches): string {
                 $tokens = preg_split('/\s+/', trim($matches[6]), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                $attrs = $matches[4].$matches[7];
+
+                if (
+                    in_array('voodbuilder-hero-media', $tokens, true)
+                    || preg_match('/\bdata-voodbuilder-role=(["\'])media\1/', $attrs) === 1
+                ) {
+                    return $matches[0];
+                }
 
                 if (in_array('voodbuilder-gjs-container', $tokens, true) || in_array('container', $tokens, true)) {
                     return $matches[0];

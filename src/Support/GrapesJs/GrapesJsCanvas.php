@@ -247,8 +247,8 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
-        .voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container),
-        .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
+        .voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media),
+        .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media) {
             width: 100%;
             max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;
@@ -258,9 +258,15 @@ final class GrapesJsCanvas
         /* Match landing.css — section images must fill the column, not intrinsic SVG width.
          * Do not apply to all body imgs: canvas body is .VPRichPage--landing and would
          * override nav logo height utilities (h-8 / md:h-10). */
-        .voodbuilder-gjs-section img {
+        .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img) {
             max-width: 100%;
             height: auto;
+        }
+
+        .voodbuilder-gjs-section .voodbuilder-hero-media {
+            width: auto;
+            max-width: none;
+            margin-inline: 0;
         }
 
         header[role='banner'] a img,

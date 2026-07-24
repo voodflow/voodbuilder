@@ -16,17 +16,24 @@ final readonly class BindingField
         public string $id,
         public string $label,
         public string $type = self::TYPE_TEXT,
+        public ?string $group = null,
     ) {}
 
     /**
-     * @return array{id: string, label: string, type: string}
+     * @return array{id: string, label: string, type: string, group?: string}
      */
     public function toArray(): array
     {
-        return [
+        $payload = [
             'id' => $this->id,
             'label' => $this->label,
             'type' => $this->type,
         ];
+
+        if ($this->group !== null && $this->group !== '') {
+            $payload['group'] = $this->group;
+        }
+
+        return $payload;
     }
 }

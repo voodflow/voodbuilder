@@ -221,6 +221,10 @@
         position: absolute;
         inset: 0;
         overflow: hidden;
+        /* Never inherit layout-container width (mx-auto / max-w) if mis-tagged. */
+        width: auto;
+        max-width: none;
+        margin-inline: 0;
     }
 
     .voodbuilder-hero-media__img,

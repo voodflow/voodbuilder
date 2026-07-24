@@ -305,6 +305,40 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $migrated);
     }
 
+    public function test_does_not_treat_hero_media_as_section_container(): void
+    {
+        $html = '<section data-voodbuilder-section-block="vb-nasa-hero" class="voodbuilder-gjs-section relative">'
+            .'<div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">'
+            .'<img class="voodbuilder-hero-media__img" src="/x.jpg" alt="" />'
+            .'</div>'
+            .'<div class="voodbuilder-gjs-container relative z-10">Copy</div>'
+            .'</section>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertMatchesRegularExpression(
+            '/class="[^"]*\bvoodbuilder-hero-media\b(?![^"]*\bvoodbuilder-gjs-container\b)[^"]*"/',
+            $migrated,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/voodbuilder-hero-media[^"]*max-w-\[var\(--width-vp-layout\)\]/',
+            $migrated,
+        );
+        $this->assertStringContainsString('voodbuilder-gjs-container relative z-10', $migrated);
+    }
+
+    public function test_strips_container_utilities_already_on_hero_media(): void
+    {
+        $html = '<div class="voodbuilder-gjs-container voodbuilder-hero-media mx-auto w-full max-w-[var(--width-vp-layout)]"></div>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('voodbuilder-hero-media', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringNotContainsString('max-w-[var(--width-vp-layout)]', $migrated);
+        $this->assertStringNotContainsString('mx-auto', $migrated);
+    }
+
     public function test_expands_voodbuilder_container_with_tailwind_utilities(): void
     {
         $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-gjs-container px-5 py-24');

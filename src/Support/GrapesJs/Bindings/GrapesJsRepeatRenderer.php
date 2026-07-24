@@ -75,7 +75,8 @@ final class GrapesJsRepeatRenderer
         $sort = $container->getAttribute('data-voodbuilder-repeat-sort') ?: null;
         $sortDir = $container->getAttribute('data-voodbuilder-repeat-sort-dir') ?: null;
         $offset = (int) ($container->getAttribute('data-voodbuilder-repeat-offset') ?: 0);
-        $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null, $offset);
+        $filters = $this->parseRepeatFilters($container);
+        $records = $this->lists->resolve($repeatKey, $limit, $sort ?: null, $sortDir ?: null, $offset, $filters);
 
         if ($records === []) {
             $this->renderEmptyRepeat($container, $page);
@@ -176,7 +177,41 @@ final class GrapesJsRepeatRenderer
         $element->removeAttribute('data-voodbuilder-repeat-offset');
         $element->removeAttribute('data-voodbuilder-repeat-sort');
         $element->removeAttribute('data-voodbuilder-repeat-sort-dir');
+        $element->removeAttribute('data-voodbuilder-repeat-filter');
         $element->removeAttribute('data-voodbuilder-repeat-item');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function parseRepeatFilters(DOMElement $container): array
+    {
+        $raw = trim($container->getAttribute('data-voodbuilder-repeat-filter'));
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $filters = [];
+
+        foreach ($decoded as $key => $value) {
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+
+            if ($key === '' || $value === '') {
+                continue;
+            }
+
+            $filters[$key] = $value;
+        }
+
+        return $filters;
     }
 
     protected function stripRepeatAttributesFromTree(DOMElement $root): void

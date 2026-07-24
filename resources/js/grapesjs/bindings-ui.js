@@ -52,7 +52,9 @@ function fieldTypeMatchesComponent(fieldType, component) {
     }
 
     if (fieldType === 'url') {
-        return tag === 'a' || tag === 'button';
+        return tag === 'a'
+            || tag === 'button'
+            || Boolean(component.getAttributes?.()['data-voodbuilder-repeat-item']);
     }
 
     if (tag === 'button' || isCtaButton(component)) {
@@ -360,6 +362,38 @@ function morphUrlButtonToAnchor(editor, component) {
     ensureInteractiveLabel(component, label);
 }
 
+/**
+ * List Item cards that are not anchors become <a> when binding a URL field,
+ * so the whole card can link without inserting a separate Link node.
+ */
+function morphRepeatItemToAnchor(editor, component) {
+    const tag = componentTag(component);
+
+    if (tag === 'a' || tag === 'button') {
+        return;
+    }
+
+    if (! component.getAttributes?.()['data-voodbuilder-repeat-item']) {
+        return;
+    }
+
+    const attributes = { ...component.getAttributes() };
+
+    delete attributes.onclick;
+    attributes.href = attributes.href && attributes.href !== '' ? attributes.href : '#';
+
+    component.set({
+        tagName: 'a',
+        type: resolveLinkComponentType(editor),
+        editable: true,
+        highlightable: true,
+        selectable: true,
+        layerable: true,
+        name: 'List Item',
+    });
+    component.setAttributes(attributes);
+}
+
 function placeholderForBinding(sourceLabel, fieldLabel) {
     return `[${sourceLabel}: ${fieldLabel}]`;
 }
@@ -463,7 +497,17 @@ function hasBindBlockingChildren(component) {
 }
 
 function isRepeatContainer(component) {
-    return Boolean(component?.getAttributes?.()['data-voodbuilder-repeat']);
+    if (Boolean(component?.getAttributes?.()['data-voodbuilder-repeat'])) {
+        return true;
+    }
+
+    if (component?.get?.('vpressRepeatMeta')?.key) {
+        return true;
+    }
+
+    const element = component?.getEl?.() ?? component?.getView?.()?.el;
+
+    return Boolean(element?.getAttribute?.('data-voodbuilder-repeat'));
 }
 
 function isInsideRepeatTemplate(component) {
@@ -483,11 +527,62 @@ function isInsideRepeatTemplate(component) {
 }
 
 function isRepeatHost(component) {
-    if (! hasElementChildren(component) || isInsideRepeatTemplate(component)) {
+    if (isInsideRepeatTemplate(component)) {
+        return false;
+    }
+
+    // After Apply list repeat only the template item remains — still a list host.
+    if (isRepeatContainer(component)) {
+        return true;
+    }
+
+    if (! hasElementChildren(component)) {
         return false;
     }
 
     return Boolean(findRepeatListContainer(component));
+}
+
+function isListRepeatContainer(component) {
+    if (component?.getAttributes?.()['data-voodbuilder-repeat']) {
+        return true;
+    }
+
+    if (isLogoScrollItemsTrack(component)) {
+        const children = listItemChildren(component);
+
+        return children.length >= 1
+            || Boolean(component.getAttributes?.()['data-voodbuilder-repeat']);
+    }
+
+    const children = listItemChildren(component);
+
+    if (children.length < 2) {
+        return false;
+    }
+
+    const classes = componentClassNames(component);
+    const isLayoutType = component?.get?.('type') === 'voodbuilder-layout-container';
+
+    // Vertical stacks (Featured sidebar, article lists) — prefer over outer grids.
+    if (/\bflex-col\b/.test(classes) || /\bdivide-y\b/.test(classes) || /\bspace-y-/i.test(classes)) {
+        return true;
+    }
+
+    // Peer cards of the same tag inside a layout/flex/grid/gap stack.
+    // Featured grids that mix a large card (`a`) with a sidebar (`div`) stay excluded.
+    if (childrenLookLikePeerItems(children)) {
+        if (isLayoutType || /\bflex\b|\binline-flex\b|\bgrid\b|\bgap-|\bspace-[xy]-/.test(classes)) {
+            return true;
+        }
+    }
+
+    // Grid / flex-wrap rows of peer cards only.
+    if (isLayoutRow(component)) {
+        return childrenLookLikePeerItems(children);
+    }
+
+    return false;
 }
 
 function componentClassNames(component) {
@@ -506,7 +601,19 @@ function isLayoutRow(component) {
 }
 
 function listItemChildren(component) {
-    return (component?.components?.()?.models ?? []).filter((child) => ! isTextNodeComponent(child));
+    return (component?.components?.()?.models ?? []).filter((child) => {
+        if (isTextNodeComponent(child)) {
+            return false;
+        }
+
+        const attrs = child.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-inner-drop'] || attrs['data-voodbuilder-repeat-empty']) {
+            return false;
+        }
+
+        return true;
+    });
 }
 
 /**
@@ -577,27 +684,22 @@ function syncLogoScrollSourceNear(component, source) {
     root.addAttributes?.({ 'data-vb-logo-source': source });
 }
 
-function isListRepeatContainer(component) {
-    if (isLogoScrollItemsTrack(component)) {
-        const children = listItemChildren(component);
-
-        return children.length >= 1
-            || Boolean(component.getAttributes?.()['data-voodbuilder-repeat']);
-    }
-
-    const children = listItemChildren(component);
-
+/**
+ * @param {object[]} children
+ * @returns {boolean}
+ */
+function childrenLookLikePeerItems(children) {
     if (children.length < 2) {
         return false;
     }
 
-    if (isLayoutRow(component)) {
-        return true;
+    const tags = children.map((child) => componentTag(child)).filter(Boolean);
+
+    if (tags.length < 2) {
+        return false;
     }
 
-    const classes = componentClassNames(component);
-
-    return /\bdivide-y\b/.test(classes) || /\bspace-y-/i.test(classes);
+    return tags.every((tag) => tag === tags[0]);
 }
 
 function findRepeatListContainer(component) {
@@ -606,10 +708,6 @@ function findRepeatListContainer(component) {
     }
 
     if (isListRepeatContainer(component)) {
-        return component;
-    }
-
-    if (isLayoutRow(component) && hasElementChildren(component)) {
         return component;
     }
 
@@ -703,7 +801,64 @@ function repeatMetaFromAttributes(attrs = {}) {
         offset: attrs['data-voodbuilder-repeat-offset'] ?? '0',
         sort: attrs['data-voodbuilder-repeat-sort'] ?? 'id',
         sortDir: attrs['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
+        filters: parseRepeatFiltersAttribute(attrs['data-voodbuilder-repeat-filter']),
     };
+}
+
+function parseRepeatFiltersAttribute(raw) {
+    if (! raw || typeof raw !== 'string') {
+        return {};
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+
+        if (! parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return {};
+        }
+
+        const filters = {};
+
+        for (const [key, value] of Object.entries(parsed)) {
+            const id = String(key ?? '').trim();
+            const selected = String(value ?? '').trim();
+
+            if (id && selected) {
+                filters[id] = selected;
+            }
+        }
+
+        return filters;
+    } catch {
+        return {};
+    }
+}
+
+function serializeRepeatFiltersAttribute(filters = {}) {
+    const clean = {};
+
+    for (const [key, value] of Object.entries(filters ?? {})) {
+        const id = String(key ?? '').trim();
+        const selected = String(value ?? '').trim();
+
+        if (id && selected) {
+            clean[id] = selected;
+        }
+    }
+
+    const keys = Object.keys(clean).sort();
+
+    if (keys.length === 0) {
+        return null;
+    }
+
+    const ordered = {};
+
+    for (const key of keys) {
+        ordered[key] = clean[key];
+    }
+
+    return JSON.stringify(ordered);
 }
 
 function applyRepeatMetaToComponent(component, meta) {
@@ -712,13 +867,23 @@ function applyRepeatMetaToComponent(component, meta) {
     }
 
     component.set('vpressRepeatMeta', meta, { silent: true });
-    component.addAttributes({
+
+    const attributes = {
         'data-voodbuilder-repeat': meta.key,
         'data-voodbuilder-repeat-limit': String(meta.limit ?? '3'),
         'data-voodbuilder-repeat-offset': String(meta.offset ?? '0'),
         'data-voodbuilder-repeat-sort': meta.sort ?? 'id',
         'data-voodbuilder-repeat-sort-dir': meta.sortDir ?? 'desc',
-    });
+    };
+    const filterAttr = serializeRepeatFiltersAttribute(meta.filters);
+
+    if (filterAttr) {
+        attributes['data-voodbuilder-repeat-filter'] = filterAttr;
+    } else {
+        component.removeAttributes('data-voodbuilder-repeat-filter');
+    }
+
+    component.addAttributes(attributes);
 }
 
 function syncRepeatMetaFromAttributes(component) {
@@ -763,6 +928,14 @@ function syncRepeatAttributesToDom(component) {
     element.setAttribute('data-voodbuilder-repeat-offset', String(meta.offset ?? '0'));
     element.setAttribute('data-voodbuilder-repeat-sort', meta.sort);
     element.setAttribute('data-voodbuilder-repeat-sort-dir', meta.sortDir);
+
+    const filterAttr = serializeRepeatFiltersAttribute(meta.filters);
+
+    if (filterAttr) {
+        element.setAttribute('data-voodbuilder-repeat-filter', filterAttr);
+    } else {
+        element.removeAttribute('data-voodbuilder-repeat-filter');
+    }
 }
 
 function migrateRepeatPlacement(component) {
@@ -791,6 +964,7 @@ function migrateRepeatPlacement(component) {
     component.removeAttributes('data-voodbuilder-repeat-offset');
     component.removeAttributes('data-voodbuilder-repeat-sort');
     component.removeAttributes('data-voodbuilder-repeat-sort-dir');
+    component.removeAttributes('data-voodbuilder-repeat-filter');
 
     return repeatTarget;
 }
@@ -801,6 +975,7 @@ function clearRepeatAttributes(component) {
     component.removeAttributes('data-voodbuilder-repeat-offset');
     component.removeAttributes('data-voodbuilder-repeat-sort');
     component.removeAttributes('data-voodbuilder-repeat-sort-dir');
+    component.removeAttributes('data-voodbuilder-repeat-filter');
     safeFindComponents(component, '[data-voodbuilder-repeat-item]').forEach((child) => {
         child.removeAttributes('data-voodbuilder-repeat-item');
     });
@@ -817,8 +992,36 @@ function repeatOffsetFromContainer(container) {
     return Number(container?.getAttributes?.()['data-voodbuilder-repeat-offset'] || 0);
 }
 
-function repeatListValuesKey(repeatKey, sort, sortDir, offset = 0) {
-    return `${repeatKey}|${sort || 'id'}|${sortDir || 'desc'}|${Number(offset) || 0}`;
+function repeatFiltersFromContainer(container) {
+    return parseRepeatFiltersAttribute(container?.getAttributes?.()['data-voodbuilder-repeat-filter']);
+}
+
+function filtersFingerprint(filters = {}) {
+    const clean = {};
+
+    for (const [key, value] of Object.entries(filters ?? {})) {
+        const id = String(key ?? '').trim();
+        const selected = String(value ?? '').trim();
+
+        if (id && selected) {
+            clean[id] = selected;
+        }
+    }
+
+    const keys = Object.keys(clean).sort();
+
+    if (keys.length === 0) {
+        return '';
+    }
+
+    return keys.map((key) => `${key}:${clean[key]}`).join(',');
+}
+
+function repeatListValuesKey(repeatKey, sort, sortDir, offset = 0, filters = {}) {
+    const base = `${repeatKey}|${sort || 'id'}|${sortDir || 'desc'}|${Number(offset) || 0}`;
+    const fingerprint = filtersFingerprint(filters);
+
+    return fingerprint ? `${base}|${fingerprint}` : base;
 }
 
 function sortFieldsForRepeatSource(catalog, repeatSourceId) {
@@ -849,11 +1052,12 @@ function collectRepeatPreviewConfigs(editor) {
 
         const { sort, sortDir } = repeatSortFromContainer(repeatTarget);
         const offset = repeatOffsetFromContainer(repeatTarget);
+        const filters = repeatFiltersFromContainer(repeatTarget);
         const limit = Math.max(
             12,
             Number(repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'] || 12),
         );
-        const cacheKey = repeatListValuesKey(repeatKey, sort, sortDir, offset);
+        const cacheKey = repeatListValuesKey(repeatKey, sort, sortDir, offset, filters);
 
         configs.set(cacheKey, {
             key: repeatKey,
@@ -861,13 +1065,14 @@ function collectRepeatPreviewConfigs(editor) {
             dir: sortDir,
             limit,
             offset,
+            filters,
         });
     });
 
     return [...configs.values()];
 }
 
-function formatRepeatSummary(repeatKey, limit, sort, sortDir, catalog, labels, offset = 0) {
+function formatRepeatSummary(repeatKey, limit, sort, sortDir, catalog, labels, offset = 0, filters = {}) {
     const sortLabel = sortFieldsForRepeatSource(catalog, repeatKey)
         .find((field) => field.id === sort)?.label ?? sort;
     const dirLabel = sortDir === 'asc'
@@ -876,8 +1081,33 @@ function formatRepeatSummary(repeatKey, limit, sort, sortDir, catalog, labels, o
     const offsetPart = Number(offset) > 0
         ? ` · ${labels.repeatOffset ?? 'Offset'} ${offset}`
         : '';
+    const filterDefs = filtersForRepeatSource(catalog, repeatKey);
+    const filterParts = [];
 
-    return `${repeatKey} (${limit})${offsetPart} · ${sortLabel} · ${dirLabel}`;
+    for (const [filterId, value] of Object.entries(filters ?? {})) {
+        if (! value) {
+            continue;
+        }
+
+        const definition = filterDefs.find((item) => item.id === filterId);
+        const optionLabel = definition?.options?.find((option) => option.value === String(value))?.label
+            ?? value;
+        const filterLabel = definition?.label ?? filterId;
+
+        filterParts.push(`${filterLabel}: ${optionLabel}`);
+    }
+
+    const filterPart = filterParts.length > 0
+        ? ` · ${filterParts.join(', ')}`
+        : '';
+
+    return `${repeatKey} (${limit})${offsetPart}${filterPart} · ${sortLabel} · ${dirLabel}`;
+}
+
+function filtersForRepeatSource(catalog, repeatSourceId) {
+    const source = (catalog?.repeatSources ?? []).find((item) => item.id === repeatSourceId);
+
+    return Array.isArray(source?.filters) ? source.filters : [];
 }
 
 function shouldOfferBindingSource(sourceId, component) {
@@ -988,6 +1218,7 @@ function repeatCardIndex(component) {
                 repeatKey,
                 index: index >= 0 ? index : 0,
                 offset: repeatOffsetFromContainer(container),
+                filters: repeatFiltersFromContainer(container),
                 ...repeatSortFromContainer(container),
             };
         }
@@ -1080,10 +1311,26 @@ function migrateBindingsInTree(editor, component, catalog) {
     });
 }
 
+function itemFieldIdFromBindingKey(bindingKey, catalog = null) {
+    const parsed = catalog ? parseBindingKey(bindingKey, catalog) : null;
+
+    if (parsed?.fieldId) {
+        return parsed.fieldId;
+    }
+
+    const match = String(bindingKey ?? '').match(/\.(?:item|latest)\.(.+)$/);
+
+    if (match?.[1]) {
+        return match[1];
+    }
+
+    return String(bindingKey ?? '').split('.').pop() ?? '';
+}
+
 function resolvePreviewValue(bindingKey, component, values, listValues, catalog) {
     if (bindingKey.includes('.item.')) {
         const repeatContext = repeatCardIndex(component);
-        const fieldId = bindingKey.split('.').pop();
+        const fieldId = itemFieldIdFromBindingKey(bindingKey, catalog);
         const repeatKey = repeatContext?.repeatKey ?? inferRepeatListKey(bindingKey, catalog);
         const index = repeatContext?.index ?? 0;
         const listKey = repeatListValuesKey(
@@ -1091,15 +1338,19 @@ function resolvePreviewValue(bindingKey, component, values, listValues, catalog)
             repeatContext?.sort,
             repeatContext?.sortDir,
             repeatContext?.offset,
+            repeatContext?.filters,
         );
         const row = listValues?.[listKey]?.[index] ?? listValues?.[repeatKey]?.[index];
+        const value = row?.[fieldId]
+            ?? row?.[bindingKey.split('.').pop()];
 
-        if (row?.[fieldId]) {
-            return row[fieldId];
+        if (value) {
+            return value;
         }
 
-        const fallback = listValues?.[listKey]?.[0]?.[fieldId]
-            ?? listValues?.[repeatKey]?.[0]?.[fieldId];
+        const fallbackRow = listValues?.[listKey]?.[0] ?? listValues?.[repeatKey]?.[0];
+        const fallback = fallbackRow?.[fieldId]
+            ?? fallbackRow?.[bindingKey.split('.').pop()];
 
         if (fallback) {
             return fallback;
@@ -1121,6 +1372,7 @@ function ensureRepeatContainers(editor, catalog) {
         processed.add(repeatTarget.cid);
         restoreRepeatMetaOnComponent(repeatTarget);
         syncRepeatAttributesToDom(repeatTarget);
+        refreshListContainerLayerName(repeatTarget);
 
         const template = collapseRepeatTemplate(repeatTarget);
 
@@ -1149,6 +1401,7 @@ function ensureRepeatContainers(editor, catalog) {
             offset: storedMeta?.offset ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-offset'] ?? '0',
             sort: storedMeta?.sort ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort'] ?? 'id',
             sortDir: storedMeta?.sortDir ?? repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] ?? 'desc',
+            filters: storedMeta?.filters ?? repeatFiltersFromContainer(repeatTarget),
         });
     };
 
@@ -1191,6 +1444,16 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
     window.clearTimeout(repeatMaintainTimer);
     repeatMaintainTimer = window.setTimeout(() => {
         ensureRepeatContainers(editor, catalog);
+
+        const visit = (component) => {
+            refreshListContainerLayerName(component);
+
+            for (const child of component?.components?.()?.models ?? []) {
+                visit(child);
+            }
+        };
+
+        visit(editor?.getWrapper?.());
         void refreshBindingPreviews(editor, previewOptions);
     }, 120);
 }
@@ -1323,22 +1586,35 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
         morphUrlButtonToAnchor(editor, bindTarget);
     }
 
+    if (
+        fieldType === 'url'
+        && componentTag(bindTarget) !== 'a'
+        && componentTag(bindTarget) !== 'button'
+        && bindTarget.getAttributes?.()['data-voodbuilder-repeat-item']
+    ) {
+        morphRepeatItemToAnchor(editor, bindTarget);
+    }
+
     bindTarget.addAttributes({
         'data-voodbuilder-bind': bindingKey,
     });
     bindTarget.addClass('voodbuilder-gjs-bound');
 
-    const urlOnInteractive = fieldType === 'url' && (effectiveTag === 'button' || effectiveTag === 'a');
+    const boundTag = componentTag(bindTarget);
+    const isRepeatItem = Boolean(bindTarget.getAttributes?.()['data-voodbuilder-repeat-item']);
+    const urlOnInteractive = fieldType === 'url' && (boundTag === 'button' || boundTag === 'a');
 
     bindTarget.set({
-        editable: urlOnInteractive,
+        editable: urlOnInteractive && ! isRepeatItem,
         highlightable: true,
         selectable: true,
         layerable: true,
-        name: urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`,
+        name: isRepeatItem && fieldType === 'url'
+            ? 'List Item'
+            : (urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`),
     });
 
-    if (effectiveTag === 'img' && fieldType === 'image') {
+    if (boundTag === 'img' && fieldType === 'image') {
         bindTarget.addAttributes({
             src: NEUTRAL_IMAGE_PLACEHOLDER,
             alt: '',
@@ -1351,7 +1627,10 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     if (fieldType === 'url') {
         bindTarget.addAttributes({ href: '#' });
         bindTarget.removeAttributes('onclick');
-        ensureInteractiveLabel(bindTarget, extractInteractiveLabel(bindTarget));
+
+        if (! isRepeatItem) {
+            ensureInteractiveLabel(bindTarget, extractInteractiveLabel(bindTarget));
+        }
 
         return bindTarget;
     }
@@ -1438,6 +1717,7 @@ export function registerBoundComponentType(editor) {
             isComponent: matcher,
             model: {
                 defaults: {
+                    name: typeName === 'voodbuilder-repeat-host' ? 'List repeat' : 'List item',
                     draggable: true,
                     droppable: true,
                     removable: true,
@@ -1445,6 +1725,7 @@ export function registerBoundComponentType(editor) {
                 },
                 init() {
                     restoreRepeatMetaOnComponent(this);
+                    refreshListContainerLayerName(this);
 
                     for (const attribute of [
                         'data-voodbuilder-repeat',
@@ -1452,10 +1733,12 @@ export function registerBoundComponentType(editor) {
                         'data-voodbuilder-repeat-offset',
                         'data-voodbuilder-repeat-sort',
                         'data-voodbuilder-repeat-sort-dir',
+                        'data-voodbuilder-repeat-filter',
                     ]) {
                         this.on(`change:attributes:${attribute}`, () => {
                             syncRepeatMetaFromAttributes(this);
                             syncRepeatAttributesToDom(this);
+                            refreshListContainerLayerName(this);
                         });
                     }
                 },
@@ -1498,92 +1781,27 @@ export function registerBoundComponentType(editor) {
     });
 }
 
-function createModal(labels) {
-    const overlay = document.createElement('div');
-    overlay.className = 'voodbuilder-gjs-bindings-modal';
-    overlay.innerHTML = `
-        <div class="voodbuilder-gjs-bindings-modal__dialog" role="dialog" aria-modal="true">
-            <h2 class="voodbuilder-gjs-bindings-modal__title"></h2>
-            <label class="voodbuilder-gjs-bindings-modal__label">
-                <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
-                <select class="voodbuilder-gjs-bindings-modal__select" data-bind-source></select>
-            </label>
-            <label class="voodbuilder-gjs-bindings-modal__label">
-                <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
-                <select class="voodbuilder-gjs-bindings-modal__select" data-bind-field disabled></select>
-            </label>
-            <div class="voodbuilder-gjs-bindings-modal__actions">
-                <button type="button" class="voodbuilder-gjs-bindings-modal__button" data-bind-cancel></button>
-                <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--primary" data-bind-apply disabled></button>
-            </div>
-        </div>
-    `;
-
-    overlay.querySelector('.voodbuilder-gjs-bindings-modal__title').textContent = labels.modalTitle;
-    overlay.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
-    overlay.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[1].textContent = labels.modalField;
-    overlay.querySelector('[data-bind-cancel]').textContent = labels.modalCancel;
-    overlay.querySelector('[data-bind-apply]').textContent = labels.modalApply;
-
-    return overlay;
-}
-
-function openBindingModal(editor, component, catalog, labels, onApplied) {
-    mountBindingForm(editor, component, catalog, labels, onApplied, { mode: 'modal' });
-}
-
-function mountBindingForm(editor, component, catalog, labels, onApplied, { mode = 'inline', mount = null } = {}) {
-    const groups = catalog?.groups ?? [];
-
-    if (groups.length === 0) {
-        // Inline Dynamic tab: never block the editor with a modal when no sources exist.
-        if (mode === 'inline' && mount) {
-            mount.replaceChildren();
-            const empty = document.createElement('p');
-            empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
-            empty.textContent = labels.noSources
-                ?? 'No dynamic data sources are registered yet.';
-            mount.appendChild(empty);
-
-            return null;
-        }
-
-        void alertDialog({
-            message: labels.noSources,
-            labels,
-        });
-
-        return null;
-    }
-
-    const isModal = mode === 'modal';
-    const overlay = isModal ? createModal(labels) : null;
-    const host = isModal ? overlay : mount;
-
-    if (! host) {
-        return null;
-    }
-
-    if (! isModal) {
-        host.innerHTML = `
+function createBindingPanelHtml({ includeModalChrome = false } = {}) {
+    const panel = `
             <div class="voodbuilder-gjs-dynamic-panel">
-                <p class="voodbuilder-gjs-dynamic-panel__hint"></p>
+                <p class="voodbuilder-gjs-dynamic-panel__hint" data-bind-hint></p>
                 <p class="voodbuilder-gjs-dynamic-panel__current" hidden></p>
                 <div class="voodbuilder-gjs-dynamic-panel__field-bind" data-field-bind-panel>
                     <label class="voodbuilder-gjs-bindings-modal__label">
-                        <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-bind-source-label></span>
                         <select class="voodbuilder-gjs-bindings-modal__select" data-bind-source></select>
                     </label>
-                    <label class="voodbuilder-gjs-bindings-modal__label">
+                    <label class="voodbuilder-gjs-bindings-modal__label" data-bind-field-search-wrap>
                         <span class="voodbuilder-gjs-bindings-modal__label-text" data-bind-field-search-label></span>
                         <input type="search" class="voodbuilder-gjs-bindings-modal__input" data-bind-field-search autocomplete="off" />
                     </label>
                     <label class="voodbuilder-gjs-bindings-modal__label">
-                        <span class="voodbuilder-gjs-bindings-modal__label-text"></span>
+                        <span class="voodbuilder-gjs-bindings-modal__label-text" data-bind-field-label></span>
                         <select class="voodbuilder-gjs-bindings-modal__select" data-bind-field disabled></select>
                     </label>
                     <div class="voodbuilder-gjs-dynamic-panel__actions">
                         <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-bind-clear></button>
+                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--primary" data-bind-apply hidden></button>
                     </div>
                 </div>
                 <div class="voodbuilder-gjs-dynamic-panel__repeat" data-repeat-panel hidden>
@@ -1611,55 +1829,206 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                             <option value="asc"></option>
                         </select>
                     </label>
+                    <div data-repeat-filters></div>
+                    <p class="voodbuilder-gjs-dynamic-panel__hint" data-repeat-template-hint></p>
                     <div class="voodbuilder-gjs-dynamic-panel__actions">
-                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-repeat-apply></button>
+                        <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--primary" data-repeat-apply></button>
                         <button type="button" class="voodbuilder-gjs-bindings-modal__button voodbuilder-gjs-bindings-modal__button--compact" data-repeat-clear></button>
                     </div>
                     <p class="voodbuilder-gjs-dynamic-panel__current" data-repeat-current hidden></p>
                 </div>
             </div>
-        `;
+    `;
 
-        host.querySelector('.voodbuilder-gjs-dynamic-panel__hint').textContent = isRepeatHost(component)
+    if (! includeModalChrome) {
+        return panel;
+    }
+
+    return `
+        <div class="voodbuilder-gjs-bindings-modal__dialog" role="dialog" aria-modal="true">
+            <h2 class="voodbuilder-gjs-bindings-modal__title" data-bind-modal-title></h2>
+            ${panel}
+            <div class="voodbuilder-gjs-bindings-modal__actions" data-bind-modal-footer>
+                <button type="button" class="voodbuilder-gjs-bindings-modal__button" data-bind-cancel></button>
+            </div>
+        </div>
+    `;
+}
+
+function createModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'voodbuilder-gjs-bindings-modal';
+    overlay.innerHTML = createBindingPanelHtml({ includeModalChrome: true });
+
+    return overlay;
+}
+
+function openBindingModal(editor, component, catalog, labels, onApplied) {
+    mountBindingForm(editor, component, catalog, labels, onApplied, { mode: 'modal' });
+}
+
+function refreshListContainerLayerName(component) {
+    if (! component?.set) {
+        return;
+    }
+
+    if (component.getAttributes?.()['data-voodbuilder-repeat']) {
+        component.set('name', 'List repeat');
+
+        return;
+    }
+
+    if (isListRepeatContainer(component)) {
+        const current = component.get('name');
+
+        if (! current || current === 'Layout' || current === 'Div' || current === 'Box') {
+            component.set('name', 'List');
+        }
+    }
+}
+
+function mountBindingForm(editor, component, catalog, labels, onApplied, { mode = 'inline', mount = null } = {}) {
+    const groups = catalog?.groups ?? [];
+    const repeatSources = catalog?.repeatSources ?? [];
+    const listHost = isRepeatHost(component);
+
+    if (groups.length === 0 && ! (listHost && repeatSources.length > 0)) {
+        // Inline Dynamic tab: never block the editor with a modal when no sources exist.
+        if (mode === 'inline' && mount) {
+            mount.replaceChildren();
+            const empty = document.createElement('p');
+            empty.className = 'voodbuilder-gjs-dynamic-panel__empty';
+            empty.textContent = labels.noSources
+                ?? 'No dynamic data sources are registered yet.';
+            mount.appendChild(empty);
+
+            return null;
+        }
+
+        void alertDialog({
+            message: labels.noSources,
+            labels,
+        });
+
+        return null;
+    }
+
+    const isModal = mode === 'modal';
+    const overlay = isModal ? createModal() : null;
+    const host = isModal ? overlay : mount;
+
+    if (! host) {
+        return null;
+    }
+
+    if (! isModal) {
+        host.innerHTML = createBindingPanelHtml();
+    }
+
+    const hintEl = host.querySelector('[data-bind-hint]') ?? host.querySelector('.voodbuilder-gjs-dynamic-panel__hint');
+
+    if (hintEl) {
+        hintEl.textContent = listHost
             ? (labels.repeatContainerHint ?? labels.inspectorHint ?? 'Use List repeat on this container, then bind fields inside each card with “List item”.')
             : isLinkableInteractive(component) && (componentTag(component) === 'button' || isCtaButton(component))
                 ? (labels.buttonUrlHint ?? 'Bind a URL field to make the button link dynamic. The label (e.g. “Read more”) stays editable with a double-click.')
                 : isInsideRepeatTemplate(component)
                     ? (labels.repeatItemHint ?? 'Choose List item and pick the field for this element (title, description, slug…).')
                     : (labels.inspectorHint ?? 'Connect the selected element to live data from your packages.');
+    }
 
-        const fieldBindPanel = host.querySelector('[data-field-bind-panel]');
+    const fieldBindPanel = host.querySelector('[data-field-bind-panel]');
 
-        if (fieldBindPanel && isRepeatHost(component)) {
-            fieldBindPanel.hidden = true;
-        }
-        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[0].textContent = labels.modalSource;
-        host.querySelector('[data-bind-field-search-label]').textContent = labels.fieldSearch ?? 'Search fields';
-        host.querySelectorAll('.voodbuilder-gjs-bindings-modal__label-text')[2].textContent = labels.modalField;
-        host.querySelector('[data-bind-clear]').textContent = labels.clearDynamic ?? 'Clear binding';
+    if (fieldBindPanel && listHost) {
+        fieldBindPanel.hidden = true;
+    }
 
-        const repeatPanel = host.querySelector('[data-repeat-panel]');
+    const sourceLabel = host.querySelector('[data-bind-source-label]');
+    const fieldLabel = host.querySelector('[data-bind-field-label]');
+    const fieldSearchLabel = host.querySelector('[data-bind-field-search-label]');
 
-        if (repeatPanel) {
-            repeatPanel.querySelector('.voodbuilder-gjs-dynamic-panel__repeat-title').textContent = labels.repeatList ?? 'List repeat';
-            repeatPanel.querySelector('[data-repeat-source-label]').textContent = labels.repeatSource ?? 'Repeat list';
-            repeatPanel.querySelector('[data-repeat-limit-label]').textContent = labels.repeatLimit ?? 'Items';
-            const offsetLabel = repeatPanel.querySelector('[data-repeat-offset-label]');
+    if (sourceLabel) {
+        sourceLabel.textContent = labels.modalSource ?? 'Data source';
+    }
 
-            if (offsetLabel) {
-                offsetLabel.textContent = labels.repeatOffset ?? 'Skip first';
-            }
+    if (fieldSearchLabel) {
+        fieldSearchLabel.textContent = labels.fieldSearch ?? 'Search fields';
+    }
 
-            repeatPanel.querySelector('[data-repeat-sort-label]').textContent = labels.repeatSort ?? 'Sort by';
-            repeatPanel.querySelector('[data-repeat-sort-dir-label]').textContent = labels.repeatSortDir ?? 'Direction';
-            repeatPanel.querySelector('[data-repeat-sort-dir] option[value="desc"]').textContent = labels.repeatSortDesc ?? 'Descending';
-            repeatPanel.querySelector('[data-repeat-sort-dir] option[value="asc"]').textContent = labels.repeatSortAsc ?? 'Ascending';
-            repeatPanel.querySelector('[data-repeat-apply]').textContent = labels.applyRepeat ?? 'Apply list repeat';
-            repeatPanel.querySelector('[data-repeat-clear]').textContent = labels.clearRepeat ?? 'Clear list repeat';
-        }
+    if (fieldLabel) {
+        fieldLabel.textContent = labels.modalField ?? 'Field';
+    }
+
+    const clearButton = host.querySelector('[data-bind-clear]');
+
+    if (clearButton) {
+        clearButton.textContent = labels.clearDynamic ?? 'Clear binding';
+    }
+
+    const applyButton = host.querySelector('[data-bind-apply]');
+
+    if (applyButton && isModal && ! listHost) {
+        applyButton.hidden = false;
+        applyButton.textContent = labels.modalApply ?? 'Apply';
+    }
+
+    const modalTitle = host.querySelector('[data-bind-modal-title]');
+
+    if (modalTitle) {
+        modalTitle.textContent = listHost
+            ? (labels.repeatList ?? 'List repeat')
+            : (labels.modalTitle ?? 'Connect to live data');
     }
 
     const repeatPanel = host.querySelector('[data-repeat-panel]');
+
+    if (repeatPanel) {
+        const title = repeatPanel.querySelector('.voodbuilder-gjs-dynamic-panel__repeat-title');
+
+        if (title) {
+            title.textContent = labels.repeatList ?? 'List repeat';
+        }
+
+        repeatPanel.querySelector('[data-repeat-source-label]').textContent = labels.repeatSource ?? 'Repeat list';
+        repeatPanel.querySelector('[data-repeat-limit-label]').textContent = labels.repeatLimit ?? 'Items';
+        const offsetLabel = repeatPanel.querySelector('[data-repeat-offset-label]');
+
+        if (offsetLabel) {
+            offsetLabel.textContent = labels.repeatOffset ?? 'Skip first';
+        }
+
+        repeatPanel.querySelector('[data-repeat-sort-label]').textContent = labels.repeatSort ?? 'Sort by';
+        repeatPanel.querySelector('[data-repeat-sort-dir-label]').textContent = labels.repeatSortDir ?? 'Direction';
+        repeatPanel.querySelector('[data-repeat-sort-dir] option[value="desc"]').textContent = labels.repeatSortDesc ?? 'Descending';
+        repeatPanel.querySelector('[data-repeat-sort-dir] option[value="asc"]').textContent = labels.repeatSortAsc ?? 'Ascending';
+        const templateHint = repeatPanel.querySelector('[data-repeat-template-hint]');
+
+        if (templateHint) {
+            templateHint.textContent = labels.repeatTemplateHint
+                ?? 'Editor shows one template card only. Save and open the public page to see all repeated items.';
+        }
+
+        repeatPanel.querySelector('[data-repeat-apply]').textContent = labels.applyRepeat ?? 'Apply list repeat';
+        repeatPanel.querySelector('[data-repeat-clear]').textContent = labels.clearRepeat ?? 'Clear list repeat';
+    }
+
+    host.querySelectorAll('[data-bind-cancel]').forEach((button) => {
+        button.textContent = labels.modalCancel ?? 'Cancel';
+
+        if (isModal) {
+            button.hidden = false;
+        }
+    });
+
+    // One Cancel only (modal footer). Clear list / Clear binding stay as separate actions.
+    if (isModal) {
+        const footer = host.querySelector('[data-bind-modal-footer]');
+
+        if (footer) {
+            footer.hidden = false;
+        }
+    }
+
     const repeatSourceSelect = host.querySelector('[data-repeat-source]');
     const repeatLimitInput = host.querySelector('[data-repeat-limit]');
     const repeatOffsetInput = host.querySelector('[data-repeat-offset]');
@@ -1671,9 +2040,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
     const sourceSelect = host.querySelector('[data-bind-source]');
     const fieldSearchInput = host.querySelector('[data-bind-field-search]');
     const fieldSelect = host.querySelector('[data-bind-field]');
-    const applyButton = host.querySelector('[data-bind-apply]');
-    const clearButton = host.querySelector('[data-bind-clear]');
-    const currentEl = host.querySelector('.voodbuilder-gjs-dynamic-panel__current');
+    const currentEl = host.querySelector('.voodbuilder-gjs-dynamic-panel__current:not([data-repeat-current])')
+        ?? host.querySelector('.voodbuilder-gjs-dynamic-panel__current');
 
     const close = () => {
         if (overlay) {
@@ -1681,54 +2049,99 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         }
     };
 
-    for (const group of groups) {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = group.package_label ?? group.package;
+    if (sourceSelect && ! listHost) {
+        for (const group of groups) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = group.package_label ?? group.package;
 
-        for (const source of group.sources ?? []) {
-            if (! shouldOfferBindingSource(source.id, component)) {
-                continue;
+            for (const source of group.sources ?? []) {
+                if (! shouldOfferBindingSource(source.id, component)) {
+                    continue;
+                }
+
+                const option = document.createElement('option');
+                option.value = source.id;
+                option.textContent = source.label;
+                optgroup.appendChild(option);
             }
 
-            const option = document.createElement('option');
-            option.value = source.id;
-            option.textContent = source.label;
-            optgroup.appendChild(option);
+            if (optgroup.children.length > 0) {
+                sourceSelect.appendChild(optgroup);
+            }
         }
-
-        sourceSelect.appendChild(optgroup);
     }
 
-    const populateFields = (autoApply = false, { searchActive = false } = {}) => {
+    const populateFields = (autoApply = false, { searchActive = false, forceFieldId = null } = {}) => {
+        if (! sourceSelect || ! fieldSelect || listHost) {
+            return;
+        }
+
         const sourceId = sourceSelect.value;
         const source = groups
             .flatMap((group) => group.sources ?? [])
             .find((item) => item.id === sourceId);
         const query = String(fieldSearchInput?.value ?? '').trim().toLowerCase();
-        const previousValue = fieldSelect.value;
+        const previousValue = forceFieldId || fieldSelect.value;
 
         fieldSelect.innerHTML = '';
         fieldSelect.disabled = ! source;
 
+        const compatibleFields = [];
+
         for (const field of source?.fields ?? []) {
-            if (! fieldTypeMatchesComponent(field?.type ?? 'text', component)) {
+            const isForced = forceFieldId && field.id === forceFieldId;
+
+            if (! isForced && ! fieldTypeMatchesComponent(field?.type ?? 'text', component)) {
                 continue;
             }
 
-            const haystack = `${field.label} ${field.id} ${field.type ?? ''}`.toLowerCase();
+            const haystack = `${field.label} ${field.id} ${field.type ?? ''} ${field.group ?? ''}`.toLowerCase();
 
-            if (query && ! haystack.includes(query)) {
+            if (query && ! haystack.includes(query) && ! isForced) {
                 continue;
             }
 
+            compatibleFields.push(field);
+        }
+
+        const appendFieldOption = (field) => {
             const option = document.createElement('option');
             option.value = field.id;
             option.textContent = formatFieldOptionLabel(field, labels);
             fieldSelect.appendChild(option);
+        };
+
+        const ungrouped = compatibleFields.filter((field) => ! field.group);
+        const grouped = new Map();
+
+        for (const field of compatibleFields) {
+            if (! field.group) {
+                continue;
+            }
+
+            if (! grouped.has(field.group)) {
+                grouped.set(field.group, []);
+            }
+
+            grouped.get(field.group).push(field);
         }
 
-        const canRestorePrevious = ! query
-            && previousValue
+        ungrouped.forEach(appendFieldOption);
+
+        for (const [groupLabel, fields] of grouped) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = groupLabel;
+            fieldSelect.appendChild(optgroup);
+
+            for (const field of fields) {
+                const option = document.createElement('option');
+                option.value = field.id;
+                option.textContent = formatFieldOptionLabel(field, labels);
+                optgroup.appendChild(option);
+            }
+        }
+
+        const canRestorePrevious = previousValue
             && [...fieldSelect.options].some((option) => option.value === previousValue);
         const preferredFieldId = preferredFieldIdForComponent(source?.fields ?? [], component);
 
@@ -1745,7 +2158,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         }
 
         const shouldAutoApply = (autoApply || (! isModal && searchActive && fieldSelect.options.length > 0))
-            && fieldSelect.value;
+            && fieldSelect.value
+            && ! forceFieldId;
 
         if (shouldAutoApply) {
             commitBinding();
@@ -1764,7 +2178,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             return;
         }
 
-        if (! sourceSelect.value || ! fieldSelect.value) {
+        if (! sourceSelect?.value || ! fieldSelect?.value) {
             return;
         }
 
@@ -1809,37 +2223,50 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         }
     };
 
-    sourceSelect.addEventListener('change', () => populateFields(! isModal));
-    fieldSearchInput?.addEventListener('input', () => {
-        const query = String(fieldSearchInput?.value ?? '').trim();
-        populateFields(false, { searchActive: query.length > 0 });
-    });
-    populateFields(false);
-
-    const existingBinding = component?.getAttributes?.()['data-voodbuilder-bind'];
-    const parsedBinding = normalizeBindingKeyForUi(existingBinding, catalog);
-
-    if (parsedBinding) {
-        sourceSelect.value = parsedBinding.sourceId;
+    if (sourceSelect && fieldSelect && ! listHost) {
+        sourceSelect.addEventListener('change', () => populateFields(! isModal));
+        fieldSearchInput?.addEventListener('input', () => {
+            const query = String(fieldSearchInput?.value ?? '').trim();
+            populateFields(false, { searchActive: query.length > 0 });
+        });
         populateFields(false);
-        fieldSelect.value = parsedBinding.fieldId;
-    } else if (isInsideRepeatTemplate(component)) {
-        const preferredSource = defaultItemSourceId(component, catalog);
 
-        if (preferredSource && [...sourceSelect.options].some((option) => option.value === preferredSource)) {
-            sourceSelect.value = preferredSource;
-            populateFields(false);
+        const existingBinding = component?.getAttributes?.()['data-voodbuilder-bind'];
+        const parsedBinding = normalizeBindingKeyForUi(existingBinding, catalog);
+
+        if (parsedBinding) {
+            sourceSelect.value = parsedBinding.sourceId;
+            populateFields(false, { forceFieldId: parsedBinding.fieldId });
+            fieldSelect.value = parsedBinding.fieldId;
+        } else if (isInsideRepeatTemplate(component)) {
+            const preferredSource = defaultItemSourceId(component, catalog);
+
+            if (preferredSource && [...sourceSelect.options].some((option) => option.value === preferredSource)) {
+                sourceSelect.value = preferredSource;
+                populateFields(false);
+            }
         }
-    }
 
-    if (currentEl && existingBinding) {
-        renderCurrentBindingSummary(currentEl, existingBinding, catalog, bindingsPreviewValues ?? {}, labels);
+        if (currentEl && existingBinding) {
+            renderCurrentBindingSummary(currentEl, existingBinding, catalog, bindingsPreviewValues ?? {}, labels);
+            currentEl.hidden = false;
+        } else if (currentEl) {
+            currentEl.hidden = true;
+        }
+
+        fieldSelect.addEventListener('change', () => {
+            if (! isModal) {
+                commitBinding();
+            }
+        });
     } else if (currentEl) {
         currentEl.hidden = true;
     }
 
     if (isModal) {
-        host.querySelector('[data-bind-cancel]').addEventListener('click', close);
+        host.querySelectorAll('[data-bind-cancel]').forEach((button) => {
+            button.addEventListener('click', close);
+        });
         overlay.addEventListener('click', (event) => {
             if (event.target === overlay) {
                 close();
@@ -1866,18 +2293,11 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
         }
     });
 
-    fieldSelect.addEventListener('change', () => {
-        if (! isModal) {
-            commitBinding();
-        }
-    });
-
-    if (repeatPanel && repeatSourceSelect && ! isModal) {
-        const repeatSources = catalog.repeatSources ?? [];
-
-        if (repeatSources.length > 0 && isRepeatHost(component)) {
+    if (repeatPanel && repeatSourceSelect) {
+        if (repeatSources.length > 0 && listHost) {
             repeatPanel.hidden = false;
             const repeatTarget = migrateRepeatPlacement(component);
+            refreshListContainerLayerName(repeatTarget);
 
             const populateRepeatSortFields = (repeatSourceId, selectedSort = 'id') => {
                 if (! repeatSortSelect) {
@@ -1898,6 +2318,71 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 }
             };
 
+            const filtersHost = host.querySelector('[data-repeat-filters]');
+
+            const readRepeatFiltersFromUi = () => {
+                const filters = {};
+
+                filtersHost?.querySelectorAll('[data-repeat-filter]')?.forEach((select) => {
+                    const id = select.getAttribute('data-repeat-filter');
+                    const value = String(select.value ?? '').trim();
+
+                    if (id && value) {
+                        filters[id] = value;
+                    }
+                });
+
+                return filters;
+            };
+
+            const populateRepeatFilters = (repeatSourceId, selectedFilters = {}) => {
+                if (! filtersHost) {
+                    return;
+                }
+
+                filtersHost.innerHTML = '';
+                const definitions = filtersForRepeatSource(catalog, repeatSourceId);
+
+                for (const definition of definitions) {
+                    if (! definition?.id || ! Array.isArray(definition.options) || definition.options.length === 0) {
+                        continue;
+                    }
+
+                    const label = document.createElement('label');
+                    label.className = 'voodbuilder-gjs-bindings-modal__label';
+
+                    const labelText = document.createElement('span');
+                    labelText.className = 'voodbuilder-gjs-bindings-modal__label-text';
+                    labelText.textContent = definition.label ?? definition.id;
+
+                    const select = document.createElement('select');
+                    select.className = 'voodbuilder-gjs-bindings-modal__select';
+                    select.setAttribute('data-repeat-filter', definition.id);
+
+                    const anyOption = document.createElement('option');
+                    anyOption.value = '';
+                    anyOption.textContent = labels.repeatFilterAny ?? 'Any';
+                    select.appendChild(anyOption);
+
+                    for (const optionDef of definition.options) {
+                        const option = document.createElement('option');
+                        option.value = String(optionDef.value ?? '');
+                        option.textContent = optionDef.label ?? option.value;
+                        select.appendChild(option);
+                    }
+
+                    const selected = selectedFilters?.[definition.id];
+
+                    if (selected && [...select.options].some((option) => option.value === String(selected))) {
+                        select.value = String(selected);
+                    }
+
+                    label.appendChild(labelText);
+                    label.appendChild(select);
+                    filtersHost.appendChild(label);
+                }
+            };
+
             for (const source of repeatSources) {
                 const option = document.createElement('option');
                 option.value = source.id;
@@ -1910,10 +2395,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             const existingSortDir = repeatTarget.getAttributes()['data-voodbuilder-repeat-sort-dir'] || 'desc';
             const existingLimit = repeatTarget.getAttributes()['data-voodbuilder-repeat-limit'];
             const existingOffset = repeatTarget.getAttributes()['data-voodbuilder-repeat-offset'] || '0';
+            const existingFilters = repeatFiltersFromContainer(repeatTarget);
 
             if (existingRepeat) {
                 repeatSourceSelect.value = existingRepeat;
                 populateRepeatSortFields(existingRepeat, existingSort);
+                populateRepeatFilters(existingRepeat, existingFilters);
                 repeatCurrentEl.hidden = false;
                 repeatCurrentEl.textContent = `${labels.currentRepeat ?? 'Current repeat'}: ${formatRepeatSummary(
                     existingRepeat,
@@ -1923,9 +2410,24 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                     catalog,
                     labels,
                     existingOffset,
+                    existingFilters,
                 )}`;
             } else {
-                populateRepeatSortFields(repeatSourceSelect.value || repeatSources[0]?.id);
+                const preferred = repeatSources.find((source) => source.id === 'vtuts.list' || source.id === 'vtut.list')
+                    ?? repeatSources[0];
+
+                if (preferred) {
+                    repeatSourceSelect.value = preferred.id;
+                    populateRepeatSortFields(
+                        preferred.id,
+                        preferred.defaultSort || 'published_at',
+                    );
+                    populateRepeatFilters(preferred.id);
+
+                    if (repeatSortDirSelect) {
+                        repeatSortDirSelect.value = preferred.defaultDirection || 'desc';
+                    }
+                }
             }
 
             if (existingLimit) {
@@ -1942,6 +2444,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
             repeatSourceSelect.addEventListener('change', () => {
                 populateRepeatSortFields(repeatSourceSelect.value);
+                populateRepeatFilters(repeatSourceSelect.value);
             });
 
             repeatApplyButton?.addEventListener('click', () => {
@@ -1953,6 +2456,8 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 const offset = Math.max(0, Math.min(100, Number(repeatOffsetInput?.value || 0)));
                 const sort = repeatSortSelect?.value || 'id';
                 const sortDir = repeatSortDirSelect?.value || 'desc';
+                const filters = readRepeatFiltersFromUi();
+                const filterAttr = serializeRepeatFiltersAttribute(filters);
 
                 if (component.getAttributes()['data-voodbuilder-bind']) {
                     clearBindingFromComponent(component);
@@ -1962,19 +2467,28 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                     clearRepeatAttributes(component);
                 }
 
-                repeatTarget.addAttributes({
+                const attributes = {
                     'data-voodbuilder-repeat': repeatSourceSelect.value,
                     'data-voodbuilder-repeat-limit': String(limit),
                     'data-voodbuilder-repeat-offset': String(offset),
                     'data-voodbuilder-repeat-sort': sort,
                     'data-voodbuilder-repeat-sort-dir': sortDir,
-                });
+                };
+
+                if (filterAttr) {
+                    attributes['data-voodbuilder-repeat-filter'] = filterAttr;
+                } else {
+                    repeatTarget.removeAttributes('data-voodbuilder-repeat-filter');
+                }
+
+                repeatTarget.addAttributes(attributes);
                 applyRepeatMetaToComponent(repeatTarget, {
                     key: repeatSourceSelect.value,
                     limit: String(limit),
                     offset: String(offset),
                     sort,
                     sortDir,
+                    filters,
                 });
 
                 const template = collapseRepeatTemplate(repeatTarget);
@@ -1984,6 +2498,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 }
 
                 syncLogoScrollSourceNear(repeatTarget, 'dynamic');
+                refreshListContainerLayerName(repeatTarget);
 
                 editor.select(template ?? repeatTarget);
 
@@ -1997,6 +2512,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                         catalog,
                         labels,
                         offset,
+                        filters,
                     )}`;
                 }
 
@@ -2006,6 +2522,10 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
                 if (typeof onApplied === 'function') {
                     onApplied(template ?? repeatTarget, null, null);
+                }
+
+                if (isModal) {
+                    close();
                 }
             });
 
@@ -2021,11 +2541,16 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
                 }
 
                 syncLogoScrollSourceNear(repeatTarget, 'static');
+                refreshListContainerLayerName(repeatTarget);
 
                 editor.select(component);
 
                 if (repeatCurrentEl) {
                     repeatCurrentEl.hidden = true;
+                }
+
+                if (isModal) {
+                    close();
                 }
             });
         }
@@ -2110,6 +2635,9 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
 
             return;
         }
+
+        restoreRepeatMetaOnComponent(selected);
+        refreshListContainerLayerName(selected);
 
         mountBindingForm(editor, selected, previewOptions.catalog ?? catalog, labels, () => refreshBindingPreviews(editor, previewOptions), {
             mode: 'inline',
@@ -2393,7 +2921,19 @@ export async function registerBindingsUi(editor, options = {}) {
                 return;
             }
 
-            openBindingModal(ed, selected, previewOptions.catalog, labels, refreshPreviews);
+            restoreRepeatMetaOnComponent(selected);
+
+            // After reload, Layout type may still wrap a list host — prefer the real repeat target.
+            const target = isRepeatHost(selected)
+                ? selected
+                : (findRepeatListContainer(selected) ?? selected);
+
+            if (target !== selected && isRepeatHost(target)) {
+                ed.select(target);
+            }
+
+            restoreRepeatMetaOnComponent(target);
+            openBindingModal(ed, target, previewOptions.catalog, labels, refreshPreviews);
         },
     });
 

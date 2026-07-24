@@ -43,8 +43,21 @@ final class ModelIntegrationLatestBindingSource extends AbstractModelIntegration
         }
 
         $query = $class::query();
+        $eagerLoads = $this->relationEagerLoads();
 
-        if (method_exists($class, 'scopePublished')) {
+        if ($eagerLoads !== []) {
+            $query->with($eagerLoads);
+        }
+
+        if (
+            method_exists($class, 'scopePubliclyListed')
+            || (new \ReflectionClass($class))->hasMethod('publiclyListed')
+        ) {
+            $query->publiclyListed();
+        } elseif (
+            method_exists($class, 'scopePublished')
+            || (new \ReflectionClass($class))->hasMethod('published')
+        ) {
             $query->published();
         }
 

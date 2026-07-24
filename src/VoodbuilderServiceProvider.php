@@ -66,6 +66,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\ChromeLayoutContentSlotBlock;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
@@ -127,6 +128,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModelRegistry::class);
         $this->app->singleton(ReverseRelationRegistry::class);
         $this->app->singleton(ModelIntegrationRegistry::class);
+        $this->app->singleton(RepeatListRegistry::class);
         $this->app->singleton(ModelIntegrationListResolver::class);
         $this->app->singleton(ModelIntegrationBindingRegistrar::class);
         $this->app->singleton(SubThemeRegistry::class);
