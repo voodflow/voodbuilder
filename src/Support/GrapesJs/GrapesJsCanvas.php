@@ -177,20 +177,37 @@ final class GrapesJsCanvas
 
         .voodbuilder-gjs-inner-drop-slot {
             box-sizing: border-box;
-            display: block !important;
+            display: none !important;
             width: 100%;
-            min-height: 2.75rem !important;
-            margin: 0.25rem 0 !important;
+            min-height: 0 !important;
+            height: 0 !important;
+            margin: 0 !important;
             padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+
+        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot,
+        body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot {
+            display: block !important;
+            min-height: 2.75rem !important;
+            height: auto !important;
+            margin: 0.25rem 0 !important;
             border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent) !important;
             border-radius: 0.5rem;
             background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
-            outline: none !important;
-            box-shadow: none !important;
+            pointer-events: auto !important;
+            overflow: visible !important;
         }
 
-        .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
-        .voodbuilder-gjs-inner-drop-slot.gjs-selected {
+        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+        body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot.gjs-selected,
+        body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+        body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-selected {
             border-color: var(--color-vp-brand-1, #6366f1) !important;
             background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
             outline: none !important;

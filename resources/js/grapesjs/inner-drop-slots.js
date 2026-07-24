@@ -7,6 +7,8 @@ import { safeFindComponents, walkComponentTree } from './tailwind-visual-style.j
 
 export const INNER_DROP_SLOT_ATTR = 'data-voodbuilder-inner-drop';
 export const INNER_DROP_SLOT_TYPE = 'voodbuilder-inner-drop-slot';
+export const INNER_DROP_SLOTS_VISIBLE_CLASS = 'voodbuilder-inner-drop-slots-visible';
+export const INNER_DROP_SLOTS_STORAGE_KEY = 'voodbuilder:inner-drop-slots-visible';
 
 const LAYOUT_CLASS_HINTS = [
     'flex',
@@ -63,6 +65,26 @@ function isDroppable(component) {
     return droppable !== false;
 }
 
+function isAnimatedLayoutHost(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (
+        attrs['data-voodbuilder-animated-stats'] != null
+        || attrs['data-voodbuilder-animated-counter'] != null
+        || attrs['data-voodbuilder-animated-cta'] != null
+        || attrs['data-voodbuilder-logo-scroll'] != null
+        || attrs['data-vb-items-root'] != null
+        || attrs['data-vb-item'] != null
+        || attrs['data-vb-count-to'] != null
+    ) {
+        return true;
+    }
+
+    const type = String(component?.get?.('type') ?? '');
+
+    return type.startsWith('voodbuilder-animated-') || type === 'voodbuilder-logo-scroll';
+}
+
 /**
  * @param {import('grapesjs').Component} component
  * @returns {boolean}
@@ -83,6 +105,10 @@ export function isInnerDropLayoutContainer(component) {
     }
 
     if (attrs['data-voodbuilder-chrome-shell-locked'] != null) {
+        return false;
+    }
+
+    if (isAnimatedLayoutHost(component)) {
         return false;
     }
 
@@ -119,6 +145,48 @@ function lastChildIsSlot(component) {
 }
 
 /**
+ * @returns {boolean}
+ */
+export function readInnerDropSlotsVisiblePreference() {
+    try {
+        return localStorage.getItem(INNER_DROP_SLOTS_STORAGE_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * @param {boolean} active
+ */
+export function saveInnerDropSlotsVisiblePreference(active) {
+    try {
+        localStorage.setItem(INNER_DROP_SLOTS_STORAGE_KEY, active ? '1' : '0');
+    } catch {
+        // Ignore storage errors.
+    }
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {boolean} visible
+ * @param {HTMLElement|null|undefined} shellRoot
+ */
+export function setInnerDropSlotsVisible(editor, visible, shellRoot = null) {
+    editor.__voodbuilderInnerDropSlotsVisible = visible === true;
+    shellRoot?.classList.toggle('is-inner-drop-slots-visible', visible === true);
+
+    editor?.Canvas?.getFrames?.()?.forEach((frame) => {
+        frame.view?.getBody()?.classList.toggle(INNER_DROP_SLOTS_VISIBLE_CLASS, visible === true);
+    });
+
+    if (visible) {
+        mountInnerDropSlots(editor);
+    } else if (! editor?.__voodbuilderInnerDropSlotsDragging) {
+        clearInnerDropSlots(editor);
+    }
+}
+
+/**
  * @param {import('grapesjs').Editor} editor
  */
 export function clearInnerDropSlots(editor) {
@@ -130,6 +198,16 @@ export function clearInnerDropSlots(editor) {
 
     for (const slot of safeFindComponents(wrapper, `[${INNER_DROP_SLOT_ATTR}]`)) {
         slot.remove({ silent: true });
+    }
+
+    // Also purge leaked DOM nodes that lost their Grapes model.
+    try {
+        const doc = editor.Canvas?.getDocument?.();
+
+        doc?.querySelectorAll?.(`[${INNER_DROP_SLOT_ATTR}], .voodbuilder-gjs-inner-drop-slot`)
+            ?.forEach((node) => node.remove());
+    } catch {
+        // Canvas may be unavailable during destroy.
     }
 
     editor.__voodbuilderInnerDropSlotsActive = false;
@@ -240,19 +318,44 @@ export function registerInnerDropSlots(editor) {
     editor.__voodbuilderInnerDropSlotsRegistered = true;
 
     registerInnerDropSlotType(editor);
+    editor.__voodbuilderInnerDropSlotsVisible = readInnerDropSlotsVisiblePreference();
+    editor.__voodbuilderInnerDropSlotsDragging = false;
 
     const scheduleClear = () => {
+        editor.__voodbuilderInnerDropSlotsDragging = false;
         window.requestAnimationFrame(() => {
+            if (editor.__voodbuilderInnerDropSlotsVisible) {
+                return;
+            }
+
             clearInnerDropSlots(editor);
         });
     };
 
+    const startDrag = () => {
+        editor.__voodbuilderInnerDropSlotsDragging = true;
+        mountInnerDropSlots(editor);
+    };
+
     // Mount synchronously so GrapesJS sorter dimensions include the slots.
-    editor.on('block:drag:start', () => mountInnerDropSlots(editor));
-    editor.on('sorter:drag:start', () => mountInnerDropSlots(editor));
+    editor.on('block:drag:start', startDrag);
+    editor.on('sorter:drag:start', startDrag);
     editor.on('block:drag:stop', scheduleClear);
     editor.on('sorter:drag:end', scheduleClear);
-    editor.on('load', () => clearInnerDropSlots(editor));
+    editor.on('load', () => {
+        clearInnerDropSlots(editor);
+
+        if (editor.__voodbuilderInnerDropSlotsVisible) {
+            mountInnerDropSlots(editor);
+        }
+    });
+    editor.on('canvas:frame:load', () => {
+        clearInnerDropSlots(editor);
+        setInnerDropSlotsVisible(
+            editor,
+            editor.__voodbuilderInnerDropSlotsVisible === true,
+        );
+    });
     editor.on('destroy', () => clearInnerDropSlots(editor));
 }
 

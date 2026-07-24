@@ -36,6 +36,19 @@ import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
 import { createInspectorEmptyState } from '../../inspector-empty-state.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
 import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
+import {
+    isDividerComponent,
+    isIconComponent,
+    isTextLinkComponent,
+    renderDividerSettings,
+    renderIconSettings,
+    renderTextLinkSettings,
+} from '../../basic-elements-settings.js';
+import {
+    isLayoutStructureComponent,
+    renderLayoutStructureSettings,
+} from '../../layout-elements-settings.js';
+import { isAnimatedCounterComponent, renderAnimatedCounterSettings, syncAnimatedCounterSettingsForm } from '../../animated-counter-settings.js';
 import { isImageSettingsComponent, renderImageContentSettings } from '../../image-content-settings.js';
 import { ensureSmartCtaButton } from '../../grapesjs-button-link.js';
 
@@ -62,9 +75,31 @@ function syncSettingsFormValues(mount, root) {
         }
 
         if (input instanceof HTMLSelectElement || input instanceof HTMLInputElement) {
-            const value = root.get(name);
+            const value = root.get(name) ?? root.getAttributes?.()?.[name];
 
-            input.value = value == null ? '' : String(value);
+            // Form-only field names (e.g. vbCountTrigger) are not model props —
+            // leave the current control value alone instead of clearing it.
+            if (value == null) {
+                return;
+            }
+
+            const next = String(value);
+
+            if (input.value === next) {
+                return;
+            }
+
+            input.value = next;
+
+            if (input instanceof HTMLSelectElement) {
+                const label = input.closest('.voodbuilder-gjs-select-wrap')
+                    ?.querySelector('.voodbuilder-gjs-select-trigger-label');
+                const selected = input.options[input.selectedIndex];
+
+                if (label && selected) {
+                    label.textContent = selected.textContent?.trim() || selected.value || '-';
+                }
+            }
         }
     });
 }
@@ -246,9 +281,17 @@ function guardTraitManagerForBlockSettings(editor) {
             return;
         }
 
-        // Smart CTA buttons always use GrapesJS traits (link type / URL / page / menu).
-        if (component?.get?.('type') === 'voodbuilder-cta-button') {
+        // Smart CTA buttons and animated counters own Content traits — never steal selection.
+        const componentType = component?.get?.('type');
+
+        if (componentType === 'voodbuilder-cta-button' || componentType === 'voodbuilder-animated-counter') {
             return originalSelect(component, ...args);
+        }
+
+        if (isAnimatedCounterComponent(component)) {
+            editor.__voodbuilderBlockSettingsRender?.();
+
+            return;
         }
 
         if (shouldRenderCustomSettings(editor, component)) {
@@ -433,6 +476,101 @@ export function registerSettingsUi(editor, mount) {
                 renderedRoot = null;
                 renderedRootBlockId = '';
                 renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isIconComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderIconSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isLayoutStructureComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderLayoutStructureSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isTextLinkComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderTextLinkSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isDividerComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderDividerSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (rawSelected.get?.('type') === 'voodbuilder-animated-counter' || isAnimatedCounterComponent(rawSelected)) {
+                const counterKey = rawSelected.getId?.() ?? rawSelected.cid ?? '';
+
+                if (
+                    renderedDescriptorId === 'animated-counter'
+                    && renderedRoot === rawSelected
+                    && renderedRootBlockId === counterKey
+                    && mount.querySelector('.voodbuilder-gjs-form')
+                ) {
+                    mount.hidden = false;
+                    traitsMount?.classList.add('hidden');
+                    syncAnimatedCounterSettingsForm(mount, rawSelected);
+
+                    return;
+                }
+
+                closeAllInspectorSelects();
+                renderAnimatedCounterSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = rawSelected;
+                renderedRootBlockId = counterKey;
+                renderedDescriptorId = 'animated-counter';
 
                 return;
             }
@@ -730,6 +868,23 @@ export function registerSettingsUi(editor, mount) {
         }
 
         const selected = editor.getSelected();
+
+        // Counter Content form remounted on every attr sync (bindings/preview) and
+        // flickered the custom selects — keep it mounted and sync values instead.
+        if (
+            selected
+            && renderedDescriptorId === 'animated-counter'
+            && renderedRoot === selected
+            && isAnimatedCounterComponent(selected)
+            && mount.querySelector('.voodbuilder-gjs-form')
+        ) {
+            if (component === selected || isWithinSettingsRoot(component, selected)) {
+                syncAnimatedCounterSettingsForm(mount, selected);
+            }
+
+            return;
+        }
+
         const { root } = resolveSettings(selected, editor);
 
         if (

@@ -4,6 +4,8 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { tablerIconSvg } from './tabler-icons-catalog.js';
+import { applyIconToComponent } from './basic-elements-settings.js';
 
 export const BASIC_BLOCK_CATEGORY = 'Basic';
 export const MEDIA_BLOCK_CATEGORY = 'Media';
@@ -27,7 +29,7 @@ const SOCIAL_NETWORKS = [
     { key: 'copy_link', label: 'Copy link' },
 ];
 
-const ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="vb-icon__glyph"><path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/></svg>';
+const ICON_SVG = tablerIconSvg('star', { sizeClass: 'size-10' });
 
 function galleryPlaceholderSrc(index) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#e2e8f0"/><text x="200" y="205" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="16">Image ${index}</text></svg>`;
@@ -40,6 +42,9 @@ function wireframe(paths) {
 }
 
 export const UTILITY_BLOCK_WIREFRAMES = {
+    'voodbuilder-heading': wireframe('<path d="M14 8v8M10 8v8M10 12h4"/><path d="M8 6h8"/>'),
+    'voodbuilder-text': wireframe('<path d="M10 12h28M10 18h22M10 24h26M10 30h18"/>'),
+    'voodbuilder-rich-text': wireframe('<path d="M10 12h28M10 18h24M10 24h28M10 30h16"/><path d="M10 36h20"/>'),
     'voodbuilder-icon': wireframe(
         '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>',
     ),
@@ -47,6 +52,15 @@ export const UTILITY_BLOCK_WIREFRAMES = {
     'voodbuilder-button': wireframe(
         '<rect x="8" y="16" width="32" height="14" rx="3"/>'
         + '<path d="M14 23h20"/>',
+    ),
+    image: wireframe(
+        '<rect x="9" y="12" width="30" height="24" rx="2.5" />'
+        + '<circle cx="17" cy="20" r="2.25" />'
+        + '<path d="M11 32l8-7 6 5 5-4 7 6" />',
+    ),
+    video: wireframe(
+        '<rect x="9" y="14" width="30" height="20" rx="2.5" />'
+        + '<path d="M22 20l8 4-8 4z" />',
     ),
     'voodbuilder-reading-time': wireframe('<circle cx="24" cy="24" r="10"/><path d="M24 18v6l4 2"/>'),
     'voodbuilder-reading-progress': wireframe('<path d="M8 28h32"/><rect x="8" y="26" width="18" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>'),
@@ -72,18 +86,6 @@ export const UTILITY_BLOCK_WIREFRAMES = {
         + '<circle cx="18" cy="36" r="1.5" fill="currentColor"/><circle cx="24" cy="36" r="1.5"/><circle cx="30" cy="36" r="1.5"/>',
     ),
     'voodbuilder-divider': wireframe('<path d="M8 24h32"/>'),
-    'voodbuilder-icon-box': wireframe(
-        '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>'
-        + '<path d="M22 16h16M22 22h12M22 28h8"/>',
-    ),
-    'voodbuilder-styled-list': wireframe(
-        '<circle cx="12" cy="16" r="1.5" fill="currentColor"/>'
-        + '<path d="M18 16h20"/>'
-        + '<circle cx="12" cy="24" r="1.5" fill="currentColor"/>'
-        + '<path d="M18 24h16"/>'
-        + '<circle cx="12" cy="32" r="1.5" fill="currentColor"/>'
-        + '<path d="M18 32h18"/>',
-    ),
     'voodbuilder-embed': wireframe(
         '<rect x="8" y="14" width="32" height="18" rx="2"/>'
         + '<path d="M20 20l8 4-8 4z"/>',
@@ -291,19 +293,39 @@ function buildSocialShareLinks() {
 
 const BLOCKS = [
     {
-        id: 'voodbuilder-icon',
-        label: 'Icon',
+        id: 'voodbuilder-heading',
+        label: 'Heading',
         category: BASIC_BLOCK_CATEGORY,
         content: {
-            type: 'voodbuilder-icon',
-            classes: ['inline-flex', 'items-center', 'justify-center', 'text-vp-text-2', 'vb-icon-link'],
-            attributes: {
-                'data-voodbuilder-icon': '',
-                href: '#',
-                'data-vb-link-type': 'none',
-            },
-            style: { 'font-size': '60px' },
-            components: ICON_SVG,
+            type: 'text',
+            tagName: 'h2',
+            classes: ['text-3xl', 'font-bold', 'tracking-tight', 'text-vp-text-1'],
+            content: 'Heading',
+            editable: true,
+        },
+    },
+    {
+        id: 'voodbuilder-text',
+        label: 'Basic Text',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'text',
+            tagName: 'p',
+            classes: ['text-base', 'leading-relaxed', 'text-vp-text-2'],
+            content: 'Insert your text here. Click to edit.',
+            editable: true,
+        },
+    },
+    {
+        id: 'voodbuilder-rich-text',
+        label: 'Rich Text',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'text',
+            tagName: 'div',
+            classes: ['vb-rich-text', 'space-y-3', 'text-base', 'leading-relaxed', 'text-vp-text-2'],
+            content: '<p>Write longer copy here. Select text to bold, italic, link, or wrap for styles.</p>',
+            editable: true,
         },
     },
     {
@@ -317,6 +339,7 @@ const BLOCKS = [
                 href: '#',
                 'data-vb-link-type': 'url',
             },
+            href: '#',
             components: 'Text link',
         },
     },
@@ -353,6 +376,59 @@ const BLOCKS = [
             href: '#',
             components: 'Button',
         },
+    },
+    {
+        id: 'voodbuilder-icon',
+        label: 'Icon',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'voodbuilder-icon',
+            classes: ['inline-flex', 'items-center', 'justify-center', 'text-vp-text-2', 'vb-icon-link', 'size-10'],
+            attributes: {
+                'data-voodbuilder-icon': '',
+                'data-vb-icon': 'star',
+                'data-vb-icon-size': 'size-10',
+                'data-vb-link-type': 'none',
+            },
+            components: ICON_SVG,
+        },
+    },
+    {
+        id: 'image',
+        label: 'Image',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'image',
+            classes: ['w-full', 'h-auto', 'rounded'],
+            attributes: {
+                src: '',
+                alt: 'Image',
+            },
+        },
+    },
+    {
+        id: 'video',
+        label: 'Video',
+        category: BASIC_BLOCK_CATEGORY,
+        content: {
+            type: 'video',
+            provider: 'yt',
+            videoId: '',
+            classes: ['w-full', 'rounded', 'aspect-video'],
+            style: {
+                width: '100%',
+                'max-width': '100%',
+                height: 'auto',
+            },
+        },
+    },
+    {
+        id: 'voodbuilder-divider',
+        label: 'Divider',
+        category: BASIC_BLOCK_CATEGORY,
+        content: `
+            <hr class="vb-divider my-6 w-full border-0 border-t border-vp-divider" data-voodbuilder-divider data-vb-divider-color="border-vp-divider" />
+        `,
     },
     {
         id: 'voodbuilder-reading-time',
@@ -483,74 +559,6 @@ const BLOCKS = [
         },
     },
     {
-        id: 'voodbuilder-divider',
-        label: 'Divider',
-        category: BASIC_BLOCK_CATEGORY,
-        content: `
-            <hr class="vb-divider my-6 w-full border-0 border-t border-vp-divider" data-voodbuilder-divider />
-        `,
-    },
-    {
-        id: 'voodbuilder-icon-box',
-        label: 'Icon box',
-        category: BASIC_BLOCK_CATEGORY,
-        content: {
-            tagName: 'div',
-            classes: ['vb-icon-box', 'flex', 'items-start', 'gap-4'],
-            attributes: { 'data-voodbuilder-icon-box': '' },
-            components: [
-                {
-                    type: 'voodbuilder-icon',
-                    classes: ['shrink-0', 'text-vp-brand-1'],
-                    attributes: {
-                        'data-voodbuilder-icon': '',
-                        href: '#',
-                        'data-vb-link-type': 'none',
-                    },
-                    style: { 'font-size': '2.5rem' },
-                    components: ICON_SVG,
-                },
-                {
-                    tagName: 'div',
-                    classes: ['min-w-0', 'space-y-2'],
-                    components: [
-                        {
-                            tagName: 'h3',
-                            classes: ['text-lg', 'font-semibold', 'text-vp-text-1'],
-                            components: 'Feature title',
-                        },
-                        {
-                            tagName: 'p',
-                            classes: ['text-sm', 'leading-relaxed', 'text-vp-text-2'],
-                            components: 'Short supporting text for this icon box.',
-                        },
-                    ],
-                },
-            ],
-        },
-    },
-    {
-        id: 'voodbuilder-styled-list',
-        label: 'Styled list',
-        category: BASIC_BLOCK_CATEGORY,
-        content: `
-            <ul class="vb-styled-list space-y-3" data-voodbuilder-styled-list>
-                <li class="flex items-start gap-3 text-sm text-vp-text-1">
-                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
-                    <span>First list item</span>
-                </li>
-                <li class="flex items-start gap-3 text-sm text-vp-text-1">
-                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
-                    <span>Second list item</span>
-                </li>
-                <li class="flex items-start gap-3 text-sm text-vp-text-1">
-                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-vp-brand-1" aria-hidden="true"></span>
-                    <span>Third list item</span>
-                </li>
-            </ul>
-        `,
-    },
-    {
         id: 'voodbuilder-embed',
         label: 'Embed',
         category: MEDIA_BLOCK_CATEGORY,
@@ -573,7 +581,33 @@ export function registerUtilityBlockComponentTypes(editor) {
     registerLinkableType(editor, 'voodbuilder-icon', {
         name: 'Icon',
         droppable: false,
+        editable: false,
     });
+
+    const iconType = editor.DomComponents.getType('voodbuilder-icon');
+
+    if (iconType?.model) {
+        const proto = iconType.model.prototype;
+        const previousInit = proto.init;
+
+        proto.init = function initIcon() {
+            previousInit?.call(this);
+
+            const syncIcon = () => {
+                const attrs = this.getAttributes?.() ?? {};
+                applyIconToComponent(this, {
+                    name: attrs['data-vb-icon'] || 'star',
+                    sizeClass: attrs['data-vb-icon-size'] || 'size-10',
+                    href: attrs.href || this.get('href'),
+                    linkType: attrs['data-vb-link-type'] || 'none',
+                });
+            };
+
+            this.on('change:attributes:data-vb-icon change:attributes:data-vb-icon-size', syncIcon);
+            syncIcon();
+        };
+    }
+
     registerLinkableType(editor, 'voodbuilder-text-link', {
         name: 'Text link',
     });
@@ -585,6 +619,25 @@ export function registerUtilityBlocks(editor) {
     const blockManager = editor.BlockManager;
 
     registerUtilityBlockComponentTypes(editor);
+
+    // Drop stock grapesjs-blocks-basic leftovers + retired elements.
+    for (const id of [
+        'column1',
+        'column2',
+        'column3',
+        'column3-7',
+        'text',
+        'link',
+        'image',
+        'video',
+        'map',
+        'voodbuilder-icon-box',
+        'voodbuilder-styled-list',
+    ]) {
+        if (blockManager.get(id)) {
+            blockManager.remove(id);
+        }
+    }
 
     for (const block of BLOCKS) {
         if (blockManager.get(block.id)) {
@@ -599,6 +652,7 @@ export function registerUtilityBlocks(editor) {
             attributes: {
                 title: block.label,
             },
+            activate: block.id === 'image' || block.id === 'voodbuilder-text' || block.id === 'voodbuilder-heading',
         });
     }
 }

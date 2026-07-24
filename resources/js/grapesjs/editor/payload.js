@@ -5,6 +5,7 @@
 import { detachTopDropSpacerForExport, restoreTopDropSpacerAfterExport } from '../canvas-block-drag.js';
 import { detachInnerDropSlotsForExport } from '../inner-drop-slots.js';
 import { syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
+import { syncAnimatedCountersForExport } from '../grapesjs-animated-blocks.js';
 import {
     ensureComponentInstancesForExport,
     syncComponentInstancePaintForExport,
@@ -150,6 +151,7 @@ export function buildPayload(editor, options = {}) {
         runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
         runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
         runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
+        runExportStep('syncAnimatedCountersForExport', () => syncAnimatedCountersForExport(editor));
         runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
         runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
         runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));

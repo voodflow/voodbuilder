@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHtmlSanitizer;
 
 final class GrapesJsBindingRenderer
 {
@@ -137,6 +138,7 @@ final class GrapesJsBindingRenderer
 
         if ($tag === 'a') {
             $element->setAttribute('href', $decoded);
+            $this->stripSpuriousDirectTextNodes($element);
 
             return;
         }
@@ -146,6 +148,43 @@ final class GrapesJsBindingRenderer
                 'onclick',
                 'window.location.href='.json_encode($decoded, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP),
             );
+        }
+    }
+
+    /**
+     * Card-style URL bindings only set href. Remove direct text nodes that were
+     * accidentally scraped from nested title/category copy in the editor.
+     */
+    protected function stripSpuriousDirectTextNodes(DOMElement $element): void
+    {
+        $hasElementChild = false;
+
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $hasElementChild = true;
+
+                break;
+            }
+        }
+
+        if (! $hasElementChild) {
+            return;
+        }
+
+        $toRemove = [];
+
+        foreach ($element->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE && trim((string) $child->textContent) !== '') {
+                $toRemove[] = $child;
+            }
+        }
+
+        foreach ($toRemove as $node) {
+            $element->removeChild($node);
+        }
+
+        if ($element->hasAttribute('data-voodbuilder-cta-label')) {
+            $element->removeAttribute('data-voodbuilder-cta-label');
         }
     }
 
@@ -161,11 +200,31 @@ final class GrapesJsBindingRenderer
             return;
         }
 
+        $decoded = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if ($this->isAnimatedCounterElement($element)) {
+            GrapesJsHtmlSanitizer::syncCounterElementFromValue($element, $decoded);
+
+            return;
+        }
+
         while ($element->firstChild !== null) {
             $element->removeChild($element->firstChild);
         }
 
-        $element->appendChild($element->ownerDocument->createTextNode(html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        $element->appendChild($element->ownerDocument->createTextNode($decoded));
+    }
+
+    protected function isAnimatedCounterElement(DOMElement $element): bool
+    {
+        if ($element->hasAttribute('data-voodbuilder-animated-counter')
+            || $element->hasAttribute('data-vb-count-to')) {
+            return true;
+        }
+
+        $class = ' '.$element->getAttribute('class').' ';
+
+        return str_contains($class, ' vb-animated-counter ');
     }
 
     protected function extractBodyHtml(DOMDocument $document): ?string

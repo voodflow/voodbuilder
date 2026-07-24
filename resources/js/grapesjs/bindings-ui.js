@@ -4,7 +4,7 @@
 
 import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
-import { ensureTextLabel, extractButtonLabel } from './grapesjs-button-link.js';
+import { ensureTextLabel, extractButtonLabel, CTA_LABEL_ATTR } from './grapesjs-button-link.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import {
     CMD_CLEAR_DYNAMIC,
@@ -18,6 +18,10 @@ import {
     createInspectorEmptyState,
     inspectorSelectElementMessage,
 } from './inspector-empty-state.js';
+import {
+    applyDynamicCounterValue,
+    isAnimatedCounterComponent,
+} from './grapesjs-animated-blocks.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -309,7 +313,38 @@ function extractInteractiveLabel(component) {
 }
 
 function ensureInteractiveLabel(component, label) {
+    if (hasBindBlockingChildren(component)) {
+        return;
+    }
+
     ensureTextLabel(component, label);
+}
+
+/**
+ * URL-bound card links must only set href — never a scraped textnode sibling.
+ */
+function stripSpuriousUrlLabelNodes(component) {
+    if (! component || ! hasBindBlockingChildren(component)) {
+        return;
+    }
+
+    for (const child of [...(component.components?.()?.models ?? [])]) {
+        if (child?.get?.('type') === 'textnode') {
+            const content = String(child.get('content') ?? '').trim();
+
+            if (content !== '') {
+                child.remove();
+            }
+        }
+    }
+
+    component.removeAttributes?.(CTA_LABEL_ATTR);
+
+    if (typeof component.unset === 'function') {
+        component.unset('ctaLabel', { silent: true });
+    } else {
+        component.set?.('ctaLabel', '', { silent: true });
+    }
 }
 
 function resolveLinkComponentType(editor) {
@@ -1439,10 +1474,23 @@ function ensureRepeatContainers(editor, catalog) {
 }
 
 let repeatMaintainTimer = null;
+let bindingPreviewInFlight = null;
+let bindingPreviewFetchedAt = 0;
+let bindingPreviewRefreshInFlight = null;
+const BINDING_PREVIEW_TTL_MS = 30_000;
+const BINDING_PREVIEW_BACKOFF_MS = 15_000;
 
 function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
+    if (editor?.__voodbuilderBindingPreviewPainting || editor?.__voodbuilderSettingsChange) {
+        return;
+    }
+
     window.clearTimeout(repeatMaintainTimer);
     repeatMaintainTimer = window.setTimeout(() => {
+        if (editor?.__voodbuilderBindingPreviewPainting || editor?.__voodbuilderSettingsChange) {
+            return;
+        }
+
         ensureRepeatContainers(editor, catalog);
 
         const visit = (component) => {
@@ -1455,7 +1503,7 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
 
         visit(editor?.getWrapper?.());
         void refreshBindingPreviews(editor, previewOptions);
-    }, 120);
+    }, 180);
 }
 
 function paintPreviewOnElement(component, value, fieldType, { altText = null } = {}) {
@@ -1517,6 +1565,10 @@ function paintPreviewOnElement(component, value, fieldType, { altText = null } =
     }
 
     if (hasBindBlockingChildren(component)) {
+        return;
+    }
+
+    if (applyDynamicCounterValue(component, text)) {
         return;
     }
 
@@ -1628,7 +1680,9 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
         bindTarget.addAttributes({ href: '#' });
         bindTarget.removeAttributes('onclick');
 
-        if (! isRepeatItem) {
+        if (hasBindBlockingChildren(bindTarget) || isRepeatItem) {
+            stripSpuriousUrlLabelNodes(bindTarget);
+        } else {
             ensureInteractiveLabel(bindTarget, extractInteractiveLabel(bindTarget));
         }
 
@@ -1684,19 +1738,27 @@ function configureBoundComponent(editor, component, catalog) {
 
     const tag = componentTag(component);
     const urlOnInteractive = fieldType === 'url' && (tag === 'button' || tag === 'a');
+    const isRepeatItem = Boolean(component.getAttributes?.()['data-voodbuilder-repeat-item']);
     const fieldLabel = boundComponentLabel(bindingKey, catalog).split(' → ').pop() ?? bindingKey;
+    const cardLink = urlOnInteractive && hasBindBlockingChildren(component);
 
     component.set({
-        editable: urlOnInteractive,
+        editable: urlOnInteractive && ! cardLink && ! isRepeatItem,
         highlightable: true,
         selectable: true,
         layerable: true,
-        name: urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`,
+        name: (isRepeatItem || cardLink) && fieldType === 'url'
+            ? (isRepeatItem ? 'List Item' : 'Dynamic link')
+            : (urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`),
     });
     component.addClass('voodbuilder-gjs-bound');
 
     if (fieldType === 'url' && (tag === 'button' || tag === 'a')) {
-        ensureInteractiveLabel(component, extractInteractiveLabel(component));
+        if (cardLink || isRepeatItem) {
+            stripSpuriousUrlLabelNodes(component);
+        } else {
+            ensureInteractiveLabel(component, extractInteractiveLabel(component));
+        }
     }
 }
 
@@ -2639,7 +2701,9 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
         restoreRepeatMetaOnComponent(selected);
         refreshListContainerLayerName(selected);
 
-        mountBindingForm(editor, selected, previewOptions.catalog ?? catalog, labels, () => refreshBindingPreviews(editor, previewOptions), {
+        mountBindingForm(editor, selected, previewOptions.catalog ?? catalog, labels, () => {
+            void refreshBindingPreviews(editor, { ...previewOptions, forceNetwork: true });
+        }, {
             mode: 'inline',
             mount,
         });
@@ -2709,8 +2773,17 @@ async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConf
         return {};
     }
 
-    if (bindingsPreviewValues && ! force) {
+    const now = Date.now();
+    const cacheFresh = bindingsPreviewValues
+        && ! force
+        && (now - bindingPreviewFetchedAt) < BINDING_PREVIEW_TTL_MS;
+
+    if (cacheFresh) {
         return bindingsPreviewValues;
+    }
+
+    if (bindingPreviewInFlight) {
+        return bindingPreviewInFlight;
     }
 
     const url = new URL(bindingsPreviewUrl, window.location.origin);
@@ -2719,20 +2792,40 @@ async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConf
         url.searchParams.set('repeats', JSON.stringify(repeatConfigs));
     }
 
-    const response = await fetch(url.toString(), {
-        headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
-    });
+    bindingPreviewInFlight = (async () => {
+        const response = await fetch(url.toString(), {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
 
-    if (! response.ok) {
-        throw new Error(`Bindings preview request failed (${response.status})`);
+        if (response.status === 429) {
+            // Keep serving cache and cool down before the next forced fetch.
+            bindingPreviewFetchedAt = now + BINDING_PREVIEW_BACKOFF_MS;
+
+            if (bindingsPreviewValues) {
+                return bindingsPreviewValues;
+            }
+
+            throw new Error(`Bindings preview request failed (${response.status})`);
+        }
+
+        if (! response.ok) {
+            throw new Error(`Bindings preview request failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        bindingsPreviewValues = payload.values ?? {};
+        bindingsPreviewListValues = payload.listValues ?? {};
+        bindingPreviewFetchedAt = Date.now();
+
+        return bindingsPreviewValues;
+    })();
+
+    try {
+        return await bindingPreviewInFlight;
+    } finally {
+        bindingPreviewInFlight = null;
     }
-
-    const payload = await response.json();
-    bindingsPreviewValues = payload.values ?? {};
-    bindingsPreviewListValues = payload.listValues ?? {};
-
-    return bindingsPreviewValues;
 }
 
 export async function refreshBindingPreviews(editor, options = {}) {
@@ -2742,55 +2835,86 @@ export async function refreshBindingPreviews(editor, options = {}) {
         return;
     }
 
-    const values = await loadBindingsPreview(
-        options.bindingsPreviewUrl,
-        true,
-        collectRepeatPreviewConfigs(editor),
-    ).catch((error) => {
-        console.error('Voodbuilder GrapesJS: could not load binding preview.', error);
+    if (bindingPreviewRefreshInFlight) {
+        return bindingPreviewRefreshInFlight;
+    }
 
-        return {};
-    });
-    const listValues = bindingsPreviewListValues ?? {};
-    const previewContext = { values, listValues, catalog };
+    const forceNetwork = options.forceNetwork === true;
 
-    safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-bind]').forEach((component) => {
-        const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+    bindingPreviewRefreshInFlight = (async () => {
+        editor.__voodbuilderBindingPreviewPainting = true;
 
-        if (! bindingKey) {
-            return;
+        try {
+            const values = await loadBindingsPreview(
+                options.bindingsPreviewUrl,
+                forceNetwork,
+                collectRepeatPreviewConfigs(editor),
+            ).catch((error) => {
+                // One log per burst — avoid flooding the console on 429 loops.
+                if (! editor.__voodbuilderBindingPreviewErrorLogged) {
+                    editor.__voodbuilderBindingPreviewErrorLogged = true;
+                    console.error('Voodbuilder GrapesJS: could not load binding preview.', error);
+                    window.setTimeout(() => {
+                        editor.__voodbuilderBindingPreviewErrorLogged = false;
+                    }, BINDING_PREVIEW_BACKOFF_MS);
+                }
+
+                return bindingsPreviewValues ?? {};
+            });
+            const listValues = bindingsPreviewListValues ?? {};
+            const previewContext = { values, listValues, catalog };
+
+            safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-bind]').forEach((component) => {
+                const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+
+                if (! bindingKey) {
+                    return;
+                }
+
+                const option = findBindingOption(catalog, bindingKey)
+                    ?? (bindingKey === 'vtuts.latest.excerpt'
+                        ? findBindingOption(catalog, 'vtuts.latest.introduction')
+                        : null);
+                const value = resolvePreviewValue(bindingKey, component, values, listValues, catalog);
+                const element = component.getView()?.el;
+                const tag = componentTag(component);
+
+                if (value == null || value === '') {
+                    return;
+                }
+
+                if (tag === 'img') {
+                    applyPreviewValue(component, bindingKey, option, value, previewContext);
+
+                    return;
+                }
+
+                const currentText = element?.textContent?.trim() ?? '';
+                const isCounter = isAnimatedCounterComponent(component);
+
+                if (
+                    ! isCounter
+                    && tag !== 'button'
+                    && tag !== 'a'
+                    && ! isPlaceholderText(currentText)
+                    && currentText !== ''
+                ) {
+                    return;
+                }
+
+                if (hasBindBlockingChildren(component)) {
+                    return;
+                }
+
+                applyPreviewValue(component, bindingKey, option, value, previewContext);
+            });
+        } finally {
+            editor.__voodbuilderBindingPreviewPainting = false;
+            bindingPreviewRefreshInFlight = null;
         }
+    })();
 
-        const option = findBindingOption(catalog, bindingKey)
-            ?? (bindingKey === 'vtuts.latest.excerpt'
-                ? findBindingOption(catalog, 'vtuts.latest.introduction')
-                : null);
-        const value = resolvePreviewValue(bindingKey, component, values, listValues, catalog);
-        const element = component.getView()?.el;
-        const tag = componentTag(component);
-
-        if (value == null || value === '') {
-            return;
-        }
-
-        if (tag === 'img') {
-            applyPreviewValue(component, bindingKey, option, value, previewContext);
-
-            return;
-        }
-
-        const currentText = element?.textContent?.trim() ?? '';
-
-        if (tag !== 'button' && tag !== 'a' && ! isPlaceholderText(currentText) && currentText !== '') {
-            return;
-        }
-
-        if (hasBindBlockingChildren(component)) {
-            return;
-        }
-
-        applyPreviewValue(component, bindingKey, option, value, previewContext);
-    });
+    return bindingPreviewRefreshInFlight;
 }
 
 async function ensureBoundComponentVisible(component, options = {}) {
@@ -2808,7 +2932,7 @@ async function ensureBoundComponentVisible(component, options = {}) {
 
     const values = await loadBindingsPreview(
         options.bindingsPreviewUrl,
-        true,
+        options.forceNetwork === true,
         options.editor ? collectRepeatPreviewConfigs(options.editor) : [],
     );
     const listValues = bindingsPreviewListValues ?? {};
@@ -2834,7 +2958,10 @@ async function ensureBoundComponentVisible(component, options = {}) {
             || element.getAttribute('src')?.startsWith('data:image/svg')
             || isPlaceholderAlt(element.getAttribute('alt'))
             || (element.getAttribute('src')?.includes('/storage/') && bindingKey.includes('.latest.'))
-        : (tag !== 'button' && tag !== 'a' && ! element.textContent?.trim());
+        : (
+            isAnimatedCounterComponent(component)
+            || (tag !== 'button' && tag !== 'a' && ! element.textContent?.trim())
+        );
 
     if (! needsPaint) {
         return;
@@ -2891,12 +3018,19 @@ export async function registerBindingsUi(editor, options = {}) {
     });
 
     editor.on('component:update', (component) => {
+        if (editor.__voodbuilderBindingPreviewPainting || editor.__voodbuilderSettingsChange) {
+            return;
+        }
+
         const attrs = component?.getAttributes?.() ?? {};
 
-        if (attrs['data-voodbuilder-repeat']
+        // Preview paints update counter/bind attrs constantly — only re-run
+        // maintenance when the structural repeat markers change.
+        if (
+            attrs['data-voodbuilder-repeat']
             || attrs['data-voodbuilder-repeat-item']
-            || attrs['data-voodbuilder-bind']
-            || safeFindComponents(component, '[data-voodbuilder-repeat], [data-voodbuilder-repeat-item], [data-voodbuilder-bind]').length > 0) {
+            || safeFindComponents(component, '[data-voodbuilder-repeat], [data-voodbuilder-repeat-item]').length > 0
+        ) {
             scheduleRepeatMaintenance(editor, catalog, previewOptions);
         }
     });
@@ -2905,8 +3039,6 @@ export async function registerBindingsUi(editor, options = {}) {
         configureBoundComponent(editor, component, catalog);
         void ensureBoundComponentVisible(component, previewOptions);
     });
-
-    const refreshPreviews = () => refreshBindingPreviews(editor, previewOptions);
 
     editor.Commands.add(CMD_MAKE_DYNAMIC, {
         async run(ed) {
@@ -2933,7 +3065,9 @@ export async function registerBindingsUi(editor, options = {}) {
             }
 
             restoreRepeatMetaOnComponent(target);
-            openBindingModal(ed, target, previewOptions.catalog, labels, refreshPreviews);
+            openBindingModal(ed, target, previewOptions.catalog, labels, () => {
+                void refreshBindingPreviews(editor, { ...previewOptions, forceNetwork: true });
+            });
         },
     });
 
@@ -2951,7 +3085,7 @@ export async function registerBindingsUi(editor, options = {}) {
 
     editor.on('load', () => {
         ensureRepeatContainers(editor, previewOptions.catalog);
-        void refreshBindingPreviews(editor, previewOptions);
+        void refreshBindingPreviews(editor, { ...previewOptions, forceNetwork: true });
     });
 
     return catalog;

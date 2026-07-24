@@ -9,6 +9,10 @@ export const CODE_BLOCK_CATEGORY = 'Code';
 
 export const CATEGORY_ORDER = {
     Pinned: -200,
+    Layout: -190,
+    Basic: -180,
+    Media: -170,
+    Single: -160,
     Site: -110,
     Hero: -100,
     Content: -95,
@@ -31,10 +35,6 @@ export const CATEGORY_ORDER = {
     Voodbuilder: -120,
     Dynamic: -115,
     Forms: 100,
-    Basic: 105,
-    Layout: 110,
-    Media: 112,
-    Single: 114,
 };
 
 /** @type {Record<string, string>} */
@@ -56,17 +56,23 @@ const CATEGORY_ALIASES = {
     'Sections · Tabs': 'Tabs',
     'Sections · Header': 'Header',
     'Sections · Footer': 'Footer',
-    Basic: 'Layout',
     Extra: 'Layout',
 };
 
 export const BASIC_BLOCK_LABELS = {
-    column1: '1 column',
-    column2: '2 columns',
-    column3: '3 columns',
-    'column3-7': '2 cols · 30/70',
     image: 'Image',
     video: 'Video',
+    'voodbuilder-heading': 'Heading',
+    'voodbuilder-text': 'Basic Text',
+    'voodbuilder-rich-text': 'Rich Text',
+    'voodbuilder-text-link': 'Text link',
+    'voodbuilder-button': 'Button',
+    'voodbuilder-icon': 'Icon',
+    'voodbuilder-divider': 'Divider',
+    'voodbuilder-layout-section': 'Section',
+    'voodbuilder-layout-container': 'Container',
+    'voodbuilder-layout-block': 'Block',
+    'voodbuilder-layout-div': 'Div',
 };
 
 /** @type {Record<string, string>} */

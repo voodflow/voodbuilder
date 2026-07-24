@@ -7,6 +7,8 @@ import { resolveComponentFromElement } from './component-context-menu.js';
 
 const POPOVER_ID = 'voodbuilder-gjs-class-hover-popover';
 const HIDE_DELAY_MS = 120;
+export const CLASS_HOVER_POPOVER_STORAGE_KEY = 'voodbuilder:class-hover-popover-visible';
+export const CLASS_HOVER_POPOVER_SHELL_CLASS = 'is-class-hover-popover-visible';
 
 function ensurePopover() {
     let popover = document.getElementById(POPOVER_ID);
@@ -78,6 +80,67 @@ function pointerInsideFrame(frame, clientX, clientY) {
         && clientY <= rect.bottom;
 }
 
+/**
+ * Default ON — only opt-out via toolbar / localStorage.
+ *
+ * @returns {boolean}
+ */
+export function readClassHoverPopoverPreference() {
+    try {
+        const raw = localStorage.getItem(CLASS_HOVER_POPOVER_STORAGE_KEY);
+
+        if (raw === null) {
+            return true;
+        }
+
+        return raw === '1';
+    } catch {
+        return true;
+    }
+}
+
+/**
+ * @param {boolean} visible
+ */
+export function saveClassHoverPopoverPreference(visible) {
+    try {
+        localStorage.setItem(CLASS_HOVER_POPOVER_STORAGE_KEY, visible ? '1' : '0');
+    } catch {
+        // Ignore storage errors.
+    }
+}
+
+/**
+ * @param {object} editor
+ * @returns {boolean}
+ */
+export function isClassHoverPopoverEnabled(editor) {
+    if (editor?.__voodbuilderClassHoverPopoverEnabled === false) {
+        return false;
+    }
+
+    if (editor?.__voodbuilderClassHoverPopoverEnabled === true) {
+        return true;
+    }
+
+    return readClassHoverPopoverPreference();
+}
+
+/**
+ * @param {object} editor
+ * @param {boolean} enabled
+ * @param {HTMLElement|null|undefined} shellRoot
+ */
+export function setClassHoverPopoverEnabled(editor, enabled, shellRoot = null) {
+    const next = enabled === true;
+    editor.__voodbuilderClassHoverPopoverEnabled = next;
+    shellRoot?.classList.toggle(CLASS_HOVER_POPOVER_SHELL_CLASS, next);
+
+    if (! next) {
+        editor.__voodbuilderClassHoverPopover?.hide?.();
+    }
+}
+
 export function registerCanvasClassHoverPopover(editor, options = {}) {
     if (! editor || editor.__voodbuilderClassHoverPopoverRegistered) {
         return;
@@ -86,12 +149,15 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
     editor.__voodbuilderClassHoverPopoverRegistered = true;
 
     const labels = options.labels ?? {};
+    const shellRoot = options.shellRoot ?? null;
     const popover = ensurePopover();
     let hideTimer = null;
     let lastCid = null;
     let raf = 0;
     let pending = null;
     let wiredFrame = null;
+
+    setClassHoverPopoverEnabled(editor, readClassHoverPopoverPreference(), shellRoot);
 
     const clearPending = () => {
         pending = null;
@@ -117,6 +183,12 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
     };
 
     const showFor = (component, clientX, clientY) => {
+        if (! isClassHoverPopoverEnabled(editor)) {
+            hide();
+
+            return;
+        }
+
         if (! component || component === editor.getWrapper?.()) {
             scheduleHide();
 
@@ -141,6 +213,12 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
         pending = null;
 
         if (! next) {
+            return;
+        }
+
+        if (! isClassHoverPopoverEnabled(editor)) {
+            hide();
+
             return;
         }
 
@@ -208,6 +286,10 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
         doc.body.dataset.voodbuilderClassHoverWired = '1';
 
         doc.body.addEventListener('mousemove', (event) => {
+            if (! isClassHoverPopoverEnabled(editor)) {
+                return;
+            }
+
             const frameRect = frame.getBoundingClientRect();
 
             pending = {
@@ -241,6 +323,8 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
 
     editor.__voodbuilderClassHoverPopover = {
         hide,
+        isEnabled: () => isClassHoverPopoverEnabled(editor),
+        setEnabled: (enabled) => setClassHoverPopoverEnabled(editor, enabled, shellRoot),
         describe: (component) => componentClassString(component) || (labels.classHoverEmpty ?? 'No classes'),
     };
 }

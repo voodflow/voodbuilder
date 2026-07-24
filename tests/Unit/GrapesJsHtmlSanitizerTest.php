@@ -117,4 +117,31 @@ class GrapesJsHtmlSanitizerTest extends TestCase
         $this->assertStringNotContainsString('voodbuilder-gjs-inner-drop-slot', $cleaned);
         $this->assertStringContainsString('>CTA</button>', $cleaned);
     }
+
+    public function test_repairs_corrupted_animated_counters_and_stats_layout(): void
+    {
+        $html = '<section data-voodbuilder-animated-stats="" data-vb-item-count="5" class="vb-animated-stats">'
+            .'<div data-vb-items-root="" class="flex flex-wrap -m-4 text-center">'
+            .'<div data-vb-item="" class="p-4 w-full sm:w-1/2 md:w-1/3">'
+            .'<span object="" class="text-5xl font-bold">2.7K</span>'
+            .'<p>Users</p>'
+            .'</div>'
+            .'</div>'
+            .'</section>'
+            .'<span object>1,250+</span>';
+
+        $repaired = GrapesJsHtmlSanitizer::sanitize($html);
+
+        $this->assertStringNotContainsString('object=', $repaired);
+        $this->assertStringNotContainsString(' object>', $repaired);
+        $this->assertStringContainsString('data-voodbuilder-animated-stats="1"', $repaired);
+        $this->assertStringContainsString('data-vb-item-columns="5"', $repaired);
+        $this->assertStringContainsString('--vb-item-columns: 5', $repaired);
+        $this->assertStringContainsString('data-voodbuilder-animated-counter="1"', $repaired);
+        $this->assertStringContainsString('data-vb-count-to="2.7"', $repaired);
+        $this->assertStringContainsString('data-vb-count-suffix="K"', $repaired);
+        $this->assertStringContainsString('data-vb-count-to="1250"', $repaired);
+        $this->assertStringContainsString('data-vb-count-suffix="+"', $repaired);
+        $this->assertStringContainsString('vb-animated-counter', $repaired);
+    }
 }

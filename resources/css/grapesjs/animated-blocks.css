@@ -49,6 +49,26 @@
     font-variant-numeric: tabular-nums;
 }
 
+/**
+ * Item grids (Animated stats, etc.): column count via --vb-item-columns so the
+ * GrapesJS canvas matches the published page even when the iframe is < md/lg.
+ */
+[data-vb-items-root][data-vb-item-columns] {
+    display: grid !important;
+    gap: 1rem;
+    grid-template-columns: repeat(var(--vb-item-columns, 4), minmax(0, 1fr));
+}
+
+@media (max-width: 639px) {
+    [data-vb-items-root][data-vb-item-columns]:not([data-vb-item-columns='1']) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    [data-vb-items-root][data-vb-item-columns='1'] {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .vb-logo-scroll__link {
     @apply no-underline text-inherit;
 }

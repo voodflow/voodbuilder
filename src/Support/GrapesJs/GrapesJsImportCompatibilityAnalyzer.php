@@ -28,20 +28,27 @@ final class GrapesJsImportCompatibilityAnalyzer
     ];
 
     /**
+     * Exact class tokens excluded from Tailwind JIT review (not package-owned prefixes).
+     *
      * @var list<string>
      */
     private const IGNORED_CLASSES = [
         'dark',
-        'voodbuilder-pasted-component',
         'relative',
-        'voodbuilder-gjs-section',
-        'voodbuilder-gjs-container',
-        'voodbuilder-gjs-bound',
-        'voodbuilder-gjs-component-instance',
         'body-font',
         'title-font',
         'group',
         'peer',
+    ];
+
+    /**
+     * Package-owned class prefixes — never flagged as "to review".
+     *
+     * @var list<string>
+     */
+    private const INTERNAL_CLASS_PREFIXES = [
+        'voodbuilder-',
+        'vb-',
     ];
 
     /**
@@ -83,7 +90,11 @@ final class GrapesJsImportCompatibilityAnalyzer
         $review = [];
 
         foreach ($normalizedClasses as $class) {
-            if (in_array($class, self::IGNORED_CLASSES, true) || in_array($class, $adaptedFrom, true)) {
+            if (
+                in_array($class, self::IGNORED_CLASSES, true)
+                || in_array($class, $adaptedFrom, true)
+                || self::isInternalPackageClass($class)
+            ) {
                 continue;
             }
 
@@ -193,6 +204,32 @@ final class GrapesJsImportCompatibilityAnalyzer
         foreach (self::THEME_UTILITY_PATTERNS as $pattern) {
             if (preg_match($pattern, $class) === 1) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Voodbuilder / GrapesJS chrome classes (vb-*, voodbuilder-*) are styled outside block JIT.
+     */
+    public static function isInternalPackageClass(string $class): bool
+    {
+        if ($class === '') {
+            return false;
+        }
+
+        $candidates = [$class];
+
+        if (str_contains($class, ':')) {
+            $candidates[] = substr($class, (int) strrpos($class, ':') + 1);
+        }
+
+        foreach ($candidates as $candidate) {
+            foreach (self::INTERNAL_CLASS_PREFIXES as $prefix) {
+                if (str_starts_with($candidate, $prefix)) {
+                    return true;
+                }
             }
         }
 

@@ -36,6 +36,7 @@ import vpressGrapesJsPlugin, {
 import { stripInvalidDomAttributes } from '../core/html-sanitize.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from '../editor-plugins.js';
 import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from '../grapesjs-button-link.js';
+import { configureRichTextEditor } from '../rich-text-editor.js';
 import { registerNewsletterFormSettings } from '../grapesjs-forms-blocks.js';
 import { registerChromeContentSlotType } from '../chrome-content-slot-utils.js';
 import {
@@ -651,10 +652,17 @@ export function initVpressGrapesJs(container, options = {}) {
             [voodbuilderEarlyTypesPlugin]: {
                 labels: options.labels ?? {},
             },
+            // Prefer string id — GrapesJS 0.23 resolves pluginsOpts by id/toString;
+            // empty `blocks` disables stock Column/Text/Link (we ship Basic ourselves).
             [grapesjsBlocksBasic]: {
                 flexGrid: true,
-                category: 'Layout',
-                blocks: ['column1', 'column2', 'column3', 'column3-7', 'image', 'video'],
+                category: 'Basic',
+                blocks: [],
+            },
+            'gjs-blocks-basic': {
+                flexGrid: true,
+                category: 'Basic',
+                blocks: [],
             },
             ...pluginBundle.pluginsOpts,
             [vpressGrapesJsPlugin]: {
@@ -724,6 +732,13 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderLabels = labels;
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
+
+    try {
+        configureRichTextEditor(editor, labels);
+    } catch (error) {
+        console.error('Voodbuilder GrapesJS: rich text editor setup failed.', error);
+    }
+
     // Register copy toolbar commands before project hydration / first selection.
     registerCanvasComponentToolbar(editor, {
         makeDynamic: labels.makeDynamic,
@@ -854,6 +869,7 @@ export function initVpressGrapesJs(container, options = {}) {
         formSubmitUrl: options.formSubmitUrl,
         csrf: options.csrf,
         plugins: options.plugins ?? {},
+        labels,
     });
 
     configureVpressCodeBlock(editor, {
@@ -1028,6 +1044,7 @@ export function initVpressGrapesJs(container, options = {}) {
         editor.__voodbuilderNewsletterLists = options.newsletterLists ?? {};
 
         configureLinkableButtons(editor);
+        configureRichTextEditor(editor, labels);
         scanLinkableButtons(editor);
 
         registerCanvasContextMenu(editor, { labels });
@@ -1052,7 +1069,7 @@ export function initVpressGrapesJs(container, options = {}) {
                 });
             }
 
-            registerCanvasClassHoverPopover(editor, { labels });
+            registerCanvasClassHoverPopover(editor, { labels, shellRoot: shell?.shell ?? null });
 
             if (shell?.shell) {
                 registerBlocksContextMenu(editor, shell.shell, labels);

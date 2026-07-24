@@ -4,7 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
-import { widthClassesForItemCount } from './section-item-count.js';
+import { widthClassesForItemCount, widthClassesForColumns, gridClassesForColumns, applyItemsRootColumnVar } from './section-item-count.js';
 import {
     initAnimatedCounters,
     initAnimatedCtas,
@@ -57,8 +57,21 @@ function counterTraits() {
             name: 'data-vb-count-trigger',
             label: 'Start when',
             options: [
-                { id: 'viewport', label: 'In viewport' },
-                { id: 'immediate', label: 'Immediately' },
+                { id: 'always', label: 'Always' },
+                { id: 'visible', label: 'On visible' },
+                { id: 'hover', label: 'On hover' },
+                { id: 'click', label: 'On click' },
+            ],
+            changeProp: true,
+        },
+        {
+            type: 'select',
+            name: 'data-vb-count-easing',
+            label: 'Easing',
+            options: [
+                { id: 'ease-out', label: 'Ease out' },
+                { id: 'linear', label: 'Linear' },
+                { id: 'ease-in-out', label: 'Ease in-out' },
             ],
             changeProp: true,
         },
@@ -76,6 +89,155 @@ function counterTraits() {
             changeProp: true,
         },
     ];
+}
+
+/**
+ * @param {string|null|undefined} raw
+ * @returns {'always'|'visible'|'hover'|'click'}
+ */
+export function normalizeCounterTrigger(raw) {
+    const value = String(raw ?? 'visible').trim().toLowerCase();
+
+    if (value === 'always' || value === 'immediate') {
+        return 'always';
+    }
+
+    if (value === 'hover') {
+        return 'hover';
+    }
+
+    if (value === 'click' || value === 'active') {
+        return 'click';
+    }
+
+    // visible | viewport | legacy empty
+    return 'visible';
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isAnimatedCounterComponent(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    if (component.get('type') === 'voodbuilder-animated-counter') {
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const classes = component.getClasses?.() ?? [];
+
+    if (attrs['data-voodbuilder-animated-counter'] != null || attrs['data-vb-count-to'] != null) {
+        return true;
+    }
+
+    return classes.includes('vb-animated-counter');
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isAnimatedStatsComponent(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    if (component.get('type') === 'voodbuilder-animated-stats') {
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    return Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-animated-stats');
+}
+
+export function readCounterConfig(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return {
+        from: Number(component.get?.('data-vb-count-from') ?? attrs['data-vb-count-from'] ?? 0) || 0,
+        to: Number(component.get?.('data-vb-count-to') ?? attrs['data-vb-count-to'] ?? 100) || 0,
+        duration: Number(component.get?.('data-vb-count-duration') ?? attrs['data-vb-count-duration'] ?? 1600) || 1600,
+        delay: Number(component.get?.('data-vb-count-delay') ?? attrs['data-vb-count-delay'] ?? 0) || 0,
+        trigger: normalizeCounterTrigger(
+            component.get?.('data-vb-count-trigger')
+            ?? attrs['data-vb-count-trigger'],
+        ),
+        easing: component.get?.('data-vb-count-easing') ?? attrs['data-vb-count-easing'] ?? 'ease-out',
+        decimals: Number(component.get?.('data-vb-count-decimals') ?? attrs['data-vb-count-decimals'] ?? 0) || 0,
+        prefix: component.get?.('data-vb-count-prefix') ?? attrs['data-vb-count-prefix'] ?? '',
+        suffix: component.get?.('data-vb-count-suffix') ?? attrs['data-vb-count-suffix'] ?? '',
+        source: component.get?.('data-vb-count-source') ?? attrs['data-vb-count-source'] ?? 'static',
+    };
+}
+
+/**
+ * @param {object} component
+ * @param {Partial<ReturnType<typeof readCounterConfig>>} patch
+ */
+export function applyCounterConfig(component, patch = {}) {
+    if (! component) {
+        return;
+    }
+
+    const next = {
+        ...readCounterConfig(component),
+        ...patch,
+    };
+    next.trigger = normalizeCounterTrigger(next.trigger);
+    next.easing = ['ease-out', 'linear', 'ease-in-out'].includes(String(next.easing))
+        ? String(next.easing)
+        : 'ease-out';
+    next.source = next.source === 'dynamic' ? 'dynamic' : 'static';
+
+    component.set({
+        type: 'voodbuilder-animated-counter',
+        'data-vb-count-from': next.from,
+        'data-vb-count-to': next.to,
+        'data-vb-count-duration': next.duration,
+        'data-vb-count-delay': next.delay,
+        'data-vb-count-trigger': next.trigger,
+        'data-vb-count-easing': next.easing,
+        'data-vb-count-decimals': next.decimals,
+        'data-vb-count-prefix': next.prefix,
+        'data-vb-count-suffix': next.suffix,
+        'data-vb-count-source': next.source,
+    }, { silent: true });
+
+    syncCounterAttributes(component);
+}
+
+/**
+ * Apply shared animation settings to every counter inside an Animated stats block.
+ *
+ * @param {object} section
+ * @param {{ trigger?: string, duration?: number, easing?: string, delay?: number }} patch
+ */
+export function applyAnimatedStatsCounterDefaults(section, patch = {}) {
+    if (! section) {
+        return;
+    }
+
+    const counters = typeof section.findType === 'function'
+        ? section.findType('voodbuilder-animated-counter')
+        : [];
+
+    const fallback = [...(section.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter') ?? [])];
+    const unique = [...new Set([...counters, ...fallback])];
+
+    unique.forEach((counter, index) => {
+        const nextPatch = { ...patch };
+
+        if (Object.prototype.hasOwnProperty.call(patch, 'delay') && patch.delay == null) {
+            nextPatch.delay = index * 120;
+        }
+
+        applyCounterConfig(counter, nextPatch);
+    });
 }
 
 function escapeHtml(value) {
@@ -103,18 +265,113 @@ function formatCounterLabel({
     return `${prefix ?? ''}${formatted}${suffix ?? ''}`;
 }
 
-function readCounterConfig(component) {
+/**
+ * @param {string} label
+ * @returns {{ to: number, decimals: number, prefix: string, suffix: string } | null}
+ */
+function parseCounterLabel(label) {
+    const text = String(label ?? '').trim();
+
+    if (text === '') {
+        return null;
+    }
+
+    const match = text.match(/^([^\d\-−]*)([-−]?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+(?:[.,]\d+)?)(.*)$/);
+
+    if (! match) {
+        return null;
+    }
+
+    const prefix = match[1] ?? '';
+    const rawNumber = String(match[2] ?? '').replace(/−/g, '-');
+    const suffix = match[3] ?? '';
+    const normalized = rawNumber.includes(',') && rawNumber.includes('.')
+        ? rawNumber.replace(/,/g, '')
+        : rawNumber.replace(/,(?=\d{3}\b)/g, '').replace(',', '.');
+    const to = Number.parseFloat(normalized);
+
+    if (! Number.isFinite(to)) {
+        return null;
+    }
+
+    const fraction = normalized.includes('.')
+        ? (normalized.split('.')[1] ?? '').length
+        : 0;
+
     return {
-        from: Number(component.get('data-vb-count-from') ?? 0) || 0,
-        to: Number(component.get('data-vb-count-to') ?? 100) || 0,
-        duration: Number(component.get('data-vb-count-duration') ?? 1600) || 1600,
-        delay: Number(component.get('data-vb-count-delay') ?? 0) || 0,
-        trigger: component.get('data-vb-count-trigger') ?? 'viewport',
-        decimals: Number(component.get('data-vb-count-decimals') ?? 0) || 0,
-        prefix: component.get('data-vb-count-prefix') ?? '',
-        suffix: component.get('data-vb-count-suffix') ?? '',
-        source: component.get('data-vb-count-source') ?? 'static',
+        to,
+        decimals: Math.max(0, Math.min(2, fraction)),
+        prefix,
+        suffix,
     };
+}
+
+/**
+ * Keep animated-counter attrs in sync when a text binding preview paints a value.
+ *
+ * @param {object} component
+ * @param {string|number} rawValue
+ * @returns {boolean}
+ */
+export function applyDynamicCounterValue(component, rawValue) {
+    if (! isAnimatedCounterComponent(component)) {
+        return false;
+    }
+
+    const text = String(rawValue ?? '').trim();
+    const parsed = parseCounterLabel(text);
+    const attrs = component.getAttributes?.() ?? {};
+    const currentLabel = String(attrs['data-vb-count-label'] ?? component.get?.('content') ?? '').trim();
+    const currentTo = String(attrs['data-vb-count-to'] ?? component.get?.('data-vb-count-to') ?? '');
+
+    if (! parsed) {
+        if (currentLabel === text && attrs['data-vb-count-source'] === 'dynamic') {
+            const view = component.getView?.() ?? component.view;
+
+            if (view?.el && view.el.textContent !== text) {
+                view.el.textContent = text;
+            }
+
+            return true;
+        }
+
+        component.set({
+            'data-vb-count-source': 'dynamic',
+            content: text,
+        }, { silent: true });
+        component.addAttributes({
+            'data-vb-count-source': 'dynamic',
+            'data-vb-count-label': text,
+        });
+        component.removeAttributes('object');
+
+        const view = component.getView?.() ?? component.view;
+
+        if (view?.el) {
+            view.el.textContent = text;
+        }
+
+        return true;
+    }
+
+    if (
+        currentTo === String(parsed.to)
+        && attrs['data-vb-count-source'] === 'dynamic'
+        && currentLabel !== ''
+        && parseCounterLabel(currentLabel)?.to === parsed.to
+    ) {
+        return true;
+    }
+
+    applyCounterConfig(component, {
+        to: parsed.to,
+        decimals: parsed.decimals,
+        prefix: parsed.prefix,
+        suffix: parsed.suffix,
+        source: 'dynamic',
+    });
+
+    return true;
 }
 
 function syncCounterAttributes(component) {
@@ -125,22 +382,72 @@ function syncCounterAttributes(component) {
     component.__vbCounterSyncing = true;
 
     try {
-        const config = readCounterConfig(component);
+        const attrs = component.getAttributes?.() ?? {};
+        const hasBind = Boolean(attrs['data-voodbuilder-bind']);
+        let config = readCounterConfig(component);
+
+        if (hasBind) {
+            const candidates = [
+                component.get?.('content'),
+                attrs['data-vb-count-label'],
+            ]
+                .map((value) => String(value ?? '').trim())
+                .filter(Boolean);
+
+            for (const candidate of candidates) {
+                const parsed = parseCounterLabel(candidate);
+
+                if (! parsed) {
+                    continue;
+                }
+
+                config = {
+                    ...config,
+                    to: parsed.to,
+                    decimals: parsed.decimals,
+                    prefix: parsed.prefix,
+                    suffix: parsed.suffix,
+                    source: 'dynamic',
+                };
+                component.set({
+                    'data-vb-count-to': parsed.to,
+                    'data-vb-count-decimals': parsed.decimals,
+                    'data-vb-count-prefix': parsed.prefix,
+                    'data-vb-count-suffix': parsed.suffix,
+                    'data-vb-count-source': 'dynamic',
+                }, { silent: true });
+                break;
+            }
+
+            if (config.source !== 'dynamic') {
+                config = { ...config, source: 'dynamic' };
+                component.set({ 'data-vb-count-source': 'dynamic' }, { silent: true });
+            }
+        }
+
         const label = formatCounterLabel(config);
 
-        component.addAttributes({
-            'data-voodbuilder-animated-counter': '',
+        const nextAttrs = {
+            'data-voodbuilder-animated-counter': '1',
             'data-vb-count-from': String(config.from),
             'data-vb-count-to': String(config.to),
             'data-vb-count-duration': String(config.duration),
             'data-vb-count-delay': String(config.delay),
             'data-vb-count-trigger': String(config.trigger),
+            'data-vb-count-easing': String(config.easing),
             'data-vb-count-decimals': String(config.decimals),
             'data-vb-count-prefix': String(config.prefix),
             'data-vb-count-suffix': String(config.suffix),
             'data-vb-count-source': String(config.source),
             'data-vb-count-label': label,
-        });
+        };
+
+        if (hasBind) {
+            nextAttrs['data-voodbuilder-bind'] = attrs['data-voodbuilder-bind'];
+        }
+
+        component.addAttributes(nextAttrs);
+        component.removeAttributes('object');
 
         // Keep the component childless — text lives only in toHTML/view.
         // Mutating components()/textContent during animation was concatenating
@@ -163,8 +470,8 @@ function buildStatItem(index, value, label, decimals = 0, suffix = '') {
 
     return {
         tagName: 'div',
-        classes: ['p-4', 'text-center', ...widthClassesForItemCount(4)],
-        attributes: { 'data-vb-item': '' },
+        classes: ['p-4', 'text-center'],
+        attributes: { 'data-vb-item': '1' },
         components: [
             {
                 type: 'voodbuilder-animated-counter',
@@ -178,12 +485,13 @@ function buildStatItem(index, value, label, decimals = 0, suffix = '') {
                     'tabular-nums',
                 ],
                 attributes: {
-                    'data-voodbuilder-animated-counter': '',
+                    'data-voodbuilder-animated-counter': '1',
                     'data-vb-count-from': '0',
                     'data-vb-count-to': String(value),
                     'data-vb-count-duration': '1600',
                     'data-vb-count-delay': String(index * 120),
-                    'data-vb-count-trigger': 'viewport',
+                    'data-vb-count-trigger': 'visible',
+                    'data-vb-count-easing': 'ease-out',
                     'data-vb-count-decimals': String(decimals),
                     'data-vb-count-prefix': '',
                     'data-vb-count-suffix': suffix,
@@ -196,7 +504,8 @@ function buildStatItem(index, value, label, decimals = 0, suffix = '') {
                 'data-vb-count-to': value,
                 'data-vb-count-duration': 1600,
                 'data-vb-count-delay': index * 120,
-                'data-vb-count-trigger': 'viewport',
+                'data-vb-count-trigger': 'visible',
+                'data-vb-count-easing': 'ease-out',
                 'data-vb-count-decimals': decimals,
                 'data-vb-count-prefix': '',
                 'data-vb-count-suffix': suffix,
@@ -387,7 +696,7 @@ function syncLogoScroll(component) {
     }, { silent: true });
 
     component.addAttributes({
-        'data-voodbuilder-logo-scroll': '',
+        'data-voodbuilder-logo-scroll': '1',
         'data-vb-logo-count': String(count),
         'data-vb-logo-direction': direction,
         'data-vb-logo-speed': speed,
@@ -555,7 +864,7 @@ function syncAnimatedCta(component) {
     const delay = component.get('data-vb-anim-delay') ?? 0;
 
     component.addAttributes({
-        'data-voodbuilder-animated-cta': '',
+        'data-voodbuilder-animated-cta': '1',
         'data-vb-anim': String(anim),
         'data-vb-anim-duration': String(duration),
         'data-vb-anim-delay': String(delay),
@@ -574,7 +883,7 @@ function registerAnimatedCtaType(editor) {
                 tagName: 'section',
                 name: 'Animated CTA',
                 attributes: {
-                    'data-voodbuilder-animated-cta': '',
+                    'data-voodbuilder-animated-cta': '1',
                     'data-vb-anim': 'fade-up',
                     'data-vb-anim-duration': '700',
                     'data-vb-anim-delay': '0',
@@ -616,7 +925,30 @@ function registerAnimatedCounterType(editor) {
     }
 
     editor.DomComponents.addType('voodbuilder-animated-counter', {
-        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-animated-counter') === true,
+        isComponent: (element) => {
+            if (! element?.getAttribute) {
+                return false;
+            }
+
+            if (element.getAttribute('data-voodbuilder-animated-counter') !== null) {
+                return true;
+            }
+
+            if (element.getAttribute('data-vb-count-to') !== null) {
+                return true;
+            }
+
+            if (element.classList?.contains?.('vb-animated-counter') === true) {
+                return true;
+            }
+
+            // Legacy withProps residue: <span object="">1,250+</span>
+            if (element.tagName === 'SPAN' && element.hasAttribute('object')) {
+                return true;
+            }
+
+            return false;
+        },
         model: {
             defaults: {
                 tagName: 'span',
@@ -625,13 +957,14 @@ function registerAnimatedCounterType(editor) {
                 editable: false,
                 highlightable: true,
                 attributes: {
-                    'data-voodbuilder-animated-counter': '',
+                    'data-voodbuilder-animated-counter': '1',
                     class: 'vb-animated-counter font-semibold text-4xl text-vp-text-1 tabular-nums',
                     'data-vb-count-from': '0',
                     'data-vb-count-to': '100',
                     'data-vb-count-duration': '1600',
                     'data-vb-count-delay': '0',
-                    'data-vb-count-trigger': 'viewport',
+                    'data-vb-count-trigger': 'visible',
+                    'data-vb-count-easing': 'ease-out',
                     'data-vb-count-decimals': '0',
                     'data-vb-count-prefix': '',
                     'data-vb-count-suffix': '',
@@ -645,7 +978,8 @@ function registerAnimatedCounterType(editor) {
                 'data-vb-count-to': 100,
                 'data-vb-count-duration': 1600,
                 'data-vb-count-delay': 0,
-                'data-vb-count-trigger': 'viewport',
+                'data-vb-count-trigger': 'visible',
+                'data-vb-count-easing': 'ease-out',
                 'data-vb-count-decimals': 0,
                 'data-vb-count-prefix': '',
                 'data-vb-count-suffix': '',
@@ -653,7 +987,7 @@ function registerAnimatedCounterType(editor) {
             },
             init() {
                 this.on(
-                    'change:data-vb-count-from change:data-vb-count-to change:data-vb-count-duration change:data-vb-count-delay change:data-vb-count-trigger change:data-vb-count-decimals change:data-vb-count-prefix change:data-vb-count-suffix change:data-vb-count-source',
+                    'change:data-vb-count-from change:data-vb-count-to change:data-vb-count-duration change:data-vb-count-delay change:data-vb-count-trigger change:data-vb-count-easing change:data-vb-count-decimals change:data-vb-count-prefix change:data-vb-count-suffix change:data-vb-count-source',
                     () => syncCounterAttributes(this),
                 );
                 syncCounterAttributes(this);
@@ -666,11 +1000,69 @@ function registerAnimatedCounterType(editor) {
                     || formatCounterLabel(readCounterConfig(this));
             },
             toHTML() {
-                const tag = this.get('tagName') || 'span';
-                const attrs = this.getAttrToHTML?.() ?? '';
-                const label = escapeHtml(this.getDisplayLabel());
+                syncCounterAttributes(this);
 
-                return `<${tag}${attrs}>${label}</${tag}>`;
+                const tag = this.get('tagName') || 'span';
+                const config = readCounterConfig(this);
+                const finalLabel = escapeHtml(this.getDisplayLabel());
+                // Deferred triggers ship the "from" value in HTML so the page never
+                // flashes the final count before vb-runtime boots.
+                const trigger = normalizeCounterTrigger(config.trigger);
+                const displayLabel = trigger === 'always'
+                    ? finalLabel
+                    : escapeHtml(formatCounterLabel({
+                        to: config.from,
+                        decimals: config.decimals,
+                        prefix: config.prefix,
+                        suffix: config.suffix,
+                    }));
+                const attrs = this.getAttributes?.() ?? {};
+                const className = [
+                    ...(this.getClasses?.() ?? []),
+                    attrs.class ?? '',
+                ]
+                    .join(' ')
+                    .split(/\s+/)
+                    .filter(Boolean);
+                const uniqueClasses = [...new Set(className)];
+
+                if (! uniqueClasses.includes('vb-animated-counter')) {
+                    uniqueClasses.unshift('vb-animated-counter');
+                }
+
+                if (! uniqueClasses.includes('tabular-nums')) {
+                    uniqueClasses.push('tabular-nums');
+                }
+
+                const parts = [
+                    `data-voodbuilder-animated-counter="1"`,
+                    `data-vb-count-from="${escapeHtml(String(config.from))}"`,
+                    `data-vb-count-to="${escapeHtml(String(config.to))}"`,
+                    `data-vb-count-duration="${escapeHtml(String(config.duration))}"`,
+                    `data-vb-count-delay="${escapeHtml(String(config.delay))}"`,
+                    `data-vb-count-trigger="${escapeHtml(String(config.trigger))}"`,
+                    `data-vb-count-easing="${escapeHtml(String(config.easing))}"`,
+                    `data-vb-count-decimals="${escapeHtml(String(config.decimals))}"`,
+                    `data-vb-count-prefix="${escapeHtml(String(config.prefix))}"`,
+                    `data-vb-count-suffix="${escapeHtml(String(config.suffix))}"`,
+                    `data-vb-count-source="${escapeHtml(String(config.source))}"`,
+                    `data-vb-count-label="${finalLabel}"`,
+                    `class="${escapeHtml(uniqueClasses.join(' '))}"`,
+                ];
+
+                if (attrs['data-voodbuilder-bind']) {
+                    parts.push(`data-voodbuilder-bind="${escapeHtml(String(attrs['data-voodbuilder-bind']))}"`);
+                }
+
+                if (attrs.id) {
+                    parts.push(`id="${escapeHtml(String(attrs.id))}"`);
+                }
+
+                if (attrs.style) {
+                    parts.push(`style="${escapeHtml(String(attrs.style))}"`);
+                }
+
+                return `<${tag} ${parts.join(' ')}>${displayLabel}</${tag}>`;
             },
         },
         view: {
@@ -695,7 +1087,7 @@ function registerLogoScrollType(editor) {
                 name: 'Logo scroll',
                 droppable: false,
                 attributes: {
-                    'data-voodbuilder-logo-scroll': '',
+                    'data-voodbuilder-logo-scroll': '1',
                     class: 'vb-logo-scroll w-full overflow-hidden border-y border-vp-divider py-6',
                     'data-vb-logo-count': '6',
                     'data-vb-logo-direction': 'left',
@@ -791,26 +1183,42 @@ function registerAnimatedStatsType(editor) {
                 tagName: 'section',
                 name: 'Animated stats',
                 attributes: {
-                    'data-voodbuilder-animated-stats': '',
+                    'data-voodbuilder-animated-stats': '1',
                     'data-vb-item-count': '4',
+                    'data-vb-item-columns': '4',
                     'data-vb-item-min': '2',
                     'data-vb-item-max': '6',
                     class: 'vb-animated-stats text-vp-text-2',
                 },
                 traits: [
                     { type: 'number', name: 'data-vb-item-count', label: 'Counters', min: 2, max: 6, changeProp: true },
+                    { type: 'number', name: 'data-vb-item-columns', label: 'Columns', min: 1, max: 6, changeProp: true },
                 ],
                 'data-vb-item-count': 4,
+                'data-vb-item-columns': 4,
             },
             init() {
-                this.on('change:data-vb-item-count', () => syncAnimatedStats(this));
+                this.on('change:data-vb-item-count change:data-vb-item-columns', () => syncAnimatedStats(this));
+                syncAnimatedStats(this);
             },
         },
     });
 }
 
 function syncAnimatedStats(component) {
-    const count = Math.max(2, Math.min(6, Number(component.get('data-vb-item-count') ?? 4) || 4));
+    const attrs = component.getAttributes?.() ?? {};
+    // Layout items writes attributes; prefer those over stale model props.
+    const count = Math.max(
+        2,
+        Math.min(6, Number(attrs['data-vb-item-count'] ?? component.get('data-vb-item-count') ?? 4) || 4),
+    );
+    const columns = Math.max(
+        1,
+        Math.min(
+            6,
+            Number(attrs['data-vb-item-columns'] ?? component.get('data-vb-item-columns') ?? count) || count,
+        ),
+    );
     const labels = ['Users', 'Subscribers', 'Downloads', 'Products', 'Reviews', 'Cities'];
     const values = [
         { value: 2.7, decimals: 1, suffix: 'K' },
@@ -822,11 +1230,16 @@ function syncAnimatedStats(component) {
     ];
 
     component.addAttributes({
-        'data-voodbuilder-animated-stats': '',
+        'data-voodbuilder-animated-stats': '1',
         'data-vb-item-count': String(count),
+        'data-vb-item-columns': String(columns),
         'data-vb-item-min': '2',
         'data-vb-item-max': '6',
     });
+    component.set({
+        'data-vb-item-count': count,
+        'data-vb-item-columns': columns,
+    }, { silent: true });
 
     const roots = component.find('[data-vb-items-root]');
     let root = roots[0];
@@ -841,12 +1254,20 @@ function syncAnimatedStats(component) {
         return;
     }
 
-    const widthClasses = widthClassesForItemCount(count);
-    const items = [...(root.components?.() ?? [])].filter((child) => {
-        const attrs = child.getAttributes?.() ?? {};
-
-        return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item');
+    const layoutClasses = gridClassesForColumns(columns);
+    const rootClasses = [...(root.getClasses?.() ?? [])].filter((className) => {
+        return ! /^(?:flex|flex-wrap|-m-4|gap-\d+|grid|grid-cols-\d+|sm:grid-cols-\d+|md:grid-cols-\d+|lg:grid-cols-\d+|text-center)$/.test(className)
+            && ! /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/.test(className);
     });
+    root.setClass([...rootClasses, ...layoutClasses, 'text-center']);
+    root.addAttributes({
+        'data-vb-items-root': '1',
+        'data-vb-item-min': '2',
+        'data-vb-item-max': '6',
+    });
+    applyItemsRootColumnVar(root, columns);
+
+    const items = findMarkedItems(root);
 
     while (items.length > count) {
         items.pop()?.remove?.();
@@ -865,10 +1286,97 @@ function syncAnimatedStats(component) {
         items.push(root.components().at(root.components().length - 1));
     }
 
-    findMarkedItems(root).forEach((item) => {
-        const classes = [...(item.getClasses?.() ?? [])].filter((className) => ! /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/.test(className));
-        item.setClass([...classes, ...widthClasses]);
+    findMarkedItems(root).forEach((item, index) => {
+        const classes = [...(item.getClasses?.() ?? [])].filter((className) => {
+            return ! /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/.test(className);
+        });
+
+        if (! classes.includes('p-4')) {
+            classes.push('p-4');
+        }
+
+        if (! classes.includes('text-center')) {
+            classes.push('text-center');
+        }
+
+        item.setClass(classes);
+        item.addAttributes({ 'data-vb-item': '1' });
+
+        let counter = item.findType?.('voodbuilder-animated-counter')?.[0]
+            ?? item.components?.()?.models?.find?.((child) => {
+                return child.get?.('type') === 'voodbuilder-animated-counter'
+                    || child.getAttributes?.()?.['data-voodbuilder-animated-counter'] != null
+                    || child.getAttributes?.()?.['data-vb-count-to'] != null;
+            });
+
+        if (! counter) {
+            const span = [...(item.components?.() ?? [])].find((child) => {
+                const tag = String(child.get?.('tagName') ?? '').toLowerCase();
+                const childAttrs = child.getAttributes?.() ?? {};
+
+                return tag === 'span'
+                    || Object.prototype.hasOwnProperty.call(childAttrs, 'object');
+            });
+
+            if (span) {
+                const metric = values[index] ?? { value: 10 + index, decimals: 0, suffix: '' };
+                const rawLabel = String(span.get?.('content') ?? '').trim();
+                const fallbackLabel = formatCounterLabel({
+                    to: metric.value,
+                    decimals: metric.decimals,
+                    prefix: '',
+                    suffix: metric.suffix,
+                });
+
+                span.set?.({
+                    type: 'voodbuilder-animated-counter',
+                    tagName: 'span',
+                    'data-vb-count-from': 0,
+                    'data-vb-count-to': metric.value,
+                    'data-vb-count-duration': 1600,
+                    'data-vb-count-delay': index * 120,
+                    'data-vb-count-trigger': 'visible',
+                    'data-vb-count-easing': 'ease-out',
+                    'data-vb-count-decimals': metric.decimals,
+                    'data-vb-count-prefix': '',
+                    'data-vb-count-suffix': metric.suffix,
+                    'data-vb-count-source': 'static',
+                    content: rawLabel || fallbackLabel,
+                }, { silent: true });
+                span.removeAttributes?.('object');
+                span.addAttributes?.({
+                    'data-voodbuilder-animated-counter': '1',
+                    'data-vb-count-from': '0',
+                    'data-vb-count-to': String(metric.value),
+                    'data-vb-count-duration': '1600',
+                    'data-vb-count-delay': String(index * 120),
+                    'data-vb-count-trigger': 'visible',
+                    'data-vb-count-easing': 'ease-out',
+                    'data-vb-count-decimals': String(metric.decimals),
+                    'data-vb-count-prefix': '',
+                    'data-vb-count-suffix': metric.suffix,
+                    'data-vb-count-source': 'static',
+                    'data-vb-count-label': rawLabel || fallbackLabel,
+                });
+                span.addClass?.('vb-animated-counter');
+                span.addClass?.('tabular-nums');
+                counter = span;
+            }
+        }
+
+        if (counter) {
+            syncCounterAttributes(counter);
+            counter.set({
+                'data-vb-count-delay': index * 120,
+            }, { silent: true });
+            counter.addAttributes({
+                'data-vb-count-delay': String(index * 120),
+            });
+        }
     });
+
+    void widthClassesForColumns;
+    void widthClassesForItemCount;
 }
 
 function findMarkedItems(root) {
@@ -888,7 +1396,7 @@ const BLOCKS = [
             type: 'voodbuilder-animated-cta',
             classes: ['vb-animated-cta', 'text-vp-text-2'],
             attributes: {
-                'data-voodbuilder-animated-cta': '',
+                'data-voodbuilder-animated-cta': '1',
                 'data-vb-anim': 'fade-up',
                 'data-vb-anim-duration': '700',
                 'data-vb-anim-delay': '0',
@@ -916,12 +1424,13 @@ const BLOCKS = [
             type: 'voodbuilder-animated-counter',
             classes: ['vb-animated-counter', 'font-semibold', 'text-4xl', 'text-vp-text-1', 'tabular-nums'],
             attributes: {
-                'data-voodbuilder-animated-counter': '',
+                'data-voodbuilder-animated-counter': '1',
                 'data-vb-count-from': '0',
                 'data-vb-count-to': '1250',
                 'data-vb-count-duration': '1800',
                 'data-vb-count-delay': '0',
-                'data-vb-count-trigger': 'viewport',
+                'data-vb-count-trigger': 'visible',
+                'data-vb-count-easing': 'ease-out',
                 'data-vb-count-decimals': '0',
                 'data-vb-count-prefix': '',
                 'data-vb-count-suffix': '+',
@@ -934,7 +1443,8 @@ const BLOCKS = [
             'data-vb-count-to': 1250,
             'data-vb-count-duration': 1800,
             'data-vb-count-delay': 0,
-            'data-vb-count-trigger': 'viewport',
+            'data-vb-count-trigger': 'visible',
+            'data-vb-count-easing': 'ease-out',
             'data-vb-count-decimals': 0,
             'data-vb-count-prefix': '',
             'data-vb-count-suffix': '+',
@@ -949,12 +1459,14 @@ const BLOCKS = [
             type: 'voodbuilder-animated-stats',
             classes: ['vb-animated-stats', 'text-vp-text-2'],
             attributes: {
-                'data-voodbuilder-animated-stats': '',
+                'data-voodbuilder-animated-stats': '1',
                 'data-vb-item-count': '4',
+                'data-vb-item-columns': '4',
                 'data-vb-item-min': '2',
                 'data-vb-item-max': '6',
             },
             'data-vb-item-count': 4,
+            'data-vb-item-columns': 4,
             components: [
                 {
                     tagName: 'div',
@@ -962,11 +1474,13 @@ const BLOCKS = [
                     components: [
                         {
                             tagName: 'div',
-                            classes: ['flex', 'flex-wrap', '-m-4', 'text-center'],
+                            classes: ['grid', 'gap-4', 'text-center'],
                             attributes: {
-                                'data-vb-items-root': '',
+                                'data-vb-items-root': '1',
                                 'data-vb-item-min': '2',
                                 'data-vb-item-max': '6',
+                                'data-vb-item-columns': '4',
+                                style: '--vb-item-columns: 4',
                             },
                             components: [
                                 buildStatItem(0, 2.7, 'Users', 1, 'K'),
@@ -988,7 +1502,7 @@ const BLOCKS = [
             type: 'voodbuilder-logo-scroll',
             classes: ['vb-logo-scroll', 'w-full', 'overflow-hidden', 'border-y', 'border-vp-divider', 'py-6'],
             attributes: {
-                'data-voodbuilder-logo-scroll': '',
+                'data-voodbuilder-logo-scroll': '1',
                 'data-vb-logo-count': '6',
                 'data-vb-logo-direction': 'left',
                 'data-vb-logo-speed': 'normal',
@@ -1020,7 +1534,7 @@ const BLOCKS = [
                         {
                             tagName: 'div',
                             classes: ['vb-logo-scroll__track', 'flex', 'w-max', 'shrink-0', 'items-center'],
-                            attributes: { 'data-vb-items-root': '' },
+                            attributes: { 'data-vb-items-root': '1' },
                             components: [1, 2, 3, 4, 5, 6].map((index) => buildLogoItem(index, 'lg')),
                         },
                     ],
@@ -1098,10 +1612,10 @@ export function configureAnimatedCanvas(editor) {
         }
 
         if (type === 'voodbuilder-animated-stats') {
-            // Do not rebuild children on every add — only sync attributes.
             component.addAttributes({
-                'data-voodbuilder-animated-stats': '',
-                'data-vb-item-count': String(component.get('data-vb-item-count') ?? 4),
+                'data-voodbuilder-animated-stats': '1',
+                'data-vb-item-count': String(component.get('data-vb-item-count') ?? component.getAttributes?.()?.['data-vb-item-count'] ?? 4),
+                'data-vb-item-columns': String(component.get('data-vb-item-columns') ?? component.getAttributes?.()?.['data-vb-item-columns'] ?? 4),
                 'data-vb-item-min': '2',
                 'data-vb-item-max': '6',
             });
@@ -1116,4 +1630,60 @@ export function configureAnimatedCanvas(editor) {
             window.setTimeout(replayAnimations, 80);
         }
     });
+}
+
+/**
+ * Re-apply counter data-* attrs before getHtml so empty-marker / withProps
+ * corruption cannot publish bare spans (legacy `object=""` residue).
+ *
+ * @param {object} editor
+ */
+export function syncAnimatedCountersForExport(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    const counters = typeof wrapper.findType === 'function'
+        ? wrapper.findType('voodbuilder-animated-counter')
+        : [];
+
+    for (const component of counters) {
+        syncCounterAttributes(component);
+    }
+
+    const stats = typeof wrapper.findType === 'function'
+        ? wrapper.findType('voodbuilder-animated-stats')
+        : [];
+
+    for (const component of stats) {
+        syncAnimatedStats(component);
+    }
+
+    const ctas = typeof wrapper.findType === 'function'
+        ? wrapper.findType('voodbuilder-animated-cta')
+        : [];
+
+    for (const component of ctas) {
+        component.addAttributes({
+            'data-voodbuilder-animated-cta': '1',
+            'data-vb-anim': component.get('data-vb-anim') ?? 'fade-up',
+            'data-vb-anim-duration': String(component.get('data-vb-anim-duration') ?? 700),
+            'data-vb-anim-delay': String(component.get('data-vb-anim-delay') ?? 0),
+        });
+        component.removeAttributes('object');
+    }
+
+    const logos = typeof wrapper.findType === 'function'
+        ? wrapper.findType('voodbuilder-logo-scroll')
+        : [];
+
+    for (const component of logos) {
+        component.addAttributes({
+            'data-voodbuilder-logo-scroll': '1',
+        });
+        component.removeAttributes('object');
+        syncLogoScroll(component);
+    }
 }

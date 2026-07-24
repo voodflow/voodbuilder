@@ -71,6 +71,50 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertStringContainsString('>Read more<', $rendered);
         $this->assertStringNotContainsString('>Hello world<', $rendered);
     }
+
+    public function test_url_binding_on_card_link_strips_scraped_text_nodes(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<a href="#" data-voodbuilder-bind="demo.latest.url" data-voodbuilder-cta-label="FilamentPHPTesting Filament Resources">'
+            .'<img src="/thumb.jpg" alt="">'
+            .'<div><span>FilamentPHP</span><h3>Testing Filament Resources</h3></div>'
+            .'FilamentPHPTesting Filament Resources'
+            .'</a>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('href="https://example.test/tutorial"', $rendered);
+        $this->assertStringContainsString('>Testing Filament Resources<', $rendered);
+        $this->assertStringNotContainsString('FilamentPHPTesting Filament Resources', $rendered);
+        $this->assertStringNotContainsString('data-voodbuilder-cta-label', $rendered);
+    }
+
+    public function test_text_binding_on_animated_counter_syncs_count_target(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<span class="vb-animated-counter"'
+            .' data-voodbuilder-animated-counter="1"'
+            .' data-vb-count-from="0"'
+            .' data-vb-count-to="2.7"'
+            .' data-vb-count-decimals="1"'
+            .' data-vb-count-suffix="K"'
+            .' data-vb-count-label="2.7K"'
+            .' data-vb-count-source="static"'
+            .' data-voodbuilder-bind="demo.latest.read_count">2.7K</span>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('data-vb-count-to="22"', $rendered);
+        $this->assertStringContainsString('data-vb-count-source="dynamic"', $rendered);
+        $this->assertStringContainsString('data-vb-count-label="22"', $rendered);
+        $this->assertStringNotContainsString('data-vb-count-to="2.7"', $rendered);
+        // Deferred trigger: HTML shows "from" until runtime animates.
+        $this->assertMatchesRegularExpression('/data-vb-count-to="22"[^>]*>0</', $rendered);
+    }
 }
 
 final class FakeLatestBindingSource implements GrapesJsBindingSource
@@ -101,6 +145,7 @@ final class FakeLatestBindingSource implements GrapesJsBindingSource
             new BindingField('title', 'Title', BindingField::TYPE_TEXT),
             new BindingField('url', 'URL', BindingField::TYPE_URL),
             new BindingField('image', 'Cover', BindingField::TYPE_IMAGE),
+            new BindingField('read_count', 'Read count', BindingField::TYPE_TEXT),
         ];
     }
 
@@ -110,6 +155,7 @@ final class FakeLatestBindingSource implements GrapesJsBindingSource
             'title' => 'Hello world',
             'url' => 'https://example.test/tutorial',
             'image' => 'https://example.test/cover.jpg',
+            'read_count' => '22',
             default => null,
         };
     }

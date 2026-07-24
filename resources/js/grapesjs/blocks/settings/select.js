@@ -195,12 +195,48 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
     // Keep smart CTA buttons selectable — they own Content traits (URL / page / menu).
     const rawType = String(raw.get?.('type') ?? '');
 
-    if (rawType === 'voodbuilder-cta-button') {
+    if (
+        rawType === 'voodbuilder-cta-button'
+        || rawType === 'voodbuilder-animated-counter'
+        || rawType === 'voodbuilder-container'
+        || rawType === 'voodbuilder-section'
+        || rawType === 'voodbuilder-layout-block'
+        || rawType === 'voodbuilder-layout-div'
+        || rawType === 'voodbuilder-icon'
+        || rawType === 'voodbuilder-text-link'
+    ) {
         return false;
     }
 
-    const rawTag = String(raw.get?.('tagName') ?? '').toLowerCase();
     const rawAttrs = raw.getAttributes?.() ?? {};
+
+    if (
+        rawAttrs['data-voodbuilder-layout'] === 'section'
+        || rawAttrs['data-voodbuilder-layout'] === 'container'
+        || rawAttrs['data-voodbuilder-layout'] === 'block'
+        || rawAttrs['data-voodbuilder-layout'] === 'div'
+    ) {
+        return false;
+    }
+    if (
+        rawAttrs['data-voodbuilder-animated-counter'] != null
+        || rawAttrs['data-vb-count-to'] != null
+        || (raw.getClasses?.() ?? []).includes('vb-animated-counter')
+    ) {
+        return false;
+    }
+
+    // Keep inline RTE targets selectable — promote-to-block-root stole the
+    // newly created <a>/<span> so Link had nowhere to edit the URL and Wrap
+    // for styles could not receive Style Manager classes.
+    const rawTag = String(raw.get?.('tagName') ?? '').toLowerCase();
+    const inlineTags = new Set([
+        'a', 'span', 'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'code', 'small', 'sub', 'sup',
+    ]);
+
+    if (inlineTags.has(rawTag) || rawType === 'link' || rawType === 'textnode' || rawType === 'text') {
+        return false;
+    }
 
     if (
         (rawTag === 'a' && rawAttrs['data-voodbuilder-cta'] === 'true')

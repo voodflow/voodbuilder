@@ -1056,14 +1056,31 @@
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
 }
 
-/* Inner drop slots are injected only while dragging (canvas frame CSS mirrors this). */
+/* Inner drop slots: hidden unless dragging or the toolbar toggle is on. */
 .voodbuilder-gjs-inner-drop-slot {
     box-sizing: border-box;
+    display: none;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot,
+body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot,
+.voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot {
+    display: block;
     min-height: 2.75rem;
+    height: auto;
     margin: 0.25rem 0;
     border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
     border-radius: 0.5rem;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+    pointer-events: auto;
+    overflow: visible;
 }
 
 .voodbuilder-gjs-drag-chip {
@@ -1564,4 +1581,112 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
     padding: 0 0.35rem !important;
+}
+
+
+/* Bricks-like container layout picker */
+.voodbuilder-gjs-layout-picker {
+    position: fixed;
+    z-index: 10060;
+    min-width: 16rem;
+    max-width: 20rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, #0f172a 94%, transparent);
+    color: #f8fafc;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(248, 250, 252, 0.08);
+}
+
+.voodbuilder-gjs-layout-picker__grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.voodbuilder-gjs-layout-picker__option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 0.2rem;
+    border: 1px solid transparent;
+    border-radius: 0.35rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-layout-picker__option svg {
+    width: 100%;
+    height: 100%;
+}
+
+.voodbuilder-gjs-layout-picker__option:hover,
+.voodbuilder-gjs-layout-picker__option.is-active {
+    background: rgba(248, 250, 252, 0.1);
+    border-color: rgba(250, 204, 21, 0.7);
+}
+
+.voodbuilder-gjs-layout-picker__caption {
+    margin-top: 0.45rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(248, 250, 252, 0.12);
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    text-align: center;
+    opacity: 0.85;
+}
+
+/* Empty layout hosts visible in canvas */
+.voodbuilder-gjs-canvas-mount .vb-layout-block:empty,
+.voodbuilder-gjs-canvas-mount .vb-layout-div:empty,
+.voodbuilder-gjs-canvas-mount [data-voodbuilder-layout="container"]:empty {
+    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    outline-offset: -1px;
+    min-height: 4rem;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
+}
+
+
+
+.voodbuilder-gjs-icon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    margin-bottom: 0.35rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-gjs-form-hint {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+
+
+.voodbuilder-gjs-form-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 85%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-form-action:hover {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #4f46e5) 45%, transparent);
 }

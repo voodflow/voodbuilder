@@ -17,6 +17,10 @@ import {
     registerUtilityBlocks,
 } from './grapesjs-utility-blocks.js';
 import {
+    configureLayoutBlocksCanvas,
+    registerLayoutBlocks,
+} from './layout-blocks.js';
+import {
     configureAnimatedCanvas,
     registerAnimatedBlocks,
 } from './grapesjs-animated-blocks.js';
@@ -142,7 +146,13 @@ function protectSiteHeaderButton(component) {
 }
 
 export function configureGrapesJsPlugins(editor, options = {}) {
-    const { formSubmitUrl, csrf, plugins: enabled = {} } = options;
+    const { formSubmitUrl, csrf, plugins: enabled = {}, labels = {} } = options;
+
+    const registerLayout = () => registerLayoutBlocks(editor, labels);
+
+    editor.on('load', registerLayout);
+    registerLayout();
+    configureLayoutBlocksCanvas(editor, labels);
 
     if (enabled.tabs !== false) {
         const registerTabs = () => registerVoodbuilderTabsBlocks(editor);

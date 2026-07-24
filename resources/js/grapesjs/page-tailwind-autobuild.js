@@ -203,11 +203,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
         if (html === lastHtml && ! pendingInvalidate) {
             applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
-            editor.trigger('voodbuilder:page-css-compiled', {
-                css: editor.__voodbuilderPageLiveCss ?? '',
-                html,
-                cached: true,
-            });
+            // Skip page-css-compiled on cache hits — listeners remorph CTAs / replay
+            // animations and that freezes or flickers the canvas.
 
             return;
         }

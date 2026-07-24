@@ -28,20 +28,32 @@ export function extractButtonLabel(component) {
     }
 
     const children = component.components?.();
+    const models = [...(children?.models ?? children ?? [])];
 
-    if (children?.length) {
+    if (models.length) {
         let fromChildren = '';
 
-        children.forEach((child) => {
-            if (fromChildren !== '' || child?.get?.('type') !== 'textnode') {
-                return;
+        for (const child of models) {
+            if (child?.get?.('type') !== 'textnode') {
+                continue;
             }
 
             fromChildren = String(child.get('content') ?? '').trim();
+
+            if (fromChildren !== '') {
+                return fromChildren;
+            }
+        }
+
+        const hasStructuralChildren = models.some((child) => {
+            const type = child?.get?.('type');
+
+            return type !== 'textnode' && type !== 'text';
         });
 
-        if (fromChildren !== '') {
-            return fromChildren;
+        // Card-style links (img + title blocks): never scrape nested copy into a sibling label.
+        if (hasStructuralChildren) {
+            return '';
         }
     }
 
@@ -63,17 +75,63 @@ export function extractButtonLabel(component) {
 }
 
 /**
- * Sync label onto the model (attr + textnode) without touching the view.
- * Returns { changed, needsViewRefresh }.
+ * Patch the live canvas DOM label without renderChildren() (which clears
+ * innerHTML first and causes visible Button flicker / editor freezes).
+ */
+function patchCtaDomLabel(component, text) {
+    const el = component?.getEl?.();
+
+    if (! el || text === '') {
+        return;
+    }
+
+    if (el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE) {
+        if (el.firstChild.textContent !== text) {
+            el.firstChild.textContent = text;
+        }
+
+        return;
+    }
+
+    if (el.querySelector?.('svg, img, i, span, strong, em, b')) {
+        const textNode = [...el.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+
+        if (textNode && textNode.textContent !== text) {
+            textNode.textContent = text;
+        }
+
+        return;
+    }
+
+    if (String(el.textContent ?? '') !== text) {
+        el.textContent = text;
+    }
+}
+
+function ctaDomLabelMismatches(component, text) {
+    const el = component?.getEl?.();
+
+    if (! el || text === '') {
+        return false;
+    }
+
+    return String(el.textContent ?? '').replace(/\s+/g, ' ').trim() !== text;
+}
+
+/**
+ * Sync label onto the model (attr + textnode). Prefer DOM patch over view re-render.
  */
 function syncCtaLabelModel(component, label = null) {
     if (! component?.components) {
-        return { changed: false, needsViewRefresh: false };
+        return { changed: false };
     }
 
-    const text = String(label ?? extractButtonLabel(component) ?? 'Button').trim() || 'Button';
+    const text = String(label ?? extractButtonLabel(component) ?? '').trim();
     let changed = false;
-    let needsViewRefresh = false;
+
+    if (text === '') {
+        return { changed: false };
+    }
 
     if (component.get('ctaLabel') !== text) {
         component.set('ctaLabel', text, { silent: true });
@@ -83,7 +141,7 @@ function syncCtaLabelModel(component, label = null) {
     const currentAttr = String(component.getAttributes?.()?.[CTA_LABEL_ATTR] ?? '');
 
     if (currentAttr !== text) {
-        component.addAttributes({ [CTA_LABEL_ATTR]: text });
+        component.addAttributes({ [CTA_LABEL_ATTR]: text }, { silent: true });
         changed = true;
     }
 
@@ -94,31 +152,46 @@ function syncCtaLabelModel(component, label = null) {
 
         return type === 'textnode' || type === 'text';
     });
+    const hasStructuralChildren = models.some((child) => {
+        const type = child?.get?.('type');
+
+        return type !== 'textnode' && type !== 'text';
+    });
 
     if (models.length === 1 && models[0]?.get?.('type') === 'textnode') {
         if (String(models[0].get('content') ?? '') !== text) {
             models[0].set('content', text, { silent: true });
             changed = true;
-            needsViewRefresh = true;
         }
-    } else if (models.length === 0 || onlyTextNodes) {
+    } else if (models.length === 0) {
+        component.append({ type: 'textnode', content: text });
+        changed = true;
+    } else if (onlyTextNodes) {
         const currentJoined = models
             .map((child) => String(child?.get?.('content') ?? ''))
             .join('');
 
-        if (currentJoined !== text || models.length !== 1) {
-            // components() already updates the canvas — do not also renderChildren.
+        // Only rebuild when the joined label is wrong — never for "normalize to 1 node".
+        if (currentJoined !== text) {
             component.components(text);
             changed = true;
         }
+    } else if (hasStructuralChildren) {
+        // Keep existing textnode labels (icon + text CTA). Never invent a new one
+        // from nested card copy — that duplicated titles next to the real markup.
+        const textNode = models.find((child) => child?.get?.('type') === 'textnode') ?? null;
+
+        if (textNode && String(textNode.get('content') ?? '') !== text && label != null) {
+            textNode.set('content', text, { silent: true });
+            changed = true;
+        }
     } else {
-        let textNode = models.find((child) => child?.get?.('type') === 'textnode') ?? null;
+        const textNode = models.find((child) => child?.get?.('type') === 'textnode') ?? null;
 
         if (textNode) {
             if (String(textNode.get('content') ?? '') !== text) {
                 textNode.set('content', text, { silent: true });
                 changed = true;
-                needsViewRefresh = true;
             }
         } else {
             component.append({ type: 'textnode', content: text });
@@ -126,13 +199,12 @@ function syncCtaLabelModel(component, label = null) {
         }
     }
 
-    return { changed, needsViewRefresh };
+    return { changed };
 }
 
 /**
  * Force a serializable label on the CTA model (attr + textnode).
- * Call after trait changes / morph — not from toHTML (that caused Button flicker
- * while page CSS compile repeatedly serialized the tree).
+ * Call after trait changes / morph — not from toHTML or CSS compile scans.
  */
 export function persistCtaLabel(component, label = null) {
     if (! component?.components) {
@@ -146,13 +218,14 @@ export function persistCtaLabel(component, label = null) {
     component.__vbPersistingCtaLabel = true;
 
     try {
-        const { needsViewRefresh } = syncCtaLabelModel(component, label);
+        const { changed } = syncCtaLabelModel(component, label);
+        const text = extractButtonLabel(component);
 
-        if (needsViewRefresh) {
-            rerenderCtaButtonView(component);
+        if (changed || ctaDomLabelMismatches(component, text)) {
+            patchCtaDomLabel(component, text);
         }
 
-        return extractButtonLabel(component);
+        return text;
     } finally {
         component.__vbPersistingCtaLabel = false;
     }
@@ -303,10 +376,11 @@ function resolveLinkHref(editor, linkType, linkRef, href) {
     return String(href ?? '#').trim() || '#';
 }
 
-function syncLinkableButtonTraits(component, editor) {
-    component.set('traits', linkTraitsFor(editor, component));
+function syncLinkableButtonTraits(component, editor, { forceSelect = false } = {}) {
+    // Silent trait schema refresh — never remount TraitManager unless selecting.
+    component.set('traits', linkTraitsFor(editor, component), { silent: true });
 
-    if (editor?.getSelected?.() !== component) {
+    if (! forceSelect || editor?.getSelected?.() !== component) {
         return;
     }
 
@@ -368,7 +442,7 @@ function hydrateLinkPropsFromAttributes(component) {
     }
 
     if (label !== '' && String(component.getAttributes?.()?.[CTA_LABEL_ATTR] ?? '') !== label) {
-        component.addAttributes({ [CTA_LABEL_ATTR]: label });
+        component.addAttributes({ [CTA_LABEL_ATTR]: label }, { silent: true });
     }
 }
 
@@ -454,38 +528,6 @@ function isExcludedLinkableButton(component) {
     return false;
 }
 
-/**
- * GrapesJS ComponentView.updateContent() does:
- *   innerHTML = components.length ? '' : content
- * That clears the button label whenever `change:content` fires while children
- * exist — then our restore puts "Button" back → visible flicker on refresh.
- * Prefer traits + persistCtaLabel over RTE; view override skips the wipe.
- */
-function rerenderCtaButtonView(component) {
-    const view = component?.getView?.();
-
-    if (! view?.renderChildren) {
-        return;
-    }
-
-    // Avoid stacking rAF restores that flash empty → label → empty.
-    if (view.__vbCtaRerenderScheduled) {
-        return;
-    }
-
-    view.__vbCtaRerenderScheduled = true;
-
-    window.requestAnimationFrame(() => {
-        view.__vbCtaRerenderScheduled = false;
-
-        try {
-            view.renderChildren();
-        } catch {
-            view.render?.();
-        }
-    });
-}
-
 function escapeHtmlText(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -498,7 +540,6 @@ function applyCtaButtonLink(component, editor = null) {
     const ed = editor ?? component?.em ?? null;
     const { href, target, linkType, linkRef } = readLinkProps(component);
     const tag = String(component.get('tagName') ?? '').toLowerCase();
-    const classes = [...(component.getClasses?.() ?? [])];
     const label = extractButtonLabel(component);
     const resolvedHref = resolveLinkHref(ed, linkType, linkRef, href);
 
@@ -524,10 +565,16 @@ function applyCtaButtonLink(component, editor = null) {
         nextProps.tagName = 'a';
     }
 
-    component.set(nextProps);
+    const propUpdates = {};
 
-    if (classes.length > 0) {
-        component.setClass(classes);
+    for (const [key, value] of Object.entries(nextProps)) {
+        if (component.get(key) !== value) {
+            propUpdates[key] = value;
+        }
+    }
+
+    if (Object.keys(propUpdates).length > 0) {
+        component.set(propUpdates);
     }
 
     const attrs = component.getAttributes?.() ?? {};
@@ -580,6 +627,22 @@ function isLinkableCtaComponent(component) {
     return tag === 'a' && component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
 }
 
+function isStableCtaButton(component) {
+    if (! component || component.get?.('type') !== 'voodbuilder-cta-button') {
+        return false;
+    }
+
+    if (! component.__vbLinkMorphApplied) {
+        return false;
+    }
+
+    if (component.getAttributes?.()?.['data-voodbuilder-cta'] !== 'true') {
+        return false;
+    }
+
+    return String(extractButtonLabel(component) ?? '').trim() !== '';
+}
+
 function upgradeLinkableButton(component, editor) {
     if (! component || ! editor) {
         return;
@@ -589,20 +652,31 @@ function upgradeLinkableButton(component, editor) {
         return;
     }
 
+    // Already a healthy CTA — never remorph / re-set attrs (causes canvas flicker).
+    if (isStableCtaButton(component)) {
+        if (ctaDomLabelMismatches(component, extractButtonLabel(component))) {
+            patchCtaDomLabel(component, extractButtonLabel(component));
+        }
+
+        return;
+    }
+
     assignLinkableButtonType(component);
     hydrateLinkPropsFromAttributes(component);
-    component.addAttributes({ 'data-voodbuilder-cta': 'true' });
-    syncLinkableButtonTraits(component, editor);
+
+    if (component.getAttributes?.()?.['data-voodbuilder-cta'] !== 'true') {
+        component.addAttributes({ 'data-voodbuilder-cta': 'true' }, { silent: true });
+    }
 
     if (component.get('type') === 'voodbuilder-cta-button' && component.__vbLinkMorphApplied) {
         persistCtaLabel(component);
-        syncLinkableButtonTraits(component, editor);
 
         return;
     }
 
     applyCtaButtonLink(component, editor);
     component.__vbLinkMorphApplied = true;
+    syncLinkableButtonTraits(component, editor);
 }
 
 function registerLinkableButtonType(editor) {
@@ -664,6 +738,7 @@ function registerLinkableButtonType(editor) {
                 hydrateLinkPropsFromAttributes(this);
                 persistCtaLabel(this, extractButtonLabel(this));
                 syncLinkableButtonTraits(this, editor);
+                this.__vbLinkMorphApplied = true;
 
                 this.on('change:ctaLabel', () => {
                     if (this.__vbPersistingCtaLabel) {
@@ -685,7 +760,7 @@ function registerLinkableButtonType(editor) {
                 this.on('change:linkType', () => {
                     this.__vbLinkMorphApplied = true;
                     this.set('linkRef', '', { silent: true });
-                    syncLinkableButtonTraits(this, editor);
+                    syncLinkableButtonTraits(this, editor, { forceSelect: true });
                     applyCtaButtonLink(this, editor);
                 });
             },
@@ -786,7 +861,6 @@ export function scanLinkableButtons(editor, root = editor.getWrapper?.()) {
     const visit = (component) => {
         if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
             upgradeLinkableButton(component, editor);
-            persistCtaLabel(component);
         }
 
         component.components?.().forEach((child) => visit(child));
@@ -808,7 +882,6 @@ export function ensureSmartCtaButton(component, editor) {
     }
 
     upgradeLinkableButton(component, editor);
-    persistCtaLabel(component);
 
     return component.get?.('type') === 'voodbuilder-cta-button'
         || component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
@@ -902,7 +975,6 @@ export function configureLinkableButtons(editor) {
         const visit = (node) => {
             if (isLinkableCtaComponent(node) || node.get?.('type') === 'voodbuilder-cta-button') {
                 upgradeLinkableButton(node, editor);
-                persistCtaLabel(node);
             }
 
             node.components?.().forEach((child) => visit(child));
@@ -920,6 +992,11 @@ export function configureLinkableButtons(editor) {
             return;
         }
 
+        // Ignore textnode churn from label sync — that used to re-upgrade parents.
+        if (component.get?.('type') === 'textnode' || component.get?.('type') === 'text') {
+            return;
+        }
+
         pendingLinkableRoots.add(component);
 
         if (linkableScanFrame == null) {
@@ -933,9 +1010,11 @@ export function configureLinkableButtons(editor) {
         }
 
         upgradeLinkableButton(component, editor);
-        persistCtaLabel(component);
-        syncLinkableButtonTraits(component, editor);
+        syncLinkableButtonTraits(component, editor, { forceSelect: true });
     });
+
+    // Do NOT rescan on page-css-compiled — compile fires often (including cache
+    // hits) and CTA remorph/re-render loops froze the canvas.
 
     scanLinkableButtons(editor);
 }

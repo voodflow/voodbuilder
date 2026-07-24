@@ -22,5 +22,10 @@ function bootSiteRuntime() {
     bootPopupsIfConfigured();
 }
 
-document.addEventListener('DOMContentLoaded', bootSiteRuntime);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootSiteRuntime);
+} else {
+    bootSiteRuntime();
+}
+
 document.addEventListener('livewire:navigated', bootSiteRuntime);

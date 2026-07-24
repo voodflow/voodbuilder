@@ -64,6 +64,26 @@ class GrapesJsImportCompatibilityAnalyzerTest extends TestCase
         $this->assertNotContains('voodbuilder-gjs-container', $report['review']);
     }
 
+    public function test_ignores_all_internal_package_class_prefixes_in_review(): void
+    {
+        $raw = <<<'HTML'
+            <section class="vb-animated-stats voodbuilder-gjs-section">
+                <div class="voodbuilder-gjs-inner-drop-slot">
+                    <span class="vb-animated-counter">10</span>
+                </div>
+            </section>
+        HTML;
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, $raw, '');
+
+        $this->assertNotContains('vb-animated-stats', $report['review']);
+        $this->assertNotContains('vb-animated-counter', $report['review']);
+        $this->assertNotContains('voodbuilder-gjs-section', $report['review']);
+        $this->assertNotContains('voodbuilder-gjs-inner-drop-slot', $report['review']);
+        $this->assertTrue(GrapesJsImportCompatibilityAnalyzer::isInternalPackageClass('hover:vb-animated-counter'));
+        $this->assertFalse(GrapesJsImportCompatibilityAnalyzer::isInternalPackageClass('totally-made-up-utility'));
+    }
+
     public function test_css_includes_utility_detects_escaped_variants(): void
     {
         $css = '.voodbuilder-pasted-component .hover\\:bg-primary-hover:hover { background-color: red; }';

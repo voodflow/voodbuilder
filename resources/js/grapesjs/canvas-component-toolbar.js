@@ -14,6 +14,7 @@ import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
 import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
+import { buildLayoutPickerToolbarButton } from './layout-blocks.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
@@ -95,6 +96,12 @@ function buildComponentToolbar(editor, component, labels = {}) {
             label: lucideIcon('move', 16),
             command: 'tlb-move',
         });
+    }
+
+    const layoutButton = buildLayoutPickerToolbarButton(component, labels);
+
+    if (layoutButton) {
+        toolbar.push(layoutButton);
     }
 
     if (component.get('copyable') && canDuplicateChromeEditorComponent(component, editor)) {

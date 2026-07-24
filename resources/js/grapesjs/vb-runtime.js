@@ -202,6 +202,143 @@ function formatCounterValue(value, decimals, prefix, suffix) {
     return `${prefix}${formatted}${suffix}`;
 }
 
+function easeCounterProgress(progress, easing) {
+    const t = Math.min(1, Math.max(0, progress));
+
+    if (easing === 'linear') {
+        return t;
+    }
+
+    if (easing === 'ease-in-out') {
+        return t < 0.5
+            ? 4 * (t ** 3)
+            : 1 - (((-2 * t) + 2) ** 3) / 2;
+    }
+
+    // ease-out (default)
+    return 1 - ((1 - t) ** 3);
+}
+
+/**
+ * Recover target/suffix/decimals from visible label when save stripped data-*.
+ * Examples: "2.7K", "1,250+", "35", "8+".
+ *
+ * @param {string} label
+ * @returns {{ from: number, to: number, decimals: number, prefix: string, suffix: string } | null}
+ */
+function parseCounterLabel(label) {
+    const text = String(label ?? '').trim();
+
+    if (text === '') {
+        return null;
+    }
+
+    const match = text.match(/^([^\d\-−]*)([-−]?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+(?:[.,]\d+)?)(.*)$/);
+
+    if (! match) {
+        return null;
+    }
+
+    const prefix = match[1] ?? '';
+    const rawNumber = String(match[2] ?? '').replace(/−/g, '-');
+    const suffix = match[3] ?? '';
+    const normalized = rawNumber.includes(',') && rawNumber.includes('.')
+        ? rawNumber.replace(/,/g, '')
+        : rawNumber.replace(/,(?=\d{3}\b)/g, '').replace(',', '.');
+    const to = Number.parseFloat(normalized);
+
+    if (! Number.isFinite(to)) {
+        return null;
+    }
+
+    const fraction = normalized.includes('.')
+        ? (normalized.split('.')[1] ?? '').length
+        : 0;
+
+    return {
+        from: 0,
+        to,
+        decimals: Math.max(0, Math.min(2, fraction)),
+        prefix,
+        suffix,
+    };
+}
+
+/**
+ * Ensure a DOM node has the attributes animateCounter expects.
+ * Heals legacy saves where attrs collapsed to `object=""`.
+ *
+ * @param {HTMLElement} node
+ */
+function ensureCounterAttributes(node) {
+    if (! (node instanceof HTMLElement)) {
+        return false;
+    }
+
+    node.removeAttribute('object');
+    node.setAttribute('data-voodbuilder-animated-counter', node.getAttribute('data-voodbuilder-animated-counter') || '1');
+    node.classList.add('vb-animated-counter', 'tabular-nums');
+
+    if (node.getAttribute('data-vb-count-to')) {
+        if (! node.getAttribute('data-vb-count-label')) {
+            node.setAttribute('data-vb-count-label', (node.textContent ?? '').trim());
+        }
+
+        return true;
+    }
+
+    const parsed = parseCounterLabel(node.textContent ?? '');
+
+    if (! parsed) {
+        return false;
+    }
+
+    node.setAttribute('data-vb-count-from', String(parsed.from));
+    node.setAttribute('data-vb-count-to', String(parsed.to));
+    node.setAttribute('data-vb-count-decimals', String(parsed.decimals));
+    node.setAttribute('data-vb-count-prefix', parsed.prefix);
+    node.setAttribute('data-vb-count-suffix', parsed.suffix);
+    node.setAttribute('data-vb-count-duration', node.getAttribute('data-vb-count-duration') || '1600');
+    node.setAttribute('data-vb-count-delay', node.getAttribute('data-vb-count-delay') || '0');
+    node.setAttribute(
+        'data-vb-count-trigger',
+        normalizeCounterTrigger(node.getAttribute('data-vb-count-trigger') || 'visible'),
+    );
+    node.setAttribute('data-vb-count-easing', node.getAttribute('data-vb-count-easing') || 'ease-out');
+    node.setAttribute('data-vb-count-source', node.getAttribute('data-vb-count-source') || 'static');
+    node.setAttribute('data-vb-count-label', formatCounterValue(
+        parsed.to,
+        parsed.decimals,
+        parsed.prefix,
+        parsed.suffix,
+    ));
+
+    return true;
+}
+
+/**
+ * @param {ParentNode} root
+ * @returns {HTMLElement[]}
+ */
+function collectCounterNodes(root) {
+    const nodes = new Set();
+
+    root.querySelectorAll('[data-voodbuilder-animated-counter], .vb-animated-counter, [data-vb-count-to]').forEach((node) => {
+        if (node instanceof HTMLElement) {
+            nodes.add(node);
+        }
+    });
+
+    // Legacy corrupted saves inside Animated stats + orphan counters.
+    root.querySelectorAll('[data-voodbuilder-animated-stats] [data-vb-item] > span, span[object], [object]').forEach((node) => {
+        if (node instanceof HTMLElement) {
+            nodes.add(node);
+        }
+    });
+
+    return [...nodes].filter((node) => ensureCounterAttributes(node));
+}
+
 function counterFinalLabel(node) {
     const stored = node.getAttribute('data-vb-count-label');
 
@@ -215,6 +352,40 @@ function counterFinalLabel(node) {
     const to = parseNumber(node.getAttribute('data-vb-count-to'), 0);
 
     return formatCounterValue(to, decimals, prefix, suffix);
+}
+
+function counterStartLabel(node) {
+    const decimals = Math.max(0, Math.min(2, Number.parseInt(node.getAttribute('data-vb-count-decimals') ?? '0', 10) || 0));
+    const prefix = node.getAttribute('data-vb-count-prefix') ?? '';
+    const suffix = node.getAttribute('data-vb-count-suffix') ?? '';
+    const from = parseNumber(node.getAttribute('data-vb-count-from'), 0);
+
+    return formatCounterValue(from, decimals, prefix, suffix);
+}
+
+/**
+ * Show the configured "from" value until the animation runs (all triggers).
+ *
+ * @param {HTMLElement} node
+ */
+function resetCounterToStart(node) {
+    if (node.dataset.vbCountPlayed === '1' || node.dataset.vbCountAnimating === '1') {
+        return;
+    }
+
+    node.textContent = counterStartLabel(node);
+}
+
+/**
+ * Prefer the stats item wrapper so hover/click work on the whole metric cell.
+ *
+ * @param {HTMLElement} node
+ * @returns {HTMLElement}
+ */
+function counterInteractionTarget(node) {
+    const item = node.closest?.('[data-vb-item]');
+
+    return item instanceof HTMLElement ? item : node;
 }
 
 function animateCounter(node, { force = false } = {}) {
@@ -235,14 +406,31 @@ function animateCounter(node, { force = false } = {}) {
     let to = parseNumber(node.getAttribute('data-vb-count-to'), from);
     const duration = Math.max(200, parseNumber(node.getAttribute('data-vb-count-duration'), 1600));
     const delay = Math.max(0, parseNumber(node.getAttribute('data-vb-count-delay'), 0));
-    const decimals = Math.max(0, Math.min(2, Number.parseInt(node.getAttribute('data-vb-count-decimals') ?? '0', 10) || 0));
-    const prefix = node.getAttribute('data-vb-count-prefix') ?? '';
-    const suffix = node.getAttribute('data-vb-count-suffix') ?? '';
-    const finalLabel = counterFinalLabel(node);
+    let decimals = Math.max(0, Math.min(2, Number.parseInt(node.getAttribute('data-vb-count-decimals') ?? '0', 10) || 0));
+    let prefix = node.getAttribute('data-vb-count-prefix') ?? '';
+    let suffix = node.getAttribute('data-vb-count-suffix') ?? '';
+    const easing = node.getAttribute('data-vb-count-easing') || 'ease-out';
+    let finalLabel = counterFinalLabel(node);
 
-    if (source === 'dynamic') {
-        to = parseNumber(node.getAttribute('data-vb-count-to') || finalLabel, to);
+    // Bound counters: trust data-vb-count-to / label (synced by PHP renderer + editor).
+    if (source === 'dynamic' || node.hasAttribute('data-voodbuilder-bind')) {
+        const parsed = parseCounterLabel(node.getAttribute('data-vb-count-label') ?? '')
+            ?? parseCounterLabel(finalLabel);
+
+        if (parsed && Number.isFinite(parsed.to)) {
+            to = parsed.to;
+            decimals = parsed.decimals;
+            prefix = parsed.prefix;
+            suffix = parsed.suffix;
+            finalLabel = formatCounterValue(to, decimals, prefix, suffix);
+        } else {
+            to = parseNumber(node.getAttribute('data-vb-count-to'), to);
+            finalLabel = formatCounterValue(to, decimals, prefix, suffix);
+        }
     }
+
+    // Start from the configured "from" value so hover/click replays are visible.
+    node.textContent = formatCounterValue(from, decimals, prefix, suffix);
 
     const finish = () => {
         node.textContent = finalLabel;
@@ -266,7 +454,7 @@ function animateCounter(node, { force = false } = {}) {
         }
 
         const progress = Math.min(1, (now - startAt) / duration);
-        const eased = 1 - ((1 - progress) ** 3);
+        const eased = easeCounterProgress(progress, easing);
         const current = from + ((to - from) * eased);
 
         // Visual-only update. The GrapesJS model keeps a stable label via
@@ -284,13 +472,44 @@ function animateCounter(node, { force = false } = {}) {
 }
 
 /**
+ * @param {string|null|undefined} raw
+ * @returns {'always'|'visible'|'hover'|'click'}
+ */
+function normalizeCounterTrigger(raw) {
+    const value = String(raw ?? 'visible').trim().toLowerCase();
+
+    if (value === 'always' || value === 'immediate') {
+        return 'always';
+    }
+
+    if (value === 'hover') {
+        return 'hover';
+    }
+
+    if (value === 'click' || value === 'active') {
+        return 'click';
+    }
+
+    return 'visible';
+}
+
+/**
+ * @param {HTMLElement} node
+ * @param {{ force?: boolean }} [options]
+ */
+function replayCounter(node, options = {}) {
+    node.dataset.vbCountPlayed = '0';
+    animateCounter(node, { force: true, ...options });
+}
+
+/**
  * @param {{ root?: ParentNode, force?: boolean, preferImmediate?: boolean }} [options]
  */
 export function initAnimatedCounters(options = {}) {
     const root = options.root ?? document;
     const force = options.force === true;
     const preferImmediate = options.preferImmediate === true;
-    const nodes = [...root.querySelectorAll('[data-voodbuilder-animated-counter]')];
+    const nodes = collectCounterNodes(root);
 
     if (nodes.length === 0) {
         return;
@@ -299,20 +518,107 @@ export function initAnimatedCounters(options = {}) {
     if (force) {
         nodes.forEach((node) => {
             node.dataset.vbCountPlayed = '0';
+            node.dataset.vbCountAnimating = '0';
         });
     }
 
-    const immediate = nodes.filter((node) => {
-        const trigger = node.getAttribute('data-vb-count-trigger') || 'viewport';
+    // Capture dynamic targets from label first — textContent may already be the "from" value.
+    nodes.forEach((node) => {
+        if (node.getAttribute('data-vb-count-source') !== 'dynamic'
+            && ! node.hasAttribute('data-voodbuilder-bind')) {
+            return;
+        }
 
-        return preferImmediate || trigger === 'immediate';
+        const parsed = parseCounterLabel(node.getAttribute('data-vb-count-label') ?? '')
+            ?? parseCounterLabel((node.textContent ?? '').trim());
+
+        if (! parsed) {
+            return;
+        }
+
+        node.setAttribute('data-vb-count-to', String(parsed.to));
+        node.setAttribute('data-vb-count-decimals', String(parsed.decimals));
+        node.setAttribute('data-vb-count-prefix', parsed.prefix);
+        node.setAttribute('data-vb-count-suffix', parsed.suffix);
+        node.setAttribute(
+            'data-vb-count-label',
+            formatCounterValue(parsed.to, parsed.decimals, parsed.prefix, parsed.suffix),
+        );
+        node.setAttribute('data-vb-count-source', 'dynamic');
     });
-    const deferred = nodes.filter((node) => ! immediate.includes(node));
 
-    immediate.forEach((node) => animateCounter(node, { force }));
+    // Reset deferred counters immediately so the SSR final value never flashes.
+    nodes.forEach((node) => {
+        const trigger = normalizeCounterTrigger(node.getAttribute('data-vb-count-trigger'));
 
-    if (deferred.length === 0 || typeof IntersectionObserver === 'undefined') {
-        deferred.forEach((node) => animateCounter(node, { force }));
+        if (! preferImmediate && trigger !== 'always') {
+            node.dataset.vbCountPlayed = '0';
+            node.dataset.vbCountAnimating = '0';
+            node.textContent = counterStartLabel(node);
+        }
+    });
+
+    const always = [];
+    const visible = [];
+    const hover = [];
+    const click = [];
+
+    nodes.forEach((node) => {
+        const trigger = normalizeCounterTrigger(node.getAttribute('data-vb-count-trigger'));
+
+        if (preferImmediate || trigger === 'always') {
+            always.push(node);
+        } else if (trigger === 'hover') {
+            hover.push(node);
+        } else if (trigger === 'click') {
+            click.push(node);
+        } else {
+            visible.push(node);
+        }
+    });
+
+    always.forEach((node) => animateCounter(node, { force }));
+
+    hover.forEach((node) => {
+        const target = counterInteractionTarget(node);
+
+        if (target.dataset.vbCountHoverBound === '1') {
+            return;
+        }
+
+        target.dataset.vbCountHoverBound = '1';
+        node.dataset.vbCountHoverBound = '1';
+        target.style.cursor = target.style.cursor || 'pointer';
+
+        if (typeof window.PointerEvent === 'function') {
+            target.addEventListener('pointerenter', () => replayCounter(node));
+        } else {
+            target.addEventListener('mouseenter', () => replayCounter(node));
+        }
+    });
+
+    click.forEach((node) => {
+        const target = counterInteractionTarget(node);
+
+        if (target.dataset.vbCountClickBound === '1') {
+            return;
+        }
+
+        target.dataset.vbCountClickBound = '1';
+        node.dataset.vbCountClickBound = '1';
+        target.style.cursor = target.style.cursor || 'pointer';
+        target.addEventListener('click', (event) => {
+            event.preventDefault();
+            replayCounter(node);
+        });
+    });
+
+    if (visible.length === 0) {
+        return;
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+        visible.forEach((node) => animateCounter(node, { force }));
 
         return;
     }
@@ -328,7 +634,7 @@ export function initAnimatedCounters(options = {}) {
         });
     }, { threshold: 0.2, rootMargin: '0px 0px -5% 0px' });
 
-    deferred.forEach((node) => observer.observe(node));
+    visible.forEach((node) => observer.observe(node));
 }
 
 /**
@@ -459,7 +765,13 @@ export function settleEditorCanvasPreview(options = {}) {
         node.classList.add('is-visible');
     });
 
-    root.querySelectorAll('[data-voodbuilder-animated-counter]').forEach((node) => {
+    root.querySelectorAll('[data-voodbuilder-animated-counter], .vb-animated-counter, [data-voodbuilder-animated-stats] [data-vb-item] > span').forEach((node) => {
+        if (! (node instanceof HTMLElement)) {
+            return;
+        }
+
+        ensureCounterAttributes(node);
+
         if (node.__vbCountRaf) {
             window.cancelAnimationFrame(node.__vbCountRaf);
             node.__vbCountRaf = 0;

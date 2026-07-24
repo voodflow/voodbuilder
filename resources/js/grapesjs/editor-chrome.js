@@ -5,6 +5,17 @@
 
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { registerEditorPanelToggles } from './editor-panel-toggles.js';
+import {
+    readInnerDropSlotsVisiblePreference,
+    saveInnerDropSlotsVisiblePreference,
+    setInnerDropSlotsVisible,
+} from './inner-drop-slots.js';
+import {
+    isClassHoverPopoverEnabled,
+    readClassHoverPopoverPreference,
+    saveClassHoverPopoverPreference,
+    setClassHoverPopoverEnabled,
+} from './canvas-class-hover-popover.js';
 
 const CMD_DEVICE_DESKTOP = 'voodbuilder-set-device-desktop';
 const CMD_DEVICE_TABLET = 'voodbuilder-set-device-tablet';
@@ -320,6 +331,57 @@ function setupComponentOutlineToggle(editor, button, shellRoot) {
     syncButton();
 }
 
+function setupInnerDropSlotsToggle(editor, button, shellRoot) {
+    const syncButton = () => {
+        const active = editor.__voodbuilderInnerDropSlotsVisible === true;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    };
+
+    button.addEventListener('click', () => {
+        const next = ! (editor.__voodbuilderInnerDropSlotsVisible === true);
+        saveInnerDropSlotsVisiblePreference(next);
+        setInnerDropSlotsVisible(editor, next, shellRoot);
+        syncButton();
+    });
+
+    editor.on('load', () => {
+        setInnerDropSlotsVisible(editor, readInnerDropSlotsVisiblePreference(), shellRoot);
+        syncButton();
+    });
+
+    editor.on('canvas:frame:load', () => {
+        setInnerDropSlotsVisible(editor, editor.__voodbuilderInnerDropSlotsVisible === true, shellRoot);
+        syncButton();
+    });
+
+    setInnerDropSlotsVisible(editor, readInnerDropSlotsVisiblePreference(), shellRoot);
+    syncButton();
+}
+
+function setupClassHoverPopoverToggle(editor, button, shellRoot) {
+    const syncButton = () => {
+        const active = isClassHoverPopoverEnabled(editor);
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    };
+
+    button.addEventListener('click', () => {
+        const next = ! isClassHoverPopoverEnabled(editor);
+        saveClassHoverPopoverPreference(next);
+        setClassHoverPopoverEnabled(editor, next, shellRoot);
+        syncButton();
+    });
+
+    editor.on('load', () => {
+        setClassHoverPopoverEnabled(editor, readClassHoverPopoverPreference(), shellRoot);
+        syncButton();
+    });
+
+    setClassHoverPopoverEnabled(editor, readClassHoverPopoverPreference(), shellRoot);
+    syncButton();
+}
+
 function registerPreviewCommand(editor, shellRoot) {
     const { Commands, Canvas } = editor;
     let outlineWasActive = false;
@@ -608,6 +670,20 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
     });
     setupComponentOutlineToggle(editor, outlineButton, shellRoot);
 
+    const dropSlotsButton = createToolButton({
+        id: 'inner-drop-slots',
+        icon: 'square-dashed',
+        title: labels.innerDropSlots ?? 'Show drop zones',
+    });
+    setupInnerDropSlotsToggle(editor, dropSlotsButton, shellRoot);
+
+    const classHoverButton = createToolButton({
+        id: 'class-hover-popover',
+        icon: 'tags',
+        title: labels.classHoverPopover ?? 'Show class tip on hover',
+    });
+    setupClassHoverPopoverToggle(editor, classHoverButton, shellRoot);
+
     const previewButton = createToolButton({
         id: 'preview',
         icon: 'eye',
@@ -617,7 +693,7 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
 
     const themeButton = createThemeToggleButton(labels);
 
-    const canvasGroup = createToolGroup([outlineButton, previewButton, themeButton]);
+    const canvasGroup = createToolGroup([outlineButton, dropSlotsButton, classHoverButton, previewButton, themeButton]);
 
     const zoomOutButton = createToolButton({
         id: 'zoom-out',

@@ -105,12 +105,50 @@ final class GrapesJsBindingStorageNormalizer
     {
         if ($tag === 'a') {
             $element->setAttribute('href', '#');
+            $this->stripSpuriousDirectTextNodes($element);
 
             return;
         }
 
         if ($tag === 'button') {
             $element->removeAttribute('onclick');
+        }
+    }
+
+    /**
+     * Card-style URL bindings only set href. Remove direct text nodes scraped
+     * from nested title/category copy in the editor.
+     */
+    protected function stripSpuriousDirectTextNodes(DOMElement $element): void
+    {
+        $hasElementChild = false;
+
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $hasElementChild = true;
+
+                break;
+            }
+        }
+
+        if (! $hasElementChild) {
+            return;
+        }
+
+        $toRemove = [];
+
+        foreach ($element->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE && trim((string) $child->textContent) !== '') {
+                $toRemove[] = $child;
+            }
+        }
+
+        foreach ($toRemove as $node) {
+            $element->removeChild($node);
+        }
+
+        if ($element->hasAttribute('data-voodbuilder-cta-label')) {
+            $element->removeAttribute('data-voodbuilder-cta-label');
         }
     }
 
