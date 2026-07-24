@@ -17,10 +17,15 @@ export function isCatalogSection(component) {
     }
 
     const attrs = component.getAttributes?.() ?? {};
+
+    // Bricks-like Layout Section is a nest host, not a catalog section block.
+    if (attrs['data-voodbuilder-layout'] === 'section') {
+        return false;
+    }
+
     const type = String(component.get('type') ?? '');
 
     return Boolean(attrs['data-voodbuilder-section-block'])
-        || type === 'voodbuilder-section'
         || type === 'voodbuilder-logo-grid'
         || type === 'voodbuilder-logo-split'
         || type === 'voodbuilder-animated-stats'

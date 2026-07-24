@@ -15,6 +15,8 @@ const LAYOUT_CLASS_HINTS = [
     'inline-flex',
     'grid',
     'voodbuilder-gjs-container',
+    'vb-layout-block',
+    'vb-layout-div',
 ];
 
 const LAYOUT_CLASS_PREFIXES = [
@@ -22,6 +24,14 @@ const LAYOUT_CLASS_PREFIXES = [
     'space-y-',
     'space-x-',
 ];
+
+const LAYOUT_ATTR_KINDS = new Set(['section', 'container', 'block', 'div']);
+const LAYOUT_TYPES = new Set([
+    'voodbuilder-section',
+    'voodbuilder-container',
+    'voodbuilder-layout-block',
+    'voodbuilder-layout-div',
+]);
 
 const CONTAINER_TAGS = new Set([
     'div',
@@ -121,6 +131,14 @@ export function isInnerDropLayoutContainer(component) {
     }
 
     if (attrs['data-voodbuilder-dropzone'] || attrs['data-voodbuilder-role'] === 'content') {
+        return true;
+    }
+
+    if (LAYOUT_ATTR_KINDS.has(String(attrs['data-voodbuilder-layout'] ?? ''))) {
+        return true;
+    }
+
+    if (LAYOUT_TYPES.has(String(component.get?.('type') ?? ''))) {
         return true;
     }
 

@@ -260,8 +260,43 @@ function armDragSessionWatchdog(editor) {
 }
 
 /**
+ * True when the component sits inside a Bricks-like Layout host (Section/Container/Block/Div).
+ * Those hosts are meant to receive nested content — do not promote out of them.
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isNestedInLayoutStructure(component) {
+    let ancestor = component?.parent?.();
+
+    while (ancestor && ancestor.get?.('type') !== 'wrapper') {
+        const attrs = ancestor.getAttributes?.() ?? {};
+        const layout = String(attrs['data-voodbuilder-layout'] ?? '');
+        const type = String(ancestor.get?.('type') ?? '');
+
+        if (
+            layout === 'block'
+            || layout === 'div'
+            || layout === 'container'
+            || layout === 'section'
+            || type === 'voodbuilder-layout-block'
+            || type === 'voodbuilder-layout-div'
+            || type === 'voodbuilder-container'
+        ) {
+            return true;
+        }
+
+        ancestor = ancestor.parent?.();
+    }
+
+    return false;
+}
+
+/**
  * If a block lands nested under the page content slot (inside another section),
  * promote it to a sibling of that section instead of discarding it.
+ *
+ * Layout Section/Container/Block are intentional nest hosts — never promote out of them.
  *
  * @param {object} editor
  * @param {object} component
@@ -283,6 +318,10 @@ function ensurePageContentSlotPlacement(editor, component) {
     }
 
     if (component.getAttributes?.()?.['data-voodbuilder-page-content']) {
+        return component;
+    }
+
+    if (isNestedInLayoutStructure(component)) {
         return component;
     }
 
@@ -320,7 +359,7 @@ function ensurePageContentSlotPlacement(editor, component) {
         }
     }
 
-    // Nested inside a section: promote as sibling after the host section.
+    // Nested inside a catalog/page section: promote as sibling after the host section.
     try {
         const insertAt = hostSection
             ? (slot.components().indexOf(hostSection) + 1)
