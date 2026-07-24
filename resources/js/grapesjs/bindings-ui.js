@@ -745,7 +745,7 @@ function resolveRepeatTargetContainer(component) {
 function bindingRejectionMessage(component, fieldType, labels) {
     if (hasBindBlockingChildren(component) && (isRepeatHost(component) || findRepeatListContainer(component))) {
         return labels.repeatListInstead
-            ?? 'This looks like a list. Use the List repeat section in the Dynamic tab, then bind title, text and links inside each card with “List item”.';
+            ?? 'Use List repeat on this container, then List item inside the card.';
     }
 
     if (fieldType !== 'url' && (componentTag(component) === 'button' || isCtaButton(component))) {
@@ -1553,7 +1553,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
 
     if (hasStructuralChildren(component) && component.getAttributes()['data-voodbuilder-repeat']) {
         void alertDialog({
-            message: labels.repeatContainerNoBind ?? 'List repeat containers cannot hold a field binding. Bind title, text and links inside the card template instead.',
+            message: labels.repeatContainerNoBind ?? 'Bind fields inside the card, not on the list container.',
             labels,
         });
 
@@ -1562,7 +1562,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
 
     if (isRepeatListSource(sourceId)) {
         void alertDialog({
-            message: labels.repeatListNotField ?? 'Repeat list sources are for containers only. Use the List repeat section, or pick a list item field.',
+            message: labels.repeatListNotField ?? 'Use List repeat on the container, not a field binding.',
             labels,
         });
 
@@ -1929,12 +1929,12 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
     if (hintEl) {
         hintEl.textContent = listHost
-            ? (labels.repeatContainerHint ?? labels.inspectorHint ?? 'Use List repeat on this container, then bind fields inside each card with “List item”.')
+            ? (labels.repeatContainerHint ?? labels.inspectorHint ?? 'Configure the list, then bind fields inside the card.')
             : isLinkableInteractive(component) && (componentTag(component) === 'button' || isCtaButton(component))
-                ? (labels.buttonUrlHint ?? 'Bind a URL field to make the button link dynamic. The label (e.g. “Read more”) stays editable with a double-click.')
+                ? (labels.buttonUrlHint ?? 'Bind a URL field; double-click to edit the label.')
                 : isInsideRepeatTemplate(component)
-                    ? (labels.repeatItemHint ?? 'Choose List item and pick the field for this element (title, description, slug…).')
-                    : (labels.inspectorHint ?? 'Connect the selected element to live data from your packages.');
+                    ? (labels.repeatItemHint ?? 'Pick a List item field. For a card link, bind [URL] Slug on List Item.')
+                    : (labels.inspectorHint ?? 'Connect this element to live data.');
     }
 
     const fieldBindPanel = host.querySelector('[data-field-bind-panel]');
@@ -2005,7 +2005,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
 
         if (templateHint) {
             templateHint.textContent = labels.repeatTemplateHint
-                ?? 'Editor shows one template card only. Save and open the public page to see all repeated items.';
+                ?? 'One template card in the editor; all items on the public page.';
         }
 
         repeatPanel.querySelector('[data-repeat-apply]').textContent = labels.applyRepeat ?? 'Apply list repeat';
