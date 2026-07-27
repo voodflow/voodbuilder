@@ -42,10 +42,10 @@ class ThemesWorkspace extends Component
 
     public bool $canEditColors = false;
 
-    /** @var array<string, ?string> */
+    /** @var array<string, string|int|null> */
     public array $light = [];
 
-    /** @var array<string, ?string> */
+    /** @var array<string, string|int|null> */
     public array $dark = [];
 
     public bool $showColorModal = false;
@@ -55,6 +55,10 @@ class ThemesWorkspace extends Component
     public string $colorKey = 'primary';
 
     public string $colorValue = '#3451b2';
+
+    public bool $headerBgTransparent = false;
+
+    public int $headerBgOpacity = 80;
 
     public bool $showGenerateModal = false;
 
@@ -143,8 +147,53 @@ class ThemesWorkspace extends Component
         $this->colorMode = $mode;
         $this->colorKey = $key;
         $palette = $mode === 'dark' ? $this->dark : $this->light;
-        $this->colorValue = $palette[$key] ?? '#3451b2';
+        $this->colorValue = is_string($palette[$key] ?? null) ? $palette[$key] : '#3451b2';
+
+        if ($key === 'header_bg') {
+            $opacity = ThemePalette::sanitizeOpacity($palette['header_bg_opacity'] ?? null);
+            $this->headerBgTransparent = $opacity !== null && $opacity < 100;
+            $this->headerBgOpacity = $opacity ?? 80;
+        } else {
+            $this->headerBgTransparent = false;
+            $this->headerBgOpacity = 80;
+        }
+
         $this->showColorModal = true;
+    }
+
+    public function updatedHeaderBgTransparent(bool $value): void
+    {
+        if (! $this->canEditColors || ! $this->showColorModal || $this->colorKey !== 'header_bg') {
+            return;
+        }
+
+        if ($value) {
+            if ($this->headerBgOpacity >= 100) {
+                $this->headerBgOpacity = 80;
+            }
+
+            $this->writeHeaderBgOpacity($this->headerBgOpacity);
+        } else {
+            $this->writeHeaderBgOpacity(null);
+        }
+
+        $this->persistColors();
+    }
+
+    public function updatedHeaderBgOpacity(int|string|null $value): void
+    {
+        if (! $this->canEditColors || ! $this->showColorModal || $this->colorKey !== 'header_bg') {
+            return;
+        }
+
+        if (! $this->headerBgTransparent) {
+            return;
+        }
+
+        $opacity = ThemePalette::sanitizeOpacity($value) ?? 80;
+        $this->headerBgOpacity = max(0, min(100, $opacity));
+        $this->writeHeaderBgOpacity($this->headerBgOpacity);
+        $this->persistColors();
     }
 
     public function updatedColorValue(?string $value): void
@@ -181,10 +230,20 @@ class ThemesWorkspace extends Component
 
         if ($mode === 'dark') {
             $this->dark[$key] = null;
+
+            if ($key === 'header_bg') {
+                unset($this->dark['header_bg_opacity']);
+            }
         } else {
             $this->light[$key] = null;
+
+            if ($key === 'header_bg') {
+                unset($this->light['header_bg_opacity']);
+            }
         }
 
+        $this->headerBgTransparent = false;
+        $this->headerBgOpacity = 80;
         $this->showColorModal = false;
         $this->persistColors();
     }
@@ -241,8 +300,8 @@ class ThemesWorkspace extends Component
 
         $colors[$this->selectedId] = [
             'custom' => true,
-            'light' => array_filter($this->light, static fn (?string $v): bool => filled($v)),
-            'dark' => array_filter($this->dark, static fn (?string $v): bool => filled($v)),
+            'light' => $this->filterModeForPersist($this->light),
+            'dark' => $this->filterModeForPersist($this->dark),
         ];
 
         VoodbuilderSettings::saveData([
@@ -617,7 +676,7 @@ class ThemesWorkspace extends Component
 
     /**
      * @param  array<string, mixed>  $colors
-     * @return array<string, ?string>
+     * @return array<string, string|int|null>
      */
     private function normalizeModeColors(array $colors): array
     {
@@ -628,7 +687,61 @@ class ThemesWorkspace extends Component
             $resolved[$key] = ThemePalette::sanitizeColor(is_string($value) ? $value : null);
         }
 
+        $opacity = ThemePalette::sanitizeOpacity($colors['header_bg_opacity'] ?? null);
+
+        if ($opacity !== null) {
+            $resolved['header_bg_opacity'] = $opacity;
+        }
+
         return $resolved;
+    }
+
+    /**
+     * @param  array<string, string|int|null>  $mode
+     * @return array<string, string|int>
+     */
+    private function filterModeForPersist(array $mode): array
+    {
+        $out = [];
+
+        foreach ($mode as $key => $value) {
+            if ($key === 'header_bg_opacity') {
+                $opacity = ThemePalette::sanitizeOpacity($value);
+
+                if ($opacity !== null && $opacity < 100) {
+                    $out[$key] = $opacity;
+                }
+
+                continue;
+            }
+
+            if (is_string($value) && filled($value)) {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    private function writeHeaderBgOpacity(?int $opacity): void
+    {
+        $opacity = ThemePalette::sanitizeOpacity($opacity);
+
+        if ($this->colorMode === 'dark') {
+            if ($opacity === null || $opacity >= 100) {
+                unset($this->dark['header_bg_opacity']);
+            } else {
+                $this->dark['header_bg_opacity'] = $opacity;
+            }
+
+            return;
+        }
+
+        if ($opacity === null || $opacity >= 100) {
+            unset($this->light['header_bg_opacity']);
+        } else {
+            $this->light['header_bg_opacity'] = $opacity;
+        }
     }
 
     /**

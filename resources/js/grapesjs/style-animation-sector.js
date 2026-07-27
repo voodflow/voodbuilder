@@ -59,7 +59,15 @@ const DURATION_OPTIONS = [
     { value: 'animate-duration-300', label: '300ms' },
     { value: 'animate-duration-500', label: '500ms' },
     { value: 'animate-duration-700', label: '700ms' },
-    { value: 'animate-duration-1000', label: '1000ms' },
+    { value: 'animate-duration-1000', label: '1s' },
+    { value: 'animate-duration-2000', label: '2s' },
+    { value: 'animate-duration-3000', label: '3s' },
+    { value: 'animate-duration-5000', label: '5s' },
+    { value: 'animate-duration-8000', label: '8s' },
+    { value: 'animate-duration-10000', label: '10s' },
+    { value: 'animate-duration-15000', label: '15s' },
+    { value: 'animate-duration-20000', label: '20s' },
+    { value: 'animate-duration-30000', label: '30s' },
 ];
 
 const DELAY_OPTIONS = [
@@ -272,8 +280,8 @@ function findSectorByTitle(stylesMount, titleNeedle) {
 }
 
 function scheduleClassCompile(editor) {
-    editor.__voodbuilderInvalidatePageCss?.()
-        ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
+    // Only compile when live CSS is missing utilities for current classes.
+    editor.__voodbuilderSchedulePageCssRebuild?.(0);
 }
 
 function scheduleEditorAnimationReplay(editor, delayMs = 80) {

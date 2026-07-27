@@ -444,19 +444,24 @@ function divContentHtml() {
 <div class="vb-layout-div w-full min-h-8" ${LAYOUT_ATTR}="div" data-gjs-type="voodbuilder-layout-div" data-gjs-name="Div" data-gjs-droppable="true"></div>`.trim();
 }
 
+/** Library thumbs: official Tabler outline SVGs (MIT) — viewBox 24×24. */
 function layoutWireframes() {
     return {
         'voodbuilder-layout-section': thumbWrap(previewSvg(
-            '<rect x="6" y="10" width="36" height="6" rx="1"/><rect x="10" y="20" width="28" height="16" rx="1.5"/>',
+            '<path d="M4 4l16 0"/><path d="M4 20l16 0"/><path d="M6 9m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>',
+            '0 0 24 24',
         )),
         'voodbuilder-layout-container': thumbWrap(previewSvg(
-            '<rect x="8" y="12" width="32" height="24" rx="2"/><rect x="12" y="16" width="24" height="16" rx="1.5"/>',
+            '<path d="M4 4l0 16"/><path d="M20 4l0 16"/><path d="M9 6m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/>',
+            '0 0 24 24',
         )),
         'voodbuilder-layout-block': thumbWrap(previewSvg(
-            '<rect x="10" y="12" width="28" height="24" rx="2"/>',
+            '<path d="M5 3m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v16a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z"/>',
+            '0 0 24 24',
         )),
         'voodbuilder-layout-div': thumbWrap(previewSvg(
-            '<rect x="10" y="12" width="28" height="24" rx="2" stroke-dasharray="3 2"/>',
+            '<path d="M20 4v.01"/><path d="M20 20v.01"/><path d="M20 16v.01"/><path d="M20 12v.01"/><path d="M20 8v.01"/><path d="M8 4m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M4 4v.01"/><path d="M4 20v.01"/><path d="M4 16v.01"/><path d="M4 12v.01"/><path d="M4 8v.01"/>',
+            '0 0 24 24',
         )),
     };
 }

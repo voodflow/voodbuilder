@@ -131,6 +131,58 @@ function applyIconToComponent(component, { name, sizeClass, href, linkType }) {
     component.__vbIconSynced = true;
 }
 
+function resolveHref(editor, linkType, linkRef, href) {
+    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+
+    if (linkType === 'page') {
+        return (targets.pages ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
+    }
+
+    if (linkType === 'menu') {
+        return (targets.menuItems ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
+    }
+
+    return String(href ?? '#').trim() || '#';
+}
+
+function readTextLinkLabel(component) {
+    return String(component.get('content') ?? '')
+        || [...(component.components?.() ?? [])].map((child) => String(child.get?.('content') ?? '')).join('')
+        || 'Text link';
+}
+
+function applyTextLinkToComponent(component, editor, { label, linkType, linkRef, href, target }) {
+    const resolvedHref = resolveHref(editor, linkType, linkRef, href);
+    const nextLabel = String(label ?? '').trim() || 'Text link';
+
+    runWithSettingsChangeGuard(editor, () => {
+        component.set({
+            href: resolvedHref,
+            target: target || '',
+            'data-vb-link-type': linkType,
+            linkType,
+            linkRef: linkType === 'url' ? '' : linkRef,
+        });
+
+        component.addAttributes({
+            href: resolvedHref,
+            target: target || null,
+            rel: target === '_blank' ? 'noopener noreferrer' : null,
+            'data-vb-link-type': linkType,
+            'data-vb-link': linkType === 'url' ? null : (linkRef || null),
+        });
+
+        const children = [...(component.components?.() ?? [])];
+        const textNode = children.find((child) => child?.get?.('type') === 'textnode');
+
+        if (textNode) {
+            textNode.set('content', nextLabel);
+        } else {
+            component.components(nextLabel);
+        }
+    });
+}
+
 /**
  * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
  */
@@ -240,6 +292,8 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
 }
 
 /**
+ * Text link Content settings — same link controls as Button (type / URL / page / menu / target).
+ *
  * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
  */
 export function renderTextLinkSettings({ mount, traitsMount = null, component, editor, labels = {} }) {
@@ -257,12 +311,17 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         return true;
     }
 
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
     const attrs = component.getAttributes?.() ?? {};
-    let label = String(component.get('content') ?? '')
-        || [...(component.components?.() ?? [])].map((child) => String(child.get?.('content') ?? '')).join('')
-        || 'Text link';
+    let linkType = String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url';
+    let linkRef = String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(component.get('href') ?? attrs.href ?? '#');
     let target = String(component.get('target') ?? attrs.target ?? '');
+    let label = readTextLinkLabel(component);
+
+    if (linkType === 'none') {
+        linkType = 'url';
+    }
 
     traitsMount?.classList.add('hidden');
     traitsMount?.replaceChildren?.();
@@ -279,11 +338,61 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         value: label,
     });
 
+    const typeField = createSelectField({
+        label: labels.buttonLinkType ?? 'Link type',
+        name: 'textLinkType',
+        value: linkType,
+        options: [
+            { value: 'url', label: labels.buttonLinkTypeUrl ?? 'URL' },
+            { value: 'page', label: labels.buttonLinkTypePage ?? 'Site page' },
+            { value: 'menu', label: labels.buttonLinkTypeMenu ?? 'Menu item' },
+        ],
+        onChange: (value) => {
+            linkType = value;
+            syncVisibility();
+            commit();
+        },
+    });
+
     const { field: urlField, input: urlInput } = createTextField({
         label: labels.buttonLinkUrl ?? 'Link URL',
         name: 'textLinkHref',
         value: href === '#' ? '' : href,
         placeholder: labels.buttonLinkUrlPlaceholder ?? 'https:// or /page',
+    });
+
+    const pageField = createSelectField({
+        label: labels.buttonLinkPage ?? 'Page',
+        name: 'textLinkRefPage',
+        value: linkRef,
+        options: [
+            { value: '', label: '—' },
+            ...(targets.pages ?? []).map((item) => ({
+                value: String(item.id),
+                label: item.label,
+            })),
+        ],
+        onChange: (value) => {
+            linkRef = value;
+            commit();
+        },
+    });
+
+    const menuField = createSelectField({
+        label: labels.buttonLinkMenu ?? 'Menu item',
+        name: 'textLinkRefMenu',
+        value: linkRef,
+        options: [
+            { value: '', label: '—' },
+            ...(targets.menuItems ?? []).map((item) => ({
+                value: String(item.id),
+                label: item.label,
+            })),
+        ],
+        onChange: (value) => {
+            linkRef = value;
+            commit();
+        },
     });
 
     const targetField = createSelectField({
@@ -300,27 +409,31 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         },
     });
 
+    fields.append(labelField, typeField, urlField, pageField, menuField, targetField);
+    mount.appendChild(section);
+
+    const syncVisibility = () => {
+        urlField.hidden = linkType !== 'url';
+        pageField.hidden = linkType !== 'page';
+        menuField.hidden = linkType !== 'menu';
+    };
+
     const commit = () => {
-        const nextLabel = String(labelInput.value ?? '').trim() || 'Text link';
-        const nextHref = String(urlInput.value ?? '').trim() || '#';
+        label = String(labelInput.value || 'Text link').trim() || 'Text link';
+        href = String(urlInput.value || '#').trim() || '#';
+        linkRef = linkType === 'page'
+            ? String(pageField.querySelector('select')?.value || '')
+            : linkType === 'menu'
+                ? String(menuField.querySelector('select')?.value || '')
+                : '';
+        target = String(targetField.querySelector('select')?.value || '');
 
-        runWithSettingsChangeGuard(editor, () => {
-            component.set({ href: nextHref, target: target || '' });
-            component.addAttributes({
-                href: nextHref,
-                target: target || null,
-                rel: target === '_blank' ? 'noopener noreferrer' : null,
-                'data-vb-link-type': 'url',
-            });
-
-            const children = [...(component.components?.() ?? [])];
-            const textNode = children.find((child) => child?.get?.('type') === 'textnode');
-
-            if (textNode) {
-                textNode.set('content', nextLabel);
-            } else {
-                component.components(nextLabel);
-            }
+        applyTextLinkToComponent(component, editor, {
+            label,
+            linkType,
+            linkRef,
+            href,
+            target,
         });
     };
 
@@ -329,8 +442,7 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
     urlInput.addEventListener('change', commit);
     urlInput.addEventListener('blur', commit);
 
-    fields.append(labelField, urlField, targetField);
-    mount.appendChild(section);
+    syncVisibility();
     editor.__voodbuilderEnhanceInspectorSelects?.(mount);
 
     return true;

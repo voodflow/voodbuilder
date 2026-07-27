@@ -41,26 +41,39 @@ function wireframe(paths) {
     return thumbWrap(previewSvg(paths));
 }
 
+/** Library thumbs: Tabler outline paths (MIT) on 24×24 viewBox. */
+function tablerThumb(paths) {
+    return thumbWrap(previewSvg(paths, '0 0 24 24'));
+}
+
 export const UTILITY_BLOCK_WIREFRAMES = {
-    'voodbuilder-heading': wireframe('<path d="M14 8v8M10 8v8M10 12h4"/><path d="M8 6h8"/>'),
-    'voodbuilder-text': wireframe('<path d="M10 12h28M10 18h22M10 24h26M10 30h18"/>'),
-    'voodbuilder-rich-text': wireframe('<path d="M10 12h28M10 18h24M10 24h28M10 30h16"/><path d="M10 36h20"/>'),
-    'voodbuilder-icon': wireframe(
-        '<path d="M12 17l-4.2 2.2 1-4.7L4 10.2l4.8-.7L12 5l3.2 4.5 4.8.7-3.2 4.3 1 4.7z"/>',
+    'voodbuilder-heading': tablerThumb(
+        '<path d="M7 12h10"/><path d="M7 5v14"/><path d="M17 5v14"/><path d="M15 19h4"/><path d="M15 5h4"/><path d="M5 19h4"/><path d="M5 5h4"/>',
     ),
-    'voodbuilder-text-link': wireframe('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/>'),
-    'voodbuilder-button': wireframe(
-        '<rect x="8" y="16" width="32" height="14" rx="3"/>'
-        + '<path d="M14 23h20"/>',
+    'voodbuilder-text': tablerThumb(
+        '<path d="M4 6l16 0"/><path d="M4 12l10 0"/><path d="M4 18l14 0"/>',
     ),
-    image: wireframe(
-        '<rect x="9" y="12" width="30" height="24" rx="2.5" />'
-        + '<circle cx="17" cy="20" r="2.25" />'
-        + '<path d="M11 32l8-7 6 5 5-4 7 6" />',
+    'voodbuilder-rich-text': tablerThumb(
+        // ti-text-plus
+        '<path d="M19 10h-14"/><path d="M5 6h14"/><path d="M14 14h-9"/><path d="M5 18h6"/><path d="M18 15v6"/><path d="M15 18h6"/>',
     ),
-    video: wireframe(
-        '<rect x="9" y="14" width="30" height="20" rx="2.5" />'
-        + '<path d="M22 20l8 4-8 4z" />',
+    'voodbuilder-icon': tablerThumb(
+        '<path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/>',
+    ),
+    'voodbuilder-text-link': tablerThumb(
+        '<path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/>',
+    ),
+    'voodbuilder-button': tablerThumb(
+        '<path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/>',
+    ),
+    'voodbuilder-divider': tablerThumb(
+        '<path d="M3 12l0 .01"/><path d="M7 12l10 0"/><path d="M21 12l0 .01"/>',
+    ),
+    image: tablerThumb(
+        '<path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/>',
+    ),
+    video: tablerThumb(
+        '<path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"/><path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>',
     ),
     'voodbuilder-reading-time': wireframe('<circle cx="24" cy="24" r="10"/><path d="M24 18v6l4 2"/>'),
     'voodbuilder-reading-progress': wireframe('<path d="M8 28h32"/><rect x="8" y="26" width="18" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>'),
@@ -394,35 +407,6 @@ const BLOCKS = [
         },
     },
     {
-        id: 'image',
-        label: 'Image',
-        category: BASIC_BLOCK_CATEGORY,
-        content: {
-            type: 'image',
-            classes: ['w-full', 'h-auto', 'rounded'],
-            attributes: {
-                src: '',
-                alt: 'Image',
-            },
-        },
-    },
-    {
-        id: 'video',
-        label: 'Video',
-        category: BASIC_BLOCK_CATEGORY,
-        content: {
-            type: 'video',
-            provider: 'yt',
-            videoId: '',
-            classes: ['w-full', 'rounded', 'aspect-video'],
-            style: {
-                width: '100%',
-                'max-width': '100%',
-                height: 'auto',
-            },
-        },
-    },
-    {
         id: 'voodbuilder-divider',
         label: 'Divider',
         category: BASIC_BLOCK_CATEGORY,
@@ -462,6 +446,35 @@ const BLOCKS = [
                 'data-share-url': '',
             },
             components: buildSocialShareLinks(),
+        },
+    },
+    {
+        id: 'image',
+        label: 'Image',
+        category: MEDIA_BLOCK_CATEGORY,
+        content: {
+            type: 'image',
+            classes: ['w-full', 'h-auto', 'rounded'],
+            attributes: {
+                src: '',
+                alt: 'Image',
+            },
+        },
+    },
+    {
+        id: 'video',
+        label: 'Video',
+        category: MEDIA_BLOCK_CATEGORY,
+        content: {
+            type: 'video',
+            provider: 'yt',
+            videoId: '',
+            classes: ['w-full', 'rounded', 'aspect-video'],
+            style: {
+                width: '100%',
+                'max-width': '100%',
+                height: 'auto',
+            },
         },
     },
     {

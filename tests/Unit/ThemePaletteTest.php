@@ -166,6 +166,39 @@ class ThemePaletteTest extends TestCase
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
     }
 
+    public function test_header_bg_opacity_emits_color_mix(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => ['label' => 'Site'],
+        ]);
+
+        VoodbuilderSettings::saveData([
+            'sub_theme_colors' => ThemePalette::normalize([
+                'site' => [
+                    'custom' => true,
+                    'light' => [
+                        'header_bg' => '#0f172a',
+                        'header_bg_opacity' => 65,
+                    ],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::css();
+
+        $this->assertStringContainsString(
+            '--vx-header-bg:color-mix(in srgb, #0f172a 65%, transparent)',
+            $css,
+        );
+        $this->assertSame(
+            'color-mix(in srgb, #0f172a 65%, transparent)',
+            ThemePalette::headerBackgroundCssValue('#0f172a', 65),
+        );
+        $this->assertSame('#0f172a', ThemePalette::headerBackgroundCssValue('#0f172a', 100));
+        $this->assertSame('transparent', ThemePalette::headerBackgroundCssValue('#0f172a', 0));
+    }
+
     public function test_critical_chrome_shell_css_prefers_admin_header_bg_over_bundled_semantic(): void
     {
         config()->set('voodbuilder.sub_themes', [

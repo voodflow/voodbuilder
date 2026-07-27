@@ -1,9 +1,16 @@
 /**
- * Recompiles page-level Tailwind utilities in the canvas iframe when classes change.
+ * Recompiles page-level Tailwind utilities in the canvas iframe when needed.
+ *
+ * Compile only when:
+ * - new element brings utilities missing from live CSS
+ * - Save / explicit invalidate
+ * - new classes not already present in the compiled CSS
+ *
+ * Do NOT compile on reorder / move of existing page elements (HTML order changes
+ * alone must not hit compile-css).
+ *
  * Style Manager paints are inline — they must NOT trigger compile-css.
  * Never compile during block/sorter drag (selector:add storms on drag-start).
- * After a successful drop, compile once only if new utilities are missing from live CSS.
- * Saves / explicit invalidate always recompile.
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
@@ -105,11 +112,57 @@ function cssDefinesUtility(css, className) {
     return new RegExp(`\\.${escaped}(?:\\b|[\\[:])`).test(css);
 }
 
+function isIgnorableClassToken(className) {
+    const token = String(className ?? '').trim();
+
+    return token === ''
+        || token.startsWith('gjs-')
+        || token.startsWith('vb-')
+        || token.startsWith('voodbuilder-');
+}
+
+function collectComponentClassSet(component, into = new Set()) {
+    if (! component) {
+        return into;
+    }
+
+    for (const className of (component.getClasses?.() ?? [])) {
+        const token = String(className ?? '').trim();
+
+        if (! isIgnorableClassToken(token)) {
+            into.add(token);
+        }
+    }
+
+    component.components?.()?.forEach?.((child) => collectComponentClassSet(child, into));
+
+    return into;
+}
+
+function sameClassSet(left, right) {
+    if (left.size !== right.size) {
+        return false;
+    }
+
+    for (const token of left) {
+        if (! right.has(token)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 export function pageCssCoversClass(editor, className) {
     const normalized = String(className ?? '').trim();
 
-    if (normalized === '') {
-        return false;
+    if (normalized === '' || isIgnorableClassToken(normalized)) {
+        return true;
+    }
+
+    // Theme / section utility tokens ship outside page live CSS.
+    if (normalized.includes('-vp-') || /(?:^|:)vp-/.test(normalized)) {
+        return true;
     }
 
     return cssDefinesUtility(editor?.__voodbuilderPageLiveCss ?? '', normalized);
@@ -135,6 +188,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let timer = null;
     let requestId = 0;
     let lastHtml = '';
+    let lastClassSet = new Set();
     let frameReady = false;
     let editorLoaded = false;
     let pendingInvalidate = false;
@@ -143,6 +197,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let settingsRetries = 0;
     let dragLockDepth = 0;
     let pendingAfterDrag = false;
+    let pendingAfterDragComponent = null;
     let endDragTimer = null;
 
     const isDragLocked = () => (
@@ -150,6 +205,49 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         || editor.__voodbuilderActiveBlockDrag
         || editor.__voodbuilderCssRebuildDragLock === true
     );
+
+    const currentPageClassSet = () => collectComponentClassSet(editor.getWrapper?.());
+
+    const classSetNeedsCompile = (classSet) => {
+        for (const token of classSet) {
+            if (! lastClassSet.has(token) && ! pageCssCoversClass(editor, token)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    const componentNeedsLiveCss = (component) => {
+        if (! component) {
+            return false;
+        }
+
+        const classSet = collectComponentClassSet(component);
+
+        for (const token of classSet) {
+            if (! pageCssCoversClass(editor, token)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    const selectorNeedsLiveCss = (selector) => {
+        const name = String(
+            selector?.getLabel?.()
+            ?? selector?.get?.('name')
+            ?? selector?.id
+            ?? '',
+        ).trim().replace(/^\./, '');
+
+        if (name === '' || lastClassSet.has(name) || pageCssCoversClass(editor, name)) {
+            return false;
+        }
+
+        return true;
+    };
 
     const schedule = (delay = DEBOUNCE_MS) => {
         if (
@@ -187,6 +285,19 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         }, delay);
     };
 
+    /** Schedule only when new utilities are missing (reorder/move must no-op). */
+    const scheduleIfMissingUtilities = (delay = DEBOUNCE_MS) => {
+        if (pendingInvalidate) {
+            schedule(delay);
+
+            return;
+        }
+
+        if (classSetNeedsCompile(currentPageClassSet())) {
+            schedule(delay);
+        }
+    };
+
     const beginDragLock = () => {
         dragLockDepth = 1;
         editor.__voodbuilderCssRebuildDragLock = true;
@@ -195,11 +306,14 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         requestId += 1;
         building = false;
         queuedWhileBuilding = false;
+        pendingAfterDrag = false;
+        pendingAfterDragComponent = null;
     };
 
-    const endDragLock = ({ flush = false } = {}) => {
+    const endDragLock = ({ flush = false, component = null } = {}) => {
         if (flush) {
             pendingAfterDrag = true;
+            pendingAfterDragComponent = component;
         }
 
         // Coalesce block:drag:stop + sorter:drag:end (both fire on library drops).
@@ -210,42 +324,14 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
             if (pendingAfterDrag) {
                 pendingAfterDrag = false;
-                schedule(DEBOUNCE_MS);
+                const dropped = pendingAfterDragComponent;
+                pendingAfterDragComponent = null;
+
+                if (componentNeedsLiveCss(dropped) || classSetNeedsCompile(currentPageClassSet())) {
+                    schedule(DEBOUNCE_MS);
+                }
             }
         }, 80);
-    };
-
-    const componentNeedsLiveCss = (component) => {
-        if (! component) {
-            return false;
-        }
-
-        let needs = false;
-        const visit = (node) => {
-            if (needs || ! node) {
-                return;
-            }
-
-            for (const className of (node.getClasses?.() ?? [])) {
-                const token = String(className ?? '').trim();
-
-                if (token === '' || token.startsWith('gjs-') || token.startsWith('vb-')) {
-                    continue;
-                }
-
-                if (! pageCssCoversClass(editor, token)) {
-                    needs = true;
-
-                    return;
-                }
-            }
-
-            node.components?.()?.forEach?.((child) => visit(child));
-        };
-
-        visit(component);
-
-        return needs;
     };
 
     const rebuild = async () => {
@@ -272,18 +358,34 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             return;
         }
 
+        const classSet = currentPageClassSet();
+
         if (html === '') {
             applyPageLiveCss(editor, '');
             lastHtml = '';
+            lastClassSet = new Set();
             editor.trigger('voodbuilder:page-css-compiled', { css: '', html: '' });
+
+            return;
+        }
+
+        // Same class tokens as last compile → structure-only change (reorder/move).
+        if (! pendingInvalidate && sameClassSet(classSet, lastClassSet)) {
+            lastHtml = html;
+
+            return;
+        }
+
+        // New tokens only: compile if any are missing from live CSS.
+        if (! pendingInvalidate && ! classSetNeedsCompile(classSet)) {
+            lastHtml = html;
+            lastClassSet = classSet;
 
             return;
         }
 
         if (html === lastHtml && ! pendingInvalidate) {
             applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
-            // Skip page-css-compiled on cache hits — listeners remorph CTAs / replay
-            // animations and that freezes or flickers the canvas.
 
             return;
         }
@@ -320,6 +422,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             }
 
             lastHtml = html;
+            lastClassSet = classSet;
             applyPageLiveCss(editor, css);
             editor.trigger('voodbuilder:page-css-compiled', { css, html });
         } catch {
@@ -331,12 +434,13 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
             if (queuedWhileBuilding) {
                 queuedWhileBuilding = false;
-                schedule(DEBOUNCE_MS);
+                scheduleIfMissingUtilities(DEBOUNCE_MS);
             }
         }
     };
 
-    editor.__voodbuilderSchedulePageCssRebuild = schedule;
+    editor.__voodbuilderSchedulePageCssRebuild = scheduleIfMissingUtilities;
+    editor.__voodbuilderForcePageCssRebuild = schedule;
     editor.__voodbuilderSetCssRebuildSuspended = (suspended) => {
         const depth = Number(editor.__voodbuilderCssRebuildSuspendDepth ?? 0);
 
@@ -362,38 +466,56 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
         if (nextDepth === 0 && editor.__voodbuilderFlushCssRebuildOnResume) {
             editor.__voodbuilderFlushCssRebuildOnResume = false;
-            schedule(200);
+            scheduleIfMissingUtilities(200);
         }
     };
     editor.__voodbuilderApplyPageLiveCss = (css) => {
         lastHtml = collectPageLevelHtml(editor);
+        lastClassSet = currentPageClassSet();
         applyPageLiveCss(editor, css);
     };
     editor.__voodbuilderInvalidatePageCss = () => {
         lastHtml = '';
+        lastClassSet = new Set();
         pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Live compile when classes are added/renamed — not when removed from canvas,
-    // and not while dragging (block library drag creates temp components + selectors).
-    editor.on('component:update:classes', () => schedule());
-    editor.on('selector:add', () => schedule());
-    editor.on('selector:update', () => schedule());
+    // Live compile only when classes/selectors introduce utilities missing from live CSS.
+    editor.on('component:update:classes', (component) => {
+        if (classSetNeedsCompile(collectComponentClassSet(component))) {
+            schedule();
+        }
+    });
+    editor.on('selector:add', (selector) => {
+        if (selectorNeedsLiveCss(selector)) {
+            schedule();
+        }
+    });
+    editor.on('selector:update', (selector) => {
+        if (selectorNeedsLiveCss(selector)) {
+            schedule();
+        }
+    });
 
     editor.on('block:drag:start', beginDragLock);
     editor.on('sorter:drag:start', beginDragLock);
+    editor.on('component:drag:start', beginDragLock);
     editor.on('block:drag:stop', (component) => {
         // Only flush after a real insert when live CSS is missing utilities.
-        endDragLock({ flush: componentNeedsLiveCss(component) });
+        endDragLock({ flush: componentNeedsLiveCss(component), component });
     });
     editor.on('sorter:drag:end', () => {
         // Reorder/move: release lock, do not force a rebuild by itself.
         endDragLock({ flush: false });
     });
+    editor.on('component:drag:end', () => {
+        endDragLock({ flush: false });
+    });
 
     const invalidate = () => {
         lastHtml = '';
+        lastClassSet = new Set();
         pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     };
@@ -405,21 +527,25 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     editor.on('load', () => {
         editorLoaded = true;
         resetEditorBuildStatus(editor);
+        pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     });
 
     editor.on('canvas:frame:load', () => {
         frameReady = true;
         applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
+        pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     });
 
     if (editor.Canvas?.getFrameEl?.()) {
         frameReady = true;
+        pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     }
 
     if (editorLoaded) {
+        pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     }
 }

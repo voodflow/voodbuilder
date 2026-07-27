@@ -37,6 +37,10 @@ function mockComponent(attrs = {}, children = [], parent = null) {
 
     const component = {
         getAttributes: () => state,
+        getClasses: () => String(state.class ?? '')
+            .split(/\s+/)
+            .map((name) => name.trim())
+            .filter(Boolean),
         get: (key) => {
             if (key === 'type') {
                 return state.type ?? 'default';
@@ -137,6 +141,26 @@ describe('blocks/settings/select', () => {
         const editor = { __voodbuilderChromeLayoutMode: true };
 
         expect(shouldPromoteSelectionToRoot(inner, root, editor)).toBe(true);
+    });
+
+    it('shouldPromoteSelectionToRoot keeps animated nodes selectable', () => {
+        const root = mockComponent({ [ATTR.block]: 'site_footer_social' });
+        const plasma = mockComponent({
+            class: 'h-32 blur-[100px] animate-spin animate-duration-1000',
+        }, [], root);
+
+        expect(shouldPromoteSelectionToRoot(plasma, root, {})).toBe(false);
+    });
+
+    it('shouldPromoteSelectionToRoot skips while layers selection is pinned', () => {
+        const root = mockComponent({ [ATTR.block]: 'site_footer_social' });
+        const inner = mockComponent({ class: 'inner' }, [], root);
+        const editor = {
+            __voodbuilderLayersSelectionPin: inner,
+            __voodbuilderLayersSelectionPinUntil: Date.now() + 1000,
+        };
+
+        expect(shouldPromoteSelectionToRoot(inner, root, editor)).toBe(false);
     });
 
     it('findLayoutChromeZoneBlockRoot resolves block inside default wrapper', () => {

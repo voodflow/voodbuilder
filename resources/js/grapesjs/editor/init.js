@@ -107,7 +107,7 @@ import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
 import { registerCanvasClassHoverPopover } from '../canvas-class-hover-popover.js';
-import { syncAllLayerDisplayNames } from '../layer-display-name.js';
+import { syncAllLayerDisplayNames, registerLayerDisplayNamePersistence } from '../layer-display-name.js';
 import { registerBlocksContextMenu } from '../blocks-context-menu.js';
 import { registerBlocksLibraryRenderHook } from '../blocks-library-sync.js';
 import { registerSectionBlockTagging } from '../section-block-tagging.js';
@@ -1037,6 +1037,7 @@ export function initVpressGrapesJs(container, options = {}) {
         configureLayoutBlocks(editor);
 
         syncAllLayerDisplayNames(editor);
+        registerLayerDisplayNamePersistence(editor);
 
         wireInspector(editor, shell, options, labels);
 

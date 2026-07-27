@@ -9,6 +9,9 @@ export const INNER_DROP_SLOT_ATTR = 'data-voodbuilder-inner-drop';
 export const INNER_DROP_SLOT_TYPE = 'voodbuilder-inner-drop-slot';
 export const INNER_DROP_SLOTS_VISIBLE_CLASS = 'voodbuilder-inner-drop-slots-visible';
 export const INNER_DROP_SLOTS_STORAGE_KEY = 'voodbuilder:inner-drop-slots-visible';
+export const INNER_DROP_DRAG_BODY_CLASS = 'voodbuilder-gjs-inner-drop-dragging';
+
+const MAX_INNER_DROP_HOSTS = 160;
 
 const LAYOUT_CLASS_HINTS = [
     'flex',
@@ -206,11 +209,24 @@ export function setInnerDropSlotsVisible(editor, visible, shellRoot = null) {
 
 /**
  * @param {import('grapesjs').Editor} editor
+ * @param {boolean} active
+ */
+function setInnerDropDragBodyClass(editor, active) {
+    const canvasBody = editor?.Canvas?.getDocument?.()?.body;
+    canvasBody?.classList?.toggle(INNER_DROP_DRAG_BODY_CLASS, active === true);
+    document.body.classList.toggle(INNER_DROP_DRAG_BODY_CLASS, active === true);
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
  */
 export function clearInnerDropSlots(editor) {
     const wrapper = editor?.getWrapper?.();
 
     if (! wrapper) {
+        setInnerDropDragBodyClass(editor, false);
+        editor.__voodbuilderInnerDropSlotsActive = false;
+
         return;
     }
 
@@ -228,6 +244,7 @@ export function clearInnerDropSlots(editor) {
         // Canvas may be unavailable during destroy.
     }
 
+    setInnerDropDragBodyClass(editor, false);
     editor.__voodbuilderInnerDropSlotsActive = false;
 }
 
@@ -246,12 +263,21 @@ export function mountInnerDropSlots(editor) {
     editor.__voodbuilderInnerDropSlotsMounting = true;
 
     try {
-        clearInnerDropSlots(editor);
-
+        // Prefer incremental append over clear+rebuild so slots appear immediately.
         const wrapper = editor.getWrapper?.();
 
         if (! wrapper) {
             return;
+        }
+
+        const existingHosts = new Set();
+
+        for (const slot of safeFindComponents(wrapper, `[${INNER_DROP_SLOT_ATTR}]`)) {
+            const host = slot.parent?.();
+
+            if (host) {
+                existingHosts.add(host);
+            }
         }
 
         const hosts = [];
@@ -266,21 +292,21 @@ export function mountInnerDropSlots(editor) {
                 return;
             }
 
-            if (lastChildIsSlot(component)) {
+            if (lastChildIsSlot(component) || existingHosts.has(component)) {
                 return;
             }
 
             hosts.push(component);
         });
 
-        // Keep drag responsive on large pages.
-        hosts.slice(0, 80).forEach((host) => {
+        hosts.slice(0, MAX_INNER_DROP_HOSTS).forEach((host) => {
             host.append({
                 type: INNER_DROP_SLOT_TYPE,
             }, { silent: true });
         });
 
-        editor.__voodbuilderInnerDropSlotsActive = hosts.length > 0;
+        setInnerDropDragBodyClass(editor, true);
+        editor.__voodbuilderInnerDropSlotsActive = true;
     } finally {
         editor.__voodbuilderInnerDropSlotsMounting = false;
     }
@@ -342,7 +368,12 @@ export function registerInnerDropSlots(editor) {
     const scheduleClear = () => {
         editor.__voodbuilderInnerDropSlotsDragging = false;
         window.requestAnimationFrame(() => {
+            // Always drop the drag body class — it also drives section-gap dropzones.
+            setInnerDropDragBodyClass(editor, false);
+
             if (editor.__voodbuilderInnerDropSlotsVisible) {
+                mountInnerDropSlots(editor);
+
                 return;
             }
 
@@ -351,15 +382,24 @@ export function registerInnerDropSlots(editor) {
     };
 
     const startDrag = () => {
+        // Layers panel reorder uses the same sorter events — do not mount canvas
+        // drop slots or show section-gap cues (that also remounts the layer tree).
+        if (editor.__voodbuilderLayerTreeSorting) {
+            return;
+        }
+
         editor.__voodbuilderInnerDropSlotsDragging = true;
+        setInnerDropDragBodyClass(editor, true);
         mountInnerDropSlots(editor);
     };
 
     // Mount synchronously so GrapesJS sorter dimensions include the slots.
     editor.on('block:drag:start', startDrag);
+    editor.on('component:drag:start', startDrag);
     editor.on('sorter:drag:start', startDrag);
     editor.on('block:drag:stop', scheduleClear);
     editor.on('sorter:drag:end', scheduleClear);
+    editor.on('component:drag:end', scheduleClear);
     editor.on('load', () => {
         clearInnerDropSlots(editor);
 

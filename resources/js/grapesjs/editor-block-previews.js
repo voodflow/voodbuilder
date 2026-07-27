@@ -27,15 +27,6 @@ export const LIGHT_BLOCK_PREVIEWS = {
         '<rect x="6" y="13" width="11" height="22" rx="1.75" />'
         + '<rect x="22" y="13" width="20" height="22" rx="2" />',
     ),
-    image: previewSvg(
-        '<rect x="9" y="12" width="30" height="24" rx="2.5" />'
-        + '<circle cx="17" cy="20" r="2.25" />'
-        + '<path d="M11 32l8-7 6 5 5-4 7 6" />',
-    ),
-    video: previewSvg(
-        '<rect x="9" y="14" width="30" height="20" rx="2.5" />'
-        + '<path d="M22 20l8 4-8 4z" />',
-    ),
 };
 
 const SECTION_WIREFRAMES = {
@@ -265,6 +256,16 @@ function applyBasicBlockPreviews(blockManager) {
 }
 
 function resolveHtmlPreviewForBlock(block) {
+    const blockId = String(block.get('id') ?? '');
+
+    // Layout + curated Basic/Media thumbs must keep Tabler/icon media (not scaled HTML).
+    if (
+        blockId.startsWith('voodbuilder-layout-')
+        || Object.prototype.hasOwnProperty.call(UTILITY_BLOCK_WIREFRAMES, blockId)
+    ) {
+        return '';
+    }
+
     const existingMedia = block.get('media');
 
     if (blockHasHtmlPreview(existingMedia)) {
@@ -340,14 +341,19 @@ function applyUtilityBlockPreviews(blockManager) {
     blockManager.getAll().forEach((block) => {
         const blockId = String(block.get('id') ?? '');
         const wireframe = UTILITY_BLOCK_WIREFRAMES[blockId] ?? resolveBlockWireframe(blockId);
-        const htmlPreview = resolveHtmlPreviewForBlock(block);
 
-        if (htmlPreview) {
-            block.set('media', htmlPreview);
-        } else if (wireframe) {
-            block.set('media', wireframe);
+        if (UTILITY_BLOCK_WIREFRAMES[blockId]) {
+            block.set('media', UTILITY_BLOCK_WIREFRAMES[blockId]);
         } else {
-            return;
+            const htmlPreview = resolveHtmlPreviewForBlock(block);
+
+            if (htmlPreview) {
+                block.set('media', htmlPreview);
+            } else if (wireframe) {
+                block.set('media', wireframe);
+            } else {
+                return;
+            }
         }
 
         const label = resolveBlockLabel(blockId, block.get('label'));

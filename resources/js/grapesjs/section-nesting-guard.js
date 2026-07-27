@@ -127,6 +127,14 @@ function guardNestedSection(editor, component) {
         return;
     }
 
+    // Layers-panel reorder is author-driven — do not auto-promote mid/after tree DnD.
+    if (
+        editor.__voodbuilderLayerTreeSorting
+        || Date.now() < Number(editor.__voodbuilderLayerTreeSortingUntil ?? 0)
+    ) {
+        return;
+    }
+
     configureSectionDropTarget(component);
 
     if (promoteNestedCatalogSection(editor, component)) {

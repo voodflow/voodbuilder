@@ -120,7 +120,7 @@ final class ThemePresenter
     }
 
     /**
-     * @return array<string, ?string>
+     * @return array<string, string|int|null>
      */
     public static function modeColors(string $themeId, string $mode): array
     {
@@ -131,6 +131,12 @@ final class ThemePresenter
 
         foreach (self::COLOR_KEYS as $key) {
             $resolved[$key] = ThemePalette::sanitizeColor($modeColors[$key] ?? null);
+        }
+
+        $opacity = ThemePalette::sanitizeOpacity($modeColors['header_bg_opacity'] ?? null);
+
+        if ($opacity !== null) {
+            $resolved['header_bg_opacity'] = $opacity;
         }
 
         return $resolved;

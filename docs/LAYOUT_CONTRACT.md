@@ -20,11 +20,14 @@ The editor must keep a single element with `data-voodbuilder-content-slot` (star
 
 Resolution order:
 
-1. Enabled layout whose `channel_ids` includes the current content channel
-2. Else enabled layout marked **default**
-3. Else classic `voodbuilder::layouts.app` shell (no chrome)
+1. Enabled **non-default** layout whose `channel_ids` includes the current content channel
+2. Else peer channel with an explicit assignment (`docs` ↔ `tutorials`)
+3. Else enabled layout marked **default** (site-wide fallback; its `channel_ids` are ignored)
+4. Else classic `voodbuilder::layouts.app` shell (no chrome)
 
 Assign channels in Admin → Layouts. Channels are registered by packages or the host app (see below).
+A layout marked default should not also list channels — it is the catch-all when nothing more specific matches.
+Documentation and Tutorials share chrome when only one side is assigned, so a “Docs” layout covers both unless Tutorials has its own.
 
 ## Plugin layout (first-party: vdocs, vtuts)
 

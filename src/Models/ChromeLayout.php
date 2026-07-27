@@ -80,6 +80,26 @@ class ChromeLayout extends Model
             return $this->is_default;
         }
 
+        // Default is a fallback only — never an explicit channel claim.
+        if ($this->is_default) {
+            return false;
+        }
+
         return in_array($channelId, $this->assignedChannelIds(), true);
+    }
+
+    /**
+     * Ensure at most one layout is marked as the site-wide default.
+     */
+    public static function ensureSingleDefault(?self $layout): void
+    {
+        if ($layout === null || ! $layout->is_default) {
+            return;
+        }
+
+        static::query()
+            ->whereKeyNot($layout->getKey())
+            ->where('is_default', true)
+            ->update(['is_default' => false]);
     }
 }

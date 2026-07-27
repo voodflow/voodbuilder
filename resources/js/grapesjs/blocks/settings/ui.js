@@ -918,6 +918,16 @@ export function refreshBlockSettingsUi(editor) {
  * @returns {object|null}
  */
 export function promoteRoot(editor, component) {
+    if (
+        editor?.__voodbuilderLayersSelectionPin
+        && Date.now() < Number(editor.__voodbuilderLayersSelectionPinUntil ?? 0)
+        && editor.__voodbuilderLayersSelectionPin === component
+    ) {
+        refreshBlockSettingsUi(editor);
+
+        return component;
+    }
+
     const root = findInspectableRoot(component, editor);
 
     if (! root || ! shouldPromoteSelectionToRoot(component, root, editor)) {

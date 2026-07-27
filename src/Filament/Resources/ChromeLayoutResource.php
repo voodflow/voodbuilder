@@ -89,14 +89,22 @@ class ChromeLayoutResource extends Resource
                             ->default(true),
                         Toggle::make('is_default')
                             ->label(__('voodbuilder::chrome_layouts.fields.is_default'))
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.is_default_help')),
+                            ->helperText(__('voodbuilder::chrome_layouts.fields.is_default_help'))
+                            ->live()
+                            ->afterStateUpdated(function (bool $state, callable $set): void {
+                                if ($state) {
+                                    $set('channel_ids', []);
+                                }
+                            }),
                         Select::make('channel_ids')
                             ->label(__('voodbuilder::chrome_layouts.fields.channels'))
                             ->multiple()
                             ->options(fn (): array => collect(app(ContentChannelRegistry::class)->all())
                                 ->mapWithKeys(fn ($channel, $id) => [$id => $channel->label()])
                                 ->all())
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.channels_help')),
+                            ->helperText(__('voodbuilder::chrome_layouts.fields.channels_help'))
+                            ->visible(fn (Get $get): bool => ! $get('is_default'))
+                            ->dehydrated(fn (Get $get): bool => ! $get('is_default')),
                         Select::make('content_width')
                             ->label(__('voodbuilder::chrome_layouts.fields.content_width'))
                             ->options(fn (): array => ChromeLayoutContentWidth::modeOptions())

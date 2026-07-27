@@ -601,6 +601,44 @@
             font-family: ui-monospace, monospace;
         }
 
+        .voodbuilder-themes-ws__opacity-block {
+            margin-top: 1rem;
+            padding-top: 0.875rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .voodbuilder-themes-ws__opacity-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+        }
+
+        .voodbuilder-themes-ws__opacity-slider-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.8125rem;
+            color: #334155;
+        }
+
+        .voodbuilder-themes-ws__opacity-slider {
+            width: 100%;
+            margin-top: 0.35rem;
+            accent-color: #3451b2;
+        }
+
+        .voodbuilder-themes-ws__opacity-preview {
+            margin-top: 0.75rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+        }
+
         .voodbuilder-themes-ws__seed-row {
             display: flex;
             gap: 0.5rem;
@@ -803,6 +841,37 @@
                     <input type="color" wire:model.live="colorValue" />
                     <input type="text" wire:model.live.debounce.300ms="colorValue" maxlength="7" />
                 </div>
+                @if ($colorKey === 'header_bg')
+                    <div class="voodbuilder-themes-ws__opacity-block">
+                        <label class="voodbuilder-themes-ws__opacity-toggle">
+                            <input type="checkbox" wire:model.live="headerBgTransparent" />
+                            <span>{{ __('voodbuilder::settings.theme_header_bg_transparent') }}</span>
+                        </label>
+                        <p class="voodbuilder-themes-ws__field-hint">{{ __('voodbuilder::settings.theme_header_bg_transparent_help') }}</p>
+                        @if ($headerBgTransparent)
+                            <label class="voodbuilder-themes-ws__opacity-slider-label" for="voodbuilder-header-bg-opacity">
+                                {{ __('voodbuilder::settings.theme_header_bg_opacity') }}
+                                <strong>{{ $headerBgOpacity }}%</strong>
+                            </label>
+                            <input
+                                id="voodbuilder-header-bg-opacity"
+                                class="voodbuilder-themes-ws__opacity-slider"
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="1"
+                                wire:model.live="headerBgOpacity"
+                            />
+                            <div
+                                class="voodbuilder-themes-ws__opacity-preview"
+                                style="background-image:
+                                    linear-gradient({{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}, {{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}),
+                                    repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%);
+                                    background-size: auto, 12px 12px;"
+                            ></div>
+                        @endif
+                    </div>
+                @endif
                 <div class="flex gap-2 mt-4 justify-between">
                     <button type="button" class="voodbuilder-themes-ws__link" wire:click="clearColor('{{ $colorMode }}', '{{ $colorKey }}')">
                         {{ __('voodbuilder::settings.theme_workspace_clear_color') }}

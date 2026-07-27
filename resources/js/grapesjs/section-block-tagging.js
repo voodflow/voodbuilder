@@ -44,7 +44,7 @@ function tagSectionBlockFromDrop(component, block, editor) {
     }
 
     section.addAttributes({ 'data-voodbuilder-section-block': blockId });
-    syncLayerDisplayName(section, editor);
+    syncLayerDisplayName(section, editor, { force: true });
 }
 
 function normalizeSectionSignature(html) {
@@ -112,7 +112,7 @@ function migrateLegacySectionBlocks(editor) {
         }
 
         section.addAttributes({ 'data-voodbuilder-section-block': match.id });
-        syncLayerDisplayName(section, editor);
+        syncLayerDisplayName(section, editor, { force: true });
     });
 }
 
@@ -132,6 +132,11 @@ export function registerSectionBlockTagging(editor) {
     });
 
     editor.on('component:add', (component) => {
+        // move() re-adds the node — do not retitle layers during tree reorder.
+        if (editor.__voodbuilderLayerTreeSorting) {
+            return;
+        }
+
         const attrs = component.getAttributes?.() ?? {};
 
         if (attrs['data-voodbuilder-section-block']) {

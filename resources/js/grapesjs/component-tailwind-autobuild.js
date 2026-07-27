@@ -110,6 +110,8 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             ! frameReady
             || editor.__voodbuilderBulkStructureUpdate
             || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            || editor.__voodbuilderCssRebuildDragLock
+            || editor.__voodbuilderActiveBlockDrag
         ) {
             return;
         }
@@ -127,7 +129,11 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     });
 
     const rebuild = async () => {
-        if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
+        if (
+            (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            || editor.__voodbuilderCssRebuildDragLock
+            || editor.__voodbuilderActiveBlockDrag
+        ) {
             return;
         }
 
@@ -146,8 +152,24 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             return;
         }
 
+        // Reorder within page changes HTML order but not utility needs — skip.
         if (html === lastHtml) {
             injectLiveComponentCss(editor, lastCss);
+            finishInitialBuild();
+
+            return;
+        }
+
+        // Same class tokens in different order: treat as structure-only.
+        const classFingerprint = [...html.matchAll(/\bclass="([^"]*)"/g)]
+            .flatMap((match) => String(match[1] ?? '').split(/\s+/))
+            .filter(Boolean)
+            .sort()
+            .join(' ');
+        const previousFingerprint = editor.__voodbuilderComponentCssClassFingerprint ?? '';
+
+        if (classFingerprint === previousFingerprint && lastCss !== '') {
+            lastHtml = html;
             finishInitialBuild();
 
             return;
@@ -183,6 +205,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
 
             lastHtml = html;
             lastCss = css;
+            editor.__voodbuilderComponentCssClassFingerprint = classFingerprint;
             injectLiveComponentCss(editor, css);
         } catch {
             // Ignore transient network errors; next edit will retry.

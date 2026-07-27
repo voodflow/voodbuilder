@@ -2,12 +2,13 @@
  * Block drag UX: compact label chip, top drop spacer, scroll room above first block.
  */
 
-import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
+import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
 import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const DRAG_CHIP_CLASS = 'voodbuilder-gjs-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-gjs-block-dragging';
+const SECTION_GAP_DROP_CLASS = 'voodbuilder-gjs-section-gap-drop';
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const SPACER_TYPE = 'voodbuilder-top-drop-spacer';
 const TOP_DROP_EDGE_PX = 72;
@@ -413,7 +414,59 @@ function setCanvasDragState(editor, active) {
 
     if (! active) {
         setTopDropSpacerActive(editor, false);
+        setSectionGapDropState(editor, false);
     }
+}
+
+function isPageContentHost(component) {
+    return isPageContentSlotComponent(component);
+}
+
+function isSectionLikeComponent(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    const tag = String(component.get('tagName') ?? '').toLowerCase();
+    const attrs = component.getAttributes?.() ?? {};
+    const type = String(component.get('type') ?? '');
+
+    return tag === 'section'
+        || attrs['data-voodbuilder-section-block'] != null
+        || attrs['data-voodbuilder-layout'] === 'section'
+        || type === 'voodbuilder-section'
+        || type === SPACER_TYPE
+        || attrs[SPACER_ATTR] != null;
+}
+
+/**
+ * Page-content section gaps already show the semi-transparent rectangle cue —
+ * hide the thin GrapesJS placeholder line so they do not stack.
+ */
+function isSectionGapDrop(payload = {}) {
+    const target = payload.targetModel;
+    const placement = String(payload?.pos?.placement ?? '');
+
+    if (! target) {
+        return false;
+    }
+
+    if (placement === 'inside') {
+        return isPageContentHost(target);
+    }
+
+    if (! isSectionLikeComponent(target)) {
+        return false;
+    }
+
+    return isPageContentHost(target.parent?.());
+}
+
+function setSectionGapDropState(editor, active) {
+    const doc = editor.Canvas?.getDocument?.();
+
+    doc?.body?.classList?.toggle(SECTION_GAP_DROP_CLASS, active === true);
+    document.body.classList.toggle(SECTION_GAP_DROP_CLASS, active === true);
 }
 
 function createDragChipElement(label) {
@@ -958,6 +1011,8 @@ export function registerCanvasBlockDrag(editor) {
     });
 
     editor.on('sorter:drag:end', () => {
+        setSectionGapDropState(editor, false);
+
         if (! editor.__voodbuilderActiveBlockDrag) {
             stopEditorIdleMotionLoops(editor);
         }
@@ -1058,6 +1113,20 @@ export function registerCanvasBlockDrag(editor) {
         }
 
         applyDragChip(editor, element);
+    });
+
+    editor.on('sorter:drag', (payload) => {
+        if (editor.__voodbuilderLayerTreeSorting) {
+            setSectionGapDropState(editor, false);
+
+            return;
+        }
+
+        setSectionGapDropState(editor, isSectionGapDrop(payload));
+    });
+
+    editor.on('component:drag:end', () => {
+        setSectionGapDropState(editor, false);
     });
 
     editor.on('block:drag:stop', (component, block) => {

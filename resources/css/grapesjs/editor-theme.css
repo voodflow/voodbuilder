@@ -738,7 +738,7 @@
     align-items: center;
     gap: 0.25rem;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
     border-radius: 0.25rem;
     color: var(--color-vp-brand-1, #6366f1);
@@ -756,14 +756,20 @@
 .voodbuilder-gjs-root .gjs-clm-tag-status,
 .voodbuilder-gjs-root [data-tag-remove],
 .voodbuilder-gjs-root [data-tag-status] {
+    position: relative;
+    z-index: 2;
     flex-shrink: 0 !important;
+    box-sizing: content-box;
     width: 0.875rem !important;
     height: 0.875rem !important;
     min-width: 0.875rem !important;
     min-height: 0.875rem !important;
+    padding: 0.2rem !important;
+    margin: -0.2rem -0.1rem -0.2rem 0 !important;
     opacity: 1 !important;
     cursor: pointer;
     color: inherit;
+    pointer-events: auto !important;
 }
 
 .voodbuilder-gjs-root .gjs-clm-tag-close svg,
@@ -775,6 +781,7 @@
     height: 100%;
     fill: currentColor !important;
     stroke: none;
+    pointer-events: none !important;
 }
 
 .voodbuilder-gjs-root .gjs-clm-tag-close:hover,
@@ -786,8 +793,15 @@
     color: var(--color-vp-text-1, #0f172a);
 }
 
-.voodbuilder-gjs-root .gjs-layer.gjs-selected {
-    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+/* GrapesJS paints selection on .gjs-layer-item via --gjs-main-light-color (near-invisible in light). */
+.voodbuilder-gjs-root .gjs-layer.gjs-selected > .gjs-layer-item {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 16%, var(--color-vp-bg-elv, #fff)) !important;
+    box-shadow: inset 3px 0 0 0 var(--color-vp-brand-1, #3451b2);
+}
+
+.dark .voodbuilder-gjs-root .gjs-layer.gjs-selected > .gjs-layer-item {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 18%, var(--color-vp-bg-elv, #202127)) !important;
+    box-shadow: inset 3px 0 0 0 var(--color-vp-brand-2, #5c73e7);
 }
 
 .voodbuilder-gjs-root .gjs-layer-move {
@@ -838,6 +852,89 @@
     position: relative;
     z-index: 1;
     pointer-events: auto;
+}
+
+.voodbuilder-gjs-layers-mount.voodbuilder-gjs-layers-sorting {
+    cursor: grabbing;
+    user-select: none;
+}
+
+/* Prevent caret toggles / accidental collapse while dragging. */
+.voodbuilder-gjs-layers-mount.voodbuilder-gjs-layers-sorting [data-toggle-open],
+.voodbuilder-gjs-layers-mount.voodbuilder-gjs-layers-sorting [data-toggle-visible],
+.voodbuilder-gjs-layers-mount.voodbuilder-gjs-layers-sorting [data-name] {
+    pointer-events: none;
+}
+
+/* Moving a parent dims the whole subtree (children travel with it). */
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-dragging,
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-dragging .gjs-layer {
+    opacity: 0.42;
+}
+
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-dragging > .gjs-layer-item {
+    opacity: 0.55;
+}
+
+.voodbuilder-gjs-layer-insert-cue {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* Bricks-like: thick bar from nest indent to panel edge. */
+.voodbuilder-gjs-layer-insert-line {
+    position: absolute;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--color-vp-brand-1, #6366f1);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 30%, transparent);
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-layer-insert-line::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-vp-brand-1, #6366f1);
+    transform: translate(-40%, -50%);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-vp-bg-elv, #fff) 92%, transparent);
+}
+
+.voodbuilder-gjs-layer-insert-cue[data-mode='into'] .voodbuilder-gjs-layer-insert-line {
+    height: auto;
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+    border: 1.5px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 65%, transparent);
+    box-shadow: none;
+}
+
+.voodbuilder-gjs-layer-insert-cue[data-mode='into'] .voodbuilder-gjs-layer-insert-line::before {
+    display: none;
+}
+
+.voodbuilder-gjs-layer-insert-label {
+    display: none !important;
+}
+
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-drop-into > .gjs-layer-item {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+}
+
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-drop-beside > .gjs-layer-item {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 6%, transparent) !important;
+}
+
+.voodbuilder-gjs-layers-mount .voodbuilder-gjs-layer-drop-blocked > .gjs-layer-item {
+    background: color-mix(in srgb, #ef4444 10%, transparent) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #ef4444 45%, transparent) !important;
+    opacity: 0.72;
 }
 
 /* Layers / traits: inherit column surface — no darker GrapesJS panel fill */
@@ -1041,19 +1138,59 @@
     outline-color: var(--color-vp-brand-1, #6366f1);
 }
 
+/* Drop indicator: thin insertion line (not a filled “selection” rectangle). */
+.voodbuilder-gjs-root .gjs-placeholder,
+.voodbuilder-gjs-root .gjs-com-placeholder {
+    background: var(--color-vp-brand-1, #6366f1) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-gjs-root .gjs-placeholder.horizontal,
+.voodbuilder-gjs-root .gjs-com-placeholder.horizontal {
+    height: 2px !important;
+    min-height: 2px !important;
+    max-height: 2px !important;
+    margin-top: -1px !important;
+}
+
+.voodbuilder-gjs-root .gjs-placeholder.vertical,
+.voodbuilder-gjs-root .gjs-com-placeholder.vertical {
+    width: 2px !important;
+    min-width: 2px !important;
+    max-width: 2px !important;
+    margin-left: -1px !important;
+}
+
+.voodbuilder-gjs-root .gjs-placeholder-int,
+.voodbuilder-gjs-root .gjs-com-placeholder-int {
+    display: none !important;
+}
+
+/* While dragging, hide the component outline so it does not look “selected”. */
+body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-root .gjs-highlighter,
+body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-root .gjs-highlighter,
+body.voodbuilder-gjs-block-dragging .gjs-cv-canvas .gjs-highlighter,
+body.voodbuilder-gjs-inner-drop-dragging .gjs-cv-canvas .gjs-highlighter {
+    outline-color: transparent !important;
+    opacity: 0 !important;
+}
+
+/* Hide thin placeholder while the page-content section gap rectangle is the active cue. */
+body.voodbuilder-gjs-section-gap-drop .gjs-placeholder,
+body.voodbuilder-gjs-section-gap-drop .gjs-com-placeholder,
+body.voodbuilder-gjs-section-gap-drop .voodbuilder-gjs-root .gjs-placeholder,
+body.voodbuilder-gjs-section-gap-drop .voodbuilder-gjs-root .gjs-com-placeholder {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
 .voodbuilder-gjs-root .gjs-com-badge,
 .voodbuilder-gjs-root .gjs-com-badge-red {
     background: var(--color-vp-brand-1, #6366f1);
-}
-
-.voodbuilder-gjs-root .gjs-placeholder {
-    border-color: var(--color-vp-brand-1, #6366f1);
-    border-width: 2px;
-}
-
-.voodbuilder-gjs-root .gjs-placeholder-int {
-    min-height: 3.25rem;
-    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
 }
 
 /* Inner drop slots: hidden unless dragging or the toolbar toggle is on. */
@@ -1070,17 +1207,29 @@
 }
 
 body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot,
+body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-inner-drop-slot,
 body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot,
 .voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot {
     display: block;
-    min-height: 2.75rem;
-    height: auto;
-    margin: 0.25rem 0;
-    border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
-    border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+    min-height: 2px;
+    height: 2px;
+    margin: 0.35rem 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-vp-brand-1, #6366f1);
+    box-shadow: none;
     pointer-events: auto;
     overflow: visible;
+}
+
+body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+.voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-hovered {
+    min-height: 2px;
+    height: 2px;
+    background: var(--color-vp-brand-1, #6366f1);
+    box-shadow: none;
 }
 
 .voodbuilder-gjs-drag-chip {

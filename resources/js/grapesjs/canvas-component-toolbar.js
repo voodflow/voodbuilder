@@ -24,6 +24,77 @@ export { CMD_EDIT_IMAGE };
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 
+function isInnerDropSlotComponent(component) {
+    return Boolean(component?.getAttributes?.()?.['data-voodbuilder-inner-drop'])
+        || component?.get?.('type') === 'voodbuilder-inner-drop-slot';
+}
+
+function isTopDropSpacerComponent(component) {
+    return Boolean(component?.getAttributes?.()?.['data-voodbuilder-top-drop-spacer']);
+}
+
+function listRealSiblings(component) {
+    const parent = component?.parent?.();
+    const collection = parent?.components?.() ?? component?.collection;
+    const models = collection?.models ?? (Array.isArray(collection) ? collection : [...(collection ?? [])]);
+
+    return models.filter((sibling) => (
+        sibling
+        && ! isInnerDropSlotComponent(sibling)
+        && ! isTopDropSpacerComponent(sibling)
+    ));
+}
+
+/**
+ * Reorder among real siblings (skip editor-only drop sentinels).
+ *
+ * @param {object} editor
+ * @param {1|-1} direction
+ */
+function moveSelectedSibling(editor, direction) {
+    const component = editor?.getSelected?.();
+    const parent = component?.parent?.();
+
+    if (! component || ! parent?.components) {
+        return;
+    }
+
+    const siblings = listRealSiblings(component);
+    const currentIndex = siblings.indexOf(component);
+
+    if (currentIndex < 0) {
+        return;
+    }
+
+    const nextIndex = currentIndex + direction;
+
+    if (nextIndex < 0 || nextIndex >= siblings.length) {
+        return;
+    }
+
+    const target = siblings[nextIndex];
+    const collectionIndex = parent.components().indexOf(target);
+
+    if (collectionIndex < 0) {
+        return;
+    }
+
+    editor.__voodbuilderSetCssRebuildSuspended?.(true);
+
+    try {
+        component.move(parent, { at: direction < 0 ? collectionIndex : collectionIndex + 1 });
+        editor.select(component);
+        // Select of an already-selected model may not re-fire component:selected —
+        // rebuild move-up / move-down for the new sibling index immediately.
+        ensureCanvasComponentToolbarButtons(editor, component, editor.__voodbuilderLabels ?? {});
+    } finally {
+        // Keep suspend briefly so post-move selector/selection noise cannot schedule compile.
+        window.setTimeout(() => {
+            editor.__voodbuilderSetCssRebuildSuspended?.(false);
+        }, 500);
+    }
+}
+
 function hasSelectableParent(component, editor) {
     let parent = component.parent?.();
     const wrapper = editor.getWrapper?.();
@@ -92,6 +163,40 @@ function buildComponentToolbar(editor, component, labels = {}) {
             },
             label: lucideIcon('chevrons-up', 16),
             command: (ed) => ed.runCommand('core:component-exit', { force: true }),
+        });
+    }
+
+    const siblings = listRealSiblings(component);
+    const siblingIndex = siblings.indexOf(component);
+    const siblingCount = siblings.length;
+    const canReorder = siblingCount > 1
+        && siblingIndex >= 0
+        && component.get('draggable') !== false
+        && ! isChromeEditorProtectedComponent(component, editor);
+
+    if (canReorder && siblingIndex > 0) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--move-up',
+                [TOOLBAR_FLAG]: 'move-up',
+                title: labels.moveUp ?? 'Move up',
+                'aria-label': labels.moveUp ?? 'Move up',
+            },
+            label: lucideIcon('arrow-up', 16),
+            command: (ed) => moveSelectedSibling(ed, -1),
+        });
+    }
+
+    if (canReorder && siblingIndex < siblingCount - 1) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-gjs-toolbar-item--move-down',
+                [TOOLBAR_FLAG]: 'move-down',
+                title: labels.moveDown ?? 'Move down',
+                'aria-label': labels.moveDown ?? 'Move down',
+            },
+            label: lucideIcon('arrow-down', 16),
+            command: (ed) => moveSelectedSibling(ed, 1),
         });
     }
 

@@ -192,24 +192,30 @@ final class GrapesJsCanvas
         }
 
         body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot,
+        body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-inner-drop-slot,
         body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot {
             display: block !important;
-            min-height: 2.75rem !important;
-            height: auto !important;
-            margin: 0.25rem 0 !important;
-            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent) !important;
-            border-radius: 0.5rem;
-            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+            min-height: 2px !important;
+            height: 2px !important;
+            margin: 0.35rem 0 !important;
+            border: 0 !important;
+            border-radius: 0;
+            background: var(--color-vp-brand-1, #6366f1);
+            box-shadow: none;
             pointer-events: auto !important;
             overflow: visible !important;
         }
 
         body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
         body.voodbuilder-gjs-block-dragging .voodbuilder-gjs-inner-drop-slot.gjs-selected,
+        body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
+        body.voodbuilder-gjs-inner-drop-dragging .voodbuilder-gjs-inner-drop-slot.gjs-selected,
         body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-hovered,
         body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-selected {
-            border-color: var(--color-vp-brand-1, #6366f1) !important;
-            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
+            min-height: 2px !important;
+            height: 2px !important;
+            background: var(--color-vp-brand-1, #6366f1) !important;
+            box-shadow: none !important;
             outline: none !important;
         }
 
@@ -363,6 +369,17 @@ final class GrapesJsCanvas
 
         body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-nav--canvas-preview [data-mobile-nav-toggle] {
             display: none !important;
+        }
+
+        /* Desktop nav links: canvas iframe is often < md (768px), so Tailwind
+         * `hidden md:flex` never activates. Device attr is the source of truth
+         * (same pattern as brand logos below). */
+        body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav] {
+            display: flex !important;
+        }
+
+        body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-chrome]:not([data-voodbuilder-chrome-hidden]) {
+            display: block !important;
         }
 
         /* Brand logos: ignore theme media queries in the canvas — device attr is source of truth.
@@ -664,24 +681,80 @@ final class GrapesJsCanvas
             outline-offset: -1px;
         }
 
-        body.voodbuilder-gjs-block-dragging section[data-voodbuilder-section-block] + section[data-voodbuilder-section-block]::before,
-        body.voodbuilder-gjs-block-dragging [data-voodbuilder-page-content] > section + section::before {
-            content: '';
-            display: block;
-            height: 2.75rem;
-            margin: -0.375rem 0;
-            border-radius: 0.375rem;
-            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
-            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, transparent);
-            pointer-events: none;
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-placeholder,
+        body.voodbuilder-gjs-block-dragging .gjs-com-placeholder,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-com-placeholder {
+            background: var(--color-vp-brand-1, #6366f1) !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
         }
 
-        body.voodbuilder-gjs-block-dragging .gjs-placeholder,
-        body.voodbuilder-gjs-block-dragging .gjs-placeholder-int {
-            min-height: 2.75rem !important;
-            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent) !important;
-            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 16%, transparent) !important;
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder.horizontal,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-placeholder.horizontal,
+        body.voodbuilder-gjs-block-dragging .gjs-com-placeholder.horizontal,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-com-placeholder.horizontal {
+            height: 2px !important;
+            min-height: 2px !important;
+            max-height: 2px !important;
+            margin-top: -1px !important;
+        }
+
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder.vertical,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-placeholder.vertical,
+        body.voodbuilder-gjs-block-dragging .gjs-com-placeholder.vertical,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-com-placeholder.vertical {
+            width: 2px !important;
+            min-width: 2px !important;
+            max-width: 2px !important;
+            margin-left: -1px !important;
+        }
+
+        body.voodbuilder-gjs-block-dragging .gjs-placeholder-int,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-placeholder-int,
+        body.voodbuilder-gjs-block-dragging .gjs-com-placeholder-int,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-com-placeholder-int {
+            display: none !important;
+        }
+
+        body.voodbuilder-gjs-block-dragging .gjs-highlighter,
+        body.voodbuilder-gjs-inner-drop-dragging .gjs-highlighter {
+            outline-color: transparent !important;
+            opacity: 0 !important;
+        }
+
+        /* Decorative plasma overlays use pointer-events-none; keep animated children
+           selectable/highlightable in the editor canvas (layers + tools). */
+        [aria-hidden="true"].pointer-events-none > [class*="animate-"],
+        [aria-hidden="true"].pointer-events-none > [class*="blur-"],
+        .pointer-events-none[aria-hidden="true"] > * {
+            pointer-events: auto !important;
+        }
+
+        /* Section-level page-content gaps use the rectangle cue — hide the thin placeholder line. */
+        body.voodbuilder-gjs-section-gap-drop .gjs-placeholder,
+        body.voodbuilder-gjs-section-gap-drop .gjs-com-placeholder {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        /* Between page-content sections: semi-transparent rectangle (distinct from thin inner lines). */
+        body.voodbuilder-gjs-block-dragging section[data-voodbuilder-section-block] + section[data-voodbuilder-section-block]::before,
+        body.voodbuilder-gjs-block-dragging [data-voodbuilder-page-content] > section + section::before,
+        body.voodbuilder-gjs-inner-drop-dragging section[data-voodbuilder-section-block] + section[data-voodbuilder-section-block]::before,
+        body.voodbuilder-gjs-inner-drop-dragging [data-voodbuilder-page-content] > section + section::before {
+            content: '';
+            display: block;
+            height: 2.5rem;
+            margin: 0.25rem 0;
             border-radius: 0.375rem;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 50%, transparent);
+            box-shadow: none;
+            pointer-events: none;
         }
 
         {$paletteCss}

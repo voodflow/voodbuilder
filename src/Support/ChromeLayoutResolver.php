@@ -10,9 +10,25 @@ use Voodflow\Voodbuilder\Models\ChromeLayout;
 
 /**
  * Resolves GrapesJS chrome layouts (header/footer shell) per content channel.
+ *
+ * Priority:
+ * 1. Enabled non-default layout whose channel_ids includes the current channel
+ * 2. Peer channel (docs ↔ tutorials) with an explicit non-default assignment
+ * 3. Enabled layout marked as default (site-wide fallback)
+ * 4. null → classic app shell
  */
 final class ChromeLayoutResolver
 {
+    /**
+     * Channels that share documentation chrome when only one side is assigned.
+     *
+     * @var array<string, string>
+     */
+    private const PEER_CHANNELS = [
+        'docs' => 'tutorials',
+        'tutorials' => 'docs',
+    ];
+
     public static function enabled(): bool
     {
         return (bool) config('voodbuilder.chrome_layouts.enabled', true);
@@ -65,22 +81,53 @@ final class ChromeLayoutResolver
         }
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function peerChannelIds(string $channelId): array
+    {
+        $peer = self::PEER_CHANNELS[$channelId] ?? null;
+
+        return is_string($peer) ? [$peer] : [];
+    }
+
     protected static function resolveLayoutIdForChannel(?string $channelId): ?string
     {
         $layouts = ChromeLayout::query()
             ->where('enabled', true)
-            ->orderByDesc('is_default')
             ->orderBy('name')
             ->get();
 
         if ($channelId !== null) {
-            foreach ($layouts as $layout) {
-                if (in_array($channelId, $layout->assignedChannelIds(), true)) {
-                    return $layout->id;
+            $specific = self::firstSpecificLayoutForChannel($layouts, $channelId);
+
+            if ($specific !== null) {
+                return $specific->id;
+            }
+
+            // docs ↔ tutorials: one Documentation chrome covers both unless overridden.
+            foreach (self::peerChannelIds($channelId) as $peerId) {
+                $peerLayout = self::firstSpecificLayoutForChannel($layouts, $peerId);
+
+                if ($peerLayout !== null) {
+                    return $peerLayout->id;
                 }
             }
         }
 
         return $layouts->firstWhere('is_default', true)?->id;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, ChromeLayout>  $layouts
+     */
+    protected static function firstSpecificLayoutForChannel($layouts, string $channelId): ?ChromeLayout
+    {
+        $match = $layouts->first(
+            static fn (ChromeLayout $layout): bool => ! $layout->is_default
+                && in_array($channelId, $layout->assignedChannelIds(), true),
+        );
+
+        return $match instanceof ChromeLayout ? $match : null;
     }
 }

@@ -30,6 +30,7 @@
 @source '../views/themes/**/*.blade.php';
 @source '../js/grapesjs/popups-ui.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
+@source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");
 @source inline("grid grid-cols-1 grid-cols-2 grid-cols-3 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-4");
 @source not '../../tests/**/*';
 @source not '../../../../../packages/**/tests/**/*';

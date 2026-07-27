@@ -4,6 +4,7 @@
  */
 
 import { componentClassString, copyTextToClipboard, splitClassTokens } from './clipboard.js';
+import { choiceDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
@@ -176,8 +177,8 @@ function renderSuggestList(list, suggestions, compiled, onPick) {
 }
 
 function scheduleClassCompile(editor) {
-    editor.__voodbuilderInvalidatePageCss?.()
-        ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
+    // Only compile when at least one class is missing from live CSS.
+    editor.__voodbuilderSchedulePageCssRebuild?.(0);
 }
 
 export function addClassesToComponent(editor, component, tokens) {
@@ -207,26 +208,106 @@ export function addClassesToComponent(editor, component, tokens) {
     return added;
 }
 
-function applyClassTokensFromInput(editor, input, labels) {
-    const selected = editor.getSelected();
-    const tokens = splitClassTokens(input.value);
+export function replaceClassesOnComponent(editor, component, tokens) {
+    if (! component || ! Array.isArray(tokens)) {
+        return 0;
+    }
 
-    if (! selected || tokens.length === 0) {
+    const next = [];
+
+    for (const token of tokens) {
+        const name = String(token ?? '').trim().replace(/^\./, '');
+
+        if (name !== '' && ! next.includes(name)) {
+            next.push(name);
+        }
+    }
+
+    component.setClass(next);
+    scheduleClassCompile(editor);
+
+    return next.length;
+}
+
+function removeClassFromSelected(editor, className) {
+    const selected = editor?.getSelected?.();
+    const name = String(className ?? '').trim().replace(/^\./, '');
+
+    if (! selected || name === '') {
         return false;
     }
 
-    addClassesToComponent(editor, selected, tokens);
-    input.value = '';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const selectors = selected.getSelectors?.();
+    const selector = selectors?.find?.((item) => {
+        const label = String(item?.getLabel?.() ?? item?.get?.('name') ?? item?.id ?? '');
 
-    if (tokens.length > 1) {
+        return label === name || label === `.${name}`;
+    });
+
+    if (selector && ! selector.get?.('protected')) {
+        editor.SelectorManager?.removeSelected?.(selector);
+    } else {
+        selected.removeClass?.(name);
+    }
+
+    scheduleClassCompile(editor);
+
+    return true;
+}
+
+async function applyPastedClassTokens(editor, selected, tokens, labels) {
+    const existing = selected.getClasses?.() ?? [];
+
+    if (existing.length === 0) {
+        addClassesToComponent(editor, selected, tokens);
+        showCopyToast(
+            labels.classPasteApplied ?? 'Classes added and compiling…',
+            tokens.join(' '),
+        );
+
+        return;
+    }
+
+    const choice = await choiceDialog({
+        title: labels.classPasteTitle ?? 'Paste classes',
+        message: labels.classPasteConflict
+            ?? 'This element already has classes. Keep the existing ones and add the new ones, or replace them with the pasted set?',
+        labels,
+        choices: [
+            {
+                id: 'keep',
+                label: labels.classPasteKeep ?? 'Keep existing + add new',
+                primary: true,
+            },
+            {
+                id: 'replace',
+                label: labels.classPasteReplace ?? 'Replace with pasted',
+            },
+            {
+                id: 'cancel',
+                label: labels.dialogCancel ?? 'Cancel',
+                ghost: true,
+            },
+        ],
+    });
+
+    if (choice === 'replace') {
+        replaceClassesOnComponent(editor, selected, tokens);
+        showCopyToast(
+            labels.classPasteReplaced ?? 'Classes replaced and compiling…',
+            tokens.join(' '),
+        );
+
+        return;
+    }
+
+    if (choice === 'keep') {
+        addClassesToComponent(editor, selected, tokens);
         showCopyToast(
             labels.classPasteApplied ?? 'Classes added and compiling…',
             tokens.join(' '),
         );
     }
-
-    return true;
 }
 
 function showCopyToast(title, detail = '') {
@@ -451,7 +532,7 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
         }, 140);
     });
 
-    input.addEventListener('paste', (event) => {
+    input.addEventListener('paste', async (event) => {
         const text = event.clipboardData?.getData('text') ?? '';
         const tokens = splitClassTokens(text);
 
@@ -468,17 +549,13 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
             return;
         }
 
-        addClassesToComponent(editor, selected, tokens);
+        await applyPastedClassTokens(editor, selected, tokens, labels);
         input.value = '';
         list.hidden = true;
         refreshHint();
-        showCopyToast(
-            labels.classPasteApplied ?? 'Classes added and compiling…',
-            tokens.join(' '),
-        );
     });
 
-    input.addEventListener('keydown', (event) => {
+    input.addEventListener('keydown', async (event) => {
         if (event.key === 'Escape' && list) {
             list.hidden = true;
 
@@ -497,7 +574,14 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
 
         event.preventDefault();
         event.stopPropagation();
-        applyClassTokensFromInput(editor, input, labels);
+
+        const selected = editor.getSelected();
+
+        if (selected) {
+            await applyPastedClassTokens(editor, selected, tokens, labels);
+            input.value = '';
+        }
+
         list.hidden = true;
         refreshHint();
     }, true);
@@ -524,6 +608,28 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
         hintEl.hidden = true;
         mount.appendChild(hintEl);
     }
+
+    // Fallback: ensure X on class chips always removes the class (CSS/SVG hit-testing can miss Grapes handlers).
+    mount.addEventListener('pointerdown', (event) => {
+        const close = event.target?.closest?.('[data-tag-remove], .gjs-clm-tag-close');
+
+        if (! close || ! mount.contains(close)) {
+            return;
+        }
+
+        const tag = close.closest('.gjs-clm-tag, .clm-tag, [class*="clm-tag"]');
+        const label = tag?.querySelector?.('[data-tag-name]')?.textContent?.trim()
+            ?? tag?.getAttribute?.('title')
+            ?? '';
+
+        if (! label) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        removeClassFromSelected(editor, label);
+    }, true);
 
     const scan = () => {
         ensureClassesCopyButtons(mount, editor, labels);

@@ -72,6 +72,11 @@ const TABLER_PATHS = {
     'color-swatch': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 3h-4a2 2 0 0 0 -2 2v12a4 4 0 0 0 8 0v-12a2 2 0 0 0 -2 -2"/><path d="M13 7.35l-2 -2a2 2 0 0 0 -2.828 0l-2.828 2.828a2 2 0 0 0 0 2.828l9 9"/><path d="M7.3 13h-2.3a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h12"/><path d="M17 17l0 .01"/>',
     directions: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 21v-4"/><path d="M12 13v-4"/><path d="M12 5v-2"/><path d="M10 21h4"/><path d="M8 5v4h11l2 -2l-2 -2l-11 0"/><path d="M14 13v4h-8l-2 -2l2 -2l8 0"/>',
     'box-margin': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8h8v8h-8l0 -8"/><path d="M4 4v.01"/><path d="M8 4v.01"/><path d="M12 4v.01"/><path d="M16 4v.01"/><path d="M20 4v.01"/><path d="M4 20v.01"/><path d="M8 20v.01"/><path d="M12 20v.01"/><path d="M16 20v.01"/><path d="M20 20v.01"/><path d="M20 16v.01"/><path d="M20 12v.01"/><path d="M20 8v.01"/><path d="M4 16v.01"/><path d="M4 12v.01"/><path d="M4 8v.01"/>',
+    /* Layout library thumbs (https://tabler.io/icons) */
+    'layout-distribute-horizontal': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4l16 0"/><path d="M4 20l16 0"/><path d="M6 9m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>',
+    'layout-distribute-vertical': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4l0 16"/><path d="M20 4l0 16"/><path d="M9 6m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/>',
+    'columns-1': '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 3m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v16a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z"/>',
+    container: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 4v.01"/><path d="M20 20v.01"/><path d="M20 16v.01"/><path d="M20 12v.01"/><path d="M20 8v.01"/><path d="M8 4m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M4 4v.01"/><path d="M4 20v.01"/><path d="M4 16v.01"/><path d="M4 12v.01"/><path d="M4 8v.01"/>',
 };
 
 export function tablerIcon(name, size = 18) {

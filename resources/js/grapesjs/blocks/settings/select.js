@@ -186,8 +186,6 @@ export const resolveInspectableBlockRoot = findInspectableRoot;
  * @returns {boolean}
  */
 export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
-    void editor;
-
     if (! raw || ! root || raw === root || root.isRemoved?.()) {
         return false;
     }
@@ -222,6 +220,21 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         rawAttrs['data-voodbuilder-animated-counter'] != null
         || rawAttrs['data-vb-count-to'] != null
         || (raw.getClasses?.() ?? []).includes('vb-animated-counter')
+    ) {
+        return false;
+    }
+
+    // Animated utilities (spin/plasma/etc.): keep the exact node so Style → Animation works.
+    const rawClasses = [...(raw.getClasses?.() ?? [])].map((name) => String(name ?? ''));
+
+    if (rawClasses.some((name) => /(?:^|:)animate-[\w-]+/.test(name))) {
+        return false;
+    }
+
+    // Layer tree pick: never steal selection to the block root.
+    if (
+        editor?.__voodbuilderLayersSelectionPin
+        && Date.now() < Number(editor.__voodbuilderLayersSelectionPinUntil ?? 0)
     ) {
         return false;
     }

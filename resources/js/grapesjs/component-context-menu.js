@@ -195,7 +195,6 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
             }
 
             applyLayerDisplayName(editor, component, next.trim());
-            component.addAttributes({ 'data-voodbuilder-layer-label': 'custom' });
         },
     });
 

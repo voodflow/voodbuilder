@@ -169,6 +169,40 @@ export function sanitizeEditorLayerTree(editor) {
  *
  * @param {object} editor
  */
+/**
+ * GrapesJS Layers.render() reuses component.viewLayer without remove(), so the
+ * shared sorter keeps a detached container and native layer DnD silently dies.
+ */
+function clearStaleLayerViews(component) {
+    if (! component) {
+        return;
+    }
+
+    if (component.viewLayer) {
+        try {
+            component.viewLayer.__clearItems?.();
+        } catch {
+            // ignore
+        }
+
+        delete component.viewLayer;
+    }
+
+    const children = component.components?.();
+
+    if (! children) {
+        return;
+    }
+
+    const list = typeof children.forEach === 'function'
+        ? children
+        : (children.models ?? children);
+
+    if (typeof list.forEach === 'function') {
+        list.forEach((child) => clearStaleLayerViews(child));
+    }
+}
+
 export function guardEditorLayersRender(editor) {
     if (editor.__voodbuilderLayersRenderGuarded || ! editor.Layers?.render) {
         return;
@@ -190,6 +224,8 @@ export function guardEditorLayersRender(editor) {
         if (hasInvalidLayerChildren(wrapper)) {
             return false;
         }
+
+        clearStaleLayerViews(wrapper);
 
         try {
             return originalRender(...args);

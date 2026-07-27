@@ -712,6 +712,8 @@ function shouldSkipEditorAnimationReplay(element) {
 
 /**
  * Restart Tailwind `animate-*` keyframes on a subtree (editor canvas preview).
+ * Prefer WAAPI so we do not write inline `animation` (that can desync GrapesJS
+ * selection / view state for spinning plasma blobs).
  *
  * @param {ParentNode} root
  */
@@ -729,9 +731,33 @@ export function restartCssKeyframeAnimations(root) {
             return;
         }
 
+        if (typeof element.getAnimations === 'function') {
+            const animations = element.getAnimations({ subtree: false });
+
+            if (animations.length > 0) {
+                animations.forEach((animation) => {
+                    try {
+                        animation.cancel();
+                        animation.play();
+                    } catch {
+                        // Ignore unfinished / finished animations.
+                    }
+                });
+
+                return;
+            }
+        }
+
+        // Fallback when WAAPI is unavailable or no animations are registered yet.
+        const previous = element.style.animation;
         element.style.animation = 'none';
         void element.offsetWidth;
-        element.style.removeProperty('animation');
+
+        if (previous) {
+            element.style.animation = previous;
+        } else {
+            element.style.removeProperty('animation');
+        }
     });
 }
 

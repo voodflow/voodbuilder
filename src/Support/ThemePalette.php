@@ -580,7 +580,7 @@ CSS;
 
     /**
      * @param  array<string, mixed>  $mode
-     * @return array<string, ?string>
+     * @return array<string, string|int|null>
      */
     private static function normalizeMode(array $mode): array
     {
@@ -590,11 +590,52 @@ CSS;
             $normalized[$key] = self::sanitizeColor($mode[$key] ?? null);
         }
 
+        $opacity = self::sanitizeOpacity($mode['header_bg_opacity'] ?? null);
+
+        if ($opacity !== null) {
+            $normalized['header_bg_opacity'] = $opacity;
+        }
+
         return $normalized;
     }
 
     /**
-     * @param  array<string, ?string>  $palette
+     * Header background opacity 0–100. Null means fully opaque (omit / solid).
+     */
+    public static function sanitizeOpacity(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        return max(0, min(100, (int) round((float) $value)));
+    }
+
+    /**
+     * Solid hex or color-mix with transparency for --vx-header-bg.
+     */
+    public static function headerBackgroundCssValue(?string $headerBg, ?int $opacity): string
+    {
+        $base = self::sanitizeColor($headerBg) ?? 'var(--color-vp-bg)';
+        $opacity = self::sanitizeOpacity($opacity);
+
+        if ($opacity === null || $opacity >= 100) {
+            return $base;
+        }
+
+        if ($opacity <= 0) {
+            return 'transparent';
+        }
+
+        return "color-mix(in srgb, {$base} {$opacity}%, transparent)";
+    }
+
+    /**
+     * @param  array<string, string|int|null>  $palette
      */
     private static function modeHasOverrides(array $palette): bool
     {
@@ -604,11 +645,13 @@ CSS;
             }
         }
 
-        return false;
+        $opacity = self::sanitizeOpacity($palette['header_bg_opacity'] ?? null);
+
+        return $opacity !== null && $opacity < 100;
     }
 
     /**
-     * @param  array<string, ?string>  $palette
+     * @param  array<string, string|int|null>  $palette
      */
     private static function buildRule(string $subThemeId, array $palette, bool $dark, ?string $selector = null): ?string
     {
@@ -660,8 +703,11 @@ CSS;
             }
         }
 
-        if (($headerBg = $palette['header_bg'] ?? null) !== null) {
-            $properties['--vx-header-bg'] = $headerBg;
+        $headerOpacity = self::sanitizeOpacity($palette['header_bg_opacity'] ?? null);
+        $headerBg = is_string($palette['header_bg'] ?? null) ? $palette['header_bg'] : null;
+
+        if ($headerBg !== null || ($headerOpacity !== null && $headerOpacity < 100)) {
+            $properties['--vx-header-bg'] = self::headerBackgroundCssValue($headerBg, $headerOpacity);
         }
 
         if (($headerText = $palette['header_text'] ?? null) !== null) {
@@ -959,7 +1005,9 @@ CSS;
 
         $names = [];
 
-        if (($mode['header_bg'] ?? null) !== null) {
+        if (($mode['header_bg'] ?? null) !== null
+            || (self::sanitizeOpacity($mode['header_bg_opacity'] ?? null) !== null
+                && self::sanitizeOpacity($mode['header_bg_opacity'] ?? null) < 100)) {
             $names[] = '--vx-header-bg';
         }
 
