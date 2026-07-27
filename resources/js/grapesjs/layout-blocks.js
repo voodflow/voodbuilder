@@ -113,13 +113,14 @@ function blockModel(extraClasses = []) {
 }
 
 /**
- * Apply a column preset to a Container (replaces direct children with Blocks).
+ * Sync Container classes/attrs/CSS for a layout preset without touching children.
+ * Mobile: single column. md+: tracks from --vb-layout-tracks.
  *
  * @param {object} container
  * @param {string} presetId
  */
-export function applyContainerLayoutPreset(container, presetId) {
-    if (! container?.components) {
+export function syncContainerLayoutStyles(container, presetId) {
+    if (! container) {
         return;
     }
 
@@ -139,7 +140,7 @@ export function applyContainerLayoutPreset(container, presetId) {
             return ! token.startsWith('gjs-');
         });
 
-    for (const token of ['grid', 'gap-4', 'w-full']) {
+    for (const token of ['grid', 'gap-4', 'w-full', 'vb-layout-row']) {
         if (! classes.includes(token)) {
             classes.push(token);
         }
@@ -151,14 +152,68 @@ export function applyContainerLayoutPreset(container, presetId) {
         [LAYOUT_PRESET_ATTR]: preset.id,
     });
 
-    const template = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
+    const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
     const style = { ...(container.getStyle?.() ?? {}) };
-    style.display = 'grid';
-    style.gap = '1rem';
-    style['grid-template-columns'] = template;
+
+    // Drop fixed grid columns — they ignored breakpoints and kept mobile side-by-side.
+    delete style.display;
+    delete style.gap;
+    delete style['grid-template-columns'];
+    delete style['grid-template-rows'];
+    style['--vb-layout-tracks'] = tracks;
+
     container.setStyle(style);
 
+    // GrapesJS may keep empty string keys; also clear via removeStyle when available.
+    container.removeStyle?.('display');
+    container.removeStyle?.('gap');
+    container.removeStyle?.('grid-template-columns');
+    container.removeStyle?.('grid-template-rows');
+}
+
+/**
+ * Apply a column preset to a Container (replaces direct children with Blocks).
+ *
+ * @param {object} container
+ * @param {string} presetId
+ */
+export function applyContainerLayoutPreset(container, presetId) {
+    if (! container?.components) {
+        return;
+    }
+
+    const preset = LAYOUT_PRESETS.find((item) => item.id === presetId) ?? LAYOUT_PRESETS[0];
+
+    syncContainerLayoutStyles(container, preset.id);
     container.components(preset.tracks.map(() => blockModel()));
+}
+
+/**
+ * Re-apply responsive styles on existing layout containers (saved pages with
+ * legacy inline grid-template-columns).
+ *
+ * @param {object} editor
+ */
+export function normalizeLayoutContainersResponsive(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    const visit = (component) => {
+        if (isLayoutContainer(component) && layoutKind(component) === 'container') {
+            const presetId = String(component.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
+
+            if (presetId) {
+                syncContainerLayoutStyles(component, presetId);
+            }
+        }
+
+        component.components?.()?.forEach?.((child) => visit(child));
+    };
+
+    visit(wrapper);
 }
 
 function presetIconSvg(weights) {
@@ -508,7 +563,15 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
     });
 
     editor.on('component:deselected', dismissLayoutPicker);
-    editor.on('load', dismissLayoutPicker);
+    editor.on('load', () => {
+        dismissLayoutPicker();
+        normalizeLayoutContainersResponsive(editor);
+    });
+
+    // Device switch (desktop → mobile) should stack columns; heal any leftover inline grid.
+    editor.on('change:device', () => {
+        normalizeLayoutContainersResponsive(editor);
+    });
 }
 
 /**

@@ -4898,6 +4898,33 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
 }
 
+/*
+ * Layout Container presets: stack on mobile, multi-column from md up.
+ * Tracks come from --vb-layout-tracks (set by the editor when picking a preset).
+ * !important on mobile beats legacy inline grid-template-columns from older saves.
+ */
+[data-voodbuilder-layout='container'][data-vb-layout-preset],
+.vb-layout-row[data-vb-layout-preset] {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 767.98px) {
+    [data-voodbuilder-layout='container'][data-vb-layout-preset],
+    .vb-layout-row[data-vb-layout-preset] {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+@media (min-width: 768px) {
+    [data-voodbuilder-layout='container'][data-vb-layout-preset],
+    .vb-layout-row[data-vb-layout-preset] {
+        grid-template-columns: var(--vb-layout-tracks, minmax(0, 1fr));
+    }
+}
+
 /* CTA: if DOM text was wiped, keep size + show label from data attribute */
 a[data-voodbuilder-cta='true']:empty,
 button[data-voodbuilder-cta='true']:empty {
