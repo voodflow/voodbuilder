@@ -15,6 +15,7 @@ import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.j
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
 import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
 import { buildLayoutPickerToolbarButton } from './layout-blocks.js';
+import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
@@ -23,6 +24,10 @@ export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
 export { CMD_EDIT_IMAGE };
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
+
+function isRichTextCanvasTarget(component) {
+    return Boolean(isRichTextComponent(component) || findRichTextHost(component));
+}
 
 function isInnerDropSlotComponent(component) {
     return Boolean(component?.getAttributes?.()?.['data-voodbuilder-inner-drop'])
@@ -245,7 +250,10 @@ function buildComponentToolbar(editor, component, labels = {}) {
         });
     }
 
-    if (canEditBlockCode(component, editor)) {
+    // Rich Text: edit content in the Content panel — skip code/dynamic chrome here.
+    const richText = isRichTextCanvasTarget(component);
+
+    if (! richText && canEditBlockCode(component, editor)) {
         toolbar.push({
             attributes: {
                 class: 'voodbuilder-gjs-toolbar-item--code',
@@ -284,7 +292,9 @@ function buildComponentToolbar(editor, component, labels = {}) {
         },
     });
 
-    toolbar.push(...buildDynamicToolbarButtons(labels));
+    if (! richText) {
+        toolbar.push(...buildDynamicToolbarButtons(labels));
+    }
 
     if (component.get('removable') && ! isChromeEditorProtectedComponent(component, editor)) {
         toolbar.push({

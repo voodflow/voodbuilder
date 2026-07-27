@@ -21,6 +21,11 @@ import {
 } from './chrome-editor-guards.js';
 import { copyTextToClipboard } from './clipboard.js';
 import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
+import { findRichTextHost, isRichTextComponent } from './text-elements.js';
+
+function isRichTextCanvasTarget(component) {
+    return Boolean(isRichTextComponent(component) || findRichTextHost(component));
+}
 
 export function resolveComponentFromElement(editor, element) {
     const doc = editor.Canvas?.getDocument?.();
@@ -215,7 +220,7 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         },
     });
 
-    if (catalogItem || canEditBlockCode(component, editor)) {
+    if (catalogItem || (! isRichTextCanvasTarget(component) && canEditBlockCode(component, editor))) {
         pushSeparator(items);
     }
 
@@ -236,7 +241,7 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         });
     }
 
-    if (canEditBlockCode(component, editor)) {
+    if (! isRichTextCanvasTarget(component) && canEditBlockCode(component, editor)) {
         items.push({
             id: 'edit-block-code',
             label: labels.editBlockCode ?? 'Edit code',
