@@ -4898,3 +4898,15 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
 }
 
+/* CTA: if DOM text was wiped, keep size + show label from data attribute */
+a[data-voodbuilder-cta='true']:empty,
+button[data-voodbuilder-cta='true']:empty {
+    min-width: 5.5rem;
+    min-height: 2.25rem;
+}
+
+a[data-voodbuilder-cta='true']:empty::before,
+button[data-voodbuilder-cta='true']:empty::before {
+    content: attr(data-voodbuilder-cta-label);
+}
+

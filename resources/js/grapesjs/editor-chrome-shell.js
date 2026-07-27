@@ -142,16 +142,14 @@ function ensurePageContentBlockEditable(editor, component) {
         return;
     }
 
-    // Keep nested structure visible/selectable in Layers (headings, buttons, links).
-    // Only top-level page blocks stay draggable as whole sections.
-    const parent = component.parent?.();
-    const isTopLevelBlock = isPageContentSlot(parent);
-
+    // Nested layout content (Section → Container → Block → Text/Button) must stay
+    // movable/duplicable — locking drag to top-level sections broke Bricks-like editing
+    // and left tlb-clone copies without the move handle.
     component.set({
         locked: false,
-        removable: isTopLevelBlock,
-        copyable: isTopLevelBlock,
-        draggable: isTopLevelBlock,
+        removable: true,
+        copyable: true,
+        draggable: true,
         selectable: true,
         hoverable: true,
         highlightable: true,
@@ -159,7 +157,9 @@ function ensurePageContentBlockEditable(editor, component) {
     }, { silent: true });
     editor.Layers?.setLocked?.(component, false);
 
-    if (isTopLevelBlock) {
+    const parent = component.parent?.();
+
+    if (isPageContentSlot(parent)) {
         lockChromePreview(component);
     }
 }

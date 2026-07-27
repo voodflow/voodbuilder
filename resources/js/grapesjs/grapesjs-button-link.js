@@ -806,6 +806,17 @@ function registerLinkableButtonType(editor) {
             init() {
                 this.stopListening(this.model, 'change:content', this.updateContent);
             },
+            onRender() {
+                const model = this.model;
+
+                if (! model) {
+                    return;
+                }
+
+                // Deselect / remorph / clone can leave an empty <a> (collapsed blue sliver).
+                // Re-assert label from ctaLabel / data attribute into model + live DOM.
+                persistCtaLabel(model, extractButtonLabel(model) || 'Button');
+            },
         },
     });
 }
@@ -1011,6 +1022,14 @@ export function configureLinkableButtons(editor) {
 
         upgradeLinkableButton(component, editor);
         syncLinkableButtonTraits(component, editor, { forceSelect: true });
+    });
+
+    editor.on('component:deselected', (component) => {
+        if (! component || component.get?.('type') !== 'voodbuilder-cta-button') {
+            return;
+        }
+
+        persistCtaLabel(component, extractButtonLabel(component) || 'Button');
     });
 
     // Do NOT rescan on page-css-compiled — compile fires often (including cache

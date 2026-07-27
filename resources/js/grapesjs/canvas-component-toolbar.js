@@ -72,6 +72,16 @@ function buildComponentToolbar(editor, component, labels = {}) {
     const stylePrefix = editor.getConfig?.('stylePrefix') ?? 'gjs-';
     const toolbar = [];
 
+    // Heal nested page-content clones that inherited draggable:false from an older
+    // chrome-shell lock (top-level-only). Layout editing needs move on every block.
+    if (component.get('draggable') === false && ! component.getAttributes?.()?.['data-voodbuilder-chrome-shell-locked']) {
+        component.set('draggable', true, { silent: true });
+    }
+
+    if (component.get('copyable') === false && ! component.getAttributes?.()?.['data-voodbuilder-chrome-shell-locked']) {
+        component.set({ copyable: true, removable: true }, { silent: true });
+    }
+
     if (component.collection && hasSelectableParent(component, editor)) {
         toolbar.push({
             attributes: {
