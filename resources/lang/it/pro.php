@@ -591,6 +591,7 @@ return [
             'rich_text_bullet_list' => 'Elenco puntato',
             'rich_text_number_list' => 'Elenco numerato',
             'rich_text_dynamic_data' => 'Dati dinamici',
+            'rich_text_dynamic_user_profile' => 'Profilo utente',
             'rich_text_dynamic_latest' => 'Ultimo record',
             'rich_text_dynamic_empty' => 'Nessuna sorgente di dati dinamici registrata.',
             'text_link_settings_title' => 'Link di testo',

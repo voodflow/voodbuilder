@@ -43,21 +43,18 @@ Esempi HTML:
 
 ## Come sceglie il picker Rich Text
 
-Il menu raggruppa per **modello** (Users, Tutorials, …), non per “Latest / List item” duplicati.
+Stile **Bricks**: gruppo dedicato in cima, poi i modelli.
 
-Priorità automatica al click su un campo:
+| Voce menu | Source | Significato |
+|-----------|--------|-------------|
+| **Profilo utente** | `{alias}.auth` | Utente della sessione (`auth()->user()`), come “User profile” in Bricks |
+| **Users / Tutorials / …** | `.latest` oppure `.item` | Record DB: ultimo fuori lista, elemento corrente dentro un repeat |
 
-1. Se il Rich Text è **dentro** un repeat di quel modello → inserisce `.item`
-2. Altrimenti, se esiste la source **`.auth`** (modello Authenticatable) → inserisce `.auth`
-3. Altrimenti → inserisce `.latest`
+Priorità automatica (Make dynamic / insert “smart”):
 
-Per Users, sotto i campi “default” (auth) il menu aggiunge anche voci esplicite:
-
-- `Ultimo record · Name`
-- `Ultimo record · Email`
-- …
-
-così resta possibile il caso marketing “ultimo iscritto” senza confonderlo col saluto.
+1. Dentro un repeat di quel modello → `.item`
+2. Altrimenti, se esiste `.auth` → `.auth`
+3. Altrimenti → `.latest`
 
 I tag inseriti usano `data-voodbuilder-hide-when-empty="1"`: se guest / valore vuoto, il nodo viene rimosso in render pubblico.
 

@@ -1,20 +1,17 @@
 /**
  * Bricks-like dynamic data picker for the Rich Text Content editor.
  *
- * Menu groups by model (Users, Tutorials, …). Context is chosen from use case:
- * - inside a matching `data-voodbuilder-repeat` → `.item`
- * - Authenticatable models (Users) outside a list → `.auth` (logged-in user)
- * - otherwise → `.latest` (newest DB record)
- *
- * When both auth and latest exist, the menu also offers explicit “Latest record · Field”
- * entries so marketing heroes can still bind the newest member / post.
+ * Top-level groups:
+ * - **User profile** (`{alias}.auth`) — logged-in session user (Bricks “User profile”)
+ * - **Model name** (`Users`, `Tutorials`, …) — `.latest` outside a list, `.item` inside
+ *   a matching `data-voodbuilder-repeat`
  */
 
 import { openContextMenu } from './context-menu.js';
 import { alertDialog } from './editor-dialog.js';
 import { RICH_TEXT_LINK_CLASSES } from './link-picker-dialog.js';
 
-const SOURCE_CONTEXT_SUFFIX_RE = /\s·\s*(Latest record|List item|Logged-in user|Ultimo record|Elemento lista|Utente autenticato)\s*$/i;
+const SOURCE_CONTEXT_SUFFIX_RE = /\s·\s*(Latest record|List item|Logged-in user|User profile|Ultimo record|Elemento lista|Utente autenticato|Profilo utente)\s*$/i;
 
 /**
  * @param {string} value
@@ -189,6 +186,19 @@ export function groupBindingSourcesByModel(sources) {
                 fieldsById: new Map(),
             };
             map.set(alias, entry);
+        } else if (String(source?.id ?? '').endsWith('.latest') || String(source?.id ?? '').endsWith('.item')) {
+            // Prefer model integration name over standalone "User profile" for the DB-record group.
+            const candidate = modelMenuLabel(source?.label, alias);
+            const current = String(entry.label ?? '');
+
+            if (
+                candidate
+                && candidate !== alias
+                && ! /^(User profile|Profilo utente)$/i.test(candidate)
+                && (/^(User profile|Profilo utente)$/i.test(current) || current === alias)
+            ) {
+                entry.label = candidate;
+            }
         }
 
         entry.sources.push(source);
@@ -317,54 +327,75 @@ function fieldMenuItem(source, field, modelLabel, onPick, menuLabel = null) {
  */
 export function buildRichTextDynamicTagMenuItems(catalog, contextComponent, onPick, labels = {}) {
     const models = groupBindingSourcesByModel(listRichTextBindingSources(catalog));
-    const latestPrefix = labels.richTextDynamicLatest
-        ?? labels.latestRecord
-        ?? 'Latest record';
+    const profileLabel = labels.richTextDynamicUserProfile
+        ?? labels.userProfile
+        ?? 'User profile';
+    /** @type {Array<object>} */
+    const items = [];
 
-    return models.map((model) => {
-        const { auth, latest, item } = splitModelBindingSources(model.sources);
-        const insideList = isComponentInsideModelRepeat(contextComponent, model.alias);
-        const defaultSource = pickBindingSourceForContext(model.sources, contextComponent);
+    // Bricks-style: dedicated "User profile" group → session user (`.auth`).
+    for (const model of models) {
+        const { auth } = splitModelBindingSources(model.sources);
+
+        if (! auth) {
+            continue;
+        }
+
         /** @type {Array<object>} */
         const children = [];
 
         for (const field of model.fields) {
-            const itemEntry = fieldMenuItem(defaultSource, field, model.label, onPick);
+            const entry = fieldMenuItem(auth, field, profileLabel, onPick);
 
-            if (itemEntry) {
-                children.push(itemEntry);
+            if (entry) {
+                children.push(entry);
             }
         }
 
-        // Outside a list, when auth is the default, also offer explicit latest fields
-        // (e.g. “Latest member” marketing copy — not the logged-in session user).
-        if (! insideList && auth && latest && defaultSource === auth) {
-            children.push({ type: 'separator' });
+        if (children.length > 0) {
+            items.push({
+                id: `auth-${model.alias}`,
+                label: profileLabel,
+                children,
+            });
+        }
+    }
 
-            for (const field of model.fields) {
-                const itemEntry = fieldMenuItem(
-                    latest,
-                    field,
-                    model.label,
-                    onPick,
-                    `${latestPrefix} · ${fieldMenuLabel(field)}`,
-                );
+    // Model groups: latest (hero / byline) or item (inside matching list repeat).
+    for (const model of models) {
+        const { auth, latest, item } = splitModelBindingSources(model.sources);
+        const insideList = isComponentInsideModelRepeat(contextComponent, model.alias);
+        const source = insideList && item
+            ? item
+            : (latest ?? (! auth ? item : null));
 
-                if (itemEntry) {
-                    children.push(itemEntry);
-                }
+        if (! source) {
+            continue;
+        }
+
+        /** @type {Array<object>} */
+        const children = [];
+
+        for (const field of model.fields) {
+            const entry = fieldMenuItem(source, field, model.label, onPick);
+
+            if (entry) {
+                children.push(entry);
             }
         }
 
-        // Keep item available in the catalog sense; if somehow auth/latest missing but item exists outside list, defaultSource already handled it.
-        void item;
+        if (children.length === 0) {
+            continue;
+        }
 
-        return {
+        items.push({
             id: `model-${model.alias}`,
             label: model.label,
             children,
-        };
-    });
+        });
+    }
+
+    return items;
 }
 
 /**

@@ -38,7 +38,8 @@ final class ModelIntegrationAuthBindingSource extends AbstractModelIntegrationBi
 
     public function label(): string
     {
-        return $this->integration->name.' · '.__('voodbuilder::model_integrations.bindings.auth');
+        // Bricks-style standalone group: "User profile" / "Profilo utente"
+        return __('voodbuilder::model_integrations.bindings.auth');
     }
 
     public function fields(): array

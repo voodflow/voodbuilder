@@ -65,7 +65,7 @@ class ModelIntegrationAuthBindingSourceTest extends TestCase
         $latestSource = new ModelIntegrationLatestBindingSource($integration);
 
         $this->assertSame('users.auth', $authSource->id());
-        $this->assertStringContainsString('Logged-in user', $authSource->label());
+        $this->assertSame('User profile', $authSource->label());
         $this->assertSame(
             'Paolo Loggato',
             $authSource->resolve('name', BindingContext::forPage(null)),

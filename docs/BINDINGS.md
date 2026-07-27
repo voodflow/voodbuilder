@@ -47,7 +47,7 @@ Saved markup uses `data-voodbuilder-bind` for content/label, and optionally `dat
 | `{alias}.latest` | Newest DB record (`latest('id')`, with public/published scopes when present). |
 | `{alias}.item` | Current row inside `data-voodbuilder-repeat="{alias}.list"`. |
 
-**Rich Text dynamic tags:** the picker lists each model once (Users, Tutorials, …). Default insert: `.item` inside that model’s list repeat; else `.auth` when available; else `.latest`. For Authenticatable models, the menu also lists explicit **Latest record · Field** entries. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
+**Rich Text dynamic tags:** Bricks-style menu — top group **User profile** inserts `{alias}.auth`; model groups (Users, Tutorials, …) insert `.latest` outside a list or `.item` inside that model’s repeat. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
 
 Use-case guide (IT): [DYNAMIC_DATA_USE_CASES.md](./DYNAMIC_DATA_USE_CASES.md).
 
