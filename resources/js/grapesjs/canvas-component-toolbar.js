@@ -318,7 +318,10 @@ function syncBoundToolbarState(editor, component) {
         return;
     }
 
-    const bound = Boolean(component.getAttributes?.()['data-voodbuilder-bind']);
+    const bound = Boolean(
+        component.getAttributes?.()['data-voodbuilder-bind']
+        || component.getAttributes?.()['data-voodbuilder-bind-href'],
+    );
     const dynamicButton = toolbarEl.querySelector(`[${TOOLBAR_FLAG}="dynamic"]`);
     const clearButton = toolbarEl.querySelector(`[${TOOLBAR_FLAG}="clear-dynamic"]`);
 

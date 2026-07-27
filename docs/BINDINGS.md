@@ -15,8 +15,8 @@ Connect any element in a GrapesJS layout to **live server data** using `data-voo
 | Binding type | Element | Behaviour |
 |--------------|---------|-----------|
 | **text** | `h1`–`h6`, `p`, `span`, … | Replaces inner text with live value. Not editable inline (content is dynamic). |
-| **url** | `a` | Sets `href`. **Label text is editable** (double-click). |
-| **url** | `button` | Auto-converts to `<a role="button">` (same classes). **Double-click edits the label.** |
+| **text** | CTA / Text link (`a`) | Replaces **label** (`data-voodbuilder-bind`). Can combine with a separate URL bind. |
+| **url** | `a` / CTA | Sets `href` via `data-voodbuilder-bind-href` (preferred) or legacy `data-voodbuilder-bind`. Label stays static unless also text-bound. |
 | **image** | `img` | Sets `src` (and `alt` when needed). |
 
 Remove a binding: select element → **Clear dynamic binding** (✕).
@@ -25,18 +25,28 @@ Remove a binding: select element → **Clear dynamic binding** (✕).
 
 ## HTML contract
 
-Saved markup uses a single attribute:
+Saved markup uses `data-voodbuilder-bind` for content/label, and optionally `data-voodbuilder-bind-href` for an independent URL:
 
 ```html
 <h1 data-voodbuilder-bind="vtuts.latest.title">[Latest tutorial: Title]</h1>
-<a data-voodbuilder-bind="vtuts.latest.url" href="#">Read more</a>
-<button type="button" data-voodbuilder-bind="vtuts.latest.url">Start here</button>
+<a data-voodbuilder-bind-href="vtuts.latest.url" href="#">Read more</a>
+<a data-voodbuilder-cta="true"
+   data-voodbuilder-bind="users.item.name"
+   data-voodbuilder-bind-href="users.item.profile_url"
+   href="#">[Users: Name]</a>
+<span data-voodbuilder-bind="users.latest.name" data-voodbuilder-hide-when-empty="1">[Users: Name]</span>
 <img data-voodbuilder-bind="vtuts.latest.image" src="…" alt="">
 ```
 
+**Rich Text dynamic tags:** the picker lists each model once (Users, Tutorials, …). Choosing a field inserts `.latest` outside a list repeat, or `.item` when the Rich Text sits inside that model’s `data-voodbuilder-repeat`. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
+
+**Block visibility:** use existing `data-voodbuilder-conditions` (logged-in, role, locale, path, dates, …) to show/hide whole sections — independent from field bindings.
+
+Legacy (still supported): URL on `data-voodbuilder-bind` alone sets `href`.
+
 Format: `{sourceId}.{fieldId}` — e.g. `vtuts.latest.introduction`.
 
-The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-voodbuilder-bind` only.
+The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-voodbuilder-bind` / `data-voodbuilder-bind-href` only.
 
 ---
 

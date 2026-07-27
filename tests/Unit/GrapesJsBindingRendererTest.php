@@ -49,6 +49,20 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertStringNotContainsString('[Latest item: Title]', $rendered);
     }
 
+    public function test_hides_empty_rich_text_dynamic_tags_on_render(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<p>Hi <span class="vb-rich-text-dynamic" data-voodbuilder-bind="demo.latest.missing" data-voodbuilder-hide-when-empty="1">[Latest: Missing]</span> there</p>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringNotContainsString('[Latest: Missing]', $rendered);
+        $this->assertStringNotContainsString('data-voodbuilder-bind="demo.latest.missing"', $rendered);
+        $this->assertStringContainsString('Hi  there', $rendered);
+    }
+
     public function test_parses_dotted_source_ids(): void
     {
         $registry = new BindingRegistry;
@@ -75,17 +89,34 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertStringNotContainsString('[Latest item: Cover]', $rendered);
     }
 
-    public function test_text_binding_on_cta_button_keeps_static_label(): void
+    public function test_text_binding_on_cta_button_updates_label(): void
     {
         $registry = new BindingRegistry;
         $registry->register(new FakeLatestBindingSource);
 
-        $html = '<button type="button" data-voodbuilder-cta="true" data-voodbuilder-bind="demo.latest.title">Read more</button>';
+        $html = '<a href="#" role="button" data-voodbuilder-cta="true" data-voodbuilder-cta-label="Read more" data-voodbuilder-bind="demo.latest.title">Read more</a>';
 
         $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
 
-        $this->assertStringContainsString('>Read more<', $rendered);
-        $this->assertStringNotContainsString('>Hello world<', $rendered);
+        $this->assertStringContainsString('>Hello world<', $rendered);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Hello world"', $rendered);
+    }
+
+    public function test_bind_href_and_label_are_independent_on_cta(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<a href="#" role="button" data-voodbuilder-cta="true"'
+            .' data-voodbuilder-bind="demo.latest.title"'
+            .' data-voodbuilder-bind-href="demo.latest.url"'
+            .' data-voodbuilder-cta-label="[Latest: Title]">[Latest: Title]</a>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('>Hello world<', $rendered);
+        $this->assertStringContainsString('href="https://example.test/tutorial"', $rendered);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Hello world"', $rendered);
     }
 
     public function test_url_binding_on_card_link_strips_scraped_text_nodes(): void

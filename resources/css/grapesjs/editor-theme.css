@@ -2070,8 +2070,10 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-h
 }
 
 .voodbuilder-gjs-rte__visual [data-voodbuilder-bind],
-.vb-rich-text [data-voodbuilder-bind] {
-    display: inline;
+.voodbuilder-gjs-rte__visual [data-voodbuilder-bind-href],
+.vb-rich-text [data-voodbuilder-bind],
+.vb-rich-text [data-voodbuilder-bind-href] {
+    display: inline !important;
     padding: 0 0.15em;
     border-radius: 0.2em;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
@@ -2080,6 +2082,7 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-h
     white-space: nowrap;
     user-select: none;
     cursor: default;
+    vertical-align: baseline;
 }
 
 .voodbuilder-gjs-rte__code {

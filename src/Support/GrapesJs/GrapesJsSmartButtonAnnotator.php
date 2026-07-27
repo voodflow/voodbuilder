@@ -128,7 +128,12 @@ final class GrapesJsSmartButtonAnnotator
             return true;
         }
 
-        $hasPad = str_contains($class, 'px-') && (str_contains($class, 'py-') || preg_match('/(?:^|\s)p-\d/', $class) === 1);
+        $hasHorizontalPad = str_contains($class, 'px-') || preg_match('/(?:^|\s)p-\d/', $class) === 1;
+        $hasVerticalPad = str_contains($class, 'py-')
+            || preg_match('/(?:^|\s)p-\d/', $class) === 1
+            || preg_match('/(?:^|\s)h-(?:\d+|\[)/', $class) === 1
+            || preg_match('/(?:^|\s)min-h-(?:\d+|\[)/', $class) === 1;
+        $hasPad = $hasHorizontalPad && $hasVerticalPad;
         $hasRounded = str_contains($class, 'rounded');
 
         if (! $hasPad || ! $hasRounded) {
@@ -163,6 +168,10 @@ final class GrapesJsSmartButtonAnnotator
         $element->setAttribute('data-voodbuilder-cta', 'true');
         $element->setAttribute('data-voodbuilder-cta-label', $label);
         $element->setAttribute('role', 'button');
+
+        if (! $element->hasAttribute('data-vb-link-type')) {
+            $element->setAttribute('data-vb-link-type', 'url');
+        }
 
         if (strtolower($element->tagName) === 'button') {
             // GrapesJS morphs button → anchor; keep as button in HTML source —

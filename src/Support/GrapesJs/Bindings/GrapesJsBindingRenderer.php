@@ -17,7 +17,7 @@ final class GrapesJsBindingRenderer
 
     public function render(string $html, ?SitePage $page = null, mixed $repeatItem = null): string
     {
-        if ($html === '' || (! str_contains($html, 'data-voodbuilder-bind') && ! self::containsRepeatAttribute($html))) {
+        if ($html === '' || (! self::containsBindAttribute($html) && ! self::containsRepeatAttribute($html))) {
             return $html;
         }
 
@@ -25,7 +25,7 @@ final class GrapesJsBindingRenderer
             $html = app(GrapesJsRepeatRenderer::class)->render($html, $page);
         }
 
-        if (! str_contains($html, 'data-voodbuilder-bind')) {
+        if (! self::containsBindAttribute($html)) {
             return $html;
         }
 
@@ -63,7 +63,14 @@ final class GrapesJsBindingRenderer
         $elements = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-bind')) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if (
+                $element->hasAttribute(BindingAttributes::BIND)
+                || $element->hasAttribute(BindingAttributes::BIND_HREF)
+            ) {
                 $elements[] = $element;
             }
         }
@@ -73,34 +80,66 @@ final class GrapesJsBindingRenderer
 
     protected function applyBinding(DOMElement $element, BindingContext $context): void
     {
-        $bindingKey = trim($element->getAttribute('data-voodbuilder-bind'));
+        $bindingKey = trim($element->getAttribute(BindingAttributes::BIND));
+        $hrefKey = trim($element->getAttribute(BindingAttributes::BIND_HREF));
+        $contentResolved = $bindingKey === '';
+        $hrefResolved = $hrefKey === '';
 
-        $parsed = BindingKey::tryParse($bindingKey, $this->registry);
+        if ($bindingKey !== '') {
+            $parsed = BindingKey::tryParse($bindingKey, $this->registry);
 
-        if ($parsed === null) {
+            if ($parsed !== null) {
+                $field = $this->registry->field($parsed->sourceId, $parsed->fieldId);
+
+                if ($field !== null) {
+                    $value = $this->registry->resolve($bindingKey, $context);
+
+                    if ($value !== null && $value !== '') {
+                        $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                        $tag = strtolower($element->tagName);
+
+                        match ($field->type) {
+                            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped, $bindingKey, $context),
+                            BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
+                            default => $this->applyTextBinding($element, $escaped, $tag),
+                        };
+                        $contentResolved = true;
+                    }
+                }
+            }
+        }
+
+        if ($hrefKey !== '') {
+            $hrefValue = $this->registry->resolve($hrefKey, $context);
+
+            if ($hrefValue !== null && $hrefValue !== '') {
+                $this->applyUrlBinding(
+                    $element,
+                    htmlspecialchars($hrefValue, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                );
+                $hrefResolved = true;
+            }
+        }
+
+        if ($this->shouldHideWhenEmpty($element) && (! $contentResolved || ! $hrefResolved)) {
+            $element->parentNode?->removeChild($element);
+
             return;
         }
 
-        $field = $this->registry->field($parsed->sourceId, $parsed->fieldId);
+        $element->removeAttribute('contenteditable');
+        $element->removeAttribute(BindingAttributes::HIDE_WHEN_EMPTY);
+    }
 
-        if ($field === null) {
-            return;
+    protected function shouldHideWhenEmpty(DOMElement $element): bool
+    {
+        if ($element->getAttribute(BindingAttributes::HIDE_WHEN_EMPTY) === '1') {
+            return true;
         }
 
-        $value = $this->registry->resolve($bindingKey, $context);
+        $class = ' '.$element->getAttribute('class').' ';
 
-        if ($value === null || $value === '') {
-            return;
-        }
-
-        $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $tag = strtolower($element->tagName);
-
-        match ($field->type) {
-            BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped, $bindingKey, $context),
-            BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
-            default => $this->applyTextBinding($element, $escaped, $tag),
-        };
+        return str_contains($class, ' vb-rich-text-dynamic ');
     }
 
     protected function applyImageBinding(DOMElement $element, string $url, string $bindingKey, BindingContext $context): void
@@ -190,10 +229,6 @@ final class GrapesJsBindingRenderer
 
     protected function applyTextBinding(DOMElement $element, string $text, string $tag): void
     {
-        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
-            return;
-        }
-
         if ($tag === 'img') {
             $element->setAttribute('alt', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
@@ -213,6 +248,10 @@ final class GrapesJsBindingRenderer
         }
 
         $element->appendChild($element->ownerDocument->createTextNode($decoded));
+
+        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
+            $element->setAttribute('data-voodbuilder-cta-label', $decoded);
+        }
     }
 
     protected function isAnimatedCounterElement(DOMElement $element): bool
@@ -242,6 +281,12 @@ final class GrapesJsBindingRenderer
         }
 
         return $output;
+    }
+
+    private static function containsBindAttribute(string $html): bool
+    {
+        return str_contains($html, BindingAttributes::BIND)
+            || str_contains($html, BindingAttributes::BIND_HREF);
     }
 
     private static function containsRepeatAttribute(string $html): bool

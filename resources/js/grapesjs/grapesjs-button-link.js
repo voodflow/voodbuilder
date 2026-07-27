@@ -951,6 +951,9 @@ export function scanLinkableButtons(editor, root = editor.getWrapper?.()) {
     }
 
     const visit = (component) => {
+        // Promote Tailblocks/template CTAs that lack data-voodbuilder-cta yet.
+        promoteButtonLikeAnchor(component);
+
         if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
             upgradeLinkableButton(component, editor);
         }
@@ -990,7 +993,12 @@ function classesLookLikeCtaButton(classes) {
         return true;
     }
 
-    const hasPad = c.includes('px-') && (c.includes('py-') || /(?:^|\s)p-\d/.test(c));
+    const hasHorizontalPad = c.includes('px-') || /(?:^|\s)p-\d/.test(c);
+    const hasVerticalPad = c.includes('py-')
+        || /(?:^|\s)p-\d/.test(c)
+        || /(?:^|\s)h-(?:\d+|\[)/.test(c)
+        || /(?:^|\s)min-h-(?:\d+|\[)/.test(c);
+    const hasPad = hasHorizontalPad && hasVerticalPad;
     const hasRounded = c.includes('rounded');
 
     if (! hasPad || ! hasRounded) {
@@ -1033,7 +1041,17 @@ function promoteButtonLikeAnchor(component) {
     const classes = `${attrs.class ?? ''} ${(component.getClasses?.() ?? []).join(' ')}`;
 
     if (classesLookLikeCtaButton(classes) || attrs.role === 'button') {
-        component.addAttributes({ 'data-voodbuilder-cta': 'true' });
+        const label = String(attrs[CTA_LABEL_ATTR] ?? '').trim()
+            || String(component.get?.('ctaLabel') ?? '').trim()
+            || extractButtonLabel(component)
+            || 'Button';
+
+        component.addAttributes({
+            'data-voodbuilder-cta': 'true',
+            role: 'button',
+            [CTA_LABEL_ATTR]: label,
+            'data-vb-link-type': attrs['data-vb-link-type'] || 'url',
+        });
     }
 }
 

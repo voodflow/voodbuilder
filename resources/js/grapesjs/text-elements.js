@@ -136,19 +136,22 @@ export function registerTextElementTypes(editor) {
     });
 
     editor.DomComponents.addType('voodbuilder-rich-text', {
-        extend: 'text',
+        // Do NOT extend `text`: GrapesJS text components reject/hoist block markup
+        // (`<p>`, lists, …) which leaked RTE updates into the page slot before the footer.
         isComponent: (el) => (
             el?.hasAttribute?.('data-voodbuilder-rich-text') === true
             || el?.classList?.contains?.('vb-rich-text') === true
         ),
         model: {
             defaults: {
-                ...textDefaults,
                 tagName: 'div',
                 name: resolveBlockLabel('voodbuilder-rich-text', 'Rich Text'),
                 // Edit in Content panel (light RTE), not via canvas toolbar.
                 editable: false,
                 droppable: false,
+                highlightable: true,
+                selectable: true,
+                hoverable: true,
                 attributes: {
                     'data-voodbuilder-rich-text': '',
                 },

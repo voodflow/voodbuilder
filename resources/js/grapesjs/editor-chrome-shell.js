@@ -32,6 +32,7 @@ import {
     PAGE_CONTENT_ATTR,
     purgeChromeBleedFromContentSlot,
 } from './chrome-content-slot-utils.js';
+import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 import {
     canMoveGrapesComponent,
     isValidMoveTarget,
@@ -73,6 +74,14 @@ function isInsidePageContentSlot(component) {
     }
 
     return false;
+}
+
+function isInsideRichTextHost(component) {
+    if (! component || isRichTextComponent(component)) {
+        return false;
+    }
+
+    return Boolean(findRichTextHost(component));
 }
 
 function isInsideChromeShellPart(component) {
@@ -139,6 +148,11 @@ function ensurePageContentBlockEditable(editor, component) {
     }
 
     if (! isInsidePageContentSlot(component)) {
+        return;
+    }
+
+    // Inner RichText markup is owned by the Content RTE — never unlock/promote it.
+    if (isInsideRichTextHost(component)) {
         return;
     }
 
@@ -716,6 +730,15 @@ function promoteComponentIntoContentSlot(editor, component) {
         return false;
     }
 
+    if (editor.__voodbuilderRichTextWriting || editor.__voodbuilderBulkStructureUpdate) {
+        return false;
+    }
+
+    // Never yank RichText inner nodes (p/strong/a…) out to the page slot.
+    if (isRichTextComponent(component) || isInsideRichTextHost(component)) {
+        return false;
+    }
+
     if (isInsidePageContentSlot(component)) {
         return false;
     }
@@ -1065,12 +1088,19 @@ export function registerChromeShellEditor(editor, options = {}) {
     });
 
     editor.on('component:add', (component) => {
-        if (editor.__voodbuilderBulkStructureUpdate) {
+        if (
+            editor.__voodbuilderBulkStructureUpdate
+            || editor.__voodbuilderRichTextWriting
+        ) {
             return;
         }
 
         window.requestAnimationFrame(() => {
-            if (! component || editor.__voodbuilderBulkStructureUpdate) {
+            if (
+                ! component
+                || editor.__voodbuilderBulkStructureUpdate
+                || editor.__voodbuilderRichTextWriting
+            ) {
                 return;
             }
 

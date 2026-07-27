@@ -12,8 +12,8 @@ import {
     readAnchorLinkState,
 } from './link-picker-dialog.js';
 import { lucideIcon } from './editor-icons.js';
-import { openRichTextDynamicTagPicker } from './rich-text-dynamic-tags.js';
-import { keepRichTextSelection, lockRichTextChildren } from './text-elements.js';
+import { insertHtmlInlineAtCaret, openRichTextDynamicTagPicker } from './rich-text-dynamic-tags.js';
+import { findRichTextHost, keepRichTextSelection, lockRichTextChildren } from './text-elements.js';
 
 const ALLOWED_TAGS = new Set([
     'P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'A',
@@ -70,8 +70,15 @@ export function sanitizeRichTextHtml(html) {
 
                 if (
                     (tag === 'SPAN' || tag === 'A')
-                    && name === 'data-voodbuilder-bind'
-                    && /^[\w.-]+$/.test(String(attr.value ?? '').trim())
+                    && (
+                        name === 'data-voodbuilder-bind'
+                        || name === 'data-voodbuilder-bind-href'
+                        || name === 'data-voodbuilder-hide-when-empty'
+                    )
+                    && (
+                        name === 'data-voodbuilder-hide-when-empty'
+                        || /^[\w.-]+$/.test(String(attr.value ?? '').trim())
+                    )
                 ) {
                     return;
                 }
@@ -105,7 +112,10 @@ export function sanitizeRichTextHtml(html) {
 
             if (
                 (tag === 'SPAN' || tag === 'A')
-                && el.hasAttribute('data-voodbuilder-bind')
+                && (
+                    el.hasAttribute('data-voodbuilder-bind')
+                    || el.hasAttribute('data-voodbuilder-bind-href')
+                )
                 && el.getAttribute('contenteditable') !== 'false'
             ) {
                 el.setAttribute('contenteditable', 'false');
@@ -181,34 +191,49 @@ export function writeComponentHtml(component, html, editor = null) {
         return;
     }
 
+    // Always write onto the Rich Text host — never an inner paragraph.
+    const host = findRichTextHost(component) ?? component;
     const safe = sanitizeRichTextHtml(html);
+
     const run = () => {
-        component.components(safe);
-        lockRichTextChildren(component);
-        keepRichTextSelection(editor, component);
+        // Replace children in place. Avoid keepRichTextSelection here — re-selecting
+        // on every keystroke races chrome-shell component:add and can leak nodes
+        // into the page-content slot (before the footer).
+        host.components(safe);
+        lockRichTextChildren(host);
     };
 
-    if (editor) {
-        const depth = Number(editor.__voodbuilderSettingsChangeDepth ?? 0);
-        editor.__voodbuilderSettingsChangeDepth = depth + 1;
-        editor.__voodbuilderSettingsChange = true;
-
-        try {
-            run();
-        } finally {
-            const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
-            editor.__voodbuilderSettingsChangeDepth = next;
-
-            if (next <= 0) {
-                editor.__voodbuilderSettingsChange = false;
-                delete editor.__voodbuilderSettingsChangeDepth;
-            }
-        }
+    if (! editor) {
+        run();
 
         return;
     }
 
-    run();
+    const depth = Number(editor.__voodbuilderSettingsChangeDepth ?? 0);
+    editor.__voodbuilderSettingsChangeDepth = depth + 1;
+    editor.__voodbuilderSettingsChange = true;
+    editor.__voodbuilderRichTextWriting = true;
+    editor.__voodbuilderBulkStructureUpdate = true;
+
+    try {
+        run();
+    } finally {
+        const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
+        editor.__voodbuilderSettingsChangeDepth = next;
+
+        if (next <= 0) {
+            editor.__voodbuilderSettingsChange = false;
+            delete editor.__voodbuilderSettingsChangeDepth;
+        }
+
+        // Keep bulk/writing flags through pending chrome component:add rAFs.
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                editor.__voodbuilderRichTextWriting = false;
+                editor.__voodbuilderBulkStructureUpdate = false;
+            });
+        });
+    }
 }
 
 function toolbarButton({ title, label, onClick, active = false }) {
@@ -300,10 +325,11 @@ function toolbarSeparator() {
  *   value?: string,
  *   labels?: Record<string, string>,
  *   editor?: object|null,
+ *   component?: object|null,
  *   onChange?: (html: string) => void,
  * }} args
  */
-export function createLightRichTextEditor({ value = '<p></p>', labels = {}, editor = null, onChange } = {}) {
+export function createLightRichTextEditor({ value = '<p></p>', labels = {}, editor = null, component = null, onChange } = {}) {
     const root = document.createElement('div');
     root.className = 'voodbuilder-gjs-rte';
     root.setAttribute('data-voodbuilder-light-rte', '');
@@ -490,6 +516,7 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
 
             openRichTextDynamicTagPicker({
                 editor,
+                component,
                 anchorEl: dynamicBtn,
                 labels,
                 onInsert: (tagHtml) => {
@@ -505,7 +532,7 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
                         }
                     }
 
-                    document.execCommand('insertHTML', false, tagHtml);
+                    insertHtmlInlineAtCaret(visual, tagHtml);
                     syncFromVisual();
                 },
             });
@@ -625,6 +652,7 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
         value: readComponentHtml(component),
         labels,
         editor,
+        component,
         onChange: (html) => {
             writeComponentHtml(component, html, editor);
         },

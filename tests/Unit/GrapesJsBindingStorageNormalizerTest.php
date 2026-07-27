@@ -36,17 +36,34 @@ class GrapesJsBindingStorageNormalizerTest extends TestCase
         $this->assertStringNotContainsString('https://cdn.test/hero.jpg', $normalized);
     }
 
-    public function test_text_binding_on_cta_button_preserves_label_on_save(): void
+    public function test_text_binding_on_cta_button_stores_placeholder_label(): void
     {
         $registry = new BindingRegistry;
         $registry->register(new StorageFakeBindingSource);
 
-        $html = '<button type="button" data-voodbuilder-cta="true" data-voodbuilder-bind="demo.latest.title">Read more</button>';
+        $html = '<a href="#" role="button" data-voodbuilder-cta="true" data-voodbuilder-bind="demo.latest.title">Hello world</a>';
 
         $normalized = (new GrapesJsBindingStorageNormalizer($registry))->normalizeHtml($html);
 
-        $this->assertStringContainsString('>Read more<', $normalized);
-        $this->assertStringNotContainsString('[Latest item: Title]', $normalized);
+        $this->assertStringContainsString('>[Latest item: Title]<', $normalized);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="[Latest item: Title]"', $normalized);
+        $this->assertStringNotContainsString('Hello world', $normalized);
+    }
+
+    public function test_bind_href_resets_url_and_keeps_static_label(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new StorageFakeBindingSource);
+
+        $html = '<a href="https://example.test/tutorial" role="button" data-voodbuilder-cta="true"'
+            .' data-voodbuilder-bind-href="demo.latest.url"'
+            .' data-voodbuilder-cta-label="Vai al profilo">Vai al profilo</a>';
+
+        $normalized = (new GrapesJsBindingStorageNormalizer($registry))->normalizeHtml($html);
+
+        $this->assertStringContainsString('href="#"', $normalized);
+        $this->assertStringContainsString('>Vai al profilo<', $normalized);
+        $this->assertStringContainsString('data-voodbuilder-bind-href="demo.latest.url"', $normalized);
     }
 }
 

@@ -61,11 +61,8 @@ function fieldTypeMatchesComponent(fieldType, component) {
             || Boolean(component.getAttributes?.()['data-voodbuilder-repeat-item']);
     }
 
-    if (tag === 'button' || isCtaButton(component)) {
-        return false;
-    }
-
-    if (tag === 'a') {
+    // Text: labels on CTA / button / link, or leaf text nodes.
+    if (tag === 'button' || isCtaButton(component) || tag === 'a') {
         return true;
     }
 
@@ -783,15 +780,19 @@ function bindingRejectionMessage(component, fieldType, labels) {
             ?? 'Use List repeat on this container, then List item inside the card.';
     }
 
-    if (fieldType !== 'url' && (componentTag(component) === 'button' || isCtaButton(component))) {
-        return labels.buttonUrlOnly
-            ?? 'Buttons keep a static label such as “Read more”. Bind a URL field to make the link dynamic, then double-click the button to edit the label.';
-    }
-
     const tag = componentTag(component);
 
     return labels.bindingNeedsLeaf
         ?? `Bind text and images on the inner element (h2, p, img, a), not on the ${tag || 'container'}.`;
+}
+
+const BIND_HREF_ATTR = 'data-voodbuilder-bind-href';
+const BIND_ATTR = 'data-voodbuilder-bind';
+
+function isInteractiveLinkComponent(component) {
+    const tag = componentTag(component);
+
+    return tag === 'button' || tag === 'a' || isCtaButton(component);
 }
 
 function preferredFieldIdForComponent(fields, component) {
@@ -1647,13 +1648,75 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
         morphRepeatItemToAnchor(editor, bindTarget);
     }
 
+    const boundTag = componentTag(bindTarget);
+    const isRepeatItem = Boolean(bindTarget.getAttributes?.()['data-voodbuilder-repeat-item']);
+    const interactive = isInteractiveLinkComponent(bindTarget);
+
+    // Interactive links/buttons: text → content bind, URL → bind-href (independent).
+    if (interactive && fieldType === 'url') {
+        const existingBind = bindTarget.getAttributes?.()?.[BIND_ATTR];
+        const existingType = existingBind
+            ? resolveBindingFieldType(existingBind, editor.__voodbuilderBindingsCatalog)
+            : null;
+
+        // Migrate legacy URL-on-content-bind to bind-href.
+        if (existingType === 'url') {
+            bindTarget.removeAttributes(BIND_ATTR);
+        }
+
+        bindTarget.addAttributes({
+            [BIND_HREF_ATTR]: bindingKey,
+            href: '#',
+        });
+        bindTarget.removeAttributes('onclick');
+        bindTarget.addClass('voodbuilder-gjs-bound');
+
+        bindTarget.set({
+            editable: ! isRepeatItem && ! bindTarget.getAttributes?.()?.[BIND_ATTR],
+            highlightable: true,
+            selectable: true,
+            layerable: true,
+            name: isRepeatItem ? 'List Item' : (isCtaButton(bindTarget) ? 'Dynamic button' : 'Dynamic link'),
+        });
+
+        if (hasBindBlockingChildren(bindTarget) || isRepeatItem) {
+            stripSpuriousUrlLabelNodes(bindTarget);
+        } else if (! bindTarget.getAttributes?.()?.[BIND_ATTR]) {
+            ensureInteractiveLabel(bindTarget, extractInteractiveLabel(bindTarget));
+        }
+
+        return bindTarget;
+    }
+
+    if (interactive && fieldType === 'text') {
+        bindTarget.addAttributes({
+            [BIND_ATTR]: bindingKey,
+        });
+        bindTarget.addClass('voodbuilder-gjs-bound');
+
+        bindTarget.set({
+            editable: false,
+            highlightable: true,
+            selectable: true,
+            layerable: true,
+            name: isCtaButton(bindTarget) ? `Dynamic: ${fieldLabel}` : `Dynamic: ${fieldLabel}`,
+            ctaLabel: placeholder,
+        });
+
+        if (isCtaButton(bindTarget)) {
+            bindTarget.addAttributes({ 'data-voodbuilder-cta-label': placeholder });
+        }
+
+        paintPreviewOnElement(bindTarget, placeholder, 'text');
+
+        return bindTarget;
+    }
+
     bindTarget.addAttributes({
-        'data-voodbuilder-bind': bindingKey,
+        [BIND_ATTR]: bindingKey,
     });
     bindTarget.addClass('voodbuilder-gjs-bound');
 
-    const boundTag = componentTag(bindTarget);
-    const isRepeatItem = Boolean(bindTarget.getAttributes?.()['data-voodbuilder-repeat-item']);
     const urlOnInteractive = fieldType === 'url' && (boundTag === 'button' || boundTag === 'a');
 
     bindTarget.set({
@@ -1697,7 +1760,8 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
 }
 
 function clearBindingFromComponent(component) {
-    component.removeAttributes('data-voodbuilder-bind');
+    component.removeAttributes(BIND_ATTR);
+    component.removeAttributes(BIND_HREF_ATTR);
     component.removeAttributes('onclick');
     component.removeClass('voodbuilder-gjs-bound');
 
@@ -1711,55 +1775,73 @@ function clearBindingFromComponent(component) {
 }
 
 function configureBoundComponent(editor, component, catalog) {
-    const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+    const attrs = component.getAttributes?.() ?? {};
+    const bindingKey = attrs[BIND_ATTR];
+    const hrefKey = attrs[BIND_HREF_ATTR];
 
-    if (! bindingKey) {
+    if (! bindingKey && ! hrefKey) {
         return;
     }
 
-    const fieldType = resolveBindingFieldType(bindingKey, catalog);
+    const fieldType = bindingKey ? resolveBindingFieldType(bindingKey, catalog) : null;
+    const tag = componentTag(component);
+    const isRepeatItem = Boolean(attrs['data-voodbuilder-repeat-item']);
+    const interactive = isInteractiveLinkComponent(component);
 
-    if (fieldType !== 'url' && (componentTag(component) === 'button' || isCtaButton(component))) {
+    if (interactive && fieldType === 'text') {
         component.set({
-            editable: true,
+            editable: false,
             highlightable: true,
             selectable: true,
             layerable: true,
-            name: 'Button',
+            name: boundComponentLabel(bindingKey, catalog),
         });
-        ensureInteractiveLabel(component, extractInteractiveLabel(component));
+        component.addClass('voodbuilder-gjs-bound');
 
         return;
     }
 
-    if (fieldType === 'url' && componentTag(component) === 'button') {
-        morphUrlButtonToAnchor(editor, component);
+    if (hrefKey || fieldType === 'url') {
+        if (fieldType === 'url' && tag === 'button') {
+            morphUrlButtonToAnchor(editor, component);
+        }
+
+        const urlOnInteractive = tag === 'button' || tag === 'a';
+        const cardLink = urlOnInteractive && hasBindBlockingChildren(component);
+        const labelBound = fieldType === 'text';
+
+        component.set({
+            editable: urlOnInteractive && ! cardLink && ! isRepeatItem && ! labelBound,
+            highlightable: true,
+            selectable: true,
+            layerable: true,
+            name: (isRepeatItem || cardLink)
+                ? (isRepeatItem ? 'List Item' : 'Dynamic link')
+                : (isCtaButton(component) ? 'Dynamic button' : 'Dynamic link'),
+        });
+        component.addClass('voodbuilder-gjs-bound');
+
+        if (urlOnInteractive && ! labelBound) {
+            if (cardLink || isRepeatItem) {
+                stripSpuriousUrlLabelNodes(component);
+            } else {
+                ensureInteractiveLabel(component, extractInteractiveLabel(component));
+            }
+        }
+
+        return;
     }
 
-    const tag = componentTag(component);
-    const urlOnInteractive = fieldType === 'url' && (tag === 'button' || tag === 'a');
-    const isRepeatItem = Boolean(component.getAttributes?.()['data-voodbuilder-repeat-item']);
     const fieldLabel = boundComponentLabel(bindingKey, catalog).split(' → ').pop() ?? bindingKey;
-    const cardLink = urlOnInteractive && hasBindBlockingChildren(component);
 
     component.set({
-        editable: urlOnInteractive && ! cardLink && ! isRepeatItem,
+        editable: false,
         highlightable: true,
         selectable: true,
         layerable: true,
-        name: (isRepeatItem || cardLink) && fieldType === 'url'
-            ? (isRepeatItem ? 'List Item' : 'Dynamic link')
-            : (urlOnInteractive ? 'Dynamic link' : `Dynamic: ${fieldLabel}`),
+        name: `Dynamic: ${fieldLabel}`,
     });
     component.addClass('voodbuilder-gjs-bound');
-
-    if (fieldType === 'url' && (tag === 'button' || tag === 'a')) {
-        if (cardLink || isRepeatItem) {
-            stripSpuriousUrlLabelNodes(component);
-        } else {
-            ensureInteractiveLabel(component, extractInteractiveLabel(component));
-        }
-    }
 }
 
 export function registerBoundComponentType(editor) {
@@ -2864,49 +2946,58 @@ export async function refreshBindingPreviews(editor, options = {}) {
             const listValues = bindingsPreviewListValues ?? {};
             const previewContext = { values, listValues, catalog };
 
-            safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-bind]').forEach((component) => {
-                const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+            safeFindComponents(editor.getWrapper?.(), `[${BIND_ATTR}], [${BIND_HREF_ATTR}]`).forEach((component) => {
+                const attrs = component.getAttributes?.() ?? {};
+                const bindingKey = attrs[BIND_ATTR];
+                const hrefKey = attrs[BIND_HREF_ATTR];
 
-                if (! bindingKey) {
-                    return;
+                if (bindingKey) {
+                    const option = findBindingOption(catalog, bindingKey)
+                        ?? (bindingKey === 'vtuts.latest.excerpt'
+                            ? findBindingOption(catalog, 'vtuts.latest.introduction')
+                            : null);
+                    const value = resolvePreviewValue(bindingKey, component, values, listValues, catalog);
+                    const element = component.getView()?.el;
+                    const tag = componentTag(component);
+                    const fieldType = option?.field?.type ?? resolveBindingFieldType(bindingKey, catalog);
+
+                    if (value != null && value !== '') {
+                        if (tag === 'img') {
+                            applyPreviewValue(component, bindingKey, option, value, previewContext);
+                        } else if (fieldType === 'url') {
+                            applyPreviewValue(component, bindingKey, option, value, previewContext);
+                        } else {
+                            const currentText = element?.textContent?.trim() ?? '';
+                            const isCounter = isAnimatedCounterComponent(component);
+                            const interactive = isInteractiveLinkComponent(component);
+
+                            if (
+                                isCounter
+                                || interactive
+                                || isPlaceholderText(currentText)
+                                || currentText === ''
+                            ) {
+                                if (! hasBindBlockingChildren(component) || interactive) {
+                                    applyPreviewValue(component, bindingKey, option, value, previewContext);
+                                }
+                            }
+                        }
+                    }
                 }
 
-                const option = findBindingOption(catalog, bindingKey)
-                    ?? (bindingKey === 'vtuts.latest.excerpt'
-                        ? findBindingOption(catalog, 'vtuts.latest.introduction')
-                        : null);
-                const value = resolvePreviewValue(bindingKey, component, values, listValues, catalog);
-                const element = component.getView()?.el;
-                const tag = componentTag(component);
+                if (hrefKey) {
+                    const hrefValue = resolvePreviewValue(hrefKey, component, values, listValues, catalog);
 
-                if (value == null || value === '') {
-                    return;
+                    if (hrefValue != null && String(hrefValue).trim() !== '') {
+                        const href = absolutePreviewUrl(String(hrefValue).trim());
+                        component.addAttributes({ href });
+                        const el = component.getView()?.el;
+
+                        if (el) {
+                            el.setAttribute('href', href);
+                        }
+                    }
                 }
-
-                if (tag === 'img') {
-                    applyPreviewValue(component, bindingKey, option, value, previewContext);
-
-                    return;
-                }
-
-                const currentText = element?.textContent?.trim() ?? '';
-                const isCounter = isAnimatedCounterComponent(component);
-
-                if (
-                    ! isCounter
-                    && tag !== 'button'
-                    && tag !== 'a'
-                    && ! isPlaceholderText(currentText)
-                    && currentText !== ''
-                ) {
-                    return;
-                }
-
-                if (hasBindBlockingChildren(component)) {
-                    return;
-                }
-
-                applyPreviewValue(component, bindingKey, option, value, previewContext);
             });
         } finally {
             editor.__voodbuilderBindingPreviewPainting = false;
@@ -3096,19 +3187,36 @@ export function syncBindingsForExport(editor) {
         return;
     }
 
-    safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-bind]').forEach((component) => {
-        const bindingKey = component.getAttributes()['data-voodbuilder-bind'];
+    safeFindComponents(editor.getWrapper?.(), `[${BIND_ATTR}], [${BIND_HREF_ATTR}]`).forEach((component) => {
+        const attrs = component.getAttributes?.() ?? {};
+        const bindingKey = attrs[BIND_ATTR];
+        const hrefKey = attrs[BIND_HREF_ATTR];
+        const next = {};
 
-        if (! bindingKey) {
+        if (bindingKey) {
+            next[BIND_ATTR] = bindingKey;
+        }
+
+        if (hrefKey) {
+            next[BIND_HREF_ATTR] = hrefKey;
+        }
+
+        if (Object.keys(next).length === 0) {
             return;
         }
 
-        component.addAttributes({ 'data-voodbuilder-bind': bindingKey });
+        component.addAttributes(next);
 
         const element = component.getView()?.el;
 
         if (element) {
-            element.setAttribute('data-voodbuilder-bind', bindingKey);
+            if (bindingKey) {
+                element.setAttribute(BIND_ATTR, bindingKey);
+            }
+
+            if (hrefKey) {
+                element.setAttribute(BIND_HREF_ATTR, hrefKey);
+            }
         }
     });
 }

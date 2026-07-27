@@ -15,7 +15,13 @@ final class GrapesJsBindingStorageNormalizer
 
     public function normalizeHtml(string $html): string
     {
-        if ($html === '' || ! str_contains($html, 'data-voodbuilder-bind')) {
+        if (
+            $html === ''
+            || (
+                ! str_contains($html, BindingAttributes::BIND)
+                && ! str_contains($html, BindingAttributes::BIND_HREF)
+            )
+        ) {
             return $html;
         }
 
@@ -37,7 +43,6 @@ final class GrapesJsBindingStorageNormalizer
             '<?xml encoding="UTF-8"><body>'.$html.'</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
-
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -52,7 +57,14 @@ final class GrapesJsBindingStorageNormalizer
         $elements = [];
 
         foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-bind')) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if (
+                $element->hasAttribute(BindingAttributes::BIND)
+                || $element->hasAttribute(BindingAttributes::BIND_HREF)
+            ) {
                 $elements[] = $element;
             }
         }
@@ -62,28 +74,31 @@ final class GrapesJsBindingStorageNormalizer
 
     protected function resetElementForStorage(DOMElement $element): void
     {
-        $bindingKey = trim($element->getAttribute('data-voodbuilder-bind'));
-        $parsed = BindingKey::tryParse($bindingKey, $this->registry);
+        $bindingKey = trim($element->getAttribute(BindingAttributes::BIND));
 
-        if ($parsed === null) {
-            return;
+        if ($bindingKey !== '') {
+            $parsed = BindingKey::tryParse($bindingKey, $this->registry);
+
+            if ($parsed !== null) {
+                $field = $this->registry->field($parsed->sourceId, $parsed->fieldId);
+
+                if ($field !== null) {
+                    $source = $this->registry->source($parsed->sourceId);
+                    $sourceLabel = $source?->label() ?? 'Dynamic';
+                    $tag = strtolower($element->tagName);
+
+                    match ($field->type) {
+                        BindingField::TYPE_IMAGE => $this->resetImageElement($element),
+                        BindingField::TYPE_URL => $this->resetUrlElement($element, $tag),
+                        default => $this->resetTextElement($element, $sourceLabel, $field->label, $tag),
+                    };
+                }
+            }
         }
 
-        $field = $this->registry->field($parsed->sourceId, $parsed->fieldId);
-
-        if ($field === null) {
-            return;
+        if (trim($element->getAttribute(BindingAttributes::BIND_HREF)) !== '') {
+            $this->resetUrlElement($element, strtolower($element->tagName));
         }
-
-        $source = $this->registry->source($parsed->sourceId);
-        $sourceLabel = $source?->label() ?? 'Dynamic';
-        $tag = strtolower($element->tagName);
-
-        match ($field->type) {
-            BindingField::TYPE_IMAGE => $this->resetImageElement($element),
-            BindingField::TYPE_URL => $this->resetUrlElement($element, $tag),
-            default => $this->resetTextElement($element, $sourceLabel, $field->label, $tag),
-        };
     }
 
     protected function resetImageElement(DOMElement $element): void
@@ -147,30 +162,34 @@ final class GrapesJsBindingStorageNormalizer
             $element->removeChild($node);
         }
 
-        if ($element->hasAttribute('data-voodbuilder-cta-label')) {
+        // Keep CTA label attr when the label itself is dynamically bound.
+        if (
+            $element->hasAttribute('data-voodbuilder-cta-label')
+            && trim($element->getAttribute(BindingAttributes::BIND)) === ''
+        ) {
             $element->removeAttribute('data-voodbuilder-cta-label');
         }
     }
 
     protected function resetTextElement(DOMElement $element, string $sourceLabel, string $fieldLabel, string $tag): void
     {
-        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
-            return;
-        }
-
         if ($tag === 'img') {
             $element->setAttribute('alt', BindingPlaceholders::text($sourceLabel, $fieldLabel));
 
             return;
         }
 
+        $placeholder = BindingPlaceholders::text($sourceLabel, $fieldLabel);
+
         while ($element->firstChild !== null) {
             $element->removeChild($element->firstChild);
         }
 
-        $element->appendChild($element->ownerDocument->createTextNode(
-            BindingPlaceholders::text($sourceLabel, $fieldLabel),
-        ));
+        $element->appendChild($element->ownerDocument->createTextNode($placeholder));
+
+        if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
+            $element->setAttribute('data-voodbuilder-cta-label', $placeholder);
+        }
     }
 
     protected function extractBodyHtml(DOMDocument $document): ?string

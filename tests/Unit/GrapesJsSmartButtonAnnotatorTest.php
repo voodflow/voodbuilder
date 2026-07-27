@@ -53,6 +53,18 @@ final class GrapesJsSmartButtonAnnotatorTest extends TestCase
     }
 
     #[Test]
+    public function it_promotes_height_based_cta_anchors_without_py(): void
+    {
+        $html = '<a href="#" class="inline-flex h-11 items-center justify-center rounded-full bg-vp-brand-1 px-8 text-base font-semibold text-white">Get started</a>';
+        $out = GrapesJsSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringContainsString('data-voodbuilder-cta="true"', $out);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Get started"', $out);
+        $this->assertStringContainsString('data-vb-link-type="url"', $out);
+        $this->assertStringContainsString('role="button"', $out);
+    }
+
+    #[Test]
     public function it_skips_plain_text_links(): void
     {
         $html = '<a class="text-vp-brand-1 underline underline-offset-2" href="/docs">Docs</a>';

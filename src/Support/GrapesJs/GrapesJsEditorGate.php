@@ -703,6 +703,7 @@ final class GrapesJsEditorGate
             'buttonLinkTarget' => __('voodbuilder::pro.grapesjs.button_link.target'),
             'buttonLinkSameTab' => __('voodbuilder::pro.grapesjs.button_link.same_tab'),
             'buttonLinkNewTab' => __('voodbuilder::pro.grapesjs.button_link.new_tab'),
+            'buttonDynamicHint' => __('voodbuilder::pro.bindings.button_dynamic_hint'),
             'rteWrapTitle' => __('voodbuilder::pro.grapesjs.rte.wrap_title'),
             'rteLinkTitle' => __('voodbuilder::pro.grapesjs.rte.link_title'),
             'rteLinkPromptTitle' => __('voodbuilder::pro.grapesjs.rte.link_prompt_title'),

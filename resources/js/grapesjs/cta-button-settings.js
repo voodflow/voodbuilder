@@ -206,6 +206,18 @@ export function renderCtaButtonSettings({ mount, traitsMount = null, component, 
     });
 
     fields.append(labelField, typeField, urlField, pageField, menuField, targetField);
+
+    const bindKey = String(attrs['data-voodbuilder-bind'] ?? '').trim();
+    const bindHref = String(attrs['data-voodbuilder-bind-href'] ?? '').trim();
+
+    if (bindKey || bindHref) {
+        const hint = document.createElement('p');
+        hint.className = 'voodbuilder-gjs-form-hint';
+        hint.textContent = labels.buttonDynamicHint
+            ?? 'Dynamic data is active on this button. Text fields bind the label; URL fields bind the link. Clear Dynamic to edit only static values.';
+        fields.appendChild(hint);
+    }
+
     mount.appendChild(section);
 
     const syncVisibility = () => {

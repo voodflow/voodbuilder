@@ -14,6 +14,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateBundle;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateRemoteImporter;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSmartButtonAnnotator;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
 class GrapesJsPageTemplatesController extends Controller
@@ -223,7 +224,7 @@ class GrapesJsPageTemplatesController extends Controller
             'name' => $template->name,
             'category' => $template->category,
             'description' => $template->description,
-            'html' => $template->html,
+            'html' => GrapesJsSmartButtonAnnotator::annotate((string) ($template->html ?? '')),
             'css' => $template->css ?? '',
             'js' => $template->js ?? '',
             'updated_at' => $template->updated_at?->toIso8601String(),
