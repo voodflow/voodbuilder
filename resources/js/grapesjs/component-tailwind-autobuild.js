@@ -195,17 +195,19 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
 
     // Pasted library components: recompile only when their Tailwind classes change.
     // Style Manager inline edits must not hit compile-css.
+    // Skip while dragging; leftover unused rules after remove are fine until next edit/save.
     editor.on('component:update:classes', (component) => {
+        if (editor.__voodbuilderCssRebuildDragLock || editor.__voodbuilderActiveBlockDrag) {
+            return;
+        }
+
         if (isInsidePastedComponent(component)) {
             schedule();
         }
     });
 
-    editor.on('component:remove', (component) => {
-        if (isInsidePastedComponent(component)) {
-            schedule();
-        }
-    });
+    editor.on('block:drag:start', () => clearTimeout(timer));
+    editor.on('sorter:drag:start', () => clearTimeout(timer));
 
     editor.on('load', () => {
         editorLoaded = true;

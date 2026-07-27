@@ -129,17 +129,12 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content:has(.VPRichPag
     padding: 0;
 }
 
-html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
-
-@media (min-width: 768px) {
-    html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-}
+/*
+ * Do NOT force horizontal padding on landing sections.
+ * High-specificity padding-left/right here beat author utilities (.p-8, .px-8, …)
+ * on the published front while the GrapesJS canvas had no such rule → WYSIWYG break.
+ * Gutters come only from classes set in the editor (or legacy vp-landing-section--* in landing.css).
+ */
 
 html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
     width: 100vw;

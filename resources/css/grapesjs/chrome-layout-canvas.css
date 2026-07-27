@@ -150,3 +150,57 @@ body.voodbuilder-gjs-block-dragging .voodbuilder-chrome-drop-zone:not(:has(> [da
     font-size: 0.875rem;
     pointer-events: none;
 }
+
+/* Layout empty cells: structure only by default; blue affordance with “Show drop zones”. */
+.vb-layout-block:empty,
+.vb-layout-div:empty,
+[data-voodbuilder-layout='container']:empty {
+    min-height: 4rem;
+}
+
+body.voodbuilder-inner-drop-slots-visible .vb-layout-block:empty,
+body.voodbuilder-inner-drop-slots-visible .vb-layout-div:empty,
+body.voodbuilder-inner-drop-slots-visible [data-voodbuilder-layout='container']:empty,
+body.voodbuilder-gjs-block-dragging .vb-layout-block:empty,
+body.voodbuilder-gjs-block-dragging .vb-layout-div:empty,
+body.voodbuilder-gjs-block-dragging [data-voodbuilder-layout='container']:empty {
+    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+    outline-offset: -1px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
+}
+
+[data-voodbuilder-layout='container'][data-vb-layout-preset],
+.vb-layout-row[data-vb-layout-preset] {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* GrapesJS device toggle (iframe width may still be wide on “Mobile”) */
+body[data-voodbuilder-gjs-device='mobilePortrait'] [data-voodbuilder-layout='container'][data-vb-layout-preset],
+body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-layout-row[data-vb-layout-preset] {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+@media (max-width: 767.98px) {
+    [data-voodbuilder-layout='container'][data-vb-layout-preset],
+    .vb-layout-row[data-vb-layout-preset] {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+/* CTA: empty <a> still shows label (frontend.css is shell-only — keep this in canvas) */
+a[data-voodbuilder-cta='true']:empty,
+button[data-voodbuilder-cta='true']:empty {
+    min-width: 5.5rem;
+    min-height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+a[data-voodbuilder-cta='true']:empty::before,
+button[data-voodbuilder-cta='true']:empty::before {
+    content: attr(data-voodbuilder-cta-label);
+}

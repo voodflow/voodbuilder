@@ -42,6 +42,13 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
 
 /* Layout content width: constrain page body (wrappers between main and VPRichPage are ok).
  * Beat theme palette `--width-vp-layout: … !important` with equal/higher specificity. */
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full']:not(.dark),
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full'],
+body[data-voodbuilder-page-width='full'] {
+    --width-vp-layout: 100% !important;
+}
+
 html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard'],
 html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom'],
 html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained'],
@@ -132,11 +139,18 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
     }
 }
 
-/* Root GrapesJS sections are full-bleed; inner copy stays padded via px-* on the block. */
-.VPRichPage--landing > section.voodbuilder-gjs-section {
-    @apply mx-0 w-full max-w-none;
-}
+/*
+ * ─── Author content parity (editor canvas ↔ published front) ─────────────
+ * Defaults for GrapesJS markup MUST NOT beat Tailwind utilities set in the
+ * editor (mx-auto, max-w-[80rem], px-*, …). Use @layer components + :where()
+ * so any author utility wins. Never force mx-0 / max-w-none / !important on
+ * .voodbuilder-gjs-section or layout containers.
+ */
 
+/*
+ * Root GrapesJS sections: no forced margin/max-width.
+ * Block HTML already includes w-full when needed; authors add mx-auto / max-w-*.
+ */
 .VPRichPage--landing > section.voodbuilder-gjs-section:empty {
     @apply hidden m-0 min-h-0 p-0;
 }
@@ -154,33 +168,49 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 /*
- * Contained width must match the GrapesJS canvas (GrapesJsCanvas::frameStyle).
- * Do not rely only on .VPRichPage--landing ancestry — editor chrome-shell has no such wrapper.
+ * Default measure for classic section containers (catalog blocks).
+ * :where() → specificity 0; author max-w-* / mx-* / w-* always win.
+ * Same contract as GrapesJsCanvas::frameStyle for editor parity.
  */
-.voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media),
-.VPRichPage--landing .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media),
-footer.voodbuilder-gjs-footer :is(.container, .voodbuilder-gjs-container),
-footer.voodbuilder-gjs-dynamic :is(.container, .voodbuilder-gjs-container),
-[data-voodbuilder-chrome-shell] :is(footer.voodbuilder-gjs-footer, footer.voodbuilder-gjs-dynamic) :is(.container, .voodbuilder-gjs-container) {
-    width: 100%;
-    max-width: var(--width-vp-layout, 80rem);
-    margin-inline: auto;
-    box-sizing: border-box;
+@layer components {
+    :where(
+        .voodbuilder-gjs-section > .container:not(.voodbuilder-hero-media),
+        .voodbuilder-gjs-section > .voodbuilder-gjs-container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-gjs-section .container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-gjs-section .voodbuilder-gjs-container:not(.voodbuilder-hero-media),
+        footer.voodbuilder-gjs-footer > .container,
+        footer.voodbuilder-gjs-footer > .voodbuilder-gjs-container,
+        footer.voodbuilder-gjs-dynamic > .container,
+        footer.voodbuilder-gjs-dynamic > .voodbuilder-gjs-container
+    ) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+        box-sizing: border-box;
+    }
+
+    /* Layout package containers: fill parent only — never invent a max-width. */
+    :where(
+        [data-voodbuilder-layout='container'].vb-layout-row,
+        [data-voodbuilder-layout='container'][data-vb-layout-preset]
+    ) {
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 /*
  * Keep section media 1:1 between GrapesJS canvas and published pages.
- * Intrinsic SVG/placeholder widths (e.g. 800px) must not outgrow their column.
- *
- * Do NOT target `.VPRichPage--landing img`: the canvas body always has that
- * class, so an unlayered `height: auto` would beat `@layer utilities` (h-8 /
- * h-10) and blow up the nav logo. On the published site the header sits
- * outside `.VPRichPage--landing`, which is why the front looked fine.
+ * @layer + :where so h-* / max-h-* utilities on content images still win.
  */
-.voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img),
-[data-voodbuilder-chrome-shell] .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img) {
-    max-width: 100%;
-    height: auto;
+@layer components {
+    :where(
+        .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img),
+        [data-voodbuilder-chrome-shell] .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img)
+    ) {
+        max-width: 100%;
+        height: auto;
+    }
 }
 
 .voodbuilder-gjs-section .voodbuilder-hero-media,

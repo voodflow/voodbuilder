@@ -1,8 +1,9 @@
 /**
  * Recompiles page-level Tailwind utilities in the canvas iframe when classes change.
  * Style Manager paints are inline — they must NOT trigger compile-css.
- * Rebuild only from Classes / Selector Manager (add/remove/rename class), not from
- * generic page edits (content, traits, settings, structure drops).
+ * Never compile during block/sorter drag (selector:add storms on drag-start).
+ * After a successful drop, compile once only if new utilities are missing from live CSS.
+ * Saves / explicit invalidate always recompile.
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
@@ -140,6 +141,15 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let building = false;
     let queuedWhileBuilding = false;
     let settingsRetries = 0;
+    let dragLockDepth = 0;
+    let pendingAfterDrag = false;
+    let endDragTimer = null;
+
+    const isDragLocked = () => (
+        dragLockDepth > 0
+        || editor.__voodbuilderActiveBlockDrag
+        || editor.__voodbuilderCssRebuildDragLock === true
+    );
 
     const schedule = (delay = DEBOUNCE_MS) => {
         if (
@@ -147,6 +157,11 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             || editor.__voodbuilderBulkStructureUpdate
             || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
         ) {
+            return;
+        }
+
+        // GrapesJS fires selector:add as soon as a block drag starts — never compile mid-drag.
+        if (isDragLocked()) {
             return;
         }
 
@@ -172,6 +187,67 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         }, delay);
     };
 
+    const beginDragLock = () => {
+        dragLockDepth = 1;
+        editor.__voodbuilderCssRebuildDragLock = true;
+        window.clearTimeout(endDragTimer);
+        clearTimeout(timer);
+        requestId += 1;
+        building = false;
+        queuedWhileBuilding = false;
+    };
+
+    const endDragLock = ({ flush = false } = {}) => {
+        if (flush) {
+            pendingAfterDrag = true;
+        }
+
+        // Coalesce block:drag:stop + sorter:drag:end (both fire on library drops).
+        window.clearTimeout(endDragTimer);
+        endDragTimer = window.setTimeout(() => {
+            dragLockDepth = 0;
+            editor.__voodbuilderCssRebuildDragLock = false;
+
+            if (pendingAfterDrag) {
+                pendingAfterDrag = false;
+                schedule(DEBOUNCE_MS);
+            }
+        }, 80);
+    };
+
+    const componentNeedsLiveCss = (component) => {
+        if (! component) {
+            return false;
+        }
+
+        let needs = false;
+        const visit = (node) => {
+            if (needs || ! node) {
+                return;
+            }
+
+            for (const className of (node.getClasses?.() ?? [])) {
+                const token = String(className ?? '').trim();
+
+                if (token === '' || token.startsWith('gjs-') || token.startsWith('vb-')) {
+                    continue;
+                }
+
+                if (! pageCssCoversClass(editor, token)) {
+                    needs = true;
+
+                    return;
+                }
+            }
+
+            node.components?.()?.forEach?.((child) => visit(child));
+        };
+
+        visit(component);
+
+        return needs;
+    };
+
     const rebuild = async () => {
         if (building) {
             queuedWhileBuilding = true;
@@ -179,7 +255,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             return;
         }
 
-        if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
+        if (
+            (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            || isDragLocked()
+        ) {
             return;
         }
 
@@ -296,12 +375,22 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Live compile only when Classes change — not on content/style/settings/structure.
+    // Live compile when classes are added/renamed — not when removed from canvas,
+    // and not while dragging (block library drag creates temp components + selectors).
     editor.on('component:update:classes', () => schedule());
-    // Selector Manager = Classes panel (add/rename/remove class selectors).
     editor.on('selector:add', () => schedule());
-    editor.on('selector:remove', () => schedule());
     editor.on('selector:update', () => schedule());
+
+    editor.on('block:drag:start', beginDragLock);
+    editor.on('sorter:drag:start', beginDragLock);
+    editor.on('block:drag:stop', (component) => {
+        // Only flush after a real insert when live CSS is missing utilities.
+        endDragLock({ flush: componentNeedsLiveCss(component) });
+    });
+    editor.on('sorter:drag:end', () => {
+        // Reorder/move: release lock, do not force a rebuild by itself.
+        endDragLock({ flush: false });
+    });
 
     const invalidate = () => {
         lastHtml = '';
@@ -309,7 +398,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Explicit rebuilds (save, code import, templates) — not routine canvas edits.
+    // Explicit rebuilds (save, code import, templates) — not routine canvas deletes.
     editor.on('voodbuilder:chrome-layout-ready', invalidate);
     editor.on('voodbuilder:page-css-invalidate', invalidate);
 

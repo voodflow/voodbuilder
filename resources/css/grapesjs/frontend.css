@@ -4888,40 +4888,41 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
 }
 
 
-/* Layout empty hosts (editor canvas) */
+/* Layout empty hosts: only with “Show drop zones” (or while dragging a block). */
 .vb-layout-block:empty,
 .vb-layout-div:empty,
 [data-voodbuilder-layout="container"]:empty {
+    min-height: 4rem;
+}
+
+body.voodbuilder-inner-drop-slots-visible .vb-layout-block:empty,
+body.voodbuilder-inner-drop-slots-visible .vb-layout-div:empty,
+body.voodbuilder-inner-drop-slots-visible [data-voodbuilder-layout="container"]:empty,
+body.voodbuilder-gjs-block-dragging .vb-layout-block:empty,
+body.voodbuilder-gjs-block-dragging .vb-layout-div:empty,
+body.voodbuilder-gjs-block-dragging [data-voodbuilder-layout="container"]:empty {
     outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
     outline-offset: -1px;
-    min-height: 4rem;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 4%, transparent);
 }
 
 /*
- * Layout Container presets: stack on mobile, multi-column from md up.
- * Tracks come from --vb-layout-tracks (set by the editor when picking a preset).
- * !important on mobile beats legacy inline grid-template-columns from older saves.
+ * Layout Container presets.
+ * Tracks are set inline by the editor (canvas iframe does not load frontend.css).
+ * Stack only on real mobile viewports / GrapesJS mobile device — do not default to
+ * one column or desktop looks empty when the canvas is narrower than 768px.
  */
 [data-voodbuilder-layout='container'][data-vb-layout-preset],
 .vb-layout-row[data-vb-layout-preset] {
     display: grid;
     gap: 1rem;
     width: 100%;
-    grid-template-columns: minmax(0, 1fr);
 }
 
 @media (max-width: 767.98px) {
     [data-voodbuilder-layout='container'][data-vb-layout-preset],
     .vb-layout-row[data-vb-layout-preset] {
         grid-template-columns: minmax(0, 1fr) !important;
-    }
-}
-
-@media (min-width: 768px) {
-    [data-voodbuilder-layout='container'][data-vb-layout-preset],
-    .vb-layout-row[data-vb-layout-preset] {
-        grid-template-columns: var(--vb-layout-tracks, minmax(0, 1fr));
     }
 }
 

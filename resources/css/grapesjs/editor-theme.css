@@ -1638,10 +1638,10 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot,
     opacity: 0.85;
 }
 
-/* Empty layout hosts visible in canvas */
-.voodbuilder-gjs-canvas-mount .vb-layout-block:empty,
-.voodbuilder-gjs-canvas-mount .vb-layout-div:empty,
-.voodbuilder-gjs-canvas-mount [data-voodbuilder-layout="container"]:empty {
+/* Empty layout hosts: shell-side preview only when drop zones are shown */
+.voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-canvas-mount .vb-layout-block:empty,
+.voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-canvas-mount .vb-layout-div:empty,
+.voodbuilder-gjs-shell.is-inner-drop-slots-visible .voodbuilder-gjs-canvas-mount [data-voodbuilder-layout="container"]:empty {
     outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
     outline-offset: -1px;
     min-height: 4rem;

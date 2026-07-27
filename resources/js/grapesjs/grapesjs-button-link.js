@@ -80,14 +80,15 @@ export function extractButtonLabel(component) {
  */
 function patchCtaDomLabel(component, text) {
     const el = component?.getEl?.();
+    const label = String(text ?? '').trim() || 'Button';
 
-    if (! el || text === '') {
+    if (! el) {
         return;
     }
 
     if (el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE) {
-        if (el.firstChild.textContent !== text) {
-            el.firstChild.textContent = text;
+        if (el.firstChild.textContent !== label) {
+            el.firstChild.textContent = label;
         }
 
         return;
@@ -96,15 +97,21 @@ function patchCtaDomLabel(component, text) {
     if (el.querySelector?.('svg, img, i, span, strong, em, b')) {
         const textNode = [...el.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
 
-        if (textNode && textNode.textContent !== text) {
-            textNode.textContent = text;
+        if (textNode) {
+            if (textNode.textContent !== label) {
+                textNode.textContent = label;
+            }
+
+            return;
         }
+
+        el.appendChild(el.ownerDocument.createTextNode(label));
 
         return;
     }
 
-    if (String(el.textContent ?? '') !== text) {
-        el.textContent = text;
+    if (String(el.textContent ?? '') !== label) {
+        el.textContent = label;
     }
 }
 
@@ -783,6 +790,7 @@ function registerLinkableButtonType(editor) {
                     href: '#',
                     role: 'button',
                     'data-voodbuilder-cta': 'true',
+                    'data-voodbuilder-cta-label': 'Button',
                     'data-vb-link-type': 'url',
                 },
                 traits: buttonLinkTraitSchema(labels, editor),
@@ -791,6 +799,7 @@ function registerLinkableButtonType(editor) {
                 linkType: 'url',
                 linkRef: '',
                 ctaLabel: 'Button',
+                components: 'Button',
                 editable: false,
                 droppable: false,
                 layerable: true,
@@ -798,7 +807,7 @@ function registerLinkableButtonType(editor) {
             },
             init() {
                 hydrateLinkPropsFromAttributes(this);
-                persistCtaLabel(this, extractButtonLabel(this));
+                persistCtaLabel(this, extractButtonLabel(this) || 'Button');
                 syncLinkableButtonTraits(this, editor);
                 this.__vbLinkMorphApplied = true;
 
@@ -877,7 +886,17 @@ function registerLinkableButtonType(editor) {
 
                 // Deselect / remorph / clone can leave an empty <a> (collapsed blue sliver).
                 // Re-assert label from ctaLabel / data attribute into model + live DOM.
-                persistCtaLabel(model, extractButtonLabel(model) || 'Button');
+                const label = extractButtonLabel(model) || 'Button';
+                persistCtaLabel(model, label);
+
+                // Drop/placement can remount the view after the first patch — heal again.
+                window.requestAnimationFrame(() => {
+                    if (model.isRemoved?.()) {
+                        return;
+                    }
+
+                    persistCtaLabel(model, extractButtonLabel(model) || 'Button');
+                });
             },
         },
     });
@@ -1099,17 +1118,23 @@ export function configureLinkableButtons(editor) {
         }
 
         // New Basic Button drops often keep the label only as a Grapes default prop.
-        // Persist into attr + textnode on the next frame so the first Save is not empty.
+        // Persist into attr + textnode (and heal DOM after placement settles).
         if (
             component.get?.('type') === 'voodbuilder-cta-button'
             || component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true'
         ) {
-            window.requestAnimationFrame(() => {
+            const heal = () => {
                 if (! component || component.isRemoved?.()) {
                     return;
                 }
 
                 persistCtaLabel(component, extractButtonLabel(component) || 'Button');
+            };
+
+            heal();
+            window.requestAnimationFrame(() => {
+                heal();
+                window.requestAnimationFrame(heal);
             });
         }
     });

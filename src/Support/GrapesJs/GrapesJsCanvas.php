@@ -264,18 +264,37 @@ final class GrapesJsCanvas
             padding: 0;
         }
 
-        .voodbuilder-gjs-section > :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media),
-        .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container):not(.voodbuilder-hero-media) {
+        /*
+         * Author content parity with landing.css:
+         * :where() defaults only — Tailwind utilities from the editor always win.
+         */
+        :where(
+            .voodbuilder-gjs-section > .container:not(.voodbuilder-hero-media),
+            .voodbuilder-gjs-section > .voodbuilder-gjs-container:not(.voodbuilder-hero-media),
+            .voodbuilder-gjs-section .container:not(.voodbuilder-hero-media),
+            .voodbuilder-gjs-section .voodbuilder-gjs-container:not(.voodbuilder-hero-media)
+        ) {
             width: 100%;
             max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;
             box-sizing: border-box;
         }
 
+        :where(
+            [data-voodbuilder-layout='container'].vb-layout-row,
+            [data-voodbuilder-layout='container'][data-vb-layout-preset],
+            [data-voodbuilder-layout='container'].voodbuilder-gjs-container
+        ) {
+            width: 100%;
+            max-width: none;
+            margin-inline: 0;
+            box-sizing: border-box;
+        }
+
         /* Match landing.css — section images must fill the column, not intrinsic SVG width.
          * Do not apply to all body imgs: canvas body is .VPRichPage--landing and would
          * override nav logo height utilities (h-8 / md:h-10). */
-        .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img) {
+        :where(.voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img)) {
             max-width: 100%;
             height: auto;
         }
@@ -294,8 +313,12 @@ final class GrapesJsCanvas
             object-fit: contain;
         }
 
-        footer.voodbuilder-gjs-footer :is(.container, .voodbuilder-gjs-container),
-        footer.voodbuilder-gjs-dynamic :is(.container, .voodbuilder-gjs-container) {
+        :where(
+            footer.voodbuilder-gjs-footer > .container,
+            footer.voodbuilder-gjs-footer > .voodbuilder-gjs-container,
+            footer.voodbuilder-gjs-dynamic > .container,
+            footer.voodbuilder-gjs-dynamic > .voodbuilder-gjs-container
+        ) {
             width: 100%;
             max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;

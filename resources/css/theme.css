@@ -318,6 +318,20 @@
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
     }
 
+    /*
+     * Layout builder containers (Section → Container): fill the parent only.
+     * Author max-w-* / mx-auto on the Section (or Container) must control measure.
+     * Zero-specificity :where so utilities always win over this default.
+     */
+    :where(
+        [data-voodbuilder-layout='container'].voodbuilder-gjs-container,
+        [data-voodbuilder-layout='container'].vb-layout-row
+    ) {
+        max-width: none;
+        margin-inline: 0;
+        width: 100%;
+    }
+
     .body-font {
         @apply font-sans text-vp-text-2 antialiased;
     }
@@ -763,4 +777,26 @@ body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-home-shell,
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-landing-shell,
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
     min-height: auto;
+}
+
+/*
+ * Layout Container presets (Bricks-like): stack columns on small viewports.
+ * Desktop tracks are inline on the element; !important beats that on mobile.
+ */
+@media (max-width: 767.98px) {
+    [data-voodbuilder-layout='container'][data-vb-layout-preset],
+    .vb-layout-row[data-vb-layout-preset] {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+a[data-voodbuilder-cta='true']:empty,
+button[data-voodbuilder-cta='true']:empty {
+    min-width: 5.5rem;
+    min-height: 2.25rem;
+}
+
+a[data-voodbuilder-cta='true']:empty::before,
+button[data-voodbuilder-cta='true']:empty::before {
+    content: attr(data-voodbuilder-cta-label);
 }

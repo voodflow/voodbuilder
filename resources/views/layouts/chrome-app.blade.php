@@ -47,11 +47,13 @@
         : ChromeLayoutContentWidth::resolveChromeWidth(
             $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
         );
+    // Full content width must force the layout token to 100% — otherwise theme.css
+    // keeps --width-vp-layout at 80rem and .voodbuilder-gjs-container stays boxed.
     $pageWidthStyle = $isGrapesJsEditor
         ? '--width-vp-layout: 100% !important'
         : (filled($pageContentMaxWidth)
             ? '--voodbuilder-page-content-max: '.$pageContentMaxWidth.'; --width-vp-layout: '.$pageContentMaxWidth.' !important'
-            : null);
+            : '--width-vp-layout: 100% !important');
 @endphp
 <!doctype html>
 <html

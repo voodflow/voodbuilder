@@ -14,7 +14,51 @@ export const CMD_LAYOUT_PICKER = 'voodbuilder-open-layout-picker';
 /** Row layout tokens applied/removed when changing presets (CSS grid — side-by-side in canvas). */
 const ROW_LAYOUT_CLASSES = ['flex', 'flex-wrap', 'grid', 'gap-4'];
 const CELL_BASE = ['vb-layout-block', 'min-h-16', 'min-w-0'];
-const WIDTH_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?(w-|basis-|flex-)/;
+const WIDTH_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?(w-|basis-|flex-|max-w-|min-w-)/;
+/** Hardcoded boxed utilities — width must follow the page content slot (full vs standard). */
+const BOXED_CONTAINER_CLASSES = new Set([
+    'container',
+    'mx-auto',
+    'max-w-7xl',
+    'max-w-6xl',
+    'max-w-5xl',
+    'max-w-4xl',
+    'max-w-3xl',
+    'max-w-2xl',
+    'max-w-xl',
+    'max-w-lg',
+    'max-w-screen-xl',
+    'max-w-screen-2xl',
+]);
+
+/** Legacy auto-gutters we used to inject on Container — strip so Section padding is WYSIWYG. */
+const LEGACY_AUTO_CONTAINER_PAD = new Set(['px-4', 'px-5', 'px-6']);
+
+function isBoxedOrWidthUtility(token) {
+    const name = String(token);
+
+    if (BOXED_CONTAINER_CLASSES.has(name) || LEGACY_AUTO_CONTAINER_PAD.has(name)) {
+        return true;
+    }
+
+    if (WIDTH_CLASS_RE.test(name)) {
+        return true;
+    }
+
+    // Arbitrary max-width (except the theme layout token — kept only if we re-add it).
+    if (/^(sm:|md:|lg:|xl:|2xl:)?max-w-\[/.test(name)) {
+        return true;
+    }
+
+    return false;
+}
+
+/** Classes for a Layout Container that fills the page-content slot (full or standard).
+ * No auto px-* — section / author utilities own horizontal padding (editor ↔ front parity).
+ */
+function layoutContainerBaseClasses() {
+    return ['w-full', 'vb-layout-row'];
+}
 
 /**
  * Grid track presets (fr units). Avoid md:w-* + w-full — those stack below the md
@@ -114,7 +158,8 @@ function blockModel(extraClasses = []) {
 
 /**
  * Sync Container classes/attrs/CSS for a layout preset without touching children.
- * Mobile: single column. md+: tracks from --vb-layout-tracks.
+ * Tracks are inline so the canvas iframe sees them (frontend.css is shell-only).
+ * Mobile stacking uses canvas device CSS + public @media !important overrides.
  *
  * @param {object} container
  * @param {string} presetId
@@ -133,14 +178,14 @@ export function syncContainerLayoutStyles(container, presetId) {
                 return false;
             }
 
-            if (WIDTH_CLASS_RE.test(token)) {
+            if (isBoxedOrWidthUtility(token)) {
                 return false;
             }
 
             return ! token.startsWith('gjs-');
         });
 
-    for (const token of ['grid', 'gap-4', 'w-full', 'vb-layout-row']) {
+    for (const token of [...layoutContainerBaseClasses(), 'grid', 'gap-4']) {
         if (! classes.includes(token)) {
             classes.push(token);
         }
@@ -155,19 +200,16 @@ export function syncContainerLayoutStyles(container, presetId) {
     const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
     const style = { ...(container.getStyle?.() ?? {}) };
 
-    // Drop fixed grid columns — they ignored breakpoints and kept mobile side-by-side.
-    delete style.display;
-    delete style.gap;
-    delete style['grid-template-columns'];
-    delete style['grid-template-rows'];
+    // Inline tracks are required in the editor canvas (layout CSS is not in canvas_styles).
+    style.display = 'grid';
+    style.gap = '1rem';
+    style.width = '100%';
+    style.maxWidth = 'none';
+    style['grid-template-columns'] = tracks;
     style['--vb-layout-tracks'] = tracks;
+    delete style['grid-template-rows'];
 
     container.setStyle(style);
-
-    // GrapesJS may keep empty string keys; also clear via removeStyle when available.
-    container.removeStyle?.('display');
-    container.removeStyle?.('gap');
-    container.removeStyle?.('grid-template-columns');
     container.removeStyle?.('grid-template-rows');
 }
 
@@ -189,8 +231,53 @@ export function applyContainerLayoutPreset(container, presetId) {
 }
 
 /**
+ * Strip hardcoded max-w-* / .container so the Container fills the page-content slot
+ * (full-width chrome layout → edge-to-edge; standard → slot max-width).
+ *
+ * @param {object} container
+ */
+export function syncContainerContentWidth(container) {
+    if (! container) {
+        return;
+    }
+
+    const presetId = String(container.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
+
+    if (presetId) {
+        syncContainerLayoutStyles(container, presetId);
+
+        return;
+    }
+
+    const classes = [...(container.getClasses?.() ?? [])]
+        .filter((name) => {
+            const token = String(name);
+
+            if (isBoxedOrWidthUtility(token)) {
+                return false;
+            }
+
+            return ! token.startsWith('gjs-');
+        });
+
+    for (const token of layoutContainerBaseClasses()) {
+        if (! classes.includes(token)) {
+            classes.push(token);
+        }
+    }
+
+    container.setClass(classes);
+    container.addAttributes({ [LAYOUT_ATTR]: 'container' });
+
+    const style = { ...(container.getStyle?.() ?? {}) };
+    style.width = '100%';
+    style.maxWidth = 'none';
+    container.setStyle(style);
+}
+
+/**
  * Re-apply responsive styles on existing layout containers (saved pages with
- * legacy inline grid-template-columns).
+ * legacy inline grid-template-columns / boxed max-w-7xl).
  *
  * @param {object} editor
  */
@@ -203,11 +290,7 @@ export function normalizeLayoutContainersResponsive(editor) {
 
     const visit = (component) => {
         if (isLayoutContainer(component) && layoutKind(component) === 'container') {
-            const presetId = String(component.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
-
-            if (presetId) {
-                syncContainerLayoutStyles(component, presetId);
-            }
+            syncContainerContentWidth(component);
         }
 
         component.components?.()?.forEach?.((child) => visit(child));
@@ -342,13 +425,13 @@ export function openContainerLayoutPicker(editor, container, labels = {}) {
 function sectionContentHtml() {
     return `
 <section class="body-font w-full py-12" ${LAYOUT_ATTR}="section" data-gjs-type="voodbuilder-section" data-gjs-name="Section">
-  <div class="container mx-auto max-w-7xl px-4 w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>
+  <div class="w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>
 </section>`.trim();
 }
 
 function containerContentHtml() {
     return `
-<div class="container mx-auto max-w-7xl px-4 w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>`.trim();
+<div class="w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>`.trim();
 }
 
 function blockContentHtml() {
@@ -540,6 +623,7 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
         }
 
         if (isLayoutContainer(component) && layoutKind(component) === 'container') {
+            syncContainerContentWidth(component);
             window.requestAnimationFrame(() => {
                 openContainerLayoutPicker(editor, component, labels);
             });
@@ -551,6 +635,7 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
             const nested = findNestedLayoutContainer(component);
 
             if (nested) {
+                syncContainerContentWidth(nested);
                 window.requestAnimationFrame(() => {
                     openContainerLayoutPicker(editor, nested, labels);
                 });
@@ -559,7 +644,37 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
     };
 
     editor.on('block:drag:stop', (component) => {
+        if (! component) {
+            return;
+        }
+
+        // Heal width immediately so full-width chrome layouts are edge-to-edge on drop.
+        if (isLayoutContainer(component) && layoutKind(component) === 'container') {
+            syncContainerContentWidth(component);
+        } else if (isLayoutSection(component)) {
+            const nested = findNestedLayoutContainer(component);
+
+            if (nested) {
+                syncContainerContentWidth(nested);
+            }
+        }
+
         maybeOpenPicker(component);
+    });
+
+    editor.on('component:add', (component) => {
+        if (
+            ! component
+            || editor.__voodbuilderBulkStructureUpdate
+            || editor.__voodbuilderActiveBlockDrag
+            || editor.__voodbuilderCssRebuildDragLock
+        ) {
+            return;
+        }
+
+        if (isLayoutContainer(component) && layoutKind(component) === 'container') {
+            syncContainerContentWidth(component);
+        }
     });
 
     editor.on('component:deselected', dismissLayoutPicker);
