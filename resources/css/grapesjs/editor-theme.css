@@ -2069,6 +2069,19 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-h
     text-align: right;
 }
 
+.voodbuilder-gjs-rte__visual [data-voodbuilder-bind],
+.vb-rich-text [data-voodbuilder-bind] {
+    display: inline;
+    padding: 0 0.15em;
+    border-radius: 0.2em;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+    outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 50%, transparent);
+    outline-offset: 1px;
+    white-space: nowrap;
+    user-select: none;
+    cursor: default;
+}
+
 .voodbuilder-gjs-rte__code {
     display: block;
     width: 100%;

@@ -347,3 +347,7 @@
 .vb-rich-text .text-right {
     text-align: right;
 }
+
+.vb-rich-text [data-voodbuilder-bind] {
+    display: inline;
+}

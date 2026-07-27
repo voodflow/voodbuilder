@@ -589,6 +589,7 @@ return [
             'rich_text_align_right' => 'Allinea a destra',
             'rich_text_bullet_list' => 'Elenco puntato',
             'rich_text_number_list' => 'Elenco numerato',
+            'rich_text_dynamic_data' => 'Dati dinamici',
             'text_link_settings_title' => 'Link di testo',
             'text_link_label' => 'Testo',
             'divider_settings_title' => 'Divider',

@@ -33,6 +33,22 @@ class GrapesJsBindingRendererTest extends TestCase
         $this->assertStringContainsString('https://example.test/tutorial', $rendered);
     }
 
+    public function test_replaces_inline_rich_text_span_bindings(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<div class="vb-rich-text" data-voodbuilder-rich-text>'
+            .'<p>By <span class="voodbuilder-gjs-bound" contenteditable="false" data-voodbuilder-bind="demo.latest.title">[Latest item: Title]</span>.</p>'
+            .'</div>';
+
+        $rendered = (new GrapesJsBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('>Hello world<', $rendered);
+        $this->assertStringContainsString('data-voodbuilder-bind="demo.latest.title"', $rendered);
+        $this->assertStringNotContainsString('[Latest item: Title]', $rendered);
+    }
+
     public function test_parses_dotted_source_ids(): void
     {
         $registry = new BindingRegistry;

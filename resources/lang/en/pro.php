@@ -589,6 +589,7 @@ return [
             'rich_text_align_right' => 'Align right',
             'rich_text_bullet_list' => 'Bullet list',
             'rich_text_number_list' => 'Numbered list',
+            'rich_text_dynamic_data' => 'Dynamic data',
             'text_link_settings_title' => 'Text link',
             'text_link_label' => 'Label',
             'divider_settings_title' => 'Divider',

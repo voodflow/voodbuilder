@@ -12,6 +12,7 @@ import {
     readAnchorLinkState,
 } from './link-picker-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import { openRichTextDynamicTagPicker } from './rich-text-dynamic-tags.js';
 import { keepRichTextSelection, lockRichTextChildren } from './text-elements.js';
 
 const ALLOWED_TAGS = new Set([
@@ -67,6 +68,22 @@ export function sanitizeRichTextHtml(html) {
                     return;
                 }
 
+                if (
+                    (tag === 'SPAN' || tag === 'A')
+                    && name === 'data-voodbuilder-bind'
+                    && /^[\w.-]+$/.test(String(attr.value ?? '').trim())
+                ) {
+                    return;
+                }
+
+                if (
+                    (tag === 'SPAN' || tag === 'A')
+                    && name === 'contenteditable'
+                    && String(attr.value ?? '').toLowerCase() === 'false'
+                ) {
+                    return;
+                }
+
                 if (name === 'class') {
                     return;
                 }
@@ -85,6 +102,14 @@ export function sanitizeRichTextHtml(html) {
 
                 el.removeAttribute(attr.name);
             });
+
+            if (
+                (tag === 'SPAN' || tag === 'A')
+                && el.hasAttribute('data-voodbuilder-bind')
+                && el.getAttribute('contenteditable') !== 'false'
+            ) {
+                el.setAttribute('contenteditable', 'false');
+            }
 
             if (pendingAlign) {
                 const classes = String(el.getAttribute('class') ?? '')
@@ -452,6 +477,44 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
                 syncFromVisual();
             },
         }),
+    );
+
+    const dynamicBtn = toolbarButton({
+        title: labels.richTextDynamicData ?? labels.makeDynamic ?? 'Dynamic data',
+        label: lucideIcon('zap', 14),
+        onClick: () => {
+            const selection = window.getSelection?.();
+            const snapshotRange = selection?.rangeCount
+                ? selection.getRangeAt(0).cloneRange()
+                : null;
+
+            openRichTextDynamicTagPicker({
+                editor,
+                anchorEl: dynamicBtn,
+                labels,
+                onInsert: (tagHtml) => {
+                    visual.focus();
+
+                    if (snapshotRange) {
+                        try {
+                            const sel = window.getSelection?.();
+                            sel?.removeAllRanges?.();
+                            sel?.addRange?.(snapshotRange);
+                        } catch {
+                            // Selection may be gone after the menu closes.
+                        }
+                    }
+
+                    document.execCommand('insertHTML', false, tagHtml);
+                    syncFromVisual();
+                },
+            });
+        },
+    });
+    dynamicBtn.setAttribute('data-vb-rte-dynamic', '');
+
+    toolbar.append(
+        dynamicBtn,
         toolbarSeparator(),
         toolbarButton({
             title: labels.richTextAlignLeft ?? 'Align left',
