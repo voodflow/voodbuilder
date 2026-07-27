@@ -10,6 +10,7 @@ return [
 
     'bindings' => [
         'package' => 'Integrazioni modello',
+        'auth' => 'Utente autenticato',
         'latest' => 'Ultimo record',
         'list_item' => 'Elemento lista',
         'repeat_source' => 'Lista ripetuta',

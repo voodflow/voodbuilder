@@ -758,6 +758,8 @@ final class GrapesJsEditorGate
             'richTextBulletList' => __('voodbuilder::pro.grapesjs.basic.rich_text_bullet_list'),
             'richTextNumberList' => __('voodbuilder::pro.grapesjs.basic.rich_text_number_list'),
             'richTextDynamicData' => __('voodbuilder::pro.grapesjs.basic.rich_text_dynamic_data'),
+            'richTextDynamicLatest' => __('voodbuilder::pro.grapesjs.basic.rich_text_dynamic_latest'),
+            'richTextDynamicEmpty' => __('voodbuilder::pro.grapesjs.basic.rich_text_dynamic_empty'),
             'textLinkSettingsTitle' => __('voodbuilder::pro.grapesjs.basic.text_link_settings_title'),
             'textLinkLabel' => __('voodbuilder::pro.grapesjs.basic.text_link_label'),
             'dividerSettingsTitle' => __('voodbuilder::pro.grapesjs.basic.divider_settings_title'),

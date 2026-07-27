@@ -591,6 +591,8 @@ return [
             'rich_text_bullet_list' => 'Bullet list',
             'rich_text_number_list' => 'Numbered list',
             'rich_text_dynamic_data' => 'Dynamic data',
+            'rich_text_dynamic_latest' => 'Latest record',
+            'rich_text_dynamic_empty' => 'No dynamic data sources are registered yet.',
             'text_link_settings_title' => 'Text link',
             'text_link_label' => 'Label',
             'divider_settings_title' => 'Divider',

@@ -34,11 +34,22 @@ Saved markup uses `data-voodbuilder-bind` for content/label, and optionally `dat
    data-voodbuilder-bind="users.item.name"
    data-voodbuilder-bind-href="users.item.profile_url"
    href="#">[Users: Name]</a>
+<span data-voodbuilder-bind="users.auth.name" data-voodbuilder-hide-when-empty="1">[Users: Name]</span>
 <span data-voodbuilder-bind="users.latest.name" data-voodbuilder-hide-when-empty="1">[Users: Name]</span>
 <img data-voodbuilder-bind="vtuts.latest.image" src="…" alt="">
 ```
 
-**Rich Text dynamic tags:** the picker lists each model once (Users, Tutorials, …). Choosing a field inserts `.latest` outside a list repeat, or `.item` when the Rich Text sits inside that model’s `data-voodbuilder-repeat`. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
+**Model Integration contexts:**
+
+| Source | Meaning |
+|--------|---------|
+| `{alias}.auth` | Authenticated session user (`auth()->user()`). Only registered when the integration model is `Authenticatable`. |
+| `{alias}.latest` | Newest DB record (`latest('id')`, with public/published scopes when present). |
+| `{alias}.item` | Current row inside `data-voodbuilder-repeat="{alias}.list"`. |
+
+**Rich Text dynamic tags:** the picker lists each model once (Users, Tutorials, …). Default insert: `.item` inside that model’s list repeat; else `.auth` when available; else `.latest`. For Authenticatable models, the menu also lists explicit **Latest record · Field** entries. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
+
+Use-case guide (IT): [DYNAMIC_DATA_USE_CASES.md](./DYNAMIC_DATA_USE_CASES.md).
 
 **Block visibility:** use existing `data-voodbuilder-conditions` (logged-in, role, locale, path, dates, …) to show/hide whole sections — independent from field bindings.
 

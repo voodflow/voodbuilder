@@ -1,13 +1,20 @@
 /**
  * Bricks-like dynamic data picker for the Rich Text Content editor.
  *
- * Menu groups by model (Users, Tutorials, …). Latest vs List-item is chosen
- * from context: inside a matching `data-voodbuilder-repeat` → `.item`, else `.latest`.
+ * Menu groups by model (Users, Tutorials, …). Context is chosen from use case:
+ * - inside a matching `data-voodbuilder-repeat` → `.item`
+ * - Authenticatable models (Users) outside a list → `.auth` (logged-in user)
+ * - otherwise → `.latest` (newest DB record)
+ *
+ * When both auth and latest exist, the menu also offers explicit “Latest record · Field”
+ * entries so marketing heroes can still bind the newest member / post.
  */
 
 import { openContextMenu } from './context-menu.js';
 import { alertDialog } from './editor-dialog.js';
 import { RICH_TEXT_LINK_CLASSES } from './link-picker-dialog.js';
+
+const SOURCE_CONTEXT_SUFFIX_RE = /\s·\s*(Latest record|List item|Logged-in user|Ultimo record|Elemento lista|Utente autenticato)\s*$/i;
 
 /**
  * @param {string} value
@@ -28,7 +35,7 @@ function escapeHtml(value) {
  */
 export function placeholderForRichTextBinding(sourceLabel, fieldLabel) {
     const model = String(sourceLabel ?? 'Dynamic')
-        .replace(/\s·\s*(Latest record|List item|Ultimo record|Elemento lista)\s*$/i, '')
+        .replace(SOURCE_CONTEXT_SUFFIX_RE, '')
         .trim() || 'Dynamic';
     const field = String(fieldLabel ?? '').trim() || 'Field';
 
@@ -56,7 +63,7 @@ export function listRichTextBindingSources(catalog) {
  * @returns {string}
  */
 export function modelAliasFromSourceId(sourceId) {
-    return String(sourceId ?? '').replace(/\.(latest|item)$/i, '');
+    return String(sourceId ?? '').replace(/\.(latest|item|auth)$/i, '');
 }
 
 /**
@@ -66,7 +73,7 @@ export function modelAliasFromSourceId(sourceId) {
  */
 function modelMenuLabel(label, alias) {
     const cleaned = String(label ?? '')
-        .replace(/\s·\s*(Latest record|List item|Ultimo record|Elemento lista)\s*$/i, '')
+        .replace(SOURCE_CONTEXT_SUFFIX_RE, '')
         .trim();
 
     return cleaned || alias || 'Source';
@@ -91,6 +98,20 @@ function fieldMenuLabel(field) {
     const group = String(field?.group ?? '').trim();
 
     return group ? `${group} · ${label}` : label;
+}
+
+/**
+ * @param {Array<object>} sourcesForModel
+ * @returns {{ auth?: object, latest?: object, item?: object }}
+ */
+export function splitModelBindingSources(sourcesForModel) {
+    const sources = Array.isArray(sourcesForModel) ? sourcesForModel : [];
+
+    return {
+        auth: sources.find((source) => String(source?.id ?? '').endsWith('.auth')),
+        latest: sources.find((source) => String(source?.id ?? '').endsWith('.latest')),
+        item: sources.find((source) => String(source?.id ?? '').endsWith('.item')),
+    };
 }
 
 /**
@@ -119,7 +140,8 @@ export function isComponentInsideModelRepeat(component, alias) {
 }
 
 /**
- * Prefer `.item` inside a matching list repeat, otherwise `.latest` (hero, byline, …).
+ * Prefer list item inside a matching repeat; for Authenticatable models prefer
+ * logged-in user; otherwise latest DB record.
  *
  * @param {Array<object>} sourcesForModel
  * @param {object|null|undefined} contextComponent
@@ -127,12 +149,15 @@ export function isComponentInsideModelRepeat(component, alias) {
  */
 export function pickBindingSourceForContext(sourcesForModel, contextComponent) {
     const sources = Array.isArray(sourcesForModel) ? sourcesForModel : [];
-    const item = sources.find((source) => String(source?.id ?? '').endsWith('.item'));
-    const latest = sources.find((source) => String(source?.id ?? '').endsWith('.latest'));
-    const alias = modelAliasFromSourceId(item?.id ?? latest?.id ?? sources[0]?.id ?? '');
+    const { auth, latest, item } = splitModelBindingSources(sources);
+    const alias = modelAliasFromSourceId(item?.id ?? auth?.id ?? latest?.id ?? sources[0]?.id ?? '');
 
     if (item && isComponentInsideModelRepeat(contextComponent, alias)) {
         return item;
+    }
+
+    if (auth) {
+        return auth;
     }
 
     return latest ?? item ?? sources[0] ?? null;
@@ -257,36 +282,89 @@ export function insertHtmlInlineAtCaret(rootEl, html) {
 }
 
 /**
+ * @param {object} source
+ * @param {object} field
+ * @param {string} modelLabel
+ * @param {(pick: { bindingKey: string, source: object, field: object, modelLabel: string }) => void} onPick
+ * @param {string} [menuLabel]
+ * @returns {object|null}
+ */
+function fieldMenuItem(source, field, modelLabel, onPick, menuLabel = null) {
+    if (! source?.id || ! field?.id) {
+        return null;
+    }
+
+    return {
+        id: `field-${source.id}.${field.id}`,
+        label: menuLabel ?? fieldMenuLabel(field),
+        onSelect: () => {
+            onPick?.({
+                bindingKey: `${source.id}.${field.id}`,
+                source,
+                field,
+                modelLabel,
+            });
+        },
+    };
+}
+
+/**
  * @param {object} catalog
  * @param {object|null|undefined} contextComponent
  * @param {(pick: { bindingKey: string, source: object, field: object, modelLabel: string }) => void} onPick
+ * @param {object} [labels]
  * @returns {Array<object>}
  */
-export function buildRichTextDynamicTagMenuItems(catalog, contextComponent, onPick) {
+export function buildRichTextDynamicTagMenuItems(catalog, contextComponent, onPick, labels = {}) {
     const models = groupBindingSourcesByModel(listRichTextBindingSources(catalog));
+    const latestPrefix = labels.richTextDynamicLatest
+        ?? labels.latestRecord
+        ?? 'Latest record';
 
-    return models.map((model) => ({
-        id: `model-${model.alias}`,
-        label: model.label,
-        children: model.fields.map((field) => ({
-            id: `field-${model.alias}.${field.id}`,
-            label: fieldMenuLabel(field),
-            onSelect: () => {
-                const source = pickBindingSourceForContext(model.sources, contextComponent);
+    return models.map((model) => {
+        const { auth, latest, item } = splitModelBindingSources(model.sources);
+        const insideList = isComponentInsideModelRepeat(contextComponent, model.alias);
+        const defaultSource = pickBindingSourceForContext(model.sources, contextComponent);
+        /** @type {Array<object>} */
+        const children = [];
 
-                if (! source?.id || ! field?.id) {
-                    return;
-                }
+        for (const field of model.fields) {
+            const itemEntry = fieldMenuItem(defaultSource, field, model.label, onPick);
 
-                onPick?.({
-                    bindingKey: `${source.id}.${field.id}`,
-                    source,
+            if (itemEntry) {
+                children.push(itemEntry);
+            }
+        }
+
+        // Outside a list, when auth is the default, also offer explicit latest fields
+        // (e.g. “Latest member” marketing copy — not the logged-in session user).
+        if (! insideList && auth && latest && defaultSource === auth) {
+            children.push({ type: 'separator' });
+
+            for (const field of model.fields) {
+                const itemEntry = fieldMenuItem(
+                    latest,
                     field,
-                    modelLabel: model.label,
-                });
-            },
-        })),
-    }));
+                    model.label,
+                    onPick,
+                    `${latestPrefix} · ${fieldMenuLabel(field)}`,
+                );
+
+                if (itemEntry) {
+                    children.push(itemEntry);
+                }
+            }
+        }
+
+        // Keep item available in the catalog sense; if somehow auth/latest missing but item exists outside list, defaultSource already handled it.
+        void item;
+
+        return {
+            id: `model-${model.alias}`,
+            label: model.label,
+            children,
+        };
+    });
 }
 
 /**
@@ -313,7 +391,7 @@ export function openRichTextDynamicTagPicker({ editor, component = null, anchorE
         if (html) {
             onInsert?.(html);
         }
-    });
+    }, labels);
 
     if (items.length === 0) {
         void alertDialog({

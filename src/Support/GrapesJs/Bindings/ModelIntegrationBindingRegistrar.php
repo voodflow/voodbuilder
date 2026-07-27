@@ -19,6 +19,10 @@ final class ModelIntegrationBindingRegistrar
 
         $this->bindings->register(new ModelIntegrationLatestBindingSource($integration));
         $this->bindings->register(new ModelIntegrationItemBindingSource($integration));
+
+        if (ModelIntegrationAuthBindingSource::supports($integration)) {
+            $this->bindings->register(new ModelIntegrationAuthBindingSource($integration));
+        }
     }
 
     public function unregister(ModelIntegration $integration): void
@@ -27,6 +31,7 @@ final class ModelIntegrationBindingRegistrar
 
         $this->bindings->forget($alias.'.latest');
         $this->bindings->forget($alias.'.item');
+        $this->bindings->forget($alias.'.auth');
         $this->integrations->forget($integration);
     }
 

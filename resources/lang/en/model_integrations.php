@@ -10,6 +10,7 @@ return [
 
     'bindings' => [
         'package' => 'Model integrations',
+        'auth' => 'Logged-in user',
         'latest' => 'Latest record',
         'list_item' => 'List item',
         'repeat_source' => 'Repeat list',
