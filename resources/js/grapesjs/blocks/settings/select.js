@@ -202,6 +202,8 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         || rawType === 'voodbuilder-layout-div'
         || rawType === 'voodbuilder-icon'
         || rawType === 'voodbuilder-text-link'
+        || rawType === 'voodbuilder-text'
+        || rawType === 'voodbuilder-rich-text'
     ) {
         return false;
     }

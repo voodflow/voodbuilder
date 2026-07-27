@@ -37,13 +37,21 @@ import { createInspectorEmptyState } from '../../inspector-empty-state.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
 import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
 import {
+    findIconHost,
     isDividerComponent,
-    isIconComponent,
     isTextLinkComponent,
     renderDividerSettings,
     renderIconSettings,
     renderTextLinkSettings,
 } from '../../basic-elements-settings.js';
+import {
+    isBasicTextComponent,
+    findRichTextHost,
+} from '../../text-elements.js';
+import {
+    renderBasicTextSettings,
+    renderRichTextSettings,
+} from '../../rich-text-content-settings.js';
 import {
     isLayoutStructureComponent,
     renderLayoutStructureSettings,
@@ -480,9 +488,61 @@ export function registerSettingsUi(editor, mount) {
                 return;
             }
 
-            if (isIconComponent(rawSelected)) {
+            {
+                const iconHost = findIconHost(rawSelected);
+
+                if (iconHost) {
+                    if (rawSelected !== iconHost && editor.getSelected?.() !== iconHost) {
+                        window.requestAnimationFrame(() => {
+                            editor.select?.(iconHost, { scroll: false });
+                        });
+                    }
+
+                    closeAllInspectorSelects();
+                    renderIconSettings({
+                        mount,
+                        traitsMount,
+                        component: iconHost,
+                        editor,
+                        labels,
+                    });
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
+
+                    return;
+                }
+            }
+
+            {
+                const richHost = findRichTextHost(rawSelected);
+
+                if (richHost) {
+                    if (rawSelected !== richHost && editor.getSelected?.() !== richHost) {
+                        window.requestAnimationFrame(() => {
+                            editor.select?.(richHost, { scroll: false });
+                        });
+                    }
+
+                    closeAllInspectorSelects();
+                    renderRichTextSettings({
+                        mount,
+                        traitsMount,
+                        component: richHost,
+                        editor,
+                        labels,
+                    });
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
+
+                    return;
+                }
+            }
+
+            if (isBasicTextComponent(rawSelected)) {
                 closeAllInspectorSelects();
-                renderIconSettings({
+                renderBasicTextSettings({
                     mount,
                     traitsMount,
                     component: rawSelected,
@@ -926,6 +986,30 @@ export function promoteRoot(editor, component) {
         refreshBlockSettingsUi(editor);
 
         return component;
+    }
+
+    const iconHost = findIconHost(component);
+
+    if (iconHost && component && iconHost !== component) {
+        if (editor.getSelected?.() !== iconHost) {
+            editor.select(iconHost, { scroll: false });
+        }
+
+        refreshBlockSettingsUi(editor);
+
+        return iconHost;
+    }
+
+    const richHost = findRichTextHost(component);
+
+    if (richHost && component && richHost !== component) {
+        if (editor.getSelected?.() !== richHost) {
+            editor.select(richHost, { scroll: false });
+        }
+
+        refreshBlockSettingsUi(editor);
+
+        return richHost;
     }
 
     const root = findInspectableRoot(component, editor);

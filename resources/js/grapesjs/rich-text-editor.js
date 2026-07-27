@@ -3,46 +3,26 @@
  *
  * Default "Link" wraps the selection in `<a href="">` then tries to select it
  * so you can edit href in Traits — but our inspector promotes selection to the
- * block root, so the URL field never appears. Prompt for the URL instead.
+ * block root, so the URL field never appears. Use the same link picker as buttons.
  */
 
-import { promptDialog } from './editor-dialog.js';
+import {
+    applyRichTextLinkAttrs,
+    buildAnchorOpenTag,
+    linkPickerDialog,
+    readAnchorLinkState,
+} from './link-picker-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import { configurePlainTextRte } from './text-elements.js';
 
 const SELECT_ME_ATTR = 'data-selectme';
 
-function escapeAttr(value) {
+function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;');
-}
-
-function selectionIsInsideTag(rte, tagName = 'A') {
-    const selection = rte?.selection?.();
-
-    if (! selection) {
-        return false;
-    }
-
-    const tag = String(tagName).toUpperCase();
-    const parents = [selection.anchorNode, selection.focusNode]
-        .filter(Boolean)
-        .map((node) => (node.nodeType === Node.TEXT_NODE ? node.parentNode : node));
-
-    return parents.some((node) => {
-        let current = node;
-
-        while (current && current !== rte.el) {
-            if (String(current.nodeName ?? '').toUpperCase() === tag) {
-                return true;
-            }
-
-            current = current.parentNode;
-        }
-
-        return false;
-    });
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function findSelectionAnchor(rte) {
@@ -74,11 +54,14 @@ function captureSelectionSnapshot(rte) {
         return null;
     }
 
+    const anchor = findSelectionAnchor(rte);
+    const linkState = readAnchorLinkState(anchor);
+
     return {
         text: String(rte.selection?.() ?? ''),
         range: selection.getRangeAt(0).cloneRange(),
-        href: findSelectionAnchor(rte)?.getAttribute?.('href') ?? '',
-        isLink: selectionIsInsideTag(rte, 'A'),
+        anchor,
+        ...linkState,
     };
 }
 
@@ -118,10 +101,6 @@ export function configureRichTextEditor(editor, labels = {}) {
     const wrapTitle = labels.rteWrapTitle
         ?? 'Wrap for styles — wraps selection in a <span> so you can style only that part';
     const linkTitle = labels.rteLinkTitle ?? 'Link';
-    const linkPromptTitle = labels.rteLinkPromptTitle ?? 'Link URL';
-    const linkPromptMessage = labels.rteLinkPromptMessage
-        ?? 'Enter the URL for the selected text. Leave empty to remove the link.';
-    const linkPlaceholder = labels.rteLinkPlaceholder ?? 'https:// or /page';
 
     // GrapesJS RTE requires `icon` as a string or DOM Node; missing icon → appendChild crash
     // and aborts editor boot before Layout/Basic blocks register.
@@ -151,22 +130,25 @@ export function configureRichTextEditor(editor, labels = {}) {
                 return;
             }
 
-            void promptDialog({
-                title: linkPromptTitle,
-                message: linkPromptMessage,
-                defaultValue: snapshot.href || 'https://',
-                placeholder: linkPlaceholder,
+            void linkPickerDialog({
+                editor,
                 labels,
-            }).then((url) => {
-                if (url === null) {
+                title: labels.rteLinkPromptTitle ?? 'Link',
+                message: labels.rteLinkPromptMessage
+                    ?? 'Choose how this text should link (same options as buttons).',
+                defaultLinkType: snapshot.linkType,
+                defaultHref: snapshot.href || 'https://',
+                defaultLinkRef: snapshot.linkRef,
+                defaultTarget: snapshot.target,
+                allowRemove: snapshot.isLink,
+            }).then((result) => {
+                if (result === null) {
                     return;
                 }
 
                 restoreSelection(rte, snapshot);
 
-                const trimmed = String(url).trim();
-
-                if (trimmed === '') {
+                if (result.remove) {
                     if (snapshot.isLink) {
                         rte.exec('unlink');
                     }
@@ -175,20 +157,18 @@ export function configureRichTextEditor(editor, labels = {}) {
                 }
 
                 if (snapshot.isLink) {
-                    const anchor = findSelectionAnchor(rte);
-
-                    if (anchor) {
-                        anchor.setAttribute('href', trimmed);
-                    }
+                    applyRichTextLinkAttrs(findSelectionAnchor(rte) ?? snapshot.anchor, result);
 
                     return;
                 }
 
                 rte.insertHTML(
-                    `<a href="${escapeAttr(trimmed)}" ${SELECT_ME_ATTR}>${snapshot.text}</a>`,
+                    `${buildAnchorOpenTag(result, SELECT_ME_ATTR)}${escapeHtml(snapshot.text)}</a>`,
                     { select: true },
                 );
             });
         },
     });
+
+    configurePlainTextRte(editor);
 }

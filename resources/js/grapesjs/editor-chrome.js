@@ -5,6 +5,7 @@
 
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { registerEditorPanelToggles } from './editor-panel-toggles.js';
+import { registerEditorPanelResize } from './editor-panel-resize.js';
 import {
     readInnerDropSlotsVisiblePreference,
     saveInnerDropSlotsVisiblePreference,
@@ -814,6 +815,7 @@ export function configureEditorChrome(editor, options = {}) {
 
     if (options.shell) {
         registerEditorPanelToggles(options.shell, options.labels ?? {}, topbar?.root ?? null);
+        registerEditorPanelResize(options.shell, options.labels ?? {});
     }
 
     let deviceRefreshTimer = 0;

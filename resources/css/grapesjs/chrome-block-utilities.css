@@ -308,3 +308,42 @@
         align-items: flex-start;
     }
 }
+
+/* Rich Text: restore list markers (Tailwind preflight sets list-style: none). */
+.vb-rich-text ul {
+    list-style-type: disc;
+    list-style-position: outside;
+    margin: 0.5em 0 0.85em;
+    padding-left: 1.5rem;
+}
+
+.vb-rich-text ol {
+    list-style-type: decimal;
+    list-style-position: outside;
+    margin: 0.5em 0 0.85em;
+    padding-left: 1.5rem;
+}
+
+.vb-rich-text li {
+    display: list-item;
+    margin: 0.2em 0;
+}
+
+.vb-rich-text a,
+.vb-rich-text a.vb-text-link {
+    color: var(--color-vp-brand-1, #6366f1);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.vb-rich-text .text-left {
+    text-align: left;
+}
+
+.vb-rich-text .text-center {
+    text-align: center;
+}
+
+.vb-rich-text .text-right {
+    text-align: right;
+}

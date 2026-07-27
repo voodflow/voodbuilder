@@ -1811,11 +1811,286 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-gjs-inner-drop-slot.gjs-h
     color: var(--color-vp-text-2, #64748b);
 }
 
+.voodbuilder-gjs-icon-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.voodbuilder-gjs-segmented {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem;
+    padding: 0.2rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
+}
+
+.voodbuilder-gjs-segmented__btn {
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 0.4rem 0.5rem;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-segmented__btn.is-active {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 16%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-icon-picker__color .voodbuilder-gjs-input {
+    width: calc(100% - 2.5rem);
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.voodbuilder-gjs-icon-picker__swatch {
+    width: 2rem;
+    height: 2rem;
+    margin-left: 0.35rem;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.4rem;
+    background: transparent;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-icon-picker__status {
+    margin: 0;
+    font-size: 0.7rem;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-gjs-icon-picker__grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35rem;
+    max-height: 13.5rem;
+    overflow: auto;
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
+}
+
+.voodbuilder-gjs-icon-picker__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 0.35rem;
+    border-radius: 0.4rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-vp-text-1, #0f172a);
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-icon-picker__item:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
+.voodbuilder-gjs-icon-picker__item.is-active {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
+}
+
+.voodbuilder-gjs-icon-picker__item svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    pointer-events: none;
+}
+
+.voodbuilder-gjs-icon-picker__empty {
+    grid-column: 1 / -1;
+    margin: 0.5rem 0;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-gjs-icon-picker__more {
+    margin-top: 0;
+}
+
 .voodbuilder-gjs-form-hint {
     margin: 0 0 0.5rem;
     font-size: 0.75rem;
     line-height: 1.35;
     color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-gjs-rte {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.voodbuilder-gjs-rte__modes {
+    display: inline-flex;
+    gap: 0.2rem;
+    padding: 0.15rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
+    align-self: flex-end;
+}
+
+.voodbuilder-gjs-rte__mode {
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 0.3rem 0.55rem;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-rte__mode.is-active {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-rte-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.voodbuilder-gjs-rte-toolbar__sep {
+    display: inline-block;
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 0.15rem;
+    background: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+}
+
+.voodbuilder-gjs-rte-toolbar__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.85rem;
+    height: 1.85rem;
+    padding: 0 0.35rem;
+    border-radius: 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-elv, #fff) 90%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.voodbuilder-gjs-rte-toolbar__btn:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
+.voodbuilder-gjs-rte-toolbar__btn svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.voodbuilder-gjs-rte__surface {
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: var(--color-vp-bg-elv, #fff);
+    overflow: hidden;
+}
+
+.voodbuilder-gjs-rte__visual {
+    min-height: 9rem;
+    max-height: 18rem;
+    overflow: auto;
+    padding: 0.7rem 0.8rem;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    outline: none;
+}
+
+.voodbuilder-gjs-rte__visual:focus {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 35%, transparent);
+}
+
+.voodbuilder-gjs-rte__visual p {
+    margin: 0 0 0.65em;
+}
+
+.voodbuilder-gjs-rte__visual p:last-child {
+    margin-bottom: 0;
+}
+
+.voodbuilder-gjs-rte__visual ul,
+.voodbuilder-gjs-rte__visual ol {
+    margin: 0.4em 0 0.75em;
+    padding-left: 1.5rem;
+    list-style-position: outside;
+}
+
+.voodbuilder-gjs-rte__visual ul {
+    list-style-type: disc;
+}
+
+.voodbuilder-gjs-rte__visual ol {
+    list-style-type: decimal;
+}
+
+.voodbuilder-gjs-rte__visual li {
+    display: list-item;
+    margin: 0.2em 0;
+}
+
+.voodbuilder-gjs-rte__visual a,
+.voodbuilder-gjs-rte__visual a.vb-text-link {
+    color: var(--color-vp-brand-1, #6366f1);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.voodbuilder-gjs-rte__visual .text-left {
+    text-align: left;
+}
+
+.voodbuilder-gjs-rte__visual .text-center {
+    text-align: center;
+}
+
+.voodbuilder-gjs-rte__visual .text-right {
+    text-align: right;
+}
+
+.voodbuilder-gjs-rte__code {
+    display: block;
+    width: 100%;
+    min-height: 9rem;
+    max-height: 18rem;
+    padding: 0.7rem 0.8rem;
+    border: 0;
+    resize: vertical;
+    background: transparent;
+    color: var(--color-vp-text-1, #0f172a);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    outline: none;
+}
+
+.gjs-rte-toolbar[data-voodbuilder-rte-hidden],
+.voodbuilder-gjs-root.voodbuilder-gjs-rte-plain .gjs-rte-toolbar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
 
 

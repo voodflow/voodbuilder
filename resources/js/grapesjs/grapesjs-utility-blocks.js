@@ -4,8 +4,9 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
-import { tablerIconSvg } from './tabler-icons-catalog.js';
-import { applyIconToComponent } from './basic-elements-settings.js';
+import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
+import { applyIconToComponent, readIconColor } from './basic-elements-settings.js';
+import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
 
 export const BASIC_BLOCK_CATEGORY = 'Basic';
 export const MEDIA_BLOCK_CATEGORY = 'Media';
@@ -29,7 +30,7 @@ const SOCIAL_NETWORKS = [
     { key: 'copy_link', label: 'Copy link' },
 ];
 
-const ICON_SVG = tablerIconSvg('star', { sizeClass: 'size-10' });
+const ICON_SVG = tablerIconSvg(DEFAULT_TABLER_ICON, { sizeClass: 'w-full h-full' });
 
 function galleryPlaceholderSrc(index) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#e2e8f0"/><text x="200" y="205" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="16">Image ${index}</text></svg>`;
@@ -58,7 +59,7 @@ export const UTILITY_BLOCK_WIREFRAMES = {
         '<path d="M19 10h-14"/><path d="M5 6h14"/><path d="M14 14h-9"/><path d="M5 18h6"/><path d="M18 15v6"/><path d="M15 18h6"/>',
     ),
     'voodbuilder-icon': tablerThumb(
-        '<path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/>',
+        '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>',
     ),
     'voodbuilder-text-link': tablerThumb(
         '<path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/>',
@@ -322,9 +323,12 @@ const BLOCKS = [
         label: 'Basic Text',
         category: BASIC_BLOCK_CATEGORY,
         content: {
-            type: 'text',
+            type: 'voodbuilder-text',
             tagName: 'p',
             classes: ['text-base', 'leading-relaxed', 'text-vp-text-2'],
+            attributes: {
+                'data-voodbuilder-text': '',
+            },
             content: 'Insert your text here. Click to edit.',
             editable: true,
         },
@@ -334,11 +338,14 @@ const BLOCKS = [
         label: 'Rich Text',
         category: BASIC_BLOCK_CATEGORY,
         content: {
-            type: 'text',
+            type: 'voodbuilder-rich-text',
             tagName: 'div',
             classes: ['vb-rich-text', 'space-y-3', 'text-base', 'leading-relaxed', 'text-vp-text-2'],
-            content: '<p>Write longer copy here. Select text to bold, italic, link, or wrap for styles.</p>',
-            editable: true,
+            attributes: {
+                'data-voodbuilder-rich-text': '',
+            },
+            components: '<p>Write longer copy here. Use Content → Visual to format.</p>',
+            editable: false,
         },
     },
     {
@@ -399,10 +406,14 @@ const BLOCKS = [
             classes: ['inline-flex', 'items-center', 'justify-center', 'text-vp-text-2', 'vb-icon-link', 'size-10'],
             attributes: {
                 'data-voodbuilder-icon': '',
-                'data-vb-icon': 'star',
+                'data-vb-icon': DEFAULT_TABLER_ICON,
                 'data-vb-icon-size': 'size-10',
+                'data-vb-icon-style': 'outline',
+                'data-vb-icon-stroke': '1.75',
                 'data-vb-link-type': 'none',
             },
+            linkType: 'none',
+            href: '#',
             components: ICON_SVG,
         },
     },
@@ -591,6 +602,8 @@ const BLOCKS = [
 ];
 
 export function registerUtilityBlockComponentTypes(editor) {
+    registerTextElementTypes(editor);
+
     registerLinkableType(editor, 'voodbuilder-icon', {
         name: 'Icon',
         droppable: false,
@@ -607,16 +620,22 @@ export function registerUtilityBlockComponentTypes(editor) {
             previousInit?.call(this);
 
             const syncIcon = () => {
+                this.__vbIconPainted = false;
                 const attrs = this.getAttributes?.() ?? {};
-                applyIconToComponent(this, {
-                    name: attrs['data-vb-icon'] || 'star',
+                applyIconToComponent(this, editor, {
+                    name: attrs['data-vb-icon'] || DEFAULT_TABLER_ICON,
                     sizeClass: attrs['data-vb-icon-size'] || 'size-10',
+                    style: attrs['data-vb-icon-style'] || 'outline',
+                    stroke: attrs['data-vb-icon-stroke'] || '1.75',
+                    color: readIconColor(this),
                     href: attrs.href || this.get('href'),
-                    linkType: attrs['data-vb-link-type'] || 'none',
+                    linkType: this.get('linkType') || attrs['data-vb-link-type'] || 'none',
+                    linkRef: this.get('linkRef') || attrs['data-vb-link'] || '',
+                    target: this.get('target') || attrs.target || '',
                 });
             };
 
-            this.on('change:attributes:data-vb-icon change:attributes:data-vb-icon-size', syncIcon);
+            this.on('change:attributes:data-vb-icon change:attributes:data-vb-icon-size change:attributes:data-vb-icon-style change:attributes:data-vb-icon-stroke change:attributes:data-vb-icon-color change:attributes:data-vb-link-type', syncIcon);
             syncIcon();
         };
     }
@@ -677,11 +696,37 @@ export function configureUtilityBlocksCanvas(editor) {
         if (type === 'voodbuilder-icon' || type === 'voodbuilder-text-link') {
             applyLinkProps(component);
         }
+
+        if (type === 'voodbuilder-icon') {
+            // Force a canvas paint after frame/view is ready.
+            component.__vbIconPainted = false;
+            applyIconToComponent(component, editor, {
+                name: component.getAttributes?.()?.['data-vb-icon'] || DEFAULT_TABLER_ICON,
+                sizeClass: component.getAttributes?.()?.['data-vb-icon-size'] || 'size-10',
+                style: component.getAttributes?.()?.['data-vb-icon-style'] || 'outline',
+                stroke: component.getAttributes?.()?.['data-vb-icon-stroke'] || '1.75',
+                color: readIconColor(component),
+                href: component.get('href'),
+                linkType: component.get('linkType') || component.getAttributes?.()?.['data-vb-link-type'] || 'none',
+                linkRef: component.get('linkRef') || component.getAttributes?.()?.['data-vb-link'] || '',
+                target: component.get('target') || '',
+            });
+        }
+
+        if (type === 'voodbuilder-rich-text') {
+            lockRichTextChildren(component);
+        }
     };
 
-    editor.on('load', () => {
-        editor.getWrapper().find('[data-voodbuilder-icon], .vb-text-link').forEach(bindLinkables);
-    });
+    const syncAllIcons = () => {
+        editor.getWrapper?.()?.find?.('[data-voodbuilder-icon], .vb-text-link, [data-voodbuilder-rich-text], .vb-rich-text')
+            ?.forEach?.(bindLinkables);
+    };
 
+    editor.on('load', syncAllIcons);
+    editor.on('canvas:frame:load', () => {
+        // Canvas DOM may not exist on `load` — re-paint colors once the frame is ready.
+        window.requestAnimationFrame(syncAllIcons);
+    });
     editor.on('component:add', bindLinkables);
 }

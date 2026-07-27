@@ -504,7 +504,8 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 }
 
 .voodbuilder-gjs-shell__left {
-    width: 15.5rem;
+    --voodbuilder-gjs-library-width: 15.5rem;
+    width: var(--voodbuilder-gjs-library-width, 15.5rem);
     border-right: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
     position: relative;
     z-index: 1;
@@ -513,6 +514,54 @@ body.voodbuilder-grapesjs-editing .voodbuilder-grapesjs-frontend__canvas .gjs-bl
 /* Width + expand animation: see inspector-ui.css (--voodbuilder-gjs-inspector-width*) */
 .voodbuilder-gjs-shell__right {
     border-left: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
+    position: relative;
+}
+
+.voodbuilder-gjs-panel-resize {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0.375rem;
+    z-index: 5;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+}
+
+.voodbuilder-gjs-panel-resize--left {
+    right: -0.1875rem;
+}
+
+.voodbuilder-gjs-panel-resize--right {
+    left: -0.1875rem;
+}
+
+.voodbuilder-gjs-panel-resize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: transparent;
+    transition: background 0.12s ease, width 0.12s ease;
+}
+
+.voodbuilder-gjs-panel-resize:hover::after,
+.voodbuilder-gjs-panel-resize:focus-visible::after,
+body.voodbuilder-gjs-is-resizing-panel .voodbuilder-gjs-panel-resize::after {
+    width: 2px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 70%, transparent);
+}
+
+body.voodbuilder-gjs-is-resizing-panel {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+body.voodbuilder-gjs-is-resizing-panel iframe {
+    pointer-events: none !important;
 }
 
 .voodbuilder-gjs-shell--left-hidden .voodbuilder-gjs-shell__left {
@@ -4757,9 +4806,16 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-grapesjs-editing .voodb
     transition: width 0.12s linear;
 }
 
+.vb-icon-link {
+    line-height: 0;
+}
+
 .vb-icon__glyph {
-    width: 1em;
-    height: 1em;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .vb-carousel__track {

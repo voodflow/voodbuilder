@@ -1,69 +1,326 @@
 /**
- * Curated Tabler Icons (MIT) for VoodBuilder Icon element.
+ * Tabler Icons catalog API for VoodBuilder.
+ * Full set (~5k outline + filled) is lazy-loaded so the editor chunk stays light.
+ *
  * @see https://tabler.io/icons
  */
 
-export const TABLER_ICON_PATHS = {
-    "star": "M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z",
-    "heart": "M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572",
-    "home": "M5 12l-2 0l9 -9l9 9l-2 0 M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7 M10 12h4v4h-4z",
-    "user": "M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0 M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2",
-    "users": "M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0 M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2 M16 3.13a4 4 0 0 1 0 7.75 M21 21v-2a4 4 0 0 0 -3 -3.85",
-    "mail": "M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z M3 7l9 6l9 -6",
-    "phone": "M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2",
-    "map-pin": "M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0 M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z",
-    "world": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M3.6 9h16.8 M3.6 15h16.8 M11.5 3a17 17 0 0 0 0 18 M12.5 3a17 17 0 0 1 0 18",
-    "link": "M9 15l6 -6 M11 6l.463 -.536a5 5 0 0 1 7.071 0a4.993 4.993 0 0 1 -1.193 5.435l-2.667 5.333 M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.973 4.973 0 0 1 0 -7.071l2.667 -5.334",
-    "check": "M5 12l5 5l10 -10",
-    "x": "M18 6l-12 12 M6 6l12 12",
-    "plus": "M12 5l0 14 M5 12l14 0",
-    "minus": "M5 12l14 0",
-    "search": "M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0 M21 21l-6 -6",
-    "settings": "M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0",
-    "menu-2": "M4 6l16 0 M4 12l16 0 M4 18l16 0",
-    "arrow-right": "M5 12l14 0 M13 18l6 -6 M13 6l6 6",
-    "arrow-left": "M5 12l14 0 M5 12l6 6 M5 12l6 -6",
-    "chevron-right": "M9 6l6 6l-6 6",
-    "chevron-down": "M6 9l6 6l6 -6",
-    "info-circle": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 9h.01 M11 12h1v4h1",
-    "alert-circle": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 8v4 M12 16h.01",
-    "circle-check": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M9 12l2 2l4 -4",
-    "photo": "M15 8h.01 M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5 M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3",
-    "video": "M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z",
-    "player-play": "M7 4v16l13 -8z",
-    "download": "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2 M7 11l5 5l5 -5 M12 4l0 12",
-    "upload": "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2 M7 9l5 -5l5 5 M12 4l0 12",
-    "share": "M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M8.7 10.7l6.6 -3.4 M8.7 13.3l6.6 3.4",
-    "lock": "M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0 M8 11v-4a4 4 0 1 1 8 0v4",
-    "eye": "M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0 M12 5c-7 0 -10 7 -10 7s3 7 10 7s10 -7 10 -7s-3 -7 -10 -7",
-    "shopping-cart": "M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M17 17h-11v-14h-2 M6 5l14 1l-1 7h-13",
-    "credit-card": "M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z M3 10l18 0 M7 15l.01 0 M11 15l2 0",
-    "calendar": "M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z M16 3v4 M8 3v4 M4 11h16",
-    "clock": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 7v5l3 3",
-    "bolt": "M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11",
-    "flame": "M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -4 -6c-1.5 3 -2.5 3 -2 4",
-    "rocket": "M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3 M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3",
-    "brand-facebook": "M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3",
-    "brand-x": "M4 4l11.733 16h4.267l-11.733 -16z M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772",
-    "brand-instagram": "M4 8a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M16.5 7.5l0 .01",
-    "brand-linkedin": "M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z M8 11v5 M8 8v.01 M12 16v-5 M16 16v-3a2 2 0 0 0 -4 0",
-    "brand-github": "M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5",
-    "brand-whatsapp": "M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9 M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"
+/** @type {string} */
+export const DEFAULT_TABLER_ICON = 'circle';
+
+/** @type {'outline'|'filled'} */
+export const DEFAULT_TABLER_ICON_STYLE = 'outline';
+
+export const DEFAULT_TABLER_ICON_STROKE = '1.75';
+
+/** Tiny fallback so canvas works before the full catalog chunk loads. */
+export const TABLER_ICON_FALLBACK_PATHS = {
+    circle: 'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0',
+    star: 'M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z',
+    heart: 'M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572',
+    home: 'M5 12l-2 0l9 -9l9 9l-2 0 M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7 M10 12h4v4h-4z',
+    check: 'M5 12l5 5l10 -10',
+    x: 'M18 6l-12 12 M6 6l12 12',
+    plus: 'M12 5l0 14 M5 12l14 0',
+    search: 'M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0 M21 21l-6 -6',
+    settings: 'M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
 };
 
-export function listTablerIconNames() {
-    return Object.keys(TABLER_ICON_PATHS);
+/**
+ * Official Tabler category labels (https://tabler.io/icons).
+ * Used before / after full catalog load.
+ */
+export const TABLER_CATEGORY_LABELS = [
+    'Animals', 'Arrows', 'Badges', 'Brand', 'Buildings', 'Charts', 'Communication',
+    'Computers', 'Currencies', 'Database', 'Design', 'Development', 'Devices',
+    'Document', 'E-commerce', 'Electrical', 'Extensions', 'Food', 'Games', 'Gender',
+    'Gestures', 'Health', 'Laundry', 'Letters', 'Logic', 'Map', 'Math', 'Media',
+    'Mood', 'Nature', 'Numbers', 'Photography', 'Shapes', 'Sport', 'Symbols',
+    'System', 'Text', 'Vehicles', 'Version control', 'Weather', 'Zodiac',
+];
+
+/**
+ * @typedef {{
+ *   version: string,
+ *   categories: string[],
+ *   byCategory: Record<string, string[]>,
+ *   tags: Record<string, string>,
+ *   outline: Record<string, string>,
+ *   filled: Record<string, string>,
+ * }} TablerIconCatalog
+ */
+
+/** @type {TablerIconCatalog|null} */
+let catalogCache = null;
+
+/** @type {Promise<TablerIconCatalog>|null} */
+let catalogPromise = null;
+
+/**
+ * @returns {Promise<TablerIconCatalog>}
+ */
+export async function ensureTablerCatalog() {
+    if (catalogCache) {
+        return catalogCache;
+    }
+
+    catalogPromise ??= import('./generated/tabler-icons-full.json')
+        .then((mod) => {
+            catalogCache = /** @type {TablerIconCatalog} */ (mod.default ?? mod);
+            return catalogCache;
+        })
+        .catch((error) => {
+            catalogPromise = null;
+            throw error;
+        });
+
+    return catalogPromise;
 }
 
-export function tablerIconSvg(name, { sizeClass = 'size-10', className = 'vb-icon__glyph' } = {}) {
-    const path = TABLER_ICON_PATHS[name] ?? TABLER_ICON_PATHS.star;
-    const safeName = TABLER_ICON_PATHS[name] ? name : 'star';
-
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${className} ${sizeClass}" data-vb-icon-glyph="${safeName}"><path d="${path}" /></svg>`;
+/**
+ * @returns {TablerIconCatalog|null}
+ */
+export function getTablerCatalogSync() {
+    return catalogCache;
 }
 
+/**
+ * @param {unknown} value
+ * @returns {'outline'|'filled'}
+ */
+export function resolveTablerIconStyle(value) {
+    return String(value ?? '').toLowerCase() === 'filled' ? 'filled' : 'outline';
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function resolveTablerIconStroke(value) {
+    const n = Number(value);
+
+    if (! Number.isFinite(n) || n <= 0) {
+        return DEFAULT_TABLER_ICON_STROKE;
+    }
+
+    return String(Math.min(4, Math.max(0.5, n)));
+}
+
+/**
+ * @param {string|null|undefined} name
+ * @param {'outline'|'filled'} [style]
+ * @returns {string|null}
+ */
+export function lookupTablerIconInner(name, style = 'outline') {
+    const key = String(name ?? '').trim();
+
+    if (! key) {
+        return null;
+    }
+
+    const catalog = catalogCache;
+
+    if (style === 'filled' && catalog?.filled?.[key]) {
+        return catalog.filled[key];
+    }
+
+    if (catalog?.outline?.[key]) {
+        return catalog.outline[key];
+    }
+
+    if (TABLER_ICON_FALLBACK_PATHS[key]) {
+        return `<path d="${TABLER_ICON_FALLBACK_PATHS[key]}"/>`;
+    }
+
+    return null;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 export function resolveTablerIconName(value) {
     const name = String(value ?? '').trim();
 
-    return TABLER_ICON_PATHS[name] ? name : 'star';
+    if (! name) {
+        return DEFAULT_TABLER_ICON;
+    }
+
+    if (catalogCache?.outline?.[name] || catalogCache?.filled?.[name] || TABLER_ICON_FALLBACK_PATHS[name]) {
+        return name;
+    }
+
+    // Unknown until catalog loads — keep the stored name so apply can resolve later.
+    if (! catalogCache) {
+        return name;
+    }
+
+    return DEFAULT_TABLER_ICON;
 }
+
+/**
+ * @param {string} name
+ * @param {{
+ *   style?: 'outline'|'filled',
+ *   stroke?: string|number,
+ *   sizeClass?: string,
+ *   className?: string,
+ *   color?: string|null,
+ * }} [options]
+ * @returns {string}
+ */
+export function tablerIconSvg(name, options = {}) {
+    const style = resolveTablerIconStyle(options.style);
+    const stroke = resolveTablerIconStroke(options.stroke);
+    const sizeClass = options.sizeClass ?? 'w-full h-full';
+    const className = options.className ?? 'vb-icon__glyph';
+    const color = String(options.color ?? '').trim();
+    const classAttr = [className, sizeClass].filter(Boolean).join(' ');
+    let safeName = resolveTablerIconName(name);
+    let inner = lookupTablerIconInner(safeName, style);
+
+    if (! inner && style === 'filled') {
+        inner = lookupTablerIconInner(safeName, 'outline');
+    }
+
+    if (! inner) {
+        safeName = DEFAULT_TABLER_ICON;
+        inner = lookupTablerIconInner(safeName, 'outline')
+            ?? `<path d="${TABLER_ICON_FALLBACK_PATHS[DEFAULT_TABLER_ICON]}"/>`;
+    }
+
+    const colorAttr = color ? ` style="color:${escapeAttr(color)}"` : '';
+
+    if (style === 'filled' && catalogCache?.filled?.[safeName]) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" class="${classAttr}" data-vb-icon-glyph="${safeName}" data-vb-icon-style="filled"${colorAttr}>${inner}</svg>`;
+    }
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${escapeAttr(stroke)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${classAttr}" data-vb-icon-glyph="${safeName}" data-vb-icon-style="outline"${colorAttr}>${inner}</svg>`;
+}
+
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+export function findCategoryForIcon(name) {
+    const safe = String(name ?? '').trim();
+    const catalog = catalogCache;
+
+    if (! catalog) {
+        return 'all';
+    }
+
+    for (const [category, icons] of Object.entries(catalog.byCategory)) {
+        if (icons.includes(safe)) {
+            return category;
+        }
+    }
+
+    return 'all';
+}
+
+/**
+ * @returns {{ id: string, label: string, icons: string[] }[]}
+ */
+export function listTablerIconCategories() {
+    const catalog = catalogCache;
+
+    if (! catalog) {
+        return [{ id: 'all', label: 'All', icons: Object.keys(TABLER_ICON_FALLBACK_PATHS) }];
+    }
+
+    return [
+        { id: 'all', label: 'All', icons: Object.keys(catalog.outline) },
+        ...catalog.categories.map((category) => ({
+            id: category,
+            label: category,
+            icons: catalog.byCategory[category] ?? [],
+        })),
+    ];
+}
+
+/**
+ * @deprecated Use listTablerIconCategories
+ */
+export function listTablerIconSets() {
+    return listTablerIconCategories();
+}
+
+/**
+ * @deprecated Use findCategoryForIcon
+ */
+export function findSetIdForIcon(name) {
+    return findCategoryForIcon(name);
+}
+
+/**
+ * @returns {string[]}
+ */
+export function listTablerIconNames() {
+    if (catalogCache) {
+        return Object.keys(catalogCache.outline);
+    }
+
+    return Object.keys(TABLER_ICON_FALLBACK_PATHS);
+}
+
+/**
+ * @param {{
+ *   category?: string,
+ *   query?: string,
+ *   style?: 'outline'|'filled'|'all',
+ *   limit?: number,
+ *   offset?: number,
+ * }} [filters]
+ * @returns {{ names: string[], total: number }}
+ */
+export function queryTablerIcons(filters = {}) {
+    const catalog = catalogCache;
+    const category = String(filters.category ?? 'all');
+    const query = String(filters.query ?? '').trim().toLowerCase();
+    const style = String(filters.style ?? 'all');
+    const limit = Math.max(1, Number(filters.limit) || 80);
+    const offset = Math.max(0, Number(filters.offset) || 0);
+
+    let names = category === 'all' || ! catalog
+        ? (catalog ? Object.keys(catalog.outline) : Object.keys(TABLER_ICON_FALLBACK_PATHS))
+        : [...(catalog.byCategory[category] ?? [])];
+
+    if (style === 'filled' && catalog) {
+        names = names.filter((name) => Boolean(catalog.filled[name]));
+    } else if (style === 'outline' && catalog) {
+        names = names.filter((name) => Boolean(catalog.outline[name]));
+    }
+
+    if (query) {
+        names = names.filter((name) => {
+            if (name.includes(query) || name.replace(/-/g, ' ').includes(query)) {
+                return true;
+            }
+
+            const tagBlob = catalog?.tags?.[name] ?? '';
+
+            return tagBlob.toLowerCase().includes(query);
+        });
+    }
+
+    return {
+        names: names.slice(offset, offset + limit),
+        total: names.length,
+    };
+}
+
+function escapeAttr(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;');
+}
+
+/** @deprecated kept for older imports */
+export const TABLER_ICON_PATHS = TABLER_ICON_FALLBACK_PATHS;
+
+/** @deprecated */
+export const TABLER_ICON_SETS = {
+    general: { label: 'General', icons: Object.keys(TABLER_ICON_FALLBACK_PATHS) },
+};

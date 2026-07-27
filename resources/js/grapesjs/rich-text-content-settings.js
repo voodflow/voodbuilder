@@ -1,0 +1,614 @@
+/**
+ * Lightweight Visual/Code rich-text editor for the Content inspector (no TipTap/Quill).
+ * Few controls, native contenteditable — Bricks-like, dependency-free.
+ */
+
+import { createFormSection } from './editor-form-ui.js';
+import {
+    applyRichTextLinkAttrs,
+    buildAnchorOpenTag,
+    ensureRichTextLinkClasses,
+    linkPickerDialog,
+    readAnchorLinkState,
+} from './link-picker-dialog.js';
+import { lucideIcon } from './editor-icons.js';
+import { keepRichTextSelection, lockRichTextChildren } from './text-elements.js';
+
+const ALLOWED_TAGS = new Set([
+    'P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'A',
+    'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE', 'DIV',
+]);
+
+const ALIGN_CLASSES = ['text-left', 'text-center', 'text-right', 'text-justify'];
+
+/**
+ * @param {string} html
+ * @returns {string}
+ */
+export function sanitizeRichTextHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = String(html ?? '');
+
+    const walk = (node) => {
+        [...node.childNodes].forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                return;
+            }
+
+            if (child.nodeType !== Node.ELEMENT_NODE) {
+                child.remove();
+
+                return;
+            }
+
+            const el = /** @type {HTMLElement} */ (child);
+            const tag = el.tagName;
+
+            if (! ALLOWED_TAGS.has(tag)) {
+                const text = document.createTextNode(el.textContent ?? '');
+                el.replaceWith(text);
+
+                return;
+            }
+
+            let pendingAlign = '';
+
+            [...el.attributes].forEach((attr) => {
+                const name = attr.name.toLowerCase();
+
+                if (tag === 'A' && (
+                    name === 'href'
+                    || name === 'target'
+                    || name === 'rel'
+                    || name === 'title'
+                    || name === 'data-vb-link-type'
+                    || name === 'data-vb-link'
+                )) {
+                    return;
+                }
+
+                if (name === 'class') {
+                    return;
+                }
+
+                if (name === 'style') {
+                    const match = /text-align\s*:\s*(left|center|right|justify)/i.exec(attr.value);
+
+                    if (match) {
+                        pendingAlign = match[1].toLowerCase();
+                    }
+
+                    el.removeAttribute(attr.name);
+
+                    return;
+                }
+
+                el.removeAttribute(attr.name);
+            });
+
+            if (pendingAlign) {
+                const classes = String(el.getAttribute('class') ?? '')
+                    .split(/\s+/)
+                    .filter((token) => token && ! ALIGN_CLASSES.includes(token));
+                classes.push(`text-${pendingAlign}`);
+                el.setAttribute('class', classes.join(' '));
+            }
+
+            if (tag === 'A') {
+                const href = el.getAttribute('href') ?? '#';
+                el.setAttribute('href', href);
+
+                if (el.getAttribute('target') === '_blank') {
+                    el.setAttribute('rel', 'noopener noreferrer');
+                }
+
+                ensureRichTextLinkClasses(el);
+            }
+
+            walk(el);
+        });
+    };
+
+    walk(template.content);
+
+    return template.innerHTML.trim() || '<p></p>';
+}
+
+/**
+ * @param {object} component
+ * @returns {string}
+ */
+export function readComponentHtml(component) {
+    if (! component) {
+        return '<p></p>';
+    }
+
+    const el = component.getEl?.();
+
+    if (el?.innerHTML != null && String(el.innerHTML).trim() !== '') {
+        return sanitizeRichTextHtml(el.innerHTML);
+    }
+
+    const children = [...(component.components?.() ?? [])];
+
+    if (children.length > 0) {
+        return sanitizeRichTextHtml(
+            children.map((child) => {
+                if (child.get?.('type') === 'textnode') {
+                    return String(child.get('content') ?? '');
+                }
+
+                return child.toHTML?.() ?? '';
+            }).join(''),
+        );
+    }
+
+    return sanitizeRichTextHtml(String(component.get?.('content') ?? '<p></p>'));
+}
+
+/**
+ * @param {object} component
+ * @param {string} html
+ * @param {object|null} [editor]
+ */
+export function writeComponentHtml(component, html, editor = null) {
+    if (! component) {
+        return;
+    }
+
+    const safe = sanitizeRichTextHtml(html);
+    const run = () => {
+        component.components(safe);
+        lockRichTextChildren(component);
+        keepRichTextSelection(editor, component);
+    };
+
+    if (editor) {
+        const depth = Number(editor.__voodbuilderSettingsChangeDepth ?? 0);
+        editor.__voodbuilderSettingsChangeDepth = depth + 1;
+        editor.__voodbuilderSettingsChange = true;
+
+        try {
+            run();
+        } finally {
+            const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
+            editor.__voodbuilderSettingsChangeDepth = next;
+
+            if (next <= 0) {
+                editor.__voodbuilderSettingsChange = false;
+                delete editor.__voodbuilderSettingsChangeDepth;
+            }
+        }
+
+        return;
+    }
+
+    run();
+}
+
+function toolbarButton({ title, label, onClick, active = false }) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'voodbuilder-gjs-rte-toolbar__btn';
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.innerHTML = label;
+    btn.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+    });
+    btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        onClick?.();
+    });
+
+    return btn;
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function findContentEditableAnchor(root) {
+    const selection = window.getSelection?.();
+    const start = selection?.anchorNode ?? selection?.focusNode ?? null;
+
+    if (! start) {
+        return null;
+    }
+
+    let current = start.nodeType === Node.TEXT_NODE ? start.parentNode : start;
+
+    while (current && current !== root) {
+        if (String(current.nodeName ?? '').toUpperCase() === 'A') {
+            return /** @type {HTMLAnchorElement} */ (current);
+        }
+
+        current = current.parentNode;
+    }
+
+    return null;
+}
+
+/**
+ * @param {HTMLElement} root
+ * @param {'left'|'center'|'right'} align
+ */
+function applyTextAlign(root, align) {
+    const selection = window.getSelection?.();
+    const start = selection?.anchorNode ?? null;
+
+    if (! start) {
+        return;
+    }
+
+    let node = start.nodeType === Node.TEXT_NODE ? start.parentElement : start;
+
+    if (! (node instanceof Element) || ! root.contains(node)) {
+        return;
+    }
+
+    const block = node.closest('p, div, li, h1, h2, h3, h4, h5, h6, blockquote');
+
+    if (! block || ! root.contains(block)) {
+        return;
+    }
+
+    ALIGN_CLASSES.forEach((token) => block.classList.remove(token));
+    block.classList.add(`text-${align}`);
+}
+
+function toolbarSeparator() {
+    const sep = document.createElement('span');
+    sep.className = 'voodbuilder-gjs-rte-toolbar__sep';
+    sep.setAttribute('aria-hidden', 'true');
+
+    return sep;
+}
+
+/**
+ * @param {{
+ *   value?: string,
+ *   labels?: Record<string, string>,
+ *   editor?: object|null,
+ *   onChange?: (html: string) => void,
+ * }} args
+ */
+export function createLightRichTextEditor({ value = '<p></p>', labels = {}, editor = null, onChange } = {}) {
+    const root = document.createElement('div');
+    root.className = 'voodbuilder-gjs-rte';
+    root.setAttribute('data-voodbuilder-light-rte', '');
+
+    let mode = 'visual';
+    let html = sanitizeRichTextHtml(value);
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'voodbuilder-gjs-rte__modes';
+
+    const visualBtn = document.createElement('button');
+    visualBtn.type = 'button';
+    visualBtn.className = 'voodbuilder-gjs-rte__mode is-active';
+    visualBtn.textContent = labels.richTextModeVisual ?? 'Visual';
+
+    const codeBtn = document.createElement('button');
+    codeBtn.type = 'button';
+    codeBtn.className = 'voodbuilder-gjs-rte__mode';
+    codeBtn.textContent = labels.richTextModeCode ?? 'Code';
+
+    modeRow.append(visualBtn, codeBtn);
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'voodbuilder-gjs-rte-toolbar';
+    toolbar.setAttribute('role', 'toolbar');
+
+    const surface = document.createElement('div');
+    surface.className = 'voodbuilder-gjs-rte__surface';
+
+    const visual = document.createElement('div');
+    visual.className = 'voodbuilder-gjs-rte__visual';
+    visual.contentEditable = 'true';
+    visual.spellcheck = true;
+    visual.setAttribute('role', 'textbox');
+    visual.setAttribute('aria-multiline', 'true');
+    visual.innerHTML = html;
+
+    const code = document.createElement('textarea');
+    code.className = 'voodbuilder-gjs-rte__code';
+    code.hidden = true;
+    code.value = html;
+    code.spellcheck = false;
+
+    const emit = () => {
+        html = mode === 'visual'
+            ? sanitizeRichTextHtml(visual.innerHTML)
+            : sanitizeRichTextHtml(code.value);
+        onChange?.(html);
+    };
+
+    const syncFromVisual = () => {
+        html = sanitizeRichTextHtml(visual.innerHTML);
+        code.value = html;
+        onChange?.(html);
+    };
+
+    const syncFromCode = () => {
+        html = sanitizeRichTextHtml(code.value);
+        visual.innerHTML = html;
+        onChange?.(html);
+    };
+
+    const exec = (command, valueArg = null) => {
+        visual.focus();
+        document.execCommand(command, false, valueArg);
+        syncFromVisual();
+    };
+
+    const setMode = (next) => {
+        if (next === mode) {
+            return;
+        }
+
+        if (mode === 'visual') {
+            html = sanitizeRichTextHtml(visual.innerHTML);
+            code.value = html;
+        } else {
+            html = sanitizeRichTextHtml(code.value);
+            visual.innerHTML = html;
+        }
+
+        mode = next;
+        const isVisual = mode === 'visual';
+        visual.hidden = ! isVisual;
+        code.hidden = isVisual;
+        toolbar.hidden = ! isVisual;
+        visualBtn.classList.toggle('is-active', isVisual);
+        codeBtn.classList.toggle('is-active', ! isVisual);
+    };
+
+    visualBtn.addEventListener('click', () => setMode('visual'));
+    codeBtn.addEventListener('click', () => setMode('code'));
+
+    toolbar.append(
+        toolbarButton({
+            title: labels.richTextBold ?? 'Bold',
+            label: '<strong>B</strong>',
+            onClick: () => exec('bold'),
+        }),
+        toolbarButton({
+            title: labels.richTextItalic ?? 'Italic',
+            label: '<em>I</em>',
+            onClick: () => exec('italic'),
+        }),
+        toolbarButton({
+            title: labels.richTextUnderline ?? 'Underline',
+            label: '<span style="text-decoration:underline">U</span>',
+            onClick: () => exec('underline'),
+        }),
+        toolbarButton({
+            title: labels.richTextLink ?? 'Link',
+            label: lucideIcon('link', 14),
+            onClick: async () => {
+                const selection = window.getSelection?.();
+                const text = String(selection?.toString?.() ?? '');
+
+                if (! text && ! findContentEditableAnchor(visual)) {
+                    return;
+                }
+
+                const anchor = findContentEditableAnchor(visual);
+                const linkState = readAnchorLinkState(anchor);
+                const snapshotRange = selection?.rangeCount
+                    ? selection.getRangeAt(0).cloneRange()
+                    : null;
+
+                const result = await linkPickerDialog({
+                    editor,
+                    labels,
+                    title: labels.rteLinkPromptTitle ?? 'Link',
+                    message: labels.rteLinkPromptMessage
+                        ?? 'Choose how this text should link (same options as buttons).',
+                    defaultLinkType: linkState.linkType,
+                    defaultHref: linkState.href || 'https://',
+                    defaultLinkRef: linkState.linkRef,
+                    defaultTarget: linkState.target,
+                    allowRemove: linkState.isLink,
+                });
+
+                if (result === null) {
+                    return;
+                }
+
+                visual.focus();
+
+                if (snapshotRange) {
+                    try {
+                        const sel = window.getSelection?.();
+                        sel?.removeAllRanges?.();
+                        sel?.addRange?.(snapshotRange);
+                    } catch {
+                        // Selection may be lost after the modal — fall back to createLink/unlink.
+                    }
+                }
+
+                if (result.remove) {
+                    exec('unlink');
+
+                    return;
+                }
+
+                if (anchor && linkState.isLink) {
+                    applyRichTextLinkAttrs(anchor, result);
+                    syncFromVisual();
+
+                    return;
+                }
+
+                const open = buildAnchorOpenTag(result);
+                document.execCommand('insertHTML', false, `${open}${escapeHtml(text)}</a>`);
+                syncFromVisual();
+            },
+        }),
+        toolbarSeparator(),
+        toolbarButton({
+            title: labels.richTextAlignLeft ?? 'Align left',
+            label: lucideIcon('align-left', 14),
+            onClick: () => {
+                visual.focus();
+                applyTextAlign(visual, 'left');
+                syncFromVisual();
+            },
+        }),
+        toolbarButton({
+            title: labels.richTextAlignCenter ?? 'Align center',
+            label: lucideIcon('align-center', 14),
+            onClick: () => {
+                visual.focus();
+                applyTextAlign(visual, 'center');
+                syncFromVisual();
+            },
+        }),
+        toolbarButton({
+            title: labels.richTextAlignRight ?? 'Align right',
+            label: lucideIcon('align-right', 14),
+            onClick: () => {
+                visual.focus();
+                applyTextAlign(visual, 'right');
+                syncFromVisual();
+            },
+        }),
+        toolbarSeparator(),
+        toolbarButton({
+            title: labels.richTextBulletList ?? 'Bullet list',
+            label: lucideIcon('list', 14),
+            onClick: () => exec('insertUnorderedList'),
+        }),
+        toolbarButton({
+            title: labels.richTextNumberList ?? 'Numbered list',
+            label: lucideIcon('list-ordered', 14),
+            onClick: () => exec('insertOrderedList'),
+        }),
+    );
+
+    visual.addEventListener('input', syncFromVisual);
+    visual.addEventListener('blur', syncFromVisual);
+    visual.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pasted = event.clipboardData?.getData('text/html')
+            || event.clipboardData?.getData('text/plain')
+            || '';
+        const safe = sanitizeRichTextHtml(
+            pasted.includes('<') ? pasted : pasted.replace(/\n/g, '<br>'),
+        );
+        document.execCommand('insertHTML', false, safe);
+        syncFromVisual();
+    });
+
+    code.addEventListener('change', syncFromCode);
+    code.addEventListener('blur', syncFromCode);
+
+    surface.append(visual, code);
+    root.append(modeRow, toolbar, surface);
+
+    return {
+        root,
+        getHtml: () => (mode === 'visual'
+            ? sanitizeRichTextHtml(visual.innerHTML)
+            : sanitizeRichTextHtml(code.value)),
+        setHtml: (next) => {
+            html = sanitizeRichTextHtml(next);
+            visual.innerHTML = html;
+            code.value = html;
+        },
+        destroy: () => {
+            root.remove();
+        },
+    };
+}
+
+/**
+ * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
+ */
+export function renderRichTextSettings({ mount, traitsMount = null, component, editor, labels = {} }) {
+    if (! mount || ! component) {
+        return false;
+    }
+
+    const key = String(component.cid ?? component.getId?.() ?? '');
+    const existing = mount.querySelector('[data-voodbuilder-rich-text-settings]');
+
+    if (existing && existing.getAttribute('data-component-key') === key) {
+        traitsMount?.classList.add('hidden');
+        mount.hidden = false;
+        lockRichTextChildren(component);
+        keepRichTextSelection(editor, component);
+
+        return true;
+    }
+
+    traitsMount?.classList.add('hidden');
+    traitsMount?.replaceChildren?.();
+    mount.hidden = false;
+    mount.replaceChildren();
+
+    const { section, fields } = createFormSection(labels.richTextSettingsTitle ?? 'Rich text');
+    section.setAttribute('data-voodbuilder-rich-text-settings', '');
+    section.setAttribute('data-component-key', key);
+
+    const editorUi = createLightRichTextEditor({
+        value: readComponentHtml(component),
+        labels,
+        editor,
+        onChange: (html) => {
+            writeComponentHtml(component, html, editor);
+        },
+    });
+
+    fields.appendChild(editorUi.root);
+    mount.appendChild(section);
+    lockRichTextChildren(component);
+    keepRichTextSelection(editor, component);
+
+    return true;
+}
+
+/**
+ * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
+ */
+export function renderBasicTextSettings({ mount, traitsMount = null, component, editor, labels = {} }) {
+    if (! mount || ! component) {
+        return false;
+    }
+
+    const key = String(component.cid ?? component.getId?.() ?? '');
+    const existing = mount.querySelector('[data-voodbuilder-basic-text-settings]');
+
+    if (existing && existing.getAttribute('data-component-key') === key) {
+        traitsMount?.classList.add('hidden');
+        mount.hidden = false;
+
+        return true;
+    }
+
+    traitsMount?.classList.add('hidden');
+    traitsMount?.replaceChildren?.();
+    mount.hidden = false;
+    mount.replaceChildren();
+
+    const { section, fields } = createFormSection(labels.basicTextSettingsTitle ?? 'Basic text');
+    section.setAttribute('data-voodbuilder-basic-text-settings', '');
+    section.setAttribute('data-component-key', key);
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-gjs-form-hint';
+    hint.textContent = labels.basicTextHint
+        ?? 'Plain text — edit directly on the canvas. No formatting toolbar.';
+
+    fields.appendChild(hint);
+    mount.appendChild(section);
+
+    return true;
+}
