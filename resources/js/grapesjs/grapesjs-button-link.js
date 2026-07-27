@@ -627,6 +627,62 @@ function isLinkableCtaComponent(component) {
     return tag === 'a' && component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
 }
 
+/**
+ * Label stored on the model for export (attr / prop / textnode). No "Button" fallback —
+ * that hid missing persistence and let empty CTAs look fine until reload.
+ *
+ * @param {object} component
+ * @returns {string}
+ */
+function readPersistedCtaLabel(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+    const fromAttr = String(attrs[CTA_LABEL_ATTR] ?? '').trim();
+
+    if (fromAttr !== '') {
+        return fromAttr;
+    }
+
+    const ctaLabel = String(component?.get?.('ctaLabel') ?? '').trim();
+
+    if (ctaLabel !== '') {
+        return ctaLabel;
+    }
+
+    const children = component?.components?.();
+    const models = [...(children?.models ?? children ?? [])];
+
+    for (const child of models) {
+        if (child?.get?.('type') !== 'textnode') {
+            continue;
+        }
+
+        const text = String(child.get('content') ?? '').trim();
+
+        if (text !== '') {
+            return text;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+function ctaModelHasLabelChild(component) {
+    const children = component?.components?.();
+    const models = [...(children?.models ?? children ?? [])];
+
+    return models.some((child) => {
+        if (child?.get?.('type') !== 'textnode') {
+            return false;
+        }
+
+        return String(child.get('content') ?? '').trim() !== '';
+    });
+}
+
 function isStableCtaButton(component) {
     if (! component || component.get?.('type') !== 'voodbuilder-cta-button') {
         return false;
@@ -640,7 +696,8 @@ function isStableCtaButton(component) {
         return false;
     }
 
-    return String(extractButtonLabel(component) ?? '').trim() !== '';
+    // Require a real textnode — DOM-only patches do not survive getHtml / reload.
+    return readPersistedCtaLabel(component) !== '' && ctaModelHasLabelChild(component);
 }
 
 function upgradeLinkableButton(component, editor) {
@@ -652,10 +709,12 @@ function upgradeLinkableButton(component, editor) {
         return;
     }
 
-    // Already a healthy CTA — never remorph / re-set attrs (causes canvas flicker).
+    // Already a healthy CTA with persisted label — avoid remorph flicker.
     if (isStableCtaButton(component)) {
-        if (ctaDomLabelMismatches(component, extractButtonLabel(component))) {
-            patchCtaDomLabel(component, extractButtonLabel(component));
+        const label = extractButtonLabel(component);
+
+        if (ctaDomLabelMismatches(component, label)) {
+            patchCtaDomLabel(component, label);
         }
 
         return;
@@ -668,14 +727,17 @@ function upgradeLinkableButton(component, editor) {
         component.addAttributes({ 'data-voodbuilder-cta': 'true' }, { silent: true });
     }
 
+    const label = readPersistedCtaLabel(component) || extractButtonLabel(component) || 'Button';
+
     if (component.get('type') === 'voodbuilder-cta-button' && component.__vbLinkMorphApplied) {
-        persistCtaLabel(component);
+        persistCtaLabel(component, label);
 
         return;
     }
 
     applyCtaButtonLink(component, editor);
     component.__vbLinkMorphApplied = true;
+    persistCtaLabel(component, label);
     syncLinkableButtonTraits(component, editor);
 }
 
@@ -957,10 +1019,27 @@ function promoteButtonLikeAnchor(component) {
 }
 
 /**
- * Before getHtml / chrome-shell extract: guarantee every CTA has a textnode label.
+ * Before getHtml / chrome-shell extract: guarantee every CTA has attr + textnode label.
+ * Default "Button" must be written into the model — otherwise getHtml emits empty <a>
+ * and reload shows a collapsed blank until the user selects it.
  */
 export function ensureCtaButtonsForExport(editor) {
-    scanLinkableButtons(editor);
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    const visit = (component) => {
+        if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
+            upgradeLinkableButton(component, editor);
+            persistCtaLabel(component, extractButtonLabel(component) || 'Button');
+        }
+
+        component.components?.()?.forEach?.((child) => visit(child));
+    };
+
+    visit(wrapper);
 }
 
 export function configureLinkableButtons(editor) {
@@ -975,6 +1054,11 @@ export function configureLinkableButtons(editor) {
 
     editor.on('load', () => {
         scanLinkableButtons(editor);
+
+        // Heal CTAs that loaded with only the model default (no textnode in HTML).
+        window.requestAnimationFrame(() => {
+            ensureCtaButtonsForExport(editor);
+        });
     });
 
     const pendingLinkableRoots = new Set();
@@ -1012,6 +1096,21 @@ export function configureLinkableButtons(editor) {
 
         if (linkableScanFrame == null) {
             linkableScanFrame = window.requestAnimationFrame(flushLinkableScan);
+        }
+
+        // New Basic Button drops often keep the label only as a Grapes default prop.
+        // Persist into attr + textnode on the next frame so the first Save is not empty.
+        if (
+            component.get?.('type') === 'voodbuilder-cta-button'
+            || component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true'
+        ) {
+            window.requestAnimationFrame(() => {
+                if (! component || component.isRemoved?.()) {
+                    return;
+                }
+
+                persistCtaLabel(component, extractButtonLabel(component) || 'Button');
+            });
         }
     });
 
