@@ -37,6 +37,9 @@ final class FilamentMenuTreeAssets
         }
 
         if (is_file(self::jsSourcePath())) {
+            // Mirror CSS: auto-copy so Edit Menu works without `filament:assets`.
+            // Without this file Alpine x-load fails and the nestable tree renders empty.
+            self::ensurePublishedJs();
             $assets[] = AlpineComponent::make(self::SCRIPT_ID, self::jsSourcePath());
         }
 
@@ -47,18 +50,43 @@ final class FilamentMenuTreeAssets
         FilamentAsset::register($assets, self::PACKAGE);
     }
 
+    public static function cssPublicPath(): string
+    {
+        return public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css');
+    }
+
+    public static function jsPublicPath(): string
+    {
+        return public_path('js/'.self::PACKAGE.'/components/'.self::SCRIPT_ID.'.js');
+    }
+
     public static function ensurePublishedCss(): void
     {
         if (! is_file(self::cssSourcePath())) {
             return;
         }
 
-        $destination = public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css');
+        $destination = self::cssPublicPath();
 
         File::ensureDirectoryExists(dirname($destination));
 
         if (! is_file($destination) || filemtime(self::cssSourcePath()) > filemtime($destination)) {
             File::copy(self::cssSourcePath(), $destination);
+        }
+    }
+
+    public static function ensurePublishedJs(): void
+    {
+        if (! is_file(self::jsSourcePath())) {
+            return;
+        }
+
+        $destination = self::jsPublicPath();
+
+        File::ensureDirectoryExists(dirname($destination));
+
+        if (! is_file($destination) || filemtime(self::jsSourcePath()) > filemtime($destination)) {
+            File::copy(self::jsSourcePath(), $destination);
         }
     }
 
@@ -69,6 +97,7 @@ final class FilamentMenuTreeAssets
         }
 
         self::ensurePublishedCss();
+        self::ensurePublishedJs();
 
         return '<link rel="stylesheet" href="'.e(
             FilamentAsset::getStyleHref(self::STYLE_ID, self::PACKAGE),

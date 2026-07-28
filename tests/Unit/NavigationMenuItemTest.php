@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -219,7 +220,29 @@ class NavigationMenuItemTest extends TestCase
 
         $this->assertNotFalse($contents);
         $this->assertStringContainsString('menu-tree-view', $contents);
+        $this->assertStringContainsString('x-data="treeView(', $contents);
         $this->assertStringContainsString('getMaxDepth()', $contents);
+    }
+
+    public function test_menu_tree_alpine_component_is_auto_published_to_public(): void
+    {
+        $destination = FilamentMenuTreeAssets::jsPublicPath();
+
+        if (is_file($destination)) {
+            unlink($destination);
+        }
+
+        $this->assertFileDoesNotExist($destination);
+
+        FilamentMenuTreeAssets::ensurePublishedJs();
+
+        $this->assertFileExists($destination);
+
+        $published = file_get_contents($destination);
+
+        $this->assertNotFalse($published);
+        $this->assertStringContainsString('export default function treeView', $published);
+        $this->assertStringContainsString('resolveDropPosition', $published);
     }
 
     public function test_menu_tree_resolve_drop_position_widens_nest_band(): void
