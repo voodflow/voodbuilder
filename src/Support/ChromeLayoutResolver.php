@@ -29,6 +29,8 @@ final class ChromeLayoutResolver
         'tutorials' => 'docs',
     ];
 
+    private static ?bool $tableExists = null;
+
     public static function enabled(): bool
     {
         return (bool) config('voodbuilder.chrome_layouts.enabled', true);
@@ -36,7 +38,7 @@ final class ChromeLayoutResolver
 
     public static function activeLayout(): ?ChromeLayout
     {
-        if (! self::enabled() || ! Schema::hasTable('voodbuilder_chrome_layouts')) {
+        if (! self::enabled() || ! self::tableExists()) {
             return null;
         }
 
@@ -47,7 +49,7 @@ final class ChromeLayoutResolver
 
     public static function resolveForChannel(?string $channelId): ?ChromeLayout
     {
-        if (! self::enabled() || ! Schema::hasTable('voodbuilder_chrome_layouts')) {
+        if (! self::enabled() || ! self::tableExists()) {
             return null;
         }
 
@@ -67,6 +69,8 @@ final class ChromeLayoutResolver
 
     public static function forgetCache(?string $channelId = null): void
     {
+        self::$tableExists = null;
+
         if ($channelId !== null) {
             Cache::forget('voodbuilder.chrome_layout_id.'.$channelId);
             Cache::forget('voodbuilder.chrome_layout.'.$channelId);
@@ -79,6 +83,15 @@ final class ChromeLayoutResolver
             Cache::forget('voodbuilder.chrome_layout_id.'.$id);
             Cache::forget('voodbuilder.chrome_layout.'.$id);
         }
+    }
+
+    protected static function tableExists(): bool
+    {
+        if (self::$tableExists !== null) {
+            return self::$tableExists;
+        }
+
+        return self::$tableExists = Schema::hasTable('voodbuilder_chrome_layouts');
     }
 
     /**

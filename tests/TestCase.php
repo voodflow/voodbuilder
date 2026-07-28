@@ -66,12 +66,19 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutVite();
 
+        \Voodflow\Voodbuilder\Support\NavigationMenuResolver::clearSchemaCache();
+        \Voodflow\Voodbuilder\Support\SitePageResolver::clearSchemaCache();
+        \Voodflow\Voodbuilder\Support\ChromeLayoutResolver::forgetCache();
+
         $this->seedCookieConsentSettings();
     }
 
     protected function tearDown(): void
     {
         PageBuilderAccess::authorizeUsing(null);
+
+        \Voodflow\Voodbuilder\Support\NavigationMenuResolver::clearSchemaCache();
+        \Voodflow\Voodbuilder\Support\SitePageResolver::clearSchemaCache();
 
         parent::tearDown();
     }

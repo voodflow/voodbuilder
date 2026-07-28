@@ -13,6 +13,11 @@ final class SitePageResolver
 {
     private static ?bool $hasLocalizationColumns = null;
 
+    public static function clearSchemaCache(): void
+    {
+        self::$hasLocalizationColumns = null;
+    }
+
     public static function hasLocalizationColumns(): bool
     {
         if (self::$hasLocalizationColumns !== null) {
