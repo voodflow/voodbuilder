@@ -5,6 +5,7 @@
     use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 
     $brandName = VoodbuilderSettings::brandName();
+    $canvasPreview = (bool) ($canvasPreview ?? false);
     $hasColumnMenus = collect(SiteFooterColumnPlacements::columnSlugs())
         ->contains(fn (string $slug): bool => Navigation::items($slug)->isNotEmpty());
     $legacyFooterItems = Navigation::items('footer');

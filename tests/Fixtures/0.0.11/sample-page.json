@@ -1,0 +1,20 @@
+{
+  "version": "0.0.11",
+  "page": {
+    "title": "Baseline landing",
+    "slug": "baseline-landing",
+    "locale": "en",
+    "layout": "landing",
+    "builder": "grapesjs",
+    "published": true,
+    "html": "<section class=\"voodbuilder-gjs-section bg-vp-bg p-8\"><h1>Baseline</h1></section>",
+    "css": ".p-8 { padding: 2rem; }",
+    "js": ""
+  },
+  "condition_html": "<div data-voodbuilder-conditions=\"{&quot;match&quot;:&quot;any&quot;,&quot;sets&quot;:[{&quot;conditions&quot;:[{&quot;key&quot;:&quot;locale&quot;,&quot;compare&quot;:&quot;==&quot;,&quot;value&quot;:&quot;en&quot;}]}]}\"><p>Visible in EN</p></div><div data-voodbuilder-conditions=\"{&quot;match&quot;:&quot;any&quot;,&quot;sets&quot;:[{&quot;conditions&quot;:[{&quot;key&quot;:&quot;locale&quot;,&quot;compare&quot;:&quot;==&quot;,&quot;value&quot;:&quot;it&quot;}]}]}\"><p>Visible in IT</p></div>",
+  "chrome_layout": {
+    "name": "Baseline chrome",
+    "slug": "baseline-chrome",
+    "html": "<header data-voodbuilder-chrome=\"nav\"><nav>Nav</nav></header><main data-voodbuilder-content-slot=\"main\"></main><footer data-voodbuilder-chrome=\"footer\">Footer</footer>"
+  }
+}

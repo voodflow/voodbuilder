@@ -58,6 +58,7 @@ use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
@@ -137,6 +138,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
         $this->app->singleton(MenuItemTypeRegistry::class);
+        $this->app->singleton(ModuleRegistry::class);
     }
 
     public function packageBooted(): void

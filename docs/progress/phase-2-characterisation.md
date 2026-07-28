@@ -1,38 +1,23 @@
-# Phase 2 progress — characterisation (partial)
+# Phase 2 characterisation — continuation
 
-## Work completed
+## Added
 
-- Diagnosed freeze failures (16 PHPUnit + 1 Vitest).
-- Restored **green** suite: `561` PHPUnit assertions path + `23` Vitest.
-- Tailwind compile self-contained for package/Testbench (`resolveAppRoot`, optional typography plugin, package npm deps).
-- Fixed chrome `resolveSettings` to keep active settings root when selection is ambiguous.
-- Fixed home locale redirect using `SiteLocales` (site default ≠ runtime `app.locale`).
-- Updated stale footer renderer characterisation assertion.
+- `tests/Fixtures/0.0.11/sample-page.json`
+- Feature: publication schedule, route resolution, conditions render, chrome layout save
+- Footer `@php` default for `$canvasPreview` (safe when not in canvas)
 
-## Files changed
-
-- `src/Support/SiteLocales.php` (new)
-- `src/Http/Controllers/HomeController.php`
-- `src/Models/SitePage.php`
-- `src/Support/GrapesJs/GrapesJsComponentTailwindCompiler.php`
-- `scripts/compile-component-tailwind.mjs`
-- `resources/js/grapesjs/blocks/settings/registry.js`
-- `package.json` / `package-lock.json` (Tailwind compile toolchain)
-- tests: `SitePageTranslationTest`, `GrapesJsServerBlockRendererTest`
-
-## Tests executed
+## Tests
 
 ```text
-vendor/bin/phpunit → OK (561 tests, 1737 assertions)
-npm run test:js → OK (23 tests)
+SitePagePublicationTest
+SitePageRouteResolutionTest
+GrapesJsConditionsRenderTest
+GrapesJsChromeLayoutSaveTest
+→ OK
 ```
 
-## Remaining Phase 2 work
+## Remaining (optional / later)
 
-- Add Feature coverage still thin: scheduled publication, theme clone/assign E2E, conditions E2E, template/component import, layout save/load.
-- Seed `tests/Fixtures/0.0.11/` from baseline + starter templates.
-- Capture screenshots under `docs/baseline/screenshots/` when demo available.
-
-## Rollback
-
-Revert this commit; suite returns to 16 failures / missing Tailwind package deps.
+- Theme assign Feature (clone already unit-covered)
+- Template/component import Feature expansion
+- Screenshots

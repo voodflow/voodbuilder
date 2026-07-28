@@ -20,11 +20,17 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 
 class Voodbuilder
 {
+    public static function modules(): ModuleRegistry
+    {
+        return app(ModuleRegistry::class);
+    }
+
     /**
      * @param  class-string<RichContentCustomBlock>  $blockClass
      */
