@@ -1,5 +1,6 @@
 @props([
     'config' => [],
+    'preview' => false,
 ])
 
 @php
@@ -18,5 +19,6 @@
     :config="$config"
     :show-logo="$showLogo"
     :show-site-name="$showSiteName"
+    :preview="$preview"
     {{ $attributes }}
 />

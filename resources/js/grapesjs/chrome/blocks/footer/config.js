@@ -4,7 +4,14 @@
 
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
-import { chromeLogoFieldDefs } from '../../../editor-form-ui.js';
+import {
+    applyChromeLogoSizeClasses,
+    chromeLogoFieldDefs,
+    CHROME_LOGO_DEFAULT_SIZE,
+    CHROME_LOGO_SIZE_KEY,
+    CHROME_LOGO_SIZE_PROP,
+    normalizeChromeLogoSize,
+} from '../../../editor-form-ui.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isFooterBlock } from '../../ids.js';
 
@@ -106,7 +113,7 @@ function applySiteFooterMenuColumnsLayout(root) {
     });
 }
 
-export function applySiteFooterSettingsPreview(root, editor = null) {
+export function applySiteFooterSettingsPreview(root, editor = null, options = {}) {
     // Page editor chrome shell: server HTML already has the correct utilities.
     // Mutating grid/flex classes here without a chrome CSS rebuild leaves the footer unstyled.
     if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
@@ -130,6 +137,7 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
     const showCopyright = root.get('vpressShowCopyright') === true;
     const showBrand = root.get('vpressShowBrand') === true;
     const showSiteName = root.get('vpressShowSiteName') !== false;
+    const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
 
     el.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
         const kind = node.getAttribute('data-voodbuilder-chrome');
@@ -156,13 +164,13 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
         }
     });
 
-    applyFooterBrandPartsPreview(el, showBrand, showSiteName);
+    applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize);
 
     if (footerBlockHasColumns(blockId)) {
         applySiteFooterMenuColumnsLayout(root);
     }
 
-    if (editor?.__voodbuilderChromeLayoutMode) {
+    if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
     }
 }
@@ -173,32 +181,24 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
  * @param {HTMLElement} el
  * @param {boolean} showBrand
  * @param {boolean} showSiteName
+ * @param {string} [logoSize]
  */
-function applyFooterBrandPartsPreview(el, showBrand, showSiteName) {
+function applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize = CHROME_LOGO_DEFAULT_SIZE) {
     const logoOnly = showBrand && ! showSiteName;
+    const size = normalizeChromeLogoSize(logoSize);
 
     el.querySelectorAll('[data-voodbuilder-footer-brand-link]').forEach((link) => {
         link.classList.toggle('w-full', logoOnly);
         link.classList.toggle('min-w-0', logoOnly);
         link.setAttribute('data-voodbuilder-brand-logo-only', logoOnly ? '1' : '0');
+        link.setAttribute('data-voodbuilder-logo-size', size);
     });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
         node.classList.toggle('hidden', ! showBrand);
-
-        node.querySelectorAll('img.vb-brand-logo').forEach((img) => {
-            const isDesktop = img.classList.contains('vb-brand-logo--desktop');
-            img.classList.toggle('h-12', logoOnly && isDesktop);
-            img.classList.toggle('h-10', ! (logoOnly && isDesktop) || ! isDesktop);
-            img.classList.toggle('w-auto', logoOnly);
-            img.classList.toggle('max-w-full', logoOnly);
-            img.classList.toggle('object-contain', logoOnly);
-            img.classList.toggle('object-left', logoOnly);
-            img.classList.toggle('w-10', ! logoOnly);
-            img.classList.toggle('rounded-full', ! logoOnly);
-            img.classList.toggle('object-cover', ! logoOnly);
-        });
     });
+
+    applyChromeLogoSizeClasses(el, size, { footerAvatar: true });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
         node.classList.toggle('hidden', ! showSiteName);
@@ -218,6 +218,9 @@ export function syncSiteFooterConfig(component) {
         show_copyright: component.get('vpressShowCopyright') === true,
         show_brand: component.get('vpressShowBrand') === true,
         show_site_name: component.get('vpressShowSiteName') !== false,
+        [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
+            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+        ),
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -265,7 +268,9 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
         }
 
         syncSiteFooterConfig(root);
-        applySiteFooterSettingsPreview(root, editor);
+        applySiteFooterSettingsPreview(root, editor, {
+            invalidateCss: name === CHROME_LOGO_SIZE_PROP,
+        });
 
         // Logo URL changes need a server re-render; visibility toggles are DOM-only
         // so Brand tab state and logo/name independence stay intact.
@@ -325,6 +330,11 @@ export function configureSiteFooterTraits(component, editor = null) {
     component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
     component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
     component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
+    component.set(
+        CHROME_LOGO_SIZE_PROP,
+        normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),
+        { silent: true },
+    );
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });

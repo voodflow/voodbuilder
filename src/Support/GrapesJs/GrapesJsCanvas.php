@@ -311,11 +311,10 @@ final class GrapesJsCanvas
             margin-inline: 0;
         }
 
-        header[role='banner'] a img,
-        .voodbuilder-mobile-nav__brand img {
-            max-height: 2.5rem;
+        header[role='banner'] a img.vb-brand-logo,
+        .voodbuilder-mobile-nav__brand img.vb-brand-logo {
             width: auto;
-            max-width: min(100%, 13.75rem);
+            max-width: min(100%, 16.25rem);
             object-fit: contain;
         }
 
@@ -384,48 +383,55 @@ final class GrapesJsCanvas
 
         /* Brand logos: ignore theme media queries in the canvas — device attr is source of truth.
          * Theme `@media (width < 60rem)` can still win on specificity and show mobile+desktop
-         * together when the editor center column is narrower than 60rem. */
+         * together when the editor center column is narrower than 60rem.
+         * Use html+body+attr+3 classes so canvas always beats theme (0,3,1). */
         .vb-brand-logo {
             display: none !important;
         }
 
-        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile,
-        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile,
-        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile.vb-brand-logo--light,
-        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile.vb-brand-logo--light,
-        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--mobile.vb-brand-logo--dark,
-        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--mobile.vb-brand-logo--dark {
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile {
             display: none !important;
         }
 
-        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--light,
-        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--light {
+        html body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light {
             display: block !important;
         }
 
-        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop,
-        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop.vb-brand-logo--light,
-        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--desktop.vb-brand-logo--dark {
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark,
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop {
             display: none !important;
         }
 
-        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--light {
+        html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: block !important;
         }
 
-        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--light,
-        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--light,
-        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--light {
+        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: none !important;
         }
 
-        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo--desktop.vb-brand-logo--dark,
-        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo--desktop.vb-brand-logo--dark {
+        html.dark body[data-voodbuilder-gjs-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark,
+        html.dark body[data-voodbuilder-gjs-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark {
             display: block !important;
         }
 
-        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo--mobile.vb-brand-logo--dark {
+        html.dark body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
             display: block !important;
+        }
+
+        /* Brand part toggles must beat device logo display rules. */
+        [data-voodbuilder-chrome-part="logo"].hidden .vb-brand-logo,
+        [data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] .vb-brand-logo {
+            display: none !important;
         }
 
         /* Canvas root: always full-bleed layout token.

@@ -54,6 +54,7 @@ final class SiteFooterConfig
             'logo_desktop_dark' => null,
             'logo_mobile_light' => null,
             'logo_mobile_dark' => null,
+            'logo_size' => ChromeBrandLogos::DEFAULT_SIZE,
         ];
     }
 

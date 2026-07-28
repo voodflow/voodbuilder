@@ -62,8 +62,6 @@
                 <x-voodbuilder::nav-title
                     :config="$brandConfig"
                     link-class="inline-flex items-center gap-2 text-base font-semibold text-vp-text-1"
-                    desktop-logo-class="h-8 w-auto max-w-[140px] object-contain object-left"
-                    mobile-logo-class="h-8 w-auto max-w-[140px] object-contain object-left"
                     data-mobile-nav-close
                 />
             </div>

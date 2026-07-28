@@ -233,14 +233,13 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 /*
- * Nav brand logos: keep intrinsic bitmap size from overflowing the header
- * bar in the editor canvas (same visual target as nav-title h-8 / md:h-10).
+ * Nav brand logos: let Tailwind height utilities (h-6…h-12 from logo_size) control
+ * size. Only cap horizontal overflow so wide bitmaps do not blow the header.
  */
-header[role='banner'] a img,
-.voodbuilder-mobile-nav__brand img {
-    max-height: 2.5rem;
+header[role='banner'] a img.vb-brand-logo,
+.voodbuilder-mobile-nav__brand img.vb-brand-logo {
     width: auto;
-    max-width: min(100%, 13.75rem);
+    max-width: min(100%, 16.25rem);
     object-fit: contain;
 }
 

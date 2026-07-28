@@ -45,11 +45,25 @@ class ChromeBrandLogosTest extends TestCase
             'show_site_name' => 1,
             'logo_desktop_dark' => '  /storage/logos/dark.png  ',
             'logo_mobile_light' => '',
+            'logo_size' => 'xl',
         ]);
 
         $this->assertFalse($normalized['show_logo']);
         $this->assertTrue($normalized['show_site_name']);
         $this->assertSame('/storage/logos/dark.png', $normalized['logo_desktop_dark']);
         $this->assertNull($normalized['logo_mobile_light']);
+        $this->assertSame('xl', $normalized['logo_size']);
+    }
+
+    public function test_logo_size_maps_to_tailwind_height_classes(): void
+    {
+        $this->assertSame('h-6', ChromeBrandLogos::heightClass('sm'));
+        $this->assertSame('h-8', ChromeBrandLogos::heightClass('md'));
+        $this->assertSame('h-10', ChromeBrandLogos::heightClass('lg'));
+        $this->assertSame('h-12', ChromeBrandLogos::heightClass('xl'));
+        $this->assertSame('lg', ChromeBrandLogos::normalizeSize('nope'));
+        $this->assertStringContainsString('h-12', ChromeBrandLogos::desktopLogoClass('xl'));
+        $this->assertStringContainsString('h-6', ChromeBrandLogos::footerLogoClass('sm', true));
+        $this->assertStringContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false));
     }
 }

@@ -36,7 +36,9 @@ function syncMobileNavComponentClasses(editor, open) {
 }
 
 async function syncCanvasDeviceMode(editor) {
-    const deviceId = editor.Devices?.getSelected?.()?.get?.('id') ?? 'desktop';
+    const deviceId = editor.Devices?.getSelected?.()?.get?.('id')
+        ?? editor.getDevice?.()
+        ?? 'desktop';
     const doc = editor.Canvas?.getDocument?.();
 
     if (! doc?.body) {
@@ -45,6 +47,8 @@ async function syncCanvasDeviceMode(editor) {
 
     doc.documentElement.dataset.voodbuilderGjsDevice = deviceId;
     doc.body.dataset.voodbuilderGjsDevice = deviceId;
+    doc.documentElement.setAttribute('data-voodbuilder-gjs-device', deviceId);
+    doc.body.setAttribute('data-voodbuilder-gjs-device', deviceId);
 
     // Always close the drawer when switching viewport — avoids a stuck open panel.
     setMobileNavOpen(doc, false);
@@ -79,6 +83,7 @@ export function registerCanvasSiteChrome(editor) {
     editor.on('canvas:frame:load', boot);
     editor.on('load', boot);
     editor.on('device:select', boot);
+    editor.on('change:device', boot);
     editor.on('sorter:drag:end', boot);
     editor.on('voodbuilder:site-chrome-updated', boot);
 

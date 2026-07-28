@@ -16,10 +16,15 @@ class GrapesJsCanvasTest extends TestCase
 
         $this->assertStringContainsString('var(--color-vp-bg', $frameStyle);
         $this->assertStringContainsString('var(--color-vp-text-1', $frameStyle);
-        $this->assertStringContainsString("header[role='banner'] a img", $frameStyle);
-        $this->assertStringContainsString('max-height: 2.5rem', $frameStyle);
+        $this->assertStringContainsString("header[role='banner'] a img.vb-brand-logo", $frameStyle);
+        $this->assertStringContainsString('max-width: min(100%, 16.25rem)', $frameStyle);
+        $this->assertStringNotContainsString('max-height: 2.5rem', $frameStyle);
         $this->assertStringContainsString(
             "body[data-voodbuilder-gjs-device='desktop'] .voodbuilder-nav--canvas-preview [data-voodbuilder-desktop-nav]",
+            $frameStyle,
+        );
+        $this->assertStringContainsString(
+            "html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light",
             $frameStyle,
         );
         $this->assertStringContainsString('display: flex !important', $frameStyle);

@@ -6,6 +6,7 @@
     $config = is_array($config ?? null) ? $config : [];
     $brandName = $brandName ?? VoodbuilderSettings::brandName();
     $logos = ChromeBrandLogos::resolve($config);
+    $logoSize = ChromeBrandLogos::normalizeSize($config['logo_size'] ?? null);
     $homeUrl = VoodbuilderUrls::home();
     $preview = (bool) ($preview ?? false);
     $showBrand = (bool) ($showBrand ?? true);
@@ -26,6 +27,7 @@
     ])
     data-voodbuilder-footer-brand-link
     data-voodbuilder-brand-logo-only="{{ $logoOnly ? '1' : '0' }}"
+    data-voodbuilder-logo-size="{{ $logoSize }}"
 >
     @if ($mountLogo)
         <span
@@ -39,8 +41,7 @@
                         alt="{{ $brandName }}"
                         @class([
                             'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--light',
-                            'h-10 w-auto max-w-full object-contain object-left' => $logoOnly,
-                            'h-10 w-10 rounded-full object-cover' => ! $logoOnly,
+                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, false),
                         ])
                     >
                 @endif
@@ -50,8 +51,7 @@
                         alt="{{ $brandName }}"
                         @class([
                             'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--dark',
-                            'h-10 w-auto max-w-full object-contain object-left' => $logoOnly,
-                            'h-10 w-10 rounded-full object-cover' => ! $logoOnly,
+                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, false),
                         ])
                     >
                 @endif
@@ -61,8 +61,7 @@
                         alt="{{ $brandName }}"
                         @class([
                             'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--light',
-                            'h-12 w-auto max-w-full object-contain object-left' => $logoOnly,
-                            'h-10 w-10 rounded-full object-cover' => ! $logoOnly,
+                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true),
                         ])
                     >
                 @endif
@@ -72,14 +71,16 @@
                         alt="{{ $brandName }}"
                         @class([
                             'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--dark',
-                            'h-12 w-auto max-w-full object-contain object-left' => $logoOnly,
-                            'h-10 w-10 rounded-full object-cover' => ! $logoOnly,
+                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true),
                         ])
                     >
                 @endif
             @else
-                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-vp-brand-1 p-2 text-white" data-voodbuilder-brand-placeholder>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <span @class([
+                    'inline-flex shrink-0 items-center justify-center rounded-full bg-vp-brand-1 p-2 text-white',
+                    ChromeBrandLogos::squareClass($logoSize),
+                ]) data-voodbuilder-brand-placeholder>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-1/2 w-1/2" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                     </svg>
                 </span>

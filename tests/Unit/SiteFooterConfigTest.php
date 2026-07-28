@@ -120,6 +120,21 @@ class SiteFooterConfigTest extends TestCase
     }
 
     #[Test]
+    public function logo_size_is_applied_on_footer_brand_render(): void
+    {
+        $html = GrapesJsSlotHydrator::renderBrand(true, [
+            'show_brand' => true,
+            'show_site_name' => false,
+            'logo_size' => 'xl',
+            'logo_desktop_light' => 'https://cdn.test/wide-logo.svg',
+        ]);
+
+        $this->assertStringContainsString('data-voodbuilder-logo-size="xl"', $html);
+        $this->assertStringContainsString('h-12', $html);
+        $this->assertStringContainsString('vb-brand-logo--desktop', $html);
+    }
+
+    #[Test]
     public function hydrate_keeps_footer_logo_from_block_config(): void
     {
         $saved = SiteFooterCenteredBlock::toHtml([

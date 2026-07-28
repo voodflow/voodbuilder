@@ -291,8 +291,130 @@ const LOGO_FIELD_KEYS = [
     { key: 'logo_mobile_dark', prop: 'vpressLogoMobileDark', labelKey: 'logoMobileDark', fallback: 'Logo mobile dark' },
 ];
 
+/** @type {Record<string, { height: string, square: string, desktopMax: string, mobileMax: string }>} */
+export const CHROME_LOGO_SIZES = {
+    sm: { height: 'h-6', square: 'h-6 w-6', desktopMax: 'max-w-[140px]', mobileMax: 'max-w-[100px]' },
+    md: { height: 'h-8', square: 'h-8 w-8', desktopMax: 'max-w-[180px]', mobileMax: 'max-w-[120px]' },
+    lg: { height: 'h-10', square: 'h-10 w-10', desktopMax: 'max-w-[220px]', mobileMax: 'max-w-[120px]' },
+    xl: { height: 'h-12', square: 'h-12 w-12', desktopMax: 'max-w-[260px]', mobileMax: 'max-w-[160px]' },
+};
+
+export const CHROME_LOGO_SIZE_PROP = 'vpressLogoSize';
+export const CHROME_LOGO_SIZE_KEY = 'logo_size';
+export const CHROME_LOGO_DEFAULT_SIZE = 'lg';
+
+/**
+ * @param {unknown} size
+ * @returns {keyof typeof CHROME_LOGO_SIZES}
+ */
+export function normalizeChromeLogoSize(size) {
+    const value = typeof size === 'string' ? size.trim().toLowerCase() : '';
+
+    return Object.prototype.hasOwnProperty.call(CHROME_LOGO_SIZES, value) ? value : CHROME_LOGO_DEFAULT_SIZE;
+}
+
+/**
+ * @returns {{ value: string, label: string }[]}
+ */
+export function chromeLogoSizeOptions(labelFn) {
+    const label = typeof labelFn === 'function' ? labelFn : (_key, fallback) => fallback;
+
+    return [
+        { value: 'sm', label: label('logoSizeSm', 'Small (h-6)') },
+        { value: 'md', label: label('logoSizeMd', 'Medium (h-8)') },
+        { value: 'lg', label: label('logoSizeLg', 'Large (h-10)') },
+        { value: 'xl', label: label('logoSizeXl', 'Extra large (h-12)') },
+    ];
+}
+
 export function chromeLogoFieldDefs() {
     return LOGO_FIELD_KEYS;
+}
+
+/**
+ * Apply Tailwind height utilities for brand logos in the live canvas DOM.
+ *
+ * @param {ParentNode} scope
+ * @param {string} size
+ * @param {{ footerAvatar?: boolean }} [opts]
+ */
+export function applyChromeLogoSizeClasses(scope, size, opts = {}) {
+    const normalized = normalizeChromeLogoSize(size);
+    const def = CHROME_LOGO_SIZES[normalized];
+    const heightKeys = Object.values(CHROME_LOGO_SIZES).flatMap((entry) => [
+        ...entry.height.split(/\s+/),
+        ...entry.square.split(/\s+/),
+        entry.desktopMax,
+        entry.mobileMax,
+        'max-w-full',
+        'w-auto',
+        'w-6',
+        'w-8',
+        'w-10',
+        'w-12',
+        'rounded-full',
+        'object-contain',
+        'object-cover',
+        'object-left',
+    ]);
+
+    scope.querySelectorAll?.('[data-voodbuilder-logo-size]').forEach((node) => {
+        node.setAttribute('data-voodbuilder-logo-size', normalized);
+    });
+
+    scope.querySelectorAll?.('img.vb-brand-logo').forEach((img) => {
+        const isDesktop = img.classList.contains('vb-brand-logo--desktop');
+        const logoOnly = img.closest('[data-voodbuilder-brand-logo-only="1"]') != null;
+        const footerContext = img.closest('[data-voodbuilder-footer-brand-link]') != null
+            || opts.footerAvatar === true;
+
+        heightKeys.forEach((cls) => {
+            if (cls) {
+                img.classList.remove(cls);
+            }
+        });
+
+        if (footerContext && ! logoOnly) {
+            def.square.split(/\s+/).forEach((cls) => img.classList.add(cls));
+            img.classList.add('rounded-full', 'object-cover');
+        } else {
+            img.classList.add(def.height, 'w-auto', 'object-contain', 'object-left');
+            img.classList.add(footerContext ? 'max-w-full' : (isDesktop ? def.desktopMax : def.mobileMax));
+        }
+    });
+}
+
+/**
+ * Append logo size select + the four chrome logo URL fields.
+ */
+export function appendChromeLogoFields({ fields, root, editor, applyChange, labelFn }) {
+    const resolveLabel = typeof labelFn === 'function'
+        ? labelFn
+        : (_key, fallback) => fallback;
+
+    fields.append(
+        createSelectField({
+            label: resolveLabel('logoSize', 'Logo size'),
+            name: CHROME_LOGO_SIZE_PROP,
+            value: normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP)),
+            options: chromeLogoSizeOptions(resolveLabel),
+            onChange: (value) => applyChange(CHROME_LOGO_SIZE_PROP, value),
+        }),
+    );
+
+    for (const def of LOGO_FIELD_KEYS) {
+        fields.append(
+            createImageUrlField({
+                label: resolveLabel(def.labelKey, def.fallback),
+                name: def.prop,
+                value: root.get(def.prop) ?? '',
+                editor,
+                chooseLabel: resolveLabel('logoChoose', 'Choose'),
+                clearLabel: resolveLabel('logoClear', 'Clear'),
+                onChange: (url) => applyChange(def.prop, url),
+            }),
+        );
+    }
 }
 
 /**
@@ -434,27 +556,4 @@ export function createImageUrlField({
     syncPreview();
 
     return field;
-}
-
-/**
- * Append the four chrome logo fields to a settings fields container.
- */
-export function appendChromeLogoFields({ fields, root, editor, applyChange, labelFn }) {
-    const resolveLabel = typeof labelFn === 'function'
-        ? labelFn
-        : (_key, fallback) => fallback;
-
-    for (const def of LOGO_FIELD_KEYS) {
-        fields.append(
-            createImageUrlField({
-                label: resolveLabel(def.labelKey, def.fallback),
-                name: def.prop,
-                value: root.get(def.prop) ?? '',
-                editor,
-                chooseLabel: resolveLabel('logoChoose', 'Choose'),
-                clearLabel: resolveLabel('logoClear', 'Clear'),
-                onChange: (url) => applyChange(def.prop, url),
-            }),
-        );
-    }
 }

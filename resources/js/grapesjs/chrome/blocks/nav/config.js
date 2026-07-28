@@ -5,17 +5,22 @@
 import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
 import { resolveSettings } from '../../../blocks/settings/index.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
-import { chromeLogoFieldDefs } from '../../../editor-form-ui.js';
+import {
+    applyChromeLogoSizeClasses,
+    chromeLogoFieldDefs,
+    CHROME_LOGO_DEFAULT_SIZE,
+    CHROME_LOGO_SIZE_KEY,
+    CHROME_LOGO_SIZE_PROP,
+    normalizeChromeLogoSize,
+} from '../../../editor-form-ui.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isNavBlock } from '../../ids.js';
 import { migrateNavId } from './preview.js';
 
-const STRUCTURAL_SITE_NAV_PROPS = new Set([
-    'vpressStickyNav',
-    'vpressShowLogo',
-    'vpressShowSiteName',
-    ...chromeLogoFieldDefs().map((def) => def.prop),
-]);
+/** Logo URL changes need a server re-render to inject new <img> variants. */
+const SITE_NAV_SERVER_REFRESH_PROPS = new Set(
+    chromeLogoFieldDefs().map((def) => def.prop),
+);
 
 const siteNavRefreshTimers = new WeakMap();
 
@@ -173,7 +178,28 @@ function reshapeSiteNavAlignDom(scope, alignCenter) {
     }
 }
 
-export function applySiteNavSettingsPreview(root, editor = null) {
+/**
+ * Toggle logo vs site name independently inside the brand chrome (no full remount).
+ *
+ * @param {ParentNode} scope
+ * @param {boolean} showLogo
+ * @param {boolean} showSiteName
+ */
+function applyNavBrandPartsPreview(scope, showLogo, showSiteName) {
+    scope.querySelectorAll('[data-voodbuilder-chrome="brand"]').forEach((brand) => {
+        brand.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
+            node.classList.toggle('hidden', ! showLogo);
+        });
+
+        brand.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
+            node.classList.toggle('hidden', ! showSiteName && ! showLogo);
+            node.classList.toggle('sr-only', ! showSiteName && showLogo);
+            node.classList.toggle('whitespace-nowrap', showSiteName);
+        });
+    });
+}
+
+export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     // Same as footer: do not mutate chrome-shell nav classes in the page editor.
     if (editor?.__voodbuilderChromeShellMode && ! editor?.__voodbuilderChromeLayoutMode) {
         return;
@@ -192,6 +218,7 @@ export function applySiteNavSettingsPreview(root, editor = null) {
     const showSiteName = root.get('vpressShowSiteName') !== false;
     const alignCenter = root.get('vpressMainNavAlign') === 'center';
     const stickyMode = root.get('vpressStickyNav') ?? 'inherit';
+    const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
 
     const scope = el.querySelector('[data-voodbuilder-gjs-site-header]') ?? el;
@@ -233,6 +260,13 @@ export function applySiteNavSettingsPreview(root, editor = null) {
             setNavChromeVisible(node, showLogo || showSiteName);
         }
     });
+
+    applyNavBrandPartsPreview(scope, showLogo, showSiteName);
+    applyChromeLogoSizeClasses(scope, logoSize);
+
+    if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
+        editor.trigger?.('voodbuilder:page-css-invalidate');
+    }
 }
 
 function scheduleSiteNavBlockRefresh(editor, root) {
@@ -265,6 +299,9 @@ export function syncSiteHeaderConfig(component) {
         show_profile_menu: component.get('vpressShowProfileMenu') === true,
         show_logo: component.get('vpressShowLogo') !== false,
         show_site_name: component.get('vpressShowSiteName') !== false,
+        [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
+            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+        ),
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -287,15 +324,14 @@ export function applySiteNavSettingChange(editor, root, name, value) {
         }
 
         syncSiteHeaderConfig(root);
+        applySiteNavSettingsPreview(root, editor, {
+            invalidateCss: name === CHROME_LOGO_SIZE_PROP,
+        });
 
-        if (STRUCTURAL_SITE_NAV_PROPS.has(name)) {
-            applySiteNavSettingsPreview(root, editor);
+        // Logo URL changes need a server re-render; visibility / size are DOM-only.
+        if (SITE_NAV_SERVER_REFRESH_PROPS.has(name)) {
             scheduleSiteNavBlockRefresh(editor, root);
-
-            return;
         }
-
-        applySiteNavSettingsPreview(root, editor);
     });
 }
 
@@ -318,6 +354,11 @@ export function configureSiteNavTraits(component, editor) {
     component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
     component.set('vpressShowLogo', config.show_logo !== false, { silent: true });
     component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
+    component.set(
+        CHROME_LOGO_SIZE_PROP,
+        normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),
+        { silent: true },
+    );
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });
