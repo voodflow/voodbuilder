@@ -106,6 +106,8 @@ final class ConfigureNpmForVoodbuilder
         return [
             '@fontsource-variable/inter' => '^5.2.8',
             '@fontsource/jetbrains-mono' => '^5.2.8',
+            '@jodit/image-editor' => '^0.2.5',
+            '@tabler/icons' => '^3.45.0',
             '@tailwindcss/vite' => '^4.3.0',
             'grapesjs' => '^0.23.2',
             'grapesjs-blocks-basic' => '^1.0.2',
@@ -115,6 +117,7 @@ final class ConfigureNpmForVoodbuilder
             'grapesjs-tabs' => '^1.0.6',
             'grapesjs-tailwindcss-plugin' => '^0.1.10',
             'tailwindcss' => '^4.3.0',
+            'tailwindcss-animated' => '^2.0.0',
         ];
     }
 
@@ -142,21 +145,19 @@ final class ConfigureNpmForVoodbuilder
             $scripts = [];
         }
 
+        $tablerCatalog = 'node packages/voodflow/voodbuilder/bin/build-tabler-icons-catalog.js';
+        $preferredBuild = $tablerCatalog.' && php artisan voodbuilder:sync-theme-imports && vite build';
         $build = $scripts['build'] ?? null;
 
-        if (! is_string($build) || $build === '') {
-            $scripts['build'] = 'php artisan voodbuilder:sync-theme-imports && vite build';
+        if (! is_string($build) || $build === '' || $build === 'vite build' || $build === 'php artisan voodbuilder:sync-theme-imports && vite build') {
+            $scripts['build'] = $preferredBuild;
             $package['scripts'] = $scripts;
 
             return;
         }
 
-        if (str_contains($build, 'voodbuilder:sync-theme-imports') || ! str_contains($build, 'vite build')) {
-            return;
-        }
-
-        if ($build === 'vite build') {
-            $scripts['build'] = 'php artisan voodbuilder:sync-theme-imports && vite build';
+        if (! str_contains($build, 'build-tabler-icons-catalog') && str_contains($build, 'vite build')) {
+            $scripts['build'] = $tablerCatalog.' && '.$build;
             $package['scripts'] = $scripts;
         }
     }

@@ -69,6 +69,8 @@ final class VoodbuilderPaths
             self::themeCssRelativePath(),
             self::grapesJsViteEntry(),
             self::grapesJsEditorCssEntry(),
+            self::grapesJsTabsCssEntry(),
+            self::grapesJsFormsCssEntry(),
         ];
 
         if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {

@@ -303,7 +303,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     $serverRegistry->register('Site', $footerBlockClass);
                 }
 
-                if (Schema::hasTable('voodbuilder_settings') && ! $this->app->runningInConsole()) {
+                // Check console first: Schema::hasTable() connects to DB and fails on host builds (DB_HOST=mysql).
+                if (! $this->app->runningInConsole() && $this->schemaHasTable('voodbuilder_settings')) {
                     $serverRegistry->registerEditorBlocks($registry);
                 }
             }
@@ -334,9 +335,23 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
             BuiltinBindingSources::register($registry);
 
-            if (Schema::hasTable('voodbuilder_model_integrations')) {
+            // Skip DB during console bootstrap (sync-theme-imports, package:discover, vite build hooks).
+            if (! $this->app->runningInConsole() && $this->schemaHasTable('voodbuilder_model_integrations')) {
                 $this->app->make(ModelIntegrationBindingRegistrar::class)->refreshFromDatabase();
             }
         });
+    }
+
+    /**
+     * Safe Schema::hasTable that returns false when the database is unreachable
+     * (e.g. host npm build with DB_HOST=mysql resolving only inside Docker).
+     */
+    protected function schemaHasTable(string $table): bool
+    {
+        try {
+            return Schema::hasTable($table);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

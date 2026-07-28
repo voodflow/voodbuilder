@@ -180,13 +180,19 @@ final class GrapesJsAssets
         bool $includeTabsAndForms = true,
     ): array {
         if ($includeTabsAndForms) {
-            $entries[] = VoodbuilderPaths::grapesJsTabsCssEntry();
-            $entries[] = VoodbuilderPaths::grapesJsFormsCssEntry();
+            foreach ([
+                VoodbuilderPaths::grapesJsTabsCssEntry(),
+                VoodbuilderPaths::grapesJsFormsCssEntry(),
+            ] as $optionalCss) {
+                if (self::canResolveViteEntry($optionalCss)) {
+                    $entries[] = $optionalCss;
+                }
+            }
         }
 
         $subThemeEntry = self::subThemeCssViteEntry($subTheme);
 
-        if ($subThemeEntry !== null) {
+        if ($subThemeEntry !== null && self::canResolveViteEntry($subThemeEntry)) {
             $entries[] = $subThemeEntry;
         }
 
@@ -194,6 +200,25 @@ final class GrapesJsAssets
             $entries,
             static fn (mixed $entry): bool => is_string($entry) && $entry !== '',
         )));
+    }
+
+    /**
+     * Optional public CSS must exist in the Vite manifest (or Vite hot) so @vite does not throw.
+     * When no manifest exists yet, keep declaring the entry (same failure mode as required assets).
+     */
+    protected static function canResolveViteEntry(string $entry): bool
+    {
+        if (class_exists(Vite::class) && Vite::isRunningHot()) {
+            return true;
+        }
+
+        $manifest = public_path('build/manifest.json');
+
+        if (! is_file($manifest)) {
+            return true;
+        }
+
+        return self::hasBuiltAsset($entry);
     }
 
     protected static function resolveSubThemeCssAbsolutePath(string $subThemeId): ?string
