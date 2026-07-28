@@ -35,7 +35,8 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = NavigationMenuResource::class;
         }
 
-        if (config('voodbuilder.modules.dynamic_data.enabled', true)) {
+        // Single-record integrations are Community; collections are entitlement-gated in the editor.
+        if (config('voodbuilder.modules.dynamic_data.enabled', true) && Voodbuilder::can('dynamic-data.single')) {
             $resources[] = ModelIntegrationResource::class;
         }
 
@@ -43,7 +44,9 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = SitePageResource::class;
         }
 
-        if (config('voodbuilder.modules.popups.enabled', true) && config('voodbuilder.popups.enabled', true)) {
+        if (config('voodbuilder.modules.popups.enabled', true)
+            && config('voodbuilder.popups.enabled', true)
+            && Voodbuilder::can('popups.builder')) {
             $resources[] = PopupResource::class;
         }
 

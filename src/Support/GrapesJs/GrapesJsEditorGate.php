@@ -14,6 +14,7 @@ use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
@@ -137,9 +138,13 @@ final class GrapesJsEditorGate
             'pageTemplatesUrl' => TemplatesModule::isEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.index')
                 : null,
-            'pageTemplatesCatalogUrl' => TemplatesModule::isEnabled() && filled(config('voodbuilder.page_templates.catalog_url'))
+            'pageTemplatesCatalogUrl' => TemplatesModule::isEnabled()
+                && Voodbuilder::can('templates.remote-install')
+                && filled(config('voodbuilder.page_templates.catalog_url'))
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
                 : null,
+            'dynamicDataCollections' => DynamicDataModule::isEnabled()
+                && Voodbuilder::can('dynamic-data.collections'),
             'popupsUrl' => PopupsModule::isEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.popups.index')
                 : null,

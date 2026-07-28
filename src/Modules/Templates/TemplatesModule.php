@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 final class TemplatesModule extends AbstractVoodBuilderModule implements RegistersRoutes
 {
@@ -42,22 +43,32 @@ final class TemplatesModule extends AbstractVoodBuilderModule implements Registe
             ->prefix('voodbuilder/grapesjs')
             ->name('voodbuilder.grapesjs.')
             ->group(function (): void {
+                // Community: local template library only.
                 Route::get('page-templates', [GrapesJsPageTemplatesController::class, 'index'])
                     ->name('page-templates.index');
                 Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])
                     ->name('page-templates.store');
-                Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])
-                    ->name('page-templates.import');
-                Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])
-                    ->name('page-templates.import-url');
-                Route::get('page-templates/catalog', [GrapesJsPageTemplatesController::class, 'catalog'])
-                    ->name('page-templates.catalog');
-                Route::post('page-templates/install', [GrapesJsPageTemplatesController::class, 'installCatalogEntry'])
-                    ->name('page-templates.install');
-                Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])
-                    ->name('page-templates.export');
                 Route::delete('page-templates/{pageTemplate}', [GrapesJsPageTemplatesController::class, 'destroy'])
                     ->name('page-templates.destroy');
+
+                if (Voodbuilder::can('templates.import')) {
+                    Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])
+                        ->name('page-templates.import');
+                    Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])
+                        ->name('page-templates.import-url');
+                }
+
+                if (Voodbuilder::can('templates.remote-install')) {
+                    Route::get('page-templates/catalog', [GrapesJsPageTemplatesController::class, 'catalog'])
+                        ->name('page-templates.catalog');
+                    Route::post('page-templates/install', [GrapesJsPageTemplatesController::class, 'installCatalogEntry'])
+                        ->name('page-templates.install');
+                }
+
+                if (Voodbuilder::can('templates.export')) {
+                    Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])
+                        ->name('page-templates.export');
+                }
             });
     }
 

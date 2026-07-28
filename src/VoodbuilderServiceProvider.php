@@ -54,6 +54,7 @@ use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Licensing\CachedEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\ConfigEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
+use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
@@ -337,18 +338,21 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         $registry->register(
             new DynamicDataModule,
-            enabled: (bool) config('voodbuilder.modules.dynamic_data.enabled', true),
+            enabled: (bool) config('voodbuilder.modules.dynamic_data.enabled', true)
+                && Voodbuilder::can('dynamic-data.single'),
         );
 
         $registry->register(
             new ComponentsModule,
-            enabled: (bool) config('voodbuilder.modules.components.enabled', true),
+            enabled: (bool) config('voodbuilder.modules.components.enabled', true)
+                && Voodbuilder::can('components.library'),
         );
 
         $registry->register(
             new PopupsModule,
             enabled: (bool) config('voodbuilder.modules.popups.enabled', true)
-                && (bool) config('voodbuilder.popups.enabled', true),
+                && (bool) config('voodbuilder.popups.enabled', true)
+                && Voodbuilder::can('popups.builder'),
         );
     }
 }
