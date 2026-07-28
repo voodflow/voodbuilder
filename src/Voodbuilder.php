@@ -23,12 +23,28 @@ use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
+use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 
 class Voodbuilder
 {
     public static function modules(): ModuleRegistry
     {
         return app(ModuleRegistry::class);
+    }
+
+    public static function entitlements(): EntitlementManager
+    {
+        return app(EntitlementManager::class);
+    }
+
+    public static function can(string $capability): bool
+    {
+        return self::entitlements()->can($capability);
+    }
+
+    public static function cannot(string $capability): bool
+    {
+        return self::entitlements()->cannot($capability);
     }
 
     /**

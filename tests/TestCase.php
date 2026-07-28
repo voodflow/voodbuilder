@@ -43,6 +43,9 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('voodbuilder.pages.enabled', true);
         $app['config']->set('voodbuilder.pages.prefix', 'pages');
         $app['config']->set('voodbuilder.home.route_enabled', false);
+        // Package still ships Agency surfaces in-repo; tests use Agency until proprietary splits exist.
+        $app['config']->set('voodbuilder.license.edition', 'agency');
+        $app['config']->set('voodbuilder.license.cache', false);
 
         $app['config']->set('settings', [
             'settings' => [

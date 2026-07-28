@@ -43,6 +43,19 @@ return [
         ],
     ],
 
+    /*
+    | Licence edition drives capability resolution (Phase 7).
+    | AnyStack adapter arrives in Phase 10 — keep remote calls out of Core paths.
+    */
+    'license' => [
+        'edition' => env('VOODBUILDER_EDITION', 'community'),
+        'key' => env('VOODBUILDER_LICENSE_KEY', ''),
+        'secret' => env('VOODBUILDER_LICENSE_SECRET', ''),
+        'enforce' => env('VOODBUILDER_LICENSE_ENFORCE', false),
+        'cache' => env('VOODBUILDER_LICENSE_CACHE', true),
+        'cache_ttl' => (int) env('VOODBUILDER_LICENSE_CACHE_TTL', 3600),
+    ],
+
     'layouts' => [
         'app' => 'voodbuilder::layouts.app',
         'chrome_app' => 'voodbuilder::layouts.chrome-app',
