@@ -19,6 +19,7 @@ export function globalTextTagValues(editor = null) {
         brand_name: 'VoodBuilder',
         site_name: 'VoodBuilder',
         site_url: '',
+        logged_username: '',
     };
 }
 

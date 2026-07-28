@@ -51,7 +51,7 @@ Saved markup uses `data-voodbuilder-bind` for content/label, and optionally `dat
 
 Use-case guide (IT): [DYNAMIC_DATA_USE_CASES.md](./DYNAMIC_DATA_USE_CASES.md).
 
-**Global text tags** (always on, not model bindings): `{current_year}`, `{brand_name}`, `{site_name}`, `{site_url}` — see that doc. Footer copyright default is `© {current_year} {brand_name}`.
+**Global text tags** (always on, not model bindings): `{current_year}`, `{brand_name}`, `{site_name}`, `{site_url}`, `{logged_username}` — see that doc. Footer copyright default is `© {current_year} {brand_name}`. Guest → empty `{logged_username}`.
 
 **Block visibility:** use existing `data-voodbuilder-conditions` (logged-in, role, locale, path, dates, …) to show/hide whole sections — independent from field bindings.
 

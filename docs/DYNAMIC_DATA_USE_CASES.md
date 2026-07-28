@@ -14,7 +14,7 @@ Per un hero tipo *«Ciao Paolo»* o un CTA *«Vai al tuo profilo»* serve la ses
 
 ## Global text tags (site-wide)
 
-Plain curly tags available in **any** chrome/page HTML text (footer copyright, taglines, free text). Not the same as `data-voodbuilder-bind` model bindings.
+Plain curly tags for **any** GrapesJS text / rich text / chrome string. **Not** the same as `data-voodbuilder-bind` (“Make dynamic” on news/articles/users).
 
 | Tag | Resolves to |
 |-----|-------------|
@@ -22,10 +22,45 @@ Plain curly tags available in **any** chrome/page HTML text (footer copyright, t
 | `{brand_name}` | Settings brand name |
 | `{site_name}` | SEO site name, else site title |
 | `{site_url}` | `APP_URL` |
+| `{logged_username}` | Authenticated user `name` (fallback `username`); **empty string** if guest or missing |
 
-Example copyright: `© {current_year} {brand_name}` → `© 2026 VoodBuilder`.
+Example (text or rich text block):
 
-Resolved at render time by `GlobalTextTags` (Blade helpers + chrome/page HTML pipeline). In the layout editor, typing `{current_year}` in copyright works; saving a resolved `© 2026 …` is re-tagged to keep the year dynamic.
+```text
+Ciao {logged_username}, il {current_year} è il tuo anno!
+```
+
+→ logged-in Paolo: `Ciao Paolo, il 2026 è il tuo anno!`  
+→ guest: `Ciao , il 2026 è il tuo anno!` (use a `user_logged_in` condition if you want to hide the whole sentence)
+
+Copyright default: `© {current_year} {brand_name}` → `© 2026 VoodBuilder`.
+
+### Where they apply
+
+| Surface | Resolved by |
+|---------|-------------|
+| Page content (text + rich text HTML) | `GrapesJsRenderer::render()` → `GlobalTextTags::replaceInHtml()` |
+| Site chrome (nav/footer layouts) | `GrapesJsChromeHtmlPipeline` |
+| Footer copyright / tagline helpers | `SiteFooterConfig::resolveCopyright()` / `resolveTagline()` |
+| Public page with `?edit=1` preview | `GrapesJsEditorGate` (same PHP replace) |
+
+### Editor UX
+
+- In the GrapesJS canvas, leave `{tags}` visible so authors see the tokens.
+- Copyright fields that show a resolved `© 2026` are re-tagged on save (`retagCurrentYear`) so the year stays dynamic.
+- Values for preview helpers are also passed to the editor as `globalTextTags` (including `logged_username` for the current admin session).
+
+### vs model bindings
+
+| Need | Use |
+|------|-----|
+| Year, brand, site URL, quick hello with username | Global text tags `{…}` |
+| News/article fields, typed fields, href/src, hide-when-empty | Make dynamic → `data-voodbuilder-bind` |
+| Hide whole section for guests | `data-voodbuilder-conditions` (`user_logged_in`) |
+
+### Performance
+
+One `strtr` pass over the final HTML string — no DOM walk, no extra JS libs. Negligible cost.
 
 ---
 
@@ -106,6 +141,7 @@ Dettaglio contratto: [BINDINGS.md](./BINDINGS.md).
 2. Componenti / repeat  
 3. **BindingRenderer** (`data-voodbuilder-bind` / `bind-href`)  
 4. Blocchi server dinamici  
+5. **GlobalTextTags** (`{current_year}`, `{logged_username}`, …) su tutto l’HTML risultante  
 
 In editor (`?edit=1`) i binding si risolvono in preview quando il gate lo consente: per `.auth` si vede l’admin/utente con cui sei loggato mentre editi.
 
@@ -127,7 +163,8 @@ In editor (`?edit=1`) i binding si risolvono in preview quando il gate lo consen
 
 | Obiettivo | Cosa usare |
 |-----------|------------|
-| «Ciao {nome}» | `users.auth.name` + (opz.) condition logged-in |
+| «Ciao {nome}» (semplice) | Global tag `{logged_username}` nel testo / rich text |
+| «Ciao {nome}» (campo modello + hide) | `users.auth.name` + (opz.) condition logged-in |
 | «Vai al tuo profilo» | CTA: label statica o `users.auth.name`, href statico `/account` o campo URL auth |
 | «Ultimo tutorial» | `vtuts.latest.title` / `url` / `image` |
 | «Ultimo iscritto in vetrina» | picker → **Ultimo record · Name** → `users.latest.name` |
