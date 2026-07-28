@@ -28,6 +28,7 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
+@source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/grapesjs/popups-ui.js';
 @source '../js/grapesjs/popups-ui.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");

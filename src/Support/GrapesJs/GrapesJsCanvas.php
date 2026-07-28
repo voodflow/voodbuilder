@@ -102,7 +102,7 @@ final class GrapesJsCanvas
         $chromeLayoutCss = self::readPackageCanvasCss('chrome-layout-canvas.css');
         $chromeBlockUtilitiesCss = self::readPackageCanvasCss('chrome-block-utilities.css');
         $wrapperMinHeight = $popupMode ? 'auto' : '100vh';
-        $popupShellCss = $popupMode ? self::readPackageCanvasCss('popup-shell.css') : '';
+        $popupShellCss = $popupMode ? self::readPopupShellCanvasCss() : '';
 
         return <<<CSS
         body {
@@ -878,6 +878,25 @@ final class GrapesJsCanvas
         }
 
         return (string) file_get_contents($path);
+    }
+
+    /**
+     * Popup canvas chrome CSS ships with voodbuilder-popups (sibling path package).
+     */
+    protected static function readPopupShellCanvasCss(): string
+    {
+        $candidates = [
+            dirname(__DIR__, 4).'/voodbuilder-popups/resources/css/grapesjs/popup-shell.css',
+            dirname(__DIR__, 3).'/resources/css/grapesjs/popup-shell.css',
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_readable($path)) {
+                return (string) file_get_contents($path);
+            }
+        }
+
+        return '';
     }
 
     protected static function readTabsCanvasCss(): string
