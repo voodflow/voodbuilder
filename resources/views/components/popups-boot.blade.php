@@ -1,5 +1,8 @@
 @if (
-    config('voodbuilder.popups.enabled', true)
+    \Voodflow\Voodbuilder\Modules\Popups\PopupsModule::isEnabled()
+    && \Illuminate\Support\Facades\Route::has('voodbuilder.popups.public')
+    && \Illuminate\Support\Facades\Route::has('voodbuilder.popups.events')
+    && config('voodbuilder.popups.enabled', true)
     && \Illuminate\Support\Facades\Schema::hasTable('voodbuilder_popups')
     && \Voodflow\Voodbuilder\Models\BuilderPopup::query()->where('enabled', true)->exists()
 )

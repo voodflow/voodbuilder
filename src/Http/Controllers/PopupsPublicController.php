@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\BuilderPopup;
+use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Support\GrapesJs\Popups\GrapesJsPopupHtmlNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Popups\PopupRulesEvaluator;
 
@@ -19,7 +20,9 @@ class PopupsPublicController extends Controller
 
     public function index(): JsonResponse
     {
-        if (! config('voodbuilder.popups.enabled', true) || ! Schema::hasTable('voodbuilder_popups')) {
+        if (! PopupsModule::isEnabled()
+            || ! config('voodbuilder.popups.enabled', true)
+            || ! Schema::hasTable('voodbuilder_popups')) {
             return response()->json(['popups' => []]);
         }
 

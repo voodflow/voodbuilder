@@ -198,4 +198,9 @@ return [
         'group_menus' => 'Voci di menu',
         'group_routes' => 'Route app',
     ],
+
+    'orphan' => [
+        'title' => 'Dati popup senza modulo Popups',
+        'body' => 'Trovati :count popup salvati, ma il modulo Popups è disabilitato. Le pagine pubbliche continuano a funzionare; riabilita il modulo (o installa voodbuilder-popups) per gestirli di nuovo.',
+    ],
 ];

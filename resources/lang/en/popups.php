@@ -198,4 +198,9 @@ return [
         'group_menus' => 'Menu links',
         'group_routes' => 'App routes',
     ],
+
+    'orphan' => [
+        'title' => 'Popup data without Popups module',
+        'body' => 'Found :count saved popup(s), but the Popups module is disabled. Public pages keep working; re-enable the module (or install voodbuilder-popups) to manage them again.',
+    ],
 ];

@@ -30,6 +30,7 @@ use Livewire\Attributes\On;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
+use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
@@ -78,6 +79,15 @@ class VoodbuilderSettingsPage extends Page
 
         $this->data = $data;
         $this->form->fill($data);
+
+        if (PopupsOrphanStatus::detected()) {
+            Notification::make()
+                ->warning()
+                ->title(PopupsOrphanStatus::adminTitle())
+                ->body(PopupsOrphanStatus::adminBody())
+                ->persistent()
+                ->send();
+        }
     }
 
     /**
