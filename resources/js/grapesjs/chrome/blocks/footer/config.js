@@ -129,6 +129,7 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
     const showTagline = root.get('vpressShowTagline') === true;
     const showCopyright = root.get('vpressShowCopyright') === true;
     const showBrand = root.get('vpressShowBrand') === true;
+    const showSiteName = root.get('vpressShowSiteName') !== false;
 
     el.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
         const kind = node.getAttribute('data-voodbuilder-chrome');
@@ -144,11 +145,11 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
         } else if (kind === 'copyright') {
             setFooterChromeVisible(node, showCopyright);
         } else if (kind === 'brand') {
-            setFooterChromeVisible(node, showBrand);
+            setFooterChromeVisible(node, showBrand || showSiteName);
         } else if (kind === 'tagline') {
             setFooterChromeVisible(node, showTagline);
         } else if (kind === 'brand-column') {
-            setFooterChromeVisible(node, showBrand || showCopyright || showSocial || showTagline);
+            setFooterChromeVisible(node, showBrand || showSiteName || showCopyright || showSocial || showTagline);
         } else if (kind?.startsWith('footer-col-')) {
             const index = Number(kind.replace('footer-col-', ''));
             setFooterChromeVisible(node, root.get(`vpressShowFooterCol${index}`) === true);
@@ -174,6 +175,7 @@ export function syncSiteFooterConfig(component) {
         show_tagline: component.get('vpressShowTagline') === true,
         show_copyright: component.get('vpressShowCopyright') === true,
         show_brand: component.get('vpressShowBrand') === true,
+        show_site_name: component.get('vpressShowSiteName') !== false,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -223,7 +225,7 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
         syncSiteFooterConfig(root);
         applySiteFooterSettingsPreview(root, editor);
 
-        if (FOOTER_LOGO_PROPS.has(name) || name === 'vpressShowBrand') {
+        if (FOOTER_LOGO_PROPS.has(name) || name === 'vpressShowBrand' || name === 'vpressShowSiteName') {
             scheduleSiteFooterBlockRefresh(editor, root);
         }
     });
@@ -261,7 +263,8 @@ export function configureSiteFooterTraits(component, editor = null) {
         return;
     }
 
-    component.set('stylable', false);
+    component.set('stylable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
+    component.set('badgable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
 
     const config = component.get('vpressConfig') ?? {};
     const columnVisibility = readFooterColumnVisibilityFromConfig(config);
@@ -276,6 +279,7 @@ export function configureSiteFooterTraits(component, editor = null) {
     component.set('vpressShowTagline', resolveShowTaglineFromConfig(config, blockId), { silent: true });
     component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
     component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
+    component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
     component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
 
     for (const def of chromeLogoFieldDefs()) {

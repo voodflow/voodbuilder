@@ -51,6 +51,7 @@ final class GrapesJsSlotHydrator
             'brandName' => VoodbuilderSettings::brandName(),
             'config' => $normalized,
             'showBrand' => (bool) ($normalized['show_brand'] ?? true),
+            'showSiteName' => (bool) ($normalized['show_site_name'] ?? true),
             'preview' => $preview,
         ])->render();
     }
@@ -72,13 +73,47 @@ final class GrapesJsSlotHydrator
 
     protected static function hydrateBrands(DOMDocument $document, DOMElement $root, bool $preview, array $config = []): void
     {
+        $elements = [];
+
         foreach ($root->getElementsByTagName('*') as $element) {
-            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-brand')) {
-                continue;
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-brand')) {
+                $elements[] = $element;
+            }
+        }
+
+        foreach ($elements as $element) {
+            $slotConfig = self::resolveConfigForElement($element, $config);
+            self::replaceElementInnerHtml($document, $element, self::renderBrand($preview, $slotConfig));
+            // Prevent a later hydrateHtml() pass (e.g. ChromeLayoutRenderer) from
+            // re-rendering the brand with an empty config and wiping custom logos.
+            $element->removeAttribute('data-voodbuilder-brand');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $fallback
+     * @return array<string, mixed>
+     */
+    protected static function resolveConfigForElement(DOMElement $element, array $fallback = []): array
+    {
+        $current = $element;
+
+        while ($current instanceof DOMElement) {
+            if ($current->hasAttribute('data-voodbuilder-config')) {
+                $decoded = GrapesJsDynamicBlockAttributeNormalizer::decodeConfig(
+                    (string) $current->getAttribute('data-voodbuilder-config'),
+                );
+
+                if ($decoded !== []) {
+                    return $decoded;
+                }
             }
 
-            self::replaceElementInnerHtml($document, $element, self::renderBrand($preview, $config));
+            $parent = $current->parentNode;
+            $current = $parent instanceof DOMElement ? $parent : null;
         }
+
+        return $fallback;
     }
 
     protected static function hydrateMenus(DOMDocument $document, DOMElement $root, bool $preview): void

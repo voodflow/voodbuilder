@@ -306,7 +306,8 @@ export function configureSiteNavTraits(component, editor) {
         return;
     }
 
-    component.set('stylable', false);
+    component.set('stylable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
+    component.set('badgable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
 
     const config = component.get('vpressConfig') ?? {};
 

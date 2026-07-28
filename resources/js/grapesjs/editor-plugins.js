@@ -244,6 +244,12 @@ export function configureGrapesJsPlugins(editor, options = {}) {
                 protectSiteHeaderButton(component);
             });
         });
+        editor.on('load', () => {
+            safeFindComponents(
+                editor.getWrapper?.(),
+                'button.voodbuilder-header-icon-btn, button[data-voodbuilder-search-open], button[data-voodbuilder-notification-bell-preview], button[data-voodbuilder-profile-menu-toggle], button[data-mobile-nav-toggle], button[data-mobile-nav-close], button[data-theme-toggle]',
+            ).forEach((button) => protectSiteHeaderButton(button));
+        });
     }
 
     if (enabled.forms !== false && formSubmitUrl) {

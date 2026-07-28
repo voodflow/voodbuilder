@@ -77,7 +77,11 @@ function syncSettingsFormValues(mount, root) {
         }
 
         if (input instanceof HTMLInputElement && input.type === 'checkbox') {
-            input.checked = root.get(name) === true;
+            const raw = root.get(name);
+            // Nav/footer brand toggles default to on when unset (`!== false`).
+            input.checked = name === 'vpressShowSiteName' || name === 'vpressShowLogo'
+                ? raw !== false
+                : raw === true;
 
             return;
         }

@@ -25,6 +25,85 @@ export function createFormSection(title) {
     return { section, fields };
 }
 
+/**
+ * Segmented tabs for inspector settings panels (nav Layout/Brand, footer Brand/Layout/Columns, …).
+ * Pass only the tabs needed for the current block variant; panels are keyed by tab id.
+ *
+ * @param {{ id: string, label: string }[]} tabs
+ * @param {{ activeId?: string, onActiveChange?: (id: string) => void }} [options]
+ * @returns {{ root: HTMLElement, panels: Record<string, HTMLElement>, setActive: (id: string) => void }}
+ */
+export function createFormTabs(tabs, { activeId, onActiveChange } = {}) {
+    const list = Array.isArray(tabs) ? tabs.filter((tab) => tab?.id && tab?.label) : [];
+    const root = document.createElement('div');
+    root.className = 'voodbuilder-gjs-form-tabs';
+
+    const bar = document.createElement('div');
+    bar.className = 'voodbuilder-gjs-form-tabs__bar voodbuilder-gjs-segmented';
+    bar.setAttribute('role', 'tablist');
+
+    const panelsHost = document.createElement('div');
+    panelsHost.className = 'voodbuilder-gjs-form-tabs__panels';
+
+    /** @type {Record<string, HTMLElement>} */
+    const panels = {};
+    /** @type {HTMLButtonElement[]} */
+    const buttons = [];
+
+    const initialId = list.some((tab) => tab.id === activeId)
+        ? activeId
+        : (list[0]?.id ?? null);
+
+    const setActive = (id) => {
+        for (const btn of buttons) {
+            const active = btn.dataset.tabId === id;
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            btn.tabIndex = active ? 0 : -1;
+        }
+
+        for (const [panelId, panel] of Object.entries(panels)) {
+            const active = panelId === id;
+            panel.hidden = ! active;
+            panel.classList.toggle('is-active', active);
+        }
+
+        if (typeof onActiveChange === 'function' && id) {
+            onActiveChange(id);
+        }
+    };
+
+    for (const tab of list) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'voodbuilder-gjs-segmented__btn voodbuilder-gjs-form-tabs__tab';
+        btn.textContent = tab.label;
+        btn.dataset.tabId = tab.id;
+        btn.id = `voodbuilder-gjs-form-tab-${tab.id}`;
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-controls', `voodbuilder-gjs-form-panel-${tab.id}`);
+        btn.addEventListener('click', () => setActive(tab.id));
+        buttons.push(btn);
+        bar.appendChild(btn);
+
+        const panel = document.createElement('div');
+        panel.className = 'voodbuilder-gjs-form-tabs__panel voodbuilder-gjs-form__fields';
+        panel.id = `voodbuilder-gjs-form-panel-${tab.id}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', btn.id);
+        panel.hidden = true;
+        panels[tab.id] = panel;
+        panelsHost.appendChild(panel);
+    }
+
+    if (list.length > 0) {
+        root.append(bar, panelsHost);
+        setActive(initialId);
+    }
+
+    return { root, panels, setActive };
+}
+
 export function createSelectField({ label, name, value, options, onChange }) {
     const id = fieldId(name);
     const field = document.createElement('div');
@@ -186,6 +265,25 @@ export function createCheckboxField({ label, name, checked, onChange }) {
     return field;
 }
 
+/**
+ * Two-column checkbox grid for brand/visibility toggles.
+ *
+ * @param {HTMLElement[]} fields
+ * @returns {HTMLElement}
+ */
+export function createCheckboxGrid(fields = []) {
+    const grid = document.createElement('div');
+    grid.className = 'voodbuilder-gjs-checkbox-grid';
+
+    for (const field of fields) {
+        if (field) {
+            grid.appendChild(field);
+        }
+    }
+
+    return grid;
+}
+
 const LOGO_FIELD_KEYS = [
     { key: 'logo_desktop_light', prop: 'vpressLogoDesktopLight', labelKey: 'logoDesktopLight', fallback: 'Logo desktop light' },
     { key: 'logo_desktop_dark', prop: 'vpressLogoDesktopDark', labelKey: 'logoDesktopDark', fallback: 'Logo desktop dark' },
@@ -280,7 +378,10 @@ export function createImageUrlField({
     input.addEventListener('change', emit);
     input.addEventListener('blur', emit);
 
-    chooseBtn.addEventListener('click', () => {
+    chooseBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
         const assets = editor?.Assets ?? editor?.AssetManager;
 
         if (! assets || typeof assets.open !== 'function') {
@@ -288,6 +389,10 @@ export function createImageUrlField({
 
             return;
         }
+
+        // Keep the settings root selected while the AssetManager is open —
+        // clicking an asset must not remount the inspector onto Layout.
+        const selectedBefore = editor?.getSelected?.() ?? null;
 
         assets.open({
             types: ['image'],
@@ -301,8 +406,18 @@ export function createImageUrlField({
                     emit();
                 }
 
-                if (complete && typeof assets.close === 'function') {
+                // Close on any selection click (GrapesJS may pass complete=false
+                // for single-click pick without double-click confirm).
+                if (typeof assets.close === 'function') {
                     assets.close();
+                } else if (complete) {
+                    // no-op: close unavailable
+                }
+
+                if (selectedBefore && editor?.getSelected?.() !== selectedBefore) {
+                    window.requestAnimationFrame(() => {
+                        editor.select?.(selectedBefore, { scroll: false });
+                    });
                 }
             },
         });

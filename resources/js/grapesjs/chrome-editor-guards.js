@@ -5,13 +5,11 @@
 import { lucideIcon } from './editor-icons.js';
 import { isGrapesComponent } from './tailwind-visual-style.js';
 import {
-    CHROME_SHELL_PART_ATTR,
     CONTENT_SLOT_ATTR,
     isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
     isChromeShellModeEditor,
     isChromeShellPartComponent,
-    isInsideChromeDropZoneComponent,
     isInsideChromeShellPartComponent,
     isPageContentSlotComponent,
     shouldBlockChromeLayerContextMenu,
@@ -135,14 +133,11 @@ export function isChromeLayoutContentSlot(component) {
     return Boolean(attrs[CONTENT_SLOT_ATTR]) && ! attrs['data-voodbuilder-page-content'];
 }
 
-function isInsideLayoutChromeZone(component) {
-    return isChromeDropZoneComponent(component) || isInsideChromeDropZoneComponent(component);
-}
-
 /**
- * Layout editor only: Style / Dynamic / Conditions stay locked on the chrome
- * zones (header/footer drop zones + page-content slot) and their nested blocks.
- * A second nav/footer dropped outside those zones is editable like any block.
+ * Layout editor only: Style / Dynamic / Conditions stay locked on structural
+ * chrome slots (header/footer drop-zone shells + page-content placeholder).
+ * Nav/footer blocks and anything dropped into those zones stay editable for
+ * classes and styles.
  */
 export function isChromeLayoutAdvancedInspectorLimited(component, editor) {
     if (! component || ! isChromeLayoutModeEditor(editor)) {
@@ -154,27 +149,6 @@ export function isChromeLayoutAdvancedInspectorLimited(component, editor) {
         || isChromeLayoutContentSlot(component)
     ) {
         return true;
-    }
-
-    if (! isInsideLayoutChromeZone(component)) {
-        return false;
-    }
-
-    if (
-        isChromeLayoutNavBlock(component)
-        || isChromeLayoutFooterBlock(component)
-    ) {
-        return true;
-    }
-
-    let current = component.parent?.();
-
-    while (current && current.get?.('type') !== 'wrapper') {
-        if (isChromeLayoutNavBlock(current) || isChromeLayoutFooterBlock(current)) {
-            return true;
-        }
-
-        current = current.parent?.();
     }
 
     return false;

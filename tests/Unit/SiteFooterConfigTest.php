@@ -66,6 +66,7 @@ class SiteFooterConfigTest extends TestCase
     {
         $html = SiteFooterColumnsSimpleBlock::toHtml([
             'show_brand' => false,
+            'show_site_name' => false,
             'show_copyright' => false,
             'show_social' => false,
             'show_tagline' => false,
@@ -75,6 +76,44 @@ class SiteFooterConfigTest extends TestCase
             '/data-voodbuilder-chrome="brand-column"[^>]*\bhidden\b|<[^>]*\bhidden\b[^>]*data-voodbuilder-chrome="brand-column"/',
             $html,
         );
+    }
+
+    #[Test]
+    public function show_site_name_is_independent_from_show_brand(): void
+    {
+        $normalized = SiteFooterConfig::normalize([
+            'show_brand' => false,
+            'show_site_name' => true,
+        ]);
+
+        $this->assertFalse($normalized['show_brand']);
+        $this->assertTrue($normalized['show_site_name']);
+        $this->assertTrue(SiteFooterConfig::isChromeVisible($normalized, 'brand'));
+
+        $html = GrapesJsSlotHydrator::renderBrand(false, [
+            'show_brand' => false,
+            'show_site_name' => true,
+            'logo_desktop_light' => 'https://cdn.test/logo.svg',
+        ]);
+
+        $this->assertStringNotContainsString('cdn.test/logo.svg', $html);
+        $this->assertStringContainsString('text-xl', $html);
+    }
+
+    #[Test]
+    public function hydrate_keeps_footer_logo_from_block_config(): void
+    {
+        $saved = SiteFooterCenteredBlock::toHtml([
+            'show_brand' => true,
+            'show_site_name' => true,
+            'logo_desktop_light' => 'https://cdn.test/footer-logo.svg',
+        ], []);
+
+        // Simulate ChromeLayoutRenderer calling hydrateHtml without config after
+        // the dynamic renderer already filled brand slots.
+        $hydrated = GrapesJsSlotHydrator::hydrateHtml($saved, false, []);
+
+        $this->assertStringContainsString('https://cdn.test/footer-logo.svg', $hydrated);
     }
 
     #[Test]
@@ -207,6 +246,7 @@ class SiteFooterConfigTest extends TestCase
     {
         $html = SiteFooterCenteredBlock::toHtml([
             'show_brand' => false,
+            'show_site_name' => false,
             'show_tagline' => true,
         ], []);
 

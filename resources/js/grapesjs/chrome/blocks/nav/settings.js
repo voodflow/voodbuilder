@@ -8,6 +8,7 @@ import {
     appendChromeLogoFields,
     createCheckboxField,
     createFormSection,
+    createFormTabs,
     createSelectField,
 } from '../../../editor-form-ui.js';
 import { configureSiteNavTraits, applySiteNavSettingChange, navSettingLabel } from './config.js';
@@ -43,31 +44,12 @@ export function registerNavSettings(editor) {
             const label = (key, fallback) => navSettingLabel(gjsEditor, key, fallback);
 
             const { section, fields } = createFormSection(label('navSettingsTitle', 'Navbar settings'));
+            const { root: tabsRoot, panels } = createFormTabs([
+                { id: 'layout', label: label('navTabLayout', 'Layout') },
+                { id: 'brand', label: label('navTabBrand', 'Brand') },
+            ]);
 
-            fields.append(
-                createCheckboxField({
-                    label: label('navShowLogo', 'Show logo'),
-                    name: 'vpressShowLogo',
-                    checked: root.get('vpressShowLogo') !== false,
-                    onChange: (checked) => applyChange('vpressShowLogo', checked),
-                }),
-                createCheckboxField({
-                    label: label('navShowSiteName', 'Show site name'),
-                    name: 'vpressShowSiteName',
-                    checked: root.get('vpressShowSiteName') !== false,
-                    onChange: (checked) => applyChange('vpressShowSiteName', checked),
-                }),
-            );
-
-            appendChromeLogoFields({
-                fields,
-                root,
-                editor: gjsEditor,
-                applyChange,
-                labelFn: label,
-            });
-
-            fields.append(
+            panels.layout.append(
                 createSelectField({
                     label: label('navMenuPosition', 'Menu position'),
                     name: 'vpressMainNavAlign',
@@ -109,6 +91,30 @@ export function registerNavSettings(editor) {
                 }),
             );
 
+            panels.brand.append(
+                createCheckboxField({
+                    label: label('navShowLogo', 'Show logo'),
+                    name: 'vpressShowLogo',
+                    checked: root.get('vpressShowLogo') !== false,
+                    onChange: (checked) => applyChange('vpressShowLogo', checked),
+                }),
+                createCheckboxField({
+                    label: label('navShowSiteName', 'Show site name'),
+                    name: 'vpressShowSiteName',
+                    checked: root.get('vpressShowSiteName') !== false,
+                    onChange: (checked) => applyChange('vpressShowSiteName', checked),
+                }),
+            );
+
+            appendChromeLogoFields({
+                fields: panels.brand,
+                root,
+                editor: gjsEditor,
+                applyChange,
+                labelFn: label,
+            });
+
+            fields.appendChild(tabsRoot);
             settingsMount.appendChild(section);
         },
     });

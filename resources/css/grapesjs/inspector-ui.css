@@ -646,6 +646,18 @@
     padding: 0.5rem 0;
 }
 
+.voodbuilder-gjs-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.125rem 0.75rem;
+    width: 100%;
+}
+
+.voodbuilder-gjs-checkbox-grid .voodbuilder-gjs-form-field--checkbox {
+    padding: 0.375rem 0;
+    min-width: 0;
+}
+
 .voodbuilder-gjs-form-field--checkbox .voodbuilder-gjs-checkbox-row {
     display: flex;
     flex-direction: row;
@@ -875,6 +887,31 @@
     text-transform: uppercase;
     color: var(--color-vp-brand-1, #6366f1);
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+}
+
+.voodbuilder-gjs-form-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.voodbuilder-gjs-form-tabs__bar {
+    flex-shrink: 0;
+}
+
+.voodbuilder-gjs-form-tabs__panels {
+    min-width: 0;
+}
+
+.voodbuilder-gjs-form-tabs__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.voodbuilder-gjs-form-tabs__panel[hidden] {
+    display: none !important;
 }
 
 .voodbuilder-gjs-form-field {

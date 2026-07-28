@@ -36,7 +36,9 @@ class SiteFooterGrapesJsBlockTest extends TestCase
 
         $this->assertStringContainsString('data-voodbuilder-menu="footer_col_1"', $html);
         $this->assertStringContainsString('data-voodbuilder-footer-col="4"', $html);
-        $this->assertStringContainsString('data-voodbuilder-brand', $html);
+        // Brand slot is hydrated then the marker is stripped so a later empty
+        // hydrateHtml() pass cannot wipe custom logos.
+        $this->assertStringNotContainsString('data-voodbuilder-brand', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome="brand"', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome="footer-tagline"', $html);
         $this->assertStringContainsString('hidden', $html);

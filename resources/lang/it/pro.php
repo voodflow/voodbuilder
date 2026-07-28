@@ -476,7 +476,12 @@ return [
             'footer_col_4_title' => 'LEGALE',
         ],
         'footer_settings' => [
+            'title' => 'Impostazioni footer',
+            'tab_brand' => 'Brand',
+            'tab_layout' => 'Layout',
+            'tab_columns' => 'Colonne',
             'show_logo' => 'Mostra logo',
+            'show_site_name' => 'Mostra nome sito',
             'show_copyright' => 'Mostra copyright',
             'show_footer_menu' => 'Mostra menu footer',
             'show_tagline' => 'Mostra descrizione',
@@ -492,6 +497,8 @@ return [
         ],
         'nav_settings' => [
             'title' => 'Impostazioni navbar',
+            'tab_layout' => 'Layout',
+            'tab_brand' => 'Brand',
             'show_logo' => 'Mostra logo',
             'show_site_name' => 'Mostra nome sito',
             'menu_position' => 'Posizione menu',

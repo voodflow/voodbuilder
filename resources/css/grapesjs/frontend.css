@@ -910,6 +910,23 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     gap: 1.25rem;
 }
 
+.voodbuilder-gjs-form-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.voodbuilder-gjs-form-tabs__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.voodbuilder-gjs-form-tabs__panel[hidden] {
+    display: none !important;
+}
+
 .voodbuilder-gjs-form-field {
     display: flex;
     flex-direction: column;

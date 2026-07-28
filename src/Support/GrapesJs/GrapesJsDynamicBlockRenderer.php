@@ -228,6 +228,18 @@ final class GrapesJsDynamicBlockRenderer
             $node->removeAttribute('data-voodbuilder-hydrate-slots');
         }
 
+        // Brand/menu slots are already filled; drop markers so a later
+        // ChromeLayoutRenderer hydrateHtml() pass cannot wipe custom logos.
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if ($element->hasAttribute('data-voodbuilder-brand')) {
+                $element->removeAttribute('data-voodbuilder-brand');
+            }
+        }
+
         return $this->extractBodyHtml($document) ?? $html;
     }
 

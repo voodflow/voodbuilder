@@ -2101,15 +2101,18 @@ export function registerVisualStyleInspector(editor) {
             return;
         }
 
-        // Layout chrome editor: Style Manager updates on every select were thrashing
-        // the main thread (color defaults black/white + full sector re-render).
-        if (editor.__voodbuilderChromeLayoutMode) {
+        const blockId = component.getAttributes?.()?.['data-voodbuilder-block'];
+        const isChromeBlock = blockId === 'site_header'
+            || isSiteNavBlockId(blockId)
+            || isSiteFooterBlockId(blockId);
+
+        // Page shell: chrome is managed by the layout — skip Style Manager thrash.
+        // Layout editor: allow Style/Classes on nav/footer and nested chrome.
+        if (editor.__voodbuilderChromeShellMode && ! editor.__voodbuilderChromeLayoutMode && isChromeBlock) {
             return;
         }
 
-        const blockId = component.getAttributes?.()?.['data-voodbuilder-block'];
-
-        if (blockId === 'site_header' || isSiteNavBlockId(blockId) || isSiteFooterBlockId(blockId)) {
+        if (! editor.__voodbuilderChromeLayoutMode && isChromeBlock) {
             return;
         }
 

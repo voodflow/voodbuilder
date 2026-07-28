@@ -871,6 +871,8 @@ export function initVpressGrapesJs(container, options = {}) {
         plugins: options.plugins ?? {},
         labels,
     });
+    // Forms plugin registers `button` after early-types; re-add chrome type so icons win.
+    registerSiteNavChromeButtonType(editor);
 
     configureVpressCodeBlock(editor, {
         codeHighlightUrl: options.codeHighlightUrl,

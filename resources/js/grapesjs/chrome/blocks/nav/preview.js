@@ -42,6 +42,44 @@ function suppressChromeBlockDescendants(component) {
     });
 }
 
+/**
+ * Layout editor: allow Style/Classes on the chrome tree while keeping menu/brand
+ * slots and chrome icon buttons non-editable as free-form content.
+ *
+ * @param {object} component
+ */
+function enableChromeLayoutStylingTree(component) {
+    const attributes = component.getAttributes?.() ?? {};
+    const protectedSlot = Boolean(attributes[ATTR.menu] || attributes[ATTR.brand]);
+    const chromeIcon = Boolean(
+        attributes['data-voodbuilder-search-open'] != null
+        || attributes['data-voodbuilder-notification-bell-preview'] != null
+        || attributes['data-voodbuilder-profile-menu-toggle'] != null
+        || attributes['data-mobile-nav-toggle'] != null
+        || attributes['data-mobile-nav-close'] != null
+        || attributes['data-theme-toggle'] != null
+        || (component.getClasses?.() ?? []).includes('voodbuilder-header-icon-btn'),
+    );
+    const lockContent = protectedSlot || chromeIcon;
+
+    component.set({
+        removable: false,
+        draggable: false,
+        copyable: false,
+        selectable: ! lockContent,
+        hoverable: ! lockContent,
+        highlightable: ! lockContent,
+        layerable: ! lockContent,
+        editable: false,
+        stylable: ! lockContent,
+        badgable: ! lockContent,
+    }, { silent: true });
+
+    component.components().forEach((child) => {
+        enableChromeLayoutStylingTree(child);
+    });
+}
+
 function isNavInteractiveComponent(component) {
     const tag = String(component.get?.('tagName') ?? '').toLowerCase();
     const attrs = component.getAttributes?.() ?? {};
@@ -132,7 +170,15 @@ export function lockNavPreview(component, editor, opts = {}) {
     migrateNavId(component);
 
     if (layoutMode) {
-        suppressChromeBlockDescendants(component);
+        enableChromeLayoutStylingTree(component);
+        component.set({
+            selectable: true,
+            highlightable: true,
+            hoverable: true,
+            layerable: true,
+            stylable: true,
+            badgable: true,
+        }, { silent: true });
         opts.normalizeMenuButtons?.(component);
         opts.normalizeChromeButtons?.(component);
 

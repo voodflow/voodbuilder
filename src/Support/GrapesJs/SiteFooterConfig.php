@@ -14,7 +14,7 @@ final class SiteFooterConfig
     {
         $normalized = array_merge(self::defaults(), $config);
 
-        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_tagline', 'footer_columns_redistribute'] as $flag) {
+        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_site_name', 'show_tagline', 'footer_columns_redistribute'] as $flag) {
             if (array_key_exists($flag, $config)) {
                 $normalized[$flag] = (bool) $config[$flag];
             }
@@ -43,6 +43,7 @@ final class SiteFooterConfig
             'show_footer_menu' => true,
             'show_copyright' => true,
             'show_brand' => true,
+            'show_site_name' => true,
             'show_tagline' => true,
             'show_footer_col_1' => true,
             'show_footer_col_2' => true,
@@ -73,9 +74,10 @@ final class SiteFooterConfig
             'footer-menu' => $normalized['show_footer_menu'],
             'footer-tagline' => $normalized['show_tagline'],
             'copyright' => $normalized['show_copyright'],
-            'brand' => $normalized['show_brand'],
+            'brand' => $normalized['show_brand'] || $normalized['show_site_name'],
             'tagline' => $normalized['show_tagline'],
             'brand-column' => $normalized['show_brand']
+                || $normalized['show_site_name']
                 || $normalized['show_copyright']
                 || $normalized['show_social']
                 || $normalized['show_tagline'],
