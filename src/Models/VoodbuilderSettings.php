@@ -31,7 +31,6 @@ class VoodbuilderSettings extends Model
         return [
             'site_title' => config('voodbuilder.site_title', config('app.name')),
             'brand_name' => null,
-            'show_site_title' => true,
             'show_notification_bell' => true,
             'show_theme_toggle' => true,
             'theme_mode' => 'system',

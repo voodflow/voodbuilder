@@ -181,10 +181,6 @@ class VoodbuilderSettingsPage extends Page
                                             ->label(__('Brand name'))
                                             ->helperText(__('Short name shown next to the logo in the header. Leave empty to reuse the site title.'))
                                             ->maxLength(255),
-                                        Toggle::make('show_site_title')
-                                            ->label(__('Show brand name next to logo'))
-                                            ->helperText(__('Disable to show only the logo in the header. Logos are managed in the layout editor (nav/footer Brand tab). Empty slots use the animated VoodBuilder mark.'))
-                                            ->default(true),
                                         $this->configurePublicBrandingUpload(
                                             FileUpload::make('favicon')
                                                 ->label(__('Favicon'))
