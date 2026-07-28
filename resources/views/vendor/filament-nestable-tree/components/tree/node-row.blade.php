@@ -18,6 +18,9 @@
         'fi-tree-node-row--selected': selectedNode === node[idField],
         'fi-tree-node-row--dragging': draggedNodeId === String(node[idField]),
         'fi-tree-node-row--drop-inside': dropTargetId === String(node[idField]) && dropPosition === 'inside',
+        'fi-tree-node-row--drop-before': dropTargetId === String(node[idField]) && dropPosition === 'before',
+        'fi-tree-node-row--drop-after': dropTargetId === String(node[idField]) && dropPosition === 'after',
+        'fi-tree-node-row--nest-target': draggedNodeId && draggedNodeId !== String(node[idField]) && node._depth === 0,
         'fi-tree-node-row--has-descendant-match': node._hasDescendantMatch && !node._isExpanded && searchQuery.trim(),
         'fi-tree-node-row--loading': loadingNodeId === String(node[idField]),
         'fi-tree-node-row--nested': node._depth > 0,
@@ -27,7 +30,7 @@
     @dragstart="dragStart($event, node[idField])"
     @dragover="dragOver($event, node._index, node._parentId, node[idField], node._depth)"
     @dragleave="dragLeave($event)"
-    @drop="drop($event, node._index, node._parentId, node[idField])"
+    @drop="drop($event, node._index, node._parentId, node[idField], node._depth)"
     @dragend="dragEnd()"
     @click="selectNode(node[idField])"
 >
@@ -96,6 +99,17 @@
             x-cloak
         ></span>
     </span>
+
+    {{-- Nest-inside hint (shown while dragging over a top-level row) --}}
+    @if ($allowDragDrop)
+        <span
+            class="fi-tree-nest-hint"
+            x-show="dropTargetId === String(node[idField]) && dropPosition === 'inside' && node._depth === 0"
+            x-cloak
+        >
+            {{ __('voodbuilder::admin.helpers.menu_tree_nest_here') }}
+        </span>
+    @endif
 
     {{-- Actions --}}
     @if ($hasNodeActions)

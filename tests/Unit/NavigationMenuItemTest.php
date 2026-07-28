@@ -201,5 +201,37 @@ class NavigationMenuItemTest extends TestCase
         $this->assertStringContainsString('fi-tree-drag-handle', $contents);
         $this->assertStringContainsString('<svg', $contents);
         $this->assertStringContainsString('fi-tree-node-row--nested', $contents);
+        $this->assertStringContainsString('fi-tree-node-row--drop-before', $contents);
+        $this->assertStringContainsString('fi-tree-node-row--drop-inside', $contents);
+        $this->assertStringContainsString('fi-tree-nest-hint', $contents);
+    }
+
+    public function test_menu_tree_view_override_uses_max_depth_config(): void
+    {
+        $path = view('filament-nestable-tree::livewire.components.tree')->getPath();
+
+        $this->assertStringEndsWith(
+            'resources/views/vendor/filament-nestable-tree/livewire/components/tree.blade.php',
+            str_replace('\\', '/', $path),
+        );
+
+        $contents = file_get_contents($path);
+
+        $this->assertNotFalse($contents);
+        $this->assertStringContainsString('menu-tree-view', $contents);
+        $this->assertStringContainsString('getMaxDepth()', $contents);
+    }
+
+    public function test_menu_tree_resolve_drop_position_widens_nest_band(): void
+    {
+        $js = file_get_contents(
+            dirname(__DIR__, 2).'/resources/js/filament-menu-tree-view.js',
+        );
+
+        $this->assertNotFalse($js);
+        $this->assertStringContainsString('resolveDropPosition', $js);
+        $this->assertStringContainsString('0.2', $js);
+        $this->assertStringContainsString('0.8', $js);
+        $this->assertStringContainsString('maxDepth', $js);
     }
 }

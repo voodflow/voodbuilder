@@ -71,8 +71,57 @@
     background-color: color-mix(in oklab, var(--primary-400, #818cf8) 8%, transparent);
 }
 
-/* Drop-as-child target: stronger ring (plugin already sets outline) */
+/* While dragging: highlight valid top-level nest targets */
+.filament-nestable-tree .fi-tree-node-row--nest-target {
+    outline: 1px dashed color-mix(in oklab, var(--primary-500, #6366f1) 45%, transparent);
+    outline-offset: -1px;
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--nest-target {
+    outline-color: color-mix(in oklab, var(--primary-400, #818cf8) 55%, transparent);
+}
+
+/* Drop-as-child target: stronger ring + tinted background */
 .filament-nestable-tree .fi-tree-node-row--drop-inside {
-    outline-width: 2px;
+    outline: 2px solid var(--primary-500, #6366f1);
     outline-offset: -2px;
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 12%, var(--color-white, #fff));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary-500, #6366f1) 20%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--drop-inside {
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 18%, transparent);
+}
+
+/* Inline badge when hovering the nest zone */
+.filament-nestable-tree .fi-tree-nest-hint {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+    border-radius: 9999px;
+    padding-inline: 0.625rem;
+    padding-block: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--primary-700, #4338ca);
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 14%, var(--color-white, #fff));
+    pointer-events: none;
+}
+
+.dark .filament-nestable-tree .fi-tree-nest-hint {
+    color: var(--primary-200, #c7d2fe);
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 22%, transparent);
+}
+
+/* Dragged row: ghost indent preview */
+.filament-nestable-tree .fi-tree-node-row--dragging {
+    opacity: 0.45;
+    transform: scale(0.99);
+}
+
+/* Reorder indicators (plugin pseudo-elements) — slightly thicker for visibility */
+.filament-nestable-tree .fi-tree-node-row--drop-before::before,
+.filament-nestable-tree .fi-tree-node-row--drop-after::after {
+    height: 3px;
 }

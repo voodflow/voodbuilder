@@ -27,6 +27,7 @@ class NavigationMenuItemTree
             ->parentKeyField('parent_id')
             ->records(fn (): array => static::build($menu))
             ->maxDepth(static::MAX_DEPTH)
+            ->maxVisibleDepth(static::MAX_DEPTH)
             ->searchable()
             ->getRecordUsing(
                 fn (int|string $id): ?NavigationMenuItem => NavigationMenuItem::query()

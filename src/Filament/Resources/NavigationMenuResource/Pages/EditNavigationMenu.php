@@ -18,6 +18,7 @@ use Voodflow\Voodbuilder\Filament\Actions\CloneNavigationMenuAction;
 use Voodflow\Voodbuilder\Filament\Actions\CreateNavigationMenuTranslationAction;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\NavigationMenuPreview;
 
@@ -38,6 +39,8 @@ class EditNavigationMenu extends EditRecord
 
     private static bool $previewAssetsRegistered = false;
 
+    private static bool $menuTreeAssetsRegistered = false;
+
     protected static function registerPreviewAssets(): void
     {
         if (static::$previewAssetsRegistered) {
@@ -49,6 +52,20 @@ class EditNavigationMenu extends EditRecord
         FilamentView::registerRenderHook(
             PanelsRenderHook::HEAD_END,
             fn (): string => view('voodbuilder::filament.partials.menu-preview-assets')->render(),
+        );
+    }
+
+    protected static function registerMenuTreeAssets(): void
+    {
+        if (static::$menuTreeAssetsRegistered) {
+            return;
+        }
+
+        static::$menuTreeAssetsRegistered = true;
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): string => FilamentMenuTreeAssets::renderStyleTag(),
         );
     }
 
@@ -64,6 +81,7 @@ class EditNavigationMenu extends EditRecord
     public function mount(int|string $record): void
     {
         static::registerPreviewAssets();
+        static::registerMenuTreeAssets();
 
         parent::mount($record);
 
