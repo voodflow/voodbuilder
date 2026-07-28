@@ -20,6 +20,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
@@ -30,6 +31,15 @@ class Voodbuilder
     public static function modules(): ModuleRegistry
     {
         return app(ModuleRegistry::class);
+    }
+
+    /**
+     * Register an official or third-party module before ModuleRegistry::boot().
+     * Prefer calling from a ServiceProvider Application::booting() callback.
+     */
+    public static function registerModule(VoodBuilderModule $module, bool $enabled = true): void
+    {
+        self::modules()->register($module, $enabled);
     }
 
     public static function entitlements(): EntitlementManager
