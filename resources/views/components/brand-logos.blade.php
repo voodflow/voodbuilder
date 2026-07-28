@@ -21,8 +21,10 @@
     $config = is_array($config) ? $config : [];
     $logos = ChromeBrandLogos::resolve($config);
     $logoSize = ChromeBrandLogos::normalizeSize($config['logo_size'] ?? null);
-    $desktopLogoClass = $desktopLogoClass ?? ChromeBrandLogos::desktopLogoClass($logoSize);
-    $mobileLogoClass = $mobileLogoClass ?? ChromeBrandLogos::mobileLogoClass($logoSize);
+    $logoSizeMobile = ChromeBrandLogos::normalizeSize($config['logo_size_mobile'] ?? $logoSize);
+    $logoFullWidth = (bool) ($config['logo_full_width'] ?? false);
+    $desktopLogoClass = $desktopLogoClass ?? ChromeBrandLogos::desktopLogoClass($logoSize, $logoFullWidth);
+    $mobileLogoClass = $mobileLogoClass ?? ChromeBrandLogos::mobileLogoClass($logoSizeMobile, $logoFullWidth);
     $brandName = $brandName ?? VoodbuilderSettings::brandName();
     $siteTitle = $siteTitle ?? VoodbuilderSettings::siteTitle();
     $href = $href ?? VoodbuilderUrls::home();
@@ -37,9 +39,14 @@
 
 <{{ $tag }}
     @if ($tag === 'a') href="{{ $href }}" @endif
-    {{ $attributes->class([$linkClass]) }}
+    {{ $attributes->class([
+        $linkClass,
+        'w-full min-w-0' => $logoFullWidth,
+    ]) }}
     @if ($tag === 'a') aria-label="{{ $siteTitle }}" @endif
     data-voodbuilder-logo-size="{{ $logoSize }}"
+    data-voodbuilder-logo-size-mobile="{{ $logoSizeMobile }}"
+    data-voodbuilder-brand-logo-full="{{ $logoFullWidth ? '1' : '0' }}"
 >
     @if ($mountLogo)
         <span
@@ -47,6 +54,7 @@
             @class([
                 'contents' => $preview ? $showLogo : true,
                 'hidden' => $preview ? ! $showLogo : false,
+                'w-full' => $logoFullWidth,
             ])
             @if ($preview && ! $showLogo) data-voodbuilder-chrome-hidden @endif
         >

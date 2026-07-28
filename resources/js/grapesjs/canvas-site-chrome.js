@@ -50,6 +50,12 @@ async function syncCanvasDeviceMode(editor) {
     doc.documentElement.setAttribute('data-voodbuilder-gjs-device', deviceId);
     doc.body.setAttribute('data-voodbuilder-gjs-device', deviceId);
 
+    // Explicit logo viewport mode so nav/footer switch even if theme media
+    // queries disagree with GrapesJS frame sizing.
+    const logoMode = deviceId === 'mobilePortrait' ? 'mobile' : 'desktop';
+    doc.documentElement.setAttribute('data-vb-logo-mode', logoMode);
+    doc.body.setAttribute('data-vb-logo-mode', logoMode);
+
     // Always close the drawer when switching viewport — avoids a stuck open panel.
     setMobileNavOpen(doc, false);
     syncMobileNavComponentClasses(editor, false);

@@ -88,6 +88,7 @@ use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\ThemeMapAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
@@ -173,6 +174,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         Livewire::component('voodbuilder.theme-map-bridge', ThemeMapBridge::class);
 
         ThemeMapAssets::register();
+        BrandMarkAssets::ensurePublished();
         FilamentAdminAssets::register();
         FilamentMenuTreeAssets::register();
 

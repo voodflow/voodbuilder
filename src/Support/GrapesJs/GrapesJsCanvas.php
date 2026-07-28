@@ -311,10 +311,17 @@ final class GrapesJsCanvas
             margin-inline: 0;
         }
 
-        header[role='banner'] a img.vb-brand-logo,
+        header[role='banner'] a:not([data-voodbuilder-brand-logo-full='1']) img.vb-brand-logo,
         .voodbuilder-mobile-nav__brand img.vb-brand-logo {
             width: auto;
             max-width: min(100%, 16.25rem);
+            object-fit: contain;
+        }
+
+        header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
+        [data-voodbuilder-footer-brand-link][data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo {
+            width: 100%;
+            max-width: 100%;
             object-fit: contain;
         }
 
@@ -428,6 +435,20 @@ final class GrapesJsCanvas
             display: block !important;
         }
 
+        html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--desktop,
+        body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--desktop {
+            display: none !important;
+        }
+
+        html:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        body:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+            display: block !important;
+        }
+
+        html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
+            display: block !important;
+        }
+
         /* Brand part toggles must beat device logo display rules (incl. placeholder). */
         [data-voodbuilder-chrome-part="logo"].hidden .vb-brand-logo,
         [data-voodbuilder-chrome-part="logo"].hidden [data-voodbuilder-brand-placeholder],
@@ -439,15 +460,24 @@ final class GrapesJsCanvas
         }
 
         /* Never show GrapesJS forms "Button" label on chrome icon buttons. */
-        .voodbuilder-header-icon-btn {
+        .voodbuilder-header-icon-btn,
+        button[data-mobile-nav-toggle],
+        button[data-mobile-nav-close] {
             font-size: 0 !important;
             line-height: 0 !important;
         }
 
-        .voodbuilder-header-icon-btn svg {
+        .voodbuilder-header-icon-btn svg,
+        button[data-mobile-nav-toggle] svg,
+        button[data-mobile-nav-close] svg {
             display: block !important;
             width: 1.25rem !important;
             height: 1.25rem !important;
+        }
+
+        button[data-mobile-nav-toggle] svg.h-6 {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
         }
 
         .voodbuilder-header-icon-btn svg.h-6 {

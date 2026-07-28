@@ -10,7 +10,11 @@ import {
     applyChromeLogoUrlsPreview,
     chromeLogoFieldDefs,
     CHROME_LOGO_DEFAULT_SIZE,
+    CHROME_LOGO_FULL_WIDTH_KEY,
+    CHROME_LOGO_FULL_WIDTH_PROP,
     CHROME_LOGO_SIZE_KEY,
+    CHROME_LOGO_SIZE_MOBILE_KEY,
+    CHROME_LOGO_SIZE_MOBILE_PROP,
     CHROME_LOGO_SIZE_PROP,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
@@ -227,6 +231,10 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     const alignCenter = root.get('vpressMainNavAlign') === 'center';
     const stickyMode = root.get('vpressStickyNav') ?? 'inherit';
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
+    const logoSizeMobile = normalizeChromeLogoSize(
+        root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
+    );
+    const logoFullWidth = root.get(CHROME_LOGO_FULL_WIDTH_PROP) === true;
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
 
     const scope = el.querySelector('[data-voodbuilder-gjs-site-header]') ?? el;
@@ -271,7 +279,10 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
 
     applyNavBrandPartsPreview(scope, showLogo, showSiteName);
     applyChromeLogoUrlsPreview(scope, root);
-    applyChromeLogoSizeClasses(scope, logoSize);
+    applyChromeLogoSizeClasses(scope, logoSize, {
+        sizeMobile: logoSizeMobile,
+        fullWidth: logoFullWidth,
+    });
 
     if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
@@ -311,6 +322,14 @@ export function syncSiteHeaderConfig(component) {
         [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
             component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
+        [CHROME_LOGO_SIZE_MOBILE_KEY]: normalizeChromeLogoSize(
+            component.get(CHROME_LOGO_SIZE_MOBILE_PROP)
+                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
+                ?? component.get(CHROME_LOGO_SIZE_PROP)
+                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+        ),
+        [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
+            || component.get('vpressConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -334,7 +353,9 @@ export function applySiteNavSettingChange(editor, root, name, value) {
 
         syncSiteHeaderConfig(root);
         applySiteNavSettingsPreview(root, editor, {
-            invalidateCss: name === CHROME_LOGO_SIZE_PROP,
+            invalidateCss: name === CHROME_LOGO_SIZE_PROP
+                || name === CHROME_LOGO_SIZE_MOBILE_PROP
+                || name === CHROME_LOGO_FULL_WIDTH_PROP,
         });
 
         // Logo URL changes need a server re-render; visibility / size are DOM-only.
@@ -368,6 +389,14 @@ export function configureSiteNavTraits(component, editor) {
         normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),
         { silent: true },
     );
+    component.set(
+        CHROME_LOGO_SIZE_MOBILE_PROP,
+        normalizeChromeLogoSize(
+            config[CHROME_LOGO_SIZE_MOBILE_KEY] ?? config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE,
+        ),
+        { silent: true },
+    );
+    component.set(CHROME_LOGO_FULL_WIDTH_PROP, config[CHROME_LOGO_FULL_WIDTH_KEY] === true, { silent: true });
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });

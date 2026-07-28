@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\GrapesJs\ChromeBrandLogos;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavConfig;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -38,6 +39,16 @@ class ChromeBrandLogosTest extends TestCase
         $this->assertSame('https://cdn.test/mob-dark.svg', $resolved['mobile_dark']);
     }
 
+    public function test_empty_config_uses_animated_voodbuilder_mark(): void
+    {
+        $resolved = ChromeBrandLogos::resolve([]);
+
+        $this->assertTrue($resolved['has_any']);
+        $this->assertNotNull($resolved['desktop_light']);
+        $this->assertStringContainsString('voodbuilder-mark.svg', (string) $resolved['desktop_light']);
+        $this->assertFileExists(BrandMarkAssets::publicPath());
+    }
+
     public function test_site_nav_config_normalizes_logo_and_visibility_flags(): void
     {
         $normalized = SiteNavConfig::normalize([
@@ -46,6 +57,8 @@ class ChromeBrandLogosTest extends TestCase
             'logo_desktop_dark' => '  /storage/logos/dark.png  ',
             'logo_mobile_light' => '',
             'logo_size' => 'xl',
+            'logo_size_mobile' => 'sm',
+            'logo_full_width' => 1,
         ]);
 
         $this->assertFalse($normalized['show_logo']);
@@ -53,6 +66,8 @@ class ChromeBrandLogosTest extends TestCase
         $this->assertSame('/storage/logos/dark.png', $normalized['logo_desktop_dark']);
         $this->assertNull($normalized['logo_mobile_light']);
         $this->assertSame('xl', $normalized['logo_size']);
+        $this->assertSame('sm', $normalized['logo_size_mobile']);
+        $this->assertTrue($normalized['logo_full_width']);
     }
 
     public function test_logo_size_maps_to_tailwind_height_classes(): void
@@ -63,7 +78,9 @@ class ChromeBrandLogosTest extends TestCase
         $this->assertSame('h-12', ChromeBrandLogos::heightClass('xl'));
         $this->assertSame('lg', ChromeBrandLogos::normalizeSize('nope'));
         $this->assertStringContainsString('h-12', ChromeBrandLogos::desktopLogoClass('xl'));
+        $this->assertStringContainsString('w-full', ChromeBrandLogos::desktopLogoClass('lg', true));
         $this->assertStringContainsString('h-6', ChromeBrandLogos::footerLogoClass('sm', true));
         $this->assertStringContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false));
+        $this->assertStringContainsString('w-full', ChromeBrandLogos::footerLogoClass('md', false, true, true));
     }
 }

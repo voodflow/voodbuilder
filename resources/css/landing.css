@@ -235,11 +235,19 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 /*
  * Nav brand logos: let Tailwind height utilities (h-6…h-12 from logo_size) control
  * size. Only cap horizontal overflow so wide bitmaps do not blow the header.
+ * Full-width brand option opts out of the max-width cap.
  */
-header[role='banner'] a img.vb-brand-logo,
+header[role='banner'] a:not([data-voodbuilder-brand-logo-full='1']) img.vb-brand-logo,
 .voodbuilder-mobile-nav__brand img.vb-brand-logo {
     width: auto;
     max-width: min(100%, 16.25rem);
+    object-fit: contain;
+}
+
+header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
+[data-voodbuilder-footer-brand-link][data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo {
+    width: 100%;
+    max-width: 100%;
     object-fit: contain;
 }
 

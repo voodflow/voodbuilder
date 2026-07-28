@@ -74,7 +74,7 @@ final class ChromeBrandLogos
             $raw[$key] = self::publicUrl($config[$key] ?? null);
         }
 
-        $globalDesktop = VoodbuilderSettings::logoUrl();
+        $globalDesktop = VoodbuilderSettings::customLogoUrl();
         $globalMobile = VoodbuilderSettings::logoMobileUrl();
 
         if ($raw['logo_desktop_light'] === null) {
@@ -110,6 +110,18 @@ final class ChromeBrandLogos
             'logo_desktop_light',
         ]);
 
+        if ($desktopLight === null && $desktopDark === null && $mobileLight === null && $mobileDark === null) {
+            $mark = \Voodflow\Voodbuilder\Support\BrandMarkAssets::url();
+
+            return [
+                'desktop_light' => $mark,
+                'desktop_dark' => $mark,
+                'mobile_light' => $mark,
+                'mobile_dark' => $mark,
+                'has_any' => true,
+            ];
+        }
+
         return [
             'desktop_light' => $desktopLight,
             'desktop_dark' => $desktopDark,
@@ -121,7 +133,7 @@ final class ChromeBrandLogos
 
     /**
      * @param  array<string, mixed>  $config
-     * @return array<string, ?string>
+     * @return array<string, mixed>
      */
     public static function normalizeConfigKeys(array $config): array
     {
@@ -133,6 +145,12 @@ final class ChromeBrandLogos
         }
 
         $out['logo_size'] = self::normalizeSize($config['logo_size'] ?? null);
+        $out['logo_size_mobile'] = self::normalizeSize(
+            $config['logo_size_mobile'] ?? $config['logo_size'] ?? null,
+        );
+        $out['logo_full_width'] = array_key_exists('logo_full_width', $config)
+            ? (bool) $config['logo_full_width']
+            : false;
 
         return $out;
     }
@@ -164,30 +182,38 @@ final class ChromeBrandLogos
         return self::sizeDefinition($size)['square'];
     }
 
-    public static function desktopLogoClass(mixed $size): string
+    public static function desktopLogoClass(mixed $size, bool $fullWidth = false): string
     {
         $def = self::sizeDefinition($size);
+
+        if ($fullWidth) {
+            return trim($def['height'].' w-full max-w-full object-contain object-left');
+        }
 
         return trim($def['height'].' w-auto '.$def['desktop_max'].' object-contain object-left');
     }
 
-    public static function mobileLogoClass(mixed $size): string
+    public static function mobileLogoClass(mixed $size, bool $fullWidth = false): string
     {
         $def = self::sizeDefinition($size);
+
+        if ($fullWidth) {
+            return trim($def['height'].' w-full max-w-full object-contain object-left');
+        }
 
         return trim($def['height'].' w-auto '.$def['mobile_max'].' object-contain object-left');
     }
 
     /**
-     * Footer avatar-style logo (with site name) vs wide logo-only.
+     * Footer avatar-style logo (with site name) vs wide logo-only / full-width.
      */
-    public static function footerLogoClass(mixed $size, bool $logoOnly, bool $desktop = true): string
+    public static function footerLogoClass(mixed $size, bool $logoOnly, bool $desktop = true, bool $fullWidth = false): string
     {
         unset($desktop);
         $def = self::sizeDefinition($size);
 
-        if ($logoOnly) {
-            return trim($def['height'].' w-auto max-w-full object-contain object-left');
+        if ($fullWidth || $logoOnly) {
+            return trim($def['height'].' w-full max-w-full object-contain object-left');
         }
 
         return trim($def['square'].' rounded-full object-cover');

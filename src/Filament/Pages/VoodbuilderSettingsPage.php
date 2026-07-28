@@ -183,28 +183,8 @@ class VoodbuilderSettingsPage extends Page
                                             ->maxLength(255),
                                         Toggle::make('show_site_title')
                                             ->label(__('Show brand name next to logo'))
-                                            ->helperText(__('Disable to show only the logo in the header.'))
+                                            ->helperText(__('Disable to show only the logo in the header. Logos are managed in the layout editor (nav/footer Brand tab). Empty slots use the animated VoodBuilder mark.'))
                                             ->default(true),
-                                        $this->configurePublicBrandingUpload(
-                                            FileUpload::make('logo')
-                                                ->label(__('Logo'))
-                                                ->disk($uploadDisk)
-                                                ->directory($uploadDirectory)
-                                                ->visibility('public')
-                                                ->acceptedFileTypes($imageTypes)
-                                                ->maxSize((int) config('voodbuilder.uploads.max_size', 2048))
-                                                ->helperText(__('voodbuilder::settings.logo_help')),
-                                        ),
-                                        $this->configurePublicBrandingUpload(
-                                            FileUpload::make('logo_mobile')
-                                                ->label(__('voodbuilder::settings.logo_mobile'))
-                                                ->disk($uploadDisk)
-                                                ->directory($uploadDirectory.'/mobile')
-                                                ->visibility('public')
-                                                ->acceptedFileTypes($imageTypes)
-                                                ->maxSize((int) config('voodbuilder.uploads.max_size', 2048))
-                                                ->helperText(__('voodbuilder::settings.logo_mobile_help')),
-                                        ),
                                         $this->configurePublicBrandingUpload(
                                             FileUpload::make('favicon')
                                                 ->label(__('Favicon'))

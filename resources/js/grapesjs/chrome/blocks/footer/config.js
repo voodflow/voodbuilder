@@ -9,7 +9,11 @@ import {
     applyChromeLogoUrlsPreview,
     chromeLogoFieldDefs,
     CHROME_LOGO_DEFAULT_SIZE,
+    CHROME_LOGO_FULL_WIDTH_KEY,
+    CHROME_LOGO_FULL_WIDTH_PROP,
     CHROME_LOGO_SIZE_KEY,
+    CHROME_LOGO_SIZE_MOBILE_KEY,
+    CHROME_LOGO_SIZE_MOBILE_PROP,
     CHROME_LOGO_SIZE_PROP,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
@@ -193,6 +197,10 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
     const showBrand = root.get('vpressShowBrand') !== false;
     const showSiteName = root.get('vpressShowSiteName') !== false;
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
+    const logoSizeMobile = normalizeChromeLogoSize(
+        root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
+    );
+    const logoFullWidth = root.get(CHROME_LOGO_FULL_WIDTH_PROP) === true;
     const socialAlign = normalizeFooterSocialAlign(root.get(FOOTER_SOCIAL_ALIGN_PROP));
 
     el.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
@@ -220,7 +228,7 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
         }
     });
 
-    applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize);
+    applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize, logoSizeMobile, logoFullWidth);
     applyChromeLogoUrlsPreview(el, root);
     applyFooterSocialAlignPreview(el, socialAlign);
 
@@ -240,21 +248,35 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
  * @param {boolean} showBrand
  * @param {boolean} showSiteName
  * @param {string} [logoSize]
+ * @param {string} [logoSizeMobile]
+ * @param {boolean} [logoFullWidth]
  */
-function applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize = CHROME_LOGO_DEFAULT_SIZE) {
+function applyFooterBrandPartsPreview(
+    el,
+    showBrand,
+    showSiteName,
+    logoSize = CHROME_LOGO_DEFAULT_SIZE,
+    logoSizeMobile = logoSize,
+    logoFullWidth = false,
+) {
     const logoOnly = showBrand && ! showSiteName;
     const size = normalizeChromeLogoSize(logoSize);
+    const sizeMobile = normalizeChromeLogoSize(logoSizeMobile);
+    const wide = logoOnly || logoFullWidth;
 
     el.querySelectorAll('[data-voodbuilder-footer-brand-link]').forEach((link) => {
-        link.classList.toggle('w-full', logoOnly);
-        link.classList.toggle('min-w-0', logoOnly);
+        link.classList.toggle('w-full', wide);
+        link.classList.toggle('min-w-0', wide);
         link.setAttribute('data-voodbuilder-brand-logo-only', logoOnly ? '1' : '0');
+        link.setAttribute('data-voodbuilder-brand-logo-full', logoFullWidth ? '1' : '0');
         link.setAttribute('data-voodbuilder-logo-size', size);
+        link.setAttribute('data-voodbuilder-logo-size-mobile', sizeMobile);
     });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
         node.classList.toggle('hidden', ! showBrand);
         node.classList.toggle('contents', showBrand);
+        node.classList.toggle('w-full', wide);
         if (showBrand) {
             node.removeAttribute('data-voodbuilder-chrome-hidden');
             node.removeAttribute('hidden');
@@ -263,7 +285,11 @@ function applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize = CH
         }
     });
 
-    applyChromeLogoSizeClasses(el, size, { footerAvatar: true });
+    applyChromeLogoSizeClasses(el, size, {
+        footerAvatar: true,
+        sizeMobile,
+        fullWidth: logoFullWidth,
+    });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
         node.classList.toggle('hidden', ! showSiteName);
@@ -289,6 +315,14 @@ export function syncSiteFooterConfig(component) {
         [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
             component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
+        [CHROME_LOGO_SIZE_MOBILE_KEY]: normalizeChromeLogoSize(
+            component.get(CHROME_LOGO_SIZE_MOBILE_PROP)
+                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
+                ?? component.get(CHROME_LOGO_SIZE_PROP)
+                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+        ),
+        [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
+            || component.get('vpressConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -337,7 +371,10 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
 
         syncSiteFooterConfig(root);
         applySiteFooterSettingsPreview(root, editor, {
-            invalidateCss: name === CHROME_LOGO_SIZE_PROP || name === FOOTER_SOCIAL_ALIGN_PROP,
+            invalidateCss: name === CHROME_LOGO_SIZE_PROP
+                || name === CHROME_LOGO_SIZE_MOBILE_PROP
+                || name === CHROME_LOGO_FULL_WIDTH_PROP
+                || name === FOOTER_SOCIAL_ALIGN_PROP,
         });
 
         // Logo URL changes need a server re-render; visibility toggles are DOM-only
@@ -408,6 +445,14 @@ export function configureSiteFooterTraits(component, editor = null) {
         normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),
         { silent: true },
     );
+    component.set(
+        CHROME_LOGO_SIZE_MOBILE_PROP,
+        normalizeChromeLogoSize(
+            config[CHROME_LOGO_SIZE_MOBILE_KEY] ?? config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE,
+        ),
+        { silent: true },
+    );
+    component.set(CHROME_LOGO_FULL_WIDTH_PROP, config[CHROME_LOGO_FULL_WIDTH_KEY] === true, { silent: true });
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });

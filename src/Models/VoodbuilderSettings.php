@@ -204,12 +204,32 @@ class VoodbuilderSettings extends Model
 
     public static function logoUrl(): ?string
     {
-        return static::assetUrl('logo', config('voodbuilder.logo'));
+        $uploaded = static::assetUrl('logo', config('voodbuilder.logo'));
+
+        // No custom upload: fall back to the animated VoodBuilder mark (not Laravel / app icons).
+        return $uploaded ?? \Voodflow\Voodbuilder\Support\BrandMarkAssets::url();
     }
 
     public static function logoMobileUrl(): ?string
     {
+        // Only a dedicated mobile upload — chrome resolve falls back across the matrix.
         return static::assetUrl('logo_mobile');
+    }
+
+    /**
+     * User-uploaded (or config) desktop logo only — null when using the package default mark.
+     */
+    public static function customLogoUrl(): ?string
+    {
+        return static::assetUrl('logo', config('voodbuilder.logo'));
+    }
+
+    /**
+     * True when a user-uploaded (or config) desktop logo is set — not the package default mark.
+     */
+    public static function hasCustomLogo(): bool
+    {
+        return static::customLogoUrl() !== null;
     }
 
     public static function assetUrl(string $key, mixed $fallback = null): ?string

@@ -16,7 +16,7 @@ class GrapesJsCanvasTest extends TestCase
 
         $this->assertStringContainsString('var(--color-vp-bg', $frameStyle);
         $this->assertStringContainsString('var(--color-vp-text-1', $frameStyle);
-        $this->assertStringContainsString("header[role='banner'] a img.vb-brand-logo", $frameStyle);
+        $this->assertStringContainsString("header[role='banner'] a:not([data-voodbuilder-brand-logo-full='1']) img.vb-brand-logo", $frameStyle);
         $this->assertStringContainsString('max-width: min(100%, 16.25rem)', $frameStyle);
         $this->assertStringNotContainsString('max-height: 2.5rem', $frameStyle);
         $this->assertStringContainsString(

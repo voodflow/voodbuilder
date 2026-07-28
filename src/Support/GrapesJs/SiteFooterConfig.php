@@ -61,6 +61,8 @@ final class SiteFooterConfig
             'logo_mobile_light' => null,
             'logo_mobile_dark' => null,
             'logo_size' => ChromeBrandLogos::DEFAULT_SIZE,
+            'logo_size_mobile' => ChromeBrandLogos::DEFAULT_SIZE,
+            'logo_full_width' => false,
         ];
     }
 

@@ -1230,6 +1230,10 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     min-width: 0;
 }
 
+.voodbuilder-gjs-image-url-row--media {
+    gap: 0.625rem;
+}
+
 .voodbuilder-gjs-image-url-preview {
     display: flex;
     align-items: center;

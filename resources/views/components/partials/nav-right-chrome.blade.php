@@ -93,7 +93,7 @@
     <button
         type="button"
         @class([
-            'h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1',
+            'voodbuilder-header-icon-btn',
             $mobileToggleClass,
         ])
         data-mobile-nav-toggle

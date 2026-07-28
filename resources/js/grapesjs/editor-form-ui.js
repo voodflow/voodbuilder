@@ -301,6 +301,10 @@ export const CHROME_LOGO_SIZES = {
 
 export const CHROME_LOGO_SIZE_PROP = 'vpressLogoSize';
 export const CHROME_LOGO_SIZE_KEY = 'logo_size';
+export const CHROME_LOGO_SIZE_MOBILE_PROP = 'vpressLogoSizeMobile';
+export const CHROME_LOGO_SIZE_MOBILE_KEY = 'logo_size_mobile';
+export const CHROME_LOGO_FULL_WIDTH_PROP = 'vpressLogoFullWidth';
+export const CHROME_LOGO_FULL_WIDTH_KEY = 'logo_full_width';
 export const CHROME_LOGO_DEFAULT_SIZE = 'lg';
 
 /**
@@ -382,12 +386,16 @@ export function applyChromeLogoUrlsPreview(scope, root) {
  * Apply Tailwind height utilities for brand logos in the live canvas DOM.
  *
  * @param {ParentNode} scope
- * @param {string} size
- * @param {{ footerAvatar?: boolean }} [opts]
+ * @param {string} sizeDesktop
+ * @param {{ footerAvatar?: boolean, sizeMobile?: string, fullWidth?: boolean }} [opts]
  */
-export function applyChromeLogoSizeClasses(scope, size, opts = {}) {
-    const normalized = normalizeChromeLogoSize(size);
-    const def = CHROME_LOGO_SIZES[normalized];
+export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
+    const desktop = normalizeChromeLogoSize(sizeDesktop);
+    const mobile = normalizeChromeLogoSize(opts.sizeMobile ?? sizeDesktop);
+    const fullWidth = opts.fullWidth === true
+        || scope.querySelector?.('[data-voodbuilder-brand-logo-full="1"]') != null;
+    const defDesktop = CHROME_LOGO_SIZES[desktop];
+    const defMobile = CHROME_LOGO_SIZES[mobile];
     const heightKeys = Object.values(CHROME_LOGO_SIZES).flatMap((entry) => [
         ...entry.height.split(/\s+/),
         ...entry.square.split(/\s+/),
@@ -395,6 +403,7 @@ export function applyChromeLogoSizeClasses(scope, size, opts = {}) {
         entry.mobileMax,
         'max-w-full',
         'w-auto',
+        'w-full',
         'w-6',
         'w-8',
         'w-10',
@@ -406,14 +415,20 @@ export function applyChromeLogoSizeClasses(scope, size, opts = {}) {
     ]);
 
     scope.querySelectorAll?.('[data-voodbuilder-logo-size]').forEach((node) => {
-        node.setAttribute('data-voodbuilder-logo-size', normalized);
+        node.setAttribute('data-voodbuilder-logo-size', desktop);
+        node.setAttribute('data-voodbuilder-logo-size-mobile', mobile);
+        node.setAttribute('data-voodbuilder-brand-logo-full', fullWidth ? '1' : '0');
+        node.classList.toggle('w-full', fullWidth);
+        node.classList.toggle('min-w-0', fullWidth);
     });
 
     scope.querySelectorAll?.('img.vb-brand-logo').forEach((img) => {
         const isDesktop = img.classList.contains('vb-brand-logo--desktop');
+        const def = isDesktop ? defDesktop : defMobile;
         const logoOnly = img.closest('[data-voodbuilder-brand-logo-only="1"]') != null;
         const footerContext = img.closest('[data-voodbuilder-footer-brand-link]') != null
             || opts.footerAvatar === true;
+        const wide = fullWidth || logoOnly;
 
         heightKeys.forEach((cls) => {
             if (cls) {
@@ -421,18 +436,24 @@ export function applyChromeLogoSizeClasses(scope, size, opts = {}) {
             }
         });
 
-        if (footerContext && ! logoOnly) {
+        if (footerContext && ! wide) {
             def.square.split(/\s+/).forEach((cls) => img.classList.add(cls));
             img.classList.add('rounded-full', 'object-cover');
         } else {
-            img.classList.add(def.height, 'w-auto', 'object-contain', 'object-left');
-            img.classList.add(footerContext ? 'max-w-full' : (isDesktop ? def.desktopMax : def.mobileMax));
+            img.classList.add(def.height, 'object-contain', 'object-left');
+
+            if (wide) {
+                img.classList.add('w-full', 'max-w-full');
+            } else {
+                img.classList.add('w-auto');
+                img.classList.add(footerContext ? 'max-w-full' : (isDesktop ? def.desktopMax : def.mobileMax));
+            }
         }
     });
 }
 
 /**
- * Append logo size select + the four chrome logo URL fields.
+ * Append desktop/mobile size selects, full-width check, and logo media pickers (no path input).
  */
 export function appendChromeLogoFields({ fields, root, editor, applyChange, labelFn }) {
     const resolveLabel = typeof labelFn === 'function'
@@ -441,11 +462,26 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
 
     fields.append(
         createSelectField({
-            label: resolveLabel('logoSize', 'Logo size'),
+            label: resolveLabel('logoSizeDesktop', 'Logo size (desktop)'),
             name: CHROME_LOGO_SIZE_PROP,
             value: normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP)),
             options: chromeLogoSizeOptions(resolveLabel),
             onChange: (value) => applyChange(CHROME_LOGO_SIZE_PROP, value),
+        }),
+        createSelectField({
+            label: resolveLabel('logoSizeMobile', 'Logo size (mobile)'),
+            name: CHROME_LOGO_SIZE_MOBILE_PROP,
+            value: normalizeChromeLogoSize(
+                root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? root.get(CHROME_LOGO_SIZE_PROP),
+            ),
+            options: chromeLogoSizeOptions(resolveLabel),
+            onChange: (value) => applyChange(CHROME_LOGO_SIZE_MOBILE_PROP, value),
+        }),
+        createCheckboxField({
+            label: resolveLabel('logoFullWidth', 'Full width in brand column'),
+            name: CHROME_LOGO_FULL_WIDTH_PROP,
+            checked: root.get(CHROME_LOGO_FULL_WIDTH_PROP) === true,
+            onChange: (checked) => applyChange(CHROME_LOGO_FULL_WIDTH_PROP, checked),
         }),
     );
 
@@ -458,6 +494,7 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
                 editor,
                 chooseLabel: resolveLabel('logoChoose', 'Choose'),
                 clearLabel: resolveLabel('logoClear', 'Clear'),
+                hidePathInput: true,
                 onChange: (url) => applyChange(def.prop, url),
             }),
         );
@@ -465,7 +502,8 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
 }
 
 /**
- * Image URL field with optional GrapesJS AssetManager picker.
+ * Image media field with GrapesJS AssetManager picker.
+ * Path/URL text input is hidden by default (local media only).
  */
 export function createImageUrlField({
     label,
@@ -474,6 +512,7 @@ export function createImageUrlField({
     editor = null,
     chooseLabel = 'Choose',
     clearLabel = 'Clear',
+    hidePathInput = true,
     onChange,
 }) {
     const id = fieldId(name);
@@ -486,7 +525,9 @@ export function createImageUrlField({
     labelEl.textContent = label;
 
     const row = document.createElement('div');
-    row.className = 'voodbuilder-gjs-image-url-row';
+    row.className = hidePathInput
+        ? 'voodbuilder-gjs-image-url-row voodbuilder-gjs-image-url-row--media'
+        : 'voodbuilder-gjs-image-url-row';
 
     const preview = document.createElement('div');
     preview.className = 'voodbuilder-gjs-image-url-preview';
@@ -494,12 +535,15 @@ export function createImageUrlField({
 
     const input = document.createElement('input');
     input.id = id;
-    input.type = 'url';
+    input.type = hidePathInput ? 'hidden' : 'url';
     input.name = name;
-    input.className = 'voodbuilder-gjs-input';
+    input.className = hidePathInput ? '' : 'voodbuilder-gjs-input';
     input.value = value ?? '';
-    input.placeholder = 'https://… or /storage/…';
     input.dataset.setting = name;
+
+    if (! hidePathInput) {
+        input.placeholder = 'https://… or /storage/…';
+    }
 
     const actions = document.createElement('div');
     actions.className = 'voodbuilder-gjs-image-url-actions';
@@ -544,8 +588,10 @@ export function createImageUrlField({
         }
     };
 
-    input.addEventListener('change', emit);
-    input.addEventListener('blur', emit);
+    if (! hidePathInput) {
+        input.addEventListener('change', emit);
+        input.addEventListener('blur', emit);
+    }
 
     chooseBtn.addEventListener('click', (event) => {
         event.preventDefault();
@@ -554,13 +600,9 @@ export function createImageUrlField({
         const assets = editor?.Assets ?? editor?.AssetManager;
 
         if (! assets || typeof assets.open !== 'function') {
-            input.focus();
-
             return;
         }
 
-        // Keep the settings root selected while the AssetManager is open —
-        // clicking an asset must not remount the inspector onto Layout.
         const selectedBefore = editor?.getSelected?.() ?? null;
 
         assets.open({
@@ -575,12 +617,10 @@ export function createImageUrlField({
                     emit();
                 }
 
-                // Close on any selection click (GrapesJS may pass complete=false
-                // for single-click pick without double-click confirm).
                 if (typeof assets.close === 'function') {
                     assets.close();
                 } else if (complete) {
-                    // no-op: close unavailable
+                    // no-op
                 }
 
                 if (selectedBefore && editor?.getSelected?.() !== selectedBefore) {
@@ -604,3 +644,4 @@ export function createImageUrlField({
 
     return field;
 }
+

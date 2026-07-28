@@ -37,8 +37,14 @@ class SiteNavConfigTest extends TestCase
         $this->assertStringContainsString('voodbuilder-header-icon-btn', $html);
         $this->assertStringContainsString('data-gjs-type="default"', $html);
         $this->assertStringContainsString('data-voodbuilder-search', $html);
-        $this->assertSame(3, substr_count($html, 'voodbuilder-header-icon-btn'));
+        $this->assertGreaterThanOrEqual(4, substr_count($html, 'voodbuilder-header-icon-btn'));
         $this->assertStringContainsString('data-mobile-nav-toggle', $html);
+        $this->assertStringContainsString('data-vb-chrome-icon="menu-2"', $html);
+        $this->assertStringNotContainsString('vb-brand-logo', substr(
+            $html,
+            (int) strpos($html, 'voodbuilder-mobile-nav__brand'),
+            400,
+        ) ?: '');
         $this->assertStringNotContainsString('data-voodbuilder-search-form', $html);
     }
 }

@@ -58,23 +58,22 @@
         data-mobile-nav-panel
     >
         <div class="voodbuilder-mobile-nav__header">
+            {{-- Brand logo stays in the page header only — avoid duplicate logo in offcanvas. --}}
             <div class="voodbuilder-mobile-nav__brand">
-                <x-voodbuilder::nav-title
-                    :config="$brandConfig"
-                    link-class="inline-flex items-center gap-2 text-base font-semibold text-vp-text-1"
-                    data-mobile-nav-close
-                />
+                <span class="inline-flex items-center text-base font-semibold text-vp-text-1">
+                    {{ VoodbuilderSettings::brandName() }}
+                </span>
             </div>
 
             <button
                 type="button"
-                class="voodbuilder-mobile-nav__close"
+                class="voodbuilder-mobile-nav__close voodbuilder-header-icon-btn"
                 data-mobile-nav-close
+                data-gjs-type="voodbuilder-chrome-button"
+                data-gjs-selectable="false"
                 aria-label="{{ __('Close menu') }}"
             >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="x"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
             </button>
         </div>
 

@@ -703,23 +703,66 @@ summary,
 }
 
 @media (width < 60rem) {
-    html:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light {
+    html:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light,
+    html:not(.dark) header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--light,
+    html:not(.dark) footer .vb-brand-logo--mobile.vb-brand-logo--light {
         display: block !important;
     }
 
-    html.dark .vb-brand-logo--mobile.vb-brand-logo--dark {
+    html.dark .vb-brand-logo--mobile.vb-brand-logo--dark,
+    html.dark header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+    html.dark footer .vb-brand-logo--mobile.vb-brand-logo--dark {
         display: block !important;
     }
 }
 
 @media (width >= 60rem) {
-    html:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light {
+    html:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light,
+    html:not(.dark) header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--light,
+    html:not(.dark) footer .vb-brand-logo--desktop.vb-brand-logo--light {
         display: block !important;
     }
 
-    html.dark .vb-brand-logo--desktop.vb-brand-logo--dark {
+    html.dark .vb-brand-logo--desktop.vb-brand-logo--dark,
+    html.dark header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+    html.dark footer .vb-brand-logo--desktop.vb-brand-logo--dark {
         display: block !important;
     }
+}
+
+/* Canvas device mode (set by GrapesJS) — beats theme media when frame width disagrees. */
+html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile,
+html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile,
+body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile {
+    display: none !important;
+}
+
+html[data-vb-logo-mode='desktop']:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop']:not(.dark) header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--light,
+body[data-vb-logo-mode='desktop']:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light {
+    display: block !important;
+}
+
+html.dark[data-vb-logo-mode='desktop'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--dark {
+    display: block !important;
+}
+
+html[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop,
+html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--desktop,
+body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop {
+    display: none !important;
+}
+
+html[data-vb-logo-mode='mobile']:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile']:not(.dark) header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--light,
+body[data-vb-logo-mode='mobile']:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light {
+    display: block !important;
+}
+
+html.dark[data-vb-logo-mode='mobile'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--dark {
+    display: block !important;
 }
 
 /*
@@ -736,20 +779,25 @@ summary,
 }
 
 /* Header chrome icon buttons: never show GrapesJS "Button" placeholder text. */
-.voodbuilder-header-icon-btn {
+.voodbuilder-header-icon-btn,
+button[data-mobile-nav-toggle],
+button[data-mobile-nav-close] {
     font-size: 0;
     line-height: 0;
     color: inherit;
 }
 
-.voodbuilder-header-icon-btn svg {
+.voodbuilder-header-icon-btn svg,
+button[data-mobile-nav-toggle] svg,
+button[data-mobile-nav-close] svg {
     display: block;
     width: 1.25rem;
     height: 1.25rem;
     flex-shrink: 0;
 }
 
-.voodbuilder-header-icon-btn svg.h-6 {
+.voodbuilder-header-icon-btn svg.h-6,
+button[data-mobile-nav-toggle] svg.h-6 {
     width: 1.5rem;
     height: 1.5rem;
 }
