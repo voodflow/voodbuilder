@@ -24,6 +24,11 @@ class GrapesJsCanvasTest extends TestCase
         );
         $this->assertStringContainsString('display: flex !important', $frameStyle);
         $this->assertStringNotContainsString('.VPRichPage--landing img', $frameStyle);
+        $this->assertStringContainsString(
+            "body[data-voodbuilder-chrome-width='full'][data-voodbuilder-canvas-content-width='full']",
+            $frameStyle,
+        );
+        $this->assertStringContainsString('--voodbuilder-chrome-layout-max, 80rem', $frameStyle);
     }
 
     #[Test]

@@ -484,6 +484,16 @@ final class GrapesJsCanvas
             box-sizing: border-box;
         }
 
+        /* chrome_width=full + full page: bars stay edge-to-edge; restore layout measure
+         * for nav/footer containers (mirrors landing.css published rule). */
+        body[data-voodbuilder-chrome-width='full'][data-voodbuilder-canvas-content-width='full'] :is(
+            [data-voodbuilder-chrome-shell],
+            [data-voodbuilder-chrome-shell-part],
+            [data-voodbuilder-chrome-drop-zone]
+        ) {
+            --width-vp-layout: var(--voodbuilder-chrome-layout-max, 80rem);
+        }
+
         body[data-voodbuilder-chrome-width='content']:is(
             [data-voodbuilder-canvas-content-width='standard'],
             [data-voodbuilder-canvas-content-width='custom'],

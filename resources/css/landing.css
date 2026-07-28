@@ -104,6 +104,17 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 /*
+ * chrome_width=full keeps nav/footer bars edge-to-edge (shell itself stays 100%).
+ * page-width=full sets --width-vp-layout: 100% on the document for page content;
+ * without restoring a layout measure on the chrome shell, footer/nav containers
+ * also go full-bleed. Sub-themes that define --width-vp-layout on the shell keep
+ * winning (higher specificity / !important).
+ */
+:is(html, body)[data-voodbuilder-chrome-width='full'][data-voodbuilder-page-width='full'] [data-voodbuilder-chrome-shell] {
+    --width-vp-layout: var(--voodbuilder-chrome-layout-max, 80rem);
+}
+
+/*
  * Fixed site headers escape parent max-width (positioned against the viewport).
  * When chrome matches content, pin the bar to the same content column.
  */
