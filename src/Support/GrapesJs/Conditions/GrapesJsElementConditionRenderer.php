@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs\Conditions;
 use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 
 final class GrapesJsElementConditionRenderer
@@ -25,6 +26,11 @@ final class GrapesJsElementConditionRenderer
             return $html;
         }
 
+        // When the Conditions module is disabled, ignore rules and keep content visible.
+        if (! ConditionsModule::isEnabled()) {
+            return $this->stripConditionAttributes($html);
+        }
+
         $document = $this->loadDocument($html);
 
         foreach ($this->conditionElements($document) as $element) {
@@ -35,6 +41,17 @@ final class GrapesJsElementConditionRenderer
             } else {
                 $element->removeAttribute('data-voodbuilder-conditions');
             }
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    protected function stripConditionAttributes(string $html): string
+    {
+        $document = $this->loadDocument($html);
+
+        foreach ($this->conditionElements($document) as $element) {
+            $element->removeAttribute('data-voodbuilder-conditions');
         }
 
         return $this->extractBodyHtml($document) ?? $html;

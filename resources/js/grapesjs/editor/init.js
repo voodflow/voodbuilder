@@ -54,6 +54,7 @@ import {
     registerChromeLayoutInspectorSelection,
     wireInspector,
 } from './inspector.js';
+import { bootEditorRegistries } from './compatibility-bridge.js';
 import { registerInspectorColorFix, installGlobalColorInputValueFix } from '../inspector-color-fix.js';
 import { guardEditorLayersRender } from '../tailwind-visual-style.js';
 import { configureVpressCodeBlock } from '../editor-code-block.js';
@@ -745,6 +746,12 @@ export function initVpressGrapesJs(container, options = {}) {
     }
 
     const editor = grapesjs.init(editorOptions);
+
+    bootEditorRegistries(editor, {
+        popupMode: Boolean(options.popupMode),
+        chromeLayoutMode: Boolean(options.chromeLayoutMode),
+        conditionsEnabled: options.conditionsEnabled !== false,
+    });
 
     editor.__voodbuilderLabels = labels;
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
@@ -1831,6 +1838,7 @@ function mountFrontendEditor() {
         linkTargetsUrl: config.linkTargetsUrl,
         bindingsPreviewUrl: config.bindingsPreviewUrl,
         conditionOptions: config.conditionOptions ?? [],
+        conditionsEnabled: config.conditionsEnabled !== false,
         globalClassesUrl: config.globalClassesUrl,
         componentsUrl: config.componentsUrl,
         componentCategories: config.componentCategories ?? [],

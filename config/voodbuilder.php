@@ -14,6 +14,9 @@ return [
         'history' => [
             'enabled' => env('VOODBUILDER_MODULE_HISTORY', true),
         ],
+        'conditions' => [
+            'enabled' => env('VOODBUILDER_MODULE_CONDITIONS', true),
+        ],
     ],
 
     'layouts' => [

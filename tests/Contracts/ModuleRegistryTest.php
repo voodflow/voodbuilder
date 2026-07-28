@@ -15,13 +15,15 @@ use Voodflow\Voodbuilder\Voodbuilder;
 
 class ModuleRegistryTest extends TestCase
 {
-    public function test_registry_is_bound_and_includes_history_pilot_by_default(): void
+    public function test_registry_is_bound_and_includes_core_pilots_by_default(): void
     {
         $registry = Voodbuilder::modules();
 
         $this->assertInstanceOf(ModuleRegistry::class, $registry);
         $this->assertTrue($registry->has('history'));
         $this->assertTrue($registry->isEnabled('history'));
+        $this->assertTrue($registry->has('conditions'));
+        $this->assertTrue($registry->isEnabled('conditions'));
         $this->assertTrue($registry->booted());
     }
 

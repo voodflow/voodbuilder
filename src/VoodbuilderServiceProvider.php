@@ -57,6 +57,7 @@ use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
@@ -375,6 +376,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new HistoryModule,
             enabled: (bool) config('voodbuilder.modules.history.enabled', true),
+        );
+
+        $registry->register(
+            new ConditionsModule,
+            enabled: (bool) config('voodbuilder.modules.conditions.enabled', true),
         );
     }
 }

@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
@@ -132,7 +133,10 @@ final class GrapesJsEditorGate
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => GrapesJsComponentCategoryNormalizer::categories(),
             'templateCategories' => PageTemplateCategories::all(),
-            'conditionOptions' => GrapesJsConditionHooks::options(),
+            'conditionOptions' => ConditionsModule::isEnabled()
+                ? GrapesJsConditionHooks::options()
+                : [],
+            'conditionsEnabled' => ConditionsModule::isEnabled(),
             'plugins' => config('voodbuilder.grapesjs.plugins', []),
             'canvasStyles' => GrapesJsCanvas::styleUrls(),
             'canvasFrameStyle' => GrapesJsCanvas::frameStyle($subTheme),

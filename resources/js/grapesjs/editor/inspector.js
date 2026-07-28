@@ -132,13 +132,15 @@ export function wireInspector(editor, shell, options, labels) {
         dynamicMount: shell?.mounts?.dynamic ?? null,
     });
 
-    registerConditionsUi(editor, {
-        mount: shell?.mounts?.conditions ?? null,
-        labels,
-        conditionOptions: options.conditionOptions ?? [],
-    });
+    if (options.conditionsEnabled !== false) {
+        registerConditionsUi(editor, {
+            mount: shell?.mounts?.conditions ?? null,
+            labels,
+            conditionOptions: options.conditionOptions ?? [],
+        });
 
-    registerConditionsPersistence(editor);
+        registerConditionsPersistence(editor);
+    }
 
     registerGlobalClassesUi(editor, {
         globalClassesUrl: options.globalClassesUrl,

@@ -526,3 +526,52 @@ describe('theme-tokens background clear', () => {
         expect(extracted).not.toContain('@media');
     });
 });
+
+describe('editor/registries', () => {
+    it('registers and lists editor commands', async () => {
+        const {
+            clearEditorCommands,
+            listEditorCommands,
+            registerEditorCommand,
+            applyEditorCommands,
+        } = await import('../../resources/js/grapesjs/editor/registries/commands.js');
+
+        clearEditorCommands();
+        registerEditorCommand('voodbuilder:test-cmd', () => ({ run() {} }), { source: 'test' });
+
+        expect(listEditorCommands()).toEqual(['voodbuilder:test-cmd']);
+
+        const added = [];
+        const editor = {
+            Commands: {
+                add(id, definition) {
+                    added.push({ id, definition });
+                },
+            },
+        };
+
+        applyEditorCommands(editor);
+        expect(added).toHaveLength(1);
+        expect(added[0].id).toBe('voodbuilder:test-cmd');
+        clearEditorCommands();
+    });
+
+    it('filters editor panels by when()', async () => {
+        const {
+            clearEditorPanels,
+            registerEditorPanel,
+            resolveEditorPanels,
+        } = await import('../../resources/js/grapesjs/editor/registries/panels.js');
+
+        clearEditorPanels();
+        registerEditorPanel({ id: 'always' });
+        registerEditorPanel({
+            id: 'popup-only',
+            when: (ctx) => ctx.popupMode === true,
+        });
+
+        expect(resolveEditorPanels({ popupMode: false }).map((p) => p.id)).toEqual(['always']);
+        expect(resolveEditorPanels({ popupMode: true }).map((p) => p.id)).toEqual(['always', 'popup-only']);
+        clearEditorPanels();
+    });
+});
