@@ -547,14 +547,22 @@ final class GrapesJsCanvas
             box-sizing: border-box;
         }
 
-        /* chrome_width=full + full page: bars stay edge-to-edge; restore layout measure
-         * for nav/footer containers (mirrors landing.css published rule). */
-        body[data-voodbuilder-chrome-width='full'][data-voodbuilder-canvas-content-width='full'] :is(
+        /* chrome_width=full: bars stay edge-to-edge; restore layout measure for inner
+         * nav/footer containers. Canvas root stays 100% so the workspace does not shrink.
+         *
+         * Needed especially in the layout editor: chrome-shell is unwrapped, so drop zones
+         * cannot inherit ThemePalette's shell token. Without this, standard/custom page
+         * content keeps --width-vp-layout at 100% on footers (sparse full-bleed columns)
+         * while the published front uses the document content max (~80rem).
+         *
+         * Prefer --voodbuilder-page-content-max when set (standard/custom); otherwise
+         * fall back to --voodbuilder-chrome-layout-max / 80rem (full page, mirrors landing.css). */
+        body[data-voodbuilder-chrome-width='full'] :is(
             [data-voodbuilder-chrome-shell],
             [data-voodbuilder-chrome-shell-part],
             [data-voodbuilder-chrome-drop-zone]
         ) {
-            --width-vp-layout: var(--voodbuilder-chrome-layout-max, 80rem);
+            --width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem));
         }
 
         body[data-voodbuilder-chrome-width='content']:is(

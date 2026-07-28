@@ -33,11 +33,17 @@ class GrapesJsCanvasTest extends TestCase
         );
         $this->assertStringContainsString('display: flex !important', $frameStyle);
         $this->assertStringNotContainsString('.VPRichPage--landing img', $frameStyle);
+        // Full chrome: restore boxed measure on shells/drop-zones for any content width
+        // (layout editor unwraps chrome-shell; standard+full was previously stuck at 100%).
         $this->assertStringContainsString(
-            "body[data-voodbuilder-chrome-width='full'][data-voodbuilder-canvas-content-width='full']",
+            "body[data-voodbuilder-chrome-width='full'] :is(",
             $frameStyle,
         );
-        $this->assertStringContainsString('--voodbuilder-chrome-layout-max, 80rem', $frameStyle);
+        $this->assertStringContainsString('[data-voodbuilder-chrome-drop-zone]', $frameStyle);
+        $this->assertStringContainsString(
+            '--width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem))',
+            $frameStyle,
+        );
         $this->assertStringContainsString('padding-inline: 1.25rem', $frameStyle);
     }
 
