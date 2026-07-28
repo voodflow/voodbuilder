@@ -146,7 +146,7 @@ final class GrapesJsConditionHooks
             return self::normalizeChoices($explicit);
         }
 
-        foreach (['cosmolab.locales', 'vtuts.locales', 'vdocs.locales', 'app.locales'] as $configKey) {
+        foreach (['app.locales', 'vtuts.locales', 'vdocs.locales'] as $configKey) {
             $locales = config($configKey);
 
             if (is_array($locales) && $locales !== []) {

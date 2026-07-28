@@ -113,4 +113,35 @@ class ChromeLayoutContentWidthTest extends TestCase
             ChromeLayoutContentWidth::resolveChromeWidth(new ChromeLayout(['chrome_width' => 'content'])),
         );
     }
+
+    public function test_element_content_width_toolbar_allows_chrome_full_with_standard_content(): void
+    {
+        $standard = ChromeLayoutContentWidth::fromLayout(new ChromeLayout([
+            'content_width' => 'standard',
+            'chrome_width' => 'full',
+        ]));
+
+        $this->assertFalse(ChromeLayoutContentWidth::isFull($standard));
+        $this->assertTrue(ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
+            $standard,
+            ChromeLayoutContentWidth::CHROME_FULL,
+        ));
+        $this->assertFalse(ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
+            $standard,
+            ChromeLayoutContentWidth::CHROME_CONTENT,
+        ));
+    }
+
+    public function test_element_content_width_toolbar_allows_content_full(): void
+    {
+        $full = ChromeLayoutContentWidth::fromLayout(new ChromeLayout([
+            'content_width' => 'full',
+            'chrome_width' => 'content',
+        ]));
+
+        $this->assertTrue(ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
+            $full,
+            ChromeLayoutContentWidth::CHROME_CONTENT,
+        ));
+    }
 }

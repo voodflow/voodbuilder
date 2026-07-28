@@ -1,9 +1,14 @@
 /**
  * Canvas toolbar action: cycle element content width on full-width pages/layouts.
  * Modes: full (edge-to-edge) → normal (80rem) → custom (layout content_max_width, if set).
+ *
+ * Product formula: page full → section always full → first content child full|normal|custom.
+ * Toolbar shows on section (1st level) and its content wrapper (2nd level).
  */
 
+import { isFooterBlock, isNavBlock, isHeaderBlock } from './chrome/ids.js';
 import { tablerIcon } from './editor-icons.js';
+import { isLayoutContainer, isLayoutSection, LAYOUT_ATTR } from './layout-blocks.js';
 
 export const CONTENT_WIDTH_ATTR = 'data-voodbuilder-content-width';
 export const CMD_CYCLE_CONTENT_WIDTH = 'voodbuilder-cycle-content-width';
@@ -15,6 +20,10 @@ export const CONTENT_WIDTH_CUSTOM = 'custom';
 export const STANDARD_CONTENT_MAX = '80rem';
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
+const HERO_MEDIA_CLASS = 'voodbuilder-hero-media';
+const CONTAINER_CLASS = 'voodbuilder-gjs-container';
+const SECTION_CLASS = 'voodbuilder-gjs-section';
+const LEAF_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'img', 'svg', 'path', 'ul', 'ol', 'li', 'input', 'textarea', 'label', 'br', 'hr', 'i', 'em', 'strong', 'small', 'code', 'pre']);
 
 /**
  * @param {unknown} raw
@@ -245,6 +254,320 @@ function stripConflictingWidthUtilities(component) {
 
 /**
  * @param {object} component
+ * @returns {Record<string, string>}
+ */
+function componentAttrs(component) {
+    return component?.getAttributes?.() ?? {};
+}
+
+/**
+ * @param {object} component
+ * @returns {string[]}
+ */
+function componentClasses(component) {
+    return component?.getClasses?.() ?? [];
+}
+
+/**
+ * @param {object} component
+ * @returns {object[]}
+ */
+function componentChildren(component) {
+    if (! component?.components) {
+        return [];
+    }
+
+    return [...(component.components()?.models ?? component.components() ?? [])];
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isHeroMediaLayer(component) {
+    const classes = componentClasses(component);
+    const role = String(componentAttrs(component)['data-voodbuilder-role'] ?? '').trim();
+
+    return classes.includes(HERO_MEDIA_CLASS)
+        || role === 'media'
+        || role === 'shade';
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isDecorativeSectionChild(component) {
+    if (isHeroMediaLayer(component)) {
+        return true;
+    }
+
+    const attrs = componentAttrs(component);
+    const classes = componentClasses(component);
+    const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
+
+    if (attrs['aria-hidden'] === 'true' && (classes.includes('absolute') || classes.includes('pointer-events-none'))) {
+        return true;
+    }
+
+    if (tag === 'iframe' || tag === 'video' || tag === 'picture') {
+        return classes.includes('absolute') || Boolean(attrs['aria-hidden']);
+    }
+
+    return false;
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isContentWidthSection(component) {
+    return isLayoutSection(component)
+        || componentClasses(component).includes(SECTION_CLASS);
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isContentWidthContainer(component) {
+    return isLayoutContainer(component)
+        || componentClasses(component).includes(CONTAINER_CLASS)
+        || String(componentAttrs(component)['data-voodbuilder-role'] ?? '') === 'content';
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isChromeNavOrFooterTree(component) {
+    let current = component;
+
+    while (current) {
+        const attrs = componentAttrs(current);
+        const classes = componentClasses(current);
+        const tag = String(current.get?.('tagName') ?? '').toLowerCase();
+        const blockId = String(attrs['data-voodbuilder-block'] ?? '');
+        const dropZone = String(attrs['data-voodbuilder-chrome-drop-zone'] ?? '');
+        const chromePart = String(attrs['data-voodbuilder-chrome-shell-part'] ?? '');
+
+        // Page body lives under chrome-shell — only exclude nav/footer chrome trees.
+        if (dropZone === 'nav' || dropZone === 'footer'
+            || chromePart === 'nav' || chromePart === 'header' || chromePart === 'footer'
+            || classes.includes('voodbuilder-gjs-footer')
+            || tag === 'footer'
+            || tag === 'nav'
+            || (tag === 'header' && (classes.includes('voodbuilder-gjs-dynamic') || blockId.startsWith('site_')))
+            || (blockId && (isFooterBlock(blockId) || isNavBlock(blockId) || isHeaderBlock(blockId)))
+            || (classes.includes('voodbuilder-gjs-dynamic') && (tag === 'footer' || tag === 'header' || tag === 'nav'))) {
+            return true;
+        }
+
+        current = current.parent?.() ?? null;
+    }
+
+    return false;
+}
+
+/**
+ * First boxed content child under a section (skips hero-media / decorative layers).
+ *
+ * @param {object} section
+ * @returns {object|null}
+ */
+export function findSectionContentWrapper(section) {
+    const children = componentChildren(section);
+
+    const explicit = children.find((child) => {
+        if (isDecorativeSectionChild(child)) {
+            return false;
+        }
+
+        return isContentWidthContainer(child);
+    });
+
+    if (explicit) {
+        return explicit;
+    }
+
+    return children.find((child) => {
+        if (isDecorativeSectionChild(child)) {
+            return false;
+        }
+
+        const tag = String(child.get?.('tagName') ?? '').toLowerCase();
+
+        return tag === 'div' || tag === 'article' || tag === 'main';
+    }) ?? null;
+}
+
+/**
+ * Ensure a section has a content wrapper to apply width to.
+ *
+ * @param {object} section
+ * @returns {object|null}
+ */
+export function ensureSectionContentWrapper(section) {
+    const existing = findSectionContentWrapper(section);
+
+    if (existing) {
+        if (! isContentWidthContainer(existing)) {
+            const classes = [...componentClasses(existing)];
+
+            if (! classes.includes(CONTAINER_CLASS) && ! classes.includes('container')) {
+                classes.unshift(CONTAINER_CLASS);
+                existing.setClass?.(classes);
+            }
+        }
+
+        return existing;
+    }
+
+    if (! section?.components?.()?.add) {
+        return null;
+    }
+
+    const created = section.components().add({
+        tagName: 'div',
+        classes: [CONTAINER_CLASS, 'w-full'],
+        attributes: {
+            [LAYOUT_ATTR]: 'container',
+            'data-voodbuilder-role': 'content',
+        },
+        droppable: true,
+    }, { at: componentChildren(section).length });
+
+    return Array.isArray(created) ? (created[0] ?? null) : (created ?? null);
+}
+
+/**
+ * Resolve the element that owns content-width (never the section itself).
+ *
+ * @param {object} component
+ * @returns {object|null}
+ */
+export function resolveContentWidthTarget(component) {
+    if (! component) {
+        return null;
+    }
+
+    if (isContentWidthSection(component)) {
+        return ensureSectionContentWrapper(component);
+    }
+
+    if (isSectionContentLevel(component) || isBarePageContentContainer(component)) {
+        return component;
+    }
+
+    return null;
+}
+
+/**
+ * Second level: direct content child of a section.
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isSectionContentLevel(component) {
+    const parent = component?.parent?.();
+
+    if (! parent || ! isContentWidthSection(parent)) {
+        return false;
+    }
+
+    if (isDecorativeSectionChild(component)) {
+        return false;
+    }
+
+    const wrapper = findSectionContentWrapper(parent);
+
+    return wrapper === component || isContentWidthContainer(component);
+}
+
+/**
+ * Optional: root page-content container without a section parent (not footer chrome).
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isBarePageContentContainer(component) {
+    if (! isContentWidthContainer(component) || isChromeNavOrFooterTree(component)) {
+        return false;
+    }
+
+    const parent = component.parent?.();
+
+    if (! parent) {
+        return false;
+    }
+
+    if (isContentWidthSection(parent)) {
+        return false;
+    }
+
+    const parentAttrs = componentAttrs(parent);
+    const parentTag = String(parent.get?.('tagName') ?? '').toLowerCase();
+    const isPageRoot = parentAttrs['data-voodbuilder-page-content']
+        || parentAttrs['data-voodbuilder-content-slot']
+        || parent.get?.('type') === 'wrapper'
+        || parentTag === 'body'
+        || parentTag === 'main';
+
+    if (! isPageRoot) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isLeafLikeComponent(component) {
+    const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
+    const type = String(component?.get?.('type') ?? '');
+
+    if (LEAF_TAGS.has(tag) || type === 'text' || type === 'image' || type === 'link') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Show content-width on section (1st) and its content wrapper (2nd) only.
+ *
+ * @param {object} component
+ * @param {object} editor
+ * @returns {boolean}
+ */
+export function shouldShowContentWidthToolbar(component, editor) {
+    if (! component || ! isFullWidthPageContext(editor)) {
+        return false;
+    }
+
+    if (isChromeNavOrFooterTree(component)) {
+        return false;
+    }
+
+    if (isLeafLikeComponent(component) || isDecorativeSectionChild(component)) {
+        return false;
+    }
+
+    if (isContentWidthSection(component)) {
+        return true;
+    }
+
+    if (isSectionContentLevel(component)) {
+        return true;
+    }
+
+    return isBarePageContentContainer(component);
+}
+
+/**
+ * @param {object} component
  * @param {string} mode
  * @param {object} editor
  */
@@ -294,9 +617,15 @@ export function applyComponentContentWidth(component, mode, editor) {
  * @param {Record<string, string>} [labels]
  */
 export function cycleSelectedContentWidth(editor, labels = {}) {
-    const component = editor?.getSelected?.();
+    const selected = editor?.getSelected?.();
 
-    if (! component || ! isFullWidthPageContext(editor)) {
+    if (! selected || ! shouldShowContentWidthToolbar(selected, editor)) {
+        return;
+    }
+
+    const component = resolveContentWidthTarget(selected);
+
+    if (! component) {
         return;
     }
 
@@ -304,7 +633,7 @@ export function cycleSelectedContentWidth(editor, labels = {}) {
     const next = nextContentWidthMode(current, editor);
 
     applyComponentContentWidth(component, next, editor);
-    ensureCanvasContentWidthToolbarState(editor, component, labels);
+    ensureCanvasContentWidthToolbarState(editor, selected, labels);
 
     const toast = contentWidthModeLabel(next, labels, editor);
     if (toast) {
@@ -373,11 +702,12 @@ function showContentWidthToast(message) {
  * @returns {object|null}
  */
 export function buildContentWidthToolbarButton(component, editor, labels = {}) {
-    if (! component || ! isFullWidthPageContext(editor)) {
+    if (! shouldShowContentWidthToolbar(component, editor)) {
         return null;
     }
 
-    const mode = readComponentContentWidthMode(component, editor);
+    const target = resolveContentWidthTarget(component) ?? component;
+    const mode = readComponentContentWidthMode(target, editor);
 
     return {
         attributes: {
@@ -410,7 +740,8 @@ export function ensureCanvasContentWidthToolbarState(editor, component, labels =
         return;
     }
 
-    const mode = readComponentContentWidthMode(component, editor);
+    const target = resolveContentWidthTarget(component) ?? component;
+    const mode = readComponentContentWidthMode(target, editor);
     button.classList.remove('is-full', 'is-normal', 'is-custom');
     button.classList.add(`is-${mode}`);
     button.setAttribute('data-voodbuilder-content-width-mode', mode);

@@ -669,8 +669,17 @@ final class VoodbuilderThemeTokenMigrator
      */
     private static function migrateContainerClass(array $tokens): array
     {
+        // Collapse accidental double prefix from naive substring replaces.
+        $tokens = array_map(static function (string $token): string {
+            while (str_contains($token, 'voodbuilder-gjs-voodbuilder-gjs-container')) {
+                $token = str_replace('voodbuilder-gjs-voodbuilder-gjs-container', 'voodbuilder-gjs-container', $token);
+            }
+
+            return $token;
+        }, $tokens);
+
         if (! in_array('container', $tokens, true)) {
-            return $tokens;
+            return array_values(array_unique($tokens));
         }
 
         $tokens = array_values(array_filter(

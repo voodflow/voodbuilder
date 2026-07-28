@@ -2,6 +2,8 @@
 
 Documento di lavoro sul comportamento dei **tag / binding dinamici** in Voodbuilder (GrapesJS + Rich Text), con focus sugli use case reali — non solo sul meccanismo tecnico.
 
+> **Nota:** la larghezza contenuto (full / 80rem / custom) è un controllo di *layout*, non un binding. Vedi [CONTENT_WIDTH.md](./CONTENT_WIDTH.md).
+
 ---
 
 ## Problema risolto

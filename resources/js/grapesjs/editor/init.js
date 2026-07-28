@@ -751,8 +751,10 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
     editor.__voodbuilderPageContentWidth = normalizePageContentWidth(options);
+    editor.__voodbuilderChromeWidth = normalizeChromeWidth(options);
     editor.__voodbuilderFullWidthPage = editor.__voodbuilderPageContentWidth.mode === 'full'
-        || options.fullWidthPage === true;
+        || options.fullWidthPage === true
+        || editor.__voodbuilderChromeWidth === 'full';
 
     try {
         configureRichTextEditor(editor, labels);

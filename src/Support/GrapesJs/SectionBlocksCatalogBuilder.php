@@ -135,7 +135,33 @@ final class SectionBlocksCatalogBuilder
             json_encode($blocks, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n",
         );
 
+        $this->writeUtilitiesCatalogHtml($blocks);
+
         return count($blocks);
+    }
+
+    /**
+     * Tailwind @source catalog: migrated section → container markup (no double prefix).
+     *
+     * @param  list<array<string, mixed>>  $blocks
+     */
+    protected function writeUtilitiesCatalogHtml(array $blocks): void
+    {
+        $catalogPath = dirname(__DIR__, 3).'/resources/grapesjs/section-catalog.html';
+        $parts = [];
+
+        foreach ($blocks as $block) {
+            $html = trim((string) ($block['content'] ?? ''));
+
+            if ($html !== '') {
+                $parts[] = $html;
+            }
+        }
+
+        file_put_contents(
+            $catalogPath,
+            '<!doctype html><html><body>'.implode("\n", $parts).'</body></html>'."\n",
+        );
     }
 
     /**
@@ -207,9 +233,13 @@ final class SectionBlocksCatalogBuilder
         ];
 
         $html = str_replace(array_keys($replacements), array_values($replacements), $html);
-
-        return GrapesJsBrandingNormalizer::normalizeHtml(
+        $html = GrapesJsBrandingNormalizer::normalizeHtml(
             preg_replace('/\s{2,}/', ' ', $html) ?? $html,
+        );
+
+        // Bake product layout contract: section.voodbuilder-gjs-section → .voodbuilder-gjs-container
+        return VoodbuilderThemeTokenMigrator::migrateHtml(
+            TailwindV4ClassMigrator::migrateHtml($html),
         );
     }
 }

@@ -62,6 +62,7 @@ final class GrapesJsEditorGate
         $chromeLayout = ChromeLayoutManagedContent::chromeLayoutForSitePage($page);
         $chromeShellMode = $chromeLayout !== null && self::isEditing($page);
         $contentWidth = ChromeLayoutContentWidth::resolve($chromeLayout, $page);
+        $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth($chromeLayout);
         $subTheme = $chromeShellMode
             ? ChromeLayoutSubThemeResolver::forSitePage($page)
             : $page->resolvedSubTheme();
@@ -85,8 +86,11 @@ final class GrapesJsEditorGate
             'chromeShellParts' => $chromeShellParts,
             'chromeLayoutCss' => $chromeLayoutCss,
             'pageContentWidth' => $contentWidth,
-            'chromeWidth' => ChromeLayoutContentWidth::resolveChromeWidth($chromeLayout),
-            'fullWidthPage' => ChromeLayoutContentWidth::isFull($contentWidth),
+            'chromeWidth' => $chromeWidth,
+            'fullWidthPage' => ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
+                $contentWidth,
+                $chromeWidth,
+            ),
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.pages.update', $page),
             'exitUrl' => $page->getUrl(),

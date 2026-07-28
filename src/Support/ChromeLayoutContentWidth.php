@@ -93,6 +93,16 @@ final class ChromeLayoutContentWidth
     }
 
     /**
+     * Element content-width toolbar: useful when page content is full-bleed,
+     * or when chrome stays edge-to-edge (full-bleed sections + boxed children).
+     */
+    public static function allowsElementContentWidthToolbar(array $resolved, string $chromeWidth): bool
+    {
+        return self::isFull($resolved)
+            || self::normalizeChromeWidth($chromeWidth) === self::CHROME_FULL;
+    }
+
+    /**
      * @param  array{mode?: string, maxWidth?: string|null}  $resolved
      */
     public static function cssMaxWidth(array $resolved): ?string

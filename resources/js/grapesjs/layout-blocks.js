@@ -103,14 +103,28 @@ export function isLayoutContainer(component) {
         return true;
     }
 
+    const classes = component.getClasses?.() ?? [];
+
     return component.get?.('type') === 'voodbuilder-container'
-        || (component.getClasses?.() ?? []).includes('container');
+        || classes.includes('voodbuilder-gjs-container')
+        || classes.includes('container');
 }
 
 export function isLayoutSection(component) {
-    return layoutKind(component) === 'section'
-        || component?.get?.('type') === 'voodbuilder-section'
-        || String(component?.get?.('tagName') ?? '').toLowerCase() === 'section';
+    if (! component) {
+        return false;
+    }
+
+    if (layoutKind(component) === 'section'
+        || component.get?.('type') === 'voodbuilder-section') {
+        return true;
+    }
+
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+    const classes = component.getClasses?.() ?? [];
+
+    return tag === 'section'
+        || classes.includes('voodbuilder-gjs-section');
 }
 
 export function findNestedLayoutContainer(component) {
@@ -431,14 +445,14 @@ export function openContainerLayoutPicker(editor, container, labels = {}) {
 
 function sectionContentHtml() {
     return `
-<section class="body-font w-full py-12" ${LAYOUT_ATTR}="section" data-gjs-type="voodbuilder-section" data-gjs-name="Section">
-  <div class="w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>
+<section class="voodbuilder-gjs-section body-font w-full py-12" ${LAYOUT_ATTR}="section" data-gjs-type="voodbuilder-section" data-gjs-name="Section">
+  <div class="voodbuilder-gjs-container w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>
 </section>`.trim();
 }
 
 function containerContentHtml() {
     return `
-<div class="w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>`.trim();
+<div class="voodbuilder-gjs-container w-full" ${LAYOUT_ATTR}="container" data-gjs-type="voodbuilder-container" data-gjs-name="Container" data-gjs-droppable="true"></div>`.trim();
 }
 
 function blockContentHtml() {

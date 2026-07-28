@@ -20,6 +20,8 @@ Contesto tipico del problema: hero a strati (media assoluto + shade + contenuto 
 
 ## 2. Anatomia di una section “bene”
 
+Contratto larghezza: **section sempre full** (bg/media) → **primo content wrapper** full|normal|custom. Dettagli: [CONTENT_WIDTH.md](./CONTENT_WIDTH.md).
+
 ```html
 <section
   class="voodbuilder-gjs-section relative overflow-hidden …"

@@ -38,13 +38,17 @@ final class GrapesJsChromeLayoutEditorGate
     {
         $subTheme = ChromeLayoutSubThemeResolver::forChromeLayout($layout);
         $contentWidth = ChromeLayoutContentWidth::fromLayout($layout);
+        $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth($layout);
 
         return [
             'chromeLayoutMode' => true,
             'chromeLayoutName' => $layout->name,
             'pageContentWidth' => $contentWidth,
-            'chromeWidth' => ChromeLayoutContentWidth::resolveChromeWidth($layout),
-            'fullWidthPage' => ChromeLayoutContentWidth::isFull($contentWidth),
+            'chromeWidth' => $chromeWidth,
+            'fullWidthPage' => ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
+                $contentWidth,
+                $chromeWidth,
+            ),
             'saveUrl' => self::editorRoute('voodbuilder.grapesjs.chrome-layouts.content.update', $layout),
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
