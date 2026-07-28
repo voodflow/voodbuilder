@@ -16,6 +16,7 @@ import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } f
 import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
 import {
     buildContentWidthToolbarButton,
+    ensureCanvasContentWidthToolbarState,
     ensureContentWidthCommand,
 } from './content-width-toolbar.js';
 import { buildLayoutPickerToolbarButton } from './layout-blocks.js';
@@ -258,12 +259,6 @@ function buildComponentToolbar(editor, component, labels = {}) {
         toolbar.push(layoutButton);
     }
 
-    const contentWidthButton = buildContentWidthToolbarButton(component, editor, labels);
-
-    if (contentWidthButton) {
-        toolbar.push(contentWidthButton);
-    }
-
     if (component.get('copyable') && canDuplicateChromeEditorComponent(component, editor)) {
         toolbar.push({
             attributes: {
@@ -331,6 +326,13 @@ function buildComponentToolbar(editor, component, labels = {}) {
             await copySelectedComponentClasses(ed, labels);
         },
     });
+
+    // Content width: place near class/dynamic tools so it stays visible in crowded toolbars.
+    const contentWidthButton = buildContentWidthToolbarButton(component, editor, labels);
+
+    if (contentWidthButton) {
+        toolbar.push(contentWidthButton);
+    }
 
     if (! richText) {
         toolbar.push(...buildDynamicToolbarButtons(labels, {
@@ -491,10 +493,15 @@ export function ensureCanvasComponentToolbarButtons(editor, component, labels = 
     ensureContentWidthCommand(editor, labels);
     component.set('toolbar', buildComponentToolbar(editor, component, labels));
 
-    window.requestAnimationFrame(() => {
+    const sync = () => {
         syncBoundToolbarState(editor, component);
+        ensureCanvasContentWidthToolbarState(editor, component, labels);
         clampCanvasToolbarPosition(editor);
-    });
+    };
+
+    window.requestAnimationFrame(sync);
+    // Second pass after GrapesJS positions the toolbar / canvas attrs settle on ?edit=1.
+    window.setTimeout(sync, 0);
 }
 
 export function registerCanvasDropAffordance(editor) {

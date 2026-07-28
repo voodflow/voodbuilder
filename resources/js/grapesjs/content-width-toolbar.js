@@ -51,17 +51,58 @@ export function getEditorPageContentWidth(editor) {
 }
 
 /**
+ * Show element content-width controls when the page can host full-bleed
+ * sections with boxed children (landing / full chrome / full content).
+ *
+ * Also reads canvas document attrs as fallback when editor props are stale
+ * (common on ?edit=1 until the iframe finishes revealCanvasDocument).
+ *
  * @param {object} editor
  * @returns {boolean}
  */
 export function isFullWidthPageContext(editor) {
+    if (editor?.__voodbuilderPopupMode === true) {
+        return false;
+    }
+
+    if (editor?.__voodbuilderFullWidthPage === true) {
+        return true;
+    }
+
     const resolved = getEditorPageContentWidth(editor);
 
     if (resolved.mode === 'full') {
         return true;
     }
 
-    return editor?.__voodbuilderFullWidthPage === true;
+    if ((editor?.__voodbuilderChromeWidth ?? null) === 'full') {
+        return true;
+    }
+
+    try {
+        const doc = editor?.Canvas?.getDocument?.();
+        const root = doc?.documentElement;
+        const body = doc?.body;
+        const pageWidth = root?.dataset?.voodbuilderPageWidth
+            || root?.dataset?.voodbuilderCanvasContentWidth
+            || body?.dataset?.voodbuilderCanvasContentWidth
+            || body?.dataset?.voodbuilderPageWidth
+            || '';
+        const chromeWidth = root?.dataset?.voodbuilderChromeWidth
+            || body?.dataset?.voodbuilderChromeWidth
+            || '';
+
+        if (pageWidth === 'full' || chromeWidth === 'full') {
+            return true;
+        }
+    } catch {
+        // Canvas not ready yet.
+    }
+
+    // Page/layout editors default to allowing the cycle (Full ↔ Normal).
+    // Contained-only hosts should set chromeWidth=content + non-full page width.
+    return (editor?.__voodbuilderChromeWidth ?? 'full') !== 'content'
+        || resolved.mode !== 'standard';
 }
 
 /**

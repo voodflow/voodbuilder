@@ -1010,6 +1010,12 @@
     color: var(--color-vp-brand-1, #6366f1);
 }
 
+.voodbuilder-gjs-root .gjs-toolbar-item[data-voodbuilder-toolbar='content-width'] svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
 .voodbuilder-gjs-root .gjs-toolbar-item.voodbuilder-gjs-toolbar-item--danger:hover {
     color: #dc2626;
     background: color-mix(in srgb, #dc2626 10%, transparent);
