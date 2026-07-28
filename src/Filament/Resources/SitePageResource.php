@@ -43,6 +43,7 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePag
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePageForm;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -251,7 +252,7 @@ class SitePageResource extends Resource
                                             ->native(false)
                                             ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
                                             ->helperText(__('voodbuilder::chrome_layouts.page_form.layout_help'))
-                                            ->visible(fn (): bool => SitePageForm::chromeLayoutsEnabled())
+                                            ->visible(fn (): bool => LayoutsModule::isEnabled() && SitePageForm::chromeLayoutsEnabled())
                                             ->columnSpanFull(),
 
                                         Select::make('layout')

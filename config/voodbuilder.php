@@ -26,6 +26,9 @@ return [
         'menus' => [
             'enabled' => env('VOODBUILDER_MODULE_MENUS', true),
         ],
+        'layouts' => [
+            'enabled' => env('VOODBUILDER_MODULE_LAYOUTS', true),
+        ],
     ],
 
     'layouts' => [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
@@ -23,6 +24,7 @@ final class GrapesJsChromeLayoutEditorGate
     public static function canEdit(ChromeLayout $layout): bool
     {
         return config('voodbuilder.chrome_layouts.enabled', true)
+            && LayoutsModule::isEnabled()
             && PageBuilderAccess::userCanUsePageBuilder();
     }
 

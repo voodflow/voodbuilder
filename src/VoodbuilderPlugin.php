@@ -45,7 +45,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = PopupResource::class;
         }
 
-        if (config('voodbuilder.chrome_layouts.enabled', true)) {
+        if (config('voodbuilder.modules.layouts.enabled', true) && config('voodbuilder.chrome_layouts.enabled', true)) {
             $resources[] = ChromeLayoutResource::class;
         }
 

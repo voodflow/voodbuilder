@@ -41,8 +41,6 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
-use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
@@ -55,6 +53,7 @@ use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
+use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
@@ -69,7 +68,6 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegist
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\ChromeLayoutContentSlotBlock;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
@@ -256,7 +254,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::put('popups/{popup}', [GrapesJsPopupsController::class, 'update'])->name('popups.update');
                 Route::delete('popups/{popup}', [GrapesJsPopupsController::class, 'destroy'])->name('popups.destroy');
                 Route::match(['put', 'post'], 'popups/{popup}/content', [GrapesJsPopupController::class, 'update'])->name('popups.content.update');
-                Route::match(['put', 'post'], 'chrome-layouts/{chromeLayout}/content', [GrapesJsChromeLayoutController::class, 'update'])->name('chrome-layouts.content.update');
             });
 
         Route::middleware(['web', 'throttle:120,1'])
@@ -272,7 +269,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->name('voodbuilder.')
             ->group(function (): void {
                 Route::get('popups/{popup}/editor', [PopupEditorController::class, 'show'])->name('popups.editor');
-                Route::get('chrome-layouts/{chromeLayout}/editor', [ChromeLayoutEditorController::class, 'show'])->name('chrome-layouts.editor');
             });
     }
 
@@ -310,10 +306,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             VoodbuilderLanding02Sections::registerBlocks();
             VoodbuilderLanding03Sections::registerBlocks();
             VoodbuilderMediaSections::registerBlocks();
-
-            if (config('voodbuilder.chrome_layouts.enabled', true)) {
-                $registry->register(ChromeLayoutContentSlotBlock::definition());
-            }
 
             if (config('voodbuilder.grapesjs.sections.enabled', true) && ! $this->app->runningInConsole()) {
                 VoodbuilderSectionGrapesJsBlocks::register($registry);
@@ -375,6 +367,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new MenusModule,
             enabled: (bool) config('voodbuilder.modules.menus.enabled', true),
+        );
+
+        $registry->register(
+            new LayoutsModule,
+            enabled: (bool) config('voodbuilder.modules.layouts.enabled', true),
         );
     }
 }
