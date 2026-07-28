@@ -1128,7 +1128,7 @@ export function initVpressGrapesJs(container, options = {}) {
         }
 
         if (! options.popupMode) {
-            if (! options.chromeLayoutMode) {
+            if (! options.chromeLayoutMode && options.pageTemplatesUrl) {
                 registerPageTemplatesSidebar(editor, {
                     pageTemplatesUrl: options.pageTemplatesUrl,
                     pageTemplatesCatalogUrl: options.pageTemplatesCatalogUrl ?? null,

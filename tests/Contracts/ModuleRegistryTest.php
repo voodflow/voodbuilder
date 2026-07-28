@@ -24,6 +24,10 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('history'));
         $this->assertTrue($registry->has('conditions'));
         $this->assertTrue($registry->isEnabled('conditions'));
+        $this->assertTrue($registry->has('templates'));
+        $this->assertTrue($registry->isEnabled('templates'));
+        $this->assertTrue($registry->has('themes'));
+        $this->assertTrue($registry->isEnabled('themes'));
         $this->assertTrue($registry->booted());
     }
 

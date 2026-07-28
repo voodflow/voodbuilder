@@ -29,6 +29,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Livewire\Attributes\On;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
@@ -269,6 +270,7 @@ class VoodbuilderSettingsPage extends Page
                         Tab::make('themes')
                             ->label(__('voodbuilder::settings.tabs.themes'))
                             ->icon('heroicon-o-paint-brush')
+                            ->visible(fn (): bool => ThemesModule::isEnabled())
                             ->schema([
                                 View::make('voodbuilder::filament.themes-workspace-shell'),
                                 $this->areaThemesSection(),

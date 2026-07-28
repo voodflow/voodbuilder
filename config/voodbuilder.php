@@ -17,6 +17,12 @@ return [
         'conditions' => [
             'enabled' => env('VOODBUILDER_MODULE_CONDITIONS', true),
         ],
+        'templates' => [
+            'enabled' => env('VOODBUILDER_MODULE_TEMPLATES', true),
+        ],
+        'themes' => [
+            'enabled' => env('VOODBUILDER_MODULE_THEMES', true),
+        ],
     ],
 
     'layouts' => [

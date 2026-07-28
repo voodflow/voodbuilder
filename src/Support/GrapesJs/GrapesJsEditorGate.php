@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
+use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
@@ -120,8 +121,10 @@ final class GrapesJsEditorGate
                 : null,
             'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
-            'pageTemplatesUrl' => self::editorRoute('voodbuilder.grapesjs.page-templates.index'),
-            'pageTemplatesCatalogUrl' => filled(config('voodbuilder.page_templates.catalog_url'))
+            'pageTemplatesUrl' => TemplatesModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.page-templates.index')
+                : null,
+            'pageTemplatesCatalogUrl' => TemplatesModule::isEnabled() && filled(config('voodbuilder.page_templates.catalog_url'))
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
                 : null,
             'popupsUrl' => config('voodbuilder.popups.enabled', true)

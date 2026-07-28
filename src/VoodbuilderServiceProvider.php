@@ -24,8 +24,6 @@ use Voodflow\Voodbuilder\Console\SubThemeCommand;
 use Voodflow\Voodbuilder\Console\SyncNpmDepsCommand;
 use Voodflow\Voodbuilder\Console\SyncThemeStylesheetImportsCommand;
 use Voodflow\Voodbuilder\Console\ThemePresetCommand;
-use Voodflow\Voodbuilder\Filament\Livewire\ThemeMapBridge;
-use Voodflow\Voodbuilder\Filament\Livewire\ThemesWorkspace;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
@@ -43,7 +41,6 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
 use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
@@ -59,6 +56,8 @@ use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
+use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
+use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -92,7 +91,6 @@ use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
-use Voodflow\Voodbuilder\Support\ThemeMapAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 
@@ -173,10 +171,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         Livewire::component('voodbuilder.site-notification-bell', SiteNotificationBell::class);
         Livewire::component('voodbuilder.account-settings', AccountSettings::class);
-        Livewire::component('voodbuilder.themes-workspace', ThemesWorkspace::class);
-        Livewire::component('voodbuilder.theme-map-bridge', ThemeMapBridge::class);
 
-        ThemeMapAssets::register();
         BrandMarkAssets::ensurePublished();
         FilamentAdminAssets::register();
         FilamentMenuTreeAssets::register();
@@ -257,14 +252,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('components/export', [GrapesJsComponentsController::class, 'export'])->name('components.export');
                 Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
                 Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
-                Route::get('page-templates', [GrapesJsPageTemplatesController::class, 'index'])->name('page-templates.index');
-                Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])->name('page-templates.store');
-                Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])->name('page-templates.import');
-                Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])->name('page-templates.import-url');
-                Route::get('page-templates/catalog', [GrapesJsPageTemplatesController::class, 'catalog'])->name('page-templates.catalog');
-                Route::post('page-templates/install', [GrapesJsPageTemplatesController::class, 'installCatalogEntry'])->name('page-templates.install');
-                Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])->name('page-templates.export');
-                Route::delete('page-templates/{pageTemplate}', [GrapesJsPageTemplatesController::class, 'destroy'])->name('page-templates.destroy');
                 Route::get('popups', [GrapesJsPopupsController::class, 'index'])->name('popups.index');
                 Route::get('popups/page-paths', [GrapesJsPopupsController::class, 'pagePaths'])->name('popups.page-paths');
                 Route::post('popups', [GrapesJsPopupsController::class, 'store'])->name('popups.store');
@@ -381,6 +368,16 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new ConditionsModule,
             enabled: (bool) config('voodbuilder.modules.conditions.enabled', true),
+        );
+
+        $registry->register(
+            new TemplatesModule,
+            enabled: (bool) config('voodbuilder.modules.templates.enabled', true),
+        );
+
+        $registry->register(
+            new ThemesModule,
+            enabled: (bool) config('voodbuilder.modules.themes.enabled', true),
         );
     }
 }
