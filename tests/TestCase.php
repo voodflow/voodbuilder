@@ -12,8 +12,15 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
 use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
+use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
+use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
+use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
+use Voodflow\VoodbuilderComponents\VoodbuilderComponentsServiceProvider;
+use Voodflow\VoodbuilderPopups\VoodbuilderPopups;
 use Voodflow\VoodbuilderPopups\VoodbuilderPopupsServiceProvider;
 
 abstract class TestCase extends BaseTestCase
@@ -28,6 +35,9 @@ abstract class TestCase extends BaseTestCase
             VoodbuilderServiceProvider::class,
             class_exists(VoodbuilderPopupsServiceProvider::class)
                 ? VoodbuilderPopupsServiceProvider::class
+                : null,
+            class_exists(VoodbuilderComponentsServiceProvider::class)
+                ? VoodbuilderComponentsServiceProvider::class
                 : null,
         ]));
     }
@@ -73,16 +83,21 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutVite();
 
-        // Filament panel plugin is not registered in Testbench; activate Popups runtime for package tests.
-        if (class_exists(\Voodflow\VoodbuilderPopups\VoodbuilderPopups::class)) {
-            \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate::flushLabelProviders();
-            \Voodflow\VoodbuilderPopups\VoodbuilderPopups::reset();
-            \Voodflow\VoodbuilderPopups\VoodbuilderPopups::activate();
+        // Filament panel plugins are not registered in Testbench; activate companion runtimes for package tests.
+        if (class_exists(VoodbuilderPopups::class)) {
+            GrapesJsEditorGate::flushLabelProviders();
+            VoodbuilderPopups::reset();
+            VoodbuilderPopups::activate();
         }
 
-        \Voodflow\Voodbuilder\Support\NavigationMenuResolver::clearSchemaCache();
-        \Voodflow\Voodbuilder\Support\SitePageResolver::clearSchemaCache();
-        \Voodflow\Voodbuilder\Support\ChromeLayoutResolver::forgetCache();
+        if (class_exists(VoodbuilderComponents::class)) {
+            VoodbuilderComponents::reset();
+            VoodbuilderComponents::activate();
+        }
+
+        NavigationMenuResolver::clearSchemaCache();
+        SitePageResolver::clearSchemaCache();
+        ChromeLayoutResolver::forgetCache();
 
         $this->seedCookieConsentSettings();
     }
@@ -91,8 +106,8 @@ abstract class TestCase extends BaseTestCase
     {
         PageBuilderAccess::authorizeUsing(null);
 
-        \Voodflow\Voodbuilder\Support\NavigationMenuResolver::clearSchemaCache();
-        \Voodflow\Voodbuilder\Support\SitePageResolver::clearSchemaCache();
+        NavigationMenuResolver::clearSchemaCache();
+        SitePageResolver::clearSchemaCache();
 
         parent::tearDown();
     }

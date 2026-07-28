@@ -11,7 +11,7 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssLibrarySync;
+use Voodflow\Voodbuilder\Support\GrapesJs\ComponentRuntimeBridge;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 use Voodflow\Voodbuilder\Support\GrapesJs\SitePageRevisionRecorder;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -65,7 +65,7 @@ class GrapesJsPageController extends Controller
             ],
         ]);
 
-        app(GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($normalized['html']);
+        ComponentRuntimeBridge::syncComponentCssLibraryFromPageHtml($normalized['html']);
 
         app(SitePageRevisionRecorder::class)
             ->recordIfChanged($sitePage, $previousPayload);

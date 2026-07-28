@@ -46,10 +46,10 @@ final class GrapesJsRenderer
 
     public function css(SitePage $page): ?string
     {
-        $globalCss = app(GrapesJsGlobalClassRenderer::class)->css();
+        $globalCss = ComponentRuntimeBridge::globalClassCss();
         $payload = $page->builder_payload ?? [];
         $html = (string) ($payload['html'] ?? '');
-        $componentCss = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        $componentCss = ComponentRuntimeBridge::componentCssForHtml($html);
         $storedPageCss = $payload['css'] ?? null;
         $pageCss = GrapesJsPastedComponentNormalizer::resolvePublishedPageCss(
             $html,
@@ -80,7 +80,7 @@ final class GrapesJsRenderer
     {
         $html = $this->html($page);
         $html = app(GrapesJsElementConditionRenderer::class)->render($html, $page);
-        $html = app(GrapesJsComponentRenderer::class)->render($html, $page);
+        $html = ComponentRuntimeBridge::renderComponentHtml($html, $page);
         $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
         $html = app(GrapesJsDynamicBlockRenderer::class)->render($html, $page);
 

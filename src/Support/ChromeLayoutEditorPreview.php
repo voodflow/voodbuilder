@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\ComponentRuntimeBridge;
 
 /**
  * Composes chrome layout + page content for the GrapesJS page editor preview.
@@ -96,8 +97,7 @@ final class ChromeLayoutEditorPreview
         $chromeHtml = $before.$slot.$after;
         $chromeCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
         $componentCss = ThemePalette::stripEmbeddedPaletteOverrides(
-            app(\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCssRenderer::class)
-                ->cssForHtml($rendered['before'].$rendered['after']),
+            ComponentRuntimeBridge::componentCssForHtml($rendered['before'].$rendered['after']) ?? '',
         );
         // Page CSS can bake stale --vx-header-bg etc.; strip so admin/canvas palette wins.
         $safePageCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($pageCss));

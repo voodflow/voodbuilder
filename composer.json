@@ -36,7 +36,9 @@
             "Voodflow\\VoodbuilderPopups\\": "../voodbuilder-popups/src/",
             "Voodflow\\Voodbuilder\\Modules\\Popups\\": "../voodbuilder-popups/src/Modules/Popups/",
             "Voodflow\\Voodbuilder\\Support\\GrapesJs\\Popups\\": "../voodbuilder-popups/src/Support/GrapesJs/Popups/",
-            "Voodflow\\Voodbuilder\\Filament\\Resources\\PopupResource\\": "../voodbuilder-popups/src/Filament/Resources/PopupResource/"
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\PopupResource\\": "../voodbuilder-popups/src/Filament/Resources/PopupResource/",
+            "Voodflow\\VoodbuilderComponents\\": "../voodbuilder-components/src/",
+            "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src/Modules/Components/"
         },
         "classmap": [
             "../voodbuilder-popups/src/Models/",
@@ -44,7 +46,10 @@
             "../voodbuilder-popups/src/Http/Controllers/",
             "../voodbuilder-popups/src/Filament/Resources/PopupResource.php",
             "../voodbuilder-popups/src/Filament/Actions/",
-            "../voodbuilder-popups/src/Support/GrapesJs/GrapesJsPopupEditorGate.php"
+            "../voodbuilder-popups/src/Support/GrapesJs/GrapesJsPopupEditorGate.php",
+            "../voodbuilder-components/src/Models/",
+            "../voodbuilder-components/src/Http/Controllers/",
+            "../voodbuilder-components/src/Support/GrapesJs/"
         ]
     },
     "require-dev": {
@@ -59,7 +64,8 @@
             ]
         },
         "suggest": {
-            "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder."
+            "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder.",
+            "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder."
         }
     },
     "minimum-stability": "dev",

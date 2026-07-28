@@ -6,14 +6,12 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
-use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
@@ -28,6 +26,7 @@ use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 final class GrapesJsEditorGate
 {
@@ -145,10 +144,10 @@ final class GrapesJsEditorGate
                     'revision' => '__REVISION__',
                 ])
                 : null,
-            'globalClassesUrl' => ComponentsModule::isEnabled()
+            'globalClassesUrl' => ComponentRuntimeBridge::moduleEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.global-classes.index')
                 : null,
-            'componentsUrl' => ComponentsModule::isEnabled()
+            'componentsUrl' => ComponentRuntimeBridge::moduleEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.components.index')
                 : null,
             'pageTemplatesUrl' => TemplatesModule::isEnabled()
@@ -748,7 +747,7 @@ final class GrapesJsEditorGate
 
         $html = $normalized['html'];
         $css = $normalized['css'];
-        $componentCss = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        $componentCss = ComponentRuntimeBridge::componentCssForHtml($html) ?? '';
 
         if ($componentCss !== '') {
             $css = trim(implode("\n\n", array_filter([$css, $componentCss])));

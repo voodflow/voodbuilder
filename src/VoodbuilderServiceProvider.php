@@ -36,26 +36,25 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
+use Voodflow\Voodbuilder\Licensing\EntitlementManager;
+use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
+use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
-use Voodflow\Voodbuilder\Modules\ModuleRegistry;
-use Voodflow\Voodbuilder\Licensing\EntitlementManager;
-use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
-use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
-use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
@@ -68,20 +67,19 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
-use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding01Sections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding02Sections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding03Sections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
+use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
+use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
 use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
-use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
-use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 
@@ -331,11 +329,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 && Voodbuilder::can('dynamic-data.single'),
         );
 
-        $registry->register(
-            new ComponentsModule,
-            enabled: (bool) config('voodbuilder.modules.components.enabled', true)
-                && Voodbuilder::can('components.library'),
-        );
+        // Components live in voodflow/voodbuilder-components (Filament plugin) and
+        // register via Voodbuilder::registerModule() during Application::booting.
 
         // Popups live in voodflow/voodbuilder-popups (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
