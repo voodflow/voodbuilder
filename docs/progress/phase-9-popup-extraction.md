@@ -1,41 +1,39 @@
-# Phase 9 — Popup extraction prep (in-repo)
+# Phase 9 — Popup extraction (`voodflow/voodbuilder-popups`)
 
-Physical Composer package `voodflow/voodbuilder-popups` is **not** split yet. This phase hardens the in-package boundary so Core survives without Popups.
+Physical Composer package extracted as a **FilamentPHP 5 plugin**, scaffolded from [filamentphp/plugin-skeleton](https://github.com/filamentphp/plugin-skeleton) `5.x`.
 
-## Acceptance covered here
+## Package
+
+```text
+packages/voodflow/voodbuilder-popups
+├── src/VoodbuilderPopupsPlugin.php          # Filament Plugin
+├── src/VoodbuilderPopupsServiceProvider.php # registers PopupsModule via Voodbuilder::registerModule()
+├── src/Modules|Http|Filament|Models|…       # feature code (keeps Voodflow\Voodbuilder\* namespaces)
+├── resources/views|lang
+└── database/migrations
+```
+
+## Acceptance
 
 | Requirement | Status |
 |---|---|
-| Core works without Popups | `PopupsModule` disable removes routes/resource/editor URLs |
-| Public render does not fail if absent | `popups-boot` checks module + `Route::has` before emitting config; no `route()` on missing names |
-| Existing popup data preserved | DB rows untouched when module off |
-| Admin orphan warning | `PopupsOrphanStatus` + Filament notification on Settings mount |
-| Public API no-op | `PopupsPublicController` returns `[]` when module disabled (defensive) |
+| Core works without Popups | Popups no longer registered in Core `registerInternalModules` / `VoodbuilderPlugin` |
+| Installing Popups adds features | Host requires package + `VoodbuilderPopupsPlugin::make()` |
+| Uninstalling does not break Core | Core stub `popups-boot`, orphan via `Schema`/`DB`, no hard class deps |
+| Existing popup data preserved | Same tables/migrations moved to plugin package |
+| Public render safe if absent | Core boot stub no-ops; module not registered |
+| Admin orphan warning | `PopupsOrphanStatus` + Settings notification |
 
-## Target future package layout
+## Host wiring
 
-```text
-voodflow/voodbuilder-popups
-├── src/
-│   ├── PopupsServiceProvider.php
-│   ├── PopupsPlugin.php          # Filament PopupResource
-│   └── ... (controllers, models stay until extract)
-├── resources/js/{popups-ui,popups-runtime}.js
-└── composer.json
+```php
+->plugins([
+    VoodbuilderPlugin::make(),
+    VoodbuilderPopupsPlugin::make(),
+])
 ```
 
-Core keeps:
+## Follow-ups
 
-- optional `<x-voodbuilder::popups-boot />` stub that no-ops without routes
-- `PopupsOrphanStatus` warning helper
-- entitlement `popups.*` in Community matrix (optional commercial later)
-
-## Next for true extract
-
-1. Move popup PHP/JS/migrations into the new package
-2. Core depends optionally via Composer suggest
-3. Hosts install `voodflow/voodbuilder-popups` to restore features
-
-## Tests
-
-- `tests/Modules/PopupsModuleTest.php` (disable + orphan + boot partial)
+- Physical move of `popups-ui.js` / `popups-runtime.js` into the plugin Vite build (currently gated soft in Core editor bundle).
+- Own Testbench suite inside `voodbuilder-popups` (tests still run via Core TestCase + autoload-dev bridge).
