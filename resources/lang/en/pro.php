@@ -33,6 +33,10 @@ return [
         'session_expired' => 'Your session expired. Reload the page and try again.',
         'forbidden' => 'You do not have permission for this action.',
         'assets_missing' => 'GrapesJS frontend assets are not built yet.',
+        'editing_context_page' => 'Page',
+        'editing_context_layout' => 'Layout',
+        'editing_context_popup' => 'Popup',
+        'editing_context_untitled' => 'Untitled',
     ],
 
     'bindings' => [

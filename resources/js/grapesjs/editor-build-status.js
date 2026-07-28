@@ -25,7 +25,7 @@ function wordmark(brand) {
  * Inline animated mark (SMIL): packets flow from top nodes toward the center.
  * Must be inline — <img> of a static PNG has no animation.
  */
-function animatedMarkMarkup(size = 96) {
+export function animatedMarkMarkup(size = 96) {
     const id = `vb-mark-${++markIdSeq}`;
     const voodGrad = `${id}-vood`;
     const flowGrad = `${id}-flow`;

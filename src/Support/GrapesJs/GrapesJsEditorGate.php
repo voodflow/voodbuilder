@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
@@ -78,6 +79,7 @@ final class GrapesJsEditorGate
 
         return [
             'pageId' => $page->getKey(),
+            'pageTitle' => (string) ($page->title ?? ''),
             'chromeShellMode' => $chromeShellMode,
             'chromeShellName' => $chromeLayout?->name,
             'chromeShellParts' => $chromeShellParts,
@@ -139,6 +141,7 @@ final class GrapesJsEditorGate
                 ])))
                 : ThemePalette::cssForCanvas($subTheme),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
+            'globalTextTags' => GlobalTextTags::values(),
             'labels' => self::sharedEditorLabels(),
         ];
     }
@@ -289,6 +292,10 @@ final class GrapesJsEditorGate
             'chromeShellManagedInspectorNoticeFallback' => __('voodbuilder::pro.editor_ui.chrome_shell_managed_inspector_notice_fallback'),
             'contentNoSettings' => __('voodbuilder::pro.editor_ui.content_no_settings'),
             'exitEditor' => __('voodbuilder::pro.frontend.exit_editor'),
+            'editingContextPage' => __('voodbuilder::pro.frontend.editing_context_page'),
+            'editingContextLayout' => __('voodbuilder::pro.frontend.editing_context_layout'),
+            'editingContextPopup' => __('voodbuilder::pro.frontend.editing_context_popup'),
+            'editingContextUntitled' => __('voodbuilder::pro.frontend.editing_context_untitled'),
             'deviceDesktop' => __('voodbuilder::pro.editor_ui.device_desktop'),
             'deviceTablet' => __('voodbuilder::pro.editor_ui.device_tablet'),
             'deviceMobile' => __('voodbuilder::pro.editor_ui.device_mobile'),
@@ -820,6 +827,7 @@ final class GrapesJsEditorGate
 
         if (self::isEditing($page)) {
             $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
+            $html = GlobalTextTags::replaceInHtml($html);
         }
 
         if (self::isEditing($page) && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {

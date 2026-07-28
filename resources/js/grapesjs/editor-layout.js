@@ -6,6 +6,7 @@
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
 import { registerBlockPins } from './block-pins.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
+import { animatedMarkMarkup } from './editor-build-status.js';
 import { setupStyleInspectorSectors } from './inspector-collapsible-sector.js';
 import { registerInspectorSelectUi } from './inspector-select-ui.js';
 import { registerInspectorColorFix } from './inspector-color-fix.js';
@@ -42,20 +43,81 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+/**
+ * Resolve topbar context under the brand mark: "Page · Home" / "Layout · Docs" / "Popup · …".
+ *
+ * @param {Record<string, unknown>} options
+ * @param {Record<string, string>} labels
+ * @returns {{ kind: string, name: string } | null}
+ */
+export function resolveEditingContext(options = {}, labels = {}) {
+    if (options.popupMode) {
+        const name = String(options.popupName ?? '').trim();
+
+        return {
+            kind: labels.editingContextPopup ?? 'Popup',
+            name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+        };
+    }
+
+    if (options.chromeLayoutMode) {
+        const name = String(options.chromeLayoutName ?? '').trim();
+
+        return {
+            kind: labels.editingContextLayout ?? 'Layout',
+            name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+        };
+    }
+
+    const name = String(options.pageTitle ?? options.pageName ?? '').trim();
+
+    if (name === '' && ! options.pageId) {
+        return null;
+    }
+
+    return {
+        kind: labels.editingContextPage ?? 'Page',
+        name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+    };
+}
+
+function editingContextMarkup(context) {
+    if (! context?.kind) {
+        return '';
+    }
+
+    const name = String(context.name ?? '').trim();
+    const label = name !== '' ? `${context.kind} · ${name}` : context.kind;
+
+    return `
+        <div class="voodbuilder-gjs-topbar__editing-context" title="${escapeHtml(label)}">
+            <span class="voodbuilder-gjs-topbar__editing-kind">${escapeHtml(context.kind)}</span>
+            ${name !== '' ? `
+                <span class="voodbuilder-gjs-topbar__editing-sep" aria-hidden="true">·</span>
+                <span class="voodbuilder-gjs-topbar__editing-name">${escapeHtml(name)}</span>
+            ` : ''}
+        </div>
+    `;
+}
+
 export function buildEditorShell(container, labels = {}, meta = {}) {
     const hideTemplates = Boolean(meta.hideTemplates);
+    const brand = String(meta.brand ?? 'VoodBuilder').trim() || 'VoodBuilder';
+    const editingContext = meta.editingContext
+        ?? (meta.editingBadgeTitle
+            ? { kind: meta.editingBadgeTitle, name: '' }
+            : null);
+
     container.classList.add('voodbuilder-gjs-root');
     container.innerHTML = `
         <div class="voodbuilder-gjs-shell" data-voodbuilder-device="desktop">
             <header class="voodbuilder-gjs-topbar">
                 <div class="voodbuilder-gjs-topbar__brand-wrap">
-                    <div class="voodbuilder-gjs-topbar__brand">${escapeHtml(meta.brand ?? 'VoodBuilder')}</div>
-                    ${meta.editingBadgeTitle ? `
-                        <div class="voodbuilder-gjs-topbar__editing-context">
-                            <span class="voodbuilder-gjs-topbar__editing-badge">${escapeHtml(meta.editingBadgeTitle)}</span>
-                            ${meta.editingBadgeHint ? `<span class="voodbuilder-gjs-topbar__editing-hint">${escapeHtml(meta.editingBadgeHint)}</span>` : ''}
-                        </div>
-                    ` : ''}
+                    <div class="voodbuilder-gjs-topbar__brand" aria-label="${escapeHtml(brand)}">
+                        <span class="voodbuilder-gjs-topbar__brand-mark">${animatedMarkMarkup(28)}</span>
+                        <span class="voodbuilder-gjs-topbar__brand-sr">${escapeHtml(brand)}</span>
+                    </div>
+                    ${editingContextMarkup(editingContext)}
                 </div>
                 <div class="voodbuilder-gjs-topbar__tools"></div>
                 <div class="voodbuilder-gjs-topbar__actions">

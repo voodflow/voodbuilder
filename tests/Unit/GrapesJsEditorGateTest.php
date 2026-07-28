@@ -62,6 +62,10 @@ class GrapesJsEditorGateTest extends TestCase
         $this->assertArrayHasKey('pageManager', $config['initial']);
         $this->assertArrayHasKey('blocksUrl', $config);
         $this->assertArrayNotHasKey('blocks', $config);
+        $this->assertSame('Landing', $config['pageTitle']);
+        $this->assertSame('Page', $config['labels']['editingContextPage']);
+        $this->assertSame('Layout', $config['labels']['editingContextLayout']);
+        $this->assertSame('Popup', $config['labels']['editingContextPopup']);
         $this->assertTrue($config['imageEditor']);
         $this->assertArrayHasKey('editImage', $config['labels']);
         $this->assertArrayHasKey('imageEditorTitle', $config['labels']);

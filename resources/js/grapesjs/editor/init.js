@@ -731,6 +731,7 @@ export function initVpressGrapesJs(container, options = {}) {
     const editor = grapesjs.init(editorOptions);
 
     editor.__voodbuilderLabels = labels;
+    editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
 
@@ -1822,6 +1823,7 @@ function mountFrontendEditor() {
         fullWidthPage: config.fullWidthPage !== false,
         labels: config.labels ?? {},
         bindingLabels: config.labels ?? {},
+        globalTextTags: config.globalTextTags ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',
         packageVersion: config.packageVersion ?? '',
         plugins: config.plugins ?? {},

@@ -33,6 +33,10 @@ return [
         'session_expired' => 'Sessione scaduta. Ricarica la pagina e riprova.',
         'forbidden' => 'Non hai i permessi per questa operazione.',
         'assets_missing' => 'Gli asset frontend di GrapesJS non sono ancora stati compilati.',
+        'editing_context_page' => 'Pagina',
+        'editing_context_layout' => 'Layout',
+        'editing_context_popup' => 'Popup',
+        'editing_context_untitled' => 'Senza titolo',
     ],
 
     'bindings' => [
