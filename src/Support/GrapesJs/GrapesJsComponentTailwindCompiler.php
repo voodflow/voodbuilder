@@ -41,10 +41,12 @@ final class GrapesJsComponentTailwindCompiler
             return null;
         }
 
-        $result = Process::path(base_path())
+        $appRoot = self::resolveAppRoot();
+
+        $result = Process::path($appRoot)
             ->timeout(60)
             ->env([
-                'VOODBUILDER_APP_ROOT' => base_path(),
+                'VOODBUILDER_APP_ROOT' => $appRoot,
                 'VOODBUILDER_TAILWIND_SCOPE' => $scope,
             ])
             ->input($html)
@@ -90,5 +92,31 @@ final class GrapesJsComponentTailwindCompiler
         }
 
         return null;
+    }
+
+    /**
+     * Prefer the host app root when it can resolve Tailwind packages; otherwise use the
+     * VoodBuilder package root (package-local installs / Orchestra Testbench).
+     */
+    protected static function resolveAppRoot(): string
+    {
+        $configured = getenv('VOODBUILDER_APP_ROOT');
+
+        if (is_string($configured) && $configured !== '' && is_dir($configured)) {
+            return $configured;
+        }
+
+        $candidates = array_values(array_unique(array_filter([
+            base_path(),
+            dirname(__DIR__, 3),
+        ])));
+
+        foreach ($candidates as $candidate) {
+            if (is_dir($candidate.DIRECTORY_SEPARATOR.'node_modules'.DIRECTORY_SEPARATOR.'tailwindcss')) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0] ?? dirname(__DIR__, 3);
     }
 }

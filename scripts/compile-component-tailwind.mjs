@@ -1003,10 +1003,19 @@ async function main() {
         return;
     }
 
+    let typographyPlugin = '';
+
+    try {
+        const { createRequire } = await import('node:module');
+        createRequire(import.meta.url).resolve('@tailwindcss/typography');
+        typographyPlugin = `@plugin '@tailwindcss/typography';\n`;
+    } catch {
+        // Optional in package/test environments; host apps may still provide it.
+    }
+
     const entryCss = `@import 'tailwindcss';
 @import 'tailwindcss-animated';
-@plugin '@tailwindcss/typography';
-@custom-variant dark (&:is(.dark, .dark *));
+${typographyPlugin}@custom-variant dark (&:is(.dark, .dark *));
 @theme {
     --breakpoint-vp: 60rem;
 

@@ -38,6 +38,8 @@ class GrapesJsServerBlockRendererTest extends TestCase
         $html = $renderer->render($wrapped, $page);
 
         $this->assertStringNotContainsString('data-voodbuilder-block', $html);
-        $this->assertStringContainsString('voodbuilder-gjs-footer', $html);
+        $this->assertStringContainsString('voodbuilder-gjs-dynamic', $html);
+        $this->assertStringContainsString('role="contentinfo"', $html);
+        $this->assertStringContainsString('data-voodbuilder-footer-col', $html);
     }
 }

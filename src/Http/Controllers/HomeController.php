@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
@@ -23,11 +24,11 @@ class HomeController extends Controller
         $locale = $this->resolvedHomeLocale();
         $page = SitePage::homePage($locale);
 
-        if ($page === null && $locale !== null && class_exists(Locales::class) && $locale !== Locales::default()) {
-            $defaultHome = SitePage::homePage(Locales::default());
+        if ($page === null && $locale !== null && SiteLocales::isValid($locale) && $locale !== SiteLocales::default()) {
+            $defaultHome = SitePage::homePage(SiteLocales::default());
 
             if ($defaultHome !== null) {
-                return redirect(VoodbuilderUrls::home(Locales::default()));
+                return redirect(VoodbuilderUrls::home(SiteLocales::default()));
             }
         }
 

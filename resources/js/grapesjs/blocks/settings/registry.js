@@ -103,11 +103,12 @@ export function resolveSettings(component, editor) {
         if (zone === 'nav' || zone === 'footer') {
             pushRoot(resolveLayoutChromeBlockFromSelection(component, editor));
             pushRoot(getLayoutChromeBlock(editor, zone));
-            pushRoot(getActiveLayoutSettingsRoot(editor));
         }
-    } else {
-        pushRoot(getActiveLayoutSettingsRoot(editor));
     }
+
+    // Keep the last explicit chrome settings root even when the selection is ambiguous
+    // (e.g. wrapper/canvas chrome outside nav/footer zones).
+    pushRoot(getActiveLayoutSettingsRoot(editor));
 
     for (const descriptor of registry.values()) {
         if (typeof descriptor.findRoot !== 'function') {

@@ -25,6 +25,7 @@ use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
@@ -467,14 +468,14 @@ class SitePage extends Model implements HasRichContent
             return $page;
         }
 
-        if (! class_exists(Locales::class) || $locale === Locales::default()) {
+        if ($locale === SiteLocales::default()) {
             return null;
         }
 
         $defaultHome = static::query()
             ->published()
             ->where('is_home', true)
-            ->where('locale', Locales::default())
+            ->where('locale', SiteLocales::default())
             ->first();
 
         return $defaultHome?->translationFor($locale);
