@@ -16,6 +16,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsImportCompatibilityAnalyzer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderThemeTokenMigrator;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Licensing\EntitlementGate;
 
 class GrapesJsComponentsController extends Controller
 {
@@ -26,6 +27,7 @@ class GrapesJsComponentsController extends Controller
     public function index(): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.library');
 
         if (! Schema::hasTable('voodbuilder_components')) {
             return response()->json(['components' => []]);
@@ -55,6 +57,7 @@ class GrapesJsComponentsController extends Controller
     public function store(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.create');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -91,6 +94,7 @@ class GrapesJsComponentsController extends Controller
     public function update(Request $request, BuilderComponent $component): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.library');
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
@@ -138,6 +142,7 @@ class GrapesJsComponentsController extends Controller
     public function destroy(string $component): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.library');
 
         if (Schema::hasTable('voodbuilder_components')) {
             BuilderComponent::query()->whereKey($component)->delete();
@@ -149,6 +154,7 @@ class GrapesJsComponentsController extends Controller
     public function compileCss(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.code-import');
 
         $validated = $request->validate([
             'html' => ['required', 'string', 'max:200000'],
@@ -185,6 +191,7 @@ class GrapesJsComponentsController extends Controller
     public function import(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.import');
 
         $validated = $request->validate([
             'components' => ['required', 'array', 'min:1', 'max:100'],
@@ -208,6 +215,7 @@ class GrapesJsComponentsController extends Controller
     public function export(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('components.export');
 
         $validated = $request->validate([
             'ids' => ['nullable', 'array', 'max:100'],

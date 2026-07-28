@@ -16,12 +16,14 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateBundle;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateRemoteImporter;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSmartButtonAnnotator;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Licensing\EntitlementGate;
 
 class GrapesJsPageTemplatesController extends Controller
 {
     public function index(): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.local');
 
         if (! Schema::hasTable('voodbuilder_page_templates')) {
             return response()->json(['templates' => []]);
@@ -39,6 +41,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function store(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.local');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -71,6 +74,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function destroy(PageTemplate $pageTemplate): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.local');
 
         $pageTemplate->delete();
 
@@ -80,6 +84,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function import(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.import');
 
         $validated = $request->validate([
             'import' => ['required', 'array'],
@@ -95,6 +100,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function importFromUrl(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.import');
 
         $validated = $request->validate([
             'url' => ['required', 'string', 'max:2000'],
@@ -117,6 +123,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function catalog(): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.remote-install');
 
         $catalogUrl = trim((string) config('voodbuilder.page_templates.catalog_url', ''));
 
@@ -132,6 +139,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function installCatalogEntry(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.remote-install');
 
         $validated = $request->validate([
             'bundle_url' => ['required', 'string', 'max:2000'],
@@ -154,6 +162,7 @@ class GrapesJsPageTemplatesController extends Controller
     public function export(Request $request): JsonResponse
     {
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
+        EntitlementGate::authorize('templates.export');
 
         $validated = $request->validate([
             'ids' => ['nullable', 'array'],
