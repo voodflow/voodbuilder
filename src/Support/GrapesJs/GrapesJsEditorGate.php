@@ -166,10 +166,13 @@ final class GrapesJsEditorGate
                 'templatesImport' => Voodbuilder::can('templates.import'),
                 'templatesExport' => Voodbuilder::can('templates.export'),
                 'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
-                'componentsLibrary' => Voodbuilder::can('components.library'),
-                'componentsImport' => Voodbuilder::can('components.import'),
-                'componentsExport' => Voodbuilder::can('components.export'),
-                'componentsCodeImport' => Voodbuilder::can('components.code-import'),
+                'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
+                'componentsImport' => ComponentRuntimeBridge::moduleEnabled()
+                    && Voodbuilder::can('components.import'),
+                'componentsExport' => ComponentRuntimeBridge::moduleEnabled()
+                    && Voodbuilder::can('components.export'),
+                'componentsCodeImport' => ComponentRuntimeBridge::moduleEnabled()
+                    && Voodbuilder::can('components.code-import'),
                 // Plugin registration unlocks single; collections still need Pro entitlement.
                 'dynamicDataSingle' => DynamicDataModule::isEnabled(),
                 'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
@@ -430,6 +433,8 @@ final class GrapesJsEditorGate
             'globalClassesLoadError' => __('voodbuilder::pro.global_classes.load_error'),
             'globalClassesSaveError' => __('voodbuilder::pro.global_classes.save_error'),
             'componentsTitle' => __('voodbuilder::pro.components.title'),
+            'componentsPluginRequiredTitle' => __('voodbuilder::pro.components.plugin_required_title'),
+            'componentsPluginRequiredBody' => __('voodbuilder::pro.components.plugin_required_body'),
             'componentsSave' => __('voodbuilder::pro.components.save_button'),
             'componentsSaveAs' => __('voodbuilder::pro.components.save_as'),
             'componentsSaveNeedSelection' => __('voodbuilder::pro.components.save_need_selection'),

@@ -241,6 +241,8 @@ return [
 
     'components' => [
         'title' => 'Componenti',
+        'plugin_required_title' => 'Add-on Components',
+        'plugin_required_body' => 'Salva e riusa sezioni tra le pagine con il plugin Components. Installa e registra voodflow/voodbuilder-components sul panel Filament per sbloccare questa libreria.',
         'save_as' => 'Salva selezione come componente',
         'save_button' => 'Salva',
         'save_need_selection' => 'Seleziona un elemento nel canvas per salvarlo come componente riutilizzabile.',

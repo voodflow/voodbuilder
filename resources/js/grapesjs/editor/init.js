@@ -859,37 +859,59 @@ export function initVpressGrapesJs(container, options = {}) {
         }
     }
 
-    if (shell && options.componentsUrl && options.entitlements?.componentsLibrary !== false) {
-        registerCanvasBlockCodeEditor(editor, {
-            componentsUrl: options.componentsUrl,
-            csrf: options.csrf,
-            labels,
-            canvasStyles: options.canvasStyles ?? [],
-        });
-
-        try {
-            registerComponentsUi(editor, {
+    if (shell?.mounts?.components) {
+        if (options.componentsUrl) {
+            registerCanvasBlockCodeEditor(editor, {
                 componentsUrl: options.componentsUrl,
                 csrf: options.csrf,
                 labels,
-                componentsMount: shell.mounts?.components ?? null,
-                componentPropsMount: shell.mounts?.componentProps ?? null,
                 canvasStyles: options.canvasStyles ?? [],
-                componentCategories: options.componentCategories ?? [],
             });
-        } catch (error) {
-            console.error('Voodbuilder GrapesJS: could not mount components library UI.', error);
+
+            try {
+                registerComponentsUi(editor, {
+                    componentsUrl: options.componentsUrl,
+                    csrf: options.csrf,
+                    labels,
+                    componentsMount: shell.mounts.components,
+                    componentPropsMount: shell.mounts?.componentProps ?? null,
+                    canvasStyles: options.canvasStyles ?? [],
+                    componentCategories: options.componentCategories ?? [],
+                });
+            } catch (error) {
+                console.error('Voodbuilder GrapesJS: could not mount components library UI.', error);
+            }
+
+            registerComponentTailwindAutobuild(editor, {
+                componentsUrl: options.componentsUrl,
+                csrf: options.csrf,
+            });
+
+            registerPageTailwindAutobuild(editor, {
+                componentsUrl: options.componentsUrl,
+                csrf: options.csrf,
+            });
+        } else {
+            // Soft commercial gate: keep the Components tab visible with an upsell.
+            const mount = shell.mounts.components;
+            mount.replaceChildren();
+            const notice = document.createElement('div');
+            notice.className = 'voodbuilder-gjs-inspector-empty-state voodbuilder-gjs-components-library__locked';
+            notice.setAttribute('data-voodbuilder-inspector-empty-state', '1');
+
+            const title = document.createElement('p');
+            title.className = 'voodbuilder-gjs-inspector-empty-state__title';
+            title.textContent = labels.componentsPluginRequiredTitle ?? 'Components add-on';
+            notice.appendChild(title);
+
+            const body = document.createElement('p');
+            body.className = 'voodbuilder-gjs-inspector-empty-state__body';
+            body.textContent = labels.componentsPluginRequiredBody
+                ?? 'Install and register the Components plugin to unlock this library.';
+            notice.appendChild(body);
+
+            mount.appendChild(notice);
         }
-
-        registerComponentTailwindAutobuild(editor, {
-            componentsUrl: options.componentsUrl,
-            csrf: options.csrf,
-        });
-
-        registerPageTailwindAutobuild(editor, {
-            componentsUrl: options.componentsUrl,
-            csrf: options.csrf,
-        });
     }
 
     configureEditorChrome(editor, {

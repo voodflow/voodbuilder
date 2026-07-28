@@ -23,12 +23,14 @@ class CommercialBoundaryTest extends TestCase
         $app['config']->set('voodbuilder.license.cache', false);
     }
 
-    public function test_community_boots_without_agency_components_module(): void
+    public function test_components_unlocks_with_companion_plugin_even_on_community(): void
     {
+        // TestCase activates VoodbuilderComponents like a host Filament panel would.
+        // The paid package (plugin registration) is the commercial gate — not Agency edition alone.
         $this->assertSame('community', Voodbuilder::entitlements()->edition());
-        $this->assertTrue(Voodbuilder::modules()->has(ComponentsModule::ID));
-        $this->assertFalse(ComponentsModule::isEnabled());
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.components.index'));
+        $this->assertFalse(Voodbuilder::can('components.library'));
+        $this->assertTrue(ComponentsModule::isEnabled());
+        $this->assertTrue(Route::has('voodbuilder.grapesjs.components.index'));
     }
 
     public function test_community_keeps_core_cms_modules(): void

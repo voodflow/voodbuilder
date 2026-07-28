@@ -241,6 +241,8 @@ return [
 
     'components' => [
         'title' => 'Components',
+        'plugin_required_title' => 'Components add-on',
+        'plugin_required_body' => 'Save and reuse sections across pages with the Components plugin. Install and register voodflow/voodbuilder-components on your Filament panel to unlock this library.',
         'save_as' => 'Save selection as component',
         'save_button' => 'Save',
         'save_need_selection' => 'Select an element on the canvas to save it as a reusable component.',
