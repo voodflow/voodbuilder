@@ -110,7 +110,7 @@ final class MenuItemTypeRegistry
             return false;
         }
 
-        if (! Schema::hasTable('voodbuilder_menus') || ! Schema::hasTable('voodbuilder_menu_items')) {
+        if (! NavigationMenuResolver::menusTableExists() || ! Schema::hasTable('voodbuilder_menu_items')) {
             return false;
         }
 
