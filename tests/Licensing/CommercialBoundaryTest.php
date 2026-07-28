@@ -7,9 +7,9 @@ namespace Voodflow\Voodbuilder\Tests\Licensing;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
-use Voodflow\Voodbuilder\Modules\DynamicDataCollections\DynamicDataCollectionsModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
+use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -34,17 +34,24 @@ class CommercialBoundaryTest extends TestCase
     public function test_community_keeps_core_cms_modules(): void
     {
         $this->assertTrue(TemplatesModule::isEnabled());
-        $this->assertTrue(DynamicDataModule::isEnabled());
         $this->assertTrue(PopupsModule::isEnabled());
         $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.index'));
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.bindings'));
         $this->assertTrue(Route::has('voodbuilder.popups.public'));
     }
 
-    public function test_community_disables_dynamic_data_collections_module(): void
+    public function test_dynamic_data_requires_companion_plugin_and_is_active_in_testbench(): void
     {
-        $this->assertTrue(Voodbuilder::modules()->has(DynamicDataCollectionsModule::ID));
-        $this->assertFalse(DynamicDataCollectionsModule::isEnabled());
+        // TestCase activates VoodbuilderDynamicData like a host Filament panel would.
+        $this->assertTrue(DynamicDataModule::isEnabled());
+        $this->assertTrue(Route::has('voodbuilder.grapesjs.bindings'));
+        // List repeat remains Pro/Agency even when the plugin is installed.
+        $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
+        $this->assertFalse(DynamicDataCollectionsBridge::moduleEnabled());
+    }
+
+    public function test_community_edition_matrix_excludes_dynamic_data_capabilities(): void
+    {
+        $this->assertFalse(Voodbuilder::can('dynamic-data.single'));
         $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
     }
 

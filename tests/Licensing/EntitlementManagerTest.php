@@ -29,9 +29,9 @@ class EntitlementManagerTest extends TestCase
 
         $this->assertTrue(Voodbuilder::can('editor.core'));
         $this->assertTrue(Voodbuilder::can('templates.local'));
-        $this->assertTrue(Voodbuilder::can('dynamic-data.single'));
         $this->assertTrue(Voodbuilder::can('popups.builder'));
 
+        $this->assertTrue(Voodbuilder::cannot('dynamic-data.single'));
         $this->assertTrue(Voodbuilder::cannot('components.library'));
         $this->assertTrue(Voodbuilder::cannot('templates.import'));
         $this->assertTrue(Voodbuilder::cannot('dynamic-data.collections'));

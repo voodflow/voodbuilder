@@ -11,12 +11,15 @@ use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
  * Optional hooks into voodflow/voodbuilder-components when the companion plugin is installed.
  *
  * Core public rendering keeps working without the plugin; component CSS/HTML expansion is skipped.
+ *
+ * class_exists() can throw ErrorException when Composer classmap points at a path that the
+ * runtime filesystem cannot open (stale Docker/virtiofs mounts). Catch and treat as absent.
  */
 final class ComponentRuntimeBridge
 {
     public static function moduleEnabled(): bool
     {
-        if (! class_exists(ComponentsModule::class)) {
+        if (! self::safeClassExists(ComponentsModule::class)) {
             return false;
         }
 
@@ -25,41 +28,69 @@ final class ComponentRuntimeBridge
 
     public static function globalClassCss(): ?string
     {
-        if (! class_exists(GrapesJsGlobalClassRenderer::class)) {
+        if (! self::safeClassExists(GrapesJsGlobalClassRenderer::class)) {
             return null;
         }
 
-        $css = app(GrapesJsGlobalClassRenderer::class)->css();
+        try {
+            $css = app(GrapesJsGlobalClassRenderer::class)->css();
+        } catch (\Throwable) {
+            return null;
+        }
 
         return filled($css) ? $css : null;
     }
 
     public static function componentCssForHtml(string $html): ?string
     {
-        if (! class_exists(GrapesJsComponentCssRenderer::class)) {
+        if (! self::safeClassExists(GrapesJsComponentCssRenderer::class)) {
             return null;
         }
 
-        $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        try {
+            $css = app(GrapesJsComponentCssRenderer::class)->cssForHtml($html);
+        } catch (\Throwable) {
+            return null;
+        }
 
         return filled($css) ? $css : null;
     }
 
     public static function renderComponentHtml(string $html, ?SitePage $page): string
     {
-        if (! class_exists(GrapesJsComponentRenderer::class)) {
+        if (! self::safeClassExists(GrapesJsComponentRenderer::class)) {
             return $html;
         }
 
-        return app(GrapesJsComponentRenderer::class)->render($html, $page);
+        try {
+            return app(GrapesJsComponentRenderer::class)->render($html, $page);
+        } catch (\Throwable) {
+            return $html;
+        }
     }
 
     public static function syncComponentCssLibraryFromPageHtml(string $html): void
     {
-        if (! class_exists(GrapesJsComponentCssLibrarySync::class)) {
+        if (! self::safeClassExists(GrapesJsComponentCssLibrarySync::class)) {
             return;
         }
 
-        app(GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($html);
+        try {
+            app(GrapesJsComponentCssLibrarySync::class)->syncFromPageHtml($html);
+        } catch (\Throwable) {
+            // Companion package present in classmap but unavailable at runtime.
+        }
+    }
+
+    /**
+     * @param  class-string  $class
+     */
+    private static function safeClassExists(string $class): bool
+    {
+        try {
+            return class_exists($class);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

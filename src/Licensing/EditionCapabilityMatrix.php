@@ -45,7 +45,7 @@ final class EditionCapabilityMatrix
             'themes.clone',
             'themes.map',
             'themes.studio',
-            'dynamic-data.single',
+            // Dynamic Data is a paid companion plugin (voodbuilder-dynamic-data), not Core Community.
             'menus.admin',
             'menus.preview',
             'layouts.chrome',
@@ -72,6 +72,7 @@ final class EditionCapabilityMatrix
             'templates.import',
             'templates.remote-install',
             'themes.import',
+            'dynamic-data.single',
             'dynamic-data.collections',
             'dynamic-data.query-builder',
         ]));

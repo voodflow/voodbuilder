@@ -43,7 +43,6 @@ use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
-use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
@@ -59,9 +58,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
@@ -120,12 +117,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModelRegistry::class);
         $this->app->singleton(ReverseRelationRegistry::class);
         $this->app->singleton(ModelIntegrationRegistry::class);
-        if (class_exists(RepeatListRegistry::class)) {
-            $this->app->singleton(RepeatListRegistry::class);
-        }
-        if (class_exists(ModelIntegrationListResolver::class)) {
-            $this->app->singleton(ModelIntegrationListResolver::class);
-        }
+        // RepeatListRegistry / ModelIntegrationListResolver are bound by
+        // voodbuilder-dynamic-data when that package is installed.
         $this->app->singleton(ModelIntegrationBindingRegistrar::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
@@ -327,17 +320,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 && (bool) config('voodbuilder.pages.enabled', true),
         );
 
-        $registry->register(
-            new DynamicDataModule,
-            enabled: (bool) config('voodbuilder.modules.dynamic_data.enabled', true)
-                && Voodbuilder::can('dynamic-data.single'),
-        );
+        // Dynamic Data lives in voodflow/voodbuilder-dynamic-data (Filament plugin).
 
         // Components live in voodflow/voodbuilder-components (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
-
-        // Dynamic Data collections live in voodflow/voodbuilder-dynamic-data
-        // (Filament plugin) as DynamicDataCollectionsModule.
 
         // Popups live in voodflow/voodbuilder-popups (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.

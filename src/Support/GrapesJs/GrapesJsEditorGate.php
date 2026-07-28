@@ -159,8 +159,7 @@ final class GrapesJsEditorGate
                 && filled(config('voodbuilder.page_templates.catalog_url'))
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
                 : null,
-            'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled()
-                && Voodbuilder::can('dynamic-data.collections'),
+            'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
                 'templatesLocal' => Voodbuilder::can('templates.local'),
@@ -171,8 +170,9 @@ final class GrapesJsEditorGate
                 'componentsImport' => Voodbuilder::can('components.import'),
                 'componentsExport' => Voodbuilder::can('components.export'),
                 'componentsCodeImport' => Voodbuilder::can('components.code-import'),
-                'dynamicDataSingle' => Voodbuilder::can('dynamic-data.single'),
-                'dynamicDataCollections' => Voodbuilder::can('dynamic-data.collections'),
+                // Plugin registration unlocks single; collections still need Pro entitlement.
+                'dynamicDataSingle' => DynamicDataModule::isEnabled(),
+                'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
             ],
             'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')

@@ -40,7 +40,8 @@
             "Voodflow\\VoodbuilderComponents\\": "../voodbuilder-components/src/",
             "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src/Modules/Components/",
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
-            "Voodflow\\Voodbuilder\\Modules\\DynamicDataCollections\\": "../voodbuilder-dynamic-data/src/Modules/DynamicDataCollections/"
+            "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src/Modules/DynamicData/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource/"
         },
         "classmap": [
             "../voodbuilder-popups/src/Models/",
@@ -52,7 +53,8 @@
             "../voodbuilder-components/src/Models/",
             "../voodbuilder-components/src/Http/Controllers/",
             "../voodbuilder-components/src/Support/GrapesJs/",
-            "../voodbuilder-dynamic-data/src/Support/GrapesJs/Bindings/"
+            "../voodbuilder-dynamic-data/src/Support/GrapesJs/Bindings/",
+            "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource.php"
         ]
     },
     "require-dev": {
@@ -69,7 +71,7 @@
         "suggest": {
             "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder.",
             "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",
-            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Pro/Agency Dynamic Data collections (List repeat)."
+            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat."
         }
     },
     "minimum-stability": "dev",

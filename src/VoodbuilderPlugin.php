@@ -10,7 +10,6 @@ use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
-use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
@@ -34,10 +33,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = NavigationMenuResource::class;
         }
 
-        // Single-record integrations are Community; collections are entitlement-gated in the editor.
-        if (config('voodbuilder.modules.dynamic_data.enabled', true) && Voodbuilder::can('dynamic-data.single')) {
-            $resources[] = ModelIntegrationResource::class;
-        }
+        // Model Integrations live in voodflow/voodbuilder-dynamic-data (Filament plugin).
 
         if (config('voodbuilder.modules.pages.enabled', true) && config('voodbuilder.pages.enabled', true)) {
             $resources[] = SitePageResource::class;
