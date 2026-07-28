@@ -141,6 +141,16 @@ class Voodbuilder
     }
 
     /**
+     * Register a custom visual condition evaluator for the GrapesJS conditions UI.
+     *
+     * @param  callable(array<string, mixed>, ?\Voodflow\Voodbuilder\Models\SitePage): bool  $handler
+     */
+    public static function grapesJsCondition(string $key, callable $handler): void
+    {
+        \Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks::register($key, $handler);
+    }
+
+    /**
      * Register a List repeat query (package lists outside Model Integrations).
      *
      * @param  callable(int $limit, int $offset, string $sort, string $direction): list<Model>  $resolver
