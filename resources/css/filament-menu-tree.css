@@ -1,0 +1,78 @@
+/* Voodbuilder: clearer nestable-tree drag handles + nesting cues */
+
+.filament-nestable-tree .fi-tree-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    cursor: grab;
+    color: var(--gray-500, #6b7280);
+    background-color: color-mix(in oklab, var(--gray-500, #6b7280) 8%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-drag-handle {
+    color: var(--gray-400, #9ca3af);
+    background-color: color-mix(in oklab, var(--gray-400, #9ca3af) 12%, transparent);
+}
+
+.filament-nestable-tree .fi-tree-node-row:hover .fi-tree-drag-handle {
+    color: var(--gray-700, #374151);
+    background-color: color-mix(in oklab, var(--gray-500, #6b7280) 16%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row:hover .fi-tree-drag-handle {
+    color: var(--gray-200, #e5e7eb);
+    background-color: color-mix(in oklab, var(--gray-400, #9ca3af) 20%, transparent);
+}
+
+.filament-nestable-tree .fi-tree-drag-handle:active {
+    cursor: grabbing;
+}
+
+.filament-nestable-tree .fi-tree-drag-handle svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.filament-nestable-tree .fi-tree-node-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.filament-nestable-tree .fi-tree-node-type {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--gray-500, #6b7280);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-type {
+    color: var(--gray-400, #9ca3af);
+}
+
+/* Nested rows: left rail + slightly softer surface */
+.filament-nestable-tree .fi-tree-node-row--nested {
+    box-shadow:
+        inset 3px 0 0 0 var(--primary-400, #818cf8),
+        0 1px 2px 0 rgb(0 0 0 / 0.05);
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 4%, var(--color-white, #fff));
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--nested {
+    box-shadow:
+        inset 3px 0 0 0 var(--primary-400, #818cf8),
+        0 1px 2px 0 rgb(0 0 0 / 0.2);
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 8%, transparent);
+}
+
+/* Drop-as-child target: stronger ring (plugin already sets outline) */
+.filament-nestable-tree .fi-tree-node-row--drop-inside {
+    outline-width: 2px;
+    outline-offset: -2px;
+}

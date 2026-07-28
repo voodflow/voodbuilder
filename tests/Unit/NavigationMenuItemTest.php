@@ -156,4 +156,50 @@ class NavigationMenuItemTest extends TestCase
 
         $this->assertSame($root->id, $grandchild->parent_id);
     }
+
+    public function test_tree_build_includes_type_labels_for_admin_ui(): void
+    {
+        $menu = NavigationMenu::query()->create([
+            'name' => 'Header',
+            'slug' => 'header',
+        ]);
+
+        $root = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'First level',
+            'type' => MenuItemType::Group,
+            'sort_order' => 0,
+        ]);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'parent_id' => $root->id,
+            'label' => 'Child link',
+            'type' => MenuItemType::Url,
+            'link' => 'https://example.com',
+            'sort_order' => 0,
+        ]);
+
+        $tree = NavigationMenuItemTree::build($menu);
+
+        $this->assertSame('Dropdown group', $tree[0]['type_label']);
+        $this->assertSame('External URL', $tree[0]['children'][0]['type_label']);
+    }
+
+    public function test_nestable_tree_node_row_override_includes_drag_handle_icon(): void
+    {
+        $path = view('filament-nestable-tree::components.tree.node-row')->getPath();
+
+        $this->assertStringEndsWith(
+            'resources/views/vendor/filament-nestable-tree/components/tree/node-row.blade.php',
+            str_replace('\\', '/', $path),
+        );
+
+        $contents = file_get_contents($path);
+
+        $this->assertNotFalse($contents);
+        $this->assertStringContainsString('fi-tree-drag-handle', $contents);
+        $this->assertStringContainsString('<svg', $contents);
+        $this->assertStringContainsString('fi-tree-node-row--nested', $contents);
+    }
 }

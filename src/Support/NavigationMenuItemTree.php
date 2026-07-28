@@ -11,6 +11,7 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use SolutionForest\FilamentNestableTree\Tree;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
@@ -133,10 +134,26 @@ class NavigationMenuItemTree
             ->values()
             ->map(function (NavigationMenuItem $item) use ($items, $depth): array {
                 return array_merge($item->toArray(), [
+                    'type_label' => static::resolveTypeLabel($item),
                     'children' => static::nestItems($items, $item->id, $depth + 1),
                 ]);
             })
             ->all();
+    }
+
+    protected static function resolveTypeLabel(NavigationMenuItem $item): string
+    {
+        if ($item->type instanceof MenuItemType) {
+            return (string) $item->type->getLabel();
+        }
+
+        $handler = $item->registeredTypeHandler();
+
+        if ($handler !== null) {
+            return $handler->label();
+        }
+
+        return filled($item->type) ? (string) $item->type : '';
     }
 
     /** @param  array<int, array<string, mixed>>  $nodes */

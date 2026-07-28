@@ -88,6 +88,7 @@ use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
+use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\ThemeMapAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
@@ -159,6 +160,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             __DIR__.'/../resources/views/cookie-consent',
         ]);
 
+        // Upstream drag handle span is empty; our node-row adds a visible grip icon.
+        View::prependNamespace('filament-nestable-tree', [
+            __DIR__.'/../resources/views/vendor/filament-nestable-tree',
+        ]);
+
         Blade::componentNamespace('Voodflow\\Voodbuilder\\Components', 'voodbuilder');
 
         Livewire::component('voodbuilder.site-notification-bell', SiteNotificationBell::class);
@@ -168,6 +174,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         ThemeMapAssets::register();
         FilamentAdminAssets::register();
+        FilamentMenuTreeAssets::register();
 
         if (config('voodbuilder.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
