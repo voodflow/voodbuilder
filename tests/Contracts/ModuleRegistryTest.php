@@ -28,6 +28,8 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('templates'));
         $this->assertTrue($registry->has('themes'));
         $this->assertTrue($registry->isEnabled('themes'));
+        $this->assertTrue($registry->has('menus'));
+        $this->assertTrue($registry->isEnabled('menus'));
         $this->assertTrue($registry->booted());
     }
 

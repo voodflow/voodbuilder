@@ -23,6 +23,9 @@ return [
         'themes' => [
             'enabled' => env('VOODBUILDER_MODULE_THEMES', true),
         ],
+        'menus' => [
+            'enabled' => env('VOODBUILDER_MODULE_MENUS', true),
+        ],
     ],
 
     'layouts' => [

@@ -45,7 +45,6 @@ use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
-use Voodflow\Voodbuilder\Http\Controllers\NavigationMenuPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupsAnalyticsController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupsPublicController;
@@ -56,6 +55,7 @@ use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
+use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -90,7 +90,6 @@ use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
-use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 
@@ -174,7 +173,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         BrandMarkAssets::ensurePublished();
         FilamentAdminAssets::register();
-        FilamentMenuTreeAssets::register();
 
         if (config('voodbuilder.grapesjs.enabled', true)) {
             $this->registerGrapesJsRoutes();
@@ -280,13 +278,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     protected function registerAdminRoutes(): void
     {
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
-            ->prefix('voodbuilder/admin')
-            ->name('voodbuilder.admin.')
-            ->group(function (): void {
-                Route::get('navigation-menus/{navigationMenu}/preview', NavigationMenuPreviewController::class)
-                    ->name('navigation-menus.preview');
-            });
+        // Menu preview routes are owned by MenusModule.
     }
 
     protected function registerGrapesJsBlocks(): void
@@ -378,6 +370,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new ThemesModule,
             enabled: (bool) config('voodbuilder.modules.themes.enabled', true),
+        );
+
+        $registry->register(
+            new MenusModule,
+            enabled: (bool) config('voodbuilder.modules.menus.enabled', true),
         );
     }
 }
