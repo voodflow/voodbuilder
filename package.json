@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "build:theme-map": "node bin/build-theme-map.js",
-        "dev:theme-map": "node bin/build-theme-map.js --dev"
+        "dev:theme-map": "node bin/build-theme-map.js --dev",
+        "test:js": "vitest run"
     },
     "dependencies": {
         "@xyflow/react": "^12.11.1",
@@ -11,6 +12,7 @@
         "react-dom": "^19.0.0"
     },
     "devDependencies": {
-        "esbuild": "^0.28.0"
+        "esbuild": "^0.28.0",
+        "vitest": "^3.2.4"
     }
 }

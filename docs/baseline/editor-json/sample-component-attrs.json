@@ -1,0 +1,19 @@
+{
+  "_comment": "Representative editor component attributes used by VoodBuilder 0.0.11 line. Not a full GrapesJS project export.",
+  "version": "0.0.11",
+  "sample_page_component": {
+    "type": "default",
+    "attributes": {
+      "class": "voodbuilder-gjs-container px-5 py-12",
+      "data-voodbuilder-block": "container"
+    }
+  },
+  "sample_binding_attrs": {
+    "data-voodbuilder-bind-source": "site_page",
+    "data-voodbuilder-bind-field": "title"
+  },
+  "sample_condition_attrs": {
+    "data-voodbuilder-condition": "{\"op\":\"and\",\"rules\":[]}"
+  },
+  "modes": ["page", "chrome_layout", "popup"]
+}

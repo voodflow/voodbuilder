@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, modular, refactor/modular-architecture]
   pull_request:
-    branches: [main]
+    branches: [main, modular, refactor/modular-architecture]
 
 jobs:
   phpunit:
@@ -24,3 +24,19 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit --configuration phpunit.xml.dist
+
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm install --no-fund --no-audit
+
+      - name: Run Vitest
+        run: npm run test:js
