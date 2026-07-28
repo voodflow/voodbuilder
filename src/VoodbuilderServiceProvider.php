@@ -37,10 +37,8 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsComponentsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
 use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
@@ -55,6 +53,7 @@ use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
+use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -84,7 +83,6 @@ use Voodflow\Voodbuilder\Support\ModelRegistry;
 use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
-use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
@@ -151,10 +149,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
         IntegrationRegistrar::boot();
 
-        if (config('voodbuilder.pages.enabled', true)) {
-            Voodbuilder::contentChannel('pages', new SitePagesContentChannel);
-        }
-
         View::replaceNamespace('cookie-consent', [
             __DIR__.'/../resources/views/cookie-consent',
         ]);
@@ -217,13 +211,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     protected function registerGrapesJsRoutes(): void
     {
-        Route::middleware(['web', 'throttle:20,1'])
-            ->prefix('voodbuilder/grapesjs')
-            ->name('voodbuilder.grapesjs.')
-            ->group(function (): void {
-                Route::post('forms/{sitePage}', GrapesJsFormController::class)->name('forms.submit');
-            });
-
         Route::middleware(['web', 'auth', 'throttle:60,1'])
             ->prefix('voodbuilder/grapesjs')
             ->name('voodbuilder.grapesjs.')
@@ -236,7 +223,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
-                Route::match(['put', 'post'], 'pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
                 Route::get('global-classes', [GrapesJsGlobalClassesController::class, 'index'])->name('global-classes.index');
                 Route::post('global-classes', [GrapesJsGlobalClassesController::class, 'store'])->name('global-classes.store');
                 Route::put('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'update'])->name('global-classes.update');
@@ -372,6 +358,12 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new LayoutsModule,
             enabled: (bool) config('voodbuilder.modules.layouts.enabled', true),
+        );
+
+        $registry->register(
+            new PagesModule,
+            enabled: (bool) config('voodbuilder.modules.pages.enabled', true)
+                && (bool) config('voodbuilder.pages.enabled', true),
         );
     }
 }

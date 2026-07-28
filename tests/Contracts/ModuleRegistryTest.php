@@ -32,6 +32,8 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('menus'));
         $this->assertTrue($registry->has('layouts'));
         $this->assertTrue($registry->isEnabled('layouts'));
+        $this->assertTrue($registry->has('pages'));
+        $this->assertTrue($registry->isEnabled('pages'));
         $this->assertTrue($registry->booted());
     }
 

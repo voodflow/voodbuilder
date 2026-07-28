@@ -37,7 +37,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = NavigationMenuResource::class;
         }
 
-        if (config('voodbuilder.pages.enabled', true)) {
+        if (config('voodbuilder.modules.pages.enabled', true) && config('voodbuilder.pages.enabled', true)) {
             $resources[] = SitePageResource::class;
         }
 

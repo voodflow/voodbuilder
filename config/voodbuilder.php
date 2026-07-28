@@ -29,6 +29,9 @@ return [
         'layouts' => [
             'enabled' => env('VOODBUILDER_MODULE_LAYOUTS', true),
         ],
+        'pages' => [
+            'enabled' => env('VOODBUILDER_MODULE_PAGES', true),
+        ],
     ],
 
     'layouts' => [

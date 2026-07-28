@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
+use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
@@ -48,6 +49,7 @@ final class GrapesJsEditorGate
     public static function userCanEdit(SitePage $page): bool
     {
         return config('voodbuilder.grapesjs.enabled', true)
+            && PagesModule::isEnabled()
             && $page->usesGrapesJsBuilder()
             && PageBuilderAccess::userCanUsePageBuilder();
     }
