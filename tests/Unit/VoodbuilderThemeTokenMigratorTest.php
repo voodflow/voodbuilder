@@ -295,6 +295,16 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringNotContainsString('class="container', $migrated);
     }
 
+    public function test_collapses_double_prefixed_container_class(): void
+    {
+        $html = '<section class="voodbuilder-gjs-section"><div class="voodbuilder-gjs-voodbuilder-gjs-container px-5 py-24">Content</div></section>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-gjs-voodbuilder-gjs-container', $migrated);
+    }
+
     public function test_restores_container_on_section_catalog_blocks(): void
     {
         $html = '<section data-voodbuilder-section-block="vb-blog-1" class="text-vp-text-2 voodbuilder-gjs-section"><div class="px-5 py-24">Content</div></section>';
