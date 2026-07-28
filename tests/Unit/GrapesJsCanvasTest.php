@@ -27,6 +27,10 @@ class GrapesJsCanvasTest extends TestCase
             "html body[data-voodbuilder-gjs-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light",
             $frameStyle,
         );
+        $this->assertStringContainsString(
+            "html[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--desktop",
+            $frameStyle,
+        );
         $this->assertStringContainsString('display: flex !important', $frameStyle);
         $this->assertStringNotContainsString('.VPRichPage--landing img', $frameStyle);
         $this->assertStringContainsString(

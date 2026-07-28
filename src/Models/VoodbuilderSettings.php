@@ -168,7 +168,14 @@ class VoodbuilderSettings extends Model
             return (string) $brand;
         }
 
-        return static::siteTitle();
+        $title = static::siteTitle();
+
+        // Framework / empty app name is not a public brand — use the package name.
+        if ($title === '' || strcasecmp($title, 'Laravel') === 0) {
+            return 'VoodBuilder';
+        }
+
+        return $title;
     }
 
     public static function primaryLocale(): string

@@ -1,5 +1,6 @@
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\BrandMarkAssets;
     use Voodflow\Voodbuilder\Support\GrapesJs\ChromeBrandLogos;
     use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
@@ -13,12 +14,14 @@
     $preview = (bool) ($preview ?? false);
     $showBrand = (bool) ($showBrand ?? true);
     $showSiteName = (bool) ($showSiteName ?? ($config['show_site_name'] ?? true));
+    // Same as nav brand-logos: empty uploads resolve to the animated package mark.
     $showLogo = $showBrand && $logos['has_any'];
-    $showPlaceholder = $showBrand && ! $logos['has_any'];
     $logoOnly = $showLogo && ! $showSiteName;
     $wideLogo = $logoOnly || $logoFullWidth;
+    $packageMark = $logos['has_any']
+        && str_contains((string) ($logos['desktop_light'] ?? ''), BrandMarkAssets::PUBLIC_RELATIVE);
     // Editor preview always mounts both parts so toggles stay independent without remount.
-    $mountLogo = $preview ? ($logos['has_any'] || true) : ($showLogo || $showPlaceholder);
+    $mountLogo = $preview ? $logos['has_any'] : $showLogo;
     $mountName = $preview || $showSiteName || $showLogo;
 @endphp
 
@@ -38,62 +41,51 @@
         <span
             data-voodbuilder-chrome-part="logo"
             @class([
-                'contents' => $preview ? $showBrand : ($showLogo || $showPlaceholder),
-                'hidden' => $preview ? ! $showBrand : ! ($showLogo || $showPlaceholder),
+                'contents' => $preview ? $showBrand : true,
+                'hidden' => $preview ? ! $showBrand : false,
                 'w-full' => $wideLogo,
             ])
             @if ($preview && ! $showBrand) data-voodbuilder-chrome-hidden @endif
         >
-            @if ($logos['has_any'])
-                @if ($logos['mobile_light'])
-                    <img
-                        src="{{ $logos['mobile_light'] }}"
-                        alt="{{ $brandName }}"
-                        @class([
-                            'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--light',
-                            ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth),
-                        ])
-                    >
-                @endif
-                @if ($logos['mobile_dark'])
-                    <img
-                        src="{{ $logos['mobile_dark'] }}"
-                        alt="{{ $brandName }}"
-                        @class([
-                            'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--dark',
-                            ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth),
-                        ])
-                    >
-                @endif
-                @if ($logos['desktop_light'])
-                    <img
-                        src="{{ $logos['desktop_light'] }}"
-                        alt="{{ $brandName }}"
-                        @class([
-                            'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--light',
-                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth),
-                        ])
-                    >
-                @endif
-                @if ($logos['desktop_dark'])
-                    <img
-                        src="{{ $logos['desktop_dark'] }}"
-                        alt="{{ $brandName }}"
-                        @class([
-                            'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--dark',
-                            ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth),
-                        ])
-                    >
-                @endif
-            @else
-                <span @class([
-                    'inline-flex shrink-0 items-center justify-center rounded-full bg-vp-brand-1 p-2 text-white',
-                    ChromeBrandLogos::squareClass($logoSize),
-                ]) data-voodbuilder-brand-placeholder>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-1/2 w-1/2" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                    </svg>
-                </span>
+            @if ($logos['mobile_light'])
+                <img
+                    src="{{ $logos['mobile_light'] }}"
+                    alt="{{ $brandName }}"
+                    @class([
+                        'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--light',
+                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark),
+                    ])
+                >
+            @endif
+            @if ($logos['mobile_dark'])
+                <img
+                    src="{{ $logos['mobile_dark'] }}"
+                    alt="{{ $brandName }}"
+                    @class([
+                        'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--dark',
+                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark),
+                    ])
+                >
+            @endif
+            @if ($logos['desktop_light'])
+                <img
+                    src="{{ $logos['desktop_light'] }}"
+                    alt="{{ $brandName }}"
+                    @class([
+                        'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--light',
+                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark),
+                    ])
+                >
+            @endif
+            @if ($logos['desktop_dark'])
+                <img
+                    src="{{ $logos['desktop_dark'] }}"
+                    alt="{{ $brandName }}"
+                    @class([
+                        'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--dark',
+                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark),
+                    ])
+                >
             @endif
         </span>
     @endif
@@ -103,14 +95,9 @@
             data-voodbuilder-chrome-part="site-name"
             @class([
                 'ml-3 text-xl' => $showSiteName,
-                'hidden' => ! $showSiteName,
+                'sr-only' => ! $showSiteName && $showLogo,
+                'hidden' => ! $showSiteName && ! $showLogo,
             ])
-        >
-            @if ($showSiteName)
-                {{ $brandName }}
-            @else
-                <span class="sr-only">{{ $brandName }}</span>
-            @endif
-        </span>
+        >{{ $brandName }}</span>
     @endif
 </a>

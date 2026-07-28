@@ -10,6 +10,9 @@ final class SiteFooterConfig
 
     public const DEFAULT_SOCIAL_ALIGN = 'center';
 
+    /** Official product slogan — default footer tagline. */
+    public const DEFAULT_TAGLINE = 'A Visual CMS for Laravel & Filament';
+
     /**
      * @param  array<string, mixed>  $config
      * @return array<string, mixed>
@@ -26,6 +29,8 @@ final class SiteFooterConfig
 
         $normalized = array_merge($normalized, ChromeBrandLogos::normalizeConfigKeys($config));
         $normalized['social_align'] = self::normalizeSocialAlign($config['social_align'] ?? $normalized['social_align'] ?? null);
+        $normalized['tagline'] = self::normalizeText($config['tagline'] ?? $normalized['tagline'] ?? null);
+        $normalized['copyright'] = self::normalizeText($config['copyright'] ?? $normalized['copyright'] ?? null);
 
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
@@ -56,6 +61,8 @@ final class SiteFooterConfig
             'show_footer_col_4' => true,
             'footer_columns_redistribute' => false,
             'social_align' => self::DEFAULT_SOCIAL_ALIGN,
+            'tagline' => null,
+            'copyright' => null,
             'logo_desktop_light' => null,
             'logo_desktop_dark' => null,
             'logo_mobile_light' => null,
@@ -64,6 +71,43 @@ final class SiteFooterConfig
             'logo_size_mobile' => ChromeBrandLogos::DEFAULT_SIZE,
             'logo_full_width' => false,
         ];
+    }
+
+    public static function resolveTagline(?string $value = null): string
+    {
+        $trimmed = self::normalizeText($value);
+
+        if ($trimmed !== null) {
+            return $trimmed;
+        }
+
+        $translated = trim((string) __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline'));
+
+        return $translated !== '' ? $translated : self::DEFAULT_TAGLINE;
+    }
+
+    public static function resolveCopyright(?string $value = null, ?string $brandName = null): string
+    {
+        $trimmed = self::normalizeText($value);
+
+        if ($trimmed !== null) {
+            return $trimmed;
+        }
+
+        $brand = trim((string) ($brandName ?? \Voodflow\Voodbuilder\Models\VoodbuilderSettings::brandName()));
+
+        return '© '.date('Y').' '.($brand !== '' ? $brand : 'VoodBuilder');
+    }
+
+    public static function normalizeText(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed !== '' ? $trimmed : null;
     }
 
     public static function normalizeSocialAlign(mixed $value): string

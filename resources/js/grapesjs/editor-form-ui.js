@@ -428,6 +428,7 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
         const logoOnly = img.closest('[data-voodbuilder-brand-logo-only="1"]') != null;
         const footerContext = img.closest('[data-voodbuilder-footer-brand-link]') != null
             || opts.footerAvatar === true;
+        const packageMark = String(img.getAttribute('src') ?? '').includes('voodbuilder-mark.svg');
         const wide = fullWidth || logoOnly;
 
         heightKeys.forEach((cls) => {
@@ -436,7 +437,7 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
             }
         });
 
-        if (footerContext && ! wide) {
+        if (footerContext && ! wide && ! packageMark) {
             def.square.split(/\s+/).forEach((cls) => img.classList.add(cls));
             img.classList.add('rounded-full', 'object-cover');
         } else {

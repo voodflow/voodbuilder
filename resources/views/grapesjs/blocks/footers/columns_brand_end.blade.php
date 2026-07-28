@@ -5,9 +5,12 @@
         </div>
         <div class="mx-auto mt-10 w-64 shrink-0 px-4 text-center md:mx-0 md:mt-0 md:text-left">
             <div data-voodbuilder-brand></div>
-            <p class="mt-3 text-sm text-vp-text-2" data-voodbuilder-footer-tagline>
-                {{ __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline') }}
-            </p>
+            @include('voodbuilder::grapesjs.blocks.partials.footer-tagline', [
+                'config' => $config,
+                'preview' => $preview ?? false,
+                'chromeKind' => 'footer-tagline',
+                'taglineClass' => 'mt-3 text-sm text-vp-text-2',
+            ])
         </div>
     </div>
 </div>

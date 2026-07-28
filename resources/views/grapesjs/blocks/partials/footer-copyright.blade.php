@@ -2,9 +2,14 @@
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
     use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
 
+    $config = is_array($config ?? null) ? $config : [];
     $brandName = VoodbuilderSettings::brandName();
     $copyrightChrome = SiteFooterConfig::chromeAttributes($config, 'copyright', $preview);
     $copyrightClass = $copyrightClass ?? 'text-xs text-vp-text-3';
+    $copyrightText = SiteFooterConfig::resolveCopyright(
+        is_string($config['copyright'] ?? null) ? $config['copyright'] : null,
+        $brandName,
+    );
 @endphp
 
 <p
@@ -12,6 +17,4 @@
     data-voodbuilder-footer-copyright
     data-voodbuilder-chrome="copyright"
     {!! $copyrightChrome['attr'] !!}
->
-    &copy; {{ date('Y') }} {{ $brandName }}
-</p>
+>{{ $copyrightText }}</p>

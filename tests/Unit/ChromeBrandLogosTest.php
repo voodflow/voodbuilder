@@ -82,5 +82,7 @@ class ChromeBrandLogosTest extends TestCase
         $this->assertStringContainsString('h-6', ChromeBrandLogos::footerLogoClass('sm', true));
         $this->assertStringContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false));
         $this->assertStringContainsString('w-full', ChromeBrandLogos::footerLogoClass('md', false, true, true));
+        $this->assertStringContainsString('object-contain', ChromeBrandLogos::footerLogoClass('md', false, true, false, true));
+        $this->assertStringNotContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false, true, false, true));
     }
 }

@@ -5,7 +5,7 @@ use Voodflow\Voodbuilder\Support\DefaultHomeContent;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 return [
-    'site_title' => env('APP_NAME', 'Laravel'),
+    'site_title' => env('VOODBUILDER_SITE_TITLE', env('APP_NAME', 'VoodBuilder')),
 
     'layouts' => [
         'app' => 'voodbuilder::layouts.app',

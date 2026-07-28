@@ -61,7 +61,8 @@ function enableChromeLayoutStylingTree(component) {
         || attributes['data-theme-toggle'] != null
         || (component.getClasses?.() ?? []).includes('voodbuilder-header-icon-btn'),
     );
-    const lockContent = protectedSlot || chromeIcon;
+    const editableText = isFooterEditableTextNode(attributes);
+    const lockContent = (protectedSlot || chromeIcon) && ! editableText;
 
     component.set({
         removable: false,
@@ -71,14 +72,37 @@ function enableChromeLayoutStylingTree(component) {
         hoverable: ! lockContent,
         highlightable: ! lockContent,
         layerable: ! lockContent,
-        editable: false,
-        stylable: ! lockContent,
-        badgable: ! lockContent,
+        editable: editableText,
+        stylable: ! lockContent || editableText,
+        badgable: ! lockContent || editableText,
     }, { silent: true });
 
     component.components().forEach((child) => {
         enableChromeLayoutStylingTree(child);
     });
+}
+
+/**
+ * Tagline / copyright are plain text the author can edit in the layout canvas.
+ *
+ * @param {Record<string, unknown>} attributes
+ * @returns {boolean}
+ */
+function isFooterEditableTextNode(attributes) {
+    if (! attributes || typeof attributes !== 'object') {
+        return false;
+    }
+
+    if (attributes['data-voodbuilder-footer-tagline'] != null
+        || attributes['data-voodbuilder-footer-copyright'] != null) {
+        return true;
+    }
+
+    const chrome = String(attributes['data-voodbuilder-chrome'] ?? '');
+
+    return chrome === 'tagline'
+        || chrome === 'footer-tagline'
+        || chrome === 'copyright';
 }
 
 /**

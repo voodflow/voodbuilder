@@ -1,9 +1,6 @@
-@props([
-    'canvasPreview' => false,
-])
-
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
     use Voodflow\Voodbuilder\Support\Navigation;
     use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 
@@ -11,6 +8,7 @@
     $hasColumnMenus = collect(SiteFooterColumnPlacements::columnSlugs())
         ->contains(fn (string $slug): bool => Navigation::items($slug)->isNotEmpty());
     $legacyFooterItems = Navigation::items('footer');
+    $tagline = SiteFooterConfig::resolveTagline();
 @endphp
 
 <footer class="border-t border-vp-divider bg-vp-bg text-vp-text-2" role="contentinfo">
@@ -20,7 +18,7 @@
                 <div class="shrink-0 md:w-64">
                     <x-voodbuilder::nav-title />
                     <p class="mt-3 text-sm text-vp-text-2">
-                        {{ __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline') }}
+                        {{ $tagline }}
                     </p>
                 </div>
 
@@ -35,7 +33,7 @@
             </div>
 
             <p class="mt-10 border-t border-vp-divider pt-6 text-center text-sm">
-                &copy; {{ date('Y') }} {{ $brandName }}
+                {{ SiteFooterConfig::resolveCopyright(null, $brandName) }}
             </p>
         </div>
     @else
@@ -65,7 +63,7 @@
                     @endforeach
                 </nav>
             @endif
-            <p>&copy; {{ date('Y') }} {{ $brandName }}</p>
+            <p>{{ SiteFooterConfig::resolveCopyright(null, $brandName) }}</p>
         </div>
     @endif
 </footer>

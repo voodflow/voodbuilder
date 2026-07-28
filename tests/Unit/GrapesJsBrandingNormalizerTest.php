@@ -47,4 +47,15 @@ class GrapesJsBrandingNormalizerTest extends TestCase
         $this->assertStringContainsString('bg-red-500', $normalized);
         $this->assertStringContainsString('class="voodbuilder-brand-mark bg-red-500"', $normalized);
     }
+
+    public function test_replaces_generic_footer_taglines_with_official_slogan(): void
+    {
+        $html = '<footer><p>Short description for your brand.</p><p>Air plant banjo lyft occupy retro adaptogen indego</p></footer>';
+
+        $normalized = GrapesJsBrandingNormalizer::normalizeHtml($html);
+
+        $this->assertStringContainsString('A Visual CMS for Laravel & Filament', $normalized);
+        $this->assertStringNotContainsString('Short description for your brand', $normalized);
+        $this->assertStringNotContainsString('Air plant banjo', $normalized);
+    }
 }

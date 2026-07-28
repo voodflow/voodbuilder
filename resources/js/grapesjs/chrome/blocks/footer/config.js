@@ -300,6 +300,7 @@ function applyFooterBrandPartsPreview(
 
 export function syncSiteFooterConfig(component) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
+    const el = component.getEl?.();
     const config = {
         ...(component.get('vpressConfig') ?? {}),
         show_newsletter: component.get('vpressShowNewsletter') !== false,
@@ -328,6 +329,24 @@ export function syncSiteFooterConfig(component) {
     for (const def of chromeLogoFieldDefs()) {
         const value = String(component.get(def.prop) ?? '').trim();
         config[def.key] = value !== '' ? value : null;
+    }
+
+    // Persist canvas text edits so remount / frontend render keep author copy.
+    const taglineEl = el?.querySelector?.('[data-voodbuilder-footer-tagline]');
+    const copyrightEl = el?.querySelector?.('[data-voodbuilder-footer-copyright]');
+    const taglineText = String(taglineEl?.textContent ?? '').trim();
+    const copyrightText = String(copyrightEl?.textContent ?? '').trim();
+
+    if (taglineText !== '') {
+        config.tagline = taglineText;
+    } else if (config.tagline == null && component.get('vpressConfig')?.tagline) {
+        config.tagline = component.get('vpressConfig').tagline;
+    }
+
+    if (copyrightText !== '') {
+        config.copyright = copyrightText;
+    } else if (config.copyright == null && component.get('vpressConfig')?.copyright) {
+        config.copyright = component.get('vpressConfig').copyright;
     }
 
     if (footerBlockHasColumns(blockId)) {
@@ -405,7 +424,8 @@ function ensureSiteFooterTaglineSlot(root, editor = null) {
         : 'mt-4 text-sm text-vp-text-2';
     tagline.setAttribute('data-voodbuilder-footer-tagline', '');
     tagline.setAttribute('data-voodbuilder-chrome', 'tagline');
-    tagline.textContent = editor?.__voodbuilderLabels?.footerDefaultTagline ?? 'Short description for your brand.';
+    tagline.textContent = editor?.__voodbuilderLabels?.footerDefaultTagline
+        ?? 'A Visual CMS for Laravel & Filament';
 
     brand.parentNode.insertBefore(tagline, brand.nextSibling);
 }
@@ -467,6 +487,37 @@ export function configureSiteFooterTraits(component, editor = null) {
 
     ensureSiteFooterTaglineSlot(component, editor);
     applySiteFooterSettingsPreview(component, editor);
+    registerFooterTextSync(editor);
+}
+
+/**
+ * Persist tagline/copyright edits into vpressConfig when leaving the RTE.
+ *
+ * @param {object|null} editor
+ */
+export function registerFooterTextSync(editor) {
+    if (! editor || editor.__voodbuilderFooterTextSyncRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderFooterTextSyncRegistered = true;
+
+    editor.on('rte:disable', (payload) => {
+        const component = payload?.model ?? payload;
+        let node = component;
+
+        while (node) {
+            const blockId = node.getAttributes?.()?.['data-voodbuilder-block'];
+
+            if (isFooterBlock(blockId)) {
+                syncSiteFooterConfig(node);
+
+                return;
+            }
+
+            node = typeof node.parent === 'function' ? node.parent() : null;
+        }
+    });
 }
 
 export function applySiteFooterColumns(component, columns) {

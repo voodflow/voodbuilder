@@ -206,14 +206,24 @@ final class ChromeBrandLogos
 
     /**
      * Footer avatar-style logo (with site name) vs wide logo-only / full-width.
+     * Package default mark uses object-contain (same as nav) — not circular crop.
      */
-    public static function footerLogoClass(mixed $size, bool $logoOnly, bool $desktop = true, bool $fullWidth = false): string
-    {
+    public static function footerLogoClass(
+        mixed $size,
+        bool $logoOnly,
+        bool $desktop = true,
+        bool $fullWidth = false,
+        bool $packageMark = false,
+    ): string {
         unset($desktop);
         $def = self::sizeDefinition($size);
 
         if ($fullWidth || $logoOnly) {
             return trim($def['height'].' w-full max-w-full object-contain object-left');
+        }
+
+        if ($packageMark) {
+            return trim($def['height'].' w-auto '.$def['desktop_max'].' object-contain object-left');
         }
 
         return trim($def['square'].' rounded-full object-cover');

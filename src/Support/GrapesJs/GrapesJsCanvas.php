@@ -436,16 +436,21 @@ final class GrapesJsCanvas
         }
 
         html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--desktop,
-        body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--desktop {
+        html[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--desktop,
+        body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--desktop,
+        body[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--desktop {
             display: none !important;
         }
 
         html:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
-        body:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+        html:not(.dark)[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        body:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        body:not(.dark)[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: block !important;
         }
 
-        html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
+        html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
             display: block !important;
         }
 

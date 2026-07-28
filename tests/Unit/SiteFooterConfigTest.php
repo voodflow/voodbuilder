@@ -132,7 +132,7 @@ class SiteFooterConfigTest extends TestCase
         $this->assertStringContainsString('data-voodbuilder-brand-logo-only="1"', $html);
         $this->assertStringContainsString('max-w-full', $html);
         $this->assertMatchesRegularExpression(
-            '/data-voodbuilder-chrome-part="site-name"[^>]*\bhidden\b|<[^>]*\bhidden\b[^>]*data-voodbuilder-chrome-part="site-name"/',
+            '/data-voodbuilder-chrome-part="site-name"[^>]*\b(hidden|sr-only)\b|<[^>]*\b(hidden|sr-only)\b[^>]*data-voodbuilder-chrome-part="site-name"/',
             $html,
         );
     }
@@ -412,5 +412,58 @@ class SiteFooterConfigTest extends TestCase
             '/data-voodbuilder-footer-col="3"[^>]*hidden|hidden[^>]*data-voodbuilder-footer-col="3"/',
             $hydrated,
         );
+    }
+
+    #[Test]
+    public function empty_footer_brand_uses_animated_voodbuilder_mark(): void
+    {
+        $html = GrapesJsSlotHydrator::renderBrand(false, [
+            'show_brand' => true,
+            'show_site_name' => true,
+        ]);
+
+        $this->assertStringContainsString('voodbuilder-mark.svg', $html);
+        $this->assertStringContainsString('vb-brand-logo', $html);
+        $this->assertStringNotContainsString('data-voodbuilder-brand-placeholder', $html);
+        $this->assertStringContainsString('object-contain', $html);
+    }
+
+    #[Test]
+    public function footer_default_tagline_is_official_slogan(): void
+    {
+        $html = SiteFooterCenteredBlock::toHtml([
+            'show_tagline' => true,
+        ], []);
+
+        $this->assertStringContainsString(e(SiteFooterConfig::DEFAULT_TAGLINE), $html);
+        $this->assertStringContainsString('VoodBuilder', $html);
+        $this->assertStringNotContainsString('Short description for your brand', $html);
+    }
+
+    #[Test]
+    public function custom_tagline_and_copyright_persist_on_render(): void
+    {
+        $html = SiteFooterCenteredBlock::toHtml([
+            'show_tagline' => true,
+            'show_copyright' => true,
+            'tagline' => 'Custom VoodBuilder tagline',
+            'copyright' => '© 2026 VoodBuilder Studio',
+        ], []);
+
+        $this->assertStringContainsString('Custom VoodBuilder tagline', $html);
+        $this->assertStringContainsString('© 2026 VoodBuilder Studio', $html);
+        $this->assertStringNotContainsString(SiteFooterConfig::DEFAULT_TAGLINE, $html);
+    }
+
+    #[Test]
+    public function normalize_keeps_tagline_and_copyright_text(): void
+    {
+        $normalized = SiteFooterConfig::normalize([
+            'tagline' => '  Hello VoodBuilder  ',
+            'copyright' => '  © 2026 VoodBuilder  ',
+        ]);
+
+        $this->assertSame('Hello VoodBuilder', $normalized['tagline']);
+        $this->assertSame('© 2026 VoodBuilder', $normalized['copyright']);
     }
 }

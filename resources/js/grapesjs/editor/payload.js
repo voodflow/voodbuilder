@@ -22,7 +22,8 @@ import {
     syncVpressDynamicAttributes,
 } from '../plugins/voodbuilder-grapesjs.js';
 import { syncSiteHeaderConfig } from '../chrome/blocks/nav/config.js';
-import { isNavBlock } from '../chrome/ids.js';
+import { syncSiteFooterConfig } from '../chrome/blocks/footer/config.js';
+import { isFooterBlock, isNavBlock } from '../chrome/ids.js';
 import {
     bakeAuthorStylesToComposerForExport,
     bakeSvgPaintForExport,
@@ -88,8 +89,14 @@ function normalizeVpressDynamicComponents(editor) {
     safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]').forEach((component) => {
         syncVpressDynamicAttributes(component);
 
-        if (isNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
+        const blockId = component.getAttributes()['data-voodbuilder-block'];
+
+        if (isNavBlock(blockId)) {
             syncSiteHeaderConfig(component);
+        }
+
+        if (isFooterBlock(blockId)) {
+            syncSiteFooterConfig(component);
         }
     });
 }
