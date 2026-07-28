@@ -35,6 +35,9 @@ return [
         'dynamic_data' => [
             'enabled' => env('VOODBUILDER_MODULE_DYNAMIC_DATA', true),
         ],
+        'components' => [
+            'enabled' => env('VOODBUILDER_MODULE_COMPONENTS', true),
+        ],
     ],
 
     'layouts' => [

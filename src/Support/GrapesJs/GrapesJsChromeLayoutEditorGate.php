@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
@@ -63,8 +64,12 @@ final class GrapesJsChromeLayoutEditorGate
             'linkTargetsUrl' => self::editorRoute('voodbuilder.grapesjs.link-targets'),
             'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
-            'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
-            'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
+            'globalClassesUrl' => ComponentsModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.global-classes.index')
+                : null,
+            'componentsUrl' => ComponentsModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.components.index')
+                : null,
             // Page templates are page-only — keep them out of the layout editor.
             'pageTemplatesUrl' => null,
             'pageTemplatesCatalogUrl' => null,

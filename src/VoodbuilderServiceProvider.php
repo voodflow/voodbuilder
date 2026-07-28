@@ -33,8 +33,6 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsComponentsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
@@ -47,6 +45,7 @@ use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
@@ -220,17 +219,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
-                Route::get('global-classes', [GrapesJsGlobalClassesController::class, 'index'])->name('global-classes.index');
-                Route::post('global-classes', [GrapesJsGlobalClassesController::class, 'store'])->name('global-classes.store');
-                Route::put('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'update'])->name('global-classes.update');
-                Route::delete('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'destroy'])->name('global-classes.destroy');
-                Route::get('components', [GrapesJsComponentsController::class, 'index'])->name('components.index');
-                Route::post('components', [GrapesJsComponentsController::class, 'store'])->name('components.store');
-                Route::post('components/compile-css', [GrapesJsComponentsController::class, 'compileCss'])->name('components.compile-css');
-                Route::post('components/import', [GrapesJsComponentsController::class, 'import'])->name('components.import');
-                Route::post('components/export', [GrapesJsComponentsController::class, 'export'])->name('components.export');
-                Route::put('components/{component}', [GrapesJsComponentsController::class, 'update'])->name('components.update');
-                Route::delete('components/{component}', [GrapesJsComponentsController::class, 'destroy'])->name('components.destroy');
                 Route::get('popups', [GrapesJsPopupsController::class, 'index'])->name('popups.index');
                 Route::get('popups/page-paths', [GrapesJsPopupsController::class, 'pagePaths'])->name('popups.page-paths');
                 Route::post('popups', [GrapesJsPopupsController::class, 'store'])->name('popups.store');
@@ -360,6 +348,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new DynamicDataModule,
             enabled: (bool) config('voodbuilder.modules.dynamic_data.enabled', true),
+        );
+
+        $registry->register(
+            new ComponentsModule,
+            enabled: (bool) config('voodbuilder.modules.components.enabled', true),
         );
     }
 }

@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
@@ -126,8 +127,12 @@ final class GrapesJsEditorGate
                     'revision' => '__REVISION__',
                 ])
                 : null,
-            'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
-            'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
+            'globalClassesUrl' => ComponentsModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.global-classes.index')
+                : null,
+            'componentsUrl' => ComponentsModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.components.index')
+                : null,
             'pageTemplatesUrl' => TemplatesModule::isEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.index')
                 : null,
