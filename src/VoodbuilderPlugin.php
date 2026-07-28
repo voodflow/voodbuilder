@@ -12,7 +12,6 @@ use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\ModelIntegrationResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
-use Voodflow\Voodbuilder\Filament\Resources\PopupResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
 class VoodbuilderPlugin implements Plugin
@@ -44,11 +43,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = SitePageResource::class;
         }
 
-        if (config('voodbuilder.modules.popups.enabled', true)
-            && config('voodbuilder.popups.enabled', true)
-            && Voodbuilder::can('popups.builder')) {
-            $resources[] = PopupResource::class;
-        }
+        // PopupResource is registered by VoodbuilderPopupsPlugin (voodflow/voodbuilder-popups).
 
         if (config('voodbuilder.modules.layouts.enabled', true) && config('voodbuilder.chrome_layouts.enabled', true)) {
             $resources[] = ChromeLayoutResource::class;

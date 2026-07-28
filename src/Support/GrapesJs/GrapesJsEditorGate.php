@@ -11,7 +11,6 @@ use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
-use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Voodbuilder;
@@ -159,10 +158,10 @@ final class GrapesJsEditorGate
                 'dynamicDataCollections' => Voodbuilder::can('dynamic-data.collections'),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
             ],
-            'popupsUrl' => PopupsModule::isEnabled()
+            'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')
                 ? self::editorRoute('voodbuilder.grapesjs.popups.index')
                 : null,
-            'popupsPagePathsUrl' => PopupsModule::isEnabled()
+            'popupsPagePathsUrl' => Voodbuilder::modules()->isEnabled('popups')
                 ? self::editorRoute('voodbuilder.grapesjs.popups.page-paths')
                 : null,
             'packageVersion' => VoodbuilderPackageVersion::current(),

@@ -1,15 +1,7 @@
+{{-- Core stub: safe when voodbuilder-popups is absent or disabled. --}}
 @if (
-    \Voodflow\Voodbuilder\Modules\Popups\PopupsModule::isEnabled()
-    && \Illuminate\Support\Facades\Route::has('voodbuilder.popups.public')
-    && \Illuminate\Support\Facades\Route::has('voodbuilder.popups.events')
-    && config('voodbuilder.popups.enabled', true)
-    && \Illuminate\Support\Facades\Schema::hasTable('voodbuilder_popups')
-    && \Voodflow\Voodbuilder\Models\BuilderPopup::query()->where('enabled', true)->exists()
+    \Voodflow\Voodbuilder\Voodbuilder::modules()->isEnabled('popups')
+    && view()->exists('voodbuilder-popups::components.popups-boot')
 )
-    <script type="application/json" data-voodbuilder-popups-config>
-        {!! json_encode([
-            'endpoint' => route('voodbuilder.popups.public', absolute: false),
-            'eventsEndpoint' => route('voodbuilder.popups.events', absolute: false),
-        ], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}
-    </script>
+    @include('voodbuilder-popups::components.popups-boot')
 @endif

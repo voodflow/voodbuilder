@@ -32,8 +32,20 @@
     "autoload-dev": {
         "psr-4": {
             "Voodflow\\Voodbuilder\\Tests\\": "tests/",
-            "Voodflow\\Vtuts\\": "../vtuts/src/"
-        }
+            "Voodflow\\Vtuts\\": "../vtuts/src/",
+            "Voodflow\\VoodbuilderPopups\\": "../voodbuilder-popups/src/",
+            "Voodflow\\Voodbuilder\\Modules\\Popups\\": "../voodbuilder-popups/src/Modules/Popups/",
+            "Voodflow\\Voodbuilder\\Support\\GrapesJs\\Popups\\": "../voodbuilder-popups/src/Support/GrapesJs/Popups/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\PopupResource\\": "../voodbuilder-popups/src/Filament/Resources/PopupResource/"
+        },
+        "classmap": [
+            "../voodbuilder-popups/src/Models/",
+            "../voodbuilder-popups/src/Enums/",
+            "../voodbuilder-popups/src/Http/Controllers/",
+            "../voodbuilder-popups/src/Filament/Resources/PopupResource.php",
+            "../voodbuilder-popups/src/Filament/Actions/",
+            "../voodbuilder-popups/src/Support/GrapesJs/GrapesJsPopupEditorGate.php"
+        ]
     },
     "require-dev": {
         "orchestra/testbench": "^10.0|^11.0",
@@ -45,6 +57,9 @@
             "providers": [
                 "Voodflow\\Voodbuilder\\VoodbuilderServiceProvider"
             ]
+        },
+        "suggest": {
+            "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder."
         }
     },
     "minimum-stability": "dev",

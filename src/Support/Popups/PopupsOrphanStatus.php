@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Popups;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Voodflow\Voodbuilder\Models\BuilderPopup;
-use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
- * Detects popup rows that remain after the Popups module/plugin is disabled.
+ * Detects popup rows that remain after the Popups plugin is disabled/uninstalled.
  * Public render must no-op; admin surfaces show a clear warning.
  */
 final class PopupsOrphanStatus
 {
     public static function detected(): bool
     {
-        if (PopupsModule::isEnabled()) {
+        if (Voodbuilder::modules()->isEnabled('popups')) {
             return false;
         }
 
@@ -25,7 +25,7 @@ final class PopupsOrphanStatus
                 return false;
             }
 
-            return BuilderPopup::query()->exists();
+            return DB::table('voodbuilder_popups')->exists();
         } catch (\Throwable) {
             return false;
         }
@@ -38,7 +38,7 @@ final class PopupsOrphanStatus
         }
 
         try {
-            return (int) BuilderPopup::query()->count();
+            return (int) DB::table('voodbuilder_popups')->count();
         } catch (\Throwable) {
             return 0;
         }

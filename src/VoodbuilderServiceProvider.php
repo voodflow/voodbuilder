@@ -47,7 +47,6 @@ use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
-use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -338,11 +337,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 && Voodbuilder::can('components.library'),
         );
 
-        $registry->register(
-            new PopupsModule,
-            enabled: (bool) config('voodbuilder.modules.popups.enabled', true)
-                && (bool) config('voodbuilder.popups.enabled', true)
-                && Voodbuilder::can('popups.builder'),
-        );
+        // Popups live in voodflow/voodbuilder-popups (Filament plugin) and
+        // register via Voodbuilder::registerModule() during Application::booting.
     }
 }

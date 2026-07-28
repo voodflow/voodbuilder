@@ -14,6 +14,7 @@ use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
 use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
+use Voodflow\VoodbuilderPopups\VoodbuilderPopupsServiceProvider;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -21,11 +22,14 @@ abstract class TestCase extends BaseTestCase
 
     protected function getPackageProviders($app): array
     {
-        return [
+        return array_values(array_filter([
             LivewireServiceProvider::class,
             LaravelSEOServiceProvider::class,
             VoodbuilderServiceProvider::class,
-        ];
+            class_exists(VoodbuilderPopupsServiceProvider::class)
+                ? VoodbuilderPopupsServiceProvider::class
+                : null,
+        ]));
     }
 
     protected function defineEnvironment($app): void

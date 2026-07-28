@@ -318,8 +318,11 @@ class InstallCommand extends Command
         $this->components->info('Host app checklist (manual steps only):');
         $this->newLine();
 
-        $this->line('  1. Filament panel — register the plugin once in your Panel provider:');
-        $this->line('     ->plugins([\\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make()])');
+        $this->line('  1. Filament panel — register plugins once in your Panel provider:');
+        $this->line('     ->plugins([');
+        $this->line('         \\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make(),');
+        $this->line('         \\Voodflow\\VoodbuilderPopups\\VoodbuilderPopupsPlugin::make(), // optional popups');
+        $this->line('     ])');
         $this->newLine();
 
         if ($this->option('skip-npm') || ! $this->npmIsAvailable()) {
