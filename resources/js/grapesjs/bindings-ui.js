@@ -3069,22 +3069,29 @@ export async function registerBindingsUi(editor, options = {}) {
     editor.__voodbuilderBindingsUiRegistered = true;
 
     const labels = options.labels ?? {};
+    const collectionsEnabled = options.dynamicDataCollections === true;
     const previewOptions = {
-        catalog: { groups: [], sources: [] },
+        catalog: { groups: [], sources: [], repeatSources: [] },
         bindingsUrl: options.bindingsUrl,
         bindingsPreviewUrl: options.bindingsPreviewUrl,
         editor,
+        dynamicDataCollections: collectionsEnabled,
     };
 
     registerBoundComponentType(editor);
 
     mountDynamicInspectorPanel(editor, options.dynamicMount, previewOptions.catalog, labels, previewOptions);
 
-    const catalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
+    const loadedCatalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
         console.error('Voodbuilder GrapesJS: could not load bindings catalog.', error);
 
-        return { groups: [], sources: [] };
+        return { groups: [], sources: [], repeatSources: [] };
     });
+
+    // Soft commercial gate: List repeat UI requires Pro collections entitlement + plugin.
+    const catalog = collectionsEnabled
+        ? loadedCatalog
+        : { ...loadedCatalog, repeatSources: [] };
 
     previewOptions.catalog = catalog;
     editor.__voodbuilderBindingsCatalog = catalog;
@@ -3101,14 +3108,22 @@ export async function registerBindingsUi(editor, options = {}) {
 
     editor.on('component:add', (component) => {
         configureBoundComponent(editor, component, catalog);
-        scheduleRepeatMaintenance(editor, catalog, previewOptions);
+        if (collectionsEnabled) {
+            scheduleRepeatMaintenance(editor, catalog, previewOptions);
+        }
     });
 
     editor.on('component:remove', () => {
-        scheduleRepeatMaintenance(editor, catalog, previewOptions);
+        if (collectionsEnabled) {
+            scheduleRepeatMaintenance(editor, catalog, previewOptions);
+        }
     });
 
     editor.on('component:update', (component) => {
+        if (! collectionsEnabled) {
+            return;
+        }
+
         if (editor.__voodbuilderBindingPreviewPainting || editor.__voodbuilderSettingsChange) {
             return;
         }

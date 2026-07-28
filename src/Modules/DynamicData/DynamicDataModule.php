@@ -35,11 +35,10 @@ final class DynamicDataModule extends AbstractVoodBuilderModule implements Regis
 
     public function capabilities(): array
     {
+        // Pro collections live in voodflow/voodbuilder-dynamic-data
+        // (DynamicDataCollectionsModule). Keep Community single here.
         return [
             'dynamic-data.single',
-            'dynamic-data.collections',
-            'dynamic-data.query-builder',
-            'dynamic-data.custom-providers',
         ];
     }
 

@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Tests\Licensing;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
+use Voodflow\Voodbuilder\Modules\DynamicDataCollections\DynamicDataCollectionsModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -38,6 +39,13 @@ class CommercialBoundaryTest extends TestCase
         $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.index'));
         $this->assertTrue(Route::has('voodbuilder.grapesjs.bindings'));
         $this->assertTrue(Route::has('voodbuilder.popups.public'));
+    }
+
+    public function test_community_disables_dynamic_data_collections_module(): void
+    {
+        $this->assertTrue(Voodbuilder::modules()->has(DynamicDataCollectionsModule::ID));
+        $this->assertFalse(DynamicDataCollectionsModule::isEnabled());
+        $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
     }
 
     public function test_community_hides_pro_template_import_and_agency_export_routes(): void

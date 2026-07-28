@@ -13,21 +13,31 @@
 - Host: `VoodbuilderComponentsPlugin::make()` + path Composer require
 - Commits: components `8cb0ad8`, core `553f56f`
 
-## 3. Dynamic Data package (scaffold + boundary)
+## 3. Dynamic Data collections package (physical extract)
 
-- Repo: `voodflow/voodbuilder-dynamic-data` (pushed)
-- **Boundary:** Community `dynamic-data.single` + bindings stay in Core; this plugin will own Pro/Agency **collections** and related Filament/editor surfaces
-- Physical move of collections-only code is the next implementation slice
+- Repo: `voodflow/voodbuilder-dynamic-data`
+- **Boundary:** Community `dynamic-data.single` stays in Core; Pro `dynamic-data.collections` in this plugin
+- Module ID: `dynamic_data_collections` (`DynamicDataCollectionsModule`) — does **not** replace Core `dynamic_data`
+- Owned PHP (classmap): RepeatRenderer, ListResolver, RepeatListRegistry, RelationFilters, SortFields, ItemBindingSource
+- Core: `DynamicDataCollectionsBridge`, gated catalog/preview/`BindingRenderer`, registrar registers `.item` only when module enabled
+- Editor JS: `dynamicDataCollections` soft-gates List repeat UI in `bindings-ui.js`
+- Host: `VoodbuilderDynamicDataPlugin::make()` + Composer path require
+- Locales: en/it/es/fr/de
 
-## 4. Forms package (scaffold)
+## 4. Forms package (scaffold only — invent later)
 
 - Repo: `voodflow/voodbuilder-forms` (pushed)
-- Stub module + locales en/it/es/fr/de; extract after Forms audit in Core
+- No Core Forms module yet; leave until last in the commercial wave
 
-## 5. Analytics + Cookiebar scaffolds
+## 5. Analytics
 
-- `voodflow/voodbuilder-analitycs` pushed to voodflow-git (folder spelling matches remote)
-- `voodbuilder-cookiebar` local scaffold ready; **GitHub remote push failed** (`Repository not found` for `git@github.com:voodflow/voodbuilder-cookiebar.git`) — create the GitHub repo or fix access, then push
+- Scaffold: `voodflow/voodbuilder-analitycs` (remote spelling)
+- Next: extend existing Popups analytics toward **page** analytics
+
+## 6. Cookiebar
+
+- Scaffold on `git@voodflow-git:voodflow/voodbuilder-cookiebar.git`
+- Next: real consent bar (block GA / Meta Pixel / tracking embeds; disclose media embeds; no Google Fonts dependency in Core)
 
 ## Host registration pattern
 
@@ -36,7 +46,7 @@
     VoodbuilderPlugin::make(),
     VoodbuilderPopupsPlugin::make(),
     VoodbuilderComponentsPlugin::make(),
-    // VoodbuilderDynamicDataPlugin::make(), // when collections extract lands
-    // VoodbuilderFormsPlugin::make(),
+    VoodbuilderDynamicDataPlugin::make(),
+    // VoodbuilderFormsPlugin::make(), // invent later
 ])
 ```

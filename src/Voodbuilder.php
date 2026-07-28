@@ -186,6 +186,11 @@ class Voodbuilder
         string $defaultDirection = 'desc',
         array $aliases = [],
     ): void {
+        // No-op without the Dynamic Data collections companion package.
+        if (! class_exists(RepeatListRegistry::class)) {
+            return;
+        }
+
         $registry = app(RepeatListRegistry::class);
         $registry->register($id, $label, $resolver, $sortFields, $defaultSort, $defaultDirection);
 

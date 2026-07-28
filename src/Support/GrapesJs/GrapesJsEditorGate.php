@@ -21,6 +21,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionsAttributeNormalizer;
+use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -158,7 +159,7 @@ final class GrapesJsEditorGate
                 && filled(config('voodbuilder.page_templates.catalog_url'))
                 ? self::editorRoute('voodbuilder.grapesjs.page-templates.catalog')
                 : null,
-            'dynamicDataCollections' => DynamicDataModule::isEnabled()
+            'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled()
                 && Voodbuilder::can('dynamic-data.collections'),
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),

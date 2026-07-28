@@ -51,6 +51,13 @@ final class ModelIntegrationRegistry
      */
     public function repeatCatalog(): array
     {
+        if (
+            ! class_exists(ModelIntegrationSortFields::class)
+            || ! class_exists(ModelIntegrationRelationFilters::class)
+        ) {
+            return [];
+        }
+
         $items = [];
         $sortFields = app(ModelIntegrationSortFields::class);
         $relationFilters = app(ModelIntegrationRelationFilters::class);

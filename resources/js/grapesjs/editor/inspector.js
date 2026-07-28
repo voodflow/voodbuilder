@@ -130,6 +130,8 @@ export function wireInspector(editor, shell, options, labels) {
         bindingsPreviewUrl: options.bindingsPreviewUrl,
         labels: options.bindingLabels ?? labels,
         dynamicMount: shell?.mounts?.dynamic ?? null,
+        // Pro collections (List repeat) — false hides repeatSources / List repeat UI.
+        dynamicDataCollections: options.dynamicDataCollections === true,
     });
 
     if (options.conditionsEnabled !== false) {

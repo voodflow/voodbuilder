@@ -20,6 +20,8 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
 use Voodflow\VoodbuilderComponents\VoodbuilderComponentsServiceProvider;
+use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicData;
+use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicDataServiceProvider;
 use Voodflow\VoodbuilderPopups\VoodbuilderPopups;
 use Voodflow\VoodbuilderPopups\VoodbuilderPopupsServiceProvider;
 
@@ -38,6 +40,9 @@ abstract class TestCase extends BaseTestCase
                 : null,
             class_exists(VoodbuilderComponentsServiceProvider::class)
                 ? VoodbuilderComponentsServiceProvider::class
+                : null,
+            class_exists(VoodbuilderDynamicDataServiceProvider::class)
+                ? VoodbuilderDynamicDataServiceProvider::class
                 : null,
         ]));
     }
@@ -93,6 +98,11 @@ abstract class TestCase extends BaseTestCase
         if (class_exists(VoodbuilderComponents::class)) {
             VoodbuilderComponents::reset();
             VoodbuilderComponents::activate();
+        }
+
+        if (class_exists(VoodbuilderDynamicData::class)) {
+            VoodbuilderDynamicData::reset();
+            VoodbuilderDynamicData::activate();
         }
 
         NavigationMenuResolver::clearSchemaCache();

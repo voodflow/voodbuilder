@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHtmlSanitizer;
 
 final class GrapesJsBindingRenderer
@@ -22,7 +23,8 @@ final class GrapesJsBindingRenderer
         }
 
         if ($repeatItem === null && self::containsRepeatAttribute($html)) {
-            $html = app(GrapesJsRepeatRenderer::class)->render($html, $page);
+            // List repeat expands only when voodbuilder-dynamic-data is active.
+            $html = DynamicDataCollectionsBridge::renderRepeats($html, $page);
         }
 
         if (! self::containsBindAttribute($html)) {

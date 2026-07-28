@@ -14,6 +14,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationListResolver;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
+use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
 
 class GrapesJsBindingsPreviewController extends Controller
@@ -61,6 +62,14 @@ class GrapesJsBindingsPreviewController extends Controller
      */
     protected function listPreviewValues(Request $request, SitePage $sitePage, BindingRegistry $registry): array
     {
+        if (! DynamicDataCollectionsBridge::moduleEnabled()) {
+            return [];
+        }
+
+        if (! class_exists(ModelIntegrationListResolver::class) || ! class_exists(RepeatListRegistry::class)) {
+            return [];
+        }
+
         $listValues = [];
         $lists = app(ModelIntegrationListResolver::class);
         $integrations = app(ModelIntegrationRegistry::class);
@@ -75,10 +84,7 @@ class GrapesJsBindingsPreviewController extends Controller
                     'limit' => 12,
                     'offset' => 0,
                 ],
-                array_merge(
-                    $integrations->repeatCatalog(),
-                    app(RepeatListRegistry::class)->catalog(),
-                ),
+                DynamicDataCollectionsBridge::repeatSourcesCatalog(),
             );
         }
 
@@ -138,6 +144,10 @@ class GrapesJsBindingsPreviewController extends Controller
      */
     protected function repeatConfigsFromRequest(Request $request, ModelIntegrationRegistry $integrations): array
     {
+        if (! DynamicDataCollectionsBridge::moduleEnabled() || ! class_exists(RepeatListRegistry::class)) {
+            return [];
+        }
+
         $raw = $request->query('repeats');
 
         if (! is_string($raw) || trim($raw) === '') {

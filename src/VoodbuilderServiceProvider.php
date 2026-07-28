@@ -120,8 +120,12 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModelRegistry::class);
         $this->app->singleton(ReverseRelationRegistry::class);
         $this->app->singleton(ModelIntegrationRegistry::class);
-        $this->app->singleton(RepeatListRegistry::class);
-        $this->app->singleton(ModelIntegrationListResolver::class);
+        if (class_exists(RepeatListRegistry::class)) {
+            $this->app->singleton(RepeatListRegistry::class);
+        }
+        if (class_exists(ModelIntegrationListResolver::class)) {
+            $this->app->singleton(ModelIntegrationListResolver::class);
+        }
         $this->app->singleton(ModelIntegrationBindingRegistrar::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
@@ -331,6 +335,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         // Components live in voodflow/voodbuilder-components (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
+
+        // Dynamic Data collections live in voodflow/voodbuilder-dynamic-data
+        // (Filament plugin) as DynamicDataCollectionsModule.
 
         // Popups live in voodflow/voodbuilder-popups (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.

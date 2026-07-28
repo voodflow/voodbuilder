@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs\Bindings;
 
 use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
 
 final class ModelIntegrationBindingRegistrar
 {
@@ -18,7 +19,14 @@ final class ModelIntegrationBindingRegistrar
         $this->integrations->register($integration);
 
         $this->bindings->register(new ModelIntegrationLatestBindingSource($integration));
-        $this->bindings->register(new ModelIntegrationItemBindingSource($integration));
+
+        // `.item` bindings belong to Pro collections (companion package).
+        if (
+            DynamicDataCollectionsBridge::moduleEnabled()
+            && class_exists(ModelIntegrationItemBindingSource::class)
+        ) {
+            $this->bindings->register(new ModelIntegrationItemBindingSource($integration));
+        }
 
         if (ModelIntegrationAuthBindingSource::supports($integration)) {
             $this->bindings->register(new ModelIntegrationAuthBindingSource($integration));
