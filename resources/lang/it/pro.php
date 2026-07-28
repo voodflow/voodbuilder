@@ -409,6 +409,10 @@ return [
             'clone' => 'Duplica',
             'delete' => 'Elimina',
             'edit_image' => 'Modifica immagine',
+            'content_width' => 'Larghezza contenuto',
+            'content_width_full' => 'Tutta larghezza',
+            'content_width_normal' => 'Normale (80rem)',
+            'content_width_custom' => 'Personalizzata',
         ],
         'image_editor' => [
             'title' => 'Modifica immagine',

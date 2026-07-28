@@ -18,9 +18,25 @@ class ChromeLayoutContentWidthTest extends TestCase
         $this->assertSame([
             'mode' => ChromeLayoutContentWidth::MODE_FULL,
             'maxWidth' => null,
+            'customMaxWidth' => null,
         ], ChromeLayoutContentWidth::fromLayout($layout));
         $this->assertTrue(ChromeLayoutContentWidth::isFull(ChromeLayoutContentWidth::fromLayout($layout)));
         $this->assertNull(ChromeLayoutContentWidth::cssMaxWidth(ChromeLayoutContentWidth::fromLayout($layout)));
+    }
+
+    public function test_from_layout_full_keeps_optional_custom_max_for_element_toolbar(): void
+    {
+        $layout = new ChromeLayout([
+            'content_width' => 'full',
+            'content_max_width' => '72rem',
+        ]);
+
+        $resolved = ChromeLayoutContentWidth::fromLayout($layout);
+
+        $this->assertSame(ChromeLayoutContentWidth::MODE_FULL, $resolved['mode']);
+        $this->assertNull($resolved['maxWidth']);
+        $this->assertSame('72rem', $resolved['customMaxWidth']);
+        $this->assertTrue(ChromeLayoutContentWidth::isFull($resolved));
     }
 
     public function test_from_layout_standard(): void
@@ -31,6 +47,7 @@ class ChromeLayoutContentWidthTest extends TestCase
 
         $this->assertSame(ChromeLayoutContentWidth::MODE_STANDARD, $resolved['mode']);
         $this->assertSame(ChromeLayoutContentWidth::STANDARD_MAX_WIDTH, $resolved['maxWidth']);
+        $this->assertNull($resolved['customMaxWidth']);
         $this->assertFalse(ChromeLayoutContentWidth::isFull($resolved));
         $this->assertSame('80rem', ChromeLayoutContentWidth::cssMaxWidth($resolved));
     }
@@ -46,6 +63,7 @@ class ChromeLayoutContentWidthTest extends TestCase
 
         $this->assertSame(ChromeLayoutContentWidth::MODE_CUSTOM, $resolved['mode']);
         $this->assertSame('72rem', $resolved['maxWidth']);
+        $this->assertSame('72rem', $resolved['customMaxWidth']);
     }
 
     public function test_resolve_prefers_layout_over_page_home_full_width(): void

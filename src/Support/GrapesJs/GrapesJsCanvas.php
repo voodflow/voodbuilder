@@ -287,6 +287,28 @@ final class GrapesJsCanvas
             box-sizing: border-box;
         }
 
+        /* Element content-width toolbar (full-width pages) — mirror landing.css. */
+        :where([data-voodbuilder-content-width='normal']) {
+            width: 100%;
+            max-width: 80rem;
+            margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        :where([data-voodbuilder-content-width='custom']) {
+            width: 100%;
+            max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+            margin-inline: auto;
+            box-sizing: border-box;
+        }
+
+        :where([data-voodbuilder-content-width='full']) {
+            width: 100%;
+            max-width: none;
+            margin-inline: 0;
+            box-sizing: border-box;
+        }
+
         :where(
             [data-voodbuilder-layout='container'].vb-layout-row,
             [data-voodbuilder-layout='container'][data-vb-layout-preset],

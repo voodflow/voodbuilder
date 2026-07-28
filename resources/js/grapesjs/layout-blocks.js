@@ -241,6 +241,13 @@ export function syncContainerContentWidth(container) {
         return;
     }
 
+    const contentWidthMode = String(container.getAttributes?.()?.['data-voodbuilder-content-width'] ?? '').trim();
+
+    // Author content-width toolbar owns measure on full-width pages — do not wipe it.
+    if (contentWidthMode === 'normal' || contentWidthMode === 'custom') {
+        return;
+    }
+
     const presetId = String(container.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
 
     if (presetId) {

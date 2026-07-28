@@ -26,7 +26,7 @@ final class ChromeLayoutContentWidth
     public const CHROME_CONTENT = 'content';
 
     /**
-     * @return array{mode: string, maxWidth: string|null}
+     * @return array{mode: string, maxWidth: string|null, customMaxWidth: string|null}
      */
     public static function resolve(?ChromeLayout $layout, ?SitePage $page = null): array
     {
@@ -39,12 +39,14 @@ final class ChromeLayoutContentWidth
             return [
                 'mode' => self::MODE_STANDARD,
                 'maxWidth' => self::STANDARD_MAX_WIDTH,
+                'customMaxWidth' => null,
             ];
         }
 
         return [
             'mode' => self::MODE_FULL,
             'maxWidth' => null,
+            'customMaxWidth' => null,
         ];
     }
 
@@ -58,7 +60,7 @@ final class ChromeLayoutContentWidth
     }
 
     /**
-     * @return array{mode: string, maxWidth: string|null}
+     * @return array{mode: string, maxWidth: string|null, customMaxWidth: string|null}
      */
     public static function fromLayout(ChromeLayout $layout): array
     {
@@ -69,14 +71,18 @@ final class ChromeLayoutContentWidth
             self::MODE_STANDARD => [
                 'mode' => self::MODE_STANDARD,
                 'maxWidth' => self::STANDARD_MAX_WIDTH,
+                'customMaxWidth' => $custom,
             ],
             self::MODE_CUSTOM => [
                 'mode' => self::MODE_CUSTOM,
                 'maxWidth' => $custom ?? self::STANDARD_MAX_WIDTH,
+                'customMaxWidth' => $custom ?? self::STANDARD_MAX_WIDTH,
             ],
             default => [
                 'mode' => self::MODE_FULL,
                 'maxWidth' => null,
+                // Optional boxed measure for element toolbar (full page + custom rem).
+                'customMaxWidth' => $custom,
             ],
         };
     }

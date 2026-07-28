@@ -422,8 +422,15 @@ function normalizePageContentWidth(options = {}) {
         const maxWidth = typeof raw.maxWidth === 'string' && raw.maxWidth.trim() !== ''
             ? raw.maxWidth.trim()
             : (mode === 'full' ? null : '80rem');
+        const customMaxWidth = typeof raw.customMaxWidth === 'string' && raw.customMaxWidth.trim() !== ''
+            ? raw.customMaxWidth.trim()
+            : (mode === 'custom' && maxWidth ? maxWidth : null);
 
-        return { mode: mode === 'contained' ? 'standard' : mode, maxWidth };
+        return {
+            mode: mode === 'contained' ? 'standard' : mode,
+            maxWidth,
+            customMaxWidth,
+        };
     }
 
     const fullWidthPage = options.fullWidthPage !== false;
@@ -431,6 +438,7 @@ function normalizePageContentWidth(options = {}) {
     return {
         mode: fullWidthPage ? 'full' : 'standard',
         maxWidth: fullWidthPage ? null : '80rem',
+        customMaxWidth: null,
     };
 }
 
@@ -445,7 +453,7 @@ function revealCanvasDocument(frameWindow, options = {}) {
         return false;
     }
 
-    const { mode, maxWidth } = normalizePageContentWidth(options);
+    const { mode, maxWidth, customMaxWidth } = normalizePageContentWidth(options);
     const chromeWidth = normalizeChromeWidth(options);
     const isFull = mode === 'full';
     const editorScope = options.chromeLayoutMode
@@ -479,6 +487,14 @@ function revealCanvasDocument(frameWindow, options = {}) {
     } else {
         doc.body.style.setProperty('--voodbuilder-page-content-max', maxWidth);
         doc.documentElement.style.setProperty('--voodbuilder-page-content-max', maxWidth);
+    }
+
+    if (customMaxWidth) {
+        doc.body.style.setProperty('--voodbuilder-element-content-max', customMaxWidth);
+        doc.documentElement.style.setProperty('--voodbuilder-element-content-max', customMaxWidth);
+    } else {
+        doc.body.style.removeProperty('--voodbuilder-element-content-max');
+        doc.documentElement.style.removeProperty('--voodbuilder-element-content-max');
     }
 
     return true;
@@ -734,6 +750,9 @@ export function initVpressGrapesJs(container, options = {}) {
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
+    editor.__voodbuilderPageContentWidth = normalizePageContentWidth(options);
+    editor.__voodbuilderFullWidthPage = editor.__voodbuilderPageContentWidth.mode === 'full'
+        || options.fullWidthPage === true;
 
     try {
         configureRichTextEditor(editor, labels);
@@ -747,6 +766,8 @@ export function initVpressGrapesJs(container, options = {}) {
         clearDynamic: labels.clearDynamic,
         selectParent: labels.selectParent,
         drag: labels.drag,
+        moveUp: labels.moveUp,
+        moveDown: labels.moveDown,
         clone: labels.clone,
         delete: labels.delete,
         editBlockCode: labels.editBlockCode,
@@ -758,6 +779,10 @@ export function initVpressGrapesJs(container, options = {}) {
         classCopySuccess: labels.classCopySuccess,
         classCopyEmpty: labels.classCopyEmpty,
         classCopyFailed: labels.classCopyFailed,
+        contentWidthTitle: labels.contentWidthTitle,
+        contentWidthFull: labels.contentWidthFull,
+        contentWidthNormal: labels.contentWidthNormal,
+        contentWidthCustom: labels.contentWidthCustom,
         imageEditorTitle: labels.imageEditorTitle,
         imageEditorApply: labels.imageEditorApply,
         imageEditorLoading: labels.imageEditorLoading,

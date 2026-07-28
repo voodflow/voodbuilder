@@ -35,13 +35,16 @@
     // canvas iframe / published page only. Otherwise landing.css max-width on site-shell
     // shrinks the entire GrapesJS workspace.
     $pageContentWidth = $isGrapesJsEditor
-        ? ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]
+        ? ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null, 'customMaxWidth' => null]
         : (isset($page) && $page instanceof SitePage
             ? ChromeLayoutContentWidth::resolve($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null, $page)
             : ($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout
                 ? ChromeLayoutContentWidth::fromLayout($chromeLayout)
-                : ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null]));
+                : ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null, 'customMaxWidth' => null]));
     $pageContentMaxWidth = ChromeLayoutContentWidth::cssMaxWidth($pageContentWidth);
+    $elementContentMaxWidth = is_string($pageContentWidth['customMaxWidth'] ?? null)
+        ? $pageContentWidth['customMaxWidth']
+        : null;
     $chromeWidth = $isGrapesJsEditor
         ? ChromeLayoutContentWidth::CHROME_FULL
         : ChromeLayoutContentWidth::resolveChromeWidth(
@@ -49,11 +52,18 @@
         );
     // Full content width must force the layout token to 100% — otherwise theme.css
     // keeps --width-vp-layout at 80rem and .voodbuilder-gjs-container stays boxed.
-    $pageWidthStyle = $isGrapesJsEditor
-        ? '--width-vp-layout: 100% !important'
+    $pageWidthStyleParts = $isGrapesJsEditor
+        ? ['--width-vp-layout: 100% !important']
         : (filled($pageContentMaxWidth)
-            ? '--voodbuilder-page-content-max: '.$pageContentMaxWidth.'; --width-vp-layout: '.$pageContentMaxWidth.' !important'
-            : '--width-vp-layout: 100% !important');
+            ? [
+                '--voodbuilder-page-content-max: '.$pageContentMaxWidth,
+                '--width-vp-layout: '.$pageContentMaxWidth.' !important',
+            ]
+            : ['--width-vp-layout: 100% !important']);
+    if (! $isGrapesJsEditor && filled($elementContentMaxWidth)) {
+        $pageWidthStyleParts[] = '--voodbuilder-element-content-max: '.$elementContentMaxWidth;
+    }
+    $pageWidthStyle = implode('; ', $pageWidthStyleParts);
 @endphp
 <!doctype html>
 <html

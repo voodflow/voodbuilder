@@ -14,6 +14,10 @@ import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
 import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
+import {
+    buildContentWidthToolbarButton,
+    ensureContentWidthCommand,
+} from './content-width-toolbar.js';
 import { buildLayoutPickerToolbarButton } from './layout-blocks.js';
 import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
@@ -254,6 +258,12 @@ function buildComponentToolbar(editor, component, labels = {}) {
         toolbar.push(layoutButton);
     }
 
+    const contentWidthButton = buildContentWidthToolbarButton(component, editor, labels);
+
+    if (contentWidthButton) {
+        toolbar.push(contentWidthButton);
+    }
+
     if (component.get('copyable') && canDuplicateChromeEditorComponent(component, editor)) {
         toolbar.push({
             attributes: {
@@ -478,6 +488,7 @@ export function ensureCanvasComponentToolbarButtons(editor, component, labels = 
     }
 
     ensureCopyComponentCommands(editor, labels);
+    ensureContentWidthCommand(editor, labels);
     component.set('toolbar', buildComponentToolbar(editor, component, labels));
 
     window.requestAnimationFrame(() => {
@@ -528,6 +539,7 @@ export function registerCanvasDropAffordance(editor) {
 export function registerCanvasComponentToolbar(editor, labels = {}) {
     // Always (re)register copy commands — early returns must not leave toolbar IDs unresolved.
     ensureCopyComponentCommands(editor, labels);
+    ensureContentWidthCommand(editor, labels);
 
     if (editor.__voodbuilderCanvasToolbarRegistered) {
         return;

@@ -31,6 +31,7 @@ return [
         'content_width_custom' => 'Custom',
         'content_max_width' => 'Max content width',
         'content_max_width_help' => 'CSS length, e.g. 72rem or 1200px.',
+        'content_max_width_full_help' => 'Optional boxed measure for the element toolbar (Custom). Page content stays full width.',
         'chrome_width' => 'Nav & footer width',
         'chrome_width_help' => 'Keep nav/footer edge-to-edge, or match the content width above.',
         'chrome_width_full' => 'Full width',

@@ -115,8 +115,14 @@ class ChromeLayoutResource extends Resource
                         TextInput::make('content_max_width')
                             ->label(__('voodbuilder::chrome_layouts.fields.content_max_width'))
                             ->placeholder('72rem')
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.content_max_width_help'))
-                            ->visible(fn (Get $get): bool => $get('content_width') === ChromeLayoutContentWidth::MODE_CUSTOM)
+                            ->helperText(fn (Get $get): string => $get('content_width') === ChromeLayoutContentWidth::MODE_FULL
+                                ? __('voodbuilder::chrome_layouts.fields.content_max_width_full_help')
+                                : __('voodbuilder::chrome_layouts.fields.content_max_width_help'))
+                            ->visible(fn (Get $get): bool => in_array(
+                                $get('content_width'),
+                                [ChromeLayoutContentWidth::MODE_CUSTOM, ChromeLayoutContentWidth::MODE_FULL],
+                                true,
+                            ))
                             ->dehydrateStateUsing(fn (?string $state): ?string => ChromeLayoutContentWidth::normalizeMaxWidth($state))
                             ->required(fn (Get $get): bool => $get('content_width') === ChromeLayoutContentWidth::MODE_CUSTOM),
                         Select::make('chrome_width')

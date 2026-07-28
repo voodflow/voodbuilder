@@ -31,6 +31,7 @@ return [
         'content_width_custom' => 'Personalizzata',
         'content_max_width' => 'Larghezza max contenuto',
         'content_max_width_help' => 'Valore CSS, es. 72rem o 1200px.',
+        'content_max_width_full_help' => 'Misura boxed opzionale per la toolbar elemento (Personalizzata). Il contenuto pagina resta a tutta larghezza.',
         'chrome_width' => 'Larghezza nav e footer',
         'chrome_width_help' => 'Nav/footer a tutta larghezza, oppure allineati al contenuto sopra.',
         'chrome_width_full' => 'Tutta larghezza',
