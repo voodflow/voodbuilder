@@ -16,6 +16,7 @@ import vpressGrapesJsPlugin, {
     applySiteFooterColumns,
     applySiteFooterSettingsPreview,
     applySiteNavSettingsPreview,
+    captureContainerAuthorClasses,
     configureSiteFooterTraits,
     configureSiteNavTraits,
     ensureLayoutSectionTraits,
@@ -29,6 +30,7 @@ import vpressGrapesJsPlugin, {
     refreshDynamicSlots,
     registerBlocks,
     registerSiteNavChromeButtonType,
+    restoreContainerAuthorClasses,
     sanitizeBlockHtml,
     syncVpressDynamicAttributes,
     syncSiteHeaderConfig,
@@ -85,6 +87,7 @@ import {
     configureEditorLayout,
     editorLayoutInitOptions,
     refreshBlocksLibraryUi,
+    resolveEditingContext,
 } from '../editor-layout.js';
 import {
     finishEditorBoot,
@@ -617,10 +620,7 @@ export function initVpressGrapesJs(container, options = {}) {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
         hideTemplates: Boolean(options.chromeLayoutMode),
-        editingBadgeTitle: options.popupMode && options.popupName
-            ? (labels.popupsEditingBadge ?? 'Editing popup: {name}').replace('{name}', String(options.popupName))
-            : null,
-        editingBadgeHint: null,
+        editingContext: resolveEditingContext(options, labels),
     }) : null;
 
     if (shell?.mounts) {
@@ -1422,6 +1422,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         }
 
         if (isSiteNavBlock(blockId)) {
+            const authorContainerClasses = captureContainerAuthorClasses(component);
             component.set('vpressConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -1429,6 +1430,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic',
             });
             component.components(fresh.innerHTML);
+            restoreContainerAuthorClasses(component, authorContainerClasses);
             component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
             component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
             const preserveSelection = editor.getSelected?.();
@@ -1469,6 +1471,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         }
 
         const footerBlock = isSiteFooterBlock(blockId);
+        const authorContainerClasses = captureContainerAuthorClasses(component);
 
         if (footerBlock && fresh.tagName === 'FOOTER') {
             applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
@@ -1477,6 +1480,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 refreshDynamicSlots(component, fresh);
             } else {
                 component.components(fresh.innerHTML);
+                restoreContainerAuthorClasses(component, authorContainerClasses);
             }
         } else {
             component.set('vpressConfig', freshConfig, { silent: true });
@@ -1496,6 +1500,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 refreshDynamicSlots(component, fresh);
             } else {
                 component.components(fresh.innerHTML);
+                restoreContainerAuthorClasses(component, authorContainerClasses);
             }
         }
 
@@ -1812,6 +1817,8 @@ function mountFrontendEditor() {
         popupMode: config.popupMode ?? false,
         popupName: config.popupName ?? null,
         popupDisplayWidth: config.popupDisplayWidth ?? null,
+        pageId: config.pageId ?? null,
+        pageTitle: config.pageTitle ?? null,
         chromeShellMode: config.chromeShellMode ?? false,
         chromeShellName: config.chromeShellName ?? null,
         chromeShellParts: config.chromeShellParts ?? null,

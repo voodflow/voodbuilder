@@ -9,6 +9,7 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\GrapesJs\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsChromeHtmlPipeline;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
@@ -75,6 +76,7 @@ final class GrapesJsChromeLayoutEditorGate
                 ThemePalette::criticalChromeShellCss($subTheme),
             ]))),
             'builderBrand' => config('voodbuilder.grapesjs.builder.brand', 'VoodBuilder'),
+            'globalTextTags' => GlobalTextTags::values(),
             'labels' => GrapesJsEditorGate::sharedEditorLabels(),
         ];
     }

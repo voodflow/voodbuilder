@@ -1486,6 +1486,7 @@ export default function vpressGrapesJsPlugin(editor, options = {}) {
     editor.__voodbuilderSiteNavDefaults = options.siteNavDefaults ?? { stickyNav: false };
     editor.__voodbuilderFooterColumnOptions = options.footerColumnOptions ?? {};
     editor.__voodbuilderLabels = options.labels ?? {};
+    editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
 
     registerTopDropSpacerType(editor);
     registerDropzoneTypes(editor);

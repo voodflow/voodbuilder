@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderThemeTokenMigrator;
@@ -36,6 +37,6 @@ final class GrapesJsChromeHtmlPipeline
 
         $html = app(GrapesJsDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
 
-        return $html;
+        return GlobalTextTags::replaceInHtml($html);
     }
 }

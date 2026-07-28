@@ -12,6 +12,23 @@ Per un hero tipo *«Ciao Paolo»* o un CTA *«Vai al tuo profilo»* serve la ses
 
 ---
 
+## Global text tags (site-wide)
+
+Plain curly tags available in **any** chrome/page HTML text (footer copyright, taglines, free text). Not the same as `data-voodbuilder-bind` model bindings.
+
+| Tag | Resolves to |
+|-----|-------------|
+| `{current_year}` | Calendar year (`date('Y')`) |
+| `{brand_name}` | Settings brand name |
+| `{site_name}` | SEO site name, else site title |
+| `{site_url}` | `APP_URL` |
+
+Example copyright: `© {current_year} {brand_name}` → `© 2026 VoodBuilder`.
+
+Resolved at render time by `GlobalTextTags` (Blade helpers + chrome/page HTML pipeline). In the layout editor, typing `{current_year}` in copyright works; saving a resolved `© 2026 …` is re-tagged to keep the year dynamic.
+
+---
+
 ## Tre contesti per modello (use case)
 
 Per ogni Model Integration (es. `users`, `tutorials`) esistono fino a tre source ID:

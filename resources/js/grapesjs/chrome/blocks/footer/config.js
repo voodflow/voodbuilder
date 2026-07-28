@@ -17,6 +17,7 @@ import {
     CHROME_LOGO_SIZE_PROP,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
+import { retagCurrentYear } from '../../../global-text-tags.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isFooterBlock } from '../../ids.js';
 
@@ -344,7 +345,7 @@ export function syncSiteFooterConfig(component) {
     }
 
     if (copyrightText !== '') {
-        config.copyright = copyrightText;
+        config.copyright = retagCurrentYear(copyrightText);
     } else if (config.copyright == null && component.get('vpressConfig')?.copyright) {
         config.copyright = component.get('vpressConfig').copyright;
     }

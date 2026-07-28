@@ -456,14 +456,39 @@ class SiteFooterConfigTest extends TestCase
     }
 
     #[Test]
+    public function copyright_resolves_global_current_year_tag(): void
+    {
+        $this->assertSame(
+            '© '.date('Y').' VoodBuilder',
+            SiteFooterConfig::resolveCopyright('© {current_year} VoodBuilder'),
+        );
+
+        $this->assertSame(
+            '© '.date('Y').' Acme',
+            SiteFooterConfig::resolveCopyright(null, 'Acme'),
+        );
+
+        $html = SiteFooterCenteredBlock::toHtml([
+            'show_copyright' => true,
+            'copyright' => '© {current_year} {brand_name}',
+        ], []);
+
+        $this->assertMatchesRegularExpression(
+            '/data-voodbuilder-footer-copyright[^>]*>© '.preg_quote(date('Y'), '/').' VoodBuilder</',
+            $html,
+        );
+        $this->assertStringContainsString('"copyright":"© {current_year} {brand_name}"', $html);
+    }
+
+    #[Test]
     public function normalize_keeps_tagline_and_copyright_text(): void
     {
         $normalized = SiteFooterConfig::normalize([
             'tagline' => '  Hello VoodBuilder  ',
-            'copyright' => '  © 2026 VoodBuilder  ',
+            'copyright' => '  © {current_year} VoodBuilder  ',
         ]);
 
         $this->assertSame('Hello VoodBuilder', $normalized['tagline']);
-        $this->assertSame('© 2026 VoodBuilder', $normalized['copyright']);
+        $this->assertSame('© {current_year} VoodBuilder', $normalized['copyright']);
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
+
 final class SiteFooterConfig
 {
     public const SOCIAL_ALIGNS = ['left', 'center', 'right'];
@@ -12,6 +14,9 @@ final class SiteFooterConfig
 
     /** Official product slogan — default footer tagline. */
     public const DEFAULT_TAGLINE = 'A Visual CMS for Laravel & Filament';
+
+    /** Default copyright template (resolved via GlobalTextTags). */
+    public const DEFAULT_COPYRIGHT = '© {current_year} {brand_name}';
 
     /**
      * @param  array<string, mixed>  $config
@@ -78,25 +83,31 @@ final class SiteFooterConfig
         $trimmed = self::normalizeText($value);
 
         if ($trimmed !== null) {
-            return $trimmed;
+            return GlobalTextTags::replace($trimmed);
         }
 
         $translated = trim((string) __('voodbuilder::pro.grapesjs.blocks.footer_default_tagline'));
+        $template = $translated !== '' ? $translated : self::DEFAULT_TAGLINE;
 
-        return $translated !== '' ? $translated : self::DEFAULT_TAGLINE;
+        return GlobalTextTags::replace($template);
     }
 
     public static function resolveCopyright(?string $value = null, ?string $brandName = null): string
     {
+        $overrides = [];
+        $brand = trim((string) ($brandName ?? ''));
+
+        if ($brand !== '') {
+            $overrides['brand_name'] = $brand;
+        }
+
         $trimmed = self::normalizeText($value);
 
         if ($trimmed !== null) {
-            return $trimmed;
+            return GlobalTextTags::replace($trimmed, $overrides);
         }
 
-        $brand = trim((string) ($brandName ?? \Voodflow\Voodbuilder\Models\VoodbuilderSettings::brandName()));
-
-        return '© '.date('Y').' '.($brand !== '' ? $brand : 'VoodBuilder');
+        return GlobalTextTags::replace(self::DEFAULT_COPYRIGHT, $overrides);
     }
 
     public static function normalizeText(mixed $value): ?string

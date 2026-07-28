@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingRenderer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -81,7 +82,8 @@ final class GrapesJsRenderer
         $html = app(GrapesJsElementConditionRenderer::class)->render($html, $page);
         $html = app(GrapesJsComponentRenderer::class)->render($html, $page);
         $html = app(GrapesJsBindingRenderer::class)->render($html, $page);
+        $html = app(GrapesJsDynamicBlockRenderer::class)->render($html, $page);
 
-        return app(GrapesJsDynamicBlockRenderer::class)->render($html, $page);
+        return GlobalTextTags::replaceInHtml($html);
     }
 }
