@@ -7,7 +7,8 @@
     use Voodflow\Voodbuilder\Enums\MenuItemType;
 
     /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
-    $hasChildren = $item->hasChildren();
+    $children = $item->navigationChildren();
+    $hasChildren = $children->isNotEmpty();
     $isActive = $item->isActive();
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
     $paddingClass = match ($depth) {
@@ -17,7 +18,7 @@
     };
 @endphp
 
-@if ($hasChildren && $depth < 1)
+@if ($hasChildren && $depth < 2)
     <li data-voodbuilder-nav-mobile-item @class([$paddingClass, 'is-open' => $isActive])>
         <button
             type="button"
@@ -62,7 +63,7 @@
                     </li>
                 @endif
 
-                @foreach ($item->children as $child)
+                @foreach ($children as $child)
                     <x-voodbuilder::menu-nav-mobile-item :item="$child" :depth="$depth + 1" />
                 @endforeach
             </ul>

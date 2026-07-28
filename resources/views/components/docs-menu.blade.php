@@ -1,7 +1,7 @@
 @php
     use Voodflow\Vdocs\Support\DocNavigation;
 
-    $sections = class_exists(DocNavigation::class) && DocNavigation::enabled()
+    $sections = class_exists(DocNavigation::class) && DocNavigation::shouldAutoInject()
         ? DocNavigation::sections()
         : collect();
 @endphp

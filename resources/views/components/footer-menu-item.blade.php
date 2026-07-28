@@ -22,7 +22,7 @@
             'mt-2 space-y-1 border-l border-vp-divider pl-3' => $depth === 0,
             'mt-1 space-y-1 pl-3' => $depth > 0,
         ])>
-            @foreach ($item->children as $child)
+            @foreach ($item->navigationChildren() as $child)
                 <x-voodbuilder::footer-menu-item :item="$child" :depth="$depth + 1" />
             @endforeach
         </ul>

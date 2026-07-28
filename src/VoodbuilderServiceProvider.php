@@ -60,6 +60,7 @@ use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
@@ -133,6 +134,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModelIntegrationBindingRegistrar::class);
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
+        $this->app->singleton(MenuItemTypeRegistry::class);
     }
 
     public function packageBooted(): void

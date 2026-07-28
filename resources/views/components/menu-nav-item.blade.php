@@ -9,11 +9,12 @@
     use Voodflow\Voodbuilder\Enums\MenuItemType;
 
     /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
-    $hasChildren = $item->hasChildren();
+    $children = $item->navigationChildren();
+    $hasChildren = $children->isNotEmpty();
     $isActive = $item->isActive();
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
     $groupedChildren = $hasChildren
-        ? $item->children->filter(fn ($child) => $child->hasChildren())
+        ? $children->filter(fn ($child) => $child->navigationChildren()->isNotEmpty())
         : collect();
     $isMegaPanel = $groupedChildren->count() >= 2;
 @endphp
@@ -65,7 +66,7 @@
                     </li>
                 @endif
 
-                @foreach ($item->children as $child)
+                @foreach ($children as $child)
                     <x-voodbuilder::menu-nav-mobile-item :item="$child" :depth="1" />
                 @endforeach
                 </ul>
@@ -122,8 +123,11 @@
                     <div @class(['my-1 h-px bg-vp-divider', 'col-span-full' => $isMegaPanel]) aria-hidden="true"></div>
                 @endif
 
-                @foreach ($item->children as $child)
-                    @if ($child->hasChildren())
+                @foreach ($children as $child)
+                    @php
+                        $grandchildren = $child->navigationChildren();
+                    @endphp
+                    @if ($grandchildren->isNotEmpty())
                         <div @class(['space-y-1', 'px-1' => $isMegaPanel, 'px-0 py-0' => ! $isMegaPanel])>
                             <p @class([
                                 'px-3 py-1 text-xs font-semibold uppercase tracking-wide text-vp-text-3',
@@ -132,7 +136,7 @@
                                 {{ __($child->label) }}
                             </p>
 
-                            @foreach ($child->children as $grandchild)
+                            @foreach ($grandchildren as $grandchild)
                                 <a
                                     href="{{ $grandchild->resolveUrl() }}"
                                     role="menuitem"

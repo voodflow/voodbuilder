@@ -152,7 +152,7 @@ final class Navigation
         return [
             'label' => $item->label,
             'icon' => $item->icon,
-            'type' => $item->type->value,
+            'type' => $item->typeKey(),
             'link' => $item->link,
             'route_parameters' => $item->route_parameters,
             'route_match' => $item->route_match,

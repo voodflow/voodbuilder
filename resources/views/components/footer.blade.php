@@ -44,7 +44,7 @@
                 <nav class="mb-3 flex flex-wrap justify-center gap-4" aria-label="{{ __('Footer') }}">
                     @foreach ($legacyFooterItems as $item)
                         @if ($item->hasChildren())
-                            @foreach ($item->children as $child)
+                            @foreach ($item->navigationChildren() as $child)
                                 <a
                                     href="{{ $child->resolveUrl() }}"
                                     class="transition-colors hover:text-vp-brand-1"

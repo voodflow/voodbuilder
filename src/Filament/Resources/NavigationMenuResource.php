@@ -34,6 +34,7 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNav
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 use Voodflow\Voodbuilder\Support\MenuTablerIcons;
@@ -63,6 +64,17 @@ class NavigationMenuResource extends Resource
     protected static function isMenuItemType(Get $get, MenuItemType $expected): bool
     {
         return static::resolveMenuItemType($get) === $expected;
+    }
+
+    protected static function isRegisteredMenuItemType(Get $get): bool
+    {
+        $type = $get('type');
+
+        if (! is_string($type) || $type === '') {
+            return false;
+        }
+
+        return app(MenuItemTypeRegistry::class)->has($type);
     }
 
     /** @return array<string, string> */
@@ -104,7 +116,8 @@ class NavigationMenuResource extends Resource
 
         return $types
             ->mapWithKeys(fn (MenuItemType $type): array => [$type->value => $type->getLabel()])
-            ->all();
+            ->all()
+            + app(MenuItemTypeRegistry::class)->options($isChild);
     }
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
@@ -343,13 +356,15 @@ class NavigationMenuResource extends Resource
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Mail))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Mail)),
             ...MenuRouteParameterField::components(),
+            ...app(MenuItemTypeRegistry::class)->formComponents(),
             TextInput::make('route_match')
                 ->label(__('voodbuilder::admin.fields.menu_route_match'))
                 ->helperText(__('voodbuilder::admin.helpers.menu_route_match'))
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
             Toggle::make('open_in_new_tab')
                 ->label(__('Open in new tab'))
-                ->visible(fn (Get $get): bool => ! static::isMenuItemType($get, MenuItemType::Group)),
+                ->visible(fn (Get $get): bool => ! static::isMenuItemType($get, MenuItemType::Group)
+                    && ! static::isRegisteredMenuItemType($get)),
         ];
     }
 

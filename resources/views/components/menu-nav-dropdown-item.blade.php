@@ -8,7 +8,8 @@
     use Voodflow\Voodbuilder\Enums\MenuItemType;
 
     /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
-    $hasChildren = $item->hasChildren();
+    $children = $item->navigationChildren();
+    $hasChildren = $children->isNotEmpty();
     $isActive = $item->isActive();
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
 @endphp
@@ -34,7 +35,7 @@
             </p>
         @endif
 
-        @foreach ($item->children as $child)
+        @foreach ($children as $child)
             <a
                 href="{{ $child->resolveUrl() }}"
                 role="menuitem"

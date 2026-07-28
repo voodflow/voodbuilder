@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
 use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
@@ -18,6 +19,7 @@ use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 
@@ -58,6 +60,25 @@ class Voodbuilder
         }
 
         $registry->registerFromArray($id, $definition);
+    }
+
+    /**
+     * Register a plugin-handled navigation menu item type (e.g. docs nav from vdocs).
+     *
+     * @param  array{
+     *     label: string|\Closure(): string,
+     *     allows_root?: bool,
+     *     allows_child?: bool,
+     *     form?: list<\Filament\Forms\Components\Component>|\Closure(): list<\Filament\Forms\Components\Component>,
+     *     resolve_url?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): string,
+     *     resolve_children?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): \Illuminate\Support\Collection,
+     *     is_active?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): bool,
+     *     has_resolvable_link?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): bool,
+     * }|MenuItemTypeHandler  $definition
+     */
+    public static function menuItemType(string $key, array|MenuItemTypeHandler $definition): void
+    {
+        app(MenuItemTypeRegistry::class)->register($key, $definition);
     }
 
     public static function grapesJsBlock(

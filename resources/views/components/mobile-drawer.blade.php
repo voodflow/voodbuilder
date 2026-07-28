@@ -16,12 +16,12 @@
     $mainItems = Navigation::items('main');
     $extraItems = Navigation::items('header_extra');
     $docSections = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
-        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
         && Route::has('vdocs.index')
         ? \Voodflow\Vdocs\Support\DocNavigation::sections()
         : collect();
     $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
-        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
         && \Voodflow\Vdocs\Support\DocNavigation::isActive();
     $showNotificationBell = $enableNotifications && (bool) VoodbuilderSettings::get('show_notification_bell', true);
     $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
