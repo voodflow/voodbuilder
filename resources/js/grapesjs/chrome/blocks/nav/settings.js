@@ -42,12 +42,27 @@ export function registerNavSettings(editor) {
             };
 
             const label = (key, fallback) => navSettingLabel(gjsEditor, key, fallback);
-
-            const { section, fields } = createFormSection(label('navSettingsTitle', 'Navbar settings'));
-            const { root: tabsRoot, panels } = createFormTabs([
+            const tabKey = `site_nav:${root.cid ?? root.getId?.() ?? 'nav'}`;
+            const rememberedTab = gjsEditor.__voodbuilderBlockSettingsTab?.[tabKey];
+            const tabDefs = [
                 { id: 'layout', label: label('navTabLayout', 'Layout') },
                 { id: 'brand', label: label('navTabBrand', 'Brand') },
-            ]);
+            ];
+            const activeId = tabDefs.some((tab) => tab.id === rememberedTab)
+                ? rememberedTab
+                : 'layout';
+
+            const { section, fields } = createFormSection(label('navSettingsTitle', 'Navbar settings'));
+            const { root: tabsRoot, panels } = createFormTabs(tabDefs, {
+                activeId,
+                onActiveChange: (id) => {
+                    if (! gjsEditor.__voodbuilderBlockSettingsTab) {
+                        gjsEditor.__voodbuilderBlockSettingsTab = {};
+                    }
+
+                    gjsEditor.__voodbuilderBlockSettingsTab[tabKey] = id;
+                },
+            });
 
             panels.layout.append(
                 createSelectField({

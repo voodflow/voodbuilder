@@ -79,9 +79,17 @@ function syncSettingsFormValues(mount, root) {
         if (input instanceof HTMLInputElement && input.type === 'checkbox') {
             const raw = root.get(name);
             // Nav/footer brand toggles default to on when unset (`!== false`).
-            input.checked = name === 'vpressShowSiteName' || name === 'vpressShowLogo'
-                ? raw !== false
-                : raw === true;
+            if (
+                name === 'vpressShowSiteName'
+                || name === 'vpressShowLogo'
+            ) {
+                input.checked = raw !== false;
+            } else if (name === 'vpressShowBrand') {
+                // Footer "Show logo" — prefer explicit true after configure.
+                input.checked = raw === true || raw === undefined;
+            } else {
+                input.checked = raw === true;
+            }
 
             return;
         }

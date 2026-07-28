@@ -188,16 +188,17 @@ function protectSiteHeaderButton(component) {
 
     const text = String(component.get('text') ?? '').trim();
     const hasSvg = safeFindComponents(component, 'svg').length > 0;
+    const domText = String(component.getEl?.()?.textContent ?? '').replace(/\s+/g, '');
+    const placeholderText = ['Send', 'Button', 'Notifications'].includes(text)
+        || /^(?:Button|Notifications|Send)+$/.test(domText);
 
-    if (['Send', 'Button', 'Notifications'].includes(text) || (! hasSvg && text !== '')) {
+    if (placeholderText || (! hasSvg && text !== '')) {
         component.set('text', '', { silent: true });
     }
 
-    if (! hasSvg) {
+    if (! hasSvg || placeholderText) {
         // Recovery when forms-plugin button init already wiped icon children.
-        const placeholder = text === '' || ['Send', 'Button', 'Notifications'].includes(text);
-
-        if (placeholder) {
+        if (placeholderText || ! hasSvg) {
             let svg = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
 
             if (attrs['data-voodbuilder-search-open'] != null) {

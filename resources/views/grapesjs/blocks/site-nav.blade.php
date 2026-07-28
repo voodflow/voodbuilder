@@ -37,12 +37,4 @@
         :brand-config="$config"
         :in-page-block="true"
     />
-
-    @if ($preview)
-        <div class="pointer-events-none absolute top-2 right-2 z-10">
-            <span class="pointer-events-auto rounded-md border border-dashed border-vp-divider bg-vp-bg px-2 py-1 text-xs text-vp-text-2 shadow-sm">
-                {{ __('voodbuilder::pro.grapesjs.blocks.site_nav_preview') }}
-            </span>
-        </div>
-    @endif
 </div>

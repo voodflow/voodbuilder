@@ -190,6 +190,35 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         return false;
     }
 
+    // Layout editor: keep the clicked chrome child selected so Style/Classes can
+    // target inner containers (e.g. py-* on the footer inner wrapper). Content
+    // settings still resolve the block root via findInspectableRoot.
+    if (editor?.__voodbuilderChromeLayoutMode) {
+        const activeTab = editor.__voodbuilderInspectorActiveTab ?? 'content';
+
+        if (activeTab === 'style' || activeTab === 'selectors' || activeTab === 'layers') {
+            return false;
+        }
+
+        // Even on Content, allow selecting stylable chrome children without steal.
+        const rawTag = String(raw.get?.('tagName') ?? '').toLowerCase();
+        const rawClasses = [...(raw.getClasses?.() ?? [])].map((name) => String(name ?? ''));
+
+        if (
+            rawTag === 'div'
+            || rawTag === 'section'
+            || rawTag === 'nav'
+            || rawTag === 'header'
+            || rawTag === 'footer'
+            || rawTag === 'a'
+            || rawTag === 'p'
+            || rawTag === 'span'
+            || rawClasses.some((name) => /(?:^|:)(?:py|px|pt|pb|p|bg|text|border)-/.test(name))
+        ) {
+            return false;
+        }
+    }
+
     // Keep smart CTA buttons selectable — they own Content traits (URL / page / menu).
     const rawType = String(raw.get?.('type') ?? '');
 

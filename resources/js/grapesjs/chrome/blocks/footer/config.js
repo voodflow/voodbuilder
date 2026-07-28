@@ -156,6 +156,8 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
         }
     });
 
+    applyFooterBrandPartsPreview(el, showBrand, showSiteName);
+
     if (footerBlockHasColumns(blockId)) {
         applySiteFooterMenuColumnsLayout(root);
     }
@@ -163,6 +165,46 @@ export function applySiteFooterSettingsPreview(root, editor = null) {
     if (editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
     }
+}
+
+/**
+ * Toggle logo vs site name independently inside the brand chrome (no full remount).
+ *
+ * @param {HTMLElement} el
+ * @param {boolean} showBrand
+ * @param {boolean} showSiteName
+ */
+function applyFooterBrandPartsPreview(el, showBrand, showSiteName) {
+    const logoOnly = showBrand && ! showSiteName;
+
+    el.querySelectorAll('[data-voodbuilder-footer-brand-link]').forEach((link) => {
+        link.classList.toggle('w-full', logoOnly);
+        link.classList.toggle('min-w-0', logoOnly);
+        link.setAttribute('data-voodbuilder-brand-logo-only', logoOnly ? '1' : '0');
+    });
+
+    el.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
+        node.classList.toggle('hidden', ! showBrand);
+
+        node.querySelectorAll('img.vb-brand-logo').forEach((img) => {
+            const isDesktop = img.classList.contains('vb-brand-logo--desktop');
+            img.classList.toggle('h-12', logoOnly && isDesktop);
+            img.classList.toggle('h-10', ! (logoOnly && isDesktop) || ! isDesktop);
+            img.classList.toggle('w-auto', logoOnly);
+            img.classList.toggle('max-w-full', logoOnly);
+            img.classList.toggle('object-contain', logoOnly);
+            img.classList.toggle('object-left', logoOnly);
+            img.classList.toggle('w-10', ! logoOnly);
+            img.classList.toggle('rounded-full', ! logoOnly);
+            img.classList.toggle('object-cover', ! logoOnly);
+        });
+    });
+
+    el.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
+        node.classList.toggle('hidden', ! showSiteName);
+        node.classList.toggle('ml-3', showSiteName);
+        node.classList.toggle('text-xl', showSiteName);
+    });
 }
 
 export function syncSiteFooterConfig(component) {
@@ -225,7 +267,9 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
         syncSiteFooterConfig(root);
         applySiteFooterSettingsPreview(root, editor);
 
-        if (FOOTER_LOGO_PROPS.has(name) || name === 'vpressShowBrand' || name === 'vpressShowSiteName') {
+        // Logo URL changes need a server re-render; visibility toggles are DOM-only
+        // so Brand tab state and logo/name independence stay intact.
+        if (FOOTER_LOGO_PROPS.has(name)) {
             scheduleSiteFooterBlockRefresh(editor, root);
         }
     });

@@ -622,7 +622,7 @@ function restoreChromeIconButtonContent(button) {
     const placeholder = CHROME_ICON_PLACEHOLDER_TEXT.has(text)
         || CHROME_ICON_PLACEHOLDER_TEXT.has(content)
         || /^(?:Button|Notifications|Send)+$/.test(domText)
-        || domText === 'ButtonButton';
+        || /Button{2,}/.test(domText);
 
     if (hasSvg && ! placeholder && text === '' && content === '' && ! /Button|Notifications|Send/.test(domText)) {
         return;
@@ -1189,12 +1189,19 @@ function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
         component.set('tagName', 'footer', { silent: true });
     }
 
+    const freshClass = String(fresh.getAttribute('class') ?? '').trim()
+        || 'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font';
+
     component.addAttributes({
         'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
         'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
-        class: fresh.getAttribute('class') ?? 'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full',
+        class: freshClass,
         'data-voodbuilder-hydrate-slots': '1',
     });
+
+    if (typeof component.setClass === 'function') {
+        component.setClass(freshClass.split(/\s+/).filter(Boolean));
+    }
 }
 
 function registerSiteNavChromeButtonType(editor) {
@@ -1251,9 +1258,12 @@ function registerDynamicBlockType(editor) {
 
             const config = parseVpressConfig(element.getAttribute('data-voodbuilder-config') ?? '{}');
             const isFooter = element?.tagName === 'FOOTER' && isSiteFooterBlock(blockId);
+            const elementClass = String(element.getAttribute('class') ?? '').trim();
             const defaultClass = isFooter
-                ? 'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg'
-                : (element.getAttribute('class') ?? 'voodbuilder-gjs-dynamic');
+                ? (elementClass !== ''
+                    ? elementClass
+                    : 'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font')
+                : (elementClass !== '' ? elementClass : 'voodbuilder-gjs-dynamic');
 
             return {
                 type: 'voodbuilder-dynamic',
@@ -1297,6 +1307,7 @@ function registerDynamicBlockType(editor) {
                 vpressShowTagline: true,
                 vpressShowCopyright: true,
                 vpressShowBrand: true,
+                vpressShowSiteName: true,
                 vpressFooterColumnsRedistribute: false,
                 attributes: {
                     class: 'voodbuilder-gjs-dynamic',

@@ -98,6 +98,25 @@ class SiteFooterConfigTest extends TestCase
 
         $this->assertStringNotContainsString('cdn.test/logo.svg', $html);
         $this->assertStringContainsString('text-xl', $html);
+        $this->assertStringContainsString('data-voodbuilder-chrome-part="site-name"', $html);
+    }
+
+    #[Test]
+    public function logo_only_brand_enlarges_logo_and_hides_site_name(): void
+    {
+        $html = GrapesJsSlotHydrator::renderBrand(true, [
+            'show_brand' => true,
+            'show_site_name' => false,
+            'logo_desktop_light' => 'https://cdn.test/wide-logo.svg',
+        ]);
+
+        $this->assertStringContainsString('cdn.test/wide-logo.svg', $html);
+        $this->assertStringContainsString('data-voodbuilder-brand-logo-only="1"', $html);
+        $this->assertStringContainsString('max-w-full', $html);
+        $this->assertMatchesRegularExpression(
+            '/data-voodbuilder-chrome-part="site-name"[^>]*\bhidden\b|<[^>]*\bhidden\b[^>]*data-voodbuilder-chrome-part="site-name"/',
+            $html,
+        );
     }
 
     #[Test]
