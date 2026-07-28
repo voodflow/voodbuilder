@@ -47,6 +47,11 @@ final class GrapesJsEditorGate
         self::$labelProviders[] = $provider;
     }
 
+    public static function flushLabelProviders(): void
+    {
+        self::$labelProviders = [];
+    }
+
     public static function authorizeUsing(?callable $callback): void
     {
         self::$authorizer = $callback !== null ? \Closure::fromCallable($callback) : null;

@@ -38,6 +38,15 @@ final class ModuleRegistry
 
         $this->modules[$id] = $module;
         $this->enabled[$id] = $enabled;
+
+        // Companion Filament plugins may register after the initial ModuleRegistry::boot().
+        if ($this->booted && $enabled) {
+            $this->assertDependencies($module);
+            $module->register($this->contextFor($module));
+            $module->boot($this->contextFor($module));
+            $this->app['router']->getRoutes()->refreshNameLookups();
+            $this->app['router']->getRoutes()->refreshActionLookups();
+        }
     }
 
     /**

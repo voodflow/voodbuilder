@@ -73,6 +73,13 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutVite();
 
+        // Filament panel plugin is not registered in Testbench; activate Popups runtime for package tests.
+        if (class_exists(\Voodflow\VoodbuilderPopups\VoodbuilderPopups::class)) {
+            \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate::flushLabelProviders();
+            \Voodflow\VoodbuilderPopups\VoodbuilderPopups::reset();
+            \Voodflow\VoodbuilderPopups\VoodbuilderPopups::activate();
+        }
+
         \Voodflow\Voodbuilder\Support\NavigationMenuResolver::clearSchemaCache();
         \Voodflow\Voodbuilder\Support\SitePageResolver::clearSchemaCache();
         \Voodflow\Voodbuilder\Support\ChromeLayoutResolver::forgetCache();
