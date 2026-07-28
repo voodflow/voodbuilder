@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\BuilderPopup;
+use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\GrapesJsBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\Popups\GrapesJsPopupHtmlNormalizer;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -17,7 +18,7 @@ final class GrapesJsPopupEditorGate
 {
     public static function canEdit(BuilderPopup $popup): bool
     {
-        return config('voodbuilder.popups.enabled', true)
+        return PopupsModule::isEnabled()
             && PageBuilderAccess::userCanUsePageBuilder();
     }
 

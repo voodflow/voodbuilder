@@ -43,7 +43,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = SitePageResource::class;
         }
 
-        if (config('voodbuilder.popups.enabled', true)) {
+        if (config('voodbuilder.modules.popups.enabled', true) && config('voodbuilder.popups.enabled', true)) {
             $resources[] = PopupResource::class;
         }
 

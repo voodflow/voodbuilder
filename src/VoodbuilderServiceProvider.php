@@ -35,11 +35,6 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
-use Voodflow\Voodbuilder\Http\Controllers\PopupEditorController;
-use Voodflow\Voodbuilder\Http\Controllers\PopupsAnalyticsController;
-use Voodflow\Voodbuilder\Http\Controllers\PopupsPublicController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
@@ -52,6 +47,7 @@ use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
+use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -219,27 +215,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
-                Route::get('popups', [GrapesJsPopupsController::class, 'index'])->name('popups.index');
-                Route::get('popups/page-paths', [GrapesJsPopupsController::class, 'pagePaths'])->name('popups.page-paths');
-                Route::post('popups', [GrapesJsPopupsController::class, 'store'])->name('popups.store');
-                Route::put('popups/{popup}', [GrapesJsPopupsController::class, 'update'])->name('popups.update');
-                Route::delete('popups/{popup}', [GrapesJsPopupsController::class, 'destroy'])->name('popups.destroy');
-                Route::match(['put', 'post'], 'popups/{popup}/content', [GrapesJsPopupController::class, 'update'])->name('popups.content.update');
-            });
-
-        Route::middleware(['web', 'throttle:120,1'])
-            ->prefix('voodbuilder')
-            ->name('voodbuilder.')
-            ->group(function (): void {
-                Route::get('popups/data', [PopupsPublicController::class, 'index'])->name('popups.public');
-                Route::post('popups/events', [PopupsAnalyticsController::class, 'store'])->name('popups.events');
-            });
-
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
-            ->prefix('voodbuilder')
-            ->name('voodbuilder.')
-            ->group(function (): void {
-                Route::get('popups/{popup}/editor', [PopupEditorController::class, 'show'])->name('popups.editor');
             });
     }
 
@@ -353,6 +328,12 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $registry->register(
             new ComponentsModule,
             enabled: (bool) config('voodbuilder.modules.components.enabled', true),
+        );
+
+        $registry->register(
+            new PopupsModule,
+            enabled: (bool) config('voodbuilder.modules.popups.enabled', true)
+                && (bool) config('voodbuilder.popups.enabled', true),
         );
     }
 }

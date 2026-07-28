@@ -38,6 +38,8 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('dynamic_data'));
         $this->assertTrue($registry->has('components'));
         $this->assertTrue($registry->isEnabled('components'));
+        $this->assertTrue($registry->has('popups'));
+        $this->assertTrue($registry->isEnabled('popups'));
         $this->assertTrue($registry->booted());
     }
 

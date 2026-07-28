@@ -38,6 +38,9 @@ return [
         'components' => [
             'enabled' => env('VOODBUILDER_MODULE_COMPONENTS', true),
         ],
+        'popups' => [
+            'enabled' => env('VOODBUILDER_MODULE_POPUPS', true),
+        ],
     ],
 
     'layouts' => [
