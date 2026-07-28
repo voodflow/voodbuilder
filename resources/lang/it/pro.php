@@ -49,6 +49,8 @@ return [
         'modal_cancel' => 'Annulla',
         'select_component' => 'Seleziona prima un elemento nel canvas.',
         'no_sources' => 'Nessuna sorgente dati dinamica registrata.',
+        'plugin_required_title' => 'Add-on Dynamic Data',
+        'plugin_required_body' => 'Collega i contenuti della pagina ai tuoi modelli con il plugin Dynamic Data. Installa e registra voodflow/voodbuilder-dynamic-data sul panel Filament per sbloccare questa scheda.',
         'inspector_hint' => 'Collega questo elemento a dati live.',
         'current_binding' => 'Collegamento attuale',
         'repeat_source' => 'Lista repeat',

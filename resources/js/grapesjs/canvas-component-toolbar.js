@@ -145,9 +145,11 @@ function toolbarHasClearDynamicButton(component) {
     return toolbar.some((item) => item?.attributes?.[TOOLBAR_FLAG] === 'clear-dynamic');
 }
 
-function buildDynamicToolbarButtons(labels = {}, { showClear = false } = {}) {
-    const buttons = [
-        {
+function buildDynamicToolbarButtons(labels = {}, { showMake = true, showClear = false } = {}) {
+    const buttons = [];
+
+    if (showMake) {
+        buttons.push({
             attributes: {
                 class: 'voodbuilder-gjs-toolbar-item--dynamic',
                 [TOOLBAR_FLAG]: 'dynamic',
@@ -156,8 +158,8 @@ function buildDynamicToolbarButtons(labels = {}, { showClear = false } = {}) {
             },
             label: lucideIcon('link-2', 16),
             command: CMD_MAKE_DYNAMIC,
-        },
-    ];
+        });
+    }
 
     if (showClear) {
         buttons.push({
@@ -335,9 +337,17 @@ function buildComponentToolbar(editor, component, labels = {}) {
     }
 
     if (! richText) {
-        toolbar.push(...buildDynamicToolbarButtons(labels, {
-            showClear: hasClearableDynamicBinding(component),
-        }));
+        const dynamicEnabled = editor.__voodbuilderDynamicDataEnabled !== false;
+        const hasBinding = hasClearableDynamicBinding(component);
+
+        // Soft commercial gate: hide Make dynamic when the companion plugin is off,
+        // but keep Clear so orphan bindings on saved pages can still be removed.
+        if (dynamicEnabled || hasBinding) {
+            toolbar.push(...buildDynamicToolbarButtons(labels, {
+                showMake: dynamicEnabled,
+                showClear: hasBinding,
+            }));
+        }
     }
 
     if (component.get('removable') && ! isChromeEditorProtectedComponent(component, editor)) {

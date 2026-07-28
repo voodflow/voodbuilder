@@ -926,6 +926,20 @@ body.voodbuilder-grapesjs-editing .voodbuilder-gjs-boot-overlay:not([hidden]) {
     text-align: left;
 }
 
+.voodbuilder-gjs-inspector-empty-state__title {
+    margin: 0 0 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-gjs-inspector-empty-state__body {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--color-vp-text-2, #64748b);
+}
+
 /* Editor form controls — Tailwind UI input-group patterns */
 .voodbuilder-gjs-form {
     display: flex;

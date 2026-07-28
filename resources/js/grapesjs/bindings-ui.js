@@ -2730,6 +2730,9 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
         event.stopPropagation();
     });
 
+    const dynamicDataEnabled = previewOptions?.dynamicDataEnabled !== false
+        && Boolean(previewOptions?.bindingsUrl);
+
     let lastTarget = null;
 
     const workingTarget = () => {
@@ -2746,7 +2749,24 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
         return null;
     };
 
+    const renderPluginRequired = () => {
+        mount.innerHTML = '';
+        mount.appendChild(createInspectorEmptyState({
+            classNameExtra: 'voodbuilder-gjs-dynamic-panel__empty voodbuilder-gjs-dynamic-panel__locked',
+            title: labels.pluginRequiredTitle ?? 'Dynamic Data add-on',
+            message: labels.pluginRequiredBody
+                ?? 'Install and register the Dynamic Data plugin to unlock bindings.',
+            labels,
+        }));
+    };
+
     const renderPanel = () => {
+        if (! dynamicDataEnabled) {
+            renderPluginRequired();
+
+            return;
+        }
+
         const selected = workingTarget();
 
         mount.innerHTML = '';
@@ -3070,17 +3090,46 @@ export async function registerBindingsUi(editor, options = {}) {
 
     const labels = options.labels ?? {};
     const collectionsEnabled = options.dynamicDataCollections === true;
+    const dynamicDataEnabled = Boolean(options.bindingsUrl);
     const previewOptions = {
         catalog: { groups: [], sources: [], repeatSources: [] },
         bindingsUrl: options.bindingsUrl,
         bindingsPreviewUrl: options.bindingsPreviewUrl,
         editor,
         dynamicDataCollections: collectionsEnabled,
+        dynamicDataEnabled,
     };
 
     registerBoundComponentType(editor);
 
     mountDynamicInspectorPanel(editor, options.dynamicMount, previewOptions.catalog, labels, previewOptions);
+
+    if (! dynamicDataEnabled) {
+        editor.__voodbuilderBindingsCatalog = { groups: [], sources: [], repeatSources: [] };
+        editor.Commands.add(CMD_MAKE_DYNAMIC, {
+            async run() {
+                void alertDialog({
+                    title: labels.pluginRequiredTitle ?? 'Dynamic Data add-on',
+                    message: labels.pluginRequiredBody
+                        ?? 'Install and register the Dynamic Data plugin to unlock bindings.',
+                    labels,
+                });
+            },
+        });
+        editor.Commands.add(CMD_CLEAR_DYNAMIC, {
+            run(ed) {
+                const selected = ed.getSelected();
+
+                if (! selected) {
+                    return;
+                }
+
+                clearBindingFromComponent(selected);
+            },
+        });
+
+        return editor.__voodbuilderBindingsCatalog;
+    }
 
     const loadedCatalog = await loadBindingsCatalog(options.bindingsUrl).catch((error) => {
         console.error('Voodbuilder GrapesJS: could not load bindings catalog.', error);

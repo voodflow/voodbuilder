@@ -16,6 +16,7 @@ export function inspectorSelectElementMessage(labels = {}) {
 /**
  * @param {object} [options]
  * @param {string} [options.message]
+ * @param {string} [options.title]
  * @param {object|null|undefined} [options.labels]
  * @param {'p'|'div'} [options.tag]
  * @param {string} [options.classNameExtra]
@@ -24,10 +25,29 @@ export function inspectorSelectElementMessage(labels = {}) {
 export function createInspectorEmptyState(options = {}) {
     const {
         message = null,
+        title = null,
         labels = {},
         tag = 'p',
         classNameExtra = '',
     } = options;
+
+    if (title) {
+        const wrap = document.createElement('div');
+        wrap.className = [INSPECTOR_EMPTY_STATE_CLASS, classNameExtra].filter(Boolean).join(' ');
+        wrap.setAttribute(INSPECTOR_EMPTY_STATE_ATTR, '1');
+
+        const heading = document.createElement('p');
+        heading.className = `${INSPECTOR_EMPTY_STATE_CLASS}__title`;
+        heading.textContent = title;
+        wrap.appendChild(heading);
+
+        const body = document.createElement('p');
+        body.className = `${INSPECTOR_EMPTY_STATE_CLASS}__body`;
+        body.textContent = message ?? inspectorSelectElementMessage(labels);
+        wrap.appendChild(body);
+
+        return wrap;
+    }
 
     const el = document.createElement(tag === 'div' ? 'div' : 'p');
     el.className = [INSPECTOR_EMPTY_STATE_CLASS, classNameExtra].filter(Boolean).join(' ');

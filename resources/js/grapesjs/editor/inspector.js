@@ -88,6 +88,13 @@ export function wireInspector(editor, shell, options, labels) {
 
     editor.__voodbuilderInspectorExtensionsRegistered = true;
 
+    // Soft commercial gate for canvas "Make dynamic" when Dynamic Data plugin is off.
+    editor.__voodbuilderDynamicDataEnabled = Boolean(options.bindingsUrl);
+    editor.__voodbuilderLabels = {
+        ...(editor.__voodbuilderLabels ?? {}),
+        ...(options.bindingLabels ?? labels),
+    };
+
     registerCanvasComponentToolbar(editor, {
         makeDynamic: labels.makeDynamic,
         clearDynamic: labels.clearDynamic,

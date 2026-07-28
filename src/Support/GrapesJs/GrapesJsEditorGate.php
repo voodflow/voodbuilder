@@ -267,6 +267,8 @@ final class GrapesJsEditorGate
             'modalCancel' => __('voodbuilder::pro.bindings.modal_cancel'),
             'selectComponent' => __('voodbuilder::pro.bindings.select_component'),
             'noSources' => __('voodbuilder::pro.bindings.no_sources'),
+            'pluginRequiredTitle' => __('voodbuilder::pro.bindings.plugin_required_title'),
+            'pluginRequiredBody' => __('voodbuilder::pro.bindings.plugin_required_body'),
             'inspectorHint' => __('voodbuilder::pro.bindings.inspector_hint'),
             'currentBinding' => __('voodbuilder::pro.bindings.current_binding'),
             'repeatSource' => __('voodbuilder::pro.bindings.repeat_source'),
