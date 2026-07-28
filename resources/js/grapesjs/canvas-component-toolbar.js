@@ -115,8 +115,33 @@ function hasSelectableParent(component, editor) {
     return false;
 }
 
-function buildDynamicToolbarButtons(labels = {}) {
-    return [
+/**
+ * True when the selected component has a clearable dynamic bind/href attr.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function hasClearableDynamicBinding(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return Boolean(
+        String(attrs['data-voodbuilder-bind'] ?? '').trim()
+        || String(attrs['data-voodbuilder-bind-href'] ?? '').trim(),
+    );
+}
+
+function toolbarHasClearDynamicButton(component) {
+    const toolbar = component?.get?.('toolbar');
+
+    if (! Array.isArray(toolbar)) {
+        return false;
+    }
+
+    return toolbar.some((item) => item?.attributes?.[TOOLBAR_FLAG] === 'clear-dynamic');
+}
+
+function buildDynamicToolbarButtons(labels = {}, { showClear = false } = {}) {
+    const buttons = [
         {
             attributes: {
                 class: 'voodbuilder-gjs-toolbar-item--dynamic',
@@ -127,7 +152,10 @@ function buildDynamicToolbarButtons(labels = {}) {
             label: lucideIcon('link-2', 16),
             command: CMD_MAKE_DYNAMIC,
         },
-        {
+    ];
+
+    if (showClear) {
+        buttons.push({
             attributes: {
                 class: 'voodbuilder-gjs-toolbar-item--clear-dynamic',
                 [TOOLBAR_FLAG]: 'clear-dynamic',
@@ -136,8 +164,10 @@ function buildDynamicToolbarButtons(labels = {}) {
             },
             label: lucideIcon('unlink-2', 16),
             command: CMD_CLEAR_DYNAMIC,
-        },
-    ];
+        });
+    }
+
+    return buttons;
 }
 
 function buildComponentToolbar(editor, component, labels = {}) {
@@ -293,7 +323,9 @@ function buildComponentToolbar(editor, component, labels = {}) {
     });
 
     if (! richText) {
-        toolbar.push(...buildDynamicToolbarButtons(labels));
+        toolbar.push(...buildDynamicToolbarButtons(labels, {
+            showClear: hasClearableDynamicBinding(component),
+        }));
     }
 
     if (component.get('removable') && ! isChromeEditorProtectedComponent(component, editor)) {
@@ -318,14 +350,12 @@ function syncBoundToolbarState(editor, component) {
         return;
     }
 
-    const bound = Boolean(
-        component.getAttributes?.()['data-voodbuilder-bind']
-        || component.getAttributes?.()['data-voodbuilder-bind-href'],
-    );
+    const bound = hasClearableDynamicBinding(component);
     const dynamicButton = toolbarEl.querySelector(`[${TOOLBAR_FLAG}="dynamic"]`);
     const clearButton = toolbarEl.querySelector(`[${TOOLBAR_FLAG}="clear-dynamic"]`);
 
     dynamicButton?.classList.toggle('is-bound', bound);
+    // Belt-and-suspenders: hide if a stale clear button is still in the DOM.
     clearButton?.classList.toggle('is-hidden', ! bound);
 }
 
@@ -532,9 +562,21 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
     });
 
     editor.on('component:update', (component) => {
-        if (editor.getSelected() === component) {
-            syncBoundToolbarState(editor, component);
+        if (editor.getSelected() !== component) {
+            return;
         }
+
+        const shouldShowClear = hasClearableDynamicBinding(component);
+
+        // Rebuild when bind presence diverges from toolbar items (make/clear dynamic).
+        // Avoids loops: after rebuild, presence matches and we only sync classes.
+        if (shouldShowClear !== toolbarHasClearDynamicButton(component)) {
+            ensureCanvasComponentToolbarButtons(editor, component, labels);
+
+            return;
+        }
+
+        syncBoundToolbarState(editor, component);
     });
 
     editor.on('component:styleUpdate', (component) => {

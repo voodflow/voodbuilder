@@ -995,6 +995,7 @@
     color: var(--color-vp-brand-1, #6366f1);
 }
 
+.gjs-toolbar-item[data-voodbuilder-toolbar='clear-dynamic'].is-hidden,
 .voodbuilder-gjs-root .gjs-toolbar-item[data-voodbuilder-toolbar='clear-dynamic'].is-hidden {
     display: none !important;
 }
