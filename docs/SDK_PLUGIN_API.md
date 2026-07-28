@@ -44,6 +44,16 @@ Voodbuilder::grapesJsCondition('acme_feature_flag', function (array $condition, 
 });
 ```
 
+## Editor labels
+
+```php
+Voodbuilder::grapesJsEditorLabels(fn (): array => [
+    'acmeHello' => __('acme::ui.hello'),
+]);
+```
+
+Popup UI strings are owned by `voodflow/voodbuilder-popups` (`voodbuilder-popups::popups.*`).
+
 ## Capabilities
 
 ```php

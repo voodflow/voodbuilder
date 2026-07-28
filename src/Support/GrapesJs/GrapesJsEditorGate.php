@@ -28,12 +28,24 @@ use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
-use Voodflow\Vtuts\Support\Locales;
 
 final class GrapesJsEditorGate
 {
     /** @var (callable(SitePage): bool)|null */
     private static ?\Closure $authorizer = null;
+
+    /** @var list<callable(): array<string, mixed>> */
+    private static array $labelProviders = [];
+
+    /**
+     * Register additional GrapesJS editor labels (official/third-party plugins).
+     *
+     * @param  callable(): array<string, mixed>  $provider
+     */
+    public static function registerLabelProvider(callable $provider): void
+    {
+        self::$labelProviders[] = $provider;
+    }
 
     public static function authorizeUsing(?callable $callback): void
     {
@@ -198,7 +210,7 @@ final class GrapesJsEditorGate
      */
     public static function sharedEditorLabels(): array
     {
-        return [
+        $labels = [
             'save' => __('voodbuilder::pro.frontend.save'),
             'saving' => __('voodbuilder::pro.frontend.saving'),
             'saved' => __('voodbuilder::pro.frontend.saved'),
@@ -558,157 +570,12 @@ final class GrapesJsEditorGate
             'pageTemplatesImportDrop' => __('voodbuilder::pro.page_templates.import_drop'),
             'pageTemplatesImportSelect' => __('voodbuilder::pro.page_templates.import_select'),
             'pageTemplatesImportCancel' => __('voodbuilder::pro.page_templates.import_cancel'),
-            'popupsTitle' => __('voodbuilder-popups::popups.editor.title'),
-            'popupsHint' => __('voodbuilder-popups::popups.editor.hint'),
-            'popupsCreate' => __('voodbuilder-popups::popups.editor.create'),
-            'popupsCreateTitle' => __('voodbuilder-popups::popups.editor.create_title'),
-            'popupsEditTitle' => __('voodbuilder-popups::popups.editor.edit_title'),
-            'popupsConfiguratorTitle' => __('voodbuilder-popups::popups.editor.configurator_title'),
-            'popupsConfiguratorSubtitle' => __('voodbuilder-popups::popups.editor.configurator_subtitle'),
-            'popupsSaveApply' => __('voodbuilder-popups::popups.editor.save_apply'),
-            'popupsReset' => __('voodbuilder-popups::popups.editor.reset'),
-            'popupsTabGeneral' => __('voodbuilder-popups::popups.editor.tab_general'),
-            'popupsTabTriggers' => __('voodbuilder-popups::popups.editor.tab_triggers'),
-            'popupsTabTargeting' => __('voodbuilder-popups::popups.editor.tab_targeting'),
-            'popupsTabSchedule' => __('voodbuilder-popups::popups.editor.tab_schedule'),
-            'popupsTabAppearance' => __('voodbuilder-popups::popups.editor.tab_appearance'),
-            'popupsEditRules' => __('voodbuilder-popups::popups.editor.edit_rules'),
-            'popupsTest' => __('voodbuilder-popups::popups.editor.test'),
-            'popupsOpenEditor' => __('voodbuilder-popups::popups.editor.open_editor'),
-            'popupsDelete' => __('voodbuilder-popups::popups.editor.delete'),
-            'popupsDeleteConfirm' => __('voodbuilder-popups::popups.editor.delete_confirm'),
-            'popupsDeleteError' => __('voodbuilder-popups::popups.editor.delete_error'),
-            'popupsSaveError' => __('voodbuilder-popups::popups.editor.save_error'),
-            'popupsLoadError' => __('voodbuilder-popups::popups.editor.load_error'),
-            'popupsEmpty' => __('voodbuilder-popups::popups.editor.empty'),
-            'popupsEnabled' => __('voodbuilder-popups::popups.editor.enabled'),
-            'popupsDisabled' => __('voodbuilder-popups::popups.editor.disabled'),
-            'popupsPaused' => __('voodbuilder-popups::popups.editor.paused'),
-            'popupsPause' => __('voodbuilder-popups::popups.editor.pause'),
-            'popupsResume' => __('voodbuilder-popups::popups.editor.resume'),
-            'popupsFieldName' => __('voodbuilder-popups::popups.fields.name'),
-            'popupsFieldDescription' => __('voodbuilder-popups::popups.fields.description'),
-            'popupsFieldDescriptionHelp' => __('voodbuilder-popups::popups.fields.description_help'),
-            'popupsFieldLocale' => __('voodbuilder-popups::popups.fields.locale'),
-            'popupsLocaleAll' => __('voodbuilder-popups::popups.fields.locale_all'),
-            'popupsLocaleHelp' => __('voodbuilder-popups::popups.fields.locale_help'),
-            'popupsLocaleOptions' => collect([
-                ['value' => '', 'label' => __('voodbuilder-popups::popups.fields.locale_all')],
-            ])->concat(
-                collect(class_exists(Locales::class)
-                    ? Locales::options()
-                    : ['en' => 'English'])
-                    ->map(fn (string $label, string $code): array => [
-                        'value' => $code,
-                        'label' => $label,
-                    ])
-                    ->values()
-            )->all(),
-            'popupsFieldEnabled' => __('voodbuilder-popups::popups.fields.enabled'),
-            'popupsFieldPaused' => __('voodbuilder-popups::popups.fields.paused'),
-            'popupsFieldPriority' => __('voodbuilder-popups::popups.fields.priority'),
-            'popupsPriorityHelp' => __('voodbuilder-popups::popups.fields.priority_help'),
-            'popupsSectionGeneral' => __('voodbuilder-popups::popups.sections.general'),
-            'popupsSectionTrigger' => __('voodbuilder-popups::popups.sections.trigger'),
-            'popupsFieldTriggerType' => __('voodbuilder-popups::popups.fields.trigger_type'),
-            'popupsTriggerLoad' => __('voodbuilder-popups::popups.triggers.load'),
-            'popupsTriggerDelay' => __('voodbuilder-popups::popups.triggers.delay'),
-            'popupsTriggerScroll' => __('voodbuilder-popups::popups.triggers.scroll'),
-            'popupsTriggerExit' => __('voodbuilder-popups::popups.triggers.exit_intent'),
-            'popupsTriggerClick' => __('voodbuilder-popups::popups.triggers.click'),
-            'popupsFieldDelay' => __('voodbuilder-popups::popups.fields.delay_seconds'),
-            'popupsFieldScroll' => __('voodbuilder-popups::popups.fields.scroll_percent'),
-            'popupsFieldClickSelector' => __('voodbuilder-popups::popups.fields.click_selector'),
-            'popupsSectionFrequency' => __('voodbuilder-popups::popups.sections.frequency'),
-            'popupsFieldFrequency' => __('voodbuilder-popups::popups.fields.frequency_mode'),
-            'popupsFrequencyAlways' => __('voodbuilder-popups::popups.frequency.always'),
-            'popupsFrequencyOnce' => __('voodbuilder-popups::popups.frequency.once'),
-            'popupsFrequencySession' => __('voodbuilder-popups::popups.frequency.session'),
-            'popupsFrequencyDays' => __('voodbuilder-popups::popups.frequency.days'),
-            'popupsFieldFrequencyDays' => __('voodbuilder-popups::popups.fields.frequency_days'),
-            'popupsFrequencyStorageHelp' => __('voodbuilder-popups::popups.fields.frequency_storage_help'),
-            'popupsSectionSchedule' => __('voodbuilder-popups::popups.sections.schedule'),
-            'popupsFieldStartAt' => __('voodbuilder-popups::popups.fields.start_at'),
-            'popupsFieldEndAt' => __('voodbuilder-popups::popups.fields.end_at'),
-            'popupsFieldTimezone' => __('voodbuilder-popups::popups.fields.timezone'),
-            'popupsAppTimezone' => (string) config('app.timezone', 'UTC'),
-            'popupsTimezoneOptions' => collect([
-                (string) config('app.timezone', 'UTC'),
-                'UTC',
-                'Europe/Rome',
-                'Europe/London',
-                'Europe/Paris',
-                'Europe/Berlin',
-                'America/New_York',
-                'America/Los_Angeles',
-                'America/Sao_Paulo',
-                'Asia/Tokyo',
-                'Asia/Dubai',
-                'Australia/Sydney',
-            ])->unique()->values()->map(fn (string $tz): array => [
-                'value' => $tz,
-                'label' => $tz === (string) config('app.timezone', 'UTC')
-                    ? __('voodbuilder-popups::popups.fields.timezone_site', ['tz' => $tz])
-                    : $tz,
-            ])->all(),
-            'popupsFieldWeeklyDay' => __('voodbuilder-popups::popups.fields.weekly_day'),
-            'popupsFieldWeeklyDays' => __('voodbuilder-popups::popups.fields.weekly_days'),
-            'popupsWeeklyPresetAll' => __('voodbuilder-popups::popups.fields.weekly_preset_all'),
-            'popupsWeeklyPresetWeekdays' => __('voodbuilder-popups::popups.fields.weekly_preset_weekdays'),
-            'popupsWeeklyPresetWeekend' => __('voodbuilder-popups::popups.fields.weekly_preset_weekend'),
-            'popupsFieldWeeklyStartTime' => __('voodbuilder-popups::popups.fields.weekly_start_time'),
-            'popupsFieldWeeklyEndTime' => __('voodbuilder-popups::popups.fields.weekly_end_time'),
-            'popupsScheduleNone' => __('voodbuilder-popups::popups.schedule.none'),
-            'popupsScheduleMonday' => __('voodbuilder-popups::popups.schedule.monday'),
-            'popupsScheduleTuesday' => __('voodbuilder-popups::popups.schedule.tuesday'),
-            'popupsScheduleWednesday' => __('voodbuilder-popups::popups.schedule.wednesday'),
-            'popupsScheduleThursday' => __('voodbuilder-popups::popups.schedule.thursday'),
-            'popupsScheduleFriday' => __('voodbuilder-popups::popups.schedule.friday'),
-            'popupsScheduleSaturday' => __('voodbuilder-popups::popups.schedule.saturday'),
-            'popupsScheduleSunday' => __('voodbuilder-popups::popups.schedule.sunday'),
-            'popupsSectionTargeting' => __('voodbuilder-popups::popups.sections.targeting'),
-            'popupsFieldAudience' => __('voodbuilder-popups::popups.fields.logged_in'),
-            'popupsTargetingAny' => __('voodbuilder-popups::popups.targeting.any'),
-            'popupsTargetingLoggedIn' => __('voodbuilder-popups::popups.targeting.logged_in'),
-            'popupsTargetingLoggedOut' => __('voodbuilder-popups::popups.targeting.logged_out'),
-            'popupsFieldPagePath' => __('voodbuilder-popups::popups.fields.page_path'),
-            'popupsSectionDisplay' => __('voodbuilder-popups::popups.sections.display'),
-            'popupsFieldWidth' => __('voodbuilder-popups::popups.fields.width'),
-            'popupsWidthSm' => __('voodbuilder-popups::popups.width.sm'),
-            'popupsWidthMd' => __('voodbuilder-popups::popups.width.md'),
-            'popupsWidthLg' => __('voodbuilder-popups::popups.width.lg'),
-            'popupsWidthXl' => __('voodbuilder-popups::popups.width.xl'),
-            'popupsFieldOverlay' => __('voodbuilder-popups::popups.fields.overlay'),
-            'popupsFieldCloseOverlay' => __('voodbuilder-popups::popups.fields.close_on_overlay'),
-            'popupsFieldCloseEscape' => __('voodbuilder-popups::popups.fields.close_on_escape'),
-            'popupsEditingBadge' => __('voodbuilder-popups::popups.editor.editing_badge'),
-            'popupsSummaryAlways' => __('voodbuilder-popups::popups.editor.summary_always'),
-            'popupsSummaryOnce' => __('voodbuilder-popups::popups.editor.summary_once'),
-            'popupsSummarySession' => __('voodbuilder-popups::popups.editor.summary_session'),
-            'popupsSummaryDays' => __('voodbuilder-popups::popups.editor.summary_days', ['days' => ':days']),
-            'popupsSummaryDateRange' => __('voodbuilder-popups::popups.editor.summary_date_range', ['start' => ':start', 'end' => ':end']),
-            'popupsSummaryStart' => __('voodbuilder-popups::popups.editor.summary_start', ['start' => ':start']),
-            'popupsSummaryEnd' => __('voodbuilder-popups::popups.editor.summary_end', ['end' => ':end']),
-            'popupsSummaryWeeklyFull' => __('voodbuilder-popups::popups.editor.summary_weekly_full', ['day' => ':day', 'start' => ':start', 'end' => ':end']),
-            'popupsSummaryWeeklyStart' => __('voodbuilder-popups::popups.editor.summary_weekly_start', ['day' => ':day', 'start' => ':start']),
-            'popupsSummaryWeeklyEnd' => __('voodbuilder-popups::popups.editor.summary_weekly_end', ['day' => ':day', 'end' => ':end']),
-            'popupsSummaryWeeklyDay' => __('voodbuilder-popups::popups.editor.summary_weekly_day', ['day' => ':day']),
-            'popupsSummaryTimezone' => __('voodbuilder-popups::popups.editor.summary_timezone', ['tz' => ':tz']),
-            'popupsSummaryAllPages' => __('voodbuilder-popups::popups.editor.summary_all_pages'),
-            'popupsSummaryPagePath' => __('voodbuilder-popups::popups.editor.summary_page_path', ['path' => ':path']),
-            'popupsSummaryAudienceAny' => __('voodbuilder-popups::popups.editor.summary_audience_any'),
-            'popupsSummaryAudienceYes' => __('voodbuilder-popups::popups.editor.summary_audience_yes'),
-            'popupsSummaryAudienceNo' => __('voodbuilder-popups::popups.editor.summary_audience_no'),
-            'popupsStatusActive' => __('voodbuilder-popups::popups.editor.status_active'),
-            'popupsStatusPaused' => __('voodbuilder-popups::popups.editor.status_paused'),
-            'popupsStatusDisabled' => __('voodbuilder-popups::popups.editor.status_disabled'),
             'chromeLayoutEditingBadge' => __('voodbuilder::chrome_layouts.editor.layout_editing_badge'),
             'chromeLayoutEditingHint' => __('voodbuilder::chrome_layouts.editor.layout_editing_hint'),
             'pageContentPlaceholder' => __('voodbuilder::chrome_layouts.editor.page_content_placeholder'),
             'layoutContentSlotPlaceholder' => __('voodbuilder::chrome_layouts.editor.layout_content_slot_placeholder'),
             'layoutNavZonePlaceholder' => __('voodbuilder::chrome_layouts.editor.layout_nav_zone_placeholder'),
             'layoutFooterZonePlaceholder' => __('voodbuilder::chrome_layouts.editor.layout_footer_zone_placeholder'),
-            'popupsPagePathCustom' => __('voodbuilder-popups::popups.page_paths.custom'),
             'dialogOk' => __('voodbuilder::pro.editor_ui.dialog_ok'),
             'dialogCancel' => __('voodbuilder::pro.editor_ui.dialog_cancel'),
             'dialogConfirm' => __('voodbuilder::pro.editor_ui.dialog_confirm'),
@@ -844,6 +711,12 @@ final class GrapesJsEditorGate
             'dividerColor' => __('voodbuilder::pro.grapesjs.basic.divider_color'),
             'dividerColorHint' => __('voodbuilder::pro.grapesjs.basic.divider_color_hint'),
         ];
+
+        foreach (self::$labelProviders as $provider) {
+            $labels = array_merge($labels, $provider());
+        }
+
+        return $labels;
     }
 
     /**

@@ -161,6 +161,16 @@ class Voodbuilder
     }
 
     /**
+     * Contribute labels to the GrapesJS editor bootstrap payload.
+     *
+     * @param  callable(): array<string, mixed>  $provider
+     */
+    public static function grapesJsEditorLabels(callable $provider): void
+    {
+        \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate::registerLabelProvider($provider);
+    }
+
+    /**
      * Register a List repeat query (package lists outside Model Integrations).
      *
      * @param  callable(int $limit, int $offset, string $sort, string $direction): list<Model>  $resolver
