@@ -113,7 +113,6 @@ final class NavigationMenuResolver
     {
         self::$localizationEnabled = null;
         self::$menusTableExists = null;
-        self::$placementCache = [];
     }
 
     public static function menusTableExists(): bool
