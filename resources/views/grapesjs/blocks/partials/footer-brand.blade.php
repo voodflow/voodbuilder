@@ -32,7 +32,11 @@
     @if ($mountLogo)
         <span
             data-voodbuilder-chrome-part="logo"
-            @class(['contents', 'hidden' => $preview ? ! $showBrand : ! ($showLogo || $showPlaceholder)])
+            @class([
+                'contents' => $preview ? $showBrand : ($showLogo || $showPlaceholder),
+                'hidden' => $preview ? ! $showBrand : ! ($showLogo || $showPlaceholder),
+            ])
+            @if ($preview && ! $showBrand) data-voodbuilder-chrome-hidden @endif
         >
             @if ($logos['has_any'])
                 @if ($logos['mobile_light'])

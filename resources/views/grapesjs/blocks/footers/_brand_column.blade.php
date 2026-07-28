@@ -31,6 +31,6 @@
     @include('voodbuilder::grapesjs.blocks.partials.footer-social', [
         'config' => $config,
         'preview' => $preview,
-        'socialClass' => 'mt-4 flex justify-center md:justify-start',
+        'socialClass' => 'mt-4',
     ])
 </div>

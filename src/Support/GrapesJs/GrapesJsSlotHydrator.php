@@ -14,12 +14,13 @@ final class GrapesJsSlotHydrator
     public static function hydrateSubtree(DOMDocument $document, DOMElement $root, bool $preview = false, array $config = []): void
     {
         self::hydrateBrands($document, $root, $preview, $config);
-        self::hydrateMenus($document, $root, $preview);
+        self::hydrateMenus($document, $root, $preview, $config);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
             self::applyFooterChromeVisibility($document, $root, $normalized, $preview);
             self::applyFooterColumnsVisibility($document, $root, $normalized, $preview);
+            self::applyFooterSocialAlign($document, $root, $normalized);
         }
     }
 
@@ -32,12 +33,13 @@ final class GrapesJsSlotHydrator
         $document = self::loadDocument($html);
 
         self::hydrateBrands($document, $document->documentElement, $preview, $config);
-        self::hydrateMenus($document, $document->documentElement, $preview);
+        self::hydrateMenus($document, $document->documentElement, $preview, $config);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
             self::applyFooterChromeVisibility($document, $document->documentElement, $normalized, $preview);
             self::applyFooterColumnsVisibility($document, $document->documentElement, $normalized, $preview);
+            self::applyFooterSocialAlign($document, $document->documentElement, $normalized);
         }
 
         return self::extractBodyHtml($document) ?? $html;
@@ -56,12 +58,14 @@ final class GrapesJsSlotHydrator
         ])->render();
     }
 
-    public static function renderMenuList(string $menuSlug, bool $preview = false): string
+    public static function renderMenuList(string $menuSlug, bool $preview = false, array $config = []): string
     {
         if ($menuSlug === 'social') {
             return view('voodbuilder::grapesjs.blocks.partials.social-menu-list-wrapper', [
                 'menuSlug' => $menuSlug,
                 'preview' => $preview,
+                'config' => $config,
+                'socialAlign' => $config['social_align'] ?? null,
             ])->render();
         }
 
@@ -116,20 +120,58 @@ final class GrapesJsSlotHydrator
         return $fallback;
     }
 
-    protected static function hydrateMenus(DOMDocument $document, DOMElement $root, bool $preview): void
+    protected static function hydrateMenus(DOMDocument $document, DOMElement $root, bool $preview, array $config = []): void
     {
-        foreach ($root->getElementsByTagName('*') as $element) {
-            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-menu')) {
-                continue;
-            }
+        $elements = [];
 
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if ($element instanceof DOMElement && $element->hasAttribute('data-voodbuilder-menu')) {
+                $elements[] = $element;
+            }
+        }
+
+        foreach ($elements as $element) {
             $menuSlug = (string) $element->getAttribute('data-voodbuilder-menu');
 
             if ($menuSlug === '') {
                 continue;
             }
 
-            self::replaceElementInnerHtml($document, $element, self::renderMenuList($menuSlug, $preview));
+            $slotConfig = self::resolveConfigForElement($element, $config);
+            self::replaceElementInnerHtml($document, $element, self::renderMenuList($menuSlug, $preview, $slotConfig));
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    protected static function applyFooterSocialAlign(DOMDocument $document, DOMElement $root, array $config): void
+    {
+        $align = SiteFooterConfig::normalizeSocialAlign($config['social_align'] ?? null);
+        $justify = SiteFooterConfig::socialJustifyClass($align);
+        $justifyTokens = ['justify-start', 'justify-center', 'justify-end', 'sm:justify-start', 'sm:justify-center', 'sm:justify-end', 'md:justify-start', 'md:justify-center', 'md:justify-end'];
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            $isSocial = $element->hasAttribute('data-voodbuilder-footer-social')
+                || $element->hasAttribute('data-voodbuilder-social-links')
+                || ($element->getAttribute('data-voodbuilder-chrome') === 'social');
+
+            if (! $isSocial) {
+                continue;
+            }
+
+            $element->setAttribute('data-voodbuilder-social-align', $align);
+            $classes = preg_split('/\s+/', trim($element->getAttribute('class'))) ?: [];
+            $classes = array_values(array_filter(
+                $classes,
+                static fn (string $class): bool => $class !== '' && ! in_array($class, $justifyTokens, true),
+            ));
+            $classes[] = $justify;
+            $element->setAttribute('class', implode(' ', $classes));
         }
     }
 

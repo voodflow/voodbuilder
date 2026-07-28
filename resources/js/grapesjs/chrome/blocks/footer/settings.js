@@ -10,6 +10,7 @@ import {
     createCheckboxGrid,
     createFormSection,
     createFormTabs,
+    createSelectField,
 } from '../../../editor-form-ui.js';
 import { isFooterBlock } from '../../ids.js';
 import {
@@ -20,6 +21,8 @@ import {
     footerBlockHasNewsletter,
     footerColumnLabel,
     footerSettingLabel,
+    FOOTER_SOCIAL_ALIGN_PROP,
+    normalizeFooterSocialAlign,
 } from './config.js';
 
 /**
@@ -104,11 +107,25 @@ export function registerFooterSettings(editor) {
                         createCheckboxField({
                             label: label('footerShowNewsletter', 'Show newsletter'),
                             name: 'vpressShowNewsletter',
-                            checked: root.get('vpressShowNewsletter') === true,
+                            checked: root.get('vpressShowNewsletter') !== false,
                             onChange: (checked) => applyChange('vpressShowNewsletter', checked),
                         }),
                     );
                 }
+
+                panels.layout.append(
+                    createSelectField({
+                        label: label('footerSocialAlign', 'Social icons alignment'),
+                        name: FOOTER_SOCIAL_ALIGN_PROP,
+                        value: normalizeFooterSocialAlign(root.get(FOOTER_SOCIAL_ALIGN_PROP)),
+                        options: [
+                            { value: 'left', label: label('footerSocialAlignLeft', 'Left') },
+                            { value: 'center', label: label('footerSocialAlignCenter', 'Center') },
+                            { value: 'right', label: label('footerSocialAlignRight', 'Right') },
+                        ],
+                        onChange: (value) => applyChange(FOOTER_SOCIAL_ALIGN_PROP, value),
+                    }),
+                );
             }
 
             panels.brand.append(
@@ -116,7 +133,7 @@ export function registerFooterSettings(editor) {
                     createCheckboxField({
                         label: label('footerShowLogo', 'Show logo'),
                         name: 'vpressShowBrand',
-                        checked: root.get('vpressShowBrand') === true,
+                        checked: root.get('vpressShowBrand') !== false,
                         onChange: (checked) => applyChange('vpressShowBrand', checked),
                     }),
                     createCheckboxField({
@@ -128,23 +145,39 @@ export function registerFooterSettings(editor) {
                     createCheckboxField({
                         label: label('footerShowTagline', 'Show tagline'),
                         name: 'vpressShowTagline',
-                        checked: root.get('vpressShowTagline') === true,
+                        checked: root.get('vpressShowTagline') !== false,
                         onChange: (checked) => applyChange('vpressShowTagline', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowCopyright', 'Show copyright'),
                         name: 'vpressShowCopyright',
-                        checked: root.get('vpressShowCopyright') === true,
+                        checked: root.get('vpressShowCopyright') !== false,
                         onChange: (checked) => applyChange('vpressShowCopyright', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowSocial', 'Show social icons'),
                         name: 'vpressShowSocial',
-                        checked: root.get('vpressShowSocial') === true,
+                        checked: root.get('vpressShowSocial') !== false,
                         onChange: (checked) => applyChange('vpressShowSocial', checked),
                     }),
                 ]),
             );
+
+            if (! hasLayoutOptions) {
+                panels.brand.append(
+                    createSelectField({
+                        label: label('footerSocialAlign', 'Social icons alignment'),
+                        name: FOOTER_SOCIAL_ALIGN_PROP,
+                        value: normalizeFooterSocialAlign(root.get(FOOTER_SOCIAL_ALIGN_PROP)),
+                        options: [
+                            { value: 'left', label: label('footerSocialAlignLeft', 'Left') },
+                            { value: 'center', label: label('footerSocialAlignCenter', 'Center') },
+                            { value: 'right', label: label('footerSocialAlignRight', 'Right') },
+                        ],
+                        onChange: (value) => applyChange(FOOTER_SOCIAL_ALIGN_PROP, value),
+                    }),
+                );
+            }
 
             appendChromeLogoFields({
                 fields: panels.brand,

@@ -82,11 +82,9 @@ function syncSettingsFormValues(mount, root) {
             if (
                 name === 'vpressShowSiteName'
                 || name === 'vpressShowLogo'
+                || name === 'vpressShowBrand'
             ) {
                 input.checked = raw !== false;
-            } else if (name === 'vpressShowBrand') {
-                // Footer "Show logo" — prefer explicit true after configure.
-                input.checked = raw === true || raw === undefined;
             } else {
                 input.checked = raw === true;
             }

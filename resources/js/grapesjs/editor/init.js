@@ -32,6 +32,7 @@ import vpressGrapesJsPlugin, {
     sanitizeBlockHtml,
     syncVpressDynamicAttributes,
     syncSiteHeaderConfig,
+    syncSiteFooterConfig,
 } from '../plugins/voodbuilder.js';
 import { stripInvalidDomAttributes } from '../core/html-sanitize.js';
 import { configureGrapesJsPlugins, resolveGrapesJsPlugins } from '../editor-plugins.js';
@@ -1351,6 +1352,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             syncSiteHeaderConfig(component);
         }
 
+        if (isSiteFooterBlock(blockId)) {
+            syncSiteFooterConfig(component);
+        }
+
         const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
         const fingerprint = dynamicBlockRenderFingerprint(blockId, config);
 
@@ -1467,7 +1472,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         if (footerBlock && fresh.tagName === 'FOOTER') {
             applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
 
-            if (safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0) {
+            if (safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand], [data-voodbuilder-chrome="brand"]').length > 0) {
                 refreshDynamicSlots(component, fresh);
             } else {
                 component.components(fresh.innerHTML);
@@ -1484,7 +1489,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             });
 
             const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
-                && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand]').length > 0;
+                && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand], [data-voodbuilder-chrome="brand"]').length > 0;
 
             if (hydratesSlots) {
                 refreshDynamicSlots(component, fresh);

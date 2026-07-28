@@ -30,6 +30,10 @@ import {
 } from './grapesjs-logo-cloud-blocks.js';
 import registerGrapesJsTailwindPlugin from './grapesjs-tailwind-plugin.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
+import {
+    chromeIconSvgForAttrs,
+    isChromeIconPlaceholderText,
+} from './chrome/icons.js';
 
 const PLUGIN_MAP = {
     forms: grapesjsPluginForms,
@@ -189,28 +193,15 @@ function protectSiteHeaderButton(component) {
     const text = String(component.get('text') ?? '').trim();
     const hasSvg = safeFindComponents(component, 'svg').length > 0;
     const domText = String(component.getEl?.()?.textContent ?? '').replace(/\s+/g, '');
-    const placeholderText = ['Send', 'Button', 'Notifications'].includes(text)
-        || /^(?:Button|Notifications|Send)+$/.test(domText);
+    const placeholderText = isChromeIconPlaceholderText(text)
+        || isChromeIconPlaceholderText(domText);
 
     if (placeholderText || (! hasSvg && text !== '')) {
-        component.set('text', '', { silent: true });
+        component.set({ text: '', content: '' }, { silent: true });
     }
 
     if (! hasSvg || placeholderText) {
-        // Recovery when forms-plugin button init already wiped icon children.
-        if (placeholderText || ! hasSvg) {
-            let svg = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
-
-            if (attrs['data-voodbuilder-search-open'] != null) {
-                svg = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>';
-            } else if (attrs['data-voodbuilder-notification-bell-preview'] != null) {
-                svg = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>';
-            } else if (attrs['data-mobile-nav-toggle'] != null || attrs['data-mobile-nav-close'] != null) {
-                svg = '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>';
-            }
-
-            component.components(svg);
-        }
+        component.components(chromeIconSvgForAttrs(attrs));
     }
 }
 

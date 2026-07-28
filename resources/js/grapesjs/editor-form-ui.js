@@ -331,6 +331,53 @@ export function chromeLogoFieldDefs() {
     return LOGO_FIELD_KEYS;
 }
 
+const LOGO_VARIANT_SELECTORS = {
+    logo_desktop_light: '.vb-brand-logo--desktop.vb-brand-logo--light',
+    logo_desktop_dark: '.vb-brand-logo--desktop.vb-brand-logo--dark',
+    logo_mobile_light: '.vb-brand-logo--mobile.vb-brand-logo--light',
+    logo_mobile_dark: '.vb-brand-logo--mobile.vb-brand-logo--dark',
+};
+
+/**
+ * Push logo URLs from component props into live canvas <img> tags immediately
+ * (before / without waiting for a full dynamic-block remount).
+ *
+ * @param {ParentNode} scope
+ * @param {{ get?: Function }} root
+ */
+export function applyChromeLogoUrlsPreview(scope, root) {
+    if (! scope?.querySelectorAll || typeof root?.get !== 'function') {
+        return;
+    }
+
+    for (const def of LOGO_FIELD_KEYS) {
+        const url = String(root.get(def.prop) ?? '').trim();
+        const selector = LOGO_VARIANT_SELECTORS[def.key];
+
+        if (! selector) {
+            continue;
+        }
+
+        scope.querySelectorAll(selector).forEach((img) => {
+            if (! (img instanceof HTMLImageElement)) {
+                return;
+            }
+
+            if (url === '') {
+                return;
+            }
+
+            if (img.getAttribute('src') !== url) {
+                img.setAttribute('src', url);
+            }
+
+            img.closest('[data-voodbuilder-chrome-part="logo"]')
+                ?.querySelector('[data-voodbuilder-brand-placeholder]')
+                ?.classList.add('hidden');
+        });
+    }
+}
+
 /**
  * Apply Tailwind height utilities for brand logos in the live canvas DOM.
  *

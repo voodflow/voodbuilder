@@ -22,7 +22,7 @@
         @include('voodbuilder::grapesjs.blocks.partials.footer-social', [
             'config' => $config,
             'preview' => $preview,
-            'socialClass' => 'mt-6 flex justify-center',
+            'socialClass' => 'mt-6',
         ])
         @include('voodbuilder::grapesjs.blocks.partials.footer-copyright', [
             'config' => $config,

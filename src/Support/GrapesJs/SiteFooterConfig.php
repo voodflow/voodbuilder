@@ -6,6 +6,10 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 final class SiteFooterConfig
 {
+    public const SOCIAL_ALIGNS = ['left', 'center', 'right'];
+
+    public const DEFAULT_SOCIAL_ALIGN = 'center';
+
     /**
      * @param  array<string, mixed>  $config
      * @return array<string, mixed>
@@ -21,6 +25,7 @@ final class SiteFooterConfig
         }
 
         $normalized = array_merge($normalized, ChromeBrandLogos::normalizeConfigKeys($config));
+        $normalized['social_align'] = self::normalizeSocialAlign($config['social_align'] ?? $normalized['social_align'] ?? null);
 
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
@@ -50,12 +55,29 @@ final class SiteFooterConfig
             'show_footer_col_3' => true,
             'show_footer_col_4' => true,
             'footer_columns_redistribute' => false,
+            'social_align' => self::DEFAULT_SOCIAL_ALIGN,
             'logo_desktop_light' => null,
             'logo_desktop_dark' => null,
             'logo_mobile_light' => null,
             'logo_mobile_dark' => null,
             'logo_size' => ChromeBrandLogos::DEFAULT_SIZE,
         ];
+    }
+
+    public static function normalizeSocialAlign(mixed $value): string
+    {
+        $align = is_string($value) ? strtolower(trim($value)) : '';
+
+        return in_array($align, self::SOCIAL_ALIGNS, true) ? $align : self::DEFAULT_SOCIAL_ALIGN;
+    }
+
+    public static function socialJustifyClass(mixed $align): string
+    {
+        return match (self::normalizeSocialAlign($align)) {
+            'left' => 'justify-start',
+            'right' => 'justify-end',
+            default => 'justify-center',
+        };
     }
 
     /**

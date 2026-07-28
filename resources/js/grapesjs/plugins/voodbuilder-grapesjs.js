@@ -16,6 +16,10 @@ import { registerTopDropSpacerType } from '../canvas-block-drag.js';
 import { resolveBlockLayerLabel } from '../layer-display-name.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
+import {
+    chromeIconSvgForAttrs,
+    isChromeIconPlaceholderText,
+} from '../chrome/icons.js';
 import { isComponentCategoryId } from '../component-block-utils.js';
 import { resolveCategoryOrder, normalizeCategoryLabel } from '../section-block-meta.js';
 import { createCheckboxField, createFormSection, createSelectField } from '../editor-form-ui.js';
@@ -579,35 +583,8 @@ function isChromeIconButtonElement(element) {
     );
 }
 
-const CHROME_ICON_PLACEHOLDER_TEXT = new Set(['Send', 'Button', 'Notifications']);
-
-const CHROME_ICON_SVG = {
-    search: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>',
-    bell: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>',
-    user: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
-    menu: '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>',
-};
-
 function chromeIconSvgForButton(button) {
-    const attrs = button.getAttributes?.() ?? {};
-
-    if (attrs['data-voodbuilder-search-open'] != null) {
-        return CHROME_ICON_SVG.search;
-    }
-
-    if (attrs['data-voodbuilder-notification-bell-preview'] != null) {
-        return CHROME_ICON_SVG.bell;
-    }
-
-    if (attrs['data-voodbuilder-profile-menu-toggle'] != null) {
-        return CHROME_ICON_SVG.user;
-    }
-
-    if (attrs['data-mobile-nav-toggle'] != null || attrs['data-mobile-nav-close'] != null) {
-        return CHROME_ICON_SVG.menu;
-    }
-
-    return CHROME_ICON_SVG.user;
+    return chromeIconSvgForAttrs(button.getAttributes?.() ?? {});
 }
 
 function restoreChromeIconButtonContent(button) {
@@ -619,12 +596,11 @@ function restoreChromeIconButtonContent(button) {
     const text = String(button.get('text') ?? '').trim();
     const content = String(button.get('content') ?? '').trim();
     const domText = String(button.getEl?.()?.textContent ?? '').replace(/\s+/g, '');
-    const placeholder = CHROME_ICON_PLACEHOLDER_TEXT.has(text)
-        || CHROME_ICON_PLACEHOLDER_TEXT.has(content)
-        || /^(?:Button|Notifications|Send)+$/.test(domText)
-        || /Button{2,}/.test(domText);
+    const placeholder = isChromeIconPlaceholderText(text)
+        || isChromeIconPlaceholderText(content)
+        || isChromeIconPlaceholderText(domText);
 
-    if (hasSvg && ! placeholder && text === '' && content === '' && ! /Button|Notifications|Send/.test(domText)) {
+    if (hasSvg && ! placeholder && text === '' && content === '' && ! isChromeIconPlaceholderText(domText)) {
         return;
     }
 
@@ -1165,14 +1141,30 @@ function pruneEmptyDynamicBlocks(editor) {
 }
 
 function refreshDynamicSlots(component, freshRoot) {
-    for (const selector of ['[data-voodbuilder-menu]', '[data-voodbuilder-brand]']) {
-        const freshSlots = [...freshRoot.querySelectorAll(selector)];
-        const componentSlots = safeFindComponents(component, selector);
+    // Brand marker (`data-voodbuilder-brand`) is stripped after hydrate — match the
+    // persistent chrome brand wrapper so logo URL refreshes still update the DOM.
+    const slotPairs = [
+        ['[data-voodbuilder-menu]', '[data-voodbuilder-menu]'],
+        ['[data-voodbuilder-brand]', '[data-voodbuilder-brand]'],
+        ['[data-voodbuilder-chrome="brand"]', '[data-voodbuilder-chrome="brand"]'],
+    ];
+
+    for (const [freshSelector, componentSelector] of slotPairs) {
+        const freshSlots = [...freshRoot.querySelectorAll(freshSelector)];
+        const componentSlots = safeFindComponents(component, componentSelector);
 
         freshSlots.forEach((freshSlot, index) => {
             const target = componentSlots[index];
 
             if (! target) {
+                return;
+            }
+
+            // Avoid double-updating brand when both brand marker and chrome wrapper match.
+            if (
+                freshSelector === '[data-voodbuilder-chrome="brand"]'
+                && target.getAttributes?.()?.['data-voodbuilder-brand'] != null
+            ) {
                 return;
             }
 
@@ -1223,6 +1215,7 @@ function registerSiteNavChromeButtonType(editor) {
                 tagName: 'button',
                 name: '',
                 text: '',
+                content: '',
                 draggable: false,
                 droppable: false,
                 selectable: false,
@@ -1236,8 +1229,36 @@ function registerSiteNavChromeButtonType(editor) {
                 badgable: false,
             },
             init() {
-                this.set('text', '', { silent: true });
+                this.set({ text: '', content: '' }, { silent: true });
                 this.off('change:text');
+                this.on('change:text', () => {
+                    const text = String(this.get('text') ?? '');
+
+                    if (text === '' || ! isChromeIconPlaceholderText(text)) {
+                        if (text !== '') {
+                            this.set('text', '', { silent: true });
+                        }
+
+                        return;
+                    }
+
+                    this.set('text', '', { silent: true });
+                    restoreChromeIconButtonContent(this);
+                });
+                window.requestAnimationFrame(() => restoreChromeIconButtonContent(this));
+            },
+        },
+        view: {
+            onRender({ el, model }) {
+                if (! el) {
+                    return;
+                }
+
+                const text = String(el.textContent ?? '').replace(/\s+/g, '');
+
+                if (! el.querySelector('svg') || isChromeIconPlaceholderText(text)) {
+                    restoreChromeIconButtonContent(model);
+                }
             },
         },
     });

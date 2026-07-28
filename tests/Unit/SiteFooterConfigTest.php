@@ -79,6 +79,24 @@ class SiteFooterConfigTest extends TestCase
     }
 
     #[Test]
+    public function social_align_is_normalized_and_applied_on_footer_render(): void
+    {
+        $normalized = SiteFooterConfig::normalize(['social_align' => 'right']);
+
+        $this->assertSame('right', $normalized['social_align']);
+        $this->assertSame('justify-end', SiteFooterConfig::socialJustifyClass('right'));
+        $this->assertSame('justify-start', SiteFooterConfig::socialJustifyClass('left'));
+        $this->assertSame('justify-center', SiteFooterConfig::socialJustifyClass('nope'));
+
+        $html = SiteFooterCenteredBlock::toHtml([
+            'social_align' => 'left',
+        ], []);
+
+        $this->assertStringContainsString('data-voodbuilder-social-align="left"', $html);
+        $this->assertStringContainsString('justify-start', $html);
+    }
+
+    #[Test]
     public function show_site_name_is_independent_from_show_brand(): void
     {
         $normalized = SiteFooterConfig::normalize([

@@ -428,10 +428,31 @@ final class GrapesJsCanvas
             display: block !important;
         }
 
-        /* Brand part toggles must beat device logo display rules. */
+        /* Brand part toggles must beat device logo display rules (incl. placeholder). */
         [data-voodbuilder-chrome-part="logo"].hidden .vb-brand-logo,
-        [data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] .vb-brand-logo {
+        [data-voodbuilder-chrome-part="logo"].hidden [data-voodbuilder-brand-placeholder],
+        [data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] .vb-brand-logo,
+        [data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] [data-voodbuilder-brand-placeholder],
+        [data-voodbuilder-chrome-part="logo"][hidden] .vb-brand-logo,
+        [data-voodbuilder-chrome-part="logo"][hidden] [data-voodbuilder-brand-placeholder] {
             display: none !important;
+        }
+
+        /* Never show GrapesJS forms "Button" label on chrome icon buttons. */
+        .voodbuilder-header-icon-btn {
+            font-size: 0 !important;
+            line-height: 0 !important;
+        }
+
+        .voodbuilder-header-icon-btn svg {
+            display: block !important;
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+        }
+
+        .voodbuilder-header-icon-btn svg.h-6 {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
         }
 
         /* Canvas root: always full-bleed layout token.

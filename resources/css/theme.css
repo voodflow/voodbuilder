@@ -722,6 +722,38 @@ summary,
     }
 }
 
+/*
+ * Logo part toggles (nav/footer): beat device logo display rules and
+ * display:contents wrappers so Show logo is independent from Show site name.
+ */
+[data-voodbuilder-chrome-part="logo"].hidden .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"].hidden [data-voodbuilder-brand-placeholder],
+[data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] [data-voodbuilder-brand-placeholder],
+[data-voodbuilder-chrome-part="logo"][hidden] .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"][hidden] [data-voodbuilder-brand-placeholder] {
+    display: none !important;
+}
+
+/* Header chrome icon buttons: never show GrapesJS "Button" placeholder text. */
+.voodbuilder-header-icon-btn {
+    font-size: 0;
+    line-height: 0;
+    color: inherit;
+}
+
+.voodbuilder-header-icon-btn svg {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.voodbuilder-header-icon-btn svg.h-6 {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 @media (width >= 80rem) {
     .xl\:block {
         display: block !important;

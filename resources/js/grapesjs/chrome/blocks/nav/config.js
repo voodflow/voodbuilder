@@ -7,6 +7,7 @@ import { resolveSettings } from '../../../blocks/settings/index.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
 import {
     applyChromeLogoSizeClasses,
+    applyChromeLogoUrlsPreview,
     chromeLogoFieldDefs,
     CHROME_LOGO_DEFAULT_SIZE,
     CHROME_LOGO_SIZE_KEY,
@@ -189,6 +190,13 @@ function applyNavBrandPartsPreview(scope, showLogo, showSiteName) {
     scope.querySelectorAll('[data-voodbuilder-chrome="brand"]').forEach((brand) => {
         brand.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
             node.classList.toggle('hidden', ! showLogo);
+            node.classList.toggle('contents', showLogo);
+            if (showLogo) {
+                node.removeAttribute('data-voodbuilder-chrome-hidden');
+                node.removeAttribute('hidden');
+            } else {
+                node.setAttribute('data-voodbuilder-chrome-hidden', '');
+            }
         });
 
         brand.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
@@ -262,6 +270,7 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     });
 
     applyNavBrandPartsPreview(scope, showLogo, showSiteName);
+    applyChromeLogoUrlsPreview(scope, root);
     applyChromeLogoSizeClasses(scope, logoSize);
 
     if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
