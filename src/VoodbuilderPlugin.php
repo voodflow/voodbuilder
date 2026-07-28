@@ -29,12 +29,14 @@ class VoodbuilderPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $resources = [
-            ModelIntegrationResource::class,
-        ];
+        $resources = [];
 
         if (config('voodbuilder.modules.menus.enabled', true)) {
             $resources[] = NavigationMenuResource::class;
+        }
+
+        if (config('voodbuilder.modules.dynamic_data.enabled', true)) {
+            $resources[] = ModelIntegrationResource::class;
         }
 
         if (config('voodbuilder.modules.pages.enabled', true) && config('voodbuilder.pages.enabled', true)) {

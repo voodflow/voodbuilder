@@ -34,6 +34,8 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('layouts'));
         $this->assertTrue($registry->has('pages'));
         $this->assertTrue($registry->isEnabled('pages'));
+        $this->assertTrue($registry->has('dynamic_data'));
+        $this->assertTrue($registry->isEnabled('dynamic_data'));
         $this->assertTrue($registry->booted());
     }
 

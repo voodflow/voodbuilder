@@ -30,14 +30,12 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsComponentsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPopupsController;
@@ -50,6 +48,7 @@ use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
+use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Modules\Menus\MenusModule;
@@ -216,9 +215,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->name('voodbuilder.grapesjs.')
             ->group(function (): void {
                 Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
-                Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
                 Route::get('link-targets', GrapesJsLinkTargetsController::class)->name('link-targets');
-                Route::get('bindings/preview/{sitePage}', GrapesJsBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('media/{media}', GrapesJsMediaPreviewController::class)->name('media.preview');
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
@@ -302,14 +299,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
     protected function registerGrapesJsBindings(): void
     {
         $this->app->booted(function (): void {
-            $registry = $this->app->make(BindingRegistry::class);
-
-            BuiltinBindingSources::register($registry);
-
-            // Skip DB during console bootstrap (sync-theme-imports, package:discover, vite build hooks).
-            if (! $this->app->runningInConsole() && $this->schemaHasTable('voodbuilder_model_integrations')) {
-                $this->app->make(ModelIntegrationBindingRegistrar::class)->refreshFromDatabase();
-            }
+            BuiltinBindingSources::register($this->app->make(BindingRegistry::class));
+            // Model-integration sources are owned by DynamicDataModule.
         });
     }
 
@@ -364,6 +355,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             new PagesModule,
             enabled: (bool) config('voodbuilder.modules.pages.enabled', true)
                 && (bool) config('voodbuilder.pages.enabled', true),
+        );
+
+        $registry->register(
+            new DynamicDataModule,
+            enabled: (bool) config('voodbuilder.modules.dynamic_data.enabled', true),
         );
     }
 }

@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
+use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
@@ -105,9 +106,13 @@ final class GrapesJsEditorGate
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),
-            'bindingsUrl' => self::editorRoute('voodbuilder.grapesjs.bindings'),
+            'bindingsUrl' => DynamicDataModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.bindings')
+                : null,
             'linkTargetsUrl' => self::editorRoute('voodbuilder.grapesjs.link-targets'),
-            'bindingsPreviewUrl' => self::editorRoute('voodbuilder.grapesjs.bindings.preview', $page),
+            'bindingsPreviewUrl' => DynamicDataModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.bindings.preview', $page)
+                : null,
             'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'formSubmitUrl' => self::editorRoute('voodbuilder.grapesjs.forms.submit', $page),

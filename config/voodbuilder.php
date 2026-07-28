@@ -32,6 +32,9 @@ return [
         'pages' => [
             'enabled' => env('VOODBUILDER_MODULE_PAGES', true),
         ],
+        'dynamic_data' => [
+            'enabled' => env('VOODBUILDER_MODULE_DYNAMIC_DATA', true),
+        ],
     ],
 
     'layouts' => [
