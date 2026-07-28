@@ -85,17 +85,18 @@ export function initProfileMenus(scope = document) {
 
 function closeNavDropdowns(scope, exceptRoot = null) {
     scope.querySelectorAll('[data-voodbuilder-nav-dropdown]').forEach((root) => {
-        if (root === exceptRoot) {
+        // Keep the opened root and its ancestors so nested flyouts do not close the parent.
+        if (exceptRoot && (root === exceptRoot || root.contains(exceptRoot))) {
             return;
         }
 
-        const panel = root.querySelector('[data-voodbuilder-nav-dropdown-panel]');
+        const panel = root.querySelector(':scope > [data-voodbuilder-nav-dropdown-panel]');
 
         if (panel) {
             panel.hidden = true;
         }
 
-        const toggle = root.querySelector('[data-voodbuilder-nav-dropdown-toggle]');
+        const toggle = root.querySelector(':scope > [data-voodbuilder-nav-dropdown-toggle]');
 
         if (toggle) {
             toggle.setAttribute('aria-expanded', 'false');
@@ -110,8 +111,8 @@ function bindNavDropdown(root, scope) {
 
     root.dataset.voodbuilderNavDropdownBound = 'true';
 
-    const toggle = root.querySelector('[data-voodbuilder-nav-dropdown-toggle]');
-    const panel = root.querySelector('[data-voodbuilder-nav-dropdown-panel]');
+    const toggle = root.querySelector(':scope > [data-voodbuilder-nav-dropdown-toggle]');
+    const panel = root.querySelector(':scope > [data-voodbuilder-nav-dropdown-panel]');
 
     if (! toggle || ! panel) {
         return;
@@ -121,6 +122,8 @@ function bindNavDropdown(root, scope) {
 
     if (trigger === 'hover') {
         root.addEventListener('mouseenter', () => {
+            // Close sibling flyouts inside the same parent panel, keep ancestors open.
+            closeNavDropdowns(scope, root);
             panel.hidden = false;
             toggle.setAttribute('aria-expanded', 'true');
         });

@@ -22,6 +22,8 @@ final class ConfigureVtutsForVoodbuilder
         $layoutReplacements = [
             "'layout' => 'vtuts::layouts.page'" => "'layout' => 'voodbuilder::layouts.page'",
             "'doc_layout' => 'vtuts::layouts.doc'" => "'doc_layout' => 'voodbuilder::layouts.doc'",
+            "'layout' => 'vpress::layouts.page'" => "'layout' => 'voodbuilder::layouts.page'",
+            "'doc_layout' => 'vpress::layouts.doc'" => "'doc_layout' => 'voodbuilder::layouts.doc'",
         ];
 
         foreach ($layoutReplacements as $search => $replace) {
