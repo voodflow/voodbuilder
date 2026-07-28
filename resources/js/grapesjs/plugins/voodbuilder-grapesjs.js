@@ -557,15 +557,90 @@ function registerSiteNavMenuButtonType(editor) {
     });
 }
 
+function isChromeIconButtonElement(element) {
+    if (! element || element.tagName !== 'BUTTON') {
+        return false;
+    }
+
+    return Boolean(
+        element.classList?.contains('voodbuilder-header-icon-btn')
+        || element.hasAttribute('data-mobile-nav-toggle')
+        || element.hasAttribute('data-mobile-nav-close')
+        || element.hasAttribute('data-theme-toggle')
+        || element.hasAttribute('data-voodbuilder-search-open')
+        || element.hasAttribute('data-voodbuilder-notification-bell-preview')
+        || element.hasAttribute('data-voodbuilder-profile-menu-toggle'),
+    );
+}
+
+const CHROME_ICON_PLACEHOLDER_TEXT = new Set(['Send', 'Button', 'Notifications']);
+
+const CHROME_ICON_SVG = {
+    search: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>',
+    bell: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>',
+    user: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+    menu: '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>',
+};
+
+function chromeIconSvgForButton(button) {
+    const attrs = button.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-search-open'] != null) {
+        return CHROME_ICON_SVG.search;
+    }
+
+    if (attrs['data-voodbuilder-notification-bell-preview'] != null) {
+        return CHROME_ICON_SVG.bell;
+    }
+
+    if (attrs['data-voodbuilder-profile-menu-toggle'] != null) {
+        return CHROME_ICON_SVG.user;
+    }
+
+    if (attrs['data-mobile-nav-toggle'] != null || attrs['data-mobile-nav-close'] != null) {
+        return CHROME_ICON_SVG.menu;
+    }
+
+    return CHROME_ICON_SVG.user;
+}
+
+function restoreChromeIconButtonContent(button) {
+    if (! button?.get) {
+        return;
+    }
+
+    const hasSvg = safeFindComponents(button, 'svg').length > 0;
+    const text = String(button.get('text') ?? '').trim();
+    const content = String(button.get('content') ?? '').trim();
+    const domText = String(button.getEl?.()?.textContent ?? '').replace(/\s+/g, '');
+    const placeholder = CHROME_ICON_PLACEHOLDER_TEXT.has(text)
+        || CHROME_ICON_PLACEHOLDER_TEXT.has(content)
+        || /^(?:Button|Notifications|Send)+$/.test(domText);
+
+    if (hasSvg && ! placeholder) {
+        if (text !== '') {
+            button.set('text', '', { silent: true });
+        }
+
+        return;
+    }
+
+    button.set({
+        text: '',
+        content: '',
+    }, { silent: true });
+    button.components(chromeIconSvgForButton(button));
+}
+
 function normalizeSiteNavChromeButtons(root) {
-    safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-mobile-nav-close], button[data-theme-toggle], button.voodbuilder-header-icon-btn').forEach((button) => {
+    safeFindComponents(root, 'button[data-mobile-nav-toggle], button[data-mobile-nav-close], button[data-theme-toggle], button.voodbuilder-header-icon-btn, button[data-voodbuilder-search-open], button[data-voodbuilder-notification-bell-preview], button[data-voodbuilder-profile-menu-toggle]').forEach((button) => {
         if (! button?.get) {
             return;
         }
 
         const type = button.get('type');
 
-        if (type === 'button' || type === 'default') {
+        if (type === 'button' || type === 'default' || type === 'voodbuilder-cta-button') {
             button.set('type', 'voodbuilder-chrome-button');
         }
 
@@ -584,11 +659,7 @@ function normalizeSiteNavChromeButtons(root) {
             copyable: false,
         }, { silent: true });
 
-        const text = String(button.get('text') ?? '').trim();
-
-        if (text === 'Send' && safeFindComponents(button, 'svg').length === 0) {
-            button.set('text', '');
-        }
+        restoreChromeIconButtonContent(button);
     });
 }
 
@@ -1395,33 +1466,24 @@ function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
 }
 
 function registerSiteNavChromeButtonType(editor) {
-    if (editor.__voodbuilderSiteNavChromeButtonRegistered) {
-        return;
-    }
-
+    // Always re-addType: grapesjs-plugin-forms registers `button` after the early-types
+    // plugin, and addType unshifts — without a later re-register, forms wins isComponent
+    // and wipes SVG children with the default "Send"/"Button" label.
     editor.__voodbuilderSiteNavChromeButtonRegistered = true;
 
     editor.DomComponents.addType('voodbuilder-chrome-button', {
         isComponent: (element) => {
-            if (element?.tagName !== 'BUTTON') {
+            if (! isChromeIconButtonElement(element)) {
                 return false;
             }
 
-            if (
-                element.classList?.contains('voodbuilder-header-icon-btn')
-                || element.hasAttribute('data-mobile-nav-toggle')
-                || element.hasAttribute('data-mobile-nav-close')
-                || element.hasAttribute('data-theme-toggle')
-            ) {
-                return { type: 'voodbuilder-chrome-button' };
-            }
-
-            return false;
+            return { type: 'voodbuilder-chrome-button' };
         },
         model: {
             defaults: {
                 tagName: 'button',
                 name: '',
+                text: '',
                 draggable: false,
                 droppable: false,
                 selectable: false,
@@ -1433,6 +1495,10 @@ function registerSiteNavChromeButtonType(editor) {
                 layerable: false,
                 highlightable: false,
                 badgable: false,
+            },
+            init() {
+                this.set('text', '', { silent: true });
+                this.off('change:text');
             },
         },
     });

@@ -81,11 +81,13 @@
 
 .voodbuilder-tm-node--area {
     border-left: 3px solid var(--vp-tm-accent, #64748b);
-    background: color-mix(in srgb, var(--vp-tm-surface, #f8fafc) 88%, white);
+    /* Keep a dark-friendly card surface; tint lightly from the bound theme. */
+    background: color-mix(in srgb, var(--vp-tm-surface, #f8fafc) 22%, #fff);
 }
 
 .dark .voodbuilder-tm-node--area {
-    background: color-mix(in srgb, var(--vp-tm-surface, #1e293b) 70%, rgb(30 41 59));
+    /* Theme surfaces are often light-mode body colors — do not wash out dark UI text. */
+    background: color-mix(in srgb, var(--vp-tm-accent, #64748b) 14%, rgb(30 41 59));
 }
 
 .voodbuilder-tm-node__strip {
@@ -120,12 +122,17 @@
 .voodbuilder-tm-node__routes {
     font-size: 0.6875rem;
     line-height: 1.35;
-    color: rgb(100 116 139);
+    color: rgb(71 85 105);
 }
 
 .dark .voodbuilder-tm-node__meta,
 .dark .voodbuilder-tm-node__routes {
-    color: rgb(148 163 184);
+    color: rgb(203 213 225);
+}
+
+.dark .voodbuilder-tm-node--area .voodbuilder-tm-node__meta,
+.dark .voodbuilder-tm-node--area .voodbuilder-tm-node__routes {
+    color: rgb(226 232 240);
 }
 
 .voodbuilder-tm-node__routes {

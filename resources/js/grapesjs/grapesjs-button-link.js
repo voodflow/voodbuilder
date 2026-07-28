@@ -473,6 +473,14 @@ function isExcludedLinkableButton(component) {
         return true;
     }
 
+    if (
+        attrs['data-voodbuilder-search-open'] != null
+        || attrs['data-voodbuilder-notification-bell-preview'] != null
+        || attrs['data-voodbuilder-profile-menu-toggle'] != null
+    ) {
+        return true;
+    }
+
     if (classes.includes('voodbuilder-mobile-nav__cookie-link') || classes.includes('cc-revoke') || classes.includes('cc-btn')) {
         return true;
     }

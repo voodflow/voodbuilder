@@ -149,7 +149,28 @@ class ChromeLayoutResource extends Resource
                 TextColumn::make('channel_ids')
                     ->label(__('voodbuilder::chrome_layouts.fields.channels'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => is_array($state) ? implode(', ', $state) : '')
+                    ->formatStateUsing(function ($state): string {
+                        // With ->badge(), Filament passes each array item (string id), not the whole array.
+                        if (is_array($state)) {
+                            return collect($state)
+                                ->filter(fn ($id): bool => is_string($id) && $id !== '')
+                                ->map(function (string $id): string {
+                                    $channel = app(ContentChannelRegistry::class)->get($id);
+
+                                    return $channel?->label() ?? $id;
+                                })
+                                ->implode(', ');
+                        }
+
+                        if (! is_string($state) || $state === '') {
+                            return '';
+                        }
+
+                        $channel = app(ContentChannelRegistry::class)->get($state);
+
+                        return $channel?->label() ?? $state;
+                    })
+                    ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('content_width')
                     ->label(__('voodbuilder::chrome_layouts.fields.content_width'))

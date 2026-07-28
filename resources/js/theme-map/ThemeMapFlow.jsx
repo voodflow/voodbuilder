@@ -27,7 +27,8 @@ function estimateAreaNodeHeight(area) {
     const padding = 24;
     const titleHeight = 18;
     const badgeReserve = 22;
-    let height = padding + titleHeight + badgeReserve;
+    const stripReserve = 4;
+    let height = padding + titleHeight + badgeReserve + stripReserve;
 
     if (area.description) {
         const charsPerLine = Math.floor(AREA_NODE_WIDTH / 6.2);
@@ -129,6 +130,11 @@ function AreaNode({ data }) {
             }}
         >
             <Handle type="target" position={Position.Left} className="voodbuilder-tm-handle" />
+            <div className="voodbuilder-tm-node__strip" aria-hidden="true">
+                {(data.strip ?? []).map((color) => (
+                    <span key={color} style={{ background: color }} />
+                ))}
+            </div>
             <div className="voodbuilder-tm-node__body">
                 <span className="voodbuilder-tm-node__title">{data.label}</span>
                 {data.description ? (
@@ -250,6 +256,7 @@ function buildNodes(payload) {
                 chrome_layout_prefix: payload.i18n?.chrome_layout ?? 'Chrome layout: ',
                 preview: theme.preview ?? '#64748b',
                 surface: theme.surface ?? 'rgb(248 250 252)',
+                strip: theme.strip ?? [],
                 inherited: edge?.inherited ?? edgeInherited(area.id, themeId, payload, payload.channel_overrides ?? {}),
                 inheritedLabel: payload.i18n?.inherited ?? 'Inherited',
             },
@@ -400,6 +407,7 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                             ...node.data,
                             preview: theme.preview ?? '#64748b',
                             surface: theme.surface ?? 'rgb(248 250 252)',
+                            strip: theme.strip ?? [],
                             inherited: edge?.data?.inherited ?? false,
                         },
                     };
@@ -559,6 +567,7 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                                 ...node.data,
                                 preview: theme.preview ?? '#64748b',
                                 surface: theme.surface ?? 'rgb(248 250 252)',
+                                strip: theme.strip ?? [],
                                 inherited: edge?.data?.inherited ?? false,
                             },
                         };
