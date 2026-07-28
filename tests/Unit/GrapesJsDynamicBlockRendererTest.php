@@ -87,4 +87,42 @@ class GrapesJsDynamicBlockRendererTest extends TestCase
         );
         $this->assertStringContainsString('data-voodbuilder-config', $html);
     }
+
+    public function test_footer_render_preserves_author_container_classes(): void
+    {
+        $serverRegistry = new GrapesJsServerBlockRegistry;
+        $serverRegistry->register('Voodbuilder', SiteFooterColumnsSimpleBlock::class);
+
+        $config = SiteFooterColumnsSimpleBlock::defaultConfig();
+        $encoded = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            ENT_QUOTES,
+            'UTF-8',
+        );
+
+        $saved = <<<HTML
+<footer data-voodbuilder-block="site_footer_columns_simple" data-voodbuilder-config="{$encoded}" data-voodbuilder-hydrate-slots="1" class="voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font" role="contentinfo">
+  <div class="voodbuilder-gjs-container px-5 mx-auto w-full max-w-[var(--width-vp-layout)] py-16">
+    <div data-voodbuilder-brand></div>
+    <div data-voodbuilder-menu="footer-col-1"></div>
+    <div data-voodbuilder-footer-brand-col></div>
+    <div data-voodbuilder-footer-col="1" data-voodbuilder-chrome="footer-col-1"></div>
+    <div data-voodbuilder-footer-col="2" data-voodbuilder-chrome="footer-col-2"></div>
+    <div data-voodbuilder-footer-col="3" data-voodbuilder-chrome="footer-col-3"></div>
+    <div data-voodbuilder-footer-col="4" data-voodbuilder-chrome="footer-col-4"></div>
+  </div>
+</footer>
+HTML;
+
+        $renderer = new GrapesJsDynamicBlockRenderer(new GrapesJsDynamicBlockRegistry, $serverRegistry);
+        $published = $renderer->render($saved, null, canvasPreview: false);
+        $preview = $renderer->render($saved, null, canvasPreview: true);
+
+        $this->assertStringContainsString('py-16', $published);
+        $this->assertStringNotContainsString('py-24', $published);
+        $this->assertStringNotContainsString('data-voodbuilder-block', $published);
+
+        $this->assertStringContainsString('py-16', $preview);
+        $this->assertStringContainsString('data-voodbuilder-block="site_footer_columns_simple"', $preview);
+    }
 }

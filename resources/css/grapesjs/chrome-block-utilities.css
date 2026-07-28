@@ -105,6 +105,7 @@
 }
 
 .voodbuilder-gjs-footer .px-4,
+.voodbuilder-gjs-container.px-4,
 [data-voodbuilder-footer-col].px-4 {
     padding-left: 1rem;
     padding-right: 1rem;
@@ -114,6 +115,30 @@
 .voodbuilder-gjs-container.px-5 {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
+}
+
+.voodbuilder-gjs-footer .px-6,
+.voodbuilder-gjs-container.px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.voodbuilder-gjs-footer .px-8,
+.voodbuilder-gjs-container.px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.voodbuilder-gjs-footer .py-16,
+.voodbuilder-gjs-container.py-16 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+.voodbuilder-gjs-footer .py-20,
+.voodbuilder-gjs-container.py-20 {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
 }
 
 .voodbuilder-gjs-footer .py-24,

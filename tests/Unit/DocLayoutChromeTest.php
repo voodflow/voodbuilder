@@ -31,5 +31,6 @@ class DocLayoutChromeTest extends TestCase
             $contents,
         );
         $this->assertStringContainsString('--voodbuilder-chrome-layout-max, 80rem', $contents);
+        $this->assertStringContainsString('padding-inline: 1.25rem', $contents);
     }
 }

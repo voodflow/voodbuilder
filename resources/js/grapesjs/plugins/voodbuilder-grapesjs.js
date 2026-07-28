@@ -1183,17 +1183,99 @@ function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
 
     const freshClass = String(fresh.getAttribute('class') ?? '').trim()
         || 'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full border-t border-vp-divider bg-vp-bg text-vp-text-2 body-font';
+    const authorClasses = (typeof component.getClasses === 'function'
+        ? component.getClasses()
+        : String(component.getAttributes?.()?.class ?? '').split(/\s+/))
+        .map((name) => String(name ?? '').trim())
+        .filter(Boolean);
+    const mergedRootClasses = mergeAuthorStructuralClasses(
+        authorClasses,
+        freshClass.split(/\s+/).filter(Boolean),
+    );
 
     component.addAttributes({
         'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
         'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
-        class: freshClass,
+        class: mergedRootClasses.join(' '),
         'data-voodbuilder-hydrate-slots': '1',
     });
 
     if (typeof component.setClass === 'function') {
-        component.setClass(freshClass.split(/\s+/).filter(Boolean));
+        component.setClass(mergedRootClasses);
     }
+}
+
+/**
+ * Keep author spacing/layout utilities when Blade remounts chrome markup.
+ *
+ * @param {string[]} author
+ * @param {string[]} fresh
+ * @returns {string[]}
+ */
+function mergeAuthorStructuralClasses(author, fresh) {
+    const required = new Set(
+        fresh.filter((name) => (
+            name === 'voodbuilder-gjs-dynamic'
+            || name === 'voodbuilder-gjs-footer'
+            || name === 'voodbuilder-gjs-container'
+            || name === 'container'
+            || name === 'body-font'
+            || name.startsWith('voodbuilder-')
+        )),
+    );
+    const merged = [];
+    const seen = new Set();
+
+    for (const name of [...author, ...fresh]) {
+        if (! name || seen.has(name)) {
+            continue;
+        }
+
+        seen.add(name);
+        merged.push(name);
+    }
+
+    for (const name of required) {
+        if (! seen.has(name)) {
+            merged.push(name);
+        }
+    }
+
+    return merged;
+}
+
+function captureContainerAuthorClasses(component) {
+    return safeFindComponents(component, '.voodbuilder-gjs-container, .container')
+        .map((node) => (typeof node.getClasses === 'function'
+            ? node.getClasses()
+            : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean)));
+}
+
+function restoreContainerAuthorClasses(component, authorClassLists) {
+    if (! Array.isArray(authorClassLists) || authorClassLists.length === 0) {
+        return;
+    }
+
+    const containers = safeFindComponents(component, '.voodbuilder-gjs-container, .container');
+
+    containers.forEach((node, index) => {
+        const author = authorClassLists[index];
+
+        if (! Array.isArray(author) || author.length === 0) {
+            return;
+        }
+
+        const fresh = typeof node.getClasses === 'function'
+            ? node.getClasses()
+            : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean);
+        const merged = mergeAuthorStructuralClasses(author, fresh);
+
+        if (typeof node.setClass === 'function') {
+            node.setClass(merged);
+        } else {
+            node.addAttributes?.({ class: merged.join(' ') });
+        }
+    });
 }
 
 function registerSiteNavChromeButtonType(editor) {
@@ -1477,6 +1559,8 @@ export {
     findSiteNavRootComponent,
     findSiteFooterRootComponent,
     applyFreshFooterAttributes,
+    captureContainerAuthorClasses,
+    restoreContainerAuthorClasses,
     prioritizeBlockCategories,
     ensureLayoutSectionTraits,
     pruneEmptySections,

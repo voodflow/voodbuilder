@@ -38,6 +38,7 @@ class GrapesJsCanvasTest extends TestCase
             $frameStyle,
         );
         $this->assertStringContainsString('--voodbuilder-chrome-layout-max, 80rem', $frameStyle);
+        $this->assertStringContainsString('padding-inline: 1.25rem', $frameStyle);
     }
 
     #[Test]

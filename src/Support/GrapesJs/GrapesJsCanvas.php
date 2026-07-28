@@ -283,6 +283,7 @@ final class GrapesJsCanvas
             width: 100%;
             max-width: var(--width-vp-layout, 80rem);
             margin-inline: auto;
+            padding-inline: 1.25rem;
             box-sizing: border-box;
         }
 

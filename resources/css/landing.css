@@ -197,6 +197,8 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
         width: 100%;
         max-width: var(--width-vp-layout, 80rem);
         margin-inline: auto;
+        /* Default horizontal gutter (px-5). Author px-* / px-0 utilities win (@layer utilities). */
+        padding-inline: 1.25rem;
         box-sizing: border-box;
     }
 

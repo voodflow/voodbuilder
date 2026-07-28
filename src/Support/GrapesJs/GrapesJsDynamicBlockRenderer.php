@@ -96,33 +96,28 @@ final class GrapesJsDynamicBlockRenderer
             $config['event_id'] = $eventId;
         }
 
-        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->alwaysFullRenderFooterBlock($blockId)) {
-            $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
+        /*
+         * Prefer slot hydration for footers that already have saved markup.
+         * Full Blade re-render wipes author classes on wrappers (e.g. py-16 on
+         * .voodbuilder-gjs-container) and breaks layout-editor persistence.
+         */
+        if (
+            SiteFooterBlocks::isFooterBlockId($blockId)
+            && $this->hasDynamicSlots($node)
+            && ! $this->footerNeedsFullRender($node, $blockId)
+        ) {
+            GrapesJsSlotHydrator::hydrateSubtree($document, $node, $canvasPreview, $config);
 
-            if ($rendered === null) {
-                return;
+            if (! $canvasPreview) {
+                $this->stripPublishedAttributesFromNode($node);
             }
-
-            if ($canvasPreview) {
-                $this->replaceNodeInnerHtmlForEditor($document, $node, $rendered);
-
-                return;
-            }
-
-            $this->replaceNodeWithRenderedHtml(
-                $document,
-                $node,
-                $this->stripPublishedBlockWrapperAttributes($rendered),
-            );
 
             return;
         }
 
-        if (SiteFooterBlocks::isFooterBlockId($blockId) && $this->hasDynamicSlots($node) && ! $this->footerNeedsFullRender($node, $blockId)) {
-            GrapesJsSlotHydrator::hydrateSubtree($document, $node, false, $config);
-
-            return;
-        }
+        $authorStructuralClasses = SiteFooterBlocks::isFooterBlockId($blockId)
+            ? $this->captureAuthorStructuralClasses($node)
+            : null;
 
         $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
@@ -132,11 +127,18 @@ final class GrapesJsDynamicBlockRenderer
 
         if ($canvasPreview) {
             $this->replaceNodeInnerHtmlForEditor($document, $node, $rendered);
+            if ($authorStructuralClasses !== null) {
+                $this->restoreAuthorStructuralClasses($node, $authorStructuralClasses);
+            }
 
             return;
         }
 
         $rendered = $this->stripPublishedBlockWrapperAttributes($rendered);
+
+        if ($authorStructuralClasses !== null) {
+            $rendered = $this->applyAuthorStructuralClassesToHtml($rendered, $authorStructuralClasses);
+        }
 
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
     }
@@ -223,14 +225,21 @@ final class GrapesJsDynamicBlockRenderer
         $document = $this->loadDocument($html);
 
         foreach ($this->dynamicNodes($document) as $node) {
-            $node->removeAttribute('data-voodbuilder-block');
-            $node->removeAttribute('data-voodbuilder-config');
-            $node->removeAttribute('data-voodbuilder-hydrate-slots');
+            $this->stripPublishedAttributesFromNode($node);
         }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    protected function stripPublishedAttributesFromNode(DOMElement $node): void
+    {
+        $node->removeAttribute('data-voodbuilder-block');
+        $node->removeAttribute('data-voodbuilder-config');
+        $node->removeAttribute('data-voodbuilder-hydrate-slots');
 
         // Brand/menu slots are already filled; drop markers so a later
         // ChromeLayoutRenderer hydrateHtml() pass cannot wipe custom logos.
-        foreach ($document->getElementsByTagName('*') as $element) {
+        foreach ($node->getElementsByTagName('*') as $element) {
             if (! $element instanceof DOMElement) {
                 continue;
             }
@@ -239,23 +248,108 @@ final class GrapesJsDynamicBlockRenderer
                 $element->removeAttribute('data-voodbuilder-brand');
             }
         }
-
-        return $this->extractBodyHtml($document) ?? $html;
-    }
-
-    protected function alwaysFullRenderFooterBlock(string $blockId): bool
-    {
-        return in_array($blockId, [
-            'site_footer_columns_simple',
-            'site_footer_columns_newsletter',
-            'site_footer_centered',
-            'site_footer_social',
-        ], true);
     }
 
     protected function isColumnFooterBlock(string $blockId): bool
     {
         return in_array($blockId, ['site_footer_columns_simple', 'site_footer_columns_newsletter'], true);
+    }
+
+    /**
+     * @return array{root: string, containers: list<string>}
+     */
+    protected function captureAuthorStructuralClasses(DOMElement $node): array
+    {
+        $containers = [];
+
+        foreach ($node->childNodes as $child) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            $class = trim((string) $child->getAttribute('class'));
+
+            if ($class === '') {
+                continue;
+            }
+
+            if (
+                str_contains($class, 'voodbuilder-gjs-container')
+                || preg_match('/(^|\s)container(\s|$)/', $class) === 1
+            ) {
+                $containers[] = $class;
+            }
+        }
+
+        return [
+            'root' => trim((string) $node->getAttribute('class')),
+            'containers' => $containers,
+        ];
+    }
+
+    /**
+     * @param  array{root: string, containers: list<string>}  $author
+     */
+    protected function restoreAuthorStructuralClasses(DOMElement $node, array $author): void
+    {
+        if ($author['root'] !== '') {
+            $node->setAttribute('class', $author['root']);
+        }
+
+        if ($author['containers'] === []) {
+            return;
+        }
+
+        $index = 0;
+
+        foreach ($node->childNodes as $child) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            $class = trim((string) $child->getAttribute('class'));
+
+            if (
+                ! str_contains($class, 'voodbuilder-gjs-container')
+                && preg_match('/(^|\s)container(\s|$)/', $class) !== 1
+            ) {
+                continue;
+            }
+
+            if (! isset($author['containers'][$index])) {
+                break;
+            }
+
+            $child->setAttribute('class', $author['containers'][$index]);
+            $index++;
+        }
+    }
+
+    /**
+     * @param  array{root: string, containers: list<string>}  $author
+     */
+    protected function applyAuthorStructuralClassesToHtml(string $html, array $author): string
+    {
+        if ($html === '' || ($author['root'] === '' && $author['containers'] === [])) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            $this->restoreAuthorStructuralClasses($child, $author);
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
     }
 
     protected function replaceNodeWithRenderedHtml(DOMDocument $document, DOMElement $node, string $rendered): void
