@@ -145,6 +145,20 @@ final class GrapesJsEditorGate
                 : null,
             'dynamicDataCollections' => DynamicDataModule::isEnabled()
                 && Voodbuilder::can('dynamic-data.collections'),
+            'entitlements' => [
+                'edition' => Voodbuilder::entitlements()->edition(),
+                'templatesLocal' => Voodbuilder::can('templates.local'),
+                'templatesImport' => Voodbuilder::can('templates.import'),
+                'templatesExport' => Voodbuilder::can('templates.export'),
+                'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
+                'componentsLibrary' => Voodbuilder::can('components.library'),
+                'componentsImport' => Voodbuilder::can('components.import'),
+                'componentsExport' => Voodbuilder::can('components.export'),
+                'componentsCodeImport' => Voodbuilder::can('components.code-import'),
+                'dynamicDataSingle' => Voodbuilder::can('dynamic-data.single'),
+                'dynamicDataCollections' => Voodbuilder::can('dynamic-data.collections'),
+                'popupsBuilder' => Voodbuilder::can('popups.builder'),
+            ],
             'popupsUrl' => PopupsModule::isEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.popups.index')
                 : null,

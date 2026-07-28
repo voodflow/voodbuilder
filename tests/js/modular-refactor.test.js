@@ -575,3 +575,30 @@ describe('editor/registries', () => {
         clearEditorPanels();
     });
 });
+
+describe('editor entitlements filtering', () => {
+    it('filters actions by entitlement flags', async () => {
+        const {
+            canEntitlement,
+            filterActionsByEntitlement,
+        } = await import('../../resources/js/grapesjs/editor/entitlements.js');
+
+        const entitlements = {
+            templatesImport: false,
+            templatesExport: true,
+            componentsLibrary: true,
+        };
+
+        expect(canEntitlement(entitlements, 'templatesExport')).toBe(true);
+        expect(canEntitlement(entitlements, 'templatesImport')).toBe(false);
+
+        const actions = filterActionsByEntitlement([
+            { id: 'local' },
+            { id: 'import', entitlement: 'templatesImport' },
+            { id: 'export', entitlement: 'templatesExport' },
+            { id: 'components', entitlement: 'componentsLibrary' },
+        ], entitlements);
+
+        expect(actions.map((a) => a.id)).toEqual(['local', 'export', 'components']);
+    });
+});

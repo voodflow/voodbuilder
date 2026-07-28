@@ -859,7 +859,7 @@ export function initVpressGrapesJs(container, options = {}) {
         }
     }
 
-    if (shell && options.componentsUrl) {
+    if (shell && options.componentsUrl && options.entitlements?.componentsLibrary !== false) {
         registerCanvasBlockCodeEditor(editor, {
             componentsUrl: options.componentsUrl,
             csrf: options.csrf,
@@ -1131,13 +1131,17 @@ export function initVpressGrapesJs(container, options = {}) {
             if (! options.chromeLayoutMode && options.pageTemplatesUrl) {
                 registerPageTemplatesSidebar(editor, {
                     pageTemplatesUrl: options.pageTemplatesUrl,
-                    pageTemplatesCatalogUrl: options.pageTemplatesCatalogUrl ?? null,
+                    pageTemplatesCatalogUrl: options.entitlements?.templatesRemoteInstall
+                        ? (options.pageTemplatesCatalogUrl ?? null)
+                        : null,
                     csrf: options.csrf,
                     labels,
                     templateCategories: options.templateCategories ?? [],
                     defaultTemplateCategory: 'Ecommerce',
                     templatesMount: shell?.mounts?.templates ?? null,
                     popupMode: options.popupMode ?? false,
+                    canImportTemplates: options.entitlements?.templatesImport === true,
+                    canExportTemplates: options.entitlements?.templatesExport === true,
                 });
             }
 
@@ -1849,6 +1853,8 @@ function mountFrontendEditor() {
         pageTemplatesCatalogUrl: config.pageTemplatesCatalogUrl ?? null,
         popupsUrl: config.popupsUrl ?? null,
         popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,
+        dynamicDataCollections: config.dynamicDataCollections === true,
+        entitlements: config.entitlements ?? {},
         popupMode: config.popupMode ?? false,
         popupName: config.popupName ?? null,
         popupDisplayWidth: config.popupDisplayWidth ?? null,
