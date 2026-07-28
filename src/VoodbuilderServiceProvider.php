@@ -43,7 +43,6 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsGlobalClassesController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageRevisionsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageTemplatesController;
 use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
@@ -58,6 +57,7 @@ use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -187,6 +187,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         }
 
         $this->registerAdminRoutes();
+        $this->registerInternalModules();
+        $this->app->make(ModuleRegistry::class)->boot();
 
         SEOManager::SEODataTransformer(static function ($seoData) {
             return VoodbuilderSeo::applyDefaults($seoData);
@@ -243,8 +245,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
                 Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
                 Route::match(['put', 'post'], 'pages/{sitePage}', [GrapesJsPageController::class, 'update'])->name('pages.update');
-                Route::get('pages/{sitePage}/revisions', [GrapesJsPageRevisionsController::class, 'index'])->name('pages.revisions.index');
-                Route::post('pages/{sitePage}/revisions/{revision}/restore', [GrapesJsPageRevisionsController::class, 'restore'])->name('pages.revisions.restore');
                 Route::get('global-classes', [GrapesJsGlobalClassesController::class, 'index'])->name('global-classes.index');
                 Route::post('global-classes', [GrapesJsGlobalClassesController::class, 'store'])->name('global-classes.store');
                 Route::put('global-classes/{globalClass}', [GrapesJsGlobalClassesController::class, 'update'])->name('global-classes.update');
@@ -366,5 +366,15 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    protected function registerInternalModules(): void
+    {
+        $registry = $this->app->make(ModuleRegistry::class);
+
+        $registry->register(
+            new HistoryModule,
+            enabled: (bool) config('voodbuilder.modules.history.enabled', true),
+        );
     }
 }

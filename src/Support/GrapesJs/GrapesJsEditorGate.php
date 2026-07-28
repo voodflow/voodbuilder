@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
@@ -107,11 +108,15 @@ final class GrapesJsEditorGate
             'codeHighlightUrl' => self::editorRoute('voodbuilder.grapesjs.code.highlight'),
             'formSubmitUrl' => self::editorRoute('voodbuilder.grapesjs.forms.submit', $page),
             'newsletterLists' => self::newsletterListOptions(),
-            'revisionsUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.index', $page),
-            'revisionsRestoreUrl' => self::editorRoute('voodbuilder.grapesjs.pages.revisions.restore', [
-                'sitePage' => $page,
-                'revision' => '__REVISION__',
-            ]),
+            'revisionsUrl' => HistoryModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.pages.revisions.index', $page)
+                : null,
+            'revisionsRestoreUrl' => HistoryModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.pages.revisions.restore', [
+                    'sitePage' => $page,
+                    'revision' => '__REVISION__',
+                ])
+                : null,
             'globalClassesUrl' => self::editorRoute('voodbuilder.grapesjs.global-classes.index'),
             'componentsUrl' => self::editorRoute('voodbuilder.grapesjs.components.index'),
             'pageTemplatesUrl' => self::editorRoute('voodbuilder.grapesjs.page-templates.index'),

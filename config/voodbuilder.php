@@ -7,6 +7,15 @@ use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 return [
     'site_title' => env('VOODBUILDER_SITE_TITLE', env('APP_NAME', 'VoodBuilder')),
 
+    /*
+    | Internal module enablement (same package; physical splits come later).
+    */
+    'modules' => [
+        'history' => [
+            'enabled' => env('VOODBUILDER_MODULE_HISTORY', true),
+        ],
+    ],
+
     'layouts' => [
         'app' => 'voodbuilder::layouts.app',
         'chrome_app' => 'voodbuilder::layouts.chrome-app',

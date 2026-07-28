@@ -6,11 +6,16 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageRevision;
+use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 
 final class SitePageRevisionRecorder
 {
     public function recordIfChanged(SitePage $page, array $previousPayload): void
     {
+        if (! HistoryModule::isEnabled()) {
+            return;
+        }
+
         if (! $this->payloadDiffers($previousPayload, $page->builder_payload ?? [])) {
             return;
         }
