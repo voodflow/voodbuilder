@@ -51,9 +51,8 @@ use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
-use Voodflow\Voodbuilder\Licensing\CachedEntitlementProvider;
-use Voodflow\Voodbuilder\Licensing\ConfigEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
+use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -132,16 +131,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(MenuItemTypeRegistry::class);
         $this->app->singleton(ModuleRegistry::class);
         $this->app->singleton(EntitlementManager::class, function (): EntitlementManager {
-            $provider = new ConfigEntitlementProvider;
-
-            if ((bool) config('voodbuilder.license.cache', true)) {
-                $provider = new CachedEntitlementProvider(
-                    $provider,
-                    (int) config('voodbuilder.license.cache_ttl', 3600),
-                );
-            }
-
-            return new EntitlementManager($provider);
+            return new EntitlementManager(EntitlementProviderFactory::make());
         });
     }
 

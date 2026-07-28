@@ -52,8 +52,18 @@ return [
         'key' => env('VOODBUILDER_LICENSE_KEY', ''),
         'secret' => env('VOODBUILDER_LICENSE_SECRET', ''),
         'enforce' => env('VOODBUILDER_LICENSE_ENFORCE', false),
+        /*
+        | Driver: config (local edition matrix) | anystack (remote) | testing
+        */
+        'driver' => env('VOODBUILDER_LICENSE_DRIVER', 'config'),
         'cache' => env('VOODBUILDER_LICENSE_CACHE', true),
         'cache_ttl' => (int) env('VOODBUILDER_LICENSE_CACHE_TTL', 3600),
+        'anystack' => [
+            'endpoint' => env('VOODBUILDER_ANYSTACK_ENDPOINT', ''),
+            'timeout' => (int) env('VOODBUILDER_ANYSTACK_TIMEOUT', 5),
+            // Keep last successful entitlement for 7 days when remote is down.
+            'grace_seconds' => (int) env('VOODBUILDER_ANYSTACK_GRACE_SECONDS', 604800),
+        ],
     ],
 
     'layouts' => [
