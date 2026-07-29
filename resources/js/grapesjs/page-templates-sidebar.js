@@ -101,6 +101,10 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         templateCategories = [],
         defaultTemplateCategory = 'Miscellaneous',
         popupMode = false,
+        canAuthorTemplates = false,
+        canImportTemplates = false,
+        canExportTemplates = false,
+        canImportTemplatesFromUrl = true,
     } = options;
 
     if (popupMode || ! pageTemplatesUrl || ! templatesMount) {
@@ -116,30 +120,53 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
     const baseUrl = pageTemplatesUrl.replace(/\/$/, '');
     const shell = templatesMount.closest('.voodbuilder-gjs-shell') ?? templatesMount;
     const blocksMount = shell.querySelector('.voodbuilder-gjs-blocks-mount');
+    const showAuthoringToolbar = canAuthorTemplates || canImportTemplates || canExportTemplates;
+    const iconActions = [
+        canImportTemplates
+            ? `<button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-import-toggle title="${escapeHtml(labels.pageTemplatesImport ?? 'Import')}" aria-label="${escapeHtml(labels.pageTemplatesImport ?? 'Import')}">${lucideIcon('download', 16)}</button>`
+            : '',
+        canImportTemplatesFromUrl
+            ? `<button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-import-url title="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}" aria-label="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}">${lucideIcon('link', 16)}</button>`
+            : '',
+        canAuthorTemplates
+            ? `<button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-select-toggle title="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-label="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-pressed="false">${lucideIcon('box-select', 16)}</button>`
+            : '',
+        canExportTemplates
+            ? `<button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-export title="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}" aria-label="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}">${lucideIcon('upload', 16)}</button>`
+            : '',
+    ].filter(Boolean).join('');
+
+    const saveButtonHtml = canAuthorTemplates
+        ? `<button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--primary voodbuilder-gjs-templates-library__save" data-voodbuilder-page-template-save>
+                        <span>${escapeHtml(labels.pageTemplatesSave ?? labels.dialogSave ?? 'Save')}</span>
+                    </button>`
+        : '';
+
+    const marketplaceHintHtml = ! showAuthoringToolbar && canImportTemplatesFromUrl
+        ? `<p class="voodbuilder-gjs-hint voodbuilder-gjs-templates-library__hint">${escapeHtml(labels.pageTemplatesMarketplaceHint ?? 'Paste a marketplace install link to add a template.')}</p>`
+        : '';
+
+    const exportSelectedHtml = canExportTemplates
+        ? `<button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-templates-selection-bar__action" data-voodbuilder-templates-export-selected disabled>
+                            ${lucideIcon('upload', 14)}
+                            <span>${escapeHtml(labels.pageTemplatesExportSelected ?? 'Export selected')}</span>
+                        </button>`
+        : '';
 
     templatesMount.innerHTML = `
         <div class="voodbuilder-gjs-templates-library" data-voodbuilder-templates-library>
+            ${marketplaceHintHtml}
             <div class="voodbuilder-gjs-templates-library__toolbar">
-                <div class="voodbuilder-gjs-templates-library__header">
-                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--primary voodbuilder-gjs-templates-library__save" data-voodbuilder-page-template-save>
-                        <span>${escapeHtml(labels.pageTemplatesSave ?? labels.dialogSave ?? 'Save')}</span>
-                    </button>
-                    <div class="voodbuilder-gjs-templates-library__icon-actions" role="group" aria-label="${escapeHtml(labels.pageTemplatesTitle ?? 'Templates')}">
-                        <button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-import-toggle title="${escapeHtml(labels.pageTemplatesImport ?? 'Import')}" aria-label="${escapeHtml(labels.pageTemplatesImport ?? 'Import')}">${lucideIcon('download', 16)}</button>
-                        <button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-import-url title="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}" aria-label="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}">${lucideIcon('link', 16)}</button>
-                        <button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-select-toggle title="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-label="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-pressed="false">${lucideIcon('box-select', 16)}</button>
-                        <button type="button" class="voodbuilder-gjs-icon-btn voodbuilder-gjs-templates-library__icon-btn" data-voodbuilder-page-template-export title="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}" aria-label="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}">${lucideIcon('upload', 16)}</button>
-                    </div>
+                <div class="voodbuilder-gjs-templates-library__header"${! saveButtonHtml && ! iconActions ? ' hidden' : ''}>
+                    ${saveButtonHtml}
+                    ${iconActions ? `<div class="voodbuilder-gjs-templates-library__icon-actions" role="group" aria-label="${escapeHtml(labels.pageTemplatesTitle ?? 'Templates')}">${iconActions}</div>` : ''}
                 </div>
                 <div class="voodbuilder-gjs-templates-selection-bar" data-voodbuilder-templates-selection-bar hidden>
                     <p class="voodbuilder-gjs-templates-selection-bar__meta">
                         <span class="voodbuilder-gjs-templates-selection-bar__count" data-voodbuilder-templates-selection-count>${escapeHtml(formatCountLabel(labels.pageTemplatesSelectedCount, 0))}</span>
                     </p>
                     <div class="voodbuilder-gjs-templates-selection-bar__actions">
-                        <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-templates-selection-bar__action" data-voodbuilder-templates-export-selected disabled>
-                            ${lucideIcon('upload', 14)}
-                            <span>${escapeHtml(labels.pageTemplatesExportSelected ?? 'Export selected')}</span>
-                        </button>
+                        ${exportSelectedHtml}
                         <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-templates-selection-bar__action voodbuilder-gjs-templates-selection-bar__action--danger" data-voodbuilder-templates-delete-selected disabled>
                             ${lucideIcon('trash-2', 14)}
                             <span>${escapeHtml(labels.pageTemplatesDeleteSelected ?? 'Delete selected')}</span>
@@ -152,10 +179,10 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 </div>
             </div>
             <section class="voodbuilder-gjs-templates-import" data-voodbuilder-page-template-import-panel hidden>
-                <h4 class="voodbuilder-gjs-templates-import__title">${escapeHtml(labels.pageTemplatesImportTitle ?? 'Import: templates')}</h4>
+                <h4 class="voodbuilder-gjs-templates-import__title">${escapeHtml(labels.pageTemplatesImportTitle ?? 'Import templates')}</h4>
                 <div class="voodbuilder-gjs-templates-import__dropzone" data-voodbuilder-page-template-import-drop tabindex="0" role="button">
-                    <p class="voodbuilder-gjs-hint">${escapeHtml(labels.pageTemplatesImportDrop ?? 'Drop file(s) here (JSON)')}</p>
-                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--block" data-voodbuilder-page-template-import-select>${escapeHtml(labels.pageTemplatesImportSelect ?? 'Select file(s) to import')}</button>
+                    <p class="voodbuilder-gjs-hint">${escapeHtml(labels.pageTemplatesImportDrop ?? 'Drop JSON files here')}</p>
+                    <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--block" data-voodbuilder-page-template-import-select>${escapeHtml(labels.pageTemplatesImportSelect ?? 'Browse')}</button>
                     <input type="file" accept="application/json,.json" hidden data-voodbuilder-page-template-import-input />
                 </div>
                 <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-btn--block" data-voodbuilder-page-template-import-cancel>${escapeHtml(labels.pageTemplatesImportCancel ?? 'Cancel')}</button>
@@ -352,8 +379,13 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             selectionCountEl.textContent = formatCountLabel(labels.pageTemplatesSelectedCount, count);
         }
 
-        exportSelectedBtn.disabled = count === 0;
-        deleteSelectedBtn.disabled = count === 0;
+        if (exportSelectedBtn) {
+            exportSelectedBtn.disabled = count === 0;
+        }
+
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.disabled = count === 0;
+        }
         selectToggleBtn?.classList.toggle('is-active', selectionMode);
         selectToggleBtn?.setAttribute('aria-pressed', selectionMode ? 'true' : 'false');
         selectionBar.hidden = ! selectionMode;

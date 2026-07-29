@@ -59,7 +59,7 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
         ? (labels.componentsCompatibilityChromeReviewHint
             ?? 'These classes are not in the block JIT CSS but are usually covered by the canvas theme (nav/footer chrome). Click a class to jump to it in the editor.')
         : (labels.componentsCompatibilityReviewHint
-            ?? 'These classes were not found in the block JIT CSS and may be covered by the canvas theme. Click a class to jump to it in the editor.');
+            ?? 'Usually covered by the canvas theme. Click a class to jump to it.');
     const statusText = statusLabel(labels, status);
     const onReviewClassClick = options.onReviewClassClick ?? null;
 
@@ -105,7 +105,7 @@ export function renderCompatibilityReport(mount, report, labels = {}, options = 
         ? ''
         : `<section class="${reviewBannerClass}" aria-label="${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}">
                 <div class="voodbuilder-gjs-compatibility__review-banner-head">
-                    <h4 class="voodbuilder-gjs-compatibility__review-banner-title">${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Classes to review')}</h4>
+                    <h4 class="voodbuilder-gjs-compatibility__review-banner-title">${escapeHtml(labels.componentsCompatibilityReviewTitle ?? 'Not in block CSS')}</h4>
                     <span class="voodbuilder-gjs-compatibility__count">${review.length}</span>
                 </div>
                 <p class="voodbuilder-gjs-compatibility__review-hint">${escapeHtml(reviewHint)}</p>

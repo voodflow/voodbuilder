@@ -162,9 +162,12 @@ final class GrapesJsEditorGate
             'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
-                'templatesLocal' => Voodbuilder::can('templates.local'),
-                'templatesImport' => Voodbuilder::can('templates.import'),
-                'templatesExport' => Voodbuilder::can('templates.export'),
+                'templatesLocal' => TemplatesModule::isEnabled(),
+                'templatesAuthoring' => TemplateAuthoringBridge::isEnabled(),
+                'templatesImport' => TemplateAuthoringBridge::canImportJson(),
+                'templatesExport' => TemplateAuthoringBridge::canExport(),
+                // Marketplace install-from-URL is always available when Templates module is on.
+                'templatesImportUrl' => TemplatesModule::isEnabled(),
                 'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
                 'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
                 'componentsImport' => ComponentRuntimeBridge::moduleEnabled()
@@ -555,6 +558,7 @@ final class GrapesJsEditorGate
             'pageTemplatesDeleteConfirm' => __('voodbuilder::pro.page_templates.delete_confirm'),
             'pageTemplatesDeleteError' => __('voodbuilder::pro.page_templates.delete_error'),
             'pageTemplatesEmpty' => __('voodbuilder::pro.page_templates.empty'),
+            'pageTemplatesMarketplaceHint' => __('voodbuilder::pro.page_templates.marketplace_hint'),
             'pageTemplatesLoading' => __('voodbuilder::pro.page_templates.loading'),
             'pageTemplatesLoadError' => __('voodbuilder::pro.page_templates.load_error'),
             'pageTemplatesImport' => __('voodbuilder::pro.page_templates.import'),

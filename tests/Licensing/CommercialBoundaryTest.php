@@ -10,8 +10,10 @@ use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
+use Voodflow\Voodbuilder\Support\GrapesJs\TemplateAuthoringBridge;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
 
 class CommercialBoundaryTest extends TestCase
 {
@@ -33,11 +35,12 @@ class CommercialBoundaryTest extends TestCase
         $this->assertTrue(Route::has('voodbuilder.grapesjs.components.index'));
     }
 
-    public function test_community_keeps_core_cms_modules(): void
+    public function test_community_keeps_core_cms_modules_and_marketplace_template_url(): void
     {
         $this->assertTrue(TemplatesModule::isEnabled());
         $this->assertTrue(PopupsModule::isEnabled());
         $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.index'));
+        $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.import-url'));
         $this->assertTrue(Route::has('voodbuilder.popups.public'));
     }
 
@@ -57,10 +60,29 @@ class CommercialBoundaryTest extends TestCase
         $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
     }
 
-    public function test_community_hides_pro_template_import_and_agency_export_routes(): void
+    public function test_community_without_templates_plugin_blocks_authoring_bridge(): void
     {
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.import'));
+        if (class_exists(VoodbuilderTemplates::class)) {
+            VoodbuilderTemplates::reset();
+        }
+
+        $this->assertFalse(TemplateAuthoringBridge::isEnabled());
+        $this->assertFalse(TemplateAuthoringBridge::canImportJson());
+        $this->assertFalse(TemplateAuthoringBridge::canExport());
         $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.catalog'));
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.export'));
+    }
+
+    public function test_templates_plugin_unlocks_authoring_on_community(): void
+    {
+        if (! class_exists(VoodbuilderTemplates::class)) {
+            $this->markTestSkipped('voodbuilder-templates companion package is not available.');
+        }
+
+        VoodbuilderTemplates::reset();
+        VoodbuilderTemplates::activate();
+
+        $this->assertTrue(TemplateAuthoringBridge::isEnabled());
+        $this->assertTrue(TemplateAuthoringBridge::canImportJson());
+        $this->assertTrue(TemplateAuthoringBridge::canExport());
     }
 }

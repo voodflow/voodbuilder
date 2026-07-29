@@ -84,6 +84,31 @@ class GrapesJsImportCompatibilityAnalyzerTest extends TestCase
         $this->assertFalse(GrapesJsImportCompatibilityAnalyzer::isInternalPackageClass('totally-made-up-utility'));
     }
 
+    public function test_treats_standard_tailwind_utilities_as_theme_ready_without_jit(): void
+    {
+        $raw = <<<'HTML'
+            <section class="grid grid-cols-2 md:grid-cols-6 gap-4 mt-12 font-bold flex-wrap bg-gradient-to-br animate-spin blur-[106px]">
+                Hero
+            </section>
+        HTML;
+
+        $report = GrapesJsImportCompatibilityAnalyzer::analyze($raw, $raw, '');
+
+        $this->assertNotContains('grid', $report['review']);
+        $this->assertNotContains('grid-cols-2', $report['review']);
+        $this->assertNotContains('md:grid-cols-6', $report['review']);
+        $this->assertNotContains('mt-12', $report['review']);
+        $this->assertNotContains('font-bold', $report['review']);
+        $this->assertNotContains('flex-wrap', $report['review']);
+        $this->assertNotContains('bg-gradient-to-br', $report['review']);
+        $this->assertNotContains('animate-spin', $report['review']);
+        $this->assertNotContains('blur-[106px]', $report['review']);
+        $this->assertSame(0, $report['totals']['review']);
+        $this->assertContains($report['status'], ['excellent', 'good']);
+        $this->assertTrue(GrapesJsImportCompatibilityAnalyzer::isStandardCanvasUtility('md:text-6xl'));
+        $this->assertFalse(GrapesJsImportCompatibilityAnalyzer::isStandardCanvasUtility('totally-made-up-utility'));
+    }
+
     public function test_css_includes_utility_detects_escaped_variants(): void
     {
         $css = '.voodbuilder-pasted-component .hover\\:bg-primary-hover:hover { background-color: red; }';

@@ -1162,8 +1162,10 @@ export function initVpressGrapesJs(container, options = {}) {
                     defaultTemplateCategory: 'Ecommerce',
                     templatesMount: shell?.mounts?.templates ?? null,
                     popupMode: options.popupMode ?? false,
+                    canAuthorTemplates: options.entitlements?.templatesAuthoring === true,
                     canImportTemplates: options.entitlements?.templatesImport === true,
                     canExportTemplates: options.entitlements?.templatesExport === true,
+                    canImportTemplatesFromUrl: options.entitlements?.templatesImportUrl !== false,
                 });
             }
 

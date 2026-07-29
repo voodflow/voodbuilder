@@ -105,9 +105,6 @@ export function registerComponentsUi(editor, options = {}) {
 
     componentsMount.innerHTML = `
         <div class="voodbuilder-gjs-components-library" data-voodbuilder-components-library>
-            <p class="voodbuilder-gjs-hint voodbuilder-gjs-components-library__hint" data-voodbuilder-components-hint hidden>
-                ${labels.componentsDragHint ?? 'Drag a component onto the canvas.'}
-            </p>
             <div class="voodbuilder-gjs-components-library__toolbar">
                 <div class="voodbuilder-gjs-components-library__header">
                     <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--primary voodbuilder-gjs-components-library__save" data-voodbuilder-save-component>
@@ -175,9 +172,9 @@ export function registerComponentsUi(editor, options = {}) {
                     tabindex="0"
                     role="button"
                 >
-                    <p class="voodbuilder-gjs-hint">${escapeHtml(labels.componentsImportDrop ?? 'Drop file(s) here (JSON)')}</p>
+                    <p class="voodbuilder-gjs-hint">${escapeHtml(labels.componentsImportDrop ?? 'Drop JSON files here')}</p>
                     <button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--block" data-voodbuilder-components-import-select>
-                        ${escapeHtml(labels.componentsImportSelect ?? 'Select file(s) to import')}
+                        ${escapeHtml(labels.componentsImportSelect ?? 'Browse')}
                     </button>
                     <input
                         type="file"
@@ -279,7 +276,6 @@ export function registerComponentsUi(editor, options = {}) {
         registerComponentBlocks(editor, catalog, labels, categories, uncategorizedLabel);
         hydrateComponentInstances(editor, catalog);
         injectComponentCatalogCss(editor, catalog);
-        updateLibraryHint();
         updateEmptyState();
         relocateComponentBlocksLibrary(editor, libraryId, libraryMounts);
         updateBlocksSelectionState();
@@ -373,7 +369,6 @@ export function registerComponentsUi(editor, options = {}) {
 
         syncComponentBlockDragState(editor, selectionMode);
         tagComponentBlockElements(editor);
-        updateLibraryHint();
         updateSelectionUi();
         updateBlocksSelectionState();
         syncComponentBlockQuickActions(editor);
@@ -460,16 +455,6 @@ export function registerComponentsUi(editor, options = {}) {
         if (deleteSelectedButton) {
             deleteSelectedButton.disabled = count === 0;
         }
-    };
-
-    const updateLibraryHint = () => {
-        const hint = componentsMount.querySelector('[data-voodbuilder-components-hint]');
-
-        if (! hint) {
-            return;
-        }
-
-        hint.hidden = catalog.length > 0 || selectionMode;
     };
 
     const importComponents = async (entries, importMeta = null) => {

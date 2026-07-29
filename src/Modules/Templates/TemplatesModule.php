@@ -43,31 +43,28 @@ final class TemplatesModule extends AbstractVoodBuilderModule implements Registe
             ->prefix('voodbuilder/grapesjs')
             ->name('voodbuilder.grapesjs.')
             ->group(function (): void {
-                // Community: local template library only.
+                // Core consume: list + delete + marketplace install-from-URL.
                 Route::get('page-templates', [GrapesJsPageTemplatesController::class, 'index'])
                     ->name('page-templates.index');
-                Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])
-                    ->name('page-templates.store');
                 Route::delete('page-templates/{pageTemplate}', [GrapesJsPageTemplatesController::class, 'destroy'])
                     ->name('page-templates.destroy');
+                Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])
+                    ->name('page-templates.import-url');
 
-                if (Voodbuilder::can('templates.import')) {
-                    Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])
-                        ->name('page-templates.import');
-                    Route::post('page-templates/import-url', [GrapesJsPageTemplatesController::class, 'importFromUrl'])
-                        ->name('page-templates.import-url');
-                }
+                // Authoring endpoints always registered; TemplateAuthoringBridge gates in the controller
+                // (and soft-gates the editor UI) so Filament plugin activation timing does not matter.
+                Route::post('page-templates', [GrapesJsPageTemplatesController::class, 'store'])
+                    ->name('page-templates.store');
+                Route::post('page-templates/import', [GrapesJsPageTemplatesController::class, 'import'])
+                    ->name('page-templates.import');
+                Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])
+                    ->name('page-templates.export');
 
                 if (Voodbuilder::can('templates.remote-install')) {
                     Route::get('page-templates/catalog', [GrapesJsPageTemplatesController::class, 'catalog'])
                         ->name('page-templates.catalog');
                     Route::post('page-templates/install', [GrapesJsPageTemplatesController::class, 'installCatalogEntry'])
                         ->name('page-templates.install');
-                }
-
-                if (Voodbuilder::can('templates.export')) {
-                    Route::post('page-templates/export', [GrapesJsPageTemplatesController::class, 'export'])
-                        ->name('page-templates.export');
                 }
             });
     }

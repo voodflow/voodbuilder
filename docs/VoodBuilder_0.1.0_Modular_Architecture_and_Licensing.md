@@ -4,8 +4,51 @@
 **Target branch:** `refactor/modular-architecture`  
 **Target version:** `0.1.0`  
 **Current version:** `0.0.11`  
-**Status:** planning baseline  
+**Status:** commercial plugin wave in progress (Phases 0–11 largely done; companion packages live)  
+**Last progress update:** 2026-07-29  
 **Primary goal:** transform the current monolithic VoodBuilder package into a modular, extensible and licensable platform without changing existing behaviour or breaking compatibility.
+
+---
+
+# 0. Where we are (2026-07-29) — read this first
+
+Living detail also lives in [`docs/progress/commercial-plugin-wave.md`](progress/commercial-plugin-wave.md) and the workstation handoff in **§27** below.
+
+## Done
+
+| Area | State |
+|---|---|
+| Internal modular Core (modules, capabilities, editor split) | Done on `refactor/modular-architecture` |
+| Popups companion | **Pushed** `voodflow/voodbuilder-popups` — owns UI/runtime |
+| Components companion | **Pushed** `voodflow/voodbuilder-components` — full library + soft-gate when plugin off |
+| Dynamic Data companion | **Pushed** `voodflow/voodbuilder-dynamic-data` — all DD behind plugin; List repeat still needs Pro entitlement |
+| Templates companion | **Pushed** `voodflow/voodbuilder-templates` — authoring only; Core keeps list + **install-from-URL** (marketplace) |
+| Forms / Analytics / Cookiebar | **Pushed scaffolds only** (`forms`, `analitycs` spelling, `cookiebar`) |
+| Components UX polish | Compatibility false positives reduced; import copy + icon contrast improved (Core) |
+
+**Commercial gate pattern (settled):** Composer package alone is not enough. Host must register `*Plugin::make()` on the Filament panel. Soft-gate the editor UI to match what the API can actually do.
+
+## Not done / continue here
+
+1. **Analytics** — implement page analytics on top of popup analytics (`voodbuilder-analitycs`).
+2. **Cookiebar** — real consent bar (block GA / Meta Pixel / embeds; disclose media; no Google Fonts dep in Core).
+3. **Forms** — invent last (`voodbuilder-forms` scaffold already exists).
+4. **Templates marketplace URL** — optional signed/one-shot install links (today: HTTPS + anti-SSRF only).
+5. **Packaging** — still path-repo clones under `packages/voodflow/` (not Packagist yet).
+6. **Edition matrices in §7.x** — still describe older Community/Pro/Agency tables; runtime gates for Components / Dynamic Data / Templates authoring are now **plugin-based**. Treat §7 as product intent; treat companion READMEs + `commercial-plugin-wave.md` as runtime truth until matrices are rewritten.
+
+## Remote push checklist (2026-07-29)
+
+| Repo | Remote | Branch | Pushed? |
+|---|---|---|---|
+| `voodbuilder` (Core) | `git@voodflow-git:voodflow/voodbuilder.git` | `refactor/modular-architecture` | Yes (push required for workstation; see §27) |
+| `voodbuilder-popups` | `…/voodbuilder-popups.git` | `main` | Yes |
+| `voodbuilder-components` | `…/voodbuilder-components.git` | `main` | Yes |
+| `voodbuilder-dynamic-data` | `…/voodbuilder-dynamic-data.git` | `main` | Yes |
+| `voodbuilder-templates` | `…/voodbuilder-templates.git` | `main` | Yes |
+| `voodbuilder-forms` | `…/voodbuilder-forms.git` | `main` | Yes (scaffold) |
+| `voodbuilder-cookiebar` | `…/voodbuilder-cookiebar.git` | `main` | Yes (scaffold) |
+| `voodbuilder-analitycs` | `…/voodbuilder-analitycs.git` | `main` | Yes (scaffold) |
 
 ---
 
@@ -511,6 +554,8 @@ Community must remain genuinely useful, but the full curated section library is 
 
 ## 7.5 Page templates
 
+> **Runtime update (2026-07):** authoring (Save / JSON import / export / multi-select) is gated by companion plugin `voodflow/voodbuilder-templates`. Core always allows list/apply and **install-from-URL** (marketplace purchase link) without that plugin. The edition table below is historical product intent and needs a rewrite.
+
 | Capability | Community | Professional | Agency |
 |---|:---:|:---:|:---:|
 | Built-in templates | 2 | Full official library | Full official library |
@@ -527,6 +572,8 @@ Community must remain genuinely useful, but the full curated section library is 
 An asset created with an Agency-only feature may declare required capabilities. A lower plan must not import an asset that depends on unavailable capabilities.
 
 ## 7.6 Components
+
+> **Runtime update (2026-07):** Components library is gated by companion plugin `voodflow/voodbuilder-components` (Filament registration), not Agency edition alone. Soft-gate the Components tab when the plugin is off.
 
 | Capability | Community | Professional | Agency |
 |---|:---:|:---:|:---:|
@@ -706,17 +753,22 @@ packages/voodflow/voodbuilder/
 ## 9.2 Later physical packages
 
 ```text
-voodflow/voodbuilder
-voodflow/voodbuilder-professional
-voodflow/voodbuilder-agency
-voodflow/voodbuilder-dynamic-data
-voodflow/voodbuilder-popups
-voodflow/voodbuilder-sdk
+voodflow/voodbuilder                 # Core (this repo)
+voodflow/voodbuilder-popups          # DONE — companion plugin
+voodflow/voodbuilder-components      # DONE — companion plugin
+voodflow/voodbuilder-dynamic-data    # DONE — companion plugin
+voodflow/voodbuilder-templates       # DONE — authoring companion (marketplace URL stays in Core)
+voodflow/voodbuilder-forms           # scaffold only
+voodflow/voodbuilder-cookiebar       # scaffold only
+voodflow/voodbuilder-analitycs       # scaffold only (intentional spelling)
+voodflow/voodbuilder-sdk             # later
 ```
 
 Avoid splitting every module into its own package.
 
 Only extract modules with a clear commercial or lifecycle boundary.
+
+**Runtime note (2026-07):** companions unlock via Filament `*Plugin::make()`, not by edition alone. Edition capabilities may still soft-gate nested features (e.g. Dynamic Data list repeat = `dynamic-data.collections`).
 
 ---
 
@@ -1715,16 +1767,19 @@ After modularisation:
 
 # 23. Commercial plugin roadmap
 
-## Official first wave
+## Official first wave — status 2026-07-29
 
-1. **VoodBuilder Popups**
-2. **VoodBuilder Dynamic Data**
-3. **VoodBuilder Forms**
-4. **VoodBuilder Analytics**
-5. **VDocs integration**
-6. **VoodBuilder Blog/Content**
-7. **VoodBuilder AI**
-8. **VoodBuilder Shop**, later
+1. **VoodBuilder Popups** — DONE (extracted)
+2. **VoodBuilder Components** — DONE (extracted; plugin gate)
+3. **VoodBuilder Dynamic Data** — DONE (extracted; plugin gate; collections still Pro)
+4. **VoodBuilder Templates** — DONE authoring plugin; Core keeps marketplace install-from-URL
+5. **VoodBuilder Analytics** — scaffold only → **NEXT implement**
+6. **VoodBuilder Cookiebar** — scaffold only → implement after Analytics
+7. **VoodBuilder Forms** — scaffold only → **LAST**
+8. **VDocs integration** — separate product (already in host)
+9. **VoodBuilder Blog/Content** — later
+10. **VoodBuilder AI** — later
+11. **VoodBuilder Shop** — later
 
 ## Plugin criteria
 
@@ -1840,24 +1895,159 @@ Version `0.1.0` is complete only when:
 
 ---
 
-# 27. Immediate next action
+# 27. Workstation handoff — continue from here (2026-07-29)
 
-Cursor must now begin with:
+This replaces the old “Phase 0 freeze” immediate action. Phases 0–11 and the first commercial companions are already in flight on `refactor/modular-architecture`.
+
+## 27.1 Goal tomorrow
+
+1. Pull **Core** `voodbuilder` on `refactor/modular-architecture`.
+2. Clone missing companions into `packages/voodflow/` (path repos; not Packagist yet).
+3. Wire host Cosmolab Composer + Filament plugins.
+4. Continue the wave: **Analytics → Cookiebar → Forms (last)**.
+
+## 27.2 Remotes (SSH `voodflow-git`)
 
 ```text
-Phase 0 — Freeze and baseline
-Phase 1 — Architectural audit
+git@voodflow-git:voodflow/voodbuilder.git
+git@voodflow-git:voodflow/voodbuilder-popups.git
+git@voodflow-git:voodflow/voodbuilder-components.git
+git@voodflow-git:voodflow/voodbuilder-dynamic-data.git
+git@voodflow-git:voodflow/voodbuilder-templates.git
+git@voodflow-git:voodflow/voodbuilder-forms.git
+git@voodflow-git:voodflow/voodbuilder-cookiebar.git
+git@voodflow-git:voodflow/voodbuilder-analitycs.git
 ```
 
-No production code should be reorganised before the audit and baseline fixtures are complete.
+## 27.3 Filo per filo — host Cosmolab (Docker DetDocker)
 
-The first requested deliverable is:
+Assume host app root:
 
 ```text
-docs/audit/migration-plan.md
+…/dev/progetti/cosmolab/app
 ```
 
-It must map the current implementation to the target modules described in this document and propose a sequence of small, testable pull requests.
+and packages:
+
+```text
+…/dev/progetti/cosmolab/app/packages/voodflow/
+```
+
+### A. Core VoodBuilder
+
+```bash
+cd …/app/packages/voodflow
+# if missing:
+git clone git@voodflow-git:voodflow/voodbuilder.git
+cd voodbuilder
+git fetch origin
+git checkout refactor/modular-architecture
+git pull --ff-only origin refactor/modular-architecture
+```
+
+### B. Companion clones (skip any folder that already exists)
+
+```bash
+cd …/app/packages/voodflow
+
+git clone git@voodflow-git:voodflow/voodbuilder-popups.git
+git clone git@voodflow-git:voodflow/voodbuilder-components.git
+git clone git@voodflow-git:voodflow/voodbuilder-dynamic-data.git
+git clone git@voodflow-git:voodflow/voodbuilder-templates.git
+git clone git@voodflow-git:voodflow/voodbuilder-forms.git
+git clone git@voodflow-git:voodflow/voodbuilder-cookiebar.git
+git clone git@voodflow-git:voodflow/voodbuilder-analitycs.git
+
+# update existing:
+for p in voodbuilder-popups voodbuilder-components voodbuilder-dynamic-data voodbuilder-templates \
+         voodbuilder-forms voodbuilder-cookiebar voodbuilder-analitycs; do
+  git -C "$p" checkout main && git -C "$p" pull --ff-only
+done
+```
+
+### C. Host `composer.json` (path repos)
+
+Ensure `require` includes (at least):
+
+```json
+"voodflow/voodbuilder": ">=0.0.2",
+"voodflow/voodbuilder-popups": "*@dev",
+"voodflow/voodbuilder-components": "*@dev",
+"voodflow/voodbuilder-dynamic-data": "*@dev",
+"voodflow/voodbuilder-templates": "*@dev"
+```
+
+Ensure `repositories` path entries exist. For Docker/virtiofs prefer:
+
+```json
+"options": { "symlink": false }
+```
+
+on companion packages (popups, components, dynamic-data, templates). Core `voodbuilder` can stay symlinked.
+
+Then:
+
+```bash
+cd …/app
+composer update voodflow/voodbuilder voodflow/voodbuilder-popups \
+  voodflow/voodbuilder-components voodflow/voodbuilder-dynamic-data \
+  voodflow/voodbuilder-templates --with-all-dependencies
+```
+
+After editing a path package with `symlink: false`, re-run that package’s `composer update` so vendor gets a fresh copy.
+
+### D. Filament panel plugins
+
+In `app/Providers/Filament/AdminPanelProvider.php`:
+
+```php
+->plugins([
+    VoodbuilderPlugin::make(),
+    VoodbuilderPopupsPlugin::make(),
+    VoodbuilderComponentsPlugin::make(),
+    VoodbuilderDynamicDataPlugin::make(),
+    VoodbuilderTemplatesPlugin::make(),
+    // VoodbuilderFormsPlugin::make(),      // invent later
+    // VoodbuilderCookiebarPlugin::make(),  // after Analytics
+    // VoodbuilderAnalitycsPlugin::make(),  // next implement
+])
+```
+
+Toggle plugins on/off to test soft-gates (Components tab upsell, Templates consume-only = link install, etc.).
+
+### E. Frontend assets
+
+GrapesJS editor assets build from the **host** Vite config (entries under `packages/voodflow/voodbuilder/...`):
+
+```bash
+cd …/app
+npx vite build
+# or: npm run dev
+```
+
+Hard-refresh the browser after build.
+
+### F. Quick smoke
+
+1. Editor opens; Popups work if plugin on.
+2. Components: Save works only with Components plugin; without plugin → upsell, no Save.
+3. Templates: without Templates plugin → only install-from-URL (+ list/apply); with plugin → Save / JSON / export / select.
+4. Dynamic Data: without plugin → Dynamic tab soft-gated; with plugin → bindings; List repeat still needs Pro edition entitlement.
+
+### G. What to implement next (priority)
+
+1. **`voodbuilder-analitycs`** — page analytics extending popup analytics.
+2. **`voodbuilder-cookiebar`** — real consent runtime.
+3. **`voodbuilder-forms`** — last.
+4. Optional: signed marketplace template URLs; rewrite §7.5–7.7 matrices to match plugin model.
+
+Open Cursor on Cosmolab with context:
+
+- this document §0 + §27
+- `docs/progress/commercial-plugin-wave.md`
+- companion README in each package
+
+Tell the agent: *continua dalla commercial plugin wave: Analytics next, Cookiebar, Forms last; non spezzare il gate marketplace Templates.*
 
 ---
 

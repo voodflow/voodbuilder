@@ -24,6 +24,8 @@ use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicData;
 use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicDataServiceProvider;
 use Voodflow\VoodbuilderPopups\VoodbuilderPopups;
 use Voodflow\VoodbuilderPopups\VoodbuilderPopupsServiceProvider;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplatesServiceProvider;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -43,6 +45,9 @@ abstract class TestCase extends BaseTestCase
                 : null,
             class_exists(VoodbuilderDynamicDataServiceProvider::class)
                 ? VoodbuilderDynamicDataServiceProvider::class
+                : null,
+            class_exists(VoodbuilderTemplatesServiceProvider::class)
+                ? VoodbuilderTemplatesServiceProvider::class
                 : null,
         ]));
     }
@@ -103,6 +108,11 @@ abstract class TestCase extends BaseTestCase
         if (class_exists(VoodbuilderDynamicData::class)) {
             VoodbuilderDynamicData::reset();
             VoodbuilderDynamicData::activate();
+        }
+
+        if (class_exists(VoodbuilderTemplates::class)) {
+            VoodbuilderTemplates::reset();
+            VoodbuilderTemplates::activate();
         }
 
         NavigationMenuResolver::clearSchemaCache();

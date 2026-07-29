@@ -41,7 +41,8 @@
             "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src/Modules/Components/",
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
             "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src/Modules/DynamicData/",
-            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource/"
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource/",
+            "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/"
         },
         "classmap": [
             "../voodbuilder-popups/src/Models/",
@@ -71,7 +72,8 @@
         "suggest": {
             "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder.",
             "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",
-            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat."
+            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat.",
+            "voodflow/voodbuilder-templates": "FilamentPHP 5 plugin: page template authoring (save, JSON import/export, multi-select)."
         }
     },
     "minimum-stability": "dev",

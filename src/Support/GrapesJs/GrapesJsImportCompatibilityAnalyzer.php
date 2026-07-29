@@ -52,6 +52,11 @@ final class GrapesJsImportCompatibilityAnalyzer
     ];
 
     /**
+     * Optional Tailwind variant prefixes (responsive, state, container, …).
+     */
+    private const VARIANT_PREFIX = '(?:(?:sm|md|lg|xl|2xl|max-sm|max-md|max-lg|max-xl|max-2xl|hover|focus|focus-visible|focus-within|active|visited|disabled|group-hover|group-focus|peer-hover|peer-focus|dark|motion-safe|motion-reduce|portrait|landscape|vp|max-vp):)*';
+
+    /**
      * @var list<string>
      */
     private const THEME_UTILITY_PATTERNS = [
@@ -62,6 +67,35 @@ final class GrapesJsImportCompatibilityAnalyzer
         '/^(?:pointer-events-(?:auto|none)|shrink-0|grow|antialiased|sr-only|not-sr-only)$/',
         '/^gap-/',
         '/^(?:items|justify|self|place)-/',
+    ];
+
+    /**
+     * Standard Tailwind utilities usually provided by the canvas/page theme even when
+     * missing from component-scoped JIT CSS (avoids false "Low compatibility" on native saves).
+     *
+     * @var list<string>
+     */
+    private const STANDARD_CANVAS_UTILITY_PATTERNS = [
+        '/^(?:flex|inline-flex|grid|inline-grid|block|inline-block|inline|hidden|contents|flow-root|table(?:-\w+)?)$/',
+        '/^(?:flex|grid|place|items|justify|content|self)-/',
+        '/^(?:grow|shrink)(?:-\d+|-0)?$/',
+        '/^basis-/',
+        '/^flex-(?:1|auto|initial|none|row|row-reverse|col|col-reverse|wrap|wrap-reverse|nowrap)$/',
+        '/^(?:col|row)-(?:auto|span-\d+|start-\d+|end-\d+)$/',
+        '/^grid-(?:cols|rows)-(?:\d+|none|subgrid)$/',
+        '/^-?(?:m|p|mt|mr|mb|ml|mx|my|ms|me|pt|pr|pb|pl|px|py|ps|pe|gap|gap-x|gap-y|space-x|space-y)-/',
+        '/^(?:w|h|min-w|min-h|max-w|max-h|size)-/',
+        '/^(?:font|text|leading|tracking|indent|align|whitespace|break|truncate|line-clamp)/',
+        '/^(?:uppercase|lowercase|capitalize|normal-case|italic|not-italic|underline|overline|line-through|no-underline)$/',
+        '/^(?:border|rounded|shadow|ring|outline|divide)/',
+        '/^(?:bg|from|via|to)-/',
+        '/^(?:static|fixed|absolute|relative|sticky)$/',
+        '/^(?:inset|top|right|bottom|left|z|start|end)-/',
+        '/^(?:opacity|blur|brightness|contrast|grayscale|hue-rotate|invert|saturate|sepia|drop-shadow)/',
+        '/^(?:transition|duration|ease|delay|animate|scale|rotate|translate|skew|origin|transform)/',
+        '/^(?:overflow|object|cursor|select|pointer-events|resize|scroll|snap|touch|overscroll)/',
+        '/^(?:appearance-none|sr-only|not-sr-only|antialiased|subpixel-antialiased|visible|invisible|collapse)$/',
+        '/^[\w.-]+-\[[^\]]+\]$/',
     ];
 
     private static ?string $themeReferenceCss = null;
@@ -203,6 +237,30 @@ final class GrapesJsImportCompatibilityAnalyzer
 
         foreach (self::THEME_UTILITY_PATTERNS as $pattern) {
             if (preg_match($pattern, $class) === 1) {
+                return true;
+            }
+        }
+
+        return self::isStandardCanvasUtility($class);
+    }
+
+    /**
+     * Common Tailwind utilities that the canvas theme / page CSS already provide.
+     */
+    public static function isStandardCanvasUtility(string $class): bool
+    {
+        if ($class === '') {
+            return false;
+        }
+
+        $base = preg_replace('/^'.self::VARIANT_PREFIX.'/', '', $class) ?? $class;
+
+        if ($base === '') {
+            return false;
+        }
+
+        foreach (self::STANDARD_CANVAS_UTILITY_PATTERNS as $pattern) {
+            if (preg_match($pattern, $base) === 1) {
                 return true;
             }
         }
@@ -375,6 +433,19 @@ final class GrapesJsImportCompatibilityAnalyzer
 
             if ($themeBackedRatio >= 0.6 || $totals['theme_ready'] >= 8) {
                 return 'good';
+            }
+        }
+
+        // Native canvas sections often rely on page theme CSS; treat heavy theme coverage as healthy.
+        if (in_array($status, ['poor', 'partial'], true)) {
+            $themeBackedRatio = ($totals['theme_ready'] + $totals['adapted']) / max(1, $totals['classes']);
+
+            if ($themeBackedRatio >= 0.75 || ($totals['theme_ready'] >= 12 && $totals['review'] <= 4)) {
+                return 'good';
+            }
+
+            if ($themeBackedRatio >= 0.5 && $totals['review'] <= 8) {
+                return 'partial';
             }
         }
 
