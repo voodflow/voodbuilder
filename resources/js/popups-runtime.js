@@ -1,5 +1,20 @@
 /**
- * Core re-export — public popup runtime lives in voodflow/voodbuilder-popups.
- * site-runtime.js keeps a stable relative import; the implementation is in the plugin.
+ * Optional public popup runtime for hosts.
+ *
+ * `voodbuilder` must stay agnostic when the `voodbuilder-popups` plugin is not installed.
  */
-export { initPopups, previewPopup } from '../../../voodbuilder-popups/resources/js/popups-runtime.js';
+const popupRuntimeModules = import.meta.glob(
+    '../../../voodbuilder-popups/resources/js/popups-runtime.js',
+    { eager: true },
+);
+
+// When the plugin is missing, the glob resolves to an empty object.
+const popupRuntimeModule = Object.values(popupRuntimeModules)[0];
+
+export function initPopups() {
+    popupRuntimeModule?.initPopups?.();
+}
+
+export function previewPopup(...args) {
+    return popupRuntimeModule?.previewPopup?.(...args);
+}

@@ -638,11 +638,12 @@ summary,
 }
 
 .voodbuilder-grapesjs-edit-launch {
+    /* Desktop-only floating CTA — hidden on mobile / drawer viewports. */
+    display: none;
     position: fixed;
-    right: 1.25rem;
-    bottom: 1.25rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
     z-index: 55;
-    display: inline-flex;
     align-items: center;
     margin: 0;
     border-radius: 9999px;
@@ -664,8 +665,7 @@ summary,
 
 @media (min-width: 768px) {
     .voodbuilder-grapesjs-edit-launch {
-        right: 1.5rem;
-        bottom: 1.5rem;
+        display: inline-flex;
     }
 }
 
@@ -836,24 +836,144 @@ html[data-voodbuilder-sub-theme] header[role='banner'],
     border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 12%, transparent);
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+/*
+ * The Blade nav also ships an explicit 1px strip (`[data-voodbuilder-header-divider]`).
+ * Together with the CSS border-bottom above that becomes a double seam (reads as a
+ * bright/white line). Hide the strip everywhere — the CSS border is the single source.
+ * Baked chrome HTML in saved layouts still contains the strip, so CSS must hide it.
+ */
+[data-voodbuilder-header-divider] {
+    display: none !important;
+}
+
+/* Page editor: no divider under the navbar between chrome and first content block.
+ * Layout editor (editor-scope=layout) keeps the subtle CSS border. */
+body[data-voodbuilder-editor-scope='page'] header[role='banner'],
+html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+}
+
+/**
+ * Shared elevated dropdown panel (TailwindPlus / Catalyst-like).
+ * Unlayered so these beat Blade utility classes (`rounded-lg`, `shadow-lg`, `border`, …)
+ * and restyle baked chrome HTML already stored in GrapesJS layouts.
+ *
+ * Light: no hard border (shadow only) — matches “avevamo rimosso i bordi”.
+ * Dark: low-contrast ring (≈ ring-white/10), never solid vp-divider / bright outline.
+ * Shadows use black, not vp-text-1 (which is light in dark and reads as a white halo).
+ */
+.voodbuilder-dropdown-panel,
+.voodbuilder-nav-profile-menu__dropdown,
+[data-voodbuilder-nav-dropdown-panel] {
+    min-width: 14rem;
+    padding-block: 0.25rem !important;
+    padding-inline: 0 !important;
+    border-radius: 0.5rem !important;
+    border: 0 !important;
+    outline: none !important;
+    background-color: var(--color-vp-bg-elv) !important;
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+html.dark .voodbuilder-dropdown-panel,
+html.dark .voodbuilder-nav-profile-menu__dropdown,
+html.dark [data-voodbuilder-nav-dropdown-panel] {
+    box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.1),
+        0 10px 15px -3px rgb(0 0 0 / 0.45),
+        0 4px 6px -4px rgb(0 0 0 / 0.35) !important;
+}
+
+.voodbuilder-nav-profile-menu__dropdown {
+    overflow: hidden;
+}
+
+[data-voodbuilder-nav-dropdown-panel]:not(:has([data-voodbuilder-nav-dropdown-nested])) {
+    overflow: hidden;
+}
+
+.voodbuilder-dropdown-panel :is(a, button, [role='menuitem']),
+.voodbuilder-nav-profile-menu__dropdown :is(a, button, [role='menuitem']),
+[data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']) {
+    display: flex;
+    width: calc(100% - 0.5rem);
+    align-items: center;
+    gap: 0.625rem;
+    box-sizing: border-box;
+    margin-inline: 0.25rem;
+    padding: 0.4375rem 0.625rem !important;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--color-vp-text-1);
+    text-align: left;
+    text-decoration: none;
+    background-color: transparent;
+    border: 0 !important;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
+}
+
+.voodbuilder-dropdown-panel :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+.voodbuilder-nav-profile-menu__dropdown :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+[data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']):is(:hover, :focus-visible) {
+    background-color: var(--color-vp-gray-soft) !important;
+    color: var(--color-vp-brand-1) !important;
+    outline: none;
+}
+
+.voodbuilder-dropdown-separator,
+.voodbuilder-dropdown-panel > .h-px,
+.voodbuilder-nav-profile-menu__dropdown > .h-px,
+[data-voodbuilder-nav-dropdown-panel] > .h-px {
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin-block: 0.25rem;
+    margin-inline: 0;
+    border: 0;
+    /* Soft full-width hairline — muted in both themes (not solid bright divider). */
+    background-color: color-mix(in srgb, var(--color-vp-text-1) 10%, transparent);
+}
+
+/*
+ * Header chrome colors must not leak into the mobile drawer (light surface).
+ * Keep in sync with ThemePalette::HEADER_CHROME_CSS exclusions.
+ */
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-muted) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(a, button):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)):is(:hover, :focus-visible) {
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(a, button):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)):not(.voodbuilder-header-icon-btn):is(:hover, :focus-visible) {
     color: color-mix(in srgb, var(--vx-header-text) 88%, #ffffff) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--color-vp-brand-1) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text) !important;
+}
+
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:not(:where([data-mobile-nav], [data-mobile-nav] *)) {
+    color: var(--vx-header-text, var(--color-vp-text-2)) !important;
+    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-2)) 10%, transparent) !important;
+}
+
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible):not(:where([data-mobile-nav], [data-mobile-nav] *)) {
+    color: var(--color-vp-brand-1) !important;
+    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 16%, transparent) !important;
 }
 
 /*

@@ -259,7 +259,34 @@ export function configurePlainTextRte(editor) {
         el.addEventListener('paste', (event) => {
             event.preventDefault();
             const text = event.clipboardData?.getData('text/plain') ?? '';
-            document.execCommand('insertText', false, text);
+
+            const selection = window.getSelection?.();
+
+            if (! selection) {
+                return;
+            }
+
+            let range = selection.rangeCount ? selection.getRangeAt(0) : null;
+
+            if (! range || ! el.contains(range.commonAncestorContainer)) {
+                range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                selection.removeAllRanges?.();
+                selection.addRange?.(range);
+            }
+
+            range.deleteContents();
+
+            const node = document.createTextNode(text);
+            range.insertNode(node);
+
+            const caret = document.createRange();
+            caret.setStartAfter(node);
+            caret.collapse(true);
+
+            selection.removeAllRanges?.();
+            selection.addRange?.(caret);
         });
     };
 

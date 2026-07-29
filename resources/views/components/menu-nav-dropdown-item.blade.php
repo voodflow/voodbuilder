@@ -1,6 +1,6 @@
 @props([
     'item',
-    'linkClass' => 'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+    'linkClass' => '',
     'depth' => 0,
 ])
 
@@ -30,9 +30,8 @@
             role="menuitem"
             @class([
                 $linkClass,
-                'flex w-full items-center justify-between gap-2 text-left',
-                'font-medium text-vp-brand-1' => $isActive,
-                'text-vp-text-2' => ! $isActive,
+                'justify-between',
+                'text-vp-brand-1' => $isActive,
             ])
             aria-haspopup="menu"
             aria-expanded="false"
@@ -47,7 +46,7 @@
             data-voodbuilder-nav-dropdown-panel
             hidden
             role="menu"
-            class="absolute top-0 left-[calc(100%-0.25rem)] z-50 min-w-[14rem] rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+            class="voodbuilder-dropdown-panel absolute top-0 left-[calc(100%-0.25rem)] z-50"
         >
             @if ($hasParentLink)
                 <a
@@ -55,15 +54,14 @@
                     role="menuitem"
                     @class([
                         $linkClass,
-                        'font-medium text-vp-brand-1' => $item->isSelfActive(),
-                        'text-vp-text-1' => ! $item->isSelfActive(),
+                        'text-vp-brand-1' => $item->isSelfActive(),
                     ])
                     @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >
                     {{ __($item->label) }}
                 </a>
 
-                <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+                <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
             @endif
 
             @foreach ($children as $child)
@@ -77,8 +75,7 @@
         role="menuitem"
         @class([
             $linkClass,
-            'font-medium text-vp-brand-1' => $isActive,
-            'text-vp-text-2' => ! $isActive,
+            'text-vp-brand-1' => $isActive,
         ])
         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
     >

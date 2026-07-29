@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build a compact Tabler Icons catalog for the VoodBuilder icon picker.
  * Source: @tabler/icons (MIT) — categories match https://tabler.io/icons

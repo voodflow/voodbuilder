@@ -16,6 +16,7 @@ use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
+use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 
 final class GrapesJsChromeLayoutEditorGate
 {
@@ -67,8 +68,11 @@ final class GrapesJsChromeLayoutEditorGate
             'componentsUrl' => ComponentRuntimeBridge::moduleEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.components.index')
                 : null,
-            // Page templates are page-only — keep them out of the layout editor.
-            'pageTemplatesUrl' => null,
+            // Allow "Templates" tab in chrome layout editor too.
+            // Even without the optional templates authoring plugin, we can still load base templates.
+            'pageTemplatesUrl' => TemplatesModule::isEnabled()
+                ? self::editorRoute('voodbuilder.grapesjs.page-templates.index')
+                : null,
             'pageTemplatesCatalogUrl' => null,
             'templateCategories' => PageTemplateCategories::all(),
             'packageVersion' => VoodbuilderPackageVersion::current(),

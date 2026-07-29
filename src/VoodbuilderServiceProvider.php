@@ -33,6 +33,8 @@ use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsController;
+use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
@@ -210,6 +212,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->name('voodbuilder.grapesjs.')
             ->group(function (): void {
                 Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
+                Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
+                Route::get('bindings/preview/{sitePage}', GrapesJsBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('link-targets', GrapesJsLinkTargetsController::class)->name('link-targets');
                 Route::get('media/{media}', GrapesJsMediaPreviewController::class)->name('media.preview');
                 Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');

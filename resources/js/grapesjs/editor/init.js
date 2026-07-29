@@ -636,7 +636,9 @@ export function initVpressGrapesJs(container, options = {}) {
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
-        hideTemplates: Boolean(options.chromeLayoutMode),
+        // In chrome layout editor we still want the "Templates" tab visible for base templates.
+        // We only hide the tab when we cannot load templates at all.
+        hideTemplates: !Boolean(options.pageTemplatesUrl),
         editingContext: resolveEditingContext(options, labels),
     }) : null;
 
@@ -1150,7 +1152,7 @@ export function initVpressGrapesJs(container, options = {}) {
         }
 
         if (! options.popupMode) {
-            if (! options.chromeLayoutMode && options.pageTemplatesUrl) {
+            if (options.pageTemplatesUrl) {
                 registerPageTemplatesSidebar(editor, {
                     pageTemplatesUrl: options.pageTemplatesUrl,
                     pageTemplatesCatalogUrl: options.entitlements?.templatesRemoteInstall
@@ -1162,6 +1164,7 @@ export function initVpressGrapesJs(container, options = {}) {
                     defaultTemplateCategory: 'Ecommerce',
                     templatesMount: shell?.mounts?.templates ?? null,
                     popupMode: options.popupMode ?? false,
+                    templatesPluginInstalled: options.entitlements?.templatesPluginInstalled === true,
                     canAuthorTemplates: options.entitlements?.templatesAuthoring === true,
                     canImportTemplates: options.entitlements?.templatesImport === true,
                     canExportTemplates: options.entitlements?.templatesExport === true,

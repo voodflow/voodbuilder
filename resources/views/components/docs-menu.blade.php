@@ -33,21 +33,19 @@
             data-voodbuilder-nav-dropdown-panel
             hidden
             role="menu"
-            class="absolute top-[calc(100%+0.5rem)] left-0 z-50 min-w-[14rem] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+            class="voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50"
         >
             <a
                 href="{{ DocNavigation::indexUrl() }}"
                 role="menuitem"
                 @class([
-                    'block px-3 py-2 text-sm font-medium transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
                     'text-vp-brand-1' => request()->routeIs('vdocs.index'),
-                    'text-vp-text-1' => ! request()->routeIs('vdocs.index'),
                 ])
             >
                 {{ __('vdocs::nav.overview') }}
             </a>
 
-            <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+            <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
 
             @foreach ($sections as $section)
                 @php
@@ -61,9 +59,7 @@
                     href="{{ DocNavigation::sectionUrl($section) }}"
                     role="menuitem"
                     @class([
-                        'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
-                        'font-medium text-vp-brand-1' => $isActiveSection,
-                        'text-vp-text-2' => ! $isActiveSection,
+                        'text-vp-brand-1' => $isActiveSection,
                     ])
                 >
                     {{ $section->title }}

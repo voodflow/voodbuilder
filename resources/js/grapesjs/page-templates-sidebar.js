@@ -101,6 +101,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         templateCategories = [],
         defaultTemplateCategory = 'Miscellaneous',
         popupMode = false,
+        templatesPluginInstalled = false,
         canAuthorTemplates = false,
         canImportTemplates = false,
         canExportTemplates = false,
@@ -146,6 +147,13 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         ? `<p class="voodbuilder-gjs-hint voodbuilder-gjs-templates-library__hint">${escapeHtml(labels.pageTemplatesMarketplaceHint ?? 'Paste a marketplace install link to add a template.')}</p>`
         : '';
 
+    const pluginHintHtml = ! templatesPluginInstalled
+        ? `<div class="voodbuilder-gjs-inspector-empty-state voodbuilder-gjs-templates-library__locked" data-voodbuilder-inspector-empty-state="1">
+            <p class="voodbuilder-gjs-inspector-empty-state__title">${escapeHtml(labels.pageTemplatesPluginTitle ?? 'Templates add-on')}</p>
+            <p class="voodbuilder-gjs-inspector-empty-state__body">${escapeHtml(labels.pageTemplatesPluginHint ?? 'Install voodflow/voodbuilder-templates to enable import/export and sharing.')}</p>
+        </div>`
+        : '';
+
     const exportSelectedHtml = canExportTemplates
         ? `<button type="button" class="voodbuilder-gjs-btn voodbuilder-gjs-btn--ghost voodbuilder-gjs-templates-selection-bar__action" data-voodbuilder-templates-export-selected disabled>
                             ${lucideIcon('upload', 14)}
@@ -155,6 +163,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
     templatesMount.innerHTML = `
         <div class="voodbuilder-gjs-templates-library" data-voodbuilder-templates-library>
+            ${pluginHintHtml}
             ${marketplaceHintHtml}
             <div class="voodbuilder-gjs-templates-library__toolbar">
                 <div class="voodbuilder-gjs-templates-library__header"${! saveButtonHtml && ! iconActions ? ' hidden' : ''}>
@@ -405,10 +414,6 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 return;
             }
 
-            if (editor.__voodbuilderActiveLibrary !== 'templates') {
-                return;
-            }
-
             if (editor.__voodbuilderTemplateSelectionMode !== true) {
                 return;
             }
@@ -431,14 +436,11 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
             event.preventDefault();
             event.stopPropagation();
-            toggleTemplateSelection(item);
+            // Selection is toggled on `click` (not `mousedown`) to avoid
+            // edge-cases with event ordering / UI overlays.
         }, true);
 
         blocksMountNode.addEventListener('click', (event) => {
-            if (editor.__voodbuilderActiveLibrary !== 'templates') {
-                return;
-            }
-
             if (editor.__voodbuilderTemplateSelectionMode !== true) {
                 return;
             }
@@ -453,6 +455,13 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 return;
             }
 
+            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog);
+
+            if (! item) {
+                return;
+            }
+
+            toggleTemplateSelection(item);
             event.preventDefault();
             event.stopPropagation();
         }, true);

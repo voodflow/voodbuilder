@@ -14,6 +14,7 @@ import {
 } from './link-picker-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { configurePlainTextRte } from './text-elements.js';
+import { insertHtmlInlineAtCaret } from './rich-text-dynamic-tags.js';
 
 const SELECT_ME_ATTR = 'data-selectme';
 
@@ -87,6 +88,26 @@ function restoreSelection(rte, snapshot) {
     }
 }
 
+function unwrapAnchorElement(anchorEl) {
+    if (! (anchorEl instanceof Element)) {
+        return false;
+    }
+
+    const parent = anchorEl.parentNode;
+
+    if (! parent) {
+        return false;
+    }
+
+    while (anchorEl.firstChild) {
+        parent.insertBefore(anchorEl.firstChild, anchorEl);
+    }
+
+    anchorEl.remove();
+
+    return true;
+}
+
 /**
  * @param {object} editor
  * @param {Record<string, string>} [labels]
@@ -114,7 +135,8 @@ export function configureRichTextEditor(editor, labels = {}) {
                 return;
             }
 
-            rte.insertHTML(`<span>${selected}</span>`);
+            const html = `<span>${escapeHtml(selected)}</span>`;
+            insertHtmlInlineAtCaret(rte.el, html);
         },
     });
 
@@ -150,7 +172,7 @@ export function configureRichTextEditor(editor, labels = {}) {
 
                 if (result.remove) {
                     if (snapshot.isLink) {
-                        rte.exec('unlink');
+                        unwrapAnchorElement(snapshot.anchor);
                     }
 
                     return;
@@ -162,10 +184,22 @@ export function configureRichTextEditor(editor, labels = {}) {
                     return;
                 }
 
-                rte.insertHTML(
-                    `${buildAnchorOpenTag(result, SELECT_ME_ATTR)}${escapeHtml(snapshot.text)}</a>`,
-                    { select: true },
-                );
+                const html = `${buildAnchorOpenTag(result, SELECT_ME_ATTR)}${escapeHtml(snapshot.text)}</a>`;
+                insertHtmlInlineAtCaret(rte.el, html);
+
+                // Keep the "select inserted anchor" behaviour for trait editing.
+                if (rte.el) {
+                    const inserted = rte.el.querySelector?.('a[data-selectme]');
+                    if (inserted) {
+                        const selection = rte.doc?.getSelection?.() ?? window.getSelection?.();
+                        const doc = rte.doc ?? document;
+
+                        const newRange = doc.createRange();
+                        newRange.selectNodeContents(inserted);
+                        selection?.removeAllRanges?.();
+                        selection?.addRange?.(newRange);
+                    }
+                }
             });
         },
     });

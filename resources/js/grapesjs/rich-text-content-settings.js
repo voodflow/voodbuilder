@@ -394,7 +394,121 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
 
     const exec = (command, valueArg = null) => {
         visual.focus();
-        document.execCommand(command, false, valueArg);
+
+        const selection = window.getSelection?.();
+        if (! selection || selection.rangeCount === 0) {
+            syncFromVisual();
+            return;
+        }
+
+        const range = selection.getRangeAt(0);
+
+        if (! range || ! visual.contains(range.commonAncestorContainer)) {
+            syncFromVisual();
+            return;
+        }
+
+        const unwrapAnchor = () => {
+            const anchorNode = selection.anchorNode ?? null;
+            const anchorEl = anchorNode instanceof Element
+                ? anchorNode.closest?.('a')
+                : anchorNode?.parentElement?.closest?.('a');
+
+            if (! anchorEl) {
+                return;
+            }
+
+            const parent = anchorEl.parentNode;
+
+            if (! parent) {
+                return;
+            }
+
+            while (anchorEl.firstChild) {
+                parent.insertBefore(anchorEl.firstChild, anchorEl);
+            }
+
+            anchorEl.remove();
+        };
+
+        const wrapRange = (tagName) => {
+            const wrapper = document.createElement(tagName);
+
+            if (range.collapsed) {
+                // Insert an empty wrapper so the caret stays usable.
+                wrapper.appendChild(document.createTextNode(''));
+                range.insertNode(wrapper);
+
+                const caret = document.createRange();
+                const textNode = wrapper.firstChild;
+
+                if (textNode) {
+                    caret.setStart(textNode, 0);
+                    caret.collapse(true);
+                } else {
+                    caret.selectNodeContents(wrapper);
+                    caret.collapse(false);
+                }
+
+                selection.removeAllRanges?.();
+                selection.addRange?.(caret);
+
+                return;
+            }
+
+            const contents = range.extractContents();
+            wrapper.appendChild(contents);
+            range.insertNode(wrapper);
+
+            const caret = document.createRange();
+            caret.selectNodeContents(wrapper);
+            caret.collapse(false);
+
+            selection.removeAllRanges?.();
+            selection.addRange?.(caret);
+        };
+
+        const insertList = (listTag) => {
+            const contents = range.extractContents();
+            const list = document.createElement(listTag);
+            const li = document.createElement('li');
+
+            li.appendChild(contents);
+            list.appendChild(li);
+            range.insertNode(list);
+
+            const caret = document.createRange();
+            caret.setStartAfter(list);
+            caret.collapse(true);
+
+            selection.removeAllRanges?.();
+            selection.addRange?.(caret);
+        };
+
+        switch (command) {
+            case 'bold':
+                wrapRange('strong');
+                break;
+            case 'italic':
+                wrapRange('em');
+                break;
+            case 'underline':
+                wrapRange('u');
+                break;
+            case 'unlink':
+                unwrapAnchor();
+                break;
+            case 'insertUnorderedList':
+                insertList('ul');
+                break;
+            case 'insertOrderedList':
+                insertList('ol');
+                break;
+            default:
+                // No-op: we intentionally avoid deprecated document.execCommand.
+                break;
+        }
+
         syncFromVisual();
     };
 
@@ -499,7 +613,7 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
                 }
 
                 const open = buildAnchorOpenTag(result);
-                document.execCommand('insertHTML', false, `${open}${escapeHtml(text)}</a>`);
+                insertHtmlInlineAtCaret(visual, `${open}${escapeHtml(text)}</a>`);
                 syncFromVisual();
             },
         }),
@@ -593,7 +707,7 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
         const safe = sanitizeRichTextHtml(
             pasted.includes('<') ? pasted : pasted.replace(/\n/g, '<br>'),
         );
-        document.execCommand('insertHTML', false, safe);
+        insertHtmlInlineAtCaret(visual, safe);
         syncFromVisual();
     });
 

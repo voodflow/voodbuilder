@@ -95,23 +95,22 @@
                 data-voodbuilder-nav-dropdown-panel
                 hidden
                 role="menu"
-                class="absolute top-[calc(100%+0.5rem)] left-0 z-50 min-w-[14rem] overflow-visible rounded-lg border border-vp-divider bg-vp-bg-elv py-2 shadow-lg"
+                class="voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50 overflow-visible"
             >
                 @if ($hasParentLink)
                     <a
                         href="{{ $item->resolveUrl() }}"
                         role="menuitem"
                         @class([
-                            'block px-3 py-2 text-sm font-medium transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+                            'font-semibold' => $item->isSelfActive(),
                             'text-vp-brand-1' => $item->isSelfActive(),
-                            'text-vp-text-1' => ! $item->isSelfActive(),
                         ])
                         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                     >
                         {{ __($item->label) }}
                     </a>
 
-                    <div class="my-1 h-px bg-vp-divider" aria-hidden="true"></div>
+                    <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
                 @endif
 
                 @foreach ($children as $child)

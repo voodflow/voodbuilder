@@ -10,8 +10,40 @@ import { choiceDialog } from './editor-dialog.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { settleEditorCanvasPreview } from './vb-runtime.js';
 import { scanLinkableButtons } from './grapesjs-button-link.js';
+import {
+    CONTENT_WIDTH_ATTR,
+    applyComponentContentWidth,
+    readComponentContentWidthMode,
+} from './content-width-toolbar.js';
 
 const CHROME_PLACEHOLDER_BLOCK_RE = /data-voodbuilder-block="(?:site_nav_simple|site_footer_columns_simple|site_header|site_footer[^"]*)"/i;
+
+/**
+ * After setComponents GrapesJS may strip inline styles that encode content-width.
+ * Re-apply them from the persisted data-voodbuilder-content-width attribute.
+ */
+function restoreContentWidthAfterApply(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    const walk = (component) => {
+        const attrs = component?.getAttributes?.() ?? {};
+        const mode = String(attrs[CONTENT_WIDTH_ATTR] ?? '').trim();
+
+        if (mode === 'full' || mode === 'normal' || mode === 'custom') {
+            applyComponentContentWidth(component, mode, editor);
+        }
+
+        for (const child of component?.components?.()?.models ?? []) {
+            walk(child);
+        }
+    };
+
+    walk(wrapper);
+}
 
 export function templatePayload(template) {
     if (template?.builder_payload) {
@@ -128,6 +160,7 @@ function runBulkStructureUpdate(editor, work) {
         window.requestAnimationFrame(() => {
             editor.__voodbuilderBulkStructureUpdate = false;
             settleTemplateCanvas(editor);
+            restoreContentWidthAfterApply(editor);
 
             try {
                 const root = editor.__voodbuilderChromeShellMode

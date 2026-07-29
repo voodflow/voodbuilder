@@ -18,30 +18,41 @@ final class TemplateAuthoringBridge
 {
     public static function isEnabled(): bool
     {
-        if (self::safeClassExists(\Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::class)) {
-            return \Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::authoringEnabled();
+        $class = 'Voodflow\\VoodbuilderTemplates\\VoodbuilderTemplates';
+
+        if (self::safeClassExists($class)) {
+            return (bool) call_user_func([$class, 'authoringEnabled']);
         }
 
-        // Legacy hosts without the companion package: keep edition matrix.
+        // Free / legacy hosts: allow basic local authoring when the edition entitles it.
         return \Voodflow\Voodbuilder\Voodbuilder::can('templates.local');
     }
 
     public static function canImportJson(): bool
     {
-        if (self::safeClassExists(\Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::class)) {
-            return self::isEnabled();
+        // Advanced JSON import requires the companion plugin.
+        if (! self::pluginInstalled()) {
+            return false;
         }
 
-        return \Voodflow\Voodbuilder\Voodbuilder::can('templates.import');
+        return self::isEnabled();
     }
 
     public static function canExport(): bool
     {
-        if (self::safeClassExists(\Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::class)) {
-            return self::isEnabled();
+        // Advanced export requires the companion plugin.
+        if (! self::pluginInstalled()) {
+            return false;
         }
 
-        return \Voodflow\Voodbuilder\Voodbuilder::can('templates.export');
+        return self::isEnabled();
+    }
+
+    public static function pluginInstalled(): bool
+    {
+        $class = 'Voodflow\\VoodbuilderTemplates\\VoodbuilderTemplates';
+
+        return self::safeClassExists($class);
     }
 
     public static function authorizeAuthoring(): void

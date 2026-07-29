@@ -97,12 +97,36 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel {
 
 .voodbuilder-mobile-nav__link.is-active {
     background: color-mix(in srgb, var(--voodbuilder-mobile-accent) 12%, var(--voodbuilder-mobile-bg));
+    /* Prefer readable body text over brand (often light for green headers). */
+    color: var(--voodbuilder-mobile-text);
+    font-weight: 600;
+}
+
+html:not(.dark) .voodbuilder-mobile-nav__link.is-active {
+    background: color-mix(in srgb, var(--voodbuilder-mobile-accent) 16%, var(--voodbuilder-mobile-bg));
+    color: var(--color-vp-text-1, var(--voodbuilder-mobile-text));
+}
+
+.dark .voodbuilder-mobile-nav__link.is-active {
     color: var(--voodbuilder-mobile-accent);
 }
 
 .voodbuilder-mobile-nav__link--secondary {
     @apply min-h-10 text-sm font-normal;
     color: var(--voodbuilder-mobile-text-muted);
+}
+
+.voodbuilder-mobile-nav__link--secondary.is-active {
+    color: var(--voodbuilder-mobile-text);
+    font-weight: 600;
+}
+
+html:not(.dark) .voodbuilder-mobile-nav__link--secondary.is-active {
+    color: var(--color-vp-text-1, var(--voodbuilder-mobile-text));
+}
+
+.dark .voodbuilder-mobile-nav__link--secondary.is-active {
+    color: var(--voodbuilder-mobile-accent);
 }
 
 .voodbuilder-mobile-nav__section {
@@ -116,7 +140,7 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel {
 }
 
 .voodbuilder-mobile-nav__footer {
-    @apply shrink-0 border-t px-3 py-3;
+    @apply relative z-10 shrink-0 overflow-visible border-t px-3 py-3;
     border-color: var(--voodbuilder-mobile-border);
     background: color-mix(in srgb, var(--voodbuilder-mobile-bg-muted) 55%, var(--voodbuilder-mobile-bg));
 }
@@ -134,6 +158,71 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel {
 
 .voodbuilder-mobile-nav__tool:hover {
     color: var(--voodbuilder-mobile-text);
+}
+
+/* Language / brand tokens designed for green header must stay readable on drawer. */
+.voodbuilder-mobile-nav .text-vp-brand-1,
+.voodbuilder-mobile-nav [aria-current='true'] {
+    color: var(--voodbuilder-mobile-text) !important;
+}
+
+html:not(.dark) .voodbuilder-mobile-nav .text-vp-brand-1,
+html:not(.dark) .voodbuilder-mobile-nav [aria-current='true'] {
+    color: var(--color-vp-text-1, var(--voodbuilder-mobile-text)) !important;
+}
+
+.voodbuilder-mobile-nav .text-vp-text-1 {
+    color: var(--voodbuilder-mobile-text) !important;
+}
+
+.voodbuilder-mobile-nav .text-vp-text-2 {
+    color: var(--voodbuilder-mobile-text-muted) !important;
+}
+
+.voodbuilder-mobile-nav .text-vp-text-3 {
+    color: var(--voodbuilder-mobile-text-muted) !important;
+}
+
+.voodbuilder-mobile-nav .voodbuilder-header-icon-btn {
+    color: var(--voodbuilder-mobile-text-muted) !important;
+    background: transparent !important;
+}
+
+.voodbuilder-mobile-nav .voodbuilder-header-icon-btn:is(:hover, :focus-visible) {
+    color: var(--voodbuilder-mobile-text) !important;
+    background: var(--voodbuilder-mobile-bg-muted) !important;
+}
+
+/*
+ * Notifications in the drawer: expand inline under the bell (not a floating
+ * dropdown that sinks to the bottom of the viewport / drawer).
+ */
+.voodbuilder-mobile-nav .site-notification-bell {
+    position: relative;
+    z-index: 20;
+    display: block;
+    width: 100%;
+}
+
+.voodbuilder-mobile-nav .site-notification-bell > button.voodbuilder-header-icon-btn {
+    display: inline-flex;
+}
+
+.voodbuilder-mobile-nav .site-notification-bell [role='menu'] {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(16rem, 40vh);
+    margin-top: 0.5rem;
+    transform: none !important;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .voodbuilder-mobile-nav__account {

@@ -27,7 +27,10 @@ export function isPageTemplateBlockElement(editor, blockEl) {
         return true;
     }
 
-    const blockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id || '';
+    const blockId = blockEl.getAttribute?.('data-gjs-block-id')
+        ?? blockEl.querySelector?.('[data-gjs-block-id]')?.getAttribute?.('data-gjs-block-id')
+        ?? blockEl.id
+        ?? '';
 
     if (isPageTemplateBlockId(blockId)) {
         return true;
@@ -97,7 +100,10 @@ export function resolveTemplateFromBlockElement(editor, blockEl, catalog = []) {
         return null;
     }
 
-    const domBlockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id;
+    const domBlockId = blockEl.getAttribute?.('data-gjs-block-id')
+        ?? blockEl.querySelector?.('[data-gjs-block-id]')?.getAttribute?.('data-gjs-block-id')
+        ?? blockEl.id
+        ?? '';
 
     if (isPageTemplateBlockId(domBlockId)) {
         const templateId = domBlockId.slice(PAGE_TEMPLATE_BLOCK_PREFIX.length);

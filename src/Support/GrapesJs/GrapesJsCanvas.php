@@ -676,6 +676,17 @@ final class GrapesJsCanvas
             display: none !important;
         }
 
+        /* Mirror theme.css: hide redundant Blade strip; page editor drops header border. */
+        [data-voodbuilder-header-divider] {
+            display: none !important;
+        }
+
+        body[data-voodbuilder-editor-scope='page'] header[role='banner'],
+        html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
+            border-bottom: 0 !important;
+            box-shadow: none !important;
+        }
+
         [data-voodbuilder-chrome-shell-locked] .gjs-badge,
         [data-voodbuilder-gjs-site-header] .gjs-badge,
         [data-voodbuilder-block^='site_nav_'] .gjs-badge,

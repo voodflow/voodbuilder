@@ -10,8 +10,8 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Voodflow\Voodbuilder\Models\PageTemplate;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsComponentCategoryNormalizer;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\GrapesJs\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateBundle;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPageTemplateRemoteImporter;
 use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSmartButtonAnnotator;
@@ -63,7 +63,7 @@ class GrapesJsPageTemplatesController extends Controller
 
         $template = PageTemplate::query()->create([
             'name' => $validated['name'],
-            'category' => GrapesJsComponentCategoryNormalizer::normalize($validated['category'] ?? null),
+            'category' => self::normalizeTemplateCategory($validated['category'] ?? null),
             'description' => $validated['description'] ?? null,
             'html' => $normalized['html'],
             'css' => $normalized['css'] !== '' ? $normalized['css'] : null,
@@ -213,7 +213,7 @@ class GrapesJsPageTemplatesController extends Controller
 
             $template = PageTemplate::query()->create([
                 'name' => $name,
-                'category' => GrapesJsComponentCategoryNormalizer::normalize($entry['category'] ?? null),
+                'category' => self::normalizeTemplateCategory($entry['category'] ?? null),
                 'description' => filled($entry['description'] ?? null) ? (string) $entry['description'] : null,
                 'html' => $normalized['html'],
                 'css' => $normalized['css'] !== '' ? $normalized['css'] : null,
@@ -224,6 +224,25 @@ class GrapesJsPageTemplatesController extends Controller
         }
 
         return $created;
+    }
+
+    private static function normalizeTemplateCategory(?string $category): string
+    {
+        $raw = trim((string) $category);
+        $categories = PageTemplateCategories::all();
+        $fallback = $categories[0] ?? 'Miscellaneous';
+
+        if ($raw === '') {
+            return $fallback;
+        }
+
+        foreach ($categories as $canonical) {
+            if (strcasecmp($raw, $canonical) === 0) {
+                return $canonical;
+            }
+        }
+
+        return $raw !== '' ? $raw : $fallback;
     }
 
     /**

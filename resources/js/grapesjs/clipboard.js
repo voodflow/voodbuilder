@@ -19,21 +19,8 @@ export async function copyTextToClipboard(text) {
         // Fall through to execCommand.
     }
 
-    try {
-        const textarea = document.createElement('textarea');
-        textarea.value = value;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'fixed';
-        textarea.style.top = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const ok = document.execCommand('copy');
-        textarea.remove();
-
-        return ok;
-    } catch {
-        return false;
-    }
+    // Avoid deprecated document.execCommand('copy') (browser deprecation warnings).
+    return false;
 }
 
 /**

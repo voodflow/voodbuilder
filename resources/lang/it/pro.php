@@ -367,6 +367,8 @@ return [
         'delete_error' => 'Impossibile eliminare il template.',
         'empty' => 'Nessun template pagina ancora.',
         'marketplace_hint' => 'Incolla il link di installazione ricevuto dopo l’acquisto sul marketplace.',
+        'plugin_title' => 'Add-on template',
+        'plugin_hint' => 'Installa voodflow/voodbuilder-templates per abilitare import/export JSON, condivisione e funzionalità marketplace (installazione da URL disponibile anche in Free).',
         'loading' => 'Caricamento…',
         'load_error' => 'Impossibile caricare i template pagina.',
         'import_empty' => 'Nessun template pagina da importare.',

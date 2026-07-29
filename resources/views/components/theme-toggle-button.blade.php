@@ -5,7 +5,7 @@
 @php
     $buttonClass = match ($variant) {
         'mobile' => 'voodbuilder-mobile-nav__tool',
-        default => 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+        default => '',
     };
 @endphp
 

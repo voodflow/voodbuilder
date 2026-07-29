@@ -63,16 +63,16 @@ html[data-voodbuilder-sub-theme='site'] header[role='banner'] {
     border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text) 12%, transparent);
 }
 
-/* Header nav uses light text; exclude dropdown panels (light surface, dark text). */
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+/* Header nav uses light text; exclude dropdowns + mobile drawer (light surfaces). */
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text);
 }
 
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)):not(.voodbuilder-header-icon-btn) {
     color: #ffffff;
 }
 
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: #fca5a5;
 }
 

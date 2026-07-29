@@ -265,12 +265,20 @@ export function insertHtmlInlineAtCaret(rootEl, html) {
     rootEl.focus();
 
     const selection = window.getSelection?.();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    let range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+
+    if (! selection) {
+        return;
+    }
 
     if (! range || ! rootEl.contains(range.commonAncestorContainer)) {
-        document.execCommand('insertHTML', false, html);
-
-        return;
+        // Avoid deprecated `document.execCommand('insertHTML', ...)`.
+        // Fallback to a synthetic caret range at the end of the root.
+        range = document.createRange();
+        range.selectNodeContents(rootEl);
+        range.collapse(false);
+        selection.removeAllRanges?.();
+        selection.addRange?.(range);
     }
 
     range.deleteContents();

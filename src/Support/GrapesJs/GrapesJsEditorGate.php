@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support\GrapesJs;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
-use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
@@ -125,11 +124,11 @@ final class GrapesJsEditorGate
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::editorRoute('voodbuilder.grapesjs.blocks'),
-            'bindingsUrl' => DynamicDataModule::isEnabled()
+            'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.bindings')
                 : null,
             'linkTargetsUrl' => self::editorRoute('voodbuilder.grapesjs.link-targets'),
-            'bindingsPreviewUrl' => DynamicDataModule::isEnabled()
+            'bindingsPreviewUrl' => self::dynamicDataEnabled()
                 ? self::editorRoute('voodbuilder.grapesjs.bindings.preview', $page)
                 : null,
             'blocksRenderUrl' => self::editorRoute('voodbuilder.grapesjs.blocks.render'),
@@ -163,6 +162,7 @@ final class GrapesJsEditorGate
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
                 'templatesLocal' => TemplatesModule::isEnabled(),
+                'templatesPluginInstalled' => TemplateAuthoringBridge::pluginInstalled(),
                 'templatesAuthoring' => TemplateAuthoringBridge::isEnabled(),
                 'templatesImport' => TemplateAuthoringBridge::canImportJson(),
                 'templatesExport' => TemplateAuthoringBridge::canExport(),
@@ -177,7 +177,7 @@ final class GrapesJsEditorGate
                 'componentsCodeImport' => ComponentRuntimeBridge::moduleEnabled()
                     && Voodbuilder::can('components.code-import'),
                 // Plugin registration unlocks single; collections still need Pro entitlement.
-                'dynamicDataSingle' => DynamicDataModule::isEnabled(),
+                'dynamicDataSingle' => self::dynamicDataEnabled(),
                 'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
             ],
@@ -559,6 +559,8 @@ final class GrapesJsEditorGate
             'pageTemplatesDeleteError' => __('voodbuilder::pro.page_templates.delete_error'),
             'pageTemplatesEmpty' => __('voodbuilder::pro.page_templates.empty'),
             'pageTemplatesMarketplaceHint' => __('voodbuilder::pro.page_templates.marketplace_hint'),
+            'pageTemplatesPluginTitle' => __('voodbuilder::pro.page_templates.plugin_title'),
+            'pageTemplatesPluginHint' => __('voodbuilder::pro.page_templates.plugin_hint'),
             'pageTemplatesLoading' => __('voodbuilder::pro.page_templates.loading'),
             'pageTemplatesLoadError' => __('voodbuilder::pro.page_templates.load_error'),
             'pageTemplatesImport' => __('voodbuilder::pro.page_templates.import'),
@@ -905,5 +907,16 @@ final class GrapesJsEditorGate
         }
 
         return $lists;
+    }
+
+    private static function dynamicDataEnabled(): bool
+    {
+        $class = 'Voodflow\\Voodbuilder\\Modules\\DynamicData\\DynamicDataModule';
+
+        try {
+            return class_exists($class) && $class::isEnabled();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }
