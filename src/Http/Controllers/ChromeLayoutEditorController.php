@@ -8,22 +8,22 @@ use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsChromeLayoutEditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorChromeLayoutEditorGate;
 
 class ChromeLayoutEditorController extends Controller
 {
     public function show(ChromeLayout $chromeLayout): View
     {
-        abort_unless(GrapesJsChromeLayoutEditorGate::isEditing($chromeLayout), 403);
+        abort_unless(EditorChromeLayoutEditorGate::isEditing($chromeLayout), 403);
 
-        $config = GrapesJsChromeLayoutEditorGate::config($chromeLayout);
+        $config = EditorChromeLayoutEditorGate::config($chromeLayout);
         $config['exitUrl'] = ChromeLayoutResource::getUrl('edit', ['record' => $chromeLayout]);
 
         return view('voodbuilder::pages.chrome-layout-editor', [
             'layout' => $chromeLayout,
-            'grapesJsEditor' => true,
+            'editorEditor' => true,
             'chromeLayoutEditor' => true,
-            'grapesJsConfig' => $config,
+            'editorConfig' => $config,
         ]);
     }
 }

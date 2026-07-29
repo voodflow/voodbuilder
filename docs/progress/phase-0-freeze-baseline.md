@@ -25,7 +25,7 @@ Result: 23 tests, 1 failure (resolveSettings active settings root)
 
 ## Known baseline failures (must not “fix by rewrite” during audit)
 
-Documented in `docs/audit/risk-register.md`. Failures observed during Phase 0 run include chrome/footer renderer expectations and related GrapesJS unit tests (e.g. `GrapesJsServerBlockRendererTest`, `SitePageGrapesJsTest`). These are characterisation debt for Phase 2, not silent ignore.
+Documented in `docs/audit/risk-register.md`. Failures observed during Phase 0 run include chrome/footer renderer expectations and related Editor unit tests (e.g. `EditorServerBlockRendererTest`, `SitePageEditorTest`). These are characterisation debt for Phase 2, not silent ignore.
 
 ## Screenshots / live HTML / API captures
 

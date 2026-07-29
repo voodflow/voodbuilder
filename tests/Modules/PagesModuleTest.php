@@ -32,8 +32,8 @@ class PagesModuleTest extends TestCase
     {
         $this->assertTrue(Voodbuilder::modules()->has(PagesModule::ID));
         $this->assertFalse(PagesModule::isEnabled());
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.pages.update'));
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.forms.submit'));
+        $this->assertFalse(Route::has('voodbuilder.editor.pages.update'));
+        $this->assertFalse(Route::has('voodbuilder.editor.forms.submit'));
     }
 
     public function test_page_save_route_is_absent_when_module_disabled(): void
@@ -48,14 +48,14 @@ class PagesModuleTest extends TestCase
             'title' => 'Off',
             'slug' => 'off',
             'locale' => 'en',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => ['html' => '<p>x</p>', 'css' => '', 'js' => ''],
             'published' => true,
             'published_at' => now()->subMinute(),
         ]);
 
         $this->actingAs($user)
-            ->putJson('/voodbuilder/grapesjs/pages/'.$page->getKey(), [
+            ->putJson('/voodbuilder/editor/pages/'.$page->getKey(), [
                 'html' => '<p>y</p>',
                 'css' => '',
                 'js' => '',
@@ -76,7 +76,7 @@ class PagesModuleTest extends TestCase
             'title' => 'Public',
             'slug' => 'public-page',
             'locale' => 'en',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => ['html' => '<p>Hello public</p>', 'css' => '', 'js' => ''],
             'published' => true,
             'published_at' => now()->subMinute(),

@@ -2,7 +2,7 @@
 
 ## Templates
 
-- `TemplatesModule` owns GrapesJS page-template routes
+- `TemplatesModule` owns Editor page-template routes
 - Editor URLs / sidebar gated when disabled
 - Config: `voodbuilder.modules.templates.enabled`
 

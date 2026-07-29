@@ -4,15 +4,15 @@ Voodbuilder owns the **site chrome** (header, footer, global nav). Content packa
 
 ## Chrome layout (option C)
 
-A **Chrome layout** is a GrapesJS template stored in Admin → **Layouts**. It wraps plugin pages:
+A **Chrome layout** is a Editor template stored in Admin → **Layouts**. It wraps plugin pages:
 
 ```
 ┌─────────────────────────────────────┐
-│  Header (GrapesJS blocks)           │
+│  Header (Editor blocks)           │
 ├─────────────────────────────────────┤
 │  @yield('content') — plugin body    │
 ├─────────────────────────────────────┤
-│  Footer (GrapesJS blocks)           │
+│  Footer (Editor blocks)           │
 └─────────────────────────────────────┘
 ```
 
@@ -103,12 +103,12 @@ Route patterns drive menu highlighting, sub-theme resolution, and chrome layout 
 | Channel layout | `doc`, `page`, `full-width` | Voodbuilder (configurable) |
 | Plugin body | `@section('doc')`, `@section('content')`, … | vdocs / vtuts / blog |
 
-Do **not** wrap every doc/tutorial page in GrapesJS. Only the shared chrome is visual; plugin templates stay Blade/Livewire.
+Do **not** wrap every doc/tutorial page in Editor. Only the shared chrome is visual; plugin templates stay Blade/Livewire.
 
 ## Site Pages with chrome layout
 
 When a chrome layout is assigned to the `pages` channel (includes `/` home and `/pages/{slug}`):
 
 - Nav/footer come **only** from Admin → Layouts
-- GrapesJS page content must not include `site_nav_*` or `site_footer_*` blocks — they are stripped on save and render
+- Editor page content must not include `site_nav_*` or `site_footer_*` blocks — they are stripped on save and render
 - Edit nav/footer in the **Layout** visual editor, not in the page editor

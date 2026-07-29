@@ -305,7 +305,7 @@ CSS;
 
     /**
      * Remove palette custom-properties and ThemePalette chrome rules baked into
-     * saved GrapesJS CSS so live ThemePalette / admin overrides control the canvas.
+     * saved Editor CSS so live ThemePalette / admin overrides control the canvas.
      */
     public static function stripEmbeddedPaletteOverrides(string $css): string
     {
@@ -381,7 +381,7 @@ CSS;
     }
 
     /**
-     * GrapesJS canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
+     * Editor canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
      * Does not rely on data-voodbuilder-sub-theme being present before external stylesheets load.
      */
     public static function cssForCanvas(string $subThemeId): string
@@ -971,7 +971,7 @@ CSS;
 
     /**
      * Drop bundled semantic tokens that admin palette already overrides, so saved
-     * GrapesJS / chrome-layout CSS cannot re-apply the theme default later in the cascade.
+     * Editor / chrome-layout CSS cannot re-apply the theme default later in the cascade.
      *
      * @param  array<string, string>  $variables
      * @return array<string, string>

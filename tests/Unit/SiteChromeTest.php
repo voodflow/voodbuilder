@@ -25,19 +25,19 @@ class SiteChromeTest extends TestCase
         $this->assertTrue(SiteChrome::shouldHideFooter($page));
     }
 
-    public function test_grapesjs_editor_keeps_site_navigation_visible(): void
+    public function test_editor_keeps_site_navigation_visible(): void
     {
         $page = new SitePage([
             'layout' => 'home',
             'sub_theme' => 'site',
             'hide_site_nav' => true,
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_nav_simple"></div>',
             ],
         ]);
 
-        $this->assertFalse(SiteChrome::shouldHideNav($page, grapesJsEditor: true));
+        $this->assertFalse(SiteChrome::shouldHideNav($page, editorEditor: true));
     }
 
     public function test_site_nav_block_in_canvas_hides_layout_navigation(): void
@@ -45,7 +45,7 @@ class SiteChromeTest extends TestCase
         $page = new SitePage([
             'layout' => 'landing',
             'sub_theme' => 'site',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_nav_with_search"></div>',
             ],
@@ -60,7 +60,7 @@ class SiteChromeTest extends TestCase
         $page = new SitePage([
             'layout' => 'landing',
             'sub_theme' => 'site',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => '<div data-voodbuilder-block="site_header"></div>',
             ],

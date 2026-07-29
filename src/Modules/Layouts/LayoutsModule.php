@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Contracts\RegistersBlocks;
 use Voodflow\Voodbuilder\Contracts\RegistersRoutes;
 use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsChromeLayoutController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorChromeLayoutController;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\ChromeLayoutContentSlotBlock;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\ChromeLayoutContentSlotBlock;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 
 /**
  * Chrome layout admin/editor. Public shell resolution stays Core (`ChromeLayoutResolver`).
@@ -44,10 +44,10 @@ final class LayoutsModule extends AbstractVoodBuilderModule implements Registers
     public function registerRoutes(Router $router, ModuleContext $context): void
     {
         Route::middleware(['web', 'auth', 'throttle:60,1'])
-            ->prefix('voodbuilder/grapesjs')
-            ->name('voodbuilder.grapesjs.')
+            ->prefix('voodbuilder/editor')
+            ->name('voodbuilder.editor.')
             ->group(function (): void {
-                Route::match(['put', 'post'], 'chrome-layouts/{chromeLayout}/content', [GrapesJsChromeLayoutController::class, 'update'])
+                Route::match(['put', 'post'], 'chrome-layouts/{chromeLayout}/content', [EditorChromeLayoutController::class, 'update'])
                     ->name('chrome-layouts.content.update');
             });
 
@@ -60,7 +60,7 @@ final class LayoutsModule extends AbstractVoodBuilderModule implements Registers
             });
     }
 
-    public function registerBlocks(GrapesJsBlockRegistry $blocks, ModuleContext $context): void
+    public function registerBlocks(EditorBlockRegistry $blocks, ModuleContext $context): void
     {
         if (! config('voodbuilder.chrome_layouts.enabled', true)) {
             return;
@@ -72,7 +72,7 @@ final class LayoutsModule extends AbstractVoodBuilderModule implements Registers
     public function register(ModuleContext $context): void
     {
         $this->registerRoutes($context->app->make(Router::class), $context);
-        $this->registerBlocks($context->app->make(GrapesJsBlockRegistry::class), $context);
+        $this->registerBlocks($context->app->make(EditorBlockRegistry::class), $context);
     }
 
     public static function isEnabled(): bool

@@ -1,13 +1,13 @@
 # Voodbuilder JS editor — modular layout
 
-This document describes the modularization strategy for the GrapesJS integration layer.
-All paths are relative to `resources/js/grapesjs/`.
+This document describes the modularization strategy for the Editor integration layer.
+All paths are relative to `resources/js/editor/`.
 
 **Master plan:** see [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) (branch `modular`).
 
 ## Principles
 
-1. **Never patch GrapesJS core** — extend via plugins, events, and CSS variables.
+1. **Never patch Editor core** — extend via plugins, events, and CSS variables.
 2. **Stay inside the package** — no edits to host app or other plugins.
 3. **Atomic modules** — small files with a single responsibility.
 4. **English documentation** in code comments and README files.
@@ -16,11 +16,11 @@ All paths are relative to `resources/js/grapesjs/`.
 
 | Layer | Path | Responsibility |
 |-------|------|----------------|
-| `core/` | `attrs.js`, `block-tree.js` | Pure helpers, no GrapesJS |
+| `core/` | `attrs.js`, `block-tree.js` | Pure helpers, no Editor |
 | `chrome/` | `ids`, `slots`, `zones`, `layout/*`, `page/*`, `blocks/*` | Site chrome domain |
 | `blocks/` | `settings/`, `dynamic/` | Inspector settings + dynamic type |
 | `editor/` | `init.js`, `payload.js`, `inspector.js` | Bootstrap + wiring |
-| `plugins/` | `voodbuilder.js` | GrapesJS plugin entry |
+| `plugins/` | `voodbuilder.js` | Editor plugin entry |
 
 ## Legacy shims (temporary)
 
@@ -41,5 +41,5 @@ Selection uses `findInspectableRoot()` which:
 
 ## PHP contract
 
-`Voodflow\Voodbuilder\Contracts\GrapesJsConfigurableBlock` documents server-side config
+`Voodflow\Voodbuilder\Contracts\EditorConfigurableBlock` documents server-side config
 normalization. JS `blocks/settings` registry is the runtime inspector source of truth.

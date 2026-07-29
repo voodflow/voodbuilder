@@ -12,7 +12,7 @@
 
 Locale middleware wraps non-default locales.
 
-## GrapesJS API (from `VoodbuilderServiceProvider::registerGrapesJsRoutes`)
+## Editor API (from `VoodbuilderServiceProvider::registerEditorRoutes`)
 
 Prefix group (package-configured), middleware `web` + auth + throttle unless noted.
 

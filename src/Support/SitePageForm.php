@@ -11,16 +11,16 @@ use Voodflow\Voodbuilder\Models\SitePage;
 
 final class SitePageForm
 {
-    public static function grapesJsOnly(): bool
+    public static function editorOnly(): bool
     {
         return (bool) config('voodbuilder.pages.grapesjs_only', false);
     }
 
     public static function defaultBuilder(): PageBuilder
     {
-        $configured = config('voodbuilder.pages.default_builder', PageBuilder::GrapesJs->value);
+        $configured = config('voodbuilder.pages.default_builder', PageBuilder::Visual->value);
 
-        return PageBuilder::tryFrom((string) $configured) ?? PageBuilder::GrapesJs;
+        return PageBuilder::tryFrom((string) $configured) ?? PageBuilder::Visual;
     }
 
     public static function allowsSubThemeOverride(): bool
@@ -74,19 +74,19 @@ final class SitePageForm
 
     public static function showRichEditor(?SitePage $record): bool
     {
-        if (! self::grapesJsOnly()) {
+        if (! self::editorOnly()) {
             return true;
         }
 
-        return $record !== null && ! $record->usesGrapesJsBuilder();
+        return $record !== null && ! $record->usesEditorBuilder();
     }
 
-    public static function showGrapesJsHint(?SitePage $record): bool
+    public static function showEditorHint(?SitePage $record): bool
     {
         if ($record === null) {
-            return self::grapesJsOnly() || self::defaultBuilder() === PageBuilder::GrapesJs;
+            return self::editorOnly() || self::defaultBuilder() === PageBuilder::Visual;
         }
 
-        return $record->usesGrapesJsBuilder();
+        return $record->usesEditorBuilder();
     }
 }

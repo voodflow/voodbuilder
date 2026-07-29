@@ -81,7 +81,7 @@ class NavigationMenuResource extends Resource
     protected static function sitePageOptions(?string $locale = null): array
     {
         $query = SitePage::query()
-            ->where('builder', PageBuilder::GrapesJs)
+            ->where('builder', PageBuilder::Visual)
             ->orderByDesc('is_home')
             ->orderBy('title');
 
@@ -268,7 +268,7 @@ class NavigationMenuResource extends Resource
                 ->live()
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page))
-                ->helperText(__('voodbuilder::admin.helpers.menu_grapes_pages_only'))
+                ->helperText(__('voodbuilder::admin.helpers.menu_editor_pages_only'))
                 ->afterStateUpdated(function (callable $set, ?string $state): void {
                     if (blank($state)) {
                         $set('route_match', null);
@@ -295,7 +295,7 @@ class NavigationMenuResource extends Resource
 
                     $page = SitePage::query()->where('slug', $slug)->first();
 
-                    if (! $page instanceof SitePage || ! $page->usesGrapesJsBuilder()) {
+                    if (! $page instanceof SitePage || ! $page->usesEditorBuilder()) {
                         return null;
                     }
 

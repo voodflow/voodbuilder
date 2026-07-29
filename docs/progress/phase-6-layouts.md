@@ -2,7 +2,7 @@
 
 ## Boundary
 
-- `LayoutsModule` owns chrome layout editor + GrapesJS content-save routes and the content-slot block
+- `LayoutsModule` owns chrome layout editor + Editor content-save routes and the content-slot block
 - Filament `ChromeLayoutResource` gated via `modules.layouts.enabled` ∧ `chrome_layouts.enabled`
 - Public shell resolution (`ChromeLayoutResolver`) remains Core on `chrome_layouts.enabled`
 

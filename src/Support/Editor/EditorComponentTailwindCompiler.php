@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support\Editor;
+
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
+
+final class EditorComponentTailwindCompiler
+{
+    public static function isAvailable(): bool
+    {
+        if (! is_file(self::scriptPath())) {
+            return false;
+        }
+
+        return self::resolveNodeBinary() !== null;
+    }
+
+    public static function compile(string $html, string $scope = 'component'): ?string
+    {
+        $html = trim($html);
+
+        if ($html === '') {
+            return null;
+        }
+
+        $scope = $scope === 'page' ? 'page' : 'component';
+
+        $scriptPath = self::scriptPath();
+
+        if (! is_file($scriptPath)) {
+            return null;
+        }
+
+        $nodeBinary = self::resolveNodeBinary();
+
+        if ($nodeBinary === null) {
+            return null;
+        }
+
+        $appRoot = self::resolveAppRoot();
+
+        $result = Process::path($appRoot)
+            ->timeout(60)
+            ->env([
+                'VOODBUILDER_APP_ROOT' => $appRoot,
+                'VOODBUILDER_TAILWIND_SCOPE' => $scope,
+            ])
+            ->input($html)
+            ->run([$nodeBinary, $scriptPath]);
+
+        if (! $result->successful()) {
+            Log::warning('voodbuilder.component_tailwind_compile_failed', [
+                'exit_code' => $result->exitCode(),
+                'stderr' => Str::limit($result->errorOutput(), 2000),
+            ]);
+
+            return null;
+        }
+
+        $payload = json_decode($result->output(), true);
+
+        if (! is_array($payload) || ($payload['success'] ?? false) !== true) {
+            Log::warning('voodbuilder.component_tailwind_compile_invalid_response', [
+                'output' => Str::limit($result->output(), 2000),
+            ]);
+
+            return null;
+        }
+
+        $css = trim((string) ($payload['css'] ?? ''));
+
+        return $css !== '' ? $css : null;
+    }
+
+    public static function scriptPath(): string
+    {
+        return dirname(__DIR__, 3).'/scripts/compile-component-tailwind.mjs';
+    }
+
+    protected static function resolveNodeBinary(): ?string
+    {
+        foreach (['node', 'nodejs'] as $candidate) {
+            $probe = Process::run([$candidate, '--version']);
+
+            if ($probe->successful()) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Prefer the host app root when it can resolve Tailwind packages; otherwise use the
+     * VoodBuilder package root (package-local installs / Orchestra Testbench).
+     */
+    protected static function resolveAppRoot(): string
+    {
+        $configured = getenv('VOODBUILDER_APP_ROOT');
+
+        if (is_string($configured) && $configured !== '' && is_dir($configured)) {
+            return $configured;
+        }
+
+        $candidates = array_values(array_unique(array_filter([
+            base_path(),
+            dirname(__DIR__, 3),
+        ])));
+
+        foreach ($candidates as $candidate) {
+            if (is_dir($candidate.DIRECTORY_SEPARATOR.'node_modules'.DIRECTORY_SEPARATOR.'tailwindcss')) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0] ?? dirname(__DIR__, 3);
+    }
+}

@@ -39,7 +39,7 @@ class SyncNpmDepsCommand extends Command
 
         if (is_file(base_path('vite.config.js'))) {
             if (ConfigureViteForVoodbuilder::apply($this->option('force'))) {
-                $this->components->info('Updated vite.config.js with voodbuilder theme and GrapesJS entries.');
+                $this->components->info('Updated vite.config.js with voodbuilder theme and Editor entries.');
             }
         } else {
             $this->components->warn('vite.config.js not found — add Voodbuilder Vite entries manually.');

@@ -16,9 +16,9 @@ class ChromeLayoutManagedContentTest extends TestCase
     public function test_strips_nav_and_footer_blocks_from_page_html(): void
     {
         $html = <<<'HTML'
-<div data-voodbuilder-block="site_nav_simple" class="voodbuilder-gjs-dynamic"><div data-voodbuilder-gjs-site-header="">Nav</div></div>
+<div data-voodbuilder-block="site_nav_simple" class="voodbuilder-editor-dynamic"><div data-voodbuilder-editor-site-header="">Nav</div></div>
 <section><h1>Hero</h1></section>
-<div data-voodbuilder-block="site_footer_columns_simple" class="voodbuilder-gjs-dynamic">Footer</div>
+<div data-voodbuilder-block="site_footer_columns_simple" class="voodbuilder-editor-dynamic">Footer</div>
 HTML;
 
         $stripped = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($html);

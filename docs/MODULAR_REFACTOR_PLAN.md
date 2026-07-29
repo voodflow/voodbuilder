@@ -1,4 +1,4 @@
-# VoodBuilder GrapesJS — Piano refactor modulare
+# VoodBuilder Editor — Piano refactor modulare
 
 **Branch:** `modular`  
 **Package:** `app/packages/voodflow/voodbuilder`  
@@ -10,9 +10,9 @@
 
 ### Obiettivi
 
-- Risolvere problemi strutturali del layer GrapesJS: cicli di import, duplicazioni (`findPrimaryBlock`), inspector nav/footer inaffidabile.
+- Risolvere problemi strutturali del layer Editor: cicli di import, duplicazioni (`findPrimaryBlock`), inspector nav/footer inaffidabile.
 - Introdurre architettura a 4 layer (`core` → `domain` → `editor` → `plugin`) con naming corto e coerente.
-- Mantenere **invariati** look & feel, funzionalità e contratto PHP `GrapesJsConfigurableBlock`.
+- Mantenere **invariati** look & feel, funzionalità e contratto PHP `EditorConfigurableBlock`.
 - **Zero patch** a `node_modules/grapesjs`.
 
 ### Definition of Done
@@ -61,7 +61,7 @@ flowchart TB
 ### File tree
 
 ```
-resources/js/grapesjs/
+resources/js/editor/
 ├── core/
 │   ├── attrs.js
 │   └── block-tree.js
@@ -120,7 +120,7 @@ resources/js/grapesjs/
 | `findZone` | `chrome/zones.js` | `findDropZone` |
 | `findInspectableRoot` | `blocks/settings/select.js` | `resolveInspectableBlockRoot` |
 | `resolveSettings` | `blocks/settings/registry.js` | `resolveBlockSettingsTarget` |
-| `initEditor` | `editor/init.js` | `initVpressGrapesJs` |
+| `initEditor` | `editor/init.js` | `initVpressEditor` |
 | `buildPayload` | `editor/payload.js` | inline in editor.js |
 | `wireInspector` | `editor/inspector.js` | `registerInspectorExtensions` |
 
@@ -149,7 +149,7 @@ resources/js/grapesjs/
 
 ## Shim policy
 
-- Legacy paths (`block-settings/`, `editor-chrome-layout.js`, `voodbuilder-grapesjs.js`) re-export new modules for one internal release.
+- Legacy paths (`block-settings/`, `editor-chrome-layout.js`, `voodbuilder-editor.js`) re-export new modules for one internal release.
 - Checklist rimozione: grep zero imports to legacy path → delete shim.
 
 ---
@@ -195,6 +195,6 @@ resources/js/grapesjs/
 
 ## Cosa NON si tocca
 
-- CSS `resources/css/grapesjs/`
+- CSS `resources/css/editor/`
 - `bindings-ui.js`, `components-ui.js` (fase 7+)
 - API PHP save/render (solo regression test)

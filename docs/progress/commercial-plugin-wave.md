@@ -27,7 +27,7 @@ Core `voodbuilder` branch `refactor/modular-architecture` must be **committed + 
 
 ## 2. Components package (physical extract)
 
-- `voodflow/voodbuilder-components` owns ComponentsModule, GrapesJS component/global-class APIs, models, migrations
+- `voodflow/voodbuilder-components` owns ComponentsModule, Editor component/global-class APIs, models, migrations
 - Core uses `ComponentRuntimeBridge` for optional public CSS when the plugin is absent
 - Host: `VoodbuilderComponentsPlugin::make()` + path Composer require
 - Soft-gate Components tab when `componentsUrl` null

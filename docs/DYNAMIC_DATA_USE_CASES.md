@@ -1,6 +1,6 @@
 # Dati dinamici: use case e binding
 
-Documento di lavoro sul comportamento dei **tag / binding dinamici** in Voodbuilder (GrapesJS + Rich Text), con focus sugli use case reali — non solo sul meccanismo tecnico.
+Documento di lavoro sul comportamento dei **tag / binding dinamici** in Voodbuilder (Editor + Rich Text), con focus sugli use case reali — non solo sul meccanismo tecnico.
 
 > **Nota:** la larghezza contenuto (full / 80rem / custom) è un controllo di *layout*, non un binding. Vedi [CONTENT_WIDTH.md](./CONTENT_WIDTH.md).
 
@@ -16,7 +16,7 @@ Per un hero tipo *«Ciao Paolo»* o un CTA *«Vai al tuo profilo»* serve la ses
 
 ## Global text tags (site-wide)
 
-Plain curly tags for **any** GrapesJS text / rich text / chrome string. **Not** the same as `data-voodbuilder-bind` (“Make dynamic” on news/articles/users).
+Plain curly tags for **any** Editor text / rich text / chrome string. **Not** the same as `data-voodbuilder-bind` (“Make dynamic” on news/articles/users).
 
 | Tag | Resolves to |
 |-----|-------------|
@@ -41,14 +41,14 @@ Copyright default: `© {current_year} {brand_name}` → `© 2026 VoodBuilder`.
 
 | Surface | Resolved by |
 |---------|-------------|
-| Page content (text + rich text HTML) | `GrapesJsRenderer::render()` → `GlobalTextTags::replaceInHtml()` |
-| Site chrome (nav/footer layouts) | `GrapesJsChromeHtmlPipeline` |
+| Page content (text + rich text HTML) | `EditorRenderer::render()` → `GlobalTextTags::replaceInHtml()` |
+| Site chrome (nav/footer layouts) | `EditorChromeHtmlPipeline` |
 | Footer copyright / tagline helpers | `SiteFooterConfig::resolveCopyright()` / `resolveTagline()` |
-| Public page with `?edit=1` preview | `GrapesJsEditorGate` (same PHP replace) |
+| Public page with `?edit=1` preview | `EditorGate` (same PHP replace) |
 
 ### Editor UX
 
-- In the GrapesJS canvas, leave `{tags}` visible so authors see the tokens.
+- In the Editor canvas, leave `{tags}` visible so authors see the tokens.
 - Copyright fields that show a resolved `© 2026` are re-tagged on save (`retagCurrentYear`) so the year stays dynamic.
 - Values for preview helpers are also passed to the editor as `globalTextTags` (including `logged_username` for the current admin session).
 
@@ -155,8 +155,8 @@ In editor (`?edit=1`) i binding si risolvono in preview quando il gate lo consen
 |------|------|
 | Source PHP | `ModelIntegrationAuthBindingSource.php` |
 | Registrazione | `ModelIntegrationBindingRegistrar.php` (registra `.auth` se Authenticatable) |
-| Picker RTE | `resources/js/grapesjs/rich-text-dynamic-tags.js` |
-| Label editor | `GrapesJsEditorGate.php` + `lang/*/pro.php` + `lang/*/model_integrations.php` |
+| Picker RTE | `resources/js/editor/rich-text-dynamic-tags.js` |
+| Label editor | `EditorGate.php` + `lang/*/pro.php` + `lang/*/model_integrations.php` |
 | Test | `tests/Unit/ModelIntegrationAuthBindingSourceTest.php` |
 
 ---
@@ -178,4 +178,4 @@ In editor (`?edit=1`) i binding si risolvono in preview quando il gate lo consen
 ## Related
 
 - [BINDINGS.md](./BINDINGS.md) — contratto attributi, API, repeat
-- [GRAPESJS.md](./GRAPESJS.md) — editor e pipeline pagina
+- [EDITOR.md](./EDITOR.md) — editor e pipeline pagina

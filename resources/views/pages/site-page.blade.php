@@ -7,20 +7,20 @@
 
 @extends($page->layoutView())
 
-@if ($grapesJsEditor ?? false)
+@if ($editorEditor ?? false)
     @section('body_class_extra')
-        voodbuilder-grapesjs-editing
+        voodbuilder-editor-editing
     @endsection
 
-    @if ($grapesJsEditor ?? false)
+    @if ($editorEditor ?? false)
     @push('head')
-        <style id="voodbuilder-grapesjs-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHostChrome::criticalHideCss() !!}</style>
+        <style id="voodbuilder-editor-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\Editor\EditorHostChrome::criticalHideCss() !!}</style>
     @endpush
     @endif
 
     @push('scripts-before-livewire')
         <style>
-            body.voodbuilder-grapesjs-editing :is(main, .voodbuilder-landing-shell, .voodbuilder-site-shell, .voodbuilder-site-content, .voodbuilder-polito-content, .VPRichPage, .VPRichPage--landing) {
+            body.voodbuilder-editor-editing :is(main, .voodbuilder-landing-shell, .voodbuilder-site-shell, .voodbuilder-site-content, .voodbuilder-polito-content, .VPRichPage, .VPRichPage--landing) {
                 max-width: none !important;
                 width: 100% !important;
                 margin-inline: 0 !important;
@@ -54,21 +54,21 @@
         // Landing section styles stay available; width is controlled by layout data-voodbuilder-page-width.
         'VPRichPage--landing' => ($voodbuilderChromeLayout ?? null) !== null
             || ChromeLayoutContentWidth::isFull($pageContentWidth)
-            || $page->usesGrapesJsBuilder(),
-        'voodbuilder-grapesjs-mode' => $grapesJsEditor ?? false,
+            || $page->usesEditorBuilder(),
+        'voodbuilder-editor-mode' => $editorEditor ?? false,
     ])>
-        @if ($grapesJsEditor ?? false)
-            @include('voodbuilder::partials.grapesjs-frontend-editor', [
-                'grapesJsConfig' => $grapesJsConfig,
+        @if ($editorEditor ?? false)
+            @include('voodbuilder::partials.editor-frontend-editor', [
+                'editorConfig' => $editorConfig,
             ])
         @else
-            @foreach (\Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsCanvas::publishedStyleUrls() as $publishedStyleUrl)
+            @foreach (\Voodflow\Voodbuilder\Support\Editor\EditorCanvas::publishedStyleUrls() as $publishedStyleUrl)
                 <link rel="stylesheet" href="{{ $publishedStyleUrl }}">
             @endforeach
 
-            @php($grapesJsStyles = $page->usesGrapesJsBuilder() ? $page->renderedStyles() : null)
-            @if (filled($grapesJsStyles))
-                <style>{!! $grapesJsStyles !!}</style>
+            @php($editorStyles = $page->usesEditorBuilder() ? $page->renderedStyles() : null)
+            @if (filled($editorStyles))
+                <style>{!! $editorStyles !!}</style>
             @endif
 
             {!! $page->renderedContent() !!}
@@ -80,8 +80,8 @@
     </div>
 @endsection
 
-@if (($canEditGrapesJs ?? false) && ! ($grapesJsEditor ?? false))
+@if (($canEditEditor ?? false) && ! ($editorEditor ?? false))
     @push('overlays')
-        @include('voodbuilder::partials.grapesjs-edit-launch')
+        @include('voodbuilder::partials.editor-edit-launch')
     @endpush
 @endif

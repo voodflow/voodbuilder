@@ -8,6 +8,11 @@ return [
     'site_title' => env('VOODBUILDER_SITE_TITLE', env('APP_NAME', 'VoodBuilder')),
 
     /*
+    | Public marketing site linked from editor upsells (Components, Dynamics, Templates).
+    */
+    'marketing_url' => env('VOODBUILDER_MARKETING_URL', 'https://voodflow.com/voodbuilder'),
+
+    /*
     | Internal module enablement (same package; physical splits come later).
     */
     'modules' => [
@@ -215,7 +220,7 @@ return [
     'admin_panel_id' => 'admin',
 
     /*
-    | Spatie permission for frontend GrapesJS editing without Filament admin access.
+    | Spatie permission for frontend Editor editing without Filament admin access.
     | Seeded by VoodbuilderSeeder when spatie/laravel-permission is installed.
     */
     'permissions' => [
@@ -263,11 +268,11 @@ return [
         'enabled' => true,
         'route_prefix' => 'pages',
         /*
-        | When true, new pages use GrapesJS only (no Rich editor toggle in admin).
+        | When true, new pages use Editor only (no Rich editor toggle in admin).
         | Existing rich-editor pages stay editable until converted manually.
         */
-        'grapesjs_only' => env('VOODBUILDER_PAGES_GRAPESJS_ONLY', false),
-        'default_builder' => env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'grapesjs'),
+        'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', env('VOODBUILDER_PAGES_GRAPESJS_ONLY', false)),
+        'default_builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
         /*
         | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
         */
@@ -307,7 +312,7 @@ return [
     ],
 
     /*
-    | GrapesJS chrome layouts — header/footer shell around plugin content.
+    | Editor chrome layouts — header/footer shell around plugin content.
     */
     'chrome_layouts' => [
         'enabled' => env('VOODBUILDER_CHROME_LAYOUTS_ENABLED', true),
@@ -317,26 +322,26 @@ return [
     ],
 
     /*
-    | GrapesJS visual page builder (voodbuilder-pro).
+    | Editor visual page builder (voodbuilder-pro).
     | Requires npm packages in the host app: grapesjs, grapesjs-blocks-basic.
-    | Add VoodbuilderPaths::grapesJsViteEntry() to vite.config.js input, then npm run build.
+    | Add VoodbuilderPaths::editorViteEntry() to vite.config.js input, then npm run build.
     */
-    'grapesjs' => [
-        'enabled' => env('VOODBUILDER_GRAPESJS_ENABLED', true),
-        'vite' => VoodbuilderPaths::grapesJsViteEntry(),
-        'canvas_styles' => VoodbuilderPaths::grapesJsCanvasStyleEntries(),
+    'editor' => [
+        'enabled' => env('VOODBUILDER_EDITOR_ENABLED', env('VOODBUILDER_GRAPESJS_ENABLED', true)),
+        'vite' => VoodbuilderPaths::editorViteEntry(),
+        'canvas_styles' => VoodbuilderPaths::editorCanvasStyleEntries(),
         'upload' => [
             'disk' => 'public',
             // Public files land under storage/app/public/voodbuilder (URL /storage/voodbuilder/…).
             'directory' => 'voodbuilder',
             // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
-            'max_size' => (int) env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192),
+            'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192)),
         ],
         /*
         | In-canvas image editor (@jodit/image-editor, MIT). Requires the host app
         | npm dependency `@jodit/image-editor`. Disable with env or config.
         */
-        'image_editor' => env('VOODBUILDER_GRAPESJS_IMAGE_EDITOR', true),
+        'image_editor' => env('VOODBUILDER_EDITOR_IMAGE_EDITOR', env('VOODBUILDER_GRAPESJS_IMAGE_EDITOR', true)),
         'include_voodbuilder_blocks' => false,
         'include_landing_blocks' => false,
         'site_blocks' => [
@@ -352,7 +357,7 @@ return [
             'theme' => env('VOODBUILDER_SECTION_THEME', 'indigo'),
         ],
         /*
-        | Block IDs to hide from the GrapesJS sidebar (runtime rendering still works).
+        | Block IDs to hide from the Editor sidebar (runtime rendering still works).
         | Example: latest_vtuts — use Dynamic bindings in the inspector instead.
         | Redundant section layouts (item-count siblings) are also filtered in
         | SectionItemCountAnnotator::REDUNDANT_BLOCK_IDS.
@@ -373,10 +378,10 @@ return [
             'max_project_bytes' => 2_000_000,
         ],
         'plugins' => [
-            'forms' => env('VOODBUILDER_GRAPESJS_FORMS', true),
-            'style_bg' => env('VOODBUILDER_GRAPESJS_STYLE_BG', true),
-            'tabs' => env('VOODBUILDER_GRAPESJS_TABS', true),
-            'custom_code' => env('VOODBUILDER_GRAPESJS_CUSTOM_CODE', false),
+            'forms' => env('VOODBUILDER_EDITOR_FORMS', env('VOODBUILDER_GRAPESJS_FORMS', true)),
+            'style_bg' => env('VOODBUILDER_EDITOR_STYLE_BG', env('VOODBUILDER_GRAPESJS_STYLE_BG', true)),
+            'tabs' => env('VOODBUILDER_EDITOR_TABS', env('VOODBUILDER_GRAPESJS_TABS', true)),
+            'custom_code' => env('VOODBUILDER_EDITOR_CUSTOM_CODE', env('VOODBUILDER_GRAPESJS_CUSTOM_CODE', false)),
         ],
         'forms' => [
             'success_message' => 'Thank you. Your message has been received.',
@@ -386,7 +391,7 @@ return [
             'default' => 'Default newsletter',
         ],
         'revisions' => [
-            'max_to_keep' => (int) env('VOODBUILDER_GRAPESJS_REVISIONS_MAX', 50),
+            'max_to_keep' => (int) env('VOODBUILDER_EDITOR_REVISIONS_MAX', env('VOODBUILDER_GRAPESJS_REVISIONS_MAX', 50)),
         ],
         'component_categories' => [
             'General',

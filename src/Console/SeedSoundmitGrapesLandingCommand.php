@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Voodflow\Vevents\Support\SoundmitLandingAssets;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\GrapesJs\SoundmitGrapesJsLanding;
+use Voodflow\Voodbuilder\Support\Editor\SoundmitEditorLanding;
 
 class SeedSoundmitGrapesLandingCommand extends Command
 {
@@ -17,7 +17,7 @@ class SeedSoundmitGrapesLandingCommand extends Command
                             {--sub-theme=events : Sub-theme slug (events, blog, news, or empty)}
                             {--install-assets : Download hero/split images when vevents is installed}';
 
-    protected $description = 'Seed the Soundmit exhibitor landing as a GrapesJS page';
+    protected $description = 'Seed the Soundmit exhibitor landing as a Editor page';
 
     public function handle(): int
     {
@@ -30,14 +30,14 @@ class SeedSoundmitGrapesLandingCommand extends Command
             $this->components->info('Soundmit landing assets installed.');
         }
 
-        $payload = SoundmitGrapesJsLanding::payload($assets);
-        SoundmitGrapesJsLanding::writeUtilitiesCatalog();
+        $payload = SoundmitEditorLanding::payload($assets);
+        SoundmitEditorLanding::writeUtilitiesCatalog();
 
         $page = SitePage::query()->updateOrCreate(
             ['slug' => $slug],
             [
                 'title' => 'Soundmit Exhibitor Landing',
-                'builder' => PageBuilder::GrapesJs,
+                'builder' => PageBuilder::Visual,
                 'layout' => 'landing',
                 'sub_theme' => filled($subTheme) ? $subTheme : null,
                 'published' => true,
@@ -47,7 +47,7 @@ class SeedSoundmitGrapesLandingCommand extends Command
             ],
         );
 
-        $this->components->info("GrapesJS Soundmit landing ready: {$page->getUrl()} (slug: {$slug})");
+        $this->components->info("Editor Soundmit landing ready: {$page->getUrl()} (slug: {$slug})");
 
         return self::SUCCESS;
     }

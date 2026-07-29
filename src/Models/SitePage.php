@@ -20,10 +20,11 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
+use Voodflow\Voodbuilder\Casts\AsPageBuilder;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
+use Voodflow\Voodbuilder\Support\Editor\EditorRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -68,7 +69,7 @@ class SitePage extends Model implements HasRichContent
     {
         return [
             'content' => 'array',
-            'builder' => PageBuilder::class,
+            'builder' => AsPageBuilder::class,
             'builder_payload' => 'array',
             'is_home' => 'boolean',
             'hide_site_footer' => 'boolean',
@@ -184,15 +185,15 @@ class SitePage extends Model implements HasRichContent
         return VoodbuilderUrls::page($this);
     }
 
-    public function usesGrapesJsBuilder(): bool
+    public function usesEditorBuilder(): bool
     {
-        return ($this->builder ?? PageBuilder::RichEditor) === PageBuilder::GrapesJs;
+        return ($this->builder ?? PageBuilder::RichEditor) === PageBuilder::Visual;
     }
 
     public function renderedContent(): string
     {
-        if ($this->usesGrapesJsBuilder()) {
-            return app(GrapesJsRenderer::class)->render($this);
+        if ($this->usesEditorBuilder()) {
+            return app(EditorRenderer::class)->render($this);
         }
 
         if (blank($this->content)) {
@@ -220,13 +221,13 @@ class SitePage extends Model implements HasRichContent
             return $this->renderedStylesCache['styles'];
         }
 
-        if (! $this->usesGrapesJsBuilder()) {
+        if (! $this->usesEditorBuilder()) {
             $this->renderedStylesCache = ['resolved' => true, 'styles' => null];
 
             return null;
         }
 
-        $styles = app(GrapesJsRenderer::class)->css($this);
+        $styles = app(EditorRenderer::class)->css($this);
         $this->renderedStylesCache = ['resolved' => true, 'styles' => $styles];
 
         return $styles;
@@ -234,11 +235,11 @@ class SitePage extends Model implements HasRichContent
 
     public function renderedScripts(): ?string
     {
-        if (! $this->usesGrapesJsBuilder()) {
+        if (! $this->usesEditorBuilder()) {
             return null;
         }
 
-        return app(GrapesJsRenderer::class)->js($this);
+        return app(EditorRenderer::class)->js($this);
     }
 
     public function usesAutomaticLayout(): bool

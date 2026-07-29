@@ -141,7 +141,7 @@ return [
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
-        'menu_grapes_pages_only' => 'Only GrapesJS pages are listed. Use “Open visual editor” to edit the selected page on the site.',
+        'menu_editor_pages_only' => 'Only Editor pages are listed. Use “Open visual editor” to edit the selected page on the site.',
         'menu_tree' => 'Drag using the grip icon (☰). To create a submenu, drop the item on the centre of a top-level row — a “Submenu here” badge appears. Top or bottom edge reorders at the same level. Sub-items show a coloured left rail. Maximum 2 levels. Use "Dropdown group" for labels without a link.',
         'menu_tree_drag' => 'Drag to reorder; drop on centre of a top-level item to nest',
         'menu_tree_nest_here' => 'Submenu here',

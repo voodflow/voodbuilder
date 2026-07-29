@@ -15,7 +15,7 @@
 
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-    use Voodflow\Voodbuilder\Support\GrapesJs\ChromeBrandLogos;
+    use Voodflow\Voodbuilder\Support\Editor\ChromeBrandLogos;
     use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
     $config = is_array($config) ? $config : [];

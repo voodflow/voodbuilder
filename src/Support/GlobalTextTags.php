@@ -9,7 +9,7 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 /**
  * Site-wide curly tags for plain / rich text (page content, footer, chrome).
  *
- * Distinct from GrapesJS data-voodbuilder-bind model bindings — these are
+ * Distinct from Editor data-voodbuilder-bind model bindings — these are
  * always available and resolve at PHP render time (no extra JS libraries).
  *
  * Available tags:
@@ -83,7 +83,7 @@ final class GlobalTextTags
     /**
      * Replace global tags anywhere in HTML (chrome / page markup).
      *
-     * Runs on the full markup string after bindings — covers GrapesJS text
+     * Runs on the full markup string after bindings — covers Editor text
      * blocks and rich text equally (tokens live in the HTML).
      *
      * @param  array<string, string|null>  $overrides

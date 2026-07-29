@@ -29,14 +29,15 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsAssetController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlockRenderController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBlocksController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsCodeHighlightController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsBindingsPreviewController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsLinkTargetsController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsMediaPreviewController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorAssetController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorBlockRenderController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorBlocksController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorCodeHighlightController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorCompileCssController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsPreviewController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorLinkTargetsController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
@@ -56,22 +57,22 @@ use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BuiltinBindingSources;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationBindingRegistrar;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding01Sections;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding02Sections;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding03Sections;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLandingGrapesJsBlocks;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderMediaSections;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BuiltinBindingSources;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationBindingRegistrar;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding03Sections;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
@@ -111,9 +112,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton(RichContentBlockRegistry::class);
-        $this->app->singleton(GrapesJsBlockRegistry::class);
-        $this->app->singleton(GrapesJsDynamicBlockRegistry::class);
-        $this->app->singleton(GrapesJsServerBlockRegistry::class);
+        $this->app->singleton(EditorBlockRegistry::class);
+        $this->app->singleton(EditorDynamicBlockRegistry::class);
+        $this->app->singleton(EditorServerBlockRegistry::class);
         $this->app->singleton(BindingRegistry::class);
         $this->app->singleton(BindingImageResolverRegistry::class);
         $this->app->singleton(ModelRegistry::class);
@@ -162,10 +163,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         BrandMarkAssets::ensurePublished();
         FilamentAdminAssets::register();
 
-        if (config('voodbuilder.grapesjs.enabled', true)) {
-            $this->registerGrapesJsRoutes();
-            $this->registerGrapesJsBlocks();
-            $this->registerGrapesJsBindings();
+        if (config('voodbuilder.editor.enabled', true)) {
+            $this->registerEditorRoutes();
+            $this->registerEditorBlocks();
+            $this->registerEditorBindings();
         }
 
         $this->registerAdminRoutes();
@@ -205,20 +206,21 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         }
     }
 
-    protected function registerGrapesJsRoutes(): void
+    protected function registerEditorRoutes(): void
     {
         Route::middleware(['web', 'auth', 'throttle:60,1'])
-            ->prefix('voodbuilder/grapesjs')
-            ->name('voodbuilder.grapesjs.')
+            ->prefix('voodbuilder/editor')
+            ->name('voodbuilder.editor.')
             ->group(function (): void {
-                Route::get('blocks', GrapesJsBlocksController::class)->name('blocks');
-                Route::get('bindings', GrapesJsBindingsController::class)->name('bindings');
-                Route::get('bindings/preview/{sitePage}', GrapesJsBindingsPreviewController::class)->name('bindings.preview');
-                Route::get('link-targets', GrapesJsLinkTargetsController::class)->name('link-targets');
-                Route::get('media/{media}', GrapesJsMediaPreviewController::class)->name('media.preview');
-                Route::get('blocks/render', GrapesJsBlockRenderController::class)->name('blocks.render');
-                Route::post('code/highlight', GrapesJsCodeHighlightController::class)->name('code.highlight');
-                Route::post('upload', [GrapesJsAssetController::class, 'store'])->name('upload');
+                Route::get('blocks', EditorBlocksController::class)->name('blocks');
+                Route::get('bindings', EditorBindingsController::class)->name('bindings');
+                Route::get('bindings/preview/{sitePage}', EditorBindingsPreviewController::class)->name('bindings.preview');
+                Route::get('link-targets', EditorLinkTargetsController::class)->name('link-targets');
+                Route::get('media/{media}', EditorMediaPreviewController::class)->name('media.preview');
+                Route::get('blocks/render', EditorBlockRenderController::class)->name('blocks.render');
+                Route::post('code/highlight', EditorCodeHighlightController::class)->name('code.highlight');
+                Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
+                Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
             });
     }
 
@@ -227,13 +229,13 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         // Menu preview routes are owned by MenusModule.
     }
 
-    protected function registerGrapesJsBlocks(): void
+    protected function registerEditorBlocks(): void
     {
         $this->app->booted(function (): void {
-            $registry = $this->app->make(GrapesJsBlockRegistry::class);
+            $registry = $this->app->make(EditorBlockRegistry::class);
 
-            if (config('voodbuilder.grapesjs.site_blocks.header_footer', true)) {
-                $serverRegistry = $this->app->make(GrapesJsServerBlockRegistry::class);
+            if (config('voodbuilder.editor.site_blocks.header_footer', true)) {
+                $serverRegistry = $this->app->make(EditorServerBlockRegistry::class);
                 foreach (SiteNavBlocks::blockClasses() as $navBlockClass) {
                     $serverRegistry->register('Site', $navBlockClass);
                 }
@@ -248,8 +250,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 }
             }
 
-            if (config('voodbuilder.grapesjs.include_landing_blocks', false)) {
-                VoodbuilderLandingGrapesJsBlocks::register();
+            if (config('voodbuilder.editor.include_landing_blocks', false)) {
+                VoodbuilderLandingEditorBlocks::register();
             }
 
             VoodbuilderLanding01Sections::registerBlocks();
@@ -257,13 +259,13 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             VoodbuilderLanding03Sections::registerBlocks();
             VoodbuilderMediaSections::registerBlocks();
 
-            if (config('voodbuilder.grapesjs.sections.enabled', true) && ! $this->app->runningInConsole()) {
-                VoodbuilderSectionGrapesJsBlocks::register($registry);
+            if (config('voodbuilder.editor.sections.enabled', true) && ! $this->app->runningInConsole()) {
+                VoodbuilderSectionEditorBlocks::register($registry);
             }
         });
     }
 
-    protected function registerGrapesJsBindings(): void
+    protected function registerEditorBindings(): void
     {
         $this->app->booted(function (): void {
             BuiltinBindingSources::register($this->app->make(BindingRegistry::class));

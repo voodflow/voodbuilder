@@ -2,24 +2,24 @@
 
 **Source:** `docs/VoodBuilder_0.1.0_Modular_Architecture_and_Licensing.md`  
 **Package:** `voodflow/voodbuilder` only  
-**Constraints:** no Filament core patches, no GrapesJS core patches, no hard-wired deps on sibling plugins (e.g. vtuts)
+**Constraints:** no Filament core patches, no Editor core patches, no hard-wired deps on sibling plugins (e.g. vtuts)
 
 ## Goal
 
-Move from a monolith (`VoodbuilderServiceProvider` + large GrapesJS `editor/init.js` wiring) to internal modules behind stable contracts, without changing behaviour for `0.0.11` data.
+Move from a monolith (`VoodbuilderServiceProvider` + large Editor `editor/init.js` wiring) to internal modules behind stable contracts, without changing behaviour for `0.0.11` data.
 
 ## Current → target module map
 
 | Target module | Current PHP locus | Current JS locus | Tables | Filament | Extract priority |
 |---|---|---|---|---|---|
 | **Core / Settings** | `VoodbuilderSettings`, `VoodbuilderSettingsPage`, `ApplyVoodbuilderSiteConfig`, SEO helpers | — | `voodbuilder_settings` | Settings page | Stay Core |
-| **Pages** | `SitePage`, `SitePageController`, `GrapesJsPageController`, resolvers | `editor/init.js` page mode, `page-tailwind-autobuild.js` | `site_pages` | `SitePageResource` | Late (Phase 6 #7) |
+| **Pages** | `SitePage`, `SitePageController`, `EditorPageController`, resolvers | `editor/init.js` page mode, `page-tailwind-autobuild.js` | `site_pages` | `SitePageResource` | Late (Phase 6 #7) |
 | **Layouts (Chrome)** | `ChromeLayout*`, chrome gates, nav/footer blocks | `editor-chrome*.js`, `chrome/` | `voodbuilder_chrome_layouts` | `ChromeLayoutResource` | Phase 6 #6 |
 | **Menus** | `NavigationMenu*`, menu registries, placements | chrome nav/footer slots | `voodbuilder_menus`, `voodbuilder_menu_items` | `NavigationMenuResource` | Phase 6 #5 |
 | **Themes** | `SubTheme*`, `ActiveThemeMap`, ThemeMap Livewire/React | `resources/js/theme-map/` | filesystem + settings | Themes workspace | Phase 6 #4 |
-| **Editor** | block registries, assets, gates | entire `resources/js/grapesjs/` | — | editor blades | Continuous (Phase 5) |
-| **Dynamic Data** | `Support/GrapesJs/Bindings/*`, `ModelIntegration*` | `bindings-ui.js` (~100KB) | `voodbuilder_model_integrations` | `ModelIntegrationResource` | Commercial boundary later |
-| **Conditions** | `Support/GrapesJs/Conditions/*` | `conditions-ui.js` | attrs on HTML | inspector | **Pilot #2** |
+| **Editor** | block registries, assets, gates | entire `resources/js/editor/` | — | editor blades | Continuous (Phase 5) |
+| **Dynamic Data** | `Support/Editor/Bindings/*`, `ModelIntegration*` | `bindings-ui.js` (~100KB) | `voodbuilder_model_integrations` | `ModelIntegrationResource` | Commercial boundary later |
+| **Conditions** | `Support/Editor/Conditions/*` | `conditions-ui.js` | attrs on HTML | inspector | **Pilot #2** |
 | **History** | `SitePageRevision*`, revisions controller | `revisions-ui.js` | `voodbuilder_site_page_revisions` | page editor UI | **Pilot #1** |
 | **Templates** | `PageTemplate`, page-templates controllers, starters | `page-templates-sidebar.js` | `voodbuilder_page_templates` | editor sidebar | Phase 6 #3 |
 | **Components** | `BuilderComponent`, components controllers/support | `components-ui.js` (~72KB) | `voodbuilder_components`, `voodbuilder_global_classes` | editor library | Agency boundary |
@@ -32,7 +32,7 @@ Move from a monolith (`VoodbuilderServiceProvider` + large GrapesJS `editor/init
 1. **`VoodbuilderServiceProvider`** registers routes, blocks, bindings, Livewire, Filament assets, and rich-content blocks in one boot path.
 2. **`VoodbuilderPlugin`** hard-registers `PopupResource` behind `config('voodbuilder.popups.enabled')` — feature flag, not module registry.
 3. **`editor/init.js`** imports page, chrome, popup, bindings, components, templates, conditions, revisions in one bootstrap.
-4. **Public render path** (`GrapesJsRenderer` and related) assumes bindings/conditions/components helpers may always be present.
+4. **Public render path** (`EditorRenderer` and related) assumes bindings/conditions/components helpers may always be present.
 5. Optional **vtuts** wiring exists via `ConfigureVtutsForVoodbuilder` — treat as host/integration adapter only; do not deepen package coupling.
 
 ## Proposed sequence of small, testable PRs
@@ -106,7 +106,7 @@ Copied from master plan §20; progress logged in `docs/progress/<phase>.md`.
 ## Explicit non-goals until later PRs
 
 - Splitting Composer packages physically (except prep for popups).
-- GrapesJS version upgrade.
+- Editor version upgrade.
 - UI redesign / rename of user-facing concepts.
 - DB column renames.
 - Fixing “unused” code without proof.

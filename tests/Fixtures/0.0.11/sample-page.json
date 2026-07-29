@@ -5,9 +5,9 @@
     "slug": "baseline-landing",
     "locale": "en",
     "layout": "landing",
-    "builder": "grapesjs",
+    "builder": "visual",
     "published": true,
-    "html": "<section class=\"voodbuilder-gjs-section bg-vp-bg p-8\"><h1>Baseline</h1></section>",
+    "html": "<section class=\"voodbuilder-editor-section bg-vp-bg p-8\"><h1>Baseline</h1></section>",
     "css": ".p-8 { padding: 2rem; }",
     "js": ""
   },

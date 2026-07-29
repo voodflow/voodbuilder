@@ -1,6 +1,6 @@
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-    use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
+    use Voodflow\Voodbuilder\Support\Editor\SiteFooterConfig;
     use Voodflow\Voodbuilder\Support\Navigation;
     use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 

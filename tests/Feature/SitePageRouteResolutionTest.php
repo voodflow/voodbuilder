@@ -16,7 +16,7 @@ class SitePageRouteResolutionTest extends TestCase
         $router->get('pages/{slug}', [SitePageController::class, 'show'])->name('voodbuilder.pages.show');
     }
 
-    public function test_published_grapesjs_page_resolves_by_slug_from_fixture(): void
+    public function test_published_editor_page_resolves_by_slug_from_fixture(): void
     {
         $fixture = json_decode(
             (string) file_get_contents(dirname(__DIR__).'/Fixtures/0.0.11/sample-page.json'),
@@ -31,7 +31,7 @@ class SitePageRouteResolutionTest extends TestCase
             'slug' => $pageData['slug'],
             'locale' => $pageData['locale'],
             'layout' => $pageData['layout'],
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => $pageData['html'],
                 'css' => $pageData['css'],

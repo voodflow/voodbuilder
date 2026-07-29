@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Architecture;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Tests\Fixtures\SamplePlugin\SampleAcmePlugin;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -17,7 +17,7 @@ class SampleThirdPartyPluginTest extends TestCase
     {
         SampleAcmePlugin::register();
 
-        $blockIds = collect(app(GrapesJsBlockRegistry::class)->toEditorBlocks())
+        $blockIds = collect(app(EditorBlockRegistry::class)->toEditorBlocks())
             ->pluck('id')
             ->all();
 
@@ -28,10 +28,10 @@ class SampleThirdPartyPluginTest extends TestCase
         $this->assertSame('Acme tagline', $bindings->resolve('acme.site.tagline', new BindingContext));
 
         $this->assertTrue(
-            GrapesJsConditionHooks::evaluate('acme_feature_flag', ['value' => 'on'], null) === true,
+            EditorConditionHooks::evaluate('acme_feature_flag', ['value' => 'on'], null) === true,
         );
         $this->assertTrue(
-            GrapesJsConditionHooks::evaluate('acme_feature_flag', ['value' => 'off'], null) === false,
+            EditorConditionHooks::evaluate('acme_feature_flag', ['value' => 'off'], null) === false,
         );
     }
 }

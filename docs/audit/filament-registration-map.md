@@ -34,7 +34,7 @@
 
 ### Rich content custom blocks
 
-Registered on `RichContentBlockRegistry` in ServiceProvider (`HeroBlock`, landing blocks, config-driven). Belongs to **Editor / Pages** legacy Filament rich content path (parallel to GrapesJS).
+Registered on `RichContentBlockRegistry` in ServiceProvider (`HeroBlock`, landing blocks, config-driven). Belongs to **Editor / Pages** legacy Filament rich content path (parallel to Editor).
 
 ## Target
 

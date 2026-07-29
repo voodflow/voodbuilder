@@ -2,7 +2,7 @@
  * Build a compact Tabler Icons catalog for the VoodBuilder icon picker.
  * Source: @tabler/icons (MIT) — categories match https://tabler.io/icons
  *
- * Output is lazy-imported by the editor; it must not be in the main GrapesJS chunk.
+ * Output is lazy-imported by the editor; it must not be in the main Editor chunk.
  */
 
 import fs from 'node:fs';
@@ -105,7 +105,7 @@ function buildCatalog(tablerRoot) {
 export function buildTablerIconsCatalog({ silent = false } = {}) {
     const tablerRoot = resolveTablerRoot();
     const catalog = buildCatalog(tablerRoot);
-    const outDir = path.join(packageRoot, 'resources/js/grapesjs/generated');
+    const outDir = path.join(packageRoot, 'resources/js/editor/generated');
     const outFile = path.join(outDir, 'tabler-icons-full.json');
 
     fs.mkdirSync(outDir, { recursive: true });

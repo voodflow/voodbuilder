@@ -1,6 +1,6 @@
 @php
-    use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
-    use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
+    use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsSimpleBlock;
+    use Voodflow\Voodbuilder\Support\Editor\SiteNavSimpleBlock;
 @endphp
 
 @if ($placement === 'main' || $placement === 'header_extra')

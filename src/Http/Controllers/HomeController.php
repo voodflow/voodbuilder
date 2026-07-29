@@ -32,7 +32,7 @@ class HomeController extends Controller
             }
         }
 
-        if ($page && ($page->usesGrapesJsBuilder() || filled($page->content))) {
+        if ($page && ($page->usesEditorBuilder() || filled($page->content))) {
             seo()->for($page);
 
             app()->setLocale($page->locale);

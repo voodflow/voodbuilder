@@ -9,15 +9,15 @@
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
 @import './landing.css';
-@import './grapesjs/chrome-block-utilities.css';
-@import './grapesjs/animated-blocks.css';
+@import './editor/chrome-block-utilities.css';
+@import './editor/animated-blocks.css';
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
 
 /*
  * Public theme scan: chrome/views only.
- * Section-block catalogs and GrapesJS JS stay in section-utilities.css (canvas/editor).
+ * Section-block catalogs and Editor JS stay in section-utilities.css (canvas/editor).
  */
 @source '../views/**/*.blade.php';
 @source '../../../../../resources/views/**/*.blade.php';
@@ -28,8 +28,8 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
-@source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/grapesjs/popups-ui.js';
-@source '../js/grapesjs/popups-ui.js';
+@source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/editor/popups-ui.js';
+@source '../js/editor/popups-ui.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");
 @source inline("grid grid-cols-1 grid-cols-2 grid-cols-3 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-4");
@@ -318,8 +318,30 @@
         display: none !important;
     }
 
-    .voodbuilder-gjs-container {
+    .voodbuilder-editor-container {
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+    }
+
+    /* Content-width toolbar — beat the default container measure above. */
+    .voodbuilder-editor-container[data-voodbuilder-content-width='normal'],
+    .container[data-voodbuilder-content-width='normal'] {
+        max-width: 80rem;
+        margin-inline: auto;
+        width: 100%;
+    }
+
+    .voodbuilder-editor-container[data-voodbuilder-content-width='custom'],
+    .container[data-voodbuilder-content-width='custom'] {
+        max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+        margin-inline: auto;
+        width: 100%;
+    }
+
+    .voodbuilder-editor-container[data-voodbuilder-content-width='full'],
+    .container[data-voodbuilder-content-width='full'] {
+        max-width: none;
+        margin-inline: 0;
+        width: 100%;
     }
 
     /*
@@ -328,7 +350,7 @@
      * Zero-specificity :where so utilities always win over this default.
      */
     :where(
-        [data-voodbuilder-layout='container'].voodbuilder-gjs-container,
+        [data-voodbuilder-layout='container'].voodbuilder-editor-container,
         [data-voodbuilder-layout='container'].vb-layout-row
     ) {
         max-width: none;
@@ -344,16 +366,16 @@
         @apply font-sans tracking-tight;
     }
 
-    footer.voodbuilder-gjs-footer > :is(.container, .voodbuilder-gjs-container),
-    footer.voodbuilder-gjs-dynamic > :is(.container, .voodbuilder-gjs-container),
-    [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-gjs-container) {
+    footer.voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container),
+    footer.voodbuilder-editor-dynamic > :is(.container, .voodbuilder-editor-container),
+    [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-editor-container) {
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
         box-sizing: border-box;
         padding-inline: 1.25rem;
     }
 
-    footer.voodbuilder-gjs-footer,
-    footer.voodbuilder-gjs-dynamic {
+    footer.voodbuilder-editor-footer,
+    footer.voodbuilder-editor-dynamic {
         @apply w-full;
     }
 
@@ -637,7 +659,7 @@ summary,
     cursor: pointer;
 }
 
-.voodbuilder-grapesjs-edit-launch {
+.voodbuilder-editor-edit-launch {
     /* Desktop-only floating CTA — hidden on mobile / drawer viewports. */
     display: none;
     position: fixed;
@@ -658,13 +680,13 @@ summary,
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.voodbuilder-grapesjs-edit-launch:hover {
+.voodbuilder-editor-edit-launch:hover {
     opacity: 0.92;
     transform: translateY(-1px);
 }
 
 @media (min-width: 768px) {
-    .voodbuilder-grapesjs-edit-launch {
+    .voodbuilder-editor-edit-launch {
         display: inline-flex;
     }
 }
@@ -733,7 +755,7 @@ summary,
     }
 }
 
-/* Canvas device mode (set by GrapesJS) — beats theme media when frame width disagrees. */
+/* Canvas device mode (set by Editor) — beats theme media when frame width disagrees. */
 html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile,
 html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile,
 html[data-vb-logo-mode='desktop'] footer .vb-brand-logo--mobile,
@@ -787,7 +809,7 @@ html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo--mobile.vb-brand-log
     display: none !important;
 }
 
-/* Header chrome icon buttons: never show GrapesJS "Button" placeholder text. */
+/* Header chrome icon buttons: never show Editor "Button" placeholder text. */
 .voodbuilder-header-icon-btn,
 button[data-mobile-nav-toggle],
 button[data-mobile-nav-close] {
@@ -822,7 +844,7 @@ button[data-mobile-nav-toggle] svg.h-6 {
  * These rules are intentionally unlayered so --vx-header-text from admin wins.
  *
  * Sub-themes (blog/news/landing-fra/…) and tabs/forms are separate Vite entries
- * loaded only when needed — see GrapesJsAssets::pageViteEntries().
+ * loaded only when needed — see EditorAssets::pageViteEntries().
  */
 html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
 html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt,
@@ -857,7 +879,7 @@ html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
 /**
  * Shared elevated dropdown panel (TailwindPlus / Catalyst-like).
  * Unlayered so these beat Blade utility classes (`rounded-lg`, `shadow-lg`, `border`, …)
- * and restyle baked chrome HTML already stored in GrapesJS layouts.
+ * and restyle baked chrome HTML already stored in Editor layouts.
  *
  * Light: no hard border (shadow only) — matches “avevamo rimosso i bordi”.
  * Dark: low-contrast ring (≈ ring-white/10), never solid vp-divider / bright outline.

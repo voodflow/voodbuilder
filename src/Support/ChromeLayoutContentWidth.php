@@ -9,7 +9,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 
 /**
  * Page content width is owned by the chrome layout (not the page form).
- * The GrapesJS editing frame stays full-bleed; only page content is constrained.
+ * The Editor editing frame stays full-bleed; only page content is constrained.
  */
 final class ChromeLayoutContentWidth
 {

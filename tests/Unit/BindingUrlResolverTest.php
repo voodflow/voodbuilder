@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingUrlResolver;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingUrlResolver;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class BindingUrlResolverTest extends TestCase

@@ -65,7 +65,7 @@
                     data-voodbuilder-notification-bell-preview
                     data-gjs-type="voodbuilder-chrome-button"
                     data-gjs-selectable="false"
-                    title="{{ __('voodbuilder::pro.grapesjs.blocks.site_header_bell_preview') }}"
+                    title="{{ __('voodbuilder::pro.editor.blocks.site_header_bell_preview') }}"
                     aria-label="{{ __('voodbuilder::notifications.bell_label') }}"
                 >
                     {{-- Tabler outline: bell (subset only) --}}

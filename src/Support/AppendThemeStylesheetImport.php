@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\File;
 
 /**
  * Registers a CSS file as a Vite input so it can be loaded on demand
- * via GrapesJsAssets::pageViteEntries() (not bundled into theme.css).
+ * via EditorAssets::pageViteEntries() (not bundled into theme.css).
  */
 final class AppendThemeStylesheetImport
 {

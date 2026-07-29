@@ -8,7 +8,7 @@
 | R4 | Popup extract leaves Core imports | Broken Community | Medium | Boundary audit + architecture tests |
 | R5 | Changing stored JSON/HTML attrs | Data loss | Medium | No format change; versioned migrators only |
 | R6 | Licence checks scattered later | Unmaintainable | Medium | Capability API only (plan §4.5) |
-| R7 | GrapesJS upgrade during refactor | Compound failures | Medium | Forbidden until modularisation done |
+| R7 | Editor upgrade during refactor | Compound failures | Medium | Forbidden until modularisation done |
 | R8 | Sibling plugin hard deps (vtuts) | Package coupling | Medium | class_exists/config only; no new requires |
 | R9 | Duplicate `canvas:frame:load` listeners | Perf/leaks | Medium | Event registry; assert once |
 | R10 | Tailwind compile env differs CI vs local | Flaky CSS tests | High (seen) | Pin toolchain; skip-with-reason only if proven env gap |
@@ -19,7 +19,7 @@
 
 | Question | Answer |
 |---|---|
-| Which classes directly instantiate other feature classes? | ServiceProvider + renderers/gates; many concrete `Support/GrapesJs/*` calls |
+| Which classes directly instantiate other feature classes? | ServiceProvider + renderers/gates; many concrete `Support/Editor/*` calls |
 | Which service providers register everything? | `VoodbuilderServiceProvider` (+ Filament `VoodbuilderPlugin`) |
 | Which JS features depend on init order? | Chrome shell/layout before bindings/dynamic refresh; frame:load handlers |
 | Which state is stored globally? | Mostly `editor.__voodbuilder*`; few `window.__vb*` |

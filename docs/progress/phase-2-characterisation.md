@@ -11,8 +11,8 @@
 ```text
 SitePagePublicationTest
 SitePageRouteResolutionTest
-GrapesJsConditionsRenderTest
-GrapesJsChromeLayoutSaveTest
+EditorConditionsRenderTest
+EditorChromeLayoutSaveTest
 → OK
 ```
 

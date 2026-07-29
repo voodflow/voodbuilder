@@ -67,7 +67,7 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
         $this->assertSame([], $added);
     }
 
-    public function test_required_dev_dependencies_include_grapesjs_tailwind_plugin(): void
+    public function test_required_dev_dependencies_include_editor_tailwind_plugin(): void
     {
         $this->assertArrayHasKey(
             'grapesjs-tailwindcss-plugin',

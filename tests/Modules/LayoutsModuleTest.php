@@ -26,7 +26,7 @@ class LayoutsModuleTest extends TestCase
         $this->assertTrue(Voodbuilder::modules()->has(LayoutsModule::ID));
         $this->assertFalse(LayoutsModule::isEnabled());
         $this->assertFalse(Route::has('voodbuilder.chrome-layouts.editor'));
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.chrome-layouts.content.update'));
+        $this->assertFalse(Route::has('voodbuilder.editor.chrome-layouts.content.update'));
     }
 
     public function test_chrome_layout_editor_route_is_absent_when_module_disabled(): void

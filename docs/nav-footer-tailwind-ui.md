@@ -18,7 +18,7 @@ Otto varianti ispirate a [Tailwind UI Navbars](https://tailwindcss.com/plus/ui-b
 - Menu **main** e **header_extra** da Admin → Menu (plugin voodpress).
 - Supporto menu **multilivello** (fino a 3 livelli) con flyout desktop e accordion mobile.
 - Logo e menu ravvicinati (`gap-3 md:gap-4`); override per pagina via trait editor (`main_nav_align`, `sticky_nav`, ecc.).
-- Legacy: `site_header` → `site_nav_simple` (`GrapesJsLegacySiteBlockMap`).
+- Legacy: `site_header` → `site_nav_simple` (`EditorLegacySiteBlockMap`).
 
 ## Footer (`site_footer_*`)
 
@@ -41,8 +41,8 @@ Otto varianti ispirate a [Tailwind UI Footers](https://tailwindcss.com/plus/ui-b
 
 ## File principali
 
-- `src/Support/GrapesJs/SiteNavBlocks.php`, `SiteFooterBlocks.php`
+- `src/Support/Editor/SiteNavBlocks.php`, `SiteFooterBlocks.php`
 - `resources/views/components/nav.blade.php`
-- `resources/views/grapesjs/blocks/site-nav.blade.php`
-- `resources/views/grapesjs/blocks/footers/*`
+- `resources/views/editor/blocks/site-nav.blade.php`
+- `resources/views/editor/blocks/footers/*`
 - `resources/views/components/menu-nav-item.blade.php`, `menu-nav-dropdown-item.blade.php`, `footer-menu-item.blade.php`

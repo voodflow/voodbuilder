@@ -5,12 +5,12 @@ declare(strict_types=1);
 return [
     'builders' => [
         'rich_editor' => 'Rich editor (blocks)',
-        'grapesjs' => 'Visual builder (GrapesJS)',
+        'visual' => 'Visual builder (Editor)',
     ],
 
     'fields' => [
         'builder' => 'Content builder',
-        'grapesjs_edit' => 'Visual editing',
+        'editor_edit' => 'Visual editing',
     ],
 
     'actions' => [
@@ -18,13 +18,13 @@ return [
     ],
 
     'helpers' => [
-        'builder' => 'Rich editor keeps TipTap blocks and docs-style content. GrapesJS opens a drag-and-drop editor on the public page when you are logged in as admin.',
-        'grapesjs_save_first' => 'Save the page first, then open it on the site to edit visually.',
-        'grapesjs_frontend' => 'Admins and users with the builder permission can edit on the public page. Use the button at the bottom-right or add ?edit=1 to the URL.',
+        'builder' => 'Rich editor keeps TipTap blocks and docs-style content. Editor opens a drag-and-drop editor on the public page when you are logged in as admin.',
+        'editor_save_first' => 'Save the page first, then open it on the site to edit visually.',
+        'editor_frontend' => 'Admins and users with the builder permission can edit on the public page. Use the button at the bottom-right or add ?edit=1 to the URL.',
     ],
 
     'frontend' => [
-        'toolbar_title' => 'GrapesJS page editor',
+        'toolbar_title' => 'Visual page editor',
         'exit_editor' => 'Exit editor',
         'save' => 'Save',
         'saving' => 'Saving…',
@@ -32,7 +32,7 @@ return [
         'error' => 'Could not save the page. Try again.',
         'session_expired' => 'Your session expired. Reload the page and try again.',
         'forbidden' => 'You do not have permission for this action.',
-        'assets_missing' => 'GrapesJS frontend assets are not built yet.',
+        'assets_missing' => 'Editor frontend assets are not built yet.',
         'editing_context_page' => 'Page',
         'editing_context_layout' => 'Layout',
         'editing_context_popup' => 'Popup',
@@ -49,8 +49,8 @@ return [
         'modal_cancel' => 'Cancel',
         'select_component' => 'Select an element on the canvas first.',
         'no_sources' => 'No dynamic data sources are registered yet.',
-        'plugin_required_title' => 'Dynamic Data add-on',
-        'plugin_required_body' => 'Connect page content to your models with the Dynamic Data plugin. Install and register voodflow/voodbuilder-dynamic-data on your Filament panel to unlock this tab.',
+        'plugin_required_title' => 'Voodbuilder Dynamics',
+        'plugin_required_body' => 'Connect page content to your models. Requires the Voodbuilder Dynamics plugin.',
         'inspector_hint' => 'Connect this element to live data.',
         'current_binding' => 'Current binding',
         'repeat_source' => 'Repeat list',
@@ -164,6 +164,17 @@ return [
         'view_page' => 'View page',
         'zoom_in' => 'Zoom in',
         'zoom_out' => 'Zoom out',
+        'global_text_tags' => 'Text tags',
+        'global_text_tags_title' => 'Available text tags',
+        'global_text_tags_hint' => 'Click a tag to copy it, then paste it into text (e.g. copyright, headings). It is replaced automatically on the published page.',
+        'global_text_tags_copy' => 'Copy',
+        'global_text_tags_copied' => 'Copied {tag}',
+        'global_text_tags_preview' => 'Preview',
+        'global_text_tag_current_year' => 'Current year',
+        'global_text_tag_brand_name' => 'Brand name',
+        'global_text_tag_site_name' => 'Site name',
+        'global_text_tag_site_url' => 'Site URL',
+        'global_text_tag_logged_username' => 'Logged-in user name (empty for guests)',
         'revisions' => 'Revisions',
         'compiling_styles' => 'Compiling styles…',
         'loading_editor' => 'Loading editor…',
@@ -179,6 +190,7 @@ return [
         'dialog_alert_title' => 'Notice',
         'dialog_confirm_title' => 'Confirm',
         'dialog_prompt_title' => 'Input',
+        'learn_more' => 'Learn more',
     ],
 
     'revisions' => [
@@ -241,8 +253,8 @@ return [
 
     'components' => [
         'title' => 'Components',
-        'plugin_required_title' => 'Components add-on',
-        'plugin_required_body' => 'Save and reuse sections across pages with the Components plugin. Install and register voodflow/voodbuilder-components on your Filament panel to unlock this library.',
+        'plugin_required_title' => 'Voodbuilder Components',
+        'plugin_required_body' => 'Save and reuse page sections as a component library. Requires the Voodbuilder Components plugin.',
         'save_as' => 'Save selection as component',
         'save_button' => 'Save',
         'save_need_selection' => 'Select an element on the canvas to save it as a reusable component.',
@@ -367,8 +379,8 @@ return [
         'delete_error' => 'Could not delete template.',
         'empty' => 'No page templates yet.',
         'marketplace_hint' => 'Paste the install link from a marketplace purchase to add a template.',
-        'plugin_title' => 'Templates add-on',
-        'plugin_hint' => 'Install voodflow/voodbuilder-templates to enable JSON import/export, sharing and marketplace features (install-from-URL works in Free).',
+        'plugin_title' => 'Voodbuilder Templates',
+        'plugin_hint' => 'Adds template import/export, sharing and marketplace. Requires the Voodbuilder Templates plugin.',
         'loading' => 'Loading…',
         'load_error' => 'Could not load page templates.',
         'import_empty' => 'No page templates to import.',
@@ -407,7 +419,7 @@ return [
         'import_cancel' => 'Cancel',
     ],
 
-    'grapesjs' => [
+    'editor' => [
         'toolbar' => [
             'select_parent' => 'Select parent',
             'drag' => 'Drag to move',
@@ -555,7 +567,7 @@ return [
             'title' => 'Newsletter',
             'list' => 'Newsletter list',
             'default_list' => 'Default newsletter',
-            'hint' => 'Submissions are sent to your app via GrapesJsFormSubmitted. Use form_type newsletter in the payload.',
+            'hint' => 'Submissions are sent to your app via EditorFormSubmitted. Use form_type newsletter in the payload.',
         ],
         'button_link' => [
             'settings_title' => 'Button settings',

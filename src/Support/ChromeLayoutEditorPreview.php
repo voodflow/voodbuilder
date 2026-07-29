@@ -6,10 +6,10 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\GrapesJs\ComponentRuntimeBridge;
+use Voodflow\Voodbuilder\Support\Editor\ComponentRuntimeBridge;
 
 /**
- * Composes chrome layout + page content for the GrapesJS page editor preview.
+ * Composes chrome layout + page content for the Editor page editor preview.
  */
 final class ChromeLayoutEditorPreview
 {

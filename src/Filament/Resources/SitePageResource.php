@@ -125,13 +125,13 @@ class SitePageResource extends Resource
                                     ->native(false)
                                     ->live()
                                     ->helperText(__('voodbuilder::pro.helpers.builder'))
-                                    ->visible(fn (): bool => ! SitePageForm::grapesJsOnly())
+                                    ->visible(fn (): bool => ! SitePageForm::editorOnly())
                                     ->columnSpanFull(),
 
                                 Hidden::make('builder')
                                     ->default(SitePageForm::defaultBuilder()->value)
                                     ->dehydrated()
-                                    ->visible(fn (): bool => SitePageForm::grapesJsOnly()),
+                                    ->visible(fn (): bool => SitePageForm::editorOnly()),
 
                                 RichEditor::make('content')
                                     ->label(__('Page content'))
@@ -142,31 +142,31 @@ class SitePageResource extends Resource
                                         ['customBlocks'],
                                     ])
                                     ->visible(function (Get $get, ?SitePage $record): bool {
-                                        if (SitePageForm::grapesJsOnly()) {
-                                            return $record !== null && ! $record->usesGrapesJsBuilder();
+                                        if (SitePageForm::editorOnly()) {
+                                            return $record !== null && ! $record->usesEditorBuilder();
                                         }
 
                                         return PageBuilder::matches($get('builder'), PageBuilder::RichEditor);
                                     })
                                     ->columnSpanFull(),
 
-                                Placeholder::make('grapesjs_frontend_hint')
-                                    ->label(__('voodbuilder::pro.fields.grapesjs_edit'))
+                                Placeholder::make('editor_frontend_hint')
+                                    ->label(__('voodbuilder::pro.fields.editor_edit'))
                                     ->content(function (?SitePage $record): HtmlString {
                                         if ($record === null) {
-                                            return new HtmlString(e(__('voodbuilder::pro.helpers.grapesjs_save_first')));
+                                            return new HtmlString(e(__('voodbuilder::pro.helpers.editor_save_first')));
                                         }
 
                                         $url = $record->getUrl();
 
                                         return new HtmlString(
-                                            __('voodbuilder::pro.helpers.grapesjs_frontend', ['url' => $url])
+                                            __('voodbuilder::pro.helpers.editor_frontend', ['url' => $url])
                                             .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
                                             .e(__('voodbuilder::pro.actions.open_visual_editor'))
                                             .'</a>'
                                         );
                                     })
-                                    ->visible(fn (?SitePage $record): bool => SitePageForm::showGrapesJsHint($record))
+                                    ->visible(fn (?SitePage $record): bool => SitePageForm::showEditorHint($record))
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
@@ -366,7 +366,7 @@ class SitePageResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
                         ? $state->label()
-                        : PageBuilder::tryFrom((string) $state)?->label() ?? (string) $state),
+                        : PageBuilder::normalize((string) $state)?->label() ?? (string) $state),
                 TextColumn::make('layout')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -398,7 +398,7 @@ class SitePageResource extends Resource
                         ->color('gray')
                         ->url(fn (SitePage $record): string => $record->getUrl().(str_contains($record->getUrl(), '?') ? '&' : '?').'edit=1')
                         ->openUrlInNewTab()
-                        ->visible(fn (SitePage $record): bool => $record->usesGrapesJsBuilder()),
+                        ->visible(fn (SitePage $record): bool => $record->usesEditorBuilder()),
                     CreateSitePageTranslationAction::make(),
                     DeleteSitePageTranslationsAction::make(fromTable: true),
                     DeleteAction::make()->hidden(fn (SitePage $record): bool => $record->is_home),

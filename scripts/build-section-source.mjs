@@ -13,8 +13,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
 const cacheDir = path.join(packageRoot, 'storage', 'section-source-src');
-const outJson = path.join(packageRoot, 'resources', 'grapesjs', 'section-source-blocks.json');
-const outCatalog = path.join(packageRoot, 'resources', 'grapesjs', 'section-catalog.html');
+const outJson = path.join(packageRoot, 'resources', 'editor', 'section-source-blocks.json');
+const outCatalog = path.join(packageRoot, 'resources', 'editor', 'section-catalog.html');
 
 const theme = process.env.VOODBUILDER_SECTION_THEME ?? 'indigo';
 

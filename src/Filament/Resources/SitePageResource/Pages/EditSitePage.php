@@ -37,7 +37,7 @@ class EditSitePage extends EditRecord
                 ->color('primary')
                 ->url(fn (): string => $this->record->getUrl())
                 ->openUrlInNewTab()
-                ->visible(fn (): bool => $this->record->usesGrapesJsBuilder()),
+                ->visible(fn (): bool => $this->record->usesEditorBuilder()),
             DeleteAction::make()
                 ->hidden(fn (SitePage $record): bool => $record->is_home),
         ];

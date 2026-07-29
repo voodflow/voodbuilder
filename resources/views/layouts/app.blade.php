@@ -7,12 +7,12 @@
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
-    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
-        $grapesJsEditor ?? false,
+    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::pageViteEntries(
+        $editorEditor ?? false,
         $chromeLayoutEditor ?? false,
         $voodbuilderSubTheme,
     );
-    $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
+    $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
 @endphp
 <!doctype html>
 <html
@@ -38,14 +38,14 @@
 
     <x-voodbuilder::geo-ai-meta />
 
-    @unless ($grapesJsEditor ?? false)
+    @unless ($editorEditor ?? false)
         @include('cookie-consent::cookie-consent-head')
     @endunless
 
     @if ($voodbuilderEditorAssetsReady)
         @vite($voodbuilderViteEntries)
-    @elseif ($grapesJsEditor ?? false)
-        <style>.voodbuilder-grapesjs-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
+    @elseif ($editorEditor ?? false)
+        <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
     @stack('head')
 </head>
@@ -65,7 +65,7 @@
         <x-voodbuilder::footer />
     @endif
 
-    @unless ($grapesJsEditor ?? false)
+    @unless ($editorEditor ?? false)
         @include('cookie-consent::cookie-consent-body')
     @endunless
     <x-voodbuilder::monitoring-scripts />

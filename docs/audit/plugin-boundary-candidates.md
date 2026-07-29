@@ -18,8 +18,8 @@ History, Conditions, Templates, Themes, Menus, Layouts, Pages — remain in Comm
 | Popups | `config popups.enabled` + always in same package | Module + later package |
 | Pages | `config pages.enabled` | Core module |
 | Chrome layouts | `config chrome_layouts.enabled` | Core module |
-| Components | always registered if GrapesJS on | Module + entitlement |
-| Bindings | always if GrapesJS on | Module + entitlement tiers |
+| Components | always registered if Editor on | Module + entitlement |
+| Bindings | always if Editor on | Module + entitlement tiers |
 
 ## Code that assumes Popups always exists
 

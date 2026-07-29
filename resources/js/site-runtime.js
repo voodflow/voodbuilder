@@ -1,6 +1,6 @@
-import { initVideoFacades } from './grapesjs/video-runtime.js';
-import { initVbRuntime } from './grapesjs/vb-runtime.js';
-import { initSiteChrome } from './grapesjs/site-chrome-runtime.js';
+import { initVideoFacades } from './editor/video-runtime.js';
+import { initVbRuntime } from './editor/vb-runtime.js';
+import { initSiteChrome } from './editor/site-chrome-runtime.js';
 
 function bootPopupsIfConfigured() {
     if (! document.querySelector('[data-voodbuilder-popups-config]')) {

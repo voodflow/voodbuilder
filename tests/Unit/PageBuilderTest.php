@@ -11,14 +11,20 @@ class PageBuilderTest extends TestCase
 {
     public function test_matches_enum_instance(): void
     {
-        $this->assertTrue(PageBuilder::matches(PageBuilder::GrapesJs, PageBuilder::GrapesJs));
-        $this->assertFalse(PageBuilder::matches(PageBuilder::GrapesJs, PageBuilder::RichEditor));
+        $this->assertTrue(PageBuilder::matches(PageBuilder::Visual, PageBuilder::Visual));
+        $this->assertFalse(PageBuilder::matches(PageBuilder::Visual, PageBuilder::RichEditor));
     }
 
     public function test_matches_string_value(): void
     {
-        $this->assertTrue(PageBuilder::matches('grapesjs', PageBuilder::GrapesJs));
+        $this->assertTrue(PageBuilder::matches('visual', PageBuilder::Visual));
         $this->assertTrue(PageBuilder::matches('rich_editor', PageBuilder::RichEditor));
+    }
+
+    public function test_matches_legacy_grapesjs_value(): void
+    {
+        $this->assertTrue(PageBuilder::matches('grapesjs', PageBuilder::Visual));
+        $this->assertSame(PageBuilder::Visual, PageBuilder::normalize('grapesjs'));
     }
 
     public function test_blank_state_defaults_to_rich_editor(): void

@@ -8,7 +8,7 @@ use Voodflow\Voodbuilder\Contracts\RegistersConditions;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks;
+use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 
 final class ConditionsModule extends AbstractVoodBuilderModule implements RegistersConditions
 {
@@ -31,7 +31,7 @@ final class ConditionsModule extends AbstractVoodBuilderModule implements Regist
 
     public function conditionDefinitions(ModuleContext $context): array
     {
-        return GrapesJsConditionHooks::options();
+        return EditorConditionHooks::options();
     }
 
     public static function isEnabled(): bool

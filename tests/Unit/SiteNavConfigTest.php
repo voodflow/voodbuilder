@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavConfig;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavConfig;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavSimpleBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SiteNavConfigTest extends TestCase

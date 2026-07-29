@@ -7,7 +7,7 @@ Third-party packages extend VoodBuilder **without editing Core files**. Register
 ```php
 use Voodflow\Voodbuilder\Voodbuilder;
 
-Voodbuilder::grapesJsBlock(
+Voodbuilder::editorBlock(
     id: 'acme-hello',
     label: 'Acme Hello',
     category: 'Acme',
@@ -18,11 +18,11 @@ Voodbuilder::grapesJsBlock(
 ## Binding source
 
 ```php
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField;
 
-Voodbuilder::grapesJsBindingSource(new class implements GrapesJsBindingSource {
+Voodbuilder::editorBindingSource(new class implements EditorBindingSource {
     public function id(): string { return 'acme.site'; }
     public function label(): string { return 'Acme site'; }
     public function package(): string { return 'acme'; }
@@ -39,7 +39,7 @@ Voodbuilder::grapesJsBindingSource(new class implements GrapesJsBindingSource {
 ## Condition
 
 ```php
-Voodbuilder::grapesJsCondition('acme_feature_flag', function (array $condition, $page): bool {
+Voodbuilder::editorCondition('acme_feature_flag', function (array $condition, $page): bool {
     return ($condition['value'] ?? null) === 'on';
 });
 ```
@@ -47,7 +47,7 @@ Voodbuilder::grapesJsCondition('acme_feature_flag', function (array $condition, 
 ## Editor labels
 
 ```php
-Voodbuilder::grapesJsEditorLabels(fn (): array => [
+Voodbuilder::editorLabels(fn (): array => [
     'acmeHello' => __('acme::ui.hello'),
 ]);
 ```

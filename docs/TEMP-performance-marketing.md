@@ -34,7 +34,7 @@ That separation is what turns a demo-grade builder into production-grade infrast
 
 ### Symptom
 
-On a real project homepage (GrapesJS builder, 8 unique library components, 9 DOM instances):
+On a real project homepage (Editor builder, 8 unique library components, 9 DOM instances):
 
 | Metric | Measured value |
 |---|---|
@@ -140,7 +140,7 @@ Use these steps to demo or validate performance in any VoodBuilder + Laravel env
 ### Prerequisites
 
 - App running (Docker or local)
-- Homepage built with GrapesJS (`SitePage` with `builder = grapesjs`)
+- Homepage built with Editor (`SitePage` with `builder = grapesjs`)
 - At least one page using library components (`data-voodbuilder-component`)
 
 ### 1. TTFB — server response time (curl)
@@ -208,15 +208,15 @@ If public pages trigger `compile-component-tailwind.mjs`, something is misconfig
 ### 6. Automated tests (CI / regression guard)
 
 ```bash
-php artisan test --filter=GrapesJsPastedComponentNormalizerTest
-php artisan test --filter=GrapesJsPhaseOneRenderersTest
-php artisan test --filter=SitePageGrapesJsTest
+php artisan test --filter=EditorPastedComponentNormalizerTest
+php artisan test --filter=EditorPhaseOneRenderersTest
+php artisan test --filter=SitePageEditorTest
 ```
 
 Key assertions:
 
 - `publishedCssForStoredHtml()` never expands missing utilities from HTML at runtime  
-- `GrapesJsComponentCssRenderer` uses the publish path  
+- `EditorComponentCssRenderer` uses the publish path  
 - `renderedStyles()` is memoized per request
 
 ---
@@ -253,7 +253,7 @@ These are **not** blockers for the compile-once fix, but they improve payload an
 | **Component library** | Reusable blocks stored in `voodbuilder_components` |
 | **Checksum** | `html_checksum` — fingerprint of component HTML; invalidates CSS when content changes |
 | **Publish path** | Code that serves public pages; must not invoke Tailwind JIT |
-| **Editor path** | Authoring APIs and GrapesJS UI; may compile when content is new or stale |
+| **Editor path** | Authoring APIs and Editor UI; may compile when content is new or stale |
 
 ---
 

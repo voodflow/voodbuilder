@@ -14,7 +14,7 @@ VoodBuilder is **not a full CMS**. It requires **Filament 5** and gives you a **
 |------------|-------------|
 | **Public theme** | VitePress-inspired navigation, doc sidebar, reading progress, mobile drawer, light/dark mode |
 | **Visual themes** | Sub-themes (docs, blog, news, landing, custom) with a Filament theme map to assign layouts per site area |
-| **Site pages** | Home and static pages via Filament RichEditor, custom blocks, and optional **GrapesJS** frontend editor |
+| **Site pages** | Home and static pages via Filament RichEditor, custom blocks, and optional **Editor** frontend editor |
 | **Navigation** | Nestable menus (main, header extras, footer) linking to routes, URLs, or site pages |
 | **Settings** | Branding, SEO defaults, locale, feature toggles — stored in the database via Spatie Settings |
 | **Content channels** | Route-based areas (tutorials, docs, events, …) registered by companion plugins; theme overrides per channel |
@@ -29,7 +29,7 @@ Pair VoodBuilder with **vtuts**, **vdocs**, **vevents**, **vexhibitors**, or you
 | Guide | Topics |
 |-------|--------|
 | [**docs/VISUAL_THEMES.md**](docs/VISUAL_THEMES.md) | Mental model, admin “theme bindings” & presets, common site setups, create custom themes |
-| [**docs/GRAPESJS.md**](docs/GRAPESJS.md) | Page builder, Tailblocks, custom blocks, dynamic blocks |
+| [**docs/EDITOR.md**](docs/EDITOR.md) | Page builder, Tailblocks, custom blocks, dynamic blocks |
 | [**docs/BUILD.md**](docs/BUILD.md) | `npm run build`, Vite entries, when to recompile |
 
 **Quick mental model:** *Visual theme* = layout + colours per area (marketing vs docs). *Light/dark* = global toggle. *Preset* = shortcut that fills the theme dropdowns — not a separate system.
@@ -83,9 +83,9 @@ That is usually enough for a fresh Laravel app with Vite. The install command pu
 | Publish | Spatie Settings, SEO, voodbuilder config |
 | Database | `migrate` + default navigation/pages seed |
 | `routes/web.php` | Removes Laravel’s default `GET /` welcome route |
-| `package.json` | Adds Tailwind, fonts, GrapesJS npm packages |
+| `package.json` | Adds Tailwind, fonts, Editor npm packages |
 | `package.json` scripts | Sets `build` to run `voodbuilder:sync-theme-imports` before Vite when safe |
-| `vite.config.js` | Adds theme CSS, GrapesJS editor JS/CSS, Tailblocks utilities |
+| `vite.config.js` | Adds theme CSS, visual editor JS/CSS, Tailblocks utilities |
 | npm | Runs `npm install` when `npm` is on PATH |
 | Cookie consent | Disables Filament auto-discovery for the public banner package |
 | vtuts (optional) | Patches `config/vtuts.php` layouts when the package is installed |
@@ -94,7 +94,7 @@ That is usually enough for a fresh Laravel app with Vite. The install command pu
 
 | Flag | Use when |
 |------|----------|
-| `--with-npm-build` | Compile theme + GrapesJS in the same step (recommended on first install) |
+| `--with-npm-build` | Compile theme + Editor in the same step (recommended on first install) |
 | `--skip-npm` | You manage Node dependencies yourself (CI, monorepo tooling) |
 | `--skip-seed` | No demo menus/pages |
 | `--skip-migrate` | Publish only; run `php artisan migrate` later |
@@ -339,11 +339,11 @@ Sub-themes are **visual variants** of the public shell (layout, typography, colo
 | Goal | Start with | Marketing pages | Docs / tutorials |
 |------|------------|-----------------|------------------|
 | Docs/tutorials only | Preset *Documentation only* | Documentation | Documentation |
-| GrapesJS landing only | Showcase + GrapesJS home page | Showcase | — |
+| Editor landing only | Showcase + Editor home page | Showcase | — |
 | Landing + docs/tutorials | Preset *Cosmolab public site* | Showcase | Documentation |
-| GrapesJS home + blog/news | Showcase home + Blog/News channel | Showcase | Blog or News for articles |
+| Editor home + blog/news | Showcase home + Blog/News channel | Showcase | Blog or News for articles |
 
-Global settings (logo, menus, SEO, dark/light, analytics) are unchanged. See [docs/GRAPESJS.md](docs/GRAPESJS.md) for the page builder.
+Global settings (logo, menus, SEO, dark/light, analytics) are unchanged. See [docs/EDITOR.md](docs/EDITOR.md) for the page builder.
 
 ### Built-in sub-themes
 
@@ -634,9 +634,9 @@ Example `input` entries after install (paths may differ):
 input: [
     'resources/js/app.js',
     'vendor/voodflow/voodbuilder/resources/css/theme.css',
-    'vendor/voodflow/voodbuilder/resources/js/grapesjs/editor.js',
-    'vendor/voodflow/voodbuilder/resources/css/grapesjs/editor.css',
-    'vendor/voodflow/voodbuilder/resources/css/grapesjs/tailblocks-utilities.css',
+    'vendor/voodflow/voodbuilder/resources/js/editor/editor.js',
+    'vendor/voodflow/voodbuilder/resources/css/editor/editor.css',
+    'vendor/voodflow/voodbuilder/resources/css/editor/tailblocks-utilities.css',
 ],
 ```
 

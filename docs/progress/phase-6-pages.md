@@ -2,7 +2,7 @@
 
 ## Boundary
 
-- `PagesModule` owns GrapesJS page save + form-submit routes and the `pages` content channel
+- `PagesModule` owns Editor page save + form-submit routes and the `pages` content channel
 - Filament `SitePageResource` gated via `modules.pages.enabled` ∧ `pages.enabled`
 - Editor `canEdit` requires `PagesModule::isEnabled()`
 - Public show routes remain in `routes/web.php` behind `pages.enabled` (Core)

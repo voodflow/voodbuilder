@@ -230,7 +230,7 @@ class ThemePaletteTest extends TestCase
 
         $this->assertStringContainsString('--vx-header-bg:#4f46e5', $css);
         // Bundled default must not be re-emitted once admin overrides header_bg,
-        // otherwise page-embedded GrapesJS CSS can win later in the cascade.
+        // otherwise page-embedded Editor CSS can win later in the cascade.
         $this->assertStringNotContainsString('--vx-header-bg:#0f172a', $css);
         $this->assertStringContainsString(
             "html[data-voodbuilder-sub-theme='site'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='site']:not(.dark)",

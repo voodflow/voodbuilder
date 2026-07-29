@@ -15,7 +15,7 @@
 ## Tests
 
 `tests/Modules/HistoryModuleTest.php`  
-`tests/Feature/GrapesJsPageRevisionTest.php`  
+`tests/Feature/EditorPageRevisionTest.php`  
 `tests/Contracts/ModuleRegistryTest.php`
 
 ## Next

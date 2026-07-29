@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderMediaSections;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class VoodbuilderMediaSectionsTest extends TestCase
@@ -18,6 +18,7 @@ class VoodbuilderMediaSectionsTest extends TestCase
             $this->assertStringContainsString('data-voodbuilder-section-block="'.$definition['id'].'"', $html);
             $this->assertMatchesRegularExpression('/vp-/', $html);
             $this->assertStringNotContainsString('GrapesJS', $html);
+        $this->assertStringNotContainsString('grapesjs', strtolower($html));
             $this->assertStringNotContainsString('grapesjs', strtolower($html));
 
             if ($definition['category'] === 'Hero') {
@@ -59,7 +60,7 @@ class VoodbuilderMediaSectionsTest extends TestCase
     {
         VoodbuilderMediaSections::registerBlocks();
 
-        $blocks = app(GrapesJsBlockRegistry::class)->toEditorBlocks();
+        $blocks = app(EditorBlockRegistry::class)->toEditorBlocks();
         $ids = collect($blocks)->pluck('id')->all();
 
         $this->assertContains('vb-bg-image', $ids);

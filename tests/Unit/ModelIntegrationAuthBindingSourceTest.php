@@ -9,9 +9,9 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationAuthBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationLatestBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationAuthBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationLatestBindingSource;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ModelIntegrationAuthBindingSourceTest extends TestCase

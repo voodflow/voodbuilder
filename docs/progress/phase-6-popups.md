@@ -2,9 +2,9 @@
 
 ## Boundary
 
-- `PopupsModule` owns GrapesJS popup CRUD/content routes, dedicated popup editor, and public runtime/analytics endpoints
+- `PopupsModule` owns Editor popup CRUD/content routes, dedicated popup editor, and public runtime/analytics endpoints
 - Filament `PopupResource` gated via `modules.popups.enabled` ∧ `popups.enabled`
-- Editor popup URLs + `GrapesJsPopupEditorGate::canEdit` use `PopupsModule::isEnabled()`
+- Editor popup URLs + `EditorPopupEditorGate::canEdit` use `PopupsModule::isEnabled()`
 - First internal pilot aligned with later `voodbuilder-popups` package extraction
 
 ## Config

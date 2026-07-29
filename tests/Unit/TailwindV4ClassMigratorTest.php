@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\TailwindV4ClassMigrator;
+use Voodflow\Voodbuilder\Support\Editor\TailwindV4ClassMigrator;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class TailwindV4ClassMigratorTest extends TestCase

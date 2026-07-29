@@ -10,7 +10,7 @@ final class SyncThemeStylesheetImports
 {
     /**
      * Drop @import lines that point to missing files.
-     * App sub-themes are Vite entries (GrapesJsAssets), not bundled into theme.css.
+     * App sub-themes are Vite entries (EditorAssets), not bundled into theme.css.
      */
     public static function sync(): bool
     {

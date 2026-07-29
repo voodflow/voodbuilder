@@ -6,7 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use DOMDocument;
 use DOMElement;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 
 final class ChromeLayoutHtmlSanitizer
 {

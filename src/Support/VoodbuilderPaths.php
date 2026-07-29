@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderSectionGrapesJsBlocks;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
 
 final class VoodbuilderPaths
 {
@@ -35,29 +35,29 @@ final class VoodbuilderPaths
         ];
     }
 
-    public static function grapesJsViteEntry(): string
+    public static function editorViteEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/js/grapesjs/editor/init.js');
+        return self::relativeToBasePath(self::packagePath().'/resources/js/editor/editor/init.js');
     }
 
-    public static function grapesJsEditorCssEntry(): string
+    public static function editorCssEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/editor.css');
+        return self::relativeToBasePath(self::packagePath().'/resources/css/editor/editor.css');
     }
 
-    public static function grapesJsBlockPreviewCssEntry(): string
+    public static function editorBlockPreviewCssEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/block-preview-shim.css');
+        return self::relativeToBasePath(self::packagePath().'/resources/css/editor/block-preview-shim.css');
     }
 
-    public static function grapesJsTabsCssEntry(): string
+    public static function editorTabsCssEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/tabs.css');
+        return self::relativeToBasePath(self::packagePath().'/resources/css/editor/tabs.css');
     }
 
-    public static function grapesJsFormsCssEntry(): string
+    public static function editorFormsCssEntry(): string
     {
-        return self::relativeToBasePath(self::packagePath().'/resources/css/grapesjs/forms.css');
+        return self::relativeToBasePath(self::packagePath().'/resources/css/editor/forms.css');
     }
 
     /**
@@ -67,15 +67,15 @@ final class VoodbuilderPaths
     {
         $entries = [
             self::themeCssRelativePath(),
-            self::grapesJsViteEntry(),
-            self::grapesJsEditorCssEntry(),
-            self::grapesJsTabsCssEntry(),
-            self::grapesJsFormsCssEntry(),
+            self::editorViteEntry(),
+            self::editorCssEntry(),
+            self::editorTabsCssEntry(),
+            self::editorFormsCssEntry(),
         ];
 
-        if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
-            $entries[] = VoodbuilderSectionGrapesJsBlocks::utilitiesCssEntry();
-            $entries[] = self::grapesJsBlockPreviewCssEntry();
+        if (VoodbuilderSectionEditorBlocks::isAvailable()) {
+            $entries[] = VoodbuilderSectionEditorBlocks::utilitiesCssEntry();
+            $entries[] = self::editorBlockPreviewCssEntry();
         }
 
         return $entries;
@@ -84,16 +84,16 @@ final class VoodbuilderPaths
     /**
      * @return list<string>
      */
-    public static function grapesJsCanvasStyleEntries(): array
+    public static function editorCanvasStyleEntries(): array
     {
         $entries = [
             self::themeCssRelativePath(),
-            self::grapesJsTabsCssEntry(),
-            self::grapesJsFormsCssEntry(),
+            self::editorTabsCssEntry(),
+            self::editorFormsCssEntry(),
         ];
 
-        if (VoodbuilderSectionGrapesJsBlocks::isAvailable()) {
-            $entries[] = VoodbuilderSectionGrapesJsBlocks::utilitiesCssEntry();
+        if (VoodbuilderSectionEditorBlocks::isAvailable()) {
+            $entries[] = VoodbuilderSectionEditorBlocks::utilitiesCssEntry();
         }
 
         return $entries;

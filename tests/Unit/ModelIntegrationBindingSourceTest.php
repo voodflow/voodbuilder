@@ -6,8 +6,8 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationLatestBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationLatestBindingSource;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ModelIntegrationBindingSourceTest extends TestCase

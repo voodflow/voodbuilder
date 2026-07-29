@@ -117,9 +117,9 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content {
 }
 
 
-/* Landing / home pages built with GrapesJS or rich-content blocks */
+/* Landing / home pages built with Editor or rich-content blocks */
 :where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
-:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode) {
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-editor-mode) {
     max-width: none;
     padding: 0;
 }
@@ -131,7 +131,7 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content:has(.VPRichPag
 
 /*
  * Do NOT force high-specificity padding on landing sections — that beat author
- * utilities. Default gutters live in landing.css :where(.voodbuilder-gjs-container)
+ * utilities. Default gutters live in landing.css :where(.voodbuilder-editor-container)
  * (specificity 0); author px-* / px-0 still win.
  */
 

@@ -12,7 +12,7 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class NavigationMenuResourceTest extends TestCase
 {
-    public function test_site_page_options_lists_only_grapesjs_pages(): void
+    public function test_site_page_options_lists_only_editor_pages(): void
     {
         SitePage::query()->create([
             'title' => 'Rich page',
@@ -24,7 +24,7 @@ class NavigationMenuResourceTest extends TestCase
         SitePage::query()->create([
             'title' => 'Grapes page',
             'slug' => 'grapes-page',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'layout' => 'landing',
             'published' => true,
         ]);

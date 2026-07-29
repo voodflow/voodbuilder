@@ -3,7 +3,7 @@
 ## Delivered
 
 - `docs/SDK_PLUGIN_API.md`
-- `Voodbuilder::grapesJsCondition()` helper
+- `Voodbuilder::editorCondition()` helper
 - Sample third-party plugin fixture (block + binding + condition)
 - Architecture test proving registration without Core edits
 

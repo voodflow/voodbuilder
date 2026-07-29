@@ -34,12 +34,7 @@ class ModuleRegistryTest extends TestCase
         $this->assertTrue($registry->isEnabled('layouts'));
         $this->assertTrue($registry->has('pages'));
         $this->assertTrue($registry->isEnabled('pages'));
-        $this->assertTrue($registry->has('dynamic_data'));
-        $this->assertTrue($registry->isEnabled('dynamic_data'));
-        $this->assertTrue($registry->has('components'));
-        $this->assertTrue($registry->isEnabled('components'));
-        $this->assertTrue($registry->has('popups'));
-        $this->assertTrue($registry->isEnabled('popups'));
+        // Companion modules (dynamic_data, components, popups) register from their packages.
         $this->assertTrue($registry->booted());
     }
 

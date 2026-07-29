@@ -17,7 +17,7 @@ Namespaces live under `Voodflow\Voodbuilder\`. Proposed target folders are `src/
 |---|---|
 | Model | `Models/SitePage` |
 | Public controller | `Http/Controllers/SitePageController`, `HomeController` |
-| Editor save | `Http/Controllers/GrapesJsPageController` |
+| Editor save | `Http/Controllers/EditorPageController` |
 | Support | `Support/SitePage*`, `Support/PageBuilderAccess` |
 
 ## Layouts (Chrome)
@@ -26,8 +26,8 @@ Namespaces live under `Voodflow\Voodbuilder\`. Proposed target folders are `src/
 |---|---|
 | Model | `Models/ChromeLayout` |
 | Filament | `Filament/Resources/ChromeLayoutResource` |
-| Editor | `ChromeLayoutEditorController`, `GrapesJsChromeLayoutController` |
-| Support | `Support/ChromeLayout*`, `Support/GrapesJs/GrapesJsChrome*` , SiteNav/SiteFooter blocks |
+| Editor | `ChromeLayoutEditorController`, `EditorChromeLayoutController` |
+| Support | `Support/ChromeLayout*`, `Support/Editor/EditorChrome*` , SiteNav/SiteFooter blocks |
 
 ## Menus
 
@@ -51,38 +51,38 @@ Namespaces live under `Voodflow\Voodbuilder\`. Proposed target folders are `src/
 |---|---|
 | Model | `ModelIntegration` |
 | Filament | `ModelIntegrationResource` |
-| Support | `Support/GrapesJs/Bindings/*` |
-| HTTP | `GrapesJsBindingsController`, preview/media controllers |
+| Support | `Support/Editor/Bindings/*` |
+| HTTP | `EditorBindingsController`, preview/media controllers |
 
 ## Conditions
 
 | Artifact | Path |
 |---|---|
-| Support | `Support/GrapesJs/Conditions/*` |
+| Support | `Support/Editor/Conditions/*` |
 
 ## History
 
 | Artifact | Path |
 |---|---|
 | Model | `SitePageRevision` |
-| HTTP | `GrapesJsPageRevisionsController` |
-| Support | `Support/GrapesJs/SitePageRevisionRecorder` |
+| HTTP | `EditorPageRevisionsController` |
+| Support | `Support/Editor/SitePageRevisionRecorder` |
 
 ## Templates
 
 | Artifact | Path |
 |---|---|
 | Model | `PageTemplate` |
-| HTTP | `GrapesJsPageTemplatesController` |
-| Support | `GrapesJsPageTemplate*`, `StarterPageTemplates`, landing section HTML builders |
+| HTTP | `EditorPageTemplatesController` |
+| Support | `EditorPageTemplate*`, `StarterPageTemplates`, landing section HTML builders |
 
 ## Components
 
 | Artifact | Path |
 |---|---|
 | Model | `BuilderComponent`, `BuilderGlobalClass` |
-| HTTP | `GrapesJsComponentsController`, `GrapesJsGlobalClassesController` |
-| Support | `GrapesJsComponent*` |
+| HTTP | `EditorComponentsController`, `EditorGlobalClassesController` |
+| Support | `EditorComponent*` |
 
 ## Popups
 
@@ -91,7 +91,7 @@ Namespaces live under `Voodflow\Voodbuilder\`. Proposed target folders are `src/
 | Models | `BuilderPopup`, `BuilderPopupEvent` |
 | Filament | `PopupResource` |
 | HTTP | popup CRUD, content, public data, analytics, editor |
-| Support | `Support/GrapesJs/Popups/*`, `GrapesJsPopupEditorGate` |
+| Support | `Support/Editor/Popups/*`, `EditorPopupEditorGate` |
 
 ## Settings / site chrome runtime
 
@@ -104,4 +104,4 @@ Namespaces live under `Voodflow\Voodbuilder\`. Proposed target folders are `src/
 
 ## Direct instantiation hotspots
 
-`VoodbuilderServiceProvider` constructs registries and calls static registrars (`IntegrationRegistrar`, landing section classes, `BuiltinBindingSources`). Feature code often `new`s or resolves concrete GrapesJS support classes rather than interfaces — full list refined during Phase 3 when introducing adapters.
+`VoodbuilderServiceProvider` constructs registries and calls static registrars (`IntegrationRegistrar`, landing section classes, `BuiltinBindingSources`). Feature code often `new`s or resolves concrete Editor support classes rather than interfaces — full list refined during Phase 3 when introducing adapters.

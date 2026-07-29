@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Fixtures\SamplePlugin;
 
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
@@ -16,14 +16,14 @@ final class SampleAcmePlugin
 {
     public static function register(): void
     {
-        Voodbuilder::grapesJsBlock(
+        Voodbuilder::editorBlock(
             id: 'acme-hello',
             label: 'Acme Hello',
             category: 'Acme',
             content: '<div class="p-4" data-acme-hello="1">Hello from Acme</div>',
         );
 
-        Voodbuilder::grapesJsBindingSource(new class implements GrapesJsBindingSource
+        Voodbuilder::editorBindingSource(new class implements EditorBindingSource
         {
             public function id(): string
             {
@@ -58,7 +58,7 @@ final class SampleAcmePlugin
             }
         });
 
-        Voodbuilder::grapesJsCondition('acme_feature_flag', static function (array $condition, $page): bool {
+        Voodbuilder::editorCondition('acme_feature_flag', static function (array $condition, $page): bool {
             return ($condition['value'] ?? null) === 'on';
         });
     }

@@ -4,8 +4,8 @@
 
 Introduced JS editor contribution registries with a compatibility bridge:
 
-- `resources/js/grapesjs/editor/registries/{commands,panels,data-sources,conditions}.js`
-- `resources/js/grapesjs/editor/compatibility-bridge.js` (`@deprecated remove-by 0.2.0`)
+- `resources/js/editor/editor/registries/{commands,panels,data-sources,conditions}.js`
+- `resources/js/editor/editor/compatibility-bridge.js` (`@deprecated remove-by 0.2.0`)
 - `bootEditorRegistries()` hooked after `grapesjs.init` in `editor/init.js`
 - PHP contracts: `RegistersEditorCommands`, `RegistersEditorPanels`
 

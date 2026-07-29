@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockPreview;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockPreview;
 
 final class ChromeLayoutDefaults
 {
@@ -31,7 +31,7 @@ HTML;
 </div>
 HTML;
 
-        return GrapesJsBlockPreview::wrapHtml($inner) ?? $inner;
+        return EditorBlockPreview::wrapHtml($inner) ?? $inner;
     }
 
     public static function navZoneHtml(): string

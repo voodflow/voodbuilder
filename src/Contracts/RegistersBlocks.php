@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Contracts;
 
 use Voodflow\Voodbuilder\Modules\ModuleContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 
 interface RegistersBlocks
 {
-    public function registerBlocks(GrapesJsBlockRegistry $blocks, ModuleContext $context): void;
+    public function registerBlocks(EditorBlockRegistry $blocks, ModuleContext $context): void;
 }

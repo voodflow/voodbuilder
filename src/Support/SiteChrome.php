@@ -9,13 +9,13 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 
 final class SiteChrome
 {
-    public static function shouldHideNav(?SitePage $page = null, bool $grapesJsEditor = false): bool
+    public static function shouldHideNav(?SitePage $page = null, bool $editorEditor = false): bool
     {
         if ($page !== null && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
             return true;
         }
 
-        if ($grapesJsEditor) {
+        if ($editorEditor) {
             return false;
         }
 
@@ -32,7 +32,7 @@ final class SiteChrome
 
     public static function pageContainsSiteNavBlock(SitePage $page): bool
     {
-        if (! $page->usesGrapesJsBuilder()) {
+        if (! $page->usesEditorBuilder()) {
             return false;
         }
 
@@ -48,13 +48,13 @@ final class SiteChrome
         );
     }
 
-    public static function shouldHideFooter(?SitePage $page = null, bool $grapesJsEditor = false): bool
+    public static function shouldHideFooter(?SitePage $page = null, bool $editorEditor = false): bool
     {
         if ($page !== null && ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
             return true;
         }
 
-        if ($grapesJsEditor) {
+        if ($editorEditor) {
             return true;
         }
 

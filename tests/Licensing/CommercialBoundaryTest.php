@@ -9,8 +9,8 @@ use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
-use Voodflow\Voodbuilder\Support\GrapesJs\DynamicDataCollectionsBridge;
-use Voodflow\Voodbuilder\Support\GrapesJs\TemplateAuthoringBridge;
+use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
+use Voodflow\Voodbuilder\Support\Editor\TemplateAuthoringBridge;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
@@ -27,29 +27,37 @@ class CommercialBoundaryTest extends TestCase
 
     public function test_components_unlocks_with_companion_plugin_even_on_community(): void
     {
-        // TestCase activates VoodbuilderComponents like a host Filament panel would.
-        // The paid package (plugin registration) is the commercial gate — not Agency edition alone.
+        if (! class_exists(ComponentsModule::class)) {
+            $this->markTestSkipped('voodbuilder-components companion package is not available.');
+        }
+
         $this->assertSame('community', Voodbuilder::entitlements()->edition());
         $this->assertFalse(Voodbuilder::can('components.library'));
         $this->assertTrue(ComponentsModule::isEnabled());
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.components.index'));
+        $this->assertTrue(Route::has('voodbuilder.editor.components.index'));
     }
 
     public function test_community_keeps_core_cms_modules_and_marketplace_template_url(): void
     {
         $this->assertTrue(TemplatesModule::isEnabled());
-        $this->assertTrue(PopupsModule::isEnabled());
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.index'));
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.import-url'));
-        $this->assertTrue(Route::has('voodbuilder.popups.public'));
+
+        if (class_exists(PopupsModule::class)) {
+            $this->assertTrue(PopupsModule::isEnabled());
+            $this->assertTrue(Route::has('voodbuilder.popups.public'));
+        }
+
+        $this->assertTrue(Route::has('voodbuilder.editor.page-templates.index'));
+        $this->assertTrue(Route::has('voodbuilder.editor.page-templates.import-url'));
     }
 
     public function test_dynamic_data_requires_companion_plugin_and_is_active_in_testbench(): void
     {
-        // TestCase activates VoodbuilderDynamicData like a host Filament panel would.
+        if (! class_exists(DynamicDataModule::class)) {
+            $this->markTestSkipped('voodbuilder-dynamic-data companion package is not available.');
+        }
+
         $this->assertTrue(DynamicDataModule::isEnabled());
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.bindings'));
-        // List repeat remains Pro/Agency even when the plugin is installed.
+        $this->assertTrue(Route::has('voodbuilder.editor.bindings'));
         $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
         $this->assertFalse(DynamicDataCollectionsBridge::moduleEnabled());
     }
@@ -66,10 +74,11 @@ class CommercialBoundaryTest extends TestCase
             VoodbuilderTemplates::reset();
         }
 
-        $this->assertFalse(TemplateAuthoringBridge::isEnabled());
+        // Advanced JSON import/export require the companion plugin.
         $this->assertFalse(TemplateAuthoringBridge::canImportJson());
         $this->assertFalse(TemplateAuthoringBridge::canExport());
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.catalog'));
+        $this->assertFalse(TemplateAuthoringBridge::pluginInstalled());
+        $this->assertFalse(Route::has('voodbuilder.editor.page-templates.catalog'));
     }
 
     public function test_templates_plugin_unlocks_authoring_on_community(): void

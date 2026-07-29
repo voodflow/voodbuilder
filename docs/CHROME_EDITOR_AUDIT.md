@@ -9,7 +9,7 @@ Technical review of the VoodBuilder chrome layout / page shell editors after har
 | **Layout editor** (`chromeLayoutMode`) | Defines site shell stored in `voodbuilder_chrome_layouts` | Nav + footer blocks; content slot is a marker only |
 | **Page editor** (`chromeShellMode`) | Edits page body inside composed shell preview | Page content slot only; nav/footer read from layout |
 
-All GrapesJS customizations live under `resources/js/grapesjs/` — **never patch `node_modules/grapesjs`**.
+All Editor customizations live under `resources/js/editor/` — **never patch `node_modules/grapesjs`**.
 
 ## Fixes applied in this cycle
 
@@ -49,7 +49,7 @@ See [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) for full tree and imp
 
 1. **Duplicated chrome detection** — Consolidated in `chrome/slots.js` (`isChromeBleed`); `chrome-content-slot-utils.js` purge helpers remain for slot sanitization.
 2. **Silent refresh loops** — `component:remove` → `scheduleRefresh` → DOM rewrites can fight user actions during bootstrap; `bootstrapping` flag helps but is fragile.
-3. **`removable: false` not enforced everywhere** — GrapesJS still allows delete via some commands; guards rely on re-sync. Prefer `editor.on('component:remove:before')` when upgrading GrapesJS.
+3. **`removable: false` not enforced everywhere** — Editor still allows delete via some commands; guards rely on re-sync. Prefer `editor.on('component:remove:before')` when upgrading Editor.
 4. **Layout save without drop zones** — JS export unwraps zones; PHP `ChromeLayoutHtmlSanitizer::unwrapDropZones()` is a safety net. Keep both.
 5. **Magic strings** — Attribute names scattered across 10+ files. Consider exporting constants from `chrome-content-slot-utils.js` only (partially done).
 
@@ -57,10 +57,10 @@ See [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) for full tree and imp
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Stored HTML in chrome layouts | Medium | `ChromeLayoutHtmlSanitizer`, `GrapesJsHtmlSanitizer`, binding normalizers on save |
+| Stored HTML in chrome layouts | Medium | `ChromeLayoutHtmlSanitizer`, `EditorHtmlSanitizer`, binding normalizers on save |
 | Page editor saving shell bleed | Medium | `ChromeLayoutManagedContent::stripSiteChromeFromPageHtml()` on save |
-| XSS via dynamic bindings | Medium | Existing `GrapesJsBindingStorageNormalizer`; audit binding preview URLs |
-| CSRF on save endpoints | Low | Laravel CSRF on all GrapesJS routes |
+| XSS via dynamic bindings | Medium | Existing `EditorBindingStorageNormalizer`; audit binding preview URLs |
+| CSRF on save endpoints | Low | Laravel CSRF on all Editor routes |
 | **No server-side delete guard** | Low | Protection is client-only; malicious API caller could POST stripped nav — acceptable if layout HTML is admin-only |
 
 ## Optimization opportunities
@@ -71,7 +71,7 @@ See [MODULAR_REFACTOR_PLAN.md](./MODULAR_REFACTOR_PLAN.md) for full tree and imp
 4. **Reduce `pointer-events: none` scope** — `[data-voodbuilder-chrome-shell-locked]` blocks all interaction; page content slot explicitly re-enabled (see `editor.css`).
 5. **PHPUnit for JS contracts** — Add tests for `ChromeLayoutHtmlSanitizer::unwrapDropZones` and `composeForPage` structure (partial coverage exists).
 
-## GrapesJS upgrade checklist
+## Editor upgrade checklist
 
 After any `grapesjs` semver bump:
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding02Sections;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class VoodbuilderLanding02SectionsTest extends TestCase
@@ -21,6 +21,7 @@ class VoodbuilderLanding02SectionsTest extends TestCase
         $this->assertStringContainsString('vb-landing02-hero', $html);
         $this->assertStringContainsString('<details', $html);
         $this->assertStringNotContainsString('GrapesJS', $html);
+        $this->assertStringNotContainsString('grapesjs', strtolower($html));
         $this->assertStringNotContainsString('dark:', $html);
         $this->assertStringNotContainsString('x-data', $html);
         $this->assertStringNotContainsString('Daiva', $html);
@@ -31,7 +32,7 @@ class VoodbuilderLanding02SectionsTest extends TestCase
     {
         VoodbuilderLanding02Sections::registerBlocks();
 
-        $blocks = app(GrapesJsBlockRegistry::class)->toEditorBlocks();
+        $blocks = app(EditorBlockRegistry::class)->toEditorBlocks();
         $byId = collect($blocks)->keyBy('id');
 
         $this->assertSame('Hero', $byId['vb-landing02-hero']['category']);

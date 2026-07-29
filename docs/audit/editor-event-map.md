@@ -1,6 +1,6 @@
 # Editor event map
 
-## GrapesJS built-ins heavily used
+## Editor built-ins heavily used
 
 | Event | Typical consumers | Notes |
 |---|---|---|
@@ -28,7 +28,7 @@
 
 ## Multi-listener hotspots
 
-`editor/init.js` alone registers multiple `load` and `canvas:frame:load` handlers. Same events also registered in `page-tailwind-autobuild.js`, `plugins/voodbuilder-grapesjs.js`, `section-*`, `style-animation-sector.js`, etc.
+`editor/init.js` alone registers multiple `load` and `canvas:frame:load` handlers. Same events also registered in `page-tailwind-autobuild.js`, `plugins/voodbuilder-editor.js`, `section-*`, `style-animation-sector.js`, etc.
 
 **Phase 5 task:** centralise subscription via an event bus/registry and assert single registration in Vitest.
 

@@ -6,30 +6,30 @@ import { describe, expect, it } from 'vitest';
 import {
     isValidDomAttributeName,
     stripInvalidDomAttributesFromHtml,
-} from '../../resources/js/grapesjs/core/html-sanitize.js';
-import { ATTR } from '../../resources/js/grapesjs/core/attrs.js';
+} from '../../resources/js/editor/core/html-sanitize.js';
+import { ATTR } from '../../resources/js/editor/core/attrs.js';
 import {
     hasInvalidLayerChildren,
     sanitizeComponentTreeForLayers,
-} from '../../resources/js/grapesjs/core/component-model.js';
-import { findPrimaryBlock, readBlockId } from '../../resources/js/grapesjs/core/block-tree.js';
+} from '../../resources/js/editor/core/component-model.js';
+import { findPrimaryBlock, readBlockId } from '../../resources/js/editor/core/block-tree.js';
 import {
     ensureRootInspectable,
     findInspectableRoot,
     findLayoutChromeZoneBlockRoot,
     shouldPromoteSelectionToRoot,
-} from '../../resources/js/grapesjs/blocks/settings/select.js';
+} from '../../resources/js/editor/blocks/settings/select.js';
 import {
     registerBlockSettings,
     resolveSettings,
-} from '../../resources/js/grapesjs/blocks/settings/registry.js';
+} from '../../resources/js/editor/blocks/settings/registry.js';
 import {
     rebuildLayoutChromeBlockRegistry,
     resolveLayoutChromeBlock,
     getLayoutChromeBlock,
     setActiveLayoutSettingsRoot,
     resolveLayoutChromeZone,
-} from '../../resources/js/grapesjs/blocks/settings/layout-chrome-registry.js';
+} from '../../resources/js/editor/blocks/settings/layout-chrome-registry.js';
 
 function mockComponent(attrs = {}, children = [], parent = null) {
     const state = { ...attrs };
@@ -419,7 +419,7 @@ describe('theme-tokens background clear', () => {
             isStyleManagerDefaultWhiteBackground,
             styleHasAuthorBackgroundPaint,
         } = await import(
-            '../../resources/js/grapesjs/theme-tokens.js'
+            '../../resources/js/editor/theme-tokens.js'
         );
 
         expect(isClearedBackground('')).toBe(true);
@@ -436,7 +436,7 @@ describe('theme-tokens background clear', () => {
         expect(styleHasAuthorBackgroundPaint({ 'background-color': '#ffffff' })).toBe(false);
 
         const { isClearedStyleValue } = await import(
-            '../../resources/js/grapesjs/theme-tokens.js'
+            '../../resources/js/editor/theme-tokens.js'
         );
 
         expect(isClearedStyleValue('color', '')).toBe(true);
@@ -445,7 +445,7 @@ describe('theme-tokens background clear', () => {
         expect(isClearedStyleValue('color', '#ff0000')).toBe(false);
 
         const { enforceStyleManagerColorOverUtilities } = await import(
-            '../../resources/js/grapesjs/theme-tokens.js'
+            '../../resources/js/editor/theme-tokens.js'
         );
 
         const child = {
@@ -493,7 +493,7 @@ describe('theme-tokens background clear', () => {
 
     it('splitClassTokens splits pasted class blobs', async () => {
         const { splitClassTokens } = await import(
-            '../../resources/js/grapesjs/clipboard.js'
+            '../../resources/js/editor/clipboard.js'
         );
 
         expect(splitClassTokens('bg-red-800 p-4 text-white')).toEqual([
@@ -506,7 +506,7 @@ describe('theme-tokens background clear', () => {
 
     it('extractGrapesComposerCss keeps only #id Style Manager rules', async () => {
         const { extractGrapesComposerCss } = await import(
-            '../../resources/js/grapesjs/editor/payload.js'
+            '../../resources/js/editor/editor/payload.js'
         );
 
         const css = `
@@ -534,7 +534,7 @@ describe('editor/registries', () => {
             listEditorCommands,
             registerEditorCommand,
             applyEditorCommands,
-        } = await import('../../resources/js/grapesjs/editor/registries/commands.js');
+        } = await import('../../resources/js/editor/editor/registries/commands.js');
 
         clearEditorCommands();
         registerEditorCommand('voodbuilder:test-cmd', () => ({ run() {} }), { source: 'test' });
@@ -561,7 +561,7 @@ describe('editor/registries', () => {
             clearEditorPanels,
             registerEditorPanel,
             resolveEditorPanels,
-        } = await import('../../resources/js/grapesjs/editor/registries/panels.js');
+        } = await import('../../resources/js/editor/editor/registries/panels.js');
 
         clearEditorPanels();
         registerEditorPanel({ id: 'always' });
@@ -581,7 +581,7 @@ describe('editor entitlements filtering', () => {
         const {
             canEntitlement,
             filterActionsByEntitlement,
-        } = await import('../../resources/js/grapesjs/editor/entitlements.js');
+        } = await import('../../resources/js/editor/editor/entitlements.js');
 
         const entitlements = {
             templatesImport: false,

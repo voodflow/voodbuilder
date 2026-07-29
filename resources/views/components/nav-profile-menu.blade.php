@@ -48,7 +48,7 @@
     >
         @if ($canvasPreview)
             <p class="px-3.5 py-2 text-xs text-vp-text-3">
-                {{ __('voodbuilder::pro.grapesjs.blocks.site_nav_preview') }}
+                {{ __('voodbuilder::pro.editor.blocks.site_nav_preview') }}
             </p>
             <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
             <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">

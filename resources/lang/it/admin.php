@@ -141,7 +141,7 @@ return [
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_icon' => 'Nome icona Tabler (es. brand-facebook). Compatibile con daljo25/filament-tabler-icons.',
-        'menu_grapes_pages_only' => 'Sono elencate solo le pagine GrapesJS. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
+        'menu_editor_pages_only' => 'Sono elencate solo le pagine Editor. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
         'menu_tree' => 'Trascina con l’icona grip (☰). Per creare un sottomenu, rilascia la voce al centro di una riga di primo livello — compare il badge “Sottomenu qui”. Il bordo superiore/inferiore riordina allo stesso livello. Le sotto-voci hanno una barra colorata a sinistra. Massimo 2 livelli. Usa "Gruppo dropdown" per etichette senza link.',
         'menu_tree_drag' => 'Trascina per riordinare; rilascia al centro di una voce di primo livello per annidare',
         'menu_tree_nest_here' => 'Sottomenu qui',

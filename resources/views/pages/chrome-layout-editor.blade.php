@@ -1,22 +1,22 @@
 @extends('voodbuilder::layouts.full-width')
 
-@section('body_class_extra', 'voodbuilder-grapesjs-editing voodbuilder-chrome-layout-editor')
+@section('body_class_extra', 'voodbuilder-editor-editing voodbuilder-chrome-layout-editor')
 
 @push('head')
-    <style id="voodbuilder-grapesjs-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHostChrome::criticalHideCss() !!}</style>
+    <style id="voodbuilder-editor-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\Editor\EditorHostChrome::criticalHideCss() !!}</style>
 @endpush
 
 @section('content')
-    <div class="voodbuilder-chrome-layout-editor-shell voodbuilder-grapesjs-mode">
-        @include('voodbuilder::partials.grapesjs-frontend-editor', [
-            'grapesJsConfig' => $grapesJsConfig,
+    <div class="voodbuilder-chrome-layout-editor-shell voodbuilder-editor-mode">
+        @include('voodbuilder::partials.editor-frontend-editor', [
+            'editorConfig' => $editorConfig,
         ])
     </div>
 @endsection
 
 @push('scripts-before-livewire')
     <style>
-        .voodbuilder-chrome-layout-editor .voodbuilder-grapesjs-frontend {
+        .voodbuilder-chrome-layout-editor .voodbuilder-editor-frontend {
             min-height: 100vh;
         }
 

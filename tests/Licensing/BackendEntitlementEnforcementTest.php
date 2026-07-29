@@ -50,12 +50,16 @@ class BackendEntitlementEnforcementTest extends TestCase
             \Voodflow\VoodbuilderComponents\VoodbuilderComponents::reset();
         }
 
+        if (! class_exists(\Voodflow\Voodbuilder\Modules\Components\ComponentsModule::class)) {
+            $this->markTestSkipped('voodbuilder-components companion package is not available.');
+        }
+
         Voodbuilder::entitlements()->useProvider(
             TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );
 
         // Module may still be registered from TestCase activation; controller must enforce.
-        if (! Route::has('voodbuilder.grapesjs.components.index')) {
+        if (! Route::has('voodbuilder.editor.components.index')) {
             $this->markTestSkipped('Components routes absent when module disabled at boot.');
         }
 
@@ -77,7 +81,7 @@ class BackendEntitlementEnforcementTest extends TestCase
         $user->forceFill(['name' => 'Ed', 'email' => 'entitlement-api@example.com'])->save();
 
         $this->actingAs($user)
-            ->getJson(route('voodbuilder.grapesjs.components.index'))
+            ->getJson(route('voodbuilder.editor.components.index'))
             ->assertForbidden();
     }
 
@@ -91,7 +95,7 @@ class BackendEntitlementEnforcementTest extends TestCase
             TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );
 
-        $this->assertTrue(Route::has('voodbuilder.grapesjs.page-templates.import'));
+        $this->assertTrue(Route::has('voodbuilder.editor.page-templates.import'));
 
         $user = new class extends User implements FilamentUser
         {
@@ -105,7 +109,7 @@ class BackendEntitlementEnforcementTest extends TestCase
         $user->forceFill(['name' => 'Ed', 'email' => 'entitlement-tpl@example.com'])->save();
 
         $this->actingAs($user)
-            ->postJson(route('voodbuilder.grapesjs.page-templates.import'), ['import' => []])
+            ->postJson(route('voodbuilder.editor.page-templates.import'), ['import' => []])
             ->assertForbidden();
     }
 }

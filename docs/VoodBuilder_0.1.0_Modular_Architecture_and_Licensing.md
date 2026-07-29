@@ -91,7 +91,7 @@ The correct sequence is:
 7. extract Popups as the first commercial package;
 8. prepare an SDK for third-party plugins and marketplace assets.
 
-The current GrapesJS integration is a particularly high-risk area. GrapesJS itself has deliberately not been patched, which is positive, but VoodBuilder customisation currently lives largely in a JavaScript bundle of more than 2.5 MB. This bundle must be audited and modularised gradually, with strong regression testing and no behavioural rewrite during the first phase.
+The current Editor integration is a particularly high-risk area. Editor itself has deliberately not been patched, which is positive, but VoodBuilder customisation currently lives largely in a JavaScript bundle of more than 2.5 MB. This bundle must be audited and modularised gradually, with strong regression testing and no behavioural rewrite during the first phase.
 
 ---
 
@@ -144,7 +144,7 @@ The most important differentiators are:
 7. **Visual conditions and data-aware rendering**
 8. **Reusable components and page templates**
 9. **Plugin architecture designed for Laravel packages**
-10. **No direct patching of GrapesJS core**
+10. **No direct patching of Editor core**
 
 ---
 
@@ -156,10 +156,10 @@ The most important differentiators are:
 | Package Laravel contracts | `illuminate/contracts ^12\|^13` |
 | Filament | `^5.0`, currently installed `v5.7.3` |
 | Minimum PHP | `^8.4` |
-| GrapesJS app constraint | `^0.22.12` |
-| GrapesJS lock version | `0.22.16` |
-| Installer GrapesJS declaration | also references `^0.23.2`; must be aligned |
-| GrapesJS bundling | Vite |
+| Editor app constraint | `^0.22.12` |
+| Editor lock version | `0.22.16` |
+| Installer Editor declaration | also references `^0.23.2`; must be aligned |
+| Editor bundling | Vite |
 | React theme map | separate esbuild bundle |
 | React libraries | React and `@xyflow/react` |
 | Package development | path repository inside Laravel demo app |
@@ -168,7 +168,7 @@ The most important differentiators are:
 | Migrations | loaded directly from package |
 | Migration publishing | not supported and should remain unnecessary |
 | Current JavaScript customisation | one very large file/bundle, over 2.5 MB |
-| GrapesJS modifications | no direct GrapesJS core patches |
+| Editor modifications | no direct Editor core patches |
 
 ---
 
@@ -192,9 +192,9 @@ Do not:
 - alter popup trigger semantics;
 - change template import format;
 - remove features considered redundant before confirming usage;
-- upgrade GrapesJS during the same refactor.
+- upgrade Editor during the same refactor.
 
-## 4.2 No direct GrapesJS core modifications
+## 4.2 No direct Editor core modifications
 
 VoodBuilder must continue using:
 
@@ -209,7 +209,7 @@ VoodBuilder must continue using:
 - panels and views;
 - external wrappers and adapters.
 
-Never patch GrapesJS source files in `node_modules`.
+Never patch Editor source files in `node_modules`.
 
 ## 4.3 Backward compatibility
 
@@ -534,7 +534,7 @@ The visual theme assignment map is a flagship Core feature and should remain ava
 | Tailwind JIT compilation | Yes | Yes | Yes |
 | Copy classes | Yes | Yes | Yes |
 | Copy complete styling | Yes | Yes | Yes |
-| Inline GrapesJS styles | Yes | Yes | Yes |
+| Inline Editor styles | Yes | Yes | Yes |
 | Animation editor | Yes | Yes | Yes |
 
 History, conditions and animations remain in Community.
@@ -1009,11 +1009,11 @@ Expected responsibilities:
 
 ---
 
-# 13. GrapesJS refactoring plan
+# 13. Editor refactoring plan
 
 ## 13.1 Current risk
 
-The current implementation keeps GrapesJS itself unmodified, but a large part of VoodBuilder behaviour is concentrated in a JavaScript file or bundle exceeding 2.5 MB.
+The current implementation keeps Editor itself unmodified, but a large part of VoodBuilder behaviour is concentrated in a JavaScript file or bundle exceeding 2.5 MB.
 
 Risks:
 
@@ -1029,7 +1029,7 @@ Risks:
 - high regression risk;
 - unclear ownership of editor features;
 - slow onboarding;
-- future GrapesJS upgrade difficulty.
+- future Editor upgrade difficulty.
 
 ## 13.2 Mandatory rule
 
@@ -1055,7 +1055,7 @@ docs/audit/editor-entrypoints.md
 
 The audit must identify:
 
-- GrapesJS initialisation;
+- Editor initialisation;
 - block registration;
 - component-type registration;
 - commands;
@@ -1199,9 +1199,9 @@ Goals:
 
 Do not optimise bundle size by removing code until tests prove it unused.
 
-## 13.10 GrapesJS upgrade strategy
+## 13.10 Editor upgrade strategy
 
-Do not combine modular refactoring with a GrapesJS version upgrade.
+Do not combine modular refactoring with a Editor version upgrade.
 
 First:
 
@@ -1210,7 +1210,7 @@ First:
 3. complete modular extraction;
 4. build regression tests;
 5. create a separate upgrade branch;
-6. test against the next supported GrapesJS version.
+6. test against the next supported Editor version.
 
 ---
 
@@ -1745,7 +1745,7 @@ First create baselines for:
 - editor initial bundle size;
 - initial load time;
 - time to interactive;
-- GrapesJS initialisation;
+- Editor initialisation;
 - Tailwind JIT compile;
 - save operation;
 - template import;
@@ -1876,7 +1876,7 @@ Version `0.1.0` is complete only when:
 - the Core is modular internally;
 - the editor is split into documented modules;
 - the 2.5 MB JavaScript implementation is no longer a single opaque source unit;
-- GrapesJS remains unpatched;
+- Editor remains unpatched;
 - page, layout and popup modes share one editor runtime;
 - module registration is centralised;
 - capabilities are centralised;
@@ -2044,7 +2044,7 @@ VOODBUILDER_MODULE_DYNAMIC_DATA=true
 VOODBUILDER_MODULE_COMPONENTS=true
 VOODBUILDER_MODULE_POPUPS=true
 
-VOODBUILDER_GRAPESJS_ENABLED=true
+VOODBUILDER_EDITOR_ENABLED=true
 VOODBUILDER_CHROME_LAYOUTS_ENABLED=true
 VOODBUILDER_PAGES_DEFAULT_BUILDER=grapesjs
 
@@ -2096,7 +2096,7 @@ Do **not** set `*_AUTO_REGISTER=true` on the Filament Cosmolab host unless you i
 
 ### E. Frontend assets
 
-GrapesJS editor assets build from the **host** Vite config (entries under `packages/voodflow/voodbuilder/...`):
+visual editor assets build from the **host** Vite config (entries under `packages/voodflow/voodbuilder/...`):
 
 ```bash
 cd …/app

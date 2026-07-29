@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 
 /**
- * Resolves GrapesJS chrome layouts (header/footer shell) per content channel.
+ * Resolves Editor chrome layouts (header/footer shell) per content channel.
  *
  * Priority:
  * 1. Enabled non-default layout whose channel_ids includes the current channel

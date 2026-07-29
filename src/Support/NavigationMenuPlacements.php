@@ -7,7 +7,7 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 
 /**
- * Admin-facing menu placements for the site chrome and GrapesJS footer blocks.
+ * Admin-facing menu placements for the site chrome and Editor footer blocks.
  *
  * Site model:
  * - Header: {@see main} (center) + optional {@see header_extra} (right)

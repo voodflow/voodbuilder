@@ -1,10 +1,10 @@
 {
-  "_comment": "Representative editor component attributes used by VoodBuilder 0.0.11 line. Not a full GrapesJS project export.",
+  "_comment": "Representative editor component attributes used by VoodBuilder 0.0.11 line. Not a full Editor project export.",
   "version": "0.0.11",
   "sample_page_component": {
     "type": "default",
     "attributes": {
-      "class": "voodbuilder-gjs-container px-5 py-12",
+      "class": "voodbuilder-editor-container px-5 py-12",
       "data-voodbuilder-block": "container"
     }
   },

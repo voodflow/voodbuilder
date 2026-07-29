@@ -21,7 +21,7 @@ class SitePagePublicationTest extends TestCase
         SitePage::query()->create([
             'title' => 'Scheduled',
             'slug' => 'scheduled-page',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => '<section>Soon</section>',
                 'css' => '',
@@ -44,9 +44,9 @@ class SitePagePublicationTest extends TestCase
         SitePage::query()->create([
             'title' => 'Live',
             'slug' => 'live-page',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
-                'html' => '<section class="voodbuilder-gjs-section">Live</section>',
+                'html' => '<section class="voodbuilder-editor-section">Live</section>',
                 'css' => '',
                 'js' => '',
             ],
@@ -69,9 +69,9 @@ class SitePagePublicationTest extends TestCase
         SitePage::query()->create([
             'title' => 'Immediate',
             'slug' => 'immediate-page',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
-                'html' => '<section class="voodbuilder-gjs-section">Now</section>',
+                'html' => '<section class="voodbuilder-editor-section">Now</section>',
                 'css' => '',
                 'js' => '',
             ],

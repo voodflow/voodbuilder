@@ -58,8 +58,8 @@ class TemplatesModuleTest extends TestCase
     {
         $this->assertTrue(Voodbuilder::modules()->has(TemplatesModule::ID));
         $this->assertFalse(TemplatesModule::isEnabled());
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.index'));
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.page-templates.store'));
+        $this->assertFalse(Route::has('voodbuilder.editor.page-templates.index'));
+        $this->assertFalse(Route::has('voodbuilder.editor.page-templates.store'));
     }
 
     public function test_template_routes_are_absent_when_module_disabled(): void
@@ -81,6 +81,6 @@ class TemplatesModuleTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->getJson('/voodbuilder/grapesjs/page-templates')->assertNotFound();
+        $this->getJson('/voodbuilder/editor/page-templates')->assertNotFound();
     }
 }

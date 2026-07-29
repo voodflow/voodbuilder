@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderLanding01Sections;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class VoodbuilderLanding01SectionsTest extends TestCase
@@ -20,6 +20,7 @@ class VoodbuilderLanding01SectionsTest extends TestCase
         $this->assertStringContainsString('text-vp-brand-1', $html);
         $this->assertStringContainsString('vb-landing01-hero', $html);
         $this->assertStringNotContainsString('GrapesJS', $html);
+        $this->assertStringNotContainsString('grapesjs', strtolower($html));
         $this->assertStringNotContainsString('dark:', $html);
         $this->assertStringNotContainsString('Astrolus', $html);
         $this->assertStringNotContainsString('images.pexels.com', $html);
@@ -29,7 +30,7 @@ class VoodbuilderLanding01SectionsTest extends TestCase
     {
         VoodbuilderLanding01Sections::registerBlocks();
 
-        $blocks = app(GrapesJsBlockRegistry::class)->toEditorBlocks();
+        $blocks = app(EditorBlockRegistry::class)->toEditorBlocks();
         $byId = collect($blocks)->keyBy('id');
 
         $this->assertSame('Hero', $byId['vb-landing01-hero']['category']);

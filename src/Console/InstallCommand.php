@@ -177,7 +177,7 @@ class InstallCommand extends Command
         }
 
         if (ConfigureViteForVoodbuilder::apply($this->option('force'))) {
-            $this->components->info('Updated vite.config.js with voodbuilder theme and GrapesJS entries.');
+            $this->components->info('Updated vite.config.js with voodbuilder theme and Editor entries.');
         } else {
             $this->components->warn('vite.config.js already references voodbuilder Vite entries (or file could not be updated).');
         }
@@ -227,7 +227,7 @@ class InstallCommand extends Command
         $this->components->info('npm install completed.');
 
         if (! $this->option('with-npm-build')) {
-            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and GrapesJS editor.');
+            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and visual editor.');
             $this->components->warn('Tip: pass `--with-npm-build` to compile assets during install.');
 
             return;
@@ -340,8 +340,8 @@ class InstallCommand extends Command
         $this->newLine();
 
         $this->line('  Automatic setup already handled by voodbuilder:install:');
-        $this->line('  - package.json npm dependencies (GrapesJS, Tailwind, fonts)');
-        $this->line('  - vite.config.js theme + GrapesJS entries');
+        $this->line('  - package.json npm dependencies (Editor, Tailwind, fonts)');
+        $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
         $this->line('  - migrations, seed data, cookie-consent panel exclusion');
         $this->newLine();

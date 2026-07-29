@@ -4,19 +4,19 @@
     use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
     use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
-    use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsHostChrome;
+    use Voodflow\Voodbuilder\Support\Editor\EditorHostChrome;
     use Voodflow\Voodbuilder\Support\SubThemeResolver;
     use Voodflow\Voodbuilder\Support\ThemePalette;
 
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
     $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
-    $suppressHostChrome = GrapesJsHostChrome::shouldSuppressHostRender($grapesJsEditor ?? null);
-    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::pageViteEntries(
-        $grapesJsEditor ?? false,
+    $suppressHostChrome = EditorHostChrome::shouldSuppressHostRender($editorEditor ?? null);
+    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::pageViteEntries(
+        $editorEditor ?? false,
         $chromeLayoutEditor ?? false,
         $voodbuilderSubTheme,
     );
-    $voodbuilderEditorAssetsReady = ! ($grapesJsEditor ?? false) || \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsAssets::isBuilt();
+    $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
     $chromeLayout = $voodbuilderChromeLayout ?? ChromeLayoutResolver::activeLayout();
     $chromeRendered = $chromeLayout && ! $suppressHostChrome
         ? app(ChromeLayoutRenderer::class)->render($chromeLayout)
@@ -28,13 +28,13 @@
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
-    $isGrapesJsEditor = (bool) ($grapesJsEditor ?? false)
+    $isEditor = (bool) ($editorEditor ?? false)
         || (bool) ($chromeLayoutEditor ?? false)
         || request()->boolean('edit');
     // Host document must stay full-bleed while editing — content width applies inside the
     // canvas iframe / published page only. Otherwise landing.css max-width on site-shell
-    // shrinks the entire GrapesJS workspace.
-    $pageContentWidth = $isGrapesJsEditor
+    // shrinks the entire Editor workspace.
+    $pageContentWidth = $isEditor
         ? ['mode' => ChromeLayoutContentWidth::MODE_FULL, 'maxWidth' => null, 'customMaxWidth' => null]
         : (isset($page) && $page instanceof SitePage
             ? ChromeLayoutContentWidth::resolve($chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null, $page)
@@ -45,14 +45,14 @@
     $elementContentMaxWidth = is_string($pageContentWidth['customMaxWidth'] ?? null)
         ? $pageContentWidth['customMaxWidth']
         : null;
-    $chromeWidth = $isGrapesJsEditor
+    $chromeWidth = $isEditor
         ? ChromeLayoutContentWidth::CHROME_FULL
         : ChromeLayoutContentWidth::resolveChromeWidth(
             $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
         );
     // Full content width must force the layout token to 100% — otherwise theme.css
-    // keeps --width-vp-layout at 80rem and .voodbuilder-gjs-container stays boxed.
-    $pageWidthStyleParts = $isGrapesJsEditor
+    // keeps --width-vp-layout at 80rem and .voodbuilder-editor-container stays boxed.
+    $pageWidthStyleParts = $isEditor
         ? ['--width-vp-layout: 100% !important']
         : (filled($pageContentMaxWidth)
             ? [
@@ -60,7 +60,7 @@
                 '--width-vp-layout: '.$pageContentMaxWidth.' !important',
             ]
             : ['--width-vp-layout: 100% !important']);
-    if (! $isGrapesJsEditor && filled($elementContentMaxWidth)) {
+    if (! $isEditor && filled($elementContentMaxWidth)) {
         $pageWidthStyleParts[] = '--voodbuilder-element-content-max: '.$elementContentMaxWidth;
     }
     $pageWidthStyle = implode('; ', $pageWidthStyleParts);
@@ -94,17 +94,17 @@
 
     <x-voodbuilder::geo-ai-meta />
 
-    @unless ($grapesJsEditor ?? false)
+    @unless ($editorEditor ?? false)
         @include('cookie-consent::cookie-consent-head')
     @endunless
 
     @if ($voodbuilderEditorAssetsReady)
         @vite($voodbuilderViteEntries)
-    @elseif ($grapesJsEditor ?? false)
-        <style>.voodbuilder-grapesjs-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
+    @elseif ($editorEditor ?? false)
+        <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
     @if ($suppressHostChrome)
-        <style id="voodbuilder-grapesjs-host-chrome-critical">{!! GrapesJsHostChrome::criticalHideCss() !!}</style>
+        <style id="voodbuilder-editor-host-chrome-critical">{!! EditorHostChrome::criticalHideCss() !!}</style>
     @endif
     @if ($chromeRendered['css'] !== '')
         <style id="voodbuilder-chrome-layout-css">{!! $chromeRendered['css'] !!}</style>
@@ -139,7 +139,7 @@
         </div>
     @endif
 
-    @unless ($grapesJsEditor ?? false)
+    @unless ($editorEditor ?? false)
         @include('cookie-consent::cookie-consent-body')
     @endunless
     <x-voodbuilder::monitoring-scripts />

@@ -2,7 +2,7 @@
 
 ## Boundary
 
-- `ComponentsModule` owns components + global-classes GrapesJS routes
+- `ComponentsModule` owns components + global-classes Editor routes
 - Editor `componentsUrl` / `globalClassesUrl` gated (page + chrome editors)
 - Public component CSS scoping/render remains Core
 

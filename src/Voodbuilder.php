@@ -6,19 +6,19 @@ namespace Voodflow\Voodbuilder;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Illuminate\Database\Eloquent\Model;
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Contracts\GrapesJsServerBlock;
+use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
+use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageResolverRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\RepeatListRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockDefinition;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsDynamicBlockRegistry;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\RepeatListRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockDefinition;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -113,14 +113,14 @@ class Voodbuilder
         app(MenuItemTypeRegistry::class)->register($key, $definition);
     }
 
-    public static function grapesJsBlock(
+    public static function editorBlock(
         string $id,
         string $label,
         string $category,
         string $content,
         array $attributes = [],
     ): void {
-        app(GrapesJsBlockRegistry::class)->register(new GrapesJsBlockDefinition(
+        app(EditorBlockRegistry::class)->register(new EditorBlockDefinition(
             id: $id,
             label: $label,
             category: $category,
@@ -132,42 +132,42 @@ class Voodbuilder
     /**
      * @param  class-string<RichContentCustomBlock>  $blockClass
      */
-    public static function grapesJsRichContentBlock(string $category, string $blockClass): void
+    public static function editorRichContentBlock(string $category, string $blockClass): void
     {
-        app(GrapesJsDynamicBlockRegistry::class)->register($category, $blockClass);
+        app(EditorDynamicBlockRegistry::class)->register($category, $blockClass);
     }
 
     /**
-     * @param  class-string<GrapesJsServerBlock>  $blockClass
+     * @param  class-string<EditorServerBlock>  $blockClass
      */
-    public static function grapesJsServerBlock(string $category, string $blockClass): void
+    public static function editorServerBlock(string $category, string $blockClass): void
     {
-        app(GrapesJsServerBlockRegistry::class)->register($category, $blockClass);
+        app(EditorServerBlockRegistry::class)->register($category, $blockClass);
     }
 
-    public static function grapesJsBindingSource(GrapesJsBindingSource $source): void
+    public static function editorBindingSource(EditorBindingSource $source): void
     {
         app(BindingRegistry::class)->register($source);
     }
 
     /**
-     * Register a custom visual condition evaluator for the GrapesJS conditions UI.
+     * Register a custom visual condition evaluator for the Editor conditions UI.
      *
      * @param  callable(array<string, mixed>, ?\Voodflow\Voodbuilder\Models\SitePage): bool  $handler
      */
-    public static function grapesJsCondition(string $key, callable $handler): void
+    public static function editorCondition(string $key, callable $handler): void
     {
-        \Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsConditionHooks::register($key, $handler);
+        \Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks::register($key, $handler);
     }
 
     /**
-     * Contribute labels to the GrapesJS editor bootstrap payload.
+     * Contribute labels to the visual editor bootstrap payload.
      *
      * @param  callable(): array<string, mixed>  $provider
      */
-    public static function grapesJsEditorLabels(callable $provider): void
+    public static function editorLabels(callable $provider): void
     {
-        \Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate::registerLabelProvider($provider);
+        \Voodflow\Voodbuilder\Support\Editor\EditorGate::registerLabelProvider($provider);
     }
 
     /**
@@ -177,7 +177,7 @@ class Voodbuilder
      * @param  list<array{id: string, label: string}>  $sortFields
      * @param  list<string>  $aliases  Legacy repeat keys mapped to this list (e.g. vtuts.latest_list)
      */
-    public static function grapesJsRepeatList(
+    public static function editorRepeatList(
         string $id,
         string $label,
         callable $resolver,

@@ -7,8 +7,8 @@ namespace Voodflow\Voodbuilder\Modules\Pages;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Contracts\RegistersRoutes;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsFormController;
-use Voodflow\Voodbuilder\Http\Controllers\GrapesJsPageController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorFormController;
+use Voodflow\Voodbuilder\Http\Controllers\EditorPageController;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -45,17 +45,17 @@ final class PagesModule extends AbstractVoodBuilderModule implements RegistersRo
     public function registerRoutes(Router $router, ModuleContext $context): void
     {
         Route::middleware(['web', 'throttle:20,1'])
-            ->prefix('voodbuilder/grapesjs')
-            ->name('voodbuilder.grapesjs.')
+            ->prefix('voodbuilder/editor')
+            ->name('voodbuilder.editor.')
             ->group(function (): void {
-                Route::post('forms/{sitePage}', GrapesJsFormController::class)->name('forms.submit');
+                Route::post('forms/{sitePage}', EditorFormController::class)->name('forms.submit');
             });
 
         Route::middleware(['web', 'auth', 'throttle:60,1'])
-            ->prefix('voodbuilder/grapesjs')
-            ->name('voodbuilder.grapesjs.')
+            ->prefix('voodbuilder/editor')
+            ->name('voodbuilder.editor.')
             ->group(function (): void {
-                Route::match(['put', 'post'], 'pages/{sitePage}', [GrapesJsPageController::class, 'update'])
+                Route::match(['put', 'post'], 'pages/{sitePage}', [EditorPageController::class, 'update'])
                     ->name('pages.update');
             });
     }

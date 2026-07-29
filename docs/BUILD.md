@@ -12,7 +12,7 @@ php artisan voodbuilder:install --with-npm-build
 
 That command:
 
-1. Patches `package.json` with Tailwind, fonts, and GrapesJS dependencies
+1. Patches `package.json` with Tailwind, fonts, and Editor dependencies
 2. Patches `vite.config.js` with voodbuilder Vite entries
 3. Runs `npm install`
 4. Runs `npm run build` (includes `voodbuilder:sync-theme-imports`)
@@ -32,9 +32,9 @@ Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
 | Vite input | Purpose |
 |------------|---------|
 | `…/resources/css/theme.css` | Public site + all sub-themes |
-| `…/resources/js/grapesjs/editor.js` | GrapesJS frontend editor |
-| `…/resources/css/grapesjs/editor.css` | Editor chrome styles |
-| `…/resources/css/grapesjs/tailblocks-utilities.css` | Tailblocks classes in the canvas |
+| `…/resources/js/editor/editor.js` | Editor frontend editor |
+| `…/resources/css/editor/editor.css` | Editor chrome styles |
+| `…/resources/css/editor/tailblocks-utilities.css` | Tailblocks classes in the canvas |
 
 Paths differ for `vendor/voodflow/voodbuilder` installs — `VoodbuilderPaths` resolves them.
 
@@ -57,7 +57,7 @@ npm run build
 | Edit sub-theme CSS (`resources/voodbuilder/themes/*/theme.css`) | **Yes** |
 | `voodbuilder:make-subtheme` (adds `@import`) | **Yes** |
 | Edit `theme.css`, landing.css, events/blog/news CSS | **Yes** |
-| Edit GrapesJS `editor.js` | **Yes** |
+| Edit Editor `editor.js` | **Yes** |
 | Edit theme-map React (`resources/js/theme-map/`) | **Yes** — see below |
 | `voodbuilder:build-tailblocks` | **Yes** (regenerates catalog + utilities scan) |
 | Blade layout only (no new Tailwind classes) | Usually no |
@@ -105,11 +105,11 @@ theme.css (package)
 
 ## Tailwind `@source` scanning
 
-`theme.css` scans Blade views and GrapesJS catalogs so utilities used in blocks are generated. If a new block HTML string uses a class that does not appear in scanned files, add it to a scanned path or a CSS file with `@source`.
+`theme.css` scans Blade views and Editor catalogs so utilities used in blocks are generated. If a new block HTML string uses a class that does not appear in scanned files, add it to a scanned path or a CSS file with `@source`.
 
 ---
 
-## GrapesJS Tailblocks pipeline
+## Editor Tailblocks pipeline
 
 ```bash
 php artisan voodbuilder:build-tailblocks [--theme=indigo]
@@ -136,11 +136,11 @@ Otherwise both scripts fight and the toggle appears broken on voodbuilder pages.
 
 ## Docker / CI
 
-Run `npm run build` in the same environment that serves the app, or in CI before deploy. Missing build → GrapesJS shows “assets not built” and theme CSS 404s.
+Run `npm run build` in the same environment that serves the app, or in CI before deploy. Missing build → Editor shows “assets not built” and theme CSS 404s.
 
 ---
 
 ## Related
 
 - [VISUAL_THEMES.md](./VISUAL_THEMES.md)  
-- [GRAPESJS.md](./GRAPESJS.md)
+- [EDITOR.md](./EDITOR.md)

@@ -13,7 +13,7 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
 use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -95,7 +95,7 @@ abstract class TestCase extends BaseTestCase
 
         // Filament panel plugins are not registered in Testbench; activate companion runtimes for package tests.
         if (class_exists(VoodbuilderPopups::class)) {
-            GrapesJsEditorGate::flushLabelProviders();
+            EditorGate::flushLabelProviders();
             VoodbuilderPopups::reset();
             VoodbuilderPopups::activate();
         }

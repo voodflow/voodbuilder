@@ -11,8 +11,8 @@ APIs that are already effectively public for host apps / integrators and should 
 | `Voodbuilder::contentChannel()` | Channel registration |
 | `ContentChannelRegistry` / `PublicContentChannel` | Channel plugins |
 | `MenuItemTypeRegistry` / `MenuItemTypeHandler` | Custom menu item types |
-| `GrapesJsBlockRegistry` + block contracts | Custom blocks |
-| `BindingRegistry` / `GrapesJsBindingSource` | Custom binding sources |
+| `EditorBlockRegistry` + block contracts | Custom blocks |
+| `BindingRegistry` / `EditorBindingSource` | Custom binding sources |
 | `SubThemeRegistry` | Theme discovery |
 | `ModelRegistry` / `ReverseRelationRegistry` | Model integration helpers |
 | `IntegrationRegistrar` | Host boot hooks |
@@ -20,11 +20,11 @@ APIs that are already effectively public for host apps / integrators and should 
 
 ## PHP — internal (do not promise)
 
-Concrete normalizers, HTML pipelines, gate classes, Filament form builders, most `Support/GrapesJs/*` helpers until wrapped.
+Concrete normalizers, HTML pipelines, gate classes, Filament form builders, most `Support/Editor/*` helpers until wrapped.
 
 ## HTTP JSON endpoints
 
-Editor endpoints under the GrapesJS route group are a de-facto API for the JS editor. Version or document payloads before external SDK use.
+Editor endpoints under the Editor route group are a de-facto API for the JS editor. Version or document payloads before external SDK use.
 
 ## JS — candidate SDK surface
 

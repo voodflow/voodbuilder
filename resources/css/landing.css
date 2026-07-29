@@ -19,20 +19,20 @@
     @apply w-full;
 }
 
-/* GrapesJS site_header block: fixed nav needs layout space so content does not jump underneath. */
-[data-voodbuilder-gjs-site-header].voodbuilder-site-header-spacer {
+/* Editor site_header block: fixed nav needs layout space so content does not jump underneath. */
+[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
     height: 4rem;
 }
 
 .voodbuilder-full-width-shell,
 .voodbuilder-site-shell:has(.VPRichPage--landing),
 :where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
-:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode),
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-editor-mode),
 main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(.VPRichPage--landing) {
     @apply max-w-none w-full p-0;
 }
 
-.VPRichPage--landing > :is(section, .voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .voodbuilder-gjs-section, .voodbuilder-gjs-footer):first-child {
+.VPRichPage--landing > :is(section, .voodbuilder-editor-hero, .voodbuilder-editor-cta, .voodbuilder-editor-section, .voodbuilder-editor-footer):first-child {
     @apply pt-0;
 }
 
@@ -64,28 +64,28 @@ body[data-voodbuilder-page-width='contained'] {
     --width-vp-layout: var(--voodbuilder-page-content-max, 80rem) !important;
 }
 
-/* Published page only — never shrink the GrapesJS host workspace. */
-html[data-voodbuilder-page-width='standard']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-html[data-voodbuilder-page-width='custom']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-html[data-voodbuilder-page-width='contained']:not(:has(body.voodbuilder-grapesjs-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-body[data-voodbuilder-page-width='standard']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-body[data-voodbuilder-page-width='custom']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
-body[data-voodbuilder-page-width='contained']:not(.voodbuilder-grapesjs-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+/* Published page only — never shrink the Editor host workspace. */
+html[data-voodbuilder-page-width='standard']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='custom']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='contained']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='standard']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='custom']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='contained']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
     width: 100%;
     max-width: var(--voodbuilder-page-content-max, 80rem) !important;
     margin-inline: auto;
     box-sizing: border-box;
 }
 
-body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
     max-width: none !important;
     width: 100% !important;
     margin-inline: 0 !important;
 }
 
-:is(html, body)[data-voodbuilder-page-width='standard'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
-:is(html, body)[data-voodbuilder-page-width='custom'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero),
-:is(html, body)[data-voodbuilder-page-width='contained'] .VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
+:is(html, body)[data-voodbuilder-page-width='standard'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='custom'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='contained'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero) {
     width: 100%;
     max-width: 100%;
     margin-inline: 0;
@@ -135,17 +135,17 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 /*
- * Embedded site nav (GrapesJS block) keeps horizontal gutters.
+ * Embedded site nav (Editor block) keeps horizontal gutters.
  * vp:px-0 in saved markup is for doc-sidebar layout only and must not zero in-page nav padding.
  */
 @media (min-width: 48rem) {
-    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+    [data-voodbuilder-editor-site-header] header[role='banner'] .px-6 {
         padding-inline: calc(var(--spacing, 0.25rem) * 8) !important;
     }
 }
 
 @media (max-width: 47.99rem) {
-    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+    [data-voodbuilder-editor-site-header] header[role='banner'] .px-6 {
         padding-inline: calc(var(--spacing, 0.25rem) * 6) !important;
     }
 }
@@ -153,6 +153,7 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 /*
  * Element content-width toggle (toolbar on full-width pages).
  * Page-level --width-vp-layout is 100% in full mode; these attrs restore a boxed measure.
+ * Do NOT wrap in :where() — must beat .voodbuilder-editor-container { max-width: var(--width-vp-layout) }.
  */
 @layer components {
     :where([data-voodbuilder-content-width='normal']) {
@@ -177,15 +178,43 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
     }
 }
 
+/* Unlayered — wins over unlayered .voodbuilder-editor-container defaults (chrome-block-utilities). */
+.voodbuilder-editor-container[data-voodbuilder-content-width='normal'],
+.container[data-voodbuilder-content-width='normal'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='normal'] {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-container[data-voodbuilder-content-width='custom'],
+.container[data-voodbuilder-content-width='custom'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='custom'] {
+    width: 100%;
+    max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-container[data-voodbuilder-content-width='full'],
+.container[data-voodbuilder-content-width='full'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='full'] {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    box-sizing: border-box;
+}
+
 /* Cancel hero 100vw breakout when the author boxes the element. */
 .VPRichPage--landing :is(
-    .voodbuilder-gjs-hero,
-    .voodbuilder-gjs-cta,
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
     .vp-landing-hero
 )[data-voodbuilder-content-width='normal'],
 .VPRichPage--landing :is(
-    .voodbuilder-gjs-hero,
-    .voodbuilder-gjs-cta,
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
     .vp-landing-hero
 )[data-voodbuilder-content-width='custom'] {
     width: 100%;
@@ -194,16 +223,16 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 .VPRichPage--landing :is(
-    .voodbuilder-gjs-hero,
-    .voodbuilder-gjs-cta,
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
     .vp-landing-hero
 )[data-voodbuilder-content-width='custom'] {
     max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
 }
 
 .VPRichPage--landing :is(
-    .voodbuilder-gjs-hero,
-    .voodbuilder-gjs-cta,
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
     .vp-landing-hero
 )[data-voodbuilder-content-width='full'] {
     width: 100vw;
@@ -213,47 +242,47 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 
 /*
  * ─── Author content parity (editor canvas ↔ published front) ─────────────
- * Defaults for GrapesJS markup MUST NOT beat Tailwind utilities set in the
+ * Defaults for Editor markup MUST NOT beat Tailwind utilities set in the
  * editor (mx-auto, max-w-[80rem], px-*, …). Use @layer components + :where()
  * so any author utility wins. Never force mx-0 / max-w-none / !important on
- * .voodbuilder-gjs-section or layout containers.
+ * .voodbuilder-editor-section or layout containers.
  */
 
 /*
- * Root GrapesJS sections: no forced margin/max-width.
+ * Root Editor sections: no forced margin/max-width.
  * Block HTML already includes w-full when needed; authors add mx-auto / max-w-*.
  */
-.VPRichPage--landing > section.voodbuilder-gjs-section:empty {
+.VPRichPage--landing > section.voodbuilder-editor-section:empty {
     @apply hidden m-0 min-h-0 p-0;
 }
 
 /* Escape nested .container wrappers when blocks were dropped inside footer columns. */
-.VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
+.VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero) {
     @apply relative w-full max-w-none;
     width: 100vw;
     max-width: 100vw;
     margin-inline: calc(50% - 50vw);
 }
 
-.VPRichPage--landing .voodbuilder-gjs-footer > :is(.container, .voodbuilder-gjs-container):has(> .voodbuilder-gjs-hero, > section.voodbuilder-gjs-hero) {
+.VPRichPage--landing .voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container):has(> .voodbuilder-editor-hero, > section.voodbuilder-editor-hero) {
     @apply max-w-none px-0 pt-0;
 }
 
 /*
  * Default measure for classic section containers (catalog blocks).
  * :where() → specificity 0; author max-w-* / mx-* / w-* always win.
- * Same contract as GrapesJsCanvas::frameStyle for editor parity.
+ * Same contract as EditorCanvas::frameStyle for editor parity.
  */
 @layer components {
     :where(
-        .voodbuilder-gjs-section > .container:not(.voodbuilder-hero-media),
-        .voodbuilder-gjs-section > .voodbuilder-gjs-container:not(.voodbuilder-hero-media),
-        .VPRichPage--landing .voodbuilder-gjs-section .container:not(.voodbuilder-hero-media),
-        .VPRichPage--landing .voodbuilder-gjs-section .voodbuilder-gjs-container:not(.voodbuilder-hero-media),
-        footer.voodbuilder-gjs-footer > .container,
-        footer.voodbuilder-gjs-footer > .voodbuilder-gjs-container,
-        footer.voodbuilder-gjs-dynamic > .container,
-        footer.voodbuilder-gjs-dynamic > .voodbuilder-gjs-container
+        .voodbuilder-editor-section > .container:not(.voodbuilder-hero-media),
+        .voodbuilder-editor-section > .voodbuilder-editor-container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-editor-section .container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-editor-section .voodbuilder-editor-container:not(.voodbuilder-hero-media),
+        footer.voodbuilder-editor-footer > .container,
+        footer.voodbuilder-editor-footer > .voodbuilder-editor-container,
+        footer.voodbuilder-editor-dynamic > .container,
+        footer.voodbuilder-editor-dynamic > .voodbuilder-editor-container
     ) {
         width: 100%;
         max-width: var(--width-vp-layout, 80rem);
@@ -274,22 +303,22 @@ body.voodbuilder-grapesjs-editing :is(main, main .VPRichPage, main .voodbuilder-
 }
 
 /*
- * Keep section media 1:1 between GrapesJS canvas and published pages.
+ * Keep section media 1:1 between Editor canvas and published pages.
  * @layer + :where so h-* / max-h-* utilities on content images still win.
  */
 @layer components {
     :where(
-        .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img),
-        [data-voodbuilder-chrome-shell] .voodbuilder-gjs-section img:not(.voodbuilder-hero-media__img)
+        .voodbuilder-editor-section img:not(.voodbuilder-hero-media__img),
+        [data-voodbuilder-chrome-shell] .voodbuilder-editor-section img:not(.voodbuilder-hero-media__img)
     ) {
         max-width: 100%;
         height: auto;
     }
 }
 
-.voodbuilder-gjs-section .voodbuilder-hero-media,
-.VPRichPage--landing .voodbuilder-gjs-section .voodbuilder-hero-media,
-[data-voodbuilder-chrome-shell] .voodbuilder-gjs-section .voodbuilder-hero-media {
+.voodbuilder-editor-section .voodbuilder-hero-media,
+.VPRichPage--landing .voodbuilder-editor-section .voodbuilder-hero-media,
+[data-voodbuilder-chrome-shell] .voodbuilder-editor-section .voodbuilder-hero-media {
     width: auto;
     max-width: none;
     margin-inline: 0;
@@ -358,7 +387,7 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
-/* GrapesJS layout video blocks (YouTube/Vimeo/HTML5) on published pages */
+/* Editor layout video blocks (YouTube/Vimeo/HTML5) on published pages */
 :is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"],
 .vb-video-host {
     position: relative;
@@ -453,21 +482,21 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPa
     @apply max-w-none p-0;
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
+.VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
     @apply text-vp-text-2;
 }
 
-.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered) {
+.VPRichPage :is(.voodbuilder-editor-component-instance, .voodbuilder-component-rendered) {
     position: relative;
     min-height: 0;
     overflow: visible;
     outline: none;
 }
 
-.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered):has(.voodbuilder-pasted-component) {
+.VPRichPage :is(.voodbuilder-editor-component-instance, .voodbuilder-component-rendered):has(.voodbuilder-pasted-component) {
     min-height: 0;
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
+.VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
     @apply text-vp-text-1;
 }

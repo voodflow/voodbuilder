@@ -14,7 +14,7 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageRevision;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -45,14 +45,14 @@ class HistoryModuleTest extends TestCase
                 ->path('admin'),
         );
 
-        GrapesJsEditorGate::authorizeUsing(
-            fn (SitePage $page): bool => $page->usesGrapesJsBuilder() && auth()->check(),
+        EditorGate::authorizeUsing(
+            fn (SitePage $page): bool => $page->usesEditorBuilder() && auth()->check(),
         );
     }
 
     protected function tearDown(): void
     {
-        GrapesJsEditorGate::authorizeUsing(null);
+        EditorGate::authorizeUsing(null);
 
         parent::tearDown();
     }
@@ -62,8 +62,8 @@ class HistoryModuleTest extends TestCase
         $this->assertTrue(Voodbuilder::modules()->has(HistoryModule::ID));
         $this->assertFalse(Voodbuilder::modules()->isEnabled(HistoryModule::ID));
         $this->assertFalse(HistoryModule::isEnabled());
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.pages.revisions.index'));
-        $this->assertFalse(Route::has('voodbuilder.grapesjs.pages.revisions.restore'));
+        $this->assertFalse(Route::has('voodbuilder.editor.pages.revisions.index'));
+        $this->assertFalse(Route::has('voodbuilder.editor.pages.revisions.restore'));
     }
 
     public function test_page_save_still_works_without_creating_revisions_when_history_disabled(): void
@@ -86,7 +86,7 @@ class HistoryModuleTest extends TestCase
         $page = SitePage::query()->create([
             'title' => 'No history',
             'slug' => 'no-history',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => [
                 'html' => '<section>Original</section>',
                 'css' => '',
@@ -97,7 +97,7 @@ class HistoryModuleTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->putJson(route('voodbuilder.grapesjs.pages.update', $page), [
+        $this->putJson(route('voodbuilder.editor.pages.update', $page), [
             'html' => '<section>Updated</section>',
             'css' => '',
             'js' => '',

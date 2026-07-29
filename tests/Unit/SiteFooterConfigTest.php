@@ -6,10 +6,10 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSlotHydrator;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterCenteredBlock;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterConfig;
+use Voodflow\Voodbuilder\Support\Editor\EditorSlotHydrator;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterCenteredBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsSimpleBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterConfig;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -108,7 +108,7 @@ class SiteFooterConfigTest extends TestCase
         $this->assertTrue($normalized['show_site_name']);
         $this->assertTrue(SiteFooterConfig::isChromeVisible($normalized, 'brand'));
 
-        $html = GrapesJsSlotHydrator::renderBrand(false, [
+        $html = EditorSlotHydrator::renderBrand(false, [
             'show_brand' => false,
             'show_site_name' => true,
             'logo_desktop_light' => 'https://cdn.test/logo.svg',
@@ -122,7 +122,7 @@ class SiteFooterConfigTest extends TestCase
     #[Test]
     public function logo_only_brand_enlarges_logo_and_hides_site_name(): void
     {
-        $html = GrapesJsSlotHydrator::renderBrand(true, [
+        $html = EditorSlotHydrator::renderBrand(true, [
             'show_brand' => true,
             'show_site_name' => false,
             'logo_desktop_light' => 'https://cdn.test/wide-logo.svg',
@@ -140,7 +140,7 @@ class SiteFooterConfigTest extends TestCase
     #[Test]
     public function logo_size_is_applied_on_footer_brand_render(): void
     {
-        $html = GrapesJsSlotHydrator::renderBrand(true, [
+        $html = EditorSlotHydrator::renderBrand(true, [
             'show_brand' => true,
             'show_site_name' => false,
             'logo_size' => 'xl',
@@ -163,7 +163,7 @@ class SiteFooterConfigTest extends TestCase
 
         // Simulate ChromeLayoutRenderer calling hydrateHtml without config after
         // the dynamic renderer already filled brand slots.
-        $hydrated = GrapesJsSlotHydrator::hydrateHtml($saved, false, []);
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, []);
 
         $this->assertStringContainsString('https://cdn.test/footer-logo.svg', $hydrated);
     }
@@ -380,7 +380,7 @@ class SiteFooterConfigTest extends TestCase
     {
         $saved = SiteFooterCenteredBlock::toPreviewHtml([], []);
 
-        $hydrated = GrapesJsSlotHydrator::hydrateHtml($saved, false, [
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, [
             'show_footer_menu' => false,
             'show_copyright' => false,
         ]);
@@ -400,7 +400,7 @@ class SiteFooterConfigTest extends TestCase
     {
         $saved = SiteFooterColumnsSimpleBlock::toHtml([], []);
 
-        $hydrated = GrapesJsSlotHydrator::hydrateHtml($saved, false, [
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, [
             'show_footer_col_1' => true,
             'show_footer_col_2' => true,
             'show_footer_col_3' => false,
@@ -417,7 +417,7 @@ class SiteFooterConfigTest extends TestCase
     #[Test]
     public function empty_footer_brand_uses_animated_voodbuilder_mark(): void
     {
-        $html = GrapesJsSlotHydrator::renderBrand(false, [
+        $html = EditorSlotHydrator::renderBrand(false, [
             'show_brand' => true,
             'show_site_name' => true,
         ]);

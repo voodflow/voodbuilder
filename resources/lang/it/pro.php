@@ -5,12 +5,12 @@ declare(strict_types=1);
 return [
     'builders' => [
         'rich_editor' => 'Editor rich content (blocchi)',
-        'grapesjs' => 'Builder visuale (GrapesJS)',
+        'visual' => 'Builder visuale (Editor)',
     ],
 
     'fields' => [
         'builder' => 'Builder contenuti',
-        'grapesjs_edit' => 'Modifica visuale',
+        'editor_edit' => 'Modifica visuale',
     ],
 
     'actions' => [
@@ -18,13 +18,13 @@ return [
     ],
 
     'helpers' => [
-        'builder' => 'L\'editor rich content mantiene i blocchi TipTap e i contenuti stile documentazione. GrapesJS apre un editor drag-and-drop sulla pagina pubblica quando sei loggato come admin.',
-        'grapesjs_save_first' => 'Salva prima la pagina, poi aprila sul sito per modificarla visivamente.',
-        'grapesjs_frontend' => 'Gli admin e gli utenti con permesso builder possono modificare la pagina pubblica. Usa il pulsante in basso a destra o aggiungi ?edit=1 all’URL.',
+        'builder' => 'L\'editor rich content mantiene i blocchi TipTap e i contenuti stile documentazione. Editor apre un editor drag-and-drop sulla pagina pubblica quando sei loggato come admin.',
+        'editor_save_first' => 'Salva prima la pagina, poi aprila sul sito per modificarla visivamente.',
+        'editor_frontend' => 'Gli admin e gli utenti con permesso builder possono modificare la pagina pubblica. Usa il pulsante in basso a destra o aggiungi ?edit=1 all’URL.',
     ],
 
     'frontend' => [
-        'toolbar_title' => 'Editor pagina GrapesJS',
+        'toolbar_title' => 'Editor visuale pagina',
         'exit_editor' => 'Esci dall\'editor',
         'save' => 'Salva',
         'saving' => 'Salvataggio…',
@@ -32,7 +32,7 @@ return [
         'error' => 'Impossibile salvare la pagina. Riprova.',
         'session_expired' => 'Sessione scaduta. Ricarica la pagina e riprova.',
         'forbidden' => 'Non hai i permessi per questa operazione.',
-        'assets_missing' => 'Gli asset frontend di GrapesJS non sono ancora stati compilati.',
+        'assets_missing' => 'Gli asset frontend di Editor non sono ancora stati compilati.',
         'editing_context_page' => 'Pagina',
         'editing_context_layout' => 'Layout',
         'editing_context_popup' => 'Popup',
@@ -49,8 +49,8 @@ return [
         'modal_cancel' => 'Annulla',
         'select_component' => 'Seleziona prima un elemento nel canvas.',
         'no_sources' => 'Nessuna sorgente dati dinamica registrata.',
-        'plugin_required_title' => 'Add-on Dynamic Data',
-        'plugin_required_body' => 'Collega i contenuti della pagina ai tuoi modelli con il plugin Dynamic Data. Installa e registra voodflow/voodbuilder-dynamic-data sul panel Filament per sbloccare questa scheda.',
+        'plugin_required_title' => 'Voodbuilder Dynamics',
+        'plugin_required_body' => 'Collega i contenuti della pagina ai tuoi modelli. Richiede il plugin Voodbuilder Dynamics.',
         'inspector_hint' => 'Collega questo elemento a dati live.',
         'current_binding' => 'Collegamento attuale',
         'repeat_source' => 'Lista repeat',
@@ -164,6 +164,17 @@ return [
         'view_page' => 'Apri pagina',
         'zoom_in' => 'Zoom avanti',
         'zoom_out' => 'Zoom indietro',
+        'global_text_tags' => 'Tag testo',
+        'global_text_tags_title' => 'Tag testo disponibili',
+        'global_text_tags_hint' => 'Clicca un tag per copiarlo, poi incollalo nel testo (es. copyright, titoli). Sulla pagina pubblicata viene sostituito automaticamente.',
+        'global_text_tags_copy' => 'Copia',
+        'global_text_tags_copied' => 'Copiato {tag}',
+        'global_text_tags_preview' => 'Anteprima',
+        'global_text_tag_current_year' => 'Anno corrente',
+        'global_text_tag_brand_name' => 'Nome brand',
+        'global_text_tag_site_name' => 'Nome del sito',
+        'global_text_tag_site_url' => 'URL del sito',
+        'global_text_tag_logged_username' => 'Nome utente autenticato (vuoto se ospite)',
         'revisions' => 'Revisioni',
         'compiling_styles' => 'Compilazione stili…',
         'loading_editor' => 'Caricamento editor…',
@@ -179,6 +190,7 @@ return [
         'dialog_alert_title' => 'Avviso',
         'dialog_confirm_title' => 'Conferma',
         'dialog_prompt_title' => 'Input',
+        'learn_more' => 'Scopri di più',
     ],
 
     'revisions' => [
@@ -241,8 +253,8 @@ return [
 
     'components' => [
         'title' => 'Componenti',
-        'plugin_required_title' => 'Add-on Components',
-        'plugin_required_body' => 'Salva e riusa sezioni tra le pagine con il plugin Components. Installa e registra voodflow/voodbuilder-components sul panel Filament per sbloccare questa libreria.',
+        'plugin_required_title' => 'Voodbuilder Components',
+        'plugin_required_body' => 'Salva e riusa sezioni di pagina come libreria di componenti. Richiede il plugin Voodbuilder Components.',
         'save_as' => 'Salva selezione come componente',
         'save_button' => 'Salva',
         'save_need_selection' => 'Seleziona un elemento nel canvas per salvarlo come componente riutilizzabile.',
@@ -367,8 +379,8 @@ return [
         'delete_error' => 'Impossibile eliminare il template.',
         'empty' => 'Nessun template pagina ancora.',
         'marketplace_hint' => 'Incolla il link di installazione ricevuto dopo l’acquisto sul marketplace.',
-        'plugin_title' => 'Add-on template',
-        'plugin_hint' => 'Installa voodflow/voodbuilder-templates per abilitare import/export JSON, condivisione e funzionalità marketplace (installazione da URL disponibile anche in Free).',
+        'plugin_title' => 'Voodbuilder Templates',
+        'plugin_hint' => 'Aggiunge template Import/export, condivisione e marketplace. Richiede il plugin Voodbuilder Templates.',
         'loading' => 'Caricamento…',
         'load_error' => 'Impossibile caricare i template pagina.',
         'import_empty' => 'Nessun template pagina da importare.',
@@ -407,7 +419,7 @@ return [
         'import_cancel' => 'Annulla',
     ],
 
-    'grapesjs' => [
+    'editor' => [
         'toolbar' => [
             'select_parent' => 'Seleziona parent',
             'drag' => 'Trascina per spostare',
@@ -555,7 +567,7 @@ return [
             'title' => 'Newsletter',
             'list' => 'Lista newsletter',
             'default_list' => 'Newsletter predefinita',
-            'hint' => 'Le iscrizioni arrivano nell\'app tramite GrapesJsFormSubmitted (form_type newsletter nel payload).',
+            'hint' => 'Le iscrizioni arrivano nell\'app tramite EditorFormSubmitted (form_type newsletter nel payload).',
         ],
         'button_link' => [
             'settings_title' => 'Impostazioni pulsante',

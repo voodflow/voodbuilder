@@ -7,7 +7,7 @@ namespace Voodflow\Voodbuilder\Tests\Modules;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
-use Voodflow\Voodbuilder\Support\GrapesJs\Conditions\GrapesJsElementConditionRenderer;
+use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -41,10 +41,10 @@ class ConditionsModuleTest extends TestCase
             'title' => 'Conditions off',
             'slug' => 'conditions-off',
             'locale' => 'it',
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
         ]);
 
-        $html = app(GrapesJsElementConditionRenderer::class)->render(
+        $html = app(EditorElementConditionRenderer::class)->render(
             (string) $fixture['condition_html'],
             $page,
         );

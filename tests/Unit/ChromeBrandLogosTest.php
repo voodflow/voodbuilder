@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
-use Voodflow\Voodbuilder\Support\GrapesJs\ChromeBrandLogos;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavConfig;
+use Voodflow\Voodbuilder\Support\Editor\ChromeBrandLogos;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavConfig;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ChromeBrandLogosTest extends TestCase

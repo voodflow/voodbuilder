@@ -1,12 +1,12 @@
-# GrapesJS field bindings
+# Editor field bindings
 
-Connect any element in a GrapesJS layout to **live server data** using `data-voodbuilder-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
+Connect any element in a Editor layout to **live server data** using `data-voodbuilder-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
 
 ---
 
 ## Editor workflow
 
-1. Open a GrapesJS page with `?edit=1`.
+1. Open a Editor page with `?edit=1`.
 2. Select an element (`h1`, `p`, `img`, `a`, `button`, …).
 3. Click **Make dynamic** (🔗).
 4. Choose **Data source** and **Field**.
@@ -65,7 +65,7 @@ The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-vo
 
 ## Field types
 
-Defined in `Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField`:
+Defined in `Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField`:
 
 | Type | PHP constant | Use for |
 |------|--------------|---------|
@@ -88,11 +88,11 @@ declare(strict_types=1);
 
 namespace My\Package\Voodbuilder;
 
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField;
 
-final class LatestItemBindingSource implements GrapesJsBindingSource
+final class LatestItemBindingSource implements EditorBindingSource
 {
     public function id(): string
     {
@@ -158,7 +158,7 @@ public function boot(): void
         return;
     }
 
-    Voodbuilder::grapesJsBindingSource(new LatestItemBindingSource);
+    Voodbuilder::editorBindingSource(new LatestItemBindingSource);
 }
 ```
 
@@ -201,8 +201,8 @@ Use it to scope queries (locale, site, channel).
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /voodbuilder/grapesjs/bindings` | Catalog grouped by package (Make dynamic modal) |
-| `GET /voodbuilder/grapesjs/bindings/preview/{sitePage}` | Live values for editor preview |
+| `GET /voodbuilder/editor/bindings` | Catalog grouped by package (Make dynamic modal) |
+| `GET /voodbuilder/editor/bindings/preview/{sitePage}` | Live values for editor preview |
 
 ---
 
@@ -211,11 +211,11 @@ Use it to scope queries (locale, site, channel).
 On public view and in the editor (`?edit=1` initial HTML):
 
 1. Load `builder_payload.html`
-2. `GrapesJsBindingRenderer` finds `data-voodbuilder-bind`
-3. `BindingRegistry` resolves each key via your `GrapesJsBindingSource`
+2. `EditorBindingRenderer` finds `data-voodbuilder-bind`
+3. `BindingRegistry` resolves each key via your `EditorBindingSource`
 4. DOM is updated (text / `href` / `src` / `onclick` on buttons)
 
-On **save**, `GrapesJsBindingStorageNormalizer` strips live values back to placeholders so the database does not store stale copy.
+On **save**, `EditorBindingStorageNormalizer` strips live values back to placeholders so the database does not store stale copy.
 
 ---
 
@@ -226,8 +226,8 @@ Image fields (`BindingField::TYPE_IMAGE`) must resolve to a **browser-loadable U
 | Level | Who | How |
 |-------|-----|-----|
 | **1 — Conventions** | Voodbuilder | `BindingMediaUrlResolver` tries Spatie Media Library collections, `{field}Url()` accessors, and public-disk paths automatically. |
-| **2 — Binding source** | Plugin author | Return the final URL from `GrapesJsBindingSource::resolve()` (optionally via a package helper such as `MyMedia::url($record)`). |
-| **3 — Editor proxy** | Voodbuilder | When previewing in the editor (`BindingContext::editorPreview`), non-public Spatie media is served via `GET /voodbuilder/grapesjs/media/{id}` (auth required). |
+| **2 — Binding source** | Plugin author | Return the final URL from `EditorBindingSource::resolve()` (optionally via a package helper such as `MyMedia::url($record)`). |
+| **3 — Editor proxy** | Voodbuilder | When previewing in the editor (`BindingContext::editorPreview`), non-public Spatie media is served via `GET /voodbuilder/editor/media/{id}` (auth required). |
 | **4 — Custom hook** | Plugin author | Register a resolver for exotic storage (CDN, signed URLs, WordPress attachments, …). |
 
 ### Level 2 example (recommended for third-party plugins)
@@ -320,7 +320,7 @@ Configure list repeat in the editor: select the grid/container → Inspector →
 
 ## Vtuts: `vtuts.latest`
 
-Registered by `Voodflow\Vtuts\Support\VtutsGrapesJsBlocks`.
+Registered by `Voodflow\Vtuts\Support\VtutsEditorBlocks`.
 
 Resolves the **latest publicly listed tutorial** for the current locale (`published_at` desc).
 
@@ -358,15 +358,15 @@ Resolves the **latest publicly listed tutorial** for the current locale (`publis
 ```php
 $registry = app(BindingRegistry::class);
 $html = '<h1 data-voodbuilder-bind="mypackage.latest.title">Placeholder</h1>';
-$rendered = app(GrapesJsBindingRenderer::class)->render($html, $page);
+$rendered = app(EditorBindingRenderer::class)->render($html, $page);
 ```
 
-Register your fake source on the registry in unit tests (see `GrapesJsBindingRendererTest` in voodbuilder).
+Register your fake source on the registry in unit tests (see `EditorBindingRendererTest` in voodbuilder).
 
 ---
 
 ## Related
 
-- [GRAPESJS.md](./GRAPESJS.md) — page builder setup, blocks, Tailblocks
-- `Voodbuilder::grapesJsBindingSource()` — registration helper
-- `Voodbuilder::grapesJsServerBlock()` — when you need full HTML widgets instead of single fields
+- [EDITOR.md](./EDITOR.md) — page builder setup, blocks, Tailblocks
+- `Voodbuilder::editorBindingSource()` — registration helper
+- `Voodbuilder::editorServerBlock()` — when you need full HTML widgets instead of single fields

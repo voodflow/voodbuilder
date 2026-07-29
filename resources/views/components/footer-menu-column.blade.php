@@ -27,7 +27,7 @@
                 </ul>
             @elseif ($canvasPreview)
                 <p class="text-sm text-vp-text-3">
-                    {{ __('voodbuilder::pro.grapesjs.blocks.site_footer_empty', ['menu' => $columnTitle]) }}
+                    {{ __('voodbuilder::pro.editor.blocks.site_footer_empty', ['menu' => $columnTitle]) }}
                 </p>
             @endif
         </nav>

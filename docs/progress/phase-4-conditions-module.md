@@ -10,7 +10,7 @@
 ## Tests
 
 `tests/Modules/ConditionsModuleTest.php`  
-existing `GrapesJsConditionsRenderTest` (module enabled path)
+existing `EditorConditionsRenderTest` (module enabled path)
 
 ## Acceptance
 

@@ -92,7 +92,7 @@ function escapeClass(className) {
     return className.replace(/([:!\\/[\].])/g, '\\$1');
 }
 
-const blocks = JSON.parse(fs.readFileSync(path.join(root, 'resources/grapesjs/section-blocks.json'), 'utf8'));
+const blocks = JSON.parse(fs.readFileSync(path.join(root, 'resources/editor/section-blocks.json'), 'utf8'));
 const used = new Set();
 
 for (const block of blocks) {
@@ -132,6 +132,6 @@ for (const className of [...used].sort()) {
     css += `${scope} .${escapeClass(className)}{${declaration}}\n`;
 }
 
-const out = path.join(root, 'resources/css/grapesjs/block-preview-shim.css');
+const out = path.join(root, 'resources/css/editor/block-preview-shim.css');
 fs.writeFileSync(out, css);
 console.log(`Wrote ${written.size} rules to ${out}`);

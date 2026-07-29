@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\VoodbuilderThemeTokenMigrator;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderThemeTokenMigrator;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class VoodbuilderThemeTokenMigratorTest extends TestCase
@@ -15,7 +15,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-section', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-section', $migrated);
         $this->assertStringContainsString('bg-vp-bg-elv', $migrated);
         $this->assertStringContainsString('text-vp-text-2', $migrated);
         $this->assertStringContainsString('text-vp-text-1', $migrated);
@@ -29,7 +29,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-section', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-section', $migrated);
         $this->assertStringNotContainsString('bg-vp-bg', $migrated);
     }
 
@@ -42,7 +42,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('background-color: var(--color-vp-bg-elv)', $migrated);
     }
 
-    public function test_migrates_saved_grapesjs_css_backgrounds(): void
+    public function test_migrates_saved_editor_css_backgrounds(): void
     {
         $css = '#hero { background-color: #ffffff; color: #111827; }';
 
@@ -62,20 +62,20 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
     public function test_migrates_legacy_button_class_to_theme_utilities(): void
     {
-        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-gjs-btn-primary inline-flex text-white');
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-editor-btn-primary inline-flex text-white');
 
-        $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $classes);
+        $this->assertStringNotContainsString('voodbuilder-editor-btn-primary', $classes);
         $this->assertStringContainsString('bg-vp-brand-1', $classes);
         $this->assertStringContainsString('hover:bg-vp-brand-2', $classes);
     }
 
     public function test_strips_legacy_button_css_rules(): void
     {
-        $css = '.voodbuilder-gjs-btn-primary { background-color: #6366f1; } .voodbuilder-gjs-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
+        $css = '.voodbuilder-editor-btn-primary { background-color: #6366f1; } .voodbuilder-editor-btn-primary:hover { background-color: #4f46e5; } .safe { color: red; }';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
 
-        $this->assertStringNotContainsString('voodbuilder-gjs-btn-primary', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-editor-btn-primary', $migrated);
         $this->assertStringContainsString('.safe { color: red; }', $migrated);
     }
 
@@ -129,7 +129,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringContainsString('var(--color-blue-200, oklch(88.2% 0.059 254.128))', $migrated);
     }
 
-    public function test_migrates_grapesjs_project_component_classes(): void
+    public function test_migrates_editor_project_component_classes(): void
     {
         $project = [
             'pages' => [[
@@ -156,12 +156,12 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertSame('text-white', VoodbuilderThemeTokenMigrator::migrateToken('text-white'));
     }
 
-    public function test_migrates_grapesjs_project_string_classes_and_removes_legacy_button_styles(): void
+    public function test_migrates_editor_project_string_classes_and_removes_legacy_button_styles(): void
     {
         $project = [
             'styles' => [
                 [
-                    'selectors' => ['voodbuilder-gjs-btn-primary'],
+                    'selectors' => ['voodbuilder-editor-btn-primary'],
                     'style' => [
                         'background-color' => 'rgb(99, 102, 241)',
                         'color' => 'rgb(255, 255, 255)',
@@ -176,7 +176,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
                         'components' => [[
                             'tagName' => 'a',
                             'classes' => [
-                                'voodbuilder-gjs-btn-primary',
+                                'voodbuilder-editor-btn-primary',
                                 'inline-flex',
                                 'text-white',
                                 'hover:bg-vp-brand-3',
@@ -191,7 +191,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $classes = $migrated['pages'][0]['frames'][0]['component']['components'][0]['classes'];
 
         $this->assertSame([], $migrated['styles']);
-        $this->assertNotContains('voodbuilder-gjs-btn-primary', $classes);
+        $this->assertNotContains('voodbuilder-editor-btn-primary', $classes);
         $this->assertContains('bg-vp-brand-1', $classes);
         $this->assertContains('hover:bg-vp-brand-2', $classes);
         $this->assertNotContains('hover:bg-vp-brand-3', $classes);
@@ -212,7 +212,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_dedupes_conflicting_hover_brand_classes_after_legacy_button_migration(): void
     {
         $classes = VoodbuilderThemeTokenMigrator::migrateClassList(
-            'voodbuilder-gjs-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
+            'voodbuilder-editor-btn-primary inline-flex text-white hover:bg-vp-brand-3 hover:bg-vp-brand-1',
         );
 
         $hoverClasses = array_values(array_filter(
@@ -263,7 +263,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
     public function test_migrate_html_preserves_background_classes_inside_component_instances(): void
     {
-        $html = '<div class="voodbuilder-gjs-component-instance bg-blue-400" data-voodbuilder-component="abc">'
+        $html = '<div class="voodbuilder-editor-component-instance bg-blue-400" data-voodbuilder-component="abc">'
             .'<div class="voodbuilder-pasted-component bg-blue-400"><p class="text-blue-500">Hi</p></div>'
             .'</div>';
 
@@ -286,76 +286,99 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
     public function test_migrates_tailwind_container_to_voodbuilder_wrapper(): void
     {
-        $html = '<section class="voodbuilder-gjs-section"><div class="container px-5 py-24 mx-auto">Content</div></section>';
+        $html = '<section class="voodbuilder-editor-section"><div class="container px-5 py-24 mx-auto">Content</div></section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-container', $migrated);
         $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $migrated);
         $this->assertStringNotContainsString('class="container', $migrated);
     }
 
     public function test_collapses_double_prefixed_container_class(): void
     {
-        $html = '<section class="voodbuilder-gjs-section"><div class="voodbuilder-gjs-voodbuilder-gjs-container px-5 py-24">Content</div></section>';
+        $html = '<section class="voodbuilder-editor-section"><div class="voodbuilder-editor-voodbuilder-editor-container px-5 py-24">Content</div></section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
-        $this->assertStringNotContainsString('voodbuilder-gjs-voodbuilder-gjs-container', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-container', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-editor-voodbuilder-editor-container', $migrated);
     }
 
     public function test_restores_container_on_section_catalog_blocks(): void
     {
-        $html = '<section data-voodbuilder-section-block="vb-blog-1" class="text-vp-text-2 voodbuilder-gjs-section"><div class="px-5 py-24">Content</div></section>';
+        $html = '<section data-voodbuilder-section-block="vb-blog-1" class="text-vp-text-2 voodbuilder-editor-section"><div class="px-5 py-24">Content</div></section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
-        $this->assertStringContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-container', $migrated);
         $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $migrated);
     }
 
     public function test_does_not_treat_hero_media_as_section_container(): void
     {
-        $html = '<section data-voodbuilder-section-block="vb-nasa-hero" class="voodbuilder-gjs-section relative">'
+        $html = '<section data-voodbuilder-section-block="vb-nasa-hero" class="voodbuilder-editor-section relative">'
             .'<div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">'
             .'<img class="voodbuilder-hero-media__img" src="/x.jpg" alt="" />'
             .'</div>'
-            .'<div class="voodbuilder-gjs-container relative z-10">Copy</div>'
+            .'<div class="voodbuilder-editor-container relative z-10">Copy</div>'
             .'</section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertMatchesRegularExpression(
-            '/class="[^"]*\bvoodbuilder-hero-media\b(?![^"]*\bvoodbuilder-gjs-container\b)[^"]*"/',
+            '/class="[^"]*\bvoodbuilder-hero-media\b(?![^"]*\bvoodbuilder-editor-container\b)[^"]*"/',
             $migrated,
         );
         $this->assertDoesNotMatchRegularExpression(
             '/voodbuilder-hero-media[^"]*max-w-\[var\(--width-vp-layout\)\]/',
             $migrated,
         );
-        $this->assertStringContainsString('voodbuilder-gjs-container relative z-10', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-container relative z-10', $migrated);
     }
 
     public function test_strips_container_utilities_already_on_hero_media(): void
     {
-        $html = '<div class="voodbuilder-gjs-container voodbuilder-hero-media mx-auto w-full max-w-[var(--width-vp-layout)]"></div>';
+        $html = '<div class="voodbuilder-editor-container voodbuilder-hero-media mx-auto w-full max-w-[var(--width-vp-layout)]"></div>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
         $this->assertStringContainsString('voodbuilder-hero-media', $migrated);
-        $this->assertStringNotContainsString('voodbuilder-gjs-container', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $migrated);
         $this->assertStringNotContainsString('max-w-[var(--width-vp-layout)]', $migrated);
         $this->assertStringNotContainsString('mx-auto', $migrated);
     }
 
     public function test_expands_voodbuilder_container_with_tailwind_utilities(): void
     {
-        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-gjs-container px-5 py-24');
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList('voodbuilder-editor-container px-5 py-24');
 
         $this->assertStringContainsString('mx-auto', $classes);
         $this->assertStringContainsString('w-full', $classes);
         $this->assertStringContainsString('max-w-[var(--width-vp-layout)]', $classes);
+    }
+
+    public function test_does_not_force_layout_max_width_when_content_width_attr_present(): void
+    {
+        $html = '<div class="voodbuilder-editor-container relative px-5 w-full max-w-[80rem] mx-auto"'
+            .' data-voodbuilder-content-width="normal">Content</div>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $migrated);
+        $this->assertStringContainsString('max-w-[80rem]', $migrated);
+        $this->assertStringNotContainsString('max-w-[var(--width-vp-layout)]', $migrated);
+    }
+
+    public function test_does_not_readd_layout_max_width_for_full_content_width(): void
+    {
+        $html = '<div class="voodbuilder-editor-container relative px-5 w-full"'
+            .' data-voodbuilder-content-width="full">Content</div>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('data-voodbuilder-content-width="full"', $migrated);
+        $this->assertStringNotContainsString('max-w-[var(--width-vp-layout)]', $migrated);
     }
 
     public function test_migrates_border_opacity_to_tailwind_v4_slash_modifier(): void

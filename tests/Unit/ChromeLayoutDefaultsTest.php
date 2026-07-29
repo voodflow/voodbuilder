@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
-use Voodflow\Voodbuilder\Support\GrapesJs\ChromeLayoutContentSlotBlock;
+use Voodflow\Voodbuilder\Support\Editor\ChromeLayoutContentSlotBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ChromeLayoutDefaultsTest extends TestCase

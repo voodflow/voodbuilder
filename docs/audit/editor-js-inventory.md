@@ -1,8 +1,8 @@
 # Editor JS inventory
 
-**Root:** `resources/js/grapesjs/`  
+**Root:** `resources/js/editor/`  
 **Entrypoint (editor):** `editor/init.js` (~72KB)  
-**Plugin entry:** `plugins/voodbuilder.js` → `plugins/voodbuilder-grapesjs.js` (~51KB)  
+**Plugin entry:** `plugins/voodbuilder.js` → `plugins/voodbuilder-editor.js` (~51KB)  
 **File count:** ~145 `.js` files (~1.8MB total source, excluding generated icons JSON)
 
 ## Layer folders (existing)
@@ -14,7 +14,7 @@
 | `blocks/settings/` | Inspector settings registry |
 | `blocks/dynamic/` | Dynamic block types |
 | `editor/` | Bootstrap (`init.js`), payload, inspector, modes |
-| `plugins/` | GrapesJS plugin registration |
+| `plugins/` | Editor plugin registration |
 | `_legacy/` | Temporary shims |
 | `block-settings/` | Re-export shim → `blocks/settings/` |
 
@@ -27,7 +27,7 @@
 | `editor/init.js` | 72KB | Bootstrap / mode wiring |
 | `grapesjs-animated-blocks.js` | 61KB | Animated blocks |
 | `tailwind-visual-style.js` | 60KB | Style inspector / export bake |
-| `plugins/voodbuilder-grapesjs.js` | 51KB | Core plugin types/blocks |
+| `plugins/voodbuilder-editor.js` | 51KB | Core plugin types/blocks |
 | `popups-ui.js` | 48KB | Popup admin UI in editor |
 | `basic-elements-settings.js` | 47KB | Basic element settings |
 | `page-templates-sidebar.js` | 34KB | Templates |
@@ -58,7 +58,7 @@ Shared: Tailwind autobuild, visual style, layers, canvas toolbars, bindings/cond
 
 ## Init-order dependencies (high risk)
 
-1. GrapesJS + base plugins load
+1. Editor + base plugins load
 2. `voodbuilder` plugin registers types/blocks
 3. Chrome shell/layout registrars mutate canvas structure
 4. Bindings/conditions/components attach listeners on `load` / `canvas:frame:load`

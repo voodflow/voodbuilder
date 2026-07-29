@@ -7,9 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsChromeHtmlPipeline;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsPastedComponentNormalizer;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsSlotHydrator;
+use Voodflow\Voodbuilder\Support\Editor\EditorChromeHtmlPipeline;
+use Voodflow\Voodbuilder\Support\Editor\EditorPastedComponentNormalizer;
+use Voodflow\Voodbuilder\Support\Editor\EditorSlotHydrator;
 
 /**
  * Splits a chrome layout around the content slot and hydrates menus/branding.
@@ -22,12 +22,12 @@ final class ChromeLayoutRenderer
     public function render(ChromeLayout $layout, bool $canvasPreview = false): array
     {
         $payload = $layout->builderPayload();
-        $html = GrapesJsChromeHtmlPipeline::render($payload['html'], $canvasPreview);
-        $html = GrapesJsSlotHydrator::hydrateHtml($html);
+        $html = EditorChromeHtmlPipeline::render($payload['html'], $canvasPreview);
+        $html = EditorSlotHydrator::hydrateHtml($html);
 
         return [
             ...$this->splitAroundContentSlot($html),
-            'css' => GrapesJsPastedComponentNormalizer::dedupeCssRules(
+            'css' => EditorPastedComponentNormalizer::dedupeCssRules(
                 ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
             ),
             'js' => trim($payload['js']),

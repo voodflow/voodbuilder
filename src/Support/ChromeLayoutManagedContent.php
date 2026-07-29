@@ -9,8 +9,8 @@ use DOMElement;
 use DOMXPath;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterBlocks;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavBlocks;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 
 /**
  * When a chrome layout is assigned to a channel, site nav/footer belong to the layout — not page content.
@@ -45,7 +45,7 @@ final class ChromeLayoutManagedContent
 
         if (
             ! str_contains($html, 'data-voodbuilder-block')
-            && ! str_contains($html, 'data-voodbuilder-gjs-site-header')
+            && ! str_contains($html, 'data-voodbuilder-editor-site-header')
         ) {
             return self::stripChromeEditorBleedFromPageHtml($html);
         }
@@ -66,7 +66,7 @@ final class ChromeLayoutManagedContent
             }
         }
 
-        foreach ($xpath->query('//*[@data-voodbuilder-gjs-site-header]') ?: [] as $node) {
+        foreach ($xpath->query('//*[@data-voodbuilder-editor-site-header]') ?: [] as $node) {
             if ($node instanceof DOMElement) {
                 $toRemove[spl_object_id($node)] = $node;
             }

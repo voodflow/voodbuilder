@@ -16,7 +16,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\DefaultHomeContent;
 use Voodflow\Voodbuilder\Support\DemoSubThemeContent;
-use Voodflow\Voodbuilder\Support\GrapesJs\StarterPageTemplates;
+use Voodflow\Voodbuilder\Support\Editor\StarterPageTemplates;
 use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\SitePageSection;
 

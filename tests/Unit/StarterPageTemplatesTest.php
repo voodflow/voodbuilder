@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\StarterPageTemplates;
+use Voodflow\Voodbuilder\Support\Editor\StarterPageTemplates;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class StarterPageTemplatesTest extends TestCase
@@ -19,6 +19,7 @@ class StarterPageTemplatesTest extends TestCase
 
         foreach ($definitions as $definition) {
             $this->assertStringNotContainsString('GrapesJS', $definition['html']);
+            $this->assertStringNotContainsString('grapesjs', strtolower($definition['html']));
             $this->assertStringNotContainsString('site_nav_simple', $definition['html']);
             $this->assertStringNotContainsString('images.pexels.com', $definition['html']);
             $this->assertTrue(

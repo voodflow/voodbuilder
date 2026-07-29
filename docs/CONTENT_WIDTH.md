@@ -1,6 +1,6 @@
 # Content width — product layout contract
 
-How VoodBuilder treats **page / section / content** width in the GrapesJS editor and on the public site.
+How VoodBuilder treats **page / section / content** width in the visual editor and on the public site.
 
 ## Formula (source of truth)
 
@@ -26,18 +26,18 @@ Padding, margin, and other styles still apply as usual on section and content.
 ## Markup standard
 
 ```html
-<section class="voodbuilder-gjs-section …">
+<section class="voodbuilder-editor-section …">
   <!-- optional absolute media — NOT a content container -->
   <div class="voodbuilder-hero-media" data-voodbuilder-role="media">…</div>
 
   <!-- first content wrapper — owns content-width -->
-  <div class="voodbuilder-gjs-container …" data-voodbuilder-role="content">
+  <div class="voodbuilder-editor-container …" data-voodbuilder-role="content">
     …
   </div>
 </section>
 ```
 
-- Do **not** put `voodbuilder-gjs-container` on hero-media layers.
+- Do **not** put `voodbuilder-editor-container` on hero-media layers.
 - Chrome footer/nav keep their own containers; do **not** force the section→container model onto footer chrome.
 
 ## Toolbar icon (`arrow-autofit-width`)
@@ -47,7 +47,7 @@ Shows on full-width page contexts, only on:
 1. **Section** (1st level) — cycle applies to the **first content child** (section stays full for backgrounds).
 2. **That content wrapper** (2nd level) — cycle applies to itself.
 
-Also (optional/minimal): a **bare** `.voodbuilder-gjs-container` that is a direct child of page content **without** a section parent — not inside nav/footer chrome.
+Also (optional/minimal): a **bare** `.voodbuilder-editor-container` that is a direct child of page content **without** a section parent — not inside nav/footer chrome.
 
 Hidden on: text, images, buttons, deeper nesting, chrome nav/footer trees.
 
@@ -67,7 +67,7 @@ See [DYNAMIC_DATA_USE_CASES.md](./DYNAMIC_DATA_USE_CASES.md) and [BINDINGS.md](.
 
 ## Authoring checklist
 
-1. Outer node = `section.voodbuilder-gjs-section` (full bleed for bg).
-2. First real content child = `.voodbuilder-gjs-container`.
+1. Outer node = `section.voodbuilder-editor-section` (full bleed for bg).
+2. First real content child = `.voodbuilder-editor-container`.
 3. Use the toolbar on section or that container — not on inner text/images.
 4. Rebuild section catalog after upstream HTML changes: `php artisan voodbuilder:build-sections` then `npm run build`.
