@@ -2015,6 +2015,85 @@ In `app/Providers/Filament/AdminPanelProvider.php`:
 
 Toggle plugins on/off to test soft-gates (Components tab upsell, Templates consume-only = link install, etc.).
 
+### D2. `.env` — mirror Cosmolab commercial wave
+
+**Important:** companion features unlock primarily via `*Plugin::make()` on the Filament panel (§D), **not** via Composer alone.  
+`.env` only flips master switches / edition. Cosmolab “here” currently has **no** `VOODBUILDER_*` keys in `.env` (all package defaults), with these plugins registered: Popups, Components, Dynamic Data, Templates.
+
+Paste into host `.env` to make the same setup explicit (and to enable Pro entitlements where useful):
+
+```dotenv
+# --- VoodBuilder Core ---
+# community | professional | agency
+# Use professional/agency if you need List repeat (dynamic-data.collections)
+# and in-editor template catalog (templates.remote-install).
+VOODBUILDER_EDITION=community
+VOODBUILDER_LICENSE_ENFORCE=false
+VOODBUILDER_LICENSE_DRIVER=config
+VOODBUILDER_LICENSE_CACHE=false
+
+# Core modules (defaults are all true — set false only to kill a surface)
+VOODBUILDER_MODULE_PAGES=true
+VOODBUILDER_MODULE_MENUS=true
+VOODBUILDER_MODULE_LAYOUTS=true
+VOODBUILDER_MODULE_TEMPLATES=true
+VOODBUILDER_MODULE_THEMES=true
+VOODBUILDER_MODULE_HISTORY=true
+VOODBUILDER_MODULE_CONDITIONS=true
+VOODBUILDER_MODULE_DYNAMIC_DATA=true
+VOODBUILDER_MODULE_COMPONENTS=true
+VOODBUILDER_MODULE_POPUPS=true
+
+VOODBUILDER_GRAPESJS_ENABLED=true
+VOODBUILDER_CHROME_LAYOUTS_ENABLED=true
+VOODBUILDER_PAGES_DEFAULT_BUILDER=grapesjs
+
+# Optional: remote template marketplace catalog JSON (Pro+ entitlement still required)
+# VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL=https://example.com/templates-catalog.json
+
+# --- Companion package master switches (default true) ---
+# Keep *_AUTO_REGISTER=false on Filament hosts: activation = Plugin::make() on the panel.
+VOODBUILDER_POPUPS_ENABLED=true
+VOODBUILDER_POPUPS_AUTO_REGISTER=false
+
+COMPONENTS_ENABLED=true
+COMPONENTS_AUTO_REGISTER=false
+
+DYNAMIC_DATA_ENABLED=true
+DYNAMIC_DATA_AUTO_REGISTER=false
+
+TEMPLATES_ENABLED=true
+TEMPLATES_AUTO_REGISTER=false
+
+# Scaffolds — leave off until implemented / registered on the panel
+FORMS_ENABLED=true
+FORMS_AUTO_REGISTER=false
+COOKIEBAR_ENABLED=true
+COOKIEBAR_AUTO_REGISTER=false
+ANALITYCS_ENABLED=true
+ANALITYCS_AUTO_REGISTER=false
+```
+
+**Parity with “here” (full wave testing):**
+
+| Goal | `.env` | Panel plugin |
+|---|---|---|
+| Same as Cosmolab now | block above with `VOODBUILDER_EDITION=community` | Popups + Components + Dynamic Data + Templates |
+| + List repeat / template catalog | `VOODBUILDER_EDITION=professional` (or `agency`) | same plugins |
+| Soft-gate Components | leave `COMPONENTS_ENABLED=true` | comment out `VoodbuilderComponentsPlugin` |
+| Soft-gate Templates authoring (keep marketplace URL) | leave `TEMPLATES_ENABLED=true` | comment out `VoodbuilderTemplatesPlugin` |
+| Soft-gate Dynamic Data | leave `DYNAMIC_DATA_ENABLED=true` | comment out `VoodbuilderDynamicDataPlugin` |
+
+After changing `.env`:
+
+```bash
+cd …/app
+php artisan config:clear
+# if you use config:cache in deploy: php artisan config:cache
+```
+
+Do **not** set `*_AUTO_REGISTER=true` on the Filament Cosmolab host unless you intentionally bypass panel plugin registration (Testbench/headless only).
+
 ### E. Frontend assets
 
 GrapesJS editor assets build from the **host** Vite config (entries under `packages/voodflow/voodbuilder/...`):

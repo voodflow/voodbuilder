@@ -83,7 +83,9 @@ Core `voodbuilder` branch `refactor/modular-architecture` must be **committed + 
 ## Continue checklist
 
 1. Workstation: pull Core branch + clone/update companions (§27 of architecture doc)
-2. Implement Analytics
-3. Implement Cookiebar
-4. Invent Forms
-5. Optional: signed marketplace template URLs; rewrite §7 matrices
+2. Copy `.env` block from architecture doc §27 D2 (edition + companion switches)
+3. Register Filament plugins (Popups / Components / Dynamic Data / Templates)
+4. Implement Analytics
+5. Implement Cookiebar
+6. Invent Forms
+7. Optional: signed marketplace template URLs; rewrite §7 matrices
