@@ -3,7 +3,7 @@
  * Editor getHtml() breaks raw JSON quotes inside attributes.
  */
 
-export function encodeVpressConfig(config) {
+export function encodeBlockConfig(config) {
     const json = typeof config === 'string' ? config : JSON.stringify(config ?? {});
 
     return json
@@ -13,7 +13,7 @@ export function encodeVpressConfig(config) {
         .replace(/>/g, '&gt;');
 }
 
-export function parseVpressConfig(raw) {
+export function parseBlockConfig(raw) {
     if (! raw || raw === '{}') {
         return {};
     }
@@ -38,15 +38,6 @@ export function parseVpressConfig(raw) {
     return {};
 }
 
-export function serializeVpressConfig(config) {
+export function serializeBlockConfig(config) {
     return JSON.stringify(config ?? {});
 }
-
-/** @deprecated Use serializeVpressConfig — alias kept for in-progress renames. */
-export const serializeBlockConfig = serializeVpressConfig;
-
-/** @deprecated Use parseVpressConfig — alias kept for in-progress renames. */
-export const parseBlockConfig = parseVpressConfig;
-
-/** @deprecated Use encodeVpressConfig — alias kept for in-progress renames. */
-export const encodeBlockConfig = encodeVpressConfig;

@@ -2,7 +2,7 @@
  * Navbar config sync + preview — extracted from plugin for chrome domain layer.
  */
 
-import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
+import { encodeBlockConfig } from '../../../voodbuilder-dynamic-config.js';
 import { resolveSettings } from '../../../blocks/settings/index.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
 import {
@@ -40,19 +40,19 @@ function siteHeaderTraitOptions(editor = null) {
         {
             type: 'checkbox',
             label: label('navShowLogo', 'Show logo'),
-            name: 'vpressShowLogo',
+            name: 'voodbuilderShowLogo',
             changeProp: true,
         },
         {
             type: 'checkbox',
             label: label('navShowSiteName', 'Show site name'),
-            name: 'vpressShowSiteName',
+            name: 'voodbuilderShowSiteName',
             changeProp: true,
         },
         {
             type: 'select',
             label: label('navMenuPosition', 'Menu position'),
-            name: 'vpressMainNavAlign',
+            name: 'voodbuilderMainNavAlign',
             changeProp: true,
             options: [
                 { value: 'start', id: 'start', name: label('navMenuLeft', 'Left (next to logo)') },
@@ -62,7 +62,7 @@ function siteHeaderTraitOptions(editor = null) {
         {
             type: 'select',
             label: label('navSticky', 'Sticky'),
-            name: 'vpressStickyNav',
+            name: 'voodbuilderStickyNav',
             changeProp: true,
             options: [
                 { value: 'inherit', id: 'inherit', name: label('navStickyInherit', 'Site default') },
@@ -73,19 +73,19 @@ function siteHeaderTraitOptions(editor = null) {
         {
             type: 'checkbox',
             label: label('navShowSearch', 'Show search'),
-            name: 'vpressShowSearch',
+            name: 'voodbuilderShowSearch',
             changeProp: true,
         },
         {
             type: 'checkbox',
             label: label('navShowNotifications', 'Show notifications'),
-            name: 'vpressShowNotifications',
+            name: 'voodbuilderShowNotifications',
             changeProp: true,
         },
         {
             type: 'checkbox',
             label: label('navShowProfile', 'Show account menu'),
-            name: 'vpressShowProfileMenu',
+            name: 'voodbuilderShowProfileMenu',
             changeProp: true,
         },
     ];
@@ -223,13 +223,13 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
         return;
     }
 
-    const showSearch = root.get('vpressShowSearch') === true;
-    const showNotifications = root.get('vpressShowNotifications') === true;
-    const showProfile = root.get('vpressShowProfileMenu') === true;
-    const showLogo = root.get('vpressShowLogo') !== false;
-    const showSiteName = root.get('vpressShowSiteName') !== false;
-    const alignCenter = root.get('vpressMainNavAlign') === 'center';
-    const stickyMode = root.get('vpressStickyNav') ?? 'inherit';
+    const showSearch = root.get('voodbuilderShowSearch') === true;
+    const showNotifications = root.get('voodbuilderShowNotifications') === true;
+    const showProfile = root.get('voodbuilderShowProfileMenu') === true;
+    const showLogo = root.get('voodbuilderShowLogo') !== false;
+    const showSiteName = root.get('voodbuilderShowSiteName') !== false;
+    const alignCenter = root.get('voodbuilderMainNavAlign') === 'center';
+    const stickyMode = root.get('voodbuilderStickyNav') ?? 'inherit';
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
     const logoSizeMobile = normalizeChromeLogoSize(
         root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
@@ -305,31 +305,31 @@ function scheduleSiteNavBlockRefresh(editor, root) {
 }
 
 export function syncSiteHeaderConfig(component) {
-    const align = component.get('vpressMainNavAlign') === 'center' ? 'center' : 'start';
-    const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('vpressStickyNav'))
-        ? component.get('vpressStickyNav')
+    const align = component.get('voodbuilderMainNavAlign') === 'center' ? 'center' : 'start';
+    const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('voodbuilderStickyNav'))
+        ? component.get('voodbuilderStickyNav')
         : 'inherit';
     const config = {
-        ...(component.get('vpressConfig') ?? {}),
+        ...(component.get('voodbuilderConfig') ?? {}),
         variant: 'simple',
         main_nav_align: align,
         sticky_nav: stickyNav,
-        show_search: component.get('vpressShowSearch') === true,
-        show_notifications: component.get('vpressShowNotifications') === true,
-        show_profile_menu: component.get('vpressShowProfileMenu') === true,
-        show_logo: component.get('vpressShowLogo') !== false,
-        show_site_name: component.get('vpressShowSiteName') !== false,
+        show_search: component.get('voodbuilderShowSearch') === true,
+        show_notifications: component.get('voodbuilderShowNotifications') === true,
+        show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
+        show_logo: component.get('voodbuilderShowLogo') !== false,
+        show_site_name: component.get('voodbuilderShowSiteName') !== false,
         [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
-            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
         [CHROME_LOGO_SIZE_MOBILE_KEY]: normalizeChromeLogoSize(
             component.get(CHROME_LOGO_SIZE_MOBILE_PROP)
-                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
+                ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
                 ?? component.get(CHROME_LOGO_SIZE_PROP)
-                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+                ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
         [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
-            || component.get('vpressConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
+            || component.get('voodbuilderConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -337,9 +337,9 @@ export function syncSiteHeaderConfig(component) {
         config[def.key] = value !== '' ? value : null;
     }
 
-    component.set('vpressConfig', config, { silent: true });
+    component.set('voodbuilderConfig', config, { silent: true });
     component.addAttributes({
-        'data-voodbuilder-config': encodeVpressConfig(config),
+        'data-voodbuilder-config': encodeBlockConfig(config),
     }, { silent: true });
 }
 
@@ -375,15 +375,15 @@ export function configureSiteNavTraits(component, editor) {
     component.set('stylable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
     component.set('badgable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
 
-    const config = component.get('vpressConfig') ?? {};
+    const config = component.get('voodbuilderConfig') ?? {};
 
-    component.set('vpressMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
-    component.set('vpressStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
-    component.set('vpressShowSearch', config.show_search === true, { silent: true });
-    component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
-    component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
-    component.set('vpressShowLogo', config.show_logo !== false, { silent: true });
-    component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
+    component.set('voodbuilderMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
+    component.set('voodbuilderStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
+    component.set('voodbuilderShowSearch', config.show_search === true, { silent: true });
+    component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
+    component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
+    component.set('voodbuilderShowLogo', config.show_logo !== false, { silent: true });
+    component.set('voodbuilderShowSiteName', config.show_site_name !== false, { silent: true });
     component.set(
         CHROME_LOGO_SIZE_PROP,
         normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),

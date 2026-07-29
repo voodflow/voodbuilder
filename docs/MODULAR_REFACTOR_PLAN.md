@@ -120,7 +120,7 @@ resources/js/editor/
 | `findZone` | `chrome/zones.js` | `findDropZone` |
 | `findInspectableRoot` | `blocks/settings/select.js` | `resolveInspectableBlockRoot` |
 | `resolveSettings` | `blocks/settings/registry.js` | `resolveBlockSettingsTarget` |
-| `initEditor` | `editor/init.js` | `initVpressEditor` |
+| `initEditor` | `editor/init.js` | `initVoodbuilderEditor` |
 | `buildPayload` | `editor/payload.js` | inline in editor.js |
 | `wireInspector` | `editor/inspector.js` | `registerInspectorExtensions` |
 

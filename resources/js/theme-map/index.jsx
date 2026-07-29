@@ -126,7 +126,6 @@ function registerLivewireHooks() {
 }
 
 window.voodbuilderMountThemeMap = mountVoodbuilderThemeMap;
-window.vpressMountThemeMap = mountVoodbuilderThemeMap;
 
 function boot() {
     registerLivewireHooks();

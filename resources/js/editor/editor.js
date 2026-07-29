@@ -3,6 +3,6 @@
  */
 
 export {
-    initVpressEditor,
+    initVoodbuilderEditor,
     buildPayload,
 } from './editor/init.js';

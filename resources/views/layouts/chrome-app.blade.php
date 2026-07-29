@@ -8,7 +8,7 @@
     use Voodflow\Voodbuilder\Support\SubThemeResolver;
     use Voodflow\Voodbuilder\Support\ThemePalette;
 
-    $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+    $voodbuilderSubTheme = $voodbuilderSubTheme ?? SubThemeResolver::forCurrentRoute();
     $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $suppressHostChrome = EditorHostChrome::shouldSuppressHostRender($editorEditor ?? null);
     $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::pageViteEntries(

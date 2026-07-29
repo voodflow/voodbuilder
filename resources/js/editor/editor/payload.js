@@ -19,7 +19,7 @@ import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { syncVideoComponentsForExport } from '../editor-video.js';
 import {
     pruneEmptyDynamicBlocks,
-    syncVpressDynamicAttributes,
+    syncDynamicBlockAttributes,
 } from '../plugins/voodbuilder-editor.js';
 import { syncSiteHeaderConfig } from '../chrome/blocks/nav/config.js';
 import { syncSiteFooterConfig } from '../chrome/blocks/footer/config.js';
@@ -85,9 +85,9 @@ export function extractGrapesComposerCss(css) {
     return kept.join('\n');
 }
 
-function normalizeVpressDynamicComponents(editor) {
+function normalizeDynamicBlockComponents(editor) {
     safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]').forEach((component) => {
-        syncVpressDynamicAttributes(component);
+        syncDynamicBlockAttributes(component);
 
         const blockId = component.getAttributes()['data-voodbuilder-block'];
 
@@ -144,7 +144,7 @@ export function buildPayload(editor, options = {}) {
     };
 
     if (mutate) {
-        runExportStep('normalizeVpressDynamicComponents', () => normalizeVpressDynamicComponents(editor));
+        runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
         runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
         runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
         runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));

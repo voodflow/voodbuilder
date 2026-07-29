@@ -1,7 +1,7 @@
 <script>
     (function () {
         const root = document.documentElement;
-        const config = window.__voodbuilderTheme || window.__vpressTheme || {
+        const config = window.__voodbuilderTheme || {
             showToggle: true,
             defaultMode: 'system',
             locked: false,

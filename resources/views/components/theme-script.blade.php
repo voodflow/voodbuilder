@@ -9,7 +9,6 @@
     (function () {
         const config = @json($config);
         window.__voodbuilderTheme = config;
-        window.__vpressTheme = config;
         let stored = null;
 
         try {

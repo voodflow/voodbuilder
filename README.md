@@ -2,7 +2,7 @@
 
 **Commercial Filament plugin** — public site shell, visual themes, and page builder for Laravel.
 
-VoodBuilder is a **paid, proprietary** package from [Voodflow](https://voodflow.com). It is **not** open source and **not** the legacy **vpress** package (renamed and split into its own repository).
+VoodBuilder is a **paid, proprietary** package from [Voodflow](https://voodflow.com). It is **not** open source.
 
 Companion plugins such as [voodflow/vtuts](https://github.com/voodflow/vtuts) and [voodflow/vdocs](https://github.com/voodflow/vdocs) are separate paid packages that integrate with VoodBuilder when installed.
 

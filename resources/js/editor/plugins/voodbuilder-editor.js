@@ -15,7 +15,7 @@ import { registerBoundComponentType } from '../bindings-ui.js';
 import { registerTopDropSpacerType } from '../canvas-block-drag.js';
 import { resolveBlockLayerLabel } from '../layer-display-name.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
-import { encodeVpressConfig, parseVpressConfig } from '../voodbuilder-dynamic-config.js';
+import { encodeBlockConfig, parseBlockConfig } from '../voodbuilder-dynamic-config.js';
 import {
     chromeIconSvgForAttrs,
     isChromeIconPlaceholderText,
@@ -265,7 +265,7 @@ function registerLayoutSectionType(editor) {
     });
 }
 
-function syncVpressDynamicAttributes(component) {
+function syncDynamicBlockAttributes(component) {
     if (component.__voodbuilderSyncingAttributes) {
         return;
     }
@@ -275,10 +275,10 @@ function syncVpressDynamicAttributes(component) {
     try {
         const attributes = component.getAttributes();
         const blockId = attributes['data-voodbuilder-block'] ?? '';
-        const config = parseVpressConfig(attributes['data-voodbuilder-config']);
-        const encodedConfig = encodeVpressConfig(config);
+        const config = parseBlockConfig(attributes['data-voodbuilder-config']);
+        const encodedConfig = encodeBlockConfig(config);
 
-        component.set('vpressConfig', config, { silent: true });
+        component.set('voodbuilderConfig', config, { silent: true });
         component.set('name', blockId ? resolveBlockLayerLabel(blockId) : 'Block', { silent: true });
 
         const updates = {};
@@ -464,7 +464,7 @@ function findSiteNavRootComponent(component) {
         }
 
         if (current.getAttributes?.()?.['data-voodbuilder-editor-site-header']) {
-            const dynamicRoot = findVpressDynamicAncestor(current);
+            const dynamicRoot = findDynamicBlockAncestor(current);
 
             if (dynamicRoot && isSiteHeaderBlock(dynamicRoot.getAttributes?.()?.['data-voodbuilder-block'])) {
                 migrateSiteNavBlockComponent(dynamicRoot);
@@ -647,7 +647,7 @@ function siteHeaderTraitOptions() {
         {
             type: 'select',
             label: 'Menu position',
-            name: 'vpressMainNavAlign',
+            name: 'voodbuilderMainNavAlign',
             changeProp: true,
             options: [
                 { value: 'start', id: 'start', name: 'Left (next to logo)' },
@@ -657,7 +657,7 @@ function siteHeaderTraitOptions() {
         {
             type: 'select',
             label: 'Sticky',
-            name: 'vpressStickyNav',
+            name: 'voodbuilderStickyNav',
             changeProp: true,
             options: [
                 { value: 'inherit', id: 'inherit', name: 'Site default' },
@@ -668,48 +668,48 @@ function siteHeaderTraitOptions() {
         {
             type: 'checkbox',
             label: 'Show search',
-            name: 'vpressShowSearch',
+            name: 'voodbuilderShowSearch',
             changeProp: true,
         },
         {
             type: 'checkbox',
             label: 'Show notifications',
-            name: 'vpressShowNotifications',
+            name: 'voodbuilderShowNotifications',
             changeProp: true,
         },
         {
             type: 'checkbox',
             label: 'Show account menu',
-            name: 'vpressShowProfileMenu',
+            name: 'voodbuilderShowProfileMenu',
             changeProp: true,
         },
     ];
 }
 
 function syncSiteHeaderConfig(component) {
-    const align = component.get('vpressMainNavAlign') === 'center' ? 'center' : 'start';
-    const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('vpressStickyNav'))
-        ? component.get('vpressStickyNav')
+    const align = component.get('voodbuilderMainNavAlign') === 'center' ? 'center' : 'start';
+    const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('voodbuilderStickyNav'))
+        ? component.get('voodbuilderStickyNav')
         : 'inherit';
     const config = {
-        ...(component.get('vpressConfig') ?? {}),
+        ...(component.get('voodbuilderConfig') ?? {}),
         variant: 'simple',
         main_nav_align: align,
         sticky_nav: stickyNav,
-        show_search: component.get('vpressShowSearch') === true,
-        show_notifications: component.get('vpressShowNotifications') === true,
-        show_profile_menu: component.get('vpressShowProfileMenu') === true,
+        show_search: component.get('voodbuilderShowSearch') === true,
+        show_notifications: component.get('voodbuilderShowNotifications') === true,
+        show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
     };
 
-    component.set('vpressConfig', config, { silent: true });
+    component.set('voodbuilderConfig', config, { silent: true });
     component.addAttributes({
-        'data-voodbuilder-config': encodeVpressConfig(config),
+        'data-voodbuilder-config': encodeBlockConfig(config),
     }, { silent: true });
 }
 
 const siteNavRefreshTimers = new WeakMap();
 
-const STRUCTURAL_SITE_NAV_PROPS = new Set(['vpressStickyNav']);
+const STRUCTURAL_SITE_NAV_PROPS = new Set(['voodbuilderStickyNav']);
 
 function resolveSiteNavStickyState(stickyMode, editor) {
     const siteDefaultSticky = editor?.__voodbuilderSiteNavDefaults?.stickyNav === true;
@@ -824,11 +824,11 @@ function applySiteNavSettingsPreview(root, editor = null) {
         return;
     }
 
-    const showSearch = root.get('vpressShowSearch') === true;
-    const showNotifications = root.get('vpressShowNotifications') === true;
-    const showProfile = root.get('vpressShowProfileMenu') === true;
-    const alignCenter = root.get('vpressMainNavAlign') === 'center';
-    const stickyMode = root.get('vpressStickyNav') ?? 'inherit';
+    const showSearch = root.get('voodbuilderShowSearch') === true;
+    const showNotifications = root.get('voodbuilderShowNotifications') === true;
+    const showProfile = root.get('voodbuilderShowProfileMenu') === true;
+    const alignCenter = root.get('voodbuilderMainNavAlign') === 'center';
+    const stickyMode = root.get('voodbuilderStickyNav') ?? 'inherit';
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
 
     const scope = el.querySelector('[data-voodbuilder-editor-site-header]') ?? el;
@@ -900,13 +900,13 @@ function configureSiteNavTraits(component, editor) {
 
     component.set('stylable', false);
 
-    const config = component.get('vpressConfig') ?? {};
+    const config = component.get('voodbuilderConfig') ?? {};
 
-    component.set('vpressMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
-    component.set('vpressStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
-    component.set('vpressShowSearch', config.show_search === true, { silent: true });
-    component.set('vpressShowNotifications', config.show_notifications === true, { silent: true });
-    component.set('vpressShowProfileMenu', config.show_profile_menu === true, { silent: true });
+    component.set('voodbuilderMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
+    component.set('voodbuilderStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
+    component.set('voodbuilderShowSearch', config.show_search === true, { silent: true });
+    component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
+    component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
 
     // Never set('traits', plainObjects, { silent: true }) — that leaves a raw array and
     // TraitManager crashes with "e.get is not a function" on select/render.
@@ -977,7 +977,7 @@ function registerSiteFooterSettingsUi(editor) {
     registerFooterSettings(editor);
 }
 
-function findVpressDynamicAncestor(component) {
+function findDynamicBlockAncestor(component) {
     let parent = component?.parent?.();
 
     while (parent) {
@@ -1108,7 +1108,7 @@ function registerDynamicBlockGuards(editor) {
             return;
         }
 
-        const dynamic = findVpressDynamicAncestor(removed);
+        const dynamic = findDynamicBlockAncestor(removed);
 
         if (! dynamic?.parent()) {
             return;
@@ -1175,7 +1175,7 @@ function refreshDynamicSlots(component, freshRoot) {
 }
 
 function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
-    component.set('vpressConfig', freshConfig, { silent: true });
+    component.set('voodbuilderConfig', freshConfig, { silent: true });
 
     if (fresh.tagName === 'FOOTER' && component.get('tagName') !== 'footer') {
         component.set('tagName', 'footer', { silent: true });
@@ -1195,7 +1195,7 @@ function applyFreshFooterAttributes(component, fresh, blockId, freshConfig) {
 
     component.addAttributes({
         'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
-        'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+        'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeBlockConfig(freshConfig),
         class: mergedRootClasses.join(' '),
         'data-voodbuilder-hydrate-slots': '1',
     });
@@ -1359,7 +1359,7 @@ function registerDynamicBlockType(editor) {
                 return false;
             }
 
-            const config = parseVpressConfig(element.getAttribute('data-voodbuilder-config') ?? '{}');
+            const config = parseBlockConfig(element.getAttribute('data-voodbuilder-config') ?? '{}');
             const isFooter = element?.tagName === 'FOOTER' && isSiteFooterBlock(blockId);
             const elementClass = String(element.getAttribute('class') ?? '').trim();
             const defaultClass = isFooter
@@ -1371,10 +1371,10 @@ function registerDynamicBlockType(editor) {
             return {
                 type: 'voodbuilder-dynamic',
                 tagName: isFooter ? 'footer' : (element.tagName?.toLowerCase() ?? 'div'),
-                vpressConfig: config,
+                voodbuilderConfig: config,
                 attributes: {
                     'data-voodbuilder-block': blockId,
-                    'data-voodbuilder-config': encodeVpressConfig(config),
+                    'data-voodbuilder-config': encodeBlockConfig(config),
                     class: defaultClass,
                     ...(element.hasAttribute('data-voodbuilder-hydrate-slots')
                         ? { 'data-voodbuilder-hydrate-slots': '1' }
@@ -1394,33 +1394,33 @@ function registerDynamicBlockType(editor) {
                 stylable: true,
                 layerable: true,
                 highlightable: true,
-                vpressConfig: {},
-                vpressMainNavAlign: 'start',
-                vpressStickyNav: 'inherit',
-                vpressShowSearch: true,
-                vpressShowNotifications: true,
-                vpressShowProfileMenu: true,
-                vpressShowFooterCol1: true,
-                vpressShowFooterCol2: true,
-                vpressShowFooterCol3: true,
-                vpressShowFooterCol4: true,
-                vpressShowNewsletter: true,
-                vpressShowSocial: true,
-                vpressShowFooterMenu: true,
-                vpressShowTagline: true,
-                vpressShowCopyright: true,
-                vpressShowBrand: true,
-                vpressShowSiteName: true,
-                vpressFooterColumnsRedistribute: false,
+                voodbuilderConfig: {},
+                voodbuilderMainNavAlign: 'start',
+                voodbuilderStickyNav: 'inherit',
+                voodbuilderShowSearch: true,
+                voodbuilderShowNotifications: true,
+                voodbuilderShowProfileMenu: true,
+                voodbuilderShowFooterCol1: true,
+                voodbuilderShowFooterCol2: true,
+                voodbuilderShowFooterCol3: true,
+                voodbuilderShowFooterCol4: true,
+                voodbuilderShowNewsletter: true,
+                voodbuilderShowSocial: true,
+                voodbuilderShowFooterMenu: true,
+                voodbuilderShowTagline: true,
+                voodbuilderShowCopyright: true,
+                voodbuilderShowBrand: true,
+                voodbuilderShowSiteName: true,
+                voodbuilderFooterColumnsRedistribute: false,
                 attributes: {
                     class: 'voodbuilder-editor-dynamic',
                     'data-voodbuilder-block': '',
-                    'data-voodbuilder-config': encodeVpressConfig({}),
+                    'data-voodbuilder-config': encodeBlockConfig({}),
                 },
                 traits: [],
             },
             init() {
-                syncVpressDynamicAttributes(this);
+                syncDynamicBlockAttributes(this);
 
                 if (isSiteFooterBlock(this.getAttributes()['data-voodbuilder-block'])) {
                     configureSiteFooterTraits(this, editor);
@@ -1431,7 +1431,7 @@ function registerDynamicBlockType(editor) {
                 }
 
                 this.on('change:attributes:data-voodbuilder-config', () => {
-                    syncVpressDynamicAttributes(this);
+                    syncDynamicBlockAttributes(this);
                 });
             },
         },
@@ -1535,7 +1535,7 @@ function ensureLayoutSectionTraits(editor) {
 export {
     registerBlocks,
     sanitizeBlockHtml,
-    syncVpressDynamicAttributes,
+    syncDynamicBlockAttributes,
     lockDynamicPreviewContent,
     registerDynamicBlockGuards,
     pruneEmptyDynamicBlocks,
@@ -1566,7 +1566,7 @@ export {
     pruneEmptySections,
 };
 
-export default function vpressEditorPlugin(editor, options = {}) {
+export default function voodbuilderEditorPlugin(editor, options = {}) {
     editor.__voodbuilderSiteNavDefaults = options.siteNavDefaults ?? { stickyNav: false };
     editor.__voodbuilderFooterColumnOptions = options.footerColumnOptions ?? {};
     editor.__voodbuilderLabels = options.labels ?? {};

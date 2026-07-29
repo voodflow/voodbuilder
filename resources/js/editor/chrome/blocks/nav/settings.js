@@ -67,57 +67,57 @@ export function registerNavSettings(editor) {
             panels.layout.append(
                 createSelectField({
                     label: label('navMenuPosition', 'Menu position'),
-                    name: 'vpressMainNavAlign',
-                    value: root.get('vpressMainNavAlign') === 'center' ? 'center' : 'start',
+                    name: 'voodbuilderMainNavAlign',
+                    value: root.get('voodbuilderMainNavAlign') === 'center' ? 'center' : 'start',
                     options: [
                         { value: 'start', label: label('navMenuLeft', 'Left (next to logo)') },
                         { value: 'center', label: label('navMenuCenter', 'Center') },
                     ],
-                    onChange: (value) => applyChange('vpressMainNavAlign', value),
+                    onChange: (value) => applyChange('voodbuilderMainNavAlign', value),
                 }),
                 createSelectField({
                     label: label('navSticky', 'Sticky'),
-                    name: 'vpressStickyNav',
-                    value: root.get('vpressStickyNav') ?? 'inherit',
+                    name: 'voodbuilderStickyNav',
+                    value: root.get('voodbuilderStickyNav') ?? 'inherit',
                     options: [
                         { value: 'inherit', label: label('navStickyInherit', 'Site default') },
                         { value: 'sticky', label: label('navStickyOn', 'Sticky') },
                         { value: 'static', label: label('navStickyOff', 'Scrolls with page') },
                     ],
-                    onChange: (value) => applyChange('vpressStickyNav', value),
+                    onChange: (value) => applyChange('voodbuilderStickyNav', value),
                 }),
                 createCheckboxField({
                     label: label('navShowSearch', 'Show search'),
-                    name: 'vpressShowSearch',
-                    checked: root.get('vpressShowSearch') === true,
-                    onChange: (checked) => applyChange('vpressShowSearch', checked),
+                    name: 'voodbuilderShowSearch',
+                    checked: root.get('voodbuilderShowSearch') === true,
+                    onChange: (checked) => applyChange('voodbuilderShowSearch', checked),
                 }),
                 createCheckboxField({
                     label: label('navShowNotifications', 'Show notifications'),
-                    name: 'vpressShowNotifications',
-                    checked: root.get('vpressShowNotifications') === true,
-                    onChange: (checked) => applyChange('vpressShowNotifications', checked),
+                    name: 'voodbuilderShowNotifications',
+                    checked: root.get('voodbuilderShowNotifications') === true,
+                    onChange: (checked) => applyChange('voodbuilderShowNotifications', checked),
                 }),
                 createCheckboxField({
                     label: label('navShowProfile', 'Show account menu'),
-                    name: 'vpressShowProfileMenu',
-                    checked: root.get('vpressShowProfileMenu') === true,
-                    onChange: (checked) => applyChange('vpressShowProfileMenu', checked),
+                    name: 'voodbuilderShowProfileMenu',
+                    checked: root.get('voodbuilderShowProfileMenu') === true,
+                    onChange: (checked) => applyChange('voodbuilderShowProfileMenu', checked),
                 }),
             );
 
             panels.brand.append(
                 createCheckboxField({
                     label: label('navShowLogo', 'Show logo'),
-                    name: 'vpressShowLogo',
-                    checked: root.get('vpressShowLogo') !== false,
-                    onChange: (checked) => applyChange('vpressShowLogo', checked),
+                    name: 'voodbuilderShowLogo',
+                    checked: root.get('voodbuilderShowLogo') !== false,
+                    onChange: (checked) => applyChange('voodbuilderShowLogo', checked),
                 }),
                 createCheckboxField({
                     label: label('navShowSiteName', 'Show site name'),
-                    name: 'vpressShowSiteName',
-                    checked: root.get('vpressShowSiteName') !== false,
-                    onChange: (checked) => applyChange('vpressShowSiteName', checked),
+                    name: 'voodbuilderShowSiteName',
+                    checked: root.get('voodbuilderShowSiteName') !== false,
+                    onChange: (checked) => applyChange('voodbuilderShowSiteName', checked),
                 }),
             );
 

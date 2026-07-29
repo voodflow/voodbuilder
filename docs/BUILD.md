@@ -125,7 +125,7 @@ Requires `esbuild`, `react`, `react-dom`, `prop-types` in the host app `node_mod
 VoodBuilder public layouts expose `window.__voodbuilderTheme` and load `site-scripts` for light/dark mode. If your host `resources/js/app.js` also toggles `document.documentElement.classList`, guard it:
 
 ```js
-if (window.__voodbuilderTheme || window.__vpressTheme) {
+if (window.__voodbuilderTheme) {
     return;
 }
 ```

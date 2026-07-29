@@ -533,7 +533,7 @@ function isRepeatContainer(component) {
         return true;
     }
 
-    if (component?.get?.('vpressRepeatMeta')?.key) {
+    if (component?.get?.('voodbuilderRepeatMeta')?.key) {
         return true;
     }
 
@@ -902,7 +902,7 @@ function applyRepeatMetaToComponent(component, meta) {
         return;
     }
 
-    component.set('vpressRepeatMeta', meta, { silent: true });
+    component.set('voodbuilderRepeatMeta', meta, { silent: true });
 
     const attributes = {
         'data-voodbuilder-repeat': meta.key,
@@ -926,7 +926,7 @@ function syncRepeatMetaFromAttributes(component) {
     const meta = repeatMetaFromAttributes(component.getAttributes?.() ?? {});
 
     if (meta) {
-        component.set('vpressRepeatMeta', meta, { silent: true });
+        component.set('voodbuilderRepeatMeta', meta, { silent: true });
     }
 }
 
@@ -939,7 +939,7 @@ function restoreRepeatMetaOnComponent(component) {
         return;
     }
 
-    const meta = component.get('vpressRepeatMeta');
+    const meta = component.get('voodbuilderRepeatMeta');
 
     if (meta?.key) {
         applyRepeatMetaToComponent(component, meta);
@@ -990,7 +990,7 @@ function migrateRepeatPlacement(component) {
     }
 
     const meta = repeatMetaFromAttributes(component.getAttributes?.() ?? {})
-        ?? component.get('vpressRepeatMeta')
+        ?? component.get('voodbuilderRepeatMeta')
         ?? { key: repeatKey };
 
     applyRepeatMetaToComponent(repeatTarget, meta);
@@ -1422,7 +1422,7 @@ function ensureRepeatContainers(editor, catalog) {
             return;
         }
 
-        const storedMeta = repeatTarget.get('vpressRepeatMeta');
+        const storedMeta = repeatTarget.get('voodbuilderRepeatMeta');
         const sampleBinding = safeFindComponents(repeatTarget, '[data-voodbuilder-bind]')[0]?.getAttributes?.()['data-voodbuilder-bind'];
         const repeatKey = storedMeta?.key
             ?? (sampleBinding ? inferRepeatListKey(sampleBinding, catalog) : catalog?.repeatSources?.[0]?.id);

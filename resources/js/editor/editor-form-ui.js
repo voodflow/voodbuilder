@@ -285,10 +285,10 @@ export function createCheckboxGrid(fields = []) {
 }
 
 const LOGO_FIELD_KEYS = [
-    { key: 'logo_desktop_light', prop: 'vpressLogoDesktopLight', labelKey: 'logoDesktopLight', fallback: 'Logo desktop light' },
-    { key: 'logo_desktop_dark', prop: 'vpressLogoDesktopDark', labelKey: 'logoDesktopDark', fallback: 'Logo desktop dark' },
-    { key: 'logo_mobile_light', prop: 'vpressLogoMobileLight', labelKey: 'logoMobileLight', fallback: 'Logo mobile light' },
-    { key: 'logo_mobile_dark', prop: 'vpressLogoMobileDark', labelKey: 'logoMobileDark', fallback: 'Logo mobile dark' },
+    { key: 'logo_desktop_light', prop: 'voodbuilderLogoDesktopLight', labelKey: 'logoDesktopLight', fallback: 'Logo desktop light' },
+    { key: 'logo_desktop_dark', prop: 'voodbuilderLogoDesktopDark', labelKey: 'logoDesktopDark', fallback: 'Logo desktop dark' },
+    { key: 'logo_mobile_light', prop: 'voodbuilderLogoMobileLight', labelKey: 'logoMobileLight', fallback: 'Logo mobile light' },
+    { key: 'logo_mobile_dark', prop: 'voodbuilderLogoMobileDark', labelKey: 'logoMobileDark', fallback: 'Logo mobile dark' },
 ];
 
 /** @type {Record<string, { height: string, square: string, desktopMax: string, mobileMax: string }>} */
@@ -299,11 +299,11 @@ export const CHROME_LOGO_SIZES = {
     xl: { height: 'h-12', square: 'h-12 w-12', desktopMax: 'max-w-[260px]', mobileMax: 'max-w-[160px]' },
 };
 
-export const CHROME_LOGO_SIZE_PROP = 'vpressLogoSize';
+export const CHROME_LOGO_SIZE_PROP = 'voodbuilderLogoSize';
 export const CHROME_LOGO_SIZE_KEY = 'logo_size';
-export const CHROME_LOGO_SIZE_MOBILE_PROP = 'vpressLogoSizeMobile';
+export const CHROME_LOGO_SIZE_MOBILE_PROP = 'voodbuilderLogoSizeMobile';
 export const CHROME_LOGO_SIZE_MOBILE_KEY = 'logo_size_mobile';
-export const CHROME_LOGO_FULL_WIDTH_PROP = 'vpressLogoFullWidth';
+export const CHROME_LOGO_FULL_WIDTH_PROP = 'voodbuilderLogoFullWidth';
 export const CHROME_LOGO_FULL_WIDTH_KEY = 'logo_full_width';
 export const CHROME_LOGO_DEFAULT_SIZE = 'lg';
 

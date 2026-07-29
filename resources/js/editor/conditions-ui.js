@@ -6,7 +6,7 @@
  * - Each group: all conditions inside must pass (AND)
  */
 
-import { encodeVpressConfig } from './voodbuilder-dynamic-config.js';
+import { encodeBlockConfig } from './voodbuilder-dynamic-config.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import {
     inspectorSelectionNotice,
@@ -88,7 +88,7 @@ function serializeConditions(definition) {
         sets: definition.sets,
     });
 
-    return encodeVpressConfig(json);
+    return encodeBlockConfig(json);
 }
 
 function defaultCondition(options) {

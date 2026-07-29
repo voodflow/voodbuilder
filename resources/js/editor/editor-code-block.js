@@ -8,8 +8,8 @@ import {
     resolveBlockWireframe,
 } from './section-block-meta.js';
 
-const CODE_PROP = 'vpressCodeContent';
-const LANG_PROP = 'vpressCodeLang';
+const CODE_PROP = 'voodbuilderCodeContent';
+const LANG_PROP = 'voodbuilderCodeLang';
 const LEGACY_CODE_ATTR = 'custom-code-plugin__code';
 const EMPTY_PLACEHOLDER = 'Double-click to add code…';
 
@@ -118,11 +118,11 @@ function wireCodeCopyButtons(documentRoot) {
     }
 
     documentRoot.querySelectorAll('[data-code-copy]').forEach((button) => {
-        if (button.dataset.vpressCodeCopyBound) {
+        if (button.dataset.voodbuilderCodeCopyBound) {
             return;
         }
 
-        button.dataset.vpressCodeCopyBound = '1';
+        button.dataset.voodbuilderCodeCopyBound = '1';
 
         button.addEventListener('mousedown', (event) => {
             event.stopPropagation();
@@ -170,8 +170,8 @@ function extractHighlightedInnerHtml(html) {
 function renderCodeBlockComponent(component, options = {}) {
     const language = component.get(LANG_PROP) || 'text';
     const code = component.get(CODE_PROP) || '';
-    const token = (component._vpressCodeRenderToken ?? 0) + 1;
-    component._vpressCodeRenderToken = token;
+    const token = (component._voodbuilderCodeRenderToken ?? 0) + 1;
+    component._voodbuilderCodeRenderToken = token;
 
     component.components(buildCodeBlockHtml(language, code));
 
@@ -199,14 +199,14 @@ function renderCodeBlockComponent(component, options = {}) {
         credentials: 'same-origin',
     })
         .then(async (response) => {
-            if (! response.ok || component._vpressCodeRenderToken !== token) {
+            if (! response.ok || component._voodbuilderCodeRenderToken !== token) {
                 return null;
             }
 
             return response.json();
         })
         .then((payload) => {
-            if (! payload || component._vpressCodeRenderToken !== token) {
+            if (! payload || component._voodbuilderCodeRenderToken !== token) {
                 return;
             }
 
@@ -310,7 +310,7 @@ function migrateLegacyCustomCode(editor, render) {
     });
 }
 
-export function configureVpressCodeBlock(editor, options = {}) {
+export function configureEditorCodeBlock(editor, options = {}) {
     const renderOptions = {
         codeHighlightUrl: options.codeHighlightUrl ?? '',
         csrf: options.csrf ?? '',

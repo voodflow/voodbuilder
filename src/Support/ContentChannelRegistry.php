@@ -118,8 +118,8 @@ final class ContentChannelRegistry
                 return $search::voodbuilderSearch($term, $limit);
             }
 
-            if (method_exists($search, 'vpressSearch')) {
-                return $search::vpressSearch($term, $limit);
+            if (method_exists($search, 'voodbuilderSearch')) {
+                return $search::voodbuilderSearch($term, $limit);
             }
 
             return collect();

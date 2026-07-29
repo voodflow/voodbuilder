@@ -69,7 +69,7 @@ function formatBlockLabel(category, variant) {
 }
 
 function buildPreview(html) {
-    return `<div class="vpress-gjs-block-preview"><div class="vpress-gjs-block-preview__scale">${html}</div></div>`;
+    return `<div class="voodbuilder-editor-block-preview"><div class="voodbuilder-editor-block-preview__scale">${html}</div></div>`;
 }
 
 if (! fs.existsSync(cacheDir)) {

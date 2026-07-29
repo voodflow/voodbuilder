@@ -2,7 +2,7 @@
  * Footer config sync + preview.
  */
 
-import { encodeVpressConfig } from '../../../voodbuilder-dynamic-config.js';
+import { encodeBlockConfig } from '../../../voodbuilder-dynamic-config.js';
 import { runWithSettingsChangeGuard } from '../../../blocks/settings/ui.js';
 import {
     applyChromeLogoSizeClasses,
@@ -25,7 +25,7 @@ const footerRefreshTimers = new WeakMap();
 
 const FOOTER_LOGO_PROPS = new Set(chromeLogoFieldDefs().map((def) => def.prop));
 
-export const FOOTER_SOCIAL_ALIGN_PROP = 'vpressSocialAlign';
+export const FOOTER_SOCIAL_ALIGN_PROP = 'voodbuilderSocialAlign';
 export const FOOTER_SOCIAL_ALIGN_KEY = 'social_align';
 export const FOOTER_SOCIAL_ALIGN_DEFAULT = 'center';
 export const FOOTER_SOCIAL_ALIGNS = ['left', 'center', 'right'];
@@ -79,7 +79,7 @@ function readFooterColumnVisibilityFromConfig(config = {}) {
 }
 
 function countVisibleFooterColumns(root) {
-    return [1, 2, 3, 4].filter((index) => root.get(`vpressShowFooterCol${index}`) === true).length;
+    return [1, 2, 3, 4].filter((index) => root.get(`voodbuilderShowFooterCol${index}`) === true).length;
 }
 
 function resolveShowTaglineFromConfig(config, blockId) {
@@ -143,7 +143,7 @@ function applySiteFooterMenuColumnsLayout(root) {
         return;
     }
 
-    const redistribute = root.get('vpressFooterColumnsRedistribute') === true;
+    const redistribute = root.get('voodbuilderFooterColumnsRedistribute') === true;
     const visibleCount = countVisibleFooterColumns(root);
 
     el.querySelectorAll('[data-voodbuilder-footer-menu-cols]').forEach((node) => {
@@ -159,7 +159,7 @@ function applySiteFooterMenuColumnsLayout(root) {
 
     el.querySelectorAll('[data-voodbuilder-footer-col]').forEach((col) => {
         const index = Number(col.getAttribute('data-voodbuilder-footer-col'));
-        const visible = root.get(`vpressShowFooterCol${index}`) === true;
+        const visible = root.get(`voodbuilderShowFooterCol${index}`) === true;
 
         col.classList.toggle('basis-full', redistribute);
         col.classList.toggle('md:mb-0', redistribute);
@@ -189,14 +189,14 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
         return;
     }
 
-    const showNewsletter = root.get('vpressShowNewsletter') !== false;
-    const showSocial = root.get('vpressShowSocial') !== false;
-    const showMenu = root.get('vpressShowFooterMenu') === true;
-    const showTagline = root.get('vpressShowTagline') !== false;
-    const showCopyright = root.get('vpressShowCopyright') !== false;
+    const showNewsletter = root.get('voodbuilderShowNewsletter') !== false;
+    const showSocial = root.get('voodbuilderShowSocial') !== false;
+    const showMenu = root.get('voodbuilderShowFooterMenu') === true;
+    const showTagline = root.get('voodbuilderShowTagline') !== false;
+    const showCopyright = root.get('voodbuilderShowCopyright') !== false;
     // Match nav: treat unset as on so toggles stay independent and visible immediately.
-    const showBrand = root.get('vpressShowBrand') !== false;
-    const showSiteName = root.get('vpressShowSiteName') !== false;
+    const showBrand = root.get('voodbuilderShowBrand') !== false;
+    const showSiteName = root.get('voodbuilderShowSiteName') !== false;
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
     const logoSizeMobile = normalizeChromeLogoSize(
         root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
@@ -225,7 +225,7 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
             setFooterChromeVisible(node, showBrand || showSiteName || showCopyright || showSocial || showTagline);
         } else if (kind?.startsWith('footer-col-')) {
             const index = Number(kind.replace('footer-col-', ''));
-            setFooterChromeVisible(node, root.get(`vpressShowFooterCol${index}`) === true);
+            setFooterChromeVisible(node, root.get(`voodbuilderShowFooterCol${index}`) === true);
         }
     });
 
@@ -303,28 +303,28 @@ export function syncSiteFooterConfig(component) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
     const el = component.getEl?.();
     const config = {
-        ...(component.get('vpressConfig') ?? {}),
-        show_newsletter: component.get('vpressShowNewsletter') !== false,
-        show_social: component.get('vpressShowSocial') !== false,
-        show_footer_menu: component.get('vpressShowFooterMenu') === true,
-        show_tagline: component.get('vpressShowTagline') !== false,
-        show_copyright: component.get('vpressShowCopyright') !== false,
-        show_brand: component.get('vpressShowBrand') !== false,
-        show_site_name: component.get('vpressShowSiteName') !== false,
+        ...(component.get('voodbuilderConfig') ?? {}),
+        show_newsletter: component.get('voodbuilderShowNewsletter') !== false,
+        show_social: component.get('voodbuilderShowSocial') !== false,
+        show_footer_menu: component.get('voodbuilderShowFooterMenu') === true,
+        show_tagline: component.get('voodbuilderShowTagline') !== false,
+        show_copyright: component.get('voodbuilderShowCopyright') !== false,
+        show_brand: component.get('voodbuilderShowBrand') !== false,
+        show_site_name: component.get('voodbuilderShowSiteName') !== false,
         [FOOTER_SOCIAL_ALIGN_KEY]: normalizeFooterSocialAlign(
-            component.get(FOOTER_SOCIAL_ALIGN_PROP) ?? component.get('vpressConfig')?.[FOOTER_SOCIAL_ALIGN_KEY],
+            component.get(FOOTER_SOCIAL_ALIGN_PROP) ?? component.get('voodbuilderConfig')?.[FOOTER_SOCIAL_ALIGN_KEY],
         ),
         [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
-            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+            component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
         [CHROME_LOGO_SIZE_MOBILE_KEY]: normalizeChromeLogoSize(
             component.get(CHROME_LOGO_SIZE_MOBILE_PROP)
-                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
+                ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_MOBILE_KEY]
                 ?? component.get(CHROME_LOGO_SIZE_PROP)
-                ?? component.get('vpressConfig')?.[CHROME_LOGO_SIZE_KEY],
+                ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
         [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
-            || component.get('vpressConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
+            || component.get('voodbuilderConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -340,29 +340,29 @@ export function syncSiteFooterConfig(component) {
 
     if (taglineText !== '') {
         config.tagline = taglineText;
-    } else if (config.tagline == null && component.get('vpressConfig')?.tagline) {
-        config.tagline = component.get('vpressConfig').tagline;
+    } else if (config.tagline == null && component.get('voodbuilderConfig')?.tagline) {
+        config.tagline = component.get('voodbuilderConfig').tagline;
     }
 
     if (copyrightText !== '') {
         config.copyright = retagCurrentYear(copyrightText);
-    } else if (config.copyright == null && component.get('vpressConfig')?.copyright) {
-        config.copyright = component.get('vpressConfig').copyright;
+    } else if (config.copyright == null && component.get('voodbuilderConfig')?.copyright) {
+        config.copyright = component.get('voodbuilderConfig').copyright;
     }
 
     if (footerBlockHasColumns(blockId)) {
-        config.footer_columns_redistribute = component.get('vpressFooterColumnsRedistribute') === true;
+        config.footer_columns_redistribute = component.get('voodbuilderFooterColumnsRedistribute') === true;
 
         for (let index = 1; index <= 4; index++) {
-            config[`show_footer_col_${index}`] = component.get(`vpressShowFooterCol${index}`) === true;
+            config[`show_footer_col_${index}`] = component.get(`voodbuilderShowFooterCol${index}`) === true;
         }
 
         config.columns = Math.max(1, countVisibleFooterColumns(component));
     }
 
-    component.set('vpressConfig', config, { silent: true });
+    component.set('voodbuilderConfig', config, { silent: true });
     component.addAttributes({
-        'data-voodbuilder-config': encodeVpressConfig(config),
+        'data-voodbuilder-config': encodeBlockConfig(config),
     }, { silent: true });
 }
 
@@ -441,21 +441,21 @@ export function configureSiteFooterTraits(component, editor = null) {
     component.set('stylable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
     component.set('badgable', Boolean(editor?.__voodbuilderChromeLayoutMode), { silent: true });
 
-    const config = component.get('vpressConfig') ?? {};
+    const config = component.get('voodbuilderConfig') ?? {};
     const columnVisibility = readFooterColumnVisibilityFromConfig(config);
 
     for (let index = 1; index <= 4; index++) {
-        component.set(`vpressShowFooterCol${index}`, columnVisibility[index] === true, { silent: true });
+        component.set(`voodbuilderShowFooterCol${index}`, columnVisibility[index] === true, { silent: true });
     }
 
-    component.set('vpressShowNewsletter', config.show_newsletter !== false, { silent: true });
-    component.set('vpressShowSocial', config.show_social !== false, { silent: true });
-    component.set('vpressShowFooterMenu', config.show_footer_menu !== false, { silent: true });
-    component.set('vpressShowTagline', resolveShowTaglineFromConfig(config, blockId), { silent: true });
-    component.set('vpressShowCopyright', config.show_copyright !== false, { silent: true });
-    component.set('vpressShowBrand', config.show_brand !== false, { silent: true });
-    component.set('vpressShowSiteName', config.show_site_name !== false, { silent: true });
-    component.set('vpressFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
+    component.set('voodbuilderShowNewsletter', config.show_newsletter !== false, { silent: true });
+    component.set('voodbuilderShowSocial', config.show_social !== false, { silent: true });
+    component.set('voodbuilderShowFooterMenu', config.show_footer_menu !== false, { silent: true });
+    component.set('voodbuilderShowTagline', resolveShowTaglineFromConfig(config, blockId), { silent: true });
+    component.set('voodbuilderShowCopyright', config.show_copyright !== false, { silent: true });
+    component.set('voodbuilderShowBrand', config.show_brand !== false, { silent: true });
+    component.set('voodbuilderShowSiteName', config.show_site_name !== false, { silent: true });
+    component.set('voodbuilderFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
     component.set(
         FOOTER_SOCIAL_ALIGN_PROP,
         normalizeFooterSocialAlign(config[FOOTER_SOCIAL_ALIGN_KEY] ?? FOOTER_SOCIAL_ALIGN_DEFAULT),
@@ -492,7 +492,7 @@ export function configureSiteFooterTraits(component, editor = null) {
 }
 
 /**
- * Persist tagline/copyright edits into vpressConfig when leaving the RTE.
+ * Persist tagline/copyright edits into voodbuilderConfig when leaving the RTE.
  *
  * @param {object|null} editor
  */
@@ -525,7 +525,7 @@ export function applySiteFooterColumns(component, columns) {
     const visibility = readFooterColumnVisibilityFromConfig({ columns });
 
     for (let index = 1; index <= 4; index++) {
-        component.set(`vpressShowFooterCol${index}`, visibility[index] === true, { silent: true });
+        component.set(`voodbuilderShowFooterCol${index}`, visibility[index] === true, { silent: true });
     }
 
     syncSiteFooterConfig(component);

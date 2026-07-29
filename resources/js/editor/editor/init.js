@@ -12,7 +12,7 @@ import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';
 import { createInspectorEmptyState } from '../inspector-empty-state.js';
-import vpressEditorPlugin, {
+import voodbuilderEditorPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
     applySiteFooterSettingsPreview,
@@ -33,7 +33,7 @@ import vpressEditorPlugin, {
     registerSiteNavChromeButtonType,
     restoreContainerAuthorClasses,
     sanitizeBlockHtml,
-    syncVpressDynamicAttributes,
+    syncDynamicBlockAttributes,
     syncSiteHeaderConfig,
     syncSiteFooterConfig,
 } from '../plugins/voodbuilder.js';
@@ -58,7 +58,7 @@ import {
 import { bootEditorRegistries } from './compatibility-bridge.js';
 import { registerInspectorColorFix, installGlobalColorInputValueFix } from '../inspector-color-fix.js';
 import { guardEditorLayersRender } from '../tailwind-visual-style.js';
-import { configureVpressCodeBlock } from '../editor-code-block.js';
+import { configureEditorCodeBlock } from '../editor-code-block.js';
 import { migrateEditorComponents, purgeBroadSectionBackgroundRules, purgeLegacyEditorStyles } from '../theme-tokens.js';
 import { registerBindingsUi, syncBindingsForExport, syncRepeatBindingsForExport } from '../bindings-ui.js';
 import { registerCanvasComponentToolbar, voodbuilderCopyCommandsPlugin } from '../canvas-component-toolbar.js';
@@ -119,7 +119,7 @@ import { registerBlocksContextMenu } from '../blocks-context-menu.js';
 import { registerBlocksLibraryRenderHook } from '../blocks-library-sync.js';
 import { registerSectionBlockTagging } from '../section-block-tagging.js';
 import { registerSectionNestingGuard } from '../section-nesting-guard.js';
-import { encodeVpressConfig, parseVpressConfig, serializeVpressConfig } from '../voodbuilder-dynamic-config.js';
+import { encodeBlockConfig, parseBlockConfig, serializeBlockConfig } from '../voodbuilder-dynamic-config.js';
 import { registerDropzoneTypes } from '../dropzone-types.js';
 import { registerInnerDropSlots } from '../inner-drop-slots.js';
 
@@ -152,9 +152,9 @@ function hasProjectData(project) {
     return true;
 }
 
-function normalizeVpressDynamicComponents(editor) {
+function normalizeDynamicBlockComponents(editor) {
     safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]').forEach((component) => {
-        syncVpressDynamicAttributes(component);
+        syncDynamicBlockAttributes(component);
 
         if (isSiteNavBlock(component.getAttributes()['data-voodbuilder-block'])) {
             syncSiteHeaderConfig(component);
@@ -645,7 +645,7 @@ function createDynamicBlocksPending() {
     };
 }
 
-export function initVpressEditor(container, options = {}) {
+export function initVoodbuilderEditor(container, options = {}) {
     // Before grapesjs.init — StyleManager sets color inputs during construction.
     installGlobalColorInputValueFix();
 
@@ -683,7 +683,7 @@ export function initVpressEditor(container, options = {}) {
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
-        plugins: [voodbuilderCopyCommandsPlugin, voodbuilderEarlyTypesPlugin, grapesjsBlocksBasic, ...pluginBundle.plugins, vpressEditorPlugin],
+        plugins: [voodbuilderCopyCommandsPlugin, voodbuilderEarlyTypesPlugin, grapesjsBlocksBasic, ...pluginBundle.plugins, voodbuilderEditorPlugin],
         pluginsOpts: {
             [voodbuilderCopyCommandsPlugin]: {
                 labels: options.labels ?? {},
@@ -704,7 +704,7 @@ export function initVpressEditor(container, options = {}) {
                 blocks: [],
             },
             ...pluginBundle.pluginsOpts,
-            [vpressEditorPlugin]: {
+            [voodbuilderEditorPlugin]: {
                 blocks: options.blocks ?? [],
                 siteNavDefaults: options.siteNavDefaults ?? { stickyNav: false },
                 footerColumnOptions: options.footerColumnOptions ?? {},
@@ -959,7 +959,7 @@ export function initVpressEditor(container, options = {}) {
     // Forms plugin registers `button` after early-types; re-add chrome type so icons win.
     registerSiteNavChromeButtonType(editor);
 
-    configureVpressCodeBlock(editor, {
+    configureEditorCodeBlock(editor, {
         codeHighlightUrl: options.codeHighlightUrl,
         csrf: options.csrf,
     });
@@ -1412,7 +1412,7 @@ function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
 }
 
 function dynamicBlockRenderFingerprint(blockId, config) {
-    return `${blockId}::${serializeVpressConfig(config ?? {})}`;
+    return `${blockId}::${serializeBlockConfig(config ?? {})}`;
 }
 
 async function refreshDynamicBlockComponent(editor, renderUrl, component) {
@@ -1457,7 +1457,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             syncSiteFooterConfig(component);
         }
 
-        const config = component.get('vpressConfig') ?? parseVpressConfig(attributes['data-voodbuilder-config']);
+        const config = component.get('voodbuilderConfig') ?? parseBlockConfig(attributes['data-voodbuilder-config']);
         const fingerprint = dynamicBlockRenderFingerprint(blockId, config);
 
         // Skip identical re-fetch/remount (footer refresh was remounting Google Maps forever).
@@ -1470,7 +1470,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         const params = new URLSearchParams({
             block: blockId,
-            config: serializeVpressConfig(config),
+            config: serializeBlockConfig(config),
         });
 
         const response = await fetch(`${renderUrl}?${params.toString()}`, {
@@ -1505,8 +1505,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             return;
         }
 
-        const freshConfig = parseVpressConfig(
-            fresh.getAttribute('data-voodbuilder-config') ?? serializeVpressConfig(config),
+        const freshConfig = parseBlockConfig(
+            fresh.getAttribute('data-voodbuilder-config') ?? serializeBlockConfig(config),
         );
         const freshFingerprint = dynamicBlockRenderFingerprint(
             fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -1523,10 +1523,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         if (isSiteNavBlock(blockId)) {
             const authorContainerClasses = captureContainerAuthorClasses(component);
-            component.set('vpressConfig', freshConfig, { silent: true });
+            component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
-                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeBlockConfig(freshConfig),
                 class: fresh.getAttribute('class') ?? 'voodbuilder-editor-dynamic',
             });
             component.components(fresh.innerHTML);
@@ -1583,10 +1583,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 restoreContainerAuthorClasses(component, authorContainerClasses);
             }
         } else {
-            component.set('vpressConfig', freshConfig, { silent: true });
+            component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
-                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeVpressConfig(freshConfig),
+                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeBlockConfig(freshConfig),
                 class: fresh.getAttribute('class') ?? 'voodbuilder-editor-dynamic',
                 ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
                     ? { 'data-voodbuilder-hydrate-slots': '1' }
@@ -1885,7 +1885,7 @@ function mountFrontendEditor() {
 
     root.dataset.voodbuilderGrapesjsMounted = 'true';
 
-    const editor = initVpressEditor(canvas, {
+    const editor = initVoodbuilderEditor(canvas, {
         height: '100%',
         noticeOnUnload: true,
         exitUrl: config.exitUrl,

@@ -80,9 +80,9 @@ function syncSettingsFormValues(mount, root) {
             const raw = root.get(name);
             // Nav/footer brand toggles default to on when unset (`!== false`).
             if (
-                name === 'vpressShowSiteName'
-                || name === 'vpressShowLogo'
-                || name === 'vpressShowBrand'
+                name === 'voodbuilderShowSiteName'
+                || name === 'voodbuilderShowLogo'
+                || name === 'voodbuilderShowBrand'
             ) {
                 input.checked = raw !== false;
             } else {

@@ -41,26 +41,4 @@ PHP);
         $this->assertStringContainsString("'doc_layout' => 'voodbuilder::layouts.doc'", $contents);
         $this->assertStringContainsString('LocaleSwitcher::currentPageUrlWithLocale', $contents);
     }
-
-    public function test_it_upgrades_vpress_layouts_to_voodbuilder(): void
-    {
-        File::ensureDirectoryExists(config_path());
-
-        File::put(config_path('vtuts.php'), <<<'PHP'
-<?php
-
-return [
-    'layout' => 'vpress::layouts.page',
-    'doc_layout' => 'vpress::layouts.doc',
-];
-PHP);
-
-        $this->assertTrue(ConfigureVtutsForVoodbuilder::apply());
-
-        $contents = File::get(config_path('vtuts.php'));
-
-        $this->assertStringContainsString("'layout' => 'voodbuilder::layouts.page'", $contents);
-        $this->assertStringContainsString("'doc_layout' => 'voodbuilder::layouts.doc'", $contents);
-        $this->assertStringNotContainsString('vpress::layouts', $contents);
-    }
 }

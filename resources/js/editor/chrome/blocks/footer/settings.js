@@ -95,9 +95,9 @@ export function registerFooterSettings(editor) {
                     panels.layout.append(
                         createCheckboxField({
                             label: label('footerShowMenu', 'Show footer menu'),
-                            name: 'vpressShowFooterMenu',
-                            checked: root.get('vpressShowFooterMenu') === true,
-                            onChange: (checked) => applyChange('vpressShowFooterMenu', checked),
+                            name: 'voodbuilderShowFooterMenu',
+                            checked: root.get('voodbuilderShowFooterMenu') === true,
+                            onChange: (checked) => applyChange('voodbuilderShowFooterMenu', checked),
                         }),
                     );
                 }
@@ -106,9 +106,9 @@ export function registerFooterSettings(editor) {
                     panels.layout.append(
                         createCheckboxField({
                             label: label('footerShowNewsletter', 'Show newsletter'),
-                            name: 'vpressShowNewsletter',
-                            checked: root.get('vpressShowNewsletter') !== false,
-                            onChange: (checked) => applyChange('vpressShowNewsletter', checked),
+                            name: 'voodbuilderShowNewsletter',
+                            checked: root.get('voodbuilderShowNewsletter') !== false,
+                            onChange: (checked) => applyChange('voodbuilderShowNewsletter', checked),
                         }),
                     );
                 }
@@ -132,33 +132,33 @@ export function registerFooterSettings(editor) {
                 createCheckboxGrid([
                     createCheckboxField({
                         label: label('footerShowLogo', 'Show logo'),
-                        name: 'vpressShowBrand',
-                        checked: root.get('vpressShowBrand') !== false,
-                        onChange: (checked) => applyChange('vpressShowBrand', checked),
+                        name: 'voodbuilderShowBrand',
+                        checked: root.get('voodbuilderShowBrand') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowBrand', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowSiteName', 'Show site name'),
-                        name: 'vpressShowSiteName',
-                        checked: root.get('vpressShowSiteName') !== false,
-                        onChange: (checked) => applyChange('vpressShowSiteName', checked),
+                        name: 'voodbuilderShowSiteName',
+                        checked: root.get('voodbuilderShowSiteName') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSiteName', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowTagline', 'Show tagline'),
-                        name: 'vpressShowTagline',
-                        checked: root.get('vpressShowTagline') !== false,
-                        onChange: (checked) => applyChange('vpressShowTagline', checked),
+                        name: 'voodbuilderShowTagline',
+                        checked: root.get('voodbuilderShowTagline') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowTagline', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowCopyright', 'Show copyright'),
-                        name: 'vpressShowCopyright',
-                        checked: root.get('vpressShowCopyright') !== false,
-                        onChange: (checked) => applyChange('vpressShowCopyright', checked),
+                        name: 'voodbuilderShowCopyright',
+                        checked: root.get('voodbuilderShowCopyright') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowCopyright', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowSocial', 'Show social icons'),
-                        name: 'vpressShowSocial',
-                        checked: root.get('vpressShowSocial') !== false,
-                        onChange: (checked) => applyChange('vpressShowSocial', checked),
+                        name: 'voodbuilderShowSocial',
+                        checked: root.get('voodbuilderShowSocial') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSocial', checked),
                     }),
                 ]),
             );
@@ -192,9 +192,9 @@ export function registerFooterSettings(editor) {
                     panels.columns.append(
                         createCheckboxField({
                             label: footerColumnLabel(index, gjsEditor),
-                            name: `vpressShowFooterCol${index}`,
-                            checked: root.get(`vpressShowFooterCol${index}`) === true,
-                            onChange: (checked) => applyChange(`vpressShowFooterCol${index}`, checked),
+                            name: `voodbuilderShowFooterCol${index}`,
+                            checked: root.get(`voodbuilderShowFooterCol${index}`) === true,
+                            onChange: (checked) => applyChange(`voodbuilderShowFooterCol${index}`, checked),
                         }),
                     );
                 }
@@ -202,9 +202,9 @@ export function registerFooterSettings(editor) {
                 panels.columns.append(
                     createCheckboxField({
                         label: label('footerColumnsRedistribute', 'Redistribute visible columns'),
-                        name: 'vpressFooterColumnsRedistribute',
-                        checked: root.get('vpressFooterColumnsRedistribute') === true,
-                        onChange: (checked) => applyChange('vpressFooterColumnsRedistribute', checked),
+                        name: 'voodbuilderFooterColumnsRedistribute',
+                        checked: root.get('voodbuilderFooterColumnsRedistribute') === true,
+                        onChange: (checked) => applyChange('voodbuilderFooterColumnsRedistribute', checked),
                     }),
                 );
             }

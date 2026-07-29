@@ -31,7 +31,7 @@ Documentation and Tutorials share chrome when only one side is assigned, so a â€
 
 ## Plugin layout (first-party: vdocs, vtuts)
 
-Each package ships a **standalone parachute layout** (`vdocs::layouts.*`, `vtuts::layouts.*`) that works without Voodbuilder/Vpress.
+Each package ships a **standalone parachute layout** (`vdocs::layouts.*`, `vtuts::layouts.*`) that works without Voodbuilder.
 
 When integrated, host `config/*.php` points layouts at Voodbuilder views:
 
