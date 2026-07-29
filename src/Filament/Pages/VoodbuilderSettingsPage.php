@@ -200,7 +200,7 @@ class VoodbuilderSettingsPage extends Page
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($faviconTypes)
                                                 ->maxSize(512)
-                                                ->helperText(__('Used when pages do not define their own favicon.')),
+                                                ->helperText(__('Used when pages do not define their own favicon. Leave empty to use the Voodflow mark.')),
                                         ),
                                     ]),
                             ]),

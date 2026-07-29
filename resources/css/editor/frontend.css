@@ -3900,6 +3900,8 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-templates-library.is-selection-mode .voodbuilder-editor-page-template-block__selection-check {
     display: inline-flex;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .voodbuilder-editor-page-template-block__selection-check.is-checked {

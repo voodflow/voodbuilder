@@ -106,14 +106,17 @@
     @if ($suppressHostChrome)
         <style id="voodbuilder-editor-host-chrome-critical">{!! EditorHostChrome::criticalHideCss() !!}</style>
     @endif
+    {{-- Page JIT CSS must load before chrome CSS: page sheets often re-emit base utilities
+         (.flex-wrap, .w-full, .text-center) without md: variants and would otherwise win the
+         cascade over the chrome layout's complete responsive rules. --}}
+    {{-- Livewire assets auto-inject only when a component is on the page (inject_assets=true). --}}
+    @stack('head')
     @if ($chromeRendered['css'] !== '')
         <style id="voodbuilder-chrome-layout-css">{!! $chromeRendered['css'] !!}</style>
     @endif
     @if ($chromeShellCss !== '')
         <style id="voodbuilder-chrome-shell-theme">{!! $chromeShellCss !!}</style>
     @endif
-    {{-- Livewire assets auto-inject only when a component is on the page (inject_assets=true). --}}
-    @stack('head')
 </head>
 <body
     class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}"

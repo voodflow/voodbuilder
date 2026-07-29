@@ -196,15 +196,7 @@ export function resolveTemplateFromBlockElement(editor, blockEl, catalog = []) {
 }
 
 export function tagPageTemplateBlockElements(editor) {
-    editor.BlockManager?.getAll?.()?.forEach((block) => {
-        const blockId = String(block.get?.('id') ?? block.id ?? '');
-
-        if (! isPageTemplateBlockId(blockId)) {
-            return;
-        }
-
-        const el = block.view?.el;
-
+    const stamp = (el, blockId) => {
         if (! el) {
             return;
         }
@@ -217,6 +209,35 @@ export function tagPageTemplateBlockElements(editor) {
 
         if (templateId !== '') {
             el.setAttribute('data-voodbuilder-template-id', templateId);
+        }
+    };
+
+    editor.BlockManager?.getAll?.()?.forEach((block) => {
+        const blockId = String(block.get?.('id') ?? block.id ?? '');
+
+        if (! isPageTemplateBlockId(blockId)) {
+            return;
+        }
+
+        stamp(block.view?.el, blockId);
+    });
+
+    // Also stamp cards that GrapesJS rendered without a ready view.el reference yet.
+    const container = editor.BlockManager?.getContainer?.();
+
+    container?.querySelectorAll?.('.gjs-block').forEach((el) => {
+        if (el.hasAttribute('data-voodbuilder-template-id')) {
+            return;
+        }
+
+        const blockId = String(
+            el.getAttribute('data-gjs-block-id')
+                ?? el.id
+                ?? '',
+        );
+
+        if (isPageTemplateBlockId(blockId)) {
+            stamp(el, blockId);
         }
     });
 }

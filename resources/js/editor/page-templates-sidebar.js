@@ -315,16 +315,9 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 return;
             }
 
+            // Same as Components: model flag only. Selection relies on capture mousedown
+            // (preventDefault + stopPropagation) before BlockView.startDrag / native DnD.
             block.set('draggable', ! active);
-
-            // GrapesJS BlockView.render() sets the DOM `draggable` attr from DnD capability,
-            // ignoring model.draggable — force the attribute so HTML5 drag cannot start.
-            const el = block.view?.el;
-
-            if (el) {
-                el.draggable = ! active;
-                el.setAttribute('draggable', active ? 'false' : 'true');
-            }
         });
     }
 
@@ -345,68 +338,106 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         delete blockEl.dataset.voodbuilderTemplateSelectBound;
     }
 
-    function bindBlockSelectionHandler(blockEl) {
-        // Selection is handled by the delegated BlockManager container listener
-        // (same pattern as Components). Per-card capture toggles raced with GrapesJS
-        // BlockView mousedown and left the container early-return with no toggle.
+    function bindBlockSelectionHandler(blockEl, templateId) {
         unbindBlockSelectionHandler(blockEl);
+
+        const key = String(templateId ?? '').trim();
+
+        if (key === '') {
+            return;
+        }
+
+        const onMouseDown = (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+
+            if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            toggleTemplateSelection({ id: key });
+        };
+
+        const onClick = (event) => {
+            if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        };
+
+        blockEl.__voodbuilderOnTemplateSelect = onMouseDown;
+        blockEl.__voodbuilderOnTemplateSelectClick = onClick;
+        blockEl.addEventListener('mousedown', onMouseDown, true);
+        blockEl.addEventListener('click', onClick, true);
         blockEl.dataset.voodbuilderTemplateSelectBound = 'true';
     }
 
     function updateBlocksSelectionState() {
-        const container = editor.BlockManager?.getContainer?.();
+        const roots = [
+            blocksMountNode,
+            libraryRoot,
+            editor.BlockManager?.getContainer?.(),
+        ].filter(Boolean);
 
-        if (! container) {
-            return;
+        const seen = new Set();
+
+        for (const root of roots) {
+            root.querySelectorAll('.gjs-block').forEach((blockEl) => {
+                if (seen.has(blockEl)) {
+                    return;
+                }
+
+                seen.add(blockEl);
+
+                if (! isPageTemplateBlockElement(editor, blockEl)) {
+                    return;
+                }
+
+                const item = resolveTemplateFromBlockElement(editor, blockEl, catalog);
+                const templateId = item ? String(item.id) : String(blockEl.getAttribute('data-voodbuilder-template-id') ?? '');
+                const isSelected = templateId !== '' && selectedIds.has(templateId);
+
+                if (templateId !== '') {
+                    blockEl.setAttribute('data-voodbuilder-template-id', templateId);
+                }
+
+                blockEl.classList.toggle('is-selected', selectionMode && isSelected);
+                blockEl.classList.toggle('is-selectable', selectionMode);
+                blockEl.setAttribute('aria-pressed', selectionMode && isSelected ? 'true' : 'false');
+
+                let check = blockEl.querySelector('[data-voodbuilder-template-selection-check]');
+                blockEl.querySelector('[data-voodbuilder-template-selection-hit]')?.remove();
+
+                if (selectionMode) {
+                    if (! check) {
+                        check = document.createElement('span');
+                        check.className = 'voodbuilder-editor-page-template-block__selection-check';
+                        check.dataset.voodbuilderTemplateSelectionCheck = '';
+                        check.setAttribute('aria-hidden', 'true');
+                        check.innerHTML = lucideIcon('check', 12);
+                        blockEl.appendChild(check);
+                    }
+
+                    if (templateId !== '') {
+                        check.dataset.voodbuilderTemplateId = templateId;
+                        bindBlockSelectionHandler(blockEl, templateId);
+                    }
+
+                    check.classList.toggle('is-checked', isSelected);
+                    check.classList.toggle('is-empty', ! isSelected);
+                } else {
+                    unbindBlockSelectionHandler(blockEl);
+                    check?.remove();
+                }
+            });
         }
-
-        container.querySelectorAll('.gjs-block').forEach((blockEl) => {
-            if (! isPageTemplateBlockElement(editor, blockEl)) {
-                return;
-            }
-
-            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog);
-            const templateId = item ? String(item.id) : String(blockEl.getAttribute('data-voodbuilder-template-id') ?? '');
-            const isSelected = templateId !== '' && selectedIds.has(templateId);
-
-            if (templateId !== '') {
-                blockEl.setAttribute('data-voodbuilder-template-id', templateId);
-            }
-
-            blockEl.classList.toggle('is-selected', selectionMode && isSelected);
-            blockEl.classList.toggle('is-selectable', selectionMode);
-            blockEl.setAttribute('aria-pressed', selectionMode && isSelected ? 'true' : 'false');
-
-            // Checkbox is visual-only (pointer-events: none); clicks hit the card.
-            let check = blockEl.querySelector('[data-voodbuilder-template-selection-check]');
-            blockEl.querySelector('[data-voodbuilder-template-selection-hit]')?.remove();
-
-            if (selectionMode) {
-                if (templateId !== '') {
-                    blockEl.draggable = false;
-                    blockEl.setAttribute('draggable', 'false');
-                }
-
-                if (! check) {
-                    check = document.createElement('span');
-                    check.className = 'voodbuilder-editor-page-template-block__selection-check';
-                    check.dataset.voodbuilderTemplateSelectionCheck = '';
-                    check.setAttribute('aria-hidden', 'true');
-                    check.innerHTML = lucideIcon('check', 12);
-                    blockEl.appendChild(check);
-                }
-
-                check.classList.toggle('is-checked', isSelected);
-                check.classList.toggle('is-empty', ! isSelected);
-
-                if (templateId !== '') {
-                    bindBlockSelectionHandler(blockEl);
-                }
-            } else {
-                unbindBlockSelectionHandler(blockEl);
-                check?.remove();
-            }
-        });
     }
 
     function setSelectionMode(active) {
@@ -422,8 +453,8 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         syncTemplateBlockDragState(selectionMode);
         updateSelectionUi();
         refreshTemplateLibraryUi();
+        bindTemplateLibraryBlockInteractions();
 
-        // BlockManager may still be settling category open state / DOM after expand.
         window.requestAnimationFrame(() => {
             if (selectionMode) {
                 expandLibraryCategories(editor, 'templates');
@@ -432,13 +463,13 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             refreshTemplateLibraryUi();
             bindTemplateLibraryBlockInteractions();
 
-            // Second frame: category open can recreate card DOM after the first paint.
             window.requestAnimationFrame(() => {
                 if (editor.__voodbuilderTemplateSelectionMode !== selectionMode) {
                     return;
                 }
 
                 refreshTemplateLibraryUi();
+                bindTemplateLibraryBlockInteractions();
             });
         });
     }
@@ -482,24 +513,21 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
     }
 
     function bindTemplateLibraryBlockInteractions() {
-        // Per-card listeners are attached in updateBlocksSelectionState.
-        // Keep a single delegated fallback on the BlockManager container for cards
-        // that were not decorated yet (same mount point as Components).
-        const attachToContainer = () => {
-            const container = editor.BlockManager?.getContainer?.();
-
-            if (! container || container.dataset.voodbuilderTemplateLibraryBound === 'v2') {
+        // Mirror Components: capture mousedown before GrapesJS BlockView.startDrag.
+        const attachToRoot = (root) => {
+            if (! root) {
                 return;
             }
 
-            container.dataset.voodbuilderTemplateLibraryBound = 'v2';
+            // Always (re)bind — BlockManager.render() recreates cards; a sticky "bound"
+            // flag left us listening on a stale tree while new cards had no handlers.
+            if (root.__voodbuilderTemplateSelectHandler) {
+                root.removeEventListener('mousedown', root.__voodbuilderTemplateSelectHandler, true);
+                root.removeEventListener('click', root.__voodbuilderTemplateClickHandler, true);
+            }
 
-            container.addEventListener('mousedown', (event) => {
+            const handleSelectMouseDown = (event) => {
                 if (event.button !== 0) {
-                    return;
-                }
-
-                if (editor.__voodbuilderActiveLibrary !== 'templates') {
                     return;
                 }
 
@@ -509,13 +537,15 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
                 const blockEl = event.target.closest?.('.gjs-block');
 
-                if (! blockEl || ! container.contains(blockEl)) {
+                if (! blockEl || ! root.contains(blockEl)) {
                     return;
                 }
 
                 if (! isPageTemplateBlockElement(editor, blockEl)) {
                     return;
                 }
+
+                tagPageTemplateBlockElements(editor);
 
                 const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
                     ?? (blockEl.getAttribute('data-voodbuilder-template-id')
@@ -526,52 +556,50 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                     return;
                 }
 
-                // Capture on the shared BlockManager container (same as Components) so we
-                // run before GrapesJS BlockView drag handlers on the card.
                 event.preventDefault();
                 event.stopPropagation();
                 event.stopImmediatePropagation();
                 toggleTemplateSelection(item);
-            }, true);
+            };
 
-            container.addEventListener('click', (event) => {
-                if (editor.__voodbuilderActiveLibrary !== 'templates') {
-                    return;
-                }
-
+            const handleSelectClick = (event) => {
                 if (editor.__voodbuilderTemplateSelectionMode !== true) {
                     return;
                 }
 
                 const blockEl = event.target.closest?.('.gjs-block');
 
-                if (! blockEl || ! container.contains(blockEl) || ! isPageTemplateBlockElement(editor, blockEl)) {
+                if (! blockEl || ! root.contains(blockEl) || ! isPageTemplateBlockElement(editor, blockEl)) {
                     return;
                 }
 
                 event.preventDefault();
                 event.stopPropagation();
                 event.stopImmediatePropagation();
-            }, true);
+            };
+
+            root.__voodbuilderTemplateSelectHandler = handleSelectMouseDown;
+            root.__voodbuilderTemplateClickHandler = handleSelectClick;
+            root.dataset.voodbuilderTemplateLibraryBound = 'v4';
+            root.addEventListener('mousedown', handleSelectMouseDown, true);
+            root.addEventListener('click', handleSelectClick, true);
         };
 
         refreshTemplateLibraryUi();
-        attachToContainer();
+        attachToRoot(libraryRoot);
+        attachToRoot(blocksMountNode);
+        attachToRoot(editor.BlockManager?.getContainer?.());
+        attachToRoot(templatesMount);
 
         if (! editor.__voodbuilderTemplateLibraryInteractionsHooked) {
             editor.__voodbuilderTemplateLibraryInteractionsHooked = true;
 
             const reattach = () => {
                 window.requestAnimationFrame(() => {
-                    // BlockManager.render() keeps the same container node, but block cards
-                    // are recreated — re-decorate and re-bind per-card handlers.
-                    const container = editor.BlockManager?.getContainer?.();
-
-                    if (container && ! container.isConnected) {
-                        delete container.dataset.voodbuilderTemplateLibraryBound;
-                    }
-
-                    attachToContainer();
+                    attachToRoot(libraryRoot);
+                    attachToRoot(blocksMountNode);
+                    attachToRoot(editor.BlockManager?.getContainer?.());
+                    attachToRoot(templatesMount);
                     refreshTemplateLibraryUi();
                 });
             };

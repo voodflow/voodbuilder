@@ -566,6 +566,7 @@ final class VoodbuilderThemeTokenMigrator
         }
 
         $tokens = array_map(static fn (string $token): string => self::migrateToken($token), $tokens);
+        $tokens = self::migrateLegacyEditorNamespaceClasses($tokens);
         $tokens = self::migrateLegacyButtonClassesArray($tokens);
         $tokens = self::normalizeBrandBackgroundClasses($tokens);
         $tokens = self::normalizeLegacyFlexColumnWidths($tokens);
@@ -698,6 +699,25 @@ final class VoodbuilderThemeTokenMigrator
         }
 
         return array_values(array_unique(array_merge($additions, $tokens)));
+    }
+
+    /**
+     * Pre-rename markup used `voodbuilder-gjs-*` (GrapesJS era). Theme + chrome-block-utilities
+     * target `voodbuilder-editor-*`; without this remap, public pages lose scoped footer/nav layout
+     * while the editor canvas still matches via data-voodbuilder-block selectors.
+     *
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function migrateLegacyEditorNamespaceClasses(array $tokens): array
+    {
+        return array_map(static function (string $token): string {
+            if (str_starts_with($token, 'voodbuilder-gjs-')) {
+                return 'voodbuilder-editor-'.substr($token, strlen('voodbuilder-gjs-'));
+            }
+
+            return $token;
+        }, $tokens);
     }
 
     /**

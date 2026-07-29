@@ -216,6 +216,15 @@ class VoodbuilderSettings extends Model
         return $uploaded ?? \Voodflow\Voodbuilder\Support\BrandMarkAssets::url();
     }
 
+    /**
+     * Uploaded favicon, or the Voodflow brand mark when none is configured.
+     */
+    public static function faviconUrl(): string
+    {
+        return static::assetUrl('favicon')
+            ?? \Voodflow\Voodbuilder\Support\BrandMarkAssets::faviconUrl();
+    }
+
     public static function logoMobileUrl(): ?string
     {
         // Only a dedicated mobile upload — chrome resolve falls back across the matrix.

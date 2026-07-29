@@ -7,6 +7,13 @@
 
 @extends($page->layoutView())
 
+@php($editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder() ? $page->renderedStyles() : null)
+@if (filled($editorStyles))
+    @push('head')
+        <style id="voodbuilder-page-css">{!! $editorStyles !!}</style>
+    @endpush
+@endif
+
 @if ($editorEditor ?? false)
     @section('body_class_extra')
         voodbuilder-editor-editing
@@ -65,11 +72,6 @@
             @foreach (\Voodflow\Voodbuilder\Support\Editor\EditorCanvas::publishedStyleUrls() as $publishedStyleUrl)
                 <link rel="stylesheet" href="{{ $publishedStyleUrl }}">
             @endforeach
-
-            @php($editorStyles = $page->usesEditorBuilder() ? $page->renderedStyles() : null)
-            @if (filled($editorStyles))
-                <style>{!! $editorStyles !!}</style>
-            @endif
 
             {!! $page->renderedContent() !!}
 

@@ -28,8 +28,8 @@ final class VoodbuilderSeo
             $seoData->site_name = VoodbuilderSettings::siteTitle();
         }
 
-        if (blank($seoData->favicon) && filled($settings['favicon'] ?? null)) {
-            $seoData->favicon = VoodbuilderSettings::assetUrl('favicon');
+        if (blank($seoData->favicon)) {
+            $seoData->favicon = VoodbuilderSettings::faviconUrl();
         }
 
         if (blank($seoData->twitter_username) && filled($settings['seo_twitter_username'] ?? null)) {

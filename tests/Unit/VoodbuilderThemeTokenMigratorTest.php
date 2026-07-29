@@ -399,6 +399,22 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringNotContainsString('border-opacity-60', $migrated);
     }
 
+    public function test_migrates_legacy_gjs_editor_namespace_classes(): void
+    {
+        $classes = VoodbuilderThemeTokenMigrator::migrateClassList(
+            'voodbuilder-gjs-dynamic voodbuilder-gjs-footer w-full',
+        );
+
+        $this->assertSame('voodbuilder-editor-dynamic voodbuilder-editor-footer w-full', $classes);
+
+        $html = '<footer class="voodbuilder-gjs-footer"><div class="voodbuilder-gjs-container px-5"></div></footer>';
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('voodbuilder-editor-footer', $migrated);
+        $this->assertStringContainsString('voodbuilder-editor-container', $migrated);
+        $this->assertStringNotContainsString('voodbuilder-gjs-', $migrated);
+    }
+
     public function test_preserves_columns_that_already_have_responsive_widths(): void
     {
         $classes = VoodbuilderThemeTokenMigrator::migrateClassList('p-2 lg:w-1/3 md:w-1/2 w-full');
