@@ -10,6 +10,9 @@ use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Configured Menu Item Type.
+ */
 final class ConfiguredMenuItemType implements MenuItemTypeHandler
 {
     /**

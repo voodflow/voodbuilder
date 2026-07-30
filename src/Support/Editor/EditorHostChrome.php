@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * Editor Host Chrome.
+ */
 final class EditorHostChrome
 {
     public static function shouldSuppressHostRender(?bool $editorEditor = null): bool

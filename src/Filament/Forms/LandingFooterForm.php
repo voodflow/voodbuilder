@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\LandingFooterSupport;
 use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
 
+/**
+ * Landing Footer Form.
+ */
 final class LandingFooterForm
 {
     /** @return array<int, mixed> */

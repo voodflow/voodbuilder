@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 use DOMDocument;
 use DOMElement;
 
+/**
+ * Editor Binding Storage Normalizer.
+ */
 final class EditorBindingStorageNormalizer
 {
     public function __construct(

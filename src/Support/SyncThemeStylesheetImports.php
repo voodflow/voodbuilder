@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Sync Theme Stylesheet Imports.
+ */
 final class SyncThemeStylesheetImports
 {
     /**

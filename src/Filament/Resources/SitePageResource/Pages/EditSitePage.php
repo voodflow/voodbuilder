@@ -14,6 +14,9 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageHome;
 
+/**
+ * Edit Site Page.
+ */
 class EditSitePage extends EditRecord
 {
     use ConfirmsSitePageHomeTakeover;

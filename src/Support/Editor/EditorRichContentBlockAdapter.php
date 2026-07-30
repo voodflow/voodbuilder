@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 
+/**
+ * Editor Rich Content Block Adapter.
+ */
 final class EditorRichContentBlockAdapter
 {
     /**

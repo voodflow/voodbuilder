@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Voodflow\Voodbuilder\Support\TranslationGroupQuery;
 
+/**
+ * Scopes List Table To Canonical Translation Groups trait.
+ */
 trait ScopesListTableToCanonicalTranslationGroups
 {
     protected function getTableQuery(): Builder|Relation|null

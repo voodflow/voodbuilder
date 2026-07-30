@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
+/**
+ * Binding Field.
+ */
 final readonly class BindingField
 {
     public const TYPE_TEXT = 'text';

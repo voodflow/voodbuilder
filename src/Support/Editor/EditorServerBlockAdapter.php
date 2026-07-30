@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
 
+/**
+ * Editor Server Block Adapter.
+ */
 final class EditorServerBlockAdapter
 {
     /**

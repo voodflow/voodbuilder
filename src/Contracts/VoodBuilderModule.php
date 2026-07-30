@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Contracts;
 
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 
+/**
+ * Contract for a bootable VoodBuilder module (core internal or companion package).
+ */
 interface VoodBuilderModule
 {
     public function id(): string;

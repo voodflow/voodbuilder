@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
+/**
+ * Sub Theme Scaffolder.
+ */
 final class SubThemeScaffolder
 {
     public static function create(string $name, string $label, bool $force = false): SubThemeScaffoldResult

@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
 use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
 
+/**
+ * Binding Registry.
+ */
 final class BindingRegistry
 {
     /** @var array<string, EditorBindingSource> */

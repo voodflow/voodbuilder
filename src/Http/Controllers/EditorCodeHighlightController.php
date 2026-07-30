@@ -8,6 +8,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Voodflow\Voodbuilder\Support\MarkdownCodeBlocks;
 
+/**
+ * HTTP controller: Editor Code Highlight.
+ */
 final class EditorCodeHighlightController
 {
     public function __invoke(Request $request): JsonResponse

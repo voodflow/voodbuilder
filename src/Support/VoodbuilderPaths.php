@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
 
+/**
+ * Voodbuilder Paths.
+ */
 final class VoodbuilderPaths
 {
     public static function packagePath(): string

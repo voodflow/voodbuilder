@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 
+/**
+ * Site Footer Column Placements.
+ */
 final class SiteFooterColumnPlacements
 {
     public const COLUMN_COUNT = 4;

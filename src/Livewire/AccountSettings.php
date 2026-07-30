@@ -15,6 +15,9 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
+/**
+ * Account Settings.
+ */
 class AccountSettings extends Component
 {
     use WithFileUploads;

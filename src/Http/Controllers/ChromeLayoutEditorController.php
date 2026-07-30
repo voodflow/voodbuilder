@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\Editor\EditorChromeLayoutEditorGate;
 
+/**
+ * HTTP controller: Chrome Layout Editor.
+ */
 class ChromeLayoutEditorController extends Controller
 {
     public function show(ChromeLayout $chromeLayout): View

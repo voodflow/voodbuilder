@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Page Resolver.
+ */
 final class SitePageResolver
 {
     private static ?bool $hasLocalizationColumns = null;

@@ -15,6 +15,9 @@ use Relaticle\Comments\Notifications\UserMentionedNotification;
 use Voodflow\Vtuts\Models\Vtut;
 use Voodflow\Vtuts\Support\VtutUrls;
 
+/**
+ * Site Notification Presenter.
+ */
 final class SiteNotificationPresenter
 {
     /**

@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
+/**
+ * Voodbuilder Plugin.
+ */
 class VoodbuilderPlugin implements Plugin
 {
     public static function make(): static

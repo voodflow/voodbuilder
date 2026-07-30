@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Licensing;
 
 use Voodflow\Voodbuilder\Licensing\Contracts\EntitlementProvider;
 
+/**
+ * Entitlement Manager.
+ */
 final class EntitlementManager
 {
     public function __construct(

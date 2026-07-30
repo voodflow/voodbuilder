@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 
+/**
+ * Create Chrome Layout.
+ */
 class CreateChromeLayout extends CreateRecord
 {
     protected static string $resource = ChromeLayoutResource::class;

@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Editor Canvas.
+ */
 final class EditorCanvas
 {
     /**

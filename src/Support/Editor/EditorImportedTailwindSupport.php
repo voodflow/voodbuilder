@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use DOMDocument;
 use DOMElement;
 
+/**
+ * Editor Imported Tailwind Support.
+ */
 final class EditorImportedTailwindSupport
 {
     /**

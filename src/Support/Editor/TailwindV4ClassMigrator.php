@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+/**
+ * Tailwind V4 Class Migrator.
+ */
 final class TailwindV4ClassMigrator
 {
     /**

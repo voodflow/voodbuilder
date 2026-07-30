@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Contracts;
 
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 
+/**
+ * Module capability: contribute visual editor inspector panels.
+ */
 interface RegistersEditorPanels
 {
     /**

@@ -15,6 +15,9 @@ use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Voodbuilder\Support\ThemeMapAssets;
 use Voodflow\Voodbuilder\Support\ThemeMapPayload;
 
+/**
+ * Theme Map Bridge.
+ */
 class ThemeMapBridge extends Component
 {
     public string $subTheme = 'site';

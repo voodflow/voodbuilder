@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 
+/**
+ * Rich content / landing block: Chrome Layout Content Slot Block.
+ */
 final class ChromeLayoutContentSlotBlock
 {
     public const string ID = 'chrome_content_slot';

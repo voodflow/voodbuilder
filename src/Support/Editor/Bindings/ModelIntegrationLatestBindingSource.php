@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Integration Latest Binding Source.
+ */
 final class ModelIntegrationLatestBindingSource extends AbstractModelIntegrationBindingSource
 {
     public function id(): string

@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Support\SubThemeScaffolder;
 use Voodflow\Voodbuilder\Support\ThemeConvention;
 
+/**
+ * Artisan command: Make Sub Theme.
+ */
 class MakeSubThemeCommand extends Command
 {
     protected $signature = 'voodbuilder:make-subtheme

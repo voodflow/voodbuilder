@@ -9,6 +9,9 @@ use DOMElement;
 use DOMNode;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Editor Slot Hydrator.
+ */
 final class EditorSlotHydrator
 {
     public static function hydrateSubtree(DOMDocument $document, DOMElement $root, bool $preview = false, array $config = []): void

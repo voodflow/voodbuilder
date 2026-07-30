@@ -11,6 +11,9 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use ZipArchive;
 
+/**
+ * Sub Theme Importer.
+ */
 final class SubThemeImporter
 {
     public static function resolveArchiveUploadPath(mixed $uploaded, string $disk = 'local'): ?string

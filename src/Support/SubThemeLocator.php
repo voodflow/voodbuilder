@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Sub Theme Locator.
+ */
 final class SubThemeLocator
 {
     public static function resolve(string $id): ?SubThemeLocation

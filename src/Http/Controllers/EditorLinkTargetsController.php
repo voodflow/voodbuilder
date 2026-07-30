@@ -9,6 +9,9 @@ use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\Editor\EditorLinkTargets;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * HTTP controller: Editor Link Targets.
+ */
 class EditorLinkTargetsController extends Controller
 {
     public function __invoke(): JsonResponse

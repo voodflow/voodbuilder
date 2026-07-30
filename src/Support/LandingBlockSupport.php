@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Landing Block Support.
+ */
 final class LandingBlockSupport
 {
     /** @return array<string, string> */

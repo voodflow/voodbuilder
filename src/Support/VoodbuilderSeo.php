@@ -8,6 +8,9 @@ use RalphJSmit\Laravel\SEO\SchemaCollection;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Voodbuilder Seo.
+ */
 final class VoodbuilderSeo
 {
     public static function applyDefaults(SEOData $seoData): SEOData

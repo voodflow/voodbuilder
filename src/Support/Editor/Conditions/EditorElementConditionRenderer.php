@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 
+/**
+ * Editor Element Condition Renderer.
+ */
 final class EditorElementConditionRenderer
 {
     public function __construct(

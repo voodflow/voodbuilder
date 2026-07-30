@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Filament\Forms\ResolvableLinkForm;
 use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Banner Cta Block.
+ */
 class LandingBannerCtaBlock extends RichContentCustomBlock
 {
     public static function getId(): string

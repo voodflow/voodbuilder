@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User;
 
+/**
+ * Site Page Revision.
+ */
 class SitePageRevision extends Model
 {
     public $timestamps = false;

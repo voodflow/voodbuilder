@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Registered User Role.
+ */
 final class RegisteredUserRole
 {
     public static function assign(Authenticatable $user): void

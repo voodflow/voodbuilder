@@ -8,6 +8,9 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Configures Translatable Locale Field trait.
+ */
 trait ConfiguresTranslatableLocaleField
 {
     /**

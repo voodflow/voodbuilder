@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Sub Theme Resolver.
+ */
 final class SubThemeResolver
 {
     public const DEFAULT = 'docs';

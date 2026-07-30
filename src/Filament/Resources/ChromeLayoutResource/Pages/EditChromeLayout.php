@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 
+/**
+ * Edit Chrome Layout.
+ */
 class EditChromeLayout extends EditRecord
 {
     protected static string $resource = ChromeLayoutResource::class;

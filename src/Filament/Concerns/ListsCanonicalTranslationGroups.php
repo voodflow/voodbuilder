@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Voodflow\Voodbuilder\Support\TranslationGroupQuery;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Lists Canonical Translation Groups trait.
+ */
 trait ListsCanonicalTranslationGroups
 {
     public static function getNavigationBadge(): ?string

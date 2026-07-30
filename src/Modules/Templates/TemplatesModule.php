@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Voodbuilder;
 
+/**
+ * Templates Module.
+ */
 final class TemplatesModule extends AbstractVoodBuilderModule implements RegistersRoutes
 {
     public const ID = 'templates';

@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Landing Footer Support.
+ */
 class LandingFooterSupport
 {
     /**
@@ -64,9 +67,6 @@ class LandingFooterSupport
         return self::menuColumnsFromRepeater($config);
     }
 
-    /**
-     * @return list<array{title: string, links: list<array{label: string, url: string, open_in_new_tab: bool}>}>
-     */
     /** @var list<string> */
     public const LAYOUT_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
 

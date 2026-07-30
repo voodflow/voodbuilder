@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Spatie\Permission\Models\Permission;
 
+/**
+ * Page Builder Access.
+ */
 final class PageBuilderAccess
 {
     /** @var (callable(): bool)|null */

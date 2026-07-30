@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Sub Theme Import Result.
+ */
 final readonly class SubThemeImportResult
 {
     public function __construct(

@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Site Page Form.
+ */
 final class SitePageForm
 {
     public static function editorOnly(): bool

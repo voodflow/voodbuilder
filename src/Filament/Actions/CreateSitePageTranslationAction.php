@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageTranslation;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament action: Create Site Page Translation.
+ */
 class CreateSitePageTranslationAction
 {
     public static function make(): Action

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Menu Tabler Icons.
+ */
 final class MenuTablerIcons
 {
     /** @var array<string, string> */

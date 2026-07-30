@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Support\SubThemeExporter;
 use Voodflow\Voodbuilder\Support\SubThemeImporter;
 use Voodflow\Voodbuilder\Support\SubThemeLocator;
 
+/**
+ * Artisan command: Sub Theme.
+ */
 class SubThemeCommand extends Command
 {
     protected $signature = 'voodbuilder:sub-theme

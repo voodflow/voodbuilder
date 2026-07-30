@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * HTTP controller: Editor Bindings.
+ */
 class EditorBindingsController extends Controller
 {
     public function __invoke(): JsonResponse

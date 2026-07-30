@@ -8,6 +8,9 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 
+/**
+ * Editor Component Page Html.
+ */
 final class EditorComponentPageHtml
 {
     /**

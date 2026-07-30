@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 
+/**
+ * Filament action: Clone Chrome Layout.
+ */
 class CloneChromeLayoutAction
 {
     public static function make(): Action

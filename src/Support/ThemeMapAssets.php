@@ -9,6 +9,9 @@ use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\File;
 
+/**
+ * Theme Map Assets.
+ */
 final class ThemeMapAssets
 {
     public const SCRIPT_ID = 'voodbuilder-theme-map';

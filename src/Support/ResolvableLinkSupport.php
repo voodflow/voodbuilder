@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\ResolvableLinkType;
 
+/**
+ * Resolvable Link Support.
+ */
 final class ResolvableLinkSupport
 {
     /**

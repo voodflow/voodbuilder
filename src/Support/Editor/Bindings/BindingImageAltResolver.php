@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
+/**
+ * Binding Image Alt Resolver.
+ */
 final class BindingImageAltResolver
 {
     /** @var list<string> */

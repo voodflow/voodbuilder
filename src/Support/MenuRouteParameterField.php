@@ -12,6 +12,9 @@ use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 
+/**
+ * Menu Route Parameter Field.
+ */
 final class MenuRouteParameterField
 {
     /** @var list<Closure(string, string, ?Get): array<string, string>> */

@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
+/**
+ * Editor Link Targets.
+ */
 final class EditorLinkTargets
 {
     /**

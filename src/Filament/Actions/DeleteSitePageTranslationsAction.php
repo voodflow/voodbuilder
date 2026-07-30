@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament action: Delete Site Page Translations.
+ */
 class DeleteSitePageTranslationsAction
 {
     public static function make(bool $fromTable = false): Action

@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 
+/**
+ * Model Integration Registry.
+ */
 final class ModelIntegrationRegistry
 {
     /** @var array<string, ModelIntegration> */

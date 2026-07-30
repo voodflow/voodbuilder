@@ -8,6 +8,9 @@ use Voodflow\Voodbuilder\Licensing\AnyStack\AnyStackEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\AnyStack\AnyStackLicenceClient;
 use Voodflow\Voodbuilder\Licensing\Contracts\EntitlementProvider;
 
+/**
+ * Entitlement Provider Factory.
+ */
 final class EntitlementProviderFactory
 {
     public static function make(): EntitlementProvider

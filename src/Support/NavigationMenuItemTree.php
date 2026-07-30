@@ -16,6 +16,9 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Navigation Menu Item Tree.
+ */
 class NavigationMenuItemTree
 {
     public const MAX_DEPTH = 2;

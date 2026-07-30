@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Events;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Editor Form Submitted.
+ */
 final class EditorFormSubmitted
 {
     /**

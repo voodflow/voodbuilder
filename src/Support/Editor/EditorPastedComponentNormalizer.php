@@ -8,6 +8,9 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 
+/**
+ * Editor Pasted Component Normalizer.
+ */
 final class EditorPastedComponentNormalizer
 {
     /**

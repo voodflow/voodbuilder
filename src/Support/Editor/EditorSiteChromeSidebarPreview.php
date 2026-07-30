@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+/**
+ * Editor Site Chrome Sidebar Preview.
+ */
 final class EditorSiteChromeSidebarPreview
 {
     public static function fromPreviewHtml(string $html, string $blockId): string

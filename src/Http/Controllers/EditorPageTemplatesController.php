@@ -20,6 +20,9 @@ use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Licensing\EntitlementGate;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 
+/**
+ * HTTP controller: Editor Page Templates.
+ */
 class EditorPageTemplatesController extends Controller
 {
     public function index(): JsonResponse

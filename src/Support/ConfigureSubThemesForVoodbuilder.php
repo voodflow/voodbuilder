@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Sub Themes For Voodbuilder.
+ */
 final class ConfigureSubThemesForVoodbuilder
 {
     /**

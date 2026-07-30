@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 
+/**
+ * Site Chrome.
+ */
 final class SiteChrome
 {
     public static function shouldHideNav(?SitePage $page = null, bool $editorEditor = false): bool

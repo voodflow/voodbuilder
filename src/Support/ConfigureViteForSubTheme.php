@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Vite For Sub Theme.
+ */
 final class ConfigureViteForSubTheme
 {
     public static function appendCssEntry(string $relativeCssPath): bool

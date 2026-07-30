@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Demo Sub Theme Content.
+ */
 final class DemoSubThemeContent
 {
     /** @return list<array{slug: string, key: string, days_ago: int}> */

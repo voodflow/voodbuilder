@@ -10,6 +10,9 @@ use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Events\EditorFormSubmitted;
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * HTTP controller: Editor Form.
+ */
 class EditorFormController extends Controller
 {
     public function __invoke(Request $request, SitePage $sitePage): JsonResponse

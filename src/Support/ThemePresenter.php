@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Presenter.
+ */
 final class ThemePresenter
 {
     /** @var list<string> */

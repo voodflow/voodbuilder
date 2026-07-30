@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Process;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
 
+/**
+ * Artisan command: Sync Npm Deps.
+ */
 class SyncNpmDepsCommand extends Command
 {
     protected $signature = 'voodbuilder:sync-npm-deps

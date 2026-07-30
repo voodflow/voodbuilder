@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\View;
 
+/**
+ * Article Channel.
+ */
 final class ArticleChannel
 {
     public const LAYOUT_ARTICLE = 'article';

@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Binding Context.
+ */
 final readonly class BindingContext
 {
     public function __construct(

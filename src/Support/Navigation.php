@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation.
+ */
 final class Navigation
 {
     /** @return Collection<int, NavigationMenuItem> */

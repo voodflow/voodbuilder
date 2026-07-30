@@ -15,6 +15,9 @@ use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 use Voodflow\Voodbuilder\Support\ResolvableLinkSupport;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
+/**
+ * Resolvable Link Form.
+ */
 final class ResolvableLinkForm
 {
     /**

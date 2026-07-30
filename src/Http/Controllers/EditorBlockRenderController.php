@@ -10,6 +10,9 @@ use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockPreview;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * HTTP controller: Editor Block Render.
+ */
 class EditorBlockRenderController extends Controller
 {
     public function __invoke(Request $request): JsonResponse

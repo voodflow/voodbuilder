@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as AuthUser;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Authorization policy for Chrome Layout.
+ */
 class ChromeLayoutPolicy
 {
     use HandlesAuthorization;

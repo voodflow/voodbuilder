@@ -9,6 +9,9 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Voodbuilder\Filament\Forms\LandingNavbarForm;
 use Voodflow\Voodbuilder\Support\LandingNavbarSupport;
 
+/**
+ * Rich content / landing block: Landing Navbar Block.
+ */
 class LandingNavbarBlock extends RichContentCustomBlock
 {
     public static function getId(): string

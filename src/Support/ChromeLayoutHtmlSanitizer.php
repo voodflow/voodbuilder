@@ -8,6 +8,9 @@ use DOMDocument;
 use DOMElement;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 
+/**
+ * Chrome Layout Html Sanitizer.
+ */
 final class ChromeLayoutHtmlSanitizer
 {
     public static function normalizeStoredHtml(string $html): string

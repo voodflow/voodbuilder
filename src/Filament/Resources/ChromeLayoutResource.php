@@ -29,6 +29,9 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 
+/**
+ * Filament resource: Chrome Layout.
+ */
 class ChromeLayoutResource extends Resource
 {
     protected static ?string $model = ChromeLayout::class;

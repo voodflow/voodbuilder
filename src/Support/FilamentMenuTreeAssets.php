@@ -9,6 +9,9 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\File;
 
+/**
+ * Filament Menu Tree Assets.
+ */
 final class FilamentMenuTreeAssets
 {
     public const STYLE_ID = 'filament-menu-tree';

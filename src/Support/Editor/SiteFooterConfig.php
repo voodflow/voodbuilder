@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
 
+/**
+ * Site Footer Config.
+ */
 final class SiteFooterConfig
 {
     public const SOCIAL_ALIGNS = ['left', 'center', 'right'];

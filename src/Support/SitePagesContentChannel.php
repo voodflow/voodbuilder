@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Pages Content Channel.
+ */
 final class SitePagesContentChannel implements PublicContentChannel
 {
     public function id(): string

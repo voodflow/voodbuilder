@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Palette.
+ */
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'

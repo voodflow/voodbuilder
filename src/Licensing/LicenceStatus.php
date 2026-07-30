@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Licensing;
 
+/**
+ * Licence Status.
+ */
 final class LicenceStatus
 {
     public function __construct(

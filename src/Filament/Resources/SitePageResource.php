@@ -52,6 +52,9 @@ use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament resource: Site Page.
+ */
 class SitePageResource extends Resource
 {
     use ConfiguresTranslatableLocaleField;

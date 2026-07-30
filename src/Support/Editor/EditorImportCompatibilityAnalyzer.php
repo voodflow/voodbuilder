@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Editor Import Compatibility Analyzer.
+ */
 final class EditorImportCompatibilityAnalyzer
 {
     /**

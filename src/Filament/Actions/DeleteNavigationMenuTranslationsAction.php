@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament action: Delete Navigation Menu Translations.
+ */
 class DeleteNavigationMenuTranslationsAction
 {
     public static function make(bool $fromTable = false): Action

@@ -10,6 +10,9 @@ use InvalidArgumentException;
 use RuntimeException;
 use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
 
+/**
+ * Module Registry.
+ */
 final class ModuleRegistry
 {
     /** @var array<string, VoodBuilderModule> */

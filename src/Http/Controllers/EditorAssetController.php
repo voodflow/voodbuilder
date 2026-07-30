@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\PublicDiskUrl;
 
+/**
+ * HTTP controller: Editor Asset.
+ */
 class EditorAssetController extends Controller
 {
     public function store(Request $request): JsonResponse

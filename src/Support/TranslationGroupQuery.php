@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Translation Group Query.
+ */
 final class TranslationGroupQuery
 {
     /** @param  Builder<Model>  $query */

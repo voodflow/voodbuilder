@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Enums;
 
+/**
+ * Sub Theme Type enumeration.
+ */
 enum SubThemeType: string
 {
     case Content = 'content';

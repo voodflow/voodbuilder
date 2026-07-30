@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
+/**
+ * Model Integration Field Type Guesser.
+ */
 final class ModelIntegrationFieldTypeGuesser
 {
     public static function guess(string $fieldId): string

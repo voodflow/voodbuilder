@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Voodbuilder Settings.
+ */
 class VoodbuilderSettings extends Model
 {
     protected $table = 'voodbuilder_settings';

@@ -22,6 +22,9 @@ use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\NavigationMenuPreview;
 
+/**
+ * Edit Navigation Menu.
+ */
 class EditNavigationMenu extends EditRecord
 {
     use InteractsWithTree;

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Enums;
 
+/**
+ * Page Builder enumeration.
+ */
 enum PageBuilder: string
 {
     case RichEditor = 'rich_editor';

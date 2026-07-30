@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 
+/**
+ * Editor Renderer.
+ */
 final class EditorRenderer
 {
     public function html(SitePage $page): string

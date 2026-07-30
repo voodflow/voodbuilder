@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Editor Assets.
+ */
 final class EditorAssets
 {
     public static function editorScriptEntry(): string

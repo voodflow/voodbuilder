@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Content Channel Themes.
+ */
 final class ContentChannelThemes
 {
     public static function resolveForChannel(PublicContentChannel $channel): ?string

@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 
+/**
+ * History Module.
+ */
 final class HistoryModule extends AbstractVoodBuilderModule implements RegistersRoutes
 {
     public const ID = 'history';

@@ -10,6 +10,9 @@ use Illuminate\Support\Collection;
 use Livewire\Component;
 use Voodflow\Voodbuilder\Support\SiteNotificationPresenter;
 
+/**
+ * Site Notification Bell.
+ */
 class SiteNotificationBell extends Component
 {
     public bool $open = false;

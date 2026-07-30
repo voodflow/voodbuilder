@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Menu Item Type Registry.
+ */
 final class MenuItemTypeRegistry
 {
     /** @var array<string, MenuItemTypeHandler> */

@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Conditions;
 use DOMDocument;
 use DOMElement;
 
+/**
+ * Editor Conditions Attribute Normalizer.
+ */
 final class EditorConditionsAttributeNormalizer
 {
     /**

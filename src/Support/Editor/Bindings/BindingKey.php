@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
+/**
+ * Binding Key.
+ */
 final readonly class BindingKey
 {
     public function __construct(

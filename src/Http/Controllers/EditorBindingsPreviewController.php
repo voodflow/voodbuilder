@@ -17,6 +17,9 @@ use Voodflow\Voodbuilder\Support\Editor\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 
+/**
+ * HTTP controller: Editor Bindings Preview.
+ */
 class EditorBindingsPreviewController extends Controller
 {
     public function __invoke(Request $request, SitePage $sitePage): JsonResponse

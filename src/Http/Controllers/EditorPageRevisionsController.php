@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Models\SitePageRevision;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\SitePageRevisionRecorder;
 
+/**
+ * HTTP controller: Editor Page Revisions.
+ */
 class EditorPageRevisionsController extends Controller
 {
     public function index(SitePage $sitePage): JsonResponse

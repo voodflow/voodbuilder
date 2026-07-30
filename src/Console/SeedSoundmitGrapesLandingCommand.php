@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\SoundmitEditorLanding;
 
+/**
+ * Artisan command: Seed Soundmit Grapes Landing.
+ */
 class SeedSoundmitGrapesLandingCommand extends Command
 {
     protected $signature = 'voodbuilder:seed-soundmit-grapes-landing

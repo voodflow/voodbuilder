@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Resolvable Link Type enumeration.
+ */
 enum ResolvableLinkType: string implements HasLabel
 {
     case Page = 'page';

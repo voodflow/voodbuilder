@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Str;
 
+/**
+ * Sub Theme Cloner.
+ */
 final class SubThemeCloner
 {
     public static function suggestCloneId(string $sourceId): string

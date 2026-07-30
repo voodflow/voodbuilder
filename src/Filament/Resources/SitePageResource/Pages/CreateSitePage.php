@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageHome;
 
+/**
+ * Create Site Page.
+ */
 class CreateSitePage extends CreateRecord
 {
     use ConfirmsSitePageHomeTakeover;

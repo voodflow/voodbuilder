@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 
+/**
+ * Model Integration Binding Registrar.
+ */
 final class ModelIntegrationBindingRegistrar
 {
     public function __construct(

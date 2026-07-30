@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Page Template.
+ */
 class PageTemplate extends Model
 {
     use HasUuids;

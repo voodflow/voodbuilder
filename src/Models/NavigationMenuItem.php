@@ -17,6 +17,9 @@ use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
+/**
+ * Navigation Menu Item.
+ */
 class NavigationMenuItem extends Model
 {
     protected $table = 'voodbuilder_menu_items';

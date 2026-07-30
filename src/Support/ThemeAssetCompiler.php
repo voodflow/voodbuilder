@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Symfony\Component\Process\Process;
 
+/**
+ * Theme Asset Compiler.
+ */
 final class ThemeAssetCompiler
 {
     public static function compile(?string $workingDirectory = null): bool

@@ -1,3 +1,10 @@
+/**
+ * Theme token helpers for the visual editor.
+ *
+ * Maps legacy brand / Tailwind colour utilities onto VoodBuilder `vp-*` theme
+ * tokens so catalog blocks stay coherent in light and dark mode.
+ */
+
 const VARIANT_PREFIXES = [
     'hover:',
     'focus:',

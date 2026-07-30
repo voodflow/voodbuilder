@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 use Voodflow\Voodbuilder\Support\YoutubeEmbed;
 
+/**
+ * Rich content / landing block: Landing Video Block.
+ */
 class LandingVideoBlock extends RichContentCustomBlock
 {
     public static function getId(): string

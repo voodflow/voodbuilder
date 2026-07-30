@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+/**
+ * Editor Imported Tailwind Css Builder.
+ */
 final class EditorImportedTailwindCssBuilder
 {
     private const string SCOPE = '.voodbuilder-pasted-component';

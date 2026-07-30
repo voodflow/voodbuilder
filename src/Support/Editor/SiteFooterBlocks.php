@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
 
+/**
+ * Site Footer Blocks.
+ */
 final class SiteFooterBlocks
 {
     public static function isFooterBlockId(string $blockId): bool

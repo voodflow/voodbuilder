@@ -9,6 +9,9 @@ use Filament\Resources\Pages\ListRecords;
 use Voodflow\Voodbuilder\Filament\Concerns\ScopesListTableToCanonicalTranslationGroups;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 
+/**
+ * List Navigation Menus.
+ */
 class ListNavigationMenus extends ListRecords
 {
     use ScopesListTableToCanonicalTranslationGroups;

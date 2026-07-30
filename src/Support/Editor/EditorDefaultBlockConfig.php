@@ -8,6 +8,9 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Vevents\Models\Event;
 
+/**
+ * Editor Default Block Config.
+ */
 final class EditorDefaultBlockConfig
 {
     /**

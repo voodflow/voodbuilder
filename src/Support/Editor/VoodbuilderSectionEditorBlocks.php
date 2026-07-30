@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Voodbuilder Section Editor Blocks.
+ */
 final class VoodbuilderSectionEditorBlocks
 {
     public static function register(EditorBlockRegistry $registry, ?string $theme = null): void

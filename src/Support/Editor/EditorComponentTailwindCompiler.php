@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 
+/**
+ * Editor Component Tailwind Compiler.
+ */
 final class EditorComponentTailwindCompiler
 {
     public static function isAvailable(): bool

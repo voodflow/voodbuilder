@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 
+/**
+ * Conditions Module.
+ */
 final class ConditionsModule extends AbstractVoodBuilderModule implements RegistersConditions
 {
     public const ID = 'conditions';

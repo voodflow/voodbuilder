@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Contracts\EditorConfigurableBlock;
 
+/**
+ * Rich content / landing block: Abstract Site Footer Variant Block.
+ */
 abstract class AbstractSiteFooterVariantBlock implements EditorConfigurableBlock
 {
     abstract public static function variant(): string;

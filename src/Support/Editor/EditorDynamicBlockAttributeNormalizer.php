@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use DOMDocument;
 use DOMElement;
 
+/**
+ * Editor Dynamic Block Attribute Normalizer.
+ */
 final class EditorDynamicBlockAttributeNormalizer
 {
     public static function normalize(string $html): string

@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Contracts;
 use Filament\Panel;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 
+/**
+ * Module capability: register Filament admin resources.
+ */
 interface RegistersFilamentResources
 {
     public function registerFilamentResources(Panel $panel, ModuleContext $context): void;

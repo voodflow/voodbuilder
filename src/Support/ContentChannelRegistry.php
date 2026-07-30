@@ -8,6 +8,9 @@ use Closure;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
+/**
+ * Content Channel Registry.
+ */
 final class ContentChannelRegistry
 {
     /** @var array<string, PublicContentChannel> */

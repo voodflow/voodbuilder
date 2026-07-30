@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\Editor\EditorChromeLayoutEditorGate;
 
+/**
+ * HTTP controller: Editor Chrome Layout.
+ */
 class EditorChromeLayoutController extends Controller
 {
     public function update(Request $request, ChromeLayout $chromeLayout): JsonResponse

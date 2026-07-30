@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Translation Group Deletion.
+ */
 final class TranslationGroupDeletion
 {
     /** @return Collection<int, Model> */

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Sub Theme Operation Result.
+ */
 final readonly class SubThemeOperationResult
 {
     public function __construct(

@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 
+/**
+ * Sub Theme Exporter.
+ */
 final class SubThemeExporter
 {
     public const MANIFEST_FILE = 'manifest.json';

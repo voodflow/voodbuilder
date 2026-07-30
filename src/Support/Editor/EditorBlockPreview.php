@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Contracts\EditorConfigurableBlock;
 
+/**
+ * Editor Block Preview.
+ */
 final class EditorBlockPreview
 {
     /**

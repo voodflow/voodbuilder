@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
 
+/**
+ * Site Nav Blocks.
+ */
 final class SiteNavBlocks
 {
     public static function isNavBlockId(string $blockId): bool

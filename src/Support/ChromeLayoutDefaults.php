@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockPreview;
 
+/**
+ * Chrome Layout Defaults.
+ */
 final class ChromeLayoutDefaults
 {
     public static function contentSlotHtml(): string

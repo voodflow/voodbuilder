@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 
+/**
+ * Abstract Model Integration Binding Source.
+ */
 abstract class AbstractModelIntegrationBindingSource implements EditorBindingSource
 {
     public function __construct(

@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 
+/**
+ * HTTP controller: Site Page.
+ */
 class SitePageController extends Controller
 {
     public function show(string $slug): View

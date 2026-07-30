@@ -8,6 +8,9 @@ use Illuminate\Validation\ValidationException;
 use Voodflow\Voodbuilder\Models\PageTemplate;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 
+/**
+ * Editor Page Template Bundle.
+ */
 final class EditorPageTemplateBundle
 {
     public const int FORMAT_VERSION = 1;

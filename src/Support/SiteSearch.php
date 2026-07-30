@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 
+/**
+ * Site Search.
+ */
 final class SiteSearch
 {
     /**

@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Menu Link Display enumeration.
+ */
 enum MenuLinkDisplay: string implements HasLabel
 {
     case IconOnly = 'icon_only';

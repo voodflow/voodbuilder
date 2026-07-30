@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
+/**
+ * Editor Binding Normalizer.
+ */
 final class EditorBindingNormalizer
 {
     public function __construct(

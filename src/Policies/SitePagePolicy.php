@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as AuthUser;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Authorization policy for Site Page.
+ */
 class SitePagePolicy
 {
     use HandlesAuthorization;

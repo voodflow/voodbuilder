@@ -10,6 +10,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * HTTP controller: Editor Media Preview.
+ */
 class EditorMediaPreviewController extends Controller
 {
     public function __invoke(Request $request, int $media): BinaryFileResponse

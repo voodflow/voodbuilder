@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationBindingRegistrar;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
 
+/**
+ * Model Integration.
+ */
 class ModelIntegration extends Model
 {
     use SoftDeletes;

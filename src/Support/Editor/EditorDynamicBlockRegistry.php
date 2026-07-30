@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 
+/**
+ * Editor Dynamic Block Registry.
+ */
 final class EditorDynamicBlockRegistry
 {
     /** @var array<string, class-string<RichContentCustomBlock>> */

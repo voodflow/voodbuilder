@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\HtmlString;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
+/**
+ * Active Theme Map.
+ */
 final class ActiveThemeMap
 {
     /**

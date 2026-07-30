@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Vite For Voodbuilder.
+ */
 final class ConfigureViteForVoodbuilder
 {
     private const LEGACY_THEME_PATH = 'packages/voodflow/voodbuilder/resources/css/theme.css';

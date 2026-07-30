@@ -9,6 +9,9 @@ use Filament\Resources\Pages\ListRecords;
 use Voodflow\Voodbuilder\Filament\Concerns\ScopesListTableToCanonicalTranslationGroups;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
+/**
+ * List Site Pages.
+ */
 class ListSitePages extends ListRecords
 {
     use ScopesListTableToCanonicalTranslationGroups;

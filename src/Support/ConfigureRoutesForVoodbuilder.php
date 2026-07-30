@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Routes For Voodbuilder.
+ */
 final class ConfigureRoutesForVoodbuilder
 {
     private const ROUTES_STUB = <<<'PHP'

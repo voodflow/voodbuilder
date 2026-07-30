@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as AuthUser;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Authorization policy for Navigation Menu.
+ */
 class NavigationMenuPolicy
 {
     use HandlesAuthorization;

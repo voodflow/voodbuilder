@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation Menu Resolver.
+ */
 final class NavigationMenuResolver
 {
     private static ?bool $localizationEnabled = null;

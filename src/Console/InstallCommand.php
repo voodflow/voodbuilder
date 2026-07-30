@@ -14,6 +14,9 @@ use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureVtutsForVoodbuilder;
 use Voodflow\Voodbuilder\Support\DisableFilamentCookieBanner;
 
+/**
+ * Artisan command: Install.
+ */
 class InstallCommand extends Command
 {
     protected $signature = 'voodbuilder:install

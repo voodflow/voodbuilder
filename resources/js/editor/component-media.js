@@ -1,3 +1,10 @@
+/**
+ * Component library media helpers.
+ *
+ * Strips embeddable video markup from component HTML so library previews and
+ * persisted templates do not autoplay third-party players in the sidebar.
+ */
+
 const VIDEO_EMBED_HOST_PATTERN = /(?:youtube(?:-nocookie)?\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/i;
 
 const MEDIA_SLOT_CLASS = 'voodbuilder-component-library-media-slot';

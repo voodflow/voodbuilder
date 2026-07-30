@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 
+/**
+ * Site Page View Data.
+ */
 final class SitePageViewData
 {
     /**

@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Translation Locale Column.
+ */
 final class TranslationLocaleColumn
 {
     /**

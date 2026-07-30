@@ -8,6 +8,9 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Editor Page Template Remote Importer.
+ */
 final class EditorPageTemplateRemoteImporter
 {
     private const int MAX_BYTES = 2_000_000;

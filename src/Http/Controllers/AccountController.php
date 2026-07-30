@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Routing\Controller;
 
+/**
+ * HTTP controller: Account.
+ */
 class AccountController extends Controller
 {
     public function __invoke(): View

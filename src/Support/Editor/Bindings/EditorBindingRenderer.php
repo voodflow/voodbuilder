@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\Editor\EditorHtmlSanitizer;
 
+/**
+ * Editor Binding Renderer.
+ */
 final class EditorBindingRenderer
 {
     public function __construct(

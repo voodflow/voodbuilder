@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Sub Theme Manager.
+ */
 final class SubThemeManager
 {
     public static function updateLabel(string $id, string $label): SubThemeOperationResult

@@ -26,6 +26,9 @@ use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\ThemePaletteGenerator;
 use Voodflow\Voodbuilder\Support\ThemePresenter;
 
+/**
+ * Themes Workspace.
+ */
 class ThemesWorkspace extends Component
 {
     use WithFileUploads;

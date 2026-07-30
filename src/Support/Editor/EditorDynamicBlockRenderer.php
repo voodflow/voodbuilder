@@ -10,6 +10,9 @@ use DOMNode;
 use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Editor Dynamic Block Renderer.
+ */
 final class EditorDynamicBlockRenderer
 {
     public function __construct(

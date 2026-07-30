@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Enums\SubThemeCapability;
 
+/**
+ * Theme Bindings.
+ */
 final class ThemeBindings
 {
     public static function sitePagesCapability(): SubThemeCapability

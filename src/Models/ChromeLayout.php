@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 
+/**
+ * Chrome Layout.
+ */
 class ChromeLayout extends Model
 {
     use HasUuids;

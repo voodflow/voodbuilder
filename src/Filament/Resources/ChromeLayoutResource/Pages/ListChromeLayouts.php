@@ -8,6 +8,9 @@ use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 
+/**
+ * List Chrome Layouts.
+ */
 class ListChromeLayouts extends ListRecords
 {
     protected static string $resource = ChromeLayoutResource::class;

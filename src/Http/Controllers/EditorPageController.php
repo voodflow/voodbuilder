@@ -16,6 +16,9 @@ use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\SitePageRevisionRecorder;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 
+/**
+ * HTTP controller: Editor Page.
+ */
 class EditorPageController extends Controller
 {
     public function update(Request $request, SitePage $sitePage): JsonResponse

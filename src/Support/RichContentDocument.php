@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Rich Content Document.
+ */
 final class RichContentDocument
 {
     /**

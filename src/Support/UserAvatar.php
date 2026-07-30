@@ -8,6 +8,9 @@ use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * User Avatar.
+ */
 final class UserAvatar
 {
     public static function url(?Authenticatable $user): ?string

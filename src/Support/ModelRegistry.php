@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Model Registry.
+ */
 final class ModelRegistry
 {
     /** @var array<string, array{essential: array, relations?: array}> */

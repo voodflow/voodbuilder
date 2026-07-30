@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation Menu Translation.
+ */
 final class NavigationMenuTranslation
 {
     /**

@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Editor Condition Hooks.
+ */
 final class EditorConditionHooks
 {
     /** @var array<string, callable(array<string, mixed>, ?SitePage): bool> */

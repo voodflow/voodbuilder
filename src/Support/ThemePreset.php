@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Theme Preset.
+ */
 final class ThemePreset
 {
     public const SCHEMA = 'voodbuilder-theme-preset/1';

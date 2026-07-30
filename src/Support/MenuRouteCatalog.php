@@ -10,6 +10,9 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Str;
 
+/**
+ * Menu Route Catalog.
+ */
 final class MenuRouteCatalog
 {
     /** @var Closure(string, string): (Field|null)|null */

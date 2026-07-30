@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
+/**
+ * Voodbuilder Urls.
+ */
 final class VoodbuilderUrls
 {
     public static function home(?string $locale = null): string

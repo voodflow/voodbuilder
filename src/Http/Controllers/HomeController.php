@@ -17,6 +17,9 @@ use Voodflow\Voodbuilder\Support\SitePageViewData;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * HTTP controller: Home.
+ */
 class HomeController extends Controller
 {
     public function __invoke(): View|RedirectResponse

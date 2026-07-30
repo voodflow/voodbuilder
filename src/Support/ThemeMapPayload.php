@@ -8,6 +8,9 @@ use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Enums\SubThemeCapability;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Map Payload.
+ */
 final class ThemeMapPayload
 {
     /**

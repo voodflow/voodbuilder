@@ -43,6 +43,9 @@ use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament resource: Navigation Menu.
+ */
 class NavigationMenuResource extends Resource
 {
     use ConfiguresTranslatableLocaleField;

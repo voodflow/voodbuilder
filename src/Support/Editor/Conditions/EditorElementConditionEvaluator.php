@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\Editor\Conditions;
 use Illuminate\Support\Carbon;
 use Voodflow\Voodbuilder\Models\SitePage;
 
+/**
+ * Editor Element Condition Evaluator.
+ */
 final class EditorElementConditionEvaluator
 {
     /**

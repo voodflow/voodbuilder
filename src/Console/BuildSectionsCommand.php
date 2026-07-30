@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
 use Voodflow\Voodbuilder\Support\Editor\SoundmitEditorLanding;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Artisan command: Build Sections.
+ */
 class BuildSectionsCommand extends Command
 {
     protected $signature = 'voodbuilder:build-sections

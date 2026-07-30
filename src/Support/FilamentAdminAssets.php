@@ -8,6 +8,9 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\File;
 
+/**
+ * Filament Admin Assets.
+ */
 final class FilamentAdminAssets
 {
     public const STYLE_ID = 'filament-database-notifications';

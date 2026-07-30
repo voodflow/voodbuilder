@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Support\LandingNavbarSupport;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Voodbuilder;
 
+/**
+ * Voodbuilder Landing Editor Blocks.
+ */
 final class VoodbuilderLandingEditorBlocks
 {
     public static function register(): void

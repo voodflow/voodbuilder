@@ -33,6 +33,9 @@ use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Page.
+ */
 class SitePage extends Model implements HasRichContent
 {
     use HasSEO;

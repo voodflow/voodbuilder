@@ -8,6 +8,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Page Translation.
+ */
 final class SitePageTranslation
 {
     /**

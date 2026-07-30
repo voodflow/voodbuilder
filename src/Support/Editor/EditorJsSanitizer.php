@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+/**
+ * Editor Js Sanitizer.
+ */
 final class EditorJsSanitizer
 {
     /**

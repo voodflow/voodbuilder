@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Filament\Forms\ResolvableLinkForm;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Hero Block.
+ */
 class LandingHeroBlock extends RichContentCustomBlock
 {
     public static function getId(): string

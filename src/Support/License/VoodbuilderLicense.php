@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support\License;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
+/**
+ * Voodbuilder License.
+ */
 final class VoodbuilderLicense
 {
     public static function isEnforced(): bool

@@ -8,6 +8,9 @@ use Filament\Forms\Components\Component;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Contract for a custom navigation menu item type (form + URL resolution).
+ */
 interface MenuItemTypeHandler
 {
     public function key(): string;

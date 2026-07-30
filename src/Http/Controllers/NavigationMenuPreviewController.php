@@ -8,6 +8,9 @@ use Illuminate\Contracts\View\View;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\NavigationMenuPreview;
 
+/**
+ * HTTP controller: Navigation Menu Preview.
+ */
 final class NavigationMenuPreviewController
 {
     public function __invoke(NavigationMenu $navigationMenu): View

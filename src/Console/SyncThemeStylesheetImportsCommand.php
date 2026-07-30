@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Console;
 use Illuminate\Console\Command;
 use Voodflow\Voodbuilder\Support\SyncThemeStylesheetImports;
 
+/**
+ * Artisan command: Sync Theme Stylesheet Imports.
+ */
 class SyncThemeStylesheetImportsCommand extends Command
 {
     protected $signature = 'voodbuilder:sync-theme-imports';
