@@ -66,6 +66,14 @@ Gate premium surfaces with entitlements; do not hard-code plan names in plugins.
 
 `tests/Fixtures/SamplePlugin/SampleAcmePlugin.php` + `tests/Architecture/SampleThirdPartyPluginTest.php`.
 
+## Editor JS (companion packages)
+
+Commercial UI that needs JavaScript must live in the companion package, not in Core.
+
+Register from `resources/js/editor/plugin.js` (path install) or via `window.VoodbuilderEditor.registerPlugin({ id, mount })`.
+
+See [EDITOR_JS_PLUGINS.md](./EDITOR_JS_PLUGINS.md).
+
 ## Asset schemas (templates / components)
 
 JSON payloads for import/export remain package-internal until marketplace Phase. Prefer documenting additive keys only.

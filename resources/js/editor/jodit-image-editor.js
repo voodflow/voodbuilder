@@ -6,7 +6,6 @@
  * Not available for: SVG / placeholder sources, or images with dynamic bindings.
  */
 
-import { ImageEditor } from '@jodit/image-editor';
 import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
@@ -18,8 +17,17 @@ const MAX_UPLOAD_ATTEMPTS = 3;
 /** @type {HTMLElement | null} */
 let activeModal = null;
 
-/** @type {ImageEditor | null} */
+/** @type {import('@jodit/image-editor').ImageEditor | null} */
 let activeEditor = null;
+
+/** @type {Promise<typeof import('@jodit/image-editor').ImageEditor>|null} */
+let imageEditorCtorPromise = null;
+
+async function loadImageEditorCtor() {
+    imageEditorCtorPromise ??= import('@jodit/image-editor').then((mod) => mod.ImageEditor);
+
+    return imageEditorCtorPromise;
+}
 
 /**
  * @param {import('grapesjs').Component | null | undefined} component
@@ -688,6 +696,7 @@ async function openImageEditorModal(editor, target, options = {}) {
 
     try {
         const blob = await loadImageBlob(target, src);
+        const ImageEditor = await loadImageEditorCtor();
         setModalStatus('');
 
         activeEditor = new ImageEditor({

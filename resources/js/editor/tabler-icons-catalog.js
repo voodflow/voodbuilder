@@ -64,9 +64,18 @@ export async function ensureTablerCatalog() {
         return catalogCache;
     }
 
-    catalogPromise ??= import('./generated/tabler-icons-full.json')
-        .then((mod) => {
-            catalogCache = /** @type {TablerIconCatalog} */ (mod.default ?? mod);
+    // Load as a static asset (?url + fetch) so Vite does not wrap ~2MB JSON in a JS chunk.
+    catalogPromise ??= import('./generated/tabler-icons-full.json?url')
+        .then((mod) => fetch(String(mod.default ?? mod)))
+        .then((response) => {
+            if (! response.ok) {
+                throw new Error(`Failed to load Tabler catalog (${response.status})`);
+            }
+
+            return response.json();
+        })
+        .then((data) => {
+            catalogCache = /** @type {TablerIconCatalog} */ (data);
             return catalogCache;
         })
         .catch((error) => {

@@ -13,6 +13,7 @@ import { lucideIcon } from './editor-icons.js';
 import {
     createCodeEditorField,
     destroyCodeEditorFields,
+    ensureCodeEditorReady,
     formatCodeForEditor,
 } from './code-editor-field.js';
 
@@ -134,9 +135,9 @@ function createFallbackCodeField({
     return field;
 }
 
-function mountCodeField(options) {
+async function mountCodeField(options) {
     try {
-        return createCodeEditorField(options) ?? createFallbackCodeField(options);
+        return (await createCodeEditorField(options)) ?? createFallbackCodeField(options);
     } catch (error) {
         console.error('Voodbuilder: falling back to textarea code field.', error);
 
@@ -242,7 +243,7 @@ function closeModal() {
 
     window.clearTimeout(previewTimer);
     window.clearTimeout(compileTimer);
-    destroyCodeEditorFields();
+    void destroyCodeEditorFields();
     activeModal.remove();
     activeModal = null;
 }
@@ -314,6 +315,7 @@ function openComponentCodeDialog({
     const compileLabel = labels.componentsCodeImportCompiling ?? 'Compiling Tailwind styles…';
 
     return new Promise((resolve) => {
+        void (async () => {
         const modal = document.createElement('div');
         modal.className = 'voodbuilder-editor-modal voodbuilder-editor-component-code-modal';
         modal.setAttribute('role', 'presentation');
@@ -591,9 +593,16 @@ function openComponentCodeDialog({
         const initialCssValue = isEdit ? String(component.css ?? '') : '';
 
         try {
-            htmlEditor = mountCodeField({
+            await ensureCodeEditorReady();
+
+            const [formattedHtml, formattedCss] = await Promise.all([
+                formatCodeForEditor(initialHtmlValue, 'html'),
+                formatCodeForEditor(initialCssValue, 'css'),
+            ]);
+
+            htmlEditor = await mountCodeField({
                 mount: htmlHost,
-                value: formatCodeForEditor(initialHtmlValue, 'html'),
+                value: formattedHtml,
                 language: 'html',
                 minHeight: isCanvasEdit ? '18rem' : '14rem',
                 lineWrapping: false,
@@ -601,16 +610,18 @@ function openComponentCodeDialog({
                     const parsed = parsePastedComponentSource(value);
 
                     if (! getCssValue().trim() && parsed.extractedCss) {
-                        cssEditor?.setValue(formatCodeForEditor(parsed.extractedCss, 'css'));
+                        void formatCodeForEditor(parsed.extractedCss, 'css').then((nextCss) => {
+                            cssEditor?.setValue(nextCss);
+                        });
                     }
 
                     scheduleCompile(value);
                 },
             });
 
-            cssEditor = mountCodeField({
+            cssEditor = await mountCodeField({
                 mount: cssHost,
-                value: formatCodeForEditor(initialCssValue, 'css'),
+                value: formattedCss,
                 language: 'css',
                 minHeight: '6rem',
                 onChange: () => {
@@ -769,6 +780,7 @@ function openComponentCodeDialog({
                 updateSubmitState();
             }
         });
+        })();
     });
 }
 

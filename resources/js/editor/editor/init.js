@@ -56,6 +56,7 @@ import {
     wireInspector,
 } from './inspector.js';
 import { bootEditorRegistries } from './compatibility-bridge.js';
+import { bootEditorPlugins, exposeEditorBridge } from '../plugin-bridge.js';
 import { registerInspectorColorFix, installGlobalColorInputValueFix } from '../inspector-color-fix.js';
 import { guardEditorLayersRender } from '../tailwind-visual-style.js';
 import { configureEditorCodeBlock } from '../editor-code-block.js';
@@ -768,10 +769,33 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
+    exposeEditorBridge();
+
     bootEditorRegistries(editor, {
         popupMode: Boolean(options.popupMode),
         chromeLayoutMode: Boolean(options.chromeLayoutMode),
         conditionsEnabled: options.conditionsEnabled !== false,
+    });
+
+    void bootEditorPlugins(editor, {
+        labels,
+        entitlements: options.entitlements ?? {},
+        urls: {
+            components: options.componentsUrl ?? null,
+            popups: options.popupsUrl ?? null,
+            bindings: options.bindingsUrl ?? null,
+            pageTemplates: options.pageTemplatesUrl ?? null,
+            upload: options.uploadUrl ?? null,
+            linkTargets: options.linkTargetsUrl ?? null,
+        },
+        flags: {
+            popupMode: Boolean(options.popupMode),
+            chromeLayoutMode: Boolean(options.chromeLayoutMode),
+            chromeShellMode: Boolean(options.chromeShellMode),
+            conditionsEnabled: options.conditionsEnabled !== false,
+            imageEditor: options.imageEditor !== false,
+        },
+        csrf: options.csrf ?? '',
     });
 
     editor.__voodbuilderLabels = labels;

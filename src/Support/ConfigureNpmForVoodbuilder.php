@@ -145,19 +145,30 @@ final class ConfigureNpmForVoodbuilder
             $scripts = [];
         }
 
-        $tablerCatalog = 'node packages/voodflow/voodbuilder/bin/build-tabler-icons-catalog.js';
-        $preferredBuild = $tablerCatalog.' && php artisan voodbuilder:sync-theme-imports && vite build';
+        // Tabler catalog is built by the Vite plugin (vite.config.js); avoid running the
+        // Node script twice during `npm run build`.
+        $preferredBuild = 'php artisan voodbuilder:sync-theme-imports && vite build';
         $build = $scripts['build'] ?? null;
 
-        if (! is_string($build) || $build === '' || $build === 'vite build' || $build === 'php artisan voodbuilder:sync-theme-imports && vite build') {
+        if (! is_string($build) || $build === '' || $build === 'vite build') {
             $scripts['build'] = $preferredBuild;
             $package['scripts'] = $scripts;
 
             return;
         }
 
-        if (! str_contains($build, 'build-tabler-icons-catalog') && str_contains($build, 'vite build')) {
-            $scripts['build'] = $tablerCatalog.' && '.$build;
+        if (str_contains($build, 'build-tabler-icons-catalog') && str_contains($build, 'vite build')) {
+            $scripts['build'] = preg_replace(
+                '#(?:^|&&\s*)node\s+packages/voodflow/voodbuilder/bin/build-tabler-icons-catalog\.js\s*(?:&&\s*)?#',
+                '',
+                $build,
+            ) ?? $build;
+            $scripts['build'] = trim(preg_replace('#\s*&&\s*&&\s*#', ' && ', $scripts['build']) ?? $scripts['build']);
+
+            if ($scripts['build'] === '' || $scripts['build'] === 'vite build') {
+                $scripts['build'] = $preferredBuild;
+            }
+
             $package['scripts'] = $scripts;
         }
     }

@@ -3,6 +3,12 @@
  */
 
 import { registerBlockSettings } from './blocks/settings/index.js';
+import {
+    applyAnimatedStatsCounterDefaults,
+    applyCounterConfig,
+    normalizeCounterTrigger,
+    readCounterConfig,
+} from './editor-animated-blocks.js';
 import { createFormSection, createSelectField, createTextField } from './editor-form-ui.js';
 
 function isAnimatedStatsRoot(root) {
@@ -10,10 +16,6 @@ function isAnimatedStatsRoot(root) {
 
     return Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-animated-stats')
         || root?.get?.('type') === 'voodbuilder-animated-stats';
-}
-
-async function loadCounterHelpers() {
-    return import('./editor-animated-blocks.js');
 }
 
 const WIDTH_CLASS_PATTERN = /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/;
@@ -386,12 +388,7 @@ export function registerSectionItemCountSettings(editor) {
                 return;
             }
 
-            void loadCounterHelpers().then(({
-                applyAnimatedStatsCounterDefaults,
-                applyCounterConfig,
-                normalizeCounterTrigger,
-                readCounterConfig,
-            }) => {
+            {
                 const sampleCounter = root.findType?.('voodbuilder-animated-counter')?.[0]
                     ?? root.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter')?.[0]
                     ?? null;
@@ -469,7 +466,7 @@ export function registerSectionItemCountSettings(editor) {
                 animFields.appendChild(staggerField);
 
                 mount.appendChild(animSection);
-            });
+            }
         },
     });
 }
