@@ -585,6 +585,119 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         }
     }
 
+    async function deleteTemplatesByIds(ids, options = {}) {
+        const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+
+        if (uniqueIds.length === 0) {
+            return false;
+        }
+
+        const confirmed = await confirmDialog({
+            title: labels.dialogConfirmTitle ?? 'Confirm',
+            message: options.confirmMessage
+                ?? labels.pageTemplatesDeleteSelectedConfirm
+                ?? 'Delete selected templates?',
+            labels,
+            danger: true,
+            confirmLabel: labels.pageTemplatesDelete ?? 'Delete',
+        });
+
+        if (! confirmed) {
+            return false;
+        }
+
+        for (const id of uniqueIds) {
+            const response = await fetch(`${baseUrl}/${id}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf),
+            });
+
+            if (! response.ok && response.status !== 404) {
+                await alertDialog({
+                    message: labels.pageTemplatesDeleteError ?? 'Could not delete template.',
+                    labels,
+                });
+
+                return false;
+            }
+
+            selectedIds.delete(id);
+        }
+
+        if (selectionMode) {
+            setSelectionMode(false);
+        }
+
+        await syncCatalog();
+
+        return true;
+    }
+
+    function setSelectionMode(active) {
+        selectionMode = active;
+        editor.__voodbuilderTemplateSelectionMode = active;
+
+        if (! selectionMode) {
+            selectedIds.clear();
+        } else {
+            expandLibraryCategories(editor, 'templates');
+        }
+
+        syncTemplateBlockDragState(selectionMode);
+        updateSelectionUi();
+        refreshTemplateLibraryUi();
+        bindTemplateLibraryBlockInteractions();
+
+        window.requestAnimationFrame(() => {
+            if (selectionMode) {
+                expandLibraryCategories(editor, 'templates');
+            }
+
+            refreshTemplateLibraryUi();
+            bindTemplateLibraryBlockInteractions();
+        });
+    }
+
+    function toggleTemplateSelection(item) {
+        const key = String(item?.id ?? '').trim();
+
+        if (key === '') {
+            return;
+        }
+
+        if (selectedIds.has(key)) {
+            selectedIds.delete(key);
+        } else {
+            selectedIds.add(key);
+        }
+
+        updateSelectionUi();
+        updateBlocksSelectionState();
+    }
+
+    function updateSelectionUi() {
+        const count = selectedIds.size;
+
+        if (selectionCountEl) {
+            selectionCountEl.textContent = formatCountLabel(labels.pageTemplatesSelectedCount, count);
+        }
+
+        if (exportSelectedBtn) {
+            exportSelectedBtn.disabled = count === 0;
+        }
+
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.disabled = count === 0;
+        }
+
+        selectToggleBtn?.classList.toggle('is-active', selectionMode);
+        selectToggleBtn?.setAttribute('aria-pressed', selectionMode ? 'true' : 'false');
+        selectionBar.hidden = ! selectionMode;
+        headerEl?.toggleAttribute('hidden', selectionMode);
+        libraryRoot?.classList.toggle('is-selection-mode', selectionMode);
+    }
+
     editor.__voodbuilderToggleTemplateSelection = toggleTemplateSelection;
     editor.__voodbuilderOnTemplateLibraryRefresh = () => {
         refreshTemplateLibraryUi();
