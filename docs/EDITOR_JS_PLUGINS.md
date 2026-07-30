@@ -80,5 +80,6 @@ Host `vite.config.js` keeps the Core `init.js` entry. Companions do not need a h
 ## Related
 
 - PHP SDK: [SDK_PLUGIN_API.md](./SDK_PLUGIN_API.md)
+- Fonts (Fontsource core + plugin providers): [FONTS.md](./FONTS.md)
 - Commercial wave notes: [progress/commercial-plugin-wave.md](./progress/commercial-plugin-wave.md)
 - Bridge implementation: `resources/js/editor/plugin-bridge.js`

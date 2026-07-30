@@ -504,7 +504,7 @@ describe('theme-tokens background clear', () => {
         expect(splitClassTokens('a, b\nc')).toEqual(['a', 'b', 'c']);
     });
 
-    it('extractGrapesComposerCss keeps only #id Style Manager rules', async () => {
+    it('extractGrapesComposerCss keeps #id Style Manager rules but drops private classes', async () => {
         const { extractGrapesComposerCss } = await import(
             '../../resources/js/editor/editor/payload.js'
         );
@@ -513,7 +513,7 @@ describe('theme-tokens background clear', () => {
 .flex { display: flex }
 #hero-title { color: #ff0000 !important; }
 @media (min-width: 768px) { #hero-title { font-size: 2rem } }
-.c123 { margin: 0 }
+.c123 { margin: 0; font-family: 'Archivo', sans-serif }
 #section-1 { background-color: #0ea5e9 }
 `;
 
@@ -522,6 +522,8 @@ describe('theme-tokens background clear', () => {
         expect(extracted).toContain('#hero-title');
         expect(extracted).toContain('color: #ff0000');
         expect(extracted).toContain('#section-1');
+        expect(extracted).not.toContain('.c123');
+        expect(extracted).not.toContain('Archivo');
         expect(extracted).not.toContain('.flex');
         expect(extracted).not.toContain('@media');
     });

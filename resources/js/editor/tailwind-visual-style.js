@@ -462,6 +462,10 @@ export function bakeAuthorStylesToComposerForExport(editor) {
         return;
     }
 
+    // HTML clones reuse .cXXXX — promote every private class onto unique #id
+    // rules before baking, with #id/inline winning over shared class paints.
+    promotePrivateStyleClassesToIdRules(editor);
+
     const seen = new Set();
 
     wrapper.onAll((component) => {
@@ -477,14 +481,19 @@ export function bakeAuthorStylesToComposerForExport(editor) {
             return;
         }
 
-        const live = {
-            ...(component.getStyle?.() ?? {}),
-            ...(component.getStyle?.({ inline: true }) ?? {}),
-        };
-
         const existingRule = editor.Css.getIdRule?.(id);
         const existing = { ...(existingRule?.getStyle?.() ?? {}) };
-        const merged = { ...existing };
+        // Prefer inline + current #id. Avoid getStyle() — it can reintroduce paints
+        // from leftover private classes and clobber a divergent sibling #id.
+        const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+        const fromPrivate = {};
+
+        for (const rule of collectPrivateClassRules(editor, component)) {
+            Object.assign(fromPrivate, rule.getStyle?.() ?? {});
+        }
+
+        const live = { ...fromPrivate, ...existing, ...inline };
+        const merged = {};
 
         for (const [property, value] of Object.entries(live)) {
             if (value == null || value === '') {
@@ -492,17 +501,15 @@ export function bakeAuthorStylesToComposerForExport(editor) {
             }
 
             if (isClearedStyleValue(property, value)) {
-                delete merged[property];
-
                 continue;
             }
 
             merged[property] = value;
         }
 
-        // Live explicitly cleared a key that still exists only on the component model.
-        for (const property of Object.keys(live)) {
-            if (isClearedStyleValue(property, live[property])) {
+        // Inline explicitly cleared a key that still exists only on the #id rule.
+        for (const property of Object.keys(inline)) {
+            if (isClearedStyleValue(property, inline[property])) {
                 delete merged[property];
             }
         }
@@ -536,6 +543,11 @@ export function bakeAuthorStylesToComposerForExport(editor) {
                 || property === 'border-color'
                 || property === 'box-shadow'
                 || property === 'text-shadow'
+                || property === 'font-family'
+                || property === 'font-size'
+                || property === 'font-weight'
+                || property === 'letter-spacing'
+                || property === 'line-height'
             ) {
                 merged[property] = ensureImportantStyleValue(value);
             }
@@ -543,10 +555,93 @@ export function bakeAuthorStylesToComposerForExport(editor) {
 
         editor.Css.setIdRule(id, merged);
 
+        // Inline must be SM-friendly: no !important (breaks select matching),
+        // single-quoted font stacks. Keep !important only on the #id rule above.
+        const inlineStyles = {};
+
+        for (const [property, value] of Object.entries(merged)) {
+            if (value == null || value === '') {
+                continue;
+            }
+
+            let next = String(value).replace(/\s*!important\s*$/i, '').trim();
+
+            if (property === 'font-family') {
+                next = next.replace(/"([^"]+)"/g, "'$1'");
+            }
+
+            inlineStyles[property] = next;
+        }
+
         // Ensure HTML serialization carries the same paints (reload + front without CSS).
-        component.addStyle?.(merged, { inline: true });
+        component.addStyle?.(inlineStyles, { inline: true });
         enforceStyleManagerColorOverUtilities(component);
     });
+}
+
+/**
+ * After reload, CssComposer #id rules may exist while the component model/inline
+ * style is empty — Style Manager then shows "-" for selects. Copy #id paints into
+ * inline (without !important) so the right-column inspector matches the canvas.
+ *
+ * @param {object} editor
+ * @returns {number}
+ */
+export function hydrateAuthorStylesFromIdRules(editor) {
+    const wrapper = editor?.getWrapper?.();
+    const css = editor?.Css;
+
+    if (! wrapper?.onAll || ! css) {
+        return 0;
+    }
+
+    let updated = 0;
+
+    wrapper.onAll((component) => {
+        const id = component.getId?.();
+
+        if (! id) {
+            return;
+        }
+
+        const fromId = { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+
+        if (Object.keys(fromId).length === 0) {
+            return;
+        }
+
+        const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+        const next = { ...fromId };
+
+        for (const [property, value] of Object.entries(next)) {
+            let cleaned = String(value ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+            if (property === 'font-family') {
+                cleaned = cleaned
+                    .replace(/"([^"]+)"/g, "'$1'")
+                    .replace(/\s*!important\s*$/i, '')
+                    .trim();
+            }
+
+            // Prefer existing inline when already set (author just edited).
+            if (inline[property] != null && String(inline[property]).trim() !== '') {
+                let kept = String(inline[property]).replace(/\s*!important\s*$/i, '').trim();
+
+                if (property === 'font-family') {
+                    kept = kept.replace(/"([^"]+)"/g, "'$1'");
+                }
+
+                next[property] = kept;
+            } else {
+                next[property] = cleaned;
+            }
+        }
+
+        component.addStyle?.(next, { inline: true });
+        updated += 1;
+    });
+
+    return updated;
 }
 
 const UTILITY_CLASS_PATTERN = /^(?:container|flex(?:-|$)|grid|mx-|my-|mt-|mb-|ml-|mr-|px-|py-|pt-|pb-|pl-|pr-|md:|lg:|sm:|xl:|2xl:|items-|justify-|gap-|text-|bg-|rounded|w-|h-|max-|min-|object-|overflow-|border(?:-|$)|hidden|block|inline|relative|absolute|static|sticky|grow|shrink|basis-|col-|row-|place-|self-|order-|z-|opacity-|shadow|ring-|aspect-|space-|divide-|font-|leading-|tracking-|list-|uppercase|lowercase|capitalize|italic|antialiased|voodbuilder-|vb-|gjs-)/;
@@ -563,6 +658,226 @@ function isComponentPrivateClass(className) {
     }
 
     return /^c\d+$/i.test(name) || /^id[a-z0-9]+$/i.test(name) || /^gjs-[a-z0-9-]+$/i.test(name);
+}
+
+/**
+ * @param {object} editor
+ * @returns {Map<string, number>}
+ */
+function countPrivateClassUsage(editor) {
+    const counts = new Map();
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper?.onAll) {
+        return counts;
+    }
+
+    wrapper.onAll((component) => {
+        for (const className of normalizeClassNames(component.getClasses?.() ?? [])) {
+            if (! isComponentPrivateClass(className)) {
+                continue;
+            }
+
+            counts.set(className, (counts.get(className) ?? 0) + 1);
+        }
+    });
+
+    return counts;
+}
+
+/**
+ * @param {unknown} rawClasses
+ * @returns {string[]}
+ */
+function normalizeClassNames(rawClasses) {
+    return [...(rawClasses ?? [])].map((item) => (
+        typeof item === 'string' ? item : String(item?.id ?? item?.get?.('name') ?? item ?? '')
+    )).filter(Boolean);
+}
+
+/**
+ * @param {object} styles
+ * @returns {object}
+ */
+function stylesForInlinePersist(styles) {
+    const inlineStyles = { ...styles };
+
+    if (inlineStyles['font-family']) {
+        inlineStyles['font-family'] = String(inlineStyles['font-family'])
+            .replace(/\s*!important\s*$/i, '')
+            .trim()
+            .replace(/"([^"]+)"/g, "'$1'");
+    }
+
+    return inlineStyles;
+}
+
+/**
+ * @param {object} editor
+ * @param {string} className
+ * @returns {object|null}
+ */
+function getPrivateClassRule(editor, className) {
+    const css = editor?.Css;
+
+    if (! css || ! className) {
+        return null;
+    }
+
+    const classRule = css.getClassRule?.(className);
+
+    if (classRule) {
+        return classRule;
+    }
+
+    const rules = css.getRules?.(`.${className}`);
+
+    if (Array.isArray(rules) && rules[0]) {
+        return rules[0];
+    }
+
+    if (rules?.length) {
+        return rules.at?.(0) ?? rules[0];
+    }
+
+    return null;
+}
+
+/**
+ * Promote GrapesJS private style classes (.c1234) onto unique #id rules and remove
+ * the classes from the component. Critical precedence: #id + inline win over the
+ * private-class snapshot, otherwise a shared .cXXXX updated while styling clone A
+ * overwrites clone B's #id font on the next save/reload.
+ *
+ * @param {object} editor
+ * @returns {number} components updated
+ */
+export function promotePrivateStyleClassesToIdRules(editor) {
+    const wrapper = editor?.getWrapper?.();
+    const css = editor?.Css;
+
+    if (! wrapper?.onAll || ! css) {
+        return 0;
+    }
+
+    let updated = 0;
+    const removedClassNames = new Set();
+
+    wrapper.onAll((component) => {
+        const privateNames = normalizeClassNames(component.getClasses?.() ?? [])
+            .filter((name) => isComponentPrivateClass(name));
+
+        if (privateNames.length === 0) {
+            return;
+        }
+
+        const fromPrivate = {};
+
+        for (const className of privateNames) {
+            Object.assign(fromPrivate, getPrivateClassRule(editor, className)?.getStyle?.() ?? {});
+            component.removeClass?.(className);
+            removedClassNames.add(className);
+        }
+
+        const id = component.getId?.();
+        const existing = id ? { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) } : {};
+        // Do NOT use getStyle() here — it re-reads private-class paints and would
+        // put the shared font back on top of a divergent #id rule.
+        const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+        const merged = { ...fromPrivate, ...existing, ...inline };
+
+        if (id && Object.keys(merged).length > 0) {
+            css.setIdRule(id, merged);
+        }
+
+        if (Object.keys(merged).length > 0) {
+            component.addStyle?.(stylesForInlinePersist(merged), { inline: true });
+        }
+
+        updated += 1;
+    });
+
+    for (const className of removedClassNames) {
+        const stillUsed = countPrivateClassUsage(editor).get(className) ?? 0;
+
+        if (stillUsed > 0) {
+            continue;
+        }
+
+        const rule = getPrivateClassRule(editor, className);
+
+        if (rule) {
+            css.remove(rule);
+        }
+    }
+
+    return updated;
+}
+
+/**
+ * @deprecated Prefer promotePrivateStyleClassesToIdRules — kept for callers.
+ * @param {object} editor
+ * @returns {number}
+ */
+export function splitSharedPrivateStyleClasses(editor) {
+    return promotePrivateStyleClassesToIdRules(editor);
+}
+
+/**
+ * After duplicating via HTML, private classes are copied with the markup. Detach
+ * them onto unique #id rules so the clone can be styled independently.
+ *
+ * @param {object} editor
+ * @param {object} rootComponent
+ */
+export function detachPrivateStyleClassesOntoId(editor, rootComponent) {
+    const css = editor?.Css;
+
+    if (! css || ! rootComponent) {
+        return;
+    }
+
+    const walk = (component) => {
+        if (! component) {
+            return;
+        }
+
+        const privateNames = normalizeClassNames(component.getClasses?.() ?? [])
+            .filter((name) => isComponentPrivateClass(name));
+
+        if (privateNames.length > 0) {
+            const fromPrivate = {};
+
+            for (const className of privateNames) {
+                Object.assign(fromPrivate, getPrivateClassRule(editor, className)?.getStyle?.() ?? {});
+                component.removeClass?.(className);
+            }
+
+            const id = component.getId?.();
+            const existing = id ? { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) } : {};
+            const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+            // At clone time styles start equal; #id/inline still win if already set.
+            const next = { ...fromPrivate, ...existing, ...inline };
+
+            if (id && Object.keys(next).length > 0) {
+                css.setIdRule(id, next);
+            }
+
+            if (Object.keys(next).length > 0) {
+                component.addStyle?.(stylesForInlinePersist(next), { inline: true });
+            }
+        }
+
+        const kids = component.components?.();
+
+        if (kids?.forEach) {
+            kids.forEach((child) => walk(child));
+        } else if (kids?.each) {
+            kids.each((child) => walk(child));
+        }
+    };
+
+    walk(rootComponent);
 }
 
 function backgroundStyleTargets(component) {

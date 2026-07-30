@@ -61,6 +61,7 @@ class EditorPageController extends Controller
                 'html' => $normalized['html'],
                 'css' => $normalized['css'],
                 'js' => $normalized['js'],
+                'fonts' => $normalized['fonts'] ?? [],
                 'project' => null,
             ],
         ]);

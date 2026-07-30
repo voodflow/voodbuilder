@@ -1,0 +1,893 @@
+[
+  {
+    "id": "inter",
+    "family": "Inter Variable",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource-variable/inter",
+    "files": [
+      "wght.css"
+    ],
+    "stack": "'Inter Variable', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "roboto",
+    "family": "Roboto",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/roboto",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Roboto', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "open-sans",
+    "family": "Open Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/open-sans",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Open Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "lato",
+    "family": "Lato",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/lato",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Lato', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "montserrat",
+    "family": "Montserrat",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/montserrat",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Montserrat', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "poppins",
+    "family": "Poppins",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/poppins",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Poppins', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "nunito",
+    "family": "Nunito",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/nunito",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Nunito', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "raleway",
+    "family": "Raleway",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/raleway",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Raleway', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "source-sans-3",
+    "family": "Source Sans 3",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/source-sans-3",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Source Sans 3', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "work-sans",
+    "family": "Work Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/work-sans",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Work Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "dm-sans",
+    "family": "DM Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/dm-sans",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'DM Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "manrope",
+    "family": "Manrope",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/manrope",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Manrope', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "outfit",
+    "family": "Outfit",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/outfit",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Outfit', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "plus-jakarta-sans",
+    "family": "Plus Jakarta Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/plus-jakarta-sans",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "figtree",
+    "family": "Figtree",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/figtree",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Figtree', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "instrument-sans",
+    "family": "Instrument Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/instrument-sans",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-600.css"
+    ],
+    "stack": "'Instrument Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      600
+    ]
+  },
+  {
+    "id": "rubik",
+    "family": "Rubik",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/rubik",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Rubik', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "mulish",
+    "family": "Mulish",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/mulish",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Mulish', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "karla",
+    "family": "Karla",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/karla",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Karla', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "barlow",
+    "family": "Barlow",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/barlow",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Barlow', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "ubuntu",
+    "family": "Ubuntu",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/ubuntu",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Ubuntu', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "noto-sans",
+    "family": "Noto Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/noto-sans",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Noto Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "ibm-plex-sans",
+    "family": "IBM Plex Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/ibm-plex-sans",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "space-grotesk",
+    "family": "Space Grotesk",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/space-grotesk",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "lexend",
+    "family": "Lexend",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/lexend",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Lexend', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "albert-sans",
+    "family": "Albert Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/albert-sans",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Albert Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "cabin",
+    "family": "Cabin",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/cabin",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Cabin', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "josefin-sans",
+    "family": "Josefin Sans",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/josefin-sans",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Josefin Sans', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "exo-2",
+    "family": "Exo 2",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/exo-2",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Exo 2', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "red-hat-text",
+    "family": "Red Hat Text",
+    "category": "sans-serif",
+    "provider": "fontsource",
+    "package": "@fontsource/red-hat-text",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Red Hat Text', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "merriweather",
+    "family": "Merriweather",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/merriweather",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Merriweather', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "playfair-display",
+    "family": "Playfair Display",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/playfair-display",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Playfair Display', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "lora",
+    "family": "Lora",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/lora",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Lora', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "source-serif-4",
+    "family": "Source Serif 4",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/source-serif-4",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Source Serif 4', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "libre-baskerville",
+    "family": "Libre Baskerville",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/libre-baskerville",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Libre Baskerville', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "cormorant-garamond",
+    "family": "Cormorant Garamond",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/cormorant-garamond",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Cormorant Garamond', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "eb-garamond",
+    "family": "EB Garamond",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/eb-garamond",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'EB Garamond', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "crimson-pro",
+    "family": "Crimson Pro",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/crimson-pro",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Crimson Pro', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "literata",
+    "family": "Literata",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/literata",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Literata', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "fraunces",
+    "family": "Fraunces",
+    "category": "serif",
+    "provider": "fontsource",
+    "package": "@fontsource/fraunces",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Fraunces', ui-serif, Georgia, serif",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "jetbrains-mono",
+    "family": "JetBrains Mono",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/jetbrains-mono",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'JetBrains Mono', ui-monospace, monospace",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "fira-code",
+    "family": "Fira Code",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/fira-code",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Fira Code', ui-monospace, monospace",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "source-code-pro",
+    "family": "Source Code Pro",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/source-code-pro",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Source Code Pro', ui-monospace, monospace",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  },
+  {
+    "id": "ibm-plex-mono",
+    "family": "IBM Plex Mono",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/ibm-plex-mono",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'IBM Plex Mono', ui-monospace, monospace",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "roboto-mono",
+    "family": "Roboto Mono",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/roboto-mono",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Roboto Mono', ui-monospace, monospace",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "space-mono",
+    "family": "Space Mono",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/space-mono",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Space Mono', ui-monospace, monospace",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "inconsolata",
+    "family": "Inconsolata",
+    "category": "monospace",
+    "provider": "fontsource",
+    "package": "@fontsource/inconsolata",
+    "files": [
+      "latin-400.css",
+      "latin-700.css"
+    ],
+    "stack": "'Inconsolata', ui-monospace, monospace",
+    "weights": [
+      400,
+      700
+    ]
+  },
+  {
+    "id": "oswald",
+    "family": "Oswald",
+    "category": "display",
+    "provider": "fontsource",
+    "package": "@fontsource/oswald",
+    "files": [
+      "latin-400.css",
+      "latin-500.css",
+      "latin-700.css"
+    ],
+    "stack": "'Oswald', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  {
+    "id": "bebas-neue",
+    "family": "Bebas Neue",
+    "category": "display",
+    "provider": "fontsource",
+    "package": "@fontsource/bebas-neue",
+    "files": [
+      "latin-400.css"
+    ],
+    "stack": "'Bebas Neue', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400
+    ]
+  },
+  {
+    "id": "anton",
+    "family": "Anton",
+    "category": "display",
+    "provider": "fontsource",
+    "package": "@fontsource/anton",
+    "files": [
+      "latin-400.css"
+    ],
+    "stack": "'Anton', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400
+    ]
+  },
+  {
+    "id": "archivo",
+    "family": "Archivo",
+    "category": "display",
+    "provider": "fontsource",
+    "package": "@fontsource/archivo",
+    "files": [
+      "latin-400.css",
+      "latin-600.css",
+      "latin-700.css"
+    ],
+    "stack": "'Archivo', ui-sans-serif, system-ui, sans-serif",
+    "weights": [
+      400,
+      600,
+      700
+    ]
+  }
+]

@@ -208,16 +208,20 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 2.7 Font manager (solo font liberi, no Google Fonts) — 🟡 M · P5
+### 2.7 Font manager (solo font liberi, no Google Fonts) — 🟡 M · P5 ✅ MVP
 
-**Cosa:** catalogo font self-hosted (Inter, Instrument Sans, JetBrains Mono già in Vite), attivazione per sub-tema.
+**Stato:** MVP (luglio 2026) — catalogo Fontsource (~50) in Core, Style Manager + lazy load editor, detect su save, publish via Vite manifest. Estendibile con plugin (`registerFonts` / `registerFontProvider`, es. Bunny).
+
+**Cosa:** catalogo font self-hosted; preview realtime in editor; solo font usati sul frontend pubblico.
 
 **Approccio:**
-- Tabella font + file in `storage/app/fonts`.
-- `@font-face` generato al publish.
-- Escludere CDN Google per privacy/GDPR.
+- `resources/fonts/core-catalog.json` + `FontCatalog` / JS catalog.
+- Vite: entry publish + `voodbuilder-fonts-manifest.json`.
+- Plugin companion per provider extra (Bunny / altri) senza CDN Google in Core.
 
-**Vincolo:** solo licenze OSS commercial-friendly documentate.
+**Vincolo:** solo licenze OSS commercial-friendly documentate. No Google Fonts CDN in Core.
+
+**Riferimento:** `docs/FONTS.md`.
 
 ---
 

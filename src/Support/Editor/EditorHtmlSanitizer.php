@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
+
 final class EditorHtmlSanitizer
 {
     /**
@@ -33,8 +35,10 @@ final class EditorHtmlSanitizer
             return $html;
         }
 
-        return self::repairAnimatedBlocks(
-            self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+        return FontStylesheets::sanitizeInlineFontFamilies(
+            self::repairAnimatedBlocks(
+                self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+            ),
         );
     }
 

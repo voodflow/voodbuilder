@@ -19,6 +19,8 @@ use Voodflow\Voodbuilder\Support\Editor\EditorBlockDefinition;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
+use Voodflow\Voodbuilder\Support\Fonts\FontDefinition;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -197,6 +199,40 @@ class Voodbuilder
         foreach ($aliases as $alias) {
             $registry->alias((string) $alias, $id);
         }
+    }
+
+    /**
+     * Extensible webfont catalog (Fontsource core + plugin providers).
+     */
+    public static function fonts(): FontCatalog
+    {
+        $catalog = app(FontCatalog::class);
+        $catalog->bootCore();
+
+        return $catalog;
+    }
+
+    /**
+     * @param  list<array<string, mixed>|FontDefinition>|FontDefinition|array<string, mixed>  $fonts
+     */
+    public static function registerFonts(array|FontDefinition $fonts): void
+    {
+        $catalog = self::fonts();
+
+        if ($fonts instanceof FontDefinition) {
+            $catalog->register($fonts);
+
+            return;
+        }
+
+        // Single associative font array vs list of fonts.
+        if (array_is_list($fonts)) {
+            $catalog->registerMany($fonts);
+
+            return;
+        }
+
+        $catalog->register(FontDefinition::fromArray($fonts));
     }
 
     /**

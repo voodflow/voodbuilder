@@ -103,9 +103,7 @@ final class ConfigureNpmForVoodbuilder
      */
     public static function requiredDevDependencies(): array
     {
-        return [
-            '@fontsource-variable/inter' => '^5.2.8',
-            '@fontsource/jetbrains-mono' => '^5.2.8',
+        $base = [
             '@jodit/image-editor' => '^0.2.5',
             '@tabler/icons' => '^3.45.0',
             '@tailwindcss/vite' => '^4.3.0',
@@ -119,6 +117,56 @@ final class ConfigureNpmForVoodbuilder
             'tailwindcss' => '^4.3.0',
             'tailwindcss-animated' => '^2.0.0',
         ];
+
+        $fonts = self::fontsourcePackagesFromCatalog();
+
+        $merged = array_merge($base, $fonts);
+        ksort($merged);
+
+        return $merged;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fontsourcePackagesFromCatalog(): array
+    {
+        $path = dirname(__DIR__, 2).'/resources/fonts/core-catalog.json';
+
+        if (! is_file($path)) {
+            return [
+                '@fontsource-variable/inter' => '^5.2.8',
+                '@fontsource/jetbrains-mono' => '^5.2.8',
+            ];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $packages = [];
+
+        foreach ($decoded as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            if (($entry['provider'] ?? '') !== 'fontsource') {
+                continue;
+            }
+
+            $package = trim((string) ($entry['package'] ?? ''));
+
+            if ($package === '') {
+                continue;
+            }
+
+            $packages[$package] = '^5.2.8';
+        }
+
+        return $packages;
     }
 
     /**

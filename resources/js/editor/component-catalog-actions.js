@@ -9,7 +9,7 @@ import {
     COMPONENT_SCOPE_ATTR,
     PROPS_ATTR,
 } from './component-instance-type.js';
-import { bakeSvgPaintForComponent, syncPaintStylesForExport } from './tailwind-visual-style.js';
+import { bakeSvgPaintForComponent, detachPrivateStyleClassesOntoId, syncPaintStylesForExport } from './tailwind-visual-style.js';
 import {
     isChromeDropZoneComponent,
     isChromeLayoutContentSlotComponent,
@@ -131,16 +131,79 @@ export function prepareComponentHtmlForSave(editor, component) {
     return component.toHTML({ keepInlineStyle: true });
 }
 
-export function duplicateCanvasComponent(component) {
+export function duplicateCanvasComponent(component, editor = null) {
     if (! component?.parent?.()) {
         return null;
     }
 
     const parent = component.parent();
     const index = parent.components().indexOf(component);
-    const clone = component.clone();
-    parent.components().add(clone, { at: index + 1 });
+
+    if (index < 0) {
+        return null;
+    }
+
+    const ed = editor
+        ?? component.em?.get?.('Editor')
+        ?? component.em
+        ?? null;
+
+    // Prefer HTML round-trip over model.clone(): some custom types flatten to a
+    // text-only sibling on clone(), which is undeletable / missing from Layers.
+    let clone = null;
+    const html = typeof component.toHTML === 'function'
+        ? String(component.toHTML({ keepInlineStyle: true }) ?? '').trim()
+        : '';
+
+    if (html !== '' && typeof parent.append === 'function') {
+        try {
+            const added = parent.append(html, { at: index + 1 });
+            clone = Array.isArray(added) ? added[0] : (added?.models?.[0] ?? added);
+        } catch {
+            clone = null;
+        }
+    }
+
+    if (! clone) {
+        clone = component.clone();
+        parent.components().add(clone, { at: index + 1 });
+    }
+
+    if (! clone?.get) {
+        return null;
+    }
+
     clone.emit?.('change:parent');
+
+    const attrs = clone.getAttributes?.() ?? {};
+
+    if (
+        attrs['data-voodbuilder-top-drop-spacer']
+        || attrs['data-voodbuilder-inner-drop']
+        || String(clone.get?.('type') ?? '') === 'voodbuilder-top-drop-spacer'
+        || String(clone.get?.('type') ?? '') === 'voodbuilder-inner-drop-slot'
+    ) {
+        clone.remove?.();
+
+        return null;
+    }
+
+    clone.set({
+        locked: false,
+        removable: true,
+        copyable: true,
+        draggable: true,
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
+        layerable: true,
+    }, { silent: true });
+
+    // HTML duplication copies GrapesJS private style classes (.c1234). Detach them
+    // onto unique #id rules so styling the clone does not restyle the original.
+    if (ed) {
+        detachPrivateStyleClassesOntoId(ed, clone);
+    }
 
     return clone;
 }

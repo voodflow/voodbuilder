@@ -22,16 +22,35 @@ const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 
 function shouldHideFromLayers(component) {
     const attrs = component.getAttributes?.() ?? {};
+    const type = String(component.get?.('type') ?? '');
 
     if (attrs['data-voodbuilder-editor-site-header']) {
         return true;
     }
 
-    if (attrs[TOP_DROP_SPACER_ATTR] || attrs[INNER_DROP_SLOT_ATTR]) {
+    if (
+        attrs[TOP_DROP_SPACER_ATTR]
+        || attrs[INNER_DROP_SLOT_ATTR]
+        || type === 'voodbuilder-top-drop-spacer'
+        || type === 'voodbuilder-inner-drop-slot'
+    ) {
         return true;
     }
 
     return false;
+}
+
+function hideFromLayers(component) {
+    component.set({
+        layerable: false,
+        draggable: false,
+        selectable: false,
+        hoverable: false,
+        highlightable: false,
+        badgable: false,
+        copyable: false,
+        removable: false,
+    }, { silent: true });
 }
 
 function isTopLevelShellNode(component, wrapper) {
@@ -133,13 +152,7 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
     // Editor-only sentinels (top spacer / inner drop slots) must never appear in Layers,
     // even when they live under Page content (where other children stay layerable).
     if (shouldHideFromLayers(component)) {
-        component.set({
-            layerable: false,
-            draggable: false,
-            selectable: false,
-            hoverable: false,
-            highlightable: false,
-        }, { silent: true });
+        hideFromLayers(component);
 
         forEachGrapesComponent(component, (child) => {
             applyLayersChromeFilter(child, wrapper, editor, true);
@@ -199,7 +212,8 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
     } else if (inPageContentTree) {
         // Undo a previous chrome pass that blanked page-content descendants
         // (Hero looked “flat” with no expandable children).
-        if (component.get('layerable') === false) {
+        // Never resurrect editor drop sentinels — they must stay out of Layers.
+        if (component.get('layerable') === false && ! shouldHideFromLayers(component)) {
             component.set({
                 layerable: true,
                 selectable: true,

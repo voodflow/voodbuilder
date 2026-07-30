@@ -1,11 +1,40 @@
 @php
     use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+    use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
+    use Voodflow\Voodbuilder\Voodbuilder;
 
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $page->resolvedSubTheme();
     $pageContentWidth = ChromeLayoutContentWidth::resolve($voodbuilderChromeLayout ?? null, $page);
+
+    $pageFontIds = $page->builder_payload['fonts'] ?? null;
+
+    if (! is_array($pageFontIds) || $pageFontIds === []) {
+        $pageFontIds = Voodbuilder::fonts()->detectUsedIds(
+            (string) ($page->builder_payload['css'] ?? '')."\n".(string) ($page->builder_payload['html'] ?? ''),
+        );
+    }
+
+    $pageFontUrls = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
+        ? FontStylesheets::urlsFor($pageFontIds)
+        : [];
+    $pageFontFileUrls = $pageFontUrls !== []
+        ? FontStylesheets::fontFileUrlsFor($pageFontIds)
+        : [];
 @endphp
 
 @extends($page->layoutView())
+
+{{-- Early stack (before @vite): preload woff2 + font CSS so first paint uses the right face. --}}
+@if ($pageFontUrls !== [])
+    @push('fonts')
+        @foreach ($pageFontFileUrls as $pageFontFileUrl)
+            <link rel="preload" href="{{ $pageFontFileUrl }}" as="font" type="font/woff2" crossorigin>
+        @endforeach
+        @foreach ($pageFontUrls as $pageFontUrl)
+            <link rel="stylesheet" href="{{ $pageFontUrl }}">
+        @endforeach
+    @endpush
+@endif
 
 @php($editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder() ? $page->renderedStyles() : null)
 @if (filled($editorStyles))

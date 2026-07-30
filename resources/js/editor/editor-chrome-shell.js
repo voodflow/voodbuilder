@@ -142,12 +142,42 @@ function unlockPageContentChildren(editor, slot) {
     });
 }
 
+function isEditorDropSentinel(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+    const type = String(component?.get?.('type') ?? '');
+
+    return Boolean(
+        attrs['data-voodbuilder-top-drop-spacer']
+        || attrs['data-voodbuilder-inner-drop']
+        || type === 'voodbuilder-top-drop-spacer'
+        || type === 'voodbuilder-inner-drop-slot',
+    );
+}
+
 function ensurePageContentBlockEditable(editor, component) {
     if (! component || isPageContentSlot(component)) {
         return;
     }
 
     if (! isInsidePageContentSlot(component)) {
+        return;
+    }
+
+    // Editor-only drop sentinels must stay non-layerable / non-selectable.
+    if (isEditorDropSentinel(component)) {
+        component.set({
+            locked: true,
+            removable: false,
+            copyable: false,
+            draggable: false,
+            selectable: false,
+            hoverable: false,
+            highlightable: false,
+            layerable: false,
+            badgable: false,
+            toolbar: [],
+        }, { silent: true });
+
         return;
     }
 

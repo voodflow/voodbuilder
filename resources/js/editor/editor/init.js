@@ -50,13 +50,15 @@ import {
     registerBlockSettingsUi,
     refreshBlockSettingsUi,
 } from '../blocks/settings/index.js';
-import { buildPayload } from './payload.js';
+import { buildPayload, stripAuthorIdRules } from './payload.js';
 import {
     registerChromeLayoutInspectorSelection,
     wireInspector,
 } from './inspector.js';
 import { bootEditorRegistries } from './compatibility-bridge.js';
 import { bootEditorPlugins, exposeEditorBridge } from '../plugin-bridge.js';
+import { registerFontsUi } from '../fonts/fonts-ui.js';
+import { prefetchFontsFromCss } from '../fonts/font-loader.js';
 import { registerInspectorColorFix, installGlobalColorInputValueFix } from '../inspector-color-fix.js';
 import { guardEditorLayersRender } from '../tailwind-visual-style.js';
 import { configureEditorCodeBlock } from '../editor-code-block.js';
@@ -81,7 +83,7 @@ import { registerGlobalClassesUi } from '../global-classes-ui.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
 import { registerPopupsUi } from '../popups-ui.js';
-import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents } from '../tailwind-visual-style.js';
+import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents, promotePrivateStyleClassesToIdRules, hydrateAuthorStylesFromIdRules } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
 import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
@@ -771,6 +773,16 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     exposeEditorBridge();
 
+    try {
+        registerFontsUi(editor, {
+            fonts: options.fonts ?? null,
+            initialCss: options.initial?.css ?? '',
+            labels: options.labels ?? {},
+        });
+    } catch (error) {
+        console.error('Voodbuilder Editor: fonts UI setup failed.', error);
+    }
+
     bootEditorRegistries(editor, {
         popupMode: Boolean(options.popupMode),
         chromeLayoutMode: Boolean(options.chromeLayoutMode),
@@ -799,6 +811,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     });
 
     editor.__voodbuilderLabels = labels;
+    editor.__voodbuilderEntitlements = options.entitlements ?? {};
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
@@ -1121,12 +1134,24 @@ export function initVoodbuilderEditor(container, options = {}) {
         }
     }
 
-    editor.on('load', () => {
+            editor.on('load', () => {
         purgeLegacyEditorStyles(editor);
         purgeBroadSectionBackgroundRules(editor);
         migrateEditorComponents(editor);
         try {
+            // Split clone-shared .cXXXX before baking paints onto #id rules.
+            promotePrivateStyleClassesToIdRules(editor);
             bakeAuthorStylesToComposerForExport(editor);
+            // After CSS load, mirror #id paints into inline so Style Manager fields
+            // (font family, color, …) are not empty/"-" on first select.
+            hydrateAuthorStylesFromIdRules(editor);
+            window.requestAnimationFrame(() => {
+                try {
+                    hydrateAuthorStylesFromIdRules(editor);
+                } catch {
+                    // Ignore hydrate race during boot.
+                }
+            });
         } catch {
             // Ignore hydrate errors during early boot.
         }
@@ -1357,6 +1382,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         try {
             hydrateSvgPaintFromAttributes(editor);
             purgeDesyncedPaintCssRules(editor);
+            hydrateAuthorStylesFromIdRules(editor);
         } catch {
             // Ignore paint sync errors during early frame mount.
         }
@@ -1938,6 +1964,7 @@ function mountFrontendEditor() {
         revisionsRestoreUrl: config.revisionsRestoreUrl,
         pageTemplatesUrl: config.pageTemplatesUrl,
         pageTemplatesCatalogUrl: config.pageTemplatesCatalogUrl ?? null,
+        fonts: config.fonts ?? null,
         popupsUrl: config.popupsUrl ?? null,
         popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,
         dynamicDataCollections: config.dynamicDataCollections === true,
@@ -2037,15 +2064,13 @@ function mountFrontendEditor() {
             const saved = await response.json().catch(() => ({}));
 
             if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
-                // Always seed the live JIT sheet from the server-compiled save payload.
-                // Chrome-shell used to only invalidate (and never apply), so a failed
-                // compile-css left the canvas without utilities until a full reload.
-                editor.setStyle(saved.css);
-                editor.__voodbuilderApplyPageLiveCss?.(saved.css);
-
-                if (editor.__voodbuilderChromeShellMode) {
-                    editor.__voodbuilderInvalidatePageCss?.();
-                }
+                // Do NOT editor.setStyle(saved.css): replacing CssComposer blanks the
+                // canvas for a frame (theme fallback flash). Author paints stay in
+                // CssComposer from buildPayload bake. Live sheet gets utilities only —
+                // never re-inject #id font rules (they would sit last and override
+                // the next font change until Save). Prefetch must not reassert.
+                editor.__voodbuilderApplyPageLiveCss?.(stripAuthorIdRules(saved.css));
+                void prefetchFontsFromCss(editor, saved.css);
             } else {
                 editor.__voodbuilderInvalidatePageCss?.()
                     ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);

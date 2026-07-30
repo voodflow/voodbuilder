@@ -101,6 +101,7 @@ return [
         'tab_content' => 'Contenuto',
         'tab_style' => 'Stile',
         'style_classes_title' => 'Classi',
+        'font_search_placeholder' => 'Cerca font…',
         'class_input_placeholder' => 'Aggiungi nuova classe…',
         'class_pending_compile' => 'Compilazione in corso per l\'anteprima…',
         'class_copy' => 'Copia classi',

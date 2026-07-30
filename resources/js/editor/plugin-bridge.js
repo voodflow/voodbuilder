@@ -1,3 +1,10 @@
+import {
+    bootCoreFontCatalog,
+    getFontCatalog,
+    registerFontProvider,
+    registerFonts,
+} from './fonts/catalog.js';
+
 /**
  * JS plugin bridge for companion packages (Popups, Components, Dynamic Data, Templates…).
  *
@@ -6,8 +13,10 @@
  * - They register with `registerEditorPlugin({ id, mount })` — never patch GrapesJS core.
  * - Core boots plugins after `grapesjs.init`, passing entitlements/URLs from EditorGate.
  * - Path-repo installs can also ship `plugin.js` discovered via import.meta.glob below.
+ * - Font providers call `registerFonts` / `registerFontProvider` (Fontsource core is built-in).
  *
  * @see docs/EDITOR_JS_PLUGINS.md
+ * @see docs/FONTS.md
  */
 
 /**
@@ -64,6 +73,7 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-components/resources/js/editor/plugin.js',
             '../../../../voodbuilder-dynamic-data/resources/js/editor/plugin.js',
             '../../../../voodbuilder-templates/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-fonts/resources/js/editor/plugin.js',
         ],
         { eager: true },
     );
@@ -103,6 +113,10 @@ export function exposeEditorBridge() {
     const api = {
         registerPlugin: registerEditorPlugin,
         listPlugins: listEditorPlugins,
+        registerFonts,
+        registerFontProvider,
+        getFontCatalog,
+        bootCoreFontCatalog,
     };
 
     window.VoodbuilderEditor = {

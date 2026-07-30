@@ -24,6 +24,7 @@ use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 use Voodflow\Voodbuilder\Voodbuilder;
@@ -160,6 +161,7 @@ final class EditorGate
                 && filled(config('voodbuilder.page_templates.catalog_url'))
                 ? self::editorRoute('voodbuilder.editor.page-templates.catalog')
                 : null,
+            'fonts' => Voodbuilder::fonts()->toEditorPayload(),
             'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
@@ -364,6 +366,7 @@ final class EditorGate
             'tabContent' => __('voodbuilder::pro.editor_ui.tab_content'),
             'tabStyle' => __('voodbuilder::pro.editor_ui.tab_style'),
             'styleClassesTitle' => __('voodbuilder::pro.editor_ui.style_classes_title'),
+            'fontSearchPlaceholder' => __('voodbuilder::pro.editor_ui.font_search_placeholder'),
             'tabDynamic' => __('voodbuilder::pro.editor_ui.tab_dynamic'),
             'tabLayers' => __('voodbuilder::pro.editor_ui.tab_layers'),
             'tabConditions' => __('voodbuilder::pro.editor_ui.tab_conditions'),
@@ -836,7 +839,7 @@ final class EditorGate
 
     /**
      * @param  array{html?: string, css?: string, js?: string, project?: mixed}  $payload
-     * @return array{html: string, css: string, js: string, project: mixed}
+     * @return array{html: string, css: string, js: string, project: mixed, fonts: list<string>}
      */
     public static function normalizePayload(array $payload, bool $recompilePageCss = false): array
     {
@@ -867,14 +870,16 @@ final class EditorGate
             ? EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($migratedHtml, $css)
             : EditorPastedComponentNormalizer::resolvePublishedPageCss($migratedHtml, $css);
 
-        return [
+        $resolvedCss = ThemePalette::stripEmbeddedPaletteOverrides($resolvedCss);
+
+        return FontStylesheets::withDetectedFonts([
             'html' => $migratedHtml,
-            'css' => ThemePalette::stripEmbeddedPaletteOverrides($resolvedCss),
+            'css' => $resolvedCss,
             'js' => EditorJsSanitizer::sanitize($js),
             'project' => is_array($project)
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)
                 : $project,
-        ];
+        ]);
     }
 
     /**

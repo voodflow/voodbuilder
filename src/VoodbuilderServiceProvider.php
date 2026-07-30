@@ -73,6 +73,7 @@ use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding03Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
+use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
@@ -127,6 +128,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ContentChannelRegistry::class);
         $this->app->singleton(MenuItemTypeRegistry::class);
         $this->app->singleton(ModuleRegistry::class);
+        $this->app->singleton(FontCatalog::class);
         $this->app->singleton(EntitlementManager::class, function (): EntitlementManager {
             return new EntitlementManager(EntitlementProviderFactory::make());
         });

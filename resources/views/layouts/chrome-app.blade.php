@@ -98,6 +98,9 @@
         @include('cookie-consent::cookie-consent-head')
     @endunless
 
+    {{-- Page fonts before theme CSS so @font-face + woff2 preload start as early as possible. --}}
+    @stack('fonts')
+
     @if ($voodbuilderEditorAssetsReady)
         @vite($voodbuilderViteEntries)
     @elseif ($editorEditor ?? false)

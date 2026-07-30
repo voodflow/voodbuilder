@@ -15,6 +15,10 @@ function isUnitSelect(select) {
 }
 
 function isFontFamilySelect(select) {
+    if (select.dataset.vbFontSearch === '1') {
+        return true;
+    }
+
     if (select.options.length < 6) {
         return false;
     }
@@ -260,6 +264,7 @@ function syncCustomSelect(wrap) {
 
     if (label) {
         label.textContent = labelText;
+        label.style.fontFamily = select.value || '';
     } else {
         trigger.textContent = labelText;
     }
@@ -271,36 +276,153 @@ function syncCustomSelect(wrap) {
     });
 }
 
+/**
+ * @param {HTMLSelectElement} select
+ * @param {HTMLElement} list
+ * @param {HTMLElement} wrap
+ */
 function buildOptionList(select, list, wrap) {
-    list.replaceChildren();
+    const searchRow = list.querySelector('.voodbuilder-editor-select-search-item');
+    const searchValue = searchRow?.querySelector('input')?.value ?? '';
+
+    list.querySelectorAll('.voodbuilder-editor-select-option').forEach((node) => node.remove());
+    list.querySelector('.voodbuilder-editor-select-empty')?.remove();
 
     const previewFont = wrap.classList.contains('voodbuilder-editor-select-wrap--font');
 
     for (const option of select.options) {
+        const label = option.textContent?.trim() || option.value || '-';
+        const value = option.value;
+
         const item = document.createElement('li');
         item.className = 'voodbuilder-editor-select-option';
         item.role = 'option';
-        item.dataset.value = option.value;
-        item.textContent = option.textContent?.trim() || option.value || '-';
+        item.dataset.value = value;
+        item.dataset.label = label.toLowerCase();
+        item.textContent = label;
         item.tabIndex = -1;
 
-        if (previewFont && option.value) {
-            item.style.fontFamily = option.value;
+        if (previewFont && value) {
+            item.style.fontFamily = value;
         }
 
         item.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            // Close before change handlers — settings remounts must not leave a portal open.
             closeOpenSelects();
-            commitSelectValue(select, option.value);
+            commitSelectValue(select, value);
             syncCustomSelect(wrap);
         });
 
         list.appendChild(item);
     }
 
+    if (searchRow) {
+        list.prepend(searchRow);
+    }
+
+    applyFontSearchFilter(list, wrap, searchValue);
     syncCustomSelect(wrap);
+}
+
+/**
+ * Filter in place — never recreate the search input (keeps focus while typing).
+ *
+ * @param {HTMLElement} list
+ * @param {HTMLElement} wrap
+ * @param {string} [query]
+ */
+function applyFontSearchFilter(list, wrap, query = '') {
+    const previewFont = wrap.classList.contains('voodbuilder-editor-select-wrap--font');
+    const needle = String(query ?? '').trim().toLowerCase();
+    let visible = 0;
+
+    list.querySelectorAll('.voodbuilder-editor-select-option').forEach((item) => {
+        const haystack = `${item.dataset.label ?? ''} ${item.dataset.value ?? ''}`.toLowerCase();
+        const match = needle === '' || haystack.includes(needle);
+        item.hidden = ! match;
+
+        if (match) {
+            visible += 1;
+        }
+    });
+
+    let empty = list.querySelector('.voodbuilder-editor-select-empty');
+
+    if (previewFont && visible === 0) {
+        if (! empty) {
+            empty = document.createElement('li');
+            empty.className = 'voodbuilder-editor-select-empty';
+            empty.setAttribute('role', 'presentation');
+            empty.textContent = 'Nessun font';
+            list.appendChild(empty);
+        }
+    } else {
+        empty?.remove();
+    }
+}
+
+/**
+ * @param {HTMLSelectElement} select
+ * @param {HTMLElement} list
+ * @param {HTMLElement} wrap
+ */
+function ensureFontSearchRow(select, list, wrap) {
+    if (! wrap.classList.contains('voodbuilder-editor-select-wrap--font')) {
+        return null;
+    }
+
+    let row = list.querySelector('.voodbuilder-editor-select-search-item');
+
+    if (row) {
+        return row.querySelector('input');
+    }
+
+    row = document.createElement('li');
+    row.className = 'voodbuilder-editor-select-search-item';
+    row.setAttribute('role', 'presentation');
+
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'voodbuilder-editor-select-search';
+    search.placeholder = select.dataset.vbFontSearchPlaceholder || 'Cerca font…';
+    search.autocomplete = 'off';
+    search.spellcheck = false;
+    search.setAttribute('aria-label', search.placeholder);
+
+    search.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+    });
+
+    search.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    search.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+
+        if (event.key === 'Escape') {
+            if (search.value !== '') {
+                search.value = '';
+                applyFontSearchFilter(list, wrap, '');
+                event.preventDefault();
+            }
+        }
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            list.querySelector('.voodbuilder-editor-select-option:not([hidden])')?.focus?.();
+        }
+    });
+
+    search.addEventListener('input', () => {
+        applyFontSearchFilter(list, wrap, search.value);
+    });
+
+    row.appendChild(search);
+    list.prepend(row);
+
+    return search;
 }
 
 function enhanceSelect(select) {
@@ -312,12 +434,26 @@ function enhanceSelect(select) {
         const wrap = select.closest('.voodbuilder-editor-select-wrap');
 
         if (wrap) {
-            const list = wrap.querySelector('.voodbuilder-editor-select-list');
+            const list = wrap.querySelector('.voodbuilder-editor-select-list')
+                ?? PORTAL_LISTS.get(wrap);
 
-            if (list && list.childElementCount !== select.options.length) {
-                buildOptionList(select, list, wrap);
-            } else {
-                syncCustomSelect(wrap);
+            if (list) {
+                const search = list.querySelector('.voodbuilder-editor-select-search');
+
+                // Never rebuild while the user is typing in the font search.
+                if (search && document.activeElement === search) {
+                    syncCustomSelect(wrap);
+
+                    return;
+                }
+
+                const optionCount = list.querySelectorAll('.voodbuilder-editor-select-option').length;
+
+                if (optionCount !== select.options.length) {
+                    buildOptionList(select, list, wrap);
+                } else {
+                    syncCustomSelect(wrap);
+                }
             }
         }
 
@@ -402,6 +538,17 @@ function enhanceSelect(select) {
         portalList(wrap, list);
         list.hidden = false;
         trigger.setAttribute('aria-expanded', 'true');
+
+        const search = ensureFontSearchRow(select, list, wrap);
+
+        if (search) {
+            search.value = '';
+            applyFontSearchFilter(list, wrap, '');
+            window.requestAnimationFrame(() => {
+                search.focus();
+            });
+        }
+
         list.querySelector('.voodbuilder-editor-select-option.is-selected')?.scrollIntoView?.({ block: 'nearest' });
     };
 
@@ -409,6 +556,13 @@ function enhanceSelect(select) {
         wrap.classList.remove('is-open');
         list.hidden = true;
         trigger.setAttribute('aria-expanded', 'false');
+
+        const search = list.querySelector('.voodbuilder-editor-select-search');
+
+        if (search && search.value !== '') {
+            search.value = '';
+            applyFontSearchFilter(list, wrap, '');
+        }
 
         if (list.classList.contains('voodbuilder-editor-select-list--portal')) {
             restoreList(wrap, list);
@@ -446,6 +600,13 @@ function enhanceSelect(select) {
     });
 
     select.addEventListener('change', () => syncCustomSelect(wrap));
+    select.addEventListener('vb:options-changed', () => {
+        buildOptionList(select, list, wrap);
+    });
+
+    if (fontList) {
+        ensureFontSearchRow(select, list, wrap);
+    }
 
     buildOptionList(select, list, wrap);
 
@@ -614,6 +775,10 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
 
     const refresh = () => {
         if (document.querySelector('.voodbuilder-editor-select-wrap.is-open')) {
+            return;
+        }
+
+        if (document.activeElement?.classList?.contains('voodbuilder-editor-select-search')) {
             return;
         }
 

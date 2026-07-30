@@ -21,10 +21,22 @@ import {
 } from './chrome-editor-guards.js';
 import { copyTextToClipboard } from './clipboard.js';
 import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
+import { canEntitlement } from './editor/entitlements.js';
 import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
 function isRichTextCanvasTarget(component) {
     return Boolean(isRichTextComponent(component) || findRichTextHost(component));
+}
+
+function canUseBlockCodeTools(editor) {
+    if (! editor?.__voodbuilderCanvasBlockCodeRegistered) {
+        return false;
+    }
+
+    const entitlements = editor.__voodbuilderEntitlements ?? {};
+
+    return canEntitlement(entitlements, 'componentsLibrary')
+        || canEntitlement(entitlements, 'componentsCodeImport');
 }
 
 export function resolveComponentFromElement(editor, element) {
@@ -142,7 +154,7 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
             id: 'duplicate',
             label: labels.canvasDuplicate ?? 'Duplicate',
             onSelect: () => {
-                const clone = duplicateCanvasComponent(component);
+                const clone = duplicateCanvasComponent(component, editor);
 
                 if (clone) {
                     editor.select(clone);
@@ -220,7 +232,7 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         },
     });
 
-    if (catalogItem || (! isRichTextCanvasTarget(component) && canEditBlockCode(component, editor))) {
+    if (catalogItem || (! isRichTextCanvasTarget(component) && canUseBlockCodeTools(editor) && canEditBlockCode(component, editor))) {
         pushSeparator(items);
     }
 
@@ -241,7 +253,7 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
         });
     }
 
-    if (! isRichTextCanvasTarget(component) && canEditBlockCode(component, editor)) {
+    if (! isRichTextCanvasTarget(component) && canUseBlockCodeTools(editor) && canEditBlockCode(component, editor)) {
         items.push({
             id: 'edit-block-code',
             label: labels.editBlockCode ?? 'Edit code',

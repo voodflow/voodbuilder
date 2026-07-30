@@ -101,6 +101,7 @@ return [
         'tab_content' => 'Content',
         'tab_style' => 'Style',
         'style_classes_title' => 'Classes',
+        'font_search_placeholder' => 'Search fonts…',
         'class_input_placeholder' => 'Add new class…',
         'class_pending_compile' => 'Compiling for canvas preview…',
         'class_copy' => 'Copy classes',

@@ -9,10 +9,12 @@ import {
     extractBlockCodeHtml,
 } from './canvas-block-code-editor.js';
 import { copyTextToClipboard } from './clipboard.js';
+import { duplicateCanvasComponent } from './component-catalog-actions.js';
 import { copySelectedComponentClasses } from './tailwind-class-suggestions.js';
 import { lucideIcon } from './editor-icons.js';
 import { shouldSuppressChromeSlotInspector } from './chrome-content-slot-utils.js';
 import { isChromeEditorProtectedComponent, canDuplicateChromeEditorComponent } from './chrome-editor-guards.js';
+import { canEntitlement } from './editor/entitlements.js';
 import { CMD_EDIT_IMAGE, resolveEditableImageTarget } from './jodit-image-editor.js';
 import {
     buildContentWidthToolbarButton,
@@ -27,7 +29,35 @@ export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
 export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 export const CMD_COPY_COMPONENT_CLASSES = 'voodbuilder:copy-component-classes';
 export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
+export const CMD_CLONE_COMPONENT = 'voodbuilder:clone-component';
 export { CMD_EDIT_IMAGE };
+
+/**
+ * Edit/Copy code require the Components plugin (not available on free).
+ *
+ * @param {object} editor
+ * @returns {boolean}
+ */
+function canUseBlockCodeTools(editor) {
+    if (! editor?.__voodbuilderCanvasBlockCodeRegistered) {
+        return false;
+    }
+
+    const entitlements = editor.__voodbuilderEntitlements ?? {};
+
+    return canEntitlement(entitlements, 'componentsLibrary')
+        || canEntitlement(entitlements, 'componentsCodeImport');
+}
+
+/**
+ * Prefer the Rich Text host when an inner locked child is selected.
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null|undefined}
+ */
+function resolveCloneTarget(component) {
+    return findRichTextHost(component) ?? component;
+}
 
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 
@@ -271,7 +301,7 @@ function buildComponentToolbar(editor, component, labels = {}) {
                 'aria-label': labels.clone ?? 'Duplicate',
             },
             label: lucideIcon('copy-plus', 16),
-            command: 'tlb-clone',
+            command: CMD_CLONE_COMPONENT,
         });
     }
 
@@ -289,9 +319,10 @@ function buildComponentToolbar(editor, component, labels = {}) {
     }
 
     // Rich Text: edit content in the Content panel — skip code/dynamic chrome here.
+    // Edit/Copy code are Components-plugin features (not on free).
     const richText = isRichTextCanvasTarget(component);
 
-    if (! richText && canEditBlockCode(component, editor)) {
+    if (! richText && canUseBlockCodeTools(editor) && canEditBlockCode(component, editor)) {
         toolbar.push({
             attributes: {
                 class: 'voodbuilder-editor-toolbar-item--code',
@@ -480,6 +511,30 @@ function ensureCopyComponentCommands(editor, labels = {}) {
         commands.add(CMD_COPY_COMPONENT_CODE, {
             run: async (ed) => {
                 await runCopyComponentCode(ed, labels);
+            },
+        });
+    }
+
+    if (! hasCommand(CMD_CLONE_COMPONENT)) {
+        commands.add(CMD_CLONE_COMPONENT, {
+            run: (ed) => {
+                const selected = ed.getSelected?.();
+                const target = resolveCloneTarget(selected);
+
+                if (! target || ! canDuplicateChromeEditorComponent(target, ed)) {
+                    return;
+                }
+
+                const clone = duplicateCanvasComponent(target, ed);
+
+                if (! clone) {
+                    return;
+                }
+
+                ed.select(clone);
+                ed.trigger('update');
+                // Rebuild toolbar for the new selection (sibling index / move buttons).
+                ensureCanvasComponentToolbarButtons(ed, clone, ed.__voodbuilderLabels ?? labels);
             },
         });
     }

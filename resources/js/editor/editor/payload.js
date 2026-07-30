@@ -43,6 +43,21 @@ import {
  * @param {string} css
  * @returns {string}
  */
+/**
+ * Keep Style Manager author paints from getCss() in chrome-shell mode.
+ * After promotePrivateStyleClassesToIdRules + bake, paints live on #id rules.
+ * Do NOT keep GrapesJS private classes (.c1234): clones share those class names
+ * and re-persisting them makes sibling fonts converge again on reload.
+ *
+ * @param {string} selectors
+ * @returns {boolean}
+ */
+function isAuthorStyleSelector(selectors) {
+    const value = String(selectors ?? '').trim();
+
+    return value !== '' && value.includes('#');
+}
+
 export function extractGrapesComposerCss(css) {
     const source = String(css ?? '').trim();
 
@@ -75,7 +90,7 @@ export function extractGrapesComposerCss(css) {
             continue;
         }
 
-        if (! selectors.includes('#')) {
+        if (! isAuthorStyleSelector(selectors)) {
             continue;
         }
 
@@ -83,6 +98,27 @@ export function extractGrapesComposerCss(css) {
     }
 
     return kept.join('\n');
+}
+
+/**
+ * Remove author `#id { … }` rules from a CSS blob (e.g. live JIT sheet).
+ * Keeps utilities; avoids stale font-family #id rules overriding the canvas
+ * after Save when the live sheet is injected last in the iframe head.
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function stripAuthorIdRules(css) {
+    const source = String(css ?? '');
+
+    if (source === '' || ! source.includes('#')) {
+        return source.trim();
+    }
+
+    return source
+        .replace(/#[A-Za-z][\w-]*(?:\s*,\s*#[A-Za-z][\w-]*)*\s*\{[^{}]*\}/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }
 
 function normalizeDynamicBlockComponents(editor) {
@@ -211,9 +247,9 @@ export function buildPayload(editor, options = {}) {
     // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
     // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Chrome shell/layout: keep Style Manager #id paints from getCss(), but not the
-    // full composer bundle (that baked ThemePalette + utilities and exploded on re-save).
-    const liveCss = String(editor.__voodbuilderPageLiveCss ?? '').trim();
+    // Chrome shell/layout: keep Style Manager #id paints from getCss() (private
+    // .c* classes are promoted to #id on save — keeping them caused clone bleed).
+    const liveCss = stripAuthorIdRules(String(editor.__voodbuilderPageLiveCss ?? '').trim());
     const composerCss = String(editor.getCss?.() ?? '').trim();
     const styleManagerCss = extractGrapesComposerCss(composerCss);
     const preferComposerSubset = Boolean(
