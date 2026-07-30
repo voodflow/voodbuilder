@@ -34,15 +34,15 @@ Lo script bulk aveva lasciato duplicati o alias spezzati; sistemati:
 - README / `LAYOUT_CONTRACT.md` / `BUILD.md`: togliere menzioni “legacy vpress” / Vpress
 - Rebuild `resources/dist/theme-map.js` dopo il rename del mount globale
 
-### Unica eccezione intenzionale
+### Schema DB (fase iniziale)
 
-Resta la migration storica:
+Le migration di create usano già i nomi `voodbuilder_*`. In fase iniziale non serve un percorso di upgrade da tabelle `vpress_*`, quindi è stata **eliminata** anche:
 
 `database/migrations/2026_06_29_200000_rename_vpress_tables_to_voodbuilder.php`
 
-Contiene i **nomi tabelle sorgente** (`vpress_*` → `voodbuilder_*`) perché è l’unico modo corretto di rinominare DB già migrati. Non è un’integrazione al package vpress: è un rename schema già applicato / da applicare su installazioni vecchie.
+Su ambienti di sviluppo già migrati: `migrate:fresh` (o equivalente) così lo schema nasce solo con i nomi `voodbuilder_*`.
 
-Nessun altro file del package deve contenere `vpress` / `Vpress`.
+Nessun file del package deve contenere `vpress` / `Vpress` (questo documento è l’unica eccezione narrativa del purge).
 
 ## Fuori scope
 
