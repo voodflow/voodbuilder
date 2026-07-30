@@ -338,47 +338,6 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         delete blockEl.dataset.voodbuilderTemplateSelectBound;
     }
 
-    function bindBlockSelectionHandler(blockEl, templateId) {
-        unbindBlockSelectionHandler(blockEl);
-
-        const key = String(templateId ?? '').trim();
-
-        if (key === '') {
-            return;
-        }
-
-        const onMouseDown = (event) => {
-            if (event.button !== 0) {
-                return;
-            }
-
-            if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            toggleTemplateSelection({ id: key });
-        };
-
-        const onClick = (event) => {
-            if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-        };
-
-        blockEl.__voodbuilderOnTemplateSelect = onMouseDown;
-        blockEl.__voodbuilderOnTemplateSelectClick = onClick;
-        blockEl.addEventListener('mousedown', onMouseDown, true);
-        blockEl.addEventListener('click', onClick, true);
-        blockEl.dataset.voodbuilderTemplateSelectBound = 'true';
-    }
-
     function updateBlocksSelectionState() {
         const roots = [
             blocksMountNode,
@@ -400,20 +359,23 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                     return;
                 }
 
-                const item = resolveTemplateFromBlockElement(editor, blockEl, catalog);
-                const templateId = item ? String(item.id) : String(blockEl.getAttribute('data-voodbuilder-template-id') ?? '');
-                const isSelected = templateId !== '' && selectedIds.has(templateId);
+                // Drop legacy per-card listeners (caused double-toggle with root capture).
+                unbindBlockSelectionHandler(blockEl);
+
+                const templateId = resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
+                    ?? blockEl.getAttribute('data-voodbuilder-template-id')
+                    ?? '';
+                const isSelected = selectionMode && templateId !== '' && selectedIds.has(String(templateId));
+
+                blockEl.classList.toggle('is-selectable', selectionMode);
+                blockEl.classList.toggle('is-selected', isSelected);
+                blockEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
                 if (templateId !== '') {
-                    blockEl.setAttribute('data-voodbuilder-template-id', templateId);
+                    blockEl.setAttribute('data-voodbuilder-template-id', String(templateId));
                 }
 
-                blockEl.classList.toggle('is-selected', selectionMode && isSelected);
-                blockEl.classList.toggle('is-selectable', selectionMode);
-                blockEl.setAttribute('aria-pressed', selectionMode && isSelected ? 'true' : 'false');
-
                 let check = blockEl.querySelector('[data-voodbuilder-template-selection-check]');
-                blockEl.querySelector('[data-voodbuilder-template-selection-hit]')?.remove();
 
                 if (selectionMode) {
                     if (! check) {
@@ -425,19 +387,123 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                         blockEl.appendChild(check);
                     }
 
-                    if (templateId !== '') {
-                        check.dataset.voodbuilderTemplateId = templateId;
-                        bindBlockSelectionHandler(blockEl, templateId);
-                    }
-
                     check.classList.toggle('is-checked', isSelected);
                     check.classList.toggle('is-empty', ! isSelected);
                 } else {
-                    unbindBlockSelectionHandler(blockEl);
                     check?.remove();
                 }
             });
         }
+
+        syncTemplateBlockQuickActions();
+    }
+
+    function syncTemplateBlockQuickActions() {
+        if (! canAuthorTemplates) {
+            return;
+        }
+
+        const container = editor.BlockManager?.getContainer?.();
+
+        if (! container) {
+            return;
+        }
+
+        container.querySelectorAll('.gjs-block').forEach((blockEl) => {
+            if (! isPageTemplateBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
+                ?? (blockEl.getAttribute('data-voodbuilder-template-id')
+                    ? { id: blockEl.getAttribute('data-voodbuilder-template-id') }
+                    : null);
+
+            if (! item?.id) {
+                return;
+            }
+
+            let toolbar = blockEl.querySelector('[data-voodbuilder-template-block-toolbar]');
+
+            if (! toolbar) {
+                toolbar = document.createElement('div');
+                toolbar.className = 'voodbuilder-editor-page-template-block__toolbar';
+                toolbar.dataset.voodbuilderTemplateBlockToolbar = '';
+                toolbar.setAttribute('role', 'toolbar');
+
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'voodbuilder-editor-page-template-block__toolbar-btn voodbuilder-editor-page-template-block__toolbar-btn--danger';
+                deleteButton.dataset.voodbuilderTemplateBlockDelete = '';
+                deleteButton.title = labels.pageTemplatesDelete ?? 'Delete';
+                deleteButton.setAttribute('aria-label', labels.pageTemplatesDelete ?? 'Delete');
+                deleteButton.innerHTML = lucideIcon('trash-2', 14);
+
+                deleteButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    void deleteTemplatesByIds([String(item.id)], {
+                        confirmMessage: labels.pageTemplatesDeleteConfirm
+                            ?? 'Delete this template?',
+                    });
+                });
+
+                toolbar.append(deleteButton);
+                blockEl.appendChild(toolbar);
+            }
+
+            toolbar.hidden = selectionMode;
+        });
+    }
+
+    async function deleteTemplatesByIds(ids, options = {}) {
+        const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+
+        if (uniqueIds.length === 0) {
+            return false;
+        }
+
+        const confirmed = await confirmDialog({
+            title: labels.dialogConfirmTitle ?? 'Confirm',
+            message: options.confirmMessage
+                ?? labels.pageTemplatesDeleteSelectedConfirm
+                ?? 'Delete selected templates?',
+            labels,
+            danger: true,
+            confirmLabel: labels.pageTemplatesDelete ?? 'Delete',
+        });
+
+        if (! confirmed) {
+            return false;
+        }
+
+        for (const id of uniqueIds) {
+            const response = await fetch(`${baseUrl}/${id}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf),
+            });
+
+            if (! response.ok && response.status !== 404) {
+                await alertDialog({
+                    message: labels.pageTemplatesDeleteError ?? 'Could not delete template.',
+                    labels,
+                });
+
+                return false;
+            }
+
+            selectedIds.delete(id);
+        }
+
+        if (selectionMode) {
+            setSelectionMode(false);
+        }
+
+        await syncCatalog();
+
+        return true;
     }
 
     function setSelectionMode(active) {
@@ -462,15 +528,6 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
             refreshTemplateLibraryUi();
             bindTemplateLibraryBlockInteractions();
-
-            window.requestAnimationFrame(() => {
-                if (editor.__voodbuilderTemplateSelectionMode !== selectionMode) {
-                    return;
-                }
-
-                refreshTemplateLibraryUi();
-                bindTemplateLibraryBlockInteractions();
-            });
         });
     }
 
@@ -513,94 +570,92 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
     }
 
     function bindTemplateLibraryBlockInteractions() {
-        // Mirror Components: capture mousedown before GrapesJS BlockView.startDrag.
-        const attachToRoot = (root) => {
-            if (! root) {
+        // Same pattern as Components: one capture listener on BlockManager container only.
+        const container = editor.BlockManager?.getContainer?.();
+
+        if (! container) {
+            return;
+        }
+
+        if (container.__voodbuilderTemplateSelectHandler) {
+            container.removeEventListener('mousedown', container.__voodbuilderTemplateSelectHandler, true);
+            container.removeEventListener('click', container.__voodbuilderTemplateClickHandler, true);
+        }
+
+        const handleSelectMouseDown = (event) => {
+            if (event.button !== 0) {
                 return;
             }
 
-            // Always (re)bind — BlockManager.render() recreates cards; a sticky "bound"
-            // flag left us listening on a stale tree while new cards had no handlers.
-            if (root.__voodbuilderTemplateSelectHandler) {
-                root.removeEventListener('mousedown', root.__voodbuilderTemplateSelectHandler, true);
-                root.removeEventListener('click', root.__voodbuilderTemplateClickHandler, true);
+            if (editor.__voodbuilderActiveLibrary !== 'templates') {
+                return;
             }
 
-            const handleSelectMouseDown = (event) => {
-                if (event.button !== 0) {
-                    return;
-                }
+            if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                return;
+            }
 
-                if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                    return;
-                }
+            if (event.target.closest('[data-voodbuilder-template-block-toolbar]')) {
+                return;
+            }
 
-                const blockEl = event.target.closest?.('.gjs-block');
+            const blockEl = event.target.closest?.('.gjs-block');
 
-                if (! blockEl || ! root.contains(blockEl)) {
-                    return;
-                }
+            if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
+                return;
+            }
 
-                if (! isPageTemplateBlockElement(editor, blockEl)) {
-                    return;
-                }
+            tagPageTemplateBlockElements(editor);
 
-                tagPageTemplateBlockElements(editor);
+            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
+                ?? (blockEl.getAttribute('data-voodbuilder-template-id')
+                    ? { id: blockEl.getAttribute('data-voodbuilder-template-id') }
+                    : null);
 
-                const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
-                    ?? (blockEl.getAttribute('data-voodbuilder-template-id')
-                        ? { id: blockEl.getAttribute('data-voodbuilder-template-id') }
-                        : null);
+            if (! item?.id) {
+                return;
+            }
 
-                if (! item?.id) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                toggleTemplateSelection(item);
-            };
-
-            const handleSelectClick = (event) => {
-                if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                    return;
-                }
-
-                const blockEl = event.target.closest?.('.gjs-block');
-
-                if (! blockEl || ! root.contains(blockEl) || ! isPageTemplateBlockElement(editor, blockEl)) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-            };
-
-            root.__voodbuilderTemplateSelectHandler = handleSelectMouseDown;
-            root.__voodbuilderTemplateClickHandler = handleSelectClick;
-            root.dataset.voodbuilderTemplateLibraryBound = 'v4';
-            root.addEventListener('mousedown', handleSelectMouseDown, true);
-            root.addEventListener('click', handleSelectClick, true);
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            toggleTemplateSelection(item);
         };
 
+        const handleSelectClick = (event) => {
+            if (editor.__voodbuilderActiveLibrary !== 'templates') {
+                return;
+            }
+
+            if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                return;
+            }
+
+            const blockEl = event.target.closest?.('.gjs-block');
+
+            if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        };
+
+        container.__voodbuilderTemplateSelectHandler = handleSelectMouseDown;
+        container.__voodbuilderTemplateClickHandler = handleSelectClick;
+        container.addEventListener('mousedown', handleSelectMouseDown, true);
+        container.addEventListener('click', handleSelectClick, true);
+
         refreshTemplateLibraryUi();
-        attachToRoot(libraryRoot);
-        attachToRoot(blocksMountNode);
-        attachToRoot(editor.BlockManager?.getContainer?.());
-        attachToRoot(templatesMount);
+        updateBlocksSelectionState();
 
         if (! editor.__voodbuilderTemplateLibraryInteractionsHooked) {
             editor.__voodbuilderTemplateLibraryInteractionsHooked = true;
 
             const reattach = () => {
                 window.requestAnimationFrame(() => {
-                    attachToRoot(libraryRoot);
-                    attachToRoot(blocksMountNode);
-                    attachToRoot(editor.BlockManager?.getContainer?.());
-                    attachToRoot(templatesMount);
-                    refreshTemplateLibraryUi();
+                    bindTemplateLibraryBlockInteractions();
                 });
             };
 
@@ -980,34 +1035,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             return;
         }
 
-        const confirmed = await confirmDialog({
-            title: labels.dialogConfirmTitle ?? 'Confirm',
-            message: labels.pageTemplatesDeleteSelectedConfirm ?? 'Delete selected templates?',
-            labels,
-            danger: true,
-            confirmLabel: labels.pageTemplatesDelete ?? 'Delete',
-        });
-
-        if (! confirmed) {
-            return;
-        }
-
-        for (const id of [...selectedIds]) {
-            const response = await fetch(`${baseUrl}/${id}`, {
-                method: 'DELETE',
-                credentials: 'same-origin',
-                headers: editorApiHeaders(csrf),
-            });
-
-            if (! response.ok && response.status !== 404) {
-                await alertDialog({ message: labels.pageTemplatesDeleteError ?? 'Could not delete template.', labels });
-
-                return;
-            }
-        }
-
-        setSelectionMode(false);
-        await syncCatalog();
+        await deleteTemplatesByIds([...selectedIds]);
     });
 
     editor.on('component:add', async (component) => {

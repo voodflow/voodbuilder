@@ -3900,8 +3900,48 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-templates-library.is-selection-mode .voodbuilder-editor-page-template-block__selection-check {
     display: inline-flex;
+    pointer-events: none;
+}
+
+.voodbuilder-editor-page-template-block__toolbar {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    z-index: 8;
+    display: none;
+    gap: 0.2rem;
     pointer-events: auto;
+}
+
+.voodbuilder-editor-template-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:hover .voodbuilder-editor-page-template-block__toolbar,
+.voodbuilder-editor-template-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:focus-within .voodbuilder-editor-page-template-block__toolbar,
+.voodbuilder-editor-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:hover .voodbuilder-editor-page-template-block__toolbar,
+.voodbuilder-editor-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:focus-within .voodbuilder-editor-page-template-block__toolbar {
+    display: inline-flex;
+}
+
+.voodbuilder-editor-templates-library.is-selection-mode .voodbuilder-editor-page-template-block__toolbar {
+    display: none !important;
+}
+
+.voodbuilder-editor-page-template-block__toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, var(--color-vp-bg-elv, #fff) 92%, transparent);
+    color: var(--color-vp-c-text-1, #0f172a);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
     cursor: pointer;
+}
+
+.voodbuilder-editor-page-template-block__toolbar-btn--danger:hover,
+.voodbuilder-editor-page-template-block__toolbar-btn--danger:focus-visible {
+    background: color-mix(in srgb, #ef4444 18%, var(--color-vp-bg-elv, #fff));
+    color: #b91c1c;
 }
 
 .voodbuilder-editor-page-template-block__selection-check.is-checked {
