@@ -3913,6 +3913,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     pointer-events: auto;
 }
 
+.voodbuilder-editor-page-template-block__toolbar.is-always-visible,
 .voodbuilder-editor-template-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:hover .voodbuilder-editor-page-template-block__toolbar,
 .voodbuilder-editor-template-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:focus-within .voodbuilder-editor-page-template-block__toolbar,
 .voodbuilder-editor-blocks-mount .gjs-block.voodbuilder-editor-page-template-block:hover .voodbuilder-editor-page-template-block__toolbar,

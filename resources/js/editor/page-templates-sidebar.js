@@ -403,249 +403,170 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             return;
         }
 
-        const container = editor.BlockManager?.getContainer?.();
+        const roots = [
+            blocksMountNode,
+            editor.BlockManager?.getContainer?.(),
+        ].filter(Boolean);
 
-        if (! container) {
-            return;
-        }
+        const seen = new Set();
 
-        container.querySelectorAll('.gjs-block').forEach((blockEl) => {
-            if (! isPageTemplateBlockElement(editor, blockEl)) {
-                return;
-            }
+        for (const root of roots) {
+            root.querySelectorAll('.gjs-block').forEach((blockEl) => {
+                if (seen.has(blockEl)) {
+                    return;
+                }
 
-            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
-                ?? (blockEl.getAttribute('data-voodbuilder-template-id')
-                    ? { id: blockEl.getAttribute('data-voodbuilder-template-id') }
-                    : null);
+                seen.add(blockEl);
 
-            if (! item?.id) {
-                return;
-            }
+                if (! isPageTemplateBlockElement(editor, blockEl)) {
+                    return;
+                }
 
-            let toolbar = blockEl.querySelector('[data-voodbuilder-template-block-toolbar]');
+                const templateId = String(
+                    resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
+                        ?? blockEl.getAttribute('data-voodbuilder-template-id')
+                        ?? '',
+                ).trim();
 
-            if (! toolbar) {
-                toolbar = document.createElement('div');
-                toolbar.className = 'voodbuilder-editor-page-template-block__toolbar';
-                toolbar.dataset.voodbuilderTemplateBlockToolbar = '';
-                toolbar.setAttribute('role', 'toolbar');
+                if (templateId === '') {
+                    return;
+                }
 
-                const deleteButton = document.createElement('button');
-                deleteButton.type = 'button';
-                deleteButton.className = 'voodbuilder-editor-page-template-block__toolbar-btn voodbuilder-editor-page-template-block__toolbar-btn--danger';
-                deleteButton.dataset.voodbuilderTemplateBlockDelete = '';
-                deleteButton.title = labels.pageTemplatesDelete ?? 'Delete';
-                deleteButton.setAttribute('aria-label', labels.pageTemplatesDelete ?? 'Delete');
-                deleteButton.innerHTML = lucideIcon('trash-2', 14);
+                blockEl.setAttribute('data-voodbuilder-template-id', templateId);
 
-                deleteButton.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-                    void deleteTemplatesByIds([String(item.id)], {
-                        confirmMessage: labels.pageTemplatesDeleteConfirm
-                            ?? 'Delete this template?',
-                    });
-                });
+                let toolbar = blockEl.querySelector('[data-voodbuilder-template-block-toolbar]');
 
-                toolbar.append(deleteButton);
-                blockEl.appendChild(toolbar);
-            }
+                if (! toolbar) {
+                    toolbar = document.createElement('div');
+                    toolbar.className = 'voodbuilder-editor-page-template-block__toolbar';
+                    toolbar.dataset.voodbuilderTemplateBlockToolbar = '';
+                    toolbar.setAttribute('role', 'toolbar');
 
-            toolbar.hidden = selectionMode;
-        });
-    }
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'voodbuilder-editor-page-template-block__toolbar-btn voodbuilder-editor-page-template-block__toolbar-btn--danger';
+                    deleteButton.dataset.voodbuilderTemplateBlockDelete = templateId;
+                    deleteButton.title = labels.pageTemplatesDelete ?? 'Delete';
+                    deleteButton.setAttribute('aria-label', labels.pageTemplatesDelete ?? 'Delete');
+                    deleteButton.innerHTML = lucideIcon('trash-2', 14);
 
-    async function deleteTemplatesByIds(ids, options = {}) {
-        const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+                    toolbar.append(deleteButton);
+                    blockEl.appendChild(toolbar);
+                } else {
+                    const deleteButton = toolbar.querySelector('[data-voodbuilder-template-block-delete]');
+                    if (deleteButton) {
+                        deleteButton.dataset.voodbuilderTemplateBlockDelete = templateId;
+                    }
+                }
 
-        if (uniqueIds.length === 0) {
-            return false;
-        }
-
-        const confirmed = await confirmDialog({
-            title: labels.dialogConfirmTitle ?? 'Confirm',
-            message: options.confirmMessage
-                ?? labels.pageTemplatesDeleteSelectedConfirm
-                ?? 'Delete selected templates?',
-            labels,
-            danger: true,
-            confirmLabel: labels.pageTemplatesDelete ?? 'Delete',
-        });
-
-        if (! confirmed) {
-            return false;
-        }
-
-        for (const id of uniqueIds) {
-            const response = await fetch(`${baseUrl}/${id}`, {
-                method: 'DELETE',
-                credentials: 'same-origin',
-                headers: editorApiHeaders(csrf),
+                // Always show trash when authoring (hover was unreliable / easy to miss).
+                toolbar.hidden = selectionMode;
+                toolbar.classList.toggle('is-always-visible', ! selectionMode);
             });
-
-            if (! response.ok && response.status !== 404) {
-                await alertDialog({
-                    message: labels.pageTemplatesDeleteError ?? 'Could not delete template.',
-                    labels,
-                });
-
-                return false;
-            }
-
-            selectedIds.delete(id);
         }
-
-        if (selectionMode) {
-            setSelectionMode(false);
-        }
-
-        await syncCatalog();
-
-        return true;
     }
 
-    function setSelectionMode(active) {
-        selectionMode = active;
-        editor.__voodbuilderTemplateSelectionMode = active;
+    function resolveTemplateIdFromEventTarget(target) {
+        const blockEl = target?.closest?.('.gjs-block');
 
-        if (! selectionMode) {
-            selectedIds.clear();
-        } else {
-            expandLibraryCategories(editor, 'templates');
+        if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
+            return '';
         }
 
-        syncTemplateBlockDragState(selectionMode);
-        updateSelectionUi();
-        refreshTemplateLibraryUi();
-        bindTemplateLibraryBlockInteractions();
+        tagPageTemplateBlockElements(editor);
 
-        window.requestAnimationFrame(() => {
-            if (selectionMode) {
-                expandLibraryCategories(editor, 'templates');
-            }
-
-            refreshTemplateLibraryUi();
-            bindTemplateLibraryBlockInteractions();
-        });
-    }
-
-    function toggleTemplateSelection(item) {
-        const key = String(item?.id ?? '').trim();
-
-        if (key === '') {
-            return;
-        }
-
-        if (selectedIds.has(key)) {
-            selectedIds.delete(key);
-        } else {
-            selectedIds.add(key);
-        }
-
-        updateSelectionUi();
-        updateBlocksSelectionState();
-    }
-
-    function updateSelectionUi() {
-        const count = selectedIds.size;
-
-        if (selectionCountEl) {
-            selectionCountEl.textContent = formatCountLabel(labels.pageTemplatesSelectedCount, count);
-        }
-
-        if (exportSelectedBtn) {
-            exportSelectedBtn.disabled = count === 0;
-        }
-
-        if (deleteSelectedBtn) {
-            deleteSelectedBtn.disabled = count === 0;
-        }
-        selectToggleBtn?.classList.toggle('is-active', selectionMode);
-        selectToggleBtn?.setAttribute('aria-pressed', selectionMode ? 'true' : 'false');
-        selectionBar.hidden = ! selectionMode;
-        headerEl?.toggleAttribute('hidden', selectionMode);
-        libraryRoot?.classList.toggle('is-selection-mode', selectionMode);
+        return String(
+            resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
+                ?? blockEl.getAttribute('data-voodbuilder-template-id')
+                ?? '',
+        ).trim();
     }
 
     function bindTemplateLibraryBlockInteractions() {
-        // Same pattern as Components: one capture listener on BlockManager container only.
-        const container = editor.BlockManager?.getContainer?.();
+        const roots = [
+            blocksMountNode,
+            editor.BlockManager?.getContainer?.(),
+            libraryRoot,
+        ].filter(Boolean);
 
-        if (! container) {
-            return;
+        for (const root of roots) {
+            if (root.__voodbuilderTemplateSelectHandler) {
+                root.removeEventListener('pointerdown', root.__voodbuilderTemplateSelectHandler, true);
+                root.removeEventListener('click', root.__voodbuilderTemplateClickHandler, true);
+            }
+
+            const handlePointerDown = (event) => {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                const deleteBtn = event.target.closest?.('[data-voodbuilder-template-block-delete]');
+
+                if (deleteBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    const id = String(
+                        deleteBtn.dataset.voodbuilderTemplateBlockDelete
+                            ?? resolveTemplateIdFromEventTarget(deleteBtn)
+                            ?? '',
+                    ).trim();
+
+                    if (id !== '') {
+                        void deleteTemplatesByIds([id], {
+                            confirmMessage: labels.pageTemplatesDeleteConfirm ?? 'Delete this template?',
+                        });
+                    }
+
+                    return;
+                }
+
+                if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                    return;
+                }
+
+                const id = resolveTemplateIdFromEventTarget(event.target);
+
+                if (id === '') {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                toggleTemplateSelection({ id });
+            };
+
+            const handleClick = (event) => {
+                if (event.target.closest?.('[data-voodbuilder-template-block-toolbar]')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    return;
+                }
+
+                if (editor.__voodbuilderTemplateSelectionMode !== true) {
+                    return;
+                }
+
+                const id = resolveTemplateIdFromEventTarget(event.target);
+
+                if (id === '') {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+            };
+
+            root.__voodbuilderTemplateSelectHandler = handlePointerDown;
+            root.__voodbuilderTemplateClickHandler = handleClick;
+            root.addEventListener('pointerdown', handlePointerDown, true);
+            root.addEventListener('click', handleClick, true);
         }
-
-        if (container.__voodbuilderTemplateSelectHandler) {
-            container.removeEventListener('mousedown', container.__voodbuilderTemplateSelectHandler, true);
-            container.removeEventListener('click', container.__voodbuilderTemplateClickHandler, true);
-        }
-
-        const handleSelectMouseDown = (event) => {
-            if (event.button !== 0) {
-                return;
-            }
-
-            if (editor.__voodbuilderActiveLibrary !== 'templates') {
-                return;
-            }
-
-            if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                return;
-            }
-
-            if (event.target.closest('[data-voodbuilder-template-block-toolbar]')) {
-                return;
-            }
-
-            const blockEl = event.target.closest?.('.gjs-block');
-
-            if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
-                return;
-            }
-
-            tagPageTemplateBlockElements(editor);
-
-            const item = resolveTemplateFromBlockElement(editor, blockEl, catalog)
-                ?? (blockEl.getAttribute('data-voodbuilder-template-id')
-                    ? { id: blockEl.getAttribute('data-voodbuilder-template-id') }
-                    : null);
-
-            if (! item?.id) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            toggleTemplateSelection(item);
-        };
-
-        const handleSelectClick = (event) => {
-            if (editor.__voodbuilderActiveLibrary !== 'templates') {
-                return;
-            }
-
-            if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                return;
-            }
-
-            const blockEl = event.target.closest?.('.gjs-block');
-
-            if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-        };
-
-        container.__voodbuilderTemplateSelectHandler = handleSelectMouseDown;
-        container.__voodbuilderTemplateClickHandler = handleSelectClick;
-        container.addEventListener('mousedown', handleSelectMouseDown, true);
-        container.addEventListener('click', handleSelectClick, true);
 
         refreshTemplateLibraryUi();
         updateBlocksSelectionState();
