@@ -6,8 +6,8 @@ import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { alertDialog, componentMetaDialog, confirmDialog, promptDialog } from './editor-dialog.js';
 import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
 import { buildPayload } from './editor.js';
-import { lucideIcon } from './editor-icons.js';
-import { applyBlocksLibraryUi, collapseLibraryCategories, expandLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
+import { lucideIcon, tablerIcon } from './editor-icons.js';
+import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import { refreshComponentBlocksLibrary } from './components-ui.js';
 import { applyPageTemplateWithPrompt } from './page-template-apply.js';
 import {
@@ -16,9 +16,7 @@ import {
     PAGE_TEMPLATE_DROP_ATTR,
     isPageTemplateBlock,
     isPageTemplateBlockId,
-    isPageTemplateBlockElement,
     pageTemplateCategoryAttributes,
-    resolveTemplateFromBlockElement,
     tagPageTemplateBlockElements,
 } from './page-template-block-utils.js';
 import { inspectorEmptyStateUpsellHtml } from './inspector-empty-state.js';
@@ -130,7 +128,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             ? `<button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-library__icon-btn" data-voodbuilder-page-template-import-url title="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}" aria-label="${escapeHtml(labels.pageTemplatesImportUrl ?? 'Install from URL')}">${lucideIcon('link', 16)}</button>`
             : '',
         canAuthorTemplates
-            ? `<button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-library__icon-btn" data-voodbuilder-page-template-select-toggle title="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-label="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-pressed="false">${lucideIcon('box-select', 16)}</button>`
+            ? `<button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-library__icon-btn" data-voodbuilder-page-template-select-toggle title="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-label="${escapeHtml(labels.pageTemplatesSelectMode ?? 'Select templates')}" aria-pressed="false">${tablerIcon('file-x', 16)}</button>`
             : '',
         canExportTemplates
             ? `<button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-library__icon-btn" data-voodbuilder-page-template-export title="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}" aria-label="${escapeHtml(labels.pageTemplatesExport ?? 'Export all')}">${lucideIcon('upload', 16)}</button>`
@@ -159,10 +157,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         : '';
 
     const exportSelectedHtml = canExportTemplates
-        ? `<button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost voodbuilder-editor-templates-selection-bar__action" data-voodbuilder-templates-export-selected disabled>
-                            ${lucideIcon('upload', 14)}
-                            <span>${escapeHtml(labels.pageTemplatesExportSelected ?? 'Export selected')}</span>
-                        </button>`
+        ? `<button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-selection-bar__icon" data-voodbuilder-templates-export-selected disabled title="${escapeHtml(labels.pageTemplatesExportSelected ?? 'Export selected')}" aria-label="${escapeHtml(labels.pageTemplatesExportSelected ?? 'Export selected')}">${lucideIcon('upload', 16)}</button>`
         : '';
 
     templatesMount.innerHTML = `
@@ -175,19 +170,11 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                     ${iconActions ? `<div class="voodbuilder-editor-templates-library__icon-actions" role="group" aria-label="${escapeHtml(labels.pageTemplatesTitle ?? 'Templates')}">${iconActions}</div>` : ''}
                 </div>
                 <div class="voodbuilder-editor-templates-selection-bar" data-voodbuilder-templates-selection-bar hidden>
-                    <p class="voodbuilder-editor-templates-selection-bar__meta">
-                        <span class="voodbuilder-editor-templates-selection-bar__count" data-voodbuilder-templates-selection-count>${escapeHtml(formatCountLabel(labels.pageTemplatesSelectedCount, 0))}</span>
-                    </p>
+                    <span class="voodbuilder-editor-templates-selection-bar__count" data-voodbuilder-templates-selection-count>${escapeHtml(formatCountLabel(labels.pageTemplatesSelectedCount, 0))}</span>
                     <div class="voodbuilder-editor-templates-selection-bar__actions">
                         ${exportSelectedHtml}
-                        <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost voodbuilder-editor-templates-selection-bar__action voodbuilder-editor-templates-selection-bar__action--danger" data-voodbuilder-templates-delete-selected disabled>
-                            ${lucideIcon('trash-2', 14)}
-                            <span>${escapeHtml(labels.pageTemplatesDeleteSelected ?? 'Delete selected')}</span>
-                        </button>
-                        <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost voodbuilder-editor-templates-selection-bar__action" data-voodbuilder-templates-select-cancel>
-                            ${lucideIcon('x', 14)}
-                            <span>${escapeHtml(labels.pageTemplatesSelectCancel ?? 'Cancel selection')}</span>
-                        </button>
+                        <button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-selection-bar__icon voodbuilder-editor-templates-selection-bar__icon--danger" data-voodbuilder-templates-delete-selected disabled title="${escapeHtml(labels.pageTemplatesDeleteSelected ?? 'Delete selected')}" aria-label="${escapeHtml(labels.pageTemplatesDeleteSelected ?? 'Delete selected')}">${lucideIcon('trash-2', 16)}</button>
+                        <button type="button" class="voodbuilder-editor-icon-btn voodbuilder-editor-templates-selection-bar__icon" data-voodbuilder-templates-select-cancel title="${escapeHtml(labels.pageTemplatesSelectCancel ?? 'Cancel selection')}" aria-label="${escapeHtml(labels.pageTemplatesSelectCancel ?? 'Cancel selection')}">${lucideIcon('x', 16)}</button>
                     </div>
                 </div>
             </div>
@@ -201,6 +188,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost voodbuilder-editor-btn--block" data-voodbuilder-page-template-import-cancel>${escapeHtml(labels.pageTemplatesImportCancel ?? 'Cancel')}</button>
             </section>
             <section class="voodbuilder-editor-page-templates-catalog" data-voodbuilder-page-templates-catalog hidden></section>
+            <div class="voodbuilder-editor-templates-select-grid" data-voodbuilder-templates-select-grid hidden></div>
             <div class="voodbuilder-editor-template-blocks-mount" data-voodbuilder-template-blocks-mount></div>
         </div>
     `;
@@ -208,6 +196,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
     const libraryRoot = templatesMount.querySelector('[data-voodbuilder-templates-library]');
     const headerEl = templatesMount.querySelector('.voodbuilder-editor-templates-library__header');
     const blocksMountNode = templatesMount.querySelector('[data-voodbuilder-template-blocks-mount]');
+    const selectGridEl = templatesMount.querySelector('[data-voodbuilder-templates-select-grid]');
     const catalogEl = templatesMount.querySelector('[data-voodbuilder-page-templates-catalog]');
     const importPanel = templatesMount.querySelector('[data-voodbuilder-page-template-import-panel]');
     const importDropzone = templatesMount.querySelector('[data-voodbuilder-page-template-import-drop]');
@@ -305,283 +294,179 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
     function refreshTemplateLibraryUi() {
         tagPageTemplateBlockElements(editor);
-        syncTemplateBlockDragState(selectionMode);
-        updateBlocksSelectionState();
+        syncTemplateBlockDragState();
+        syncSelectionModeDom();
     }
 
-    function syncTemplateBlockDragState(active) {
+    function syncTemplateBlockDragState() {
         editor.BlockManager?.getAll?.()?.forEach((block) => {
             if (! isPageTemplateBlock(block)) {
                 return;
             }
 
-            // Same as Components: model flag only. Selection relies on capture mousedown
-            // (preventDefault + stopPropagation) before BlockView.startDrag / native DnD.
-            block.set('draggable', ! active);
+            block.set('draggable', ! selectionMode);
         });
     }
 
-    function unbindBlockSelectionHandler(blockEl) {
-        const onMouseDown = blockEl.__voodbuilderOnTemplateSelect;
-        const onClick = blockEl.__voodbuilderOnTemplateSelectClick;
-
-        if (onMouseDown) {
-            blockEl.removeEventListener('mousedown', onMouseDown, true);
-            delete blockEl.__voodbuilderOnTemplateSelect;
+    function syncSelectionModeDom() {
+        if (blocksMountNode) {
+            blocksMountNode.hidden = selectionMode;
+            blocksMountNode.classList.toggle('is-selection-hidden', selectionMode);
         }
 
-        if (onClick) {
-            blockEl.removeEventListener('click', onClick, true);
-            delete blockEl.__voodbuilderOnTemplateSelectClick;
-        }
-
-        delete blockEl.dataset.voodbuilderTemplateSelectBound;
+        renderSelectGrid();
     }
 
-    function updateBlocksSelectionState() {
-        const roots = [
-            blocksMountNode,
-            libraryRoot,
-            editor.BlockManager?.getContainer?.(),
-        ].filter(Boolean);
+    function filteredCatalog() {
+        const query = String(readBlocksSearchQuery() ?? '').trim().toLowerCase();
 
-        const seen = new Set();
-
-        for (const root of roots) {
-            root.querySelectorAll('.gjs-block').forEach((blockEl) => {
-                if (seen.has(blockEl)) {
-                    return;
-                }
-
-                seen.add(blockEl);
-
-                if (! isPageTemplateBlockElement(editor, blockEl)) {
-                    return;
-                }
-
-                // Drop legacy per-card listeners (caused double-toggle with root capture).
-                unbindBlockSelectionHandler(blockEl);
-
-                const templateId = resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
-                    ?? blockEl.getAttribute('data-voodbuilder-template-id')
-                    ?? '';
-                const isSelected = selectionMode && templateId !== '' && selectedIds.has(String(templateId));
-
-                blockEl.classList.toggle('is-selectable', selectionMode);
-                blockEl.classList.toggle('is-selected', isSelected);
-                blockEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-
-                if (templateId !== '') {
-                    blockEl.setAttribute('data-voodbuilder-template-id', String(templateId));
-                }
-
-                let check = blockEl.querySelector('[data-voodbuilder-template-selection-check]');
-
-                if (selectionMode) {
-                    if (! check) {
-                        check = document.createElement('span');
-                        check.className = 'voodbuilder-editor-page-template-block__selection-check';
-                        check.dataset.voodbuilderTemplateSelectionCheck = '';
-                        check.setAttribute('aria-hidden', 'true');
-                        check.innerHTML = lucideIcon('check', 12);
-                        blockEl.appendChild(check);
-                    }
-
-                    check.classList.toggle('is-checked', isSelected);
-                    check.classList.toggle('is-empty', ! isSelected);
-                } else {
-                    check?.remove();
-                }
-            });
+        if (query === '') {
+            return catalog;
         }
 
-        syncTemplateBlockQuickActions();
+        return catalog.filter((template) => {
+            const hay = `${template.name ?? ''} ${template.category ?? ''} ${template.description ?? ''}`.toLowerCase();
+
+            return hay.includes(query);
+        });
     }
 
-    function syncTemplateBlockQuickActions() {
-        if (! canAuthorTemplates) {
+    function renderSelectGrid() {
+        if (! selectGridEl || ! canAuthorTemplates) {
+            if (selectGridEl) {
+                selectGridEl.hidden = true;
+                selectGridEl.replaceChildren();
+            }
+
             return;
         }
 
-        const roots = [
-            blocksMountNode,
-            editor.BlockManager?.getContainer?.(),
-        ].filter(Boolean);
+        if (! selectionMode) {
+            selectGridEl.hidden = true;
+            selectGridEl.replaceChildren();
 
-        const seen = new Set();
-
-        for (const root of roots) {
-            root.querySelectorAll('.gjs-block').forEach((blockEl) => {
-                if (seen.has(blockEl)) {
-                    return;
-                }
-
-                seen.add(blockEl);
-
-                if (! isPageTemplateBlockElement(editor, blockEl)) {
-                    return;
-                }
-
-                const templateId = String(
-                    resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
-                        ?? blockEl.getAttribute('data-voodbuilder-template-id')
-                        ?? '',
-                ).trim();
-
-                if (templateId === '') {
-                    return;
-                }
-
-                blockEl.setAttribute('data-voodbuilder-template-id', templateId);
-
-                let toolbar = blockEl.querySelector('[data-voodbuilder-template-block-toolbar]');
-
-                if (! toolbar) {
-                    toolbar = document.createElement('div');
-                    toolbar.className = 'voodbuilder-editor-page-template-block__toolbar';
-                    toolbar.dataset.voodbuilderTemplateBlockToolbar = '';
-                    toolbar.setAttribute('role', 'toolbar');
-
-                    const deleteButton = document.createElement('button');
-                    deleteButton.type = 'button';
-                    deleteButton.className = 'voodbuilder-editor-page-template-block__toolbar-btn voodbuilder-editor-page-template-block__toolbar-btn--danger';
-                    deleteButton.dataset.voodbuilderTemplateBlockDelete = templateId;
-                    deleteButton.title = labels.pageTemplatesDelete ?? 'Delete';
-                    deleteButton.setAttribute('aria-label', labels.pageTemplatesDelete ?? 'Delete');
-                    deleteButton.innerHTML = lucideIcon('trash-2', 14);
-
-                    toolbar.append(deleteButton);
-                    blockEl.appendChild(toolbar);
-                } else {
-                    const deleteButton = toolbar.querySelector('[data-voodbuilder-template-block-delete]');
-                    if (deleteButton) {
-                        deleteButton.dataset.voodbuilderTemplateBlockDelete = templateId;
-                    }
-                }
-
-                // Always show trash when authoring (hover was unreliable / easy to miss).
-                toolbar.hidden = selectionMode;
-                toolbar.classList.toggle('is-always-visible', ! selectionMode);
-            });
-        }
-    }
-
-    function resolveTemplateIdFromEventTarget(target) {
-        const blockEl = target?.closest?.('.gjs-block');
-
-        if (! blockEl || ! isPageTemplateBlockElement(editor, blockEl)) {
-            return '';
+            return;
         }
 
-        tagPageTemplateBlockElements(editor);
+        const items = filteredCatalog();
+        selectGridEl.hidden = false;
+        selectGridEl.replaceChildren();
 
-        return String(
-            resolveTemplateFromBlockElement(editor, blockEl, catalog)?.id
-                ?? blockEl.getAttribute('data-voodbuilder-template-id')
-                ?? '',
-        ).trim();
-    }
+        if (items.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'voodbuilder-editor-hint';
+            empty.textContent = labels.pageTemplatesEmpty ?? 'No page templates yet.';
+            selectGridEl.append(empty);
 
-    function bindTemplateLibraryBlockInteractions() {
-        const roots = [
-            blocksMountNode,
-            editor.BlockManager?.getContainer?.(),
-            libraryRoot,
-        ].filter(Boolean);
+            return;
+        }
 
-        for (const root of roots) {
-            if (root.__voodbuilderTemplateSelectHandler) {
-                root.removeEventListener('pointerdown', root.__voodbuilderTemplateSelectHandler, true);
-                root.removeEventListener('click', root.__voodbuilderTemplateClickHandler, true);
+        // Group by category for scanability with many templates.
+        const groups = new Map();
+
+        for (const template of items) {
+            const category = normalizeCategory(
+                template.category,
+                labels.pageTemplatesUncategorized ?? 'Miscellaneous',
+            );
+
+            if (! groups.has(category)) {
+                groups.set(category, []);
             }
 
-            const handlePointerDown = (event) => {
-                if (event.button !== 0) {
-                    return;
-                }
-
-                const deleteBtn = event.target.closest?.('[data-voodbuilder-template-block-delete]');
-
-                if (deleteBtn) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-
-                    const id = String(
-                        deleteBtn.dataset.voodbuilderTemplateBlockDelete
-                            ?? resolveTemplateIdFromEventTarget(deleteBtn)
-                            ?? '',
-                    ).trim();
-
-                    if (id !== '') {
-                        void deleteTemplatesByIds([id], {
-                            confirmMessage: labels.pageTemplatesDeleteConfirm ?? 'Delete this template?',
-                        });
-                    }
-
-                    return;
-                }
-
-                if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                    return;
-                }
-
-                const id = resolveTemplateIdFromEventTarget(event.target);
-
-                if (id === '') {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                toggleTemplateSelection({ id });
-            };
-
-            const handleClick = (event) => {
-                if (event.target.closest?.('[data-voodbuilder-template-block-toolbar]')) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-
-                    return;
-                }
-
-                if (editor.__voodbuilderTemplateSelectionMode !== true) {
-                    return;
-                }
-
-                const id = resolveTemplateIdFromEventTarget(event.target);
-
-                if (id === '') {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-            };
-
-            root.__voodbuilderTemplateSelectHandler = handlePointerDown;
-            root.__voodbuilderTemplateClickHandler = handleClick;
-            root.addEventListener('pointerdown', handlePointerDown, true);
-            root.addEventListener('click', handleClick, true);
+            groups.get(category).push(template);
         }
 
-        refreshTemplateLibraryUi();
-        updateBlocksSelectionState();
+        for (const [category, templates] of groups) {
+            const section = document.createElement('section');
+            section.className = 'voodbuilder-editor-templates-select-grid__section';
 
-        if (! editor.__voodbuilderTemplateLibraryInteractionsHooked) {
-            editor.__voodbuilderTemplateLibraryInteractionsHooked = true;
+            const title = document.createElement('h4');
+            title.className = 'voodbuilder-editor-templates-select-grid__section-title';
+            title.textContent = category;
+            section.append(title);
 
-            const reattach = () => {
-                window.requestAnimationFrame(() => {
-                    bindTemplateLibraryBlockInteractions();
+            const grid = document.createElement('div');
+            grid.className = 'voodbuilder-editor-templates-select-grid__cards';
+
+            for (const template of templates) {
+                const id = String(template.id ?? '').trim();
+
+                if (id === '') {
+                    continue;
+                }
+
+                const selected = selectedIds.has(id);
+                const card = document.createElement('article');
+                card.className = 'voodbuilder-editor-templates-select-card';
+                card.classList.toggle('is-selected', selected);
+                card.dataset.voodbuilderTemplateId = id;
+                card.tabIndex = 0;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+
+                const check = document.createElement('span');
+                check.className = 'voodbuilder-editor-templates-select-card__check';
+                check.classList.toggle('is-checked', selected);
+                check.setAttribute('aria-hidden', 'true');
+                check.innerHTML = lucideIcon('check', 12);
+
+                const media = document.createElement('div');
+                media.className = 'voodbuilder-editor-templates-select-card__media';
+                media.innerHTML = thumbWrap(previewSvg(
+                    '<rect x="8" y="10" width="32" height="28" rx="2.5" /><path d="M8 18h32" />',
+                ));
+
+                const label = document.createElement('div');
+                label.className = 'voodbuilder-editor-templates-select-card__label';
+                label.textContent = template.name ?? id;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'voodbuilder-editor-templates-select-card__delete';
+                deleteBtn.title = labels.pageTemplatesDelete ?? 'Delete';
+                deleteBtn.setAttribute('aria-label', labels.pageTemplatesDelete ?? 'Delete');
+                deleteBtn.innerHTML = lucideIcon('trash-2', 14);
+                deleteBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    void deleteTemplatesByIds([id], {
+                        confirmMessage: labels.pageTemplatesDeleteConfirm ?? 'Delete this template?',
+                    });
                 });
-            };
 
-            editor.on('block:add', reattach);
-            editor.on('block:remove', reattach);
+                const toggle = () => {
+                    if (selectedIds.has(id)) {
+                        selectedIds.delete(id);
+                    } else {
+                        selectedIds.add(id);
+                    }
+
+                    updateSelectionUi();
+                    renderSelectGrid();
+                };
+
+                card.addEventListener('click', (event) => {
+                    if (event.target.closest('.voodbuilder-editor-templates-select-card__delete')) {
+                        return;
+                    }
+
+                    toggle();
+                });
+
+                card.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        toggle();
+                    }
+                });
+
+                card.append(check, deleteBtn, media, label);
+                grid.append(card);
+            }
+
+            section.append(grid);
+            selectGridEl.append(section);
         }
     }
 
@@ -640,40 +525,10 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
 
         if (! selectionMode) {
             selectedIds.clear();
-        } else {
-            expandLibraryCategories(editor, 'templates');
         }
 
-        syncTemplateBlockDragState(selectionMode);
         updateSelectionUi();
         refreshTemplateLibraryUi();
-        bindTemplateLibraryBlockInteractions();
-
-        window.requestAnimationFrame(() => {
-            if (selectionMode) {
-                expandLibraryCategories(editor, 'templates');
-            }
-
-            refreshTemplateLibraryUi();
-            bindTemplateLibraryBlockInteractions();
-        });
-    }
-
-    function toggleTemplateSelection(item) {
-        const key = String(item?.id ?? '').trim();
-
-        if (key === '') {
-            return;
-        }
-
-        if (selectedIds.has(key)) {
-            selectedIds.delete(key);
-        } else {
-            selectedIds.add(key);
-        }
-
-        updateSelectionUi();
-        updateBlocksSelectionState();
     }
 
     function updateSelectionUi() {
@@ -698,11 +553,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         libraryRoot?.classList.toggle('is-selection-mode', selectionMode);
     }
 
-    editor.__voodbuilderToggleTemplateSelection = toggleTemplateSelection;
-    editor.__voodbuilderOnTemplateLibraryRefresh = () => {
-        refreshTemplateLibraryUi();
-        bindTemplateLibraryBlockInteractions();
-    };
+    editor.__voodbuilderOnTemplateLibraryRefresh = refreshTemplateLibraryUi;
 
     function setImportPanelOpen(open) {
         if (! importPanel) {
@@ -1060,6 +911,12 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         setSelectionMode(! selectionMode);
     });
 
+    shell.querySelector('.voodbuilder-editor-blocks-search')?.addEventListener('input', () => {
+        if (selectionMode) {
+            renderSelectGrid();
+        }
+    });
+
     templatesMount.querySelector('[data-voodbuilder-templates-select-cancel]')?.addEventListener('click', () => {
         setSelectionMode(false);
     });
@@ -1109,7 +966,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
         }
     });
 
-    bindTemplateLibraryBlockInteractions();
+    refreshTemplateLibraryUi();
 
     void syncCatalog();
     void loadCatalog();
