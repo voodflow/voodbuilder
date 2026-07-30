@@ -6,7 +6,7 @@ import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
-import { applyIconToComponent, readIconColor } from './basic-elements-settings.js';
+import { applyIconToComponent, findIconHost, isIconComponent, readIconColor } from './basic-elements-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
 
 export const BASIC_BLOCK_CATEGORY = 'Basic';
@@ -139,21 +139,21 @@ function linkTraitSchema() {
 }
 
 function applyLinkProps(component) {
-    const linkType = component.get('data-vb-link-type') ?? 'url';
-    const href = String(component.get('href') ?? '#').trim() || '#';
-    const target = component.get('target') ?? '';
+    const attrs = component.getAttributes?.() ?? {};
+    const linkType = component.get('linkType')
+        ?? attrs['data-vb-link-type']
+        ?? component.get('data-vb-link-type')
+        ?? 'url';
+    const href = String(component.get('href') ?? attrs.href ?? '#').trim() || '#';
+    const target = component.get('target') ?? attrs.target ?? '';
 
     component.addAttributes({
         'data-vb-link-type': linkType,
-        href: linkType === 'none' ? '#' : href,
-        target: target || null,
-        rel: target === '_blank' ? 'noopener noreferrer' : null,
-        'data-vb-lightbox': linkType.startsWith('lightbox-') ? linkType.replace('lightbox-', '') : null,
+        href: linkType === 'none' ? null : href,
+        target: linkType === 'none' || ! target ? null : target,
+        rel: linkType !== 'none' && target === '_blank' ? 'noopener noreferrer' : null,
+        'data-vb-lightbox': String(linkType).startsWith('lightbox-') ? String(linkType).replace('lightbox-', '') : null,
     });
-
-    if (linkType === 'none') {
-        component.addAttributes({ href: null, target: null, rel: null });
-    }
 }
 
 function registerLinkableType(editor, typeName, defaults = {}) {
@@ -173,7 +173,59 @@ function registerLinkableType(editor, typeName, defaults = {}) {
                 traits: linkTraitSchema(),
             },
             init() {
-                this.on('change:data-vb-link-type change:href change:target', () => applyLinkProps(this));
+                this.on('change:linkType change:data-vb-link-type change:href change:target', () => applyLinkProps(this));
+                applyLinkProps(this);
+            },
+        },
+    });
+}
+
+/**
+ * Icon is a span by default (not a Grapes `link`) so it drops into catalog Heroes
+ * and dropzones reliably; it morphs to `<a>` only when a link type is set.
+ *
+ * @param {import('grapesjs').Editor} editor
+ */
+function registerIconType(editor) {
+    if (editor.DomComponents.getType('voodbuilder-icon')) {
+        return;
+    }
+
+    editor.DomComponents.addType('voodbuilder-icon', {
+        extend: 'default',
+        isComponent: (element) => {
+            if (element?.getAttribute?.('data-voodbuilder-icon') != null) {
+                return { type: 'voodbuilder-icon' };
+            }
+
+            return false;
+        },
+        model: {
+            defaults: {
+                tagName: 'span',
+                name: 'Icon',
+                droppable: false,
+                editable: false,
+                attributes: {
+                    'data-voodbuilder-icon': '',
+                    'data-vb-link-type': 'none',
+                },
+                linkType: 'none',
+                href: '#',
+                traits: linkTraitSchema(),
+            },
+            init() {
+                this.on('change:linkType change:attributes:data-vb-link-type change:href change:target', () => {
+                    applyLinkProps(this);
+                    const type = this.get('linkType')
+                        ?? this.getAttributes?.()?.['data-vb-link-type']
+                        ?? 'none';
+                    const nextTag = type === 'none' ? 'span' : 'a';
+
+                    if (String(this.get('tagName') ?? '').toLowerCase() !== nextTag) {
+                        this.set('tagName', nextTag);
+                    }
+                });
                 applyLinkProps(this);
             },
         },
@@ -404,6 +456,7 @@ const BLOCKS = [
         category: BASIC_BLOCK_CATEGORY,
         content: {
             type: 'voodbuilder-icon',
+            tagName: 'span',
             classes: ['inline-flex', 'items-center', 'justify-center', 'text-vp-text-2', 'vb-icon-link', 'size-10'],
             attributes: {
                 'data-voodbuilder-icon': '',
@@ -605,11 +658,7 @@ const BLOCKS = [
 export function registerUtilityBlockComponentTypes(editor) {
     registerTextElementTypes(editor);
 
-    registerLinkableType(editor, 'voodbuilder-icon', {
-        name: 'Icon',
-        droppable: false,
-        editable: false,
-    });
+    registerIconType(editor);
 
     const iconType = editor.DomComponents.getType('voodbuilder-icon');
 
@@ -621,6 +670,12 @@ export function registerUtilityBlockComponentTypes(editor) {
             previousInit?.call(this);
 
             const syncIcon = () => {
+                // Skip while settings apply is writing attrs — avoids nested apply that
+                // sees the new data-vb-icon but the still-stale SVG and bails early.
+                if (Number(editor.__voodbuilderSettingsChangeDepth ?? 0) > 0) {
+                    return;
+                }
+
                 this.__vbIconPainted = false;
                 const attrs = this.getAttributes?.() ?? {};
                 applyIconToComponent(this, editor, {
@@ -701,12 +756,13 @@ export function registerUtilityBlocks(editor) {
 export function configureUtilityBlocksCanvas(editor) {
     const bindLinkables = (component) => {
         const type = component.get('type');
+        const isIcon = type === 'voodbuilder-icon' || isIconComponent(component);
 
-        if (type === 'voodbuilder-icon' || type === 'voodbuilder-text-link') {
+        if (isIcon || type === 'voodbuilder-text-link') {
             applyLinkProps(component);
         }
 
-        if (type === 'voodbuilder-icon') {
+        if (isIcon) {
             // Force a canvas paint after frame/view is ready.
             component.__vbIconPainted = false;
             applyIconToComponent(component, editor, {
@@ -730,12 +786,73 @@ export function configureUtilityBlocksCanvas(editor) {
     const syncAllIcons = () => {
         editor.getWrapper?.()?.find?.('[data-voodbuilder-icon], .vb-text-link, [data-voodbuilder-rich-text], .vb-rich-text')
             ?.forEach?.(bindLinkables);
+
+        // Linked icons may be parsed as Grapes `link` — still walk the tree by attribute.
+        editor.getWrapper?.()?.onAll?.((component) => {
+            if (isIconComponent(component)) {
+                bindLinkables(component);
+            }
+        });
     };
 
     editor.on('load', syncAllIcons);
     editor.on('canvas:frame:load', () => {
         // Canvas DOM may not exist on `load` — re-paint colors once the frame is ready.
         window.requestAnimationFrame(syncAllIcons);
+        window.setTimeout(syncAllIcons, 50);
+        window.setTimeout(syncAllIcons, 250);
     });
     editor.on('component:add', bindLinkables);
+    editor.on('component:selected', (component) => {
+        const host = findIconHost(component);
+
+        if (! host) {
+            return;
+        }
+
+        host.__vbIconPainted = false;
+        applyIconToComponent(host, editor, {
+            name: host.getAttributes?.()?.['data-vb-icon'] || DEFAULT_TABLER_ICON,
+            sizeClass: host.getAttributes?.()?.['data-vb-icon-size'] || 'size-10',
+            style: host.getAttributes?.()?.['data-vb-icon-style'] || 'outline',
+            stroke: host.getAttributes?.()?.['data-vb-icon-stroke'] || '1.75',
+            color: readIconColor(host),
+            href: host.get('href'),
+            linkType: host.get('linkType') || host.getAttributes?.()?.['data-vb-link-type'] || 'none',
+            linkRef: host.get('linkRef') || host.getAttributes?.()?.['data-vb-link'] || '',
+            target: host.get('target') || '',
+        });
+    });
+}
+
+/**
+ * Re-apply icon colors before getHtml so a cold gray canvas cannot be saved.
+ *
+ * @param {object} editor
+ */
+export function ensureIconsForExport(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    wrapper.onAll?.((component) => {
+        if (! isIconComponent(component)) {
+            return;
+        }
+
+        component.__vbIconPainted = false;
+        applyIconToComponent(component, editor, {
+            name: component.getAttributes?.()?.['data-vb-icon'] || DEFAULT_TABLER_ICON,
+            sizeClass: component.getAttributes?.()?.['data-vb-icon-size'] || 'size-10',
+            style: component.getAttributes?.()?.['data-vb-icon-style'] || 'outline',
+            stroke: component.getAttributes?.()?.['data-vb-icon-stroke'] || '1.75',
+            color: readIconColor(component),
+            href: component.get('href'),
+            linkType: component.get('linkType') || component.getAttributes?.()?.['data-vb-link-type'] || 'none',
+            linkRef: component.get('linkRef') || component.getAttributes?.()?.['data-vb-link'] || '',
+            target: component.get('target') || '',
+        });
+    });
 }

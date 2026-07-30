@@ -1013,8 +1013,15 @@ body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
 
 /*
  * Layout Container presets (Bricks-like): stack columns on small viewports.
- * Desktop tracks are inline on the element; !important beats that on mobile.
+ * Desktop tracks come from inline style / --vb-layout-tracks; !important beats that on mobile.
  */
+[data-voodbuilder-layout='container'][data-vb-layout-preset],
+.vb-layout-row[data-vb-layout-preset] {
+    display: grid;
+    width: 100%;
+    grid-template-columns: var(--vb-layout-tracks, minmax(0, 1fr));
+}
+
 @media (max-width: 767.98px) {
     [data-voodbuilder-layout='container'][data-vb-layout-preset],
     .vb-layout-row[data-vb-layout-preset] {

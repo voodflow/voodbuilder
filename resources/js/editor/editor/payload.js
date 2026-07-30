@@ -15,6 +15,9 @@ import { syncConditionsForExport } from '../conditions-ui.js';
 import { findPageContentSlotInEditor } from '../chrome-content-slot-utils.js';
 import { extractChromeLayoutHtml } from '../editor-chrome-layout.js';
 import { ensureCtaButtonsForExport } from '../editor-button-link.js';
+import { ensureIconsForExport } from '../editor-utility-blocks.js';
+import { ensureLayoutContainersForExport } from '../layout-blocks.js';
+import { restoreContentWidthFromAttributes } from '../content-width-toolbar.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -200,6 +203,9 @@ export function buildPayload(editor, options = {}) {
         runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
         runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
         runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));
+        runExportStep('ensureIconsForExport', () => ensureIconsForExport(editor));
+        runExportStep('ensureLayoutContainersForExport', () => ensureLayoutContainersForExport(editor));
+        runExportStep('restoreContentWidthFromAttributes', () => restoreContentWidthFromAttributes(editor));
         // Final bake after other syncs may have touched styles.
         runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));
     }

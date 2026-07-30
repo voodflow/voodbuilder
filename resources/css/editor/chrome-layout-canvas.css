@@ -172,21 +172,15 @@ body.voodbuilder-editor-block-dragging [data-voodbuilder-layout='container']:emp
 [data-voodbuilder-layout='container'][data-vb-layout-preset],
 .vb-layout-row[data-vb-layout-preset] {
     display: grid;
-    gap: 1rem;
     width: 100%;
+    /* Fallback when inline grid-template-columns was lost on reload. */
+    grid-template-columns: var(--vb-layout-tracks, minmax(0, 1fr));
 }
 
-/* Editor device toggle (iframe width may still be wide on “Mobile”) */
+/* Editor device toggle only — do NOT stack when the iframe is merely narrow. */
 body[data-voodbuilder-editor-device='mobilePortrait'] [data-voodbuilder-layout='container'][data-vb-layout-preset],
 body[data-voodbuilder-editor-device='mobilePortrait'] .vb-layout-row[data-vb-layout-preset] {
     grid-template-columns: minmax(0, 1fr) !important;
-}
-
-@media (max-width: 767.98px) {
-    [data-voodbuilder-layout='container'][data-vb-layout-preset],
-    .vb-layout-row[data-vb-layout-preset] {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
 }
 
 /* CTA: empty <a> still shows label (frontend.css is shell-only — keep this in canvas) */

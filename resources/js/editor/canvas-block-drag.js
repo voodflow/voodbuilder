@@ -364,29 +364,76 @@ function armDragSessionWatchdog(editor) {
 }
 
 /**
- * True when the component sits inside a Bricks-like Layout host (Section/Container/Block/Div).
+ * True when an ancestor is an intentional nest host (layout, dropzone, catalog section).
+ * Catalog heroes use `voodbuilder-layout-container` / dropzones — not only `data-voodbuilder-layout`.
+ *
+ * @param {object} ancestor
+ * @returns {boolean}
+ */
+export function isIntentionalNestHost(ancestor) {
+    if (! ancestor?.get) {
+        return false;
+    }
+
+    const attrs = ancestor.getAttributes?.() ?? {};
+    const layout = String(attrs['data-voodbuilder-layout'] ?? '');
+    const type = String(ancestor.get?.('type') ?? '');
+    const role = String(attrs['data-voodbuilder-role'] ?? '');
+    const className = String(attrs.class ?? '');
+
+    if (attrs['data-voodbuilder-dropzone']) {
+        return true;
+    }
+
+    if (role === 'content') {
+        return true;
+    }
+
+    // Catalog section (Hero, Features, …) — Basic elements nest inside these.
+    if (attrs['data-voodbuilder-section-block']) {
+        return true;
+    }
+
+    if (
+        layout === 'block'
+        || layout === 'div'
+        || layout === 'container'
+        || layout === 'section'
+    ) {
+        return true;
+    }
+
+    if (
+        type === 'voodbuilder-layout-block'
+        || type === 'voodbuilder-layout-div'
+        || type === 'voodbuilder-container'
+        || type === 'voodbuilder-layout-container'
+        || type === 'voodbuilder-dropzone'
+        || type === 'voodbuilder-section'
+        || type === 'voodbuilder-section-dropzones'
+    ) {
+        return true;
+    }
+
+    if (/\b(flex|inline-flex|grid|voodbuilder-editor-container|vb-layout-block|vb-layout-div)\b/.test(className)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * True when the component sits inside a Bricks-like Layout host, dropzone, or catalog section.
  * Those hosts are meant to receive nested content — do not promote out of them.
  *
  * @param {object} component
  * @returns {boolean}
  */
-function isNestedInLayoutStructure(component) {
+export function isNestedInLayoutStructure(component) {
     let ancestor = component?.parent?.();
 
     while (ancestor && ancestor.get?.('type') !== 'wrapper') {
-        const attrs = ancestor.getAttributes?.() ?? {};
-        const layout = String(attrs['data-voodbuilder-layout'] ?? '');
-        const type = String(ancestor.get?.('type') ?? '');
-
-        if (
-            layout === 'block'
-            || layout === 'div'
-            || layout === 'container'
-            || layout === 'section'
-            || type === 'voodbuilder-layout-block'
-            || type === 'voodbuilder-layout-div'
-            || type === 'voodbuilder-container'
-        ) {
+        if (isIntentionalNestHost(ancestor)) {
             return true;
         }
 
@@ -397,10 +444,11 @@ function isNestedInLayoutStructure(component) {
 }
 
 /**
- * If a block lands nested under the page content slot (inside another section),
- * promote it to a sibling of that section instead of discarding it.
+ * Keep chrome-shell drops inside the page content slot.
  *
- * Layout Section/Container/Block are intentional nest hosts — never promote out of them.
+ * Do NOT yank Basic elements (heading, button, icon, …) out of catalog Heroes —
+ * only relocate orphans that landed in nav/footer chrome. Nested catalog sections
+ * are promoted by {@see registerSectionNestingGuard}, not here.
  *
  * @param {object} editor
  * @param {object} component
@@ -446,12 +494,12 @@ function ensurePageContentSlotPlacement(editor, component) {
         return component;
     }
 
+    // Already nested under layout / dropzone / catalog section — keep the blue-line drop.
     if (isNestedInLayoutStructure(component)) {
         return component;
     }
 
     let ancestor = parent;
-    let hostSection = null;
     let underSlot = false;
 
     while (ancestor && ancestor.get?.('type') !== 'wrapper') {
@@ -460,42 +508,24 @@ function ensurePageContentSlotPlacement(editor, component) {
             break;
         }
 
-        const tag = String(ancestor.get?.('tagName') ?? '').toLowerCase();
-
-        if (! hostSection && tag === 'section') {
-            hostSection = ancestor;
-        }
-
         ancestor = ancestor.parent?.();
     }
 
-    if (! underSlot) {
-        // Dropped outside the page content (nav/footer/chrome) — move into the slot.
-        try {
-            const first = slot.components?.().at?.(0);
-            const at = isTopDropSpacerComponent(first) ? 1 : (slot.components?.()?.length ?? 0);
-            // Prefer top when the pointer was over the top spacer during this drag.
-            const insertAt = editor.__voodbuilderPointerOverTopSpacer
-                ? (isTopDropSpacerComponent(first) ? 1 : 0)
-                : at;
-            component.move(slot, { at: insertAt });
-            editor.select?.(component);
-
-            return component;
-        } catch {
-            component.remove?.();
-
-            return null;
-        }
+    if (underSlot) {
+        // Nested under the page slot but not in a recognized nest host (rare).
+        // Leave in place — section-nesting-guard handles catalog-section nesting.
+        return component;
     }
 
-    // Nested inside a catalog/page section: promote as sibling after the host section.
+    // Dropped outside the page content (nav/footer/chrome) — move into the slot.
     try {
-        const insertAt = hostSection
-            ? (slot.components().indexOf(hostSection) + 1)
-            : (slot.components?.()?.length ?? 0);
-
-        component.move(slot, { at: Math.max(0, insertAt) });
+        const first = slot.components?.().at?.(0);
+        const at = isTopDropSpacerComponent(first) ? 1 : (slot.components?.()?.length ?? 0);
+        // Prefer top when the pointer was over the top spacer during this drag.
+        const insertAt = editor.__voodbuilderPointerOverTopSpacer
+            ? (isTopDropSpacerComponent(first) ? 1 : 0)
+            : at;
+        component.move(slot, { at: insertAt });
         editor.select?.(component);
 
         return component;

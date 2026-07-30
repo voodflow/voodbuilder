@@ -604,3 +604,463 @@ describe('editor entitlements filtering', () => {
         expect(actions.map((a) => a.id)).toEqual(['local', 'export', 'components']);
     });
 });
+
+describe('canvas nest hosts (basic drops into Heroes)', () => {
+    function mockAncestor(attrs = {}, type = 'default') {
+        return {
+            get: (key) => (key === 'type' ? type : undefined),
+            getAttributes: () => ({ ...attrs }),
+        };
+    }
+
+    function mockNested(ancestors) {
+        // ancestors[0] = immediate parent of the leaf … ancestors[n] = wrapper
+        let chain = null;
+
+        for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+            const parent = chain;
+            chain = {
+                ...ancestors[i],
+                parent: () => parent,
+            };
+        }
+
+        return {
+            get: () => undefined,
+            getAttributes: () => ({}),
+            parent: () => chain,
+        };
+    }
+
+    it('treats catalog dropzones and layout-containers as nest hosts', async () => {
+        const {
+            isIntentionalNestHost,
+            isNestedInLayoutStructure,
+        } = await import('../../resources/js/editor/canvas-block-drag.js');
+
+        expect(isIntentionalNestHost(mockAncestor({ 'data-voodbuilder-dropzone': 'copy' }, 'voodbuilder-dropzone'))).toBe(true);
+        expect(isIntentionalNestHost(mockAncestor({ 'data-voodbuilder-role': 'content' }, 'voodbuilder-layout-container'))).toBe(true);
+        expect(isIntentionalNestHost(mockAncestor({ 'data-voodbuilder-section-block': 'vb-hero-2' }, 'voodbuilder-section-dropzones'))).toBe(true);
+        expect(isIntentionalNestHost(mockAncestor({ class: 'voodbuilder-editor-container flex' }, 'voodbuilder-layout-container'))).toBe(true);
+        expect(isIntentionalNestHost(mockAncestor({ class: 'max-w-3xl' }, 'default'))).toBe(false);
+
+        const headingInsideHero = mockNested([
+            mockAncestor({ 'data-voodbuilder-dropzone': 'copy' }, 'voodbuilder-dropzone'),
+            mockAncestor({ class: 'max-w-3xl' }, 'default'),
+            mockAncestor({ 'data-voodbuilder-role': 'content', class: 'voodbuilder-editor-container' }, 'voodbuilder-layout-container'),
+            mockAncestor({ 'data-voodbuilder-section-block': 'vb-hero-2' }, 'voodbuilder-section-dropzones'),
+            mockAncestor({}, 'wrapper'),
+        ]);
+
+        expect(isNestedInLayoutStructure(headingInsideHero)).toBe(true);
+    });
+});
+
+describe('layout container column presets preserve content', () => {
+    function mockCollection(initial = []) {
+        const models = [...initial];
+
+        return {
+            models,
+            [Symbol.iterator]: () => models[Symbol.iterator](),
+            forEach: (fn) => models.forEach(fn),
+            at: (index) => models[index],
+            length: models.length,
+            indexOf: (item) => models.indexOf(item),
+            add(child, opts = {}) {
+                if (opts.at != null) {
+                    models.splice(opts.at, 0, child);
+                } else {
+                    models.push(child);
+                }
+
+                Object.defineProperty(this, 'length', { get: () => models.length, configurable: true });
+            },
+            remove(child) {
+                const index = models.indexOf(child);
+
+                if (index >= 0) {
+                    models.splice(index, 1);
+                }
+
+                Object.defineProperty(this, 'length', { get: () => models.length, configurable: true });
+            },
+        };
+    }
+
+    function mockComponent({ type = 'default', layout = '', kids = [], name = '' } = {}) {
+        const attrs = {};
+
+        if (layout) {
+            attrs['data-voodbuilder-layout'] = layout;
+        }
+
+        const state = {
+            type,
+            name,
+            classes: layout === 'block' ? ['vb-layout-block', 'min-h-16', 'min-w-0'] : [],
+            style: {},
+            attrs,
+        };
+
+        const collection = mockCollection();
+
+        const component = {
+            get: (key) => state[key],
+            set: (key, value) => {
+                if (typeof key === 'object' && key !== null) {
+                    Object.assign(state, key);
+
+                    return;
+                }
+
+                state[key] = value;
+            },
+            getAttributes: () => ({ ...state.attrs }),
+            addAttributes: (next) => {
+                Object.assign(state.attrs, next);
+            },
+            getClasses: () => [...state.classes],
+            setClass: (classes) => {
+                state.classes = [...classes];
+            },
+            getStyle: () => ({ ...state.style }),
+            setStyle: (style) => {
+                state.style = { ...style };
+            },
+            removeStyle: () => {},
+            components: (maybe) => {
+                if (Array.isArray(maybe)) {
+                    collection.models.splice(0, collection.models.length, ...maybe);
+                    Object.defineProperty(collection, 'length', {
+                        get: () => collection.models.length,
+                        configurable: true,
+                    });
+
+                    return collection;
+                }
+
+                return collection;
+            },
+            append: (def, opts = {}) => {
+                const child = typeof def === 'object' && def.get
+                    ? def
+                    : mockComponent({
+                        type: def.type ?? 'default',
+                        layout: def.attributes?.['data-voodbuilder-layout'] ?? '',
+                        name: def.name ?? '',
+                    });
+                child.__parent = component;
+                collection.add(child, opts);
+
+                return child;
+            },
+            move: (target) => {
+                const parent = component.__parent;
+
+                if (parent) {
+                    parent.components().remove(component);
+                }
+
+                component.__parent = target;
+                target.components().add(component);
+            },
+            remove: () => {
+                const parent = component.__parent;
+
+                if (parent) {
+                    parent.components().remove(component);
+                }
+
+                component.__removed = true;
+            },
+            isRemoved: () => component.__removed === true,
+            parent: () => component.__parent ?? null,
+        };
+
+        for (const kid of kids) {
+            kid.__parent = component;
+            collection.add(kid);
+        }
+
+        Object.defineProperty(collection, 'length', {
+            get: () => collection.models.length,
+            configurable: true,
+        });
+
+        return component;
+    }
+
+    it('keeps content when growing from 1 to 2 columns', async () => {
+        const {
+            applyContainerLayoutPreset,
+            isLayoutBlock,
+        } = await import('../../resources/js/editor/layout-blocks.js');
+
+        const heading = mockComponent({ type: 'text', name: 'Heading' });
+        const block = mockComponent({ type: 'voodbuilder-layout-block', layout: 'block', kids: [heading] });
+        const container = mockComponent({ type: 'voodbuilder-container', layout: 'container', kids: [block] });
+
+        applyContainerLayoutPreset(container, '2');
+
+        const columns = [...container.components()].filter((child) => isLayoutBlock(child));
+
+        expect(columns).toHaveLength(2);
+        expect([...columns[0].components()].some((child) => child.get('name') === 'Heading')).toBe(true);
+        expect([...columns[1].components()]).toHaveLength(0);
+        expect(container.getAttributes()['data-vb-layout-preset']).toBe('2');
+    });
+
+    it('merges leftover columns when shrinking from 2 to 1', async () => {
+        const {
+            applyContainerLayoutPreset,
+            isLayoutBlock,
+        } = await import('../../resources/js/editor/layout-blocks.js');
+
+        const left = mockComponent({ type: 'text', name: 'Left' });
+        const right = mockComponent({ type: 'text', name: 'Right' });
+        const col1 = mockComponent({ type: 'voodbuilder-layout-block', layout: 'block', kids: [left] });
+        const col2 = mockComponent({ type: 'voodbuilder-layout-block', layout: 'block', kids: [right] });
+        const container = mockComponent({
+            type: 'voodbuilder-container',
+            layout: 'container',
+            kids: [col1, col2],
+        });
+
+        applyContainerLayoutPreset(container, '1');
+
+        const columns = [...container.components()].filter((child) => isLayoutBlock(child));
+
+        expect(columns).toHaveLength(1);
+        const names = [...columns[0].components()].map((child) => child.get('name'));
+        expect(names).toEqual(['Left', 'Right']);
+    });
+
+    it('preserves author gap-* and does not pin inline gap', async () => {
+        const { syncContainerLayoutStyles } = await import('../../resources/js/editor/layout-blocks.js');
+
+        const style = { gap: '1rem', width: '100%' };
+        const classes = ['w-full', 'vb-layout-row', 'grid', 'gap-8'];
+        const attrs = { 'data-voodbuilder-layout': 'container', 'data-vb-layout-preset': '2' };
+        const container = {
+            getClasses: () => [...classes],
+            setClass: (next) => {
+                classes.splice(0, classes.length, ...next);
+            },
+            getAttributes: () => ({ ...attrs }),
+            addAttributes: (next) => Object.assign(attrs, next),
+            getStyle: () => ({ ...style }),
+            setStyle: (next) => {
+                Object.keys(style).forEach((key) => delete style[key]);
+                Object.assign(style, next);
+            },
+            removeStyle: (prop) => {
+                delete style[prop];
+            },
+        };
+
+        syncContainerLayoutStyles(container, '2');
+
+        expect(classes).toContain('gap-8');
+        expect(classes).not.toContain('gap-4');
+        expect(style.gap).toBeUndefined();
+        expect(style.display).toBe('grid');
+        expect(style['grid-template-columns']).toContain('1fr');
+        expect(attrs['data-vb-layout-tracks']).toContain('1fr');
+    });
+
+    it('restores column tracks even when content-width mode is set', async () => {
+        const { syncContainerContentWidth } = await import('../../resources/js/editor/layout-blocks.js');
+
+        const style = {
+            width: '100%',
+            'max-width': '80rem',
+            'margin-left': 'auto',
+            'margin-right': 'auto',
+        };
+        const classes = ['w-full', 'vb-layout-row', 'grid', 'gap-4', 'voodbuilder-editor-container', 'mx-auto', 'max-w-[80rem]'];
+        const attrs = {
+            'data-voodbuilder-layout': 'container',
+            'data-vb-layout-preset': '2',
+            'data-voodbuilder-content-width': 'normal',
+            style: 'width: 100%; max-width: 80rem; margin-left: auto; margin-right: auto',
+        };
+        const container = {
+            getClasses: () => [...classes],
+            setClass: (next) => {
+                classes.splice(0, classes.length, ...next);
+            },
+            getAttributes: () => ({ ...attrs }),
+            addAttributes: (next) => Object.assign(attrs, next),
+            getStyle: () => ({ ...style }),
+            setStyle: (next) => {
+                Object.keys(style).forEach((key) => delete style[key]);
+                Object.assign(style, next);
+            },
+            removeStyle: (prop) => {
+                delete style[prop];
+            },
+        };
+
+        syncContainerContentWidth(container);
+
+        expect(style['grid-template-columns']).toBe('minmax(0,1fr) minmax(0,1fr)');
+        expect(attrs['data-vb-layout-preset']).toBe('2');
+        expect(style['max-width']).toBe('80rem');
+        expect(classes).toContain('max-w-[80rem]');
+        expect(classes).toContain('mx-auto');
+        expect(String(attrs.style)).toContain('max-width: 80rem');
+    });
+});
+
+describe('basic-elements-settings icon apply', () => {
+    function mockIconHost({ attrs = {}, classes = [], svgAttrs = {} } = {}) {
+        const attrState = { ...attrs };
+        let classList = [...classes];
+        let styleState = {};
+        let children = [];
+
+        if (Object.keys(svgAttrs).length > 0 || attrs['data-vb-icon']) {
+            children = [{
+                get: (key) => (key === 'tagName' ? 'svg' : undefined),
+                getAttributes: () => ({ ...svgAttrs }),
+                addAttributes: (next) => Object.assign(svgAttrs, next),
+                set: () => {},
+                components: () => [],
+            }];
+        }
+
+        const collection = {
+            reset() {
+                children = [];
+            },
+            remove(child) {
+                children = children.filter((item) => item !== child);
+            },
+            [Symbol.iterator]: () => children[Symbol.iterator](),
+            forEach: (fn) => children.forEach(fn),
+        };
+
+        return {
+            getAttributes: () => ({ ...attrState }),
+            addAttributes(next) {
+                Object.assign(attrState, next);
+            },
+            getClasses: () => [...classList],
+            setClass(next) {
+                classList = [...next];
+            },
+            getStyle: () => ({ ...styleState }),
+            setStyle(next) {
+                styleState = { ...next };
+            },
+            get: (key) => attrState[key],
+            set(values) {
+                Object.assign(attrState, values);
+            },
+            getEl: () => ({}),
+            components(html) {
+                if (html === undefined) {
+                    return collection;
+                }
+
+                if (Array.isArray(html) && html.length === 0) {
+                    children = [];
+
+                    return collection;
+                }
+
+                const markup = String(html);
+                const glyph = /data-vb-icon-glyph="([^"]+)"/.exec(markup)?.[1] ?? '';
+                const style = /data-vb-icon-style="([^"]+)"/.exec(markup)?.[1] ?? 'outline';
+                const childAttrs = {
+                    'data-vb-icon-glyph': glyph,
+                    'data-vb-icon-style': style,
+                };
+
+                children = [{
+                    get: (key) => (key === 'tagName' ? 'svg' : undefined),
+                    getAttributes: () => ({ ...childAttrs }),
+                    addAttributes: (next) => Object.assign(childAttrs, next),
+                    set: () => {},
+                    components: () => [],
+                }];
+
+                return collection;
+            },
+            __styleState: () => styleState,
+            __classes: () => classList,
+            __attrs: () => attrState,
+            __childCount: () => children.length,
+            __paintedGlyph: () => children[0]?.getAttributes?.()?.['data-vb-icon-glyph'] ?? '',
+        };
+    }
+
+    it('replaces stale circle glyph when attrs already claim another icon', async () => {
+        const { applyIconToComponent } = await import('../../resources/js/editor/basic-elements-settings.js');
+
+        const host = mockIconHost({
+            attrs: {
+                'data-vb-icon': 'star',
+                'data-vb-icon-size': 'size-8',
+                'data-vb-icon-style': 'outline',
+                'data-vb-icon-stroke': '1.75',
+                'data-vb-link-type': 'none',
+            },
+            classes: ['inline-flex', 'vb-icon-link', 'size-8', 'w-full', 'max-w-[80rem]'],
+            svgAttrs: {
+                'data-vb-icon-glyph': 'circle',
+                'data-vb-icon-style': 'outline',
+            },
+        });
+
+        applyIconToComponent(host, null, {
+            name: 'star',
+            sizeClass: 'size-8',
+            style: 'outline',
+            stroke: '1.75',
+            color: '',
+            linkType: 'none',
+        });
+
+        expect(host.__paintedGlyph()).toBe('star');
+        expect(host.__childCount()).toBe(1);
+        expect(host.__classes()).not.toContain('w-full');
+        expect(host.__classes()).not.toContain('max-w-[80rem]');
+        expect(host.__styleState().width).toBe('32px');
+        expect(host.__styleState().height).toBe('32px');
+        expect(host.__attrs()['data-vb-icon']).toBe('star');
+    });
+
+    it('pins box size when only color changes', async () => {
+        const { applyIconToComponent } = await import('../../resources/js/editor/basic-elements-settings.js');
+
+        const host = mockIconHost({
+            attrs: {
+                'data-vb-icon': 'star',
+                'data-vb-icon-size': 'size-6',
+                'data-vb-icon-style': 'outline',
+                'data-vb-icon-stroke': '1.75',
+                'data-vb-link-type': 'none',
+            },
+            classes: ['inline-flex', 'vb-icon-link', 'size-6'],
+            svgAttrs: {
+                'data-vb-icon-glyph': 'star',
+                'data-vb-icon-style': 'outline',
+            },
+        });
+
+        applyIconToComponent(host, null, {
+            name: 'star',
+            sizeClass: 'size-6',
+            style: 'outline',
+            stroke: '1.75',
+            color: '#3f7fd9',
+            linkType: 'none',
+        });
+
+        expect(host.__paintedGlyph()).toBe('star');
+        expect(host.__styleState().width).toBe('24px');
+        expect(host.__styleState().maxWidth).toBe('24px');
+    });
+});

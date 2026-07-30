@@ -12,7 +12,9 @@ export const LAYOUT_PRESET_ATTR = 'data-vb-layout-preset';
 export const CMD_LAYOUT_PICKER = 'voodbuilder-open-layout-picker';
 
 /** Row layout tokens applied/removed when changing presets (CSS grid — side-by-side in canvas). */
-const ROW_LAYOUT_CLASSES = ['flex', 'flex-wrap', 'grid', 'gap-4'];
+const ROW_LAYOUT_CLASSES = ['flex', 'flex-wrap', 'grid'];
+const DEFAULT_LAYOUT_GAP_CLASS = 'gap-4';
+const LAYOUT_GAP_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?gap-/;
 const CELL_BASE = ['vb-layout-block', 'min-h-16', 'min-w-0'];
 const WIDTH_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?(w-|basis-|flex-|max-w-|min-w-)/;
 /** Hardcoded boxed utilities — width must follow the page content slot (full vs standard). */
@@ -58,6 +60,18 @@ function isBoxedOrWidthUtility(token) {
  */
 function layoutContainerBaseClasses() {
     return ['w-full', 'vb-layout-row'];
+}
+
+/**
+ * Keep an author-chosen gap-* utility; default to gap-4 when none is present.
+ *
+ * @param {string[]} classes
+ * @returns {string}
+ */
+function resolveLayoutGapClass(classes) {
+    const found = classes.find((token) => LAYOUT_GAP_CLASS_RE.test(String(token)));
+
+    return found ?? DEFAULT_LAYOUT_GAP_CLASS;
 }
 
 /**
@@ -171,6 +185,128 @@ function blockModel(extraClasses = []) {
 }
 
 /**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isLayoutBlock(component) {
+    if (! component) {
+        return false;
+    }
+
+    return layoutKind(component) === 'block'
+        || component.get?.('type') === 'voodbuilder-layout-block';
+}
+
+/**
+ * @param {object} container
+ * @returns {object[]}
+ */
+function listDirectChildren(container) {
+    return [...(container.components?.()?.models ?? container.components?.() ?? [])];
+}
+
+/**
+ * @param {object} container
+ * @returns {object[]}
+ */
+function listLayoutBlocks(container) {
+    return listDirectChildren(container).filter((child) => isLayoutBlock(child));
+}
+
+/**
+ * Ensure Container children are Layout Blocks so columns can grow/shrink
+ * without wiping author content.
+ *
+ * @param {object} container
+ * @returns {object[]}
+ */
+function ensureColumnBlocks(container) {
+    const children = listDirectChildren(container);
+    const blocks = children.filter((child) => isLayoutBlock(child));
+    const loose = children.filter((child) => ! isLayoutBlock(child));
+
+    if (blocks.length === 0) {
+        const added = container.append(blockModel(), { at: 0 });
+        const block = Array.isArray(added) ? added[0] : added;
+
+        for (const child of loose) {
+            if (child?.move && block && ! child.isRemoved?.()) {
+                child.move(block);
+            }
+        }
+
+        return listLayoutBlocks(container);
+    }
+
+    if (loose.length > 0) {
+        const first = blocks[0];
+
+        for (const child of loose) {
+            if (child?.move && first && ! child.isRemoved?.()) {
+                child.move(first);
+            }
+        }
+    }
+
+    return listLayoutBlocks(container);
+}
+
+/**
+ * @param {object} source
+ * @param {object} target
+ */
+function moveAllChildren(source, target) {
+    if (! source?.components || ! target) {
+        return;
+    }
+
+    const kids = [...(source.components()?.models ?? source.components() ?? [])];
+
+    for (const child of kids) {
+        if (child?.move && ! child.isRemoved?.()) {
+            child.move(target);
+        }
+    }
+}
+
+/**
+ * Sync Layout Block chrome classes after a preset change.
+ *
+ * @param {object} block
+ */
+function syncLayoutBlockChrome(block) {
+    if (! block) {
+        return;
+    }
+
+    const classes = [...(block.getClasses?.() ?? [])]
+        .filter((token) => {
+            const name = String(token);
+
+            if (CELL_BASE.includes(name)) {
+                return false;
+            }
+
+            return ! WIDTH_CLASS_RE.test(name);
+        });
+
+    for (const token of CELL_BASE) {
+        if (! classes.includes(token)) {
+            classes.push(token);
+        }
+    }
+
+    block.setClass(classes);
+    block.addAttributes({ [LAYOUT_ATTR]: 'block' });
+    block.set?.({
+        type: 'voodbuilder-layout-block',
+        droppable: true,
+        highlightable: true,
+        name: block.get?.('name') || 'Block',
+    });
+}
+
+/**
  * Sync Container classes/attrs/CSS for a layout preset without touching children.
  * Tracks are inline so the canvas iframe sees them (frontend.css is shell-only).
  * Mobile stacking uses canvas device CSS + public @media !important overrides.
@@ -178,12 +314,17 @@ function blockModel(extraClasses = []) {
  * @param {object} container
  * @param {string} presetId
  */
-export function syncContainerLayoutStyles(container, presetId) {
+export function syncContainerLayoutStyles(container, presetId, options = {}) {
     if (! container) {
         return;
     }
 
     const preset = LAYOUT_PRESETS.find((item) => item.id === presetId) ?? LAYOUT_PRESETS[0];
+    const contentWidthMode = String(container.getAttributes?.()?.['data-voodbuilder-content-width'] ?? '').trim();
+    const hasContentWidth = contentWidthMode === 'normal'
+        || contentWidthMode === 'custom'
+        || contentWidthMode === 'full';
+    const resetMeasure = options.resetMeasure ?? ! hasContentWidth;
     const classes = [...(container.getClasses?.() ?? [])]
         .filter((name) => {
             const token = String(name);
@@ -192,43 +333,48 @@ export function syncContainerLayoutStyles(container, presetId) {
                 return false;
             }
 
+            if (token.startsWith('gjs-')) {
+                return false;
+            }
+
+            // Durable Content width utilities must survive layout track sync.
+            if (hasContentWidth && (token === 'max-w-[80rem]' || token === 'mx-auto' || token === 'w-full')) {
+                return true;
+            }
+
             if (isBoxedOrWidthUtility(token)) {
                 return false;
             }
 
-            return ! token.startsWith('gjs-');
+            return true;
         });
 
-    for (const token of [...layoutContainerBaseClasses(), 'grid', 'gap-4']) {
+    const gapClass = resolveLayoutGapClass(classes);
+
+    for (const token of [...layoutContainerBaseClasses(), 'grid', gapClass]) {
         if (! classes.includes(token)) {
             classes.push(token);
         }
     }
 
     container.setClass(classes);
+
+    const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
+
     container.addAttributes({
         [LAYOUT_ATTR]: 'container',
         [LAYOUT_PRESET_ATTR]: preset.id,
+        'data-vb-layout-tracks': tracks,
     });
 
-    const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
-    const style = { ...(container.getStyle?.() ?? {}) };
-
-    // Inline tracks are required in the editor canvas (layout CSS is not in canvas_styles).
-    style.display = 'grid';
-    style.gap = '1rem';
-    style.width = '100%';
-    style.maxWidth = 'none';
-    style['grid-template-columns'] = tracks;
-    style['--vb-layout-tracks'] = tracks;
-    delete style['grid-template-rows'];
-
-    container.setStyle(style);
-    container.removeStyle?.('grid-template-rows');
+    applyLayoutTracksToContainer(container, tracks, { resetMeasure });
 }
 
 /**
- * Apply a column preset to a Container (replaces direct children with Blocks).
+ * Apply a column preset to a Container while preserving existing column content.
+ *
+ * Growing (1→2): keep current content in the first column(s), append empty Blocks.
+ * Shrinking (3→1): merge leftover columns into the last remaining Block.
  *
  * @param {object} container
  * @param {string} presetId
@@ -239,9 +385,145 @@ export function applyContainerLayoutPreset(container, presetId) {
     }
 
     const preset = LAYOUT_PRESETS.find((item) => item.id === presetId) ?? LAYOUT_PRESETS[0];
+    const targetCount = Math.max(1, (preset.tracks ?? ['minmax(0,1fr)']).length);
+
+    let blocks = ensureColumnBlocks(container);
+
+    while (blocks.length < targetCount) {
+        container.append(blockModel());
+        blocks = listLayoutBlocks(container);
+    }
+
+    if (blocks.length > targetCount) {
+        const keep = blocks[targetCount - 1];
+
+        for (let index = targetCount; index < blocks.length; index += 1) {
+            moveAllChildren(blocks[index], keep);
+        }
+
+        for (let index = blocks.length - 1; index >= targetCount; index -= 1) {
+            blocks[index]?.remove?.();
+        }
+
+        blocks = listLayoutBlocks(container);
+    }
+
+    for (const block of blocks) {
+        syncLayoutBlockChrome(block);
+    }
 
     syncContainerLayoutStyles(container, preset.id);
-    container.components(preset.tracks.map(() => blockModel()));
+}
+
+/**
+ * Persist column tracks on the model + live canvas element.
+ *
+ * @param {object} container
+ * @param {string} tracks
+ * @param {{ resetMeasure?: boolean }} [options]
+ */
+function applyLayoutTracksToContainer(container, tracks, options = {}) {
+    const resetMeasure = options.resetMeasure === true;
+    const style = {
+        ...(container.getStyle?.({ inline: true }) ?? container.getStyle?.() ?? {}),
+    };
+
+    style.display = 'grid';
+    style['grid-template-columns'] = tracks;
+    style['--vb-layout-tracks'] = tracks;
+    delete style.gap;
+    delete style['grid-template-rows'];
+
+    if (resetMeasure) {
+        style.width = '100%';
+        style.maxWidth = 'none';
+    }
+
+    container.setStyle(style);
+    container.removeStyle?.('gap');
+    container.removeStyle?.('grid-template-rows');
+
+    const attrs = { ...(container.getAttributes?.() ?? {}) };
+    const styleParts = String(attrs.style ?? '')
+        .split(';')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .filter((part) => {
+            if (/^(display|grid-template-columns|grid-template-rows|--vb-layout-tracks|gap)\s*:/i.test(part)) {
+                return false;
+            }
+
+            // Only strip measure keys when we intentionally reset content width.
+            if (
+                resetMeasure
+                && /^(width|max-width|margin-left|margin-right|margin-inline)\s*:/i.test(part)
+            ) {
+                return false;
+            }
+
+            return true;
+        });
+
+    styleParts.push('display: grid');
+    styleParts.push(`grid-template-columns: ${tracks}`);
+    styleParts.push(`--vb-layout-tracks: ${tracks}`);
+
+    if (resetMeasure) {
+        styleParts.push('width: 100%');
+        styleParts.push('max-width: none');
+    }
+
+    container.addAttributes({
+        style: styleParts.join('; '),
+        'data-vb-layout-tracks': tracks,
+    });
+
+    const el = container.getEl?.()
+        ?? container.getView?.()?.el
+        ?? container.view?.el;
+
+    if (el?.style) {
+        el.style.display = 'grid';
+        el.style.gridTemplateColumns = tracks;
+        el.style.setProperty('--vb-layout-tracks', tracks);
+
+        if (resetMeasure) {
+            el.style.width = '100%';
+            el.style.maxWidth = 'none';
+        }
+    }
+}
+
+/**
+ * Resolve saved tracks from preset id or data-vb-layout-tracks fallback.
+ *
+ * @param {object} container
+ * @returns {string}
+ */
+function resolveSavedLayoutTracks(container) {
+    const attrs = container.getAttributes?.() ?? {};
+    const presetId = String(attrs[LAYOUT_PRESET_ATTR] ?? '').trim();
+    const fromAttr = String(attrs['data-vb-layout-tracks'] ?? '').trim();
+
+    if (presetId) {
+        const preset = LAYOUT_PRESETS.find((item) => item.id === presetId);
+
+        if (preset?.tracks?.length) {
+            return preset.tracks.join(' ');
+        }
+    }
+
+    if (fromAttr) {
+        return fromAttr;
+    }
+
+    const fromStyle = String(
+        (container.getStyle?.({ inline: true }) ?? {})['grid-template-columns']
+        ?? (container.getStyle?.({ inline: true }) ?? {})['--vb-layout-tracks']
+        ?? '',
+    ).trim();
+
+    return fromStyle;
 }
 
 /**
@@ -255,22 +537,28 @@ export function syncContainerContentWidth(container) {
         return;
     }
 
-    const contentWidthMode = String(container.getAttributes?.()?.['data-voodbuilder-content-width'] ?? '').trim();
-
-    // Author content-width toolbar owns measure on full-width pages — do not wipe it.
-    if (
-        contentWidthMode === 'normal'
+    const attrs = container.getAttributes?.() ?? {};
+    const presetId = String(attrs[LAYOUT_PRESET_ATTR] ?? '').trim();
+    const savedTracks = resolveSavedLayoutTracks(container);
+    const contentWidthMode = String(attrs['data-voodbuilder-content-width'] ?? '').trim();
+    const hasContentWidth = contentWidthMode === 'normal'
         || contentWidthMode === 'custom'
-        || contentWidthMode === 'full'
-    ) {
+        || contentWidthMode === 'full';
+
+    // Restore column tracks without wiping Content width measure/utilities.
+    if (presetId || savedTracks) {
+        if (presetId) {
+            syncContainerLayoutStyles(container, presetId, { resetMeasure: ! hasContentWidth });
+        } else {
+            applyLayoutTracksToContainer(container, savedTracks, { resetMeasure: ! hasContentWidth });
+            container.addAttributes({ [LAYOUT_ATTR]: 'container' });
+        }
+
         return;
     }
 
-    const presetId = String(container.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
-
-    if (presetId) {
-        syncContainerLayoutStyles(container, presetId);
-
+    // Author content-width toolbar owns measure — do not wipe it.
+    if (hasContentWidth) {
         return;
     }
 
@@ -294,7 +582,7 @@ export function syncContainerContentWidth(container) {
     container.setClass(classes);
     container.addAttributes({ [LAYOUT_ATTR]: 'container' });
 
-    const style = { ...(container.getStyle?.() ?? {}) };
+    const style = { ...(container.getStyle?.({ inline: true }) ?? container.getStyle?.() ?? {}) };
     style.width = '100%';
     style.maxWidth = 'none';
     container.setStyle(style);
@@ -314,7 +602,14 @@ export function normalizeLayoutContainersResponsive(editor) {
     }
 
     const visit = (component) => {
-        if (isLayoutContainer(component) && layoutKind(component) === 'container') {
+        const attrs = component?.getAttributes?.() ?? {};
+        const hasPreset = String(attrs[LAYOUT_PRESET_ATTR] ?? '').trim() !== '';
+        const hasTracks = String(attrs['data-vb-layout-tracks'] ?? '').trim() !== '';
+        // Only touch Layout package containers — never every .voodbuilder-editor-container.
+        const isPkgContainer = layoutKind(component) === 'container'
+            || component.get?.('type') === 'voodbuilder-container';
+
+        if (isPkgContainer || hasPreset || hasTracks) {
             syncContainerContentWidth(component);
         }
 
@@ -322,6 +617,15 @@ export function normalizeLayoutContainersResponsive(editor) {
     };
 
     visit(wrapper);
+}
+
+/**
+ * Re-apply column tracks before getHtml so a cold 1-col canvas cannot be saved.
+ *
+ * @param {object} editor
+ */
+export function ensureLayoutContainersForExport(editor) {
+    normalizeLayoutContainersResponsive(editor);
 }
 
 function presetIconSvg(weights) {
@@ -713,9 +1017,43 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
         normalizeLayoutContainersResponsive(editor);
     });
 
+    editor.on('canvas:frame:load', () => {
+        window.requestAnimationFrame(() => normalizeLayoutContainersResponsive(editor));
+        window.setTimeout(() => normalizeLayoutContainersResponsive(editor), 50);
+        window.setTimeout(() => normalizeLayoutContainersResponsive(editor), 250);
+    });
+
     // Device switch (desktop → mobile) should stack columns; heal any leftover inline grid.
     editor.on('change:device', () => {
         normalizeLayoutContainersResponsive(editor);
+    });
+
+    // Style-panel gap-* must win over legacy inline gap:1rem from older saves.
+    editor.on('component:update:classes', (component) => {
+        if (! isLayoutContainer(component) || layoutKind(component) !== 'container') {
+            return;
+        }
+
+        const classes = component.getClasses?.() ?? [];
+        const hasGapUtility = [...classes].some((token) => LAYOUT_GAP_CLASS_RE.test(String(token)));
+
+        if (! hasGapUtility) {
+            return;
+        }
+
+        const style = { ...(component.getStyle?.() ?? {}) };
+
+        if (style.gap === undefined && style['column-gap'] === undefined && style['row-gap'] === undefined) {
+            return;
+        }
+
+        delete style.gap;
+        delete style['column-gap'];
+        delete style['row-gap'];
+        component.setStyle(style);
+        component.removeStyle?.('gap');
+        component.removeStyle?.('column-gap');
+        component.removeStyle?.('row-gap');
     });
 }
 

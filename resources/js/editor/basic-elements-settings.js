@@ -13,6 +13,7 @@ import {
     DEFAULT_TABLER_ICON_STYLE,
     ensureTablerCatalog,
     findCategoryForIcon,
+    getTablerCatalogSync,
     listTablerIconCategories,
     queryTablerIcons,
     resolveTablerIconName,
@@ -23,7 +24,13 @@ import {
 } from './tabler-icons-catalog.js';
 
 function runWithSettingsChangeGuard(editor, callback) {
-    if (! editor || typeof callback !== 'function') {
+    if (typeof callback !== 'function') {
+        return;
+    }
+
+    if (! editor) {
+        callback();
+
         return;
     }
 
@@ -112,6 +119,15 @@ const ICON_SIZES = [
     { value: 'size-16', label: '2XL (64px)' },
 ];
 
+/** Stable px sizes — do not rely on Tailwind JIT for icon box dimensions. */
+const ICON_SIZE_PX = {
+    'size-6': 24,
+    'size-8': 32,
+    'size-10': 40,
+    'size-12': 48,
+    'size-16': 64,
+};
+
 const ICON_STROKES = [
     { value: '1', label: '1' },
     { value: '1.5', label: '1.5' },
@@ -162,6 +178,144 @@ function isManagedIconTextClass(token) {
         || /^text-(?:vp-[\w-]+|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/.test(name)
         || /^text-(?:black|white|transparent|current)$/.test(name)
         || /^text-\[.+\]$/.test(name);
+}
+
+/**
+ * Layout / measure utilities that must never stick on an Icon host
+ * (they make the SVG `w-full` explode to the column width).
+ *
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isIconLayoutNoiseClass(token) {
+    const name = String(token ?? '');
+
+    if (name.startsWith('size-') || isManagedIconTextClass(name)) {
+        return true;
+    }
+
+    if (/^(sm:|md:|lg:|xl:|2xl:)?(w-|h-|max-w-|max-h-|min-w-|min-h-|basis-|grow|shrink)/.test(name)) {
+        return true;
+    }
+
+    return [
+        'w-full',
+        'h-full',
+        'ms-auto',
+        'me-auto',
+        'mx-auto',
+        'flex-1',
+        'flex-auto',
+        'block',
+        'vb-layout-row',
+        'voodbuilder-editor-container',
+    ].includes(name);
+}
+
+/**
+ * @param {object} component
+ * @returns {object|null}
+ */
+function findIconSvgChild(component) {
+    return [...(component.components?.() ?? [])]
+        .find((child) => String(child.get?.('tagName') ?? '').toLowerCase() === 'svg')
+        ?? null;
+}
+
+/**
+ * Glyph actually painted on the canvas (may differ from data-vb-icon before catalog load).
+ *
+ * @param {object} component
+ * @returns {string}
+ */
+function readPaintedIconGlyph(component) {
+    return String(findIconSvgChild(component)?.getAttributes?.()?.['data-vb-icon-glyph'] ?? '').trim();
+}
+
+/**
+ * Pin host box size with inline styles so canvas JIT / compile thrash cannot enlarge the icon.
+ *
+ * @param {object} component
+ * @param {string} sizeClass
+ */
+function applyIconHostBoxSize(component, sizeClass) {
+    const px = ICON_SIZE_PX[sizeClass] ?? ICON_SIZE_PX['size-10'];
+    // Prefer inline styles so we do not drop a previously painted `color`.
+    const style = {
+        ...(component.getStyle?.({ inline: true }) ?? component.getStyle?.() ?? {}),
+    };
+
+    const attrColor = String(
+        parseStyleAttributeColor(component.getAttributes?.()?.style)
+        ?? '',
+    ).trim();
+
+    if (attrColor && ! String(style.color ?? '').trim()) {
+        style.color = attrColor;
+    }
+
+    style.width = `${px}px`;
+    style.height = `${px}px`;
+    style.maxWidth = `${px}px`;
+    style.maxHeight = `${px}px`;
+    style.minWidth = `${px}px`;
+    style.minHeight = `${px}px`;
+    style.flexShrink = '0';
+    style.display = 'inline-flex';
+    style.alignItems = 'center';
+    style.justifyContent = 'center';
+    style.lineHeight = '0';
+
+    component.setStyle(style);
+}
+
+/**
+ * @param {unknown} styleAttr
+ * @returns {string}
+ */
+function parseStyleAttributeColor(styleAttr) {
+    const raw = String(styleAttr ?? '');
+    const match = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(raw);
+
+    return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * Replace icon SVG children. Grapes `components(html)` alone can leave a stale glyph.
+ *
+ * @param {object} component
+ * @param {string} svgHtml
+ */
+function replaceIconGlyph(component, svgHtml) {
+    const collection = component.components?.();
+
+    if (collection) {
+        try {
+            if (typeof collection.reset === 'function') {
+                collection.reset();
+            } else if (typeof collection.remove === 'function') {
+                [...collection].forEach((child) => {
+                    try {
+                        collection.remove(child);
+                    } catch {
+                        // ignore
+                    }
+                });
+            } else if (typeof component.empty === 'function') {
+                component.empty();
+            } else {
+                component.components([]);
+            }
+        } catch {
+            try {
+                component.components([]);
+            } catch {
+                // Last resort: overwrite below.
+            }
+        }
+    }
+
+    component.components(svgHtml);
 }
 
 /**
@@ -256,8 +410,19 @@ function applyHostColorStyle(component, color) {
  * @param {'outline'|'filled'} style
  */
 function patchIconAppearance(component, color, stroke, style) {
+    const sizeClass = String(
+        component.getAttributes?.()?.['data-vb-icon-size']
+        ?? readIconSize(component)
+        ?? 'size-10',
+    );
     const classes = [...(component.getClasses?.() ?? [])]
-        .filter((token) => ! isManagedIconTextClass(token));
+        .filter((token) => ! isIconLayoutNoiseClass(token));
+
+    if (! classes.includes('inline-flex')) {
+        classes.push('inline-flex', 'items-center', 'justify-center', 'vb-icon-link');
+    } else if (! classes.includes('vb-icon-link')) {
+        classes.push('vb-icon-link');
+    }
 
     if (color.mode === 'class' && color.className) {
         classes.push(color.className);
@@ -265,11 +430,15 @@ function patchIconAppearance(component, color, stroke, style) {
         classes.push('text-vp-text-2');
     }
 
+    if (! classes.includes(sizeClass)) {
+        classes.push(sizeClass);
+    }
+
     component.setClass(classes);
+    applyIconHostBoxSize(component, sizeClass);
     applyHostColorStyle(component, color);
 
-    const svg = [...(component.components?.() ?? [])]
-        .find((child) => String(child.get?.('tagName') ?? '').toLowerCase() === 'svg');
+    const svg = findIconSvgChild(component);
 
     if (! svg) {
         return;
@@ -280,11 +449,15 @@ function patchIconAppearance(component, color, stroke, style) {
             'stroke-width': stroke,
             stroke: 'currentColor',
             fill: 'none',
+            width: '100%',
+            height: '100%',
         });
     } else {
         svg.addAttributes({
             fill: 'currentColor',
             stroke: 'none',
+            width: '100%',
+            height: '100%',
         });
     }
 }
@@ -352,6 +525,35 @@ function keepIconSelection(editor, component) {
  * @param {object|Record<string, unknown>} editorOrOptions
  * @param {Record<string, unknown>} [maybeOptions]
  */
+/**
+ * Schedule a glyph rebuild once the Tabler catalog finishes loading.
+ * Prevents sticky circle fallback when attrs already say e.g. "pulse".
+ *
+ * @param {object} component
+ * @param {object|null} editor
+ * @param {Record<string, unknown>} options
+ */
+function scheduleIconGlyphRefresh(component, editor, options) {
+    if (component.__vbIconCatalogRefreshPending || getTablerCatalogSync()) {
+        return;
+    }
+
+    component.__vbIconCatalogRefreshPending = true;
+
+    ensureTablerCatalog()
+        .then(() => {
+            component.__vbIconCatalogRefreshPending = false;
+            component.__vbIconPainted = false;
+            applyIconToComponent(component, editor, {
+                ...options,
+                forceGlyph: true,
+            });
+        })
+        .catch(() => {
+            component.__vbIconCatalogRefreshPending = false;
+        });
+}
+
 export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
     let editor = null;
     let options = maybeOptions ?? {};
@@ -367,6 +569,7 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
             || editorOrOptions.style !== undefined
             || editorOrOptions.stroke !== undefined
             || editorOrOptions.color !== undefined
+            || editorOrOptions.forceGlyph !== undefined
         )
     ) {
         options = editorOrOptions;
@@ -375,7 +578,7 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         editor = editorOrOptions ?? null;
     }
 
-    const { name, sizeClass, href, linkType, linkRef, target, style, stroke, color } = options;
+    const { name, sizeClass, href, linkType, linkRef, target, style, stroke, color, forceGlyph } = options;
     const iconName = resolveTablerIconName(name);
     const iconStyle = resolveTablerIconStyle(style);
     const iconStroke = resolveTablerIconStroke(stroke);
@@ -388,50 +591,58 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         : resolveHref(editor, type, linkRef, href);
     const attrs = component.getAttributes?.() ?? {};
     const prevColor = String(attrs['data-vb-icon-color'] ?? '');
-    const hasSvg = [...(component.components?.() ?? [])].some(
-        (child) => String(child.get?.('tagName') ?? '').toLowerCase() === 'svg',
+    const paintedGlyph = readPaintedIconGlyph(component);
+    const paintedStyle = String(
+        findIconSvgChild(component)?.getAttributes?.()?.['data-vb-icon-style']
+        ?? attrs['data-vb-icon-style']
+        ?? DEFAULT_TABLER_ICON_STYLE,
     );
-    const sameGlyph = attrs['data-vb-icon'] === iconName
-        && String(attrs['data-vb-icon-style'] ?? DEFAULT_TABLER_ICON_STYLE) === iconStyle
-        && hasSvg;
+    const hasSvg = Boolean(findIconSvgChild(component));
+    // Compare the SVG actually on canvas — attrs alone lie when catalog fell back to circle.
+    const sameGlyph = ! forceGlyph
+        && hasSvg
+        && paintedGlyph === iconName
+        && paintedStyle === iconStyle;
+
+    const linkMatches = String(attrs['data-vb-link-type'] ?? 'none') === String(type)
+        && String(attrs['data-vb-link'] ?? '') === String(type === 'url' || type === 'none' ? '' : (linkRef || ''))
+        && String(attrs.target ?? '') === String(target || '');
 
     if (
         sameGlyph
+        && attrs['data-vb-icon'] === iconName
         && attrs['data-vb-icon-size'] === size
         && String(attrs['data-vb-icon-stroke'] ?? DEFAULT_TABLER_ICON_STROKE) === iconStroke
         && prevColor === colorRaw
-        && String(attrs['data-vb-link-type'] ?? 'none') === String(type)
-        && String(attrs['data-vb-link'] ?? '') === String(type === 'url' || type === 'none' ? '' : (linkRef || ''))
-        && String(attrs.target ?? '') === String(target || '')
+        && linkMatches
     ) {
-        // Attrs already match — still paint canvas (cold load skips visual sync).
+        // Always re-paint color/size — canvas CSS rebuilds and cold loads often
+        // leave data-vb-icon-color set while the live color falls back to gray.
         const elReady = Boolean(
             component.getEl?.()
             ?? component.getView?.()?.el
             ?? component.view?.el,
         );
 
-        if (! component.__vbIconPainted || ! elReady) {
-            runWithSettingsChangeGuard(editor, () => {
-                patchIconAppearance(component, parsedColor, iconStroke, iconStyle);
-                lockIconGlyphChildren(component);
-                component.__vbIconSynced = true;
-                component.__vbIconPainted = elReady;
-            });
-        }
+        runWithSettingsChangeGuard(editor, () => {
+            patchIconAppearance(component, parsedColor, iconStroke, iconStyle);
+            lockIconGlyphChildren(component);
+            component.__vbIconSynced = true;
+            component.__vbIconPainted = elReady;
+        });
 
         return;
     }
 
     const appearanceOnly = sameGlyph
         && attrs['data-vb-icon-size'] === size
-        && String(attrs['data-vb-link-type'] ?? 'none') === String(type)
-        && String(attrs['data-vb-link'] ?? '') === String(type === 'url' || type === 'none' ? '' : (linkRef || ''))
-        && String(attrs.target ?? '') === String(target || '');
+        && linkMatches;
 
     runWithSettingsChangeGuard(editor, () => {
         if (appearanceOnly) {
             component.addAttributes({
+                'data-vb-icon': iconName,
+                'data-vb-icon-style': iconStyle,
                 'data-vb-icon-stroke': iconStroke,
                 'data-vb-icon-color': colorRaw || null,
             });
@@ -443,10 +654,12 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         }
 
         const classes = [...(component.getClasses?.() ?? [])]
-            .filter((token) => ! String(token).startsWith('size-') && ! isManagedIconTextClass(token));
+            .filter((token) => ! isIconLayoutNoiseClass(token));
 
         if (! classes.includes('inline-flex')) {
             classes.push('inline-flex', 'items-center', 'justify-center', 'vb-icon-link');
+        } else if (! classes.includes('vb-icon-link')) {
+            classes.push('vb-icon-link');
         }
 
         if (parsedColor.mode === 'class' && parsedColor.className) {
@@ -458,11 +671,14 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         classes.push(size);
 
         const needsGlyphRebuild = ! sameGlyph
-            || String(attrs['data-vb-icon-stroke'] ?? DEFAULT_TABLER_ICON_STROKE) !== iconStroke;
+            || String(attrs['data-vb-icon-stroke'] ?? DEFAULT_TABLER_ICON_STROKE) !== iconStroke
+            || Boolean(forceGlyph);
 
         component.setClass(classes);
+        applyIconHostBoxSize(component, size);
         applyHostColorStyle(component, parsedColor);
         component.set({
+            tagName: type === 'none' ? 'span' : 'a',
             linkType: type,
             linkRef: type === 'url' || type === 'none' ? '' : (linkRef || ''),
             href: resolvedHref || '#',
@@ -483,15 +699,31 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         });
 
         if (needsGlyphRebuild) {
-            component.components(tablerIconSvg(iconName, {
+            replaceIconGlyph(component, tablerIconSvg(iconName, {
                 style: iconStyle,
                 stroke: iconStroke,
                 sizeClass: 'w-full h-full',
                 color: null,
             }));
             lockIconGlyphChildren(component);
-            // Re-apply color after glyph swap (setClass/style can be wiped by re-render).
+            // Re-apply color/size after glyph swap (setClass/style can be wiped by re-render).
             patchIconAppearance(component, parsedColor, iconStroke, iconStyle);
+
+            const paintedAfter = readPaintedIconGlyph(component);
+
+            if (paintedAfter !== iconName) {
+                scheduleIconGlyphRefresh(component, editor, {
+                    name: iconName,
+                    sizeClass: size,
+                    style: iconStyle,
+                    stroke: iconStroke,
+                    color: colorRaw,
+                    href,
+                    linkType: type,
+                    linkRef,
+                    target,
+                });
+            }
         } else {
             patchIconAppearance(component, parsedColor, iconStroke, iconStyle);
         }
@@ -1124,6 +1356,19 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
     picker.refreshCategories?.();
     keepIconSelection(editor, host);
 
+    // Re-paint immediately on open — cold loads leave data-vb-icon-color without live color.
+    applyIconToComponent(host, editor, {
+        name: iconName,
+        sizeClass,
+        style: iconStyle,
+        stroke: iconStroke,
+        color: iconColor,
+        href,
+        linkType,
+        linkRef,
+        target,
+    });
+
     // Prefetch catalog so apply uses full paths after first open.
     ensureTablerCatalog().then(() => {
         picker.refreshCategories?.();
@@ -1135,6 +1380,7 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
                 style: iconStyle,
                 stroke: iconStroke,
                 color: iconColor,
+                forceGlyph: true,
                 href,
                 linkType,
                 linkRef,
