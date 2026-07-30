@@ -1,7 +1,8 @@
 # Progress — Commercial plugin wave (after Phase 11)
 
-**Last update:** 2026-07-29  
-**Handoff:** see Core doc §0 + §27 in `docs/VoodBuilder_0.1.0_Modular_Architecture_and_Licensing.md`
+**Last update:** 2026-07-30  
+**Handoff:** see Core doc §0 + §27 in `docs/VoodBuilder_0.1.0_Modular_Architecture_and_Licensing.md`  
+**Elements companion (planned):** [`docs/handoff/elements-companion-pack.md`](../handoff/elements-companion-pack.md) — catalogo blocchi premium; **non** è `voodbuilder-components` (library utente).
 
 ## Push status (companions)
 
@@ -50,10 +51,17 @@ Core `voodbuilder` branch `refactor/modular-architecture` must be **committed + 
 - Host: `VoodbuilderTemplatesPlugin::make()`
 - Locales: en/it/es/fr/de
 
-## 5. Forms package (scaffold only — invent later)
+## 5. Elements package (planned — catalogo sezioni premium)
+
+- Repo target: `voodflow/voodbuilder-elements` (**non creato**)
+- Core oggi: gate Community via `EditorCommunityBlockCatalog` + `blocks.official.complete`
+- Extract fisico: guida in `docs/handoff/elements-companion-pack.md` + `elements-companion-manifest.json`
+- **≠ Components:** Elements = blocchi pronti prodotto; Components = pezzi salvati dall’utente
+
+## 5b. Forms package (scaffold only — invent later)
 
 - Repo: `voodflow/voodbuilder-forms` (pushed)
-- Leave until **last** in the commercial wave
+- Leave until **last** in the commercial wave (Forms editor blocks may land in Elements first)
 
 ## 6. Analytics — NEXT TO IMPLEMENT
 

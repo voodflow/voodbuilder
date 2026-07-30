@@ -955,6 +955,14 @@ body.voodbuilder-editor-editing .voodbuilder-editor-boot-overlay:not([hidden]) {
     color: var(--color-vp-brand-2, #4f46e5);
 }
 
+.voodbuilder-editor-elements-library__locked {
+    margin: 0 1.125rem 0.75rem;
+}
+
+.voodbuilder-editor-components-library__locked {
+    margin: 0;
+}
+
 /* Editor form controls — Tailwind UI input-group patterns */
 .voodbuilder-editor-form {
     display: flex;

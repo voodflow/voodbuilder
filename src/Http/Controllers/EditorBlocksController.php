@@ -7,11 +7,15 @@ namespace Voodflow\Voodbuilder\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorCommunityBlockCatalog;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 
+/**
+ * HTTP controller: Editor Blocks.
+ */
 class EditorBlocksController extends Controller
 {
     public function __invoke(): JsonResponse
@@ -29,8 +33,10 @@ class EditorBlocksController extends Controller
             VoodbuilderSectionEditorBlocks::register($registry);
         }
 
+        $chromeLayoutEditor = EditorCommunityBlockCatalog::requestIsChromeLayoutEditor();
+
         return response()->json([
-            'blocks' => $registry->toEditorBlocks(),
+            'blocks' => $registry->toEditorBlocks($chromeLayoutEditor),
         ]);
     }
 }

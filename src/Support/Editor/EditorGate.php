@@ -29,6 +29,9 @@ use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 use Voodflow\Voodbuilder\Voodbuilder;
 
+/**
+ * Editor Gate.
+ */
 final class EditorGate
 {
     /** @var (callable(SitePage): bool)|null */
@@ -125,6 +128,7 @@ final class EditorGate
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks'),
+            'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false),
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::editorRoute('voodbuilder.editor.bindings')
                 : null,
@@ -184,6 +188,7 @@ final class EditorGate
                 'dynamicDataSingle' => self::dynamicDataEnabled(),
                 'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
+                'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
             ],
             'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')
                 ? self::editorRoute('voodbuilder.editor.popups.index')
@@ -454,6 +459,8 @@ final class EditorGate
             'globalClassesEmpty' => __('voodbuilder::pro.global_classes.empty'),
             'globalClassesLoadError' => __('voodbuilder::pro.global_classes.load_error'),
             'globalClassesSaveError' => __('voodbuilder::pro.global_classes.save_error'),
+            'elementsPluginRequiredTitle' => __('voodbuilder::pro.elements.plugin_required_title'),
+            'elementsPluginRequiredBody' => __('voodbuilder::pro.elements.plugin_required_body'),
             'componentsTitle' => __('voodbuilder::pro.components.title'),
             'componentsPluginRequiredTitle' => __('voodbuilder::pro.components.plugin_required_title'),
             'componentsPluginRequiredBody' => __('voodbuilder::pro.components.plugin_required_body'),

@@ -28,6 +28,7 @@ import {
     configureLogoCloudCanvas,
     registerLogoCloudBlocks,
 } from './editor-logo-cloud-blocks.js';
+import { setEditorBlockAllowlist } from './block-allowlist.js';
 import registerEditorTailwindPlugin from './editor-tailwind-plugin.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import {
@@ -206,7 +207,9 @@ function protectSiteHeaderButton(component) {
 }
 
 export function configureEditorPlugins(editor, options = {}) {
-    const { formSubmitUrl, csrf, plugins: enabled = {}, labels = {} } = options;
+    const { formSubmitUrl, csrf, plugins: enabled = {}, labels = {}, blockAllowlist = null } = options;
+
+    setEditorBlockAllowlist(editor, blockAllowlist);
 
     const registerLayout = () => registerLayoutBlocks(editor, labels);
 

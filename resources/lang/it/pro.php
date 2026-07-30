@@ -88,7 +88,7 @@ return [
         'panel_blocks' => 'Blocchi',
         'panel_library' => 'Libreria',
         'panel_inspector' => 'Inspector',
-        'block_search' => 'Cerca blocchi…',
+        'block_search' => 'Cerca elementi…',
         'blocks_load_error' => 'Impossibile caricare la libreria blocchi. Ricarica l’editor o verifica la sessione.',
         'block_pin' => 'Fissa',
         'block_unpin' => 'Rimuovi',
@@ -250,6 +250,11 @@ return [
         'empty' => 'Nessuna classe globale.',
         'load_error' => 'Impossibile caricare le classi globali.',
         'save_error' => 'Impossibile salvare la classe globale.',
+    ],
+
+    'elements' => [
+        'plugin_required_title' => 'Voodbuilder Elements',
+        'plugin_required_body' => 'Migliaia di elementi — copia e incolla da toolkit come Tailwind Plus, crea nuovi elementi con codice e amplia la libreria. Richiede il plugin Voodbuilder Elements.',
     ],
 
     'components' => [

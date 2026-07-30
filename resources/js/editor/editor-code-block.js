@@ -7,6 +7,7 @@ import {
     resolveBlockLabel,
     resolveBlockWireframe,
 } from './section-block-meta.js';
+import { isEditorBlockAllowed } from './block-allowlist.js';
 
 const CODE_PROP = 'voodbuilderCodeContent';
 const LANG_PROP = 'voodbuilderCodeLang';
@@ -394,7 +395,11 @@ export function configureEditorCodeBlock(editor, options = {}) {
         },
     });
 
-    if (! BlockManager.get('voodbuilder-code-block')) {
+    if (! isEditorBlockAllowed(editor, 'voodbuilder-code-block')) {
+        if (BlockManager.get('voodbuilder-code-block')) {
+            BlockManager.remove('voodbuilder-code-block');
+        }
+    } else if (! BlockManager.get('voodbuilder-code-block')) {
         BlockManager.add('voodbuilder-code-block', {
             label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
             category: CODE_BLOCK_CATEGORY,

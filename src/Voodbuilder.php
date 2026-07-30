@@ -28,6 +28,14 @@ use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 
+/**
+ * Public facade for third-party and host-app registration.
+ *
+ * Register blocks, bindings, conditions, content channels, menu item types,
+ * fonts, sub-themes, and modules from a ServiceProvider — never by editing Core.
+ *
+ * @see docs/manual/developer/extending-overview.md
+ */
 class Voodbuilder
 {
     public static function modules(): ModuleRegistry

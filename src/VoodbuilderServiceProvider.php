@@ -84,6 +84,11 @@ use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 
+/**
+ * Package service provider: registers modules, editor routes, Filament plugin hooks, and view/config merges.
+ *
+ * Companion packages should register via {@see Voodbuilder} / {@see VoodBuilderModule}, not by editing this class.
+ */
 class VoodbuilderServiceProvider extends PackageServiceProvider
 {
     public static string $name = 'voodbuilder';

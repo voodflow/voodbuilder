@@ -2,6 +2,8 @@
  * VoodBuilder tab section presets — replaces the default grapesjs-tabs block.
  */
 
+import { isEditorBlockAllowed } from './block-allowlist.js';
+
 export const TABS_BLOCK_CATEGORY = 'Tabs';
 
 const TAB_LABELS = ['Overview', 'Details', 'Resources'];
@@ -152,6 +154,14 @@ export function registerVoodbuilderTabsBlocks(editor) {
     blockManager.remove('tabs');
 
     for (const variant of VARIANTS) {
+        if (! isEditorBlockAllowed(editor, variant.id)) {
+            if (blockManager.get(variant.id)) {
+                blockManager.remove(variant.id);
+            }
+
+            continue;
+        }
+
         if (blockManager.get(variant.id)) {
             blockManager.remove(variant.id);
         }

@@ -992,6 +992,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         csrf: options.csrf,
         plugins: options.plugins ?? {},
         labels,
+        blockAllowlist: options.blockAllowlist ?? null,
     });
     // Forms plugin registers `button` after early-types; re-add chrome type so icons win.
     registerSiteNavChromeButtonType(editor);

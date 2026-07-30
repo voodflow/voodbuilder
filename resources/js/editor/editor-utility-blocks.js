@@ -4,6 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
 import { applyIconToComponent, readIconColor } from './basic-elements-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
@@ -672,6 +673,14 @@ export function registerUtilityBlocks(editor) {
     }
 
     for (const block of BLOCKS) {
+        if (! isEditorBlockAllowed(editor, block.id)) {
+            if (blockManager.get(block.id)) {
+                blockManager.remove(block.id);
+            }
+
+            continue;
+        }
+
         if (blockManager.get(block.id)) {
             blockManager.remove(block.id);
         }

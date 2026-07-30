@@ -4,6 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { isEditorBlockAllowed } from './block-allowlist.js';
 import { widthClassesForItemCount, widthClassesForColumns, gridClassesForColumns, applyItemsRootColumnVar } from './section-item-count.js';
 import {
     initAnimatedCounters,
@@ -1558,6 +1559,14 @@ export function registerAnimatedBlocks(editor) {
     registerAnimatedComponentTypes(editor);
 
     for (const block of BLOCKS) {
+        if (! isEditorBlockAllowed(editor, block.id)) {
+            if (blockManager.get(block.id)) {
+                blockManager.remove(block.id);
+            }
+
+            continue;
+        }
+
         if (blockManager.get(block.id)) {
             blockManager.remove(block.id);
         }

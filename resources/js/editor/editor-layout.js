@@ -18,6 +18,7 @@ import {
 import {
     createInspectorEmptyState,
 } from './inspector-empty-state.js';
+import { canEntitlement } from './editor/entitlements.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 
@@ -155,9 +156,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         <input
                             type="search"
                             class="voodbuilder-editor-blocks-search"
-                            placeholder="${escapeHtml(labels.blockSearch ?? 'Search blocks…')}"
+                            placeholder="${escapeHtml(labels.blockSearch ?? 'Search elements…')}"
                             autocomplete="off"
-                            aria-label="${escapeHtml(labels.blockSearch ?? 'Search blocks')}"
+                            aria-label="${escapeHtml(labels.blockSearch ?? 'Search elements')}"
                         />
                     </label>
                     <div class="voodbuilder-editor-library-panels">
@@ -299,7 +300,7 @@ function setupLibraryTabs(mounts, labels = {}, editor = null) {
     let activeLibrary = 'blocks';
 
     const placeholders = {
-        blocks: labels.blockSearch ?? 'Search blocks…',
+        blocks: labels.blockSearch ?? 'Search elements…',
         components: labels.componentSearch ?? 'Search components…',
         templates: labels.templateSearch ?? 'Search templates…',
     };
@@ -747,10 +748,53 @@ function trimDefaultPanelButtons(editor) {
     }
 }
 
+/**
+ * Soft commercial gate: keep Community Elements visible, show companion upsell above the catalog.
+ *
+ * @param {object|null|undefined} shell
+ * @param {object} [labels]
+ * @param {import('grapesjs').Editor|null|undefined} editor
+ * @returns {void}
+ */
+function mountElementsLibraryUpsell(shell, labels = {}, editor = null) {
+    const entitlements = editor?.__voodbuilderEntitlements ?? {};
+
+    if (canEntitlement(entitlements, 'blocksOfficialComplete')) {
+        return;
+    }
+
+    const blocksMount = shell?.mounts?.blocks ?? null;
+    const panel = blocksMount?.closest('[data-voodbuilder-library-panel="blocks"]')
+        ?? blocksMount?.parentElement
+        ?? null;
+
+    if (! panel || panel.querySelector('[data-voodbuilder-elements-upsell]')) {
+        return;
+    }
+
+    const upsell = createInspectorEmptyState({
+        classNameExtra: 'voodbuilder-editor-elements-library__locked',
+        title: labels.elementsPluginRequiredTitle ?? 'Voodbuilder Elements',
+        message: labels.elementsPluginRequiredBody
+            ?? 'Thousands of elements — copy and paste from toolkits like Tailwind Plus, create new elements with code, and expand your library. Requires the Voodbuilder Elements plugin.',
+        labels,
+        linkUrl: labels.marketingUrl ?? null,
+        linkLabel: labels.learnMore ?? 'Learn more',
+    });
+    upsell.setAttribute('data-voodbuilder-elements-upsell', '1');
+
+    if (blocksMount?.parentElement === panel) {
+        panel.insertBefore(upsell, blocksMount);
+    } else {
+        panel.prepend(upsell);
+    }
+}
+
 export function configureEditorLayout(editor, shell, labels = {}) {
     trimDefaultPanelButtons(editor);
     setupStyleInspectorSectors(shell.mounts, labels);
     setupLibraryTabs(shell.mounts, labels, editor);
+    mountElementsLibraryUpsell(shell, labels, editor);
     setupBlockSearch(editor, shell.mounts.search);
     registerBlockPins(editor, {
         blocksMount: shell.mounts.blocks,

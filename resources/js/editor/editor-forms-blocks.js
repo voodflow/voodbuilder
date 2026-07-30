@@ -4,6 +4,7 @@
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
+import { isEditorBlockAllowed } from './block-allowlist.js';
 import { registerBlockSettings } from './block-settings/index.js';
 
 export const FORMS_BLOCK_CATEGORY = 'Forms';
@@ -147,6 +148,14 @@ export function registerVoodbuilderFormBlock(editor) {
     const blockManager = editor.BlockManager;
 
     blockManager.remove('form');
+
+    if (! isEditorBlockAllowed(editor, FORM_BLOCK_ID)) {
+        if (blockManager.get(FORM_BLOCK_ID)) {
+            blockManager.remove(FORM_BLOCK_ID);
+        }
+
+        return;
+    }
 
     if (! blockManager.get(FORM_BLOCK_ID)) {
         blockManager.add(FORM_BLOCK_ID, {

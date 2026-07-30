@@ -17,7 +17,11 @@ use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
+use Voodflow\Voodbuilder\Voodbuilder;
 
+/**
+ * Editor Chrome Layout Editor Gate.
+ */
 final class EditorChromeLayoutEditorGate
 {
     public static function canEdit(ChromeLayout $layout): bool
@@ -57,7 +61,8 @@ final class EditorChromeLayoutEditorGate
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($layout),
-            'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks'),
+            'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks').'?chrome=1',
+            'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),
             'bindingsUrl' => self::editorRoute('voodbuilder.editor.bindings'),
             'linkTargetsUrl' => self::editorRoute('voodbuilder.editor.link-targets'),
             'blocksRenderUrl' => self::editorRoute('voodbuilder.editor.blocks.render'),
@@ -90,6 +95,12 @@ final class EditorChromeLayoutEditorGate
             ]))),
             'builderBrand' => config('voodbuilder.editor.builder.brand', 'VoodBuilder'),
             'globalTextTags' => GlobalTextTags::values(),
+            'marketingUrl' => (string) config('voodbuilder.marketing_url', 'https://voodflow.com/voodbuilder'),
+            'entitlements' => [
+                'edition' => Voodbuilder::entitlements()->edition(),
+                'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
+                'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
+            ],
             'labels' => EditorGate::sharedEditorLabels(),
         ];
     }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+/**
+ * Editor Block Registry.
+ */
 final class EditorBlockRegistry
 {
     /** @var list<EditorBlockDefinition> */
@@ -19,11 +22,13 @@ final class EditorBlockRegistry
     /**
      * @return list<array<string, mixed>>
      */
-    public function toEditorBlocks(): array
+    public function toEditorBlocks(?bool $chromeLayoutEditor = null): array
     {
-        return array_values(array_map(
+        $blocks = array_values(array_map(
             static fn (EditorBlockDefinition $block): array => $block->toEditorArray(),
             $this->blocks,
         ));
+
+        return EditorCommunityBlockCatalog::filterEditorBlocks($blocks, $chromeLayoutEditor);
     }
 }

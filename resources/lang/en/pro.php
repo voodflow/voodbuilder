@@ -88,7 +88,7 @@ return [
         'panel_blocks' => 'Blocks',
         'panel_library' => 'Library',
         'panel_inspector' => 'Inspector',
-        'block_search' => 'Search blocks…',
+        'block_search' => 'Search elements…',
         'blocks_load_error' => 'Could not load the block library. Reload the editor or check your session.',
         'block_pin' => 'Pin',
         'block_unpin' => 'Unpin',
@@ -250,6 +250,11 @@ return [
         'empty' => 'No global classes yet.',
         'load_error' => 'Could not load global classes.',
         'save_error' => 'Could not save global class.',
+    ],
+
+    'elements' => [
+        'plugin_required_title' => 'Voodbuilder Elements',
+        'plugin_required_body' => 'Thousands of elements — copy and paste from toolkits like Tailwind Plus, create new elements with code, and expand your library. Requires the Voodbuilder Elements plugin.',
     ],
 
     'components' => [
