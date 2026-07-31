@@ -98,6 +98,17 @@ final class EditorCommunityBlockCatalog
     ];
 
     /**
+     * Community JS tiles that stay in the Core tab when Elements owns SOURCE.
+     *
+     * @var list<string>
+     */
+    public const COMMUNITY_JS_BLOCK_IDS = [
+        'voodbuilder-animated-cta',
+        'voodbuilder-animated-stats',
+        'voodbuilder-tabs-pills',
+    ];
+
+    /**
      * Chrome-layout-only Site helper (hidden from page Site category).
      */
     public const CHROME_ONLY_BLOCK_ID = 'chrome_content_slot';
@@ -169,22 +180,46 @@ final class EditorCommunityBlockCatalog
     }
 
     /**
+     * True when the Elements companion plugin is active on this host.
+     * Section templates then live in the remote SOURCE UI — not the local accordion.
+     */
+    public static function elementsLibraryActive(): bool
+    {
+        $class = 'Voodflow\\VoodbuilderElements\\VoodbuilderElements';
+
+        if (! class_exists($class)) {
+            return false;
+        }
+
+        return $class::isActivated() && $class::isEnabled();
+    }
+
+    /**
      * @return list<string>|null Null = no sidebar filter (full library).
      */
     public static function sidebarAllowlist(?bool $chromeLayoutEditor = null): ?array
     {
-        if (! self::limitsLibrary()) {
-            $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
+        $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
+
+        // Elements plugin owns the section catalog (SOURCE). Local sidebar = foundation + community JS.
+        if (self::elementsLibraryActive()) {
+            $ids = [
+                ...self::FOUNDATION_BLOCK_IDS,
+                ...self::COMMUNITY_JS_BLOCK_IDS,
+            ];
 
             if ($chromeLayoutEditor) {
-                return null;
+                $ids[] = self::CHROME_ONLY_BLOCK_ID;
             }
 
-            // Full Pro library still hides chrome slot from page Site category.
+            return array_values(array_unique($ids));
+        }
+
+        if (! self::limitsLibrary()) {
+            // Full Pro library without Elements plugin (legacy) — keep chrome slot off pages.
             return null;
         }
 
-        $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
         $ids = [
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,

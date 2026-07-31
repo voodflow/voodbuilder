@@ -20,14 +20,24 @@ final class EditorBlockRegistry
     }
 
     /**
+     * Unfiltered definitions (for companion SOURCE merge, etc.).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function allDefinitions(): array
+    {
+        return array_values(array_map(
+            static fn (EditorBlockDefinition $block): array => $block->toEditorArray(),
+            $this->blocks,
+        ));
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function toEditorBlocks(?bool $chromeLayoutEditor = null): array
     {
-        $blocks = array_values(array_map(
-            static fn (EditorBlockDefinition $block): array => $block->toEditorArray(),
-            $this->blocks,
-        ));
+        $blocks = $this->allDefinitions();
 
         return EditorCommunityBlockCatalog::filterEditorBlocks($blocks, $chromeLayoutEditor);
     }

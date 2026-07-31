@@ -99,6 +99,7 @@ final class EditorChromeLayoutEditorGate
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
                 'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
+                'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
                 'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
             ],
             'labels' => EditorGate::sharedEditorLabels(),

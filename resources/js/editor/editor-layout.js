@@ -759,7 +759,11 @@ function trimDefaultPanelButtons(editor) {
 function mountElementsLibraryUpsell(shell, labels = {}, editor = null) {
     const entitlements = editor?.__voodbuilderEntitlements ?? {};
 
-    if (canEntitlement(entitlements, 'blocksOfficialComplete')) {
+    // Elements plugin active → SOURCE UI owns the library (no upsell).
+    if (
+        canEntitlement(entitlements, 'elementsLibrary')
+        || canEntitlement(entitlements, 'blocksOfficialComplete')
+    ) {
         return;
     }
 

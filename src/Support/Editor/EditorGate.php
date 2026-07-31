@@ -129,6 +129,9 @@ final class EditorGate
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks'),
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false),
+            'elementsSourceUrl' => EditorCommunityBlockCatalog::elementsLibraryActive()
+                ? self::editorRoute('voodbuilder.editor.elements.source')
+                : null,
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::editorRoute('voodbuilder.editor.bindings')
                 : null,
@@ -189,6 +192,7 @@ final class EditorGate
                 'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
                 'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
+                'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
             ],
             'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')
                 ? self::editorRoute('voodbuilder.editor.popups.index')
