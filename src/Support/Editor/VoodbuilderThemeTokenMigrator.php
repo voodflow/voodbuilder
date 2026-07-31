@@ -212,7 +212,7 @@ final class VoodbuilderThemeTokenMigrator
         );
 
         return preg_replace_callback(
-            '/\bcolor:\s*([^;}{]+)/',
+            '/(?<![\w-])color:\s*([^;}{]+)/',
             static function (array $matches): string {
                 $value = strtolower(trim($matches[1]));
 
@@ -529,9 +529,16 @@ final class VoodbuilderThemeTokenMigrator
         ) ?? $html;
     }
 
+    /**
+     * Strip only the CSS `color` property — never `background-color`, `border-color`,
+     * `box-shadow-color`, etc. A bare `\bcolor` lookbehind matches those suffixes and
+     * used to concatenate leftovers (`background-color:#daa0a0` → `background-`),
+     * wiping Style Manager paints from saved HTML while #id CSS still looked fine.
+     */
     private static function removeColorFromStyleDeclaration(string $style): string
     {
-        $style = preg_replace('/\bcolor\s*:\s*[^;]+;?/i', '', $style) ?? $style;
+        $style = preg_replace('/(?<![\w-])color\s*:\s*[^;]+;?/i', '', $style) ?? $style;
+        $style = preg_replace('/;\s*;+/', ';', $style) ?? $style;
 
         return trim($style, " \t\n\r\0\x0B;");
     }
@@ -1035,7 +1042,7 @@ final class VoodbuilderThemeTokenMigrator
         $style = self::replaceFixedBackgroundColors($style);
 
         $style = preg_replace_callback(
-            '/\bcolor:\s*([^;]+)/i',
+            '/(?<![\w-])color:\s*([^;]+)/i',
             static function (array $matches): string {
                 $value = strtolower(trim($matches[1]));
 

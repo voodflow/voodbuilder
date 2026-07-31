@@ -315,12 +315,16 @@ function watchFontFamilyChanges(editor) {
         void applyFont(editor, editor.getSelected?.(), value ?? component);
     });
 
-    editor.on('component:styleUpdate', (component, property) => {
+    editor.on('component:styleUpdate', (component, propertyOrPros) => {
         if (editor.__voodbuilderFontsApplying) {
             return;
         }
 
-        if (property && property !== 'font-family') {
+        const properties = typeof propertyOrPros === 'string'
+            ? [propertyOrPros]
+            : Object.keys(propertyOrPros?.style ?? {});
+
+        if (properties.length > 0 && ! properties.includes('font-family')) {
             return;
         }
 

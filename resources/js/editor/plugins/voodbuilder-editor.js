@@ -9,6 +9,7 @@ import {
     resolveVisualStyleTarget,
     safeFindComponents,
     safeGetClasses,
+    styleUpdatePropertyNames,
     walkComponentTree,
 } from '../tailwind-visual-style.js';
 import { registerBoundComponentType } from '../bindings-ui.js';
@@ -75,8 +76,10 @@ function isSpacingStyleProperty(property) {
 }
 
 function registerSpacingStyleSync(editor) {
-    editor.on('component:styleUpdate', (component, property) => {
-        if (! isSpacingStyleProperty(property)) {
+    editor.on('component:styleUpdate', (component, propertyOrPros) => {
+        const properties = styleUpdatePropertyNames(propertyOrPros);
+
+        if (! properties.some((property) => isSpacingStyleProperty(property))) {
             return;
         }
 
@@ -102,12 +105,14 @@ function isBorderPaintProperty(property) {
 }
 
 function registerTailwindStyleSync(editor) {
-    editor.on('component:styleUpdate', (component, property) => {
-        if (editor.__voodbuilderPurgingBackground) {
+    editor.on('component:styleUpdate', (component, propertyOrPros) => {
+        if (editor.__voodbuilderPurgingBackground || ! component) {
             return;
         }
 
-        if (! property || ! component) {
+        const properties = styleUpdatePropertyNames(propertyOrPros);
+
+        if (properties.length === 0) {
             return;
         }
 
@@ -115,41 +120,43 @@ function registerTailwindStyleSync(editor) {
         const wrapperStyle = component.getStyle?.() ?? {};
         const targetStyle = target?.getStyle?.() ?? {};
 
-        if (property === 'background'
-            || property === 'background-color'
-            || property === 'background-image') {
-            const background = wrapperStyle[property]
-                ?? wrapperStyle['background-color']
-                ?? wrapperStyle['background-image']
-                ?? wrapperStyle.background
-                ?? targetStyle[property]
-                ?? targetStyle['background-color']
-                ?? targetStyle['background-image']
-                ?? targetStyle.background;
+        for (const property of properties) {
+            if (property === 'background'
+                || property === 'background-color'
+                || property === 'background-image') {
+                const background = wrapperStyle[property]
+                    ?? wrapperStyle['background-color']
+                    ?? wrapperStyle['background-image']
+                    ?? wrapperStyle.background
+                    ?? targetStyle[property]
+                    ?? targetStyle['background-color']
+                    ?? targetStyle['background-image']
+                    ?? targetStyle.background;
 
-            const cleared = background == null
-                || background === ''
-                || isClearedBackground(background)
-                || isClearedBackgroundImage(background);
+                const cleared = background == null
+                    || background === ''
+                    || isClearedBackground(background)
+                    || isClearedBackgroundImage(background);
 
-            if (cleared) {
-                restoreBackgroundClasses(target);
-                clearBackgroundCssRules(editor, component);
-            } else {
-                stripBackgroundClasses(target);
+                if (cleared) {
+                    restoreBackgroundClasses(target);
+                    clearBackgroundCssRules(editor, component);
+                } else {
+                    stripBackgroundClasses(target);
+                }
             }
-        }
 
-        if (property === 'color') {
-            enforceStyleManagerColorOverUtilities(target);
-        }
+            if (property === 'color') {
+                enforceStyleManagerColorOverUtilities(target);
+            }
 
-        if (isBorderRadiusProperty(property)) {
-            stripRoundedClasses(target);
-        }
+            if (isBorderRadiusProperty(property)) {
+                stripRoundedClasses(target);
+            }
 
-        if (isBorderPaintProperty(property)) {
-            stripBorderColorClasses(target);
+            if (isBorderPaintProperty(property)) {
+                stripBorderColorClasses(target);
+            }
         }
 
         target.view?.updateStyles?.();

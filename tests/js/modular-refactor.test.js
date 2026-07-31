@@ -597,6 +597,130 @@ describe('theme-tokens background clear', () => {
         expect(next).not.toContain('#box');
         expect(next).toContain('.flex');
     });
+
+    it('style:property:update ignores Grapes __up read refreshes', async () => {
+        const { registerVisualStyleInspector } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const handlers = {};
+        const styles = {};
+        const idRules = {};
+        const target = {
+            getId: () => 'box-1',
+            addStyle(next) {
+                Object.assign(styles, next);
+            },
+            getStyle: () => ({ ...styles }),
+        };
+
+        const editor = {
+            on(event, handler) {
+                handlers[event] = handler;
+            },
+            getSelected: () => target,
+            StyleManager: { select() {} },
+            Css: {
+                getIdRule: (id) => (idRules[id] ? { getStyle: () => ({ ...idRules[id] }) } : null),
+                setIdRule(id, style) {
+                    idRules[id] = { ...style };
+                },
+            },
+        };
+
+        registerVisualStyleInspector(editor);
+
+        handlers['style:property:update']({
+            property: { getName: () => 'background-color' },
+            value: '#f3f4f6',
+            opts: { __up: true },
+        });
+
+        expect(styles['background-color']).toBeUndefined();
+        expect(idRules['box-1']).toBeUndefined();
+
+        handlers['style:property:update']({
+            property: { getName: () => 'background-color' },
+            value: '#0ea5e9',
+            opts: {},
+        });
+
+        expect(styles['background-color']).toBe('#0ea5e9');
+        expect(idRules['box-1']['background-color']).toContain('#0ea5e9');
+    });
+
+    it('styleUpdatePropertyNames reads Grapes { style } payload', async () => {
+        const { styleUpdatePropertyNames } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        expect(styleUpdatePropertyNames('background-color')).toEqual(['background-color']);
+        expect(styleUpdatePropertyNames({ style: { 'background-color': '#0ea5e9', color: 'red' } }))
+            .toEqual(['background-color', 'color']);
+        expect(styleUpdatePropertyNames(null)).toEqual([]);
+    });
+
+    it('hydrateAuthorStylesFromIdRules restores background-color after reload', async () => {
+        const { hydrateAuthorStylesFromIdRules } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+        const { collectAuthorIdCssFromComponents } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const inline = {};
+        const component = {
+            getId: () => 'section-bg',
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            addStyle(next, opts) {
+                if (opts?.inline) {
+                    Object.assign(inline, next);
+                }
+            },
+        };
+
+        const editor = {
+            Css: {
+                getIdRule: (id) => (id === 'section-bg'
+                    ? { getStyle: () => ({ 'background-color': '#daa0a0 !important' }) }
+                    : null),
+                setIdRule() {},
+            },
+            getWrapper: () => ({
+                onAll: (cb) => cb(component),
+            }),
+        };
+
+        const updated = hydrateAuthorStylesFromIdRules(editor);
+
+        expect(updated).toBe(1);
+        expect(inline['background-color']).toBe('#daa0a0');
+
+        const css = collectAuthorIdCssFromComponents(editor);
+
+        expect(css).toContain('#section-bg');
+        expect(css).toContain('background-color:#daa0a0');
+    });
+
+    it('mergeCompiledPageCssWithAuthorIdRules keeps #id background after JIT rebuild', async () => {
+        const { mergeCompiledPageCssWithAuthorIdRules } = await import(
+            '../../resources/js/editor/page-tailwind-autobuild.js'
+        );
+
+        const editor = {
+            __voodbuilderPageLiveCss: `
+.flex { display: flex }
+#section-bg { background-color: #daa0a0 !important; }
+`,
+            getCss: () => '#section-bg { background-color: #daa0a0 !important; }',
+        };
+
+        const merged = mergeCompiledPageCssWithAuthorIdRules(editor, '.text-lg { font-size: 1.125rem }');
+
+        expect(merged).toContain('.text-lg');
+        expect(merged).toContain('#section-bg');
+        expect(merged).toContain('background-color: #daa0a0');
+    });
 });
 
 describe('editor/registries', () => {

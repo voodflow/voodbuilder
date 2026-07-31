@@ -234,6 +234,35 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
         $this->assertStringNotContainsString('color:', $migrated);
     }
 
+    public function test_preserves_background_color_when_stripping_conflicting_text_color(): void
+    {
+        $html = '<section class="text-vp-text-2 voodbuilder-editor-section" style="'
+            .'color: rgb(60, 60, 67);'
+            .'background-color:#daa0a0;'
+            .'border-color:black;'
+            .'box-shadow:0 0 5px 0 black;'
+            .'">Content</section>';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
+
+        $this->assertStringContainsString('background-color:#daa0a0', $migrated);
+        $this->assertStringContainsString('border-color:black', $migrated);
+        $this->assertStringContainsString('box-shadow:0 0 5px 0 black', $migrated);
+        $this->assertDoesNotMatchRegularExpression('/(?<![\w-])color\s*:/i', $migrated);
+        $this->assertStringNotContainsString('text-shadow-border', $migrated);
+        $this->assertDoesNotMatchRegularExpression('/background-(?:;|"|\s*$)/', $migrated);
+    }
+
+    public function test_migrate_css_does_not_rewrite_background_color_as_text_color(): void
+    {
+        $css = '#box { background-color: #daa0a0; color: #111827; }';
+
+        $migrated = VoodbuilderThemeTokenMigrator::migrateCss($css);
+
+        $this->assertStringContainsString('background-color: #daa0a0', $migrated);
+        $this->assertStringContainsString('color: var(--color-vp-text-1)', $migrated);
+    }
+
     public function test_migrates_project_inline_color_without_overriding_text_white_class(): void
     {
         $project = [

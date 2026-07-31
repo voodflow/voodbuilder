@@ -15,6 +15,7 @@
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
 import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
+import { extractGrapesComposerCss, mergeAuthorCssChunks } from './editor/payload.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-page-live-css';
 const DEBOUNCE_MS = 450;
@@ -173,6 +174,32 @@ export function applyPageLiveCss(editor, css) {
 
     editor.__voodbuilderPageLiveCss = normalized;
     injectLivePageCss(editor, normalized);
+}
+
+/**
+ * JIT compile returns utilities only. Keep author `#id` Style Manager paints from the
+ * previous live sheet and/or CssComposer so background-color (etc.) survive rebuilds.
+ *
+ * @param {object} editor
+ * @param {string} compiledCss
+ * @returns {string}
+ */
+export function mergeCompiledPageCssWithAuthorIdRules(editor, compiledCss) {
+    const compiled = String(compiledCss ?? '').trim();
+    const previousAuthor = extractGrapesComposerCss(editor?.__voodbuilderPageLiveCss ?? '');
+    let composerAuthor = '';
+
+    try {
+        composerAuthor = extractGrapesComposerCss(
+            typeof editor?.getCss === 'function'
+                ? (editor.getCss({ keepUnusedStyles: true }) ?? '')
+                : '',
+        );
+    } catch {
+        composerAuthor = '';
+    }
+
+    return mergeAuthorCssChunks([compiled, previousAuthor, composerAuthor]);
 }
 
 export function registerPageTailwindAutobuild(editor, options = {}) {
@@ -460,8 +487,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
             lastHtml = html;
             lastClassSet = classSet;
-            applyPageLiveCss(editor, css);
-            editor.trigger('voodbuilder:page-css-compiled', { css, html });
+            applyPageLiveCss(editor, mergeCompiledPageCssWithAuthorIdRules(editor, css));
+            editor.trigger('voodbuilder:page-css-compiled', { css: editor.__voodbuilderPageLiveCss ?? css, html });
 
             try {
                 editor.refresh?.();

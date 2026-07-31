@@ -2452,19 +2452,16 @@ export function registerVisualStyleInspector(editor) {
         const propertyName = event?.property?.getName?.() ?? event?.property?.get?.('property');
         const value = event?.value ?? event?.to?.value ?? '';
         const selected = editor.getSelected();
+        const opts = event?.opts ?? {};
 
         if (! propertyName || ! selected) {
             return;
         }
 
-        if (EXPORT_PAINT_PROPERTIES.includes(propertyName)) {
-            propagateSvgExportStyle(editor, selected, propertyName, value);
-        }
-
         // Only wipe on explicit Style Manager clear (__clear). Intermediate empty
         // values while picking a color used to call clearStyleProperty and erase
         // paints from the model while the canvas still showed cached CSS.
-        const explicitClear = event?.opts?.__clear === true;
+        const explicitClear = opts.__clear === true;
 
         if (explicitClear) {
             clearStyleProperty(editor, selected, propertyName, {
@@ -2481,6 +2478,18 @@ export function registerVisualStyleInspector(editor) {
             });
 
             return;
+        }
+
+        // Grapes emits style:property:update for Style Manager *read* refreshes too
+        // (`opts.__up === true`) when selecting a component. Those values often come
+        // from parent/utility rules (e.g. `.bg-*`) and must NOT be written back onto
+        // inline/#id — that overwrote author background paints after editor reload.
+        if (opts.__up === true || opts.avoidStore === true || opts.noTarget === true) {
+            return;
+        }
+
+        if (EXPORT_PAINT_PROPERTIES.includes(propertyName)) {
+            propagateSvgExportStyle(editor, selected, propertyName, value);
         }
 
         // Persist every SM paint onto unique #id + inline immediately — do not wait
@@ -2525,6 +2534,29 @@ export function registerVisualStyleInspector(editor) {
     });
 }
 
+/**
+ * GrapesJS emits `component:styleUpdate` as (component, { style: changed }).
+ * Older handlers assumed a property name string and never ran.
+ *
+ * @param {unknown} propertyOrPros
+ * @returns {string[]}
+ */
+export function styleUpdatePropertyNames(propertyOrPros) {
+    if (typeof propertyOrPros === 'string' && propertyOrPros !== '') {
+        return [propertyOrPros];
+    }
+
+    if (propertyOrPros && typeof propertyOrPros === 'object') {
+        const style = propertyOrPros.style;
+
+        if (style && typeof style === 'object') {
+            return Object.keys(style);
+        }
+    }
+
+    return [];
+}
+
 function clearForwardedStyle(target, property) {
     target.removeStyle(property);
 
@@ -2536,66 +2568,74 @@ function clearForwardedStyle(target, property) {
 }
 
 export function registerVisualStyleTarget(editor) {
-    editor.on('component:styleUpdate', (component, property) => {
-        if (isPurgingBackground(editor)) {
+    editor.on('component:styleUpdate', (component, propertyOrPros) => {
+        if (isPurgingBackground(editor) || ! component) {
             return;
         }
 
-        if (component && EXPORT_PAINT_PROPERTIES.includes(property)) {
-            const value = component.getStyle?.()?.[property];
+        const properties = styleUpdatePropertyNames(propertyOrPros);
 
-            if (value != null && value !== '') {
-                propagateSvgExportStyle(editor, component, property, value);
+        if (properties.length === 0) {
+            return;
+        }
+
+        for (const property of properties) {
+            if (EXPORT_PAINT_PROPERTIES.includes(property)) {
+                const value = component.getStyle?.()?.[property];
+
+                if (value != null && value !== '') {
+                    propagateSvgExportStyle(editor, component, property, value);
+                }
             }
-        }
 
-        if (! component || ! shouldForwardStyleProperty(property)) {
-            return;
-        }
+            if (! shouldForwardStyleProperty(property)) {
+                continue;
+            }
 
-        const target = resolveVisualStyleTarget(component);
+            const target = resolveVisualStyleTarget(component);
 
-        if (target === component) {
-            return;
-        }
+            if (target === component) {
+                continue;
+            }
 
-        const style = component.getStyle?.() ?? {};
-        const value = style[property];
-        const isBackgroundPaint = isBackgroundPaintProperty(property);
-        const shouldClear = value == null
-            || value === ''
-            || (isBackgroundPaint && isBackgroundClearValue(value));
+            const style = component.getStyle?.() ?? {};
+            const value = style[property];
+            const isBackgroundPaint = isBackgroundPaintProperty(property);
+            const shouldClear = value == null
+                || value === ''
+                || (isBackgroundPaint && isBackgroundClearValue(value));
 
-        if (shouldClear) {
+            if (shouldClear) {
+                component.removeStyle(property);
+                clearForwardedStyle(target, property);
+
+                if (isBackgroundPaint) {
+                    clearBackgroundCssRules(editor, component);
+                } else {
+                    clearStyleProperty(editor, component, property);
+                }
+
+                target.view?.updateStyles?.();
+
+                continue;
+            }
+
             component.removeStyle(property);
-            clearForwardedStyle(target, property);
+            // Always persist on the visual target as inline + #id so chrome-shell
+            // export (and reload) does not depend on private .c* classes.
+            target.addStyle({ [property]: ensureImportantStyleValue(value) }, { inline: true });
 
-            if (isBackgroundPaint) {
-                clearBackgroundCssRules(editor, component);
-            } else {
-                clearStyleProperty(editor, component, property);
+            const targetId = target.getId?.();
+
+            if (targetId && editor.Css?.setIdRule) {
+                const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
+                editor.Css.setIdRule(targetId, {
+                    ...existing,
+                    [property]: ensureImportantStyleValue(value),
+                });
             }
 
             target.view?.updateStyles?.();
-
-            return;
         }
-
-        component.removeStyle(property);
-        // Always persist on the visual target as inline + #id so chrome-shell
-        // export (and reload) does not depend on private .c* classes.
-        target.addStyle({ [property]: ensureImportantStyleValue(value) }, { inline: true });
-
-        const targetId = target.getId?.();
-
-        if (targetId && editor.Css?.setIdRule) {
-            const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(targetId, {
-                ...existing,
-                [property]: ensureImportantStyleValue(value),
-            });
-        }
-
-        target.view?.updateStyles?.();
     });
 }
