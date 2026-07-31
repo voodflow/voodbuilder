@@ -98,7 +98,8 @@ final class EditorCommunityBlockCatalog
     ];
 
     /**
-     * Community JS tiles that stay in the Core tab when Elements owns SOURCE.
+     * Community JS tiles shown in the Core sidebar when Elements is not installed.
+     * When Elements is active they move to the Library modal only.
      *
      * @var list<string>
      */
@@ -201,12 +202,10 @@ final class EditorCommunityBlockCatalog
     {
         $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
 
-        // Elements plugin owns the section catalog (SOURCE). Local sidebar = foundation + community JS.
+        // Elements plugin owns the section catalog (Library modal). Local sidebar =
+        // foundation only (Layout / Basic / Media / Site…). Animated / Tabs live in Library.
         if (self::elementsLibraryActive()) {
-            $ids = [
-                ...self::FOUNDATION_BLOCK_IDS,
-                ...self::COMMUNITY_JS_BLOCK_IDS,
-            ];
+            $ids = [...self::FOUNDATION_BLOCK_IDS];
 
             if ($chromeLayoutEditor) {
                 $ids[] = self::CHROME_ONLY_BLOCK_ID;
