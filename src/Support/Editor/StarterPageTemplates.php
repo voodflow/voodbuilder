@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\PageTemplate;
 
 /**
- * Curated starter page templates (Landing 01–03 only).
+ * Curated starter page templates (Landing 01–02 community thinners).
  * Nav/footer are omitted — chrome-shell page editors already provide them.
+ * Landing 03 (cinematic / NASA-style) lives in the Elements companion.
  */
 class StarterPageTemplates
 {
@@ -21,7 +22,6 @@ class StarterPageTemplates
         return [
             VoodbuilderLanding01Sections::TEMPLATE_NAME,
             VoodbuilderLanding02Sections::TEMPLATE_NAME,
-            VoodbuilderLanding03Sections::TEMPLATE_NAME,
         ];
     }
 
@@ -52,6 +52,7 @@ class StarterPageTemplates
             'VoodBuilder landing 01',
             'VoodBuilder landing 02',
             'VoodBuilder NASA',
+            'Landing 03',
         ];
     }
 
@@ -64,7 +65,7 @@ class StarterPageTemplates
             [
                 'name' => VoodbuilderLanding01Sections::TEMPLATE_NAME,
                 'category' => 'Landing pages',
-                'description' => 'Gradient SaaS landing: hero, features, solution, testimonials, articles and CTA.',
+                'description' => 'Community starter: article cards and CTA.',
                 'html' => EditorSmartButtonAnnotator::annotate(VoodbuilderLanding01Sections::pageHtml()),
                 'css' => null,
                 'js' => null,
@@ -72,16 +73,8 @@ class StarterPageTemplates
             [
                 'name' => VoodbuilderLanding02Sections::TEMPLATE_NAME,
                 'category' => 'Landing pages',
-                'description' => 'Editorial landing: hero, trust, features, impact, toolkit, articles and FAQ.',
+                'description' => 'Community starter: FAQ accordion.',
                 'html' => EditorSmartButtonAnnotator::annotate(VoodbuilderLanding02Sections::pageHtml()),
-                'css' => null,
-                'js' => null,
-            ],
-            [
-                'name' => VoodbuilderLanding03Sections::TEMPLATE_NAME,
-                'category' => 'Landing pages',
-                'description' => 'Cinematic home: hero, stats, featured stories, teaser, spotlight, missions and explore.',
-                'html' => EditorSmartButtonAnnotator::annotate(VoodbuilderLanding03Sections::pageHtml()),
                 'css' => null,
                 'js' => null,
             ],

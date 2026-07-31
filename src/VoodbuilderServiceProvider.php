@@ -69,7 +69,6 @@ use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
-use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding03Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
@@ -263,7 +262,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
             VoodbuilderLanding01Sections::registerBlocks();
             VoodbuilderLanding02Sections::registerBlocks();
-            VoodbuilderLanding03Sections::registerBlocks();
             VoodbuilderMediaSections::registerBlocks();
 
             if (config('voodbuilder.editor.sections.enabled', true) && ! $this->app->runningInConsole()) {

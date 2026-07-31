@@ -18,7 +18,9 @@ class VoodbuilderLanding01SectionsTest extends TestCase
         $this->assertStringContainsString('VoodBuilder', $html);
         $this->assertStringContainsString('bg-vp-bg', $html);
         $this->assertStringContainsString('text-vp-brand-1', $html);
-        $this->assertStringContainsString('vb-landing01-hero', $html);
+        $this->assertStringContainsString('vb-landing01-articles', $html);
+        $this->assertStringContainsString('vb-landing01-cta', $html);
+        $this->assertStringNotContainsString('vb-landing01-hero', $html);
         $this->assertStringNotContainsString('GrapesJS', $html);
         $this->assertStringNotContainsString('grapesjs', strtolower($html));
         $this->assertStringNotContainsString('dark:', $html);
@@ -33,9 +35,10 @@ class VoodbuilderLanding01SectionsTest extends TestCase
         $blocks = app(EditorBlockRegistry::class)->toEditorBlocks();
         $byId = collect($blocks)->keyBy('id');
 
-        $this->assertSame('Hero', $byId['vb-landing01-hero']['category']);
-        $this->assertSame('Features', $byId['vb-landing01-features']['category']);
+        $this->assertSame('Articles', $byId['vb-landing01-articles']['category']);
         $this->assertSame('CTA', $byId['vb-landing01-cta']['category']);
-        $this->assertSame('Gradient hero', $byId['vb-landing01-hero']['label']);
+        $this->assertSame('Article cards · 3', $byId['vb-landing01-articles']['label']);
+        $this->assertSame('Community CTA', $byId['vb-landing01-cta']['label']);
+        $this->assertArrayNotHasKey('vb-landing01-hero', $byId->all());
     }
 }

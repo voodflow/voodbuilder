@@ -18,7 +18,6 @@ class VoodbuilderMediaSectionsTest extends TestCase
             $this->assertStringContainsString('data-voodbuilder-section-block="'.$definition['id'].'"', $html);
             $this->assertMatchesRegularExpression('/vp-/', $html);
             $this->assertStringNotContainsString('GrapesJS', $html);
-        $this->assertStringNotContainsString('grapesjs', strtolower($html));
             $this->assertStringNotContainsString('grapesjs', strtolower($html));
 
             if ($definition['category'] === 'Hero') {
@@ -42,20 +41,6 @@ class VoodbuilderMediaSectionsTest extends TestCase
         $this->assertStringContainsString('data-vb-min-height="70vh"', $html);
     }
 
-    public function test_slider_blocks_use_scroll_snap_markup(): void
-    {
-        $images = VoodbuilderMediaSections::sliderImages();
-        $videos = VoodbuilderMediaSections::sliderVideos();
-
-        $this->assertStringContainsString('class="voodbuilder-slider', $images);
-        $this->assertStringContainsString('data-voodbuilder-slider="images"', $images);
-        $this->assertStringContainsString('voodbuilder-slider__track', $images);
-        $this->assertStringContainsString('data-vb-slider-mode="static"', $images);
-
-        $this->assertStringContainsString('data-voodbuilder-slider="videos"', $videos);
-        $this->assertStringContainsString('voodbuilder-slider__slide', $videos);
-    }
-
     public function test_register_blocks_adds_media_sections_to_registry(): void
     {
         VoodbuilderMediaSections::registerBlocks();
@@ -64,17 +49,14 @@ class VoodbuilderMediaSectionsTest extends TestCase
         $ids = collect($blocks)->pluck('id')->all();
 
         $this->assertContains('vb-bg-image', $ids);
-        $this->assertContains('vb-bg-video', $ids);
-        $this->assertContains('vb-slider-images', $ids);
-        $this->assertContains('vb-slider-videos', $ids);
+        $this->assertNotContains('vb-bg-video', $ids);
+        $this->assertNotContains('vb-slider-images', $ids);
+        $this->assertNotContains('vb-slider-videos', $ids);
 
         $hero = collect($blocks)->firstWhere('id', 'vb-bg-image');
-        $gallery = collect($blocks)->firstWhere('id', 'vb-slider-images');
 
         $this->assertNotNull($hero);
-        $this->assertNotNull($gallery);
         $this->assertSame('Hero', $hero['category']);
-        $this->assertSame('Gallery', $gallery['category']);
         $this->assertSame('Background image', $hero['label']);
     }
 }

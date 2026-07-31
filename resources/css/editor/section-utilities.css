@@ -9,7 +9,6 @@
 @source '../editor/voodbuilder-home-landing-catalog.html';
 @source '../../src/Support/Editor/VoodbuilderLanding01Sections.php';
 @source '../../src/Support/Editor/VoodbuilderLanding02Sections.php';
-@source '../../src/Support/Editor/VoodbuilderLanding03Sections.php';
 @source '../../src/Support/Editor/VoodbuilderMediaSections.php';
 @source '../../views/editor/blocks/footers/**/*.blade.php';
 @source '../../views/editor/blocks/nav/**/*.blade.php';

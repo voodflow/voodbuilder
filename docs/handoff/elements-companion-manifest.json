@@ -142,10 +142,10 @@
   ],
   "source_map": {
     "section_catalog_json": "resources/editor/section-blocks.json",
-    "landing_01": "src/Support/Editor/VoodbuilderLanding01Sections.php",
-    "landing_02": "src/Support/Editor/VoodbuilderLanding02Sections.php",
-    "landing_03": "src/Support/Editor/VoodbuilderLanding03Sections.php",
-    "media_sections": "src/Support/Editor/VoodbuilderMediaSections.php",
+    "landing_01": "src/Support/Editor/VoodbuilderLanding01Sections.php (Core keeps articles+cta only; companion owns hero/features/solution/testimonials)",
+    "landing_02": "src/Support/Editor/VoodbuilderLanding02Sections.php (Core keeps faq only; companion owns remaining Landing 02 sections)",
+    "landing_03": "REMOVED from Core — recreate cinematic/NASA sections in Elements companion (was VoodbuilderLanding03Sections.php)",
+    "media_sections": "src/Support/Editor/VoodbuilderMediaSections.php (Core keeps vb-bg-image only; companion owns bg-video + sliders)",
     "animated_js": "resources/js/editor/editor-animated-blocks.js",
     "logo_cloud_js": "resources/js/editor/editor-logo-cloud-blocks.js",
     "tabs_js": "resources/js/editor/editor-tabs-blocks.js",
@@ -156,6 +156,7 @@
   },
   "notes": {
     "vs_components": "voodbuilder-components = user/team saved reusable pieces (Components tab). voodbuilder-elements = product-ready BlockManager sections (Gallery, extra Heroes, Tabs, Forms, …). Do not merge packages.",
+    "core_community_html": "Landing01 articles+cta, Landing02 faq, Media vb-bg-image remain registered from Core PHP. Full Landing 03 page HTML left Core.",
     "guide": "docs/handoff/elements-companion-pack.md"
   },
   "injection": {
