@@ -550,6 +550,26 @@ describe('theme-tokens background clear', () => {
         expect(extracted).not.toContain('@media');
     });
 
+    it('extractGrapesComposerCss drops animate-* utilities as regenerated JIT', async () => {
+        const { extractGrapesComposerCss } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const css = `
+.animate-fade-right { animation: var(--animate-fade-right); }
+.animate-once { animation-iteration-count: 1; }
+.vb-hero-plasma__orb { filter: blur(48px); }
+#i837wt { outline: none; }
+`;
+
+        const extracted = extractGrapesComposerCss(css);
+
+        expect(extracted).toContain('#i837wt');
+        expect(extracted).toContain('.vb-hero-plasma__orb');
+        expect(extracted).not.toContain('animate-fade-right');
+        expect(extracted).not.toContain('animate-once');
+    });
+
     it('extractGrapesComposerCss keeps custom BEM rules and @keyframes from Library embeds', async () => {
         const { extractGrapesComposerCss } = await import(
             '../../resources/js/editor/editor/payload.js'
@@ -1363,6 +1383,9 @@ describe('layout container column presets preserve content', () => {
             },
             getAttributes: () => ({ ...attrs }),
             addAttributes: (next) => Object.assign(attrs, next),
+            removeAttributes: (key) => {
+                delete attrs[key];
+            },
             getStyle: () => ({ ...style }),
             setStyle: (next) => {
                 Object.keys(style).forEach((key) => delete style[key]);
@@ -1377,10 +1400,102 @@ describe('layout container column presets preserve content', () => {
 
         expect(classes).toContain('gap-8');
         expect(classes).not.toContain('gap-4');
+        expect(classes).toContain('grid');
+        expect(classes).toContain('grid-cols-2');
         expect(style.gap).toBeUndefined();
-        expect(style.display).toBe('grid');
-        expect(style['grid-template-columns']).toContain('1fr');
+        expect(style.display).toBeUndefined();
+        expect(style['grid-template-columns']).toBeUndefined();
         expect(attrs['data-vb-layout-tracks']).toContain('1fr');
+        expect(String(attrs.style ?? '')).not.toMatch(/grid-template-columns|display\s*:/i);
+    });
+
+    it('2-col preset uses Tailwind grid-cols-2 without layout inline styles', async () => {
+        const { syncContainerLayoutStyles } = await import('../../resources/js/editor/layout-blocks.js');
+
+        const style = {
+            display: 'grid',
+            'grid-template-columns': 'minmax(0,1fr) minmax(0,1fr)',
+            '--vb-layout-tracks': 'minmax(0,1fr) minmax(0,1fr)',
+            width: '100%',
+            maxWidth: 'none',
+            'max-width': 'none',
+        };
+        const classes = ['voodbuilder-editor-container', 'w-full'];
+        const attrs = {
+            'data-voodbuilder-layout': 'container',
+            style: 'maxWidth:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);--vb-layout-tracks:minmax(0,1fr) minmax(0,1fr);width:100%;max-width:none;',
+        };
+        const container = {
+            getClasses: () => [...classes],
+            setClass: (next) => {
+                classes.splice(0, classes.length, ...next);
+            },
+            getAttributes: () => ({ ...attrs }),
+            addAttributes: (next) => Object.assign(attrs, next),
+            removeAttributes: (key) => {
+                delete attrs[key];
+            },
+            getStyle: () => ({ ...style }),
+            setStyle: (next) => {
+                Object.keys(style).forEach((key) => delete style[key]);
+                Object.assign(style, next);
+            },
+            removeStyle: (prop) => {
+                delete style[prop];
+            },
+        };
+
+        syncContainerLayoutStyles(container, '2');
+
+        expect(classes).toEqual(expect.arrayContaining(['w-full', 'vb-layout-row', 'grid', 'grid-cols-2', 'gap-4']));
+        expect(style.display).toBeUndefined();
+        expect(style['grid-template-columns']).toBeUndefined();
+        expect(style['--vb-layout-tracks']).toBeUndefined();
+        expect(style.width).toBeUndefined();
+        expect(style.maxWidth).toBeUndefined();
+        expect(style['max-width']).toBeUndefined();
+        expect(attrs['data-vb-layout-preset']).toBe('2');
+        expect(attrs['data-vb-layout-tracks']).toBe('minmax(0,1fr) minmax(0,1fr)');
+        expect(String(attrs.style ?? '')).not.toMatch(
+            /display\s*:|grid-template-columns|--vb-layout-tracks|width\s*:\s*100%|max-width\s*:\s*none/i,
+        );
+    });
+
+    it('asymmetric preset uses arbitrary grid-cols utility', async () => {
+        const { syncContainerLayoutStyles, tracksToGridColsClass } = await import('../../resources/js/editor/layout-blocks.js');
+
+        expect(tracksToGridColsClass(['minmax(0,1fr)', 'minmax(0,2fr)'])).toBe(
+            'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]',
+        );
+
+        const classes = ['w-full', 'vb-layout-row', 'grid', 'gap-4'];
+        const attrs = { 'data-voodbuilder-layout': 'container' };
+        const style = {};
+        const container = {
+            getClasses: () => [...classes],
+            setClass: (next) => {
+                classes.splice(0, classes.length, ...next);
+            },
+            getAttributes: () => ({ ...attrs }),
+            addAttributes: (next) => Object.assign(attrs, next),
+            removeAttributes: (key) => {
+                delete attrs[key];
+            },
+            getStyle: () => ({ ...style }),
+            setStyle: (next) => {
+                Object.keys(style).forEach((key) => delete style[key]);
+                Object.assign(style, next);
+            },
+            removeStyle: (prop) => {
+                delete style[prop];
+            },
+        };
+
+        syncContainerLayoutStyles(container, '1-2');
+
+        expect(classes).toContain('grid-cols-[minmax(0,1fr)_minmax(0,2fr)]');
+        expect(attrs['data-vb-layout-preset']).toBe('1-2');
+        expect(style['grid-template-columns']).toBeUndefined();
     });
 
     it('restores column tracks even when content-width mode is set', async () => {
@@ -1406,6 +1521,9 @@ describe('layout container column presets preserve content', () => {
             },
             getAttributes: () => ({ ...attrs }),
             addAttributes: (next) => Object.assign(attrs, next),
+            removeAttributes: (key) => {
+                delete attrs[key];
+            },
             getStyle: () => ({ ...style }),
             setStyle: (next) => {
                 Object.keys(style).forEach((key) => delete style[key]);
@@ -1418,12 +1536,15 @@ describe('layout container column presets preserve content', () => {
 
         syncContainerContentWidth(container);
 
-        expect(style['grid-template-columns']).toBe('minmax(0,1fr) minmax(0,1fr)');
+        expect(style['grid-template-columns']).toBeUndefined();
+        expect(style.display).toBeUndefined();
+        expect(classes).toContain('grid-cols-2');
         expect(attrs['data-vb-layout-preset']).toBe('2');
         expect(style['max-width']).toBe('80rem');
         expect(classes).toContain('max-w-[80rem]');
         expect(classes).toContain('mx-auto');
         expect(String(attrs.style)).toContain('max-width: 80rem');
+        expect(String(attrs.style)).not.toMatch(/grid-template-columns|display\s*:\s*grid/i);
     });
 });
 
@@ -1491,6 +1612,57 @@ describe('content width preserves layout gap', () => {
         ]);
     });
 
+    it('content-width margin styleUpdate must not strip author p-6', async () => {
+        const { filterOutConflictingBoxSpacingClasses } = await import(
+            '../../resources/js/editor/spacing-utility-sync.js'
+        );
+
+        const before = [
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'gap-4',
+            'w-full',
+            'bg-vp-brand-1',
+            'p-6',
+            'grid',
+            'mx-auto',
+            'max-w-[80rem]',
+        ];
+
+        // Legacy bug: styleUpdate for margin-left/right stripped ALL box-spacing including p-6.
+        const afterMarginSync = filterOutConflictingBoxSpacingClasses(before, [
+            'margin-left',
+            'margin-right',
+            'max-width',
+            'width',
+        ]);
+
+        expect(afterMarginSync).toContain('p-6');
+        expect(afterMarginSync).toContain('bg-vp-brand-1');
+        expect(afterMarginSync).toContain('gap-4');
+        expect(afterMarginSync).toContain('max-w-[80rem]');
+        // Horizontal margin utilities conflict with content-width margins.
+        expect(afterMarginSync).not.toContain('mx-auto');
+    });
+
+    it('padding styleUpdate still strips conflicting p-* but keeps margins', async () => {
+        const { filterOutConflictingBoxSpacingClasses } = await import(
+            '../../resources/js/editor/spacing-utility-sync.js'
+        );
+
+        const kept = filterOutConflictingBoxSpacingClasses(
+            ['p-6', 'px-4', 'mt-6', 'mx-auto', 'gap-4', 'bg-vp-brand-1'],
+            ['padding'],
+        );
+
+        expect(kept).not.toContain('p-6');
+        expect(kept).not.toContain('px-4');
+        expect(kept).toContain('mt-6');
+        expect(kept).toContain('mx-auto');
+        expect(kept).toContain('gap-4');
+        expect(kept).toContain('bg-vp-brand-1');
+    });
+
     it('applyComponentContentWidth never drops layout gap/grid utilities', async () => {
         const { applyComponentContentWidth, CONTENT_WIDTH_ATTR, CONTENT_WIDTH_NORMAL, CONTENT_WIDTH_FULL } = await import(
             '../../resources/js/editor/content-width-toolbar.js'
@@ -1534,7 +1706,7 @@ describe('content width preserves layout gap', () => {
         expect(component.__classes().filter((name) => /^gap-/.test(name))).toEqual(['gap-4']);
     });
 
-    it('simulates styleUpdate after content-width margins: gap survives box-spacing filter', async () => {
+    it('simulates styleUpdate after content-width margins: gap and p-6 survive scoped filter', async () => {
         const { filterOutConflictingBoxSpacingClasses } = await import(
             '../../resources/js/editor/spacing-utility-sync.js'
         );
@@ -1548,18 +1720,27 @@ describe('content width preserves layout gap', () => {
             'w-full',
             'grid',
             'gap-4',
+            'p-6',
+            'bg-vp-brand-1',
         ]);
         const editor = { __voodbuilderPageContentWidth: { mode: 'full' } };
 
         applyComponentContentWidth(component, CONTENT_WIDTH_NORMAL, editor);
 
-        // Legacy bug path: margin styleUpdate ran stripTailwindSpacingClasses including gap-*.
-        const afterStyleSync = filterOutConflictingBoxSpacingClasses(component.__classes());
+        // Content-width writes margin-left/right — scoped strip must keep author padding.
+        const afterStyleSync = filterOutConflictingBoxSpacingClasses(component.__classes(), [
+            'margin-left',
+            'margin-right',
+            'width',
+            'max-width',
+        ]);
         component.setClass(afterStyleSync);
 
         expect(component.__classes()).toContain('gap-4');
         expect(component.__classes()).toContain('grid');
         expect(component.__classes()).toContain('vb-layout-row');
+        expect(component.__classes()).toContain('p-6');
+        expect(component.__classes()).toContain('bg-vp-brand-1');
         expect(component.__classes()).not.toContain('mx-auto');
     });
 });

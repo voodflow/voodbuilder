@@ -200,28 +200,46 @@ export function nextContentWidthMode(mode, editor) {
     return modes[(current + 1) % modes.length];
 }
 
-/** Avoid component:styleUpdate (spacing sync must not strip layout gap-* utilities). */
+/** Avoid component:styleUpdate (spacing sync must not strip layout gap-* / author p-*). */
 const SILENT_STYLE = { noEvent: true };
 
+const CONTENT_WIDTH_STYLE_KEYS = [
+    'maxWidth',
+    'max-width',
+    'marginLeft',
+    'margin-left',
+    'marginRight',
+    'margin-right',
+    'marginInline',
+    'margin-inline',
+    'width',
+];
+
 /**
- * Clear previous content-width inline measure without wiping unrelated styles.
+ * Clear previous content-width inline measure without wiping unrelated styles
+ * (font-family, color, …). Prefer removeStyle over full setStyle replace.
  *
  * @param {object} component
  */
 function clearContentWidthInlineStyles(component) {
-    const style = { ...(component.getStyle?.() ?? {}) };
-    delete style.maxWidth;
-    delete style['max-width'];
-    delete style.marginLeft;
-    delete style['margin-left'];
-    delete style.marginRight;
-    delete style['margin-right'];
-    delete style.marginInline;
-    delete style['margin-inline'];
-    delete style.width;
+    for (const property of CONTENT_WIDTH_STYLE_KEYS) {
+        component.removeStyle?.(property);
+    }
 
-    // Editor setStyle replaces; keep remaining keys. noEvent skips spacing class strip.
-    component.setStyle(style, SILENT_STYLE);
+    const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+    let changed = false;
+
+    for (const property of CONTENT_WIDTH_STYLE_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(inline, property)) {
+            delete inline[property];
+            changed = true;
+        }
+    }
+
+    // Keep remaining author paints (font-family, color, …). noEvent skips spacing strip.
+    if (changed) {
+        component.setStyle(inline, { ...SILENT_STYLE, inline: true });
+    }
 }
 
 /**
@@ -575,72 +593,82 @@ export function applyComponentContentWidth(component, mode, editor) {
         ? CONTENT_WIDTH_NORMAL
         : mode;
 
-    stripConflictingWidthUtilities(component);
-    clearContentWidthInlineStyles(component);
-    component.addAttributes({ [CONTENT_WIDTH_ATTR]: next });
-
-    // Durable Tailwind utilities survive save/reload better than private CssComposer
-    // classes alone (chrome-shell export keeps #id rules, not .cNNNN).
-    const classes = [...(component.getClasses?.() ?? [])].filter((name) => {
-        const token = String(name);
-
-        return token !== 'max-w-[80rem]' && token !== 'mx-auto';
-    });
-
-    if (! classes.includes('w-full')) {
-        classes.push('w-full');
+    if (editor) {
+        editor.__voodbuilderContentWidthApplying = true;
     }
 
-    // Persist measure as inline style so published HTML works without relying only on CSS.
-    if (next === CONTENT_WIDTH_NORMAL) {
-        if (! classes.includes('mx-auto')) {
-            classes.push('mx-auto');
+    try {
+        stripConflictingWidthUtilities(component);
+        clearContentWidthInlineStyles(component);
+        component.addAttributes({ [CONTENT_WIDTH_ATTR]: next });
+
+        // Durable Tailwind utilities survive save/reload better than private CssComposer
+        // classes alone (chrome-shell export keeps #id rules, not .cNNNN).
+        const classes = [...(component.getClasses?.() ?? [])].filter((name) => {
+            const token = String(name);
+
+            return token !== 'max-w-[80rem]' && token !== 'mx-auto';
+        });
+
+        if (! classes.includes('w-full')) {
+            classes.push('w-full');
         }
 
-        if (! classes.includes('max-w-[80rem]')) {
-            classes.push('max-w-[80rem]');
-        }
-
-        component.setClass(classes);
-        component.addStyle({
-            width: '100%',
-            'max-width': STANDARD_CONTENT_MAX,
-            'margin-left': 'auto',
-            'margin-right': 'auto',
-        }, SILENT_STYLE);
-    } else if (next === CONTENT_WIDTH_CUSTOM) {
-        const custom = resolveCustomContentMax(editor);
-
-        if (custom) {
+        // Persist measure as inline style so published HTML works without relying only on CSS.
+        if (next === CONTENT_WIDTH_NORMAL) {
             if (! classes.includes('mx-auto')) {
                 classes.push('mx-auto');
+            }
+
+            if (! classes.includes('max-w-[80rem]')) {
+                classes.push('max-w-[80rem]');
             }
 
             component.setClass(classes);
             component.addStyle({
                 width: '100%',
-                'max-width': custom,
+                'max-width': STANDARD_CONTENT_MAX,
                 'margin-left': 'auto',
                 'margin-right': 'auto',
             }, SILENT_STYLE);
+        } else if (next === CONTENT_WIDTH_CUSTOM) {
+            const custom = resolveCustomContentMax(editor);
+
+            if (custom) {
+                if (! classes.includes('mx-auto')) {
+                    classes.push('mx-auto');
+                }
+
+                component.setClass(classes);
+                component.addStyle({
+                    width: '100%',
+                    'max-width': custom,
+                    'margin-left': 'auto',
+                    'margin-right': 'auto',
+                }, SILENT_STYLE);
+            } else {
+                component.setClass(classes);
+            }
         } else {
             component.setClass(classes);
+            component.addStyle({
+                width: '100%',
+                'max-width': 'none',
+                'margin-left': '0',
+                'margin-right': '0',
+            }, SILENT_STYLE);
         }
-    } else {
-        component.setClass(classes);
-        component.addStyle({
-            width: '100%',
-            'max-width': 'none',
-            'margin-left': '0',
-            'margin-right': '0',
-        }, SILENT_STYLE);
-    }
 
-    // Force canvas view to pick up attr + styles immediately (one-click WYSIWYG).
-    try {
-        component.view?.render?.();
-    } catch {
-        // View may be unavailable during bulk setComponents.
+        // Force canvas view to pick up attr + styles immediately (one-click WYSIWYG).
+        try {
+            component.view?.render?.();
+        } catch {
+            // View may be unavailable during bulk setComponents.
+        }
+    } finally {
+        if (editor) {
+            editor.__voodbuilderContentWidthApplying = false;
+        }
     }
 }
 

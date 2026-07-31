@@ -61,9 +61,13 @@ function isSiteFooterBlock(blockId) {
     return isFooterBlock(blockId);
 }
 
-function stripTailwindSpacingClasses(component) {
-    // Strip p-*/m-* only — never gap-* (layout column spacing survives content-width margins).
-    component.setClass(filterOutConflictingBoxSpacingClasses(safeGetClasses(component)));
+function stripTailwindSpacingClasses(component, changedProperties) {
+    // Strip only utilities that conflict with the changed CSS props.
+    // Content-width margin-left/right must never wipe author p-6 / px-*.
+    // Never strip gap-* (layout column spacing).
+    component.setClass(
+        filterOutConflictingBoxSpacingClasses(safeGetClasses(component), changedProperties),
+    );
 }
 
 function isSpacingStyleProperty(property) {
@@ -71,9 +75,18 @@ function isSpacingStyleProperty(property) {
 }
 
 function registerSpacingStyleSync(editor) {
+    // Utilities panel is always the source of truth in this editor — set early so
+    // load/export layout sync cannot strip author p-* before the Style panel mounts.
+    editor.__voodbuilderTailwindStyleOnly = true;
+
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
         // Tailwind Style panel applies spacing via utilities — never strip those classes.
         if (editor.__voodbuilderTailwindStyleOnly) {
+            return;
+        }
+
+        // Layout / content-width rewrites emit margin-* via setStyle; never wipe padding.
+        if (editor.__voodbuilderLayoutStyleSilent || editor.__voodbuilderContentWidthApplying) {
             return;
         }
 
@@ -83,7 +96,7 @@ function registerSpacingStyleSync(editor) {
             return;
         }
 
-        stripTailwindSpacingClasses(component);
+        stripTailwindSpacingClasses(component, properties);
         window.requestAnimationFrame(() => {
             pruneRedundantSpacingZeros(component);
 

@@ -1291,7 +1291,8 @@ function applySpacingStyle(component, style) {
     }
 
     if (Object.keys(pruned).length > 0) {
-        component.addStyle(pruned, { inline: true });
+        // noEvent: export spacing bake must not strip author Tailwind p-*/m-*.
+        component.addStyle(pruned, { inline: true, noEvent: true });
     }
 }
 

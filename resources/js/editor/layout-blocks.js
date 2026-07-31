@@ -15,8 +15,13 @@ export const CMD_LAYOUT_PICKER = 'voodbuilder-open-layout-picker';
 const ROW_LAYOUT_CLASSES = ['flex', 'flex-wrap', 'grid'];
 const DEFAULT_LAYOUT_GAP_CLASS = 'gap-4';
 const LAYOUT_GAP_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?gap-/;
+/** Track utilities owned by layout sync — strip before re-applying the active preset. */
+const GRID_COLS_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?grid-cols-/;
 const CELL_BASE = ['vb-layout-block', 'min-h-16', 'min-w-0'];
 const WIDTH_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?(w-|basis-|flex-|max-w-|min-w-)/;
+/** Inline keys that duplicate Tailwind grid/width mechanics (legacy saves + old sync). */
+const LAYOUT_MECHANIC_STYLE_RE = /^(display|grid-template-columns|grid-template-rows|--vb-layout-tracks|gap|column-gap|row-gap)\s*:/i;
+const LAYOUT_MEASURE_STYLE_RE = /^(width|max-width|maxWidth|margin-left|margin-right|margin-inline)\s*:/i;
 /** Hardcoded boxed utilities — width must follow the page content slot (full vs standard). */
 const BOXED_CONTAINER_CLASSES = new Set([
     'container',
@@ -75,25 +80,66 @@ function resolveLayoutGapClass(classes) {
 }
 
 /**
- * Grid track presets (fr units). Avoid md:w-* + w-full — those stack below the md
- * breakpoint and often never apply in the editor iframe.
+ * Grid track presets (fr units) + Tailwind colsClass.
+ * Equal splits use grid-cols-N; asymmetric use arbitrary grid-cols-[…].
+ * Tracks stay on data-vb-layout-tracks for editor metadata / legacy resolve —
+ * layout mechanics live on classes, not inline style.
  *
- * @type {Array<{ id: string, label: string, tracks: string[] }>}
+ * @type {Array<{ id: string, label: string, tracks: string[], colsClass: string }>}
  */
 export const LAYOUT_PRESETS = [
-    { id: '1', label: '1', tracks: ['minmax(0,1fr)'] },
-    { id: '2', label: '1/2', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)'] },
-    { id: '3', label: '1/3', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'] },
-    { id: '4', label: '1/4', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'] },
-    { id: '6', label: '1/6', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'] },
-    { id: '1-2', label: '1/3 · 2/3', tracks: ['minmax(0,1fr)', 'minmax(0,2fr)'] },
-    { id: '2-1', label: '2/3 · 1/3', tracks: ['minmax(0,2fr)', 'minmax(0,1fr)'] },
-    { id: '1-3', label: '1/4 · 3/4', tracks: ['minmax(0,1fr)', 'minmax(0,3fr)'] },
-    { id: '3-1', label: '3/4 · 1/4', tracks: ['minmax(0,3fr)', 'minmax(0,1fr)'] },
-    { id: '1-1-2', label: '1/4 · 1/4 · 1/2', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,2fr)'] },
-    { id: '2-1-1', label: '1/2 · 1/4 · 1/4', tracks: ['minmax(0,2fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'] },
-    { id: '1-2-1', label: '1/4 · 1/2 · 1/4', tracks: ['minmax(0,1fr)', 'minmax(0,2fr)', 'minmax(0,1fr)'] },
+    { id: '1', label: '1', tracks: ['minmax(0,1fr)'], colsClass: 'grid-cols-1' },
+    { id: '2', label: '1/2', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-2' },
+    { id: '3', label: '1/3', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-3' },
+    { id: '4', label: '1/4', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-4' },
+    { id: '6', label: '1/6', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-6' },
+    { id: '1-2', label: '1/3 · 2/3', tracks: ['minmax(0,1fr)', 'minmax(0,2fr)'], colsClass: 'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]' },
+    { id: '2-1', label: '2/3 · 1/3', tracks: ['minmax(0,2fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' },
+    { id: '1-3', label: '1/4 · 3/4', tracks: ['minmax(0,1fr)', 'minmax(0,3fr)'], colsClass: 'grid-cols-[minmax(0,1fr)_minmax(0,3fr)]' },
+    { id: '3-1', label: '3/4 · 1/4', tracks: ['minmax(0,3fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-[minmax(0,3fr)_minmax(0,1fr)]' },
+    { id: '1-1-2', label: '1/4 · 1/4 · 1/2', tracks: ['minmax(0,1fr)', 'minmax(0,1fr)', 'minmax(0,2fr)'], colsClass: 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]' },
+    { id: '2-1-1', label: '1/2 · 1/4 · 1/4', tracks: ['minmax(0,2fr)', 'minmax(0,1fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]' },
+    { id: '1-2-1', label: '1/4 · 1/2 · 1/4', tracks: ['minmax(0,1fr)', 'minmax(0,2fr)', 'minmax(0,1fr)'], colsClass: 'grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]' },
 ];
+
+/**
+ * Map track list → Tailwind grid-cols utility (equal N → grid-cols-N, else arbitrary).
+ *
+ * @param {string|string[]} tracks
+ * @returns {string}
+ */
+export function tracksToGridColsClass(tracks) {
+    const parts = (Array.isArray(tracks) ? tracks : String(tracks).trim().split(/\s+/))
+        .map((part) => String(part).trim().replace(/\s+/g, ''))
+        .filter(Boolean);
+
+    if (parts.length === 0) {
+        return 'grid-cols-1';
+    }
+
+    const equalOneFr = parts.every((part) => part === 'minmax(0,1fr)' || part === '1fr');
+
+    if (equalOneFr && parts.length >= 1 && parts.length <= 12) {
+        return `grid-cols-${parts.length}`;
+    }
+
+    return `grid-cols-[${parts.join('_')}]`;
+}
+
+/**
+ * @param {string} presetId
+ * @param {string} [tracksFallback]
+ * @returns {string}
+ */
+function resolvePresetColsClass(presetId, tracksFallback = '') {
+    const preset = LAYOUT_PRESETS.find((item) => item.id === presetId);
+
+    if (preset?.colsClass) {
+        return preset.colsClass;
+    }
+
+    return tracksToGridColsClass(tracksFallback || (preset?.tracks ?? ['minmax(0,1fr)']));
+}
 
 /** @deprecated alias for picker icons — same length as tracks */
 function presetColumnWeights(preset) {
@@ -307,12 +353,13 @@ function syncLayoutBlockChrome(block) {
 }
 
 /**
- * Sync Container classes/attrs/CSS for a layout preset without touching children.
- * Tracks are inline so the canvas iframe sees them (frontend.css is shell-only).
+ * Sync Container classes/attrs for a layout preset without touching children.
+ * Tracks are Tailwind grid-cols-* (plus data-vb-layout-tracks for metadata).
  * Mobile stacking uses canvas device CSS + public @media !important overrides.
  *
  * @param {object} container
  * @param {string} presetId
+ * @param {{ resetMeasure?: boolean }} [options]
  */
 export function syncContainerLayoutStyles(container, presetId, options = {}) {
     if (! container) {
@@ -329,7 +376,7 @@ export function syncContainerLayoutStyles(container, presetId, options = {}) {
         .filter((name) => {
             const token = String(name);
 
-            if (ROW_LAYOUT_CLASSES.includes(token)) {
+            if (ROW_LAYOUT_CLASSES.includes(token) || GRID_COLS_CLASS_RE.test(token)) {
                 return false;
             }
 
@@ -350,8 +397,10 @@ export function syncContainerLayoutStyles(container, presetId, options = {}) {
         });
 
     const gapClass = resolveLayoutGapClass(classes);
+    const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
+    const colsClass = preset.colsClass ?? tracksToGridColsClass(preset.tracks ?? ['minmax(0,1fr)']);
 
-    for (const token of [...layoutContainerBaseClasses(), 'grid', gapClass]) {
+    for (const token of [...layoutContainerBaseClasses(), 'grid', colsClass, gapClass]) {
         if (! classes.includes(token)) {
             classes.push(token);
         }
@@ -359,15 +408,13 @@ export function syncContainerLayoutStyles(container, presetId, options = {}) {
 
     container.setClass(classes);
 
-    const tracks = (preset.tracks ?? ['minmax(0,1fr)']).join(' ');
-
     container.addAttributes({
         [LAYOUT_ATTR]: 'container',
         [LAYOUT_PRESET_ATTR]: preset.id,
         'data-vb-layout-tracks': tracks,
     });
 
-    applyLayoutTracksToContainer(container, tracks, { resetMeasure });
+    stripLayoutMechanicInlineStyles(container, { resetMeasure });
 }
 
 /**
@@ -415,33 +462,56 @@ export function applyContainerLayoutPreset(container, presetId) {
     syncContainerLayoutStyles(container, preset.id);
 }
 
+/** Avoid component:styleUpdate — full setStyle would re-emit margin-* and strip author p-*. */
+const SILENT_LAYOUT_STYLE = { noEvent: true };
+
 /**
- * Persist column tracks on the model + live canvas element.
+ * Remove legacy layout mechanic inline styles (display/grid/width) so Tailwind classes win.
  *
  * @param {object} container
- * @param {string} tracks
  * @param {{ resetMeasure?: boolean }} [options]
  */
-function applyLayoutTracksToContainer(container, tracks, options = {}) {
+function stripLayoutMechanicInlineStyles(container, options = {}) {
     const resetMeasure = options.resetMeasure === true;
     const style = {
-        ...(container.getStyle?.({ inline: true }) ?? container.getStyle?.() ?? {}),
+        ...(container.getStyle?.() ?? {}),
+        ...(container.getStyle?.({ inline: true }) ?? {}),
     };
 
-    style.display = 'grid';
-    style['grid-template-columns'] = tracks;
-    style['--vb-layout-tracks'] = tracks;
-    delete style.gap;
+    delete style.display;
+    delete style['grid-template-columns'];
     delete style['grid-template-rows'];
+    delete style['--vb-layout-tracks'];
+    delete style.gap;
+    delete style['column-gap'];
+    delete style['row-gap'];
 
     if (resetMeasure) {
-        style.width = '100%';
-        style.maxWidth = 'none';
+        delete style.width;
+        delete style.maxWidth;
+        delete style['max-width'];
+        delete style['margin-left'];
+        delete style['margin-right'];
+        delete style['margin-inline'];
     }
 
-    container.setStyle(style);
-    container.removeStyle?.('gap');
+    container.setStyle(style, SILENT_LAYOUT_STYLE);
+    container.removeStyle?.('display');
+    container.removeStyle?.('grid-template-columns');
     container.removeStyle?.('grid-template-rows');
+    container.removeStyle?.('--vb-layout-tracks');
+    container.removeStyle?.('gap');
+    container.removeStyle?.('column-gap');
+    container.removeStyle?.('row-gap');
+
+    if (resetMeasure) {
+        container.removeStyle?.('width');
+        container.removeStyle?.('max-width');
+        container.removeStyle?.('maxWidth');
+        container.removeStyle?.('margin-left');
+        container.removeStyle?.('margin-right');
+        container.removeStyle?.('margin-inline');
+    }
 
     const attrs = { ...(container.getAttributes?.() ?? {}) };
     const styleParts = String(attrs.style ?? '')
@@ -449,49 +519,102 @@ function applyLayoutTracksToContainer(container, tracks, options = {}) {
         .map((part) => part.trim())
         .filter(Boolean)
         .filter((part) => {
-            if (/^(display|grid-template-columns|grid-template-rows|--vb-layout-tracks|gap)\s*:/i.test(part)) {
+            if (LAYOUT_MECHANIC_STYLE_RE.test(part)) {
                 return false;
             }
 
-            // Only strip measure keys when we intentionally reset content width.
-            if (
-                resetMeasure
-                && /^(width|max-width|margin-left|margin-right|margin-inline)\s*:/i.test(part)
-            ) {
+            if (resetMeasure && LAYOUT_MEASURE_STYLE_RE.test(part)) {
                 return false;
             }
 
             return true;
         });
 
-    styleParts.push('display: grid');
-    styleParts.push(`grid-template-columns: ${tracks}`);
-    styleParts.push(`--vb-layout-tracks: ${tracks}`);
-
-    if (resetMeasure) {
-        styleParts.push('width: 100%');
-        styleParts.push('max-width: none');
+    if (styleParts.length > 0) {
+        container.addAttributes({
+            style: styleParts.join('; '),
+        });
+    } else if (Object.prototype.hasOwnProperty.call(attrs, 'style')) {
+        container.addAttributes({ style: '' });
+        container.removeAttributes?.('style');
     }
-
-    container.addAttributes({
-        style: styleParts.join('; '),
-        'data-vb-layout-tracks': tracks,
-    });
 
     const el = container.getEl?.()
         ?? container.getView?.()?.el
         ?? container.view?.el;
 
     if (el?.style) {
-        el.style.display = 'grid';
-        el.style.gridTemplateColumns = tracks;
-        el.style.setProperty('--vb-layout-tracks', tracks);
+        el.style.removeProperty('display');
+        el.style.removeProperty('grid-template-columns');
+        el.style.removeProperty('grid-template-rows');
+        el.style.removeProperty('--vb-layout-tracks');
+        el.style.removeProperty('gap');
+        el.style.removeProperty('column-gap');
+        el.style.removeProperty('row-gap');
 
         if (resetMeasure) {
-            el.style.width = '100%';
-            el.style.maxWidth = 'none';
+            el.style.removeProperty('width');
+            el.style.removeProperty('max-width');
+            el.style.removeProperty('margin-left');
+            el.style.removeProperty('margin-right');
+            el.style.removeProperty('margin-inline');
         }
     }
+}
+
+/**
+ * Apply column tracks via Tailwind grid-cols-* (no layout inline styles).
+ *
+ * @param {object} container
+ * @param {string} tracks
+ * @param {{ resetMeasure?: boolean, presetId?: string }} [options]
+ */
+function applyLayoutTracksToContainer(container, tracks, options = {}) {
+    const resetMeasure = options.resetMeasure === true;
+    const presetId = String(options.presetId ?? container.getAttributes?.()?.[LAYOUT_PRESET_ATTR] ?? '').trim();
+    const colsClass = resolvePresetColsClass(presetId, tracks);
+    const contentWidthMode = String(container.getAttributes?.()?.['data-voodbuilder-content-width'] ?? '').trim();
+    const hasContentWidth = contentWidthMode === 'normal'
+        || contentWidthMode === 'custom'
+        || contentWidthMode === 'full';
+
+    const classes = [...(container.getClasses?.() ?? [])]
+        .filter((name) => {
+            const token = String(name);
+
+            if (ROW_LAYOUT_CLASSES.includes(token) || GRID_COLS_CLASS_RE.test(token)) {
+                return false;
+            }
+
+            if (token.startsWith('gjs-')) {
+                return false;
+            }
+
+            if (hasContentWidth && (token === 'max-w-[80rem]' || token === 'mx-auto' || token === 'w-full')) {
+                return true;
+            }
+
+            if (resetMeasure && isBoxedOrWidthUtility(token)) {
+                return false;
+            }
+
+            return true;
+        });
+
+    const gapClass = resolveLayoutGapClass(classes);
+
+    for (const token of [...layoutContainerBaseClasses(), 'grid', colsClass, gapClass]) {
+        if (! classes.includes(token)) {
+            classes.push(token);
+        }
+    }
+
+    container.setClass(classes);
+    container.addAttributes({
+        'data-vb-layout-tracks': tracks,
+    });
+
+    stripLayoutMechanicInlineStyles(container, { resetMeasure });
 }
 
 /**
@@ -581,11 +704,7 @@ export function syncContainerContentWidth(container) {
 
     container.setClass(classes);
     container.addAttributes({ [LAYOUT_ATTR]: 'container' });
-
-    const style = { ...(container.getStyle?.({ inline: true }) ?? container.getStyle?.() ?? {}) };
-    style.width = '100%';
-    style.maxWidth = 'none';
-    container.setStyle(style);
+    stripLayoutMechanicInlineStyles(container, { resetMeasure: true });
 }
 
 /**
@@ -601,22 +720,29 @@ export function normalizeLayoutContainersResponsive(editor) {
         return;
     }
 
-    const visit = (component) => {
-        const attrs = component?.getAttributes?.() ?? {};
-        const hasPreset = String(attrs[LAYOUT_PRESET_ATTR] ?? '').trim() !== '';
-        const hasTracks = String(attrs['data-vb-layout-tracks'] ?? '').trim() !== '';
-        // Only touch Layout package containers — never every .voodbuilder-editor-container.
-        const isPkgContainer = layoutKind(component) === 'container'
-            || component.get?.('type') === 'voodbuilder-container';
+    const prevSilent = editor.__voodbuilderLayoutStyleSilent;
+    editor.__voodbuilderLayoutStyleSilent = true;
 
-        if (isPkgContainer || hasPreset || hasTracks) {
-            syncContainerContentWidth(component);
-        }
+    try {
+        const visit = (component) => {
+            const attrs = component?.getAttributes?.() ?? {};
+            const hasPreset = String(attrs[LAYOUT_PRESET_ATTR] ?? '').trim() !== '';
+            const hasTracks = String(attrs['data-vb-layout-tracks'] ?? '').trim() !== '';
+            // Only touch Layout package containers — never every .voodbuilder-editor-container.
+            const isPkgContainer = layoutKind(component) === 'container'
+                || component.get?.('type') === 'voodbuilder-container';
 
-        component.components?.()?.forEach?.((child) => visit(child));
-    };
+            if (isPkgContainer || hasPreset || hasTracks) {
+                syncContainerContentWidth(component);
+            }
 
-    visit(wrapper);
+            component.components?.()?.forEach?.((child) => visit(child));
+        };
+
+        visit(wrapper);
+    } finally {
+        editor.__voodbuilderLayoutStyleSilent = prevSilent;
+    }
 }
 
 /**
@@ -1041,7 +1167,10 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
             return;
         }
 
-        const style = { ...(component.getStyle?.() ?? {}) };
+        const style = {
+            ...(component.getStyle?.() ?? {}),
+            ...(component.getStyle?.({ inline: true }) ?? {}),
+        };
 
         if (style.gap === undefined && style['column-gap'] === undefined && style['row-gap'] === undefined) {
             return;
@@ -1050,7 +1179,8 @@ export function configureLayoutBlocksCanvas(editor, labels = {}) {
         delete style.gap;
         delete style['column-gap'];
         delete style['row-gap'];
-        component.setStyle(style);
+        // Silent: avoid re-emitting margin-* from content-width into spacing strip.
+        component.setStyle(style, SILENT_LAYOUT_STYLE);
         component.removeStyle?.('gap');
         component.removeStyle?.('column-gap');
         component.removeStyle?.('row-gap');

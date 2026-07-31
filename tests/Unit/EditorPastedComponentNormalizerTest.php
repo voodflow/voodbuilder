@@ -420,6 +420,57 @@ CSS;
         $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 
+    public function test_manual_page_css_strips_animate_utilities_without_theme_tokens(): void
+    {
+        $storedCss = <<<'CSS'
+.animate-fade-right { animation: var(--animate-fade-right); }
+.animate-once { animation-iteration-count: 1; }
+.animate-bounce { animation: var(--animate-bounce); }
+.vb-hero-plasma__orb { filter: blur(48px); }
+#i837wt { outline: none; }
+CSS;
+
+        $manual = EditorPastedComponentNormalizer::manualPageCssFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('#i837wt', $manual);
+        $this->assertStringContainsString('.vb-hero-plasma__orb', $manual);
+        $this->assertStringNotContainsString('animate-fade-right', $manual);
+        $this->assertStringNotContainsString('animate-once', $manual);
+        $this->assertStringNotContainsString('animate-bounce', $manual);
+        $this->assertTrue(EditorPastedComponentNormalizer::isTailwindUtilityClassName('animate-fade-right'));
+        $this->assertTrue(EditorPastedComponentNormalizer::isTailwindUtilityClassName('animate-once'));
+        $this->assertTrue(EditorPastedComponentNormalizer::isTailwindUtilityClassName('hover:animate-bounce'));
+    }
+
+    public function test_page_css_has_orphan_animate_variables_detects_broken_utility_bundle(): void
+    {
+        $orphan = '.animate-fade-right { animation: var(--animate-fade-right); }';
+        $complete = ':root { --animate-fade-right: fade-right 1s ease 0s both; } .animate-fade-right { animation: var(--animate-fade-right); }';
+
+        $this->assertTrue(EditorPastedComponentNormalizer::pageCssHasOrphanAnimateVariables($orphan));
+        $this->assertFalse(EditorPastedComponentNormalizer::pageCssHasOrphanAnimateVariables($complete));
+        $this->assertTrue(EditorPastedComponentNormalizer::pageCssMissingThemeVariables($orphan));
+        $this->assertFalse(EditorPastedComponentNormalizer::pageCssMissingThemeVariables($complete));
+    }
+
+    public function test_resolve_published_page_css_for_save_keeps_animate_tokens(): void
+    {
+        if (! EditorComponentTailwindCompiler::isAvailable()) {
+            $this->markTestSkipped('Node Tailwind compiler is not available.');
+        }
+
+        $html = '<img class="w-full h-auto rounded animate-once animate-duration-1000 animate-delay-150 animate-fade-right" id="i837wt" src="x.jpg" alt="">';
+        $stale = '.animate-fade-right { animation: var(--animate-fade-right); } .animate-bounce { animation: var(--animate-bounce); }';
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $stale);
+
+        $this->assertStringContainsString('--animate-fade-right', $resolved);
+        $this->assertMatchesRegularExpression('/--animate-fade-right\s*:/', $resolved);
+        $this->assertStringContainsString('animate-fade-right', $resolved);
+        $this->assertStringContainsString('@keyframes fade-right', $resolved);
+        $this->assertStringNotContainsString('animate-bounce', $resolved);
+    }
+
     public function test_manual_page_css_from_stored_css_keeps_keyframes_and_bem_hooks(): void
     {
         $storedCss = <<<'CSS'

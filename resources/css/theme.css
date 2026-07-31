@@ -30,9 +30,14 @@
 @source '../views/themes/**/*.blade.php';
 @source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/editor/popups-ui.js';
 @source '../js/editor/popups-ui.js';
+/* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
+   published pages match the Editor even when page JIT CSS is stale/partial. */
+@source '../js/editor/style-animation-sector.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");
-@source inline("grid grid-cols-1 grid-cols-2 grid-cols-3 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-4");
+@source inline("grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 grid-cols-6 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-4");
+@source inline("grid-cols-[minmax(0,1fr)_minmax(0,2fr)] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,3fr)] grid-cols-[minmax(0,3fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]");
+@source inline("w-full vb-layout-row vb-layout-block vb-layout-div gap-4 gap-8 min-h-16 min-w-0 max-w-none");
 /* Catalog/page blocks store px-* / py-* on containers; keep utilities in the public theme. */
 @source inline("px-0 px-4 px-5 px-6 px-8 py-0 py-8 py-10 py-12 py-16 py-20 py-24 md:px-6 md:px-8");
 @source not '../../tests/**/*';
@@ -1120,13 +1125,13 @@ body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
 
 /*
  * Layout Container presets (Bricks-like): stack columns on small viewports.
- * Desktop tracks come from inline style / --vb-layout-tracks; !important beats that on mobile.
+ * Desktop tracks come from Tailwind grid-cols-* utilities (not inline style).
+ * !important beats those utilities on mobile.
  */
 [data-voodbuilder-layout='container'][data-vb-layout-preset],
 .vb-layout-row[data-vb-layout-preset] {
     display: grid;
     width: 100%;
-    grid-template-columns: var(--vb-layout-tracks, minmax(0, 1fr));
 }
 
 @media (max-width: 767.98px) {

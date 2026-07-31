@@ -414,6 +414,44 @@ function rewriteThemeVarFallbacks(root) {
     });
 }
 
+/**
+ * Ensure `animation: var(--animate-*)` keeps a literal fallback from @theme so
+ * published page CSS still animates if the custom property is later stripped.
+ *
+ * @param {import('postcss').Root} root
+ * @param {Map<string, string>} themeVariables
+ */
+function rewriteAnimateVarFallbacks(root, themeVariables) {
+    root.walkDecls((decl) => {
+        if (decl.prop !== 'animation' && decl.prop !== 'animation-name') {
+            return;
+        }
+
+        const value = String(decl.value ?? '');
+
+        if (! value.includes('var(--animate-')) {
+            return;
+        }
+
+        const next = value.replace(
+            /var\((--animate-[a-z0-9-]+)\)/gi,
+            (match, token) => {
+                const fallback = themeVariables.get(token);
+
+                if (! fallback) {
+                    return match;
+                }
+
+                return `var(${token}, ${fallback})`;
+            },
+        );
+
+        if (next !== value) {
+            decl.value = next;
+        }
+    });
+}
+
 function stripScopedVpThemeOverrides(root) {
     root.walkDecls((decl) => {
         if (decl.prop.startsWith('--color-vp-') || isLegacyPaletteColorVariable(decl.prop)) {
@@ -476,6 +514,7 @@ function optimizeComponentCss(css, scope) {
 
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
+    rewriteAnimateVarFallbacks(root, themeVariables);
 
     const scopedDeclarations = INHERITED_THEME_PROPS.map((prop) => postcss.decl({ prop, value: 'inherit' }));
 
@@ -962,6 +1001,7 @@ function optimizePageCss(css) {
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
     rewriteThemeVarFallbacks(root);
+    rewriteAnimateVarFallbacks(root, themeVariables);
     flattenNestedMediaQueries(root);
     flattenNestedAmpersandRules(root);
     normalizeMediaRangeSyntax(root);

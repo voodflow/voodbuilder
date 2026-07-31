@@ -150,15 +150,23 @@ function clearInlineProps(editor, component, properties) {
     }
 
     const target = resolveVisualStyleTarget(component) ?? component;
+    const prevSilent = editor.__voodbuilderLayoutStyleSilent;
 
-    for (const property of properties) {
-        clearStyleProperty(editor, target, property, {
-            family: property === 'background' || property === 'background-color' || property === 'background-image',
-        });
-    }
+    // Clearing leftover inline padding must not re-enter spacing strip.
+    editor.__voodbuilderLayoutStyleSilent = true;
 
-    if (properties.some((property) => String(property).startsWith('background'))) {
-        clearBackgroundCssRules(editor, target);
+    try {
+        for (const property of properties) {
+            clearStyleProperty(editor, target, property, {
+                family: property === 'background' || property === 'background-color' || property === 'background-image',
+            });
+        }
+
+        if (properties.some((property) => String(property).startsWith('background'))) {
+            clearBackgroundCssRules(editor, target);
+        }
+    } finally {
+        editor.__voodbuilderLayoutStyleSilent = prevSilent;
     }
 }
 
@@ -194,7 +202,7 @@ function sanitizeInventedStyles(editor, component) {
     }
 }
 
-function syncSelectsFromComponent(root, component) {
+function syncSelectsFromComponent(root, component, editor = null) {
     if (! root) {
         return;
     }
@@ -212,11 +220,16 @@ function syncSelectsFromComponent(root, component) {
     const fontSelect = root.querySelector('[data-voodbuilder-tw-font-family]');
 
     if (fontSelect) {
+        const id = component?.getId?.();
+        const fromId = id && editor?.Css?.getIdRule
+            ? String(editor.Css.getIdRule(id)?.getStyle?.()?.['font-family'] ?? '').trim()
+            : '';
         const family = String(
             component?.getStyle?.({ inline: true })?.['font-family']
             ?? component?.getStyle?.()?.['font-family']
+            ?? fromId
             ?? '',
-        ).trim();
+        ).replace(/\s*!important\s*$/i, '').trim();
 
         fontSelect.value = family && [...fontSelect.options].some((opt) => opt.value === family)
             ? family
@@ -232,6 +245,36 @@ function syncSelectsFromComponent(root, component) {
     }
 }
 
+/**
+ * Grapes rarely emits `component:update:classes` for CLASSES chip add/remove/rename
+ * (those mutate the selectors collection in place). Watch the collection directly.
+ *
+ * @param {object|null|undefined} component
+ * @param {() => void} onChange
+ * @returns {() => void} unsubscribe
+ */
+export function watchComponentClassList(component, onChange) {
+    if (! component || typeof onChange !== 'function') {
+        return () => {};
+    }
+
+    const classes = component.get?.('classes') ?? component.classes;
+
+    if (! classes || typeof classes.on !== 'function' || typeof classes.off !== 'function') {
+        return () => {};
+    }
+
+    const handler = () => {
+        onChange();
+    };
+
+    classes.on('add remove reset change', handler);
+
+    return () => {
+        classes.off('add remove reset change', handler);
+    };
+}
+
 function applyGroup(editor, component, groupId, value) {
     const groupSet = GROUP_SETS[groupId];
 
@@ -239,9 +282,16 @@ function applyGroup(editor, component, groupId, value) {
         return;
     }
 
-    replaceClassGroup(component, groupSet, value || null);
-    clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
-    scheduleClassCompile(editor);
+    // Settings → classes writes; class-list watch re-hydrates selects only (no write-back).
+    editor.__voodbuilderTwStyleApplying = true;
+
+    try {
+        replaceClassGroup(component, groupSet, value || null);
+        clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+        scheduleClassCompile(editor);
+    } finally {
+        editor.__voodbuilderTwStyleApplying = false;
+    }
 }
 
 function buildCollapsibleSector({ id, title, bodyHtml }) {
@@ -294,7 +344,7 @@ function bindGroupField(editor, root, groupId) {
         }
 
         applyGroup(editor, selected, groupId, select?.value ?? '');
-        syncSelectsFromComponent(root.closest('.gjs-sm-sectors') ?? root, selected);
+        syncSelectsFromComponent(root.closest('.gjs-sm-sectors') ?? root, selected, editor);
     };
 
     add?.addEventListener('click', apply);
@@ -469,7 +519,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             stylesMount.appendChild(marker);
         }
 
-        syncSelectsFromComponent(stylesMount, editor.getSelected());
+        syncSelectsFromComponent(stylesMount, editor.getSelected(), editor);
     };
 
     const observer = new MutationObserver(() => {
@@ -478,18 +528,77 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     });
     observer.observe(stylesMount, { childList: true, subtree: true });
 
+    let stopClassWatch = null;
+
+    const hydrateFromClasses = (component = null) => {
+        if (editor.__voodbuilderTwStyleApplying) {
+            return;
+        }
+
+        const target = component ?? editor.getSelected();
+        const selected = editor.getSelected();
+
+        // Ignore class mutations on non-selected components (symbols / bulk ops).
+        if (selected && target && selected !== target) {
+            return;
+        }
+
+        syncSelectsFromComponent(stylesMount, selected ?? target, editor);
+    };
+
+    const attachClassWatch = (component) => {
+        stopClassWatch?.();
+        stopClassWatch = null;
+
+        if (! component) {
+            return;
+        }
+
+        stopClassWatch = watchComponentClassList(component, () => {
+            hydrateFromClasses(component);
+        });
+    };
+
     editor.on('load', () => window.setTimeout(ensure, 60));
     editor.on('component:selected', (component) => {
         window.setTimeout(() => {
             ensure();
             sanitizeInventedStyles(editor, component);
-            syncSelectsFromComponent(stylesMount, component);
+            syncSelectsFromComponent(stylesMount, component, editor);
+            attachClassWatch(component);
         }, 0);
     });
 
-    editor.on('component:update:classes', (component) => {
-        syncSelectsFromComponent(stylesMount, component ?? editor.getSelected());
+    editor.on('component:deselected', () => {
+        stopClassWatch?.();
+        stopClassWatch = null;
     });
+
+    // Kept as a fallback when Grapes does emit it (rare for chip edits).
+    editor.on('component:update:classes', (component) => {
+        hydrateFromClasses(component);
+    });
+
+    // Chip rename updates the Selector model; collection `change` usually covers it,
+    // but selector:update is a cheap extra signal when the selected component owns it.
+    editor.on('selector:update', (selector) => {
+        const selected = editor.getSelected();
+        const selectors = selected?.getSelectors?.() ?? selected?.get?.('classes');
+
+        if (! selected || ! selectors) {
+            return;
+        }
+
+        const owned = typeof selectors.includes === 'function'
+            ? selectors.includes(selector)
+            : [...(selectors.models ?? selectors)].includes(selector);
+
+        if (owned) {
+            hydrateFromClasses(selected);
+        }
+    });
+
+    attachClassWatch(editor.getSelected());
 
     // Block native SM from persisting invented paints while Tailwind panel owns styling.
     editor.on('style:property:update', (event) => {
@@ -535,4 +644,4 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     ensure();
 }
 
-export { sanitizeInventedStyles as sanitizeInventedStyleManagerProps };
+export { sanitizeInventedStyles as sanitizeInventedStyleManagerProps, syncSelectsFromComponent };
