@@ -294,6 +294,18 @@ async function applyFont(editor, component, rawValue) {
     }
 }
 
+/**
+ * Public entry for the Tailwind Style panel font-family field.
+ *
+ * @param {object} editor
+ * @param {object|null|undefined} component
+ * @param {string} rawValue
+ * @returns {Promise<void>}
+ */
+export async function applyEditorFontFamily(editor, component, rawValue) {
+    await applyFont(editor, component, rawValue);
+}
+
 function watchFontFamilyChanges(editor) {
     if (editor.__voodbuilderFontsWatchBound) {
         return;

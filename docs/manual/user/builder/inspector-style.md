@@ -1,31 +1,29 @@
 ---
 title: Inspector — Style
-description: Style Manager, Tailwind classes, fonts, and animation.
+description: Tailwind utility Style panel, classes chips, fonts, and animation.
 ---
 
 # Inspector — Style
 
-The **Style** tab combines classic Style Manager sectors with VoodBuilder helpers.
+The **Style** tab applies styling as **Tailwind utility classes** (same pattern as the Animation sector). GrapesJS still owns the canvas, DnD, layers, and save — not invented inline Style Manager paints.
 
 ## What you can adjust
 
-- Layout: display, direction, gap, alignment, sizing, spacing
-- Typography and colour (prefer **theme tokens** `text-vp-*`, `bg-vp-*`)
-- Borders, shadows, backgrounds
-- **Tailwind class chips** — add/remove/paste classes; live CSS compile on canvas
-- **Font family** — search the self-hosted Fontsource catalog (~50 families)
-- **Animation** sector where enabled
+- **Dimension** — width, height, max-width, margin, padding (Tailwind scale)
+- **Decorations** — background, border width/style/color, rounded, box-shadow (`shadow-*`)
+- **Typography** — font family (Fontsource catalog), font-size, weight, align, text color, leading
+- **Animation** — Tailwind CSS Animated utilities (unchanged)
+- **Classes chips** — add/remove/paste any utility; live CSS compile on canvas
+- **Global classes** — optional named CSS rules (empty until you create one; day-to-day styling uses utilities)
 
-::: tip Screenshot needed
-Style tab with font search and Tailwind class chips on a heading.
-:::
+Empty sector fields mean **nothing was authored** for that utility group — no default `text-shadow`, `0 solid black` borders, or `undefined` box-shadows.
 
 ## Theme tokens vs raw colours
 
-Blocks from the catalog use tokens so light/dark and brand colours stay coherent. Prefer `bg-vp-bg` / `text-vp-brand-1` over hard-coded `bg-white` / `text-gray-900` unless you intentionally want a fixed cinematic band.
+Prefer theme tokens `text-vp-*` / `bg-vp-*` so light/dark and brand colours stay coherent.
 
 ## Live CSS
 
-The editor compiles Tailwind-compatible classes for the canvas. After large imports, check the compatibility report if shown.
+The editor compiles Tailwind-compatible classes for the canvas via page JIT. After large imports, check the compatibility report if shown.
 
 Related: [Content width](./content-width), developer [Fonts](../../developer/php-sdk/fonts).

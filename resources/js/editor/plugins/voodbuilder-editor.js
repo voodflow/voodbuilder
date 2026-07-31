@@ -72,6 +72,11 @@ function isSpacingStyleProperty(property) {
 
 function registerSpacingStyleSync(editor) {
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
+        // Tailwind Style panel applies spacing via utilities — never strip those classes.
+        if (editor.__voodbuilderTailwindStyleOnly) {
+            return;
+        }
+
         const properties = styleUpdatePropertyNames(propertyOrPros);
 
         if (! properties.some((property) => isSpacingStyleProperty(property))) {
@@ -102,6 +107,11 @@ function isBorderPaintProperty(property) {
 function registerTailwindStyleSync(editor) {
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
         if (editor.__voodbuilderPurgingBackground || ! component) {
+            return;
+        }
+
+        // Utilities panel: do not strip Tailwind classes when leftover inline clears fire.
+        if (editor.__voodbuilderTailwindStyleOnly) {
             return;
         }
 

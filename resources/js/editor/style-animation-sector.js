@@ -814,11 +814,25 @@ function buildAnimationSector(editor, labels = {}) {
 }
 
 function placeAnimationSector(stylesMount, sector) {
-    const decorations = findSectorByTitle(stylesMount, 'decoration');
+    const twDecorations = stylesMount.querySelector('[data-voodbuilder-tw-sector="decorations"]');
+    const twTypography = stylesMount.querySelector('[data-voodbuilder-tw-sector="typography"]');
+    const decorations = twDecorations ?? findSectorByTitle(stylesMount, 'decoration');
     const extra = findSectorByTitle(stylesMount, 'extra');
+
+    if (twTypography) {
+        twTypography.parentNode?.insertBefore(sector, twTypography.nextSibling);
+
+        return;
+    }
 
     if (decorations?.nextSibling) {
         decorations.parentNode.insertBefore(sector, decorations.nextSibling);
+
+        return;
+    }
+
+    if (decorations) {
+        decorations.parentNode?.appendChild(sector);
 
         return;
     }
@@ -848,8 +862,11 @@ export function registerStyleAnimationSector(editor, options = {}) {
             return;
         }
 
-        if (! stylesMount.querySelector('.gjs-sm-sector')) {
-            return;
+        // Tailwind panel may mount first; otherwise create an empty sectors root.
+        if (! stylesMount.querySelector('.gjs-sm-sectors') && ! stylesMount.querySelector('.gjs-sm-sector')) {
+            const root = document.createElement('div');
+            root.className = 'gjs-sm-sectors';
+            stylesMount.appendChild(root);
         }
 
         const sector = buildAnimationSector(editor, labels);

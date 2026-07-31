@@ -1750,6 +1750,35 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     color: var(--color-vp-brand-1, #0d9488);
 }
 
+/* ── Tailwind Style panel (utilities-only; hide native Grapes SM sectors) ── */
+.voodbuilder-editor-styles--tailwind-only .gjs-sm-sector[data-voodbuilder-native-sm-hidden],
+.voodbuilder-editor-styles--tailwind-only .gjs-sm-sector:not([data-voodbuilder-tw-sector]):not([data-voodbuilder-animation-sector]) {
+    display: none !important;
+}
+
+.voodbuilder-editor-sm-sector-tw .voodbuilder-editor-anim-property {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 38%) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem 0.55rem;
+    margin: 0;
+    padding: 0.4375rem 0.625rem;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
+    background: transparent;
+}
+
+.voodbuilder-editor-sm-sector-tw .voodbuilder-editor-anim-property:last-child {
+    border-bottom: none;
+}
+
+.voodbuilder-editor-sm-sector-tw__hint {
+    margin: 0.5rem 0.625rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
 /* ── Extra / Opacity: unitless 0–1 (no Dimension-style units box) ── */
 .voodbuilder-editor-shell__right .gjs-sm-sector__extra > .gjs-sm-properties > .gjs-sm-property {
     margin: 0;

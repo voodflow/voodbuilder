@@ -2687,6 +2687,11 @@ export function registerVisualStyleInspector(editor) {
             return;
         }
 
+        // Tailwind Style panel owns utilities; only font-family may still write inline.
+        if (editor.__voodbuilderTailwindStyleOnly && propertyName !== 'font-family') {
+            return;
+        }
+
         // Only wipe on explicit Style Manager clear (__clear). Intermediate empty
         // values while picking a color used to call clearStyleProperty and erase
         // paints from the model while the canvas still showed cached CSS.

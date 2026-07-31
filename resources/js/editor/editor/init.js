@@ -117,6 +117,7 @@ import { registerLayersDrag } from '../layers-drag.js';
 import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
+import { registerStyleTailwindPanel } from '../style-tailwind-panel.js';
 import { registerCanvasClassHoverPopover } from '../canvas-class-hover-popover.js';
 import { syncAllLayerDisplayNames, registerLayerDisplayNamePersistence } from '../layer-display-name.js';
 import { registerBlocksContextMenu } from '../blocks-context-menu.js';
@@ -1216,6 +1217,10 @@ export function initVoodbuilderEditor(container, options = {}) {
             }
 
             if (shell?.mounts?.styles) {
+                registerStyleTailwindPanel(editor, {
+                    mount: shell.mounts.styles,
+                    labels,
+                });
                 registerStyleAnimationSector(editor, {
                     mount: shell.mounts.styles,
                     labels,
