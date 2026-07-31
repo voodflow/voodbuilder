@@ -465,6 +465,7 @@ final class EditorGate
             'globalClassesSaveError' => __('voodbuilder::pro.global_classes.save_error'),
             'elementsPluginRequiredTitle' => __('voodbuilder::pro.elements.plugin_required_title'),
             'elementsPluginRequiredBody' => __('voodbuilder::pro.elements.plugin_required_body'),
+            'elementsLibrary' => __('voodbuilder::pro.elements.library'),
             'componentsTitle' => __('voodbuilder::pro.components.title'),
             'componentsPluginRequiredTitle' => __('voodbuilder::pro.components.plugin_required_title'),
             'componentsPluginRequiredBody' => __('voodbuilder::pro.components.plugin_required_body'),

@@ -255,6 +255,7 @@ return [
     'elements' => [
         'plugin_required_title' => 'Voodbuilder Elements',
         'plugin_required_body' => 'Thousands of elements — copy and paste from toolkits like Tailwind Plus, create new elements with code, and expand your library. Requires the Voodbuilder Elements plugin.',
+        'library' => 'Library',
     ],
 
     'components' => [

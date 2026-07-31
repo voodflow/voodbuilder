@@ -112,8 +112,17 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
     const showComponents = libraryId === 'components';
     const showTemplates = libraryId === 'templates';
     const matchingCategoryIds = new Set();
+    const hiddenBlockIds = editor.__voodbuilderHiddenBlockIds instanceof Set
+        ? editor.__voodbuilderHiddenBlockIds
+        : null;
 
     editor.BlockManager.getAll().forEach((block) => {
+        const blockId = String(block.getId?.() ?? block.get?.('id') ?? '');
+
+        if (hiddenBlockIds?.has(blockId)) {
+            return;
+        }
+
         const isComponent = isComponentBlock(block);
         const isTemplate = isPageTemplateBlock(block);
         const inActiveLibrary = showComponents
@@ -138,6 +147,12 @@ export function applyBlocksLibraryUi(editor, searchQuery = '') {
     container.querySelectorAll('.gjs-block').forEach((blockEl) => {
         const blockId = blockEl.getAttribute?.('data-gjs-block-id') || blockEl.id || '';
         const block = blockId ? editor.BlockManager?.get?.(blockId) : null;
+
+        if (hiddenBlockIds?.has(blockId)) {
+            setBlockDisplay(blockEl, false);
+
+            return;
+        }
         const isComponent = block ? isComponentBlock(block) : isComponentBlockElement(editor, blockEl);
         const isTemplate = block ? isPageTemplateBlock(block) : isPageTemplateBlockElement(editor, blockEl);
         const inActiveLibrary = showComponents
