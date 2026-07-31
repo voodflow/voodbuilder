@@ -462,6 +462,12 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             lastClassSet = classSet;
             applyPageLiveCss(editor, css);
             editor.trigger('voodbuilder:page-css-compiled', { css, html });
+
+            try {
+                editor.refresh?.();
+            } catch {
+                // Optional canvas paint after live sheet swap.
+            }
         } catch (error) {
             pendingInvalidate = true;
             console.warn('VoodBuilder page CSS: compile-css error', error);
@@ -470,15 +476,21 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             endEditorBuild(editor, BUILD_SCOPE);
             building = false;
 
-            if (queuedWhileBuilding) {
+            // A force/invalidate during this request must not fall back to
+            // scheduleIfMissingUtilities — that can no-op after a partial early compile
+            // (e.g. Library HTML still parsing when the first collect ran).
+            if (queuedWhileBuilding || pendingInvalidate) {
                 queuedWhileBuilding = false;
-                scheduleIfMissingUtilities(DEBOUNCE_MS);
+                schedule(pendingInvalidate ? INITIAL_BUILD_DELAY_MS : DEBOUNCE_MS);
             }
         }
     };
 
     editor.__voodbuilderSchedulePageCssRebuild = scheduleIfMissingUtilities;
-    editor.__voodbuilderForcePageCssRebuild = schedule;
+    editor.__voodbuilderForcePageCssRebuild = (delay = DEBOUNCE_MS) => {
+        pendingInvalidate = true;
+        schedule(delay);
+    };
     editor.__voodbuilderSetCssRebuildSuspended = (suspended) => {
         const depth = Number(editor.__voodbuilderCssRebuildSuspendDepth ?? 0);
 
