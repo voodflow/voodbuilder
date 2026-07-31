@@ -527,6 +527,76 @@ describe('theme-tokens background clear', () => {
         expect(extracted).not.toContain('.flex');
         expect(extracted).not.toContain('@media');
     });
+
+    it('collectAuthorIdCssFromComponents emits #id rules from inline styles', async () => {
+        const { collectAuthorIdCssFromComponents } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const components = [
+            {
+                getId: () => 'title-1',
+                getStyle: (opts) => (opts?.inline
+                    ? { color: 'rgb(255, 0, 0)', 'font-family': "'Roboto', sans-serif" }
+                    : {}),
+            },
+            {
+                getId: () => 'box-2',
+                getStyle: () => ({ 'background-color': '#0ea5e9' }),
+            },
+        ];
+
+        const editor = {
+            Css: {
+                getIdRule: () => null,
+            },
+            getWrapper: () => ({
+                onAll: (cb) => components.forEach(cb),
+            }),
+        };
+
+        const css = collectAuthorIdCssFromComponents(editor);
+
+        expect(css).toContain('#title-1');
+        expect(css).toContain('color:rgb(255, 0, 0)');
+        expect(css).toContain("font-family:'Roboto', sans-serif");
+        expect(css).toContain('#box-2');
+        expect(css).toContain('background-color:#0ea5e9');
+    });
+
+    it('mergeAuthorCssChunks keeps first #id rule and utilities', async () => {
+        const { mergeAuthorCssChunks } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const merged = mergeAuthorCssChunks([
+            '#a {color:red}',
+            '#a {color:blue}',
+            '#b {font-size:20px}',
+            '.flex {display:flex}',
+        ]);
+
+        expect(merged).toContain('#a {color:red}');
+        expect(merged).not.toContain('#a {color:blue}');
+        expect(merged).toContain('#b {font-size:20px}');
+        expect(merged).toContain('.flex {display:flex}');
+    });
+
+    it('stripAuthorIdRules removes #id but keeps utilities', async () => {
+        const { stripAuthorIdRules } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const next = stripAuthorIdRules(`
+#hero { color: red !important; }
+.flex { display: flex }
+#box { font-family: 'Roboto', sans-serif }
+`);
+
+        expect(next).not.toContain('#hero');
+        expect(next).not.toContain('#box');
+        expect(next).toContain('.flex');
+    });
 });
 
 describe('editor/registries', () => {

@@ -317,7 +317,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
 
     public function test_does_not_treat_hero_media_as_section_container(): void
     {
-        $html = '<section data-voodbuilder-section-block="vb-nasa-hero" class="voodbuilder-editor-section relative">'
+        $html = '<section data-voodbuilder-section-block="vb-hero-cinematic" class="voodbuilder-editor-section relative">'
             .'<div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">'
             .'<img class="voodbuilder-hero-media__img" src="/x.jpg" alt="" />'
             .'</div>'

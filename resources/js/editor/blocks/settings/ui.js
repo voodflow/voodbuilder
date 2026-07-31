@@ -58,6 +58,12 @@ import {
 } from '../../layout-elements-settings.js';
 import { isAnimatedCounterComponent, renderAnimatedCounterSettings, syncAnimatedCounterSettingsForm } from '../../animated-counter-settings.js';
 import { isImageSettingsComponent, renderImageContentSettings } from '../../image-content-settings.js';
+import {
+    isInlineVideoSettingsComponent,
+    isVideoSettingsComponent,
+    renderInlineVideoContentSettings,
+    renderVideoContentSettings,
+} from '../../video-content-settings.js';
 import { ensureSmartCtaButton } from '../../editor-button-link.js';
 
 /**
@@ -641,6 +647,38 @@ export function registerSettingsUi(editor, mount) {
                 renderedRoot = rawSelected;
                 renderedRootBlockId = counterKey;
                 renderedDescriptorId = 'animated-counter';
+
+                return;
+            }
+
+            if (isInlineVideoSettingsComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderInlineVideoContentSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isVideoSettingsComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderVideoContentSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
 
                 return;
             }

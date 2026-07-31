@@ -1,4 +1,5 @@
 import { initVideoFacades } from './editor/video-runtime.js';
+import { initHeroBackgroundVideos } from './editor/hero-video-runtime.js';
 import { initVbRuntime } from './editor/vb-runtime.js';
 import { initSiteChrome } from './editor/site-chrome-runtime.js';
 
@@ -17,6 +18,7 @@ function bootPopupsIfConfigured() {
 
 function bootSiteRuntime() {
     initVideoFacades();
+    initHeroBackgroundVideos();
     initVbRuntime();
     initSiteChrome();
     bootPopupsIfConfigured();

@@ -636,23 +636,7 @@ const BLOCKS = [
             ],
         },
     },
-    {
-        id: 'voodbuilder-embed',
-        label: 'Embed',
-        category: MEDIA_BLOCK_CATEGORY,
-        content: `
-            <div class="vb-embed aspect-video w-full overflow-hidden rounded-xl border border-vp-divider bg-vp-bg-alt" data-voodbuilder-embed>
-                <iframe
-                    class="h-full w-full"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    title="Embedded content"
-                    loading="lazy"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                ></iframe>
-            </div>
-        `,
-    },
+    // Embed folded into Video (YouTube / Vimeo / file). Legacy data-voodbuilder-embed markup still renders.
 ];
 
 export function registerUtilityBlockComponentTypes(editor) {

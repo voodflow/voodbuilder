@@ -30,9 +30,12 @@ final class EditorCanvas
     /**
      * Stylesheets required on published Editor pages.
      *
-     * Intentionally empty: critical section chrome (hero media cover, media frames) lives in
-     * `theme.css`, which the public site already loads. `section-utilities.css` stays canvas-only
-     * (Tailwind JIT for block catalogs).
+     * Intentionally empty: authored content CSS lives in `theme.css` → `landing.css`
+     * (loaded on both the Grapes canvas via {@see styleUrls()} and the public site).
+     * Do not add a second “published-only” bundle — that recreates editor↔front drift.
+     * Canvas-only sheets (`section-utilities.css`, chrome drop/device CSS in frameStyle)
+     * must never be required for public layout. Library Elements use Tailwind utilities
+     * so page JIT (`compile-css` / save) matches — see `EditorLibraryLayoutNormalizer`.
      *
      * @return list<string>
      */

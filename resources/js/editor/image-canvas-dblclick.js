@@ -5,6 +5,7 @@
  */
 
 import { isDynamicallyBoundImage, isEditableImageComponent } from './jodit-image-editor.js';
+import { openMediaAssets } from './editor-assets.js';
 
 /**
  * @param {import('grapesjs').Editor} editor
@@ -62,33 +63,20 @@ function findComponentByElement(editor, element) {
  * @param {import('grapesjs').Component} image
  */
 function openImageAssets(editor, image) {
-    const assets = editor.Assets ?? editor.AssetManager;
-
-    if (! assets || typeof assets.open !== 'function') {
-        return;
-    }
-
     if (image.get?.('editable') === false) {
         image.set?.('editable', true);
     }
 
-    assets.open({
-        types: ['image'],
-        accept: 'image/*',
-        target: image,
-        select: (asset, complete) => {
-            const src = typeof asset?.getSrc === 'function'
-                ? asset.getSrc()
-                : (asset?.get?.('src') ?? asset?.src ?? '');
+    const labels = editor?.__voodbuilderLabels ?? {};
 
-            if (src) {
-                image.set('src', src);
-                image.addAttributes?.({ src });
-            }
-
-            if (complete && typeof assets.close === 'function') {
-                assets.close();
-            }
+    openMediaAssets({
+        editor,
+        kinds: ['image'],
+        labelKind: 'image',
+        labels,
+        onSelect: (src) => {
+            image.set('src', src);
+            image.addAttributes?.({ src });
         },
     });
 }

@@ -1293,6 +1293,37 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     color: var(--color-vp-text-1, #0f172a);
 }
 
+.voodbuilder-editor-root .voodbuilder-am-video-preview {
+    position: relative;
+    display: flex;
+    height: 100%;
+    min-height: 5rem;
+    align-items: flex-end;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.voodbuilder-editor-root .voodbuilder-am-video-preview video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+}
+
+.voodbuilder-editor-root .voodbuilder-am-video-preview__label {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    color: #fff;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.75), transparent);
+    word-break: break-all;
+}
+
 /*
  * Editor Asset Manager / Modal defaults to z-index: 100, which sits under our
  * editor shell (toolbar ~10040). Without this, dblclick-on-image looks broken.

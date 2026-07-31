@@ -33,7 +33,7 @@ final class VoodbuilderMediaSections
         return [
             [
                 'id' => 'vb-bg-image',
-                'label' => 'Background image',
+                'label' => 'Hero · background image',
                 'category' => 'Hero',
                 'content' => self::backgroundImage(),
             ],

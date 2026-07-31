@@ -242,10 +242,12 @@ body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-si
 
 /*
  * ─── Author content parity (editor canvas ↔ published front) ─────────────
- * Defaults for Editor markup MUST NOT beat Tailwind utilities set in the
- * editor (mx-auto, max-w-[80rem], px-*, …). Use @layer components + :where()
- * so any author utility wins. Never force mx-0 / max-w-none / !important on
- * .voodbuilder-editor-section or layout containers.
+ * Single source for authored content: this file (via theme.css).
+ * Canvas loads theme.css too — do NOT put content layout only in
+ * chrome-layout-canvas.css / section-utilities.css / frameStyle duplicates.
+ * Editor-only chrome (drop slots, device toggles, gjs placeholders) stays
+ * canvas-side. Defaults MUST NOT beat Tailwind utilities (mx-auto, max-w-*,
+ * px-*, …): use @layer components + :where() so author utilities win.
  */
 
 /*
@@ -387,9 +389,14 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
-/* Editor layout video blocks (YouTube/Vimeo/HTML5) on published pages */
+/*
+ * Video hosts — same rules in editor canvas and published pages.
+ * Do NOT key off data-gjs-type: those attributes are stripped on publish
+ * (EditorHtmlSanitizer::stripEditorOnlyAttributes). Stable class: .vb-video-host.
+ * Exclude full-bleed hero backgrounds (cover-scaled in theme.css).
+ */
 :is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"],
-.vb-video-host {
+.vb-video-host:not(.voodbuilder-hero-media__iframe):not(.voodbuilder-hero-media__video):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media video) {
     position: relative;
     display: block;
     width: 100%;
@@ -400,8 +407,14 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     overflow: hidden;
 }
 
-:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"] > :is(iframe, video, .gjs-no-pointer),
-:is(body.voodbuilder-canvas-ready, .VPRichPage) .vb-video-facade--fill {
+/*
+ * Fill media inside a host wrapper (canvas div[data-gjs-type=video], or any
+ * .vb-video-host that is not the media element itself).
+ */
+:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"] > :is(iframe, video, .gjs-no-pointer, .vb-video-facade),
+.vb-video-host:not(iframe):not(video) > :is(iframe, video, .gjs-no-pointer, .vb-video-facade),
+:is(body.voodbuilder-canvas-ready, .VPRichPage) .vb-video-facade--fill,
+.vb-video-facade--fill {
     position: absolute !important;
     inset: 0;
     width: 100% !important;
@@ -423,11 +436,12 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     max-width: 100%;
 }
 
+/* Naked embeds (no .vb-video-host / facade) — keep 16:9 without fighting host children. */
 .VPRichPage :is(
-    video:not([data-gjs-type="video"] *),
-    iframe[src*='youtube']:not([data-gjs-type="video"] *),
-    iframe[src*='youtube-nocookie']:not([data-gjs-type="video"] *),
-    iframe[src*='vimeo']:not([data-gjs-type="video"] *)
+    video:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade *):not(.voodbuilder-hero-media video):not(.voodbuilder-hero-media__video),
+    iframe[src*='youtube']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe),
+    iframe[src*='youtube-nocookie']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe),
+    iframe[src*='vimeo']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe)
 ) {
     display: block;
     width: 100% !important;
@@ -499,4 +513,37 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPa
 
 .VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
     @apply text-vp-text-1;
+}
+
+/* Core Image caption (figure.vb-image) — below / overlay / none.
+ * Do not force w-full here: in flex/grid slots the figure must keep the
+ * image's width utilities (md:w-1/2, lg:w-3/5, …) or the media drops a row. */
+.vb-image {
+    @apply relative m-0;
+}
+
+.vb-image > img {
+    @apply block w-full h-auto;
+}
+
+.vb-image__caption {
+    @apply m-0 text-sm leading-relaxed text-vp-text-2;
+}
+
+.vb-image--caption-below .vb-image__caption {
+    @apply mt-2;
+}
+
+/* Overlay caption is absolute to the figure. In flex/grid rows the figure
+ * otherwise stretches to the tall sibling (e.g. step list) and the caption
+ * sits in empty space below the bitmap — keep height tied to the image. */
+.vb-image--caption-overlay {
+    @apply relative overflow-hidden self-start;
+    height: fit-content;
+    max-height: fit-content;
+}
+
+.vb-image--caption-overlay .vb-image__caption {
+    @apply absolute inset-x-0 bottom-0 z-10 px-3 py-2 text-white;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.65), transparent);
 }

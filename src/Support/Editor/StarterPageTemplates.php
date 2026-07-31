@@ -51,7 +51,7 @@ class StarterPageTemplates
             'Company profile',
             'VoodBuilder landing 01',
             'VoodBuilder landing 02',
-            'VoodBuilder NASA',
+            'VoodBuilder cinematic',
             'Landing 03',
         ];
     }

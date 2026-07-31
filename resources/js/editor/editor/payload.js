@@ -19,7 +19,7 @@ import { ensureIconsForExport } from '../editor-utility-blocks.js';
 import { ensureLayoutContainersForExport } from '../layout-blocks.js';
 import { restoreContentWidthFromAttributes } from '../content-width-toolbar.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
-import { syncVideoComponentsForExport } from '../editor-video.js';
+import { applyVideoFacadesToExportedHtml, syncVideoComponentsForExport } from '../editor-video.js';
 import {
     pruneEmptyDynamicBlocks,
     syncDynamicBlockAttributes,
@@ -39,13 +39,6 @@ import {
     syncSpacingStylesForExport,
 } from '../tailwind-visual-style.js';
 
-/**
- * Keep Style Manager #id / private-class rules from getCss() without the full
- * Tailwind/theme bundle (that baked stale --vx-header-bg on the frontend).
- *
- * @param {string} css
- * @returns {string}
- */
 /**
  * Keep Style Manager author paints from getCss() in chrome-shell mode.
  * After promotePrivateStyleClassesToIdRules + bake, paints live on #id rules.
@@ -122,6 +115,163 @@ export function stripAuthorIdRules(css) {
         .replace(/#[A-Za-z][\w-]*(?:\s*,\s*#[A-Za-z][\w-]*)*\s*\{[^{}]*\}/g, ' ')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
+}
+
+/**
+ * Safety net: emit `#id { … }` rules from component inline + CssComposer #id
+ * styles. Grapes `getCss()` can omit unused/private rules; without this, Style
+ * Manager paints vanish from builder_payload.css on chrome-shell save.
+ *
+ * @param {object} editor
+ * @returns {string}
+ */
+export function collectAuthorIdCssFromComponents(editor) {
+    const wrapper = editor?.getWrapper?.();
+    const cssApi = editor?.Css;
+
+    if (! wrapper?.onAll) {
+        return '';
+    }
+
+    const rules = [];
+    const seen = new Set();
+
+    wrapper.onAll((component) => {
+        const id = String(component?.getId?.() ?? '').trim();
+
+        if (id === '' || seen.has(id)) {
+            return;
+        }
+
+        seen.add(id);
+
+        const fromId = { ...(cssApi?.getIdRule?.(id)?.getStyle?.() ?? {}) };
+        const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+        // Combined getStyle() can include private-class paints still attached.
+        const combined = { ...(component.getStyle?.() ?? {}) };
+        const merged = { ...fromId, ...combined, ...inline };
+        const decls = [];
+
+        for (const [property, value] of Object.entries(merged)) {
+            if (value == null || value === '') {
+                continue;
+            }
+
+            const raw = String(value).trim();
+
+            if (raw === '' || raw === 'undefined' || raw === 'null') {
+                continue;
+            }
+
+            // Skip Grapes internal / empty clears.
+            if (/^(none|transparent|initial|inherit|unset)$/i.test(raw.replace(/\s*!important\s*$/i, '').trim())
+                && (property === 'background' || property === 'background-color' || property === 'background-image')) {
+                continue;
+            }
+
+            decls.push(`${property}:${raw}`);
+        }
+
+        if (decls.length === 0) {
+            return;
+        }
+
+        rules.push(`#${id} {${decls.join(';')}}`);
+    });
+
+    return rules.join('\n');
+}
+
+/**
+ * Read Grapes CssComposer CSS, preferring keepUnusedStyles so #id paints that
+ * are not referenced as classes still serialize.
+ *
+ * @param {object} editor
+ * @returns {string}
+ */
+export function readComposerCssForPersist(editor) {
+    if (typeof editor?.getCss !== 'function') {
+        return '';
+    }
+
+    try {
+        const withUnused = editor.getCss({ keepUnusedStyles: true });
+
+        if (typeof withUnused === 'string' && withUnused.trim() !== '') {
+            return withUnused.trim();
+        }
+    } catch {
+        // Older Grapes builds may not accept options.
+    }
+
+    return String(editor.getCss() ?? '').trim();
+}
+
+/**
+ * Merge CSS chunks, preferring the first declaration block per `#id` selector
+ * (later duplicates from live/composer are skipped).
+ *
+ * @param {string[]} chunks
+ * @returns {string}
+ */
+export function mergeAuthorCssChunks(chunks) {
+    const seenIds = new Set();
+    const out = [];
+
+    for (const chunk of chunks) {
+        const source = String(chunk ?? '').trim();
+
+        if (source === '') {
+            continue;
+        }
+
+        // Split into rules while keeping non-# utility blobs intact.
+        if (! source.includes('#')) {
+            if (! out.includes(source)) {
+                out.push(source);
+            }
+
+            continue;
+        }
+
+        let cursor = 0;
+        const re = /([^{}@]+)\{([^{}]*)\}/g;
+        let match;
+
+        while ((match = re.exec(source)) !== null) {
+            const between = source.slice(cursor, match.index).trim();
+
+            if (between !== '' && ! out.includes(between)) {
+                out.push(between);
+            }
+
+            cursor = match.index + match[0].length;
+            const selectors = match[1].trim();
+            const body = match[2].trim();
+            const rule = `${selectors} {${body}}`;
+
+            if (selectors.includes('#')) {
+                const ids = [...selectors.matchAll(/#([A-Za-z][\w-]*)/g)].map((m) => m[1]);
+                const already = ids.some((id) => seenIds.has(id));
+
+                if (already) {
+                    continue;
+                }
+
+                ids.forEach((id) => seenIds.add(id));
+            }
+
+            out.push(rule);
+        }
+
+        const tail = source.slice(cursor).trim();
+
+        if (tail !== '' && ! out.includes(tail)) {
+            out.push(tail);
+        }
+    }
+
+    return out.join('\n');
 }
 
 function normalizeDynamicBlockComponents(editor) {
@@ -247,23 +397,33 @@ export function buildPayload(editor, options = {}) {
         html = extractChromeLayoutHtml(editor);
     }
 
+    // Click-to-play cover must survive export (GrapesJS still serializes embed iframes).
+    html = applyVideoFacadesToExportedHtml(editor, html);
+
     html = encodeJsonDataGjsAttributes(html);
 
     // Intentionally empty page content must persist (delete-all / remove last block).
     // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
     // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Chrome shell/layout: keep Style Manager #id paints from getCss() (private
-    // .c* classes are promoted to #id on save — keeping them caused clone bleed).
-    const liveCss = stripAuthorIdRules(String(editor.__voodbuilderPageLiveCss ?? '').trim());
-    const composerCss = String(editor.getCss?.() ?? '').trim();
+    // Chrome shell/layout: persist Style Manager paints from every reliable source:
+    // 1) CssComposer #id rules (after bake / promote)
+    // 2) component inline + #id walk (safety net if getCss omits unused rules)
+    // 3) any #id still sitting in the live JIT sheet
+    // Utilities come from the live sheet with #id stripped (strip only for that chunk).
+    // Never strip #id from the *persisted* payload — that wiped fonts/colors on reload.
+    const liveCssRaw = String(editor.__voodbuilderPageLiveCss ?? '').trim();
+    const liveCssUtilities = stripAuthorIdRules(liveCssRaw);
+    const liveCssAuthorIds = extractGrapesComposerCss(liveCssRaw);
+    const composerCss = readComposerCssForPersist(editor);
     const styleManagerCss = extractGrapesComposerCss(composerCss);
+    const componentAuthorCss = collectAuthorIdCssFromComponents(editor);
     const preferComposerSubset = Boolean(
         editor.__voodbuilderChromeShellMode || editor.__voodbuilderChromeLayoutMode,
     );
     const css = preferComposerSubset
-        ? [styleManagerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n')
-        : [composerCss, liveCss].filter((chunk, index, all) => chunk !== '' && all.indexOf(chunk) === index).join('\n\n');
+        ? mergeAuthorCssChunks([styleManagerCss, componentAuthorCss, liveCssAuthorIds, liveCssUtilities])
+        : mergeAuthorCssChunks([composerCss, componentAuthorCss, liveCssRaw]);
 
     const payload = {
         html,

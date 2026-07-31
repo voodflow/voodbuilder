@@ -1,8 +1,14 @@
 /**
  * Editor component types for vb-bg-image and vb-bg-video media hero sections.
- * Traits on the section sync data-* attributes to child img/video elements.
+ * Traits on the section sync data-* attributes to child img/video/embed elements.
  */
 
+import {
+    buildHeroEmbedSrc,
+    isHeroEmbedProvider,
+    normalizeHeroVideoId,
+    normalizeHeroVideoProvider,
+} from './hero-video-embed.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const BG_SIZE_OPTIONS = [
@@ -28,6 +34,13 @@ const ON_OFF_OPTIONS = [
     { id: '0', label: 'No' },
 ];
 
+const PROVIDER_OPTIONS = [
+    { id: 'file', label: 'File' },
+    { id: 'yt', label: 'YouTube' },
+    { id: 'ytnc', label: 'YouTube (nocookie)' },
+    { id: 'vi', label: 'Vimeo' },
+];
+
 /**
  * @param {import('grapesjs').Component} section
  * @returns {import('grapesjs').Component | undefined}
@@ -40,8 +53,24 @@ function findHeroMediaImage(section) {
  * @param {import('grapesjs').Component} section
  * @returns {import('grapesjs').Component | undefined}
  */
+function findHeroMediaHost(section) {
+    return safeFindComponents(section, '[data-voodbuilder-role="media"], .voodbuilder-hero-media')[0];
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ * @returns {import('grapesjs').Component | undefined}
+ */
 function findHeroMediaVideo(section) {
     return safeFindComponents(section, '[data-voodbuilder-role="media"] video, .voodbuilder-hero-media__video')[0];
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ * @returns {import('grapesjs').Component | undefined}
+ */
+function findHeroMediaEmbed(section) {
+    return safeFindComponents(section, '[data-vb-embed-bg], .voodbuilder-hero-media__embed')[0];
 }
 
 /**
@@ -64,6 +93,92 @@ function objectPositionValue(position) {
             return 'center bottom';
         default:
             return 'center';
+    }
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ * @returns {import('grapesjs').Component | undefined}
+ */
+function ensureHeroMediaVideo(section) {
+    const existing = findHeroMediaVideo(section);
+
+    if (existing) {
+        return existing;
+    }
+
+    const host = findHeroMediaHost(section);
+
+    if (! host?.append) {
+        return undefined;
+    }
+
+    host.append({
+        tagName: 'video',
+        type: 'default',
+        classes: ['voodbuilder-hero-media__video'],
+        attributes: {
+            playsinline: '',
+            muted: '',
+            autoplay: '',
+            loop: '',
+        },
+    }, { at: 0 });
+
+    return findHeroMediaVideo(section);
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ * @returns {import('grapesjs').Component | undefined}
+ */
+function ensureHeroMediaEmbed(section) {
+    const existing = findHeroMediaEmbed(section);
+
+    if (existing) {
+        return existing;
+    }
+
+    const host = findHeroMediaHost(section);
+
+    if (! host?.append) {
+        return undefined;
+    }
+
+    host.append({
+        tagName: 'div',
+        type: 'default',
+        classes: ['voodbuilder-hero-media__embed'],
+        attributes: {
+            'data-vb-embed-bg': '',
+            'aria-hidden': 'true',
+        },
+        components: [{
+            tagName: 'iframe',
+            type: 'default',
+            classes: ['voodbuilder-hero-media__iframe'],
+            attributes: {
+                title: 'Background video',
+                frameborder: '0',
+                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                allowfullscreen: 'allowfullscreen',
+                loading: 'eager',
+                referrerpolicy: 'strict-origin-when-cross-origin',
+            },
+        }],
+    }, { at: 0 });
+
+    return findHeroMediaEmbed(section);
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ */
+function removeHeroMediaEmbed(section) {
+    const embed = findHeroMediaEmbed(section);
+
+    if (embed?.remove) {
+        embed.remove();
     }
 }
 
@@ -113,19 +228,15 @@ function syncBackgroundImageSection(section) {
 
 /**
  * @param {import('grapesjs').Component} section
+ * @param {Record<string, string>} attrs
+ * @param {string} opacity
+ * @param {string} objectFit
+ * @param {string} objectPosition
  */
-function syncBackgroundVideoSection(section) {
-    const attrs = section.getAttributes?.() ?? {};
-    const video = findHeroMediaVideo(section);
-    const minHeight = String(attrs['data-vb-min-height'] ?? '70vh');
+function syncNativeHeroVideo(section, attrs, opacity, objectFit, objectPosition) {
+    removeHeroMediaEmbed(section);
 
-    section.addStyle({ 'min-height': minHeight });
-
-    const content = findHeroContentContainer(section);
-
-    if (content) {
-        content.addStyle({ 'min-height': minHeight });
-    }
+    const video = ensureHeroMediaVideo(section);
 
     if (! video) {
         return;
@@ -138,6 +249,20 @@ function syncBackgroundVideoSection(section) {
     const autoplay = attrs['data-vb-autoplay'] !== '0';
     const loop = attrs['data-vb-loop'] !== '0';
 
+    video.addStyle({
+        position: 'absolute',
+        inset: '0',
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        'max-width': 'none',
+        opacity,
+        'object-fit': objectFit,
+        'object-position': objectPosition,
+        '--vb-object-fit': objectFit,
+        '--vb-object-position': objectPosition,
+    });
+
     const videoAttrs = {
         playsinline: '',
         ...(videoSrc !== '' ? { src: videoSrc } : {}),
@@ -149,6 +274,14 @@ function syncBackgroundVideoSection(section) {
     };
 
     video.addAttributes(videoAttrs);
+
+    if (videoSrc === '') {
+        video.removeAttributes('src');
+    }
+
+    if (poster === '') {
+        video.removeAttributes('poster');
+    }
 
     if (! controls) {
         video.removeAttributes('controls');
@@ -165,6 +298,127 @@ function syncBackgroundVideoSection(section) {
     if (! loop) {
         video.removeAttributes('loop');
     }
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ * @param {Record<string, string>} attrs
+ * @param {'yt'|'ytnc'|'vi'} provider
+ * @param {string} opacity
+ * @param {string} objectFit
+ * @param {string} objectPosition
+ */
+function syncEmbedHeroVideo(section, attrs, provider, opacity, objectFit, objectPosition) {
+    const video = findHeroMediaVideo(section);
+
+    if (video) {
+        video.addStyle({ display: 'none' });
+        video.removeAttributes('src');
+        video.removeAttributes('autoplay');
+    }
+
+    const embed = ensureHeroMediaEmbed(section);
+
+    if (! embed) {
+        return;
+    }
+
+    const videoId = normalizeHeroVideoId(String(attrs['data-vb-video-id'] ?? ''), provider);
+    const muted = attrs['data-vb-muted'] !== '0';
+    const autoplay = attrs['data-vb-autoplay'] !== '0';
+    const loop = attrs['data-vb-loop'] !== '0';
+    const embedSrc = buildHeroEmbedSrc(provider, videoId, { autoplay, loop, muted });
+
+    embed.addAttributes({
+        'data-vb-embed-bg': '',
+        'data-vb-embed-fit': objectFit,
+        'data-vb-embed-position': String(attrs['data-vb-bg-position'] ?? 'center'),
+        'aria-hidden': 'true',
+    });
+
+    embed.addStyle({
+        position: 'absolute',
+        inset: '0',
+        display: 'block',
+        overflow: 'hidden',
+        opacity,
+        'pointer-events': 'none',
+        '--vb-object-fit': objectFit,
+        '--vb-object-position': objectPosition,
+    });
+
+    const iframe = safeFindComponents(embed, 'iframe, .voodbuilder-hero-media__iframe')[0]
+        ?? safeFindComponents(section, '.voodbuilder-hero-media__iframe')[0];
+
+    if (! iframe) {
+        return;
+    }
+
+    if (embedSrc !== '') {
+        iframe.addAttributes({ src: embedSrc });
+    } else {
+        iframe.removeAttributes('src');
+    }
+
+    // Cover layout must not inherit inline-video host utilities (letterbox + chrome flash).
+    for (const className of ['w-full', 'aspect-video', 'rounded', 'vb-video-host']) {
+        if (iframe.getClasses?.().includes(className)) {
+            iframe.removeClass(className);
+        }
+    }
+
+    if (! iframe.getClasses?.().includes('voodbuilder-hero-media__iframe')) {
+        iframe.addClass('voodbuilder-hero-media__iframe');
+    }
+
+    const style = { ...(iframe.getStyle?.() ?? {}) };
+    delete style.width;
+    delete style.height;
+    delete style['max-width'];
+    delete style['max-height'];
+    delete style['aspect-ratio'];
+    iframe.setStyle?.(style);
+
+    iframe.addAttributes({
+        title: 'Background video',
+        frameborder: '0',
+        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+        allowfullscreen: 'allowfullscreen',
+        loading: 'eager',
+        referrerpolicy: 'strict-origin-when-cross-origin',
+    });
+}
+
+/**
+ * @param {import('grapesjs').Component} section
+ */
+function syncBackgroundVideoSection(section) {
+    const attrs = section.getAttributes?.() ?? {};
+    const provider = normalizeHeroVideoProvider(attrs['data-vb-video-provider']);
+    const minHeight = String(attrs['data-vb-min-height'] ?? '70vh');
+    const opacity = String(attrs['data-vb-bg-opacity'] ?? '1');
+    const objectFit = String(attrs['data-vb-bg-size'] ?? 'cover');
+    const objectPosition = objectPositionValue(String(attrs['data-vb-bg-position'] ?? 'center'));
+
+    section.addStyle({ 'min-height': minHeight });
+
+    const content = findHeroContentContainer(section);
+
+    if (content) {
+        content.addStyle({ 'min-height': minHeight });
+    }
+
+    if (! findHeroMediaHost(section)) {
+        return;
+    }
+
+    if (isHeroEmbedProvider(provider)) {
+        syncEmbedHeroVideo(section, attrs, provider, opacity, objectFit, objectPosition);
+
+        return;
+    }
+
+    syncNativeHeroVideo(section, attrs, opacity, objectFit, objectPosition);
 }
 
 /**
@@ -227,7 +481,7 @@ function registerBackgroundImageType(editor) {
         editor,
         'vb-bg-image',
         'vb-bg-image',
-        'Background image',
+        'Hero · background image',
         syncBackgroundImageSection,
         [
             { type: 'text', name: 'data-vb-bg-src', label: 'Background image URL', changeProp: true },
@@ -270,11 +524,42 @@ function registerBackgroundVideoType(editor) {
         editor,
         'vb-bg-video',
         'vb-bg-video',
-        'Background video',
+        'Hero · background video',
         syncBackgroundVideoSection,
         [
+            {
+                type: 'select',
+                name: 'data-vb-video-provider',
+                label: 'Source',
+                options: PROVIDER_OPTIONS,
+                changeProp: true,
+            },
+            { type: 'text', name: 'data-vb-video-id', label: 'YouTube / Vimeo ID', changeProp: true },
             { type: 'text', name: 'data-vb-video-src', label: 'Video URL', changeProp: true },
             { type: 'text', name: 'data-vb-video-poster', label: 'Poster image URL', changeProp: true },
+            {
+                type: 'select',
+                name: 'data-vb-bg-size',
+                label: 'Video fit',
+                options: BG_SIZE_OPTIONS,
+                changeProp: true,
+            },
+            {
+                type: 'select',
+                name: 'data-vb-bg-position',
+                label: 'Video position',
+                options: BG_POSITION_OPTIONS,
+                changeProp: true,
+            },
+            {
+                type: 'number',
+                name: 'data-vb-bg-opacity',
+                label: 'Video opacity',
+                min: 0.3,
+                max: 1,
+                step: 0.05,
+                changeProp: true,
+            },
             {
                 type: 'select',
                 name: 'data-vb-controls',

@@ -47,7 +47,6 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-audio',
         'voodbuilder-carousel',
         'voodbuilder-slider',
-        'voodbuilder-embed',
         // Single
         'voodbuilder-reading-time',
         'voodbuilder-reading-progress',
@@ -122,24 +121,26 @@ final class EditorCommunityBlockCatalog
     public const COMPANION_BLOCK_IDS = [
         // Hero extras
         'vb-hero-1', 'vb-hero-3', 'vb-hero-4', 'vb-hero-5', 'vb-hero-6',
-        'vb-landing01-hero', 'vb-landing02-hero', 'vb-nasa-hero', 'vb-bg-video',
+        'vb-landing01-hero', 'vb-landing02-hero', 'vb-hero-cinematic', 'vb-bg-video',
+        'vb-hero-plasma', 'vb-hero-aurora',
         // Content extras
         'vb-content-1', 'vb-content-2', 'vb-content-3', 'vb-content-4',
         'vb-content-6', 'vb-content-7', 'vb-content-8',
         'vb-landing01-solution', 'vb-landing02-trust', 'vb-landing02-impact',
-        'vb-nasa-teaser', 'vb-nasa-spotlight',
+        'vb-content-teaser-card', 'vb-content-spotlight-split',
         // Features extras
         'vb-feature-3', 'vb-feature-4', 'vb-feature-5', 'vb-feature-6',
         'vb-feature-7', 'vb-feature-8',
         'vb-landing01-features', 'vb-landing02-features', 'vb-landing02-toolkit',
         // Articles extras
         'vb-blog-2', 'vb-blog-3', 'vb-blog-4', 'vb-blog-5',
-        'vb-landing02-articles', 'vb-nasa-featured', 'vb-nasa-explore',
+        'vb-landing02-articles', 'vb-articles-featured-stories', 'vb-articles-explore-cards',
         // Gallery (entire category)
         'vb-gallery-1', 'vb-gallery-2', 'vb-gallery-3',
-        'vb-nasa-missions', 'vb-slider-images', 'vb-slider-videos',
+        'vb-gallery-mission-cards', 'vb-slider-images', 'vb-slider-videos',
         // Stats (entire category)
-        'vb-statistic-1', 'vb-statistic-2', 'vb-statistic-3', 'vb-nasa-stats',
+        'vb-statistic-1', 'vb-statistic-2', 'vb-statistic-3', 'vb-stats-cinematic-band',
+        'vb-stats-count-up', 'vb-stats-metrics-band',
         // Testimonials extras
         'vb-testimonial-3', 'vb-landing01-testimonials',
         // Team extras
@@ -150,6 +151,7 @@ final class EditorCommunityBlockCatalog
         'vb-pricing-1', 'vb-pricing-2',
         // CTA extras
         'vb-cta-2', 'vb-cta-3', 'vb-cta-4',
+        'vb-cta-glow-pulse', 'vb-cta-split-shimmer',
         // Contact (entire category)
         'vb-contact-1', 'vb-contact-2', 'vb-contact-3',
         // Shop (entire category)

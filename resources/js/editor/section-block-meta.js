@@ -63,8 +63,8 @@ export const BASIC_BLOCK_LABELS = {
     image: 'Image',
     video: 'Video',
     'voodbuilder-heading': 'Heading',
-    'voodbuilder-text': 'Basic Text',
-    'voodbuilder-rich-text': 'Rich Text',
+    'voodbuilder-text': 'Basic text',
+    'voodbuilder-rich-text': 'Rich text',
     'voodbuilder-text-link': 'Text link',
     'voodbuilder-button': 'Button',
     'voodbuilder-icon': 'Icon',
@@ -77,19 +77,35 @@ export const BASIC_BLOCK_LABELS = {
 
 /** @type {Record<string, string>} */
 export const SECTION_BLOCK_LABELS = {
+    // Hero
+    'vb-bg-image': 'Hero · background image',
+    'vb-bg-video': 'Hero · background video',
     'vb-hero-1': 'Hero · split text left',
     'vb-hero-2': 'Hero · centered',
     'vb-hero-3': 'Hero · split image left',
     'vb-hero-4': 'Hero · split newsletter',
     'vb-hero-5': 'Hero · split image + newsletter',
     'vb-hero-6': 'Hero · centered newsletter',
-    'vb-content-1': 'Text · 4 link columns',
-    'vb-content-2': 'Split · image cards',
-    'vb-content-3': 'Centered · icon grid',
-    'vb-content-4': 'Text · link columns',
-    'vb-content-5': 'Headline · CTA row',
-    'vb-content-6': 'Profile · split image',
-    'vb-content-8': 'Media · image cards',
+    'vb-hero-aurora': 'Hero · aurora glow',
+    'vb-hero-plasma': 'Hero · plasma glow',
+    'vb-hero-cinematic': 'Hero · cinematic full-bleed',
+    'vb-landing01-hero': 'Hero · gradient',
+    'vb-landing02-hero': 'Hero · editorial',
+    // Content
+    'vb-content-1': 'Content · 4 link columns',
+    'vb-content-2': 'Content · split image cards',
+    'vb-content-3': 'Content · centered icon grid',
+    'vb-content-4': 'Content · link columns',
+    'vb-content-5': 'Content · headline CTA row',
+    'vb-content-6': 'Content · profile split image',
+    'vb-content-7': 'Content · featured story CTA',
+    'vb-content-8': 'Content · media image cards',
+    'vb-content-teaser-card': 'Content · teaser with card',
+    'vb-content-spotlight-split': 'Content · spotlight split',
+    'vb-landing01-solution': 'Content · solution split',
+    'vb-landing02-impact': 'Content · impact split',
+    'vb-landing02-trust': 'Content · trust logos',
+    // Features
     'vb-feature-1': 'Features · icon grid',
     'vb-feature-2': 'Features · 2 cards',
     'vb-feature-3': 'Features · bordered grid',
@@ -98,20 +114,37 @@ export const SECTION_BLOCK_LABELS = {
     'vb-feature-6': 'Features · alternating icons',
     'vb-feature-7': 'Features · checklist',
     'vb-feature-8': 'Features · numbered rows',
+    'vb-landing01-features': 'Features · solution cards',
+    'vb-landing02-features': 'Features · 2×2 grid',
+    'vb-landing02-toolkit': 'Features · toolkit pills',
+    // Articles
     'vb-blog-1': 'Articles · card grid',
     'vb-blog-2': 'Articles · elevated cards',
     'vb-blog-3': 'Articles · split layout',
     'vb-blog-4': 'Articles · timeline',
     'vb-blog-5': 'Articles · dated list',
+    'vb-articles-featured-stories': 'Articles · featured stories',
+    'vb-articles-explore-cards': 'Articles · explore cards',
+    'vb-landing02-articles': 'Articles · duo',
+    // Gallery
     'vb-gallery-1': 'Gallery · full bleed',
     'vb-gallery-2': 'Gallery · 2×2 grid',
     'vb-gallery-3': 'Gallery · mosaic',
+    'vb-gallery-mission-cards': 'Gallery · mission cards',
+    'vb-slider-images': 'Gallery · image slider',
+    'vb-slider-videos': 'Gallery · video slider',
+    // Stats
     'vb-statistic-1': 'Stats · counters',
     'vb-statistic-2': 'Stats · with icons',
     'vb-statistic-3': 'Stats · bar chart',
-    'vb-testimonial-1': 'Quote · single card',
-    'vb-testimonial-2': 'Quote · avatar row',
-    'vb-testimonial-3': 'Quote · carousel style',
+    'vb-stats-count-up': 'Stats · count up',
+    'vb-stats-metrics-band': 'Stats · metrics band',
+    'vb-stats-cinematic-band': 'Stats · cinematic band',
+    // Testimonials / Team / Steps / Pricing
+    'vb-testimonial-1': 'Testimonials · single card',
+    'vb-testimonial-2': 'Testimonials · avatar row',
+    'vb-testimonial-3': 'Testimonials · carousel style',
+    'vb-landing01-testimonials': 'Testimonials · masonry',
     'vb-team-1': 'Team · member list',
     'vb-team-2': 'Team · cards',
     'vb-team-3': 'Team · large photos',
@@ -120,31 +153,46 @@ export const SECTION_BLOCK_LABELS = {
     'vb-step-3': 'Steps · timeline',
     'vb-pricing-1': 'Pricing · tiers',
     'vb-pricing-2': 'Pricing · comparison',
+    // CTA / Contact / Shop
     'vb-cta-1': 'CTA · headline + button',
     'vb-cta-2': 'CTA · split + signup',
     'vb-cta-3': 'CTA · centered form',
     'vb-cta-4': 'CTA · app download',
+    'vb-cta-glow-pulse': 'CTA · glow pulse',
+    'vb-cta-split-shimmer': 'CTA · split shimmer',
     'vb-contact-1': 'Contact · map + form',
     'vb-contact-2': 'Contact · map split',
     'vb-contact-3': 'Contact · centered form',
     'vb-ecommerce-1': 'Shop · product grid',
     'vb-ecommerce-2': 'Shop · featured product',
     'vb-ecommerce-3': 'Shop · compact row',
-    'voodbuilder-animated-cta': 'Animated CTA',
-    'voodbuilder-animated-counter': 'Animated counter',
-    'voodbuilder-animated-stats': 'Animated stats',
-    'voodbuilder-logo-scroll': 'Logo scroll',
-    'voodbuilder-logo-grid': 'Logo grid',
-    'voodbuilder-logo-split': 'Logo split',
-    'landing_navbar': 'Landing navbar',
-    'site_nav_simple': 'Navbar',
+    // Header / Footer (library chrome bands)
+    'vb-header-1': 'Header · logo links CTA',
+    'vb-header-2': 'Header · logo links solid CTA',
+    'vb-header-3': 'Header · centered logo',
+    'vb-header-4': 'Header · stacked brand',
+    'vb-footer-1': 'Footer · brand + columns',
+    'vb-footer-2': 'Footer · brand + newsletter',
+    'vb-footer-3': 'Footer · link columns',
+    'vb-footer-4': 'Footer · compact social',
+    'vb-footer-5': 'Footer · dense columns',
+    // Core animated / media / site
+    'voodbuilder-animated-cta': 'CTA · animated',
+    'voodbuilder-animated-counter': 'Stats · animated counter',
+    'voodbuilder-animated-stats': 'Stats · animated',
+    'voodbuilder-logo-scroll': 'Content · logo scroll',
+    'voodbuilder-logo-grid': 'Content · logo grid',
+    'voodbuilder-logo-split': 'Content · logo split',
+    'landing_navbar': 'Header · landing navbar',
+    'site_nav_simple': 'Header · site navbar',
     'site_footer_columns_simple': 'Footer · 4 columns',
-    'site_footer_columns_newsletter': 'Footer · newsletter + cols',
+    'site_footer_columns_newsletter': 'Footer · newsletter + columns',
     'site_footer_centered': 'Footer · centered',
     'site_footer_social': 'Footer · social bar',
-    'event_landing_footer': 'Event footer',
-    'voodbuilder-code-block': 'Code block',
-    'voodbuilder-form': 'Contact form',
+    'event_landing_footer': 'Footer · event',
+    'voodbuilder-code-block': 'Code · editable block',
+    'voodbuilder-form': 'Forms · contact',
+    'newsletter-form': 'Forms · newsletter',
     'voodbuilder-tabs-pills': 'Tabs · pills',
     'voodbuilder-tabs-underline': 'Tabs · underline',
     'voodbuilder-tabs-segmented': 'Tabs · segmented',
@@ -167,6 +215,18 @@ export const SECTION_BLOCK_LABELS = {
     checkbox: 'Checkbox',
     radio: 'Radio option',
 };
+
+/** Legacy catalog ids → canonical ids (layer label + attr migration). */
+export const SECTION_BLOCK_ID_ALIASES = {
+    'vb-nasa-hero': 'vb-hero-cinematic',
+    'vb-nasa-teaser': 'vb-content-teaser-card',
+    'vb-nasa-spotlight': 'vb-content-spotlight-split',
+    'vb-nasa-featured': 'vb-articles-featured-stories',
+    'vb-nasa-explore': 'vb-articles-explore-cards',
+    'vb-nasa-missions': 'vb-gallery-mission-cards',
+    'vb-nasa-stats': 'vb-stats-cinematic-band',
+};
+
 
 /** @type {Record<string, () => string>} */
 export const BLOCK_WIREFRAMES = {
@@ -431,8 +491,26 @@ export function unifyBlockCategories(editor) {
     });
 }
 
+export function resolveCanonicalBlockId(blockId) {
+    const id = String(blockId ?? '').trim();
+
+    if (! id) {
+        return '';
+    }
+
+    return SECTION_BLOCK_ID_ALIASES[id] ?? id;
+}
+
 export function resolveBlockLabel(blockId, fallback = '') {
-    return SECTION_BLOCK_LABELS[blockId] ?? fallback;
+    const id = String(blockId ?? '').trim();
+
+    if (! id) {
+        return fallback;
+    }
+
+    const canonical = resolveCanonicalBlockId(id);
+
+    return SECTION_BLOCK_LABELS[canonical] ?? SECTION_BLOCK_LABELS[id] ?? fallback;
 }
 
 export function resolveBlockWireframe(blockId) {

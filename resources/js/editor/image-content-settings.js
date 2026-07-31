@@ -8,9 +8,14 @@ import {
     createImageUrlField,
     createSelectField,
     createTextField,
+    createTextareaField,
 } from './editor-form-ui.js';
 import { CMD_EDIT_IMAGE, isDynamicallyBoundImage, isRasterEditableSrc } from './jodit-image-editor.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
+
+const CAPTION_DISPLAY_NONE = 'none';
+const CAPTION_DISPLAY_BELOW = 'below';
+const CAPTION_DISPLAY_OVERLAY = 'overlay';
 
 function runWithSettingsChangeGuard(editor, callback) {
     if (! editor || typeof callback !== 'function') {
@@ -53,6 +58,45 @@ function componentClasses(component) {
 }
 
 /**
+ * Flex/grid slot utilities that must live on the figure wrapper (not the img),
+ * otherwise wrapping for captions forces w-full and the image drops to the next row.
+ *
+ * @param {string} className
+ * @returns {boolean}
+ */
+function isLayoutSlotUtilityClass(className) {
+    const name = String(className ?? '').trim();
+
+    if (name === '' || name === 'vb-image' || name.startsWith('vb-image--')) {
+        return false;
+    }
+
+    return /^(?:!?(?:sm|md|lg|xl|2xl):)?(?:w-|min-w-|max-w-|flex-|grow(?:-\d+)?$|shrink(?:-0)?$|basis-|order-|self-|m[trblxyse]?-|!-?m[trblxyse]?-)/.test(name)
+        || name === 'grow'
+        || name === 'shrink'
+        || name === 'shrink-0';
+}
+
+/**
+ * @param {import('grapesjs').Component} from
+ * @param {import('grapesjs').Component} to
+ */
+function transferLayoutSlotClasses(from, to) {
+    for (const className of componentClasses(from).filter(isLayoutSlotUtilityClass)) {
+        from.removeClass(className);
+        to.addClass(className);
+    }
+}
+
+/**
+ * @param {import('grapesjs').Component} figure
+ * @returns {boolean}
+ */
+function figureHasWidthUtility(figure) {
+    return componentClasses(figure).some((className) => /^(?:!?(?:sm|md|lg|xl|2xl):)?w-/.test(className));
+}
+
+/**
  * @param {import('grapesjs').Component | null | undefined} component
  * @returns {boolean}
  */
@@ -66,6 +110,14 @@ export function isImageComponent(component) {
     }
 
     return componentTag(component) === 'img';
+}
+
+/**
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @returns {boolean}
+ */
+function isVbImageFigure(component) {
+    return componentTag(component) === 'figure' && componentClasses(component).includes('vb-image');
 }
 
 /**
@@ -95,6 +147,25 @@ function findHeroMediaImage(section) {
         section,
         '[data-voodbuilder-role="media"] img, .voodbuilder-hero-media__img',
     )[0];
+}
+
+/**
+ * @param {import('grapesjs').Component} figure
+ * @returns {import('grapesjs').Component | undefined}
+ */
+function findFigureImage(figure) {
+    return safeFindComponents(figure, 'img')[0]
+        ?? figure.findType?.('image')?.[0]
+        ?? figure.components?.()?.find?.((child) => isImageComponent(child));
+}
+
+/**
+ * @param {import('grapesjs').Component} figure
+ * @returns {import('grapesjs').Component | undefined}
+ */
+function findFigureCaption(figure) {
+    return safeFindComponents(figure, 'figcaption')[0]
+        ?? figure.components?.()?.find?.((child) => componentTag(child) === 'figcaption');
 }
 
 /**
@@ -158,6 +229,29 @@ export function resolveImageSettingsContext(component) {
         return null;
     }
 
+    if (isVbImageFigure(component) || (componentTag(component) === 'figure' && findFigureImage(component))) {
+        const image = findFigureImage(component);
+
+        if (! image || isDynamicallyBoundImage(image) || isHeroMediaImage(image)) {
+            return null;
+        }
+
+        return {
+            mode: 'image',
+            image,
+            section: null,
+            source: component,
+        };
+    }
+
+    if (componentTag(component) === 'figcaption') {
+        const figure = component.parent?.();
+
+        if (figure && (isVbImageFigure(figure) || findFigureImage(figure))) {
+            return resolveImageSettingsContext(figure);
+        }
+    }
+
     if (isImageComponent(component)) {
         if (isDynamicallyBoundImage(component)) {
             return null;
@@ -213,6 +307,188 @@ export function isImageSettingsComponent(component) {
  */
 function readImageSrc(image) {
     return String(image.get?.('src') ?? image.getAttributes?.()?.src ?? '').trim();
+}
+
+/**
+ * @param {import('grapesjs').Component} image
+ * @returns {{ caption: string, display: string }}
+ */
+function readCaptionState(image) {
+    const attrs = image.getAttributes?.() ?? {};
+    const parent = image.parent?.();
+    const parentAttrs = parent?.getAttributes?.() ?? {};
+    const caption = String(attrs['data-vb-caption'] ?? '').trim();
+    let display = String(
+        attrs['data-vb-caption-display']
+        ?? parentAttrs['data-vb-caption-display']
+        ?? CAPTION_DISPLAY_NONE,
+    ).trim();
+
+    if (! [CAPTION_DISPLAY_NONE, CAPTION_DISPLAY_BELOW, CAPTION_DISPLAY_OVERLAY].includes(display)) {
+        display = CAPTION_DISPLAY_NONE;
+    }
+
+    if (display === CAPTION_DISPLAY_NONE && parent && findFigureCaption(parent) && caption !== '') {
+        const classes = componentClasses(parent);
+
+        if (classes.includes('vb-image--caption-overlay')) {
+            display = CAPTION_DISPLAY_OVERLAY;
+        } else if (classes.includes('vb-image--caption-below') || isVbImageFigure(parent)) {
+            display = CAPTION_DISPLAY_BELOW;
+        }
+    }
+
+    const figcaption = parent ? findFigureCaption(parent) : null;
+    const fromFigcaption = figcaption
+        ? String(figcaption.get?.('content') ?? figcaption.view?.el?.textContent ?? '').trim()
+        : '';
+
+    return {
+        caption: caption || fromFigcaption,
+        display,
+    };
+}
+
+/**
+ * @param {import('grapesjs').Component} image
+ * @returns {import('grapesjs').Component | null}
+ */
+function ensureVbImageFigure(image) {
+    const parent = image.parent?.();
+
+    if (parent && isVbImageFigure(parent)) {
+        transferLayoutSlotClasses(image, parent);
+
+        return parent;
+    }
+
+    if (parent && componentTag(parent) === 'figure') {
+        parent.addClass('vb-image');
+        transferLayoutSlotClasses(image, parent);
+
+        if (! figureHasWidthUtility(parent) && componentClasses(image).includes('w-full')) {
+            parent.addClass('w-full');
+            image.removeClass('w-full');
+        }
+
+        return parent;
+    }
+
+    if (! parent?.append || typeof image.index !== 'function') {
+        return null;
+    }
+
+    const index = image.index();
+    const layoutClasses = componentClasses(image).filter(isLayoutSlotUtilityClass);
+    const figureClasses = ['vb-image', ...layoutClasses];
+
+    if (! layoutClasses.some((className) => /^(?:!?(?:sm|md|lg|xl|2xl):)?w-/.test(className))) {
+        figureClasses.push('w-full');
+    }
+
+    const appended = parent.append({
+        tagName: 'figure',
+        classes: figureClasses,
+        attributes: {
+            'data-vb-image': '',
+        },
+    }, { at: index });
+
+    const figure = Array.isArray(appended) ? appended[0] : appended;
+
+    if (! figure) {
+        return null;
+    }
+
+    image.move(figure, { at: 0 });
+    transferLayoutSlotClasses(image, figure);
+
+    return figure;
+}
+
+/**
+ * @param {import('grapesjs').Component} captionEl
+ * @param {string} text
+ */
+function setFigcaptionText(captionEl, text) {
+    if (typeof captionEl.components === 'function') {
+        captionEl.components(text);
+    }
+
+    captionEl.set?.('content', text);
+}
+
+/**
+ * @param {import('grapesjs').Component} image
+ * @param {{ caption?: string, display?: string }} values
+ */
+function syncImageCaption(image, values) {
+    const caption = String(values.caption ?? '').trim();
+    const display = [CAPTION_DISPLAY_BELOW, CAPTION_DISPLAY_OVERLAY].includes(String(values.display ?? ''))
+        ? String(values.display)
+        : CAPTION_DISPLAY_NONE;
+
+    image.addAttributes({
+        'data-vb-caption': caption || null,
+        'data-vb-caption-display': display === CAPTION_DISPLAY_NONE ? null : display,
+    });
+
+    const parent = image.parent?.();
+
+    if (display === CAPTION_DISPLAY_NONE || caption === '') {
+        if (parent && (isVbImageFigure(parent) || componentTag(parent) === 'figure')) {
+            const existing = findFigureCaption(parent);
+
+            if (existing) {
+                existing.remove();
+            }
+
+            parent.removeClass('vb-image--caption-below');
+            parent.removeClass('vb-image--caption-overlay');
+            parent.addAttributes({ 'data-vb-caption-display': null });
+
+            const remaining = parent.components?.() ?? [];
+            const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
+
+            if (onlyImage && isVbImageFigure(parent) && parent.parent?.()) {
+                const grandParent = parent.parent();
+                const at = parent.index();
+                transferLayoutSlotClasses(parent, image);
+                image.move(grandParent, { at });
+                parent.remove();
+            }
+        }
+
+        return;
+    }
+
+    const figure = ensureVbImageFigure(image);
+
+    if (! figure) {
+        return;
+    }
+
+    figure.removeClass('vb-image--caption-below');
+    figure.removeClass('vb-image--caption-overlay');
+    figure.addClass(display === CAPTION_DISPLAY_OVERLAY ? 'vb-image--caption-overlay' : 'vb-image--caption-below');
+    figure.addAttributes({ 'data-vb-caption-display': display });
+
+    let captionEl = findFigureCaption(figure);
+
+    if (! captionEl) {
+        const appended = figure.append({
+            tagName: 'figcaption',
+            classes: ['vb-image__caption'],
+            content: caption,
+        });
+
+        captionEl = Array.isArray(appended) ? appended[0] : appended;
+    }
+
+    if (captionEl) {
+        captionEl.addClass?.('vb-image__caption');
+        setFigcaptionText(captionEl, caption);
+    }
 }
 
 /**
@@ -337,6 +613,9 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
     let src = readImageSrc(image);
     let alt = String(image.getAttributes?.()?.alt ?? '');
+    const captionState = readCaptionState(image);
+    let caption = captionState.caption;
+    let captionDisplay = captionState.display;
     const imageStyle = image.getStyle?.() ?? {};
     let opacity = String(
         section?.getAttributes?.()?.['data-vb-bg-opacity']
@@ -391,6 +670,51 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
         });
 
         fields.append(altField);
+
+        const { field: captionField, input: captionInput } = createTextareaField({
+            label: labels.imageSettingsCaption ?? 'Caption',
+            name: 'imageCaption',
+            value: caption,
+            rows: 2,
+            placeholder: labels.imageSettingsCaptionPlaceholder ?? 'Optional caption',
+        });
+
+        captionInput.addEventListener('change', () => {
+            caption = String(captionInput.value ?? '').trim();
+            runWithSettingsChangeGuard(editor, () => {
+                syncImageCaption(image, { caption, display: captionDisplay });
+            });
+        });
+
+        fields.append(captionField);
+
+        fields.append(
+            createSelectField({
+                label: labels.imageSettingsCaptionDisplay ?? 'Caption display',
+                name: 'imageCaptionDisplay',
+                value: captionDisplay,
+                options: [
+                    {
+                        value: CAPTION_DISPLAY_NONE,
+                        label: labels.imageSettingsCaptionDisplayNone ?? 'None (manual)',
+                    },
+                    {
+                        value: CAPTION_DISPLAY_BELOW,
+                        label: labels.imageSettingsCaptionDisplayBelow ?? 'Below image',
+                    },
+                    {
+                        value: CAPTION_DISPLAY_OVERLAY,
+                        label: labels.imageSettingsCaptionDisplayOverlay ?? 'Overlay',
+                    },
+                ],
+                onChange: (value) => {
+                    captionDisplay = value;
+                    runWithSettingsChangeGuard(editor, () => {
+                        syncImageCaption(image, { caption, display: value });
+                    });
+                },
+            }),
+        );
     }
 
     if (mode === 'hero') {
@@ -475,7 +799,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     hint.className = 'voodbuilder-editor-hint';
     hint.textContent = mode === 'hero'
         ? (labels.imageSettingsHeroHint ?? 'Choose a photo for the hero background. SVG placeholders cannot be cropped until you upload a real image.')
-        : (labels.imageSettingsHint ?? 'Choose or upload an image. Dynamic bindings hide these controls.');
+        : (labels.imageSettingsCaptionHint ?? labels.imageSettingsHint ?? 'Choose or upload an image. Use “None” to keep the caption in data attributes and place text manually.');
     fields.append(hint);
 
     mount.appendChild(form);

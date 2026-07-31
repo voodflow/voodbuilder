@@ -8,7 +8,10 @@ Contesto tipico del problema: hero a strati (media assoluto + shade + contenuto 
 
 ## 1. Principi non negoziabili
 
-1. **Editor ≈ pubblico** — layout critico (cover hero, absolute fill) non deve dipendere solo da utility Tailwind JIT fragili. Usa classi CSS stabili in `section-utilities.css` (es. `.voodbuilder-hero-media__img`) e/o `style=""` inline per `position/inset/width/height/object-fit`.
+1. **Editor ≈ pubblico**
+   - Layout degli **Elements di libreria** = **utility Tailwind nell’HTML** (compilate dal page JIT su canvas e su `#voodbuilder-page-css`). Classi BEM (`voodbuilder-slider__*`, …) solo come hook JS/selector — **non** come fogli CSS per-elemento in `theme.css`.
+   - Cover/media che non sono esprimibili come utility (hero absolute fill, container queries) restano in `theme.css` / classi stabili (es. `.voodbuilder-hero-media__img`) e/o `style=""`.
+   - Il normalizer `EditorLibraryLayoutNormalizer` unisce utility obbligatorie sugli hook strutturali noti (save + catalogo + render pubblico), così editor e frontend restano allineati senza CSS ad hoc.
 2. **Una responsabilità per layer** — media, shade, contenuto editabile sono nodi distinti e nominati.
 3. **Drop solo dove ha senso** — zone drop esplicite; layer decorativi non droppable.
 4. **Content panel prima del click sul canvas** — media e CTA devono avere trait/opzioni quando selezioni la section o lo slot contenuto.
@@ -102,7 +105,7 @@ Quando è selezionata la **section** (o lo slot `content`), esporre trait tipo:
 
 Pattern consigliato:
 
-1. Custom component type sulla section (`vb-nasa-hero`, ecc.) con `traits` che scrivono sull’img figlia.
+1. Custom component type sulla section (`vb-hero-cinematic`, ecc.) con `traits` che scrivono sull’img figlia.
 2. Oppure trait sull’img con `name: 'Hero image'` e section che, in `init`, promuove quel trait a livello section.
 3. L’img resta nel DOM (meglio per accessibilità / SEO) ma il **controllo UX** sta nel Content panel.
 

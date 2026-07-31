@@ -3,6 +3,8 @@
  * @see https://tailwindcss.com/plus/ui-blocks/application-ui/forms/input-groups
  */
 
+import { openMediaAssets } from './editor-assets.js';
+
 function fieldId(name) {
     return `voodbuilder-editor-field-${String(name).replace(/[^a-z0-9_-]/gi, '-')}`;
 }
@@ -503,8 +505,22 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
 }
 
 /**
- * Image media field with Editor AssetManager picker.
- * Path/URL text input is hidden by default (local media only).
+ * Media URL field with Editor AssetManager picker.
+ * Path/URL text input is hidden by default for images (local media only).
+ *
+ * @param {{
+ *   label: string,
+ *   name: string,
+ *   value?: string,
+ *   editor?: object|null,
+ *   chooseLabel?: string,
+ *   clearLabel?: string,
+ *   hidePathInput?: boolean,
+ *   assetTypes?: string[],
+ *   previewMode?: 'image'|'video'|'none',
+ *   placeholder?: string,
+ *   onChange?: (url: string) => void,
+ * }} args
  */
 export function createImageUrlField({
     label,
@@ -514,6 +530,9 @@ export function createImageUrlField({
     chooseLabel = 'Choose',
     clearLabel = 'Clear',
     hidePathInput = true,
+    assetTypes = ['image'],
+    previewMode = 'image',
+    placeholder = 'https://… or /storage/…',
     onChange,
 }) {
     const id = fieldId(name);
@@ -543,7 +562,7 @@ export function createImageUrlField({
     input.dataset.setting = name;
 
     if (! hidePathInput) {
-        input.placeholder = 'https://… or /storage/…';
+        input.placeholder = placeholder;
     }
 
     const actions = document.createElement('div');
@@ -562,7 +581,7 @@ export function createImageUrlField({
     const syncPreview = () => {
         const src = String(input.value ?? '').trim();
 
-        if (src === '') {
+        if (src === '' || previewMode === 'none') {
             preview.replaceChildren();
             preview.hidden = true;
 
@@ -570,6 +589,26 @@ export function createImageUrlField({
         }
 
         preview.hidden = false;
+
+        if (previewMode === 'video') {
+            let video = preview.querySelector('video');
+
+            if (! video) {
+                video = document.createElement('video');
+                video.muted = true;
+                video.playsInline = true;
+                video.setAttribute('playsinline', '');
+                video.preload = 'metadata';
+                preview.replaceChildren(video);
+            }
+
+            if (video.getAttribute('src') !== src) {
+                video.setAttribute('src', src);
+            }
+
+            return;
+        }
+
         let img = preview.querySelector('img');
 
         if (! img) {
@@ -598,31 +637,31 @@ export function createImageUrlField({
         event.preventDefault();
         event.stopPropagation();
 
-        const assets = editor?.Assets ?? editor?.AssetManager;
-
-        if (! assets || typeof assets.open !== 'function') {
+        if (! editor) {
             return;
         }
 
         const selectedBefore = editor?.getSelected?.() ?? null;
+        const types = Array.isArray(assetTypes) && assetTypes.length > 0 ? assetTypes : ['image'];
+        const labels = editor?.getConfig?.()?.voodbuilderLabels
+            ?? editor?.__voodbuilderLabels
+            ?? {};
+        const kinds = types.includes('video') && ! types.includes('image')
+            ? ['video']
+            : (types.includes('video') ? ['video', 'image'] : ['image']);
+        // Cover/poster fields pass assetTypes:['image'] — never inherit video AM copy.
+        const labelKind = types.includes('image') && ! types.includes('video')
+            ? 'image'
+            : (types.includes('video') && ! types.includes('image') ? 'video' : 'image');
 
-        assets.open({
-            types: ['image'],
-            select(asset, complete) {
-                const src = typeof asset?.getSrc === 'function'
-                    ? asset.getSrc()
-                    : (asset?.get?.('src') ?? asset?.src ?? '');
-
-                if (src) {
-                    input.value = src;
-                    emit();
-                }
-
-                if (typeof assets.close === 'function') {
-                    assets.close();
-                } else if (complete) {
-                    // no-op
-                }
+        openMediaAssets({
+            editor,
+            kinds,
+            labelKind,
+            labels,
+            onSelect: (src) => {
+                input.value = src;
+                emit();
 
                 if (selectedBefore && editor?.getSelected?.() !== selectedBefore) {
                     window.requestAnimationFrame(() => {

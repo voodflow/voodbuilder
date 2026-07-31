@@ -122,33 +122,7 @@
         width: 100%;
     }
 
-    /* Hero media + media frames: defined in theme.css (public + canvas via @import). */
-
-    .voodbuilder-slider__track {
-        display: flex;
-        gap: 1rem;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .voodbuilder-slider__track::-webkit-scrollbar {
-        display: none;
-    }
-
-    .voodbuilder-slider__slide {
-        flex: 0 0 85%;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-    }
-
-    @media (min-width: 768px) {
-        .voodbuilder-slider__slide {
-            flex-basis: 40%;
-        }
-    }
+    /* Hero media + media frames + sliders: defined in theme.css (public + canvas). */
 }
 
 @keyframes voodbuilder-brand-pulse {

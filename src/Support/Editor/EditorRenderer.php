@@ -37,8 +37,12 @@ final class EditorRenderer
             EditorFormNormalizer::normalizeForPage(
                 EditorStepTabsNormalizer::normalize(
                     EditorCodeBlockNormalizer::normalize(
-                        VoodbuilderThemeTokenMigrator::migrateHtml(
-                            EditorHtmlSanitizer::sanitize($html),
+                        EditorHeroBackgroundNormalizer::normalize(
+                            EditorLibraryLayoutNormalizer::normalize(
+                                VoodbuilderThemeTokenMigrator::migrateHtml(
+                                    EditorHtmlSanitizer::sanitize($html),
+                                ),
+                            ),
                         ),
                     ),
                 ),
@@ -51,7 +55,7 @@ final class EditorRenderer
     {
         $globalCss = ComponentRuntimeBridge::globalClassCss();
         $payload = $page->builder_payload ?? [];
-        $html = (string) ($payload['html'] ?? '');
+        $html = EditorLibraryLayoutNormalizer::normalize((string) ($payload['html'] ?? ''));
         $componentCss = ComponentRuntimeBridge::componentCssForHtml($html);
         $storedPageCss = $payload['css'] ?? null;
         $pageCss = EditorPastedComponentNormalizer::resolvePublishedPageCss(

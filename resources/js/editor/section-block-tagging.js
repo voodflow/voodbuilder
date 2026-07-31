@@ -4,6 +4,7 @@
 
 import { syncLayerDisplayName } from './layer-display-name.js';
 import { isComponentBlockId } from './component-block-utils.js';
+import { resolveCanonicalBlockId } from './section-block-meta.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 function findSectionRoot(component) {
@@ -36,8 +37,18 @@ function tagSectionBlockFromDrop(component, block, editor) {
     }
 
     const attrs = section.getAttributes?.() ?? {};
+    const existingId = String(attrs['data-voodbuilder-section-block'] ?? '').trim();
 
-    if (attrs['data-voodbuilder-section-block']) {
+    if (existingId) {
+        const canonical = resolveCanonicalBlockId(existingId);
+
+        if (canonical && canonical !== existingId) {
+            section.addAttributes({ 'data-voodbuilder-section-block': canonical });
+            syncLayerDisplayName(section, editor, { force: true });
+
+            return;
+        }
+
         syncLayerDisplayName(section, editor);
 
         return;
@@ -88,12 +99,28 @@ function migrateLegacySectionBlocks(editor) {
         return;
     }
 
-    safeFindComponents(wrapper, 'section').forEach((section) => {
+    safeFindComponents(wrapper, 'section, header, footer').forEach((section) => {
         const attrs = section.getAttributes?.() ?? {};
+        const existingId = String(attrs['data-voodbuilder-section-block'] ?? '').trim();
 
-        if (attrs['data-voodbuilder-section-block']) {
+        if (existingId) {
+            const canonical = resolveCanonicalBlockId(existingId);
+
+            if (canonical && canonical !== existingId) {
+                section.addAttributes({ 'data-voodbuilder-section-block': canonical });
+                syncLayerDisplayName(section, editor, { force: true });
+
+                return;
+            }
+
             syncLayerDisplayName(section, editor);
 
+            return;
+        }
+
+        const tag = String(section.get?.('tagName') ?? '').toLowerCase();
+
+        if (tag !== 'section') {
             return;
         }
 

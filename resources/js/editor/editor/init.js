@@ -12,6 +12,7 @@ import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';
 import { createInspectorEmptyState } from '../inspector-empty-state.js';
+import { loadMediaLibrary, registerVideoAssetType } from '../editor-assets.js';
 import voodbuilderEditorPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
@@ -224,15 +225,17 @@ function applyInitialContent(editor, initial) {
         }
     }
 
-    if (! initial.html?.trim() || hasCanvas) {
-        return;
-    }
-
-    // CssComposer #id paints → component inline so Style Manager / reload keep them.
+    // Always hydrate #id → inline so Style Manager shows fonts/colors after reload,
+    // including when pageManager already filled the canvas (hasCanvas=true).
     try {
         bakeAuthorStylesToComposerForExport(editor);
+        hydrateAuthorStylesFromIdRules(editor);
     } catch {
         // Ignore hydrate errors during early boot.
+    }
+
+    if (! initial.html?.trim()) {
+        return;
     }
 
     try {
@@ -771,6 +774,10 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     const editor = grapesjs.init(editorOptions);
 
+    editor.__voodbuilderLabels = labels;
+    registerVideoAssetType(editor);
+    void loadMediaLibrary(editor, options.mediaLibraryUrl ?? null);
+
     exposeEditorBridge();
 
     try {
@@ -788,6 +795,10 @@ export function initVoodbuilderEditor(container, options = {}) {
         chromeLayoutMode: Boolean(options.chromeLayoutMode),
         conditionsEnabled: options.conditionsEnabled !== false,
     });
+
+    // Entitlements before companion mount — plugins gate UI on EditorGate flags.
+    editor.__voodbuilderEntitlements = options.entitlements ?? {};
+    editor.__voodbuilderLabels = labels;
 
     void bootEditorPlugins(editor, {
         labels,
@@ -812,8 +823,6 @@ export function initVoodbuilderEditor(container, options = {}) {
         csrf: options.csrf ?? '',
     });
 
-    editor.__voodbuilderLabels = labels;
-    editor.__voodbuilderEntitlements = options.entitlements ?? {};
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;

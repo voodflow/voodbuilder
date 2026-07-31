@@ -2466,22 +2466,62 @@ export function registerVisualStyleInspector(editor) {
         // paints from the model while the canvas still showed cached CSS.
         const explicitClear = event?.opts?.__clear === true;
 
-        if (! explicitClear) {
+        if (explicitClear) {
+            clearStyleProperty(editor, selected, propertyName, {
+                family: isBackgroundPaintProperty(propertyName),
+            });
+
+            if (isBackgroundPaintProperty(propertyName)) {
+                clearBackgroundCssRules(editor, selected);
+            }
+
+            window.requestAnimationFrame(() => {
+                const target = resolveVisualStyleTarget(selected);
+                editor.StyleManager.select(target, { component: selected });
+            });
+
             return;
         }
 
-        clearStyleProperty(editor, selected, propertyName, {
-            family: isBackgroundPaintProperty(propertyName),
-        });
+        // Persist every SM paint onto unique #id + inline immediately — do not wait
+        // for Save bake. Chrome-shell export previously relied only on getCss() and
+        // dropped paints that never became #id rules (fonts/colors vanished on reload).
+        const raw = String(value ?? '').trim();
 
-        if (isBackgroundPaintProperty(propertyName)) {
-            clearBackgroundCssRules(editor, selected);
+        if (raw === '' || raw === 'undefined') {
+            return;
         }
 
-        window.requestAnimationFrame(() => {
-            const target = resolveVisualStyleTarget(selected);
-            editor.StyleManager.select(target, { component: selected });
-        });
+        const target = resolveVisualStyleTarget(selected) ?? selected;
+        const needsImportant = EXPORT_PAINT_PROPERTIES.includes(propertyName)
+            || propertyName === 'font-family'
+            || propertyName === 'font-size'
+            || propertyName === 'font-weight'
+            || propertyName === 'letter-spacing'
+            || propertyName === 'line-height'
+            || propertyName === 'color'
+            || propertyName.startsWith('background')
+            || propertyName.startsWith('border')
+            || propertyName === 'box-shadow'
+            || propertyName === 'text-shadow';
+        const persistValue = needsImportant ? ensureImportantStyleValue(raw) : raw;
+        const inlineValue = String(persistValue).replace(/\s*!important\s*$/i, '').trim();
+
+        try {
+            target.addStyle?.({ [propertyName]: inlineValue }, { inline: true });
+        } catch {
+            // ignore
+        }
+
+        const targetId = target.getId?.();
+
+        if (targetId && editor.Css?.setIdRule) {
+            const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(targetId, {
+                ...existing,
+                [propertyName]: persistValue,
+            });
+        }
     });
 }
 
@@ -2542,7 +2582,20 @@ export function registerVisualStyleTarget(editor) {
         }
 
         component.removeStyle(property);
-        target.addStyle({ [property]: ensureImportantStyleValue(value) });
+        // Always persist on the visual target as inline + #id so chrome-shell
+        // export (and reload) does not depend on private .c* classes.
+        target.addStyle({ [property]: ensureImportantStyleValue(value) }, { inline: true });
+
+        const targetId = target.getId?.();
+
+        if (targetId && editor.Css?.setIdRule) {
+            const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(targetId, {
+                ...existing,
+                [property]: ensureImportantStyleValue(value),
+            });
+        }
+
         target.view?.updateStyles?.();
     });
 }

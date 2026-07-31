@@ -225,15 +225,19 @@
     .voodbuilder-hero-media {
         position: absolute;
         inset: 0;
+        z-index: 0;
         overflow: hidden;
         /* Never inherit layout-container width (mx-auto / max-w) if mis-tagged. */
         width: auto;
         max-width: none;
         margin-inline: 0;
+        /* Let the content layer / hit shield own the cursor — YouTube title
+           otherwise appears on hover wherever the layout container does not cover. */
+        pointer-events: none;
     }
 
     .voodbuilder-hero-media__img,
-    .voodbuilder-hero-media__video {
+    .voodbuilder-hero-media__video:where(video) {
         position: absolute;
         inset: 0;
         display: block;
@@ -242,6 +246,103 @@
         max-width: none;
         object-fit: var(--vb-object-fit, cover);
         object-position: var(--vb-object-position, center);
+    }
+
+    /**
+     * YouTube / Vimeo background: keep a true 16:9 iframe and cover the host.
+     * Viewport vw/vh math fails on tall mobile heroes (70vh) and letterboxes the
+     * player (chrome visible). Size against the media host via container queries,
+     * then scale slightly so provider UI at the edges stays cropped.
+     */
+    .voodbuilder-hero-media__embed,
+    .voodbuilder-hero-media:has(> iframe) {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background-color: inherit;
+        container-type: size;
+        container-name: vb-hero-media;
+    }
+
+    .voodbuilder-hero-media iframe,
+    .voodbuilder-hero-media__iframe {
+        position: absolute !important;
+        top: 50%;
+        left: 50%;
+        border: 0 !important;
+        pointer-events: none !important;
+        max-width: none !important;
+        max-height: none !important;
+        aspect-ratio: auto !important;
+        /* CQ fallback; hero-video-runtime.js overwrites with px cover on boot. */
+        width: 177.78cqh !important;
+        height: 100cqh !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        /* Scale past 1.2 so the YouTube title strip (top) stays outside overflow. */
+        transform: translate(-50%, -50%) scale(1.35);
+        transition: opacity 0.35s ease;
+    }
+
+    @container vb-hero-media (min-aspect-ratio: 16/9) {
+        .voodbuilder-hero-media iframe,
+        .voodbuilder-hero-media__iframe {
+            width: 100cqw !important;
+            height: calc(100cqw * 9 / 16) !important;
+        }
+    }
+
+    @container vb-hero-media (max-aspect-ratio: 16/9) {
+        .voodbuilder-hero-media iframe,
+        .voodbuilder-hero-media__iframe {
+            height: 100cqh !important;
+            width: calc(100cqh * 16 / 9) !important;
+        }
+    }
+
+    /* Runtime sets .is-pending before load so YouTube chrome never flashes. */
+    .voodbuilder-hero-media iframe.is-pending,
+    .voodbuilder-hero-media__iframe.is-pending {
+        opacity: 0;
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-position='top'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        transform: translate(-50%, -40%) scale(1.35);
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-position='bottom'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        transform: translate(-50%, -60%) scale(1.35);
+    }
+
+    /**
+     * Re-enable hit-testing above the iframe (parent has pointer-events: none)
+     * so empty areas beside a max-width content column never hover YouTube.
+     */
+    .voodbuilder-hero-media__hit {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: auto;
+    }
+
+    .voodbuilder-editor-section:has(> .voodbuilder-hero-media) > [data-voodbuilder-role='content'],
+    .voodbuilder-editor-section:has(> .voodbuilder-hero-media) > .voodbuilder-editor-container {
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-fit='contain'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        width: 100% !important;
+        height: 100% !important;
+        transform: translate(-50%, -50%);
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-fit='fill'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        width: 100% !important;
+        height: 100% !important;
+        transform: translate(-50%, -50%);
     }
 
     .voodbuilder-hero-media__shade {

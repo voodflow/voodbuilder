@@ -41,7 +41,7 @@ HTML;
 
         $this->assertStringContainsString('Nav', $rendered['before']);
         $this->assertStringContainsString('Foot', $rendered['after']);
-        $this->assertStringContainsString('.chrome { color: red; }', $rendered['css']);
+        $this->assertStringContainsString('[data-voodbuilder-chrome-shell] .chrome { color: red; }', $rendered['css']);
         $this->assertSame('console.log("chrome");', $rendered['js']);
     }
 
@@ -59,6 +59,24 @@ HTML;
 
         $rendered = app(ChromeLayoutRenderer::class)->render($layout);
 
-        $this->assertSame($rule, $rendered['css']);
+        $this->assertSame('[data-voodbuilder-chrome-shell] .chrome { color: red; }', $rendered['css']);
+    }
+
+    public function test_render_scopes_base_utilities_so_they_do_not_leak_to_page_content(): void
+    {
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Utility shell',
+            'slug' => 'utility-shell',
+            'html' => '<header class="w-full">Nav</header><div data-voodbuilder-content-slot="main"></div>',
+            'css' => ".w-full { width: 100%; }\n@media (min-width: 64rem) {\n  .lg\\:w-1\\/2 { width: 50%; }\n}",
+            'js' => '',
+            'enabled' => true,
+        ]);
+
+        $rendered = app(ChromeLayoutRenderer::class)->render($layout);
+
+        $this->assertStringContainsString('[data-voodbuilder-chrome-shell] .w-full { width: 100%; }', $rendered['css']);
+        $this->assertStringContainsString('[data-voodbuilder-chrome-shell] .lg\\:w-1\\/2 { width: 50%; }', $rendered['css']);
+        $this->assertStringNotContainsString("\n.w-full {", "\n".$rendered['css']);
     }
 }

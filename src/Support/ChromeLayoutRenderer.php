@@ -27,8 +27,10 @@ final class ChromeLayoutRenderer
 
         return [
             ...$this->splitAroundContentSlot($html),
-            'css' => EditorPastedComponentNormalizer::dedupeCssRules(
-                ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
+            'css' => ChromeLayoutCssScoper::scope(
+                EditorPastedComponentNormalizer::dedupeCssRules(
+                    ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
+                ),
             ),
             'js' => trim($payload['js']),
         ];

@@ -109,9 +109,9 @@
     @if ($suppressHostChrome)
         <style id="voodbuilder-editor-host-chrome-critical">{!! EditorHostChrome::criticalHideCss() !!}</style>
     @endif
-    {{-- Page JIT CSS must load before chrome CSS: page sheets often re-emit base utilities
-         (.flex-wrap, .w-full, .text-center) without md: variants and would otherwise win the
-         cascade over the chrome layout's complete responsive rules. --}}
+    {{-- Page JIT CSS before chrome CSS: page sheets often re-emit base utilities without md:
+         variants. Chrome CSS is scoped to [data-voodbuilder-chrome-shell] so its .w-full (etc.)
+         cannot override page responsive utilities such as lg:w-1/2. --}}
     {{-- Livewire assets auto-inject only when a component is on the page (inject_assets=true). --}}
     @stack('head')
     @if ($chromeRendered['css'] !== '')
