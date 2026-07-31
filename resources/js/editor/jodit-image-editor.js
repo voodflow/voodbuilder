@@ -390,13 +390,15 @@ function pathinfoFilename(value) {
  * @returns {string}
  */
 function sanitizeUploadBaseName(value) {
-    return String(value ?? '')
+    const cleaned = String(value ?? '')
         .trim()
         .replace(/[^\p{L}\p{N}\-_ .]+/gu, '-')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
-        .slice(0, 120) || 'image';
+        .slice(0, 120);
+
+    return cleaned;
 }
 
 /**
@@ -415,7 +417,7 @@ async function blobToUploadFile(blob, type = 'image/jpeg', quality = 0.88, displ
 
     const extension = type === 'image/png' ? 'png' : (type === 'image/webp' ? 'webp' : 'jpg');
     const mime = output.type || type;
-    const base = sanitizeUploadBaseName(displayName);
+    const base = sanitizeUploadBaseName(displayName) || 'edited-image';
 
     return new File([output], `${base}.${extension}`, { type: mime });
 }
