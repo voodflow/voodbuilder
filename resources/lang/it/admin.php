@@ -7,6 +7,7 @@ return [
         'group' => 'Voodbuilder',
         'menus' => 'Menu',
         'pages' => 'Pagine',
+        'media_library' => 'Libreria media',
         'settings' => 'Impostazioni',
         'content_channels' => 'Temi canali',
         'footer_column_placement' => 'Footer colonna :number',
@@ -154,5 +155,17 @@ return [
         'layout_auto_home' => 'Usa tutta la larghezza edge-to-edge (consigliato per la home del sito).',
         'layout_auto_page' => 'Usa la larghezza contenuta della pagina standard.',
         'sub_theme_marketing_recommended' => 'Le pagine a tutta larghezza funzionano meglio con un tema marketing (Site o il tuo tema custom).',
+    ],
+
+    'media_library' => [
+        'title' => 'Libreria media',
+        'save' => 'Salva libreria media',
+        'saved' => 'Libreria media salvata',
+        'intro' => 'Carica immagini e video una volta e riutilizzali dall’Asset Manager dell’editor visuale o su qualsiasi pagina. I file sono gestiti con Spatie Media Library.',
+        'images' => 'Immagini',
+        'images_help' => 'Immagini riutilizzabili per il page builder (hero, contenuti, loghi).',
+        'videos' => 'Video',
+        'videos_help' => 'MP4/WebM self-hosted per sezioni video di sfondo.',
+        'empty' => 'Nessun media. Carica file da Admin → Libreria media oppure dall’editor visuale.',
     ],
 ];

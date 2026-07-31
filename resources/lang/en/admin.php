@@ -7,6 +7,7 @@ return [
         'group' => 'Voodbuilder',
         'menus' => 'Menus',
         'pages' => 'Pages',
+        'media_library' => 'Media library',
         'settings' => 'Settings',
         'content_channels' => 'Channel themes',
         'footer_column_placement' => 'Footer column :number',
@@ -154,5 +155,17 @@ return [
         'layout_auto_home' => 'Uses full width edge-to-edge (recommended for the site home).',
         'layout_auto_page' => 'Uses a standard contained page width.',
         'sub_theme_marketing_recommended' => 'Full-width pages work best with a marketing theme (Site or your custom theme).',
+    ],
+
+    'media_library' => [
+        'title' => 'Media library',
+        'save' => 'Save media library',
+        'saved' => 'Media library saved',
+        'intro' => 'Upload images and videos once, then reuse them from the visual editor Asset Manager or on any page. Files are stored with Spatie Media Library.',
+        'images' => 'Images',
+        'images_help' => 'Reusable images for the page builder (hero, content, logos).',
+        'videos' => 'Videos',
+        'videos_help' => 'Self-hosted MP4/WebM for background video sections.',
+        'empty' => 'No media yet. Upload files in Admin → Media library, or from the visual editor.',
     ],
 ];

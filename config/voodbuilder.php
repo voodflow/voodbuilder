@@ -37,6 +37,9 @@ return [
         'pages' => [
             'enabled' => env('VOODBUILDER_MODULE_PAGES', true),
         ],
+        'media_library' => [
+            'enabled' => env('VOODBUILDER_MODULE_MEDIA_LIBRARY', true),
+        ],
         'dynamic_data' => [
             'enabled' => env('VOODBUILDER_MODULE_DYNAMIC_DATA', true),
         ],
@@ -192,6 +195,14 @@ return [
         'social_max_size' => 4096,
     ],
 
+    /*
+    | Reusable site media (Spatie Media Library + Filament Spatie plugin).
+    | Managed in Admin → Media library; Editor AssetManager lists the same collections.
+    */
+    'media_library' => [
+        'enabled' => env('VOODBUILDER_MEDIA_LIBRARY_ENABLED', true),
+    ],
+
     'notifications' => [
         'enabled' => true,
     ],
@@ -336,6 +347,8 @@ return [
             'directory' => 'voodbuilder',
             // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
             'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192)),
+            // Self-hosted MP4/WebM for Video / hero backgrounds (KB).
+            'video_max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_VIDEO_MAX_KB', 51200),
         ],
         /*
         | In-canvas image editor (@jodit/image-editor, MIT). Requires the host app

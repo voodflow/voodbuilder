@@ -23,3 +23,11 @@ Authorize SitePage / ChromeLayout / menu models with host policies. Editor route
 ## Assets
 
 Theme CSS, section utilities, and font publish helpers must be part of the host Vite build. See package `docs/BUILD.md` and `docs/FONTS.md` for engineering detail.
+
+## Media library
+
+`voodbuilder:install` publishes Spatie Media Library config and the `media` table migration.
+
+Reusable images/videos live on the singleton `MediaLibrary` model (collections `images` / `videos`), managed in Filament → **Media library** via `SpatieMediaLibraryFileUpload`.
+
+The visual editor Asset Manager lists and uploads into the same collections (`POST /voodbuilder/editor/upload`, `GET /voodbuilder/editor/media`). The in-canvas Jodit image editor keeps using that upload endpoint.

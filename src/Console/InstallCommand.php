@@ -39,6 +39,8 @@ class InstallCommand extends Command
         'cookie-consent-settings-migrations' => 'jeffersongoncalves/laravel-cookie-consent',
         'seo-config' => 'ralphjsmit/laravel-seo',
         'seo-migrations' => 'ralphjsmit/laravel-seo',
+        'medialibrary-config' => 'spatie/laravel-medialibrary',
+        'medialibrary-migrations' => 'spatie/laravel-medialibrary',
         'voodbuilder-config' => 'voodflow/voodbuilder',
     ];
 
@@ -74,6 +76,12 @@ class InstallCommand extends Command
             }
 
             $this->components->info("Publishing {$tag}...");
+
+            if ($tag === 'medialibrary-migrations' && $this->mediaTableMigrationIsAvailable()) {
+                $this->components->warn('Skipping medialibrary-migrations: media table migration already present.');
+
+                continue;
+            }
 
             $arguments = ['--tag' => $tag, ...$publishOptions];
 
@@ -129,6 +137,17 @@ class InstallCommand extends Command
         }
 
         return $this->finish(self::SUCCESS);
+    }
+
+    protected function mediaTableMigrationIsAvailable(): bool
+    {
+        foreach (glob(database_path('migrations/*create_media_table.php')) ?: [] as $file) {
+            if (is_file($file)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function settingsTableMigrationIsAvailable(): bool
@@ -346,6 +365,7 @@ class InstallCommand extends Command
         $this->line('  - package.json npm dependencies (Editor, Tailwind, fonts)');
         $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
+        $this->line('  - Spatie Media Library config + media table migration');
         $this->line('  - migrations, seed data, cookie-consent panel exclusion');
         $this->newLine();
 

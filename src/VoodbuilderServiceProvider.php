@@ -43,6 +43,7 @@ use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
+use Voodflow\Voodbuilder\Models\MediaLibrary;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
@@ -144,6 +145,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         Relation::morphMap([
             'site_page' => SitePage::class,
+            'voodbuilder_media_library' => MediaLibrary::class,
         ]);
 
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
@@ -222,6 +224,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('bindings', EditorBindingsController::class)->name('bindings');
                 Route::get('bindings/preview/{sitePage}', EditorBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('link-targets', EditorLinkTargetsController::class)->name('link-targets');
+                Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
                 Route::get('media/{media}', EditorMediaPreviewController::class)->name('media.preview');
                 Route::get('blocks/render', EditorBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', EditorCodeHighlightController::class)->name('code.highlight');

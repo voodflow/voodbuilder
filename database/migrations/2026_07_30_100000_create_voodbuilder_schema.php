@@ -69,6 +69,12 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('voodbuilder_media_libraries', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name')->default('Site media');
+            $table->timestamps();
+        });
+
         Schema::create('voodbuilder_model_integrations', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
@@ -134,6 +140,7 @@ return new class extends Migration
         Schema::dropIfExists('site_pages');
         Schema::dropIfExists('voodbuilder_page_templates');
         Schema::dropIfExists('voodbuilder_model_integrations');
+        Schema::dropIfExists('voodbuilder_media_libraries');
         Schema::dropIfExists('voodbuilder_settings');
         Schema::dropIfExists('voodbuilder_menu_items');
         Schema::dropIfExists('voodbuilder_menus');
