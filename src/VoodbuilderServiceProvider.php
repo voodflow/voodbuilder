@@ -224,12 +224,17 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('bindings', EditorBindingsController::class)->name('bindings');
                 Route::get('bindings/preview/{sitePage}', EditorBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('link-targets', EditorLinkTargetsController::class)->name('link-targets');
-                Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
-                Route::get('media/{media}', EditorMediaPreviewController::class)->name('media.preview');
+                // Companion voodflow/voodbuilder-media owns list/upload when installed.
+                if (! class_exists(\Voodflow\VoodbuilderMedia\VoodbuilderMedia::class)) {
+                    Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
+                    Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
+                }
+                Route::get('media/{media}', EditorMediaPreviewController::class)
+                    ->whereNumber('media')
+                    ->name('media.preview');
                 Route::get('blocks/render', EditorBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', EditorCodeHighlightController::class)->name('code.highlight');
                 Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
-                Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
             });
     }
 

@@ -323,12 +323,90 @@ async function resolveUploadErrorMessage(response, labels = {}) {
 }
 
 /**
+ * Prefer a stable human title for edited uploads (never bare "edited").
+ *
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @param {string} src
+ * @returns {string}
+ */
+export function resolveEditedDisplayName(editor, component, src) {
+    const assets = editor?.Assets?.getAll?.() ?? editor?.AssetManager?.getAll?.() ?? [];
+    const list = typeof assets?.models !== 'undefined'
+        ? assets.models
+        : (Array.isArray(assets) ? assets : []);
+
+    for (const asset of list) {
+        const assetSrc = String(asset?.get?.('src') ?? asset?.src ?? '').trim();
+
+        if (assetSrc === '' || assetSrc !== String(src ?? '').trim()) {
+            continue;
+        }
+
+        const assetName = String(asset?.get?.('name') ?? asset?.name ?? '').trim();
+
+        if (assetName !== '' && ! /^edited(?:[-_.].*)?$/i.test(assetName)) {
+            return pathinfoFilename(assetName);
+        }
+    }
+
+    const alt = String(component?.getAttributes?.()?.alt ?? '').trim();
+
+    if (alt !== '') {
+        return sanitizeUploadBaseName(alt);
+    }
+
+    const fromUrl = pathinfoFilename(String(src ?? ''));
+
+    if (fromUrl !== '' && ! /^edited$/i.test(fromUrl)) {
+        if (/^[a-f0-9_-]{16,}$/i.test(fromUrl)) {
+            return `edited-${fromUrl.slice(0, 8)}`;
+        }
+
+        return fromUrl;
+    }
+
+    return 'edited-image';
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function pathinfoFilename(value) {
+    const cleaned = String(value ?? '').split('?')[0].split('#')[0];
+    const base = cleaned.includes('/')
+        ? cleaned.slice(cleaned.lastIndexOf('/') + 1)
+        : cleaned;
+    const withoutExt = base.includes('.')
+        ? base.slice(0, base.lastIndexOf('.'))
+        : base;
+
+    return sanitizeUploadBaseName(withoutExt);
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function sanitizeUploadBaseName(value) {
+    return String(value ?? '')
+        .trim()
+        .replace(/[^\p{L}\p{N}\-_ .]+/gu, '-')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 120) || 'image';
+}
+
+/**
  * @param {Blob} blob
  * @param {string} type
  * @param {number} quality
+ * @param {string} [displayName]
  * @returns {Promise<File>}
  */
-async function blobToUploadFile(blob, type = 'image/jpeg', quality = 0.88) {
+async function blobToUploadFile(blob, type = 'image/jpeg', quality = 0.88, displayName = 'edited-image') {
     let output = blob;
 
     if (blob.type !== type || type === 'image/jpeg') {
@@ -337,8 +415,9 @@ async function blobToUploadFile(blob, type = 'image/jpeg', quality = 0.88) {
 
     const extension = type === 'image/png' ? 'png' : (type === 'image/webp' ? 'webp' : 'jpg');
     const mime = output.type || type;
+    const base = sanitizeUploadBaseName(displayName);
 
-    return new File([output], `edited.${extension}`, { type: mime });
+    return new File([output], `${base}.${extension}`, { type: mime });
 }
 
 /**
@@ -378,13 +457,19 @@ async function reencodeBlob(blob, type, quality) {
 
 /**
  * @param {File} file
- * @param {{ uploadUrl: string, csrf?: string }} options
+ * @param {{ uploadUrl: string, csrf?: string, displayName?: string }} options
  * @param {Record<string, string>} labels
  * @returns {Promise<string>}
  */
 async function uploadFile(file, options, labels = {}) {
     const form = new FormData();
     form.append('file', file);
+
+    const displayName = String(options.displayName ?? pathinfoFilename(file.name) ?? '').trim();
+
+    if (displayName !== '') {
+        form.append('name', displayName);
+    }
 
     const response = await fetch(options.uploadUrl, {
         method: 'POST',
@@ -455,19 +540,20 @@ function uploadViaAssetManager(editor, file) {
 /**
  * @param {import('grapesjs').Editor} editor
  * @param {Blob} blob
- * @param {{ uploadUrl: string, csrf?: string }} options
+ * @param {{ uploadUrl: string, csrf?: string, displayName?: string, component?: object }} options
  * @param {Record<string, string>} labels
  * @returns {Promise<string>}
  */
 async function uploadEditedBlob(editor, blob, options, labels = {}) {
     let lastError = labels.imageEditorUploadError ?? 'Could not upload the edited image.';
     let quality = 0.88;
+    const displayName = String(options.displayName ?? 'edited-image').trim() || 'edited-image';
 
     for (let attempt = 0; attempt < MAX_UPLOAD_ATTEMPTS; attempt += 1) {
-        const file = await blobToUploadFile(blob, 'image/jpeg', quality);
+        const file = await blobToUploadFile(blob, 'image/jpeg', quality, displayName);
 
         try {
-            return await uploadFile(file, options, labels);
+            return await uploadFile(file, { ...options, displayName }, labels);
         } catch (error) {
             lastError = error instanceof Error && error.message
                 ? error.message
@@ -677,7 +763,8 @@ async function openImageEditorModal(editor, target, options = {}) {
         setModalStatus(labels.imageEditorSaving ?? 'Saving…');
 
         try {
-            const url = await uploadEditedBlob(editor, blob, { uploadUrl, csrf }, labels);
+            const displayName = resolveEditedDisplayName(editor, target, src);
+            const url = await uploadEditedBlob(editor, blob, { uploadUrl, csrf, displayName, component: target }, labels);
             applyEditedSrc(editor, target, url);
             onClose();
         } catch (error) {

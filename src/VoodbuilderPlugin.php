@@ -8,9 +8,9 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
-use Voodflow\Voodbuilder\Filament\Pages\MediaLibraryPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
+use Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
@@ -49,17 +49,16 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = ChromeLayoutResource::class;
         }
 
-        $pages = [
-            VoodbuilderSettingsPage::class,
-        ];
-
-        if (MediaLibraryPage::canAccess()) {
-            $pages[] = MediaLibraryPage::class;
+        // Prefer voodflow/voodbuilder-media when installed (galleries + fixed admin UX).
+        if (MediaLibraryResource::canAccess() && ! class_exists(\Voodflow\VoodbuilderMedia\VoodbuilderMedia::class)) {
+            $resources[] = MediaLibraryResource::class;
         }
 
         $panel
             ->resources($resources)
-            ->pages($pages)
+            ->pages([
+                VoodbuilderSettingsPage::class,
+            ])
             ->databaseNotifications(livewireComponent: AdminDatabaseNotifications::class);
 
         CookieConsentPlugin::make()->register($panel);

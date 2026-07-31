@@ -1,0 +1,402 @@
+/* Modern media browser (Choose) — dark/light via --color-vp-* · mobile responsive */
+
+.voodbuilder-media-browser {
+    z-index: 10060;
+    padding: 0.75rem;
+}
+
+/* Beat .voodbuilder-editor-modal__panel { width: 32rem } from frontend.css */
+.voodbuilder-media-browser > .voodbuilder-editor-modal__panel.voodbuilder-media-browser__panel,
+.voodbuilder-media-browser .voodbuilder-media-browser__panel {
+    width: min(1440px, calc(100vw - 1.5rem));
+    height: min(920px, calc(100dvh - 1.5rem));
+    max-height: min(920px, calc(100dvh - 1.5rem));
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    background: var(--color-vp-bg-elv, #fff);
+    color: var(--color-vp-text-1, #0f172a);
+    box-shadow: 0 28px 80px rgb(15 23 42 / 0.28);
+}
+
+.dark .voodbuilder-media-browser > .voodbuilder-editor-modal__panel.voodbuilder-media-browser__panel {
+    box-shadow: 0 28px 80px rgb(0 0 0 / 0.55);
+}
+
+.voodbuilder-media-browser__head {
+    flex: none;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--color-vp-divider, #e2e8f0);
+}
+
+.voodbuilder-media-browser__head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.voodbuilder-media-browser__subtitle {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-media-browser__layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.voodbuilder-media-browser__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.85rem;
+    overflow: auto;
+    border-right: 1px solid var(--color-vp-divider, #e2e8f0);
+    background: color-mix(in oklab, var(--color-vp-bg-alt, #f8fafc) 88%, transparent);
+}
+
+.voodbuilder-media-browser__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    border: 0;
+    border-radius: 0.65rem;
+    background: transparent;
+    color: var(--color-vp-text-1, #0f172a);
+    font: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    padding: 0.55rem 0.65rem;
+    cursor: pointer;
+}
+
+.voodbuilder-media-browser__nav span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.voodbuilder-media-browser__nav em {
+    font-style: normal;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-vp-brand-1, #f59e0b);
+}
+
+.voodbuilder-media-browser__nav > span:last-child:not(:first-child),
+.voodbuilder-media-browser__nav > span + span {
+    color: var(--color-vp-text-2, #64748b);
+    font-variant-numeric: tabular-nums;
+}
+
+.voodbuilder-media-browser__nav:hover {
+    background: color-mix(in oklab, var(--color-vp-brand-1, #f59e0b) 12%, transparent);
+}
+
+.voodbuilder-media-browser__nav.is-active {
+    background: color-mix(in oklab, var(--color-vp-brand-1, #f59e0b) 18%, transparent);
+    font-weight: 600;
+}
+
+.voodbuilder-media-browser__main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.85rem;
+    gap: 0.65rem;
+}
+
+.voodbuilder-media-browser__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    flex: none;
+}
+
+.voodbuilder-media-browser__type-toggle {
+    display: inline-flex;
+    padding: 0.15rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    background: var(--color-vp-bg, #fff);
+}
+
+.voodbuilder-media-browser__seg {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+}
+
+.voodbuilder-media-browser__seg.is-active,
+.voodbuilder-media-browser__seg[aria-pressed='true'] {
+    background: color-mix(in oklab, var(--color-vp-brand-1, #f59e0b) 22%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-media-browser__search {
+    position: relative;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+}
+
+.voodbuilder-media-browser__search input {
+    width: 100%;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    border-radius: 0.65rem;
+    background: var(--color-vp-bg, #fff);
+    color: var(--color-vp-text-1, #0f172a);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.voodbuilder-media-browser__gallery-select {
+    display: none;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    border-radius: 0.65rem;
+    background: var(--color-vp-bg, #fff);
+    color: var(--color-vp-text-1, #0f172a);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.65rem;
+    max-width: 100%;
+}
+
+.voodbuilder-media-browser__dropzone {
+    position: relative;
+    flex: none;
+    border: 1px dashed color-mix(in oklab, var(--color-vp-divider, #cbd5e1) 100%, transparent);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--color-vp-bg-alt, #f8fafc) 70%, transparent);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.voodbuilder-media-browser__dropzone:hover,
+.voodbuilder-media-browser__dropzone.is-dragover {
+    border-color: var(--color-vp-brand-1, #f59e0b);
+    background: color-mix(in oklab, var(--color-vp-brand-1, #f59e0b) 10%, transparent);
+}
+
+.voodbuilder-media-browser__dropzone-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.voodbuilder-media-browser__dropzone-inner strong {
+    font-weight: 600;
+}
+
+.voodbuilder-media-browser__dropzone-inner span {
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-media-browser__upload-progress {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-media-browser__grid-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    border-radius: 0.85rem;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    background: var(--color-vp-bg, #fff);
+}
+
+.voodbuilder-media-browser__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.75rem;
+    padding: 0.85rem;
+}
+
+.voodbuilder-media-browser__tile {
+    position: relative;
+    display: block;
+    border: 1px solid color-mix(in oklab, var(--color-vp-divider, #e2e8f0) 80%, transparent);
+    border-radius: 0.85rem;
+    background: var(--color-vp-bg-alt, #f8fafc);
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    aspect-ratio: 1;
+}
+
+.voodbuilder-media-browser__tile:hover,
+.voodbuilder-media-browser__tile:focus-visible {
+    border-color: var(--color-vp-brand-1, #f59e0b);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-vp-brand-1, #f59e0b) 35%, transparent);
+    outline: none;
+}
+
+.voodbuilder-media-browser__tile-preview {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background:
+        linear-gradient(135deg,
+            color-mix(in oklab, var(--color-vp-bg-alt, #f1f5f9) 100%, transparent),
+            color-mix(in oklab, var(--color-vp-divider, #e2e8f0) 55%, transparent));
+}
+
+.voodbuilder-media-browser__tile-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.voodbuilder-media-browser__tile-video {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-vp-text-1, #0f172a);
+    background: color-mix(in oklab, var(--color-vp-bg-alt, #0f172a) 12%, transparent);
+}
+
+.dark .voodbuilder-media-browser__tile-video {
+    background: color-mix(in oklab, #000 35%, transparent);
+    color: #f8fafc;
+}
+
+.voodbuilder-media-browser__tile-meta {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 1.75rem 0.55rem 0.5rem;
+    background: linear-gradient(to top, rgb(15 23 42 / 0.78), transparent);
+    color: #fff;
+    pointer-events: none;
+}
+
+.dark .voodbuilder-media-browser__tile-meta {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.72), transparent);
+}
+
+.voodbuilder-media-browser__tile-name {
+    font-size: 0.75rem;
+    line-height: 1.25;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voodbuilder-media-browser__tile-kind {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+}
+
+.voodbuilder-media-browser__status {
+    flex: none;
+    padding: 0 0.15rem;
+    font-size: 0.72rem;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-media-browser__sentinel {
+    height: 1px;
+}
+
+.voodbuilder-media-browser__url-row {
+    display: flex;
+    gap: 0.5rem;
+    flex: none;
+}
+
+.voodbuilder-media-browser__url-row .voodbuilder-editor-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.voodbuilder-media-browser__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 900px) {
+    .voodbuilder-media-browser__grid {
+        grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+        gap: 0.55rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .voodbuilder-media-browser {
+        padding: 0.4rem;
+    }
+
+    .voodbuilder-media-browser > .voodbuilder-editor-modal__panel.voodbuilder-media-browser__panel {
+        width: calc(100vw - 0.8rem);
+        height: calc(100dvh - 0.8rem);
+        max-height: calc(100dvh - 0.8rem);
+        border-radius: 0.85rem;
+    }
+
+    .voodbuilder-media-browser__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .voodbuilder-media-browser__sidebar {
+        display: none;
+    }
+
+    .voodbuilder-media-browser__gallery-select {
+        display: block;
+        flex: 1 1 100%;
+    }
+
+    .voodbuilder-media-browser__grid {
+        grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+        gap: 0.45rem;
+        padding: 0.55rem;
+    }
+
+    .voodbuilder-media-browser__url-row {
+        flex-direction: column;
+    }
+}

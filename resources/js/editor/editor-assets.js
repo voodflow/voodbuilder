@@ -171,11 +171,30 @@ export function syncAssetManagerChrome(copy) {
  *
  * @param {import('grapesjs').Editor} editor
  * @param {Array<{ src: string, type?: string, name?: string }>} assets
+ * @param {{ replace?: boolean }} [options]
  */
-export function seedAssetManager(editor, assets) {
+export function seedAssetManager(editor, assets, options = {}) {
     const am = editor?.AssetManager ?? editor?.Assets;
 
-    if (! am || typeof am.add !== 'function' || ! Array.isArray(assets) || assets.length === 0) {
+    if (! am || typeof am.add !== 'function') {
+        return;
+    }
+
+    if (options.replace) {
+        const all = am.getAll?.();
+
+        if (all && typeof all.reset === 'function') {
+            all.reset();
+        } else if (all && typeof am.remove === 'function') {
+            const models = [...(all.models ?? all ?? [])];
+
+            for (const asset of models) {
+                am.remove(asset);
+            }
+        }
+    }
+
+    if (! Array.isArray(assets) || assets.length === 0) {
         return;
     }
 
@@ -209,11 +228,42 @@ export function seedAssetManager(editor, assets) {
 }
 
 /**
+ * @param {string | null | undefined} mediaLibraryUrl
+ * @param {{ galleryId?: number|null, type?: 'image'|'video'|null }} [query]
+ */
+export function buildMediaLibraryUrl(mediaLibraryUrl, query = {}) {
+    const url = String(mediaLibraryUrl ?? '').trim();
+
+    if (url === '') {
+        return '';
+    }
+
+    try {
+        const parsed = new URL(url, window.location.origin);
+
+        if (query.galleryId != null && Number.isFinite(Number(query.galleryId))) {
+            parsed.searchParams.set('gallery_id', String(query.galleryId));
+        } else {
+            parsed.searchParams.delete('gallery_id');
+        }
+
+        if (query.type === 'image' || query.type === 'video') {
+            parsed.searchParams.set('type', query.type);
+        }
+
+        return parsed.pathname + parsed.search;
+    } catch {
+        return url;
+    }
+}
+
+/**
  * @param {import('grapesjs').Editor} editor
  * @param {string | null | undefined} mediaLibraryUrl
+ * @param {{ galleryId?: number|null, type?: 'image'|'video'|null, replace?: boolean }} [options]
  */
-export async function loadMediaLibrary(editor, mediaLibraryUrl) {
-    const url = String(mediaLibraryUrl ?? '').trim();
+export async function loadMediaLibrary(editor, mediaLibraryUrl, options = {}) {
+    const url = buildMediaLibraryUrl(mediaLibraryUrl, options);
 
     if (url === '' || typeof fetch !== 'function') {
         return;
@@ -231,14 +281,144 @@ export async function loadMediaLibrary(editor, mediaLibraryUrl) {
 
         const payload = await response.json();
         const assets = Array.isArray(payload?.data) ? payload.data : [];
-        seedAssetManager(editor, assets);
+        seedAssetManager(editor, assets, { replace: Boolean(options.replace) });
     } catch {
         // Library is optional; Choose still works via upload.
     }
 }
 
 /**
- * Open AssetManager for image or video with correct filters and labels.
+ * @param {string | null | undefined} galleriesUrl
+ * @param {'image'|'video'|null} [type]
+ * @returns {Promise<{ galleries: Array<object>, defaultGalleryId: number|null, uploadGalleryId: number|null }>}
+ */
+export async function fetchMediaGalleries(galleriesUrl, type = null) {
+    const base = String(galleriesUrl ?? '').trim();
+
+    if (base === '' || typeof fetch !== 'function') {
+        return { galleries: [], defaultGalleryId: null, uploadGalleryId: null };
+    }
+
+    try {
+        const parsed = new URL(base, window.location.origin);
+
+        if (type === 'image' || type === 'video') {
+            parsed.searchParams.set('type', type);
+        }
+
+        const response = await fetch(parsed.pathname + parsed.search, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+
+        if (! response.ok) {
+            return { galleries: [], defaultGalleryId: null, uploadGalleryId: null };
+        }
+
+        const payload = await response.json();
+
+        return {
+            galleries: Array.isArray(payload?.data) ? payload.data : [],
+            defaultGalleryId: payload?.default_gallery_id ?? null,
+            uploadGalleryId: payload?.upload_gallery_id ?? null,
+        };
+    } catch {
+        return { galleries: [], defaultGalleryId: null, uploadGalleryId: null };
+    }
+}
+
+/**
+ * Gallery chips above the Asset Manager grid (browse any gallery; upload stays on default).
+ *
+ * @param {{
+ *   galleries: Array<{ id: number, name: string, is_default?: boolean, media_count?: number }>,
+ *   activeGalleryId: number|null,
+ *   uploadGalleryId: number|null,
+ *   onSelect: (galleryId: number|null) => void,
+ * }} args
+ * @returns {() => void} cleanup
+ */
+export function mountGalleryBrowser({
+    galleries,
+    activeGalleryId,
+    uploadGalleryId,
+    onSelect,
+}) {
+    const previous = document.querySelector('.voodbuilder-am-galleries');
+
+    if (previous) {
+        previous.remove();
+    }
+
+    if (! Array.isArray(galleries) || galleries.length === 0) {
+        return () => {};
+    }
+
+    const modal = document.querySelector('.gjs-mdl-dialog')
+        ?? document.querySelector('.gjs-mdl-container');
+    const assetsContainer = modal?.querySelector?.('.gjs-am-assets-cont')
+        ?? modal?.querySelector?.('.gjs-am-assets')
+        ?? modal?.querySelector?.('.gjs-am-assets-header')
+        ?? null;
+
+    if (! assetsContainer?.parentElement) {
+        return () => {};
+    }
+
+    const bar = document.createElement('div');
+    bar.className = 'voodbuilder-am-galleries';
+    bar.setAttribute('role', 'tablist');
+    bar.setAttribute('aria-label', 'Galleries');
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-am-galleries__hint';
+    hint.textContent = uploadGalleryId
+        ? 'Upload goes to the default gallery. Browse any gallery to choose.'
+        : 'Browse galleries to choose media.';
+    bar.appendChild(hint);
+
+    const chips = document.createElement('div');
+    chips.className = 'voodbuilder-am-galleries__chips';
+
+    const makeChip = (id, label, count = null) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'voodbuilder-am-galleries__chip';
+        button.setAttribute('role', 'tab');
+        button.dataset.galleryId = id == null ? '' : String(id);
+
+        const active = (id == null && activeGalleryId == null)
+            || (id != null && Number(id) === Number(activeGalleryId));
+
+        if (active) {
+            button.classList.add('is-active');
+            button.setAttribute('aria-selected', 'true');
+        } else {
+            button.setAttribute('aria-selected', 'false');
+        }
+
+        button.textContent = count != null ? `${label} (${count})` : label;
+        button.addEventListener('click', () => onSelect(id));
+        chips.appendChild(button);
+    };
+
+    makeChip(null, 'All');
+
+    for (const gallery of galleries) {
+        const name = gallery.is_default ? `${gallery.name} · default` : gallery.name;
+        makeChip(gallery.id, name, gallery.media_count ?? null);
+    }
+
+    bar.appendChild(chips);
+    assetsContainer.parentElement.insertBefore(bar, assetsContainer);
+
+    return () => {
+        bar.remove();
+    };
+}
+
+/**
+ * Open the media picker. Prefers the modern paginated browser; falls back to GrapesJS AM.
  *
  * @param {{
  *   editor: object,
@@ -249,7 +429,41 @@ export async function loadMediaLibrary(editor, mediaLibraryUrl) {
  *   onClose?: () => void,
  * }} args
  */
-export function openMediaAssets({
+export async function openMediaAssets(args) {
+    const { editor, labels = {} } = args;
+    const libraryUrl = editor?.__voodbuilderMediaLibraryUrl
+        ?? labels.mediaLibraryUrl
+        ?? null;
+
+    if (libraryUrl) {
+        try {
+            const { openMediaBrowser } = await import('./media-browser.js');
+            const opened = await openMediaBrowser(args);
+
+            if (opened) {
+                return;
+            }
+        } catch {
+            // Fall through to GrapesJS Asset Manager.
+        }
+    }
+
+    return openGrapesAssetManager(args);
+}
+
+/**
+ * Legacy GrapesJS Asset Manager (fallback when media library URL is unavailable).
+ *
+ * @param {{
+ *   editor: object,
+ *   kinds?: Array<'image'|'video'>,
+ *   labelKind?: 'image'|'video',
+ *   labels?: Record<string, string>,
+ *   onSelect: (src: string) => void,
+ *   onClose?: () => void,
+ * }} args
+ */
+async function openGrapesAssetManager({
     editor,
     kinds = ['image'],
     labelKind = null,
@@ -265,6 +479,12 @@ export function openMediaAssets({
 
     registerVideoAssetType(editor);
 
+    const libraryUrl = editor?.__voodbuilderMediaLibraryUrl
+        ?? labels.mediaLibraryUrl
+        ?? null;
+
+    await loadMediaLibrary(editor, libraryUrl, { replace: true });
+
     const wantsVideo = kinds.includes('video');
     const wantsImage = kinds.includes('image') || ! wantsVideo;
     const openTypes = [];
@@ -277,7 +497,6 @@ export function openMediaAssets({
         openTypes.push('image');
     }
 
-    // Poster / cover must stay image copy even if the parent settings panel is video.
     const resolvedLabelKind = labelKind === 'video' || labelKind === 'image'
         ? labelKind
         : (wantsVideo && ! wantsImage ? 'video' : 'image');

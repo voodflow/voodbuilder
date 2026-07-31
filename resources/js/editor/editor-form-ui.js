@@ -519,7 +519,7 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
  *   assetTypes?: string[],
  *   previewMode?: 'image'|'video'|'none',
  *   placeholder?: string,
- *   onChange?: (url: string) => void,
+ *   onChange?: (url: string, meta?: { caption?: string|null, name?: string, id?: number }) => void,
  * }} args
  */
 export function createImageUrlField({
@@ -620,11 +620,11 @@ export function createImageUrlField({
         img.src = src;
     };
 
-    const emit = () => {
+    const emit = (meta) => {
         syncPreview();
 
         if (typeof onChange === 'function') {
-            onChange(String(input.value ?? '').trim());
+            onChange(String(input.value ?? '').trim(), meta);
         }
     };
 
@@ -659,9 +659,9 @@ export function createImageUrlField({
             kinds,
             labelKind,
             labels,
-            onSelect: (src) => {
+            onSelect: (src, meta) => {
                 input.value = src;
-                emit();
+                emit(meta);
 
                 if (selectedBefore && editor?.getSelected?.() !== selectedBefore) {
                     window.requestAnimationFrame(() => {

@@ -318,6 +318,7 @@ function readCaptionState(image) {
     const parent = image.parent?.();
     const parentAttrs = parent?.getAttributes?.() ?? {};
     const caption = String(attrs['data-vb-caption'] ?? '').trim();
+    const libraryCaption = String(attrs['data-vb-media-caption'] ?? '').trim();
     let display = String(
         attrs['data-vb-caption-display']
         ?? parentAttrs['data-vb-caption-display']
@@ -344,8 +345,9 @@ function readCaptionState(image) {
         : '';
 
     return {
-        caption: caption || fromFigcaption,
+        caption: caption || fromFigcaption || libraryCaption,
         display,
+        libraryCaption,
     };
 }
 
@@ -496,21 +498,30 @@ function syncImageCaption(image, values) {
  * @param {import('grapesjs').Component | null} section
  * @param {string} url
  */
-function applyImageSrc(image, section, url) {
+function applyImageSrc(image, section, url, meta = null) {
     const next = String(url ?? '').trim();
+    const attrs = {
+        src: next || null,
+    };
+
+    if (meta != null) {
+        const libraryCaption = String(meta.caption ?? '').trim();
+        attrs['data-vb-media-caption'] = libraryCaption !== '' ? libraryCaption : null;
+        attrs['data-vb-media-id'] = meta.id != null ? String(meta.id) : null;
+    }
 
     image.set('src', next);
-    image.addAttributes({ src: next || null });
+    image.addAttributes(attrs);
 
     if (section) {
-        const attrs = section.getAttributes?.() ?? {};
+        const sectionAttrs = section.getAttributes?.() ?? {};
         const type = String(section.get?.('type') ?? '');
-        const blockId = String(attrs['data-voodbuilder-section-block'] ?? '');
+        const blockId = String(sectionAttrs['data-voodbuilder-section-block'] ?? '');
 
         if (
             type === 'vb-bg-image'
             || blockId.includes('vb-bg-image')
-            || Object.prototype.hasOwnProperty.call(attrs, 'data-vb-bg-src')
+            || Object.prototype.hasOwnProperty.call(sectionAttrs, 'data-vb-bg-src')
             || findHeroMediaImage(section) === image
         ) {
             section.addAttributes({ 'data-vb-bg-src': next || null });
@@ -616,6 +627,8 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     const captionState = readCaptionState(image);
     let caption = captionState.caption;
     let captionDisplay = captionState.display;
+    /** @type {HTMLTextAreaElement | null} */
+    let captionInputEl = null;
     const imageStyle = image.getStyle?.() ?? {};
     let opacity = String(
         section?.getAttributes?.()?.['data-vb-bg-opacity']
@@ -645,10 +658,31 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
             editor,
             chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
             clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
-            onChange: (url) => {
+            onChange: (url, meta) => {
                 src = url;
                 runWithSettingsChangeGuard(editor, () => {
-                    applyImageSrc(image, section, url);
+                    applyImageSrc(image, section, url, meta);
+
+                    if (mode !== 'image') {
+                        return;
+                    }
+
+                    const libraryCaption = String(meta?.caption ?? '').trim();
+                    const pageCaption = String(image.getAttributes?.()?.['data-vb-caption'] ?? '').trim();
+
+                    if (libraryCaption !== '' && pageCaption === '') {
+                        caption = libraryCaption;
+
+                        if (captionInputEl) {
+                            captionInputEl.value = libraryCaption;
+                        }
+
+                        if (captionDisplay !== CAPTION_DISPLAY_NONE) {
+                            syncImageCaption(image, { caption: libraryCaption, display: captionDisplay });
+                        } else {
+                            image.addAttributes({ 'data-vb-caption': libraryCaption });
+                        }
+                    }
                 });
             },
         }),
@@ -678,6 +712,8 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
             rows: 2,
             placeholder: labels.imageSettingsCaptionPlaceholder ?? 'Optional caption',
         });
+
+        captionInputEl = captionInput;
 
         captionInput.addEventListener('change', () => {
             caption = String(captionInput.value ?? '').trim();

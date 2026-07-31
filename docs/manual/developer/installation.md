@@ -28,6 +28,7 @@ Theme CSS, section utilities, and font publish helpers must be part of the host 
 
 `voodbuilder:install` publishes Spatie Media Library config and the `media` table migration.
 
-Reusable images/videos live on the singleton `MediaLibrary` model (collections `images` / `videos`), managed in Filament → **Media library** via `SpatieMediaLibraryFileUpload`.
+Reusable images/videos live on the singleton `MediaLibrary` model (collections `images` / `videos`).
 
-The visual editor Asset Manager lists and uploads into the same collections (`POST /voodbuilder/editor/upload`, `GET /voodbuilder/editor/media`). The in-canvas Jodit image editor keeps using that upload endpoint.
+- **Admin** → Media library: table of Spatie `Media` rows + Upload action (safe incremental adds; no wipe-on-save FileUpload form).
+- **Editor** Asset Manager: `GET /voodbuilder/editor/media` seeds Choose; `POST /voodbuilder/editor/upload` stores into the same library. Jodit keeps using that upload endpoint.
