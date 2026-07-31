@@ -395,21 +395,9 @@ export function configureEditorCodeBlock(editor, options = {}) {
         },
     });
 
-    if (! isEditorBlockAllowed(editor, 'voodbuilder-code-block')) {
-        if (BlockManager.get('voodbuilder-code-block')) {
-            BlockManager.remove('voodbuilder-code-block');
-        }
-    } else if (! BlockManager.get('voodbuilder-code-block')) {
-        BlockManager.add('voodbuilder-code-block', {
-            label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
-            category: CODE_BLOCK_CATEGORY,
-            media: resolveBlockWireframe('voodbuilder-code-block'),
-            content: {
-                type: 'voodbuilder-code-block',
-                [LANG_PROP]: 'php',
-                [CODE_PROP]: "<?php echo 'Hello';",
-            },
-        });
+    // BlockManager tile lives in Elements companion; Core keeps the component type.
+    if (BlockManager.get('voodbuilder-code-block')) {
+        BlockManager.remove('voodbuilder-code-block');
     }
 
     editor.on('load', () => {
@@ -437,3 +425,34 @@ export function configureEditorCodeBlock(editor, options = {}) {
         }
     });
 }
+
+/**
+ * Elements companion — Code BlockManager tile (component type registered by Core).
+ *
+ * @param {import('grapesjs').Editor} editor
+ */
+export function registerCompanionCodeBlock(editor) {
+    const { BlockManager } = editor;
+
+    if (! isEditorBlockAllowed(editor, 'voodbuilder-code-block')) {
+        if (BlockManager.get('voodbuilder-code-block')) {
+            BlockManager.remove('voodbuilder-code-block');
+        }
+
+        return;
+    }
+
+    if (! BlockManager.get('voodbuilder-code-block')) {
+        BlockManager.add('voodbuilder-code-block', {
+            label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
+            category: CODE_BLOCK_CATEGORY,
+            media: resolveBlockWireframe('voodbuilder-code-block'),
+            content: {
+                type: 'voodbuilder-code-block',
+                [LANG_PROP]: 'php',
+                [CODE_PROP]: "<?php echo 'Hello';",
+            },
+        });
+    }
+}
+

@@ -1,6 +1,6 @@
 {
   "package": "voodflow/voodbuilder-elements",
-  "status": "planned — code still in Core, gated by blocks.official.complete",
+  "status": "extracted — HTML catalog in voodflow/voodbuilder-elements; Core keeps community + canvas types",
   "capability_full_library": "blocks.official.complete",
   "community_foundation": [
     "voodbuilder-layout-section",

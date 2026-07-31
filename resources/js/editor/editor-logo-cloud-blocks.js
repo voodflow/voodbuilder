@@ -424,12 +424,31 @@ export function registerLogoCloudComponentTypes(editor) {
     registerLogoSplitType(editor);
 }
 
-export function registerLogoCloudBlocks(editor) {
+const COMPANION_LOGO_CLOUD_IDS = new Set([
+    'voodbuilder-logo-grid',
+    'voodbuilder-logo-split',
+]);
+
+export function registerLogoCloudBlocks(editor, options = {}) {
+    const scope = options.scope ?? 'community';
     const blockManager = editor.BlockManager;
 
     registerLogoCloudComponentTypes(editor);
 
     for (const block of BLOCKS) {
+        // Entire logo-cloud category lives in Elements companion.
+        if (scope === 'community') {
+            if (blockManager.get(block.id)) {
+                blockManager.remove(block.id);
+            }
+
+            continue;
+        }
+
+        if (scope === 'companion' && ! COMPANION_LOGO_CLOUD_IDS.has(block.id)) {
+            continue;
+        }
+
         if (! isEditorBlockAllowed(editor, block.id)) {
             if (blockManager.get(block.id)) {
                 blockManager.remove(block.id);
@@ -480,4 +499,10 @@ export function configureLogoCloudCanvas(editor) {
             component.set?.('droppable', false);
         }
     });
+}
+
+
+/** Elements companion — logo grid / split tiles. */
+export function registerCompanionLogoCloudBlocks(editor) {
+    registerLogoCloudBlocks(editor, { scope: 'companion' });
 }

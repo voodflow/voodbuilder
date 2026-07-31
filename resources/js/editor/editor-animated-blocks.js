@@ -1553,12 +1553,38 @@ export function registerAnimatedComponentTypes(editor) {
     registerAnimatedStatsType(editor);
 }
 
-export function registerAnimatedBlocks(editor) {
+const COMMUNITY_ANIMATED_IDS = new Set([
+    'voodbuilder-animated-cta',
+    'voodbuilder-animated-stats',
+]);
+
+const COMPANION_ANIMATED_IDS = new Set([
+    'voodbuilder-animated-counter',
+    'voodbuilder-logo-scroll',
+]);
+
+export function registerAnimatedBlocks(editor, options = {}) {
+    const scope = options.scope ?? 'community';
     const blockManager = editor.BlockManager;
 
     registerAnimatedComponentTypes(editor);
 
     for (const block of BLOCKS) {
+        const isCompanion = COMPANION_ANIMATED_IDS.has(block.id);
+        const isCommunity = COMMUNITY_ANIMATED_IDS.has(block.id);
+
+        if (scope === 'community' && ! isCommunity) {
+            if (blockManager.get(block.id)) {
+                blockManager.remove(block.id);
+            }
+
+            continue;
+        }
+
+        if (scope === 'companion' && ! isCompanion) {
+            continue;
+        }
+
         if (! isEditorBlockAllowed(editor, block.id)) {
             if (blockManager.get(block.id)) {
                 blockManager.remove(block.id);
@@ -1738,4 +1764,10 @@ export function syncAnimatedCountersForExport(editor) {
         component.removeAttributes('object');
         syncLogoScroll(component);
     }
+}
+
+
+/** Elements companion — counter / logo-scroll tiles (types stay in Core). */
+export function registerCompanionAnimatedBlocks(editor) {
+    registerAnimatedBlocks(editor, { scope: 'companion' });
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Voodbuilder;
+use Voodflow\Voodbuilder\Support\Editor\EditorCommunityBlockCatalog;
 
 /**
  * Astrolus-inspired landing sections for VoodBuilder (theme tokens = light/dark).
@@ -16,6 +17,10 @@ final class VoodbuilderLanding01Sections
     public static function registerBlocks(): void
     {
         foreach (self::blockDefinitions() as $definition) {
+            if (EditorCommunityBlockCatalog::isCompanionBlockId((string) $definition['id'])) {
+                continue;
+            }
+
             Voodbuilder::editorBlock(
                 $definition['id'],
                 $definition['label'],

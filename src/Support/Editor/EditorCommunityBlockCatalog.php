@@ -7,11 +7,12 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
- * Community (free) Editor library allowlist.
+ * Core Community Editor library allowlist.
  *
- * Core still ships companion-bound block source so existing pages keep rendering.
- * Sidebar visibility is gated by {@see Voodbuilder::can}('blocks.official.complete').
- * Third-party / companion packages that register new IDs (not in {@see coreOwnedIds()})
+ * Premium section tiles live in `voodflow/voodbuilder-elements` (remote catalog).
+ * {@see COMPANION_BLOCK_IDS} documents IDs owned by that companion after extract.
+ * Sidebar visibility for Core-owned IDs is gated by {@see Voodbuilder::can}('blocks.official.complete').
+ * Third-party / Elements packages that register new IDs (not in {@see coreOwnedIds()})
  * stay visible — injection must not break.
  *
  * @see docs/handoff/elements-companion-pack.md
@@ -241,12 +242,19 @@ final class EditorCommunityBlockCatalog
      */
     public static function coreOwnedIds(): array
     {
+        // After Elements extract, companion IDs are no longer Core-owned.
+        // When the Elements plugin registers them they pass the Community filter
+        // as third-party injection (visible only because they are registered).
         return array_values(array_unique([
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,
-            ...self::COMPANION_BLOCK_IDS,
             self::CHROME_ONLY_BLOCK_ID,
         ]));
+    }
+
+    public static function isCompanionBlockId(string $id): bool
+    {
+        return in_array($id, self::COMPANION_BLOCK_IDS, true);
     }
 
     public static function requestIsChromeLayoutEditor(): bool

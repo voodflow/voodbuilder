@@ -76,6 +76,10 @@ final class VoodbuilderSectionEditorBlocks
     {
         $id = (string) ($definition['id'] ?? '');
 
+        if ($id !== '' && EditorCommunityBlockCatalog::isCompanionBlockId($id)) {
+            return false;
+        }
+
         if ($id !== '' && SectionItemCountAnnotator::isRedundant($id)) {
             return false;
         }

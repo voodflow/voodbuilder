@@ -98,6 +98,13 @@ function buildTabsSectionContent(variant) {
     };
 }
 
+const COMMUNITY_TAB_IDS = new Set(['voodbuilder-tabs-pills']);
+
+const COMPANION_TAB_IDS = new Set([
+    'voodbuilder-tabs-underline',
+    'voodbuilder-tabs-segmented',
+]);
+
 const VARIANTS = [
     {
         id: 'voodbuilder-tabs-pills',
@@ -148,12 +155,32 @@ export function editorTabsPluginOptions() {
     };
 }
 
-export function registerVoodbuilderTabsBlocks(editor) {
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {{ scope?: 'community' | 'companion' | 'all' }} [options]
+ */
+export function registerVoodbuilderTabsBlocks(editor, options = {}) {
+    const scope = options.scope ?? 'community';
     const blockManager = editor.BlockManager;
 
     blockManager.remove('tabs');
 
     for (const variant of VARIANTS) {
+        const isCompanion = COMPANION_TAB_IDS.has(variant.id);
+        const isCommunity = COMMUNITY_TAB_IDS.has(variant.id);
+
+        if (scope === 'community' && ! isCommunity) {
+            if (blockManager.get(variant.id)) {
+                blockManager.remove(variant.id);
+            }
+
+            continue;
+        }
+
+        if (scope === 'companion' && ! isCompanion) {
+            continue;
+        }
+
         if (! isEditorBlockAllowed(editor, variant.id)) {
             if (blockManager.get(variant.id)) {
                 blockManager.remove(variant.id);
@@ -176,4 +203,9 @@ export function registerVoodbuilderTabsBlocks(editor) {
             },
         });
     }
+}
+
+/** Elements companion — underline / segmented tiles only. */
+export function registerCompanionTabsBlocks(editor) {
+    registerVoodbuilderTabsBlocks(editor, { scope: 'companion' });
 }

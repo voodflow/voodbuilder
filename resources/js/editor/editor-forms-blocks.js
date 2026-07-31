@@ -149,6 +149,18 @@ export function registerVoodbuilderFormBlock(editor) {
 
     blockManager.remove('form');
 
+    // Contact form tile lives in Elements companion; Core keeps form canvas behaviour.
+    if (blockManager.get(FORM_BLOCK_ID)) {
+        blockManager.remove(FORM_BLOCK_ID);
+    }
+}
+
+/** Elements companion — contact form BlockManager tile. */
+export function registerCompanionFormBlocks(editor) {
+    const blockManager = editor.BlockManager;
+
+    blockManager.remove('form');
+
     if (! isEditorBlockAllowed(editor, FORM_BLOCK_ID)) {
         if (blockManager.get(FORM_BLOCK_ID)) {
             blockManager.remove(FORM_BLOCK_ID);

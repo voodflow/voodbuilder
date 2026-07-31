@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Voodbuilder;
+use Voodflow\Voodbuilder\Support\Editor\EditorCommunityBlockCatalog;
 
 /**
  * Cinematic homepage sections (Landing 03) (Explorer-1 layout cues + theme tokens).
@@ -19,6 +20,10 @@ final class VoodbuilderLanding03Sections
     public static function registerBlocks(): void
     {
         foreach (self::blockDefinitions() as $definition) {
+            if (EditorCommunityBlockCatalog::isCompanionBlockId((string) $definition['id'])) {
+                continue;
+            }
+
             Voodbuilder::editorBlock(
                 $definition['id'],
                 $definition['label'],
