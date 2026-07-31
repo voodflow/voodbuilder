@@ -3,6 +3,7 @@
 @import './editor-theme.css';
 @import './frontend.css';
 @import './inspector-ui.css';
+@import './media-browser.css';
 
 .voodbuilder-editor-field .gjs-one-bg {
     background-color: var(--gray-50, #f9fafb);

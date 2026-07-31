@@ -32,8 +32,19 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply max-w-none w-full p-0;
 }
 
-.VPRichPage--landing > :is(section, .voodbuilder-editor-hero, .voodbuilder-editor-cta, .voodbuilder-editor-section, .voodbuilder-editor-footer):first-child {
-    @apply pt-0;
+/*
+ * Soft chrome flush for the first landing block when the author has NOT set
+ * py-* / pt-* utilities. MUST stay in @layer components + :where() so Tailwind
+ * utilities (py-24, pt-8, …) win — never unlayered :is(...):first-child { pt-0 }
+ * (specificity ~0,3,0 beats utilities and breaks editor ↔ front parity: the
+ * canvas often has a drop-spacer as :first-child, so the rule never fires there).
+ */
+@layer components {
+    :where(
+        .VPRichPage--landing > :is(section, .voodbuilder-editor-hero, .voodbuilder-editor-cta, .voodbuilder-editor-section, .voodbuilder-editor-footer):first-child
+    ) {
+        padding-top: 0;
+    }
 }
 
 .VPRichPage--landing {
@@ -178,7 +189,7 @@ body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-si
     }
 }
 
-/* Unlayered — wins over unlayered .voodbuilder-editor-container defaults (chrome-block-utilities). */
+/* Unlayered — wins over soft :where(.voodbuilder-editor-container) defaults. */
 .voodbuilder-editor-container[data-voodbuilder-content-width='normal'],
 .container[data-voodbuilder-content-width='normal'],
 [data-voodbuilder-role='content'][data-voodbuilder-content-width='normal'] {
@@ -247,7 +258,9 @@ body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-si
  * chrome-layout-canvas.css / section-utilities.css / frameStyle duplicates.
  * Editor-only chrome (drop slots, device toggles, gjs placeholders) stays
  * canvas-side. Defaults MUST NOT beat Tailwind utilities (mx-auto, max-w-*,
- * px-*, …): use @layer components + :where() so author utilities win.
+ * px-*, py-*, pt-*, pb-*, …): use @layer components + :where() so author
+ * utilities win. Never unlayered high-specificity padding/margin resets on
+ * sections/containers (see first-child chrome flush above).
  */
 
 /*
@@ -266,8 +279,18 @@ body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-si
     margin-inline: calc(50% - 50vw);
 }
 
-.VPRichPage--landing .voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container):has(> .voodbuilder-editor-hero, > section.voodbuilder-editor-hero) {
-    @apply max-w-none px-0 pt-0;
+/*
+ * Footer column hosting a nested hero: soft escape from boxed measure/gutters.
+ * @layer + :where so author px-* / pt-* / max-w-* on that container still win.
+ */
+@layer components {
+    :where(
+        .VPRichPage--landing .voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container):has(> .voodbuilder-editor-hero, > section.voodbuilder-editor-hero)
+    ) {
+        max-width: none;
+        padding-inline: 0;
+        padding-top: 0;
+    }
 }
 
 /*
@@ -345,32 +368,63 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     object-fit: contain;
 }
 
+/*
+ * Classic landing section width/padding traits (LandingBlockSupport).
+ * Bleed stays unlayered (intentional full-bleed chrome, like hero breakout).
+ * Contained/narrow/full/padding-* are soft defaults — @layer + :where so
+ * author mx-* / max-w-* / px-* / py-* utilities always win.
+ */
 .VPRichPage--landing > .vp-landing-section--bleed {
     @apply relative left-1/2 w-screen max-w-none -translate-x-1/2;
 }
 
-.VPRichPage--landing > .vp-landing-section--full {
-    @apply w-full max-w-none px-0;
-}
+@layer components {
+    :where(.VPRichPage--landing > .vp-landing-section--full) {
+        width: 100%;
+        max-width: none;
+        padding-inline: 0;
+    }
 
-.VPRichPage--landing > .vp-landing-section--contained {
-    @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 md:px-8;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--contained) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+        padding-inline: 1.5rem;
+    }
 
-.VPRichPage--landing > .vp-landing-section--narrow {
-    @apply mx-auto w-full max-w-3xl px-6 md:px-8;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--narrow) {
+        width: 100%;
+        max-width: 48rem; /* max-w-3xl */
+        margin-inline: auto;
+        padding-inline: 1.5rem;
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-none {
-    @apply py-0;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--padding-none) {
+        padding-block: 0;
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-default {
-    @apply py-10 md:py-14;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--padding-default) {
+        padding-block: 2.5rem; /* py-10 */
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-large {
-    @apply py-16 md:py-24;
+    :where(.VPRichPage--landing > .vp-landing-section--padding-large) {
+        padding-block: 4rem; /* py-16 */
+    }
+
+    @media (min-width: 48rem) {
+        :where(.VPRichPage--landing > .vp-landing-section--contained),
+        :where(.VPRichPage--landing > .vp-landing-section--narrow) {
+            padding-inline: 2rem; /* md:px-8 */
+        }
+
+        :where(.VPRichPage--landing > .vp-landing-section--padding-default) {
+            padding-block: 3.5rem; /* md:py-14 */
+        }
+
+        :where(.VPRichPage--landing > .vp-landing-section--padding-large) {
+            padding-block: 6rem; /* md:py-24 */
+        }
+    }
 }
 
 .vp-landing-hero {

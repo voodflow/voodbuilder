@@ -419,7 +419,8 @@
         display: none !important;
     }
 
-    .voodbuilder-editor-container {
+    /* Soft measure — :where so author max-w-* / mx-* utilities win. */
+    :where(.voodbuilder-editor-container) {
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
     }
 
@@ -467,10 +468,15 @@
         @apply font-sans tracking-tight;
     }
 
-    footer.voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container),
-    footer.voodbuilder-editor-dynamic > :is(.container, .voodbuilder-editor-container),
-    [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-editor-container) {
-        @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+    /* Soft footer gutters — :where so author px-* / max-w-* / mx-* win. */
+    :where(
+        footer.voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container),
+        footer.voodbuilder-editor-dynamic > :is(.container, .voodbuilder-editor-container),
+        [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-editor-container)
+    ) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
         box-sizing: border-box;
         padding-inline: 1.25rem;
     }
@@ -1139,4 +1145,256 @@ button[data-voodbuilder-cta='true']:empty {
 a[data-voodbuilder-cta='true']:empty::before,
 button[data-voodbuilder-cta='true']:empty::before {
     content: attr(data-voodbuilder-cta-label);
+}
+
+/*
+ * Catalog Elements BEM hooks (plasma / aurora / CTA motion).
+ * Must live in theme.css — Library import + chrome-shell save only persist Tailwind
+ * utilities and #id paints; embedded <style> from remote items does not survive.
+ */
+@keyframes vb-plasma-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes vb-plasma-spin-rev {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes vb-plasma-drift {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(4%, -3%, 0) scale(1.08);
+    }
+}
+
+.vb-hero-plasma__stage {
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+}
+
+.vb-hero-plasma__orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(48px);
+    opacity: 0.55;
+    will-change: transform;
+}
+
+.vb-hero-plasma__orb--a {
+    width: 42vw;
+    height: 42vw;
+    left: 8%;
+    top: 5%;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 70%, #a78bfa);
+    animation:
+        vb-plasma-spin 28s linear infinite,
+        vb-plasma-drift 11s ease-in-out infinite;
+}
+
+.vb-hero-plasma__orb--b {
+    width: 36vw;
+    height: 36vw;
+    right: 0;
+    top: 18%;
+    background: color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 65%, #22d3ee);
+    animation:
+        vb-plasma-spin-rev 34s linear infinite,
+        vb-plasma-drift 13s ease-in-out infinite reverse;
+}
+
+.vb-hero-plasma__orb--c {
+    width: 48vw;
+    height: 48vw;
+    left: 28%;
+    bottom: -18%;
+    background: color-mix(in srgb, var(--color-vp-brand-3, #5672cd) 55%, #f472b6);
+    animation:
+        vb-plasma-spin 40s linear infinite,
+        vb-plasma-drift 15s ease-in-out infinite;
+}
+
+@keyframes vb-aurora-a {
+    0%,
+    100% {
+        transform: translate(-8%, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(6%, 4%) rotate(25deg);
+    }
+}
+
+@keyframes vb-aurora-b {
+    0%,
+    100% {
+        transform: translate(10%, -4%) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(-8%, 6%) rotate(-30deg);
+    }
+}
+
+@keyframes vb-aurora-c {
+    0%,
+    100% {
+        transform: translate(0, 8%) scale(1);
+    }
+
+    50% {
+        transform: translate(-4%, -6%) scale(1.15);
+    }
+}
+
+.vb-hero-aurora__mesh {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.vb-hero-aurora__blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    opacity: 0.5;
+    will-change: transform;
+}
+
+.vb-hero-aurora__blob--1 {
+    width: 55%;
+    height: 55%;
+    left: -10%;
+    top: -15%;
+    background: #6366f1;
+    animation: vb-aurora-a 16s ease-in-out infinite;
+}
+
+.vb-hero-aurora__blob--2 {
+    width: 50%;
+    height: 50%;
+    right: -12%;
+    top: 10%;
+    background: #22d3ee;
+    animation: vb-aurora-b 19s ease-in-out infinite;
+}
+
+.vb-hero-aurora__blob--3 {
+    width: 45%;
+    height: 45%;
+    left: 30%;
+    bottom: -20%;
+    background: #ec4899;
+    animation: vb-aurora-c 14s ease-in-out infinite;
+}
+
+@keyframes vb-cta-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 45%, transparent);
+    }
+
+    50% {
+        box-shadow: 0 0 0 14px transparent;
+    }
+}
+
+@keyframes vb-cta-rise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.vb-cta-glow-pulse__btn {
+    animation: vb-cta-glow 2.4s ease-out infinite;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child] {
+    opacity: 0;
+    animation: vb-cta-rise 0.7s ease forwards;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='1'] {
+    animation-delay: 0.05s;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='2'] {
+    animation-delay: 0.18s;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='3'] {
+    animation-delay: 0.32s;
+}
+
+@keyframes vb-cta-shimmer {
+    0% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+@keyframes vb-cta-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.vb-cta-split-shimmer__card {
+    position: relative;
+    overflow: hidden;
+}
+
+.vb-cta-split-shimmer__sheen {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.35) 50%,
+        transparent 60%
+    );
+    animation: vb-cta-shimmer 3.2s ease-in-out infinite;
+}
+
+.vb-cta-split-shimmer__orb {
+    animation: vb-cta-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vb-hero-plasma__orb,
+    .vb-hero-aurora__blob,
+    .vb-cta-glow-pulse__btn,
+    .vb-cta-glow-pulse [data-vb-anim-child],
+    .vb-cta-split-shimmer__sheen,
+    .vb-cta-split-shimmer__orb {
+        animation: none !important;
+    }
+
+    .vb-cta-glow-pulse [data-vb-anim-child] {
+        opacity: 1 !important;
+    }
 }

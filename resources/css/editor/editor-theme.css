@@ -1324,6 +1324,50 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     word-break: break-all;
 }
 
+.voodbuilder-editor-root .voodbuilder-am-galleries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem 0.35rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    background: var(--color-vp-bg-elv, #fff);
+}
+
+.voodbuilder-editor-root .voodbuilder-am-galleries__hint {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-editor-root .voodbuilder-am-galleries__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.voodbuilder-editor-root .voodbuilder-am-galleries__chip {
+    appearance: none;
+    border: 1px solid color-mix(in oklab, var(--color-vp-divider, #cbd5e1) 100%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+    line-height: 1.2;
+    padding: 0.28rem 0.7rem;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-root .voodbuilder-am-galleries__chip:hover {
+    border-color: var(--color-vp-brand, #f59e0b);
+}
+
+.voodbuilder-editor-root .voodbuilder-am-galleries__chip.is-active {
+    background: color-mix(in oklab, var(--color-vp-brand, #f59e0b) 18%, transparent);
+    border-color: var(--color-vp-brand, #f59e0b);
+    font-weight: 600;
+}
+
 /*
  * Editor Asset Manager / Modal defaults to z-index: 100, which sits under our
  * editor shell (toolbar ~10040). Without this, dblclick-on-image looks broken.

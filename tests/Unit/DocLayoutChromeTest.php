@@ -33,4 +33,93 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringContainsString('--voodbuilder-chrome-layout-max, 80rem', $contents);
         $this->assertStringContainsString('padding-inline: 1.25rem', $contents);
     }
+
+    public function test_landing_css_first_child_padding_flush_yields_to_author_utilities(): void
+    {
+        $contents = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+        );
+
+        // Contract: soft first-block chrome flush must not beat Tailwind py-*/pt-*.
+        // Unlayered `.VPRichPage--landing > :is(...):first-child { @apply pt-0 }`
+        // had specificity ~(0,3,0) and zeroed author py-24 on the published front.
+        $this->assertStringNotContainsString(
+            '.VPRichPage--landing > :is(section, .voodbuilder-editor-hero, .voodbuilder-editor-cta, .voodbuilder-editor-section, .voodbuilder-editor-footer):first-child {',
+            $contents,
+        );
+        $this->assertStringContainsString(
+            ':where(',
+            $contents,
+        );
+        $this->assertMatchesRegularExpression(
+            '/@layer\s+components\s*\{[^}]*:where\(\s*\n?\s*\.VPRichPage--landing\s*>\s*:is\(section/s',
+            $contents,
+        );
+        $this->assertStringContainsString('Defaults MUST NOT beat Tailwind utilities', $contents);
+    }
+
+    public function test_landing_css_section_traits_and_footer_hero_escape_yield_to_author_utilities(): void
+    {
+        $contents = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+        );
+
+        // Soft section width/padding traits must not be unlayered high-specificity @apply.
+        $this->assertStringNotContainsString(
+            '.VPRichPage--landing > .vp-landing-section--contained {',
+            $contents,
+        );
+        $this->assertStringNotContainsString(
+            '.VPRichPage--landing > .vp-landing-section--padding-default {',
+            $contents,
+        );
+        $this->assertStringNotContainsString(
+            '@apply max-w-none px-0 pt-0',
+            $contents,
+        );
+        $this->assertStringContainsString(
+            ':where(.VPRichPage--landing > .vp-landing-section--contained)',
+            $contents,
+        );
+        $this->assertStringContainsString(
+            ':where(.VPRichPage--landing > .vp-landing-section--padding-default)',
+            $contents,
+        );
+        $this->assertStringContainsString(
+            '.VPRichPage--landing .voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container):has(> .voodbuilder-editor-hero, > section.voodbuilder-editor-hero)',
+            $contents,
+        );
+        $this->assertMatchesRegularExpression(
+            '/@layer\s+components\s*\{[\s\S]*:where\(\s*\n?\s*\.VPRichPage--landing\s+\.voodbuilder-editor-footer\s*>/s',
+            $contents,
+        );
+
+        // Intentional full-bleed chrome stays unlayered.
+        $this->assertStringContainsString(
+            '.VPRichPage--landing > .vp-landing-section--bleed {',
+            $contents,
+        );
+    }
+
+    public function test_chrome_block_utilities_container_default_yields_to_author_utilities(): void
+    {
+        $contents = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/css/editor/chrome-block-utilities.css',
+        );
+
+        // Unlayered `.voodbuilder-editor-container { max-width }` beat author max-w-*.
+        $this->assertDoesNotMatchRegularExpression(
+            '/(?<!:where\()\s*\.voodbuilder-editor-container\s*\{\s*\n\s*width:\s*100%;/s',
+            $contents,
+        );
+        $this->assertMatchesRegularExpression(
+            '/@layer\s+components\s*\{[^}]*:where\(\.voodbuilder-editor-container\)/s',
+            $contents,
+        );
+        // Toolbar attrs remain unlayered so they still beat the soft default.
+        $this->assertStringContainsString(
+            ".voodbuilder-editor-container[data-voodbuilder-content-width='full']",
+            $contents,
+        );
+    }
 }

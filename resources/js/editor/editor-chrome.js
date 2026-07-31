@@ -125,7 +125,8 @@ export const STYLE_MANAGER_SECTORS = [
             { property: 'color', important: true, default: '', defaults: '' },
             { property: 'line-height', important: true, default: '', defaults: '' },
             { property: 'text-align', important: true, default: '', defaults: '' },
-            { property: 'text-shadow', important: true, default: '', defaults: '' },
+            // Stack property: empty/important defaults break Grapes layer parsing.
+            { property: 'text-shadow', default: 'none' },
         ],
     },
     {
@@ -196,7 +197,9 @@ export const STYLE_MANAGER_SECTORS = [
                 ],
             },
             { property: 'border', important: true, default: '', defaults: '' },
-            { property: 'box-shadow', important: true, default: '', defaults: '' },
+            // Never set important/empty default on stack shadows — Grapes parses
+            // `0 0 5px black !important` into broken layers ("undefined undefined…").
+            { property: 'box-shadow', default: 'none' },
             { property: 'fill', important: true, default: '', defaults: '' },
             { property: 'stroke', important: true, default: '', defaults: '' },
         ],
@@ -220,8 +223,8 @@ export const STYLE_MANAGER_SECTORS = [
                 default: '',
                 defaults: '',
             },
-            { property: 'transition', important: true, default: '', defaults: '' },
-            { property: 'transform', important: true, default: '', defaults: '' },
+            { property: 'transition', default: 'none' },
+            { property: 'transform', default: 'none' },
         ],
     },
 ];
@@ -256,6 +259,9 @@ export function editorChromeInitOptions() {
         },
         styleManager: {
             sectors: STYLE_MANAGER_SECTORS,
+            // Do not surface canvas/chrome computed shadows/borders as if authored —
+            // Grapes defaults + showComputed made box-shadow reappear after clear.
+            avoidComputed: ['width', 'height', 'box-shadow', 'text-shadow', 'border', 'border-width', 'border-style', 'border-color'],
         },
     };
 }

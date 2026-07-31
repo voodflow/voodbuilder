@@ -28,7 +28,8 @@
         animation: voodbuilder-brand-pulse 2.4s ease-in-out infinite;
     }
 
-    .voodbuilder-editor-container {
+    /* Soft measure — :where so author max-w-* / mx-* utilities win (match theme.css). */
+    :where(.voodbuilder-editor-container) {
         @apply mx-auto w-full max-w-[var(--width-vp-layout)];
     }
 

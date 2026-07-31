@@ -200,6 +200,9 @@ export function nextContentWidthMode(mode, editor) {
     return modes[(current + 1) % modes.length];
 }
 
+/** Avoid component:styleUpdate (spacing sync must not strip layout gap-* utilities). */
+const SILENT_STYLE = { noEvent: true };
+
 /**
  * Clear previous content-width inline measure without wiping unrelated styles.
  *
@@ -217,16 +220,8 @@ function clearContentWidthInlineStyles(component) {
     delete style['margin-inline'];
     delete style.width;
 
-    // Editor setStyle replaces; keep remaining keys.
-    component.setStyle(style);
-
-    // Ensure removed keys do not linger as empty strings in the model.
-    component.removeStyle?.('max-width');
-    component.removeStyle?.('maxWidth');
-    component.removeStyle?.('margin-left');
-    component.removeStyle?.('margin-right');
-    component.removeStyle?.('margin-inline');
-    component.removeStyle?.('width');
+    // Editor setStyle replaces; keep remaining keys. noEvent skips spacing class strip.
+    component.setStyle(style, SILENT_STYLE);
 }
 
 /**
@@ -612,7 +607,7 @@ export function applyComponentContentWidth(component, mode, editor) {
             'max-width': STANDARD_CONTENT_MAX,
             'margin-left': 'auto',
             'margin-right': 'auto',
-        });
+        }, SILENT_STYLE);
     } else if (next === CONTENT_WIDTH_CUSTOM) {
         const custom = resolveCustomContentMax(editor);
 
@@ -627,7 +622,7 @@ export function applyComponentContentWidth(component, mode, editor) {
                 'max-width': custom,
                 'margin-left': 'auto',
                 'margin-right': 'auto',
-            });
+            }, SILENT_STYLE);
         } else {
             component.setClass(classes);
         }
@@ -638,7 +633,7 @@ export function applyComponentContentWidth(component, mode, editor) {
             'max-width': 'none',
             'margin-left': '0',
             'margin-right': '0',
-        });
+        }, SILENT_STYLE);
     }
 
     // Force canvas view to pick up attr + styles immediately (one-click WYSIWYG).

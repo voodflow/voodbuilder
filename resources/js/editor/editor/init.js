@@ -12,7 +12,7 @@ import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';
 import { createInspectorEmptyState } from '../inspector-empty-state.js';
-import { loadMediaLibrary, registerVideoAssetType } from '../editor-assets.js';
+import { registerVideoAssetType } from '../editor-assets.js';
 import voodbuilderEditorPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
@@ -776,7 +776,11 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     editor.__voodbuilderLabels = labels;
     registerVideoAssetType(editor);
-    void loadMediaLibrary(editor, options.mediaLibraryUrl ?? null);
+    editor.__voodbuilderMediaLibraryUrl = options.mediaLibraryUrl ?? '';
+    editor.__voodbuilderMediaGalleriesUrl = options.mediaGalleriesUrl ?? '';
+    editor.__voodbuilderUploadUrl = options.uploadUrl ?? '';
+    editor.__voodbuilderCsrf = options.csrf ?? '';
+    // Do not preload thousands of assets into GrapesJS AM — the media browser loads pages on demand.
 
     exposeEditorBridge();
 
@@ -1959,6 +1963,8 @@ function mountFrontendEditor() {
         subTheme: config.subTheme,
         canvasPrefersDark: config.canvasPrefersDark,
         uploadUrl: config.uploadUrl,
+        mediaLibraryUrl: config.mediaLibraryUrl ?? null,
+        mediaGalleriesUrl: config.mediaGalleriesUrl ?? null,
         imageEditor: config.imageEditor !== false,
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,

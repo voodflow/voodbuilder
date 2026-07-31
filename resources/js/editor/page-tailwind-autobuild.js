@@ -177,8 +177,9 @@ export function applyPageLiveCss(editor, css) {
 }
 
 /**
- * JIT compile returns utilities only. Keep author `#id` Style Manager paints from the
- * previous live sheet and/or CssComposer so background-color (etc.) survive rebuilds.
+ * JIT compile returns utilities only. Keep author `#id` Style Manager paints and
+ * custom class / @keyframes rules from CssComposer (Library embeds) so motion
+ * and paints survive rebuilds.
  *
  * @param {object} editor
  * @param {string} compiledCss

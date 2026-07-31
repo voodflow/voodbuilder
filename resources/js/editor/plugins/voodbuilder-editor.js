@@ -12,6 +12,7 @@ import {
     styleUpdatePropertyNames,
     walkComponentTree,
 } from '../tailwind-visual-style.js';
+import { filterOutConflictingBoxSpacingClasses } from '../spacing-utility-sync.js';
 import { registerBoundComponentType } from '../bindings-ui.js';
 import { registerTopDropSpacerType } from '../canvas-block-drag.js';
 import { resolveBlockLayerLabel } from '../layer-display-name.js';
@@ -60,15 +61,9 @@ function isSiteFooterBlock(blockId) {
     return isFooterBlock(blockId);
 }
 
-const SECTION_PADDING_CLASSES = ['py-0', 'py-8', 'py-12', 'py-16', 'py-20', 'py-24'];
-
-const TAILWIND_SPACING_CLASS = /^(?:md:)?(?:[pm][xytblr]?|gap(?:-[xy])?)-/;
-
 function stripTailwindSpacingClasses(component) {
-    const classes = safeGetClasses(component)
-        .filter((className) => ! TAILWIND_SPACING_CLASS.test(className) && ! SECTION_PADDING_CLASSES.includes(className));
-
-    component.setClass(classes);
+    // Strip p-*/m-* only — never gap-* (layout column spacing survives content-width margins).
+    component.setClass(filterOutConflictingBoxSpacingClasses(safeGetClasses(component)));
 }
 
 function isSpacingStyleProperty(property) {

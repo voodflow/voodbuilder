@@ -412,8 +412,9 @@ final class EditorPastedComponentNormalizer
     }
 
     /**
-     * Non-Tailwind rules from Editor getCss(): #id composer styles and custom class rules.
-     * Strips utility bundles and @media blocks (regenerated on compile).
+     * Non-Tailwind rules from Editor getCss(): #id composer styles, custom class
+     * rules, and @keyframes (Library embeds / pasted components). Strips utility
+     * bundles and @media blocks (regenerated on compile / shipped in theme.css).
      */
     public static function manualPageCssFromStoredCss(?string $storedCss): string
     {
@@ -423,13 +424,28 @@ final class EditorPastedComponentNormalizer
             return '';
         }
 
-        $withoutMedia = preg_replace('/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}/s', '', $storedCss) ?? $storedCss;
+        $kept = [];
 
-        if (! preg_match_all('/([^{}@]+)\{([^{}]*)\}/s', $withoutMedia, $matches, PREG_SET_ORDER)) {
-            return self::grapesComposerRulesFromStoredCss($storedCss);
+        if (preg_match_all('/@keyframes\s+[^{]+\{(?:[^{}]++|\{[^{}]*\})*\}/s', $storedCss, $keyframeMatches) > 0) {
+            foreach ($keyframeMatches[0] as $block) {
+                $trimmed = trim((string) $block);
+
+                if ($trimmed !== '') {
+                    $kept[] = $trimmed;
+                }
+            }
         }
 
-        $kept = [];
+        $withoutMedia = preg_replace('/@media[^{]*\{(?:[^{}]++|\{(?:[^{}]++|\{[^{}]*\})*\})*\}/s', '', $storedCss) ?? $storedCss;
+        $withoutKeyframes = preg_replace('/@keyframes\s+[^{]+\{(?:[^{}]++|\{[^{}]*\})*\}/s', '', $withoutMedia) ?? $withoutMedia;
+
+        if (! preg_match_all('/([^{}@]+)\{([^{}]*)\}/s', $withoutKeyframes, $matches, PREG_SET_ORDER)) {
+            if ($kept === []) {
+                return self::grapesComposerRulesFromStoredCss($storedCss);
+            }
+
+            return self::dedupeCssRules(trim(implode("\n", $kept)));
+        }
 
         foreach ($matches as $match) {
             $selectors = trim($match[1]);
@@ -506,6 +522,12 @@ final class EditorPastedComponentNormalizer
 
     public static function isTailwindUtilityClassName(string $className): bool
     {
+        $className = ltrim($className, '!');
+
+        if (preg_match('/^(?:isolate|border|rounded|shadow|truncate|uppercase|lowercase|capitalize|italic|underline|antialiased|contents|grow|shrink)$/i', $className) === 1) {
+            return true;
+        }
+
         $utilityPattern = '/^(?:[a-z][a-z0-9_-]*:)*-?(?:flex|grid|inline-flex|inline|block|hidden|contents|table|flow-root|list-item|absolute|relative|fixed|sticky|static|container|mx-|my-|mt-|mb-|ml-|mr-|w-|h-|min-w-|max-w-|min-h-|max-h-|size-|gap-|p-|px-|py-|pt-|pb-|pl-|pr-|m-|text-|bg-|rounded|shadow|aspect-|col-|row-|items-|justify-|self-|order-|space-|divide-|border-opacity|border-|ring-|outline-|opacity-|z-|top-|bottom-|left-|right-|inset-|object-|overflow-|truncate|whitespace-|leading-|font-|tracking-|underline|decoration-|backdrop-|transition|duration-|ease-|scale-|rotate-|translate-|skew-|origin-|fill-|stroke-|sr-only|not-sr-only|pointer-events-|select-|cursor-|align-|place-|content-|grow|shrink|basis-|from-|to-|via-|bg-vp-|text-vp-|antialiased|subpixel-antialiased|italic|not-italic|visible|invisible|collapse|isolate|box-|break-|hyphens-|list-|columns-|float-|clear-|overscroll-|scroll-|snap-|touch-|will-change-|accent-|caret-|field-sizing-)/i';
 
         return preg_match($utilityPattern, $className) === 1;

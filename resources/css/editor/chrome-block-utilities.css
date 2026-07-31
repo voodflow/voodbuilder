@@ -225,11 +225,18 @@
     font-family: var(--font-vp-sans, inherit);
 }
 
-.voodbuilder-editor-container {
-    width: 100%;
-    max-width: var(--width-vp-layout, 80rem);
-    margin-left: auto;
-    margin-right: auto;
+/*
+ * Soft measure for classic containers. MUST stay @layer + :where — unlayered
+ * .voodbuilder-editor-container { max-width } beat author max-w-* / mx-* on the
+ * published front (this sheet is imported by theme.css). Content-width attrs
+ * stay unlayered below so the toolbar still wins over this default.
+ */
+@layer components {
+    :where(.voodbuilder-editor-container) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+    }
 }
 
 .voodbuilder-editor-container[data-voodbuilder-content-width='normal'] {

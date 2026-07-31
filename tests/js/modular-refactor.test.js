@@ -444,6 +444,28 @@ describe('theme-tokens background clear', () => {
         expect(isClearedStyleValue('box-shadow', 'none')).toBe(true);
         expect(isClearedStyleValue('color', '#ff0000')).toBe(false);
 
+        const {
+            isStyleManagerInventedValue,
+            shouldOmitAuthorStyleValue,
+        } = await import('../../resources/js/editor/theme-tokens.js');
+
+        expect(isStyleManagerInventedValue('box-shadow', '0px 0px 5px 0px black')).toBe(true);
+        expect(isStyleManagerInventedValue('box-shadow', '0 0 5px black')).toBe(true);
+        expect(isStyleManagerInventedValue('box-shadow', '0 8px 24px rgba(15, 23, 42, 0.16)')).toBe(false);
+        expect(isStyleManagerInventedValue('border', '0 solid black')).toBe(true);
+        expect(isStyleManagerInventedValue('border', '2px solid #ef4444')).toBe(false);
+        expect(shouldOmitAuthorStyleValue('box-shadow', 'none')).toBe(true);
+        expect(shouldOmitAuthorStyleValue('box-shadow', '0 0 5px black')).toBe(true);
+        expect(isClearedStyleValue('box-shadow', '0 0 5px black')).toBe(true);
+        expect(isClearedStyleValue('box-shadow', '10px 10px 20px #333')).toBe(false);
+
+        const { isCorruptedStackStyleValue } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        expect(isCorruptedStackStyleValue('undefined undefined undefined undefined')).toBe(true);
+        expect(isCorruptedStackStyleValue('0 0 5px black')).toBe(false);
+
         const { enforceStyleManagerColorOverUtilities } = await import(
             '../../resources/js/editor/theme-tokens.js'
         );
@@ -526,6 +548,32 @@ describe('theme-tokens background clear', () => {
         expect(extracted).not.toContain('Archivo');
         expect(extracted).not.toContain('.flex');
         expect(extracted).not.toContain('@media');
+    });
+
+    it('extractGrapesComposerCss keeps custom BEM rules and @keyframes from Library embeds', async () => {
+        const { extractGrapesComposerCss } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const css = `
+@keyframes vb-plasma-spin{to{transform:rotate(360deg)}}
+.vb-hero-plasma__orb{position:absolute;filter:blur(48px)}
+.vb-hero-plasma__orb--a{width:42vw;animation:vb-plasma-spin 28s linear infinite}
+.flex{display:flex}
+.border{border-width:1px}
+.c999{color:red}
+#hero{color:#fff}
+`;
+
+        const extracted = extractGrapesComposerCss(css);
+
+        expect(extracted).toContain('@keyframes vb-plasma-spin');
+        expect(extracted).toContain('.vb-hero-plasma__orb');
+        expect(extracted).toContain('.vb-hero-plasma__orb--a');
+        expect(extracted).toContain('#hero');
+        expect(extracted).not.toContain('.flex');
+        expect(extracted).not.toContain('.border');
+        expect(extracted).not.toContain('.c999');
     });
 
     it('collectAuthorIdCssFromComponents emits #id rules from inline styles', async () => {
@@ -647,6 +695,278 @@ describe('theme-tokens background clear', () => {
 
         expect(styles['background-color']).toBe('#0ea5e9');
         expect(idRules['box-1']['background-color']).toContain('#0ea5e9');
+    });
+
+    it('style:property:update does not wipe border-radius on empty SM refresh', async () => {
+        const { registerVisualStyleInspector } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const handlers = {};
+        const styles = { 'border-radius': '16px', 'border-color': '#ef4444' };
+        const idRules = {
+            'img-1': { 'border-radius': '16px !important', 'border-color': '#ef4444 !important' },
+        };
+        const target = {
+            cid: 'c1',
+            getId: () => 'img-1',
+            getClasses: () => [],
+            getAttributes: () => ({}),
+            removeAttributes() {},
+            addStyle(next) {
+                Object.assign(styles, next);
+            },
+            removeStyle(property) {
+                delete styles[property];
+            },
+            setStyle(next, opts) {
+                if (opts?.inline) {
+                    Object.keys(styles).forEach((key) => delete styles[key]);
+                    Object.assign(styles, next);
+                }
+            },
+            getStyle: (opts) => (opts?.inline ? { ...styles } : { ...styles }),
+            components: () => ({ models: [] }),
+        };
+
+        const editor = {
+            on(event, handler) {
+                handlers[event] = handler;
+            },
+            getSelected: () => target,
+            StyleManager: { select() {} },
+            Styles: { getModelToStyle: () => null },
+            Css: {
+                getIdRule: (id) => (idRules[id]
+                    ? {
+                        getStyle: () => ({ ...idRules[id] }),
+                        setStyle(next) {
+                            idRules[id] = { ...next };
+                        },
+                    }
+                    : null),
+                setIdRule(id, style) {
+                    idRules[id] = { ...style };
+                },
+                remove(rule) {
+                    const id = Object.keys(idRules).find((key) => idRules[key] === rule.getStyle?.());
+                    if (id) {
+                        delete idRules[id];
+                    }
+                },
+                getComponentRules: () => [],
+                getRules: () => [],
+            },
+        };
+
+        registerVisualStyleInspector(editor);
+
+        // Empty radius after image src / reselect must keep author corners.
+        handlers['style:property:update']({
+            property: { getName: () => 'border-radius' },
+            value: '',
+            opts: {},
+        });
+
+        expect(styles['border-radius']).toBe('16px');
+        expect(idRules['img-1']['border-radius']).toContain('16px');
+
+        // Author border-color must survive empty SM refresh (same class of bug).
+        handlers['style:property:update']({
+            property: { getName: () => 'border-color' },
+            value: '',
+            opts: {},
+        });
+
+        expect(styles['border-color']).toBe('#ef4444');
+        expect(idRules['img-1']['border-color']).toContain('#ef4444');
+    });
+
+    it('style:property:update keeps author box-shadow and border on empty SM refresh', async () => {
+        const { registerVisualStyleInspector } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const handlers = {};
+        const styles = {
+            'box-shadow': '0 8px 24px rgba(15, 23, 42, 0.16)',
+            border: '2px solid #ef4444',
+        };
+        const idRules = {
+            'card-1': {
+                'box-shadow': '0 8px 24px rgba(15, 23, 42, 0.16) !important',
+                border: '2px solid #ef4444 !important',
+            },
+        };
+        const target = {
+            cid: 'c2',
+            getId: () => 'card-1',
+            getClasses: () => [],
+            getAttributes: () => ({}),
+            removeAttributes() {},
+            addStyle(next) {
+                Object.assign(styles, next);
+            },
+            removeStyle(property) {
+                delete styles[property];
+            },
+            setStyle(next, opts) {
+                if (opts?.inline) {
+                    Object.keys(styles).forEach((key) => delete styles[key]);
+                    Object.assign(styles, next);
+                }
+            },
+            getStyle: (opts) => (opts?.inline ? { ...styles } : { ...styles }),
+            components: () => ({ models: [] }),
+        };
+
+        const editor = {
+            on(event, handler) {
+                handlers[event] = handler;
+            },
+            getSelected: () => target,
+            StyleManager: { select() {} },
+            Styles: { getModelToStyle: () => null },
+            Css: {
+                getIdRule: (id) => (idRules[id]
+                    ? {
+                        getStyle: () => ({ ...idRules[id] }),
+                        setStyle(next) {
+                            idRules[id] = { ...next };
+                        },
+                    }
+                    : null),
+                setIdRule(id, style) {
+                    idRules[id] = { ...style };
+                },
+                remove() {},
+                getComponentRules: () => [],
+                getRules: () => [],
+            },
+        };
+
+        registerVisualStyleInspector(editor);
+
+        handlers['style:property:update']({
+            property: { getName: () => 'box-shadow' },
+            value: '',
+            opts: {},
+        });
+        handlers['style:property:update']({
+            property: { getName: () => 'border' },
+            value: '0 solid black',
+            opts: {},
+        });
+
+        expect(styles['box-shadow']).toBe('0 8px 24px rgba(15, 23, 42, 0.16)');
+        expect(styles.border).toBe('2px solid #ef4444');
+        expect(idRules['card-1']['box-shadow']).toContain('0 8px 24px');
+        expect(idRules['card-1'].border).toContain('2px solid');
+    });
+
+    it('style:property:update still scrubs invented box-shadow leftovers', async () => {
+        const { registerVisualStyleInspector } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const handlers = {};
+        const styles = { 'box-shadow': '0 0 5px black' };
+        const idRules = {
+            'card-2': { 'box-shadow': '0 0 5px black !important' },
+        };
+        const target = {
+            cid: 'c3',
+            getId: () => 'card-2',
+            getClasses: () => [],
+            getAttributes: () => ({}),
+            removeAttributes() {},
+            addStyle(next) {
+                Object.assign(styles, next);
+            },
+            removeStyle(property) {
+                delete styles[property];
+            },
+            setStyle(next, opts) {
+                if (opts?.inline) {
+                    Object.keys(styles).forEach((key) => delete styles[key]);
+                    Object.assign(styles, next);
+                }
+            },
+            getStyle: (opts) => (opts?.inline ? { ...styles } : { ...styles }),
+            components: () => ({ models: [] }),
+        };
+
+        const editor = {
+            on(event, handler) {
+                handlers[event] = handler;
+            },
+            getSelected: () => target,
+            StyleManager: { select() {} },
+            Styles: { getModelToStyle: () => null },
+            Css: {
+                getIdRule: (id) => (idRules[id]
+                    ? {
+                        getStyle: () => ({ ...idRules[id] }),
+                        setStyle(next) {
+                            idRules[id] = { ...next };
+                        },
+                    }
+                    : null),
+                setIdRule(id, style) {
+                    idRules[id] = { ...style };
+                },
+                remove(rule) {
+                    for (const id of Object.keys(idRules)) {
+                        if (idRules[id] && rule?.getStyle) {
+                            delete idRules[id];
+                        }
+                    }
+                },
+                getComponentRules: () => [],
+                getRules: () => [],
+            },
+        };
+
+        registerVisualStyleInspector(editor);
+
+        handlers['style:property:update']({
+            property: { getName: () => 'box-shadow' },
+            value: '0 0 5px black',
+            opts: {},
+        });
+
+        expect(styles['box-shadow']).toBeUndefined();
+    });
+
+    it('syncStaleDecorationRules hydrates border-radius from #id into inline', async () => {
+        const { syncStaleDecorationRules } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const inline = {};
+        const target = {
+            getId: () => 'img-2',
+            getClasses: () => [],
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            addStyle(next) {
+                Object.assign(inline, next);
+            },
+            components: () => ({ models: [] }),
+        };
+
+        const editor = {
+            Css: {
+                getIdRule: () => ({
+                    getStyle: () => ({ 'border-radius': '24px !important' }),
+                }),
+                getComponentRules: () => [],
+                getRules: () => [],
+            },
+        };
+
+        syncStaleDecorationRules(editor, target);
+
+        expect(inline['border-radius']).toBe('24px');
     });
 
     it('styleUpdatePropertyNames reads Grapes { style } payload', async () => {
@@ -1104,6 +1424,143 @@ describe('layout container column presets preserve content', () => {
         expect(classes).toContain('max-w-[80rem]');
         expect(classes).toContain('mx-auto');
         expect(String(attrs.style)).toContain('max-width: 80rem');
+    });
+});
+
+describe('content width preserves layout gap', () => {
+    function mockWidthTarget(initialClasses) {
+        let classList = [...initialClasses];
+        let styleState = { width: '100%' };
+        const attrs = {};
+
+        return {
+            getClasses: () => [...classList],
+            setClass(next) {
+                classList = [...next];
+            },
+            getAttributes: () => ({ ...attrs }),
+            addAttributes(next) {
+                Object.assign(attrs, next);
+            },
+            getStyle: () => ({ ...styleState }),
+            setStyle(next) {
+                styleState = { ...next };
+            },
+            addStyle(next) {
+                Object.assign(styleState, next);
+            },
+            removeStyle(prop) {
+                delete styleState[prop];
+            },
+            __classes: () => classList,
+            __style: () => styleState,
+            __attrs: () => attrs,
+        };
+    }
+
+    it('box-spacing strip keeps gap-* / grid / vb-layout-* (margin sync must not wipe columns)', async () => {
+        const { filterOutConflictingBoxSpacingClasses, isTailwindBoxSpacingClass } = await import(
+            '../../resources/js/editor/spacing-utility-sync.js'
+        );
+
+        expect(isTailwindBoxSpacingClass('gap-4')).toBe(false);
+        expect(isTailwindBoxSpacingClass('md:gap-8')).toBe(false);
+        expect(isTailwindBoxSpacingClass('gap-x-4')).toBe(false);
+        expect(isTailwindBoxSpacingClass('mx-auto')).toBe(true);
+        expect(isTailwindBoxSpacingClass('px-4')).toBe(true);
+        expect(isTailwindBoxSpacingClass('py-16')).toBe(true);
+
+        const kept = filterOutConflictingBoxSpacingClasses([
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'w-full',
+            'grid',
+            'gap-4',
+            'mx-auto',
+            'px-6',
+            'md:gap-8',
+        ]);
+
+        expect(kept).toEqual([
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'w-full',
+            'grid',
+            'gap-4',
+            'md:gap-8',
+        ]);
+    });
+
+    it('applyComponentContentWidth never drops layout gap/grid utilities', async () => {
+        const { applyComponentContentWidth, CONTENT_WIDTH_ATTR, CONTENT_WIDTH_NORMAL, CONTENT_WIDTH_FULL } = await import(
+            '../../resources/js/editor/content-width-toolbar.js'
+        );
+
+        const layoutClasses = [
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'w-full',
+            'grid',
+            'gap-4',
+        ];
+        const component = mockWidthTarget(layoutClasses);
+        const editor = { __voodbuilderPageContentWidth: { mode: 'full' } };
+
+        applyComponentContentWidth(component, CONTENT_WIDTH_NORMAL, editor);
+
+        expect(component.__attrs()[CONTENT_WIDTH_ATTR]).toBe('normal');
+        expect(component.__classes()).toEqual(expect.arrayContaining([
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'w-full',
+            'grid',
+            'gap-4',
+            'mx-auto',
+            'max-w-[80rem]',
+        ]));
+        expect(component.__style()['max-width']).toBe('80rem');
+
+        applyComponentContentWidth(component, CONTENT_WIDTH_FULL, editor);
+
+        expect(component.__attrs()[CONTENT_WIDTH_ATTR]).toBe('full');
+        expect(component.__classes()).toEqual(expect.arrayContaining([
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'grid',
+            'gap-4',
+            'w-full',
+        ]));
+        expect(component.__classes()).not.toContain('gap-0');
+        expect(component.__classes().filter((name) => /^gap-/.test(name))).toEqual(['gap-4']);
+    });
+
+    it('simulates styleUpdate after content-width margins: gap survives box-spacing filter', async () => {
+        const { filterOutConflictingBoxSpacingClasses } = await import(
+            '../../resources/js/editor/spacing-utility-sync.js'
+        );
+        const { applyComponentContentWidth, CONTENT_WIDTH_NORMAL } = await import(
+            '../../resources/js/editor/content-width-toolbar.js'
+        );
+
+        const component = mockWidthTarget([
+            'voodbuilder-editor-container',
+            'vb-layout-row',
+            'w-full',
+            'grid',
+            'gap-4',
+        ]);
+        const editor = { __voodbuilderPageContentWidth: { mode: 'full' } };
+
+        applyComponentContentWidth(component, CONTENT_WIDTH_NORMAL, editor);
+
+        // Legacy bug path: margin styleUpdate ran stripTailwindSpacingClasses including gap-*.
+        const afterStyleSync = filterOutConflictingBoxSpacingClasses(component.__classes());
+        component.setClass(afterStyleSync);
+
+        expect(component.__classes()).toContain('gap-4');
+        expect(component.__classes()).toContain('grid');
+        expect(component.__classes()).toContain('vb-layout-row');
+        expect(component.__classes()).not.toContain('mx-auto');
     });
 });
 

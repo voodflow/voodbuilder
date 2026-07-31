@@ -15,6 +15,8 @@ import {
     isClearedBackgroundImage,
     isClearedStyleValue,
     isStyleManagerDefaultWhiteBackground,
+    isStyleManagerInventedValue,
+    shouldOmitAuthorStyleValue,
     styleHasAuthorBackgroundPaint,
     enforceStyleManagerColorOverUtilities,
 } from './theme-tokens.js';
@@ -322,6 +324,70 @@ function shouldForwardStyleProperty(property) {
         && FORWARDED_STYLE_PREFIXES.some((prefix) => property === prefix || property.startsWith(`${prefix}-`));
 }
 
+function isBorderRadiusProperty(property) {
+    return typeof property === 'string'
+        && /^(border-radius|border-top-left-radius|border-top-right-radius|border-bottom-left-radius|border-bottom-right-radius)$/.test(property);
+}
+
+/**
+ * Empty SM updates may scrub invented border/shadow leftovers from the model.
+ * Never include border-radius: Grapes often emits empty radius on reselect /
+ * src change; clearing it removes #id rules while the canvas CSSOM stays
+ * rounded until refresh — save then ships square corners on the front.
+ *
+ * Even for these properties, callers must only clear when the stored value is
+ * empty/invented — never wipe a real author paint on SM refresh noise.
+ */
+function shouldAutoClearEmptyStyleProperty(property) {
+    if (property === 'box-shadow' || property === 'text-shadow' || property === 'border') {
+        return true;
+    }
+
+    return typeof property === 'string'
+        && property.startsWith('border-')
+        && ! isBorderRadiusProperty(property);
+}
+
+/**
+ * Inline + #id union for one property (author dual storage).
+ *
+ * @param {import('grapesjs').Editor} editor
+ * @param {import('grapesjs').Component} component
+ * @param {string} property
+ * @returns {string}
+ */
+function readStoredAuthorStyleValue(editor, component, property) {
+    if (! component || ! property) {
+        return '';
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const inline = target.getStyle?.({ inline: true })?.[property]
+        ?? target.getStyle?.()?.[property]
+        ?? '';
+    const id = target.getId?.();
+    const fromId = id && editor?.Css?.getIdRule?.(id)
+        ? (editor.Css.getIdRule(id).getStyle?.()?.[property] ?? '')
+        : '';
+    const raw = String(inline || fromId || '').trim();
+
+    return raw.replace(/\s*!important\s*$/i, '').trim();
+}
+
+const DECORATION_STYLE_PROPERTIES = [
+    'border-radius',
+    'border-top-left-radius',
+    'border-top-right-radius',
+    'border-bottom-left-radius',
+    'border-bottom-right-radius',
+    'box-shadow',
+    'text-shadow',
+    'border',
+    'border-color',
+    'border-width',
+    'border-style',
+];
+
 function ensureImportantStyleValue(value) {
     if (value == null || value === '') {
         return value;
@@ -500,7 +566,7 @@ export function bakeAuthorStylesToComposerForExport(editor) {
                 continue;
             }
 
-            if (isClearedStyleValue(property, value)) {
+            if (shouldOmitAuthorStyleValue(property, value)) {
                 continue;
             }
 
@@ -509,7 +575,7 @@ export function bakeAuthorStylesToComposerForExport(editor) {
 
         // Inline explicitly cleared a key that still exists only on the #id rule.
         for (const property of Object.keys(inline)) {
-            if (isClearedStyleValue(property, inline[property])) {
+            if (shouldOmitAuthorStyleValue(property, inline[property])) {
                 delete merged[property];
             }
         }
@@ -520,7 +586,7 @@ export function bakeAuthorStylesToComposerForExport(editor) {
                 const stillLive = Object.entries(live).some(([property, value]) => {
                     return value != null
                         && value !== ''
-                        && ! isClearedStyleValue(property, value);
+                        && ! shouldOmitAuthorStyleValue(property, value);
                 });
 
                 if (! stillLive && Object.keys(live).length > 0) {
@@ -532,7 +598,18 @@ export function bakeAuthorStylesToComposerForExport(editor) {
         }
 
         // Style Manager paints beat utility classes (same node + inheritance).
+        // Never !important stack shadows/transforms — Grapes cannot re-parse layers.
         for (const [property, value] of Object.entries(merged)) {
+            if (
+                property === 'box-shadow'
+                || property === 'text-shadow'
+                || property === 'transition'
+                || property === 'transform'
+            ) {
+                merged[property] = String(value).replace(/\s*!important\s*$/i, '').trim();
+                continue;
+            }
+
             if (
                 property === 'color'
                 || property === 'fill'
@@ -541,8 +618,6 @@ export function bakeAuthorStylesToComposerForExport(editor) {
                 || property === 'background-color'
                 || property === 'background-image'
                 || property === 'border-color'
-                || property === 'box-shadow'
-                || property === 'text-shadow'
                 || property === 'font-family'
                 || property === 'font-size'
                 || property === 'font-weight'
@@ -611,9 +686,13 @@ export function hydrateAuthorStylesFromIdRules(editor) {
         }
 
         const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
-        const next = { ...fromId };
+        const next = {};
 
-        for (const [property, value] of Object.entries(next)) {
+        for (const [property, value] of Object.entries(fromId)) {
+            if (shouldOmitAuthorStyleValue(property, value)) {
+                continue;
+            }
+
             let cleaned = String(value ?? '').replace(/\s*!important\s*$/i, '').trim();
 
             if (property === 'font-family') {
@@ -625,6 +704,10 @@ export function hydrateAuthorStylesFromIdRules(editor) {
 
             // Prefer existing inline when already set (author just edited).
             if (inline[property] != null && String(inline[property]).trim() !== '') {
+                if (shouldOmitAuthorStyleValue(property, inline[property])) {
+                    continue;
+                }
+
                 let kept = String(inline[property]).replace(/\s*!important\s*$/i, '').trim();
 
                 if (property === 'font-family') {
@@ -635,6 +718,10 @@ export function hydrateAuthorStylesFromIdRules(editor) {
             } else {
                 next[property] = cleaned;
             }
+        }
+
+        if (Object.keys(next).length === 0) {
+            return;
         }
 
         component.addStyle?.(next, { inline: true });
@@ -700,16 +787,92 @@ function normalizeClassNames(rawClasses) {
  * @returns {object}
  */
 function stylesForInlinePersist(styles) {
-    const inlineStyles = { ...styles };
+    const inlineStyles = {};
 
-    if (inlineStyles['font-family']) {
-        inlineStyles['font-family'] = String(inlineStyles['font-family'])
-            .replace(/\s*!important\s*$/i, '')
-            .trim()
-            .replace(/"([^"]+)"/g, "'$1'");
+    for (const [property, value] of Object.entries(styles ?? {})) {
+        if (value == null || value === '') {
+            continue;
+        }
+
+        let next = String(value).replace(/\s*!important\s*$/i, '').trim();
+
+        if (next === '') {
+            continue;
+        }
+
+        if (property === 'font-family') {
+            next = next.replace(/"([^"]+)"/g, "'$1'");
+        }
+
+        inlineStyles[property] = next;
     }
 
     return inlineStyles;
+}
+
+/**
+ * Grapes stack layerLabel becomes "undefined undefined…" when box-shadow was
+ * persisted with !important or an empty default. Detect and wipe.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isCorruptedStackStyleValue(value) {
+    const raw = String(value ?? '').trim().toLowerCase();
+
+    if (raw === '') {
+        return false;
+    }
+
+    return raw.includes('undefined')
+        || /^undefined(\s+undefined)+$/.test(raw);
+}
+
+/**
+ * @param {object} editor
+ * @param {object} component
+ */
+function sanitizeCorruptedStackStyles(editor, component) {
+    if (! component) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const inline = { ...(target.getStyle?.({ inline: true }) ?? {}) };
+    const id = target.getId?.();
+    const idStyle = id && editor?.Css?.getIdRule
+        ? { ...(editor.Css.getIdRule(id)?.getStyle?.() ?? {}) }
+        : {};
+
+    for (const property of ['box-shadow', 'text-shadow', 'transition', 'transform']) {
+        const inlineValue = inline[property];
+        const idValue = idStyle[property];
+
+        if (isCorruptedStackStyleValue(inlineValue) || isCorruptedStackStyleValue(idValue)) {
+            clearStyleProperty(editor, target, property);
+            continue;
+        }
+
+        // Strip !important from stack paints so SM can re-parse layers on select.
+        for (const [source, value] of [['inline', inlineValue], ['id', idValue]]) {
+            if (value == null || value === '') {
+                continue;
+            }
+
+            const cleaned = String(value).replace(/\s*!important\s*$/i, '').trim();
+
+            if (cleaned === String(value).trim()) {
+                continue;
+            }
+
+            if (source === 'inline') {
+                target.addStyle?.({ [property]: cleaned }, { inline: true });
+            } else if (id && editor.Css?.setIdRule) {
+                const next = { ...idStyle, [property]: cleaned };
+                editor.Css.setIdRule(id, next);
+            }
+        }
+    }
 }
 
 /**
@@ -784,7 +947,15 @@ export function promotePrivateStyleClassesToIdRules(editor) {
         // Do NOT use getStyle() here — it re-reads private-class paints and would
         // put the shared font back on top of a divergent #id rule.
         const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
-        const merged = { ...fromPrivate, ...existing, ...inline };
+        const merged = {};
+
+        for (const [property, value] of Object.entries({ ...fromPrivate, ...existing, ...inline })) {
+            if (value == null || value === '' || shouldOmitAuthorStyleValue(property, value)) {
+                continue;
+            }
+
+            merged[property] = value;
+        }
 
         if (id && Object.keys(merged).length > 0) {
             css.setIdRule(id, merged);
@@ -857,7 +1028,15 @@ export function detachPrivateStyleClassesOntoId(editor, rootComponent) {
             const existing = id ? { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) } : {};
             const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
             // At clone time styles start equal; #id/inline still win if already set.
-            const next = { ...fromPrivate, ...existing, ...inline };
+            const next = {};
+
+            for (const [property, value] of Object.entries({ ...fromPrivate, ...existing, ...inline })) {
+                if (value == null || value === '' || shouldOmitAuthorStyleValue(property, value)) {
+                    continue;
+                }
+
+                next[property] = value;
+            }
 
             if (id && Object.keys(next).length > 0) {
                 css.setIdRule(id, next);
@@ -2304,6 +2483,54 @@ export function syncStaleBackgroundRules(editor, component) {
 }
 
 /**
+ * On select: hydrate border-radius from #id / private rules when inline is empty
+ * (e.g. after image src change). Keeps Style Manager and getHtml in sync with
+ * what the canvas still shows from CssComposer.
+ */
+export function syncStaleDecorationRules(editor, component) {
+    if (! component || isPurgingBackground(editor) || ! editor?.Css) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component);
+    const inline = { ...(target.getStyle?.({ inline: true }) ?? {}) };
+    const ruleStyle = {};
+
+    for (const rule of collectComponentStyleRules(editor, target)) {
+        Object.assign(ruleStyle, rule.getStyle?.() ?? {});
+    }
+
+    const hydrate = {};
+
+    for (const property of DECORATION_STYLE_PROPERTIES) {
+        const inlineValue = inline[property];
+
+        if (inlineValue != null && inlineValue !== '' && ! isClearedStyleValue(property, inlineValue)) {
+            continue;
+        }
+
+        const value = ruleStyle[property];
+
+        if (
+            value == null
+            || value === ''
+            || isClearedStyleValue(property, value)
+            || isStyleManagerInventedValue(property, value)
+        ) {
+            continue;
+        }
+
+        hydrate[property] = String(value).replace(/\s*!important\s*$/i, '').trim();
+    }
+
+    if (Object.keys(hydrate).length === 0) {
+        return;
+    }
+
+    target.addStyle?.(hydrate, { inline: true });
+}
+
+/**
  * Strip only cleared *tokens* (none / transparent / empty) left on background
  * rules. Do not treat "composer has paint, inline empty" as a clear — dual storage.
  */
@@ -2437,6 +2664,8 @@ export function registerVisualStyleInspector(editor) {
             }
 
             syncStaleBackgroundRules(editor, component);
+            syncStaleDecorationRules(editor, component);
+            sanitizeCorruptedStackStyles(editor, component);
 
             const target = resolveVisualStyleTarget(component);
 
@@ -2497,12 +2726,45 @@ export function registerVisualStyleInspector(editor) {
         // dropped paints that never became #id rules (fonts/colors vanished on reload).
         const raw = String(value ?? '').trim();
 
-        if (raw === '' || raw === 'undefined') {
+        // Empty / none / Grapes composite defaults / corrupted stack labels are NOT
+        // author styles — do not persist them. Only scrub the model when the *stored*
+        // value is already empty/invented/corrupt (leftover cleanup). If the author
+        // has a real paint, SM refresh noise after image src / reselect must not wipe it.
+        if (
+            raw === ''
+            || raw === 'undefined'
+            || isCorruptedStackStyleValue(raw)
+            || shouldOmitAuthorStyleValue(propertyName, raw)
+            || isStyleManagerInventedValue(propertyName, raw)
+        ) {
+            if (isCorruptedStackStyleValue(raw)) {
+                clearStyleProperty(editor, selected, propertyName);
+
+                return;
+            }
+
+            if (shouldAutoClearEmptyStyleProperty(propertyName)) {
+                const stored = readStoredAuthorStyleValue(editor, selected, propertyName);
+
+                if (
+                    stored === ''
+                    || shouldOmitAuthorStyleValue(propertyName, stored)
+                    || isCorruptedStackStyleValue(stored)
+                ) {
+                    clearStyleProperty(editor, selected, propertyName);
+                }
+            }
+
             return;
         }
 
         const target = resolveVisualStyleTarget(selected) ?? selected;
-        const needsImportant = EXPORT_PAINT_PROPERTIES.includes(propertyName)
+        const isStackPaint = propertyName === 'box-shadow'
+            || propertyName === 'text-shadow'
+            || propertyName === 'transition'
+            || propertyName === 'transform';
+        const needsImportant = ! isStackPaint && (
+            EXPORT_PAINT_PROPERTIES.includes(propertyName)
             || propertyName === 'font-family'
             || propertyName === 'font-size'
             || propertyName === 'font-weight'
@@ -2511,8 +2773,7 @@ export function registerVisualStyleInspector(editor) {
             || propertyName === 'color'
             || propertyName.startsWith('background')
             || propertyName.startsWith('border')
-            || propertyName === 'box-shadow'
-            || propertyName === 'text-shadow';
+        );
         const persistValue = needsImportant ? ensureImportantStyleValue(raw) : raw;
         const inlineValue = String(persistValue).replace(/\s*!important\s*$/i, '').trim();
 
@@ -2526,6 +2787,15 @@ export function registerVisualStyleInspector(editor) {
 
         if (targetId && editor.Css?.setIdRule) {
             const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
+            delete existing[propertyName];
+
+            // Drop invented leftovers that may still sit on the #id rule.
+            for (const [key, existingValue] of Object.entries(existing)) {
+                if (shouldOmitAuthorStyleValue(key, existingValue) || isCorruptedStackStyleValue(existingValue)) {
+                    delete existing[key];
+                }
+            }
+
             editor.Css.setIdRule(targetId, {
                 ...existing,
                 [propertyName]: persistValue,
@@ -2623,7 +2893,10 @@ export function registerVisualStyleTarget(editor) {
             component.removeStyle(property);
             // Always persist on the visual target as inline + #id so chrome-shell
             // export (and reload) does not depend on private .c* classes.
-            target.addStyle({ [property]: ensureImportantStyleValue(value) }, { inline: true });
+            // Inline must stay SM-friendly (no !important) — same as style:property:update.
+            const persistValue = ensureImportantStyleValue(value);
+            const inlineValue = String(persistValue).replace(/\s*!important\s*$/i, '').trim();
+            target.addStyle({ [property]: inlineValue }, { inline: true });
 
             const targetId = target.getId?.();
 
@@ -2631,7 +2904,7 @@ export function registerVisualStyleTarget(editor) {
                 const existing = { ...(editor.Css.getIdRule?.(targetId)?.getStyle?.() ?? {}) };
                 editor.Css.setIdRule(targetId, {
                     ...existing,
-                    [property]: ensureImportantStyleValue(value),
+                    [property]: persistValue,
                 });
             }
 

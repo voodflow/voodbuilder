@@ -359,8 +359,87 @@ export function isStyleManagerDefaultWhiteBackground(value) {
         return true;
     }
 
-    return /^rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)$/.test(normalized)
-        || normalized === 'rgb(255,255,255)';
+    if (normalized === 'rgb(255,255,255)' || normalized === 'rgba(255,255,255,1)') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * GrapesJS Style Manager composite/stack defaults (not authored by the user).
+ * Example: box-shadow stack defaults to `0 0 5px black`; border composite to
+ * `0 solid black`. Persisting those makes shadows/borders reappear after clear.
+ *
+ * @param {string} property
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isStyleManagerInventedValue(property, value) {
+    if (value == null || value === '') {
+        return false;
+    }
+
+    const prop = String(property ?? '').trim().toLowerCase();
+    const normalized = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s*!important\s*$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (normalized === '') {
+        return false;
+    }
+
+    const black = '(?:black|#000(?:000)?|rgb\\(\\s*0\\s*,\\s*0\\s*,\\s*0\\s*\\)|rgba\\(\\s*0\\s*,\\s*0\\s*,\\s*0\\s*,\\s*1(?:\\.0)?\\s*\\))';
+    const zero = '0(?:px)?';
+
+    if (prop === 'box-shadow' || prop === 'text-shadow') {
+        // Default stack layer: 0 0 5px [0] black (optional inset / spread).
+        const offsetForm = new RegExp(
+            `^(?:inset\\s+)?${zero}\\s+${zero}\\s+5px(?:\\s+${zero})?\\s+${black}$`,
+        );
+        const colorFirstForm = new RegExp(
+            `^${black}\\s+${zero}\\s+${zero}\\s+5px(?:\\s+${zero})?(?:\\s+inset)?$`,
+        );
+
+        return offsetForm.test(normalized) || colorFirstForm.test(normalized);
+    }
+
+    if (prop === 'border' || /^border-(top|right|bottom|left)$/.test(prop)) {
+        // Composite default display: 0 solid black (zero width → invisible, still invents).
+        return new RegExp(`^${zero}\\s+solid\\s+${black}$`).test(normalized)
+            || new RegExp(`^${black}\\s+${zero}\\s+solid$`).test(normalized);
+    }
+
+    if (prop === 'border-color' && new RegExp(`^${black}$`).test(normalized)) {
+        // Alone, black is a valid author colour — only invent when paired via composite.
+        return false;
+    }
+
+    if (prop === 'border-style' && normalized === 'solid') {
+        return false;
+    }
+
+    if ((prop === 'border-width' || /^border-(top|right|bottom|left)-width$/.test(prop))
+        && new RegExp(`^${zero}$`).test(normalized)) {
+        // Zero width alone is a no-op paint — do not persist as author style.
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * True when a style value should not be kept as author paint (cleared or SM-invented).
+ *
+ * @param {string} property
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function shouldOmitAuthorStyleValue(property, value) {
+    return isClearedStyleValue(property, value) || isStyleManagerInventedValue(property, value);
 }
 
 /**
@@ -411,7 +490,13 @@ export function isClearedStyleValue(property, value) {
     }
 
     if (property === 'box-shadow' || property === 'text-shadow') {
-        return normalized === 'none';
+        return normalized === 'none' || isStyleManagerInventedValue(property, value);
+    }
+
+    if (property === 'border' || /^border-(top|right|bottom|left)$/.test(String(property ?? ''))) {
+        if (isStyleManagerInventedValue(property, value)) {
+            return true;
+        }
     }
 
     if (property === 'opacity' && (normalized === '1' || normalized === '1.0')) {

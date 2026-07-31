@@ -125,6 +125,9 @@ final class EditorGate
             'viewPageUrl' => $page->getUrl(),
             'uploadUrl' => self::editorRoute('voodbuilder.editor.upload'),
             'mediaLibraryUrl' => self::editorRoute('voodbuilder.editor.media.index'),
+            'mediaGalleriesUrl' => \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries')
+                ? self::editorRoute('voodbuilder.editor.media.galleries')
+                : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),

@@ -420,6 +420,25 @@ CSS;
         $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 
+    public function test_manual_page_css_from_stored_css_keeps_keyframes_and_bem_hooks(): void
+    {
+        $storedCss = <<<'CSS'
+@keyframes vb-plasma-spin{to{transform:rotate(360deg)}}
+.vb-hero-plasma__orb{position:absolute;filter:blur(48px)}
+.flex{display:flex}
+@media (min-width: 768px){.p-4{padding:1rem}}
+#hero{color:#fff}
+CSS;
+
+        $manual = EditorPastedComponentNormalizer::manualPageCssFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('@keyframes vb-plasma-spin', $manual);
+        $this->assertStringContainsString('.vb-hero-plasma__orb', $manual);
+        $this->assertStringContainsString('#hero', $manual);
+        $this->assertStringNotContainsString('.flex', $manual);
+        $this->assertStringNotContainsString('@media', $manual);
+    }
+
     public function test_dedupe_css_rules_collapses_identical_rules(): void
     {
         $css = ".hero { color: red; }\n.hero { color: red; }\n.other { color: blue; }";
