@@ -1,5 +1,5 @@
 /**
- * Export upstream section React components to GrapesJS-ready JSON for voodbuilder:build-sections.
+ * Export upstream section React components to Editor-ready JSON for voodbuilder:build-sections.
  */
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -35,7 +35,7 @@ function migrateToTailwindV4(html) {
     return migrated;
 }
 
-function fixGrapesJsSrcUri(value) {
+function fixEditorSrcUri(value) {
     return value.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
 }
 
@@ -58,10 +58,10 @@ function normalizePlaceholderUrls(html) {
         .replace(new RegExp(`\\bbackground-image\\s*:\\s*url\\((["']?)(${hostPattern})\\1\\)\\s*;?`, 'gi'), `background-image: url(${NEUTRAL_PLACEHOLDER_SRC});`);
 }
 
-function sanitizeGrapesJsHtml(html) {
+function sanitizeEditorHtml(html) {
     const normalized = normalizePlaceholderUrls(html);
 
-    return normalized.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixGrapesJsSrcUri(src)}${quote}`);
+    return normalized.replace(/\bsrc=(["'])(.*?)\1/gi, (match, quote, src) => `src=${quote}${fixEditorSrcUri(src)}${quote}`);
 }
 
 function formatBlockLabel(category, variant) {
@@ -122,7 +122,7 @@ for (const darkMode of [false]) {
             }
 
             const rawHtml = renderToStaticMarkup(element).replace(/<link rel="preload"[^>]*>/g, '');
-            const html = sanitizeGrapesJsHtml(migrateToTailwindV4(rawHtml));
+            const html = sanitizeEditorHtml(migrateToTailwindV4(rawHtml));
             const id = `section-source-${category.toLowerCase()}-${variant.toLowerCase()}`;
 
             definitions.push({

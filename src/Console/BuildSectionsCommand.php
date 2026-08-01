@@ -7,7 +7,7 @@ namespace Voodflow\Voodbuilder\Console;
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
-use Voodflow\Voodbuilder\Support\Editor\SoundmitEditorLanding;
+use Voodflow\Voodbuilder\Support\Editor\DemoEditorLanding;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 /**
@@ -69,7 +69,7 @@ class BuildSectionsCommand extends Command
         $sectionCount = (new SectionBlocksCatalogBuilder)->write();
 
         $this->components->info('Voodbuilder section catalog ready ('.$sectionCount.' blocks): '.SectionBlocksCatalogBuilder::outputPath());
-        SoundmitEditorLanding::writeUtilitiesCatalog();
+        DemoEditorLanding::writeUtilitiesCatalog();
         $this->components->warn('Run `npm run build` so section-utilities.css is compiled for the canvas.');
 
         return self::SUCCESS;

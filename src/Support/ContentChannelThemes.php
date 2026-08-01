@@ -30,7 +30,7 @@ final class ContentChannelThemes
     }
 
     /**
-     * Events and exhibitors often share the same visual theme (e.g. Soundmit).
+     * Events and exhibitors often share the same visual theme.
      * When one landing channel has an explicit override, the other can inherit it.
      */
     public static function peerLandingThemeFor(string $channelId): ?string

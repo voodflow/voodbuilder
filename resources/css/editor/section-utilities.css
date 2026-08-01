@@ -5,7 +5,7 @@
 @import '../theme.css';
 
 @source '../editor/section-catalog.html';
-@source '../editor/soundmit-landing-catalog.html';
+@source '../editor/demo-landing-catalog.html';
 @source '../editor/voodbuilder-home-landing-catalog.html';
 @source '../../src/Support/Editor/VoodbuilderLanding01Sections.php';
 @source '../../src/Support/Editor/VoodbuilderLanding02Sections.php';

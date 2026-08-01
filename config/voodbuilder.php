@@ -282,7 +282,7 @@ return [
         | When true, new pages use Editor only (no Rich editor toggle in admin).
         | Existing rich-editor pages stay editable until converted manually.
         */
-        'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', env('VOODBUILDER_PAGES_GRAPESJS_ONLY', false)),
+        'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', false),
         'default_builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
         /*
         | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
@@ -333,12 +333,12 @@ return [
     ],
 
     /*
-    | Editor visual page builder (voodbuilder-pro).
-    | Requires npm packages in the host app: grapesjs, grapesjs-blocks-basic.
-    | Add VoodbuilderPaths::editorViteEntry() to vite.config.js input, then npm run build.
+    | Visual page builder.
+    | Requires host npm packages (see ConfigureNpmForVoodbuilder) and
+    | VoodbuilderPaths::editorViteEntry() in vite.config.js, then npm run build.
     */
     'editor' => [
-        'enabled' => env('VOODBUILDER_EDITOR_ENABLED', env('VOODBUILDER_GRAPESJS_ENABLED', true)),
+        'enabled' => env('VOODBUILDER_EDITOR_ENABLED', true),
         'vite' => VoodbuilderPaths::editorViteEntry(),
         'canvas_styles' => VoodbuilderPaths::editorCanvasStyleEntries(),
         'upload' => [
@@ -346,7 +346,7 @@ return [
             // Public files land under storage/app/public/voodbuilder (URL /storage/voodbuilder/…).
             'directory' => 'voodbuilder',
             // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
-            'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', env('VOODBUILDER_GRAPESJS_UPLOAD_MAX_KB', 8192)),
+            'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', 8192),
             // Self-hosted MP4/WebM for Video / hero backgrounds (KB).
             'video_max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_VIDEO_MAX_KB', 51200),
         ],
@@ -354,7 +354,7 @@ return [
         | In-canvas image editor (@jodit/image-editor, MIT). Requires the host app
         | npm dependency `@jodit/image-editor`. Disable with env or config.
         */
-        'image_editor' => env('VOODBUILDER_EDITOR_IMAGE_EDITOR', env('VOODBUILDER_GRAPESJS_IMAGE_EDITOR', true)),
+        'image_editor' => env('VOODBUILDER_EDITOR_IMAGE_EDITOR', true),
         'include_voodbuilder_blocks' => false,
         'include_landing_blocks' => false,
         'site_blocks' => [
@@ -391,10 +391,10 @@ return [
             'max_project_bytes' => 2_000_000,
         ],
         'plugins' => [
-            'forms' => env('VOODBUILDER_EDITOR_FORMS', env('VOODBUILDER_GRAPESJS_FORMS', true)),
-            'style_bg' => env('VOODBUILDER_EDITOR_STYLE_BG', env('VOODBUILDER_GRAPESJS_STYLE_BG', true)),
-            'tabs' => env('VOODBUILDER_EDITOR_TABS', env('VOODBUILDER_GRAPESJS_TABS', true)),
-            'custom_code' => env('VOODBUILDER_EDITOR_CUSTOM_CODE', env('VOODBUILDER_GRAPESJS_CUSTOM_CODE', false)),
+            'forms' => env('VOODBUILDER_EDITOR_FORMS', true),
+            'style_bg' => env('VOODBUILDER_EDITOR_STYLE_BG', true),
+            'tabs' => env('VOODBUILDER_EDITOR_TABS', true),
+            'custom_code' => env('VOODBUILDER_EDITOR_CUSTOM_CODE', false),
         ],
         'forms' => [
             'success_message' => 'Thank you. Your message has been received.',
@@ -404,7 +404,7 @@ return [
             'default' => 'Default newsletter',
         ],
         'revisions' => [
-            'max_to_keep' => (int) env('VOODBUILDER_EDITOR_REVISIONS_MAX', env('VOODBUILDER_GRAPESJS_REVISIONS_MAX', 50)),
+            'max_to_keep' => (int) env('VOODBUILDER_EDITOR_REVISIONS_MAX', 50),
         ],
         'component_categories' => [
             'General',

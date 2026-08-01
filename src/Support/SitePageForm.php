@@ -16,7 +16,7 @@ final class SitePageForm
 {
     public static function editorOnly(): bool
     {
-        return (bool) config('voodbuilder.pages.grapesjs_only', false);
+        return (bool) config('voodbuilder.pages.editor_only', false);
     }
 
     public static function defaultBuilder(): PageBuilder
