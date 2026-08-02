@@ -418,7 +418,9 @@ export function mountGalleryBrowser({
 }
 
 /**
- * Open the media picker. Prefers the modern paginated browser; falls back to GrapesJS AM.
+ * Open the media picker.
+ * Uses the Media companion browser only when galleries API is available;
+ * otherwise falls back to the GrapesJS Asset Manager.
  *
  * @param {{
  *   editor: object,
@@ -434,8 +436,12 @@ export async function openMediaAssets(args) {
     const libraryUrl = editor?.__voodbuilderMediaLibraryUrl
         ?? labels.mediaLibraryUrl
         ?? null;
+    const galleriesUrl = editor?.__voodbuilderMediaGalleriesUrl
+        ?? labels.mediaGalleriesUrl
+        ?? null;
 
-    if (libraryUrl) {
+    // Custom browser is owned by voodflow/voodbuilder-media (galleries + vault).
+    if (shouldUseMediaCompanionBrowser(libraryUrl, galleriesUrl)) {
         try {
             const { openMediaBrowser } = await import('./media-browser.js');
             const opened = await openMediaBrowser(args);
@@ -452,14 +458,73 @@ export async function openMediaAssets(args) {
 }
 
 /**
- * Legacy GrapesJS Asset Manager (fallback when media library URL is unavailable).
+ * @param {string | null | undefined} libraryUrl
+ * @param {string | null | undefined} galleriesUrl
+ */
+export function shouldUseMediaCompanionBrowser(libraryUrl, galleriesUrl) {
+    return String(libraryUrl ?? '').trim() !== ''
+        && String(galleriesUrl ?? '').trim() !== '';
+}
+
+/**
+ * Re-render the open Asset Manager with the current global collection (type-filtered).
+ *
+ * @param {object} assets
+ * @param {string[]} openTypes
+ */
+function refreshOpenAssetManager(assets, openTypes = []) {
+    if (! assets || typeof assets.render !== 'function') {
+        return;
+    }
+
+    const all = assets.getAll?.();
+    const models = [...(all?.models ?? all ?? [])].filter(Boolean);
+    const filtered = openTypes.length > 0
+        ? models.filter((asset) => {
+            const type = typeof asset?.get === 'function'
+                ? asset.get('type')
+                : asset?.type;
+
+            return openTypes.includes(String(type ?? 'image'));
+        })
+        : models;
+
+    assets.render(filtered);
+}
+
+/**
+ * @param {unknown} payload
+ * @returns {string}
+ */
+function firstUploadedAssetSrc(payload) {
+    const data = payload && typeof payload === 'object' ? payload.data : null;
+
+    if (! Array.isArray(data) || data.length === 0) {
+        return '';
+    }
+
+    const first = data[0];
+
+    if (typeof first === 'string') {
+        return first.trim();
+    }
+
+    if (first && typeof first === 'object') {
+        return String(first.src ?? '').trim();
+    }
+
+    return '';
+}
+
+/**
+ * GrapesJS Asset Manager used by Core (free) when the Media companion is inactive.
  *
  * @param {{
  *   editor: object,
  *   kinds?: Array<'image'|'video'>,
  *   labelKind?: 'image'|'video',
  *   labels?: Record<string, string>,
- *   onSelect: (src: string) => void,
+ *   onSelect: (src: string, meta?: object) => void,
  *   onClose?: () => void,
  * }} args
  */
@@ -483,8 +548,6 @@ async function openGrapesAssetManager({
         ?? labels.mediaLibraryUrl
         ?? null;
 
-    await loadMediaLibrary(editor, libraryUrl, { replace: true });
-
     const wantsVideo = kinds.includes('video');
     const wantsImage = kinds.includes('image') || ! wantsVideo;
     const openTypes = [];
@@ -496,6 +559,10 @@ async function openGrapesAssetManager({
     if (wantsImage) {
         openTypes.push('image');
     }
+
+    const libraryType = wantsVideo && ! wantsImage
+        ? 'video'
+        : (wantsImage && ! wantsVideo ? 'image' : null);
 
     const resolvedLabelKind = labelKind === 'video' || labelKind === 'image'
         ? labelKind
@@ -520,6 +587,7 @@ async function openGrapesAssetManager({
     const restoreLabels = applyAssetManagerLabels(editor, resolvedLabelKind, labels);
 
     let cleaned = false;
+    let applied = false;
 
     const cleanup = () => {
         if (cleaned) {
@@ -528,6 +596,8 @@ async function openGrapesAssetManager({
 
         cleaned = true;
         restoreLabels();
+        editor?.off?.('asset:upload:error', onUploadError);
+        editor?.off?.('asset:upload:response', onUploadResponse);
 
         if (amConfig) {
             if (previousAccept != null) {
@@ -540,6 +610,88 @@ async function openGrapesAssetManager({
         onClose?.();
     };
 
+    const applySrc = (src, meta = undefined) => {
+        const trimmed = String(src ?? '').trim();
+
+        if (trimmed === '' || applied) {
+            return false;
+        }
+
+        if (wantsVideo && ! wantsImage && ! isVideoAssetSrc(trimmed)) {
+            return false;
+        }
+
+        if (wantsImage && ! wantsVideo && isVideoAssetSrc(trimmed)) {
+            return false;
+        }
+
+        applied = true;
+        onSelect(trimmed, meta);
+
+        if (typeof assets.close === 'function') {
+            assets.close();
+        }
+
+        cleanup();
+
+        return true;
+    };
+
+    const onUploadError = (error) => {
+        let message = labels.imageEditorUploadError
+            ?? 'Upload failed. Check media migrations and storage.';
+
+        if (typeof error === 'string') {
+            try {
+                const parsed = JSON.parse(error);
+                message = String(parsed?.message ?? error);
+            } catch {
+                message = error.replace(/<[^>]+>/g, ' ').trim().slice(0, 240) || message;
+            }
+        } else if (error?.message) {
+            message = String(error.message);
+        }
+
+        window.console?.error?.('[voodbuilder] asset upload failed', error);
+
+        const modal = document.querySelector('.gjs-mdl-dialog')
+            ?? document.querySelector('.gjs-am-assets-cont');
+        let banner = modal?.querySelector?.('[data-voodbuilder-am-error]');
+
+        if (! banner && modal) {
+            banner = document.createElement('p');
+            banner.dataset.voodbuilderAmError = '1';
+            banner.setAttribute('role', 'alert');
+            banner.style.cssText = 'margin:0.5rem 0.75rem;padding:0.5rem 0.75rem;border-radius:0.375rem;background:#fef2f2;color:#991b1b;font-size:0.8125rem;';
+            modal.insertBefore(banner, modal.firstChild);
+        }
+
+        if (banner) {
+            banner.textContent = String(message);
+        }
+    };
+
+    const onUploadResponse = (payload) => {
+        const src = firstUploadedAssetSrc(payload);
+        const media = payload && typeof payload === 'object' ? payload.media : null;
+
+        if (src === '') {
+            return;
+        }
+
+        // Upload from Choose should apply immediately (free Core has no gallery browser).
+        window.requestAnimationFrame(() => {
+            applySrc(src, media && typeof media === 'object'
+                ? {
+                    caption: media.caption ?? null,
+                    name: media.name ?? null,
+                    id: media.id ?? null,
+                }
+                : undefined);
+        });
+    };
+
+    // Open immediately — hydrate the library in the background so Choose feels snappy.
     assets.open({
         types: openTypes,
         accept,
@@ -549,31 +701,15 @@ async function openGrapesAssetManager({
                 ? asset.getSrc()
                 : (asset?.get?.('src') ?? asset?.src ?? '');
 
-            const trimmed = String(src ?? '').trim();
-
-            if (trimmed === '') {
-                return;
+            // Single click is enough for the Choose field (GrapesJS default waits for dblclick).
+            if (complete === false || complete === true) {
+                applySrc(src);
             }
-
-            if (wantsVideo && ! wantsImage && ! isVideoAssetSrc(trimmed)) {
-                return;
-            }
-
-            if (wantsImage && ! wantsVideo && isVideoAssetSrc(trimmed)) {
-                return;
-            }
-
-            onSelect(trimmed);
-
-            if (typeof assets.close === 'function') {
-                assets.close();
-            } else if (complete) {
-                // default UI closes on double-click
-            }
-
-            cleanup();
         },
     });
+
+    editor?.on?.('asset:upload:error', onUploadError);
+    editor?.on?.('asset:upload:response', onUploadResponse);
 
     const syncChrome = () => syncAssetManagerChrome(copy);
 
@@ -582,4 +718,13 @@ async function openGrapesAssetManager({
     window.setTimeout(syncChrome, 0);
 
     editor?.once?.('modal:close', cleanup);
+
+    if (libraryUrl) {
+        await loadMediaLibrary(editor, libraryUrl, {
+            replace: true,
+            type: libraryType,
+        });
+        refreshOpenAssetManager(assets, openTypes);
+        syncChrome();
+    }
 }

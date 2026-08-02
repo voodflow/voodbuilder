@@ -50,7 +50,7 @@ final class VoodbuilderMediaSections
     <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;opacity:0.55;object-fit:cover;object-position:center;" loading="eager" />
     <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade" style="pointer-events:none;position:absolute;inset:0;"></div>
   </div>
-  <div class="voodbuilder-editor-container relative z-10 flex items-end px-5 pb-16 pt-28 lg:items-center lg:pb-24" data-voodbuilder-role="content" style="min-height:70vh;">
+        <div class="voodbuilder-editor-container relative z-10 flex items-center px-5 py-16 lg:py-24" data-voodbuilder-role="content" style="min-height:70vh;">
     <div class="max-w-3xl">
       <div data-voodbuilder-dropzone="copy">
         <p class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-vp-brand-2">Featured</p>

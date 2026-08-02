@@ -650,7 +650,11 @@ export function bakeAuthorStylesToComposerForExport(editor) {
 
         // Ensure HTML serialization carries the same paints (reload + front without CSS).
         component.addStyle?.(inlineStyles, { inline: true });
-        enforceStyleManagerColorOverUtilities(component);
+
+        // Tailwind Style panel owns text-* utilities — never strip them on Save bake.
+        if (! editor.__voodbuilderTailwindStyleOnly) {
+            enforceStyleManagerColorOverUtilities(component);
+        }
     });
 }
 
@@ -731,7 +735,7 @@ export function hydrateAuthorStylesFromIdRules(editor) {
     return updated;
 }
 
-const UTILITY_CLASS_PATTERN = /^(?:container|flex(?:-|$)|grid|mx-|my-|mt-|mb-|ml-|mr-|px-|py-|pt-|pb-|pl-|pr-|md:|lg:|sm:|xl:|2xl:|items-|justify-|gap-|text-|bg-|rounded|w-|h-|max-|min-|object-|overflow-|border(?:-|$)|hidden|block|inline|relative|absolute|static|sticky|grow|shrink|basis-|col-|row-|place-|self-|order-|z-|opacity-|shadow|ring-|aspect-|space-|divide-|font-|leading-|tracking-|list-|uppercase|lowercase|capitalize|italic|antialiased|voodbuilder-|vb-|gjs-)/;
+const UTILITY_CLASS_PATTERN = /^(?:container|flex(?:-|$)|grid|mx-|my-|mt-|mb-|ml-|mr-|m-|px-|py-|pt-|pb-|pl-|pr-|p-|md:|lg:|sm:|xl:|2xl:|items-|justify-|gap-|text-|bg-|rounded|w-|h-|max-|min-|object-|overflow-|border(?:-|$)|hidden|block|inline|relative|absolute|static|sticky|grow|shrink|basis-|col-|row-|place-|self-|order-|z-|opacity-|shadow|ring-|aspect-|space-|divide-|font-|leading-|tracking-|list-|uppercase|lowercase|capitalize|italic|antialiased|voodbuilder-|vb-|gjs-)/;
 
 function isLikelyUtilityClass(className) {
     return UTILITY_CLASS_PATTERN.test(String(className ?? ''));

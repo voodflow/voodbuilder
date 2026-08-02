@@ -7,10 +7,229 @@ import { componentClassString, copyTextToClipboard, splitClassTokens } from './c
 import { choiceDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
 
+const GROUP_CATEGORY = {
+    width: 'dimension',
+    height: 'dimension',
+    'max-width': 'dimension',
+    margin: 'dimension',
+    'margin-x': 'dimension',
+    'margin-y': 'dimension',
+    'margin-t': 'dimension',
+    'margin-r': 'dimension',
+    'margin-b': 'dimension',
+    'margin-l': 'dimension',
+    padding: 'dimension',
+    'padding-x': 'dimension',
+    'padding-y': 'dimension',
+    'padding-t': 'dimension',
+    'padding-r': 'dimension',
+    'padding-b': 'dimension',
+    'padding-l': 'dimension',
+    background: 'decorations',
+    'gradient-direction': 'decorations',
+    'gradient-from': 'decorations',
+    'gradient-via': 'decorations',
+    'gradient-to': 'decorations',
+    'border-width': 'decorations',
+    'border-t-width': 'decorations',
+    'border-r-width': 'decorations',
+    'border-b-width': 'decorations',
+    'border-l-width': 'decorations',
+    'border-style': 'decorations',
+    'border-color': 'decorations',
+    rounded: 'decorations',
+    'rounded-t': 'decorations',
+    'rounded-r': 'decorations',
+    'rounded-b': 'decorations',
+    'rounded-l': 'decorations',
+    'rounded-tl': 'decorations',
+    'rounded-tr': 'decorations',
+    'rounded-br': 'decorations',
+    'rounded-bl': 'decorations',
+    shadow: 'decorations',
+    'font-size': 'typography',
+    'font-weight': 'typography',
+    'text-align': 'typography',
+    'text-color': 'typography',
+    leading: 'typography',
+    tracking: 'typography',
+    'text-transform': 'typography',
+    'text-decoration': 'typography',
+};
+
+const CLASS_TO_CATEGORY = new Map();
+
+for (const group of STYLE_UTILITY_GROUPS) {
+    const category = GROUP_CATEGORY[group.id] ?? 'other';
+
+    for (const opt of group.options) {
+        if (opt.value) {
+            CLASS_TO_CATEGORY.set(opt.value, category);
+        }
+    }
+}
+
+function classifyClassName(name) {
+    const raw = String(name ?? '').trim();
+
+    if (raw === '') {
+        return 'other';
+    }
+
+    if (CLASS_TO_CATEGORY.has(raw)) {
+        return CLASS_TO_CATEGORY.get(raw);
+    }
+
+    // Strip responsive / state variants: lg:text-6xl → text-6xl
+    const bare = raw.includes(':') ? raw.slice(raw.lastIndexOf(':') + 1) : raw;
+
+    if (CLASS_TO_CATEGORY.has(bare)) {
+        return CLASS_TO_CATEGORY.get(bare);
+    }
+
+    if (/^(animate-|vb-animate|animation-|duration-|delay-|ease-|fill-mode|iteration|direction-|transition)/.test(bare)
+        || /^(hover|focus|group-hover):animate-/.test(raw)) {
+        return 'animation';
+    }
+
+    if (/^(w-|h-|min-w-|max-w-|min-h-|max-h-|m-|mx-|my-|mt-|mr-|mb-|ml-|p-|px-|py-|pt-|pr-|pb-|pl-|gap-|space-|inset-|top-|right-|bottom-|left-|z-|flex|grid|col-|row-|order-|basis-|grow|shrink|justify-|items-|content-|self-|place-)/.test(bare)) {
+        return 'dimension';
+    }
+
+    if (/^(bg-|from-|via-|to-|border|rounded|shadow|opacity-|ring-|outline-|backdrop-)/.test(bare)) {
+        return 'decorations';
+    }
+
+    if (/^(text-|font-|leading-|tracking-|align-|whitespace-|break-|truncate|line-clamp|decoration-|underline|uppercase|lowercase|capitalize|italic|not-italic)/.test(bare)) {
+        return 'typography';
+    }
+
+    return 'other';
+}
+
+const CATEGORY_ORDER = ['dimension', 'decorations', 'typography', 'animation', 'other'];
+const CATEGORY_LABELS = {
+    dimension: 'Dimension',
+    decorations: 'Decorations',
+    typography: 'Typography',
+    animation: 'Animation',
+    other: 'Other',
+};
+
+/**
+ * Render grouped class chips from the selected component (never move Grapes DOM tags).
+ * Native Grapes chips are hidden to avoid duplicate lists after Style panel edits.
+ *
+ * @param {HTMLElement} mount
+ * @param {object} editor
+ */
+function renderGroupedClassChips(mount, editor) {
+    const tagsRoot = mount.querySelector('.gjs-clm-tags, .clm-tags');
+
+    if (! tagsRoot) {
+        return;
+    }
+
+    tagsRoot.classList.add('voodbuilder-clm-tags--native-hidden');
+    // Hide Grapes chips but keep the manual class input.
+    tagsRoot.querySelectorAll('.gjs-clm-tag, .clm-tag').forEach((tag) => {
+        tag.hidden = true;
+        tag.setAttribute('data-vb-native-chip-hidden', '1');
+    });
+
+    let host = mount.querySelector('[data-vb-class-groups]');
+
+    if (! host) {
+        host = document.createElement('div');
+        host.className = 'voodbuilder-editor-class-groups';
+        host.dataset.vbClassGroups = '1';
+        // Categories sit under the add-class field (tagsRoot), not above the selector label.
+        tagsRoot.parentElement?.insertBefore(host, tagsRoot.nextSibling)
+            ?? mount.appendChild(host);
+    }
+
+    const selected = editor.getSelected?.();
+
+    // Display only — never mutate classes here. A setClass() during Style panel
+    // apply races Grapes updates and can drop utilities from the saved HTML.
+    const classes = componentClassList(selected);
+    const signature = classes.join('\0');
+
+    if (host.dataset.vbSignature === signature) {
+        return;
+    }
+
+    host.dataset.vbSignature = signature;
+    host.replaceChildren();
+
+    if (classes.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'voodbuilder-editor-class-groups__empty';
+        empty.textContent = 'Nessuna classe. Digita sopra per aggiungerne.';
+        host.appendChild(empty);
+
+        return;
+    }
+
+    const buckets = Object.fromEntries(CATEGORY_ORDER.map((key) => [key, []]));
+
+    for (const name of classes) {
+        buckets[classifyClassName(name)].push(name);
+    }
+
+    for (const category of CATEGORY_ORDER) {
+        const list = buckets[category];
+
+        if (list.length === 0) {
+            continue;
+        }
+
+        const group = document.createElement('div');
+        group.className = 'voodbuilder-editor-class-group';
+        group.dataset.vbClassGroup = category;
+
+        const title = document.createElement('div');
+        title.className = 'voodbuilder-editor-class-group__title';
+        title.textContent = CATEGORY_LABELS[category] ?? category;
+
+        const chips = document.createElement('div');
+        chips.className = 'voodbuilder-editor-class-group__chips';
+
+        for (const name of list) {
+            const chip = document.createElement('span');
+            chip.className = 'voodbuilder-editor-class-chip';
+            chip.dataset.className = name;
+
+            const label = document.createElement('span');
+            label.className = 'voodbuilder-editor-class-chip__label';
+            label.textContent = name;
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'voodbuilder-editor-class-chip__remove';
+            remove.setAttribute('aria-label', `Remove ${name}`);
+            remove.textContent = '×';
+            remove.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                removeClassFromSelected(editor, name);
+                host.dataset.vbSignature = '';
+                renderGroupedClassChips(mount, editor);
+            });
+
+            chip.append(label, remove);
+            chips.appendChild(chip);
+        }
+
+        group.append(title, chips);
+        host.appendChild(group);
+    }
+}
 const ANIMATION_CLASSES = [
     'animate-none',
     'animate-spin',
@@ -433,19 +652,7 @@ function ensureClassesCopyButtons(mount, editor, labels) {
         await copySelectedComponentClasses(editor, labels);
     });
 
-    const copyAllBtn = document.createElement('button');
-    copyAllBtn.type = 'button';
-    copyAllBtn.className = 'voodbuilder-editor-classes-copy-btn voodbuilder-editor-classes-copy-btn--all';
-    copyAllBtn.dataset.voodbuilderCopyAll = '';
-    copyAllBtn.title = labels.classCopyAll ?? 'Copy all';
-    copyAllBtn.innerHTML = `${lucideIcon('clipboard', 13)}<span>${labels.classCopyAll ?? 'Copy all'}</span>`;
-    copyAllBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        await copySelectedComponentAllStyles(editor, labels);
-    });
-
-    actions.append(copyClassesBtn, copyAllBtn);
+    actions.append(copyClassesBtn);
     title.appendChild(actions);
 }
 
@@ -637,6 +844,8 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
         for (const input of mount.querySelectorAll('[data-input]')) {
             wireClassInput(editor, input, hintEl, labels);
         }
+
+        renderGroupedClassChips(mount, editor);
     };
 
     const observer = new MutationObserver(() => scan());
@@ -644,6 +853,7 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
     scan();
 
     editor.on('component:update', scan);
+    editor.on('component:selected', scan);
     editor.on('component:styleUpdate', scan);
     editor.on('voodbuilder:page-css-compiled', scan);
 }

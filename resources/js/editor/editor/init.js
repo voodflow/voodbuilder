@@ -80,7 +80,6 @@ import {
 } from '../components-ui.js';
 import { registerComponentTailwindAutobuild } from '../component-tailwind-autobuild.js';
 import { registerPageTailwindAutobuild } from '../page-tailwind-autobuild.js';
-import { registerGlobalClassesUi } from '../global-classes-ui.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
 import { registerPopupsUi } from '../popups-ui.js';

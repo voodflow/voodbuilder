@@ -280,6 +280,8 @@ async function applyFont(editor, component, rawValue) {
         const stack = ensureCssSafeFontFamilyStyle(editor, target, raw);
         const font = findFontByStack(stack);
 
+        target.addAttributes?.({ 'data-vb-font': stack });
+
         if (! font) {
             syncStyleManagerFontFamilyValue(editor, stack);
 
@@ -306,6 +308,42 @@ export async function applyEditorFontFamily(editor, component, rawValue) {
     await applyFont(editor, component, rawValue);
 }
 
+/**
+ * Hover preview while scrolling the font list — must stay realtime.
+ * Skips the applying lock and persists only the inline/id paint (no attr bake).
+ *
+ * @param {object} editor
+ * @param {object|null|undefined} component
+ * @param {string} rawValue
+ */
+export function previewEditorFontFamily(editor, component, rawValue) {
+    const target = typeof component?.getStyle === 'function'
+        ? component
+        : editor.getSelected?.();
+    const raw = String(rawValue ?? '').trim();
+
+    if (! target || raw === '' || editor.__voodbuilderFontsApplying) {
+        return;
+    }
+
+    editor.__voodbuilderFontsPreviewing = true;
+
+    try {
+        const stack = ensureCssSafeFontFamilyStyle(editor, target, raw);
+        const font = findFontByStack(stack);
+
+        if (font) {
+            void ensureFontLoaded(editor, font, { reassert: false }).then(() => {
+                if (! editor.__voodbuilderFontsApplying) {
+                    reassertComponentFontFamily(editor, target, font);
+                }
+            });
+        }
+    } finally {
+        editor.__voodbuilderFontsPreviewing = false;
+    }
+}
+
 function watchFontFamilyChanges(editor) {
     if (editor.__voodbuilderFontsWatchBound) {
         return;
@@ -314,7 +352,7 @@ function watchFontFamilyChanges(editor) {
     editor.__voodbuilderFontsWatchBound = true;
 
     editor.on('style:change:font-family', (component, value) => {
-        if (editor.__voodbuilderFontsApplying) {
+        if (editor.__voodbuilderFontsApplying || editor.__voodbuilderFontsPreviewing) {
             return;
         }
 
@@ -328,7 +366,7 @@ function watchFontFamilyChanges(editor) {
     });
 
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
-        if (editor.__voodbuilderFontsApplying) {
+        if (editor.__voodbuilderFontsApplying || editor.__voodbuilderFontsPreviewing) {
             return;
         }
 
@@ -361,7 +399,8 @@ function watchFontFamilyChanges(editor) {
         // Bring #id paints into the model so every SM field (font, color, …) shows.
         hydrateComponentFromIdRule(editor, component);
 
-        const raw = readComponentFontFamily(editor, component);
+        const fromAttr = String(component.getAttributes?.()?.['data-vb-font'] ?? '').trim();
+        const raw = fromAttr || readComponentFontFamily(editor, component);
         const stack = raw ? resolveCanonicalFontStack(raw) : '';
 
         if (! stack) {
@@ -374,6 +413,7 @@ function watchFontFamilyChanges(editor) {
 
         try {
             ensureCssSafeFontFamilyStyle(editor, component, stack);
+            component.addAttributes?.({ 'data-vb-font': stack });
             syncStyleManagerFontFamilyValue(editor, stack);
         } finally {
             editor.__voodbuilderFontsApplying = false;

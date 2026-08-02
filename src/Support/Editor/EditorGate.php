@@ -124,8 +124,11 @@ final class EditorGate
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
             'uploadUrl' => self::editorRoute('voodbuilder.editor.upload'),
-            'mediaLibraryUrl' => self::editorRoute('voodbuilder.editor.media.index'),
-            'mediaGalleriesUrl' => \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries')
+            'mediaLibraryUrl' => \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.index')
+                ? self::editorRoute('voodbuilder.editor.media.index')
+                : null,
+            // Galleries API is owned by voodflow/voodbuilder-media when the Filament plugin is active.
+            'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
                 ? self::editorRoute('voodbuilder.editor.media.galleries')
                 : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
@@ -399,6 +402,7 @@ final class EditorGate
             'classAnimationGroupFill' => __('voodbuilder::pro.editor_ui.class_animation_group_fill'),
             'classAnimationGroupTransition' => __('voodbuilder::pro.editor_ui.class_animation_group_transition'),
             'classStyleDimensionTitle' => __('voodbuilder::pro.editor_ui.class_style_dimension_title'),
+            'classStyleSpacingTitle' => __('voodbuilder::pro.editor_ui.class_style_spacing_title'),
             'classStyleDecorationsTitle' => __('voodbuilder::pro.editor_ui.class_style_decorations_title'),
             'classStyleTypographyTitle' => __('voodbuilder::pro.editor_ui.class_style_typography_title'),
             'classStyleAdd' => __('voodbuilder::pro.editor_ui.class_style_add'),
@@ -419,18 +423,48 @@ final class EditorGate
             'classStylePaddingR' => __('voodbuilder::pro.editor_ui.class_style_padding_r'),
             'classStylePaddingB' => __('voodbuilder::pro.editor_ui.class_style_padding_b'),
             'classStylePaddingL' => __('voodbuilder::pro.editor_ui.class_style_padding_l'),
+            'classStyleSpacingLinkSides' => __('voodbuilder::pro.editor_ui.class_style_spacing_link_sides'),
+            'classStyleSpacingLinkIndependent' => __('voodbuilder::pro.editor_ui.class_style_spacing_link_independent'),
+            'classStyleSpacingLinkOpposites' => __('voodbuilder::pro.editor_ui.class_style_spacing_link_opposites'),
+            'classStyleSpacingLinkAll' => __('voodbuilder::pro.editor_ui.class_style_spacing_link_all'),
+            'classStyleSpacingScale' => __('voodbuilder::pro.editor_ui.class_style_spacing_scale'),
+            'classStyleSpacingSearch' => __('voodbuilder::pro.editor_ui.class_style_spacing_search'),
+            'classStyleFontSearch' => __('voodbuilder::pro.editor_ui.class_style_font_search'),
+            'classStyleFieldSearch' => __('voodbuilder::pro.editor_ui.class_style_field_search'),
             'classStyleBackground' => __('voodbuilder::pro.editor_ui.class_style_background'),
+            'classStyleBackgroundColor' => __('voodbuilder::pro.editor_ui.class_style_background_color'),
+            'classStyleGradient' => __('voodbuilder::pro.editor_ui.class_style_gradient'),
+            'classStyleGradientDir' => __('voodbuilder::pro.editor_ui.class_style_gradient_dir'),
+            'classStyleGradientFrom' => __('voodbuilder::pro.editor_ui.class_style_gradient_from'),
+            'classStyleGradientVia' => __('voodbuilder::pro.editor_ui.class_style_gradient_via'),
+            'classStyleGradientTo' => __('voodbuilder::pro.editor_ui.class_style_gradient_to'),
+            'classStyleBorder' => __('voodbuilder::pro.editor_ui.class_style_border'),
             'classStyleBorderWidth' => __('voodbuilder::pro.editor_ui.class_style_border_width'),
             'classStyleBorderStyle' => __('voodbuilder::pro.editor_ui.class_style_border_style'),
             'classStyleBorderColor' => __('voodbuilder::pro.editor_ui.class_style_border_color'),
+            'classStyleBorderT' => __('voodbuilder::pro.editor_ui.class_style_border_t'),
+            'classStyleBorderR' => __('voodbuilder::pro.editor_ui.class_style_border_r'),
+            'classStyleBorderB' => __('voodbuilder::pro.editor_ui.class_style_border_b'),
+            'classStyleBorderL' => __('voodbuilder::pro.editor_ui.class_style_border_l'),
+            'classStyleDecorationsLinkSides' => __('voodbuilder::pro.editor_ui.class_style_decorations_link_sides'),
+            'classStyleDecorationsLinkCorners' => __('voodbuilder::pro.editor_ui.class_style_decorations_link_corners'),
             'classStyleRounded' => __('voodbuilder::pro.editor_ui.class_style_rounded'),
+            'classStyleRoundedTl' => __('voodbuilder::pro.editor_ui.class_style_rounded_tl'),
+            'classStyleRoundedTr' => __('voodbuilder::pro.editor_ui.class_style_rounded_tr'),
+            'classStyleRoundedBr' => __('voodbuilder::pro.editor_ui.class_style_rounded_br'),
+            'classStyleRoundedBl' => __('voodbuilder::pro.editor_ui.class_style_rounded_bl'),
             'classStyleShadow' => __('voodbuilder::pro.editor_ui.class_style_shadow'),
             'classStyleFontFamily' => __('voodbuilder::pro.editor_ui.class_style_font_family'),
             'classStyleFontSize' => __('voodbuilder::pro.editor_ui.class_style_font_size'),
             'classStyleFontWeight' => __('voodbuilder::pro.editor_ui.class_style_font_weight'),
             'classStyleTextAlign' => __('voodbuilder::pro.editor_ui.class_style_text_align'),
+            'classStyleTextTransform' => __('voodbuilder::pro.editor_ui.class_style_text_transform'),
+            'classStyleTextDecoration' => __('voodbuilder::pro.editor_ui.class_style_text_decoration'),
             'classStyleTextColor' => __('voodbuilder::pro.editor_ui.class_style_text_color'),
             'classStyleLeading' => __('voodbuilder::pro.editor_ui.class_style_leading'),
+            'classStyleTracking' => __('voodbuilder::pro.editor_ui.class_style_tracking'),
+            'classStyleClear' => __('voodbuilder::pro.editor_ui.class_style_clear'),
+            'classStyleAuthoredHint' => __('voodbuilder::pro.editor_ui.class_style_authored_hint'),
             'classStyleEmptyHint' => __('voodbuilder::pro.editor_ui.class_style_empty_hint'),
             'copyComponentClasses' => __('voodbuilder::pro.editor_ui.copy_component_classes'),
             'copyComponentCode' => __('voodbuilder::pro.editor_ui.copy_component_code'),
@@ -1028,6 +1062,25 @@ final class EditorGate
 
         try {
             return class_exists($class) && $class::isEnabled();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Custom media browser (galleries) requires the Media companion Filament plugin.
+     */
+    private static function mediaCompanionBrowserEnabled(): bool
+    {
+        $class = 'Voodflow\\VoodbuilderMedia\\VoodbuilderMedia';
+
+        if (! class_exists($class) || ! method_exists($class, 'isActive')) {
+            return false;
+        }
+
+        try {
+            return (bool) $class::isActive()
+                && \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries');
         } catch (\Throwable) {
             return false;
         }

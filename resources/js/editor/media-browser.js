@@ -80,7 +80,8 @@ export async function openMediaBrowser(args) {
         ?? editor?.getConfig?.()?.assetManager?.upload
         ?? '';
 
-    if (! libraryUrl) {
+    // Requires the Media companion galleries API — otherwise Core uses GrapesJS AM.
+    if (! libraryUrl || ! galleriesUrl) {
         return false;
     }
 

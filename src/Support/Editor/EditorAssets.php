@@ -259,6 +259,16 @@ final class EditorAssets
 
         $decoded = json_decode((string) file_get_contents($manifest), true);
 
-        return is_array($decoded) && array_key_exists($entry, $decoded);
+        if (! is_array($decoded)) {
+            return false;
+        }
+
+        foreach (VoodbuilderPaths::viteManifestKeys($entry) as $key) {
+            if (array_key_exists($key, $decoded)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

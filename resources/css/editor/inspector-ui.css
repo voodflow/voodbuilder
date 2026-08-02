@@ -127,6 +127,34 @@
     padding: 0;
 }
 
+/*
+ * Uniform open-sector body inset for every right-column accordion.
+ * Must beat `.gjs-sm-properties { padding: 0 }` above (same file, higher specificity).
+ * Target: nothing touches the sector border — match Typography breathing room.
+ */
+.voodbuilder-editor-root .voodbuilder-editor-sm-sector-tw > .gjs-sm-properties.voodbuilder-editor-sm-sector-tw__body,
+.voodbuilder-editor-root .voodbuilder-editor-sm-sector-animation > .gjs-sm-properties.voodbuilder-editor-sm-sector-animation__body,
+.voodbuilder-editor-root .voodbuilder-editor-inspector-sector.is-open > .voodbuilder-editor-inspector-sector__body {
+    padding: 0.75rem !important;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-shell__right .voodbuilder-editor-form,
+.voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs__panels {
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs {
+    padding: 0.75rem 0.75rem 0;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs .voodbuilder-editor-form,
+.voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs__panels .voodbuilder-editor-form {
+    padding: 0.5rem 0 0;
+}
+
 .voodbuilder-editor-root .gjs-sm-property {
     flex-direction: row;
     flex-wrap: wrap;
@@ -135,6 +163,14 @@
     width: 100%;
     padding: 0.4375rem 0.625rem;
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
+}
+
+/* Sector body already insets — avoid double horizontal padding on Style rows. */
+.voodbuilder-editor-root .voodbuilder-editor-sm-sector-tw > .gjs-sm-properties > .gjs-sm-property,
+.voodbuilder-editor-root .voodbuilder-editor-sm-sector-tw .voodbuilder-editor-anim-property.gjs-sm-property,
+.voodbuilder-editor-root .voodbuilder-editor-sm-sector-tw .voodbuilder-editor-typo-seg.gjs-sm-property {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .voodbuilder-editor-root .gjs-sm-property:last-child {

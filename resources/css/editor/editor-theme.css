@@ -1548,7 +1548,6 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 0.65rem 0.75rem 0.75rem;
     background: transparent;
 }
 
@@ -1720,8 +1719,89 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     color: var(--color-vp-text-1, #0f172a) !important;
 }
 
-.voodbuilder-editor-anim-combobox .voodbuilder-editor-select-chevron {
-    right: 0.45rem;
+.voodbuilder-editor-anim-combobox--solo {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.voodbuilder-editor-anim-combobox--solo .voodbuilder-editor-anim-combobox__add {
+    display: none;
+}
+
+/* Typography segmented controls (align / transform / decoration) */
+.voodbuilder-editor-typo-seg {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0 0 0.35rem;
+}
+
+.voodbuilder-editor-typo-seg__head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.voodbuilder-editor-typo-seg__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-editor-typo-seg__dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--color-vp-brand-1, #6366f1);
+    flex-shrink: 0;
+}
+
+.voodbuilder-editor-typo-seg__group {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0.15rem;
+    width: 100%;
+    padding: 0.2rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.45rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 75%, transparent);
+}
+
+.voodbuilder-editor-typo-seg__btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.85rem;
+    margin: 0;
+    padding: 0.2rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-typo-seg__btn:hover {
+    color: var(--color-vp-text-1, #0f172a);
+    background: color-mix(in srgb, var(--color-vp-bg, #fff) 90%, transparent);
+}
+
+.voodbuilder-editor-typo-seg__btn.is-active {
+    color: var(--color-vp-brand-1, #6366f1);
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-editor-typo-seg__btn--clear {
+    flex: 0 0 1.85rem;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .voodbuilder-editor-anim-combobox__add {
@@ -1761,11 +1841,14 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     grid-template-columns: minmax(5.5rem, 38%) minmax(0, 1fr);
     align-items: center;
     gap: 0.4rem 0.55rem;
+    width: 100%;
     margin: 0;
-    padding: 0.4375rem 0.625rem;
+    /* Horizontal inset comes from uniform sector body padding. */
+    padding: 0.4375rem 0;
     border: none;
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent);
     background: transparent;
+    box-sizing: border-box;
 }
 
 .voodbuilder-editor-sm-sector-tw .voodbuilder-editor-anim-property:last-child {
@@ -2258,4 +2341,668 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
 
 .voodbuilder-editor-form-action:hover {
     border-color: color-mix(in srgb, var(--color-vp-brand-1, #4f46e5) 45%, transparent);
+}
+
+/* Style panel — spacing (margin / padding, Bricks-inspired) */
+.voodbuilder-editor-sm-sector-tw--spacing > .voodbuilder-editor-sm-sector-tw__body {
+    display: block;
+}
+
+.voodbuilder-editor-spacing {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    /* Body already provides the sector inset (inspector-ui uniform padding). */
+    padding: 0;
+}
+
+.voodbuilder-editor-spacing-block__head,
+.voodbuilder-editor-spacing-cross {
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+/* Authored dots hidden for now — values are visible when the sector is open. */
+.voodbuilder-editor-spacing-block__dot,
+.voodbuilder-editor-deco-block__dot,
+.voodbuilder-editor-typo-seg__dot {
+    display: none !important;
+}
+
+/* No nested cards — Spacing sector already frames the content. */
+.voodbuilder-editor-spacing-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.voodbuilder-editor-spacing-block + .voodbuilder-editor-spacing-block {
+    margin-top: 0.25rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+}
+
+.voodbuilder-editor-spacing-block__head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.25rem;
+}
+
+.voodbuilder-editor-spacing-block__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-spacing-block__dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--color-vp-brand-1, #6366f1);
+    flex-shrink: 0;
+}
+
+.voodbuilder-editor-spacing-block__links {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: auto;
+}
+
+.voodbuilder-editor-spacing-block__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--color-vp-text-3, #94a3b8);
+    cursor: pointer;
+}
+
+.voodbuilder-editor-spacing-block__link:hover {
+    color: var(--color-vp-text-1, #0f172a);
+    background: var(--color-vp-gray-soft, rgba(142, 150, 170, 0.14));
+}
+
+.voodbuilder-editor-spacing-block__link.is-active {
+    color: var(--color-vp-brand-1, #6366f1);
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
+}
+
+.voodbuilder-editor-spacing-cross {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(2.5rem, 0.7fr) minmax(0, 1fr);
+    grid-template-rows: 2rem minmax(2rem, auto) 2rem;
+    gap: 0.3rem;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+.voodbuilder-editor-spacing-cross__cell {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #cbd5e1) 95%, transparent);
+    border-radius: 0.35rem;
+    background: var(--color-vp-bg-elv, #fff);
+    overflow: hidden;
+}
+
+.voodbuilder-editor-spacing-cross__cell--t { grid-column: 2; grid-row: 1; }
+.voodbuilder-editor-spacing-cross__cell--l { grid-column: 1; grid-row: 2; }
+.voodbuilder-editor-spacing-cross__cell--r { grid-column: 3; grid-row: 2; }
+.voodbuilder-editor-spacing-cross__cell--b { grid-column: 2; grid-row: 3; }
+
+.voodbuilder-editor-spacing-cross__core {
+    grid-column: 2;
+    grid-row: 2;
+    border-radius: 0.3rem;
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent) 0%,
+            transparent 55%
+        ),
+        color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 88%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--color-vp-divider, #cbd5e1) 95%, transparent);
+}
+
+.voodbuilder-editor-spacing-cross__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.2rem 0.35rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.voodbuilder-editor-spacing-cross__input::placeholder {
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-spacing-cross__input.is-set {
+    font-weight: 600;
+}
+
+.voodbuilder-editor-spacing-cross__input.is-invalid {
+    color: #b91c1c;
+}
+
+.voodbuilder-editor-spacing-cross__input:focus {
+    outline: none;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
+}
+
+.voodbuilder-editor-spacing-cross__scale {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    margin: 0;
+    padding: 0 0.25rem;
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 92%, transparent);
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-spacing-cross__scale:hover {
+    color: var(--color-vp-brand-1, #6366f1);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+/* Dark: lift inputs / separators so spacing controls read clearly on the sidebar. */
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-block + .voodbuilder-editor-spacing-block {
+    border-top-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 100%, #6a6a71 18%);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-cross__cell {
+    border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 70%, #98989f 30%);
+    background: var(--color-vp-bg-elv, #202127);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-cross__core {
+    border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 55%, #98989f 45%);
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb, #fff 6%, transparent) 0%,
+            transparent 55%
+        ),
+        color-mix(in srgb, var(--color-vp-bg-alt, #161618) 70%, #202127);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-cross__scale {
+    border-left-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 70%, #98989f 30%);
+    background: color-mix(in srgb, #fff 5%, var(--color-vp-bg-alt, #161618));
+    color: var(--color-vp-text-2, #98989f);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-block__link {
+    color: var(--color-vp-text-2, #98989f);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-block__link:hover {
+    color: var(--color-vp-text-1, #dfdfd6);
+    background: color-mix(in srgb, #fff 7%, transparent);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-spacing-block__link.is-active {
+    color: var(--color-vp-brand-1, #a8b1ff);
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 45%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 16%, transparent);
+}
+
+.voodbuilder-editor-spacing-popover {
+    position: fixed;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: min(18rem, 50vh);
+    padding: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
+    border-radius: 0.5rem;
+    background: var(--color-vp-bg, #fff);
+    box-shadow: 0 10px 30px color-mix(in srgb, #0f172a 18%, transparent);
+}
+
+.voodbuilder-editor-spacing-popover__head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-vp-text-2, #64748b);
+}
+
+.voodbuilder-editor-spacing-popover__search {
+    width: 100%;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
+    border-radius: 0.35rem;
+    background: var(--color-vp-bg-alt, #f8fafc);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+}
+
+.voodbuilder-editor-spacing-popover__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
+    overflow: auto;
+    padding-right: 0.1rem;
+}
+
+.voodbuilder-editor-spacing-popover__opt {
+    min-height: 1.75rem;
+    padding: 0.2rem 0.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.3rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-spacing-popover__opt:hover,
+.voodbuilder-editor-spacing-popover__opt.is-selected {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 55%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-editor-root .gjs-clm-tags.voodbuilder-clm-tags--native-hidden .gjs-clm-tag,
+.voodbuilder-editor-root .gjs-clm-tags.voodbuilder-clm-tags--native-hidden .clm-tag,
+.voodbuilder-editor-root .clm-tags.voodbuilder-clm-tags--native-hidden .gjs-clm-tag,
+.voodbuilder-editor-root .clm-tags.voodbuilder-clm-tags--native-hidden .clm-tag,
+.voodbuilder-editor-root .gjs-clm-tag[data-vb-native-chip-hidden],
+.voodbuilder-editor-root .clm-tag[data-vb-native-chip-hidden] {
+    display: none !important;
+}
+
+.voodbuilder-editor-root .gjs-clm-tags.voodbuilder-clm-tags--native-hidden {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    min-height: 2rem;
+    margin-bottom: 0.35rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px dashed color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 95%, transparent);
+    border-radius: 0.45rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 70%, transparent);
+}
+
+.voodbuilder-editor-class-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    margin: 0.15rem 0 0.65rem;
+}
+
+.voodbuilder-editor-class-groups__empty {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-class-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 100%;
+}
+
+.voodbuilder-editor-class-group__title {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-class-group__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.voodbuilder-editor-class-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 100%;
+    padding: 0.15rem 0.2rem 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+}
+
+.voodbuilder-editor-class-chip__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voodbuilder-editor-class-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-vp-text-3, #94a3b8);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.voodbuilder-editor-class-chip__remove:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-select-option--swatch {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.voodbuilder-editor-select-swatch {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, #0f172a 18%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 35%, transparent);
+}
+
+.voodbuilder-editor-select-swatch--trigger {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.voodbuilder-editor-select-trigger-label--swatch {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-select-swatch {
+    border-color: color-mix(in srgb, #fff 22%, transparent);
+}
+
+/* Style panel — decorations (flat blocks; sector body inset from inspector-ui) */
+.voodbuilder-editor-sm-sector-tw--decorations > .voodbuilder-editor-sm-sector-tw__body {
+    display: block;
+}
+
+.voodbuilder-editor-deco {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.voodbuilder-editor-deco-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.voodbuilder-editor-deco-block + .voodbuilder-editor-deco-block {
+    margin-top: 0.35rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+}
+
+.voodbuilder-editor-deco-block__head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.5rem;
+    padding: 0.4375rem 0 0.35rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-block__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-deco-block__dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--color-vp-brand-1, #6366f1);
+}
+
+.voodbuilder-editor-deco-block__links {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: auto;
+}
+
+.voodbuilder-editor-deco-block__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--color-vp-text-3, #94a3b8);
+    cursor: pointer;
+}
+
+.voodbuilder-editor-deco-block__link:hover {
+    color: var(--color-vp-text-1, #0f172a);
+    background: var(--color-vp-gray-soft, rgba(142, 150, 170, 0.14));
+}
+
+.voodbuilder-editor-deco-block__link.is-active {
+    color: var(--color-vp-brand-1, #6366f1);
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 14%, transparent);
+}
+
+.voodbuilder-editor-deco-block .gjs-sm-property {
+    margin: 0;
+}
+
+.voodbuilder-editor-deco-block .gjs-sm-label:empty,
+.voodbuilder-editor-deco-block .gjs-sm-label:has(.gjs-sm-label-text:empty) {
+    display: none;
+}
+
+.voodbuilder-editor-deco-fold {
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+    margin: 0;
+    padding: 0.35rem 0 0;
+}
+
+.voodbuilder-editor-deco-fold__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-vp-text-2, #64748b);
+    padding: 0.25rem 0;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-fold__summary::-webkit-details-marker {
+    display: none;
+}
+
+.voodbuilder-editor-deco-fold__summary::before {
+    content: '▸';
+    font-size: 0.65rem;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-deco-fold[open] > .voodbuilder-editor-deco-fold__summary::before {
+    content: '▾';
+}
+
+.voodbuilder-editor-deco-fold__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 0.15rem;
+}
+
+/* Decorations fields / segments: same horizontal inset as Typography rows */
+.voodbuilder-editor-deco .voodbuilder-editor-typo-seg,
+.voodbuilder-editor-deco-border-all {
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+/* Stack From / Via / To — same label/select ratio as other Decorations rows. */
+.voodbuilder-editor-deco-stops {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.voodbuilder-editor-deco-stops .gjs-sm-property,
+.voodbuilder-editor-deco-stops .voodbuilder-editor-anim-property {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 38%) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem 0.55rem;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-stops .gjs-sm-label-text {
+    font-size: 0.6875rem;
+}
+
+.voodbuilder-editor-deco-stops .gjs-fields {
+    min-width: 0;
+    width: 100%;
+}
+
+.voodbuilder-editor-deco-stops .voodbuilder-editor-select-wrap {
+    width: 100%;
+    min-width: 0;
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-deco-block + .voodbuilder-editor-deco-block {
+    border-top-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 100%, #6a6a71 18%);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-deco-block__link {
+    color: var(--color-vp-text-2, #98989f);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-deco-block__link:hover {
+    color: var(--color-vp-text-1, #dfdfd6);
+    background: color-mix(in srgb, #fff 7%, transparent);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-deco-block__link.is-active {
+    color: var(--color-vp-brand-1, #a8b1ff);
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 45%, transparent);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 16%, transparent);
+}
+
+.voodbuilder-editor-deco-sides,
+.voodbuilder-editor-deco-corners {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem 0.5rem;
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.35rem 0 0.5rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-sides__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.voodbuilder-editor-deco-sides__cap {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--color-vp-text-3, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.voodbuilder-editor-deco-sides__cell .voodbuilder-editor-input {
+    width: 100%;
+}
+
+
+
+/* Decorations — background image picker */
+.voodbuilder-editor-deco-bg-image {
+    padding: 0.35rem 0 0.5rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-field {
+    margin: 0;
+    padding: 0.35rem 0;
+    border: none;
+}
+
+.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-label {
+    font-size: 0.6875rem;
 }

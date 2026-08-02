@@ -49,8 +49,8 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = ChromeLayoutResource::class;
         }
 
-        // Prefer voodflow/voodbuilder-media when installed (galleries + fixed admin UX).
-        if (MediaLibraryResource::canAccess() && ! class_exists(\Voodflow\VoodbuilderMedia\VoodbuilderMedia::class)) {
+        // Prefer voodflow/voodbuilder-media when its Filament plugin is active.
+        if (MediaLibraryResource::canAccess() && ! self::mediaCompanionActive()) {
             $resources[] = MediaLibraryResource::class;
         }
 
@@ -67,5 +67,14 @@ class VoodbuilderPlugin implements Plugin
     public function boot(Panel $panel): void
     {
         CookieConsentPlugin::make()->boot($panel);
+    }
+
+    protected static function mediaCompanionActive(): bool
+    {
+        $class = \Voodflow\VoodbuilderMedia\VoodbuilderMedia::class;
+
+        return class_exists($class)
+            && method_exists($class, 'isActive')
+            && (bool) $class::isActive();
     }
 }

@@ -7,7 +7,6 @@ import { registerCanvasBlockDrag } from '../canvas-block-drag.js';
 import { registerCanvasComponentToolbar } from '../canvas-component-toolbar.js';
 import { registerCanvasSiteChrome } from '../canvas-site-chrome.js';
 import { registerConditionsPersistence, registerConditionsUi } from '../conditions-ui.js';
-import { registerGlobalClassesUi } from '../global-classes-ui.js';
 import { registerNewsletterFormSettings } from '../editor-forms-blocks.js';
 import { registerInspectorColorFix } from '../inspector-color-fix.js';
 import { registerNavSettings } from '../chrome/blocks/nav/settings.js';
@@ -150,13 +149,6 @@ export function wireInspector(editor, shell, options, labels) {
 
         registerConditionsPersistence(editor);
     }
-
-    registerGlobalClassesUi(editor, {
-        globalClassesUrl: options.globalClassesUrl,
-        csrf: options.csrf,
-        labels,
-        mount: shell?.mounts?.globalClasses ?? null,
-    });
 
     registerFooterSettings(editor);
     registerNavSettings(editor);

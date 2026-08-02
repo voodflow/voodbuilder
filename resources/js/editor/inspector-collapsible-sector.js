@@ -47,11 +47,4 @@ export function setupStyleInspectorSectors(mounts, labels = {}) {
             open: true,
         });
     }
-
-    if (mounts?.globalClasses) {
-        mountCollapsibleInspectorSector(mounts.globalClasses, {
-            title: labels.globalClassesTitle ?? 'Global classes',
-            open: false,
-        });
-    }
 }

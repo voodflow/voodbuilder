@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveAssetManagerCopy } from '../../resources/js/editor/editor-assets.js';
+import { resolveAssetManagerCopy, shouldUseMediaCompanionBrowser } from '../../resources/js/editor/editor-assets.js';
 
 describe('resolveAssetManagerCopy', () => {
     it('uses image copy for poster / cover pickers', () => {
@@ -36,5 +36,17 @@ describe('resolveAssetManagerCopy', () => {
         expect(copy.addButton).toBe('Add video');
         expect(copy.inputPlh).toContain('video.mp4');
         expect(copy.uploadTitle).toContain('video');
+    });
+});
+
+describe('shouldUseMediaCompanionBrowser', () => {
+    it('requires both library and galleries URLs (Media companion)', () => {
+        expect(shouldUseMediaCompanionBrowser('/voodbuilder/editor/media', null)).toBe(false);
+        expect(shouldUseMediaCompanionBrowser('/voodbuilder/editor/media', '')).toBe(false);
+        expect(shouldUseMediaCompanionBrowser('', '/voodbuilder/editor/media/galleries')).toBe(false);
+        expect(shouldUseMediaCompanionBrowser(
+            '/voodbuilder/editor/media',
+            '/voodbuilder/editor/media/galleries',
+        )).toBe(true);
     });
 });

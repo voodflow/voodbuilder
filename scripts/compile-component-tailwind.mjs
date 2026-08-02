@@ -1047,10 +1047,14 @@ async function main() {
 
     try {
         const { createRequire } = await import('node:module');
-        createRequire(import.meta.url).resolve('@tailwindcss/typography');
+        const { join } = await import('node:path');
+        // Resolve against the host app root (compile base), not this script's
+        // package folder — otherwise @plugin points at a package that Vite/Tailwind
+        // cannot load from /var/www/html when typography is only in the package.
+        createRequire(join(appRoot, 'package.json')).resolve('@tailwindcss/typography');
         typographyPlugin = `@plugin '@tailwindcss/typography';\n`;
     } catch {
-        // Optional in package/test environments; host apps may still provide it.
+        // Optional — host apps may omit the plugin.
     }
 
     const entryCss = `@import 'tailwindcss';

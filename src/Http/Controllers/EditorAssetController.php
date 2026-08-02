@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\File;
 use Voodflow\Voodbuilder\Support\Editor\EditorMediaLibrary;
 
@@ -17,6 +18,13 @@ class EditorAssetController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        if (! Schema::hasTable('voodbuilder_media_libraries')) {
+            return response()->json([
+                'message' => 'Media library is not installed. Run: php artisan migrate',
+                'data' => [],
+            ], 503);
+        }
+
         $type = $request->query('type');
         $type = is_string($type) && in_array($type, ['image', 'video'], true) ? $type : null;
 
@@ -36,6 +44,12 @@ class EditorAssetController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (! Schema::hasTable('voodbuilder_media_libraries')) {
+            return response()->json([
+                'message' => 'Media library is not installed. Run: php artisan migrate',
+            ], 503);
+        }
+
         $imageMaxKb = (int) config('voodbuilder.editor.upload.max_size', 4096);
         $videoMaxKb = (int) config('voodbuilder.editor.upload.video_max_size', max($imageMaxKb, 51200));
         $uploaded = $request->file('file');

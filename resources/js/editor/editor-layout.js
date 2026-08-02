@@ -188,7 +188,6 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         </div>
                         <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="style">
                             <div class="voodbuilder-editor-selectors-mount"></div>
-                            <div class="voodbuilder-editor-global-classes-mount"></div>
                             <div class="voodbuilder-editor-styles-mount"></div>
                         </div>
                         <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="dynamic">
@@ -251,7 +250,6 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             styles: container.querySelector('.voodbuilder-editor-styles-mount'),
             dynamic: container.querySelector('.voodbuilder-editor-dynamic-mount'),
             conditions: container.querySelector('.voodbuilder-editor-conditions-mount'),
-            globalClasses: container.querySelector('.voodbuilder-editor-global-classes-mount'),
             search: container.querySelector('.voodbuilder-editor-blocks-search'),
             tablist,
             panels: container.querySelector('.voodbuilder-editor-inspector-panels'),
@@ -660,7 +658,7 @@ function syncChromeLayoutStylePanel(editor, mounts) {
     const selected = editor.getSelected?.();
     const noticeText = inspectorSelectionNotice(selected, editor, labels);
     const hideControls = noticeText !== null;
-    const styleMounts = [mounts.selectors, mounts.globalClasses, mounts.styles].filter(Boolean);
+    const styleMounts = [mounts.selectors, mounts.styles].filter(Boolean);
 
     styleMounts.forEach((el) => {
         el.hidden = hideControls;

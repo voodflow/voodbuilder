@@ -24,8 +24,18 @@ function isFontFamilySelect(select) {
     }
 
     const sample = String(select.options[0]?.value ?? '');
+    const second = String(select.options[1]?.value ?? '');
 
-    return sample.includes(',') || /sans-serif|serif|monospace|cursive/i.test(sample);
+    // Skip empty "—" first option used by Style panel typography.
+    const probe = sample.includes(',') || /sans-serif|serif|monospace|cursive/i.test(sample)
+        ? sample
+        : second;
+
+    return probe.includes(',') || /sans-serif|serif|monospace|cursive/i.test(probe);
+}
+
+function isSearchableSelect(select) {
+    return select.dataset.vbSearch === '1' || isFontFamilySelect(select);
 }
 
 function shouldEnhanceSelect(select) {
@@ -74,6 +84,20 @@ function setNativeSelectValue(select, value) {
 function commitSelectValue(select, value) {
     setNativeSelectValue(select, value);
 
+    // Style panel Tailwind selects are custom markup (not Grapes PropertyView).
+    // Never route through SM inputValueChanged — that swallows `change` and blocks
+    // font-size / font-weight / decorations apply.
+    if (
+        select.matches?.(
+            '[data-voodbuilder-tw-group], [data-voodbuilder-tw-font-family], [data-vb-font-search], [data-vb-search]',
+        )
+    ) {
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+
+        return;
+    }
+
     const integerField = select.closest('.gjs-field-integer');
 
     if (integerField && isUnitSelect(select)) {
@@ -95,7 +119,7 @@ function commitSelectValue(select, value) {
 
     const propertyEl = select.closest('.gjs-sm-property');
 
-    if (propertyEl) {
+    if (propertyEl && ! propertyEl.classList.contains('voodbuilder-editor-anim-property')) {
         const view = findGrapesView(propertyEl);
 
         if (view?.inputValueChanged) {
@@ -260,14 +284,30 @@ function syncCustomSelect(wrap) {
     const selected = select.options[select.selectedIndex];
     const rawLabel = selected?.textContent?.trim() || selected?.value || '-';
     const labelText = formatSelectTriggerLabel(select, rawLabel);
+    const hex = selected?.getAttribute?.('data-hex') || '';
     const label = triggerLabel(trigger);
 
     if (label) {
-        label.textContent = labelText;
+        label.replaceChildren();
+
+        if (hex) {
+            const swatch = document.createElement('span');
+            swatch.className = 'voodbuilder-editor-select-swatch voodbuilder-editor-select-swatch--trigger';
+            swatch.style.background = hex;
+            swatch.setAttribute('aria-hidden', 'true');
+            label.appendChild(swatch);
+            label.classList.add('voodbuilder-editor-select-trigger-label--swatch');
+        } else {
+            label.classList.remove('voodbuilder-editor-select-trigger-label--swatch');
+        }
+
+        label.appendChild(document.createTextNode(labelText));
         label.style.fontFamily = select.value || '';
     } else {
         trigger.textContent = labelText;
     }
+
+    wrap.classList.toggle('voodbuilder-editor-select-wrap--has-swatch', Boolean(hex));
 
     list.querySelectorAll('.voodbuilder-editor-select-option').forEach((option) => {
         const active = option.dataset.value === select.value;
@@ -293,14 +333,24 @@ function buildOptionList(select, list, wrap) {
     for (const option of select.options) {
         const label = option.textContent?.trim() || option.value || '-';
         const value = option.value;
+        const hex = option.getAttribute('data-hex');
 
         const item = document.createElement('li');
         item.className = 'voodbuilder-editor-select-option';
         item.role = 'option';
         item.dataset.value = value;
         item.dataset.label = label.toLowerCase();
-        item.textContent = label;
         item.tabIndex = -1;
+
+        if (hex) {
+            item.classList.add('voodbuilder-editor-select-option--swatch');
+            const swatch = document.createElement('span');
+            swatch.className = 'voodbuilder-editor-select-swatch';
+            swatch.style.background = hex;
+            item.append(swatch, document.createTextNode(label));
+        } else {
+            item.textContent = label;
+        }
 
         if (previewFont && value) {
             item.style.fontFamily = value;
@@ -313,6 +363,15 @@ function buildOptionList(select, list, wrap) {
             commitSelectValue(select, value);
             syncCustomSelect(wrap);
         });
+
+        if (previewFont && value) {
+            item.addEventListener('mouseenter', () => {
+                select.dispatchEvent(new CustomEvent('vb:font-preview', {
+                    bubbles: true,
+                    detail: { value },
+                }));
+            });
+        }
 
         list.appendChild(item);
     }
@@ -368,7 +427,10 @@ function applyFontSearchFilter(list, wrap, query = '') {
  * @param {HTMLElement} wrap
  */
 function ensureFontSearchRow(select, list, wrap) {
-    if (! wrap.classList.contains('voodbuilder-editor-select-wrap--font')) {
+    const searchable = wrap.classList.contains('voodbuilder-editor-select-wrap--font')
+        || wrap.classList.contains('voodbuilder-editor-select-wrap--searchable');
+
+    if (! searchable) {
         return null;
     }
 
@@ -385,7 +447,9 @@ function ensureFontSearchRow(select, list, wrap) {
     const search = document.createElement('input');
     search.type = 'search';
     search.className = 'voodbuilder-editor-select-search';
-    search.placeholder = select.dataset.vbFontSearchPlaceholder || 'Cerca font…';
+    search.placeholder = select.dataset.vbFontSearchPlaceholder
+        || select.dataset.vbSearchPlaceholder
+        || 'Search…';
     search.autocomplete = 'off';
     search.spellcheck = false;
     search.setAttribute('aria-label', search.placeholder);
@@ -474,6 +538,7 @@ function enhanceSelect(select) {
 
     const compact = isUnitSelect(select);
     const fontList = ! compact && isFontFamilySelect(select);
+    const searchable = ! compact && isSearchableSelect(select);
     const existingFormWrap = select.closest('.voodbuilder-editor-form .voodbuilder-editor-select-wrap');
     const reuseWrap = Boolean(
         existingFormWrap
@@ -499,6 +564,10 @@ function enhanceSelect(select) {
         wrap.classList.add('voodbuilder-editor-select-wrap--font');
     }
 
+    if (searchable) {
+        wrap.classList.add('voodbuilder-editor-select-wrap--searchable');
+    }
+
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'voodbuilder-editor-select-trigger';
@@ -520,6 +589,10 @@ function enhanceSelect(select) {
         list.classList.add('voodbuilder-editor-select-list--font');
     }
 
+    if (searchable) {
+        list.classList.add('voodbuilder-editor-select-list--searchable');
+    }
+
     list.role = 'listbox';
     list.hidden = true;
 
@@ -539,7 +612,7 @@ function enhanceSelect(select) {
         list.hidden = false;
         trigger.setAttribute('aria-expanded', 'true');
 
-        const search = ensureFontSearchRow(select, list, wrap);
+        const search = searchable ? ensureFontSearchRow(select, list, wrap) : null;
 
         if (search) {
             search.value = '';
@@ -604,7 +677,7 @@ function enhanceSelect(select) {
         buildOptionList(select, list, wrap);
     });
 
-    if (fontList) {
+    if (searchable) {
         ensureFontSearchRow(select, list, wrap);
     }
 

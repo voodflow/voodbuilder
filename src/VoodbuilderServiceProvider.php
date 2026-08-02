@@ -224,11 +224,8 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::get('bindings', EditorBindingsController::class)->name('bindings');
                 Route::get('bindings/preview/{sitePage}', EditorBindingsPreviewController::class)->name('bindings.preview');
                 Route::get('link-targets', EditorLinkTargetsController::class)->name('link-targets');
-                // Companion voodflow/voodbuilder-media owns list/upload when installed.
-                if (! class_exists(\Voodflow\VoodbuilderMedia\VoodbuilderMedia::class)) {
-                    Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
-                    Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
-                }
+                // Media list/upload: Core owns them unless the Media companion plugin is active.
+                // Deferred so Filament plugin activation can claim the routes first.
                 Route::get('media/{media}', EditorMediaPreviewController::class)
                     ->whereNumber('media')
                     ->name('media.preview');
@@ -236,6 +233,35 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('code/highlight', EditorCodeHighlightController::class)->name('code.highlight');
                 Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
             });
+
+        $this->app->booted(function (): void {
+            if ($this->mediaCompanionOwnsEditorMediaRoutes()) {
+                return;
+            }
+
+            Route::middleware(['web', 'auth', 'throttle:60,1'])
+                ->prefix('voodbuilder/editor')
+                ->name('voodbuilder.editor.')
+                ->group(function (): void {
+                    Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
+                    Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
+                });
+        });
+    }
+
+    protected function mediaCompanionOwnsEditorMediaRoutes(): bool
+    {
+        $class = \Voodflow\VoodbuilderMedia\VoodbuilderMedia::class;
+
+        if (! class_exists($class)) {
+            return false;
+        }
+
+        if (! method_exists($class, 'isActive')) {
+            return true;
+        }
+
+        return (bool) $class::isActive();
     }
 
     protected function registerAdminRoutes(): void

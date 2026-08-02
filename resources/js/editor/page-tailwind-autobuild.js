@@ -16,6 +16,9 @@ import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
 import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
 import { extractGrapesComposerCss, mergeAuthorCssChunks } from './editor/payload.js';
+import { STYLE_SPACING_SAFELIST } from './style-spacing-safelist.js';
+import { STYLE_COLOR_SAFELIST } from './style-color-safelist.js';
+import { STYLE_UTILITY_GROUPS } from './style-tailwind-class-groups.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-page-live-css';
 const DEBOUNCE_MS = 450;
@@ -23,6 +26,45 @@ const BUILD_SCOPE = 'page-css';
 const INITIAL_BUILD_DELAY_MS = 200;
 const SETTINGS_RETRY_MS = 100;
 const MAX_SETTINGS_RETRIES = 40;
+
+/** Utilities already shipped in canvas section-utilities.css (Style panel catalogs). */
+const PALETTE_SHADE_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/;
+const NAMED_COLOR_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:black|white|transparent|current|inherit)$/;
+
+const CANVAS_BUNDLED_UTILITIES = (() => {
+    const set = new Set(
+        `${STYLE_SPACING_SAFELIST ?? ''}\n${STYLE_COLOR_SAFELIST ?? ''}`
+            .split(/\s+/)
+            .map((token) => token.trim())
+            .filter(Boolean),
+    );
+
+    // Add Style panel literals (font-bold, bg-cover, drop-shadow-lg, …).
+    // Skip palette/named color tokens unless they are already in the safelist
+    // files — template-built options (e.g. shadow-red-500) are invisible to
+    // Tailwind @source; claiming them as "bundled" skipped JIT so the color
+    // only appeared after Save.
+    for (const group of STYLE_UTILITY_GROUPS ?? []) {
+        for (const opt of group.options ?? []) {
+            const value = String(opt?.value ?? '').trim();
+
+            if (value === '') {
+                continue;
+            }
+
+            const isPaletteColor = PALETTE_SHADE_UTILITY_RE.test(value)
+                || NAMED_COLOR_UTILITY_RE.test(value);
+
+            if (isPaletteColor && ! set.has(value)) {
+                continue;
+            }
+
+            set.add(value);
+        }
+    }
+
+    return set;
+})();
 
 function collectPageLevelHtml(editor) {
     // Chrome-shell page editor: compile only the page content slot — full getHtml()
@@ -163,6 +205,11 @@ export function pageCssCoversClass(editor, className) {
 
     // Theme / section utility tokens ship outside page live CSS.
     if (normalized.includes('-vp-') || /(?:^|:)vp-/.test(normalized)) {
+        return true;
+    }
+
+    // Style panel spacing/dimension catalogs are baked into section-utilities.css.
+    if (CANVAS_BUNDLED_UTILITIES.has(normalized)) {
         return true;
     }
 

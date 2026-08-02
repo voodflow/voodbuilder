@@ -9,6 +9,7 @@ import {
     normalizeHeroVideoId,
     normalizeHeroVideoProvider,
 } from './hero-video-embed.js';
+import { componentClassList } from './style-tailwind-class-groups.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const BG_SIZE_OPTIONS = [
@@ -183,6 +184,30 @@ function removeHeroMediaEmbed(section) {
 }
 
 /**
+ * Align hero content vertically for pages saved with the old items-end template.
+ * Never strip author padding (pt-* / pb-*): those are Style panel utilities.
+ *
+ * @param {import('grapesjs').Component} content
+ */
+function normalizeHeroContentAlignment(content) {
+    if (! content?.getClasses) {
+        return;
+    }
+
+    const classes = componentClassList(content);
+    const drop = new Set(['items-end', 'lg:items-end']);
+    const next = classes.filter((name) => ! drop.has(name));
+
+    if (! next.includes('items-center')) {
+        next.push('items-center');
+    }
+
+    if (next.join(' ') !== classes.join(' ')) {
+        content.setClass?.(next);
+    }
+}
+
+/**
  * @param {import('grapesjs').Component} section
  */
 function syncBackgroundImageSection(section) {
@@ -199,6 +224,7 @@ function syncBackgroundImageSection(section) {
 
     if (content) {
         content.addStyle({ 'min-height': minHeight });
+        normalizeHeroContentAlignment(content);
     }
 
     if (image) {
