@@ -18,7 +18,7 @@ Install npm dependencies (host app):
 
 ```bash
 # Host install pulls Editor npm deps via voodbuilder:install / SyncNpmDeps.
-# Under the hood the canvas uses the grapesjs package (pinned in package.json — do not patch node_modules).
+# Canvas engine package is pinned in package.json — do not patch node_modules.
 npm run build
 ```
 
@@ -45,7 +45,7 @@ Blocks appear in the Editor sidebar when editing.
 
 ### Section library catalog
 
-Bundled JSON: `resources/editor/section-library-blocks.json` (legacy filename `tailblocks-blocks.json` may still exist during migration)
+Bundled JSON: `resources/editor/section-library-blocks.json` (legacy `tailblocks-blocks.json` filename may still exist during migration)
 
 Regenerate section library assets (optional):
 

@@ -37,15 +37,15 @@ Gate features with `Voodbuilder::can('…')` — do not hard-code plan names in 
 ## Editor plugins
 
 ```php
-'grapesjs' => [ // internal config key — not a public product name
+'editor' => [ // prefer this key; legacy `grapesjs` is still accepted
     'plugins' => [/* forms, tabs, custom-code, style-bg */],
     'image_editor' => true,
 ],
 ```
 
-## Editor / Tailblocks / fonts / layouts
+## Editor / section catalog / fonts / layouts
 
-See inline comments in the published config for `editor.tailblocks`, layout view names, marketing URL, revision limits, and font settings.
+See inline comments in the published config for `editor` (section catalog / utilities), layout view names, marketing URL, revision limits, and font settings.
 
 ## Integrations file
 

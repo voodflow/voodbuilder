@@ -85,9 +85,9 @@ That is usually enough for a fresh Laravel app with Vite. The install command pu
 | `routes/web.php` | Removes Laravel’s default `GET /` welcome route |
 | `package.json` | Adds Tailwind, fonts, Editor npm packages |
 | `package.json` scripts | Sets `build` to run `voodbuilder:sync-theme-imports` before Vite when safe |
-| `vite.config.js` | Adds theme CSS, visual editor JS/CSS, Tailblocks utilities |
+| `vite.config.js` | Adds theme CSS, visual editor JS/CSS, section-catalog utilities |
 | npm | Runs `npm install` when `npm` is on PATH |
-| Cookie consent | Disables Filament auto-discovery for the public banner package |
+| Cookie consent | Prefer optional `voodflow/vcookiebar` for the public consent banner |
 | vtuts (optional) | Patches `config/vtuts.php` layouts when the package is installed |
 
 **CLI flags**
@@ -636,7 +636,7 @@ input: [
     'vendor/voodflow/voodbuilder/resources/css/theme.css',
     'vendor/voodflow/voodbuilder/resources/js/editor/editor.js',
     'vendor/voodflow/voodbuilder/resources/css/editor/editor.css',
-    'vendor/voodflow/voodbuilder/resources/css/editor/tailblocks-utilities.css',
+    'vendor/voodflow/voodbuilder/resources/css/editor/tailblocks-utilities.css', // section-catalog utilities (legacy filename)
 ],
 ```
 

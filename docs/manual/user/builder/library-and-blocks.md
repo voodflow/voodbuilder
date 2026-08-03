@@ -15,7 +15,7 @@ Section, Container, Block, Div — see [Understanding the layout](./understandin
 
 ### Section catalog
 
-Sixty-plus marketing sections (Tailblocks-style), adaptive to light/dark via theme tokens, grouped roughly as:
+Sixty-plus marketing sections from the section catalog, adaptive to light/dark via theme tokens, grouped roughly as:
 
 Hero, Features, Content, Articles, CTA, Contact, Shop, Gallery, Stats, Steps, Team, Testimonials, Pricing, Header, Footer, …
 
