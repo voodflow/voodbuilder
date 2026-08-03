@@ -16,14 +16,20 @@ final class SitePageForm
 {
     public static function editorOnly(): bool
     {
-        return (bool) config('voodbuilder.pages.editor_only', false);
+        if ((bool) config('voodbuilder.pages.editor_only', false)) {
+            return true;
+        }
+
+        // Legacy published configs (pre Editor rename) used grapesjs_only.
+        return (bool) config('voodbuilder.pages.grapesjs_only', false);
     }
 
     public static function defaultBuilder(): PageBuilder
     {
         $configured = config('voodbuilder.pages.default_builder', PageBuilder::Visual->value);
+        $normalized = PageBuilder::normalize((string) $configured);
 
-        return PageBuilder::tryFrom((string) $configured) ?? PageBuilder::Visual;
+        return $normalized ?? PageBuilder::Visual;
     }
 
     public static function allowsSubThemeOverride(): bool
