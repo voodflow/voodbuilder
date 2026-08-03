@@ -120,7 +120,8 @@ final class EditorGate
                 $chromeWidth,
             ),
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
-            'saveUrl' => self::editorRoute('voodbuilder.editor.pages.update', $page),
+            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
+                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
@@ -132,46 +133,46 @@ final class EditorGate
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
-            'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks'),
+            'blocksUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false),
             'elementsSourceUrl' => EditorCommunityBlockCatalog::elementsLibraryActive()
-                ? self::editorRoute('voodbuilder.editor.elements.source')
+                ? self::optionalEditorRoute('voodbuilder.editor.elements.source')
                 : null,
             'bindingsUrl' => self::dynamicDataEnabled()
-                ? self::editorRoute('voodbuilder.editor.bindings')
+                ? self::optionalEditorRoute('voodbuilder.editor.bindings')
                 : null,
-            'linkTargetsUrl' => self::editorRoute('voodbuilder.editor.link-targets'),
+            'linkTargetsUrl' => self::optionalEditorRoute('voodbuilder.editor.link-targets') ?? '',
             'bindingsPreviewUrl' => self::dynamicDataEnabled()
-                ? self::editorRoute('voodbuilder.editor.bindings.preview', $page)
+                ? self::optionalEditorRoute('voodbuilder.editor.bindings.preview', $page)
                 : null,
-            'blocksRenderUrl' => self::editorRoute('voodbuilder.editor.blocks.render'),
-            'codeHighlightUrl' => self::editorRoute('voodbuilder.editor.code.highlight'),
-            'formSubmitUrl' => self::editorRoute('voodbuilder.editor.forms.submit', $page),
+            'blocksRenderUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks.render') ?? '',
+            'codeHighlightUrl' => self::optionalEditorRoute('voodbuilder.editor.code.highlight') ?? '',
+            'formSubmitUrl' => self::optionalEditorRoute('voodbuilder.editor.forms.submit', $page) ?? '',
             'newsletterLists' => self::newsletterListOptions(),
             'revisionsUrl' => HistoryModule::isEnabled()
-                ? self::editorRoute('voodbuilder.editor.pages.revisions.index', $page)
+                ? self::optionalEditorRoute('voodbuilder.editor.pages.revisions.index', $page)
                 : null,
             'revisionsRestoreUrl' => HistoryModule::isEnabled()
-                ? self::editorRoute('voodbuilder.editor.pages.revisions.restore', [
+                ? self::optionalEditorRoute('voodbuilder.editor.pages.revisions.restore', [
                     'sitePage' => $page,
                     'revision' => '__REVISION__',
                 ])
                 : null,
             'globalClassesUrl' => ComponentRuntimeBridge::moduleEnabled()
-                ? self::editorRoute('voodbuilder.editor.global-classes.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.global-classes.index')
                 : null,
             'componentsUrl' => ComponentRuntimeBridge::moduleEnabled()
-                ? self::editorRoute('voodbuilder.editor.components.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.components.index')
                 : null,
             // Core JIT endpoint — do not require the Components plugin for canvas compile.
-            'compileCssUrl' => self::editorRoute('voodbuilder.editor.compile-css'),
+            'compileCssUrl' => self::optionalEditorRoute('voodbuilder.editor.compile-css') ?? '',
             'pageTemplatesUrl' => TemplatesModule::isEnabled()
-                ? self::editorRoute('voodbuilder.editor.page-templates.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.page-templates.index')
                 : null,
             'pageTemplatesCatalogUrl' => TemplatesModule::isEnabled()
                 && Voodbuilder::can('templates.remote-install')
                 && filled(config('voodbuilder.page_templates.catalog_url'))
-                ? self::editorRoute('voodbuilder.editor.page-templates.catalog')
+                ? self::optionalEditorRoute('voodbuilder.editor.page-templates.catalog')
                 : null,
             'fonts' => Voodbuilder::fonts()->toEditorPayload(),
             'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
@@ -200,10 +201,10 @@ final class EditorGate
                 'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
             ],
             'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')
-                ? self::editorRoute('voodbuilder.editor.popups.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.popups.index')
                 : null,
             'popupsPagePathsUrl' => Voodbuilder::modules()->isEnabled('popups')
-                ? self::editorRoute('voodbuilder.editor.popups.page-paths')
+                ? self::optionalEditorRoute('voodbuilder.editor.popups.page-paths')
                 : null,
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
@@ -1014,6 +1015,20 @@ final class EditorGate
     private static function editorRoute(string $name, mixed $parameters = []): string
     {
         return route($name, $parameters, absolute: false);
+    }
+
+    /**
+     * Resolve a named editor route when registered; never throw (companion packages may lag).
+     *
+     * @param  array<string, mixed>|object|string|int|null  $parameters
+     */
+    private static function optionalEditorRoute(string $name, mixed $parameters = []): ?string
+    {
+        if (! \Illuminate\Support\Facades\Route::has($name)) {
+            return null;
+        }
+
+        return self::editorRoute($name, $parameters);
     }
 
     public static function chromeShellPreviewSubTheme(): string

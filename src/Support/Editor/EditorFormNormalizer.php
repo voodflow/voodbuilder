@@ -56,6 +56,11 @@ final class EditorFormNormalizer
         }
 
         $html = self::normalize($html);
+
+        if (! \Illuminate\Support\Facades\Route::has('voodbuilder.editor.forms.submit')) {
+            return $html;
+        }
+
         $action = route('voodbuilder.editor.forms.submit', $page);
         $token = csrf_token();
 

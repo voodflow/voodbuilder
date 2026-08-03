@@ -228,7 +228,12 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             });
 
         $this->app->booted(function (): void {
-            if ($this->mediaCompanionOwnsEditorMediaRoutes()) {
+            // Skip only when companion (or a prior registrar) actually exposed upload.
+            // Vmedia::isActive() alone is not enough: Filament can activate the plugin
+            // before HTTP routes land (or nest them under filament.*), which left
+            // EditorGate resolving a missing voodbuilder.editor.upload and 500'd ?edit=1
+            // — the page editor never mounted, so saves could not persist.
+            if ($this->editorMediaUploadRouteRegistered()) {
                 return;
             }
 
@@ -242,19 +247,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         });
     }
 
-    protected function mediaCompanionOwnsEditorMediaRoutes(): bool
+    protected function editorMediaUploadRouteRegistered(): bool
     {
-        $class = \Voodflow\Vmedia\Vmedia::class;
-
-        if (! class_exists($class)) {
-            return false;
-        }
-
-        if (! method_exists($class, 'isActive')) {
-            return true;
-        }
-
-        return (bool) $class::isActive();
+        return Route::has('vmedia.media.upload')
+            || Route::has('voodbuilder.editor.upload');
     }
 
     protected function registerAdminRoutes(): void

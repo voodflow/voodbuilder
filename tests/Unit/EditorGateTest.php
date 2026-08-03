@@ -72,6 +72,43 @@ class EditorGateTest extends TestCase
         $this->assertArrayHasKey('imageEditorPlaceholderHint', $config['labels']);
         $this->assertArrayHasKey('imageSettingsHeroTitle', $config['labels']);
         $this->assertArrayHasKey('imageSettingsSrc', $config['labels']);
+        $this->assertSame('/voodbuilder/editor/pages/'.$page->getKey(), $config['saveUrl']);
+        $this->assertIsString($config['uploadUrl']);
+    }
+
+    public function test_config_exposes_save_url_and_tolerates_optional_media_routes(): void
+    {
+        EditorGate::authorizeUsing(
+            static fn (SitePage $page): bool => $page->usesEditorBuilder(),
+        );
+
+        $page = SitePage::query()->create([
+            'title' => 'Landing',
+            'slug' => 'landing-gate-save-url',
+            'builder' => PageBuilder::Visual,
+            'published' => true,
+            'builder_payload' => [
+                'html' => '<section>Hero</section>',
+                'css' => '',
+            ],
+        ]);
+
+        $this->app->instance('request', Request::create('/pages/landing-page?edit=1', 'GET'));
+
+        $config = EditorGate::config($page);
+
+        $this->assertSame('/voodbuilder/editor/pages/'.$page->getKey(), $config['saveUrl']);
+        $this->assertIsString($config['uploadUrl']);
+
+        if (
+            \Illuminate\Support\Facades\Route::has('vmedia.media.upload')
+            || \Illuminate\Support\Facades\Route::has('voodbuilder.editor.upload')
+        ) {
+            $this->assertNotSame('', $config['uploadUrl']);
+        } else {
+            // Companion inactive and core fallback not registered — editor must still boot.
+            $this->assertSame('', $config['uploadUrl']);
+        }
     }
 
     public function test_image_editor_can_be_disabled_via_config(): void

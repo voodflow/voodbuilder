@@ -54,30 +54,31 @@ final class EditorChromeLayoutEditorGate
                 $contentWidth,
                 $chromeWidth,
             ),
-            'saveUrl' => self::editorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout),
+            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout)
+                ?? '/voodbuilder/editor/chrome-layouts/'.$layout->getKey().'/content',
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($layout),
-            'blocksUrl' => self::editorRoute('voodbuilder.editor.blocks').'?chrome=1',
+            'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks').'?chrome=1',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),
-            'bindingsUrl' => self::editorRoute('voodbuilder.editor.bindings'),
-            'linkTargetsUrl' => self::editorRoute('voodbuilder.editor.link-targets'),
-            'blocksRenderUrl' => self::editorRoute('voodbuilder.editor.blocks.render'),
-            'codeHighlightUrl' => self::editorRoute('voodbuilder.editor.code.highlight'),
+            'bindingsUrl' => self::optionalEditorRoute('voodbuilder.editor.bindings'),
+            'linkTargetsUrl' => self::optionalEditorRoute('voodbuilder.editor.link-targets') ?? '',
+            'blocksRenderUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks.render') ?? '',
+            'codeHighlightUrl' => self::optionalEditorRoute('voodbuilder.editor.code.highlight') ?? '',
             'globalClassesUrl' => ComponentRuntimeBridge::moduleEnabled()
-                ? self::editorRoute('voodbuilder.editor.global-classes.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.global-classes.index')
                 : null,
             'componentsUrl' => ComponentRuntimeBridge::moduleEnabled()
-                ? self::editorRoute('voodbuilder.editor.components.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.components.index')
                 : null,
-            'compileCssUrl' => self::editorRoute('voodbuilder.editor.compile-css'),
+            'compileCssUrl' => self::optionalEditorRoute('voodbuilder.editor.compile-css') ?? '',
             // Allow "Templates" tab in chrome layout editor too.
             // Even without the optional templates authoring plugin, we can still load base templates.
             'pageTemplatesUrl' => TemplatesModule::isEnabled()
-                ? self::editorRoute('voodbuilder.editor.page-templates.index')
+                ? self::optionalEditorRoute('voodbuilder.editor.page-templates.index')
                 : null,
             'pageTemplatesCatalogUrl' => null,
             'templateCategories' => PageTemplateCategories::all(),
@@ -156,6 +157,18 @@ final class EditorChromeLayoutEditorGate
     private static function editorRoute(string $name, mixed $parameters = []): string
     {
         return route($name, $parameters, absolute: false);
+    }
+
+    /**
+     * @param  array<string, mixed>|object|string|int|null  $parameters
+     */
+    private static function optionalEditorRoute(string $name, mixed $parameters = []): ?string
+    {
+        if (! \Illuminate\Support\Facades\Route::has($name)) {
+            return null;
+        }
+
+        return self::editorRoute($name, $parameters);
     }
 
     private static function mediaUploadUrl(): ?string
