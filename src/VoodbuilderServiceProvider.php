@@ -251,7 +251,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     protected function mediaCompanionOwnsEditorMediaRoutes(): bool
     {
-        $class = \Voodflow\VoodbuilderMedia\VoodbuilderMedia::class;
+        $class = \Voodflow\Vmedia\Vmedia::class;
 
         if (! class_exists($class)) {
             return false;
@@ -370,7 +370,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         // Components live in voodflow/voodbuilder-components (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
 
-        // Popups live in voodflow/voodbuilder-popups (Filament plugin) and
+        // Popups live in voodflow/vpopups (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
     }
 }

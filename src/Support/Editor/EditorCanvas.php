@@ -929,12 +929,12 @@ final class EditorCanvas
     }
 
     /**
-     * Popup canvas chrome CSS ships with voodbuilder-popups (sibling path package).
+     * Popup canvas chrome CSS ships with vpopups (sibling path package).
      */
     protected static function readPopupShellCanvasCss(): string
     {
         $candidates = [
-            dirname(__DIR__, 4).'/voodbuilder-popups/resources/css/editor/popup-shell.css',
+            dirname(__DIR__, 4).'/vpopups/resources/css/editor/popup-shell.css',
             dirname(__DIR__, 3).'/resources/css/editor/popup-shell.css',
         ];
 

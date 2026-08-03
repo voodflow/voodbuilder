@@ -10,8 +10,8 @@ import {
  *
  * Contract:
  * - Companion packages own their JS under `resources/js/editor/` in their repo.
- * - They register with `registerEditorPlugin({ id, mount })` — never patch GrapesJS core.
- * - Core boots plugins after `grapesjs.init`, passing entitlements/URLs from EditorGate.
+ * - They register with `registerEditorPlugin({ id, mount })` — never patch the canvas engine core.
+ * - Core boots plugins after editor init, passing entitlements/URLs from EditorGate.
  * - Path-repo installs can also ship `plugin.js` discovered via import.meta.glob below.
  * - Font providers call `registerFonts` / `registerFontProvider` (Fontsource core is built-in).
  *
@@ -69,7 +69,7 @@ export function listEditorPlugins() {
 function discoverCompanionPlugins() {
     const modules = import.meta.glob(
         [
-            '../../../../voodbuilder-popups/resources/js/editor/plugin.js',
+            '../../../../vpopups/resources/js/editor/plugin.js',
             '../../../../voodbuilder-components/resources/js/editor/plugin.js',
             '../../../../voodbuilder-dynamic-data/resources/js/editor/plugin.js',
             '../../../../voodbuilder-templates/resources/js/editor/plugin.js',

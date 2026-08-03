@@ -124,12 +124,10 @@ final class EditorGate
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
             'uploadUrl' => self::editorRoute('voodbuilder.editor.upload'),
-            'mediaLibraryUrl' => \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.index')
-                ? self::editorRoute('voodbuilder.editor.media.index')
-                : null,
-            // Galleries API is owned by voodflow/voodbuilder-media when the Filament plugin is active.
+            'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
+            // Galleries API is owned by voodflow/vmedia when the Filament plugin is active.
             'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
-                ? self::editorRoute('voodbuilder.editor.media.galleries')
+                ? self::mediaGalleriesIndexUrl()
                 : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
@@ -1068,11 +1066,36 @@ final class EditorGate
     }
 
     /**
+     * Prefer vmedia package routes; fall back to transitional voodbuilder.editor.* aliases.
+     */
+    private static function mediaLibraryIndexUrl(): ?string
+    {
+        foreach (['vmedia.media.index', 'voodbuilder.editor.media.index'] as $name) {
+            if (\Illuminate\Support\Facades\Route::has($name)) {
+                return self::editorRoute($name);
+            }
+        }
+
+        return null;
+    }
+
+    private static function mediaGalleriesIndexUrl(): ?string
+    {
+        foreach (['vmedia.media.galleries', 'voodbuilder.editor.media.galleries'] as $name) {
+            if (\Illuminate\Support\Facades\Route::has($name)) {
+                return self::editorRoute($name);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Custom media browser (galleries) requires the Media companion Filament plugin.
      */
     private static function mediaCompanionBrowserEnabled(): bool
     {
-        $class = 'Voodflow\\VoodbuilderMedia\\VoodbuilderMedia';
+        $class = 'Voodflow\\Vmedia\\Vmedia';
 
         if (! class_exists($class) || ! method_exists($class, 'isActive')) {
             return false;
@@ -1080,7 +1103,10 @@ final class EditorGate
 
         try {
             return (bool) $class::isActive()
-                && \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries');
+                && (
+                    \Illuminate\Support\Facades\Route::has('vmedia.media.galleries')
+                    || \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries')
+                );
         } catch (\Throwable) {
             return false;
         }

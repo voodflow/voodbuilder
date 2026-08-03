@@ -1,12 +1,12 @@
 /**
  * Optional popup UI for hosts.
  *
- * `voodbuilder` must stay agnostic when the `voodbuilder-popups` plugin is not installed yet:
+ * `voodbuilder` must stay agnostic when the `voodflow/vpopups` plugin is not installed yet:
  * build should succeed and popups should simply be disabled.
  */
 
 const popupUiModules = import.meta.glob(
-    '../../../../voodbuilder-popups/resources/js/editor/popups-ui.js',
+    '../../../../vpopups/resources/js/editor/popups-ui.js',
     { eager: true },
 );
 

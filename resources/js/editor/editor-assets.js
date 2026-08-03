@@ -440,7 +440,7 @@ export async function openMediaAssets(args) {
         ?? labels.mediaGalleriesUrl
         ?? null;
 
-    // Custom browser is owned by voodflow/voodbuilder-media (galleries + vault).
+    // Custom browser is owned by voodflow/vmedia (galleries + vault).
     if (shouldUseMediaCompanionBrowser(libraryUrl, galleriesUrl)) {
         try {
             const { openMediaBrowser } = await import('./media-browser.js');

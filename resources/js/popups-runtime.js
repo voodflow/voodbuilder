@@ -1,10 +1,10 @@
 /**
  * Optional public popup runtime for hosts.
  *
- * `voodbuilder` must stay agnostic when the `voodbuilder-popups` plugin is not installed.
+ * `voodbuilder` must stay agnostic when the `voodflow/vpopups` plugin is not installed.
  */
 const popupRuntimeModules = import.meta.glob(
-    '../../../voodbuilder-popups/resources/js/popups-runtime.js',
+    '../../../vpopups/resources/js/popups-runtime.js',
     { eager: true },
 );
 

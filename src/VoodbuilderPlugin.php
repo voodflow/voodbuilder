@@ -43,13 +43,13 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = SitePageResource::class;
         }
 
-        // PopupResource is registered by VoodbuilderPopupsPlugin (voodflow/voodbuilder-popups).
+        // PopupResource is registered by VpopupsPlugin (voodflow/vpopups).
 
         if (config('voodbuilder.modules.layouts.enabled', true) && config('voodbuilder.chrome_layouts.enabled', true)) {
             $resources[] = ChromeLayoutResource::class;
         }
 
-        // Prefer voodflow/voodbuilder-media when its Filament plugin is active.
+        // Prefer voodflow/vmedia when its Filament plugin is active.
         if (MediaLibraryResource::canAccess() && ! self::mediaCompanionActive()) {
             $resources[] = MediaLibraryResource::class;
         }
@@ -71,7 +71,7 @@ class VoodbuilderPlugin implements Plugin
 
     protected static function mediaCompanionActive(): bool
     {
-        $class = \Voodflow\VoodbuilderMedia\VoodbuilderMedia::class;
+        $class = \Voodflow\Vmedia\Vmedia::class;
 
         return class_exists($class)
             && method_exists($class, 'isActive')

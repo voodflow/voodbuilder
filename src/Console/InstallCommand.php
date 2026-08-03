@@ -343,7 +343,10 @@ class InstallCommand extends Command
         $this->line('  1. Filament panel — register plugins once in your Panel provider:');
         $this->line('     ->plugins([');
         $this->line('         \\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make(),');
-        $this->line('         \\Voodflow\\VoodbuilderPopups\\VoodbuilderPopupsPlugin::make(), // optional popups');
+        $this->line('         \\Voodflow\\Vpopups\\VpopupsPlugin::make(), // optional popups');
+        $this->line('         \\Voodflow\\Vmedia\\VmediaPlugin::make(), // optional media');
+        $this->line('         \\Voodflow\\Vforms\\VformsPlugin::make(), // optional forms');
+        $this->line('         \\Voodflow\\Vcookiebar\\VcookiebarPlugin::make(), // optional cookie bar');
         $this->line('     ])');
         $this->newLine();
 

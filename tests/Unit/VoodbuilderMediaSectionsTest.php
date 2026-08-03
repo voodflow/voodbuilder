@@ -57,6 +57,6 @@ class VoodbuilderMediaSectionsTest extends TestCase
 
         $this->assertNotNull($hero);
         $this->assertSame('Hero', $hero['category']);
-        $this->assertSame('Background image', $hero['label']);
+        $this->assertSame('Hero · background image', $hero['label']);
     }
 }

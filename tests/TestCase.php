@@ -22,10 +22,10 @@ use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
 use Voodflow\VoodbuilderComponents\VoodbuilderComponentsServiceProvider;
 use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicData;
 use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicDataServiceProvider;
-use Voodflow\VoodbuilderPopups\VoodbuilderPopups;
-use Voodflow\VoodbuilderPopups\VoodbuilderPopupsServiceProvider;
 use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
 use Voodflow\VoodbuilderTemplates\VoodbuilderTemplatesServiceProvider;
+use Voodflow\Vpopups\Vpopups;
+use Voodflow\Vpopups\VpopupsServiceProvider;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -37,8 +37,8 @@ abstract class TestCase extends BaseTestCase
             LivewireServiceProvider::class,
             LaravelSEOServiceProvider::class,
             VoodbuilderServiceProvider::class,
-            class_exists(VoodbuilderPopupsServiceProvider::class)
-                ? VoodbuilderPopupsServiceProvider::class
+            class_exists(VpopupsServiceProvider::class)
+                ? VpopupsServiceProvider::class
                 : null,
             class_exists(VoodbuilderComponentsServiceProvider::class)
                 ? VoodbuilderComponentsServiceProvider::class
@@ -94,10 +94,10 @@ abstract class TestCase extends BaseTestCase
         $this->withoutVite();
 
         // Filament panel plugins are not registered in Testbench; activate companion runtimes for package tests.
-        if (class_exists(VoodbuilderPopups::class)) {
+        if (class_exists(Vpopups::class)) {
             EditorGate::flushLabelProviders();
-            VoodbuilderPopups::reset();
-            VoodbuilderPopups::activate();
+            Vpopups::reset();
+            Vpopups::activate();
         }
 
         if (class_exists(VoodbuilderComponents::class)) {

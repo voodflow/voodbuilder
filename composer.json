@@ -35,10 +35,10 @@
         "psr-4": {
             "Voodflow\\Voodbuilder\\Tests\\": "tests/",
             "Voodflow\\Vtuts\\": "../vtuts/src/",
-            "Voodflow\\VoodbuilderPopups\\": "../voodbuilder-popups/src/",
-            "Voodflow\\Voodbuilder\\Modules\\Popups\\": "../voodbuilder-popups/src/Modules/Popups/",
-            "Voodflow\\Voodbuilder\\Support\\Editor\\Popups\\": "../voodbuilder-popups/src/Support/Editor/Popups/",
-            "Voodflow\\Voodbuilder\\Filament\\Resources\\PopupResource\\": "../voodbuilder-popups/src/Filament/Resources/PopupResource/",
+            "Voodflow\\Vpopups\\": "../vpopups/src/",
+            "Voodflow\\Vmedia\\": "../vmedia/src/",
+            "Voodflow\\Vforms\\": "../vforms/src/",
+            "Voodflow\\Vcookiebar\\": "../vcookiebar/src/",
             "Voodflow\\VoodbuilderComponents\\": "../voodbuilder-components/src/",
             "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src/Modules/Components/",
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
@@ -47,12 +47,11 @@
             "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/"
         },
         "classmap": [
-            "../voodbuilder-popups/src/Models/",
-            "../voodbuilder-popups/src/Enums/",
-            "../voodbuilder-popups/src/Http/Controllers/",
-            "../voodbuilder-popups/src/Filament/Resources/PopupResource.php",
-            "../voodbuilder-popups/src/Filament/Actions/",
-            "../voodbuilder-popups/src/Support/Editor/EditorPopupEditorGate.php",
+            "../vpopups/src/Models/",
+            "../vpopups/src/Enums/",
+            "../vpopups/src/Http/Controllers/",
+            "../vpopups/src/Filament/Resources/PopupResource.php",
+            "../vpopups/src/Filament/Actions/",
             "../voodbuilder-components/src/Models/",
             "../voodbuilder-components/src/Http/Controllers/",
             "../voodbuilder-components/src/Support/Editor/",
@@ -72,7 +71,10 @@
             ]
         },
         "suggest": {
-            "voodflow/voodbuilder-popups": "FilamentPHP 5 plugin: popup builder, runtime and analytics for VoodBuilder.",
+            "voodflow/vpopups": "FilamentPHP 5 plugin: popup builder, runtime and analytics (standalone; optional VoodBuilder integration).",
+            "voodflow/vmedia": "FilamentPHP 5 plugin: media library and galleries (standalone; optional VoodBuilder Asset Manager).",
+            "voodflow/vforms": "FilamentPHP 5 plugin: managed forms and submissions (standalone; optional VoodBuilder blocks).",
+            "voodflow/vcookiebar": "FilamentPHP 5 plugin: cookie consent bar (standalone; optional VoodBuilder blocks).",
             "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",
             "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat.",
             "voodflow/voodbuilder-templates": "FilamentPHP 5 plugin: page template authoring (save, JSON import/export, multi-select)."
