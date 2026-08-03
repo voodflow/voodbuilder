@@ -123,7 +123,7 @@ final class EditorGate
             'saveUrl' => self::editorRoute('voodbuilder.editor.pages.update', $page),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
-            'uploadUrl' => self::editorRoute('voodbuilder.editor.upload'),
+            'uploadUrl' => self::mediaUploadUrl() ?? '',
             'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
             // Galleries API is owned by voodflow/vmedia when the Filament plugin is active.
             'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
@@ -1068,6 +1068,17 @@ final class EditorGate
     /**
      * Prefer vmedia package routes; fall back to transitional voodbuilder.editor.* aliases.
      */
+    private static function mediaUploadUrl(): ?string
+    {
+        foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
+            if (\Illuminate\Support\Facades\Route::has($name)) {
+                return self::editorRoute($name);
+            }
+        }
+
+        return null;
+    }
+
     private static function mediaLibraryIndexUrl(): ?string
     {
         foreach (['vmedia.media.index', 'voodbuilder.editor.media.index'] as $name) {

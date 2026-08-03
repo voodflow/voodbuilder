@@ -57,7 +57,7 @@ final class EditorChromeLayoutEditorGate
             'saveUrl' => self::editorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout),
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
-            'uploadUrl' => self::editorRoute('voodbuilder.editor.upload'),
+            'uploadUrl' => self::mediaUploadUrl() ?? '',
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'csrf' => csrf_token(),
             'initial' => self::initialPayload($layout),
@@ -156,5 +156,16 @@ final class EditorChromeLayoutEditorGate
     private static function editorRoute(string $name, mixed $parameters = []): string
     {
         return route($name, $parameters, absolute: false);
+    }
+
+    private static function mediaUploadUrl(): ?string
+    {
+        foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
+            if (\Illuminate\Support\Facades\Route::has($name)) {
+                return self::editorRoute($name);
+            }
+        }
+
+        return null;
     }
 }
