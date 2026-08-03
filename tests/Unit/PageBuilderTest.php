@@ -27,8 +27,9 @@ class PageBuilderTest extends TestCase
         $this->assertSame(PageBuilder::Visual, PageBuilder::normalize('grapesjs'));
     }
 
-    public function test_blank_state_defaults_to_rich_editor(): void
+    public function test_blank_state_defaults_to_visual(): void
     {
-        $this->assertTrue(PageBuilder::matches(null, PageBuilder::RichEditor));
+        $this->assertTrue(PageBuilder::matches(null, PageBuilder::Visual));
+        $this->assertFalse(PageBuilder::matches(null, PageBuilder::RichEditor));
     }
 }

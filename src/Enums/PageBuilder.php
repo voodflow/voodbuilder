@@ -27,7 +27,7 @@ enum PageBuilder: string
         }
 
         if (blank($state)) {
-            return $builder === self::RichEditor;
+            return $builder === self::Visual;
         }
 
         return self::normalize($state) === $builder;

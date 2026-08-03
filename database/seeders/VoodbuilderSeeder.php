@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Voodbuilder\Support\DefaultHomeContent;
 use Voodflow\Voodbuilder\Support\DemoSubThemeContent;
 use Voodflow\Voodbuilder\Support\Editor\StarterPageTemplates;
 use Voodflow\Voodbuilder\Support\Navigation;
@@ -33,6 +33,7 @@ class VoodbuilderSeeder extends Seeder
             [
                 'title' => 'Privacy Policy',
                 'layout' => 'page',
+                'builder' => PageBuilder::Visual,
                 'published' => true,
                 'published_at' => now(),
                 'is_home' => false,
@@ -44,6 +45,7 @@ class VoodbuilderSeeder extends Seeder
             [
                 'title' => 'Cookie Policy',
                 'layout' => 'page',
+                'builder' => PageBuilder::Visual,
                 'published' => true,
                 'published_at' => now(),
                 'is_home' => false,
@@ -80,7 +82,8 @@ class VoodbuilderSeeder extends Seeder
                 'title' => __('voodbuilder::home.page_title'),
                 'layout' => 'home',
                 'sub_theme' => 'default',
-                'content' => DefaultHomeContent::content(),
+                'builder' => PageBuilder::Visual,
+                'content' => null,
                 'published' => true,
                 'published_at' => now(),
                 'is_home' => true,

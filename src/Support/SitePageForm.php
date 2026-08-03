@@ -10,26 +10,34 @@ use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
 
 /**
- * Site Page Form.
+ * Site Page Form helpers.
+ *
+ * Pages always use the Visual Editor. Rich editor remains only for legacy rows.
  */
 final class SitePageForm
 {
     public static function editorOnly(): bool
     {
-        if ((bool) config('voodbuilder.pages.editor_only', false)) {
-            return true;
-        }
-
-        // Legacy published configs (pre Editor rename) used grapesjs_only.
-        return (bool) config('voodbuilder.pages.grapesjs_only', false);
+        return true;
     }
 
     public static function defaultBuilder(): PageBuilder
     {
-        $configured = config('voodbuilder.pages.default_builder', PageBuilder::Visual->value);
-        $normalized = PageBuilder::normalize((string) $configured);
+        return PageBuilder::Visual;
+    }
 
-        return $normalized ?? PageBuilder::Visual;
+    public static function showRichEditor(?SitePage $record): bool
+    {
+        return $record !== null && ! $record->usesEditorBuilder();
+    }
+
+    public static function showEditorHint(?SitePage $record): bool
+    {
+        if ($record === null) {
+            return true;
+        }
+
+        return $record->usesEditorBuilder();
     }
 
     public static function allowsSubThemeOverride(): bool
@@ -79,23 +87,5 @@ final class SitePageForm
             });
 
         return $options;
-    }
-
-    public static function showRichEditor(?SitePage $record): bool
-    {
-        if (! self::editorOnly()) {
-            return true;
-        }
-
-        return $record !== null && ! $record->usesEditorBuilder();
-    }
-
-    public static function showEditorHint(?SitePage $record): bool
-    {
-        if ($record === null) {
-            return self::editorOnly() || self::defaultBuilder() === PageBuilder::Visual;
-        }
-
-        return $record->usesEditorBuilder();
     }
 }

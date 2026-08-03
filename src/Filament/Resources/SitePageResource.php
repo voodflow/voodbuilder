@@ -124,21 +124,11 @@ class SitePageResource extends Resource
                                     ->helperText(__('voodbuilder::admin.helpers.excerpt'))
                                     ->columnSpanFull(),
 
-                                Select::make('builder')
-                                    ->label(__('voodbuilder::pro.fields.builder'))
-                                    ->options(PageBuilder::options())
-                                    ->default(SitePageForm::defaultBuilder())
-                                    ->native(false)
-                                    ->live()
-                                    ->helperText(__('voodbuilder::pro.helpers.builder'))
-                                    ->visible(fn (): bool => ! SitePageForm::editorOnly())
-                                    ->columnSpanFull(),
-
                                 Hidden::make('builder')
-                                    ->default(SitePageForm::defaultBuilder()->value)
-                                    ->dehydrated()
-                                    ->visible(fn (): bool => SitePageForm::editorOnly()),
+                                    ->default(PageBuilder::Visual->value)
+                                    ->dehydrated(),
 
+                                // Legacy rich-editor pages remain editable until converted to Visual.
                                 RichEditor::make('content')
                                     ->label(__('Page content'))
                                     ->customBlocks(app(RichContentBlockRegistry::class)->editorGroups())
@@ -147,13 +137,7 @@ class SitePageResource extends Resource
                                         ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
                                         ['customBlocks'],
                                     ])
-                                    ->visible(function (Get $get, ?SitePage $record): bool {
-                                        if (SitePageForm::editorOnly()) {
-                                            return $record !== null && ! $record->usesEditorBuilder();
-                                        }
-
-                                        return PageBuilder::matches($get('builder'), PageBuilder::RichEditor);
-                                    })
+                                    ->visible(fn (?SitePage $record): bool => $record !== null && ! $record->usesEditorBuilder())
                                     ->columnSpanFull(),
 
                                 Placeholder::make('editor_frontend_hint')
@@ -414,6 +398,7 @@ class SitePageResource extends Resource
                 TextColumn::make('builder')
                     ->label(__('voodbuilder::pro.fields.builder'))
                     ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
                         ? $state->label()
                         : PageBuilder::normalize((string) $state)?->label() ?? (string) $state),
@@ -476,7 +461,8 @@ class SitePageResource extends Resource
                     ->placeholder(__('voodbuilder::admin.filters.any')),
                 SelectFilter::make('builder')
                     ->label(__('voodbuilder::admin.filters.builder'))
-                    ->options(PageBuilder::options()),
+                    ->options(PageBuilder::options())
+                    ->visible(false),
                 SelectFilter::make('layout')
                     ->label(__('voodbuilder::admin.filters.layout'))
                     ->options([

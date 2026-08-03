@@ -200,7 +200,8 @@ class SitePage extends Model implements HasRichContent
 
     public function usesEditorBuilder(): bool
     {
-        return ($this->builder ?? PageBuilder::RichEditor) === PageBuilder::Visual;
+        // Visual Editor is the only supported builder for new pages; blank → Visual.
+        return (PageBuilder::normalize($this->builder) ?? PageBuilder::Visual) === PageBuilder::Visual;
     }
 
     public function renderedContent(): string

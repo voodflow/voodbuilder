@@ -279,10 +279,10 @@ return [
         'enabled' => true,
         'route_prefix' => 'pages',
         /*
-        | When true, new pages use Editor only (no Rich editor toggle in admin).
-        | Existing rich-editor pages stay editable until converted manually.
+        | Visual Editor is always used for new pages (no Content builder select).
+        | Kept for documentation / older hosts; SitePageForm::editorOnly() is hard-true.
         */
-        'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', false),
+        'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', true),
         'default_builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
         /*
         | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
