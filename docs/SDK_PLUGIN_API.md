@@ -52,7 +52,7 @@ Voodbuilder::editorLabels(fn (): array => [
 ]);
 ```
 
-Popup UI strings are owned by `voodflow/voodbuilder-popups` (`voodbuilder-popups::popups.*`).
+Popup UI strings are owned by `voodflow/vpopups` (`vpopups::popups.*`).
 
 ## Capabilities
 

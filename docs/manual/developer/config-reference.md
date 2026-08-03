@@ -34,10 +34,10 @@ Primary file: `config/voodbuilder.php`. Highlights:
 
 Gate features with `Voodbuilder::can('…')` — do not hard-code plan names in plugins.
 
-## GrapesJS
+## Editor plugins
 
 ```php
-'grapesjs' => [
+'grapesjs' => [ // internal config key — not a public product name
     'plugins' => [/* forms, tabs, custom-code, style-bg */],
     'image_editor' => true,
 ],

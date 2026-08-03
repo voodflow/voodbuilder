@@ -1,6 +1,6 @@
 ---
 title: Forms, tabs & code
-description: Optional GrapesJS plugins bundled with the editor.
+description: Optional editor plugins bundled with the page builder.
 ---
 
 # Forms, tabs & code
@@ -14,10 +14,10 @@ Optional editor plugins (enabled in config by default):
 | **Custom code** | Embed HTML/JS snippets (use carefully) |
 | **Style background** | Richer background style controls |
 
-Host apps can disable plugins in `config/voodbuilder.php` → `grapesjs.plugins`.
+Host apps can disable plugins in `config/voodbuilder.php` → `editor.plugins` (legacy key `grapesjs.plugins` still accepted).
 
 ::: tip Screenshot needed
 Forms block selected with field traits in Content panel.
 :::
 
-A dedicated **Forms** product companion may extend this later; the GrapesJS forms plugin itself ships with core.
+A dedicated **Forms** product companion (`voodflow/vforms`) may extend this; basic form blocks still ship with core.

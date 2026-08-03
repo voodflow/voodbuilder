@@ -1,6 +1,6 @@
 # Editor JS plugins (companion packages)
 
-For release packaging: **GrapesJS core stays vanilla**. VoodBuilder owns the editor shell (`init.js`). Commercial features live in companion packages and talk to Core through a stable bridge.
+For release packaging: **the canvas engine stays vanilla** (never patch `node_modules`). VoodBuilder owns the editor shell (`init.js`). Commercial features live in companion packages and talk to Core through a stable bridge.
 
 ## What stays in VoodBuilder core
 
@@ -15,7 +15,7 @@ For release packaging: **GrapesJS core stays vanilla**. VoodBuilder owns the edi
 
 | Package | Owns (JS) |
 |---------|-----------|
-| `voodbuilder-popups` | Popup library UI + public `popups-runtime` |
+| `vpopups` | Popup library UI + public `popups-runtime` |
 | `voodbuilder-components` | Components library sidebar, instance type helpers, code import UX |
 | `voodbuilder-dynamic-data` | Bindings / Make dynamic / collections Pro UI |
 | `voodbuilder-templates` | Template authoring extras beyond core list/marketplace |
@@ -32,7 +32,7 @@ Companion entry (`resources/js/editor/plugin.js`):
 
 ```js
 export default {
-    id: 'voodbuilder-popups',
+    id: 'vpopups',
     mount(editor, context) {
         // context.entitlements, context.urls, context.labels, context.csrf, context.flags
         registerPopupsUi(editor, context);

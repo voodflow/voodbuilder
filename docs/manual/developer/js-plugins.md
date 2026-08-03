@@ -5,7 +5,7 @@ description: Mount companion JavaScript into the visual editor.
 
 # JS plugins
 
-GrapesJS stays **vanilla**. Companion UI mounts through the Core bridge.
+The canvas engine stays **vanilla**. Companion UI mounts through the Core bridge.
 
 ## Preferred: `registerPlugin`
 
@@ -57,7 +57,7 @@ Prefer namespaced triggers:
 
 ## Rules
 
-- Never patch `node_modules/grapesjs`  
+- Never patch the canvas engine under `node_modules`  
 - Do not hard-code plan names — read `context.entitlements`  
 - Keep paid UI out of Core; Core may keep a soft-gate shim only  
 

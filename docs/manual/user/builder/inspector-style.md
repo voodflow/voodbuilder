@@ -5,7 +5,7 @@ description: Tailwind utility Style panel, classes chips, fonts, and animation.
 
 # Inspector — Style
 
-The **Style** tab applies styling as **Tailwind utility classes** (same pattern as the Animation sector). GrapesJS still owns the canvas, DnD, layers, and save — not invented inline Style Manager paints.
+The **Style** tab applies styling as **Tailwind utility classes** (same pattern as the Animation sector). The canvas engine still owns DnD, layers, and save — not invented inline Style Manager paints.
 
 ## What you can adjust
 

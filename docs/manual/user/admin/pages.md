@@ -14,7 +14,7 @@ description: Create and manage pages in the Filament admin.
 | **Rich editor** | Long-form content with Filament TipTap / custom rich blocks |
 | **Visual builder (Editor)** | Marketing layouts, landing pages, full visual control |
 
-Only pages set to the visual builder open the GrapesJS-based editor (`?edit=1`).
+Only pages set to the visual builder open the page editor (`?edit=1`).
 
 ## Common fields
 

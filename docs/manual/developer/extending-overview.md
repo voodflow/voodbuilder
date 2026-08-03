@@ -72,7 +72,7 @@ Prefer host `config/voodbuilder-integrations.php` or `AppServiceProvider` over e
 
 ## Do not
 
-- Patch `node_modules/grapesjs`  
+- Patch the canvas engine under `node_modules`  
 - Fork Core for a single block  
 - Hard-code edition names — use entitlements  
 - Put paid UI into Core — use companions + soft-gates  

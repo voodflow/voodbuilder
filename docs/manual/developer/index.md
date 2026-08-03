@@ -12,7 +12,7 @@ This manual explains how **third-party packages** and the **host application** e
 1. **Never edit vendor / core files** to add product features  
 2. Register from your ServiceProvider `boot()` / `packageBooted()` or `Application::booting`  
 3. Prefer the `Voodbuilder` facade and contracts under `Voodflow\Voodbuilder\Contracts`  
-4. Keep GrapesJS **vanilla** — no patches under `node_modules/grapesjs`  
+4. Keep the canvas engine **vanilla** — no patches under its `node_modules` package  
 5. Put commercial JS in companion packages; talk to core via the plugin bridge  
 
 ## Start here

@@ -11,7 +11,7 @@ Exact Composer steps depend on your monorepo or Satis feed. Conceptually:
 2. Publish config: `config/voodbuilder.php` (and optionally `voodbuilder-integrations.php`)  
 3. Run migrations / `php artisan voodbuilder:install`  
 4. Register `VoodbuilderPlugin::make()` on the Filament panel  
-5. Install npm peer deps (GrapesJS + optional plugins) and ensure Vite entries for the editor  
+5. Install npm peer deps for the visual editor and ensure Vite entries for the editor  
 6. `npm run build`
 
 `voodbuilder:install` attempts to patch `vite.config.js` with editor entries when possible.

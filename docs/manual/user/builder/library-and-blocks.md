@@ -33,7 +33,7 @@ Navbar, footer variants (multi-column, newsletter, social, centered), and the **
 
 ### Basic & plugin blocks
 
-- Basic GrapesJS blocks (when enabled)
+- Basic layout blocks (when enabled)
 - Optional plugins: **forms**, **style background**, **tabs**, **custom code** (config toggles)
 
 ## Components & Templates tabs

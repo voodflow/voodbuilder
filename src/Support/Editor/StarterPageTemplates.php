@@ -10,7 +10,7 @@ use Voodflow\Voodbuilder\Models\PageTemplate;
 /**
  * Curated starter page templates (Landing 01–02 community thinners).
  * Nav/footer are omitted — chrome-shell page editors already provide them.
- * Landing 03 (cinematic / NASA-style) lives in the Elements companion.
+ * Landing 03 (cinematic kit) lives in the Elements companion.
  */
 class StarterPageTemplates
 {

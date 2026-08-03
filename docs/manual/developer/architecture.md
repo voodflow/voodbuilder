@@ -13,7 +13,7 @@ description: Core modules, editor shell, and rendering.
 | **Modules** | History, Conditions, Templates, Themes, Menus, Layouts, Pages |
 | **Support/Editor** | Gate, renderer, blocks, bindings, conditions, fonts bridge |
 | **Licensing** | Edition capability matrix / entitlement checks |
-| **resources/js/editor** | Visual editor shell (GrapesJS + VoodBuilder plugins) |
+| **resources/js/editor** | Visual editor shell (canvas engine + VoodBuilder plugins) |
 | **Contracts** | Stable extension surfaces for third parties |
 
 ## Request flows
@@ -24,7 +24,7 @@ Request → middleware (site config) → controller → chrome layout resolution
 
 ### Visual editor
 
-Authorized `?edit=1` → EditorGate payload (labels, URLs, entitlements, flags) → Vite editor entry → `grapesjs.init` → core plugins → companion `registerPlugin` mounts.
+Authorized `?edit=1` → EditorGate payload (labels, URLs, entitlements, flags) → Vite editor entry → editor init → core plugins → companion `registerPlugin` mounts.
 
 ## Soft-gates
 
