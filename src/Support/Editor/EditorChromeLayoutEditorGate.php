@@ -47,20 +47,21 @@ final class EditorChromeLayoutEditorGate
 
         return [
             'chromeLayoutMode' => true,
+            'chromeLayoutId' => $layout->getKey(),
             'chromeLayoutName' => $layout->name,
+            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout)
+                ?? '/voodbuilder/editor/chrome-layouts/'.$layout->getKey().'/content',
+            'csrf' => csrf_token(),
+            'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
+            'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
             'pageContentWidth' => $contentWidth,
             'chromeWidth' => $chromeWidth,
             'fullWidthPage' => ChromeLayoutContentWidth::allowsElementContentWidthToolbar(
                 $contentWidth,
                 $chromeWidth,
             ),
-            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout)
-                ?? '/voodbuilder/editor/chrome-layouts/'.$layout->getKey().'/content',
-            'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
-            'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
-            'csrf' => csrf_token(),
             'initial' => self::initialPayload($layout),
             'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks').'?chrome=1',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),

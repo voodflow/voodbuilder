@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Http\Controllers\AuthController;
 use Voodflow\Voodbuilder\Http\Controllers\HomeController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchController;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
+use Voodflow\Voodbuilder\Http\Controllers\SitePageUnlockController;
 use Voodflow\Vtuts\Support\Locales;
 
 $localeMiddleware = [];
@@ -46,6 +47,10 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
 
         Route::get('/'.$prefix.'/{slug}', [SitePageController::class, 'show'])
             ->name('voodbuilder.pages.show');
+
+        Route::post('/'.$prefix.'/{slug}/unlock', SitePageUnlockController::class)
+            ->middleware('throttle:10,1')
+            ->name('voodbuilder.pages.unlock');
     }
 
     if (config('voodbuilder.auth.enabled', true)) {

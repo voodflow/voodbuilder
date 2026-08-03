@@ -22,7 +22,7 @@ use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Casts\AsPageBuilder;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
-use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\Editor\EditorRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
@@ -66,6 +66,8 @@ class SitePage extends Model implements HasRichContent
         'translation_group_id',
         'published',
         'published_at',
+        'visibility',
+        'password_protected',
     ];
 
     protected function casts(): array
@@ -80,6 +82,8 @@ class SitePage extends Model implements HasRichContent
             'section_home' => 'boolean',
             'published' => 'boolean',
             'published_at' => 'datetime',
+            'visibility' => PageVisibility::class,
+            'password_protected' => 'boolean',
         ];
     }
 
@@ -113,6 +117,12 @@ class SitePage extends Model implements HasRichContent
     {
         return $this->hasMany(self::class, 'translation_group_id', 'translation_group_id')
             ->whereKeyNot($this->getKey());
+    }
+
+    /** @return HasMany<SitePageCredential, $this> */
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(SitePageCredential::class, 'site_page_id');
     }
 
     public function translationFor(string $locale): ?self

@@ -11,6 +11,7 @@
 @import './landing.css';
 @import './editor/chrome-block-utilities.css';
 @import './editor/animated-blocks.css';
+@import './editor/vforms-theme.css';
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -30,6 +31,8 @@
 @source '../views/themes/**/*.blade.php';
 @source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/editor/popups-ui.js';
 @source '../js/editor/popups-ui.js';
+@source '../../../../../packages/voodflow/vforms/src/Support/FormTailwind.php';
+@source '../../../../../packages/voodflow/vforms/resources/js/runtime/form-runtime.js';
 /* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
    published pages match the Editor even when page JIT CSS is stale/partial. */
 @source '../js/editor/style-animation-sector.js';
@@ -381,7 +384,7 @@
     }
 
     .voodbuilder-header-icon-btn {
-        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1;
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1;
     }
 
     .voodbuilder-header-icon-btn svg {
@@ -1095,7 +1098,8 @@ html[data-voodbuilder-sub-theme] header[role='banner'] :is(a, button):not(:where
 }
 
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
-    color: var(--color-vp-brand-1) !important;
+    /* Remap brand hover: brand-1 often matches a branded header_bg and vanishes. */
+    color: color-mix(in srgb, var(--vx-header-text) 88%, #ffffff) !important;
 }
 
 html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
@@ -1108,15 +1112,17 @@ html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-
 }
 
 html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible):not(:where([data-mobile-nav], [data-mobile-nav] *)) {
-    color: var(--color-vp-brand-1) !important;
-    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 16%, transparent) !important;
+    /* Keep header-text (not brand-1) so icons stay visible on branded headers. */
+    color: var(--vx-header-text, var(--color-vp-text-1)) !important;
+    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 22%, transparent) !important;
 }
 
 /*
  * Chrome layouts render header/footer as body siblings around <main>.
- * Theme shells often use min-h-[calc(100vh-…)] for non-chrome pages; with chrome that
- * stacks on top of main.flex-1 and pushes the footer below the fold. Sticky footer =
- * body min-h-screen flex-col + main flex-1 only.
+ * Default is content-driven (no main flex-1) so the footer sits after content —
+ * same as the editor canvas. Sticky footer is opt-in via body.voodbuilder-sticky-footer
+ * (see landing.css). Still neutralize shell min-heights under chrome so short pages
+ * do not push the footer below the fold.
  */
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell,
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-home-shell,
@@ -1194,6 +1200,9 @@ button[data-voodbuilder-cta='true']:empty::before {
     filter: blur(48px);
     opacity: 0.55;
     will-change: transform;
+    /* Parent stage is PE-none, but pointer-events is not inherited — keep orbs
+     * non-interactive so they never steal clicks/drops from content above. */
+    pointer-events: none;
 }
 
 .vb-hero-plasma__orb--a {

@@ -99,7 +99,6 @@ export function looksLikeSiteChromeStructure(component) {
 
     if (
         tag === 'footer'
-        || tag === 'header'
         || cls.includes('voodbuilder-editor-footer')
         || attrs['data-voodbuilder-footer-col']
         || attrs['data-voodbuilder-editor-site-header']
@@ -110,15 +109,24 @@ export function looksLikeSiteChromeStructure(component) {
         return true;
     }
 
-    const el = component.getEl?.();
-
-    if (el?.matches?.('footer, header[role="banner"], [data-voodbuilder-editor-site-header]')) {
+    // Only treat <header> as chrome when it is the live site banner — bare
+    // catalog/marketing <header> roots must remain droppable page content.
+    if (tag === 'header' && (
+        attrs['role'] === 'banner'
+        || attrs['data-voodbuilder-editor-site-header'] != null
+        || blockId.startsWith('site_nav_')
+        || blockId === 'site_header'
+    )) {
         return true;
     }
 
-    return Boolean(el?.querySelector?.(
-        'footer, [data-voodbuilder-footer-col], [data-voodbuilder-editor-site-header], header[role="banner"]',
-    ));
+    const el = component.getEl?.();
+
+    if (el?.matches?.('[data-voodbuilder-editor-site-header], header[role="banner"][data-voodbuilder-chrome], footer.voodbuilder-editor-footer')) {
+        return true;
+    }
+
+    return false;
 }
 
 export function isChromeDropZoneComponent(component) {
@@ -353,12 +361,22 @@ function isChromeBleedComponent(component) {
         || attrs['data-voodbuilder-chrome-shell-locked']
         || type === 'voodbuilder-chrome-button'
         || gjsType === 'voodbuilder-chrome-button'
-        || type === 'voodbuilder-dynamic'
     ) {
         return true;
     }
 
-    if (tag === 'button') {
+    // Only purge chrome chrome-toggle <button>s — never author Basic/CTA buttons.
+    if (
+        tag === 'button'
+        && (
+            attrs['data-mobile-nav-toggle'] != null
+            || attrs['data-theme-toggle'] != null
+            || attrs['data-voodbuilder-nav-dropdown-toggle'] != null
+            || attrs['data-voodbuilder-notification-bell-preview'] != null
+            || type === 'voodbuilder-chrome-button'
+            || gjsType === 'voodbuilder-chrome-button'
+        )
+    ) {
         return true;
     }
 
@@ -369,11 +387,8 @@ function isChromeBleedComponent(component) {
     const text = String(component.get('content') ?? component.get('text') ?? '').trim();
     const normalized = text.replace(/\s+/g, '');
 
-    if (
-        normalized === 'Button'
-        || normalized === 'Notifications'
-        || /^(?:Button|Notifications)+$/.test(normalized)
-    ) {
+    // Stock Grapes "Notifications" chrome preview label — not author "Button" CTAs.
+    if (normalized === 'Notifications' || /^(?:Notifications)+$/.test(normalized)) {
         return true;
     }
 
@@ -426,14 +441,21 @@ export function sanitizeChromeContentSlotChildren(slot) {
             || attrs['data-theme-toggle']
             || attrs['data-voodbuilder-editor-site-header']
             || type === 'voodbuilder-chrome-button'
-            || type === 'voodbuilder-dynamic'
         ) {
             removable.push(component);
 
             return;
         }
 
-        if (tag === 'button') {
+        if (
+            tag === 'button'
+            && (
+                attrs['data-mobile-nav-toggle'] != null
+                || attrs['data-theme-toggle'] != null
+                || attrs['data-voodbuilder-nav-dropdown-toggle'] != null
+                || type === 'voodbuilder-chrome-button'
+            )
+        ) {
             removable.push(component);
 
             return;

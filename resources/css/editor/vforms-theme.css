@@ -1,0 +1,134 @@
+/**
+ * Managed forms (vforms) — theme + dark/light binding for published pages.
+ *
+ * Keeps .vforms-* chrome on --color-vp-* tokens (ThemePalette / .dark), with
+ * enough specificity to beat leftover utility colors baked into saved HTML.
+ */
+
+.vforms-form {
+    color-scheme: light dark;
+    color: var(--color-vp-text-1, #3c3c43);
+}
+
+.vforms-form .vforms-form-label,
+.vforms-form .vforms-check-label,
+.vforms-form .vforms-form-heading {
+    color: var(--color-vp-text-1, #3c3c43) !important;
+}
+
+.vforms-form .vforms-form-help,
+.vforms-form .vforms-form-intro,
+.vforms-form .vforms-form-outro,
+.vforms-form .vforms-form-panel__desc,
+.vforms-form .vforms-form-verify-status,
+.vforms-form .vforms-check-description,
+.vforms-form .vforms-form-step {
+    color: var(--color-vp-text-2, #67676c) !important;
+}
+
+.vforms-form .vforms-form-control {
+    background-color: var(--color-vp-bg-elv, var(--color-vp-bg, #fff)) !important;
+    border-color: var(--color-vp-divider, #e2e2e3) !important;
+    color: var(--color-vp-text-1, #3c3c43) !important;
+}
+
+.vforms-form .vforms-form-control:focus {
+    border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    outline-color: color-mix(in srgb, var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) 45%, transparent) !important;
+}
+
+.vforms-form .vforms-form-control[readonly],
+.vforms-form .vforms-form-control:disabled {
+    background-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 10%,
+        var(--color-vp-bg-elv, var(--color-vp-bg, #fff))
+    ) !important;
+    border-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 26%,
+        var(--color-vp-divider, #e2e2e3)
+    ) !important;
+    color: var(--color-vp-text-1, #3c3c43) !important;
+    cursor: default;
+}
+
+.vforms-form .vforms-form-control--info {
+    background-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 14%,
+        var(--color-vp-bg-elv, var(--color-vp-bg, #fff))
+    ) !important;
+    border-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 34%,
+        var(--color-vp-divider, #e2e2e3)
+    ) !important;
+    color: var(--color-vp-brand-1, #3451b2) !important;
+    font-weight: 600;
+    resize: none;
+    cursor: default;
+}
+
+.vforms-form .vforms-form-btn--primary {
+    background-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    color: #fff !important;
+}
+
+.vforms-form .vforms-form-btn--primary:hover:not(:disabled) {
+    background-color: var(--color-vp-brand-1, #3451b2) !important;
+    border-color: var(--color-vp-brand-1, #3451b2) !important;
+}
+
+.vforms-form .vforms-form-btn--ghost {
+    background-color: var(--color-vp-bg-alt, #f6f6f7) !important;
+    border-color: var(--color-vp-divider, #e2e2e3) !important;
+    color: var(--color-vp-text-1, #3c3c43) !important;
+}
+
+.vforms-form .vforms-form-tab.is-active,
+.vforms-form .vforms-form-tab[data-vforms-tab-active='1'],
+.vforms-form .vforms-form-step.is-active,
+.vforms-form .vforms-form-step[data-vforms-step-active='1'] {
+    color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+}
+
+.vforms-form .vforms-form-tab.is-active,
+.vforms-form .vforms-form-tab[data-vforms-tab-active='1'] {
+    background-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    color: #fff !important;
+}
+
+.vforms-form .vforms-form-step.is-active .vforms-form-step__index,
+.vforms-form .vforms-form-step[data-vforms-step-active='1'] .vforms-form-step__index {
+    background-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
+    color: #fff !important;
+}
+
+.vforms-form .vforms-form-step__index {
+    background-color: var(--color-vp-bg-alt, #f6f6f7) !important;
+    color: var(--color-vp-text-2, #67676c) !important;
+}
+
+.vforms-form .vforms-tags__chip {
+    background-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 14%,
+        var(--color-vp-bg-elv, var(--color-vp-bg, #fff))
+    ) !important;
+    border-color: color-mix(
+        in srgb,
+        var(--color-vp-brand-1, #3451b2) 28%,
+        var(--color-vp-divider, #e2e2e3)
+    ) !important;
+    color: var(--color-vp-brand-1, #3451b2) !important;
+}
+
+.vforms-form .vforms-checkbox-input,
+.vforms-form .vforms-radio-input,
+.vforms-form .vforms-check-control input[type='checkbox'],
+.vforms-form .vforms-check-control input[type='radio'] {
+    accent-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc));
+}

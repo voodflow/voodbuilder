@@ -13,6 +13,25 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 class ThemePaletteTest extends TestCase
 {
     #[Test]
+    public function it_keeps_header_icon_hover_readable_against_branded_header_bg(): void
+    {
+        $css = ThemePalette::headerChromeCss();
+
+        $this->assertStringContainsString(
+            ".voodbuilder-header-icon-btn:is(:hover,:focus-visible):not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text,var(--color-vp-text-1))!important",
+            $css,
+        );
+        $this->assertStringNotContainsString(
+            '.voodbuilder-header-icon-btn:is(:hover,:focus-visible):not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--color-vp-brand-1)!important',
+            $css,
+        );
+        $this->assertStringContainsString(
+            '.hover\:text-vp-brand-1:hover:not(:where([role=\'menu\'],[role=\'menu\'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}',
+            $css,
+        );
+    }
+
+    #[Test]
     public function it_sanitizes_hex_colors(): void
     {
         $this->assertSame('#3451b2', ThemePalette::sanitizeColor('#3451b2'));

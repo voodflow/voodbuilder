@@ -53,6 +53,11 @@ return [
         'translations' => 'Translations',
         'translations_to_delete' => 'Translations to delete',
         'menu_clone_name' => 'Menu name',
+        'visibility' => 'Access level',
+        'password_protected' => 'Password protection',
+        'password_credentials' => 'Access credentials',
+        'credential_email' => 'Email (optional)',
+        'credential_password' => 'Password',
     ],
 
     'actions' => [
@@ -63,6 +68,7 @@ return [
         'delete_translations' => 'Delete translations',
         'actions' => 'Actions',
         'more' => 'Actions',
+        'add_credential' => 'Add credential',
     ],
 
     'translation' => [
@@ -125,6 +131,7 @@ return [
 
     'sections' => [
         'appearance' => 'Appearance (optional)',
+        'access' => 'Access',
     ],
 
     'menu_preview' => [
@@ -155,6 +162,10 @@ return [
         'layout_auto_home' => 'Uses full width edge-to-edge (recommended for the site home).',
         'layout_auto_page' => 'Uses a standard contained page width.',
         'sub_theme_marketing_recommended' => 'Full-width pages work best with a marketing theme (Site or your custom theme).',
+        'visibility' => 'Who can view this page on the public site. Uses Spatie roles / the subscriber ability when Shield is present.',
+        'password_protected' => 'Optional bypass: unlock with a password for previews, client reviews, or one-off invites — even if the access level is Registered/Subscriber. Subscribers (or registered users) who already qualify still see the page without the password.',
+        'password_credentials' => 'One or more passwords. Leave email empty for password-only access. Works as an alternate path alongside the access level.',
+        'credential_password' => 'Leave blank when editing to keep the current password.',
     ],
 
     'media_library' => [

@@ -1890,8 +1890,34 @@ function resolveCsrfToken(fallback = '') {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? fallback;
 }
 
+function isEditorApiSavePath(path) {
+    return path.startsWith('/voodbuilder/editor/')
+        || path.startsWith('/vpopups/editor/');
+}
+
+function fallbackEditorSavePath(config) {
+    if (config?.popupMode && config?.popupId) {
+        return `/voodbuilder/editor/popups/${config.popupId}/content`;
+    }
+
+    if (config?.chromeLayoutMode && config?.chromeLayoutId) {
+        return `/voodbuilder/editor/chrome-layouts/${config.chromeLayoutId}/content`;
+    }
+
+    if (config?.pageId) {
+        return `/voodbuilder/editor/pages/${config.pageId}`;
+    }
+
+    return '';
+}
+
+/**
+ * Resolve the editor persistence endpoint.
+ *
+ * Absolute public page URLs (e.g. homepage exitUrl `http://host?locale=en`) must never
+ * be used: stripping them to pathname `/` makes nginx return 405 on PUT.
+ */
 function resolveSaveUrl(config) {
-    const pageId = config?.pageId;
     let path = typeof config?.saveUrl === 'string' ? config.saveUrl.trim() : '';
 
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -1902,43 +1928,68 @@ function resolveSaveUrl(config) {
         }
     }
 
-    if (! path && pageId) {
-        path = `/voodbuilder/editor/pages/${pageId}`;
+    const queryIndex = path.indexOf('?');
+    if (queryIndex >= 0) {
+        path = path.slice(0, queryIndex);
+    }
+
+    const hashIndex = path.indexOf('#');
+    if (hashIndex >= 0) {
+        path = path.slice(0, hashIndex);
+    }
+
+    if (! path.startsWith('/')) {
+        path = path ? `/${path}` : '';
+    }
+
+    if (! isEditorApiSavePath(path)) {
+        path = fallbackEditorSavePath(config);
     }
 
     if (! path) {
         throw new Error('Missing Editor save URL.');
     }
 
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-
-    return new URL(normalizedPath, window.location.origin).href;
+    return new URL(path, window.location.origin).href;
 }
 
 async function persistPagePayload(saveUrl, payload, csrf) {
     const headers = {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
         'X-CSRF-TOKEN': csrf,
     };
 
-    let response = await fetch(saveUrl, {
+    const fetchOptions = {
         method: 'PUT',
         credentials: 'same-origin',
         headers,
         body: JSON.stringify(payload),
-    });
+        // Never follow 302 "back" redirects from validation/CSRF — those used to
+        // surface as 405 on `/` or a 200 HTML page and look like a successful save.
+        redirect: 'manual',
+    };
+
+    let response = await fetch(saveUrl, fetchOptions);
+
+    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+        throw new Error(`Save redirected (${response.status}). Check CSRF/session and payload size.`);
+    }
 
     if (response.status === 405) {
         response = await fetch(saveUrl, {
+            ...fetchOptions,
             method: 'POST',
-            credentials: 'same-origin',
             headers: {
                 ...headers,
                 'X-HTTP-Method-Override': 'PUT',
             },
-            body: JSON.stringify(payload),
         });
+
+        if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+            throw new Error(`Save redirected (${response.status}). Check CSRF/session and payload size.`);
+        }
     }
 
     return response;
@@ -2083,7 +2134,18 @@ function mountFrontendEditor() {
             if (! response.ok) {
                 const body = await response.text().catch(() => '');
                 console.error('VoodBuilder page save failed', response.status, saveUrl, body);
-                throw new Error(body || `Save failed (${response.status})`);
+
+                let detail = body;
+
+                try {
+                    const parsed = JSON.parse(body);
+                    detail = parsed?.message
+                        ?? (parsed?.errors ? Object.values(parsed.errors).flat().join(' ') : body);
+                } catch {
+                    // keep raw body
+                }
+
+                throw new Error(detail || `Save failed (${response.status})`);
             }
 
             const saved = await response.json().catch(() => ({}));
@@ -2113,8 +2175,11 @@ function mountFrontendEditor() {
         } catch (error) {
             console.error('VoodBuilder page save failed', error);
 
+            const detail = error instanceof Error ? error.message.trim() : '';
+            const base = config.labels?.error ?? 'Could not save the page.';
+
             await alertDialog({
-                message: config.labels?.error ?? 'Could not save the page.',
+                message: detail && detail !== base ? `${base}\n\n${detail}` : base,
                 labels: config.labels ?? {},
             });
         } finally {

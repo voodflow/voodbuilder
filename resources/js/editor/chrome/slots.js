@@ -96,12 +96,21 @@ export function isChromeBleed(component, looksLikeChrome) {
         || attrs[ATTR.shellLocked]
         || type === 'voodbuilder-chrome-button'
         || gjsType === 'voodbuilder-chrome-button'
-        || type === 'voodbuilder-dynamic'
     ) {
         return true;
     }
 
-    if (tag === 'button') {
+    if (
+        tag === 'button'
+        && (
+            attrs['data-mobile-nav-toggle'] != null
+            || attrs['data-theme-toggle'] != null
+            || attrs['data-voodbuilder-nav-dropdown-toggle'] != null
+            || attrs['data-voodbuilder-notification-bell-preview'] != null
+            || type === 'voodbuilder-chrome-button'
+            || gjsType === 'voodbuilder-chrome-button'
+        )
+    ) {
         return true;
     }
 
@@ -112,11 +121,7 @@ export function isChromeBleed(component, looksLikeChrome) {
     const text = String(component.get('content') ?? component.get('text') ?? '').trim();
     const normalized = text.replace(/\s+/g, '');
 
-    if (
-        normalized === 'Button'
-        || normalized === 'Notifications'
-        || /^(?:Button|Notifications)+$/.test(normalized)
-    ) {
+    if (normalized === 'Notifications' || /^(?:Notifications)+$/.test(normalized)) {
         return true;
     }
 

@@ -290,6 +290,22 @@ return [
         'allow_sub_theme_override' => env('VOODBUILDER_PAGES_ALLOW_SUB_THEME_OVERRIDE', true),
     ],
 
+    /*
+    | Frontend page access (visibility + password gate).
+    | Visibility maps to Spatie roles / Gate ability used by Cosmolab & vtuts.
+    */
+    'access' => [
+        'login_route' => env('VOODBUILDER_ACCESS_LOGIN_ROUTE', 'login'),
+        'register_route' => env('VOODBUILDER_ACCESS_REGISTER_ROUTE', 'register'),
+        'subscribe_url' => env('VOODBUILDER_ACCESS_SUBSCRIBE_URL'),
+        'subscriber_ability' => env('VOODBUILDER_ACCESS_SUBSCRIBER_ABILITY', 'access subscriber content'),
+        /*
+        | Minutes the password unlock stays in session (null = until Laravel session ends).
+        | Laravel session lifetime defaults to SESSION_LIFETIME (120).
+        */
+        'password_unlock_minutes' => env('VOODBUILDER_PASSWORD_UNLOCK_MINUTES'),
+    ],
+
     'popups' => [
         'enabled' => env('VOODBUILDER_POPUPS_ENABLED', true),
         // null = use site default sub-theme (Settings → Appearance), same as page/layout editors.
@@ -385,10 +401,12 @@ return [
             'excluded_models' => [],
         ],
         'payload' => [
-            'max_html_bytes' => 500_000,
-            'max_css_bytes' => 100_000,
-            'max_js_bytes' => 100_000,
-            'max_project_bytes' => 2_000_000,
+            // Character limits (Laravel `max:` on strings). Pages with Forms / SVGs /
+            // Style Manager #id rules routinely exceed the old 100–500KB caps.
+            'max_html_bytes' => 2_000_000,
+            'max_css_bytes' => 1_000_000,
+            'max_js_bytes' => 500_000,
+            'max_project_bytes' => 5_000_000,
         ],
         'plugins' => [
             'forms' => env('VOODBUILDER_EDITOR_FORMS', true),

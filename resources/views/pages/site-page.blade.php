@@ -64,6 +64,10 @@
             }
         </style>
     @endpush
+@elseif (! empty($pageGate))
+    @section('body_class_extra')
+        voodbuilder-page-gated
+    @endsection
 @endif
 
 @section($page->contentSection())
@@ -87,16 +91,21 @@
 
     <div @class([
         'VPRichPage',
-        // Landing section styles stay available; width is controlled by layout data-voodbuilder-page-width.
-        'VPRichPage--landing' => ($voodbuilderChromeLayout ?? null) !== null
+        // Landing full-bleed only for real page content — gate stays contained (80rem).
+        'VPRichPage--landing' => empty($pageGate) && (
+            ($voodbuilderChromeLayout ?? null) !== null
             || ChromeLayoutContentWidth::isFull($pageContentWidth)
-            || $page->usesEditorBuilder(),
+            || $page->usesEditorBuilder()
+        ),
+        'VPRichPage--gate' => ! empty($pageGate),
         'voodbuilder-editor-mode' => $editorEditor ?? false,
     ])>
         @if ($editorEditor ?? false)
             @include('voodbuilder::partials.editor-frontend-editor', [
                 'editorConfig' => $editorConfig,
             ])
+        @elseif (! empty($pageGate))
+            @include('voodbuilder::partials.page-gate')
         @else
             @foreach (\Voodflow\Voodbuilder\Support\Editor\EditorCanvas::publishedStyleUrls() as $publishedStyleUrl)
                 <link rel="stylesheet" href="{{ $publishedStyleUrl }}">

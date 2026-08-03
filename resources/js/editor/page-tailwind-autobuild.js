@@ -416,11 +416,12 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
                 const dropped = pendingAfterDragComponent;
                 pendingAfterDragComponent = null;
 
-                // Force compile after library drops — heuristics alone skipped pricing/hero CSS.
-                if (dropped) {
-                    pendingInvalidate = true;
-                    schedule(DEBOUNCE_MS);
-                } else if (componentNeedsLiveCss(dropped) || classSetNeedsCompile(currentPageClassSet())) {
+                // Compile only when the drop introduced utilities missing from the live
+                // sheet. Forcing JIT on every library drop made Forms feel multi-second.
+                if (
+                    componentNeedsLiveCss(dropped)
+                    || classSetNeedsCompile(currentPageClassSet())
+                ) {
                     schedule(DEBOUNCE_MS);
                 }
             }
@@ -658,8 +659,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         beginDragLock();
     });
     editor.on('block:drag:stop', (component) => {
-        // Library drops always need a JIT pass — pricing/hero utilities are often
-        // missing from the live sheet even when lastClassSet heuristics miss them.
+        // Release the drag lock; compile only if the new tree needs missing utilities.
         endDragLock({
             flush: Boolean(component) || classSetNeedsCompile(currentPageClassSet()),
             component,

@@ -563,6 +563,88 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPa
     @apply max-w-none p-0;
 }
 
+/*
+ * Access gate: keep shell + skeleton at layout width (80rem), even on home/landing.
+ * Without this, :has(.VPRichPage--landing) / full-width home shells stretch the gate.
+ */
+.VPRichPage--gate {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+:is(
+    .voodbuilder-site-content,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell,
+    .voodbuilder-site-shell
+):has(.VPRichPage--gate) {
+    max-width: 80rem !important;
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+    padding-block: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.voodbuilder-page-gate {
+    max-width: 80rem;
+    width: 100%;
+    margin-inline: auto;
+}
+
+/*
+ * Gated pages: lock viewport height so nav + main + footer fit without page scroll.
+ * Card stays centered in the remaining main area (gap from nav and footer).
+ */
+body.voodbuilder-page-gated {
+    height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+}
+
+body.voodbuilder-page-gated > main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.voodbuilder-page-gated > main > :is(
+    .voodbuilder-site-shell,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell,
+    .voodbuilder-full-width-shell
+) {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+body.voodbuilder-page-gated :is(
+    .voodbuilder-site-content,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell
+) {
+    min-height: 0 !important;
+    padding-block: 0 !important;
+}
+
+body.voodbuilder-page-gated .voodbuilder-page-gate > .relative {
+    /* Keep breathing room from nav/footer without forcing scroll */
+    margin-block: 0.75rem;
+}
+
 .VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
     @apply text-vp-text-2;
 }

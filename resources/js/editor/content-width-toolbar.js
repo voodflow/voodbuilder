@@ -415,7 +415,36 @@ export function findSectionContentWrapper(section) {
 }
 
 /**
+ * Move non-decorative section children into a content wrapper (heals orphan empty containers).
+ *
+ * @param {object} section
+ * @param {object} wrapper
+ */
+function absorbSectionContentIntoWrapper(section, wrapper) {
+    if (! section || ! wrapper) {
+        return;
+    }
+
+    const loose = componentChildren(section).filter((child) => {
+        if (! child || child === wrapper || child.isRemoved?.()) {
+            return false;
+        }
+
+        return ! isDecorativeSectionChild(child);
+    });
+
+    for (const child of loose) {
+        if (child?.move && ! child.isRemoved?.()) {
+            child.move(wrapper);
+        }
+    }
+}
+
+/**
  * Ensure a section has a content wrapper to apply width to.
+ *
+ * When missing, wraps existing children instead of appending an empty sibling
+ * (that orphan div broke managed forms and looked like a stray "div fuori").
  *
  * @param {object} section
  * @returns {object|null}
@@ -431,7 +460,17 @@ export function ensureSectionContentWrapper(section) {
                 classes.unshift(CONTAINER_CLASS);
                 existing.setClass?.(classes);
             }
+
+            const attrs = {
+                ...componentAttrs(existing),
+                [LAYOUT_ATTR]: 'container',
+                'data-voodbuilder-role': 'content',
+            };
+            existing.setAttributes?.(attrs);
         }
+
+        // Heal: empty/partial wrapper left beside form or other section content.
+        absorbSectionContentIntoWrapper(section, existing);
 
         return existing;
     }
@@ -440,6 +479,7 @@ export function ensureSectionContentWrapper(section) {
         return null;
     }
 
+    const insertAt = componentChildren(section).findIndex((child) => ! isDecorativeSectionChild(child));
     const created = section.components().add({
         tagName: 'div',
         classes: [CONTAINER_CLASS, 'w-full'],
@@ -448,9 +488,15 @@ export function ensureSectionContentWrapper(section) {
             'data-voodbuilder-role': 'content',
         },
         droppable: true,
-    }, { at: componentChildren(section).length });
+    }, { at: insertAt < 0 ? 0 : insertAt });
 
-    return Array.isArray(created) ? (created[0] ?? null) : (created ?? null);
+    const wrapper = Array.isArray(created) ? (created[0] ?? null) : (created ?? null);
+
+    if (wrapper) {
+        absorbSectionContentIntoWrapper(section, wrapper);
+    }
+
+    return wrapper;
 }
 
 /**

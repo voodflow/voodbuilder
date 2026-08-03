@@ -53,6 +53,11 @@ return [
         'translations' => 'Traduzioni',
         'translations_to_delete' => 'Traduzioni da eliminare',
         'menu_clone_name' => 'Nome menu',
+        'visibility' => 'Livello di accesso',
+        'password_protected' => 'Protezione con password',
+        'password_credentials' => 'Credenziali di accesso',
+        'credential_email' => 'Email (opzionale)',
+        'credential_password' => 'Password',
     ],
 
     'actions' => [
@@ -63,6 +68,7 @@ return [
         'delete_translations' => 'Elimina traduzioni',
         'actions' => 'Azioni',
         'more' => 'Azioni',
+        'add_credential' => 'Aggiungi credenziale',
     ],
 
     'translation' => [
@@ -125,6 +131,7 @@ return [
 
     'sections' => [
         'appearance' => 'Aspetto (opzionale)',
+        'access' => 'Accesso',
     ],
 
     'menu_preview' => [
@@ -155,6 +162,10 @@ return [
         'layout_auto_home' => 'Usa tutta la larghezza edge-to-edge (consigliato per la home del sito).',
         'layout_auto_page' => 'Usa la larghezza contenuta della pagina standard.',
         'sub_theme_marketing_recommended' => 'Le pagine a tutta larghezza funzionano meglio con un tema marketing (Site o il tuo tema custom).',
+        'visibility' => 'Chi può vedere questa pagina sul sito pubblico. Usa i ruoli Spatie / l’ability subscriber se Shield è presente.',
+        'password_protected' => 'Bypass opzionale: sblocca con password per anteprime, clienti o accessi una tantum — anche se il livello è Registered/Subscriber. Chi ha già il livello richiesto vede la pagina senza password.',
+        'password_credentials' => 'Una o più password. Lascia l’email vuota per accesso solo con password. Funziona come percorso alternativo rispetto al livello di accesso.',
+        'credential_password' => 'In modifica, lascia vuoto per mantenere la password attuale.',
     ],
 
     'media_library' => [

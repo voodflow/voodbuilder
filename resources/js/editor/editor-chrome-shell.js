@@ -745,14 +745,14 @@ function isChromeBleedComponent(component) {
         || attrs['data-mobile-nav-toggle']
         || attrs['data-theme-toggle']
         || attrs['data-voodbuilder-notification-bell-preview']
-        || tag === 'button'
+        || attrs['data-voodbuilder-nav-dropdown-toggle']
     ) {
         return true;
     }
 
     const text = String(component.get?.('content') ?? component.get?.('text') ?? '').replace(/\s+/g, '');
 
-    return /^(?:Button|Notifications)+$/.test(text);
+    return /^(?:Notifications)+$/.test(text);
 }
 
 function promoteComponentIntoContentSlot(editor, component) {

@@ -106,8 +106,15 @@ final class EditorGate
             $chromeLayoutCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
         }
 
+        // Keep save/auth fields before large HTML payloads so a truncated config
+        // script still exposes the persistence endpoint when possible.
         return [
             'pageId' => $page->getKey(),
+            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
+                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
+            'csrf' => csrf_token(),
+            'exitUrl' => $page->getUrl(),
+            'viewPageUrl' => $page->getUrl(),
             'pageTitle' => (string) ($page->title ?? ''),
             'chromeShellMode' => $chromeShellMode,
             'chromeShellName' => $chromeLayout?->name,
@@ -120,10 +127,6 @@ final class EditorGate
                 $chromeWidth,
             ),
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
-            'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
-            'exitUrl' => $page->getUrl(),
-            'viewPageUrl' => $page->getUrl(),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
             'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
             // Galleries API is owned by voodflow/vmedia when the Filament plugin is active.
@@ -131,7 +134,6 @@ final class EditorGate
                 ? self::mediaGalleriesIndexUrl()
                 : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
-            'csrf' => csrf_token(),
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false),

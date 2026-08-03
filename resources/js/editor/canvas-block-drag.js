@@ -269,6 +269,64 @@ function insertBlockAtTop(editor, block) {
     return component ?? null;
 }
 
+/**
+ * When Grapes cancels a library drop over the page-content slot (overlay stole
+ * the hit target), still insert the block at the end of the slot.
+ *
+ * @param {object} editor
+ * @param {object} block
+ * @returns {object|null}
+ */
+function insertBlockIntoPageContent(editor, block) {
+    if (! editor?.__voodbuilderChromeShellMode || ! block) {
+        return null;
+    }
+
+    const content = block?.get?.('content') ?? block?.getContent?.();
+    const slot = findPageContentSlotInEditor(editor);
+
+    if (! slot || ! content) {
+        return null;
+    }
+
+    const first = slot.components?.().at?.(0);
+    const preferTop = editor.__voodbuilderPointerOverTopSpacer === true;
+    const at = preferTop
+        ? (isTopDropSpacerComponent(first) ? 1 : 0)
+        : (slot.components?.()?.length ?? 0);
+    const added = slot.append(content, { at });
+    const component = Array.isArray(added) ? added[0] : added;
+
+    if (component) {
+        markTopDropHandled(editor);
+        editor.select?.(component);
+        window.setTimeout(() => editor.__voodbuilderSchedulePageCssRebuild?.(0), 120);
+    }
+
+    return component ?? null;
+}
+
+function isPointerOverPageContent(editor) {
+    if (! editor?.__voodbuilderChromeShellMode) {
+        return false;
+    }
+
+    const doc = editor.Canvas?.getDocument?.();
+    const frame = editor.Canvas?.getFrameEl?.();
+    const point = editor.__voodbuilderLastDragPoint ?? editor.__voodbuilderLastDropPoint;
+
+    if (! doc || ! frame || ! point) {
+        return Boolean(editor.__voodbuilderPointerOverTopSpacer);
+    }
+
+    const rect = frame.getBoundingClientRect();
+    const x = point.fromFrameWindow ? point.x : (point.x - rect.left);
+    const y = point.fromFrameWindow ? point.y : (point.y - rect.top);
+    const target = doc.elementFromPoint(x, y);
+
+    return Boolean(target?.closest?.('[data-voodbuilder-page-content]'));
+}
+
 function bindBlockDragPointerTracking(editor) {
     const track = (event) => {
         const frame = editor.Canvas?.getFrameEl?.();
@@ -888,8 +946,9 @@ function syncChromeDropZoneHighlight(editor) {
     }
 
     const rect = frame.getBoundingClientRect();
-    const x = point.x - rect.left + (frame.contentWindow?.scrollX ?? 0);
-    const y = point.y - rect.top + (frame.contentWindow?.scrollY ?? 0);
+    // elementFromPoint uses the iframe viewport — do not add scroll offsets.
+    const x = point.fromFrameWindow ? point.x : (point.x - rect.left);
+    const y = point.fromFrameWindow ? point.y : (point.y - rect.top);
     const target = doc.elementFromPoint(x, y);
 
     if (target?.closest?.('[data-voodbuilder-page-content]')) {
@@ -1359,6 +1418,10 @@ export function registerCanvasBlockDrag(editor) {
             // Grapes cancelled the drop (common when the blue line sits on the top band).
             delete editor.__voodbuilderTopDropHandled;
             insertBlockAtTop(editor, block);
+        } else if (block && isPointerOverPageContent(editor)) {
+            // Grapes cancelled over the content slot (decorative overlays stole the hit).
+            delete editor.__voodbuilderTopDropHandled;
+            insertBlockIntoPageContent(editor, block);
         }
 
         endTopDropSession(editor);

@@ -724,8 +724,8 @@ final class EditorCanvas
 
         [data-voodbuilder-editor-site-header] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible),
         [data-voodbuilder-block^='site_nav_'] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible) {
-            color: var(--color-vp-brand-1) !important;
-            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 16%, transparent) !important;
+            color: var(--vx-header-text, var(--color-vp-text-1)) !important;
+            background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 22%, transparent) !important;
         }
 
         [data-voodbuilder-nav-dropdown-toggle] svg {
@@ -806,6 +806,19 @@ final class EditorCanvas
             pointer-events: none !important;
         }
 
+        /* Re-enable real drop hosts so Grapes can finish the drop (children were
+         * PE-none above — without this the dashed outline looked droppable but release
+         * hit a non-component overlay and cancelled). */
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-dropzone],
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-role='content'],
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content],
+        body.voodbuilder-editor-block-dragging .voodbuilder-editor-inner-drop-slot,
+        body.voodbuilder-editor-block-dragging .gjs-placeholder,
+        body.voodbuilder-editor-block-dragging .gjs-com-placeholder,
+        body.voodbuilder-editor-block-dragging .voodbuilder-editor-top-drop-spacer.is-active {
+            pointer-events: auto !important;
+        }
+
         body.voodbuilder-editor-block-dragging [data-voodbuilder-section-block] {
             outline: 1px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 35%, transparent);
             outline-offset: -1px;
@@ -855,12 +868,19 @@ final class EditorCanvas
             opacity: 0 !important;
         }
 
-        /* Decorative plasma overlays use pointer-events-none; keep animated children
-           selectable/highlightable in the editor canvas (layers + tools). */
-        [aria-hidden="true"].pointer-events-none > [class*="animate-"],
-        [aria-hidden="true"].pointer-events-none > [class*="blur-"],
-        .pointer-events-none[aria-hidden="true"] > * {
-            pointer-events: auto !important;
+        /* Decorative overlays (plasma orbs, blur layers) stay PE-none. Never re-enable
+         * their children for hit-testing — that stole block drops (release looked like
+         * a valid dropzone but Grapes cancelled on a non-component target). Idle
+         * selection still uses the section/content hosts above the decorations. */
+        body.voodbuilder-editor-block-dragging .voodbuilder-hero-media__hit,
+        body.voodbuilder-editor-inner-drop-dragging .voodbuilder-hero-media__hit,
+        body.voodbuilder-editor-block-dragging .vb-hero-plasma__orb,
+        body.voodbuilder-editor-inner-drop-dragging .vb-hero-plasma__orb,
+        body.voodbuilder-editor-block-dragging [aria-hidden="true"].pointer-events-none > *,
+        body.voodbuilder-editor-inner-drop-dragging [aria-hidden="true"].pointer-events-none > *,
+        body.voodbuilder-editor-block-dragging .pointer-events-none[aria-hidden="true"] > *,
+        body.voodbuilder-editor-inner-drop-dragging .pointer-events-none[aria-hidden="true"] > * {
+            pointer-events: none !important;
         }
 
         /* Section-level page-content drops: show the real Grapes placeholder as a dashed

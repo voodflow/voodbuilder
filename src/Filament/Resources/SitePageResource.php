@@ -13,6 +13,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -30,10 +31,12 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Filament\Actions\CreateSitePageTranslationAction;
 use Voodflow\Voodbuilder\Filament\Actions\DeleteSitePageTranslationsAction;
 use Voodflow\Voodbuilder\Filament\Columns\TranslationLocaleColumn;
@@ -243,6 +246,50 @@ class SitePageResource extends Resource
                                     })
                                     ->visibleOn('edit')
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+
+                                Section::make(__('voodbuilder::admin.sections.access'))
+                                    ->collapsed(false)
+                                    ->schema([
+                                        Select::make('visibility')
+                                            ->label(__('voodbuilder::admin.fields.visibility'))
+                                            ->options(PageVisibility::class)
+                                            ->default(PageVisibility::Public->value)
+                                            ->native(false)
+                                            ->helperText(__('voodbuilder::admin.helpers.visibility'))
+                                            ->columnSpanFull(),
+
+                                        Toggle::make('password_protected')
+                                            ->label(__('voodbuilder::admin.fields.password_protected'))
+                                            ->helperText(__('voodbuilder::admin.helpers.password_protected'))
+                                            ->live()
+                                            ->columnSpanFull(),
+
+                                        Repeater::make('credentials')
+                                            ->relationship()
+                                            ->label(__('voodbuilder::admin.fields.password_credentials'))
+                                            ->helperText(__('voodbuilder::admin.helpers.password_credentials'))
+                                            ->schema([
+                                                TextInput::make('email')
+                                                    ->label(__('voodbuilder::admin.fields.credential_email'))
+                                                    ->email()
+                                                    ->maxLength(255),
+                                                TextInput::make('password')
+                                                    ->label(__('voodbuilder::admin.fields.credential_password'))
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->required(fn ($record): bool => $record === null)
+                                                    ->dehydrated(fn (?string $state): bool => filled($state))
+                                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
+                                                    ->formatStateUsing(fn (): ?string => null)
+                                                    ->helperText(__('voodbuilder::admin.helpers.credential_password')),
+                                            ])
+                                            ->columns(1)
+                                            ->defaultItems(0)
+                                            ->addActionLabel(__('voodbuilder::admin.actions.add_credential'))
+                                            ->collapsible()
+                                            ->visible(fn (Get $get): bool => (bool) $get('password_protected'))
+                                            ->columnSpanFull(),
+                                    ]),
 
                                 Section::make(__('voodbuilder::admin.sections.appearance'))
                                     ->collapsed(false)
