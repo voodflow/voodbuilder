@@ -38,10 +38,6 @@
 
     <x-voodbuilder::geo-ai-meta />
 
-    @unless ($editorEditor ?? false)
-        @include('cookie-consent::cookie-consent-head')
-    @endunless
-
     {{-- Page fonts before theme CSS so @font-face + woff2 preload start as early as possible. --}}
     @stack('fonts')
 
@@ -68,9 +64,6 @@
         <x-voodbuilder::footer />
     @endif
 
-    @unless ($editorEditor ?? false)
-        @include('cookie-consent::cookie-consent-body')
-    @endunless
     <x-voodbuilder::monitoring-scripts />
     <x-voodbuilder::popups-boot />
 

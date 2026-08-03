@@ -493,7 +493,7 @@ function isExcludedLinkableButton(component) {
         || attrs['data-mobile-nav-toggle']
         || attrs['data-theme-toggle']
         || attrs['data-cc']
-        || attrs['aria-label'] === 'cookieconsent'
+        || attrs['aria-label'] === 'vcookiebar'
     ) {
         return true;
     }

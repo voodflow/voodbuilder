@@ -55,14 +55,15 @@ HTML;
             ->values()
             ->all();
 
-        $this->assertContains('vb-content-7', $ids);
-        $this->assertContains('vb-content-8', $ids);
+        $this->assertContains('vb-content-5', $ids);
+        $this->assertContains('vb-hero-2', $ids);
 
         $method = new \ReflectionMethod(VoodbuilderSectionEditorBlocks::class, 'shouldRegisterBlock');
         $method->setAccessible(true);
 
+        // Redundant legacy ids stay unregistered even if absent from the trimmed catalog.
         $this->assertFalse($method->invoke(null, ['id' => 'vb-content-7', 'mode' => 'adaptive']));
-        $this->assertTrue($method->invoke(null, ['id' => 'vb-content-8', 'mode' => 'adaptive']));
-        $this->assertTrue($method->invoke(null, ['id' => 'vb-feature-7', 'mode' => 'adaptive']));
+        $this->assertTrue($method->invoke(null, ['id' => 'vb-content-5', 'mode' => 'adaptive']));
+        $this->assertTrue($method->invoke(null, ['id' => 'vb-feature-1', 'mode' => 'adaptive']));
     }
 }

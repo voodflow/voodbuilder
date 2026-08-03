@@ -12,7 +12,6 @@ use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureRoutesForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureVtutsForVoodbuilder;
-use Voodflow\Voodbuilder\Support\DisableFilamentCookieBanner;
 
 /**
  * Artisan command: Install.
@@ -29,14 +28,13 @@ class InstallCommand extends Command
     protected $description = 'Publish Voodbuilder and dependency configs/migrations, then run migrate and seed';
 
     /**
-     * Publish order matters: Spatie settings table must exist before cookie consent settings migrations run.
+     * Publish order matters: Spatie settings table must exist before packages that depend on it.
      *
      * @var array<string, string|null>
      */
     protected array $publishTags = [
         'config' => 'spatie/laravel-settings',
         'migrations' => 'spatie/laravel-settings',
-        'cookie-consent-settings-migrations' => 'jeffersongoncalves/laravel-cookie-consent',
         'seo-config' => 'ralphjsmit/laravel-seo',
         'seo-migrations' => 'ralphjsmit/laravel-seo',
         'medialibrary-config' => 'spatie/laravel-medialibrary',
@@ -107,8 +105,6 @@ class InstallCommand extends Command
         $this->configureViteIntegration();
 
         $this->configureNpmIntegration();
-
-        $this->configureCookieConsentForFrontendOnly();
 
         if ($this->option('skip-migrate')) {
             $this->components->info('Skipped migrations (--skip-migrate). Run `php artisan migrate` when ready.');
@@ -278,22 +274,6 @@ class InstallCommand extends Command
         return $result->successful();
     }
 
-    protected function configureCookieConsentForFrontendOnly(): void
-    {
-        if (! InstalledVersions::isInstalled('jeffersongoncalves/filament-cookie-consent')) {
-            return;
-        }
-
-        $composerPath = base_path('composer.json');
-
-        if (! DisableFilamentCookieBanner::applyToComposerJson($composerPath)) {
-            return;
-        }
-
-        $this->components->info('Disabled Filament auto-discovery for filament-cookie-consent (banner stays on public site).');
-        $this->components->warn('Run `composer dump-autoload` so the admin panel stops loading the cookie banner.');
-    }
-
     protected function publishNotificationsTableMigration(): void
     {
         if ($this->notificationsMigrationIsAvailable()) {
@@ -369,7 +349,7 @@ class InstallCommand extends Command
         $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
         $this->line('  - Spatie Media Library config + media table migration');
-        $this->line('  - migrations, seed data, cookie-consent panel exclusion');
+        $this->line('  - migrations and seed data');
         $this->newLine();
 
         $this->components->success('voodflow/voodbuilder installed successfully.');

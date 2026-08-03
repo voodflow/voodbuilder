@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use JeffersonGoncalves\Filament\CookieConsent\CookieConsentPlugin;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
@@ -60,13 +59,11 @@ class VoodbuilderPlugin implements Plugin
                 VoodbuilderSettingsPage::class,
             ])
             ->databaseNotifications(livewireComponent: AdminDatabaseNotifications::class);
-
-        CookieConsentPlugin::make()->register($panel);
     }
 
     public function boot(Panel $panel): void
     {
-        CookieConsentPlugin::make()->boot($panel);
+        //
     }
 
     protected static function mediaCompanionActive(): bool

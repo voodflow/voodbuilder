@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
-use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
@@ -57,7 +56,6 @@ class VoodbuilderSeeder extends Seeder
         $this->seedPermissions();
 
         $this->seedMenus();
-        $this->seedCookieConsentSettings();
     }
 
     protected function seedPageTemplates(): void
@@ -356,25 +354,5 @@ class VoodbuilderSeeder extends Seeder
                 'sort_order' => 30,
             ],
         ];
-    }
-
-    protected function seedCookieConsentSettings(): void
-    {
-        if (! class_exists(CookieConsentSettings::class)) {
-            return;
-        }
-
-        $settings = app(CookieConsentSettings::class);
-
-        $settings->content_message = __('We use cookies to improve your experience. By continuing, you accept our cookie policy.');
-        $settings->content_allow = __('Accept');
-        $settings->content_deny = __('Decline');
-        $settings->content_link = __('Learn more');
-        $cookiePolicy = SitePage::query()->where('slug', 'cookie-policy')->first();
-        $settings->content_href = $cookiePolicy?->getUrl();
-        $settings->position = 'bottom';
-        $settings->theme = 'block';
-
-        $settings->save();
     }
 }

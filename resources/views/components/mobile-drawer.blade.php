@@ -30,7 +30,11 @@
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
     $brandConfig = is_array($brandConfig) ? $brandConfig : [];
-    $cookieConsent = function_exists('cookie_consent_settings') ? cookie_consent_settings() : null;
+    $cookiePolicyPage = \Voodflow\Voodbuilder\Models\SitePage::query()
+        ->where('slug', 'cookie-policy')
+        ->where('published', true)
+        ->first();
+    $cookiePolicyUrl = $cookiePolicyPage?->getUrl();
 @endphp
 
 <div
@@ -194,15 +198,14 @@
                 </div>
             @endauth
 
-            @if (! $canvasPreview && $cookieConsent && filled($cookieConsent->content_href))
+            @if (! $canvasPreview && filled($cookiePolicyUrl))
                 <div class="voodbuilder-mobile-nav__legal">
                     <a
-                        href="{{ $cookieConsent->content_href }}"
+                        href="{{ $cookiePolicyUrl }}"
                         class="voodbuilder-mobile-nav__cookie-link"
-                        @if (filled($cookieConsent->content_target)) target="{{ $cookieConsent->content_target }}" @endif
                         data-mobile-nav-close
                     >
-                        {{ $cookieConsent->content_policy }}
+                        {{ __('voodbuilder::nav.cookie_policy') }}
                     </a>
                     <span class="voodbuilder-mobile-nav__legal-separator" aria-hidden="true">·</span>
                     <button type="button" class="voodbuilder-mobile-nav__cookie-link" data-cookie-preferences>

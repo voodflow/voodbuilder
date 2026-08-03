@@ -20,7 +20,7 @@ VoodBuilder is **not a full CMS**. It requires **Filament 5** and gives you a **
 | **Content channels** | Route-based areas (tutorials, docs, events, …) registered by companion plugins; theme overrides per channel |
 | **Search** | Unified `/search` across registered channels and site pages |
 | **Auth shell** | Optional Fortify login/register and `/account` profile styled like the public theme |
-| **Integrations** | SEO (ralphjsmit/laravel-seo), cookie consent on the public site, optional notifications bell |
+| **Integrations** | SEO (ralphjsmit/laravel-seo), optional Vcookiebar consent on the public site, optional notifications bell |
 
 Pair VoodBuilder with **vtuts**, **vdocs**, **vevents**, **vexhibitors**, or your own packages for structured content. VoodBuilder provides the **chrome** (layout, nav, themes, SEO defaults), not blog posts or tutorials themselves.
 
@@ -29,7 +29,7 @@ Pair VoodBuilder with **vtuts**, **vdocs**, **vevents**, **vexhibitors**, or you
 | Guide | Topics |
 |-------|--------|
 | [**docs/VISUAL_THEMES.md**](docs/VISUAL_THEMES.md) | Mental model, admin “theme bindings” & presets, common site setups, create custom themes |
-| [**docs/EDITOR.md**](docs/EDITOR.md) | Page builder, Tailblocks, custom blocks, dynamic blocks |
+| [**docs/EDITOR.md**](docs/EDITOR.md) | Page builder, section library, custom blocks, dynamic blocks |
 | [**docs/BUILD.md**](docs/BUILD.md) | `npm run build`, Vite entries, when to recompile |
 
 **Quick mental model:** *Visual theme* = layout + colours per area (marketing vs docs). *Light/dark* = global toggle. *Preset* = shortcut that fills the theme dropdowns — not a separate system.

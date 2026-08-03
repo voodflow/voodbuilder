@@ -24,7 +24,7 @@ class EditorCatalogWiringTest extends TestCase
 
         $this->assertNotEmpty($blocks);
         $this->assertTrue(
-            collect($blocks)->contains(fn (array $definition): bool => ($definition['id'] ?? '') === 'vb-hero-1'),
+            collect($blocks)->contains(fn (array $definition): bool => ($definition['id'] ?? '') === 'vb-hero-2'),
         );
 
         $categories = collect($blocks)->pluck('category')->unique();
@@ -32,7 +32,7 @@ class EditorCatalogWiringTest extends TestCase
         $this->assertTrue($categories->contains('Hero'));
         $this->assertFalse($categories->contains(fn (string $category): bool => str_starts_with($category, 'Tailblocks')));
 
-        $hero = collect($blocks)->firstWhere('id', 'vb-hero-1');
+        $hero = collect($blocks)->firstWhere('id', 'vb-hero-2');
 
         $this->assertIsArray($hero);
         $this->assertStringContainsString('voodbuilder-editor-block-preview', (string) ($hero['preview'] ?? ''));

@@ -1,5 +1,7 @@
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Vcookiebar\Support\ConsentPayload;
+    use Voodflow\Vcookiebar\Vcookiebar;
 
     $pixelId = VoodbuilderSettings::get('facebook_pixel_id');
     $gtmId = VoodbuilderSettings::get('google_tag_manager_id');
@@ -8,6 +10,15 @@
     $bodyCode = VoodbuilderSettings::get('monitoring_body_code');
 
     $hasTracking = filled($pixelId) || filled($gtmId) || filled($gaId) || filled($headCode) || filled($bodyCode);
+
+    $consentPreferences = null;
+    $consentRequired = false;
+
+    if (class_exists(Vcookiebar::class) && Vcookiebar::isEnabled()) {
+        $consentRequired = true;
+        $cookieName = (string) config('vcookiebar.consent_cookie', 'vcookiebar_consent');
+        $consentPreferences = ConsentPayload::decode(request()->cookie($cookieName));
+    }
 @endphp
 
 @if($hasTracking)
@@ -21,12 +32,20 @@
                 bodyCode: @json($bodyCode),
             };
 
+            const consentRequired = @json($consentRequired);
+            window.__vcookiebar = window.__vcookiebar || {};
+            window.__vcookiebar.preferences = @json($consentPreferences);
+
             let loaded = false;
 
-            function hasConsent() {
-                return document.cookie.split(';').some(function (cookie) {
-                    return cookie.trim().startsWith('cookieconsent_status=allow');
-                });
+            function hasAnalyticsConsent() {
+                if (! consentRequired) {
+                    return true;
+                }
+
+                const preferences = window.__vcookiebar?.preferences;
+
+                return Boolean(preferences && preferences.analytics === true);
             }
 
             function injectHtml(html, target) {
@@ -42,7 +61,7 @@
             }
 
             function loadTracking() {
-                if (loaded || !hasConsent()) {
+                if (loaded || ! hasAnalyticsConsent()) {
                     return;
                 }
 
@@ -97,6 +116,16 @@
             }
 
             loadTracking();
+
+            window.addEventListener('vcookiebar:consent', function (event) {
+                const detail = event?.detail?.preferences;
+
+                if (detail && typeof detail === 'object') {
+                    window.__vcookiebar.preferences = detail;
+                }
+
+                loadTracking();
+            });
 
             const consentWatcher = window.setInterval(function () {
                 loadTracking();

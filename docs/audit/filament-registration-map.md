@@ -25,7 +25,7 @@
 | Item | Where | Module |
 |---|---|---|
 | `AdminDatabaseNotifications` | plugin `databaseNotifications` | Core |
-| `CookieConsentPlugin` | registered/booted by VoodbuilderPlugin | Core integration |
+| — | Cookie consent is provided by optional `voodflow/vcookiebar` (not registered by Core) |
 | `ThemesWorkspace` Livewire | ServiceProvider | Themes |
 | `ThemeMapBridge` Livewire | ServiceProvider | Themes |
 | Menu tree assets | `FilamentMenuTreeAssets` | Menus |

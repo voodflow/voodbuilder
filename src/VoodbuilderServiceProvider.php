@@ -77,7 +77,6 @@ use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
-use Voodflow\Voodbuilder\Support\RegisterFilamentCookieConsentTranslations;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
@@ -141,8 +140,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        RegisterFilamentCookieConsentTranslations::apply();
-
         Relation::morphMap([
             'site_page' => SitePage::class,
             'voodbuilder_media_library' => MediaLibrary::class,
@@ -153,10 +150,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
         IntegrationRegistrar::boot();
-
-        View::replaceNamespace('cookie-consent', [
-            __DIR__.'/../resources/views/cookie-consent',
-        ]);
 
         // Upstream drag handle span is empty; our node-row adds a visible grip icon.
         View::prependNamespace('filament-nestable-tree', [

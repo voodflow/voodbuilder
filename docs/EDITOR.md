@@ -17,15 +17,14 @@ Voodbuilder Pro ships a **frontend visual editor** for Site Pages. Editors with 
 Install npm dependencies (host app):
 
 ```bash
-npm install grapesjs grapesjs-blocks-basic grapesjs-plugin-forms grapesjs-style-bg grapesjs-tabs grapesjs-custom-code
-npm install -D @jodit/image-editor   # in-canvas image crop / filters (MIT)
-npm install -D esbuild react react-dom prop-types   # only for voodbuilder:build-tailblocks
+# Host install pulls Editor npm deps via voodbuilder:install / SyncNpmDeps.
+# Under the hood the canvas uses the grapesjs package (pinned in package.json — do not patch node_modules).
 npm run build
 ```
 
-Optional Editor plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/voodbuilder.php` → `grapesjs.plugins`.
+Optional Editor plugins (forms, background styles, tabs, custom HTML) ship enabled by default. Toggle in `config/voodbuilder.php` → `editor.plugins` (legacy key `grapesjs.plugins` still accepted).
 
-The **image editor** (`@jodit/image-editor`) opens from the canvas toolbar on selected images (and background-image sections). Toggle with `grapesjs.image_editor` / `VOODBUILDER_EDITOR_IMAGE_EDITOR`.
+The **image editor** opens from the canvas toolbar on selected images (and background-image sections). Toggle with `editor.image_editor` / `VOODBUILDER_EDITOR_IMAGE_EDITOR` (legacy key `grapesjs.image_editor`).
 
 `php artisan voodbuilder:install` patches `vite.config.js` with Editor entries when possible.
 
@@ -37,21 +36,21 @@ Blocks appear in the Editor sidebar when editing.
 
 | Source | Category | Notes |
 |--------|----------|-------|
-| **Tailblocks** | `Tailblocks / …` | 60+ marketing sections; adaptive to light/dark via theme tokens |
+| **Section library** | Marketing sections | 60+ marketing sections; adaptive to light/dark via theme tokens |
 | **Voodbuilder** | `Voodbuilder` | Hero, content section, CTA, **site header/footer** (live menus) |
 | **RichEditor blocks** | Per package | Dynamic server-rendered blocks (e.g. latest posts) |
 | **Server blocks** | Per package | Third-party packages without Filament RichEditor |
 | **Custom** | Your category | Static HTML registered in a ServiceProvider |
 | **Forms / Tabs / …** | Editor plugins | Optional npm plugins (see below) |
 
-### Tailblocks catalog
+### Section library catalog
 
-Bundled JSON: `resources/editor/tailblocks-blocks.json`
+Bundled JSON: `resources/editor/section-library-blocks.json` (legacy filename `tailblocks-blocks.json` may still exist during migration)
 
-Regenerate from upstream Tailblocks (optional):
+Regenerate section library assets (optional):
 
 ```bash
-php artisan voodbuilder:build-tailblocks --theme=indigo
+php artisan voodbuilder:build-sections --theme=indigo
 npm run build
 ```
 
@@ -61,7 +60,7 @@ Config (`config/voodbuilder.php`):
 
 ```php
 'editor' => [
-    'tailblocks' => [
+    'sections' => [
         'enabled' => true,
         'theme' => 'indigo',   // accent colour family in source HTML
         'modes' => ['adaptive'],
@@ -149,7 +148,7 @@ final class LatestNewsEditorBlock implements EditorServerBlock
 
     public static function toHtml(array $config, array $context): string
     {
-        return view('ultinews::grapesjs.latest', compact('config'))->render();
+        return view('example::editor.latest', compact('config'))->render();
     }
 
     public static function toPreviewHtml(array $config, array $context): string
@@ -181,7 +180,7 @@ Editor stores only a placeholder (`data-voodbuilder-block`, `data-voodbuilder-co
 
 Editors can connect any selected element (title, image, link, …) to **live data** from installed packages — without writing PHP.
 
-1. Build or paste your layout in the canvas (Tailblocks, copied HTML, etc.).
+1. Build or paste your layout in the canvas (section library, copied HTML, etc.).
 2. Select an element (`h1`, `p`, `img`, `a`, `button`, …).
 3. Click **Make dynamic** (🔗) in the Editor toolbar.
 4. Choose **Data source** (e.g. *Latest tutorial* from Vtuts) and **Field** (Title, URL, Image, …).
@@ -232,10 +231,10 @@ Config (`config/voodbuilder.php`):
 
 | Plugin | Purpose |
 |--------|---------|
-| `grapesjs-plugin-forms` | Form/input blocks; submits to `POST /voodbuilder/editor/forms/{page}` with CSRF |
-| `grapesjs-style-bg` | Background images / gradients in Style Manager |
-| `grapesjs-tabs` | Tab component (not in Tailblocks) |
-| `grapesjs-custom-code` | Custom HTML embed; stripped of `<script>` on save |
+| Forms plugin | Form/input blocks; submits to `POST /voodbuilder/editor/forms/{page}` with CSRF |
+| Background style plugin | Background images / gradients in Style Manager |
+| Tabs plugin | Tab component |
+| Custom code plugin | Custom HTML embed; stripped of `<script>` on save |
 
 Listen for form submissions in the host app:
 
@@ -264,7 +263,7 @@ Pages using the Polito sub-theme will pick up those variables automatically.
 
 ## Permissions
 
-`config/voodbuilder.php` → `grapesjs` and `permissions.page_builder` / `page_builder_roles`.
+`config/voodbuilder.php` → `editor` (legacy key `grapesjs` still accepted) and `permissions.page_builder` / `page_builder_roles`.
 
 Users need page-builder permission to see **Edit page** and use `?edit=1`.
 
@@ -297,10 +296,10 @@ Toolbar icons use [Lucide](https://lucide.dev) (ISC License — commercial-frien
 
 The theme remaps Editor `--gjs-*` variables to Voodbuilder tokens (`--color-vp-*`, `--vx-*`), replacing the default brown UI.
 
-### Surviving GrapesJS upgrades
+### Surviving Editor engine upgrades
 
-1. Pin `grapesjs` (and `@jodit/image-editor`) in `package.json` (semver range, not `*`)
-2. Never edit files inside `node_modules/grapesjs` or `node_modules/@jodit`
+1. Pin the Editor canvas package (and image editor) in `package.json` (semver range, not `*`)
+2. Never edit files inside `node_modules` for those packages
 3. Customise only via public APIs: `Panels`, `Commands`, `appendTo`, events, and our plugins under `resources/js/editor/`
 4. After `npm update`, smoke-test: open `?edit=1`, drag a block, edit an image (toolbar pencil), bind a field, save, reload
 
@@ -313,7 +312,7 @@ Saved payload: `html`, `css`, `project` (Editor JSON) on the Site Page record.
 Public view:
 
 - HTML rendered via `EditorRenderer`
-- Hardcoded light colours in saved HTML are migrated to theme tokens at render time (`TailblocksThemeTokenMigrator`)
+- Hardcoded light colours in saved HTML are migrated to theme tokens at render time (`SectionThemeTokenMigrator`; legacy class name may still appear in older installs)
 
 ---
 
