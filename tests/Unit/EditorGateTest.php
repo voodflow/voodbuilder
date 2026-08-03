@@ -111,6 +111,47 @@ class EditorGateTest extends TestCase
         }
     }
 
+    public function test_config_prefers_vmedia_upload_when_registered_else_core_fallback(): void
+    {
+        EditorGate::authorizeUsing(
+            static fn (SitePage $page): bool => $page->usesEditorBuilder(),
+        );
+
+        $page = SitePage::query()->create([
+            'title' => 'Landing',
+            'slug' => 'landing-gate-upload-preference',
+            'builder' => PageBuilder::Visual,
+            'published' => true,
+            'builder_payload' => [
+                'html' => '<section>Hero</section>',
+                'css' => '',
+            ],
+        ]);
+
+        $this->app->instance('request', Request::create('/pages/landing-page?edit=1', 'GET'));
+
+        $config = EditorGate::config($page);
+        $uploadUrl = (string) ($config['uploadUrl'] ?? '');
+
+        if (\Illuminate\Support\Facades\Route::has('vmedia.media.upload')) {
+            $this->assertSame(
+                route('vmedia.media.upload', absolute: false),
+                $uploadUrl,
+            );
+        } elseif (\Illuminate\Support\Facades\Route::has('voodbuilder.editor.upload')) {
+            $this->assertSame(
+                route('voodbuilder.editor.upload', absolute: false),
+                $uploadUrl,
+            );
+        } else {
+            $this->assertSame('', $uploadUrl);
+        }
+
+        // Missing companion must never throw while resolving editor config.
+        $this->assertIsArray($config);
+        $this->assertArrayHasKey('saveUrl', $config);
+    }
+
     public function test_image_editor_can_be_disabled_via_config(): void
     {
         EditorGate::authorizeUsing(

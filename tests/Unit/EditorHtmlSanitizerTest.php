@@ -19,6 +19,33 @@ class EditorHtmlSanitizerTest extends TestCase
         $this->assertStringNotContainsString('width=100%&', $sanitized);
     }
 
+    public function test_preserves_escaped_json_data_attributes_for_forms(): void
+    {
+        $html = '<section data-vforms-managed-form="1">'
+            .'<div data-vforms-visibility="{&quot;logic&quot;:&quot;and&quot;,&quot;rules&quot;:[]}">'
+            .'<label>Name</label></div></section>';
+
+        $sanitized = EditorHtmlSanitizer::sanitize($html);
+
+        $this->assertStringContainsString('data-vforms-visibility=', $sanitized);
+        $this->assertStringNotContainsString('data-vforms-visibility="{"', $sanitized);
+        $this->assertStringContainsString('&quot;logic&quot;', $sanitized);
+        $this->assertStringNotContainsString('&amp;quot;', $sanitized);
+        $this->assertStringContainsString('<label>Name</label>', $sanitized);
+    }
+
+    public function test_repairs_broken_raw_json_visibility_attributes(): void
+    {
+        $html = '<div data-vforms-visibility="{"logic":"and","rules":[]}"><span>Field</span></div>';
+
+        $repaired = EditorHtmlSanitizer::sanitize($html);
+
+        $this->assertStringNotContainsString('data-vforms-visibility="{"', $repaired);
+        $this->assertStringContainsString('&quot;logic&quot;', $repaired);
+        $this->assertStringNotContainsString('&amp;quot;', $repaired);
+        $this->assertStringContainsString('<span>Field</span>', $repaired);
+    }
+
     public function test_preserves_valid_percent_encoding(): void
     {
         $value = 'https://example.test/path?q=%C4%B0zmir';

@@ -21,17 +21,23 @@ final class EditorHtmlSanitizer
             return $html;
         }
 
-        $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
+        // Heal already-persisted broken JSON attrs (e.g. visibility) before other passes.
+        $html = self::repairBrokenJsonDataAttributes($html);
 
+        // Never html_entity_decode() the whole document: it turns &quot; inside
+        // attribute values back into raw ", which breaks JSON data-* attrs
+        // (vforms visibility) and leaves GrapesJS unable to serialize/reload the page.
+        // Decode entities only inside src= values where maps embeds need % / & fixes.
         $sanitized = preg_replace_callback(
             '/\bsrc=(["\'])(.*?)\1/i',
             static function (array $matches): string {
                 $quote = $matches[1];
-                $src = self::encodeMalformedPercentSequences($matches[2]);
+                $src = html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5);
+                $src = self::encodeMalformedPercentSequences($src);
 
                 return 'src='.$quote.$src.$quote;
             },
-            $decoded,
+            $html,
         );
 
         if (! is_string($sanitized)) {
@@ -43,6 +49,85 @@ final class EditorHtmlSanitizer
                 self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
             ),
         );
+    }
+
+    /**
+     * Re-escape JSON data attributes that were persisted with raw quotes inside
+     * double-quoted HTML attributes (invalid HTML that blanks the editor canvas).
+     */
+    public static function repairBrokenJsonDataAttributes(string $html): string
+    {
+        foreach (['data-vforms-visibility'] as $attribute) {
+            $html = self::reescapeRawJsonAttribute($html, $attribute);
+        }
+
+        return $html;
+    }
+
+    private static function reescapeRawJsonAttribute(string $html, string $attribute): string
+    {
+        // Only raw quotes after the opening brace are invalid HTML
+        // (data-vforms-visibility="{"logic":...}). Properly escaped values use
+        // {&quot;...} and must not be re-encoded into &amp;quot;.
+        if (! str_contains($html, $attribute.'="{"')) {
+            return $html;
+        }
+
+        $needle = $attribute.'="';
+        $offset = 0;
+        $length = strlen($html);
+        $output = '';
+
+        while (($pos = strpos($html, $needle, $offset)) !== false) {
+            $output .= substr($html, $offset, $pos - $offset);
+            $valueStart = $pos + strlen($needle);
+            $isBrokenJson = ($html[$valueStart] ?? '') === '{'
+                && ($html[$valueStart + 1] ?? '') === '"';
+
+            if (! $isBrokenJson) {
+                $end = strpos($html, '"', $valueStart);
+
+                if ($end === false) {
+                    $output .= substr($html, $pos);
+
+                    return $output;
+                }
+
+                $output .= substr($html, $pos, $end - $pos + 1);
+                $offset = $end + 1;
+
+                continue;
+            }
+
+            $depth = 0;
+            $cursor = $valueStart;
+
+            for (; $cursor < $length; $cursor++) {
+                $char = $html[$cursor];
+
+                if ($char === '{') {
+                    $depth++;
+                } elseif ($char === '}') {
+                    $depth--;
+
+                    if ($depth === 0) {
+                        $cursor++;
+                        break;
+                    }
+                }
+            }
+
+            $json = substr($html, $valueStart, $cursor - $valueStart);
+
+            if (($html[$cursor] ?? '') === '"') {
+                $cursor++;
+            }
+
+            $output .= $attribute.'="'.htmlspecialchars($json, ENT_QUOTES | ENT_HTML5, 'UTF-8').'"';
+            $offset = $cursor;
+        }
+
+        return $output.substr($html, $offset);
     }
 
     /**

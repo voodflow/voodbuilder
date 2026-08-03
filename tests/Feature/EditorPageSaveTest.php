@@ -262,6 +262,73 @@ class EditorPageSaveTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_admin_can_save_form_like_html_with_json_data_attributes(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-form-save@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Grapes form page',
+            'slug' => 'grapes-form-page',
+            'builder' => PageBuilder::Visual,
+            'layout' => 'landing',
+            'published' => true,
+            'builder_payload' => [
+                'html' => '<section class="voodbuilder-editor-section bg-vp-bg">persist-ok-marker</section>',
+                'css' => '',
+                'js' => '',
+                'project' => null,
+            ],
+        ]);
+
+        $this->actingAs($user);
+
+        $formHtml = <<<'HTML'
+<section class="voodbuilder-editor-section vforms-managed-form-section w-full py-10" data-vforms-managed-form="form-1" data-vforms-block="managed">
+  <div class="vforms-managed-form" data-vforms-form-mount="form-1">
+    <form class="vforms-form" method="post" action="/forms/form-1/submit">
+      <div class="vforms-form-field" data-vforms-field="name" data-vforms-visibility="{&quot;logic&quot;:&quot;and&quot;,&quot;rules&quot;:[]}">
+        <label for="vforms-form-name">Name</label>
+        <input id="vforms-form-name" type="text" name="name" />
+      </div>
+    </form>
+  </div>
+</section>
+HTML;
+
+        $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => $formHtml,
+            'css' => '',
+            'project' => ['pages' => []],
+        ])->assertOk()->assertJson(['saved' => true]);
+
+        $page->refresh();
+        $savedHtml = (string) ($page->builder_payload['html'] ?? '');
+
+        $this->assertStringContainsString('data-vforms-managed-form="form-1"', $savedHtml);
+        $this->assertStringContainsString('data-vforms-field="name"', $savedHtml);
+        $this->assertStringContainsString('Name', $savedHtml);
+        $this->assertStringNotContainsString('persist-ok-marker', $savedHtml);
+        $this->assertStringNotContainsString('data-vforms-visibility="{"', $savedHtml);
+        $this->assertStringNotContainsString('&amp;quot;', $savedHtml);
+
+        $initial = EditorGate::initialPayload($page);
+        $this->assertStringContainsString('data-vforms-managed-form="form-1"', $initial['html']);
+        $this->assertStringContainsString('Name', $initial['html']);
+    }
+
     public function test_rejects_oversized_html_payload(): void
     {
         $user = new class extends User implements FilamentUser
