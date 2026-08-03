@@ -15,7 +15,7 @@
 @endphp
 
 @section('content')
-    <section class="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+    <section class="mx-auto flex w-full max-w-2xl min-h-[min(100dvh,36rem)] flex-col items-center justify-center px-6 py-16 text-center">
         <div class="w-full rounded-2xl border border-vp-divider bg-vp-bg-alt/60 px-8 py-12 shadow-sm">
             <p class="text-sm font-medium uppercase tracking-wide text-vp-brand-1">
                 {{ VoodbuilderSettings::brandName() }}

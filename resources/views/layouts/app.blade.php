@@ -56,7 +56,8 @@
         />
     @endunless
 
-    <main class="flex-1">
+    {{-- Content-driven height (matches editor). Opt-in sticky footer: body.voodbuilder-sticky-footer --}}
+    <main>
         @yield('content')
     </main>
 

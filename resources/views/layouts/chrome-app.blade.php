@@ -131,7 +131,8 @@
         </div>
     @endif
 
-    <main class="flex flex-1 flex-col min-h-0">
+    {{-- Content-driven height (matches editor). Opt-in sticky footer: body.voodbuilder-sticky-footer --}}
+    <main class="flex flex-col min-h-0">
         @yield('content')
     </main>
 

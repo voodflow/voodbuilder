@@ -122,4 +122,27 @@ class DocLayoutChromeTest extends TestCase
             $contents,
         );
     }
+
+    public function test_chrome_app_main_is_content_driven_not_sticky_footer_by_default(): void
+    {
+        $chromeApp = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/views/layouts/chrome-app.blade.php',
+        );
+        $app = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/views/layouts/app.blade.php',
+        );
+        $landing = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+        );
+
+        // Sticky footer (main flex-1 under body min-h-screen) created a huge gap
+        // between short page content and the chrome footer on the published front.
+        $this->assertStringNotContainsString('flex flex-1 flex-col', $chromeApp);
+        $this->assertStringNotContainsString('<main class="flex-1">', $app);
+        $this->assertStringContainsString('body.voodbuilder-sticky-footer > main', $landing);
+        $this->assertStringNotContainsString(
+            'min-h-[calc(100vh-4rem)] bg-vp-bg',
+            $landing,
+        );
+    }
 }

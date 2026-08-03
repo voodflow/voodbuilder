@@ -542,8 +542,21 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
     @apply absolute inset-0 h-full w-full border-0;
 }
 
+/*
+ * Content-driven height by default (footer follows content, like the editor).
+ * Do not force shells to fill the viewport — that pushed chrome footers below
+ * the fold on short pages. Opt-in sticky footer: body.voodbuilder-sticky-footer.
+ */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-events-shell:has(.VPRichPage--landing) {
-    @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
+    @apply bg-vp-bg;
+}
+
+body.voodbuilder-sticky-footer > main {
+    flex: 1 1 auto;
+}
+
+body.voodbuilder-sticky-footer .voodbuilder-events-shell:has(.VPRichPage--landing) {
+    min-height: calc(100vh - 4rem);
 }
 
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPage--landing) {
