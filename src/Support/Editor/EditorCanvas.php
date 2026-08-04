@@ -531,7 +531,8 @@ final class EditorCanvas
 
         /* Canvas root: always full-bleed layout token.
          * Beat theme palette (`html[data-voodbuilder-sub-theme] { --width-vp-layout: … !important }`)
-         * and never let frontend landing.css page-width rules shrink the iframe. */
+         * and never let frontend landing.css page-width rules shrink the iframe.
+         * Do NOT target bare `html`/`body` — that kills chrome_width=full boxing (footer 80rem). */
         html.voodbuilder-canvas-ready,
         html.voodbuilder-canvas-ready[data-voodbuilder-sub-theme],
         html.voodbuilder-canvas-ready[data-voodbuilder-sub-theme]:not(.dark),
@@ -589,9 +590,9 @@ final class EditorCanvas
          * nav/footer containers. Canvas root stays 100% so the workspace does not shrink.
          *
          * Needed especially in the layout editor: chrome-shell is unwrapped, so drop zones
-         * cannot inherit ThemePalette's shell token. Without this, standard/custom page
-         * content keeps --width-vp-layout at 100% on footers (sparse full-bleed columns)
-         * while the published front uses the document content max (~80rem).
+         * cannot inherit ThemePalette's shell token. Without this, full page content keeps
+         * --width-vp-layout at 100% on footers (sparse full-bleed columns) while the
+         * published front uses the document content max (~80rem / custom).
          *
          * Prefer --voodbuilder-page-content-max when set (standard/custom); otherwise
          * fall back to --voodbuilder-chrome-layout-max / 80rem (full page, mirrors landing.css). */

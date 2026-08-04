@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
+use Voodflow\Voodbuilder\Filament\Pages\ThemeStudioPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
 use Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource;
@@ -56,6 +57,7 @@ class VoodbuilderPlugin implements Plugin
         $panel
             ->resources($resources)
             ->pages([
+                ThemeStudioPage::class,
                 VoodbuilderSettingsPage::class,
             ])
             ->databaseNotifications(livewireComponent: AdminDatabaseNotifications::class);

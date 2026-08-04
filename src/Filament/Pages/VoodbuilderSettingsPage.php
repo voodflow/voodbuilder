@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Filament\Pages;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -22,17 +21,12 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
-use Livewire\Attributes\On;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
-use Voodflow\Voodbuilder\Support\SubThemeResolver;
-use Voodflow\Voodbuilder\Support\ThemeBindings;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
@@ -45,7 +39,7 @@ class VoodbuilderSettingsPage extends Page
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     public static function getNavigationGroup(): ?string
     {
@@ -72,11 +66,6 @@ class VoodbuilderSettingsPage extends Page
             $data['primary_locale'] = VoodbuilderSettings::primaryLocale();
         }
 
-        $channelThemes = is_array($data['content_channel_sub_themes'] ?? null)
-            ? $data['content_channel_sub_themes']
-            : [];
-        $data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm($channelThemes);
-
         $this->data = $data;
         $this->form->fill($data);
 
@@ -90,30 +79,6 @@ class VoodbuilderSettingsPage extends Page
         }
     }
 
-    /**
-     * @param  array<string, string>  $channelThemes
-     */
-    #[On('voodbuilder-theme-map-sync')]
-    public function syncThemeMap(string $subTheme, array $channelThemes): void
-    {
-        $this->data['sub_theme'] = $subTheme;
-        $this->data['content_channel_sub_themes'] = $channelThemes;
-        $this->form->fill($this->data);
-    }
-
-    #[On('voodbuilder-themes-changed')]
-    public function reloadThemeMapFromSettings(): void
-    {
-        $data = VoodbuilderSettings::data();
-
-        $this->data['sub_theme'] = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
-            ?? SubThemeResolver::SITE;
-        $this->data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm(
-            is_array($data['content_channel_sub_themes'] ?? null) ? $data['content_channel_sub_themes'] : [],
-        );
-        $this->form->fill($this->data);
-    }
-
     public function save(): void
     {
         try {
@@ -121,30 +86,9 @@ class VoodbuilderSettingsPage extends Page
 
             $data = $this->form->getState();
 
-            // Theme map updates Livewire state directly; ensure it wins over the hidden fields.
-            if (isset($this->data['sub_theme'])) {
-                $data['sub_theme'] = $this->data['sub_theme'];
-            }
-
-            if (isset($this->data['content_channel_sub_themes']) && is_array($this->data['content_channel_sub_themes'])) {
-                $data['content_channel_sub_themes'] = $this->data['content_channel_sub_themes'];
-            }
-
             VoodbuilderSettings::saveData($data);
 
             $this->commitDatabaseTransaction();
-
-            $saved = VoodbuilderSettings::data();
-            $this->data['sub_theme'] = (string) ($saved['sub_theme'] ?? SubThemeResolver::SITE);
-            $this->data['content_channel_sub_themes'] = ThemeBindings::expandChannelThemesForForm(
-                is_array($saved['content_channel_sub_themes'] ?? null) ? $saved['content_channel_sub_themes'] : [],
-            );
-
-            $this->dispatch(
-                'voodbuilder-theme-map-settings-saved',
-                subTheme: $this->data['sub_theme'],
-                channelThemes: $this->data['content_channel_sub_themes'],
-            );
 
             Notification::make()
                 ->title(__('Settings saved'))
@@ -276,14 +220,6 @@ class VoodbuilderSettingsPage extends Page
                                                         && LocaleSwitcher::enabled()),
                                             ]),
                                     ]),
-                            ]),
-                        Tab::make('themes')
-                            ->label(__('voodbuilder::settings.tabs.themes'))
-                            ->icon('heroicon-o-paint-brush')
-                            ->visible(fn (): bool => ThemesModule::isEnabled())
-                            ->schema([
-                                View::make('voodbuilder::filament.themes-workspace-shell'),
-                                $this->areaThemesSection(),
                             ]),
                         Tab::make(__('voodbuilder::settings.tabs.seo'))
                             ->icon('heroicon-o-magnifying-glass')
@@ -418,24 +354,6 @@ class VoodbuilderSettingsPage extends Page
 
                 return $uploaded;
             });
-    }
-
-    protected function areaThemesSection(): Section
-    {
-        return Section::make(__('voodbuilder::settings.area_themes_section'))
-            ->contained(false)
-            ->compact()
-            ->schema([
-                View::make('voodbuilder::filament.theme-map-shell')
-                    ->viewData(fn (): array => [
-                        'subTheme' => (string) ($this->data['sub_theme'] ?? 'site'),
-                        'channelThemes' => is_array($this->data['content_channel_sub_themes'] ?? null)
-                            ? $this->data['content_channel_sub_themes']
-                            : [],
-                    ]),
-                Hidden::make('sub_theme'),
-                Hidden::make('content_channel_sub_themes'),
-            ]);
     }
 
     public function content(Schema $schema): Schema

@@ -70,9 +70,29 @@ function stacksEqual(a, b) {
 function getFontFamilyProperty(editor) {
     const sm = editor?.StyleManager;
 
-    return sm?.getProperty?.('typography', 'font-family')
-        ?? sm?.getSector?.('typography')?.getProperty?.('font-family')
+    if (! sm || ! styleManagerHasSector(sm, 'typography')) {
+        return null;
+    }
+
+    return sm.getProperty?.('typography', 'font-family')
+        ?? sm.getSector?.('typography')?.getProperty?.('font-family')
         ?? null;
+}
+
+/**
+ * @param {object} sm
+ * @param {string} sectorId
+ * @returns {boolean}
+ */
+function styleManagerHasSector(sm, sectorId) {
+    try {
+        const sectors = sm.getSectors?.();
+        const list = sectors?.models ?? sectors ?? [];
+
+        return [...list].some((sector) => String(sector?.get?.('id') ?? sector?.id ?? '') === sectorId);
+    } catch {
+        return false;
+    }
 }
 
 /**

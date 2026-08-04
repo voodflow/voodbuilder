@@ -536,9 +536,15 @@ final class EditorPastedComponentNormalizer
 
     /**
      * ThemePalette header/chrome rules are injected live — never keep them in stored CSS.
+     * Managed-form chrome (.vforms-*) lives in the public theme / FormChromeCss, not page CSS.
      */
     private static function isThemeManagedChromeSelector(string $selector): bool
     {
+        if (preg_match('/(?:^|[\s>+~])\.vforms-[\w-]/', $selector) === 1
+            || str_contains($selector, '.vforms-form')) {
+            return true;
+        }
+
         if (! str_contains($selector, 'header[role=')) {
             return false;
         }
@@ -712,7 +718,16 @@ final class EditorPastedComponentNormalizer
 
     public static function storedCssIsCorrupted(string $storedCss): bool
     {
-        return (bool) preg_match('/\bvar\(\s*(?:\}|;)/', $storedCss);
+        if (preg_match('/\bvar\(\s*(?:\}|;)/', $storedCss) === 1) {
+            return true;
+        }
+
+        // LightningCSS can expand `background:var(...)!important` into empty
+        // longhands (`background-color: !important`) that wipe public theme styles.
+        return preg_match(
+            '/\b(?:background(?:-color|-image)?|border(?:-color|-top-color|-right-color|-bottom-color|-left-color)?)\s*:\s*!important\b/i',
+            $storedCss,
+        ) === 1;
     }
 
     public static function storedCssRequiresRecompile(string $html, string $storedCss): bool

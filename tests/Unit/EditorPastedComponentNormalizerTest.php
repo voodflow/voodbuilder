@@ -270,6 +270,27 @@ class EditorPastedComponentNormalizerTest extends TestCase
         ));
     }
 
+    public function test_stored_css_is_corrupted_detects_empty_important_longhands(): void
+    {
+        $corrupted = '.vforms-form-control { background-color: !important; border-top-color: !important; }';
+
+        $this->assertTrue(EditorPastedComponentNormalizer::storedCssIsCorrupted($corrupted));
+    }
+
+    public function test_manual_page_css_strips_vforms_chrome_rules(): void
+    {
+        $stored = <<<'CSS'
+#hero { min-height: 70vh; }
+.vforms-form-control { background-color: var(--vforms-bg) !important; }
+.vforms-form-btn--primary { background-color: !important; }
+CSS;
+
+        $manual = EditorPastedComponentNormalizer::manualPageCssFromStoredCss($stored);
+
+        $this->assertStringContainsString('#hero', $manual);
+        $this->assertStringNotContainsString('vforms-form', $manual);
+    }
+
     public function test_resolve_published_page_css_recompiles_when_stored_css_is_corrupted(): void
     {
         $html = '<section class="bg-blue-200 p-4"><p class="text-white">Hi</p></section>';

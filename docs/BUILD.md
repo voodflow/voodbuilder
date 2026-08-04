@@ -69,7 +69,9 @@ Development:
 npm run dev
 ```
 
-### Theme map (Filament Settings → Themes)
+### Theme map (Filament Theme Studio)
+
+Build the React theme-map bundle, then open **VoodBuilder → Theme Studio** in admin.
 
 The theme assignment UI is a **standalone React Flow bundle** inside voodbuilder. It does **not** use voodflow or the host app Vite entries.
 

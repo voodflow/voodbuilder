@@ -7,7 +7,20 @@
 
 .vforms-form {
     color-scheme: light dark;
+    /* Inherit builder section typography (font-size / family) — do not lock rem. */
     color: var(--color-vp-text-1, #3c3c43);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.vforms-form .vforms-form-label,
+.vforms-form .vforms-check-label,
+.vforms-form .vforms-form-heading,
+.vforms-form .vforms-form-btn,
+.vforms-form .vforms-form-control {
+    font-family: inherit;
+    font-size: inherit;
 }
 
 .vforms-form .vforms-form-label,
@@ -22,19 +35,48 @@
 .vforms-form .vforms-form-panel__desc,
 .vforms-form .vforms-form-verify-status,
 .vforms-form .vforms-check-description,
-.vforms-form .vforms-form-step {
+.vforms-form .vforms-form-step,
+.vforms-form .vforms-form-message,
+.vforms-form .vforms-form-field-error {
     color: var(--color-vp-text-2, #67676c) !important;
+    /* em so help/meta scale with section typography */
+    font-size: 0.875em;
 }
 
+.vforms-form .vforms-form-heading {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.vforms-form .vforms-form-step {
+    font-size: 0.9em;
+}
+
+.vforms-form .vforms-form-tab {
+    font-size: 0.95em;
+}
+
+/*
+ * border-color alone is invisible without width/style. Editor skips FormChromeCss
+ * (Grapes expands var()!important), so theme must paint a full border + fill.
+ */
 .vforms-form .vforms-form-control {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 2.75em;
+    padding: 0.55em 0.75em;
+    border: 1px solid var(--color-vp-divider, #e2e2e3) !important;
+    border-radius: 0.5rem;
     background-color: var(--color-vp-bg-elv, var(--color-vp-bg, #fff)) !important;
-    border-color: var(--color-vp-divider, #e2e2e3) !important;
     color: var(--color-vp-text-1, #3c3c43) !important;
+    font: inherit;
 }
 
 .vforms-form .vforms-form-control:focus {
     border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
-    outline-color: color-mix(in srgb, var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) 45%, transparent) !important;
+    outline: 2px solid color-mix(in srgb, var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) 45%, transparent);
+    outline-offset: 1px;
 }
 
 .vforms-form .vforms-form-control[readonly],
@@ -44,7 +86,7 @@
         var(--color-vp-brand-1, #3451b2) 10%,
         var(--color-vp-bg-elv, var(--color-vp-bg, #fff))
     ) !important;
-    border-color: color-mix(
+    border: 1px solid color-mix(
         in srgb,
         var(--color-vp-brand-1, #3451b2) 26%,
         var(--color-vp-divider, #e2e2e3)
@@ -59,7 +101,7 @@
         var(--color-vp-brand-1, #3451b2) 14%,
         var(--color-vp-bg-elv, var(--color-vp-bg, #fff))
     ) !important;
-    border-color: color-mix(
+    border: 1px solid color-mix(
         in srgb,
         var(--color-vp-brand-1, #3451b2) 34%,
         var(--color-vp-divider, #e2e2e3)

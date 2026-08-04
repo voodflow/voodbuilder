@@ -188,7 +188,7 @@ export function registerFontSelectType(editor, options = {}) {
 
 /**
  * Point the typography font-family property at the searchable type.
- * Removes and re-adds the property so GrapesJS binds the custom typeView.
+ * No-op when Style Manager has no typography sector (Tailwind panel owns fonts).
  *
  * @param {object} editor
  */
@@ -196,6 +196,23 @@ export function applyFontSelectProperty(editor) {
     const sm = editor?.StyleManager;
 
     if (! sm?.addProperty) {
+        return;
+    }
+
+    // STYLE_MANAGER_SECTORS is intentionally empty — Grapes logs
+    // "'typography' sector not found" on every getSector/addProperty miss.
+    // Enumerate sectors instead of looking up by id.
+    let hasSector = false;
+
+    try {
+        const sectors = sm.getSectors?.();
+        const list = sectors?.models ?? sectors ?? [];
+        hasSector = [...list].some((sector) => String(sector?.get?.('id') ?? sector?.id ?? '') === SECTOR_ID);
+    } catch {
+        hasSector = false;
+    }
+
+    if (! hasSector) {
         return;
     }
 

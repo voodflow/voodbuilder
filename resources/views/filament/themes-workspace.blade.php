@@ -1,4 +1,4 @@
-<div class="voodbuilder-themes-ws">
+<div class="voodbuilder-themes-ws" data-studio-role="{{ $studioRole }}">
     <style>
         .voodbuilder-themes-ws {
             --vp-ws-radius: 0.75rem;
@@ -69,10 +69,29 @@
             border-radius: var(--vp-ws-radius);
             overflow: hidden;
             cursor: pointer;
-            transition: box-shadow 0.15s ease, transform 0.15s ease;
+            transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
             box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
             display: flex;
             flex-direction: column;
+            border: 1px solid rgb(226 232 240);
+            /* Keep theme surface as a soft tint — never opaque wash in dark mode */
+            background:
+                linear-gradient(
+                    180deg,
+                    color-mix(in srgb, var(--vp-card-surface, #f8fafc) 55%, #fff) 0%,
+                    #fff 72%
+                );
+        }
+
+        .dark .voodbuilder-themes-ws__card {
+            border-color: rgb(71 85 105);
+            box-shadow: 0 4px 14px rgb(0 0 0 / 0.22);
+            background:
+                linear-gradient(
+                    180deg,
+                    color-mix(in srgb, var(--vp-card-accent, #ea580c) 18%, rgb(30 41 59)) 0%,
+                    rgb(30 41 59) 70%
+                );
         }
 
         .voodbuilder-themes-ws__header {
@@ -105,7 +124,6 @@
         }
 
         .voodbuilder-themes-ws__import-loading {
-            display: none;
             margin-top: 0.25rem;
             min-height: 1.125rem;
             font-size: 0.6875rem;
@@ -114,12 +132,8 @@
             color: rgb(100 116 139);
         }
 
-        .voodbuilder-themes-ws__import-loading[wire\:loading][wire\:target="importArchive"] {
-            display: block;
-        }
-
-        .voodbuilder-themes-ws__card--import .voodbuilder-themes-ws__card-badge[wire\:loading][wire\:target="importArchive"] {
-            display: none;
+        .dark .voodbuilder-themes-ws__import-loading {
+            color: rgb(148 163 184);
         }
 
         .voodbuilder-themes-ws__card--import {
@@ -206,14 +220,14 @@
         }
 
         .voodbuilder-themes-ws__btn--primary {
-            background-color: var(--vp-ws-accent);
+            background-color: var(--vp-ws-accent, #ea580c);
             color: #ffffff !important;
-            border-color: var(--vp-ws-accent);
+            border-color: var(--vp-ws-accent, #ea580c);
         }
 
         .voodbuilder-themes-ws__btn--primary:hover {
-            background-color: var(--vp-ws-accent-hover);
-            border-color: var(--vp-ws-accent-hover);
+            background-color: var(--vp-ws-accent-hover, #c2410c);
+            border-color: var(--vp-ws-accent-hover, #c2410c);
         }
 
         .voodbuilder-themes-ws__btn--ghost {
@@ -261,13 +275,26 @@
             letter-spacing: 0.04em;
         }
 
+        .dark .voodbuilder-themes-ws__section-title {
+            color: rgb(148 163 184);
+        }
+
         .voodbuilder-themes-ws__card--selected {
             box-shadow: 0 0 0 2px var(--vp-card-accent, var(--vp-ws-accent));
+            border-color: color-mix(in srgb, var(--vp-card-accent, var(--vp-ws-accent)) 50%, rgb(226 232 240));
+        }
+
+        .dark .voodbuilder-themes-ws__card--selected {
+            border-color: color-mix(in srgb, var(--vp-card-accent, var(--vp-ws-accent)) 55%, rgb(71 85 105));
         }
 
         .voodbuilder-themes-ws__card:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
+        }
+
+        .dark .voodbuilder-themes-ws__card:hover {
+            box-shadow: 0 8px 20px rgb(0 0 0 / 0.35);
         }
 
         .voodbuilder-themes-ws__card--bundled {
@@ -351,6 +378,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .dark .voodbuilder-themes-ws__card-badge {
+            color: rgb(148 163 184);
         }
 
         .voodbuilder-themes-ws__editor-actions {
@@ -533,10 +564,13 @@
         }
 
         .voodbuilder-themes-ws__modal-backdrop {
+            /* Teleported to body — keep accent tokens on the modal host itself. */
+            --vp-ws-accent: #ea580c;
+            --vp-ws-accent-hover: #c2410c;
             position: fixed;
             inset: 0;
-            background: rgb(15 23 42 / 0.45);
-            z-index: 50;
+            background: rgb(15 23 42 / 0.55);
+            z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -548,7 +582,7 @@
             border-radius: 0.75rem;
             padding: 1.125rem;
             width: 100%;
-            max-width: 20rem;
+            max-width: 22rem;
             border: 1px solid rgb(226 232 240);
             box-shadow: 0 16px 40px rgb(15 23 42 / 0.16);
         }
@@ -659,6 +693,7 @@
         }
     </style>
 
+    @if ($studioRole !== 'editor')
     <div class="voodbuilder-themes-ws__header">
         <p class="voodbuilder-themes-ws__header-hint">{{ __('voodbuilder::settings.themes_library_intro') }}</p>
     </div>
@@ -695,7 +730,9 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if ($studioRole !== 'catalog')
     @if ($selectedId)
         <div class="voodbuilder-themes-ws__editor" wire:key="editor-{{ $selectedId }}">
             <div class="voodbuilder-themes-ws__editor-header">
@@ -830,121 +867,135 @@
                 </div>
             @endif
         </div>
+    @else
+        <div class="voodbuilder-theme-studio__empty" wire:key="editor-empty">
+            <h3 class="voodbuilder-theme-studio__empty-title">{{ __('voodbuilder::settings.theme_studio_edit_empty_title') }}</h3>
+            <p class="voodbuilder-theme-studio__empty-body">{{ __('voodbuilder::settings.theme_studio_edit_empty_body') }}</p>
+        </div>
+    @endif
     @endif
 
     @if ($showColorModal)
-        <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="closeColorModal">
-            <div class="voodbuilder-themes-ws__modal" wire:click.stop>
-                <h3>{{ __('voodbuilder::settings.theme_workspace_pick_color_for', ['label' => $colorKeyLabel]) }}</h3>
-                <p class="voodbuilder-themes-ws__modal-subtitle">{{ ucfirst($colorMode) }} · {{ __('voodbuilder::settings.theme_workspace_auto_apply') }}</p>
-                <div class="voodbuilder-themes-ws__color-input-row">
-                    <input type="color" wire:model.live="colorValue" />
-                    <input type="text" wire:model.live.debounce.300ms="colorValue" maxlength="7" />
-                </div>
-                @if ($colorKey === 'header_bg')
-                    <div class="voodbuilder-themes-ws__opacity-block">
-                        <label class="voodbuilder-themes-ws__opacity-toggle">
-                            <input type="checkbox" wire:model.live="headerBgTransparent" />
-                            <span>{{ __('voodbuilder::settings.theme_header_bg_transparent') }}</span>
-                        </label>
-                        <p class="voodbuilder-themes-ws__field-hint">{{ __('voodbuilder::settings.theme_header_bg_transparent_help') }}</p>
-                        @if ($headerBgTransparent)
-                            <label class="voodbuilder-themes-ws__opacity-slider-label" for="voodbuilder-header-bg-opacity">
-                                {{ __('voodbuilder::settings.theme_header_bg_opacity') }}
-                                <strong>{{ $headerBgOpacity }}%</strong>
-                            </label>
-                            <input
-                                id="voodbuilder-header-bg-opacity"
-                                class="voodbuilder-themes-ws__opacity-slider"
-                                type="range"
-                                min="0"
-                                max="100"
-                                step="1"
-                                wire:model.live="headerBgOpacity"
-                            />
-                            <div
-                                class="voodbuilder-themes-ws__opacity-preview"
-                                style="background-image:
-                                    linear-gradient({{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}, {{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}),
-                                    repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%);
-                                    background-size: auto, 12px 12px;"
-                            ></div>
-                        @endif
+        <template x-teleport="body">
+            <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="closeColorModal" x-data>
+                <div class="voodbuilder-themes-ws__modal" wire:click.stop @click.stop>
+                    <h3>{{ __('voodbuilder::settings.theme_workspace_pick_color_for', ['label' => $colorKeyLabel]) }}</h3>
+                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ ucfirst($colorMode) }} · {{ __('voodbuilder::settings.theme_workspace_auto_apply') }}</p>
+                    <div class="voodbuilder-themes-ws__color-input-row">
+                        <input type="color" wire:model.live="colorValue" />
+                        <input type="text" wire:model.live.debounce.300ms="colorValue" maxlength="7" />
                     </div>
-                @endif
-                <div class="flex gap-2 mt-4 justify-between">
-                    <button type="button" class="voodbuilder-themes-ws__link" wire:click="clearColor('{{ $colorMode }}', '{{ $colorKey }}')">
-                        {{ __('voodbuilder::settings.theme_workspace_clear_color') }}
-                    </button>
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="closeColorModal">
-                        {{ __('voodbuilder::settings.theme_workspace_done') }}
-                    </button>
+                    @if ($colorKey === 'header_bg')
+                        <div class="voodbuilder-themes-ws__opacity-block">
+                            <label class="voodbuilder-themes-ws__opacity-toggle">
+                                <input type="checkbox" wire:model.live="headerBgTransparent" />
+                                <span>{{ __('voodbuilder::settings.theme_header_bg_transparent') }}</span>
+                            </label>
+                            <p class="voodbuilder-themes-ws__field-hint">{{ __('voodbuilder::settings.theme_header_bg_transparent_help') }}</p>
+                            @if ($headerBgTransparent)
+                                <label class="voodbuilder-themes-ws__opacity-slider-label" for="voodbuilder-header-bg-opacity">
+                                    {{ __('voodbuilder::settings.theme_header_bg_opacity') }}
+                                    <strong>{{ $headerBgOpacity }}%</strong>
+                                </label>
+                                <input
+                                    id="voodbuilder-header-bg-opacity"
+                                    class="voodbuilder-themes-ws__opacity-slider"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    wire:model.live="headerBgOpacity"
+                                />
+                                <div
+                                    class="voodbuilder-themes-ws__opacity-preview"
+                                    style="background-image:
+                                        linear-gradient({{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}, {{ \Voodflow\Voodbuilder\Support\ThemePalette::headerBackgroundCssValue($colorValue, (int) $headerBgOpacity) }}),
+                                        repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%);
+                                        background-size: auto, 12px 12px;"
+                                ></div>
+                            @endif
+                        </div>
+                    @endif
+                    <div class="flex gap-2 mt-4 justify-between">
+                        <button type="button" class="voodbuilder-themes-ws__link" wire:click="clearColor('{{ $colorMode }}', '{{ $colorKey }}')">
+                            {{ __('voodbuilder::settings.theme_workspace_clear_color') }}
+                        </button>
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="closeColorModal">
+                            {{ __('voodbuilder::settings.theme_workspace_done') }}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </template>
     @endif
 
     @if ($showCloneModal)
-        <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showCloneModal', false)">
-            <div class="voodbuilder-themes-ws__modal" wire:click.stop>
-                <h3>{{ __('voodbuilder::settings.clone_theme') }}</h3>
-                <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.clone_theme_help') }}</p>
-                <div class="voodbuilder-themes-ws__field mb-3">
-                    <label>{{ __('voodbuilder::settings.create_theme_id') }}</label>
-                    <input type="text" wire:model="cloneTargetId" pattern="[a-z][a-z0-9-]*" />
-                </div>
-                <div class="voodbuilder-themes-ws__field mb-4">
-                    <label>{{ __('voodbuilder::settings.create_theme_label') }}</label>
-                    <input type="text" wire:model="cloneLabel" />
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showCloneModal', false)">{{ __('Cancel') }}</button>
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="executeClone">{{ __('voodbuilder::settings.clone_theme') }}</button>
+        <template x-teleport="body">
+            <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showCloneModal', false)" x-data>
+                <div class="voodbuilder-themes-ws__modal" wire:click.stop @click.stop>
+                    <h3>{{ __('voodbuilder::settings.clone_theme') }}</h3>
+                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.clone_theme_help') }}</p>
+                    <div class="voodbuilder-themes-ws__field mb-3">
+                        <label>{{ __('voodbuilder::settings.create_theme_id') }}</label>
+                        <input type="text" wire:model="cloneTargetId" pattern="[a-z][a-z0-9-]*" />
+                    </div>
+                    <div class="voodbuilder-themes-ws__field mb-4">
+                        <label>{{ __('voodbuilder::settings.create_theme_label') }}</label>
+                        <input type="text" wire:model="cloneLabel" />
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showCloneModal', false)">{{ __('Cancel') }}</button>
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="executeClone">{{ __('voodbuilder::settings.clone_theme') }}</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </template>
     @endif
 
     @if ($showGenerateModal)
-        <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showGenerateModal', false)">
-            <div class="voodbuilder-themes-ws__modal" wire:click.stop style="max-width: 24rem;">
-                <h3>{{ __('voodbuilder::settings.generate_theme_palette') }}</h3>
-                <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.generate_theme_palette_help') }}</p>
-                @foreach (['seedPrimary' => 'palette_seed_primary', 'seedSecondary' => 'palette_seed_secondary', 'seedHeaderBg' => 'palette_seed_header_bg'] as $prop => $langKey)
-                    <div class="voodbuilder-themes-ws__field mb-3">
-                        <label>{{ __('voodbuilder::settings.'.$langKey) }}</label>
-                        <div class="voodbuilder-themes-ws__seed-row">
-                            <input type="color" wire:model.live="{{ $prop }}" />
-                            <input type="text" wire:model.live.debounce.300ms="{{ $prop }}" placeholder="#3451b2" />
+        <template x-teleport="body">
+            <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showGenerateModal', false)" x-data>
+                <div class="voodbuilder-themes-ws__modal" wire:click.stop @click.stop style="max-width: 24rem;">
+                    <h3>{{ __('voodbuilder::settings.generate_theme_palette') }}</h3>
+                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.generate_theme_palette_help') }}</p>
+                    @foreach (['seedPrimary' => 'palette_seed_primary', 'seedSecondary' => 'palette_seed_secondary', 'seedHeaderBg' => 'palette_seed_header_bg'] as $prop => $langKey)
+                        <div class="voodbuilder-themes-ws__field mb-3">
+                            <label>{{ __('voodbuilder::settings.'.$langKey) }}</label>
+                            <div class="voodbuilder-themes-ws__seed-row">
+                                <input type="color" wire:model.live="{{ $prop }}" />
+                                <input type="text" wire:model.live.debounce.300ms="{{ $prop }}" placeholder="#3451b2" />
+                            </div>
                         </div>
+                    @endforeach
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showGenerateModal', false)">{{ __('Cancel') }}</button>
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="generatePalette">{{ __('voodbuilder::settings.generate_theme_palette') }}</button>
                     </div>
-                @endforeach
-                <div class="flex gap-2 justify-end">
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showGenerateModal', false)">{{ __('Cancel') }}</button>
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="generatePalette">{{ __('voodbuilder::settings.generate_theme_palette') }}</button>
                 </div>
             </div>
-        </div>
+        </template>
     @endif
 
     @if ($showDeleteModal)
-        <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showDeleteModal', false)">
-            <div class="voodbuilder-themes-ws__modal" wire:click.stop>
-                <h3>{{ __('voodbuilder::settings.delete_theme') }}</h3>
-                <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.delete_theme_help') }}</p>
-                <div class="voodbuilder-themes-ws__field mb-4">
-                    <label>{{ __('voodbuilder::settings.delete_theme_fallback') }}</label>
-                    <select wire:model="deleteFallbackId">
-                        @foreach ($fallbackOptions as $id => $name)
-                            <option value="{{ $id }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showDeleteModal', false)">{{ __('Cancel') }}</button>
-                    <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" style="background:#dc2626;border-color:#dc2626" wire:click="deleteTheme">{{ __('voodbuilder::settings.delete_theme') }}</button>
+        <template x-teleport="body">
+            <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showDeleteModal', false)" x-data>
+                <div class="voodbuilder-themes-ws__modal" wire:click.stop @click.stop>
+                    <h3>{{ __('voodbuilder::settings.delete_theme') }}</h3>
+                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.delete_theme_help') }}</p>
+                    <div class="voodbuilder-themes-ws__field mb-4">
+                        <label>{{ __('voodbuilder::settings.delete_theme_fallback') }}</label>
+                        <select wire:model="deleteFallbackId">
+                            @foreach ($fallbackOptions as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showDeleteModal', false)">{{ __('Cancel') }}</button>
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" style="background:#dc2626;border-color:#dc2626" wire:click="deleteTheme">{{ __('voodbuilder::settings.delete_theme') }}</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </template>
     @endif
 </div>

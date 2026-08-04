@@ -63,6 +63,14 @@
     if (! $isEditor && filled($elementContentMaxWidth)) {
         $pageWidthStyleParts[] = '--voodbuilder-element-content-max: '.$elementContentMaxWidth;
     }
+    // Full content + full chrome: bar edge-to-edge, boxed inner nav/footer (landing.css).
+    if (
+        ! $isEditor
+        && ($pageContentWidth['mode'] ?? null) === ChromeLayoutContentWidth::MODE_FULL
+        && $chromeWidth === ChromeLayoutContentWidth::CHROME_FULL
+    ) {
+        $pageWidthStyleParts[] = '--voodbuilder-chrome-layout-max: '.($elementContentMaxWidth ?: ChromeLayoutContentWidth::STANDARD_MAX_WIDTH);
+    }
     $pageWidthStyle = implode('; ', $pageWidthStyleParts);
 @endphp
 <!doctype html>

@@ -1,6 +1,6 @@
 /**
  * {{ name }} — documentation / tutorial theme.
- * Uses the shared doc layout; customize colors in Settings → Themes.
+ * Uses the shared doc layout; customize colors in Theme Studio.
  */
 
 html[data-voodbuilder-sub-theme='{{ id }}'] {

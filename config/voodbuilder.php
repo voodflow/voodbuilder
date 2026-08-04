@@ -362,7 +362,7 @@ return [
             // Public files land under storage/app/public/voodbuilder (URL /storage/voodbuilder/…).
             'directory' => 'voodbuilder',
             // Soft ceiling; the image editor re-encodes to JPEG and retries at lower quality.
-            'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', 8192),
+            'max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_MAX_KB', 12288),
             // Self-hosted MP4/WebM for Video / hero backgrounds (KB).
             'video_max_size' => (int) env('VOODBUILDER_EDITOR_UPLOAD_VIDEO_MAX_KB', 51200),
         ],

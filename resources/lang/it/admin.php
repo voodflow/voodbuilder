@@ -9,6 +9,7 @@ return [
         'pages' => 'Pagine',
         'media_library' => 'Libreria media',
         'settings' => 'Impostazioni',
+        'theme_studio' => 'Theme Studio',
         'content_channels' => 'Temi canali',
         'footer_column_placement' => 'Footer colonna :number',
         'link_display' => 'Visualizzazione link',
@@ -130,6 +131,7 @@ return [
     ],
 
     'sections' => [
+        'content' => 'Contenuto',
         'appearance' => 'Aspetto (opzionale)',
         'access' => 'Accesso',
     ],

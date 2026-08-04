@@ -139,14 +139,21 @@
     box-sizing: border-box;
 }
 
+/*
+ * Every right-column mount already insets its content by 0.75rem (settings /
+ * component props / dynamic / conditions above, traits + layers in frontend.css).
+ * Form wrappers must not add a second inset: block settings nest
+ * mount > form > form-tabs > form-tabs__panels, so any padding here stacks four
+ * deep and pushes fields ~3rem in from the sidebar edge.
+ */
 .voodbuilder-editor-shell__right .voodbuilder-editor-form,
 .voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs__panels {
-    padding: 0.75rem;
+    padding: 0;
     box-sizing: border-box;
 }
 
 .voodbuilder-editor-shell__right .voodbuilder-editor-form-tabs {
-    padding: 0.75rem 0.75rem 0;
+    padding: 0;
     box-sizing: border-box;
 }
 

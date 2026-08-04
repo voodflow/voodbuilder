@@ -9,6 +9,7 @@ return [
         'pages' => 'Pages',
         'media_library' => 'Media library',
         'settings' => 'Settings',
+        'theme_studio' => 'Theme Studio',
         'content_channels' => 'Channel themes',
         'footer_column_placement' => 'Footer column :number',
         'link_display' => 'Link display',
@@ -130,6 +131,7 @@ return [
     ],
 
     'sections' => [
+        'content' => 'Content',
         'appearance' => 'Appearance (optional)',
         'access' => 'Access',
     ],

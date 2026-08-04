@@ -99,28 +99,32 @@ class ThemesWorkspace extends Component
         'plugin' => [],
     ];
 
-    public function mount(): void
+    /**
+     * Theme Studio layout role:
+     * - full: legacy single column (catalog + editor)
+     * - catalog: sidebar list only
+     * - editor: customize panel only
+     */
+    public string $studioRole = 'full';
+
+    public function mount(string $studioRole = 'full', ?string $initialThemeId = null): void
     {
+        $this->studioRole = match ($studioRole) {
+            'catalog', 'editor', 'full' => $studioRole,
+            default => 'full',
+        };
         $this->syncThemeGroups();
-    }
 
-    #[On('voodbuilder-themes-changed')]
-    public function refreshThemeCatalog(): void
-    {
-        $this->syncThemeGroups();
-    }
-
-    public function closeEditor(): void
-    {
-        $this->selectedId = null;
-    }
-
-    public function selectTheme(string $id): void
-    {
-        if (! app(SubThemeRegistry::class)->exists($id)) {
-            return;
+        if ($this->studioRole === 'editor' && filled($initialThemeId) && app(SubThemeRegistry::class)->exists($initialThemeId)) {
+            $this->hydrateEditorFor($initialThemeId);
         }
+    }
 
+    /**
+     * Load editor fields without switching studio mode (used on mount / cross-component sync).
+     */
+    protected function hydrateEditorFor(string $id): void
+    {
         $this->selectedId = $id;
         $card = ThemePresenter::card($id);
         $this->label = $card['label'];
@@ -135,10 +139,86 @@ class ThemesWorkspace extends Component
         $this->seedHeaderBg = $this->light['header_bg'] ?? '';
     }
 
+    #[On('voodbuilder-themes-changed')]
+    public function refreshThemeCatalog(): void
+    {
+        $this->syncThemeGroups();
+    }
+
+    public function closeEditor(): void
+    {
+        $this->selectedId = null;
+        $this->dispatch('theme-studio-close-editor');
+        $this->dispatch('voodbuilder-theme-studio-highlight', id: null);
+    }
+
+    public function selectTheme(string $id): void
+    {
+        if (! app(SubThemeRegistry::class)->exists($id)) {
+            return;
+        }
+
+        if ($this->studioRole === 'catalog') {
+            $this->selectedId = $id;
+            $this->dispatch('voodbuilder-theme-studio-edit', id: $id);
+
+            return;
+        }
+
+        $this->hydrateEditorFor($id);
+
+        if ($this->studioRole === 'full') {
+            $this->dispatch('theme-studio-open-editor', id: $id);
+        }
+    }
+
     #[On('voodbuilder-select-theme')]
     public function onSelectTheme(string $id): void
     {
+        if ($this->studioRole === 'catalog') {
+            $this->selectedId = app(SubThemeRegistry::class)->exists($id) ? $id : null;
+            $this->dispatch('voodbuilder-theme-studio-edit', id: $id);
+
+            return;
+        }
+
         $this->selectTheme($id);
+    }
+
+    #[On('voodbuilder-theme-studio-edit')]
+    public function onStudioEdit(string $id): void
+    {
+        if ($this->studioRole === 'catalog') {
+            $this->selectedId = app(SubThemeRegistry::class)->exists($id) ? $id : null;
+
+            return;
+        }
+
+        if ($this->studioRole === 'editor' || $this->studioRole === 'full') {
+            if (! app(SubThemeRegistry::class)->exists($id)) {
+                return;
+            }
+
+            $this->hydrateEditorFor($id);
+        }
+    }
+
+    #[On('voodbuilder-theme-studio-highlight')]
+    public function onStudioHighlight(?string $id): void
+    {
+        if ($this->studioRole !== 'catalog') {
+            return;
+        }
+
+        $this->selectedId = filled($id) && app(SubThemeRegistry::class)->exists($id) ? $id : null;
+    }
+
+    #[On('theme-studio-close-editor')]
+    public function onStudioCloseEditor(): void
+    {
+        if ($this->studioRole === 'editor') {
+            $this->selectedId = null;
+        }
     }
 
     public function openColor(string $mode, string $key): void
@@ -488,7 +568,6 @@ class ThemesWorkspace extends Component
         }
 
         $this->showCloneModal = false;
-        $this->selectTheme($result->id);
         $this->syncThemeGroups();
 
         ThemeAssetCompiler::scheduleCompile();
@@ -501,6 +580,14 @@ class ThemesWorkspace extends Component
         );
 
         $this->dispatch('voodbuilder-themes-changed');
+        $this->dispatch('voodbuilder-theme-studio-edit', id: $result->id);
+        $this->dispatch('theme-studio-open-editor', id: $result->id);
+
+        if ($this->studioRole !== 'catalog') {
+            $this->hydrateEditorFor($result->id);
+        } else {
+            $this->selectedId = $result->id;
+        }
     }
 
     public function confirmDelete(): void
@@ -544,6 +631,9 @@ class ThemesWorkspace extends Component
         $this->notify(
             Notification::make()->title(__('voodbuilder::settings.delete_theme_success'))->success(),
         );
+
+        $this->dispatch('theme-studio-close-editor');
+        $this->dispatch('voodbuilder-theme-studio-highlight', id: null);
 
         $saved = VoodbuilderSettings::data();
         $this->dispatch(

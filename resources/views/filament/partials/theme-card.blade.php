@@ -5,7 +5,7 @@
 @endphp
 <div
     class="voodbuilder-themes-ws__card @if ($selected) voodbuilder-themes-ws__card--selected @endif @if ($isCustom) voodbuilder-themes-ws__card--custom @else voodbuilder-themes-ws__card--bundled @endif"
-    style="--vp-card-accent: {{ $card['preview'] }}; background: {{ $card['surface'] }}"
+    style="--vp-card-accent: {{ $card['preview'] }}; --vp-card-surface: {{ $card['surface'] }}"
     @if ($isCustom)
         wire:click="selectTheme('{{ $card['id'] }}')"
         wire:keydown.enter="selectTheme('{{ $card['id'] }}')"

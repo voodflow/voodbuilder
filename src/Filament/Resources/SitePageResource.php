@@ -22,6 +22,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -46,7 +48,6 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePag
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePageForm;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -92,74 +93,120 @@ class SitePageResource extends Resource
             ->components([
                 Group::make()
                     ->schema([
-                        Section::make()
-                            ->schema([
-                                TextInput::make('title')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (?string $state, Set $set, Get $get, ?SitePage $record): void {
-                                        if ($record !== null || filled($get('slug'))) {
-                                            return;
-                                        }
+                        Tabs::make('page_tabs')
+                            ->tabs([
+                                Tab::make(__('voodbuilder::admin.sections.content'))
+                                    ->schema([
+                                        TextInput::make('title')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function (?string $state, Set $set, Get $get, ?SitePage $record): void {
+                                                if ($record !== null || filled($get('slug'))) {
+                                                    return;
+                                                }
 
-                                        $set('slug', Str::slug((string) $state));
-                                    }),
+                                                $set('slug', Str::slug((string) $state));
+                                            }),
 
-                                TextInput::make('slug')
-                                    ->maxLength(255)
-                                    ->unique(
-                                        ignoreRecord: true,
-                                        modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
-                                            'locale',
-                                            $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
-                                        ),
-                                    )
-                                    ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
+                                        TextInput::make('slug')
+                                            ->maxLength(255)
+                                            ->unique(
+                                                ignoreRecord: true,
+                                                modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
+                                                    'locale',
+                                                    $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
+                                                ),
+                                            )
+                                            ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
 
-                                Textarea::make('excerpt')
-                                    ->label(__('voodbuilder::admin.fields.excerpt'))
-                                    ->rows(3)
-                                    ->maxLength(500)
-                                    ->helperText(__('voodbuilder::admin.helpers.excerpt'))
-                                    ->columnSpanFull(),
+                                        Textarea::make('excerpt')
+                                            ->label(__('voodbuilder::admin.fields.excerpt'))
+                                            ->rows(3)
+                                            ->maxLength(500)
+                                            ->helperText(__('voodbuilder::admin.helpers.excerpt'))
+                                            ->columnSpanFull(),
 
-                                Hidden::make('builder')
-                                    ->default(PageBuilder::Visual->value)
-                                    ->dehydrated(),
+                                        Hidden::make('builder')
+                                            ->default(PageBuilder::Visual->value)
+                                            ->dehydrated(),
 
-                                // Legacy rich-editor pages remain editable until converted to Visual.
-                                RichEditor::make('content')
-                                    ->label(__('Page content'))
-                                    ->customBlocks(app(RichContentBlockRegistry::class)->editorGroups())
-                                    ->toolbarButtons([
-                                        ['bold', 'italic', 'strike', 'link'],
-                                        ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
-                                        ['customBlocks'],
+                                        // Legacy rich-editor pages remain editable until converted to Visual.
+                                        RichEditor::make('content')
+                                            ->label(__('Page content'))
+                                            ->customBlocks(app(RichContentBlockRegistry::class)->editorGroups())
+                                            ->toolbarButtons([
+                                                ['bold', 'italic', 'strike', 'link'],
+                                                ['h2', 'h3', 'blockquote', 'bulletList', 'orderedList'],
+                                                ['customBlocks'],
+                                            ])
+                                            ->visible(fn (?SitePage $record): bool => $record !== null && ! $record->usesEditorBuilder())
+                                            ->columnSpanFull(),
+
+                                        Placeholder::make('editor_frontend_hint')
+                                            ->label(__('voodbuilder::pro.fields.editor_edit'))
+                                            ->content(function (?SitePage $record): HtmlString {
+                                                if ($record === null) {
+                                                    return new HtmlString(e(__('voodbuilder::pro.helpers.editor_save_first')));
+                                                }
+
+                                                $url = $record->getUrl();
+
+                                                return new HtmlString(
+                                                    __('voodbuilder::pro.helpers.editor_frontend', ['url' => $url])
+                                                    .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
+                                                    .e(__('voodbuilder::pro.actions.open_visual_editor'))
+                                                    .'</a>'
+                                                );
+                                            })
+                                            ->visible(fn (?SitePage $record): bool => SitePageForm::showEditorHint($record))
+                                            ->columnSpanFull(),
                                     ])
-                                    ->visible(fn (?SitePage $record): bool => $record !== null && ! $record->usesEditorBuilder())
-                                    ->columnSpanFull(),
+                                    ->columns(2),
 
-                                Placeholder::make('editor_frontend_hint')
-                                    ->label(__('voodbuilder::pro.fields.editor_edit'))
-                                    ->content(function (?SitePage $record): HtmlString {
-                                        if ($record === null) {
-                                            return new HtmlString(e(__('voodbuilder::pro.helpers.editor_save_first')));
-                                        }
+                                Tab::make(__('voodbuilder::admin.sections.access'))
+                                    ->schema([
+                                        Select::make('visibility')
+                                            ->label(__('voodbuilder::admin.fields.visibility'))
+                                            ->options(PageVisibility::class)
+                                            ->default(PageVisibility::Public->value)
+                                            ->native(false)
+                                            ->helperText(__('voodbuilder::admin.helpers.visibility'))
+                                            ->columnSpanFull(),
 
-                                        $url = $record->getUrl();
+                                        Toggle::make('password_protected')
+                                            ->label(__('voodbuilder::admin.fields.password_protected'))
+                                            ->helperText(__('voodbuilder::admin.helpers.password_protected'))
+                                            ->live()
+                                            ->columnSpanFull(),
 
-                                        return new HtmlString(
-                                            __('voodbuilder::pro.helpers.editor_frontend', ['url' => $url])
-                                            .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
-                                            .e(__('voodbuilder::pro.actions.open_visual_editor'))
-                                            .'</a>'
-                                        );
-                                    })
-                                    ->visible(fn (?SitePage $record): bool => SitePageForm::showEditorHint($record))
-                                    ->columnSpanFull(),
-                            ])
-                            ->columns(2),
+                                        Repeater::make('credentials')
+                                            ->relationship()
+                                            ->label(__('voodbuilder::admin.fields.password_credentials'))
+                                            ->helperText(__('voodbuilder::admin.helpers.password_credentials'))
+                                            ->schema([
+                                                TextInput::make('email')
+                                                    ->label(__('voodbuilder::admin.fields.credential_email'))
+                                                    ->email()
+                                                    ->maxLength(255),
+                                                TextInput::make('password')
+                                                    ->label(__('voodbuilder::admin.fields.credential_password'))
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->required(fn ($record): bool => $record === null)
+                                                    ->dehydrated(fn (?string $state): bool => filled($state))
+                                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
+                                                    ->formatStateUsing(fn (): ?string => null)
+                                                    ->helperText(__('voodbuilder::admin.helpers.credential_password')),
+                                            ])
+                                            ->columns(1)
+                                            ->defaultItems(0)
+                                            ->addActionLabel(__('voodbuilder::admin.actions.add_credential'))
+                                            ->collapsible()
+                                            ->visible(fn (Get $get): bool => (bool) $get('password_protected'))
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
                     ])
                     ->columnSpan(['lg' => 2]),
 
@@ -230,156 +277,108 @@ class SitePageResource extends Resource
                                     })
                                     ->visibleOn('edit')
                                     ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
+                            ]),
 
-                                Section::make(__('voodbuilder::admin.sections.access'))
-                                    ->collapsed(false)
-                                    ->schema([
-                                        Select::make('visibility')
-                                            ->label(__('voodbuilder::admin.fields.visibility'))
-                                            ->options(PageVisibility::class)
-                                            ->default(PageVisibility::Public->value)
-                                            ->native(false)
-                                            ->helperText(__('voodbuilder::admin.helpers.visibility'))
-                                            ->columnSpanFull(),
+                        // Chrome layout is inherited from the channel/theme (Admin → Layouts).
+                        Hidden::make('chrome_layout_id')
+                            ->dehydrated()
+                            ->dehydrateStateUsing(fn (): ?string => null),
 
-                                        Toggle::make('password_protected')
-                                            ->label(__('voodbuilder::admin.fields.password_protected'))
-                                            ->helperText(__('voodbuilder::admin.helpers.password_protected'))
-                                            ->live()
-                                            ->columnSpanFull(),
+                        Section::make(__('voodbuilder::admin.sections.appearance'))
+                            ->collapsed(false)
+                            ->visible(fn (): bool => ! SitePageForm::chromeLayoutManagesShell()
+                                || SitePageForm::allowsSubThemeOverride())
+                            ->schema([
+                                Select::make('layout')
+                                    ->label(__('voodbuilder::admin.fields.canvas_width'))
+                                    ->options([
+                                        self::LAYOUT_AUTO => __('voodbuilder::admin.fields.layout_auto'),
+                                        'page' => __('voodbuilder::admin.fields.layout_standard'),
+                                        'full_width' => __('voodbuilder::admin.fields.layout_full_width'),
+                                    ])
+                                    ->default(self::LAYOUT_AUTO)
+                                    ->native(false)
+                                    ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
+                                        ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
+                                            && ($record?->is_home || (bool) $get('is_home')) => __('voodbuilder::admin.helpers.layout_auto_home'),
+                                        $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('voodbuilder::admin.helpers.layout_auto_page'),
+                                        static::formUsesFullWidthLayout($get, $record) => __('voodbuilder::landing.layouts.full_width_help'),
+                                        default => null,
+                                    })
+                                    // Content width lives on the chrome layout when layouts manage the shell.
+                                    ->visible(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
+                                    ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
+                                        if ($record === null) {
+                                            return;
+                                        }
 
-                                        Repeater::make('credentials')
-                                            ->relationship()
-                                            ->label(__('voodbuilder::admin.fields.password_credentials'))
-                                            ->helperText(__('voodbuilder::admin.helpers.password_credentials'))
-                                            ->schema([
-                                                TextInput::make('email')
-                                                    ->label(__('voodbuilder::admin.fields.credential_email'))
-                                                    ->email()
-                                                    ->maxLength(255),
-                                                TextInput::make('password')
-                                                    ->label(__('voodbuilder::admin.fields.credential_password'))
-                                                    ->password()
-                                                    ->revealable()
-                                                    ->required(fn ($record): bool => $record === null)
-                                                    ->dehydrated(fn (?string $state): bool => filled($state))
-                                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
-                                                    ->formatStateUsing(fn (): ?string => null)
-                                                    ->helperText(__('voodbuilder::admin.helpers.credential_password')),
-                                            ])
-                                            ->columns(1)
-                                            ->defaultItems(0)
-                                            ->addActionLabel(__('voodbuilder::admin.actions.add_credential'))
-                                            ->collapsible()
-                                            ->visible(fn (Get $get): bool => (bool) $get('password_protected'))
-                                            ->columnSpanFull(),
-                                    ]),
+                                        if (in_array($record->layout, ['home', 'landing', 'full_width'], true)) {
+                                            $component->state('full_width');
 
-                                Section::make(__('voodbuilder::admin.sections.appearance'))
-                                    ->collapsed(false)
-                                    ->schema([
-                                        Select::make('chrome_layout_id')
-                                            ->label(__('voodbuilder::chrome_layouts.page_form.layout'))
-                                            ->options(fn (): array => SitePageForm::chromeLayoutSelectOptions())
-                                            ->default(fn (): ?string => SitePageForm::chromeLayoutForPages()?->id)
-                                            ->nullable()
-                                            ->native(false)
-                                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
-                                            ->helperText(__('voodbuilder::chrome_layouts.page_form.layout_help'))
-                                            ->visible(fn (): bool => LayoutsModule::isEnabled() && SitePageForm::chromeLayoutsEnabled())
-                                            ->columnSpanFull(),
+                                            return;
+                                        }
 
-                                        Select::make('layout')
-                                            ->label(__('voodbuilder::admin.fields.canvas_width'))
-                                            ->options([
-                                                self::LAYOUT_AUTO => __('voodbuilder::admin.fields.layout_auto'),
-                                                'page' => __('voodbuilder::admin.fields.layout_standard'),
-                                                'full_width' => __('voodbuilder::admin.fields.layout_full_width'),
-                                            ])
-                                            ->default(self::LAYOUT_AUTO)
-                                            ->native(false)
-                                            ->helperText(fn (Get $get, ?SitePage $record): ?string => match (true) {
-                                                ($get('layout') === self::LAYOUT_AUTO || blank($get('layout')))
-                                                    && ($record?->is_home || (bool) $get('is_home')) => __('voodbuilder::admin.helpers.layout_auto_home'),
-                                                $get('layout') === self::LAYOUT_AUTO || blank($get('layout')) => __('voodbuilder::admin.helpers.layout_auto_page'),
-                                                static::formUsesFullWidthLayout($get, $record) => __('voodbuilder::landing.layouts.full_width_help'),
-                                                default => null,
-                                            })
-                                            // Content width lives on the chrome layout when layouts manage the shell.
-                                            ->visible(fn (): bool => ! SitePageForm::chromeLayoutManagesShell())
-                                            ->afterStateHydrated(function (Select $component, ?SitePage $record): void {
-                                                if ($record === null) {
-                                                    return;
-                                                }
+                                        if ($record->usesAutomaticLayout()) {
+                                            $component->state(self::LAYOUT_AUTO);
 
-                                                if (in_array($record->layout, ['home', 'landing', 'full_width'], true)) {
-                                                    $component->state('full_width');
+                                            return;
+                                        }
+                                    })
+                                    ->dehydrateStateUsing(function (?string $state, Get $get, ?SitePage $record): string {
+                                        if ($state === self::LAYOUT_AUTO || ! filled($state)) {
+                                            return self::LAYOUT_AUTO;
+                                        }
 
-                                                    return;
-                                                }
+                                        $isHome = $record?->is_home || (bool) $get('is_home');
 
-                                                if ($record->usesAutomaticLayout()) {
-                                                    $component->state(self::LAYOUT_AUTO);
+                                        if ($state !== 'full_width') {
+                                            return $state;
+                                        }
 
-                                                    return;
-                                                }
-                                            })
-                                            ->dehydrateStateUsing(function (?string $state, Get $get, ?SitePage $record): string {
-                                                if ($state === self::LAYOUT_AUTO || ! filled($state)) {
-                                                    return self::LAYOUT_AUTO;
-                                                }
+                                        return $isHome ? 'home' : 'full_width';
+                                    })
+                                    ->live(),
 
-                                                $isHome = $record?->is_home || (bool) $get('is_home');
+                                Toggle::make('hide_site_footer')
+                                    ->label(__('voodbuilder::landing.layouts.hide_site_footer'))
+                                    ->helperText(__('voodbuilder::landing.layouts.hide_site_footer_help'))
+                                    ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
+                                        && static::formUsesFullWidthLayout($get, $record)),
 
-                                                if ($state !== 'full_width') {
-                                                    return $state;
-                                                }
+                                Toggle::make('hide_site_nav')
+                                    ->label(__('voodbuilder::landing.layouts.hide_site_nav'))
+                                    ->helperText(__('voodbuilder::landing.layouts.hide_site_nav_help'))
+                                    ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
+                                        && static::formUsesFullWidthLayout($get, $record)),
 
-                                                return $isHome ? 'home' : 'full_width';
-                                            })
-                                            ->live(),
+                                Select::make('sub_theme')
+                                    ->label(__('voodbuilder::admin.fields.sub_theme'))
+                                    ->options(fn (?SitePage $record): array => [
+                                        '' => __('voodbuilder::admin.fields.sub_theme_inherit'),
+                                        ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
+                                    ])
+                                    ->default(null)
+                                    ->nullable()
+                                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
+                                    ->native(false)
+                                    ->visible(fn (): bool => SitePageForm::allowsSubThemeOverride())
+                                    ->helperText(function (Get $get, ?SitePage $record): string {
+                                        $siteTheme = ThemeBindings::siteThemeLabel();
+                                        $message = __('voodbuilder::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
 
-                                        Toggle::make('hide_site_footer')
-                                            ->label(__('voodbuilder::landing.layouts.hide_site_footer'))
-                                            ->helperText(__('voodbuilder::landing.layouts.hide_site_footer_help'))
-                                            ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
-                                                && static::formUsesFullWidthLayout($get, $record)),
+                                        $subTheme = filled($get('sub_theme'))
+                                            ? (string) $get('sub_theme')
+                                            : SubThemeResolver::siteDefault();
 
-                                        Toggle::make('hide_site_nav')
-                                            ->label(__('voodbuilder::landing.layouts.hide_site_nav'))
-                                            ->helperText(__('voodbuilder::landing.layouts.hide_site_nav_help'))
-                                            ->visible(fn (Get $get, ?SitePage $record): bool => ! SitePageForm::chromeLayoutManagesShell()
-                                                && static::formUsesFullWidthLayout($get, $record)),
+                                        if (
+                                            static::formUsesFullWidthLayout($get, $record)
+                                            && $subTheme === SubThemeResolver::DEFAULT
+                                        ) {
+                                            return $message.' '.__('voodbuilder::admin.helpers.sub_theme_marketing_recommended');
+                                        }
 
-                                        Select::make('sub_theme')
-                                            ->label(__('voodbuilder::admin.fields.sub_theme'))
-                                            ->options(fn (?SitePage $record): array => [
-                                                '' => __('voodbuilder::admin.fields.sub_theme_inherit'),
-                                                ...ThemeBindings::sitePagesSelectOptions($record?->sub_theme),
-                                            ])
-                                            ->default(null)
-                                            ->nullable()
-                                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? $state : null)
-                                            ->native(false)
-                                            ->visible(fn (): bool => SitePageForm::allowsSubThemeOverride())
-                                            ->helperText(function (Get $get, ?SitePage $record): string {
-                                                $siteTheme = ThemeBindings::siteThemeLabel();
-                                                $message = __('voodbuilder::admin.helpers.sub_theme_page', ['theme' => $siteTheme]);
-
-                                                $subTheme = filled($get('sub_theme'))
-                                                    ? (string) $get('sub_theme')
-                                                    : SubThemeResolver::siteDefault();
-
-                                                if (
-                                                    static::formUsesFullWidthLayout($get, $record)
-                                                    && $subTheme === SubThemeResolver::DEFAULT
-                                                ) {
-                                                    return $message.' '.__('voodbuilder::admin.helpers.sub_theme_marketing_recommended');
-                                                }
-
-                                                return $message;
-                                            }),
-                                    ]),
+                                        return $message;
+                                    }),
                             ]),
                     ])
                     ->columnSpan(['lg' => 1]),

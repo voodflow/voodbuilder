@@ -515,6 +515,13 @@ function revealCanvasDocument(frameWindow, options = {}) {
         doc.documentElement.style.setProperty('--voodbuilder-page-content-max', maxWidth);
     }
 
+    // chrome_width=full + content full: bar is edge-to-edge, but inner nav/footer
+    // containers use this measure (mirrors landing.css --voodbuilder-chrome-layout-max).
+    // Prefer layout "Max content width" (e.g. 72rem), else standard 80rem.
+    const chromeLayoutMax = customMaxWidth || '80rem';
+    doc.body.style.setProperty('--voodbuilder-chrome-layout-max', chromeLayoutMax);
+    doc.documentElement.style.setProperty('--voodbuilder-chrome-layout-max', chromeLayoutMax);
+
     if (customMaxWidth) {
         doc.body.style.setProperty('--voodbuilder-element-content-max', customMaxWidth);
         doc.documentElement.style.setProperty('--voodbuilder-element-content-max', customMaxWidth);
@@ -1088,6 +1095,16 @@ export function initVoodbuilderEditor(container, options = {}) {
 
             const refresh = new Promise((resolve) => {
                 let started = false;
+                let settled = false;
+
+                const done = () => {
+                    if (settled) {
+                        return;
+                    }
+
+                    settled = true;
+                    resolve();
+                };
 
                 const start = () => {
                     if (started) {
@@ -1095,7 +1112,7 @@ export function initVoodbuilderEditor(container, options = {}) {
                     }
 
                     started = true;
-                    void runInitialDynamicRefresh().then(resolve);
+                    void runInitialDynamicRefresh().finally(done);
                 };
 
                 if (editor.__voodbuilderChromeLayoutReady) {
@@ -1106,7 +1123,9 @@ export function initVoodbuilderEditor(container, options = {}) {
                     editor.on('voodbuilder:chrome-layout-ready', start);
                 }
 
+                // Don't block layout forever if chrome-ready never fires.
                 window.setTimeout(start, 300);
+                window.setTimeout(done, 12_000);
             });
 
             editor.__voodbuilderDynamicBlocksRefresh = refresh;
@@ -1724,7 +1743,14 @@ async function refreshDynamicBlockList(editor, renderUrl, components) {
         return;
     }
 
-    await Promise.all(components.map((component) => refreshDynamicBlockComponent(editor, renderUrl, component)));
+    const withTimeout = (component) => Promise.race([
+        refreshDynamicBlockComponent(editor, renderUrl, component),
+        new Promise((resolve) => {
+            window.setTimeout(resolve, 8_000);
+        }),
+    ]);
+
+    await Promise.all(components.map((component) => withTimeout(component)));
 }
 
 function collectDynamicBlocksInTree(component) {
@@ -1792,9 +1818,7 @@ async function refreshDynamicBlocks(editor, renderUrl) {
 
     const components = safeFindComponents(wrapper, '[data-voodbuilder-block]');
 
-    for (const component of components) {
-        await refreshDynamicBlockComponent(editor, renderUrl, component);
-    }
+    await refreshDynamicBlockList(editor, renderUrl, components);
 }
 
 async function loadLinkTargets(editor, linkTargetsUrl) {

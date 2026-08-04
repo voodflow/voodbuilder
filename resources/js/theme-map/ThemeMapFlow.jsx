@@ -13,15 +13,15 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-const THEME_COLUMN_X = 48;
-const AREA_COLUMN_X = 360;
-const START_Y = 16;
-const THEME_ROW_GAP = 76;
-const AREA_ROW_GAP = 24;
-const THEME_NODE_HEIGHT = 54;
-const CANVAS_PADDING_BOTTOM = 40;
-const AREA_NODE_WIDTH = 200;
-const THEME_MAP_MIN_CANVAS_HEIGHT = 520;
+const THEME_COLUMN_X = 40;
+const AREA_COLUMN_X = 420;
+const START_Y = 20;
+const THEME_ROW_GAP = 84;
+const AREA_ROW_GAP = 28;
+const THEME_NODE_HEIGHT = 58;
+const CANVAS_PADDING_BOTTOM = 48;
+const AREA_NODE_WIDTH = 248;
+const THEME_MAP_MIN_CANVAS_HEIGHT = 640;
 
 function estimateAreaNodeHeight(area) {
     const padding = 24;

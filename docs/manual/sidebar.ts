@@ -30,7 +30,7 @@ export const voodbuilderManualSidebar = [
           { text: 'Site pages', link: '/user/admin/pages' },
           { text: 'Menus', link: '/user/admin/menus' },
           { text: 'Chrome layouts', link: '/user/admin/chrome-layouts' },
-          { text: 'Settings & themes', link: '/user/admin/settings-and-themes' },
+          { text: 'Settings & Theme Studio', link: '/user/admin/settings-and-themes' },
         ],
       },
       {
