@@ -145,4 +145,18 @@ class DocLayoutChromeTest extends TestCase
             $landing,
         );
     }
+
+    public function test_editor_canvas_keeps_full_page_content_edge_to_edge(): void
+    {
+        $frameStyle = \Voodflow\Voodbuilder\Support\Editor\EditorCanvas::frameStyle('site');
+
+        $this->assertStringContainsString(
+            "body[data-voodbuilder-canvas-content-width='full'] [data-voodbuilder-page-content]",
+            $frameStyle,
+        );
+        $this->assertStringContainsString(
+            '[data-voodbuilder-chrome-drop-zone]:not([data-voodbuilder-page-content])',
+            $frameStyle,
+        );
+    }
 }

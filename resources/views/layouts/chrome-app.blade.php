@@ -53,7 +53,12 @@
     // Full content width must force the layout token to 100% — otherwise theme.css
     // keeps --width-vp-layout at 80rem and .voodbuilder-editor-container stays boxed.
     $pageWidthStyleParts = $isEditor
-        ? ['--width-vp-layout: 100% !important']
+        ? [
+            '--width-vp-layout: 100% !important',
+            // Keep chrome measure available if any host chrome sneaks through;
+            // canvas iframe also sets this via revealCanvasDocument.
+            '--voodbuilder-chrome-layout-max: '.ChromeLayoutContentWidth::STANDARD_MAX_WIDTH,
+        ]
         : (filled($pageContentMaxWidth)
             ? [
                 '--voodbuilder-page-content-max: '.$pageContentMaxWidth,

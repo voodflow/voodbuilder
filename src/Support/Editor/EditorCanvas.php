@@ -551,6 +551,21 @@ final class EditorCanvas
             margin-inline: 0 !important;
         }
 
+        /*
+         * Page editor + content_width=full: keep the editable page-content column
+         * edge-to-edge. Chrome shells may restore an 80rem measure for nav/footer
+         * containers; never let that inherit into the page-content slot.
+         */
+        body[data-voodbuilder-canvas-content-width='full'] [data-voodbuilder-page-content],
+        body[data-voodbuilder-canvas-content-width='full'] .voodbuilder-chrome-content-slot[data-voodbuilder-page-content],
+        body[data-voodbuilder-canvas-content-width='full'] .voodbuilder-page-content-slot {
+            --width-vp-layout: 100% !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin-inline: 0 !important;
+            box-sizing: border-box;
+        }
+
         /* Page content width: constrain ONLY the page-content / layout content slot. */
         body[data-voodbuilder-canvas-content-width='standard'] [data-voodbuilder-page-content],
         body[data-voodbuilder-canvas-content-width='custom'] [data-voodbuilder-page-content],
@@ -595,11 +610,12 @@ final class EditorCanvas
          * published front uses the document content max (~80rem / custom).
          *
          * Prefer --voodbuilder-page-content-max when set (standard/custom); otherwise
-         * fall back to --voodbuilder-chrome-layout-max / 80rem (full page, mirrors landing.css). */
+         * fall back to --voodbuilder-chrome-layout-max / 80rem (full page, mirrors landing.css).
+         * Scope to chrome parts only — never page-content (see full-bleed rule above). */
         body[data-voodbuilder-chrome-width='full'] :is(
             [data-voodbuilder-chrome-shell],
             [data-voodbuilder-chrome-shell-part],
-            [data-voodbuilder-chrome-drop-zone]
+            [data-voodbuilder-chrome-drop-zone]:not([data-voodbuilder-page-content])
         ) {
             --width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem));
         }
