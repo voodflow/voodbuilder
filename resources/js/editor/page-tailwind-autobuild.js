@@ -26,6 +26,10 @@ const BUILD_SCOPE = 'page-css';
 const INITIAL_BUILD_DELAY_MS = 200;
 const SETTINGS_RETRY_MS = 100;
 const MAX_SETTINGS_RETRIES = 40;
+/** Cap tight retries after compile failures (esp. 429) so we do not starve /blocks. */
+const MAX_COMPILE_FAILURES = 6;
+const RATE_LIMIT_DEFAULT_BACKOFF_MS = 15_000;
+const RATE_LIMIT_MAX_BACKOFF_MS = 60_000;
 
 /** Utilities already shipped in canvas section-utilities.css (Style panel catalogs). */
 const PALETTE_SHADE_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/;
@@ -282,6 +286,9 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let pendingAfterDrag = false;
     let pendingAfterDragComponent = null;
     let endDragTimer = null;
+    let consecutiveFailures = 0;
+    let rateLimitedUntil = 0;
+    let rateLimitWarned = false;
 
     const isUserCanvasDrag = () => (
         editor.__voodbuilderActiveBlockDrag
@@ -449,6 +456,15 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             return;
         }
 
+        const now = Date.now();
+
+        if (now < rateLimitedUntil) {
+            pendingInvalidate = true;
+            schedule(rateLimitedUntil - now);
+
+            return;
+        }
+
         let html = '';
 
         try {
@@ -517,8 +533,36 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             });
 
             if (! response.ok) {
-                pendingInvalidate = true;
-                console.warn('VoodBuilder page CSS: compile-css failed', response.status);
+                consecutiveFailures += 1;
+
+                if (response.status === 429) {
+                    const retryAfterHeader = Number(response.headers.get('Retry-After'));
+                    const backoffMs = Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
+                        ? Math.min(RATE_LIMIT_MAX_BACKOFF_MS, retryAfterHeader * 1000)
+                        : Math.min(
+                            RATE_LIMIT_MAX_BACKOFF_MS,
+                            RATE_LIMIT_DEFAULT_BACKOFF_MS * Math.max(1, consecutiveFailures),
+                        );
+                    rateLimitedUntil = Date.now() + backoffMs;
+                    pendingInvalidate = true;
+
+                    if (! rateLimitWarned) {
+                        rateLimitWarned = true;
+                        console.warn(
+                            'VoodBuilder page CSS: compile-css rate-limited (429). Cooling down before retry; block library uses a separate quota.',
+                            { backoffMs },
+                        );
+                    }
+                } else if (consecutiveFailures >= MAX_COMPILE_FAILURES) {
+                    pendingInvalidate = false;
+                    console.warn(
+                        'VoodBuilder page CSS: compile-css failed repeatedly; pausing auto-rebuild until the next edit.',
+                        response.status,
+                    );
+                } else {
+                    pendingInvalidate = true;
+                    console.warn('VoodBuilder page CSS: compile-css failed', response.status);
+                }
 
                 return;
             }
@@ -534,6 +578,9 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
                 return;
             }
 
+            consecutiveFailures = 0;
+            rateLimitedUntil = 0;
+            rateLimitWarned = false;
             lastHtml = html;
             lastClassSet = classSet;
             applyPageLiveCss(editor, mergeCompiledPageCssWithAuthorIdRules(editor, css));
@@ -545,8 +592,18 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
                 // Optional canvas paint after live sheet swap.
             }
         } catch (error) {
-            pendingInvalidate = true;
-            console.warn('VoodBuilder page CSS: compile-css error', error);
+            consecutiveFailures += 1;
+
+            if (consecutiveFailures >= MAX_COMPILE_FAILURES) {
+                pendingInvalidate = false;
+                console.warn(
+                    'VoodBuilder page CSS: compile-css error; pausing auto-rebuild until the next edit.',
+                    error,
+                );
+            } else {
+                pendingInvalidate = true;
+                console.warn('VoodBuilder page CSS: compile-css error', error);
+            }
         } finally {
             window.clearTimeout(fetchTimeout);
             endEditorBuild(editor, BUILD_SCOPE);
@@ -557,7 +614,20 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             // (e.g. Library HTML still parsing when the first collect ran).
             if (queuedWhileBuilding || pendingInvalidate) {
                 queuedWhileBuilding = false;
-                schedule(pendingInvalidate ? INITIAL_BUILD_DELAY_MS : DEBOUNCE_MS);
+                let delay = DEBOUNCE_MS;
+
+                if (Date.now() < rateLimitedUntil) {
+                    delay = Math.max(DEBOUNCE_MS, rateLimitedUntil - Date.now());
+                } else if (consecutiveFailures > 0 && pendingInvalidate) {
+                    delay = Math.min(
+                        RATE_LIMIT_MAX_BACKOFF_MS,
+                        Math.max(DEBOUNCE_MS, 1000 * (2 ** (consecutiveFailures - 1))),
+                    );
+                } else if (pendingInvalidate) {
+                    delay = INITIAL_BUILD_DELAY_MS;
+                }
+
+                schedule(delay);
             }
         }
     };

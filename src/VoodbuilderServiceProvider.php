@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -209,7 +212,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     protected function registerEditorRoutes(): void
     {
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
+        $this->configureEditorRateLimiters();
+
+        Route::middleware(['web', 'auth', 'throttle:voodbuilder-editor'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {
@@ -224,6 +229,13 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     ->name('media.preview');
                 Route::get('blocks/render', EditorBlockRenderController::class)->name('blocks.render');
                 Route::post('code/highlight', EditorCodeHighlightController::class)->name('code.highlight');
+            });
+
+        // Separate quota from catalog/bindings — page JIT can burst without starving the library.
+        Route::middleware(['web', 'auth', 'throttle:voodbuilder-compile-css'])
+            ->prefix('voodbuilder/editor')
+            ->name('voodbuilder.editor.')
+            ->group(function (): void {
                 Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
             });
 
@@ -237,7 +249,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 return;
             }
 
-            Route::middleware(['web', 'auth', 'throttle:60,1'])
+            Route::middleware(['web', 'auth', 'throttle:voodbuilder-editor'])
                 ->prefix('voodbuilder/editor')
                 ->name('voodbuilder.editor.')
                 ->group(function (): void {
@@ -245,6 +257,25 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
                 });
         });
+    }
+
+    protected function configureEditorRateLimiters(): void
+    {
+        RateLimiter::for(
+            'voodbuilder-editor',
+            static function (Request $request): Limit {
+                return Limit::perMinute(120)
+                    ->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
+            },
+        );
+
+        RateLimiter::for(
+            'voodbuilder-compile-css',
+            static function (Request $request): Limit {
+                return Limit::perMinute(180)
+                    ->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
+            },
+        );
     }
 
     protected function editorMediaUploadRouteRegistered(): bool
