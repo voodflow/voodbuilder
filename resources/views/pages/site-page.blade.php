@@ -36,10 +36,31 @@
     @endpush
 @endif
 
-@php($editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder() ? $page->renderedStyles() : null)
+@php
+    $editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
+        ? $page->renderedStyles()
+        : null;
+@endphp
 @if (filled($editorStyles))
     @push('head')
         <style id="voodbuilder-page-css">{!! $editorStyles !!}</style>
+    @endpush
+@endif
+
+{{-- Stepper CSS before first paint: Vite/dev often injects theme CSS too late (FOUC). --}}
+@php
+    $vformsHtmlProbe = (string) ($page->builder_payload['html'] ?? '');
+    $vformsNeedsStepsCss = ! ($editorEditor ?? false)
+        && class_exists(\Voodflow\Vforms\Support\FormChromeCss::class)
+        && (
+            str_contains($vformsHtmlProbe, 'vforms-form')
+            || str_contains($vformsHtmlProbe, 'data-vforms-form')
+            || str_contains($vformsHtmlProbe, 'vforms-form-steps')
+        );
+@endphp
+@if ($vformsNeedsStepsCss)
+    @push('head')
+        {!! \Voodflow\Vforms\Support\FormChromeCss::stepsStyleTag() !!}
     @endpush
 @endif
 

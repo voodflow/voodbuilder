@@ -35,7 +35,6 @@
 .vforms-form .vforms-form-panel__desc,
 .vforms-form .vforms-form-verify-status,
 .vforms-form .vforms-check-description,
-.vforms-form .vforms-form-step,
 .vforms-form .vforms-form-message,
 .vforms-form .vforms-form-field-error {
     color: var(--color-vp-text-2, #67676c) !important;
@@ -43,13 +42,82 @@
     font-size: 0.875em;
 }
 
+/*
+ * Verify / field / form message states. The muted rule above uses !important so
+ * utility classes (text-green-700, …) never win on published pages — and those
+ * utilities are often purged from the site theme. Mirror FormChromeCss here.
+ */
+.vforms-form .vforms-form-verify-status[data-state='ok'],
+.vforms-form .vforms-form-field-error[data-state='ok'] {
+    color: #15803d !important;
+}
+
+.vforms-form .vforms-form-verify-status[data-state='error'],
+.vforms-form .vforms-form-field-error[data-state='error'] {
+    color: #b91c1c !important;
+}
+
+.vforms-form .vforms-form-message[data-state='ok'] {
+    color: #166534 !important;
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.vforms-form .vforms-form-message[data-state='error'] {
+    color: #991b1b !important;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.vforms-form .vforms-form-message[data-state='blocked'] {
+    color: #92400e !important;
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.vforms-form .vforms-form-message[data-state='info'] {
+    color: #1e40af !important;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.dark .vforms-form .vforms-form-verify-status[data-state='ok'],
+.dark .vforms-form .vforms-form-field-error[data-state='ok'] {
+    color: #86efac !important;
+}
+
+.dark .vforms-form .vforms-form-verify-status[data-state='error'],
+.dark .vforms-form .vforms-form-field-error[data-state='error'] {
+    color: #fca5a5 !important;
+}
+
+.dark .vforms-form .vforms-form-message[data-state='ok'] {
+    color: #86efac !important;
+    background: color-mix(in srgb, #22c55e 16%, transparent);
+    border-color: color-mix(in srgb, #22c55e 40%, var(--color-vp-divider, #e2e2e3));
+}
+
+.dark .vforms-form .vforms-form-message[data-state='error'] {
+    color: #fca5a5 !important;
+    background: color-mix(in srgb, #ef4444 16%, transparent);
+    border-color: color-mix(in srgb, #ef4444 40%, var(--color-vp-divider, #e2e2e3));
+}
+
+.dark .vforms-form .vforms-form-message[data-state='blocked'] {
+    color: #fcd34d !important;
+    background: color-mix(in srgb, #f59e0b 16%, transparent);
+    border-color: color-mix(in srgb, #f59e0b 40%, var(--color-vp-divider, #e2e2e3));
+}
+
+.dark .vforms-form .vforms-form-message[data-state='info'] {
+    color: #bfdbfe !important;
+    background: color-mix(in srgb, #3b82f6 18%, transparent);
+    border-color: color-mix(in srgb, #60a5fa 45%, var(--color-vp-divider, #e2e2e3));
+}
+
 .vforms-form .vforms-form-heading {
     font-size: 1.1em;
     font-weight: 700;
-}
-
-.vforms-form .vforms-form-step {
-    font-size: 0.9em;
 }
 
 .vforms-form .vforms-form-tab {
@@ -77,6 +145,23 @@
     border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
     outline: 2px solid color-mix(in srgb, var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) 45%, transparent);
     outline-offset: 1px;
+}
+
+/* background-color alone hides UA select chevrons — paint an explicit indicator. */
+.vforms-form select.vforms-form-control {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    padding-right: 2.35em !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%2367676c' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75em center !important;
+    background-size: 1.05em 1.05em !important;
+    cursor: pointer;
+}
+
+.dark .vforms-form select.vforms-form-control,
+[data-theme='dark'] .vforms-form select.vforms-form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%23c0c0c4' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
 }
 
 .vforms-form .vforms-form-control[readonly],
@@ -130,9 +215,7 @@
 }
 
 .vforms-form .vforms-form-tab.is-active,
-.vforms-form .vforms-form-tab[data-vforms-tab-active='1'],
-.vforms-form .vforms-form-step.is-active,
-.vforms-form .vforms-form-step[data-vforms-step-active='1'] {
+.vforms-form .vforms-form-tab[data-vforms-tab-active='1'] {
     color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
 }
 
@@ -141,17 +224,6 @@
     background-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
     border-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
     color: #fff !important;
-}
-
-.vforms-form .vforms-form-step.is-active .vforms-form-step__index,
-.vforms-form .vforms-form-step[data-vforms-step-active='1'] .vforms-form-step__index {
-    background-color: var(--color-vp-brand-2, var(--color-vp-brand-1, #3a5ccc)) !important;
-    color: #fff !important;
-}
-
-.vforms-form .vforms-form-step__index {
-    background-color: var(--color-vp-bg-alt, #f6f6f7) !important;
-    color: var(--color-vp-text-2, #67676c) !important;
 }
 
 .vforms-form .vforms-tags__chip {
