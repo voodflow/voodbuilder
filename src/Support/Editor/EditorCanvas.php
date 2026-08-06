@@ -50,6 +50,11 @@ final class EditorCanvas
             return $entry;
         }
 
+        // Companion packages (e.g. vforms) may register same-origin public assets.
+        if (str_starts_with($entry, '/')) {
+            return $entry;
+        }
+
         if (! class_exists(Vite::class) || ! Vite::isRunningHot() && ! self::hasBuiltAsset($entry)) {
             return null;
         }

@@ -536,7 +536,7 @@ final class EditorPastedComponentNormalizer
 
     /**
      * ThemePalette header/chrome rules are injected live — never keep them in stored CSS.
-     * Managed-form chrome (.vforms-*) lives in the public theme / FormChromeCss, not page CSS.
+     * Managed-form chrome (.vforms-*) lives in vforms (FormChromeCss / theme bridge), not page CSS.
      */
     private static function isThemeManagedChromeSelector(string $selector): bool
     {

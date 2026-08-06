@@ -11,9 +11,8 @@
 @import './landing.css';
 @import './editor/chrome-block-utilities.css';
 @import './editor/animated-blocks.css';
-@import './editor/vforms-theme.css';
-/* Stepper variants (progress/circles/simple) — shared with FormChromeCss; not inlined in editor HTML. */
-@import '../../../vforms/resources/css/form-steps.css';
+/* Managed forms (.vforms-*) CSS is owned by voodflow/vforms and injected when
+ * that companion is present — do not @import form packages here. */
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
@@ -33,12 +32,6 @@
 @source '../views/themes/**/*.blade.php';
 @source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/editor/popups-ui.js';
 @source '../js/editor/popups-ui.js';
-@source '../../../../../vendor/voodflow/vforms/src/Support/FormTailwind.php';
-@source '../../../../../vendor/voodflow/vforms/resources/js/runtime/form-runtime.js';
-@source '../../../vforms/src/Support/FormTailwind.php';
-@source '../../../vforms/resources/js/runtime/form-runtime.js';
-@source '../../../../../packages/voodflow/voodbuilder-forms/src/Support/FormTailwind.php';
-@source '../../../../../packages/voodflow/voodbuilder-forms/resources/js/runtime/form-runtime.js';
 /* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
    published pages match the Editor even when page JIT CSS is stale/partial. */
 @source '../js/editor/style-animation-sector.js';
