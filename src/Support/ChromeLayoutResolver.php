@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
@@ -64,7 +65,24 @@ final class ChromeLayoutResolver
             return null;
         }
 
-        return ChromeLayout::query()->find($layoutId);
+        $layout = ChromeLayout::query()->find($layoutId);
+
+        if (! $layout instanceof ChromeLayout) {
+            return null;
+        }
+
+        if ($layout->isDraftShell() && ! $layout->is_default) {
+            $defaultLayout = ChromeLayout::query()
+                ->where('enabled', true)
+                ->where('is_default', true)
+                ->first();
+
+            if ($defaultLayout instanceof ChromeLayout && ! $defaultLayout->isDraftShell()) {
+                return $defaultLayout;
+            }
+        }
+
+        return $layout;
     }
 
     public static function forgetCache(?string $channelId = null): void
@@ -132,7 +150,7 @@ final class ChromeLayoutResolver
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, ChromeLayout>  $layouts
+     * @param  Collection<int, ChromeLayout>  $layouts
      */
     protected static function firstSpecificLayoutForChannel($layouts, string $channelId): ?ChromeLayout
     {

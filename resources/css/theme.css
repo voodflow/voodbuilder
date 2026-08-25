@@ -30,7 +30,7 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
-@source '../../../../../packages/voodflow/voodbuilder-popups/resources/js/editor/popups-ui.js';
+@source '../../../../../packages/voodflow/vpopups/resources/js/editor/popups-ui.js';
 @source '../js/editor/popups-ui.js';
 /* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
    published pages match the Editor even when page JIT CSS is stale/partial. */

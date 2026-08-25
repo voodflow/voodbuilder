@@ -92,6 +92,22 @@ class ChromeLayout extends Model
     }
 
     /**
+     * Chrome layouts saved from Theme Studio before any header/footer blocks are added
+     * contain only editor drop zones — treat them as unpublished and fall back to default.
+     */
+    public function isDraftShell(): bool
+    {
+        $html = (string) ($this->html ?? '');
+
+        if ($html === '') {
+            return true;
+        }
+
+        return str_contains($html, 'voodbuilder-chrome-drop-zone')
+            && ! str_contains($html, 'data-voodbuilder-block');
+    }
+
+    /**
      * Ensure at most one layout is marked as the site-wide default.
      */
     public static function ensureSingleDefault(?self $layout): void

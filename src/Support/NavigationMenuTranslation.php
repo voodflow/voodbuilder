@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Str;
+use Voodflow\Vevents\Models\Event;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
@@ -151,6 +153,10 @@ final class NavigationMenuTranslation
             }
         }
 
+        if ($targetLocale !== null && $item->type === MenuItemType::Route && filled($item->link)) {
+            self::localizeRouteMenuItem($clone, $targetLocale);
+        }
+
         $clone->save();
 
         foreach ($item->children as $child) {
@@ -158,5 +164,52 @@ final class NavigationMenuTranslation
         }
 
         return $clone;
+    }
+
+    protected static function localizeRouteMenuItem(NavigationMenuItem $item, string $targetLocale): void
+    {
+        $link = (string) $item->link;
+
+        if (preg_match('/^vevents\.([^.]+)\.(.+)$/', $link, $matches) === 1) {
+            $item->link = 'vevents.'.$targetLocale.'.'.$matches[2];
+
+            if (is_string($item->route_match) && preg_match('/^vevents\.([^.]+)\./', $item->route_match) === 1) {
+                $item->route_match = preg_replace(
+                    '/^vevents\.[^.]+\./',
+                    'vevents.'.$targetLocale.'.',
+                    $item->route_match,
+                );
+            }
+        }
+
+        $parameters = is_array($item->route_parameters) ? $item->route_parameters : [];
+
+        if (isset($parameters['slug']) && is_string($parameters['slug']) && class_exists(Event::class)) {
+            try {
+                $event = Event::resolvePublishedSlug($parameters['slug']);
+                $localized = $event->translationFor($targetLocale);
+
+                if ($localized !== null) {
+                    $parameters['slug'] = (string) $localized->slug;
+                }
+            } catch (ModelNotFoundException) {
+                // Keep the original slug when the event cannot be resolved.
+            }
+        }
+
+        if (isset($parameters['eventSlug']) && is_string($parameters['eventSlug']) && class_exists(Event::class)) {
+            try {
+                $event = Event::resolvePublishedSlug($parameters['eventSlug']);
+                $localized = $event->translationFor($targetLocale);
+
+                if ($localized !== null) {
+                    $parameters['eventSlug'] = (string) $localized->slug;
+                }
+            } catch (ModelNotFoundException) {
+                // Keep the original slug when the event cannot be resolved.
+            }
+        }
+
+        $item->route_parameters = $parameters === [] ? null : $parameters;
     }
 }

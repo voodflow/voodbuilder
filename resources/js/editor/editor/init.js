@@ -614,14 +614,25 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
         chromeShellMode: Boolean(options.chromeShellMode),
     };
 
+    const dismissBootSplash = () => {
+        finishEditorBoot(editor);
+        shellRoot.classList.remove('voodbuilder-editor-root--booting');
+    };
+
     const reveal = () => {
         if (! revealPromise) {
+            // Dismiss the splash as soon as boot can progress. Waiting for canvas
+            // styles/frame first left the UI stuck when later `load` handlers blocked
+            // the main thread for tens of seconds (layout editor especially).
+            dismissBootSplash();
+
             revealPromise = (async () => {
                 try {
                     await waitForCanvasPresentation(editor, revealOptions);
+                } catch (error) {
+                    console.warn('Voodbuilder Editor: canvas presentation wait failed.', error);
                 } finally {
-                    finishEditorBoot(editor);
-                    shellRoot.classList.remove('voodbuilder-editor-root--booting');
+                    dismissBootSplash();
                 }
             })();
         }
@@ -638,9 +649,15 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
         void reveal();
     });
 
+    // Hard deadline so a blocked main thread still clears the splash once it yields.
     window.setTimeout(() => {
         void reveal();
-    }, 4_000);
+    }, 2_000);
+
+    // Init may finish after Grapes already loaded the project — don't wait for a second load.
+    if (editor.getWrapper?.()) {
+        void reveal();
+    }
 }
 
 function createDynamicBlocksPending() {

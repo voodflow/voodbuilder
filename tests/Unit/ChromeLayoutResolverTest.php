@@ -174,4 +174,32 @@ class ChromeLayoutResolverTest extends TestCase
         $this->assertSame($tutorials->id, $resolved->id);
         $this->assertNotSame($docs->id, $resolved->id);
     }
+
+    public function test_draft_shell_layout_falls_back_to_default(): void
+    {
+        $default = ChromeLayout::query()->create([
+            'name' => 'Site default',
+            'slug' => 'site-default',
+            'html' => '<div data-voodbuilder-block="site_nav_simple"></div><div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'is_default' => true,
+            'channel_ids' => [],
+        ]);
+
+        ChromeLayout::query()->create([
+            'name' => 'Events draft',
+            'slug' => 'events-draft',
+            'html' => '<div data-voodbuilder-chrome-drop-zone="nav" class="voodbuilder-chrome-drop-zone"></div><div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'is_default' => false,
+            'channel_ids' => ['events'],
+        ]);
+
+        ChromeLayoutResolver::forgetCache();
+
+        $resolved = ChromeLayoutResolver::resolveForChannel('events');
+
+        $this->assertNotNull($resolved);
+        $this->assertSame($default->id, $resolved->id);
+    }
 }

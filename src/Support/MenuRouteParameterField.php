@@ -29,6 +29,9 @@ final class MenuRouteParameterField
     /** @var list<Closure(array<string, mixed>): array<string, mixed>> */
     protected static array $beforeCompressResolvers = [];
 
+    /** @var list<Closure(array<string, mixed>): array<string, mixed>> */
+    protected static array $afterExpandResolvers = [];
+
     /**
      * @param  Closure(string, string, ?Get): array<string, string>  $resolver
      */
@@ -59,6 +62,14 @@ final class MenuRouteParameterField
     public static function beforeCompressUsing(Closure $resolver): void
     {
         self::$beforeCompressResolvers[] = $resolver;
+    }
+
+    /**
+     * @param  Closure(array<string, mixed>): array<string, mixed>  $resolver
+     */
+    public static function afterExpandUsing(Closure $resolver): void
+    {
+        self::$afterExpandResolvers[] = $resolver;
     }
 
     /** @return list<string> */
@@ -152,6 +163,10 @@ final class MenuRouteParameterField
             }
 
             $data[self::flatKey($parameterName)] = $value;
+        }
+
+        foreach (self::$afterExpandResolvers as $resolver) {
+            $data = $resolver($data);
         }
 
         return $data;
