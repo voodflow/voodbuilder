@@ -8,10 +8,11 @@ Technical entry for host apps and companion package authors.
 2. [Architecture](../manual/developer/architecture.md)
 3. [Extending overview](../manual/developer/extending-overview.md)
 4. [Companion integration](./companion-integration.md) ← **required for third parties**
-5. [Events & hooks](../manual/developer/events-and-hooks.md)
-6. [JS plugins](../manual/developer/js-plugins.md)
-7. [Sample plugin](../manual/developer/sample-plugin.md)
-8. [Config reference](../manual/developer/config-reference.md)
+5. [Dynamic SitePages](./dynamic-site-pages.md) ← template pages that claim companion routes
+6. [Events & hooks](../manual/developer/events-and-hooks.md)
+7. [JS plugins](../manual/developer/js-plugins.md)
+8. [Sample plugin](../manual/developer/sample-plugin.md)
+9. [Config reference](../manual/developer/config-reference.md)
 
 ## Extension map
 
@@ -25,6 +26,7 @@ Technical entry for host apps and companion package authors.
 | Bindings / repeats | `editorBindingSource` / `editorRepeatList` |
 | Conditions / labels | `editorCondition` / `editorLabels` |
 | Content channels | `contentChannel` |
+| Dynamic SitePages | `dynamicPageProvider` → [dynamic-site-pages.md](./dynamic-site-pages.md) |
 | Menus | `menuItemType` |
 | Themes / fonts | `subTheme` / `registerFonts` |
 | Entitlements | `can` / `cannot` |

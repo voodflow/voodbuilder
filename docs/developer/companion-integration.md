@@ -40,6 +40,7 @@ Reference companions in this monorepo: `vforms`, `vpopups`, `vcookiebar`, `voodb
 | `editorRichContentBlock` | Filament RichEditor → canvas placeholder |
 | `editorServerBlock` | Server-rendered block without RichEditor |
 | `editorBindingSource` | Dynamic field sources |
+| `dynamicPageProvider` | Claim companion routes with a SitePage template ([dynamic-site-pages.md](./dynamic-site-pages.md)) |
 | `editorRepeatList` | List repeat (no-op without Dynamics package) |
 | `editorCondition` | Visibility evaluators |
 | `editorLabels` | i18n strings in editor bootstrap |

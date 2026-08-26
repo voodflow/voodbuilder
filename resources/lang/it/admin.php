@@ -59,6 +59,11 @@ return [
         'password_credentials' => 'Credenziali di accesso',
         'credential_email' => 'Email (opzionale)',
         'credential_password' => 'Password',
+        'is_dynamic' => 'Pagina dinamica',
+        'dynamic_channel' => 'Modello / canale',
+        'dynamic_routes' => 'Pattern URL (route)',
+        'dynamic_priority' => 'Priorità',
+        'dynamic_preview_url' => 'URL pubblico di esempio',
     ],
 
     'actions' => [
@@ -134,6 +139,7 @@ return [
         'content' => 'Contenuto',
         'appearance' => 'Aspetto (opzionale)',
         'access' => 'Accesso',
+        'dynamic' => 'Routing dinamico',
     ],
 
     'menu_preview' => [
@@ -168,6 +174,11 @@ return [
         'password_protected' => 'Bypass opzionale: sblocca con password per anteprime, clienti o accessi una tantum — anche se il livello è Registered/Subscriber. Chi ha già il livello richiesto vede la pagina senza password.',
         'password_credentials' => 'Una o più password. Lascia l’email vuota per accesso solo con password. Funziona come percorso alternativo rispetto al livello di accesso.',
         'credential_password' => 'In modifica, lascia vuoto per mantenere la password attuale.',
+        'is_dynamic' => 'Riusa questa pagina Visual Editor come template per molte URL (es. una scheda espositore per ogni /exhibitors/{slug}). Le route del companion restano i pattern URL; questa pagina le reclama se pubblicata.',
+        'dynamic_channel' => 'Quale companion fornisce i parametri di route e le binding source (.current).',
+        'dynamic_routes' => 'Seleziona una o più route reclamabili. Ognuna definisce i propri parametri di path (1+n segmenti). Lo stesso template può coprire /exhibitors/{slug} e /exhibitors/{slug}/events/{eventSlug}.',
+        'dynamic_priority' => 'Se più pagine dinamiche reclamano la stessa route, vince la priorità più alta.',
+        'dynamic_preview_url' => 'URL di esempio per “Apri editor visuale” e anteprima binding.',
     ],
 
     'media_library' => [

@@ -59,6 +59,11 @@ return [
         'password_credentials' => 'Access credentials',
         'credential_email' => 'Email (optional)',
         'credential_password' => 'Password',
+        'is_dynamic' => 'Dynamic page',
+        'dynamic_channel' => 'Model / channel',
+        'dynamic_routes' => 'URL patterns (routes)',
+        'dynamic_priority' => 'Priority',
+        'dynamic_preview_url' => 'Example public URL',
     ],
 
     'actions' => [
@@ -134,6 +139,7 @@ return [
         'content' => 'Content',
         'appearance' => 'Appearance (optional)',
         'access' => 'Access',
+        'dynamic' => 'Dynamic routing',
     ],
 
     'menu_preview' => [
@@ -168,6 +174,11 @@ return [
         'password_protected' => 'Optional bypass: unlock with a password for previews, client reviews, or one-off invites — even if the access level is Registered/Subscriber. Subscribers (or registered users) who already qualify still see the page without the password.',
         'password_credentials' => 'One or more passwords. Leave email empty for password-only access. Works as an alternate path alongside the access level.',
         'credential_password' => 'Leave blank when editing to keep the current password.',
+        'is_dynamic' => 'Reuse this Visual Editor page as a template for many URLs (e.g. one exhibitor profile for every /exhibitors/{slug}). Companion plugin routes keep the URL patterns; this page claims them when published.',
+        'dynamic_channel' => 'Which companion model/channel supplies route parameters and binding sources (.current).',
+        'dynamic_routes' => 'Select one or more claimable routes. Each encodes its path parameters (1+n segments). The same template can own both /exhibitors/{slug} and /exhibitors/{slug}/events/{eventSlug}.',
+        'dynamic_priority' => 'If multiple dynamic pages claim the same route, the highest priority wins.',
+        'dynamic_preview_url' => 'Sample URL used for “Open visual editor” and binding previews.',
     ],
 
     'media_library' => [

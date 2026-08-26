@@ -44,6 +44,7 @@ public function boot(): void
 | `editorCondition` | Custom visibility evaluator |
 | `editorLabels` | Extra editor UI strings |
 | `contentChannel` | Route areas for chrome / search |
+| `dynamicPageProvider` | Dynamic SitePage templates claiming companion routes |
 | `menuItemType` | Custom menu item types |
 | `richContentBlock` | TipTap admin blocks |
 | `subTheme` | Visual theme definition |

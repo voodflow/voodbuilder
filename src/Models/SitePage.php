@@ -29,7 +29,6 @@ use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
-use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
@@ -62,6 +61,10 @@ class SitePage extends Model implements HasRichContent
         'excerpt',
         'section_home',
         'is_home',
+        'is_dynamic',
+        'dynamic_channel',
+        'dynamic_routes',
+        'dynamic_priority',
         'locale',
         'translation_group_id',
         'published',
@@ -77,6 +80,9 @@ class SitePage extends Model implements HasRichContent
             'builder' => AsPageBuilder::class,
             'builder_payload' => 'array',
             'is_home' => 'boolean',
+            'is_dynamic' => 'boolean',
+            'dynamic_routes' => 'array',
+            'dynamic_priority' => 'integer',
             'hide_site_footer' => 'boolean',
             'hide_site_nav' => 'boolean',
             'section_home' => 'boolean',
@@ -85,6 +91,25 @@ class SitePage extends Model implements HasRichContent
             'visibility' => PageVisibility::class,
             'password_protected' => 'boolean',
         ];
+    }
+
+    /**
+     * Logical claimable route names owned by this dynamic template.
+     *
+     * @return list<string>
+     */
+    public function dynamicRouteNames(): array
+    {
+        $routes = $this->dynamic_routes;
+
+        if (! is_array($routes)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(static fn (mixed $route): string => trim((string) $route), $routes),
+            static fn (string $route): bool => $route !== '',
+        ));
     }
 
     protected function setUpRichContent(): void

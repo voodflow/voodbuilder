@@ -10,6 +10,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
@@ -48,6 +49,7 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePag
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\EditSitePage;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePageForm;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -204,6 +206,68 @@ class SitePageResource extends Resource
                                             ->addActionLabel(__('voodbuilder::admin.actions.add_credential'))
                                             ->collapsible()
                                             ->visible(fn (Get $get): bool => (bool) $get('password_protected'))
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Tab::make(__('voodbuilder::admin.sections.dynamic'))
+                                    ->schema([
+                                        Toggle::make('is_dynamic')
+                                            ->label(__('voodbuilder::admin.fields.is_dynamic'))
+                                            ->helperText(__('voodbuilder::admin.helpers.is_dynamic'))
+                                            ->live()
+                                            ->columnSpanFull(),
+
+                                        Select::make('dynamic_channel')
+                                            ->label(__('voodbuilder::admin.fields.dynamic_channel'))
+                                            ->options(fn (): array => app(DynamicPageRegistry::class)->channelOptions())
+                                            ->native(false)
+                                            ->searchable()
+                                            ->required(fn (Get $get): bool => (bool) $get('is_dynamic'))
+                                            ->visible(fn (Get $get): bool => (bool) $get('is_dynamic'))
+                                            ->live()
+                                            ->afterStateUpdated(fn (Set $set) => $set('dynamic_routes', []))
+                                            ->helperText(__('voodbuilder::admin.helpers.dynamic_channel'))
+                                            ->columnSpanFull(),
+
+                                        CheckboxList::make('dynamic_routes')
+                                            ->label(__('voodbuilder::admin.fields.dynamic_routes'))
+                                            ->options(fn (Get $get): array => app(DynamicPageRegistry::class)
+                                                ->routeOptions((string) ($get('dynamic_channel') ?? '')))
+                                            ->required(fn (Get $get): bool => (bool) $get('is_dynamic'))
+                                            ->visible(fn (Get $get): bool => (bool) $get('is_dynamic') && filled($get('dynamic_channel')))
+                                            ->helperText(__('voodbuilder::admin.helpers.dynamic_routes'))
+                                            ->columns(1)
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('dynamic_priority')
+                                            ->label(__('voodbuilder::admin.fields.dynamic_priority'))
+                                            ->numeric()
+                                            ->default(0)
+                                            ->minValue(0)
+                                            ->maxValue(999)
+                                            ->visible(fn (Get $get): bool => (bool) $get('is_dynamic'))
+                                            ->helperText(__('voodbuilder::admin.helpers.dynamic_priority')),
+
+                                        Placeholder::make('dynamic_preview_url')
+                                            ->label(__('voodbuilder::admin.fields.dynamic_preview_url'))
+                                            ->content(function (Get $get, ?SitePage $record): HtmlString {
+                                                $channel = (string) ($get('dynamic_channel') ?? $record?->dynamic_channel ?? '');
+                                                $url = filled($channel)
+                                                    ? app(DynamicPageRegistry::class)->get($channel)?->previewUrl($record)
+                                                    : null;
+
+                                                if (blank($url)) {
+                                                    return new HtmlString('<span class="text-gray-500">—</span>');
+                                                }
+
+                                                return new HtmlString(
+                                                    '<a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
+                                                    .e($url)
+                                                    .'</a>'
+                                                );
+                                            })
+                                            ->visible(fn (Get $get): bool => (bool) $get('is_dynamic'))
+                                            ->helperText(__('voodbuilder::admin.helpers.dynamic_preview_url'))
                                             ->columnSpanFull(),
                                     ]),
                             ]),

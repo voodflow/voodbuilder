@@ -8,6 +8,7 @@ use Filament\Forms\Components\Component;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Voodflow\Voodbuilder\Contracts\DynamicPageProvider;
 use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
@@ -18,6 +19,7 @@ use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
@@ -108,6 +110,14 @@ class Voodbuilder
         }
 
         $registry->registerFromArray($id, $definition);
+    }
+
+    /**
+     * Register a companion provider for dynamic SitePage templates that claim public routes.
+     */
+    public static function dynamicPageProvider(DynamicPageProvider $provider): void
+    {
+        app(DynamicPageRegistry::class)->register($provider);
     }
 
     /**
