@@ -12,7 +12,7 @@ import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';
 import { createInspectorEmptyState } from '../inspector-empty-state.js';
-import { registerVideoAssetType } from '../editor-assets.js';
+import { registerMediaPickerCommands, registerVideoAssetType } from '../editor-assets.js';
 import voodbuilderEditorPlugin, {
     applyFreshFooterAttributes,
     applySiteFooterColumns,
@@ -804,6 +804,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     editor.__voodbuilderMediaGalleriesUrl = options.mediaGalleriesUrl ?? '';
     editor.__voodbuilderUploadUrl = options.uploadUrl ?? '';
     editor.__voodbuilderCsrf = options.csrf ?? '';
+    registerMediaPickerCommands(editor);
     // Do not preload thousands of assets into GrapesJS AM — the media browser loads pages on demand.
 
     exposeEditorBridge();
@@ -831,6 +832,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     void bootEditorPlugins(editor, {
         labels,
         entitlements: options.entitlements ?? {},
+        vevents: options.vevents ?? null,
         urls: {
             components: options.componentsUrl ?? null,
             popups: options.popupsUrl ?? null,
@@ -850,6 +852,8 @@ export function initVoodbuilderEditor(container, options = {}) {
         },
         csrf: options.csrf ?? '',
     });
+
+    editor.__voodbuilderVevents = options.vevents ?? null;
 
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
@@ -2110,6 +2114,7 @@ function mountFrontendEditor() {
         siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },
         footerColumnOptions: config.footerColumnOptions ?? {},
         newsletterLists: config.newsletterLists ?? {},
+        vevents: config.vevents ?? null,
     });
 
     const onResize = () => refreshEditorLayout(editor);

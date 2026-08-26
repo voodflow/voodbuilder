@@ -535,6 +535,8 @@ function applyGroup(editor, component, groupId, value) {
         scheduleClassCompile(editor);
         // Same dirty signal as CLASSES "+" / other editor mutations.
         editor?.trigger?.('update');
+        // Class chips listen to component:update (not plain "update").
+        editor?.trigger?.('component:update', component);
     } finally {
         editor.__voodbuilderTwStyleApplying = false;
     }
@@ -1357,6 +1359,8 @@ function normalizeSpacingToken(raw) {
     }
 
     token = token.replace(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|mx|my|px|py)-/, '');
+    // Authors often type CSS units; Spacing is a Tailwind scale, so strip them.
+    token = token.replace(/(?:px|rem|em|%)$/i, '');
 
     if (! SPACING_SCALE_SET.has(token)) {
         return null;
@@ -1790,7 +1794,12 @@ function wireSpacingBoxes(editor, sector, labels = {}) {
         });
 
         block.querySelectorAll('input[data-voodbuilder-spacing-kind]').forEach((input) => {
+            let liveTimer = null;
+
             const commit = () => {
+                window.clearTimeout(liveTimer);
+                liveTimer = null;
+
                 const component = editor.getSelected();
                 const side = input.getAttribute('data-voodbuilder-spacing-side');
                 const linkMode = block.dataset.link || 'all';
@@ -1816,16 +1825,30 @@ function wireSpacingBoxes(editor, sector, labels = {}) {
                 const linkMode = block.dataset.link || 'all';
                 const side = input.getAttribute('data-voodbuilder-spacing-side');
                 mirrorLinkedSpacingInputs(block, side, input.value, linkMode);
+
+                // Live-apply valid scale tokens so authors need not blur first.
+                window.clearTimeout(liveTimer);
+                liveTimer = window.setTimeout(() => {
+                    if (normalizeSpacingToken(input.value) === null) {
+                        return;
+                    }
+
+                    commit();
+                }, 280);
             });
+
+            input.addEventListener('change', commit);
 
             input.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
+                    commit();
                     input.blur();
                 }
 
                 if (event.key === 'Escape') {
                     event.preventDefault();
+                    window.clearTimeout(liveTimer);
                     const component = editor.getSelected();
                     syncSpacingBox(sector.closest('.gjs-sm-sectors') ?? sector, component);
                     input.blur();

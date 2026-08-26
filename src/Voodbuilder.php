@@ -4,29 +4,35 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder;
 
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
-use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
+use Voodflow\Voodbuilder\Licensing\EntitlementManager;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\RepeatListRegistry;
+use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockDefinition;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\Fonts\FontDefinition;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
-use Voodflow\Voodbuilder\Contracts\VoodBuilderModule;
-use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
-use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 
 /**
  * Public facade for third-party and host-app registration.
@@ -111,11 +117,11 @@ class Voodbuilder
      *     label: string|\Closure(): string,
      *     allows_root?: bool,
      *     allows_child?: bool,
-     *     form?: list<\Filament\Forms\Components\Component>|\Closure(): list<\Filament\Forms\Components\Component>,
-     *     resolve_url?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): string,
-     *     resolve_children?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): \Illuminate\Support\Collection,
-     *     is_active?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): bool,
-     *     has_resolvable_link?: \Closure(\Voodflow\Voodbuilder\Models\NavigationMenuItem): bool,
+     *     form?: list<Component>|\Closure(): list<Component>,
+     *     resolve_url?: \Closure(NavigationMenuItem): string,
+     *     resolve_children?: \Closure(NavigationMenuItem): Collection,
+     *     is_active?: \Closure(NavigationMenuItem): bool,
+     *     has_resolvable_link?: \Closure(NavigationMenuItem): bool,
      * }|MenuItemTypeHandler  $definition
      */
     public static function menuItemType(string $key, array|MenuItemTypeHandler $definition): void
@@ -163,11 +169,11 @@ class Voodbuilder
     /**
      * Register a custom visual condition evaluator for the Editor conditions UI.
      *
-     * @param  callable(array<string, mixed>, ?\Voodflow\Voodbuilder\Models\SitePage): bool  $handler
+     * @param  callable(array<string, mixed>, ?SitePage): bool  $handler
      */
     public static function editorCondition(string $key, callable $handler): void
     {
-        \Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks::register($key, $handler);
+        EditorConditionHooks::register($key, $handler);
     }
 
     /**
@@ -177,7 +183,17 @@ class Voodbuilder
      */
     public static function editorLabels(callable $provider): void
     {
-        \Voodflow\Voodbuilder\Support\Editor\EditorGate::registerLabelProvider($provider);
+        EditorGate::registerLabelProvider($provider);
+    }
+
+    /**
+     * Contribute extra keys to the visual editor bootstrap payload (e.g. companion options).
+     *
+     * @param  callable(): array<string, mixed>  $provider
+     */
+    public static function editorConfig(callable $provider): void
+    {
+        EditorGate::registerConfigProvider($provider);
     }
 
     /**

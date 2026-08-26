@@ -25,6 +25,12 @@ Contesto tipico del problema: hero a strati (media assoluto + shade + contenuto 
 
 Contratto larghezza: **section sempre full** (bg/media) → **primo content wrapper** full|normal|custom. Dettagli: [CONTENT_WIDTH.md](./CONTENT_WIDTH.md).
 
+> **Companion / blocchi dinamici:** non aggiungere Section width, Section padding o Content width nel pannello settings a destra. Quei controlli vivono solo nella toolbar contestuale (icona content-width). Il markup sotto è obbligatorio affinché la toolbar funzioni. I root `data-voodbuilder-block` (`.voodbuilder-editor-dynamic`) espongono la stessa icona content-width del blocco section catalogo, perché l’albero interno è locked.
+
+> **Non confondere con Layout Container:** `class="voodbuilder-editor-container"` + `data-voodbuilder-role="content"` è solo lo shell di misura. **Non** mettere `data-voodbuilder-layout="container"` sui companion — quell’attributo attiva Columns / layout picker e non ha senso sui blocchi dinamici.
+
+> **Bordi:** mai `border` nudo. Usa `border border-vp-divider` (come i blocchi catalogo) o `ring-1 ring-vp-divider`.
+
 ```html
 <section
   class="voodbuilder-editor-section relative overflow-hidden …"
@@ -41,6 +47,7 @@ Contratto larghezza: **section sempre full** (bg/media) → **primo content wrap
   <div
     class="voodbuilder-editor-container relative z-10 …"
     data-voodbuilder-role="content"
+    data-voodbuilder-content-width="normal"
     data-voodbuilder-dropzone="content"
   >
     <!-- slot interni opzionali, ancora più precisi -->

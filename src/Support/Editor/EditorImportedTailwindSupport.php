@@ -44,6 +44,7 @@ final class EditorImportedTailwindSupport
         $html = self::simplifyCustomElements($html);
         $html = self::stripNonStandardAttributes($html);
         $html = self::markPastedComponentRoot($html);
+        $html = self::ensureEditorLayoutShell($html);
 
         return self::ensureDarkVariantScope(self::bakeSvgPaintInHtml(self::stripSpuriousSvgBakedPaint($html)));
     }
@@ -479,15 +480,41 @@ final class EditorImportedTailwindSupport
         ) ?? $html;
     }
 
+    /**
+     * Framework / JSX layout tags often appear in Tailwind marketing snippets
+     * (Astro <Container>, etc.). Map them to plain divs so Grapes + toolbar work.
+     *
+     * @var list<string>
+     */
+    private const LAYOUT_PSEUDO_TAGS = [
+        'container',
+        'row',
+        'col',
+        'column',
+        'columns',
+        'fragment',
+        'el-dialog',
+        'el-dialog-panel',
+    ];
+
     public static function simplifyCustomElements(string $html): string
     {
-        if (! str_contains($html, 'el-dialog')) {
+        $needsPass = str_contains($html, 'el-dialog');
+
+        foreach (self::LAYOUT_PSEUDO_TAGS as $tag) {
+            if (stripos($html, '<'.$tag) !== false || stripos($html, '</'.$tag) !== false) {
+                $needsPass = true;
+                break;
+            }
+        }
+
+        if (! $needsPass) {
             return $html;
         }
 
         $document = self::loadDocument($html);
 
-        foreach (['el-dialog-panel', 'el-dialog'] as $tag) {
+        foreach (self::LAYOUT_PSEUDO_TAGS as $tag) {
             while (true) {
                 $elements = $document->getElementsByTagName($tag);
 
@@ -513,6 +540,25 @@ final class EditorImportedTailwindSupport
                     }
                 }
 
+                if (strtolower($tag) === 'container') {
+                    $classes = trim($replacement->getAttribute('class'));
+                    $tokens = preg_split('/\s+/', $classes, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                    if (! in_array('voodbuilder-editor-container', $tokens, true)) {
+                        $tokens[] = 'voodbuilder-editor-container';
+                    }
+
+                    if (! in_array('w-full', $tokens, true)) {
+                        $tokens[] = 'w-full';
+                    }
+
+                    $replacement->setAttribute('class', implode(' ', $tokens));
+
+                    if (! $replacement->hasAttribute('data-voodbuilder-role')) {
+                        $replacement->setAttribute('data-voodbuilder-role', 'content');
+                    }
+                }
+
                 while ($element->firstChild !== null) {
                     $replacement->appendChild($element->firstChild);
                 }
@@ -522,6 +568,309 @@ final class EditorImportedTailwindSupport
         }
 
         return self::extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * Ensure imported snippets expose the standard section → content shell so the
+     * canvas content-width ("resize") toolbar and Layers stay compliant.
+     */
+    public static function ensureEditorLayoutShell(string $html): string
+    {
+        $html = trim($html);
+
+        if ($html === '') {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $roots = [];
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $roots[] = $child;
+            }
+        }
+
+        if ($roots === []) {
+            return $html;
+        }
+
+        if (count($roots) === 1 && self::isEditorSectionElement($roots[0])) {
+            self::ensureContentWrapperOnSection($document, $roots[0]);
+            self::promotePastedComponentClassToSection($roots[0]);
+
+            return self::extractBodyHtml($document) ?? $html;
+        }
+
+        // Single root that is already a content shell: wrap with section only.
+        if (count($roots) === 1 && self::isContentShellElement($roots[0])) {
+            $section = self::createEditorSection($document);
+            $container = $roots[0];
+            self::stripPastedComponentClass($container);
+            self::stampContentShellAttributes($container);
+            $section->appendChild($container);
+            self::replaceBodyChildren($body, [$section]);
+
+            return self::extractBodyHtml($document) ?? $html;
+        }
+
+        $section = self::createEditorSection($document);
+
+        if (count($roots) === 1) {
+            $only = $roots[0];
+            $directContentShell = self::findDirectContentShellChild($only);
+
+            if ($directContentShell !== null) {
+                // e.g. #blog > .voodbuilder-editor-container — promote shell, keep outer as body.
+                self::stripPastedComponentClass($only);
+                $id = trim($only->getAttribute('id'));
+
+                if ($id !== '' && ! $section->hasAttribute('id')) {
+                    $section->setAttribute('id', $id);
+                    $only->removeAttribute('id');
+                }
+
+                while ($only->firstChild !== null) {
+                    $section->appendChild($only->firstChild);
+                }
+
+                self::ensureContentWrapperOnSection($document, $section);
+                self::replaceBodyChildren($body, [$section]);
+
+                return self::extractBodyHtml($document) ?? $html;
+            }
+        }
+
+        $container = self::createEditorContentContainer($document);
+
+        foreach ($roots as $root) {
+            self::stripPastedComponentClass($root);
+
+            if (count($roots) === 1) {
+                $id = trim($root->getAttribute('id'));
+
+                if ($id !== '' && ! $section->hasAttribute('id')) {
+                    $section->setAttribute('id', $id);
+                    $root->removeAttribute('id');
+                }
+
+                // Unwrap a trivial outer div (only id/class leftovers).
+                if (self::isTrivialWrapper($root)) {
+                    while ($root->firstChild !== null) {
+                        $container->appendChild($root->firstChild);
+                    }
+
+                    continue;
+                }
+            }
+
+            $container->appendChild($root);
+        }
+
+        $section->appendChild($container);
+        self::replaceBodyChildren($body, [$section]);
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
+    protected static function createEditorSection(DOMDocument $document): DOMElement
+    {
+        $section = $document->createElement('section');
+        $section->setAttribute('class', 'voodbuilder-editor-section voodbuilder-pasted-component relative w-full');
+
+        return $section;
+    }
+
+    protected static function createEditorContentContainer(DOMDocument $document): DOMElement
+    {
+        $container = $document->createElement('div');
+        self::stampContentShellAttributes($container);
+
+        return $container;
+    }
+
+    protected static function stampContentShellAttributes(DOMElement $element): void
+    {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach (['voodbuilder-editor-container', 'mx-auto', 'w-full', 'max-w-[80rem]'] as $token) {
+            if (! in_array($token, $classes, true)) {
+                $classes[] = $token;
+            }
+        }
+
+        $element->setAttribute('class', implode(' ', $classes));
+        $element->setAttribute('data-voodbuilder-role', 'content');
+
+        if (! $element->hasAttribute('data-voodbuilder-content-width')) {
+            $element->setAttribute('data-voodbuilder-content-width', 'normal');
+        }
+
+        $style = trim($element->getAttribute('style'));
+        $required = 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;';
+
+        if ($style === '') {
+            $element->setAttribute('style', $required);
+        } elseif (! str_contains($style, 'max-width')) {
+            $element->setAttribute('style', rtrim($style, ';').';'.$required);
+        }
+    }
+
+    protected static function isEditorSectionElement(DOMElement $element): bool
+    {
+        if (strtolower($element->tagName) !== 'section') {
+            return false;
+        }
+
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return in_array('voodbuilder-editor-section', $classes, true)
+            || $element->hasAttribute('data-voodbuilder-section-block')
+            || $element->hasAttribute('data-voodbuilder-layout');
+    }
+
+    protected static function isContentShellElement(DOMElement $element): bool
+    {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return in_array('voodbuilder-editor-container', $classes, true)
+            || $element->getAttribute('data-voodbuilder-role') === 'content';
+    }
+
+    protected static function findDirectContentShellChild(DOMElement $parent): ?DOMElement
+    {
+        foreach ($parent->childNodes as $child) {
+            if ($child instanceof DOMElement && self::isContentShellElement($child)) {
+                return $child;
+            }
+        }
+
+        return null;
+    }
+
+    protected static function ensureContentWrapperOnSection(DOMDocument $document, DOMElement $section): void
+    {
+        $existing = null;
+
+        foreach ($section->childNodes as $child) {
+            if ($child instanceof DOMElement && self::isContentShellElement($child)) {
+                $existing = $child;
+                break;
+            }
+        }
+
+        if ($existing instanceof DOMElement) {
+            self::stampContentShellAttributes($existing);
+
+            return;
+        }
+
+        $container = self::createEditorContentContainer($document);
+        $move = [];
+
+        foreach ($section->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $move[] = $child;
+            }
+        }
+
+        foreach ($move as $child) {
+            $container->appendChild($child);
+        }
+
+        $section->appendChild($container);
+    }
+
+    protected static function promotePastedComponentClassToSection(DOMElement $section): void
+    {
+        $classes = preg_split('/\s+/', trim($section->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (! in_array('voodbuilder-editor-section', $classes, true)) {
+            array_unshift($classes, 'voodbuilder-editor-section');
+        }
+
+        if (! in_array('voodbuilder-pasted-component', $classes, true)) {
+            $classes[] = 'voodbuilder-pasted-component';
+        }
+
+        if (! in_array('relative', $classes, true)) {
+            $classes[] = 'relative';
+        }
+
+        if (! in_array('w-full', $classes, true)) {
+            $classes[] = 'w-full';
+        }
+
+        $section->setAttribute('class', implode(' ', $classes));
+
+        foreach ($section->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                self::stripPastedComponentClass($child);
+            }
+        }
+    }
+
+    protected static function stripPastedComponentClass(DOMElement $element): void
+    {
+        if (! $element->hasAttribute('class')) {
+            return;
+        }
+
+        $classes = array_values(array_filter(
+            preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            static fn (string $token): bool => $token !== 'voodbuilder-pasted-component',
+        ));
+
+        if ($classes === []) {
+            $element->removeAttribute('class');
+        } else {
+            $element->setAttribute('class', implode(' ', $classes));
+        }
+    }
+
+    protected static function isTrivialWrapper(DOMElement $element): bool
+    {
+        if (strtolower($element->tagName) !== 'div') {
+            return false;
+        }
+
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $meaningful = array_values(array_filter(
+            $classes,
+            static fn (string $token): bool => ! in_array($token, ['relative', 'voodbuilder-pasted-component'], true),
+        ));
+
+        if ($meaningful !== []) {
+            return false;
+        }
+
+        foreach ($element->attributes as $attribute) {
+            if (! in_array($attribute->name, ['id', 'class'], true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  list<DOMElement>  $children
+     */
+    protected static function replaceBodyChildren(DOMElement $body, array $children): void
+    {
+        while ($body->firstChild !== null) {
+            $body->removeChild($body->firstChild);
+        }
+
+        foreach ($children as $child) {
+            $body->appendChild($child);
+        }
     }
 
     public static function inlineBackgroundImageClasses(string $html): string

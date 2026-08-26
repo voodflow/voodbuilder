@@ -21,6 +21,8 @@ const LINE_HEIGHT_REPLACEMENTS = {
     'sm:text-xl/8': 'sm:text-xl sm:leading-8',
 };
 
+const LAYOUT_PSEUDO_TAGS = ['container', 'row', 'col', 'column', 'columns', 'fragment'];
+
 export function migrateImportedTailwindHtml(html) {
     let migrated = String(html ?? '');
 
@@ -46,6 +48,8 @@ export function migrateImportedTailwindHtml(html) {
         .replace(/<el-dialog\b/gi, '<div')
         .replace(/<\/el-dialog>/gi, '</div>')
         .replace(/\s(?:command|commandfor)=(["']).*?\1/gi, '');
+
+    migrated = simplifyFrameworkLayoutTags(migrated);
 
     if (! /\bvoodbuilder-pasted-component\b/.test(migrated)) {
         const trimmed = migrated.trim();
@@ -81,7 +85,160 @@ export function migrateImportedTailwindHtml(html) {
         );
     }
 
-    return migrated;
+    return ensureEditorLayoutShell(migrated);
+}
+
+/**
+ * Astro/React layout helpers → plain divs (mirrors PHP simplifyCustomElements).
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+function simplifyFrameworkLayoutTags(html) {
+    let next = String(html ?? '');
+
+    for (const tag of LAYOUT_PSEUDO_TAGS) {
+        const open = new RegExp(`<${tag}\\b([^>]*)>`, 'gi');
+        const close = new RegExp(`</${tag}\\s*>`, 'gi');
+
+        next = next.replace(open, (_, attrs) => {
+            let attrsStr = String(attrs ?? '');
+
+            if (tag.toLowerCase() !== 'container') {
+                return `<div${attrsStr}>`;
+            }
+
+            let classAttr = '';
+            const classMatch = attrsStr.match(/\bclass=(["'])(.*?)\1/i);
+
+            if (classMatch) {
+                const tokens = classMatch[2].split(/\s+/).filter(Boolean);
+
+                if (! tokens.includes('voodbuilder-editor-container')) {
+                    tokens.push('voodbuilder-editor-container');
+                }
+
+                if (! tokens.includes('w-full')) {
+                    tokens.push('w-full');
+                }
+
+                classAttr = ` class="${tokens.join(' ')}"`;
+                attrsStr = attrsStr.replace(/\bclass=(["'])(.*?)\1/i, '');
+            } else {
+                classAttr = ' class="voodbuilder-editor-container w-full"';
+            }
+
+            if (! /\bdata-voodbuilder-role=/.test(attrsStr)) {
+                attrsStr += ' data-voodbuilder-role="content"';
+            }
+
+            return `<div${attrsStr}${classAttr}>`;
+        });
+        next = next.replace(close, '</div>');
+    }
+
+    return next;
+}
+
+/**
+ * Ensure section → content shell for content-width toolbar (mirrors PHP).
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function ensureEditorLayoutShell(html) {
+    const trimmed = String(html ?? '').trim();
+
+    if (! trimmed) {
+        return trimmed;
+    }
+
+    if (/\bvoodbuilder-editor-section\b/.test(trimmed)
+        && /\bdata-voodbuilder-role=(["'])content\1/.test(trimmed)) {
+        return trimmed;
+    }
+
+    if (typeof DOMParser === 'undefined') {
+        return [
+            '<section class="voodbuilder-editor-section voodbuilder-pasted-component relative w-full">',
+            '<div class="voodbuilder-editor-container mx-auto w-full max-w-[80rem]" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto;">',
+            trimmed,
+            '</div></section>',
+        ].join('');
+    }
+
+    const document = new DOMParser().parseFromString(`<body>${trimmed}</body>`, 'text/html');
+    const body = document.body;
+    const roots = [...body.children];
+
+    if (roots.length === 0) {
+        return trimmed;
+    }
+
+    const section = document.createElement('section');
+    section.className = 'voodbuilder-editor-section voodbuilder-pasted-component relative w-full';
+
+    const container = document.createElement('div');
+    container.className = 'voodbuilder-editor-container mx-auto w-full max-w-[80rem]';
+    container.setAttribute('data-voodbuilder-role', 'content');
+    container.setAttribute('data-voodbuilder-content-width', 'normal');
+    container.setAttribute('style', 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;');
+
+    if (roots.length === 1) {
+        const only = roots[0];
+        const id = only.getAttribute('id');
+
+        if (id) {
+            section.id = id;
+            only.removeAttribute('id');
+        }
+
+        only.classList.remove('voodbuilder-pasted-component');
+
+        const directShell = [...only.children].find((child) => (
+            child.classList?.contains('voodbuilder-editor-container')
+            || child.getAttribute('data-voodbuilder-role') === 'content'
+        ));
+
+        if (directShell) {
+            while (only.firstChild) {
+                section.appendChild(only.firstChild);
+            }
+
+            const shell = section.querySelector('[data-voodbuilder-role="content"], .voodbuilder-editor-container');
+
+            if (shell) {
+                shell.classList.add('voodbuilder-editor-container', 'mx-auto', 'w-full', 'max-w-[80rem]');
+                shell.setAttribute('data-voodbuilder-role', 'content');
+
+                if (! shell.hasAttribute('data-voodbuilder-content-width')) {
+                    shell.setAttribute('data-voodbuilder-content-width', 'normal');
+                }
+            }
+
+            return section.outerHTML;
+        }
+
+        const isTrivial = only.tagName === 'DIV'
+            && [...only.classList].every((token) => ['relative', 'voodbuilder-pasted-component'].includes(token));
+
+        if (isTrivial) {
+            while (only.firstChild) {
+                container.appendChild(only.firstChild);
+            }
+        } else {
+            container.appendChild(only);
+        }
+    } else {
+        for (const root of roots) {
+            root.classList?.remove?.('voodbuilder-pasted-component');
+            container.appendChild(root);
+        }
+    }
+
+    section.appendChild(container);
+
+    return section.outerHTML;
 }
 
 function parseBackgroundUrlClass(className) {

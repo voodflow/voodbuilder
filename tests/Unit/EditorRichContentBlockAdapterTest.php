@@ -18,6 +18,18 @@ class EditorRichContentBlockAdapterTest extends TestCase
         $this->assertStringContainsString('data-voodbuilder-block="event_details"', $html);
         $this->assertStringContainsString('data-voodbuilder-config=', $html);
         $this->assertStringContainsString('<p>Details</p>', $html);
+        $this->assertStringContainsString('<div data-voodbuilder-block="event_details"', $html);
+    }
+
+    public function test_stamps_dynamic_attrs_on_single_section_root(): void
+    {
+        $inner = '<section class="voodbuilder-editor-section ve-demo"><div>Body</div></section>';
+        $html = EditorRichContentBlockAdapter::wrap('event_testimonials', ['heading' => 'Say'], $inner);
+
+        $this->assertStringContainsString('<section class="voodbuilder-editor-section ve-demo voodbuilder-editor-dynamic"', $html);
+        $this->assertStringContainsString('data-voodbuilder-block="event_testimonials"', $html);
+        $this->assertStringNotContainsString('<div data-voodbuilder-block=', $html);
+        $this->assertStringContainsString('<div>Body</div>', $html);
     }
 
     public function test_builds_definition_from_rich_content_block(): void

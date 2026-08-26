@@ -6,6 +6,7 @@
 
 import { isDynamicallyBoundImage, isEditableImageComponent } from './jodit-image-editor.js';
 import { openMediaAssets } from './editor-assets.js';
+import { applyImageSrc } from './image-content-settings.js';
 
 /**
  * @param {import('grapesjs').Editor} editor
@@ -74,9 +75,8 @@ function openImageAssets(editor, image) {
         kinds: ['image'],
         labelKind: 'image',
         labels,
-        onSelect: (src) => {
-            image.set('src', src);
-            image.addAttributes?.({ src });
+        onSelect: (src, meta) => {
+            applyImageSrc(image, null, src, meta ?? null);
         },
     });
 }

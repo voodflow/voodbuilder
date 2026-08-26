@@ -125,6 +125,11 @@ function registerSectionCtaDropGuard(editor) {
                 return false;
             }
 
+            // Companion smart-wrap roots must remain voodbuilder-dynamic.
+            if (element.getAttribute?.('data-voodbuilder-block')) {
+                return false;
+            }
+
             if (! element.querySelector?.('[data-voodbuilder-dropzone="actions"]')) {
                 return false;
             }

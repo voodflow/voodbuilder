@@ -89,8 +89,12 @@
     min-height: 4rem;
 }
 
-.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:empty) {
+.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop])) {
     min-height: 0;
+}
+
+.gjs-frame .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) {
+    min-height: 12rem;
 }
 
 .gjs-frame .voodbuilder-page-content-slot:empty::before,

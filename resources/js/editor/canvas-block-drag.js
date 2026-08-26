@@ -942,6 +942,11 @@ function syncChromeDropZoneHighlight(editor) {
     const point = editor.__voodbuilderLastDragPoint ?? editor.__voodbuilderLastDropPoint;
 
     if (! frame || ! point) {
+        // Empty / spacer-only pages: still show the page-content affordance while dragging.
+        if (isPageContentSlotDropAffordable(pageSlot)) {
+            pageSlot.classList.add('voodbuilder-chrome-drop-active');
+        }
+
         return;
     }
 
@@ -953,7 +958,40 @@ function syncChromeDropZoneHighlight(editor) {
 
     if (target?.closest?.('[data-voodbuilder-page-content]')) {
         pageSlot.classList.add('voodbuilder-chrome-drop-active');
+
+        return;
     }
+
+    // Wrapper is not droppable — treat the gap between chrome parts as page content
+    // when the pointer is not over nav/footer chrome.
+    const overChromePart = target?.closest?.('[data-voodbuilder-chrome-shell-part]');
+
+    if (! overChromePart && isPageContentSlotDropAffordable(pageSlot)) {
+        pageSlot.classList.add('voodbuilder-chrome-drop-active');
+    }
+}
+
+/**
+ * True when the page-content slot has no author blocks yet (empty or only editor spacers).
+ *
+ * @param {HTMLElement|null|undefined} pageSlot
+ * @returns {boolean}
+ */
+function isPageContentSlotDropAffordable(pageSlot) {
+    if (! pageSlot) {
+        return false;
+    }
+
+    const children = [...(pageSlot.children ?? [])];
+
+    if (children.length === 0) {
+        return true;
+    }
+
+    return children.every((child) => (
+        child.hasAttribute?.('data-voodbuilder-top-drop-spacer')
+        || child.hasAttribute?.('data-voodbuilder-inner-drop')
+    ));
 }
 
 function isChromeDropTargetElement(element, editor) {

@@ -235,7 +235,18 @@ function registerLayoutSectionType(editor) {
                 return false;
             }
 
-            return Boolean(element.querySelector?.('.container'))
+            // Smart-wrapped companion blocks stamp data-voodbuilder-block on the
+            // outer section (often with body-font). Those must stay
+            // voodbuilder-dynamic (droppable:false) so Grapes places siblings
+            // before/after in page-content — otherwise section droppable
+            // functions reject catalog drops and the blue drop zones vanish.
+            if (element.getAttribute?.('data-voodbuilder-block')) {
+                return false;
+            }
+
+            // Intentional layout / catalog sections — not every companion section shell.
+            return element.getAttribute?.('data-voodbuilder-layout') === 'section'
+                || Boolean(element.getAttribute?.('data-voodbuilder-section-block'))
                 || element.classList.contains('body-font');
         },
         extend: 'default',
@@ -271,7 +282,9 @@ function registerLayoutSectionType(editor) {
                 return false;
             }
 
-            return element.classList.contains('container') || element.classList.contains('voodbuilder-editor-container');
+            // Layout builder containers only — content-width shells use
+            // .voodbuilder-editor-container without data-voodbuilder-layout.
+            return element.getAttribute?.('data-voodbuilder-layout') === 'container';
         },
         extend: 'default',
         model: {
@@ -328,9 +341,13 @@ function lockComponentTree(component) {
     const attributes = component.getAttributes?.() ?? {};
     const protectedSlot = attributes['data-voodbuilder-menu'] || attributes['data-voodbuilder-brand'];
 
+    // Keep dynamic preview trees closed for canvas + Layers DnD. Without
+    // droppable:false, authors can nest Layout / other blocks inside event
+    // shells (empty testimonials with deep accidental trees).
     component.set({
         removable: false,
         draggable: false,
+        droppable: false,
         copyable: false,
         selectable: ! protectedSlot,
         hoverable: ! protectedSlot,
@@ -372,6 +389,13 @@ function lockDynamicPreviewContent(component, editor = null) {
     if (locked) {
         return;
     }
+
+    // Root must stay closed even if a later type (e.g. body-font section)
+    // overwrote defaults — otherwise the placer never falls through to
+    // page-content before/after and canvas drop zones disappear.
+    component.set({
+        droppable: false,
+    }, { silent: true });
 
     component.components().forEach((child) => {
         lockComponentTree(child);
@@ -1270,10 +1294,18 @@ function mergeAuthorStructuralClasses(author, fresh) {
 }
 
 function captureContainerAuthorClasses(component) {
-    return safeFindComponents(component, '.voodbuilder-editor-container, .container')
-        .map((node) => (typeof node.getClasses === 'function'
-            ? node.getClasses()
-            : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean)));
+    return safeFindComponents(component, '.voodbuilder-editor-container, .container, [data-voodbuilder-role="content"]')
+        .map((node) => {
+            const attrs = node.getAttributes?.() ?? {};
+
+            return {
+                classes: typeof node.getClasses === 'function'
+                    ? node.getClasses()
+                    : String(attrs.class ?? '').split(/\s+/).filter(Boolean),
+                contentWidth: String(attrs['data-voodbuilder-content-width'] ?? '').trim(),
+                style: node.getStyle?.({ inline: true }) ?? {},
+            };
+        });
 }
 
 function restoreContainerAuthorClasses(component, authorClassLists) {
@@ -1281,24 +1313,54 @@ function restoreContainerAuthorClasses(component, authorClassLists) {
         return;
     }
 
-    const containers = safeFindComponents(component, '.voodbuilder-editor-container, .container');
+    const containers = safeFindComponents(component, '.voodbuilder-editor-container, .container, [data-voodbuilder-role="content"]');
 
     containers.forEach((node, index) => {
         const author = authorClassLists[index];
 
-        if (! Array.isArray(author) || author.length === 0) {
+        if (! author) {
             return;
         }
 
-        const fresh = typeof node.getClasses === 'function'
-            ? node.getClasses()
-            : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean);
-        const merged = mergeAuthorStructuralClasses(author, fresh);
+        // Back-compat: older callers passed a bare string[] of classes.
+        const authorClasses = Array.isArray(author)
+            ? author
+            : (Array.isArray(author.classes) ? author.classes : []);
+        const contentWidth = Array.isArray(author)
+            ? ''
+            : String(author.contentWidth ?? '').trim();
+        const authorStyle = Array.isArray(author)
+            ? {}
+            : (author.style && typeof author.style === 'object' ? author.style : {});
 
-        if (typeof node.setClass === 'function') {
-            node.setClass(merged);
-        } else {
-            node.addAttributes?.({ class: merged.join(' ') });
+        if (authorClasses.length > 0) {
+            const fresh = typeof node.getClasses === 'function'
+                ? node.getClasses()
+                : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean);
+            const merged = mergeAuthorStructuralClasses(authorClasses, fresh);
+
+            if (typeof node.setClass === 'function') {
+                node.setClass(merged);
+            } else {
+                node.addAttributes?.({ class: merged.join(' ') });
+            }
+        }
+
+        if (contentWidth !== '') {
+            node.addAttributes?.({ 'data-voodbuilder-content-width': contentWidth });
+        }
+
+        const measureKeys = ['width', 'max-width', 'maxWidth', 'margin-left', 'marginLeft', 'margin-right', 'marginRight', 'margin-inline', 'marginInline'];
+        const stylePatch = {};
+
+        for (const key of measureKeys) {
+            if (Object.prototype.hasOwnProperty.call(authorStyle, key) && authorStyle[key] != null && authorStyle[key] !== '') {
+                stylePatch[key] = authorStyle[key];
+            }
+        }
+
+        if (Object.keys(stylePatch).length > 0) {
+            node.addStyle?.(stylePatch, { noEvent: true });
         }
     });
 }
@@ -1447,6 +1509,10 @@ function registerDynamicBlockType(editor) {
             init() {
                 syncDynamicBlockAttributes(this);
 
+                // Always keep the dynamic root closed for canvas drops, even when
+                // another type briefly coerced the model (body-font section match).
+                this.set('droppable', false, { silent: true });
+
                 if (isSiteFooterBlock(this.getAttributes()['data-voodbuilder-block'])) {
                     configureSiteFooterTraits(this, editor);
                 }
@@ -1522,6 +1588,11 @@ function pruneEmptySections(editor) {
 function ensureLayoutSectionTraits(editor) {
     walkComponentTree(editor.getWrapper?.(), (section) => {
         if (String(section.get?.('tagName') ?? '').toLowerCase() !== 'section') {
+            return;
+        }
+
+        // Never coerce companion / chrome dynamic shells into layout sections.
+        if (section.getAttributes?.()?.['data-voodbuilder-block']) {
             return;
         }
 
@@ -1605,10 +1676,12 @@ export default function voodbuilderEditorPlugin(editor, options = {}) {
     registerBoundComponentType(editor);
     registerComponentInstanceType(editor, () => editor.__voodbuilderComponentsCatalog ?? []);
 
-    registerDynamicBlockType(editor);
     registerSiteNavMenuButtonType(editor);
     registerSiteNavChromeButtonType(editor);
     registerLayoutSectionType(editor);
+    // Register after layout section so smart-wrapped companion shells
+    // (section + body-font + data-voodbuilder-block) resolve as dynamic.
+    registerDynamicBlockType(editor);
     registerSpacingStyleSync(editor);
     registerTailwindStyleSync(editor);
     registerDynamicBlockGuards(editor);

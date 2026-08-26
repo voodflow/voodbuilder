@@ -75,6 +75,7 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-templates/resources/js/editor/plugin.js',
             '../../../../voodbuilder-fonts/resources/js/editor/plugin.js',
             '../../../../voodbuilder-elements/resources/js/editor/plugin.js',
+            '../../../../vevents/resources/js/editor/plugin.js',
         ],
         { eager: true },
     );

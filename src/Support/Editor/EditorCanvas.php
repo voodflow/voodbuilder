@@ -927,7 +927,17 @@ final class EditorCanvas
          * Before the first page-content block (sibling spacer under chrome nav).
          * Only during block drag — not when the "show dropzones" toggle is on
          * (that uses inner-drop-slot sentinels, and wrongly shared this cue before).
+         *
+         * Spacer-only slots must keep a tall hit target: appending the spacer
+         * clears :empty and used to collapse min-height to 0 (no dropzones).
          */
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) {
+            min-height: min(28rem, 55vh) !important;
+            outline: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+            outline-offset: -2px;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 6%, transparent);
+        }
+
         body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-top-drop-spacer {
             min-height: 2.5rem !important;
             height: 2.5rem !important;
@@ -938,6 +948,13 @@ final class EditorCanvas
             pointer-events: auto !important;
             background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
             border-radius: 0.375rem;
+        }
+
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) > .voodbuilder-editor-top-drop-spacer {
+            min-height: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            background: transparent;
         }
 
         body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-top-drop-spacer::after {

@@ -8,7 +8,8 @@
 
 import { isFooterBlock, isNavBlock, isHeaderBlock } from './chrome/ids.js';
 import { tablerIcon } from './editor-icons.js';
-import { isLayoutContainer, isLayoutSection, LAYOUT_ATTR } from './layout-blocks.js';
+import { isLayoutContainer, isLayoutSection } from './layout-blocks.js';
+import { COMPONENT_ATTR } from './component-instance-type.js';
 
 export const CONTENT_WIDTH_ATTR = 'data-voodbuilder-content-width';
 export const CMD_CYCLE_CONTENT_WIDTH = 'voodbuilder-cycle-content-width';
@@ -331,6 +332,23 @@ function isDecorativeSectionChild(component) {
 }
 
 /**
+ * Saved library component instance root (data-voodbuilder-component).
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isComponentInstanceHost(component) {
+    if (! component) {
+        return false;
+    }
+
+    const attrs = componentAttrs(component);
+
+    return Boolean(attrs[COMPONENT_ATTR])
+        || componentClasses(component).includes('voodbuilder-editor-component-instance');
+}
+
+/**
  * @param {object} component
  * @returns {boolean}
  */
@@ -461,9 +479,10 @@ export function ensureSectionContentWrapper(section) {
                 existing.setClass?.(classes);
             }
 
+            // Content-width shell only — never stamp LAYOUT_ATTR (that opens
+            // Columns / layout picker and breaks companion dynamic blocks).
             const attrs = {
                 ...componentAttrs(existing),
-                [LAYOUT_ATTR]: 'container',
                 'data-voodbuilder-role': 'content',
             };
             existing.setAttributes?.(attrs);
@@ -484,7 +503,6 @@ export function ensureSectionContentWrapper(section) {
         tagName: 'div',
         classes: [CONTAINER_CLASS, 'w-full'],
         attributes: {
-            [LAYOUT_ATTR]: 'container',
             'data-voodbuilder-role': 'content',
         },
         droppable: true,
@@ -508,6 +526,22 @@ export function ensureSectionContentWrapper(section) {
 export function resolveContentWidthTarget(component) {
     if (! component) {
         return null;
+    }
+
+    if (isDynamicRichContentHost(component)) {
+        const nestedSection = findNestedContentWidthSection(component);
+
+        if (nestedSection) {
+            return ensureSectionContentWrapper(nestedSection);
+        }
+    }
+
+    if (isComponentInstanceHost(component)) {
+        const nestedSection = findNestedContentWidthSection(component);
+
+        if (nestedSection) {
+            return ensureSectionContentWrapper(nestedSection);
+        }
     }
 
     if (isContentWidthSection(component)) {
@@ -595,7 +629,55 @@ function isLeafLikeComponent(component) {
 }
 
 /**
+ * Dynamic rich-content hosts (companion blocks) lock inner trees so the
+ * selectable root is `data-voodbuilder-block`. Treat them like a section for
+ * content-width toolbar — same UX as catalog sections.
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+export function isDynamicRichContentHost(component) {
+    const blockId = String(componentAttrs(component)['data-voodbuilder-block'] ?? '').trim();
+
+    if (blockId === '') {
+        return false;
+    }
+
+    if (isChromeNavOrFooterTree(component)) {
+        return false;
+    }
+
+    return componentClasses(component).includes('voodbuilder-editor-dynamic')
+        || Boolean(blockId);
+}
+
+/**
+ * @param {object} component
+ * @returns {object|null}
+ */
+export function findNestedContentWidthSection(component) {
+    const children = componentChildren(component);
+
+    for (const child of children) {
+        if (isContentWidthSection(child)) {
+            return child;
+        }
+    }
+
+    for (const child of children) {
+        for (const grand of componentChildren(child)) {
+            if (isContentWidthSection(grand)) {
+                return grand;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
  * Show content-width on section (1st) and its content wrapper (2nd) only.
+ * Also on locked dynamic block roots that wrap a section + content shell.
  *
  * @param {object} component
  * @param {object} editor
@@ -614,6 +696,14 @@ export function shouldShowContentWidthToolbar(component, editor) {
         return false;
     }
 
+    if (isDynamicRichContentHost(component) && findNestedContentWidthSection(component)) {
+        return true;
+    }
+
+    if (isComponentInstanceHost(component) && findNestedContentWidthSection(component)) {
+        return true;
+    }
+
     if (isContentWidthSection(component)) {
         return true;
     }
@@ -623,6 +713,55 @@ export function shouldShowContentWidthToolbar(component, editor) {
     }
 
     return isBarePageContentContainer(component);
+}
+
+/**
+ * Apply content-width to the live canvas DOM without remounting the view tree.
+ *
+ * @param {object} component
+ * @param {string} mode
+ * @param {object} editor
+ */
+function syncContentWidthDom(component, mode, editor) {
+    const el = component?.getEl?.() ?? component?.view?.el;
+
+    if (! (el instanceof Element)) {
+        return;
+    }
+
+    el.setAttribute(CONTENT_WIDTH_ATTR, mode);
+
+    const classes = component.getClasses?.() ?? [];
+    if (Array.isArray(classes) && classes.length > 0) {
+        el.setAttribute('class', classes.join(' '));
+    }
+
+    if (mode === CONTENT_WIDTH_NORMAL) {
+        el.style.width = '100%';
+        el.style.maxWidth = STANDARD_CONTENT_MAX;
+        el.style.marginLeft = 'auto';
+        el.style.marginRight = 'auto';
+
+        return;
+    }
+
+    if (mode === CONTENT_WIDTH_CUSTOM) {
+        const custom = resolveCustomContentMax(editor);
+
+        if (custom) {
+            el.style.width = '100%';
+            el.style.maxWidth = custom;
+            el.style.marginLeft = 'auto';
+            el.style.marginRight = 'auto';
+        }
+
+        return;
+    }
+
+    el.style.width = '100%';
+    el.style.maxWidth = 'none';
+    el.style.marginLeft = '0';
+    el.style.marginRight = '0';
 }
 
 /**
@@ -705,12 +844,9 @@ export function applyComponentContentWidth(component, mode, editor) {
             }, SILENT_STYLE);
         }
 
-        // Force canvas view to pick up attr + styles immediately (one-click WYSIWYG).
-        try {
-            component.view?.render?.();
-        } catch {
-            // View may be unavailable during bulk setComponents.
-        }
+        // Sync attr/styles onto the live canvas node without a full Grapes view
+        // remount (that freezes large dynamic blocks for several seconds).
+        syncContentWidthDom(component, next, editor);
     } finally {
         if (editor) {
             editor.__voodbuilderContentWidthApplying = false;

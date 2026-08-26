@@ -1033,6 +1033,12 @@ CSS;
             return $html;
         }
 
+        // Already compliant editor shell — do not wrap again (nested <main>/<section>
+        // inside the content container must not trigger a second outer wrapper).
+        if (preg_match('/^<section\b[^>]*\bvoodbuilder-editor-section\b/i', ltrim($html)) === 1) {
+            return $html;
+        }
+
         if (preg_match_all('/<(section|nav|header|footer|main|article)\b/i', $html, $matches) > 1) {
             return '<div class="voodbuilder-pasted-component">'.$html.'</div>';
         }

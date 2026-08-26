@@ -77,4 +77,6 @@ Prefer host `config/voodbuilder-integrations.php` or `AppServiceProvider` over e
 - Hard-code edition names — use entitlements  
 - Put paid UI into Core — use companions + soft-gates  
 
+Deep dive for companion authors: [Companion integration](../../developer/companion-integration.md).
+
 Walkthrough: [Sample plugin](./sample-plugin).

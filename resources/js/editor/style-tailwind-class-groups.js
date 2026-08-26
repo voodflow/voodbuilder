@@ -702,11 +702,9 @@ const UTILITY_CONFLICT_GROUPS = {
 /**
  * Replace one exclusive utility group atomically (deduped, no append).
  *
- * Prefer setClass with the final list. Do not dual-write attributes.class — that
- * races attrUpdated and can drop utilities from toHTML/Save.
- *
- * After setClass, verify with addClass (same path as CLASSES "+") so Grapes
- * SelectorManager never silently drops tokens from the saved HTML.
+ * Prefer removeClass + addClass (same path as CLASSES "+"). Avoid setClass —
+ * it races Grapes SelectorManager / attrUpdated and can drop utilities so the
+ * Style Spacing panel appears to "do nothing" while manual class entry works.
  *
  * @param {object|null|undefined} component
  * @param {Set<string>} groupSet
@@ -729,39 +727,30 @@ export function replaceClassGroup(component, groupSet, nextClass, options = {}) 
         }
     }
 
-    const kept = componentClassList(component).filter((name) => ! drop.has(name));
     const next = String(nextClass ?? '').trim();
+    const before = componentClassList(component);
 
-    if (next !== '' && ! kept.includes(next)) {
-        kept.push(next);
-    }
-
-    if (typeof component.setClass === 'function') {
-        component.setClass(kept);
-    } else {
-        for (const name of componentClassList(component)) {
-            if (drop.has(name)) {
-                component.removeClass?.(name);
-            }
-        }
-
-        if (next !== '' && ! componentClassList(component).includes(next)) {
-            component.addClass?.(next);
+    for (const name of before) {
+        if (drop.has(name) && name !== next) {
+            component.removeClass?.(name);
         }
     }
 
-    // Match CLASSES "+" persistence: ensure every kept token is registered.
+    if (next !== '' && ! componentClassList(component).includes(next)) {
+        component.addClass?.(next);
+    }
+
+    // Second pass: Grapes sometimes keeps a Selector without reflecting it in
+    // getClasses until addClass runs again (same as CLASSES "+" persistence).
     const present = new Set(componentClassList(component));
 
-    for (const name of kept) {
-        if (! present.has(name)) {
-            component.addClass?.(name);
-            present.add(name);
-        }
+    if (next !== '' && ! present.has(next)) {
+        component.addClass?.(next);
+        present.add(next);
     }
 
-    for (const name of [...present]) {
-        if (drop.has(name) && name !== next) {
+    for (const name of before) {
+        if (drop.has(name) && name !== next && present.has(name)) {
             component.removeClass?.(name);
         }
     }

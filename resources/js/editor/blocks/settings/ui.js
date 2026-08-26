@@ -75,6 +75,11 @@ function syncSettingsFormValues(mount, root) {
         return;
     }
 
+    const blockConfig = root.get('voodbuilderConfig');
+    const config = blockConfig && typeof blockConfig === 'object' && ! Array.isArray(blockConfig)
+        ? blockConfig
+        : null;
+
     mount.querySelectorAll('[name]').forEach((input) => {
         const name = input.getAttribute('name');
 
@@ -83,23 +88,35 @@ function syncSettingsFormValues(mount, root) {
         }
 
         if (input instanceof HTMLInputElement && input.type === 'checkbox') {
-            const raw = root.get(name);
-            // Nav/footer brand toggles default to on when unset (`!== false`).
-            if (
-                name === 'voodbuilderShowSiteName'
+            let raw = root.get(name);
+
+            if ((raw === undefined || raw === null) && config && Object.prototype.hasOwnProperty.call(config, name)) {
+                raw = config[name];
+            }
+
+            // Nav/footer brand toggles + event "show_*" default to on when unset.
+            const defaultOn = name === 'voodbuilderShowSiteName'
                 || name === 'voodbuilderShowLogo'
                 || name === 'voodbuilderShowBrand'
-            ) {
-                input.checked = raw !== false;
+                || name === 'show_days'
+                || name === 'show_map'
+                || name === 'show_program_link';
+
+            if (defaultOn) {
+                input.checked = raw !== false && raw !== 0 && raw !== '0' && raw !== 'false';
             } else {
-                input.checked = raw === true;
+                input.checked = raw === true || raw === 1 || raw === '1' || raw === 'true';
             }
 
             return;
         }
 
         if (input instanceof HTMLSelectElement || input instanceof HTMLInputElement) {
-            const value = root.get(name) ?? root.getAttributes?.()?.[name];
+            let value = root.get(name) ?? root.getAttributes?.()?.[name];
+
+            if ((value === undefined || value === null) && config && Object.prototype.hasOwnProperty.call(config, name)) {
+                value = config[name];
+            }
 
             // Form-only field names (e.g. vbCountTrigger) are not model props —
             // leave the current control value alone instead of clearing it.

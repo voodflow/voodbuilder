@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\FeaturesGridBlock;
 use Voodflow\Voodbuilder\Models\SitePage;
@@ -124,5 +125,64 @@ HTML;
 
         $this->assertStringContainsString('py-16', $preview);
         $this->assertStringContainsString('data-voodbuilder-block="site_footer_columns_simple"', $preview);
+    }
+
+    public function test_published_render_preserves_author_content_width_on_dynamic_shells(): void
+    {
+        $registry = new EditorDynamicBlockRegistry;
+        $registry->register('Test', StubContentWidthDynamicBlock::class);
+
+        $config = ['heading' => 'Exhibitors'];
+        $encoded = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            ENT_QUOTES,
+            'UTF-8',
+        );
+
+        $saved = <<<HTML
+<div data-voodbuilder-block="stub_content_width" data-voodbuilder-config="{$encoded}" class="voodbuilder-editor-dynamic">
+  <section class="voodbuilder-editor-section w-full">
+    <div class="voodbuilder-editor-container mx-auto max-w-[80rem] px-6" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width: 100%; max-width: 80rem; margin-left: auto; margin-right: auto;">
+      <h2>Saved</h2>
+    </div>
+  </section>
+</div>
+HTML;
+
+        $renderer = new EditorDynamicBlockRenderer($registry, new EditorServerBlockRegistry);
+        $published = $renderer->render($saved, null, canvasPreview: false);
+
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $published);
+        $this->assertStringContainsString('max-w-[80rem]', $published);
+        $this->assertStringContainsString('max-width: 80rem', $published);
+        $this->assertStringContainsString('Fresh render', $published);
+        $this->assertStringNotContainsString('data-voodbuilder-block', $published);
+    }
+}
+
+/**
+ * @internal
+ */
+final class StubContentWidthDynamicBlock extends RichContentCustomBlock
+{
+    public static function getId(): string
+    {
+        return 'stub_content_width';
+    }
+
+    public static function getLabel(): string
+    {
+        return 'Stub';
+    }
+
+    public static function toHtml(array $config, array $data): string
+    {
+        return <<<'HTML'
+<section class="voodbuilder-editor-section w-full">
+  <div class="voodbuilder-editor-container mx-auto px-6" data-voodbuilder-role="content">
+    <h2>Fresh render</h2>
+  </div>
+</section>
+HTML;
     }
 }

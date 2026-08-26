@@ -23,4 +23,12 @@ This manual explains how **third-party packages** and the **host application** e
 4. [JS plugins](./js-plugins)  
 5. [Sample plugin](./sample-plugin)  
 
+## Companion integration (extra depth)
+
+Third-party / companion authors should also read:
+
+- [Developer hub](../../developer/README.md)
+- [Companion integration](../../developer/companion-integration.md)
+- [Sales overview](../../sales/README.md)
+
 Internal engineering notes (audits, phase plans) live under `docs/` outside `manual/` and are not part of the product manuals.

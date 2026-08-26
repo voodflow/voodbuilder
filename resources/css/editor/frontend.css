@@ -895,8 +895,9 @@ body.voodbuilder-editor-editing .voodbuilder-editor-boot-overlay:not([hidden]) {
     color: var(--color-vp-text-3, #94a3b8);
 }
 
-.voodbuilder-editor-blocks-search:focus {
-    outline: none;
+.voodbuilder-editor-blocks-search:focus,
+.voodbuilder-editor-blocks-search:focus-visible {
+    outline: none !important;
     border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, var(--color-vp-divider, #e2e8f0));
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
 }
@@ -1861,6 +1862,15 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
 
 .voodbuilder-editor-components-blocks-mount .gjs-block.voodbuilder-editor-component-block {
     position: relative;
+    /* Toolbar has 3 actions — do not clip it (grid cards are narrow). */
+    overflow: visible;
+    contain: none;
+    isolation: auto;
+}
+
+.voodbuilder-editor-components-blocks-mount .gjs-block.voodbuilder-editor-component-block:hover,
+.voodbuilder-editor-components-blocks-mount .gjs-block.voodbuilder-editor-component-block:focus-within {
+    z-index: 6;
 }
 
 .voodbuilder-editor-components-blocks-mount .gjs-block.voodbuilder-editor-component-block.is-selected {
@@ -1871,19 +1881,23 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
 
 .voodbuilder-editor-component-block__toolbar {
     position: absolute;
-    top: 0.35rem;
-    right: 0.35rem;
-    z-index: 4;
+    top: 0.25rem;
+    left: 50%;
+    right: auto;
+    z-index: 8;
     display: inline-flex;
     align-items: center;
-    gap: 0.15rem;
-    padding: 0.2rem;
+    justify-content: center;
+    gap: 0.1rem;
+    max-width: calc(100% - 0.4rem);
+    padding: 0.15rem;
     border-radius: 0.5rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
     background: #fff;
     box-shadow: 0 4px 16px rgb(15 23 42 / 0.14);
     opacity: 0;
     pointer-events: none;
+    transform: translateX(-50%);
     transition: opacity 0.15s ease;
 }
 
@@ -1901,8 +1915,8 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
 
 .voodbuilder-editor-component-block__toolbar-btn .voodbuilder-editor-icon {
     display: block;
-    width: 1rem;
-    height: 1rem;
+    width: 0.875rem;
+    height: 0.875rem;
     fill: none !important;
     stroke: currentColor;
     stroke-width: 2;
@@ -1923,8 +1937,9 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.85rem;
-    height: 1.85rem;
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
     border: 0;
     border-radius: 0.375rem;

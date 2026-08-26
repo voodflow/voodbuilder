@@ -32,9 +32,10 @@ class VoodbuilderPluginTest extends TestCase
 
     public function test_filament_navigation_sort_order_is_menus_pages_settings(): void
     {
+        // Menus (1), Pages (2), Theme Studio (3), Chrome (4), Settings (5), Media (6).
         $this->assertSame(1, $this->navigationSort(NavigationMenuResource::class));
         $this->assertSame(2, $this->navigationSort(SitePageResource::class));
-        $this->assertSame(3, $this->navigationSort(VoodbuilderSettingsPage::class));
+        $this->assertSame(5, $this->navigationSort(VoodbuilderSettingsPage::class));
     }
 
     protected function navigationSort(string $class): ?int

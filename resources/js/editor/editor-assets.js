@@ -449,9 +449,14 @@ export async function openMediaAssets(args) {
             if (opened) {
                 return;
             }
-        } catch {
-            // Fall through to GrapesJS Asset Manager.
+        } catch (error) {
+            console.error('Voodbuilder Editor: vmedia browser failed; falling back to GrapesJS Asset Manager.', error);
         }
+    } else if (String(libraryUrl ?? '').trim() !== '' && String(galleriesUrl ?? '').trim() === '') {
+        console.warn(
+            'Voodbuilder Editor: media library URL is set but galleries URL is missing. '
+            + 'Activate voodflow/vmedia (galleries route) to use the media browser instead of GrapesJS Asset Manager.',
+        );
     }
 
     return openGrapesAssetManager(args);
@@ -464,6 +469,105 @@ export async function openMediaAssets(args) {
 export function shouldUseMediaCompanionBrowser(libraryUrl, galleriesUrl) {
     return String(libraryUrl ?? '').trim() !== ''
         && String(galleriesUrl ?? '').trim() !== '';
+}
+
+/**
+ * Redirect GrapesJS `open-assets` (image drop / toolbar / dblclick) to vmedia
+ * when the companion browser is configured.
+ *
+ * @param {import('grapesjs').Editor} editor
+ */
+export function registerMediaPickerCommands(editor) {
+    if (! editor?.Commands || editor.__voodbuilderMediaPickerCommandsRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderMediaPickerCommandsRegistered = true;
+
+    const commands = editor.Commands;
+    const previous = typeof commands.get === 'function' ? commands.get('open-assets') : null;
+
+    commands.add('open-assets', {
+        run(ed, sender, opts = {}) {
+            const libraryUrl = ed?.__voodbuilderMediaLibraryUrl ?? '';
+            const galleriesUrl = ed?.__voodbuilderMediaGalleriesUrl ?? '';
+            const labels = ed?.__voodbuilderLabels ?? {};
+            const target = opts?.target ?? ed?.getSelected?.() ?? null;
+
+            if (shouldUseMediaCompanionBrowser(libraryUrl, galleriesUrl)) {
+                void openMediaAssets({
+                    editor: ed,
+                    kinds: ['image'],
+                    labelKind: 'image',
+                    labels,
+                    onSelect: (src, meta) => {
+                        applyMediaSrcToComponent(target, src, meta);
+                    },
+                });
+
+                return;
+            }
+
+            if (previous && typeof previous.run === 'function') {
+                return previous.run(ed, sender, opts);
+            }
+
+            return openGrapesAssetManager({
+                editor: ed,
+                kinds: ['image'],
+                labelKind: 'image',
+                labels,
+                onSelect: (src, meta) => {
+                    applyMediaSrcToComponent(target, src, meta);
+                },
+            });
+        },
+    });
+}
+
+/**
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @param {string} src
+ * @param {Record<string, unknown> | null | undefined} meta
+ */
+function applyMediaSrcToComponent(component, src, meta) {
+    if (! component) {
+        return;
+    }
+
+    const next = String(src ?? '').trim();
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+    const type = String(component.get?.('type') ?? '');
+    const attrs = {
+        src: next || null,
+    };
+
+    if (meta && typeof meta === 'object') {
+        const libraryCaption = String(meta.caption ?? '').trim();
+        const libraryAlt = String(meta.alt ?? '').trim();
+        const libraryCredits = String(meta.credits ?? '').trim();
+        const libraryName = String(meta.name ?? '').trim();
+        const libraryFileName = String(meta.file_name ?? meta.fileName ?? '').trim();
+
+        attrs['data-vb-media-caption'] = libraryCaption !== '' ? libraryCaption : null;
+        attrs['data-vb-media-credits'] = libraryCredits !== '' ? libraryCredits : null;
+        attrs['data-vb-media-name'] = libraryName !== '' ? libraryName : null;
+        attrs['data-vb-media-filename'] = libraryFileName !== '' ? libraryFileName : null;
+        attrs['data-vb-media-id'] = meta.id != null ? String(meta.id) : null;
+        attrs['data-vb-media-uuid'] = meta.uuid != null ? String(meta.uuid) : null;
+
+        if (libraryAlt !== '') {
+            attrs.alt = libraryAlt;
+        } else if (libraryName !== '' && (tag === 'img' || type === 'image')) {
+            attrs.alt = libraryName;
+        }
+    }
+
+    if (typeof component.set === 'function' && (tag === 'img' || type === 'image')) {
+        component.set('src', next);
+    }
+
+    component.addAttributes?.(attrs);
 }
 
 /**

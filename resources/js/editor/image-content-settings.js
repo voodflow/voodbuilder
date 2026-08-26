@@ -497,8 +497,9 @@ function syncImageCaption(image, values) {
  * @param {import('grapesjs').Component} image
  * @param {import('grapesjs').Component | null} section
  * @param {string} url
+ * @param {{ caption?: string|null, alt?: string|null, credits?: string|null, name?: string|null, file_name?: string|null, id?: number|string|null, uuid?: string|null } | null} [meta]
  */
-function applyImageSrc(image, section, url, meta = null) {
+export function applyImageSrc(image, section, url, meta = null) {
     const next = String(url ?? '').trim();
     const attrs = {
         src: next || null,
@@ -506,8 +507,29 @@ function applyImageSrc(image, section, url, meta = null) {
 
     if (meta != null) {
         const libraryCaption = String(meta.caption ?? '').trim();
+        const libraryAlt = String(meta.alt ?? '').trim();
+        const libraryCredits = String(meta.credits ?? '').trim();
+        const libraryName = String(meta.name ?? '').trim();
+        const libraryFileName = String(meta.file_name ?? meta.fileName ?? '').trim();
+        const currentAlt = String(image.getAttributes?.()?.alt ?? '').trim();
+
         attrs['data-vb-media-caption'] = libraryCaption !== '' ? libraryCaption : null;
-        attrs['data-vb-media-id'] = meta.id != null ? String(meta.id) : null;
+        attrs['data-vb-media-credits'] = libraryCredits !== '' ? libraryCredits : null;
+        attrs['data-vb-media-name'] = libraryName !== '' ? libraryName : null;
+        attrs['data-vb-media-filename'] = libraryFileName !== '' ? libraryFileName : null;
+        attrs['data-vb-media-id'] = meta.id != null && String(meta.id).trim() !== ''
+            ? String(meta.id)
+            : null;
+        attrs['data-vb-media-uuid'] = meta.uuid != null && String(meta.uuid).trim() !== ''
+            ? String(meta.uuid)
+            : null;
+
+        // Prefer library alt; keep an existing author alt only when library has none.
+        if (libraryAlt !== '') {
+            attrs.alt = libraryAlt;
+        } else if (currentAlt === '' || currentAlt === 'Image') {
+            attrs.alt = libraryName || '';
+        }
     }
 
     image.set('src', next);
@@ -629,6 +651,8 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     let captionDisplay = captionState.display;
     /** @type {HTMLTextAreaElement | null} */
     let captionInputEl = null;
+    /** @type {HTMLInputElement | null} */
+    let altInputEl = null;
     const imageStyle = image.getStyle?.() ?? {};
     let opacity = String(
         section?.getAttributes?.()?.['data-vb-bg-opacity']
@@ -667,8 +691,17 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                         return;
                     }
 
+                    const libraryAlt = String(meta?.alt ?? '').trim();
                     const libraryCaption = String(meta?.caption ?? '').trim();
                     const pageCaption = String(image.getAttributes?.()?.['data-vb-caption'] ?? '').trim();
+
+                    if (libraryAlt !== '') {
+                        alt = libraryAlt;
+
+                        if (altInputEl) {
+                            altInputEl.value = libraryAlt;
+                        }
+                    }
 
                     if (libraryCaption !== '' && pageCaption === '') {
                         caption = libraryCaption;
@@ -695,6 +728,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
             value: alt,
             placeholder: labels.imageSettingsAltPlaceholder ?? 'Describe the image',
         });
+        altInputEl = altInput;
 
         altInput.addEventListener('change', () => {
             alt = String(altInput.value ?? '').trim();

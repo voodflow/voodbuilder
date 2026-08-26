@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
@@ -15,16 +16,15 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
-use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingNormalizer;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionsAttributeNormalizer;
-use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
+use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
-use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 use Voodflow\Voodbuilder\Voodbuilder;
@@ -40,6 +40,9 @@ final class EditorGate
     /** @var list<callable(): array<string, mixed>> */
     private static array $labelProviders = [];
 
+    /** @var list<callable(): array<string, mixed>> */
+    private static array $configProviders = [];
+
     /**
      * Register additional visual editor labels (official/third-party plugins).
      *
@@ -50,9 +53,24 @@ final class EditorGate
         self::$labelProviders[] = $provider;
     }
 
+    /**
+     * Merge extra keys into the visual editor bootstrap payload.
+     *
+     * @param  callable(): array<string, mixed>  $provider
+     */
+    public static function registerConfigProvider(callable $provider): void
+    {
+        self::$configProviders[] = $provider;
+    }
+
     public static function flushLabelProviders(): void
     {
         self::$labelProviders = [];
+    }
+
+    public static function flushConfigProviders(): void
+    {
+        self::$configProviders = [];
     }
 
     public static function authorizeUsing(?callable $callback): void
@@ -235,7 +253,28 @@ final class EditorGate
             'globalTextTags' => GlobalTextTags::values(),
             'marketingUrl' => (string) config('voodbuilder.marketing_url', 'https://voodflow.com/voodbuilder'),
             'labels' => self::sharedEditorLabels(),
+            ...self::mergedCompanionConfig(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function mergedCompanionConfig(): array
+    {
+        $merged = [];
+
+        foreach (self::$configProviders as $provider) {
+            $chunk = $provider();
+
+            if (! is_array($chunk) || $chunk === []) {
+                continue;
+            }
+
+            $merged = array_replace_recursive($merged, $chunk);
+        }
+
+        return $merged;
     }
 
     /**
@@ -1026,7 +1065,7 @@ final class EditorGate
      */
     private static function optionalEditorRoute(string $name, mixed $parameters = []): ?string
     {
-        if (! \Illuminate\Support\Facades\Route::has($name)) {
+        if (! Route::has($name)) {
             return null;
         }
 
@@ -1088,7 +1127,7 @@ final class EditorGate
     private static function mediaUploadUrl(): ?string
     {
         foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
-            if (\Illuminate\Support\Facades\Route::has($name)) {
+            if (Route::has($name)) {
                 return self::editorRoute($name);
             }
         }
@@ -1099,7 +1138,7 @@ final class EditorGate
     private static function mediaLibraryIndexUrl(): ?string
     {
         foreach (['vmedia.media.index', 'voodbuilder.editor.media.index'] as $name) {
-            if (\Illuminate\Support\Facades\Route::has($name)) {
+            if (Route::has($name)) {
                 return self::editorRoute($name);
             }
         }
@@ -1110,7 +1149,7 @@ final class EditorGate
     private static function mediaGalleriesIndexUrl(): ?string
     {
         foreach (['vmedia.media.galleries', 'voodbuilder.editor.media.galleries'] as $name) {
-            if (\Illuminate\Support\Facades\Route::has($name)) {
+            if (Route::has($name)) {
                 return self::editorRoute($name);
             }
         }
@@ -1132,8 +1171,8 @@ final class EditorGate
         try {
             return (bool) $class::isActive()
                 && (
-                    \Illuminate\Support\Facades\Route::has('vmedia.media.galleries')
-                    || \Illuminate\Support\Facades\Route::has('voodbuilder.editor.media.galleries')
+                    Route::has('vmedia.media.galleries')
+                    || Route::has('voodbuilder.editor.media.galleries')
                 );
         } catch (\Throwable) {
             return false;

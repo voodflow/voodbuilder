@@ -12,6 +12,8 @@ Welcome to the official **VoodBuilder** documentation. These manuals cover the *
 | [User manual](./user/) | Editors, marketers, site admins | [Getting started](./user/getting-started) |
 | [Developer manual](./developer/) | Package authors & host-app integrators | [Extending VoodBuilder](./developer/extending-overview) |
 
+Also see the package docs hub: [sales](../sales/README.md), [developer companions](../developer/README.md), [index](../README.md).
+
 ## Importing into VitePress / vdocs
 
 This folder is plain Markdown with VitePress-friendly conventions:

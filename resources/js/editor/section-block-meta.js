@@ -34,12 +34,24 @@ export const CATEGORY_ORDER = {
     Footer: -25,
     Voodbuilder: -120,
     Dynamic: -115,
+    Events: -114,
+    Eventi: -114,
     Forms: 100,
 };
 
 /** @type {Record<string, string>} */
 const CATEGORY_ALIASES = {
     forms: 'Forms',
+    dynamic: 'Events',
+    Dynamic: 'Events',
+    'Vevents / Landing': 'Events',
+    'vevents / landing': 'Events',
+    Exhibitors: 'Events',
+    Espositori: 'Events',
+    Partners: 'Events',
+    Partner: 'Events',
+    Sponsors: 'Events',
+    Sponsor: 'Events',
     'Sections · Hero': 'Hero',
     'Sections · Content': 'Content',
     'Sections · Features': 'Features',

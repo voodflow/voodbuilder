@@ -81,6 +81,14 @@ describe('style tailwind class groups', () => {
             setClass: (next) => {
                 classes = [...next];
             },
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
         };
 
         const widthSet = classSetFromOptions(WIDTH_OPTIONS);
@@ -96,7 +104,7 @@ describe('style tailwind class groups', () => {
         expect(classes).toContain('p-4');
     });
 
-    it('uses setClass atomically and never dual-writes attributes.class', () => {
+    it('uses removeClass + addClass (CLASSES + path) and never dual-writes attributes.class', () => {
         let classes = ['w-full', 'p-4', 'text-lg'];
         const calls = [];
         const component = {
@@ -125,21 +133,23 @@ describe('style tailwind class groups', () => {
 
         expect(classes).toEqual(['p-4', 'text-lg', 'w-1/2']);
         expect(calls.some((entry) => entry[0] === 'addAttributes')).toBe(false);
-        expect(calls.some((entry) => entry[0] === 'removeClass')).toBe(false);
-        expect(calls.some((entry) => entry[0] === 'addClass')).toBe(false);
-        expect(calls).toContainEqual(['setClass', ['p-4', 'text-lg', 'w-1/2']]);
+        expect(calls.some((entry) => entry[0] === 'setClass')).toBe(false);
+        expect(calls).toContainEqual(['removeClass', 'w-full']);
+        expect(calls).toContainEqual(['addClass', 'w-1/2']);
     });
 
-    it('recovers tokens dropped by setClass via addClass (CLASSES + path)', () => {
+    it('recovers tokens when SelectorManager needs an explicit addClass', () => {
         let classes = ['w-full', 'p-4', 'text-lg'];
+        let addPasses = 0;
         const component = {
             getClasses: () => [...classes],
-            setClass: (next) => {
-                // Simulate Grapes dropping slash utilities from batch setClass.
-                classes = next.filter((name) => ! name.includes('/'));
+            setClass: () => {
+                // Intentionally unused — replaceClassGroup must not rely on setClass.
             },
             addClass: (name) => {
-                if (! classes.includes(name)) {
+                addPasses += 1;
+                // First addClass is ignored (Grapes race); second sticks.
+                if (addPasses >= 2 && ! classes.includes(name)) {
                     classes = [...classes, name];
                 }
             },
@@ -171,6 +181,14 @@ describe('style tailwind class groups', () => {
             getClasses: () => [...classes],
             setClass: (next) => {
                 classes = [...next];
+            },
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
             },
         };
 
@@ -354,6 +372,14 @@ describe('decoration conflict groups', () => {
             setClass: (next) => {
                 classes = [...next];
             },
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
         };
 
         const borderSet = classSetFromOptions(BORDER_WIDTH_OPTIONS);
@@ -379,6 +405,14 @@ describe('decoration conflict groups', () => {
             setClass: (next) => {
                 classes = [...next];
             },
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
         };
 
         const cornerSet = classSetFromOptions(ROUNDED_TL_OPTIONS);
@@ -403,6 +437,14 @@ describe('spacing link modes (opposites vs all)', () => {
             getClasses: () => [...classes],
             setClass: (next) => {
                 classes = [...next];
+            },
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
             },
             addAttributes: () => {},
             removeAttributes: () => {},

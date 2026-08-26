@@ -131,4 +131,46 @@ class EditorImportedTailwindSupportTest extends TestCase
             EditorImportedTailwindSupport::parseBackgroundUrlClass($unquotedClass),
         );
     }
+
+    public function test_prepare_html_converts_container_and_wraps_section_shell(): void
+    {
+        $html = <<<'HTML'
+<div id="blog">
+  <Container>
+      <div class="mb-12 text-center">
+        <h2 class="text-3xl font-bold">Latest Articles</h2>
+      </div>
+  </Container>
+</div>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertStringNotContainsString('<container', strtolower($prepared));
+        $this->assertStringNotContainsString('<Container', $prepared);
+        $this->assertStringContainsString('voodbuilder-editor-section', $prepared);
+        $this->assertStringContainsString('voodbuilder-editor-container', $prepared);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $prepared);
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $prepared);
+        $this->assertStringContainsString('Latest Articles', $prepared);
+        $this->assertStringContainsString('id="blog"', $prepared);
+    }
+
+    public function test_ensure_editor_layout_shell_is_idempotent_on_compliant_markup(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section voodbuilder-pasted-component relative w-full">
+  <div class="voodbuilder-editor-container w-full" data-voodbuilder-role="content" data-voodbuilder-content-width="normal">
+    <p>Hi</p>
+  </div>
+</section>
+HTML;
+
+        $once = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+        $twice = EditorImportedTailwindSupport::ensureEditorLayoutShell($once);
+
+        $this->assertStringContainsString('voodbuilder-editor-section', $twice);
+        $this->assertSame(1, substr_count(strtolower($twice), '<section'));
+        $this->assertStringContainsString('<p>Hi</p>', $twice);
+    }
 }

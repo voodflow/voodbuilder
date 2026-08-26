@@ -121,6 +121,7 @@ final class EditorDynamicBlockRenderer
         $authorStructuralClasses = SiteFooterBlocks::isFooterBlockId($blockId)
             ? $this->captureAuthorStructuralClasses($node)
             : null;
+        $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
 
         $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
@@ -133,6 +134,7 @@ final class EditorDynamicBlockRenderer
             if ($authorStructuralClasses !== null) {
                 $this->restoreAuthorStructuralClasses($node, $authorStructuralClasses);
             }
+            $this->restoreAuthorContentWidthShells($node, $authorContentWidthShells);
 
             return;
         }
@@ -143,6 +145,8 @@ final class EditorDynamicBlockRenderer
             $rendered = $this->applyAuthorStructuralClassesToHtml($rendered, $authorStructuralClasses);
         }
 
+        $rendered = $this->applyAuthorContentWidthShellsToHtml($rendered, $authorContentWidthShells);
+
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
     }
 
@@ -152,7 +156,10 @@ final class EditorDynamicBlockRenderer
      */
     protected function replaceNodeInnerHtmlForEditor(DOMDocument $document, DOMElement $node, string $rendered): void
     {
-        $innerHtml = $this->unwrapEditorPreviewRoot($rendered);
+        $innerHtml = $this->unwrapMatchingRootTag(
+            $node,
+            $this->unwrapEditorPreviewRoot($rendered),
+        );
 
         while ($node->firstChild) {
             $node->removeChild($node->firstChild);
@@ -180,6 +187,50 @@ final class EditorDynamicBlockRenderer
                 $node->appendChild($document->importNode($child, true));
             }
         }
+    }
+
+    /**
+     * When the dynamic root is already a section/footer (smart wrap), the Blade
+     * preview returns the same outer tag — use its children to avoid section > section.
+     */
+    protected function unwrapMatchingRootTag(DOMElement $node, string $html): string
+    {
+        if ($html === '') {
+            return $html;
+        }
+
+        $tag = strtolower($node->tagName);
+
+        if (! in_array($tag, ['section', 'footer', 'header', 'article', 'div'], true)) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $elementChildren = [];
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $elementChildren[] = $child;
+            }
+        }
+
+        if (count($elementChildren) !== 1 || strtolower($elementChildren[0]->tagName) !== $tag) {
+            return $html;
+        }
+
+        $output = '';
+
+        foreach ($elementChildren[0]->childNodes as $child) {
+            $output .= $document->saveHTML($child);
+        }
+
+        return $output;
     }
 
     /**
@@ -256,6 +307,201 @@ final class EditorDynamicBlockRenderer
     protected function isColumnFooterBlock(string $blockId): bool
     {
         return in_array($blockId, ['site_footer_columns_simple', 'site_footer_columns_newsletter'], true);
+    }
+
+    /**
+     * @return list<array{content_width: string, class: string, style: string}>
+     */
+    protected function captureAuthorContentWidthShells(DOMElement $node): array
+    {
+        $shells = [];
+
+        foreach ($this->contentWidthShellElements($node) as $element) {
+            $shells[] = [
+                'content_width' => trim((string) $element->getAttribute('data-voodbuilder-content-width')),
+                'class' => trim((string) $element->getAttribute('class')),
+                'style' => trim((string) $element->getAttribute('style')),
+            ];
+        }
+
+        return $shells;
+    }
+
+    /**
+     * @param  list<array{content_width: string, class: string, style: string}>  $shells
+     */
+    protected function restoreAuthorContentWidthShells(DOMElement $node, array $shells): void
+    {
+        if ($shells === []) {
+            return;
+        }
+
+        $index = 0;
+
+        foreach ($this->contentWidthShellElements($node) as $element) {
+            if (! isset($shells[$index])) {
+                break;
+            }
+
+            $this->applyContentWidthShellToElement($element, $shells[$index]);
+            $index++;
+        }
+    }
+
+    /**
+     * @param  list<array{content_width: string, class: string, style: string}>  $shells
+     */
+    protected function applyAuthorContentWidthShellsToHtml(string $html, array $shells): string
+    {
+        if ($html === '' || $shells === []) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $index = 0;
+
+        foreach ($this->contentWidthShellElements($body) as $element) {
+            if (! isset($shells[$index])) {
+                break;
+            }
+
+            $this->applyContentWidthShellToElement($element, $shells[$index]);
+            $index++;
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * @param  array{content_width: string, class: string, style: string}  $shell
+     */
+    protected function applyContentWidthShellToElement(DOMElement $element, array $shell): void
+    {
+        if ($shell['content_width'] !== '') {
+            $element->setAttribute('data-voodbuilder-content-width', $shell['content_width']);
+        }
+
+        if ($shell['class'] !== '') {
+            $element->setAttribute(
+                'class',
+                $this->mergeAuthorContentWidthClasses(
+                    $shell['class'],
+                    trim((string) $element->getAttribute('class')),
+                ),
+            );
+        }
+
+        if ($shell['style'] !== '') {
+            $element->setAttribute(
+                'style',
+                $this->mergeAuthorContentWidthStyles(
+                    $shell['style'],
+                    trim((string) $element->getAttribute('style')),
+                ),
+            );
+        }
+    }
+
+    /**
+     * @return list<DOMElement>
+     */
+    protected function contentWidthShellElements(DOMNode $root): array
+    {
+        $shells = [];
+        $document = $root instanceof DOMDocument ? $root : $root->ownerDocument;
+
+        if ($document === null) {
+            return [];
+        }
+
+        $xpath = new \DOMXPath($document);
+        $query = './/*[contains(concat(" ", normalize-space(@class), " "), " voodbuilder-editor-container ")'
+            .' or @data-voodbuilder-role="content"'
+            .' or contains(concat(" ", normalize-space(@class), " "), " container ")]';
+
+        foreach ($xpath->query($query, $root) as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            // Skip nested containers that are layout grid cells — only real measure shells.
+            $class = trim((string) $element->getAttribute('class'));
+
+            if (str_contains($class, 'vb-layout-block') || str_contains($class, 'voodbuilder-hero-media')) {
+                continue;
+            }
+
+            $shells[] = $element;
+        }
+
+        return $shells;
+    }
+
+    protected function mergeAuthorContentWidthClasses(string $author, string $fresh): string
+    {
+        $authorTokens = preg_split('/\s+/', trim($author)) ?: [];
+        $freshTokens = preg_split('/\s+/', trim($fresh)) ?: [];
+        $measureTokens = ['mx-auto', 'max-w-[80rem]', 'max-w-none', 'w-full'];
+        $merged = $freshTokens;
+
+        foreach ($authorTokens as $token) {
+            if ($token === '') {
+                continue;
+            }
+
+            if (
+                in_array($token, $measureTokens, true)
+                || str_starts_with($token, 'max-w-[')
+            ) {
+                if (! in_array($token, $merged, true)) {
+                    $merged[] = $token;
+                }
+            }
+        }
+
+        return trim(implode(' ', array_values(array_unique($merged))));
+    }
+
+    protected function mergeAuthorContentWidthStyles(string $author, string $fresh): string
+    {
+        $keys = ['width', 'max-width', 'margin-left', 'margin-right', 'margin-inline'];
+        $parsed = [];
+
+        foreach ([$fresh, $author] as $style) {
+            foreach (explode(';', $style) as $part) {
+                $part = trim($part);
+
+                if ($part === '' || ! str_contains($part, ':')) {
+                    continue;
+                }
+
+                [$property, $value] = array_map('trim', explode(':', $part, 2));
+                $propertyLower = strtolower($property);
+
+                if (! in_array($propertyLower, $keys, true)) {
+                    if (! array_key_exists($propertyLower, $parsed) && $style === $fresh) {
+                        $parsed[$propertyLower] = $property.': '.$value;
+                    }
+
+                    continue;
+                }
+
+                // Author measure wins over fresh defaults.
+                if ($style === $author) {
+                    $parsed[$propertyLower] = $property.': '.$value;
+                } elseif (! array_key_exists($propertyLower, $parsed)) {
+                    $parsed[$propertyLower] = $property.': '.$value;
+                }
+            }
+        }
+
+        return implode('; ', array_values($parsed));
     }
 
     /**

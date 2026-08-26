@@ -522,6 +522,12 @@ function canMoveIntoParent(editor, parent, source, index = 0) {
         return false;
     }
 
+    // Never nest into the interior of a dynamic companion block (event listings,
+    // testimonials, …). Reorder beside the block root instead.
+    if (isInsideDynamicBlockInterior(parent)) {
+        return false;
+    }
+
     // Page content is the intended host for top-level sections — allow reorder
     // and drops into it. Header/footer/shell stay locked.
     if (isSiteChromeBlock(parent, editor) && ! isPageContentSlotComponent(parent)) {
@@ -541,6 +547,26 @@ function canMoveIntoParent(editor, parent, source, index = 0) {
     }
 
     return true;
+}
+
+/**
+ * True when the component lives under a `[data-voodbuilder-block]` root
+ * (not the root itself).
+ */
+function isInsideDynamicBlockInterior(component) {
+    let current = component;
+
+    while (current) {
+        const attrs = current.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-block']) {
+            return current !== component;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
 }
 
 function isLikelyNestHost(component) {

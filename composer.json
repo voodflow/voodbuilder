@@ -71,7 +71,7 @@
         },
         "suggest": {
             "voodflow/vpopups": "FilamentPHP 5 plugin: popup builder, runtime and analytics (standalone; optional VoodBuilder integration).",
-            "voodflow/vmedia": "FilamentPHP 5 plugin: media library and galleries (standalone; optional VoodBuilder Asset Manager).",
+            "voodflow/vmedia": "Required free companion: media vault, galleries, and Editor asset browser (alt/caption/credits).",
             "voodflow/vforms": "FilamentPHP 5 plugin: managed forms and submissions (standalone; optional VoodBuilder blocks).",
             "voodflow/vcookiebar": "FilamentPHP 5 plugin: cookie consent bar (standalone; optional VoodBuilder blocks).",
             "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",

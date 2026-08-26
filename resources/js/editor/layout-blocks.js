@@ -154,37 +154,32 @@ function layoutKind(component) {
     return String(component?.getAttributes?.()?.[LAYOUT_ATTR] ?? '').trim();
 }
 
+/**
+ * Intentional Layout → Container only (data-voodbuilder-layout="container").
+ * Do NOT treat every content-width shell (.voodbuilder-editor-container /
+ * data-voodbuilder-role=content) as a layout grid — companion/dynamic blocks
+ * use that class for measure, not for Columns / layout picker.
+ */
 export function isLayoutContainer(component) {
     if (! component) {
         return false;
     }
 
-    if (layoutKind(component) === 'container') {
-        return true;
-    }
-
-    const classes = component.getClasses?.() ?? [];
-
-    return component.get?.('type') === 'voodbuilder-container'
-        || classes.includes('voodbuilder-editor-container')
-        || classes.includes('container');
+    return layoutKind(component) === 'container';
 }
 
+/**
+ * Intentional Layout → Section only (data-voodbuilder-layout="section").
+ * Companion section shells use .voodbuilder-editor-section for content-width
+ * without becoming layout structure targets.
+ */
 export function isLayoutSection(component) {
     if (! component) {
         return false;
     }
 
-    if (layoutKind(component) === 'section'
-        || component.get?.('type') === 'voodbuilder-section') {
-        return true;
-    }
-
-    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
-    const classes = component.getClasses?.() ?? [];
-
-    return tag === 'section'
-        || classes.includes('voodbuilder-editor-section');
+    return layoutKind(component) === 'section'
+        || component.get?.('type') === 'voodbuilder-section';
 }
 
 export function findNestedLayoutContainer(component) {
@@ -1022,6 +1017,10 @@ export function registerLayoutComponentTypes(editor) {
 
     editor.DomComponents.addType('voodbuilder-section', {
         isComponent: (el) => {
+            if (el?.getAttribute?.('data-voodbuilder-block')) {
+                return false;
+            }
+
             if (el?.getAttribute?.(LAYOUT_ATTR) === 'section') {
                 return { type: 'voodbuilder-section' };
             }

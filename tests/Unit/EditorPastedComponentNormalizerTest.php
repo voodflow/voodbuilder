@@ -34,7 +34,10 @@ class EditorPastedComponentNormalizerTest extends TestCase
             <body><main>Content</main></body></html>
         HTML);
 
-        $this->assertSame('<main class="voodbuilder-pasted-component relative">Content</main>', $result['html']);
+        $this->assertStringContainsString('voodbuilder-editor-section', $result['html']);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $result['html']);
+        $this->assertStringContainsString('Content', $result['html']);
+        $this->assertStringContainsString('<main', $result['html']);
     }
 
     public function test_wraps_multiple_root_sections(): void
@@ -44,9 +47,10 @@ class EditorPastedComponentNormalizerTest extends TestCase
             <section>Hero</section>
         HTML);
 
-        $this->assertStringStartsWith('<div class="voodbuilder-pasted-component relative">', $result['html']);
+        $this->assertStringContainsString('voodbuilder-editor-section', $result['html']);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $result['html']);
         $this->assertStringContainsString('<nav>Menu</nav>', $result['html']);
-        $this->assertStringContainsString('<section class="voodbuilder-editor-section bg-vp-bg">Hero</section>', $result['html']);
+        $this->assertStringContainsString('Hero', $result['html']);
     }
 
     public function test_uniquifies_svg_gradient_ids(): void

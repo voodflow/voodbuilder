@@ -86,11 +86,62 @@ final class EditorRichContentBlockAdapter
 
         $hydrateSlots = SiteFooterBlocks::isFooterBlockId($blockId) ? ' data-voodbuilder-hydrate-slots="1"' : '';
 
+        $stamped = self::stampDynamicAttrsOnSingleRoot($blockId, $encodedConfig, $hydrateSlots, $innerHtml);
+
+        if ($stamped !== null) {
+            return $stamped;
+        }
+
         return <<<HTML
 <div data-voodbuilder-block="{$blockId}" data-voodbuilder-config="{$encodedConfig}"{$hydrateSlots} class="voodbuilder-editor-dynamic">
 {$innerHtml}
 </div>
 HTML;
+    }
+
+    /**
+     * Prefer a single outer section/footer/header as the dynamic root so Layers
+     * stays flat (no div > section nesting). Falls back to a wrapper div.
+     */
+    protected static function stampDynamicAttrsOnSingleRoot(
+        string $blockId,
+        string $encodedConfig,
+        string $hydrateSlots,
+        string $innerHtml,
+    ): ?string {
+        $trimmed = ltrim($innerHtml);
+
+        if (! preg_match('/^<(section|footer|header|article)\b([^>]*)>/i', $trimmed, $matches)) {
+            return null;
+        }
+
+        $tag = strtolower($matches[1]);
+        $attrs = $matches[2];
+
+        if (str_contains($attrs, 'data-voodbuilder-block')) {
+            return null;
+        }
+
+        if (preg_match('/\bclass=(["\'])(.*?)\1/is', $attrs, $classMatch)) {
+            $classes = trim($classMatch[2]);
+
+            if (! str_contains($classes, 'voodbuilder-editor-dynamic')) {
+                $classes = trim($classes.' voodbuilder-editor-dynamic');
+            }
+
+            $attrs = preg_replace(
+                '/\bclass=(["\'])(.*?)\1/is',
+                'class='.$classMatch[1].$classes.$classMatch[1],
+                $attrs,
+                1,
+            ) ?? $attrs;
+        } else {
+            $attrs .= ' class="voodbuilder-editor-dynamic"';
+        }
+
+        $attrs .= ' data-voodbuilder-block="'.$blockId.'" data-voodbuilder-config="'.$encodedConfig.'"'.$hydrateSlots;
+
+        return '<'.$tag.$attrs.'>'.substr($trimmed, strlen($matches[0]));
     }
 
     public static function previewMedia(string $html, string $label): string
