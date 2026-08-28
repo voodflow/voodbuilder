@@ -328,7 +328,7 @@ export async function fetchMediaGalleries(galleriesUrl, type = null) {
 }
 
 /**
- * Gallery chips above the Asset Manager grid (browse any gallery; upload stays on default).
+ * Gallery chips above the Asset Manager grid (browse any gallery; upload follows sidebar selection).
  *
  * @param {{
  *   galleries: Array<{ id: number, name: string, is_default?: boolean, media_count?: number }>,
@@ -373,7 +373,7 @@ export function mountGalleryBrowser({
     const hint = document.createElement('p');
     hint.className = 'voodbuilder-am-galleries__hint';
     hint.textContent = uploadGalleryId
-        ? 'Upload goes to the default gallery. Browse any gallery to choose.'
+        ? 'Upload destination follows the selected gallery. Browse any gallery to choose.'
         : 'Browse galleries to choose media.';
     bar.appendChild(hint);
 

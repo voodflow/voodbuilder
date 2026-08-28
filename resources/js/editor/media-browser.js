@@ -107,6 +107,7 @@ export async function openMediaBrowser(args) {
         uploading: false,
         galleries: [],
         uploadGalleryId: null,
+        uploadGallery: null,
         observer: null,
         searchTimer: null,
     };
@@ -144,7 +145,7 @@ export async function openMediaBrowser(args) {
                         <input type="file" data-mb-file multiple hidden />
                         <div class="voodbuilder-media-browser__dropzone-inner">
                             <strong data-mb-drop-title>Upload</strong>
-                            <span data-mb-drop-hint>Drops go to the default gallery</span>
+                            <span data-mb-drop-hint>Select a gallery to set the upload destination</span>
                         </div>
                         <div class="voodbuilder-media-browser__upload-progress" data-mb-progress hidden></div>
                     </div>
@@ -252,6 +253,34 @@ export async function openMediaBrowser(args) {
             btn.setAttribute('aria-pressed', active ? 'true' : 'false');
             btn.classList.toggle('is-active', active);
         });
+    };
+
+    const selectedGallery = () => {
+        if (state.galleryId == null) {
+            return null;
+        }
+
+        return state.galleries.find((gallery) => Number(gallery.id) === Number(state.galleryId)) ?? null;
+    };
+
+    const includeDescendantsForSelection = () => selectedGallery()?.kind === 'group';
+
+    const uploadContextGalleryId = () => state.galleryId;
+
+    const updateUploadHint = () => {
+        const path = state.uploadGallery?.path || state.uploadGallery?.name;
+
+        if (path) {
+            els.subtitle.textContent = labels.mediaBrowserUploadSubtitle
+                ?? `Uploads go to ${path} · browse any gallery to choose`;
+            els.dropHint.textContent = labels.mediaBrowserUploadDropHint
+                ?? `Uploads → ${path}`;
+
+            return;
+        }
+
+        els.subtitle.textContent = labels.mediaBrowserBrowseSubtitle ?? 'Browse and choose media';
+        els.dropHint.textContent = labels.mediaBrowserUploadDropDefault ?? 'Uploads → default gallery';
     };
 
     const renderGalleries = () => {
@@ -368,9 +397,7 @@ export async function openMediaBrowser(args) {
             : (state.loading
                 ? 'Loading…'
                 : `${state.total} item${state.total === 1 ? '' : 's'}${state.hasMore ? ' · scroll for more' : ''}`);
-        els.subtitle.textContent = state.uploadGalleryId
-            ? 'Uploads go to the default gallery · browse any gallery to choose'
-            : 'Browse and choose media';
+        updateUploadHint();
     };
 
     const fetchGalleries = async () => {
@@ -381,7 +408,10 @@ export async function openMediaBrowser(args) {
         }
 
         try {
-            const url = buildUrl(galleriesUrl, { type: state.type });
+            const url = buildUrl(galleriesUrl, {
+                type: state.type,
+                gallery_id: state.galleryId,
+            });
             const response = await fetch(url, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
@@ -394,13 +424,8 @@ export async function openMediaBrowser(args) {
             const payload = await response.json();
             state.galleries = Array.isArray(payload?.data) ? payload.data : [];
             state.uploadGalleryId = payload?.upload_gallery_id ?? null;
-
-            if (els.dropHint && state.uploadGalleryId) {
-                const def = state.galleries.find((g) => g.is_default || Number(g.id) === Number(state.uploadGalleryId));
-                els.dropHint.textContent = def
-                    ? `Uploads → ${def.name}`
-                    : 'Uploads → default gallery';
-            }
+            state.uploadGallery = payload?.upload_gallery ?? null;
+            updateUploadHint();
         } catch {
             state.galleries = [];
         }
@@ -429,6 +454,7 @@ export async function openMediaBrowser(args) {
                 per_page: 48,
                 type: state.type,
                 gallery_id: state.galleryId,
+                include_descendants: includeDescendantsForSelection() ? 1 : null,
                 q: state.search || null,
             });
             const response = await fetch(url, {
@@ -448,6 +474,8 @@ export async function openMediaBrowser(args) {
             state.total = Number(meta.total ?? state.items.length);
             state.hasMore = Boolean(meta.has_more);
             state.uploadGalleryId = payload?.upload_gallery_id ?? state.uploadGalleryId;
+            state.uploadGallery = payload?.upload_gallery ?? state.uploadGallery;
+            updateUploadHint();
         } catch {
             if (reset) {
                 state.items = [];
@@ -502,6 +530,12 @@ export async function openMediaBrowser(args) {
             try {
                 const body = new FormData();
                 body.append('file', file);
+
+                const contextId = uploadContextGalleryId();
+
+                if (contextId != null) {
+                    body.append('gallery_id', String(contextId));
+                }
 
                 const response = await fetch(uploadUrl, {
                     method: 'POST',

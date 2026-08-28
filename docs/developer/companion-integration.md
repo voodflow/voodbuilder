@@ -99,6 +99,15 @@ After `npm update` on GrapesJS: smoke-test `?edit=1` (blocks, traits, save/reloa
 - Choosing an asset applies `alt`, `caption`, `credits`, `name` / `file_name` onto the canvas (`alt` + `data-vb-media-*`).
 - Do not open GrapesJS Asset Manager when vmedia is active — UI entry points go through `openMediaAssets()`.
 
+**Browse vs upload**
+
+| | Behaviour |
+|---|-----------|
+| Browse | Any gallery/folder in the vault (sidebar). |
+| Upload | Goes to the **selected** folder/album. Folders (e.g. **Builder**) upload into their `Library` child album. “All media” → site default gallery. |
+
+The list API returns `upload_gallery` / `upload_gallery_id`; upload POST accepts optional `gallery_id` (see vmedia [editor-integration.md](../../vmedia/docs/developer/editor-integration.md)).
+
 Host persistence: prefer `config/voodbuilder-integrations.php` or `AppServiceProvider` over editing vendor packages.
 
 ## Filament plugin
