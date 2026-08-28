@@ -58,6 +58,7 @@ use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
+use Voodflow\Vmedia\Support\Integration\PluginVaultRootBootstrap;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -158,6 +159,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         ]);
 
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
+
+        $this->app->booted(fn (): mixed => class_exists(PluginVaultRootBootstrap::class)
+            ? PluginVaultRootBootstrap::ensureFor('voodbuilder')
+            : null);
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
