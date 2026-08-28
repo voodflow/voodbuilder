@@ -182,7 +182,7 @@ final class EditorBindingStorageNormalizer
             return;
         }
 
-        $placeholder = BindingPlaceholders::text($sourceLabel, $fieldLabel);
+        $placeholder = '';
 
         while ($element->firstChild !== null) {
             $element->removeChild($element->firstChild);

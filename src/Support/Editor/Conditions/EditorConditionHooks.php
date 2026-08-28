@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\Editor\Conditions;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 
 /**
  * Editor Condition Hooks.
@@ -115,10 +116,66 @@ final class EditorConditionHooks
                 'choices' => self::localeChoices(),
             ],
             'user_role' => self::roleValueMeta(),
-            'route_name' => ['type' => 'text'],
+            'route_name' => self::routeValueMeta(),
             'date_before', 'date_after' => ['type' => 'date'],
             default => ['type' => 'text'],
         };
+    }
+
+    /**
+     * @return array{type: string, choices?: list<array{value: string, label: string}>}
+     */
+    private static function routeValueMeta(): array
+    {
+        $choices = self::routeChoices();
+
+        if ($choices === []) {
+            return ['type' => 'text'];
+        }
+
+        return [
+            'type' => 'select',
+            'choices' => $choices,
+        ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private static function routeChoices(): array
+    {
+        $explicit = config('voodbuilder.editor.conditions.routes');
+
+        if (is_array($explicit) && $explicit !== []) {
+            return self::normalizeChoices($explicit);
+        }
+
+        $choices = [];
+
+        foreach (app(DynamicPageRegistry::class)->all() as $provider) {
+            foreach ($provider->claimableRoutes() as $routeName => $label) {
+                $choices[$routeName] = [
+                    'value' => (string) $routeName,
+                    'label' => self::shortRouteLabel((string) $routeName, (string) $label),
+                    'title' => (string) $routeName.' — '.(string) $label,
+                ];
+            }
+        }
+
+        ksort($choices);
+
+        return array_values($choices);
+    }
+
+    private static function shortRouteLabel(string $routeName, string $description): string
+    {
+        $short = trim(explode('/', $description, 2)[0]);
+
+        if ($short !== '') {
+            return $short;
+        }
+
+        return $routeName;
     }
 
     /**
@@ -204,10 +261,16 @@ final class EditorConditionHooks
 
         foreach ($choices as $key => $value) {
             if (is_array($value) && isset($value['value'])) {
-                $normalized[] = [
+                $entry = [
                     'value' => (string) $value['value'],
                     'label' => (string) ($value['label'] ?? $value['value']),
                 ];
+
+                if (isset($value['title']) && is_string($value['title'])) {
+                    $entry['title'] = $value['title'];
+                }
+
+                $normalized[] = $entry;
 
                 continue;
             }

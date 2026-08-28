@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource\Pages;
 
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Contracts\Support\Htmlable;
 use Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource;
 use Voodflow\Voodbuilder\Models\MediaLibrary;
 
@@ -27,12 +28,12 @@ class ManageMediaLibrary extends ManageRecords
         ];
     }
 
-    public function getTitle(): string|\Illuminate\Contracts\Support\Htmlable
+    public function getTitle(): string|Htmlable
     {
         return __('voodbuilder::admin.media_library.title');
     }
 
-    public function getSubheading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    public function getSubheading(): string|Htmlable|null
     {
         return __('voodbuilder::admin.media_library.intro');
     }

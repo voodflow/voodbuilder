@@ -810,9 +810,22 @@
 .voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__fields > .voodbuilder-editor-select-wrap,
 .voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__fields > select.voodbuilder-editor-select,
 .voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__value .voodbuilder-editor-input,
-.voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__value select {
-    width: 100%;
+.voodbuilder-editor-conditions-panel .voodbuilder-editor-conditions-select-hint {
+    margin: 0.25rem 0 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--vb-inspector-text-muted, #64748b);
+    word-break: break-all;
 }
+
+.voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__value select {
+    text-overflow: ellipsis;
+}
+
 
 .voodbuilder-editor-conditions-panel .voodbuilder-editor-condition-item__meta {
     display: grid;

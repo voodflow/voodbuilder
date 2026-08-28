@@ -33,6 +33,50 @@ export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURICompon
 let bindingsCatalog = null;
 let bindingsPreviewValues = null;
 let bindingsPreviewListValues = null;
+let dynamicPreviewRouteEntities = {};
+let bindingsPreviewRouteEntitiesKey = '';
+
+function parseRouteEntitiesFromPathname(pathname, patterns = []) {
+    const path = String(pathname ?? '').replace(/\/+$/, '');
+
+    for (const { regex, keys } of patterns) {
+        const expression = regex instanceof RegExp ? regex : new RegExp(String(regex ?? ''));
+        const match = path.match(expression);
+
+        if (! match) {
+            continue;
+        }
+
+        const bag = {};
+
+        keys.forEach((key, index) => {
+            const value = decodeURIComponent(match[index + 1] ?? '');
+
+            if (value) {
+                bag[key] = value;
+            }
+        });
+
+        return bag;
+    }
+
+    return {};
+}
+
+function setDynamicPreviewRouteEntities(editor, options = {}) {
+    const fromConfig = options.dynamicPage?.routeEntities;
+    const patterns = options.routeEntityPatterns ?? options.dynamicPage?.routeEntityPatterns ?? [];
+    const fromPath = parseRouteEntitiesFromPathname(window.location.pathname, patterns);
+
+    dynamicPreviewRouteEntities = (fromConfig && typeof fromConfig === 'object' && Object.keys(fromConfig).length > 0)
+        ? fromConfig
+        : fromPath;
+    bindingsPreviewRouteEntitiesKey = JSON.stringify(dynamicPreviewRouteEntities);
+
+    if (editor) {
+        editor.__voodbuilderDynamicPreviewRouteEntities = dynamicPreviewRouteEntities;
+    }
+}
 
 function componentTag(component) {
     return String(component.get('tagName') ?? '').toLowerCase();
@@ -1146,7 +1190,27 @@ function filtersForRepeatSource(catalog, repeatSourceId) {
     return Array.isArray(source?.filters) ? source.filters : [];
 }
 
-function shouldOfferBindingSource(sourceId, component) {
+function dynamicPageCurrentSourceIds(editor) {
+    const dynamicPage = editor?.__voodbuilderDynamicPage;
+
+    if (! dynamicPage || ! Array.isArray(dynamicPage.currentSourceIds)) {
+        return [];
+    }
+
+    return dynamicPage.currentSourceIds;
+}
+
+function isCurrentBindingSource(sourceId) {
+    return typeof sourceId === 'string' && sourceId.endsWith('.current');
+}
+
+function preferredDynamicPageSourceId(editor) {
+    const allowed = dynamicPageCurrentSourceIds(editor);
+
+    return allowed[0] ?? null;
+}
+
+function shouldOfferBindingSource(sourceId, component, editor = null) {
     if (isRepeatListSource(sourceId)) {
         return false;
     }
@@ -1157,6 +1221,12 @@ function shouldOfferBindingSource(sourceId, component) {
 
     if (isRepeatItemSource(sourceId)) {
         return false;
+    }
+
+    const allowedCurrent = dynamicPageCurrentSourceIds(editor);
+
+    if (isCurrentBindingSource(sourceId) && allowedCurrent.length > 0) {
+        return allowedCurrent.includes(sourceId);
     }
 
     return true;
@@ -1507,8 +1577,8 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
     }, 180);
 }
 
-function paintPreviewOnElement(component, value, fieldType, { altText = null } = {}) {
-    if (value == null || value === '') {
+function paintPreviewOnElement(component, value, fieldType, { altText = null, allowEmpty = false } = {}) {
+    if ((value == null || value === '') && ! allowEmpty) {
         return;
     }
 
@@ -1569,6 +1639,13 @@ function paintPreviewOnElement(component, value, fieldType, { altText = null } =
         return;
     }
 
+    if (text === '') {
+        element.textContent = '';
+        component.set('content', '', { silent: true });
+
+        return;
+    }
+
     if (applyDynamicCounterValue(component, text)) {
         return;
     }
@@ -1602,7 +1679,11 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     const fieldLabel = option?.field?.label ?? bindingKey;
     const fieldType = option?.field?.type ?? 'text';
     const sourceId = option?.source?.id ?? '';
-    const placeholder = placeholderForBinding(sourceLabel, fieldLabel);
+    const previewValues = editor?.__voodbuilderBindingsPreviewValues ?? {};
+    const resolvedPreview = previewValues[bindingKey];
+    const initialText = fieldType === 'text' && resolvedPreview != null && String(resolvedPreview).trim() !== ''
+        ? String(resolvedPreview).trim()
+        : '';
 
     if (hasStructuralChildren(component) && component.getAttributes()['data-voodbuilder-repeat']) {
         void alertDialog({
@@ -1700,14 +1781,14 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
             selectable: true,
             layerable: true,
             name: isCtaButton(bindTarget) ? `Dynamic: ${fieldLabel}` : `Dynamic: ${fieldLabel}`,
-            ctaLabel: placeholder,
+            ctaLabel: initialText,
         });
 
         if (isCtaButton(bindTarget)) {
-            bindTarget.addAttributes({ 'data-voodbuilder-cta-label': placeholder });
+            bindTarget.addAttributes({ 'data-voodbuilder-cta-label': initialText });
         }
 
-        paintPreviewOnElement(bindTarget, placeholder, 'text');
+        paintPreviewOnElement(bindTarget, initialText, 'text', { allowEmpty: true });
 
         return bindTarget;
     }
@@ -1753,7 +1834,7 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     }
 
     if (fieldType === 'text') {
-        paintPreviewOnElement(bindTarget, placeholder, 'text');
+        paintPreviewOnElement(bindTarget, initialText, 'text', { allowEmpty: true });
     }
 
     return bindTarget;
@@ -2199,7 +2280,7 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             optgroup.label = group.package_label ?? group.package;
 
             for (const source of group.sources ?? []) {
-                if (! shouldOfferBindingSource(source.id, component)) {
+                if (! shouldOfferBindingSource(source.id, component, editor)) {
                     continue;
                 }
 
@@ -2384,6 +2465,13 @@ function mountBindingForm(editor, component, catalog, labels, onApplied, { mode 
             fieldSelect.value = parsedBinding.fieldId;
         } else if (isInsideRepeatTemplate(component)) {
             const preferredSource = defaultItemSourceId(component, catalog);
+
+            if (preferredSource && [...sourceSelect.options].some((option) => option.value === preferredSource)) {
+                sourceSelect.value = preferredSource;
+                populateFields(false);
+            }
+        } else {
+            const preferredSource = preferredDynamicPageSourceId(editor);
 
             if (preferredSource && [...sourceSelect.options].some((option) => option.value === preferredSource)) {
                 sourceSelect.value = preferredSource;
@@ -2892,6 +2980,14 @@ async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConf
 
     const url = new URL(bindingsPreviewUrl, window.location.origin);
 
+    if (bindingsPreviewRouteEntitiesKey !== JSON.stringify(dynamicPreviewRouteEntities)) {
+        bindingsPreviewValues = null;
+    }
+
+    if (Object.keys(dynamicPreviewRouteEntities).length > 0) {
+        url.searchParams.set('route_entities', JSON.stringify(dynamicPreviewRouteEntities));
+    }
+
     if (repeatConfigs.length > 0) {
         url.searchParams.set('repeats', JSON.stringify(repeatConfigs));
     }
@@ -2920,6 +3016,7 @@ async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConf
         const payload = await response.json();
         bindingsPreviewValues = payload.values ?? {};
         bindingsPreviewListValues = payload.listValues ?? {};
+        editor.__voodbuilderBindingsPreviewValues = bindingsPreviewValues;
         bindingPreviewFetchedAt = Date.now();
 
         return bindingsPreviewValues;
@@ -3004,6 +3101,8 @@ export async function refreshBindingPreviews(editor, options = {}) {
                                 }
                             }
                         }
+                    } else if (fieldType === 'text' && isPlaceholderText(element?.textContent?.trim() ?? '')) {
+                        paintPreviewOnElement(component, '', 'text', { allowEmpty: true });
                     }
                 }
 
@@ -3089,6 +3188,8 @@ export async function registerBindingsUi(editor, options = {}) {
     }
 
     editor.__voodbuilderBindingsUiRegistered = true;
+    editor.__voodbuilderDynamicPage = options.dynamicPage ?? null;
+    setDynamicPreviewRouteEntities(editor, options);
 
     const labels = options.labels ?? {};
     const collectionsEnabled = options.dynamicDataCollections === true;

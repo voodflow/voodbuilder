@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\ThemeStudioPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
@@ -70,7 +71,7 @@ class VoodbuilderPlugin implements Plugin
 
     protected static function mediaCompanionActive(): bool
     {
-        $class = \Voodflow\Vmedia\Vmedia::class;
+        $class = Vmedia::class;
 
         return class_exists($class)
             && method_exists($class, 'isActive')

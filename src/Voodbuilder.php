@@ -18,13 +18,16 @@ use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
+use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRelatedBindingSourceRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\RepeatListRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockConfigRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockDefinition;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
@@ -118,6 +121,45 @@ class Voodbuilder
     public static function dynamicPageProvider(DynamicPageProvider $provider): void
     {
         app(DynamicPageRegistry::class)->register($provider);
+    }
+
+    /**
+     * Register an extra ".current" binding source for a dynamic page channel.
+     *
+     * @param  callable(SitePage): bool  $when
+     */
+    public static function dynamicPageRelatedBindingSource(string $channelId, string $sourceId, callable $when): void
+    {
+        app(DynamicPageRelatedBindingSourceRegistry::class)->register($channelId, $sourceId, $when);
+    }
+
+    /**
+     * Register optional channel stylesheet for theme.css sync.
+     */
+    public static function registerChannelStylesheet(string $absolutePath): void
+    {
+        app(ChannelStylesheetRegistry::class)->register($absolutePath);
+    }
+
+    /**
+     * Register editor block defaults and/or event-scoping metadata.
+     *
+     * @param  array{
+     *     defaults?: array<string, mixed>,
+     *     requires_event_id?: bool,
+     * }  $options
+     */
+    public static function editorBlockConfig(string $blockId, array $options = []): void
+    {
+        app(EditorBlockConfigRegistry::class)->register($blockId, $options);
+    }
+
+    /**
+     * @param  callable(): ?int  $resolver
+     */
+    public static function editorPublishedEventIdResolver(callable $resolver): void
+    {
+        app(EditorBlockConfigRegistry::class)->registerPublishedEventIdResolver($resolver);
     }
 
     /**

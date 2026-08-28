@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Spatie\LaravelMarkdown\MarkdownRenderer;
 use Spatie\LaravelMarkdown\MarkdownServiceProvider;
 use Voodflow\Voodbuilder\Support\Editor\EditorCodeBlockNormalizer;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -20,7 +21,7 @@ class EditorCodeBlockNormalizerTest extends TestCase
 
     public function test_highlights_plain_vp_code_blocks_with_shiki(): void
     {
-        if (! class_exists(\Spatie\LaravelMarkdown\MarkdownRenderer::class)) {
+        if (! class_exists(MarkdownRenderer::class)) {
             $this->markTestSkipped('spatie/laravel-markdown is not installed.');
         }
 

@@ -57,4 +57,20 @@ final class DynamicPageRegistry
     {
         return $this->get($channelId)?->claimableRoutes() ?? [];
     }
+
+    /**
+     * @return list<array{regex: string, keys: list<string>}>
+     */
+    public function editorRouteEntityPatterns(): array
+    {
+        $patterns = [];
+
+        foreach ($this->providers as $provider) {
+            foreach ($provider->editorRouteEntityPatterns() as $pattern) {
+                $patterns[] = $pattern;
+            }
+        }
+
+        return $patterns;
+    }
 }

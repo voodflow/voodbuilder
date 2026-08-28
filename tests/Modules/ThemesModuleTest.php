@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Modules;
 
+use Livewire\Exceptions\ComponentNotFoundException;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -26,7 +27,7 @@ class ThemesModuleTest extends TestCase
 
     public function test_theme_studio_livewire_alias_is_absent_when_disabled(): void
     {
-        $this->expectException(\Livewire\Exceptions\ComponentNotFoundException::class);
+        $this->expectException(ComponentNotFoundException::class);
 
         app('livewire')->new('voodbuilder.themes-workspace');
     }

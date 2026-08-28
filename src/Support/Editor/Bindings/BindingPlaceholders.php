@@ -23,4 +23,11 @@ final class BindingPlaceholders
     {
         return sprintf('[%s: %s]', $sourceLabel, $fieldLabel);
     }
+
+    public static function isPlaceholderText(string $value): bool
+    {
+        $value = trim($value);
+
+        return $value !== '' && (bool) preg_match('/^\[[^:]+:[^\]]+\]$/', $value);
+    }
 }

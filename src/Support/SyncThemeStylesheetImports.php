@@ -90,7 +90,6 @@ final class SyncThemeStylesheetImports
         return true;
     }
 
-
     /**
      * Optional voodbuilder channel stylesheets shipped by other voodflow packages.
      *
@@ -98,22 +97,7 @@ final class SyncThemeStylesheetImports
      */
     private static function optionalChannelCssPaths(): array
     {
-        $paths = [];
-
-        foreach (['vexhibitors', 'vevents'] as $package) {
-            foreach ([
-                base_path("packages/voodflow/{$package}/resources/css/voodbuilder-channel.css"),
-                base_path("vendor/voodflow/{$package}/resources/css/voodbuilder-channel.css"),
-            ] as $candidate) {
-                if (is_file($candidate)) {
-                    $paths[] = $candidate;
-
-                    break;
-                }
-            }
-        }
-
-        return $paths;
+        return app(ChannelStylesheetRegistry::class)->paths();
     }
 
     /**

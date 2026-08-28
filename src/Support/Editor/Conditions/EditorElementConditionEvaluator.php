@@ -77,7 +77,7 @@ final class EditorElementConditionEvaluator
             'user_logged_in' => $this->compareBool(auth()->check(), $compare, $this->truthy($value)),
             'user_role' => $this->compareRole($compare, (string) $value),
             'locale' => $this->compareString(app()->getLocale(), $compare, (string) $value),
-            'route_name' => $this->compareString((string) request()->route()?->getName(), $compare, (string) $value),
+            'route_name' => $this->compareRouteName($compare, (string) $value),
             'page_path' => $this->compareString('/'.ltrim(request()->path(), '/'), $compare, '/'.ltrim((string) $value, '/')),
             'date_before' => $this->compareDateBefore((string) $value),
             'date_after' => $this->compareDateAfter((string) $value),
@@ -121,6 +121,14 @@ final class EditorElementConditionEvaluator
             'not_contains' => ! str_contains($actual, $expected),
             default => $actual === $expected,
         };
+    }
+
+    protected function compareRouteName(string $compare, string $expected): bool
+    {
+        $actual = LogicalRouteName::normalize((string) request()->route()?->getName());
+        $expected = LogicalRouteName::normalize($expected);
+
+        return $this->compareString($actual, $compare, $expected);
     }
 
     protected function compareDateBefore(string $value): bool

@@ -19,7 +19,7 @@ use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 /**
  * Chrome layout admin/editor. Public shell resolution stays Core (`ChromeLayoutResolver`).
  */
-final class LayoutsModule extends AbstractVoodBuilderModule implements RegistersRoutes, RegistersBlocks
+final class LayoutsModule extends AbstractVoodBuilderModule implements RegistersBlocks, RegistersRoutes
 {
     public const ID = 'layouts';
 

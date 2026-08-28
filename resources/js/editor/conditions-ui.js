@@ -263,8 +263,21 @@ function buildValueControl(condition, options, labels) {
             const option = document.createElement('option');
             option.value = choice.value;
             option.textContent = choice.label;
+            if (choice.title) {
+                option.title = choice.title;
+            }
             option.selected = String(condition.value ?? '') === String(choice.value);
             control.appendChild(option);
+        }
+
+        if (condition.key === 'route_name') {
+            const hint = document.createElement('p');
+            hint.className = 'voodbuilder-editor-conditions-select-hint';
+            hint.textContent = control.value || '';
+            control.addEventListener('change', () => {
+                hint.textContent = control.value || '';
+            });
+            wrap.appendChild(hint);
         }
     } else if (meta.type === 'date') {
         control = document.createElement('input');

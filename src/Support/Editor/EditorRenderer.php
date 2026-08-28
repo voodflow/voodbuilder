@@ -6,9 +6,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
-use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Feature;
 
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Hash;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Enums\PageVisibility;
@@ -191,9 +192,9 @@ class SitePageAccessGateTest extends TestCase
         ], $attributes));
     }
 
-    protected function createUser(): \Illuminate\Foundation\Auth\User
+    protected function createUser(): User
     {
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->forceFill([
             'name' => 'Member',
             'email' => 'member@example.com',

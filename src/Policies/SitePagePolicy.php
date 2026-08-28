@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Policies;
 
+use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
  * Authorization policy for Site Page.
@@ -14,7 +14,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class SitePagePolicy
 {
     use HandlesAuthorization;
-    
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:SitePage');
@@ -74,5 +74,4 @@ class SitePagePolicy
     {
         return $authUser->can('Reorder:SitePage');
     }
-
 }

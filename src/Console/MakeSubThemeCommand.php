@@ -55,7 +55,6 @@ class MakeSubThemeCommand extends Command
         $this->line("  Layouts: {$viewsRoot}/");
         $this->line('Customize colors in Admin → Settings → Layouts, or edit the theme CSS file.');
 
-
         return self::SUCCESS;
     }
 }

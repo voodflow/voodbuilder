@@ -238,9 +238,6 @@ final class EditorLibraryLayoutNormalizer
         return $changed;
     }
 
-    /**
-     * @param  string  $tracks
-     */
     private static function tracksToGridColsClass(string $tracks): string
     {
         $parts = preg_split('/\s+/', trim($tracks)) ?: [];

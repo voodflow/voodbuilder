@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPagePreviewEntityResolver;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRequestContext;
 
@@ -49,9 +51,9 @@ final readonly class BindingContext
         );
     }
 
-    public static function forEditorPreview(SitePage $page): self
+    public static function forEditorPreview(SitePage $page, ?Request $request = null): self
     {
-        $entities = self::previewEntitiesForPage($page);
+        $entities = DynamicPagePreviewEntityResolver::entitiesForEditorPreview($page, $request);
 
         return new self(
             page: $page,
@@ -60,7 +62,7 @@ final readonly class BindingContext
             editorPreview: true,
             routeItem: self::firstEntity($entities),
             routeEntities: $entities,
-            dynamicChannel: $page->dynamic_channel,
+            dynamicChannel: DynamicPageRequestContext::channel() ?? $page->dynamic_channel,
         );
     }
 

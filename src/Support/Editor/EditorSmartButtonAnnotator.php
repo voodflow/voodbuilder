@@ -86,7 +86,16 @@ final class EditorSmartButtonAnnotator
         if ($button->hasAttribute('data-voodbuilder-bind')
             || $button->hasAttribute('data-cookie-preferences')
             || $button->hasAttribute('data-cc')
+            || $button->hasAttribute('data-voodbuilder-skip-cta')
+            || $button->hasAttribute('data-vx-gallery-index')
+            || $button->hasAttribute('data-vx-gallery-close')
+            || $button->hasAttribute('data-vx-gallery-prev')
+            || $button->hasAttribute('data-vx-gallery-next')
         ) {
+            return true;
+        }
+
+        if (self::hasAncestorWithAttribute($button, 'data-vx-gallery')) {
             return true;
         }
 
@@ -103,6 +112,21 @@ final class EditorSmartButtonAnnotator
 
         while ($parent instanceof \DOMElement) {
             if (strcasecmp($parent->tagName, $tag) === 0) {
+                return true;
+            }
+
+            $parent = $parent->parentNode;
+        }
+
+        return false;
+    }
+
+    private static function hasAncestorWithAttribute(\DOMElement $element, string $attribute): bool
+    {
+        $parent = $element->parentNode;
+
+        while ($parent instanceof \DOMElement) {
+            if ($parent->hasAttribute($attribute)) {
                 return true;
             }
 

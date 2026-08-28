@@ -139,6 +139,7 @@ final class ThemeBindings
 
             if ($override !== null && $override !== '' && ThemeBindings::isValidChannelBinding($channelId, $override)) {
                 $expanded[$channelId] = SubThemeResolver::normalize($override);
+
                 continue;
             }
 

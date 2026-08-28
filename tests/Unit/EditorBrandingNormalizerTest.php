@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Support\Editor\EditorBrandingNormalizer;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class EditorBrandingNormalizerTest extends TestCase
 {

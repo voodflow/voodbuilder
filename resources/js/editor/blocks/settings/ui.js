@@ -94,6 +94,19 @@ function syncSettingsFormValues(mount, root) {
                 raw = config[name];
             }
 
+            const collectionMatch = /^collection_(gallery|logo|attachments)$/.exec(name);
+
+            if (collectionMatch && config) {
+                const rawCollections = config.collections ?? config.collection ?? ['gallery'];
+                const collections = Array.isArray(rawCollections)
+                    ? rawCollections.map((item) => String(item))
+                    : [String(rawCollections)];
+
+                input.checked = collections.includes(collectionMatch[1]);
+
+                return;
+            }
+
             // Nav/footer brand toggles + event "show_*" default to on when unset.
             const defaultOn = name === 'voodbuilderShowSiteName'
                 || name === 'voodbuilderShowLogo'
@@ -984,6 +997,26 @@ export function registerSettingsUi(editor, mount) {
     editor.on('voodbuilder:layout-inspector-ready', scheduleRender);
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
         closeAllInspectorSelects();
+
+        const selected = editor.getSelected?.();
+        const { root, descriptor } = resolveSettings(selected, editor);
+        const rootBlockId = root ? readBlockId(root) : '';
+        const existingForm = mount.querySelector('.voodbuilder-editor-form');
+
+        if (
+            root
+            && descriptor
+            && existingForm
+            && renderedRoot === root
+            && renderedRootBlockId !== ''
+            && renderedRootBlockId === rootBlockId
+            && renderedDescriptorId === descriptor.id
+        ) {
+            syncSettingsFormValues(mount, root);
+
+            return;
+        }
+
         invalidateRenderCache();
         scheduleRender();
     });

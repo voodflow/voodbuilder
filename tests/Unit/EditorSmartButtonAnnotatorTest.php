@@ -11,6 +11,16 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 final class EditorSmartButtonAnnotatorTest extends TestCase
 {
     #[Test]
+    public function it_skips_gallery_thumb_buttons(): void
+    {
+        $html = '<section data-vx-gallery><button type="button" data-vx-gallery-index="0" class="vx-gallery__thumb"><img src="/x.jpg" alt=""></button></section>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('data-vx-gallery-index="0"', $out);
+    }
+
+    #[Test]
     public function it_promotes_standalone_buttons_to_smart_cta_anchors(): void
     {
         $html = '<section><button class="text-white bg-indigo-500 px-8 py-2 rounded">Buy now</button></section>';

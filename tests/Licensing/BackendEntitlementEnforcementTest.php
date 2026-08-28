@@ -12,9 +12,12 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
 use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
+use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
+use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
 
 class BackendEntitlementEnforcementTest extends TestCase
 {
@@ -46,11 +49,11 @@ class BackendEntitlementEnforcementTest extends TestCase
 
     public function test_community_without_components_plugin_forbids_component_library_api(): void
     {
-        if (class_exists(\Voodflow\VoodbuilderComponents\VoodbuilderComponents::class)) {
-            \Voodflow\VoodbuilderComponents\VoodbuilderComponents::reset();
+        if (class_exists(VoodbuilderComponents::class)) {
+            VoodbuilderComponents::reset();
         }
 
-        if (! class_exists(\Voodflow\Voodbuilder\Modules\Components\ComponentsModule::class)) {
+        if (! class_exists(ComponentsModule::class)) {
             $this->markTestSkipped('voodbuilder-components companion package is not available.');
         }
 
@@ -65,7 +68,7 @@ class BackendEntitlementEnforcementTest extends TestCase
 
         // After reset, ComponentsModule may still report enabled from boot registration.
         // Prefer asserting via a fresh request if the module stays enabled — skip when plugin gate cannot be undone mid-process.
-        if (\Voodflow\Voodbuilder\Modules\Components\ComponentsModule::isEnabled()) {
+        if (ComponentsModule::isEnabled()) {
             $this->markTestSkipped('Components module remains enabled after boot registration; plugin gate is activation-based.');
         }
 
@@ -87,8 +90,8 @@ class BackendEntitlementEnforcementTest extends TestCase
 
     public function test_community_without_templates_plugin_forbids_json_import(): void
     {
-        if (class_exists(\Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::class)) {
-            \Voodflow\VoodbuilderTemplates\VoodbuilderTemplates::reset();
+        if (class_exists(VoodbuilderTemplates::class)) {
+            VoodbuilderTemplates::reset();
         }
 
         Voodbuilder::entitlements()->useProvider(

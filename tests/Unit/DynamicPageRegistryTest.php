@@ -62,10 +62,30 @@ class DynamicPageRegistryTest extends TestCase
             {
                 return [];
             }
+
+            public function resolveRouteEntitiesFromSlugs(array $slugs): array
+            {
+                return [];
+            }
+
+            public function currentBindingSourceId(): string
+            {
+                return 'acme.current';
+            }
+
+            public function editorRouteEntityPatterns(): array
+            {
+                return [
+                    ['regex' => '^/acme/([^/]+)$', 'keys' => ['exhibitor']],
+                ];
+            }
         });
 
         $this->assertSame(['exhibitors' => 'Exhibitors'], $registry->channelOptions());
         $this->assertSame(['vexhibitors.show' => 'Show /{slug}'], $registry->routeOptions('exhibitors'));
+        $this->assertSame([
+            ['regex' => '^/acme/([^/]+)$', 'keys' => ['exhibitor']],
+        ], $registry->editorRouteEntityPatterns());
     }
 
     #[Test]

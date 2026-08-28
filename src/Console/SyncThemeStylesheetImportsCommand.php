@@ -28,5 +28,4 @@ class SyncThemeStylesheetImportsCommand extends Command
 
         return self::SUCCESS;
     }
-
 }

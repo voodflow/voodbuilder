@@ -76,6 +76,7 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-fonts/resources/js/editor/plugin.js',
             '../../../../voodbuilder-elements/resources/js/editor/plugin.js',
             '../../../../vevents/resources/js/editor/plugin.js',
+            '../../../../vexhibitors/resources/js/editor/plugin.js',
         ],
         { eager: true },
     );

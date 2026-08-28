@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Voodflow\Voodbuilder\Support\Editor\EditorCanvas;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -148,7 +149,7 @@ class DocLayoutChromeTest extends TestCase
 
     public function test_editor_canvas_keeps_full_page_content_edge_to_edge(): void
     {
-        $frameStyle = \Voodflow\Voodbuilder\Support\Editor\EditorCanvas::frameStyle('site');
+        $frameStyle = EditorCanvas::frameStyle('site');
 
         $this->assertStringContainsString(
             "body[data-voodbuilder-canvas-content-width='full'] [data-voodbuilder-page-content]",

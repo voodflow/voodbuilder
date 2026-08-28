@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 
 /**
  * Site Chrome.

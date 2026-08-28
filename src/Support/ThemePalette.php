@@ -935,7 +935,7 @@ CSS;
     }
 
     /**
-     * @param array<string, string> $variables
+     * @param  array<string, string>  $variables
      * @return array<string, string>
      */
     private static function filterSubThemeVariables(array $variables): array

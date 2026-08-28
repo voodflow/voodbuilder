@@ -41,7 +41,7 @@ final class EditorDynamicBlockRenderer
         }
 
         $document = $this->loadDocument($html);
-        $renderData = EditorRichContentBlockAdapter::renderData($eventId);
+        $renderData = EditorRichContentBlockAdapter::renderData($eventId, $page);
 
         foreach ($this->dynamicNodes($document) as $node) {
             $this->replaceNode($document, $node, $eventId, $renderData, $canvasPreview);
@@ -118,9 +118,7 @@ final class EditorDynamicBlockRenderer
             return;
         }
 
-        $authorStructuralClasses = SiteFooterBlocks::isFooterBlockId($blockId)
-            ? $this->captureAuthorStructuralClasses($node)
-            : null;
+        $authorStructuralClasses = $this->captureAuthorStructuralClasses($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
 
         $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);

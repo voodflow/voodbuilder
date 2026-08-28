@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageCredential;
+use Voodflow\Vtuts\Support\SubKit;
 use Voodflow\Vtuts\Support\SubscriberAccess;
 
 /**
@@ -266,10 +267,10 @@ final class SitePageAccess
         }
 
         if (class_exists(SubscriberAccess::class)
-            && class_exists(\Voodflow\Vtuts\Support\SubKit::class)
-            && \Voodflow\Vtuts\Support\SubKit::isEnabled()
-            && Route::has(\Voodflow\Vtuts\Support\SubKit::pricingRouteName())) {
-            return route(\Voodflow\Vtuts\Support\SubKit::pricingRouteName());
+            && class_exists(SubKit::class)
+            && SubKit::isEnabled()
+            && Route::has(SubKit::pricingRouteName())) {
+            return route(SubKit::pricingRouteName());
         }
 
         return null;

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorBrandingNormalizer;
 use Voodflow\Voodbuilder\Support\Editor\EditorRenderer;
 use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SectionBlocksCatalogBuilderTest extends TestCase
 {

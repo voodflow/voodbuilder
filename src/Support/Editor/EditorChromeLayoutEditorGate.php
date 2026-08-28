@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
+use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
-use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingStorageNormalizer;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
-use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
@@ -165,7 +166,7 @@ final class EditorChromeLayoutEditorGate
      */
     private static function optionalEditorRoute(string $name, mixed $parameters = []): ?string
     {
-        if (! \Illuminate\Support\Facades\Route::has($name)) {
+        if (! Route::has($name)) {
             return null;
         }
 
@@ -175,7 +176,7 @@ final class EditorChromeLayoutEditorGate
     private static function mediaUploadUrl(): ?string
     {
         foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
-            if (\Illuminate\Support\Facades\Route::has($name)) {
+            if (Route::has($name)) {
                 return self::editorRoute($name);
             }
         }

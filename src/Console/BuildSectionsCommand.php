@@ -6,8 +6,8 @@ namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
-use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
 use Voodflow\Voodbuilder\Support\Editor\DemoEditorLanding;
+use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
 /**

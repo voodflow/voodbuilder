@@ -26,7 +26,6 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource\Pages\ListChrom
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
-use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 
 /**

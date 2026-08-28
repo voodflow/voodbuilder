@@ -109,6 +109,13 @@ final class EditorBindingRenderer
                             default => $this->applyTextBinding($element, $escaped, $tag),
                         };
                         $contentResolved = true;
+                    } elseif ($field->type !== BindingField::TYPE_IMAGE && $field->type !== BindingField::TYPE_URL) {
+                        $currentText = trim((string) $element->textContent);
+
+                        if (BindingPlaceholders::isPlaceholderText($currentText)) {
+                            $this->applyTextBinding($element, '', strtolower($element->tagName));
+                            $contentResolved = true;
+                        }
                     }
                 }
             }

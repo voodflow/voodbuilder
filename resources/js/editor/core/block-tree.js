@@ -64,6 +64,33 @@ export function findBlockRoot(component) {
 }
 
 /**
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} ancestor
+ * @returns {boolean}
+ */
+export function isDescendantOf(component, ancestor) {
+    if (! component || ! ancestor) {
+        return false;
+    }
+
+    let current = component;
+
+    while (current) {
+        if (current === ancestor) {
+            return true;
+        }
+
+        if (current.get?.('type') === 'wrapper') {
+            break;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+/**
  * Walk model tree (no DOM).
  *
  * @param {object|null|undefined} container

@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support;
 use Closure;
 use Filament\Forms\Components\Component;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
@@ -27,7 +28,7 @@ final class MenuItemTypeRegistry
      *     allows_child?: bool,
      *     form?: list<Component>|Closure(): list<Component>,
      *     resolve_url?: Closure(NavigationMenuItem): string,
-     *     resolve_children?: Closure(NavigationMenuItem): \Illuminate\Support\Collection,
+     *     resolve_children?: Closure(NavigationMenuItem): Collection,
      *     is_active?: Closure(NavigationMenuItem): bool,
      *     has_resolvable_link?: Closure(NavigationMenuItem): bool,
      * }|MenuItemTypeHandler  $definition

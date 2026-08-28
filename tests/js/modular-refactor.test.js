@@ -135,6 +135,24 @@ describe('blocks/settings/select', () => {
         expect(findInspectableRoot(slot, editor)).toBeNull();
     });
 
+    it('findInspectableRoot does not steal sibling dynamic blocks on the page', () => {
+        const page = mockComponent({}, [
+            {
+                attrs: { 'data-voodbuilder-layout': 'section' },
+                children: [
+                    { attrs: { tagName: 'p' } },
+                ],
+            },
+            {
+                attrs: { [ATTR.block]: 'vexhibitor_media_collection' },
+            },
+        ]);
+        const heroText = page.components().models[0].components().models[0];
+        const editor = {};
+
+        expect(findInspectableRoot(heroText, editor)).toBeNull();
+    });
+
     it('shouldPromoteSelectionToRoot promotes from inner child even when root is not selectable', () => {
         const root = mockComponent({ [ATTR.block]: 'site_footer_social', selectable: false });
         const inner = mockComponent({ class: 'inner' }, [], root);

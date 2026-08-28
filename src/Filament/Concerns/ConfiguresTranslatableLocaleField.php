@@ -15,7 +15,7 @@ trait ConfiguresTranslatableLocaleField
 {
     /**
      * @param  class-string<Model>  $modelClass
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     protected static function translatableLocaleSelect(Select $field, string $modelClass, string $resourceClass): Select
     {

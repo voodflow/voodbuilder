@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\EditorHtmlSanitizer;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -89,7 +90,7 @@ class EditorHtmlSanitizerTest extends TestCase
             .'data-gjs-type="voodbuilder-cta-button" data-gjs-ctaLabel="Submit" '
             .'data-gjs-droppable="e=>!x7(e)">Submit</a>';
 
-        $normalized = \Voodflow\Voodbuilder\Support\Editor\EditorGate::normalizePayload([
+        $normalized = EditorGate::normalizePayload([
             'html' => $html,
             'css' => '',
             'js' => '',

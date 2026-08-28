@@ -41,6 +41,10 @@ Reference companions in this monorepo: `vforms`, `vpopups`, `vcookiebar`, `voodb
 | `editorServerBlock` | Server-rendered block without RichEditor |
 | `editorBindingSource` | Dynamic field sources |
 | `dynamicPageProvider` | Claim companion routes with a SitePage template ([dynamic-site-pages.md](./dynamic-site-pages.md)) |
+| `dynamicPageRelatedBindingSource` | Extra `.current` binding sources for a channel (e.g. event context on exhibitor templates) |
+| `editorBlockConfig` | Default block config + `requires_event_id` metadata |
+| `editorPublishedEventIdResolver` | Fallback `event_id` for editor previews |
+| `registerChannelStylesheet` | Optional `voodbuilder-channel.css` merged into theme bundle |
 | `editorRepeatList` | List repeat (no-op without Dynamics package) |
 | `editorCondition` | Visibility evaluators |
 | `editorLabels` | i18n strings in editor bootstrap |

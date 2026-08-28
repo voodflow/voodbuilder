@@ -135,6 +135,7 @@ export function wireInspector(editor, shell, options, labels) {
         bindingsUrl: options.bindingsUrl,
         bindingsPreviewUrl: options.bindingsPreviewUrl,
         labels: options.bindingLabels ?? labels,
+        dynamicPage: options.dynamicPage ?? null,
         dynamicMount: shell?.mounts?.dynamic ?? null,
         // Pro collections (List repeat) — false hides repeatSources / List repeat UI.
         dynamicDataCollections: options.dynamicDataCollections === true,

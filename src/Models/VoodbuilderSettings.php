@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelThemes;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -216,7 +217,7 @@ class VoodbuilderSettings extends Model
         $uploaded = static::assetUrl('logo', config('voodbuilder.logo'));
 
         // No custom upload: fall back to the animated VoodBuilder mark (not Laravel / app icons).
-        return $uploaded ?? \Voodflow\Voodbuilder\Support\BrandMarkAssets::url();
+        return $uploaded ?? BrandMarkAssets::url();
     }
 
     /**
@@ -225,7 +226,7 @@ class VoodbuilderSettings extends Model
     public static function faviconUrl(): string
     {
         return static::assetUrl('favicon')
-            ?? \Voodflow\Voodbuilder\Support\BrandMarkAssets::faviconUrl();
+            ?? BrandMarkAssets::faviconUrl();
     }
 
     public static function logoMobileUrl(): ?string

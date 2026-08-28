@@ -9,16 +9,16 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Voodflow\Voodbuilder\Licensing\EntitlementGate;
 use Voodflow\Voodbuilder\Models\PageTemplate;
+use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
-use Voodflow\Voodbuilder\Support\Editor\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\Editor\EditorPageTemplateBundle;
 use Voodflow\Voodbuilder\Support\Editor\EditorPageTemplateRemoteImporter;
 use Voodflow\Voodbuilder\Support\Editor\EditorSmartButtonAnnotator;
+use Voodflow\Voodbuilder\Support\Editor\PageTemplateCategories;
 use Voodflow\Voodbuilder\Support\Editor\TemplateAuthoringBridge;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
-use Voodflow\Voodbuilder\Licensing\EntitlementGate;
-use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 
 /**
  * HTTP controller: Editor Page Templates.

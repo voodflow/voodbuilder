@@ -77,10 +77,18 @@ class ExhibitorController extends Controller
 Register an `EditorBindingSource` with id `{package}.current` that reads:
 
 ```php
-$exhibitor = $context->routeEntity('exhibitor') ?? $context->routeItem;
+$exhibitor = $context->routeEntity('exhibitor');
 ```
 
 `BindingContext` is filled from `DynamicPageRequestContext` during render (and from `previewEntities()` in the editor).
+
+**Editor preview sample record:** when you edit the template from Filament (`/pages/{slug}?edit=1`), `previewEntities()` tries to match the SitePage **title** or **slug** to the companion record (e.g. title `Yamaha` → exhibitor Yamaha). When you open the editor from a public URL (`/exhibitors/yamaha?edit=1`), the exhibitor slug is sent to the bindings preview API (`route_entities`) so AJAX preview uses the same record as the URL—not the first/last exhibitor in the database.
+
+### Media gallery block
+
+For collections (gallery, logo, attachments) use the **Exhibitor media gallery** dynamic block (`vexhibitor_media_collection`) instead of binding dozens of scalar image fields. It reads the current route exhibitor via `DynamicPageRequestContext` / editor preview entities.
+
+Options: collection source, layout (grid/masonry), columns, limit, order (manual/random), lightbox.
 
 ## Core pieces
 

@@ -73,15 +73,29 @@ final class ContentChannelRegistry
 
     public function matchesCurrentRequest(): ?PublicContentChannel
     {
+        if (request()->route()?->getName() === null) {
+            return null;
+        }
+
+        $bestChannel = null;
+        $bestScore = -1;
+
         foreach ($this->channels as $channel) {
             foreach ($channel->routePatterns() as $pattern) {
-                if (request()->routeIs($pattern)) {
-                    return $channel;
+                if (! request()->routeIs($pattern)) {
+                    continue;
+                }
+
+                $score = strlen($pattern) - (substr_count($pattern, '*') * 8);
+
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $bestChannel = $channel;
                 }
             }
         }
 
-        return null;
+        return $bestChannel;
     }
 
     /**

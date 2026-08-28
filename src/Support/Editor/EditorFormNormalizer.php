@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
 
 /**
@@ -57,7 +58,7 @@ final class EditorFormNormalizer
 
         $html = self::normalize($html);
 
-        if (! \Illuminate\Support\Facades\Route::has('voodbuilder.editor.forms.submit')) {
+        if (! Route::has('voodbuilder.editor.forms.submit')) {
             return $html;
         }
 

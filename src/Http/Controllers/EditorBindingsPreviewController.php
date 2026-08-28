@@ -27,7 +27,7 @@ class EditorBindingsPreviewController extends Controller
         abort_unless(EditorGate::canEdit($sitePage), 403);
 
         $registry = app(BindingRegistry::class);
-        $context = BindingContext::forEditorPreview($sitePage);
+        $context = BindingContext::forEditorPreview($sitePage, $request);
         $values = [];
 
         foreach ($registry->catalog() as $source) {
@@ -119,7 +119,7 @@ class EditorBindingsPreviewController extends Controller
 
             foreach ($lists->resolve($repeatKey, $limit, $sort, $dir, $offset, $filters) as $record) {
                 $row = [];
-                $context = BindingContext::forEditorPreview($sitePage)->withRepeatItem($record);
+                $context = BindingContext::forEditorPreview($sitePage, $request)->withRepeatItem($record);
 
                 foreach ($itemSource->fields() as $field) {
                     $value = $registry->resolve($itemSourceId.'.'.$field->id, $context);
@@ -195,7 +195,6 @@ class EditorBindingsPreviewController extends Controller
     }
 
     /**
-     * @param  mixed  $filters
      * @return array<string, string>
      */
     public static function normalizeFilters(mixed $filters): array

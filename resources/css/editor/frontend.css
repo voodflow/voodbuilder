@@ -5681,3 +5681,30 @@ button[data-voodbuilder-cta='true']:empty::before {
     content: attr(data-voodbuilder-cta-label);
 }
 
+.vb-media-gallery[data-vb-layout='grid'],
+.vb-media-gallery[data-vb-layout='masonry'] {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(var(--vb-media-cols, 3), minmax(0, 1fr));
+}
+
+.vb-media-gallery[data-vb-layout='grid'] .vb-media-gallery__thumb img,
+.vb-media-gallery[data-vb-layout='grid'] > figure img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.vb-media-gallery[data-vb-layout='masonry'] .vb-media-gallery__thumb img,
+.vb-media-gallery[data-vb-layout='masonry'] > figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.vb-media-gallery__thumb {
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+

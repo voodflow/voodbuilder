@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Licensing;
 
 use Voodflow\Voodbuilder\Licensing\CapabilitySet;
+use Voodflow\Voodbuilder\Licensing\ConfigEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
@@ -76,7 +77,7 @@ class EntitlementManagerTest extends TestCase
         config()->set('voodbuilder.license.edition', 'community');
         config()->set('voodbuilder.license.cache', false);
 
-        $manager = new EntitlementManager(new \Voodflow\Voodbuilder\Licensing\ConfigEntitlementProvider);
+        $manager = new EntitlementManager(new ConfigEntitlementProvider);
 
         $this->assertSame('community', $manager->edition());
         $this->assertTrue($manager->can('menus.admin'));

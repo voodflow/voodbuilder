@@ -37,6 +37,11 @@ final class EditorBlockPreview
 
         if ($richBlockClass !== null) {
             $mergedConfig = $config !== [] ? $config : EditorDefaultBlockConfig::for($richBlockClass, null);
+
+            if ($config !== [] && method_exists($richBlockClass, 'normalizeConfig')) {
+                $mergedConfig = $richBlockClass::normalizeConfig($mergedConfig);
+            }
+
             $inner = EditorRichContentBlockAdapter::editorPreviewHtml($richBlockClass, $mergedConfig);
 
             return EditorRichContentBlockAdapter::wrap($blockId, $mergedConfig, $inner);

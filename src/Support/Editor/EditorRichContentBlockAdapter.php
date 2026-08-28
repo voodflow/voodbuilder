@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRequestContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
 
 /**
  * Editor Rich Content Block Adapter.
@@ -154,10 +157,20 @@ HTML;
     /**
      * @return array<string, mixed>
      */
-    public static function renderData(?int $eventId = null): array
+    public static function renderData(?int $eventId = null, ?SitePage $page = null): array
     {
+        $routeEntities = [];
+
+        if (DynamicPageRequestContext::isBound()) {
+            $routeEntities = DynamicPageRequestContext::entities();
+        } elseif ($page?->is_dynamic) {
+            $routeEntities = BindingContext::forEditorPreview($page)->routeEntities;
+        }
+
         return array_filter([
             'event_id' => $eventId,
+            'route_entities' => $routeEntities !== [] ? $routeEntities : null,
+            'dynamic_channel' => DynamicPageRequestContext::channel() ?? $page?->dynamic_channel,
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
     }
 }

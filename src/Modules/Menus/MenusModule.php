@@ -17,7 +17,7 @@ use Voodflow\Voodbuilder\Support\FilamentMenuTreeAssets;
 /**
  * Admin menus UI. Public navigation resolution remains Core.
  */
-final class MenusModule extends AbstractVoodBuilderModule implements RegistersRoutes, RegistersAssets
+final class MenusModule extends AbstractVoodBuilderModule implements RegistersAssets, RegistersRoutes
 {
     public const ID = 'menus';
 

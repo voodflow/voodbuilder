@@ -18,7 +18,7 @@ class ThemePaletteTest extends TestCase
         $css = ThemePalette::headerChromeCss();
 
         $this->assertStringContainsString(
-            ".voodbuilder-header-icon-btn:is(:hover,:focus-visible):not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text,var(--color-vp-text-1))!important",
+            '.voodbuilder-header-icon-btn:is(:hover,:focus-visible):not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text,var(--color-vp-text-1))!important',
             $css,
         );
         $this->assertStringNotContainsString(

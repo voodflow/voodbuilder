@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 
 /**
  * Resolves desktop/mobile × light/dark logo URLs for nav/footer chrome.
@@ -111,7 +112,7 @@ final class ChromeBrandLogos
         ]);
 
         if ($desktopLight === null && $desktopDark === null && $mobileLight === null && $mobileDark === null) {
-            $mark = \Voodflow\Voodbuilder\Support\BrandMarkAssets::url();
+            $mark = BrandMarkAssets::url();
 
             return [
                 'desktop_light' => $mark,

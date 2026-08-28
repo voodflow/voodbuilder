@@ -1615,9 +1615,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             return;
         }
 
-        const freshConfig = parseBlockConfig(
-            fresh.getAttribute('data-voodbuilder-config') ?? serializeBlockConfig(config),
-        );
+        const freshConfig = {
+            ...parseBlockConfig(fresh.getAttribute('data-voodbuilder-config') ?? '{}'),
+            ...config,
+        };
         const freshFingerprint = dynamicBlockRenderFingerprint(
             fresh.getAttribute('data-voodbuilder-block') ?? blockId,
             freshConfig,
@@ -2115,6 +2116,7 @@ function mountFrontendEditor() {
         footerColumnOptions: config.footerColumnOptions ?? {},
         newsletterLists: config.newsletterLists ?? {},
         vevents: config.vevents ?? null,
+        dynamicPage: config.dynamicPage ?? null,
     });
 
     const onResize = () => refreshEditorLayout(editor);

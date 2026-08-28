@@ -5,6 +5,7 @@
 import {
     findBlockRoot,
     readBlockId,
+    isDescendantOf,
 } from '../../core/block-tree.js';
 import { isChromeLayoutModeEditor } from '../../chrome-content-slot-utils.js';
 import { findInspectableRoot } from './select.js';
@@ -55,6 +56,31 @@ function normalizeDescriptor(descriptor) {
         blockIds,
         matchesRoot,
     };
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} root
+ * @returns {boolean}
+ */
+function rootOwnsSelection(component, root) {
+    if (! root) {
+        return false;
+    }
+
+    if (! component) {
+        return true;
+    }
+
+    if (component === root) {
+        return true;
+    }
+
+    if (isDescendantOf(component, root) || isDescendantOf(root, component)) {
+        return true;
+    }
+
+    return findBlockRoot(component) === root;
 }
 
 /**
@@ -121,6 +147,10 @@ export function resolveSettings(component, editor) {
     }
 
     for (const root of roots) {
+        if (! rootOwnsSelection(component, root)) {
+            continue;
+        }
+
         const descriptor = resolveDescriptorForRoot(root);
 
         if (descriptor) {

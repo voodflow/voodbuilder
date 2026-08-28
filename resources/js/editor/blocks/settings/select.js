@@ -10,6 +10,7 @@ import {
     findPrimaryBlock,
     findPrimaryBlockInContainer,
     findPrimaryBlockInChromeDropZone,
+    isDescendantOf,
 } from '../../core/block-tree.js';
 import {
     isChromeLayoutContentSlotComponent,
@@ -163,7 +164,7 @@ export function findInspectableRoot(component, editor) {
 
         const nested = findPrimaryBlockInContainer(current);
 
-        if (nested) {
+        if (nested && isDescendantOf(component, nested)) {
             return nested;
         }
 

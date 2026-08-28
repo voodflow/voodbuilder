@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 use Voodflow\Vtuts\Support\Locales;
 
@@ -81,7 +82,7 @@ final class DynamicPageResolver
         }
 
         $logicalRoute = $provider->normalizeRouteName($routeName);
-        $locale ??= self::preferredLocale();
+        $locale ??= SitePageResolver::preferredLocale();
 
         $query = SitePage::query()
             ->where('is_dynamic', true)
@@ -105,10 +106,7 @@ final class DynamicPageResolver
             }
         }
 
-        if (
-            class_exists(Locales::class)
-            && $locale !== Locales::default()
-        ) {
+        if (class_exists(Locales::class) && $locale !== Locales::default()) {
             return self::findTemplate($channel, $routeName, Locales::default());
         }
 
@@ -123,14 +121,5 @@ final class DynamicPageResolver
         } catch (\Throwable) {
             return false;
         }
-    }
-
-    private static function preferredLocale(): string
-    {
-        if (class_exists(Locales::class)) {
-            return Locales::current() ?? Locales::default();
-        }
-
-        return app()->getLocale();
     }
 }

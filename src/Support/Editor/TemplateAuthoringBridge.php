@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Voodflow\Voodbuilder\Voodbuilder;
+
 /**
  * Optional unlock for page-template authoring via voodflow/voodbuilder-templates.
  *
@@ -25,7 +27,7 @@ final class TemplateAuthoringBridge
         }
 
         // Free / legacy hosts: allow basic local authoring when the edition entitles it.
-        return \Voodflow\Voodbuilder\Voodbuilder::can('templates.local');
+        return Voodbuilder::can('templates.local');
     }
 
     public static function canImportJson(): bool

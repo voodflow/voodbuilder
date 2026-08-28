@@ -16,6 +16,9 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageBindingCatalog;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPagePreviewEntityResolver;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingNormalizer;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
@@ -134,6 +137,12 @@ final class EditorGate
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
             'pageTitle' => (string) ($page->title ?? ''),
+            'dynamicPage' => $page->is_dynamic ? [
+                'channel' => (string) ($page->dynamic_channel ?? ''),
+                'currentSourceIds' => DynamicPageBindingCatalog::currentSourceIds($page),
+                'routeEntities' => DynamicPagePreviewEntityResolver::slugBagFromRequestContext(),
+            ] : null,
+            'routeEntityPatterns' => app(DynamicPageRegistry::class)->editorRouteEntityPatterns(),
             'chromeShellMode' => $chromeShellMode,
             'chromeShellName' => $chromeLayout?->name,
             'chromeShellParts' => $chromeShellParts,

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Support\DefaultHomeContent;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
@@ -283,7 +284,7 @@ return [
         | Kept for documentation / older hosts; SitePageForm::editorOnly() is hard-true.
         */
         'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', true),
-        'default_builder' => \Voodflow\Voodbuilder\Enums\PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
+        'default_builder' => PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
         /*
         | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
         */

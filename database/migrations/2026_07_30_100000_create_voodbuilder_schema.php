@@ -210,7 +210,7 @@ return new class extends Migration
             Schema::table('site_pages', function (Blueprint $table): void {
                 $table->dropUnique(['slug']);
             });
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Index may already be gone or named differently.
         }
 
@@ -218,7 +218,7 @@ return new class extends Migration
             Schema::table('site_pages', function (Blueprint $table): void {
                 $table->unique(['slug', 'locale'], 'site_pages_slug_locale_unique');
             });
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Composite unique may already exist.
         }
     }

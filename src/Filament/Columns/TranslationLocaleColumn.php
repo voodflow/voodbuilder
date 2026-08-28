@@ -16,7 +16,7 @@ use Voodflow\Vtuts\Support\Locales;
 final class TranslationLocaleColumn
 {
     /**
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     public static function make(string $resourceClass): TextColumn
     {

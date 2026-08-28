@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Policies;
 
+use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
-use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
  * Authorization policy for Navigation Menu.
@@ -14,7 +14,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class NavigationMenuPolicy
 {
     use HandlesAuthorization;
-    
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:NavigationMenu');
@@ -74,5 +74,4 @@ class NavigationMenuPolicy
     {
         return $authUser->can('Reorder:NavigationMenu');
     }
-
 }

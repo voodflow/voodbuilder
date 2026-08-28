@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
-use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
+use Voodflow\Voodbuilder\Support\GlobalTextTags;
 
 /**
  * Renders stored Editor HTML for site chrome layouts (no SitePage context).

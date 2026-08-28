@@ -59,13 +59,16 @@ use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
+use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRelatedBindingSourceRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BuiltinBindingSources;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationBindingRegistrar;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationRegistry;
+use Voodflow\Voodbuilder\Support\Editor\EditorBlockConfigRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
@@ -73,6 +76,7 @@ use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderEditorBlockConfigs;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
@@ -135,6 +139,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(SubThemeRegistry::class);
         $this->app->singleton(ContentChannelRegistry::class);
         $this->app->singleton(DynamicPageRegistry::class);
+        $this->app->singleton(DynamicPageRelatedBindingSourceRegistry::class);
+        $this->app->singleton(ChannelStylesheetRegistry::class);
+        $this->app->singleton(EditorBlockConfigRegistry::class);
         $this->app->singleton(MenuItemTypeRegistry::class);
         $this->app->singleton(ModuleRegistry::class);
         $this->app->singleton(FontCatalog::class);
@@ -170,6 +177,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         FilamentAdminAssets::register();
 
         if (config('voodbuilder.editor.enabled', true)) {
+            VoodbuilderEditorBlockConfigs::register();
             $this->registerEditorRoutes();
             $this->registerEditorBlocks();
             $this->registerEditorBindings();

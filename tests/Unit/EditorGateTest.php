@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
@@ -101,8 +102,8 @@ class EditorGateTest extends TestCase
         $this->assertIsString($config['uploadUrl']);
 
         if (
-            \Illuminate\Support\Facades\Route::has('vmedia.media.upload')
-            || \Illuminate\Support\Facades\Route::has('voodbuilder.editor.upload')
+            Route::has('vmedia.media.upload')
+            || Route::has('voodbuilder.editor.upload')
         ) {
             $this->assertNotSame('', $config['uploadUrl']);
         } else {
@@ -133,12 +134,12 @@ class EditorGateTest extends TestCase
         $config = EditorGate::config($page);
         $uploadUrl = (string) ($config['uploadUrl'] ?? '');
 
-        if (\Illuminate\Support\Facades\Route::has('vmedia.media.upload')) {
+        if (Route::has('vmedia.media.upload')) {
             $this->assertSame(
                 route('vmedia.media.upload', absolute: false),
                 $uploadUrl,
             );
-        } elseif (\Illuminate\Support\Facades\Route::has('voodbuilder.editor.upload')) {
+        } elseif (Route::has('voodbuilder.editor.upload')) {
             $this->assertSame(
                 route('voodbuilder.editor.upload', absolute: false),
                 $uploadUrl,
