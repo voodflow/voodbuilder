@@ -283,10 +283,22 @@ export async function openMediaBrowser(args) {
         els.dropHint.textContent = labels.mediaBrowserUploadDropDefault ?? 'Uploads → default gallery';
     };
 
+    const galleryLabel = (gallery) => {
+        if (gallery.label) {
+            return gallery.label;
+        }
+
+        if (gallery.breadcrumb && gallery.breadcrumb !== gallery.name) {
+            return gallery.breadcrumb;
+        }
+
+        return gallery.name ?? '';
+    };
+
     const renderGalleries = () => {
         const allLabel = 'All media';
         const items = [
-            { id: null, name: allLabel, media_count: state.total || null, is_default: false },
+            { id: null, name: allLabel, label: allLabel, depth: 0, media_count: state.total || null, is_default: false },
             ...state.galleries,
         ];
 
@@ -296,9 +308,15 @@ export async function openMediaBrowser(args) {
                 || (id != null && Number(id) === Number(state.galleryId));
             const count = gallery.media_count != null ? `<span>${escapeHtml(String(gallery.media_count))}</span>` : '';
             const badge = gallery.is_default ? '<em>default</em>' : '';
+            const depth = Number(gallery.depth ?? 0);
+            const kindClass = gallery.kind === 'group' ? ' is-group' : (gallery.kind === 'album' ? ' is-album' : '');
+            const label = galleryLabel(gallery);
+            const pathHint = gallery.path && gallery.path !== label && ! label.includes('›')
+                ? `<small class="voodbuilder-media-browser__nav-path">${escapeHtml(gallery.path)}</small>`
+                : '';
 
-            return `<button type="button" class="voodbuilder-media-browser__nav${active ? ' is-active' : ''}" data-mb-gallery="${id == null ? '' : escapeHtml(String(id))}">
-                <span>${escapeHtml(gallery.name)}${badge}</span>${count}
+            return `<button type="button" class="voodbuilder-media-browser__nav${active ? ' is-active' : ''}${kindClass}" data-mb-depth="${depth}" data-mb-gallery="${id == null ? '' : escapeHtml(String(id))}">
+                <span class="voodbuilder-media-browser__nav-label">${escapeHtml(label)}${badge}${pathHint}</span>${count}
             </button>`;
         }).join('');
 
@@ -307,7 +325,7 @@ export async function openMediaBrowser(args) {
             const selected = (gallery.id == null && state.galleryId == null)
                 || (gallery.id != null && Number(gallery.id) === Number(state.galleryId));
 
-            return `<option value="${escapeHtml(id)}" ${selected ? 'selected' : ''}>${escapeHtml(gallery.name)}</option>`;
+            return `<option value="${escapeHtml(id)}" ${selected ? 'selected' : ''}>${escapeHtml(galleryLabel(gallery))}</option>`;
         }).join('');
     };
 

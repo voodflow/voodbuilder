@@ -80,6 +80,38 @@
     cursor: pointer;
 }
 
+.voodbuilder-media-browser__nav[data-mb-depth="1"] {
+    padding-inline-start: 1.15rem;
+}
+
+.voodbuilder-media-browser__nav[data-mb-depth="2"] {
+    padding-inline-start: 1.65rem;
+}
+
+.voodbuilder-media-browser__nav[data-mb-depth="3"] {
+    padding-inline-start: 2.15rem;
+}
+
+.voodbuilder-media-browser__nav.is-group .voodbuilder-media-browser__nav-label {
+    font-weight: 600;
+}
+
+.voodbuilder-media-browser__nav-label {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.voodbuilder-media-browser__nav-path {
+    display: block;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    color: var(--color-vp-text-2, #64748b);
+    font-weight: 400;
+}
+
 .voodbuilder-media-browser__nav span {
     display: inline-flex;
     align-items: center;
