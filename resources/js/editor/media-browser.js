@@ -265,7 +265,7 @@ export async function openMediaBrowser(args) {
 
     const includeDescendantsForSelection = () => selectedGallery()?.kind === 'group';
 
-    const uploadContextGalleryId = () => state.galleryId;
+    const uploadContextGalleryId = () => state.uploadGalleryId ?? state.galleryId;
 
     const updateUploadHint = () => {
         const path = state.uploadGallery?.path || state.uploadGallery?.name;
