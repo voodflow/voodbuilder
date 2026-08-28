@@ -26,6 +26,8 @@ Optional Editor plugins (forms, background styles, tabs, custom HTML) ship enabl
 
 The **image editor** opens from the canvas toolbar on selected images (and background-image sections). Toggle with `editor.image_editor` / `VOODBUILDER_EDITOR_IMAGE_EDITOR` (legacy key `grapesjs.image_editor`).
 
+**Save behaviour (with vmedia):** footer **Save** replaces the vault file in-place (one `.originals/` backup on disk); **Save as copy** creates a linked variant. **Focus** tab: click the preview to set the tilt-shift centre. Details: [manual/user/builder/image-editing.md](./manual/user/builder/image-editing.md).
+
 `php artisan voodbuilder:install` patches `vite.config.js` with Editor entries when possible.
 
 ---

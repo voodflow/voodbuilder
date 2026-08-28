@@ -7,6 +7,7 @@
  */
 
 import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
+import { createFocusPointPlugin } from './jodit-focus-point-plugin.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 export const CMD_EDIT_IMAGE = 'voodbuilder:edit-image';
@@ -458,8 +459,60 @@ async function reencodeBlob(blob, type, quality) {
 }
 
 /**
+ * @param {import('grapesjs').Component} component
+ * @returns {string|null}
+ */
+function resolveMediaUuid(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+    const uuid = String(attrs['data-vb-media-uuid'] ?? '').trim();
+
+    return uuid !== '' ? uuid : null;
+}
+
+/**
  * @param {File} file
- * @param {{ uploadUrl: string, csrf?: string, displayName?: string }} options
+ * @param {{ replaceUrl: string, uuid: string, csrf?: string, displayName?: string }} options
+ * @param {Record<string, string>} labels
+ * @returns {Promise<{ url: string, media?: object }>}
+ */
+async function replaceFile(file, options, labels = {}) {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('uuid', options.uuid);
+
+    const displayName = String(options.displayName ?? pathinfoFilename(file.name) ?? '').trim();
+
+    if (displayName !== '') {
+        form.append('name', displayName);
+    }
+
+    const response = await fetch(options.replaceUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: editorApiHeaders(options.csrf),
+        body: form,
+    });
+
+    if (! response.ok) {
+        throw new Error(await resolveUploadErrorMessage(response, labels));
+    }
+
+    const payload = await response.json();
+    const url = payload?.data?.[0];
+
+    if (typeof url !== 'string' || url.trim() === '') {
+        throw new Error(labels.imageEditorUploadError ?? 'Could not upload the edited image.');
+    }
+
+    return {
+        url: url.trim(),
+        media: payload?.media ?? null,
+    };
+}
+
+/**
+ * @param {File} file
+ * @param {{ uploadUrl: string, csrf?: string, displayName?: string, derivedFromUuid?: string|null }} options
  * @param {Record<string, string>} labels
  * @returns {Promise<string>}
  */
@@ -471,6 +524,10 @@ async function uploadFile(file, options, labels = {}) {
 
     if (displayName !== '') {
         form.append('name', displayName);
+    }
+
+    if (options.derivedFromUuid) {
+        form.append('derived_from_uuid', options.derivedFromUuid);
     }
 
     const response = await fetch(options.uploadUrl, {
@@ -542,20 +599,34 @@ function uploadViaAssetManager(editor, file) {
 /**
  * @param {import('grapesjs').Editor} editor
  * @param {Blob} blob
- * @param {{ uploadUrl: string, csrf?: string, displayName?: string, component?: object }} options
+ * @param {{ uploadUrl: string, replaceUrl?: string, csrf?: string, displayName?: string, component?: object, mode?: 'replace'|'create', mediaUuid?: string|null }} options
  * @param {Record<string, string>} labels
- * @returns {Promise<string>}
+ * @returns {Promise<{ url: string, media?: object|null }>}
  */
 async function uploadEditedBlob(editor, blob, options, labels = {}) {
     let lastError = labels.imageEditorUploadError ?? 'Could not upload the edited image.';
     let quality = 0.88;
     const displayName = String(options.displayName ?? 'edited-image').trim() || 'edited-image';
+    const mode = options.mode ?? 'create';
+    const mediaUuid = options.mediaUuid ?? null;
+    const replaceUrl = options.replaceUrl ?? '';
 
     for (let attempt = 0; attempt < MAX_UPLOAD_ATTEMPTS; attempt += 1) {
         const file = await blobToUploadFile(blob, 'image/jpeg', quality, displayName);
 
         try {
-            return await uploadFile(file, { ...options, displayName }, labels);
+            if (mode === 'replace' && mediaUuid && replaceUrl !== '') {
+                return await replaceFile(file, {
+                    replaceUrl,
+                    uuid: mediaUuid,
+                    csrf: options.csrf,
+                    displayName,
+                }, labels);
+            }
+
+            const url = await uploadFile(file, { ...options, displayName }, labels);
+
+            return { url, media: null };
         } catch (error) {
             lastError = error instanceof Error && error.message
                 ? error.message
@@ -564,7 +635,7 @@ async function uploadEditedBlob(editor, blob, options, labels = {}) {
             const viaAssets = await uploadViaAssetManager(editor, file);
 
             if (viaAssets) {
-                return viaAssets;
+                return { url: viaAssets, media: null };
             }
 
             // Retry smaller JPEG when validation complains about size.
@@ -585,10 +656,29 @@ async function uploadEditedBlob(editor, blob, options, labels = {}) {
  * @param {import('grapesjs').Editor} editor
  * @param {import('grapesjs').Component} component
  * @param {string} url
+ * @param {{ media?: object|null, preserveUuid?: boolean }} [meta]
  */
-function applyEditedSrc(editor, component, url) {
+function applyEditedSrc(editor, component, url, meta = {}) {
     component.set('src', url);
     component.addAttributes({ src: url });
+
+    const media = meta.media;
+
+    if (media && typeof media === 'object') {
+        const uuid = media.uuid != null ? String(media.uuid).trim() : '';
+        const id = media.id != null ? String(media.id).trim() : '';
+
+        if (uuid !== '') {
+            component.addAttributes({ 'data-vb-media-uuid': uuid });
+        }
+
+        if (id !== '') {
+            component.addAttributes({ 'data-vb-media-id': id });
+        }
+    } else if (meta.preserveUuid === false) {
+        component.removeAttributes?.('data-vb-media-uuid');
+        component.removeAttributes?.('data-vb-media-id');
+    }
 
     let parent = component.parent?.();
 
@@ -675,13 +765,15 @@ function resolveLoadErrorMessage(error, labels = {}) {
 /**
  * @param {import('grapesjs').Editor} editor
  * @param {import('grapesjs').Component} target
- * @param {{ uploadUrl?: string, csrf?: string, labels?: Record<string, string> }} options
+ * @param {{ uploadUrl?: string, replaceUrl?: string, csrf?: string, labels?: Record<string, string> }} options
  */
 async function openImageEditorModal(editor, target, options = {}) {
     const labels = options.labels ?? editor.__voodbuilderLabels ?? {};
     const uploadUrl = options.uploadUrl ?? editor.__voodbuilderUploadUrl ?? '';
+    const replaceUrl = options.replaceUrl ?? editor.__voodbuilderMediaReplaceUrl ?? '';
     const csrf = resolveCsrfToken(options.csrf ?? editor.__voodbuilderCsrf ?? '');
     const src = resolveImageSrc(target);
+    const mediaUuid = resolveMediaUuid(target);
 
     if (uploadUrl === '') {
         // Still open a minimal modal so the user sees the message.
@@ -696,7 +788,8 @@ async function openImageEditorModal(editor, target, options = {}) {
 
     const title = labels.imageEditorTitle ?? 'Edit image';
     const cancelLabel = labels.dialogCancel ?? labels.modalCancel ?? 'Cancel';
-    const applyLabel = labels.imageEditorApply ?? 'Apply';
+    const saveLabel = labels.imageEditorSave ?? 'Save';
+    const saveAsLabel = labels.imageEditorSaveAs ?? 'Save as copy';
     const loadingLabel = labels.imageEditorLoading ?? 'Loading image…';
 
     modal.innerHTML = `
@@ -707,12 +800,15 @@ async function openImageEditorModal(editor, target, options = {}) {
                 <button type="button" class="voodbuilder-editor-modal__close" data-voodbuilder-image-editor-close aria-label="${escapeHtml(cancelLabel)}">×</button>
             </header>
             <div class="voodbuilder-editor-modal__body voodbuilder-editor-image-editor-modal__body">
-                <p class="voodbuilder-editor-hint" data-voodbuilder-image-editor-status hidden></p>
                 <div class="voodbuilder-editor-image-editor-host" data-voodbuilder-image-editor-host></div>
             </div>
             <footer class="voodbuilder-editor-modal__foot voodbuilder-editor-image-editor-modal__foot">
-                <button type="button" class="voodbuilder-editor-btn" data-voodbuilder-image-editor-close>${escapeHtml(cancelLabel)}</button>
-                <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--primary" data-voodbuilder-image-editor-apply disabled>${escapeHtml(applyLabel)}</button>
+                <p class="voodbuilder-editor-hint" data-voodbuilder-image-editor-status hidden></p>
+                <div class="voodbuilder-editor-image-editor-modal__foot-actions">
+                    <button type="button" class="voodbuilder-editor-btn" data-voodbuilder-image-editor-close>${escapeHtml(cancelLabel)}</button>
+                    <button type="button" class="voodbuilder-editor-btn" data-voodbuilder-image-editor-save-as disabled>${escapeHtml(saveAsLabel)}</button>
+                    <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--primary" data-voodbuilder-image-editor-save disabled>${escapeHtml(saveLabel)}</button>
+                </div>
             </footer>
         </div>
     `;
@@ -721,7 +817,16 @@ async function openImageEditorModal(editor, target, options = {}) {
     activeModal = modal;
 
     const host = modal.querySelector('[data-voodbuilder-image-editor-host]');
-    const applyButton = modal.querySelector('[data-voodbuilder-image-editor-apply]');
+    const saveButton = modal.querySelector('[data-voodbuilder-image-editor-save]');
+    const saveAsButton = modal.querySelector('[data-voodbuilder-image-editor-save-as]');
+
+    const setSavingState = (disabled) => {
+        for (const button of [saveButton, saveAsButton]) {
+            if (button instanceof HTMLButtonElement) {
+                button.disabled = disabled;
+            }
+        }
+    };
 
     const onClose = () => {
         closeImageEditorModal();
@@ -750,24 +855,36 @@ async function openImageEditorModal(editor, target, options = {}) {
 
     /**
      * @param {Blob} blob
+     * @param {'replace'|'create'} mode
      */
-    const persistBlob = async (blob) => {
+    const persistBlob = async (blob, mode) => {
         if (saving) {
             return;
         }
 
         saving = true;
-
-        if (applyButton instanceof HTMLButtonElement) {
-            applyButton.disabled = true;
-        }
+        setSavingState(true);
 
         setModalStatus(labels.imageEditorSaving ?? 'Saving…');
 
         try {
             const displayName = resolveEditedDisplayName(editor, target, src);
-            const url = await uploadEditedBlob(editor, blob, { uploadUrl, csrf, displayName, component: target }, labels);
-            applyEditedSrc(editor, target, url);
+            const canReplace = mode === 'replace' && mediaUuid !== null && replaceUrl !== '';
+            const result = await uploadEditedBlob(editor, blob, {
+                uploadUrl,
+                replaceUrl,
+                csrf,
+                displayName,
+                component: target,
+                mode: canReplace ? 'replace' : 'create',
+                mediaUuid,
+                derivedFromUuid: canReplace ? null : mediaUuid,
+            }, labels);
+
+            applyEditedSrc(editor, target, result.url, {
+                media: result.media,
+                preserveUuid: canReplace || Boolean(result.media?.uuid),
+            });
             onClose();
         } catch (error) {
             const message = error instanceof Error && error.message
@@ -776,10 +893,7 @@ async function openImageEditorModal(editor, target, options = {}) {
 
             setModalStatus(message);
             saving = false;
-
-            if (applyButton instanceof HTMLButtonElement) {
-                applyButton.disabled = false;
-            }
+            setSavingState(false);
         }
     };
 
@@ -791,35 +905,41 @@ async function openImageEditorModal(editor, target, options = {}) {
         activeEditor = new ImageEditor({
             container: host,
             image: blob,
+            plugins: [createFocusPointPlugin(() => host)],
             state: {
                 theme: 'light',
+                showToolbar: true,
             },
             onSave: (editedBlob) => {
-                void persistBlob(editedBlob);
+                void persistBlob(editedBlob, 'replace');
             },
             onSaveAs: (editedBlob) => {
-                void persistBlob(editedBlob);
+                void persistBlob(editedBlob, 'create');
             },
         });
 
-        if (applyButton instanceof HTMLButtonElement) {
-            applyButton.disabled = false;
-            applyButton.addEventListener('click', () => {
+        setSavingState(false);
+
+        if (saveButton instanceof HTMLButtonElement) {
+            saveButton.addEventListener('click', () => {
                 void activeEditor?.save();
+            });
+        }
+
+        if (saveAsButton instanceof HTMLButtonElement) {
+            saveAsButton.addEventListener('click', () => {
+                void activeEditor?.saveAs();
             });
         }
     } catch (error) {
         setModalStatus(resolveLoadErrorMessage(error, labels));
-
-        if (applyButton instanceof HTMLButtonElement) {
-            applyButton.disabled = true;
-        }
+        setSavingState(true);
     }
 }
 
 /**
  * @param {import('grapesjs').Editor} editor
- * @param {{ enabled?: boolean, uploadUrl?: string, csrf?: string, labels?: Record<string, string> }} [options]
+ * @param {{ enabled?: boolean, uploadUrl?: string, replaceUrl?: string, csrf?: string, labels?: Record<string, string> }} [options]
  */
 export function registerJoditImageEditor(editor, options = {}) {
     if (editor.__voodbuilderJoditImageEditorRegistered) {
@@ -835,6 +955,7 @@ export function registerJoditImageEditor(editor, options = {}) {
     editor.__voodbuilderJoditImageEditorRegistered = true;
     editor.__voodbuilderImageEditorEnabled = true;
     editor.__voodbuilderUploadUrl = options.uploadUrl ?? editor.__voodbuilderUploadUrl ?? '';
+    editor.__voodbuilderMediaReplaceUrl = options.replaceUrl ?? editor.__voodbuilderMediaReplaceUrl ?? '';
     editor.__voodbuilderCsrf = options.csrf ?? editor.__voodbuilderCsrf ?? '';
 
     if (options.labels) {
@@ -865,6 +986,7 @@ export function registerJoditImageEditor(editor, options = {}) {
 
                 await openImageEditorModal(ed, target, {
                     uploadUrl: ed.__voodbuilderUploadUrl,
+                    replaceUrl: ed.__voodbuilderMediaReplaceUrl,
                     csrf: ed.__voodbuilderCsrf,
                     labels: ed.__voodbuilderLabels ?? {},
                 });

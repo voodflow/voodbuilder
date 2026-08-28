@@ -507,7 +507,8 @@ return [
         ],
         'image_editor' => [
             'title' => 'Edit image',
-            'apply' => 'Apply',
+            'save' => 'Save',
+            'save_as' => 'Save as copy',
             'loading' => 'Loading image…',
             'saving' => 'Saving…',
             'load_error' => 'Could not load this image for editing (missing source or blocked by CORS).',

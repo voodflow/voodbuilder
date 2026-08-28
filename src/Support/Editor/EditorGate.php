@@ -155,6 +155,7 @@ final class EditorGate
             ),
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
+            'mediaReplaceUrl' => self::mediaReplaceUrl(),
             'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
             // Galleries API is owned by voodflow/vmedia when the Filament plugin is active.
             'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
@@ -312,7 +313,8 @@ final class EditorGate
             'contentWidthNormal' => __('voodbuilder::pro.editor.toolbar.content_width_normal'),
             'contentWidthCustom' => __('voodbuilder::pro.editor.toolbar.content_width_custom'),
             'imageEditorTitle' => __('voodbuilder::pro.editor.image_editor.title'),
-            'imageEditorApply' => __('voodbuilder::pro.editor.image_editor.apply'),
+            'imageEditorSave' => __('voodbuilder::pro.editor.image_editor.save'),
+            'imageEditorSaveAs' => __('voodbuilder::pro.editor.image_editor.save_as'),
             'imageEditorLoading' => __('voodbuilder::pro.editor.image_editor.loading'),
             'imageEditorSaving' => __('voodbuilder::pro.editor.image_editor.saving'),
             'imageEditorLoadError' => __('voodbuilder::pro.editor.image_editor.load_error'),
@@ -1136,6 +1138,17 @@ final class EditorGate
     private static function mediaUploadUrl(): ?string
     {
         foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
+            if (Route::has($name)) {
+                return self::editorRoute($name);
+            }
+        }
+
+        return null;
+    }
+
+    private static function mediaReplaceUrl(): ?string
+    {
+        foreach (['vmedia.media.replace', 'voodbuilder.editor.media.replace'] as $name) {
             if (Route::has($name)) {
                 return self::editorRoute($name);
             }

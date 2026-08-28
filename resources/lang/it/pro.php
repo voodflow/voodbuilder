@@ -507,7 +507,8 @@ return [
         ],
         'image_editor' => [
             'title' => 'Modifica immagine',
-            'apply' => 'Applica',
+            'save' => 'Salva',
+            'save_as' => 'Salva copia',
             'loading' => 'Caricamento immagine…',
             'saving' => 'Salvataggio…',
             'load_error' => 'Impossibile caricare questa immagine (sorgente assente o bloccata da CORS).',

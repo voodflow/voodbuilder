@@ -907,6 +907,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     registerJoditImageEditor(editor, {
         enabled: options.imageEditor !== false,
         uploadUrl: options.uploadUrl ?? '',
+        replaceUrl: options.mediaReplaceUrl ?? '',
         csrf: options.csrf ?? '',
         labels,
     });
