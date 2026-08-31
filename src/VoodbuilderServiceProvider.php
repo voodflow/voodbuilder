@@ -23,6 +23,7 @@ use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
 use Voodflow\Voodbuilder\Console\MakeSubThemeCommand;
 use Voodflow\Voodbuilder\Console\SeedDemoLandingCommand;
+use Voodflow\Voodbuilder\Console\SeedMarketingSiteCommand;
 use Voodflow\Voodbuilder\Console\SubThemeCommand;
 use Voodflow\Voodbuilder\Console\SyncNpmDepsCommand;
 use Voodflow\Voodbuilder\Console\SyncThemeStylesheetImportsCommand;
@@ -116,6 +117,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->hasCommand(MakeSubThemeCommand::class)
             ->hasCommand(BuildSectionsCommand::class)
             ->hasCommand(SeedDemoLandingCommand::class)
+            ->hasCommand(SeedMarketingSiteCommand::class)
             ->hasCommand(ThemePresetCommand::class)
             ->hasCommand(SubThemeCommand::class)
             ->hasCommand(SyncThemeStylesheetImportsCommand::class)
