@@ -41,47 +41,30 @@ final class MarketingSiteMenus
             'sort_order' => 0,
         ]);
 
-        $pluginsGroup = NavigationMenuItem::query()->create([
+        $productsGroup = NavigationMenuItem::query()->create([
             'menu_id' => $main->getKey(),
-            'label' => 'Plugins',
+            'label' => 'Products',
             'type' => MenuItemType::Group,
             'sort_order' => 1,
         ]);
 
-        NavigationMenuItem::query()->create([
-            'menu_id' => $main->getKey(),
-            'parent_id' => $pluginsGroup->getKey(),
-            'label' => 'All plugins',
-            'type' => MenuItemType::Page,
-            'link' => 'a-plugins',
-            'sort_order' => 0,
-        ]);
-
-        foreach (MarketingSiteContent::pluginCatalog() as $index => $plugin) {
+        foreach (MarketingSiteContent::productLandings() as $index => $product) {
             NavigationMenuItem::query()->create([
                 'menu_id' => $main->getKey(),
-                'parent_id' => $pluginsGroup->getKey(),
-                'label' => $plugin['name'],
+                'parent_id' => $productsGroup->getKey(),
+                'label' => $product['name'],
                 'type' => MenuItemType::Page,
-                'link' => 'a-'.$plugin['slug'],
-                'sort_order' => $index + 1,
+                'link' => 'a-'.$product['slug'],
+                'sort_order' => $index,
             ]);
         }
 
         NavigationMenuItem::query()->create([
             'menu_id' => $main->getKey(),
-            'label' => 'Docs',
-            'type' => MenuItemType::Page,
-            'link' => 'a-docs',
+            'label' => 'Contact',
+            'type' => MenuItemType::Url,
+            'link' => 'https://voodflow.com',
             'sort_order' => 2,
-        ]);
-
-        NavigationMenuItem::query()->create([
-            'menu_id' => $main->getKey(),
-            'label' => 'Tutorials',
-            'type' => MenuItemType::Page,
-            'link' => 'a-tutorials',
-            'sort_order' => 3,
         ]);
     }
 
@@ -102,15 +85,15 @@ final class MarketingSiteMenus
                 'sort_order' => 0,
             ],
             [
-                'label' => 'Docs',
+                'label' => 'Voodflow',
                 'type' => MenuItemType::Page,
-                'link' => 'a-docs',
+                'link' => 'a-voodflow',
                 'sort_order' => 1,
             ],
             [
-                'label' => 'Tutorials',
-                'type' => MenuItemType::Page,
-                'link' => 'a-tutorials',
+                'label' => 'Contact',
+                'type' => MenuItemType::Url,
+                'link' => 'https://voodflow.com',
                 'sort_order' => 2,
             ],
         ]);
@@ -123,28 +106,41 @@ final class MarketingSiteMenus
                 'sort_order' => 0,
             ],
             [
-                'label' => 'All plugins',
+                'label' => 'Voodflow',
                 'type' => MenuItemType::Page,
-                'link' => 'a-plugins',
+                'link' => 'a-voodflow',
                 'sort_order' => 1,
             ],
             [
-                'label' => 'Docs',
+                'label' => 'VoodBuilder',
                 'type' => MenuItemType::Page,
-                'link' => 'a-docs',
+                'link' => 'a-voodbuilder',
                 'sort_order' => 2,
-            ],
-            [
-                'label' => 'Tutorials',
-                'type' => MenuItemType::Page,
-                'link' => 'a-tutorials',
-                'sort_order' => 3,
             ],
         ]);
 
-        self::seedFooterColumn(2, self::pluginFooterLinks());
+        self::seedFooterColumn(2, self::productFooterLinks());
 
-        self::seedFooterColumn(3, []);
+        self::seedFooterColumn(3, [
+            [
+                'label' => 'White-label licensing',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 0,
+            ],
+            [
+                'label' => 'OEM / multi-tenant',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 1,
+            ],
+            [
+                'label' => 'Contact',
+                'type' => MenuItemType::Url,
+                'link' => 'https://voodflow.com',
+                'sort_order' => 2,
+            ],
+        ]);
 
         self::seedFooterColumn(4, self::policyFooterLinks());
     }
@@ -171,15 +167,15 @@ final class MarketingSiteMenus
     /**
      * @return list<array{label: string, type: MenuItemType, link: string, sort_order: int}>
      */
-    protected static function pluginFooterLinks(): array
+    protected static function productFooterLinks(): array
     {
         $links = [];
 
-        foreach (MarketingSiteContent::pluginCatalog() as $index => $plugin) {
+        foreach (MarketingSiteContent::productLandings() as $index => $product) {
             $links[] = [
-                'label' => $plugin['name'],
+                'label' => $product['name'],
                 'type' => MenuItemType::Page,
-                'link' => 'a-'.$plugin['slug'],
+                'link' => 'a-'.$product['slug'],
                 'sort_order' => $index,
             ];
         }
