@@ -5,6 +5,9 @@
 
 const BUILD_SCOPES = new Map();
 let markIdSeq = 0;
+/** Failsafe when begin/end pairs desync after aborted compiles or observer storms. */
+const STUCK_BUILD_RESET_MS = 20_000;
+let stuckBuildTimer = null;
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -112,6 +115,26 @@ function spinnerMarkup(label) {
     `;
 }
 
+function armStuckBuildFailsafe(editor) {
+    window.clearTimeout(stuckBuildTimer);
+    stuckBuildTimer = window.setTimeout(() => {
+        if (totalBuildCount() === 0) {
+            return;
+        }
+
+        console.warn('VoodBuilder Editor: compile overlay stuck — resetting build counters.');
+        BUILD_SCOPES.clear();
+        syncClassesOverlay(editor);
+    }, STUCK_BUILD_RESET_MS);
+}
+
+function disarmStuckBuildFailsafe() {
+    if (totalBuildCount() === 0) {
+        window.clearTimeout(stuckBuildTimer);
+        stuckBuildTimer = null;
+    }
+}
+
 function totalBuildCount() {
     let total = 0;
 
@@ -141,8 +164,9 @@ function syncCanvasCompileOverlay(editor) {
         return;
     }
 
-    const busy = (BUILD_SCOPES.get('page-css') ?? 0) > 0
-        || (BUILD_SCOPES.get('component-css') ?? 0) > 0;
+    const busy = ! editor?.__voodbuilderBooting
+        && ((BUILD_SCOPES.get('page-css') ?? 0) > 0
+            || (BUILD_SCOPES.get('component-css') ?? 0) > 0);
 
     overlay.hidden = ! busy;
     overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
@@ -166,6 +190,7 @@ export function beginEditorBuild(editor, scope = 'default') {
     }
 
     BUILD_SCOPES.set(scope, (BUILD_SCOPES.get(scope) ?? 0) + 1);
+    armStuckBuildFailsafe(editor);
     syncClassesOverlay(editor);
 }
 
@@ -182,12 +207,14 @@ export function endEditorBuild(editor, scope = 'default') {
         BUILD_SCOPES.set(scope, next);
     }
 
+    disarmStuckBuildFailsafe();
     syncClassesOverlay(editor);
 }
 
 /** Clear stuck compile overlays (e.g. after a failed/aborted build storm). */
 export function resetEditorBuildStatus(editor) {
     BUILD_SCOPES.clear();
+    disarmStuckBuildFailsafe();
     syncClassesOverlay(editor);
 }
 
@@ -253,6 +280,17 @@ export function startEditorBoot(editor) {
 
     editor.__voodbuilderBooting = true;
     syncBootOverlay(editor);
+
+    window.clearTimeout(editor.__voodbuilderBootFailsafeTimer);
+    editor.__voodbuilderBootFailsafeTimer = window.setTimeout(() => {
+        if (editor.__voodbuilderBooting === true) {
+            console.warn('VoodBuilder Editor: boot splash failsafe — forcing editor unlock.');
+            finishEditorBoot(editor);
+            document.querySelector('.voodbuilder-editor-root--booting')
+                ?.classList.remove('voodbuilder-editor-root--booting');
+            resetEditorBuildStatus(editor);
+        }
+    }, 3500);
 }
 
 export function finishEditorBoot(editor) {
@@ -260,6 +298,8 @@ export function finishEditorBoot(editor) {
         return;
     }
 
+    window.clearTimeout(editor.__voodbuilderBootFailsafeTimer);
+    editor.__voodbuilderBootFailsafeTimer = null;
     editor.__voodbuilderBooting = false;
     syncBootOverlay(editor);
 }

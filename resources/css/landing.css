@@ -559,6 +559,14 @@ body.voodbuilder-sticky-footer .voodbuilder-events-shell:has(.VPRichPage--landin
     min-height: calc(100vh - 4rem);
 }
 
+body:has(> [data-voodbuilder-chrome-shell]) :is(
+    .voodbuilder-site-shell,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell
+) {
+    min-height: auto;
+}
+
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPage--landing) {
     @apply max-w-none p-0;
 }

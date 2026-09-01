@@ -3,6 +3,8 @@
  * Uses public DOM hooks only — no patches to node_modules/grapesjs.
  */
 
+import { isEditorBooting, shouldSuppressInspectorDomScan } from './editor-lifecycle.js';
+
 const CHEVRON_SVG = '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>';
 
 const PORTAL_LISTS = new WeakMap();
@@ -809,7 +811,7 @@ function scheduleInspectorSelectRefresh(callback) {
     refreshTimer = window.setTimeout(() => {
         refreshTimer = null;
         callback();
-    }, 180);
+    }, 420);
 }
 
 function hasRelevantMutation(mutations) {
@@ -845,8 +847,55 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
     ].filter(Boolean);
 
     let enhancing = false;
+    let lastRefreshAt = 0;
+
+    const pauseObservers = () => {
+        for (const root of roots) {
+            if (! root?.__vbSelectObserver) {
+                continue;
+            }
+
+            root.__vbSelectObserver.disconnect();
+            delete root.__vbSelectObserver;
+        }
+    };
+
+    const attachObservers = () => {
+        for (const root of roots) {
+            if (! root || root.__vbSelectObserver) {
+                continue;
+            }
+
+            const observer = new MutationObserver((mutations) => {
+                if (shouldSuppressInspectorDomScan(editor, { busy: enhancing }) || ! hasRelevantMutation(mutations)) {
+                    return;
+                }
+
+                debouncedRefresh();
+            });
+
+            observer.observe(root, { childList: true, subtree: true });
+            root.__vbSelectObserver = observer;
+        }
+    };
+
+    const resumeObservers = () => {
+        attachObservers();
+    };
 
     const refresh = () => {
+        if (isEditorBooting(editor)) {
+            return;
+        }
+
+        const now = Date.now();
+
+        if (now - lastRefreshAt < 120) {
+            debouncedRefresh();
+
+            return;
+        }
+
         if (document.querySelector('.voodbuilder-editor-select-wrap.is-open')) {
             return;
         }
@@ -862,22 +911,26 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
         refreshFrame = window.requestAnimationFrame(() => {
             refreshFrame = null;
             enhancing = true;
+            pauseObservers();
 
             try {
                 for (const root of roots) {
                     enhanceInspectorInputGroups(root);
                     enhanceInspectorSelects(root);
                 }
+
+                lastRefreshAt = Date.now();
             } finally {
                 window.queueMicrotask(() => {
                     enhancing = false;
+                    resumeObservers();
                 });
             }
         });
     };
 
     const debouncedRefresh = () => {
-        if (enhancing) {
+        if (shouldSuppressInspectorDomScan(editor, { busy: enhancing })) {
             return;
         }
 
@@ -886,7 +939,9 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
 
     editor.on('component:selected', debouncedRefresh);
     editor.on('trait:select', debouncedRefresh);
-    editor.on('load', refresh);
+    editor.on('load', () => {
+        window.setTimeout(refresh, 600);
+    });
 
     document.addEventListener('mousedown', (event) => {
         if (isSelectUiTarget(event.target)) {
@@ -916,22 +971,6 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
         }
     }, true);
 
-    for (const root of roots) {
-        if (! root || root.__vbSelectObserver) {
-            continue;
-        }
-
-        const observer = new MutationObserver((mutations) => {
-            if (enhancing || ! hasRelevantMutation(mutations)) {
-                return;
-            }
-
-            debouncedRefresh();
-        });
-
-        observer.observe(root, { childList: true, subtree: true });
-        root.__vbSelectObserver = observer;
-    }
-
+    attachObservers();
     refresh();
 }

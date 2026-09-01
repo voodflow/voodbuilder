@@ -15,6 +15,7 @@ import { isInsideChromeDropZoneComponent, isPageContentSlotComponent, isChromeSh
 import { isCatalogSection } from './section-nesting-guard.js';
 
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+const BOTTOM_SPACER_ATTR = 'data-voodbuilder-bottom-drop-spacer';
 const CHROME_DROP_ZONE_ATTR = 'data-voodbuilder-chrome-drop-zone';
 const LAYER_SORT_MOVE_THRESHOLD_PX = 6;
 const LAYER_INSERT_LINE_ATTR = 'data-voodbuilder-layer-insert-line';
@@ -75,7 +76,7 @@ function shouldEnableLayerReorder(component, editor) {
         return false;
     }
 
-    if (component.getAttributes?.()?.[SPACER_ATTR]) {
+    if (component.getAttributes?.()?.[SPACER_ATTR] || component.getAttributes?.()?.[BOTTOM_SPACER_ATTR]) {
         return false;
     }
 

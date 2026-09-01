@@ -606,6 +606,7 @@ function observeSelectorManagerDedupe(mounts) {
 
     let dedupeTimer = null;
     let deduping = false;
+    const observers = [];
 
     const dedupe = () => {
         if (deduping) {
@@ -614,11 +615,19 @@ function observeSelectorManagerDedupe(mounts) {
 
         deduping = true;
 
+        for (const { observer } of observers) {
+            observer.disconnect();
+        }
+
         try {
             dedupeSelectorManagerPanels(mounts.selectors, mounts.styles);
         } finally {
             window.queueMicrotask(() => {
                 deduping = false;
+
+                for (const { observer, target } of observers) {
+                    observer.observe(target, { childList: true, subtree: true });
+                }
             });
         }
     };
@@ -632,12 +641,13 @@ function observeSelectorManagerDedupe(mounts) {
         dedupeTimer = window.setTimeout(dedupe, 80);
     };
 
-    const observer = new MutationObserver(() => {
-        scheduleDedupe();
-    });
-
     for (const target of targets) {
+        const observer = new MutationObserver(() => {
+            scheduleDedupe();
+        });
+
         observer.observe(target, { childList: true, subtree: true });
+        observers.push({ observer, target });
     }
 
     dedupe();

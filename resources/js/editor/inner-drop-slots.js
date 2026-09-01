@@ -109,7 +109,7 @@ export function isInnerDropLayoutContainer(component) {
 
     const attrs = component.getAttributes?.() ?? {};
 
-    if (attrs[INNER_DROP_SLOT_ATTR] || attrs['data-voodbuilder-top-drop-spacer']) {
+    if (attrs[INNER_DROP_SLOT_ATTR] || attrs['data-voodbuilder-top-drop-spacer'] || attrs['data-voodbuilder-bottom-drop-spacer']) {
         return false;
     }
 

@@ -4,6 +4,7 @@
 
 import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import { isEditorBooting } from './editor-lifecycle.js';
 import { ensureTextLabel, extractButtonLabel, CTA_LABEL_ATTR } from './editor-button-link.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import {
@@ -1552,13 +1553,21 @@ const BINDING_PREVIEW_TTL_MS = 30_000;
 const BINDING_PREVIEW_BACKOFF_MS = 15_000;
 
 function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
-    if (editor?.__voodbuilderBindingPreviewPainting || editor?.__voodbuilderSettingsChange) {
+    if (
+        isEditorBooting(editor)
+        || editor?.__voodbuilderBindingPreviewPainting
+        || editor?.__voodbuilderSettingsChange
+    ) {
         return;
     }
 
     window.clearTimeout(repeatMaintainTimer);
     repeatMaintainTimer = window.setTimeout(() => {
-        if (editor?.__voodbuilderBindingPreviewPainting || editor?.__voodbuilderSettingsChange) {
+        if (
+            isEditorBooting(editor)
+            || editor?.__voodbuilderBindingPreviewPainting
+            || editor?.__voodbuilderSettingsChange
+        ) {
             return;
         }
 
@@ -2960,7 +2969,7 @@ async function loadBindingsCatalog(bindingsUrl) {
     return bindingsCatalog;
 }
 
-async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConfigs = []) {
+async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConfigs = [], editor = null) {
     if (! bindingsPreviewUrl) {
         return {};
     }
@@ -3016,7 +3025,9 @@ async function loadBindingsPreview(bindingsPreviewUrl, force = false, repeatConf
         const payload = await response.json();
         bindingsPreviewValues = payload.values ?? {};
         bindingsPreviewListValues = payload.listValues ?? {};
-        editor.__voodbuilderBindingsPreviewValues = bindingsPreviewValues;
+        if (editor) {
+            editor.__voodbuilderBindingsPreviewValues = bindingsPreviewValues;
+        }
         bindingPreviewFetchedAt = Date.now();
 
         return bindingsPreviewValues;
@@ -3050,6 +3061,7 @@ export async function refreshBindingPreviews(editor, options = {}) {
                 options.bindingsPreviewUrl,
                 forceNetwork,
                 collectRepeatPreviewConfigs(editor),
+                editor,
             ).catch((error) => {
                 // One log per burst — avoid flooding the console on 429 loops.
                 if (! editor.__voodbuilderBindingPreviewErrorLogged) {
@@ -3146,6 +3158,7 @@ async function ensureBoundComponentVisible(component, options = {}) {
         options.bindingsPreviewUrl,
         options.forceNetwork === true,
         options.editor ? collectRepeatPreviewConfigs(options.editor) : [],
+        options.editor ?? null,
     );
     const listValues = bindingsPreviewListValues ?? {};
     const previewContext = { values, listValues, catalog };

@@ -186,6 +186,51 @@ final class EditorCanvas
             box-sizing: border-box;
         }
 
+        .voodbuilder-editor-bottom-drop-spacer {
+            box-sizing: border-box;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            visibility: hidden;
+            pointer-events: none !important;
+            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease, visibility 0s linear 0.12s;
+        }
+
+        .voodbuilder-editor-bottom-drop-spacer.gjs-hovered,
+        .voodbuilder-editor-bottom-drop-spacer.gjs-selected {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .voodbuilder-editor-bottom-drop-spacer.is-active {
+            min-height: 4.5rem !important;
+            height: 4.5rem !important;
+            max-height: none !important;
+            opacity: 1 !important;
+            visibility: visible;
+            pointer-events: auto !important;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 8%, transparent);
+            border-radius: 0.375rem;
+            transition: min-height 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+        }
+
+        .voodbuilder-editor-bottom-drop-spacer.is-active::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
+            border-radius: 0.375rem;
+            box-sizing: border-box;
+        }
+
         .voodbuilder-editor-inner-drop-slot {
             box-sizing: border-box;
             display: none !important;
@@ -931,7 +976,7 @@ final class EditorCanvas
          * Spacer-only slots must keep a tall hit target: appending the spacer
          * clears :empty and used to collapse min-height to 0 (no dropzones).
          */
-        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) {
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop]))) {
             min-height: min(28rem, 55vh) !important;
             outline: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
             outline-offset: -2px;
@@ -950,7 +995,7 @@ final class EditorCanvas
             border-radius: 0.375rem;
         }
 
-        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) > .voodbuilder-editor-top-drop-spacer {
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop]))) > .voodbuilder-editor-top-drop-spacer {
             min-height: 100% !important;
             height: 100% !important;
             margin: 0 !important;
@@ -958,6 +1003,33 @@ final class EditorCanvas
         }
 
         body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-top-drop-spacer::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 50%, transparent);
+            border-radius: 0.375rem;
+            box-sizing: border-box;
+        }
+
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-bottom-drop-spacer {
+            min-height: 2.5rem !important;
+            height: 2.5rem !important;
+            max-height: none !important;
+            margin: 0.25rem 0 !important;
+            opacity: 1 !important;
+            visibility: visible;
+            pointer-events: auto !important;
+            background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+            border-radius: 0.375rem;
+        }
+
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-bottom-drop-spacer.is-active {
+            min-height: 4.5rem !important;
+            height: 4.5rem !important;
+        }
+
+        body.voodbuilder-editor-block-dragging [data-voodbuilder-page-content] > .voodbuilder-editor-bottom-drop-spacer::after {
             content: '';
             display: block;
             width: 100%;

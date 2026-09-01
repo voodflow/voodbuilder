@@ -14,6 +14,8 @@
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
+import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
+import { shouldDeferCssRebuild } from './editor-lifecycle.js';
 import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
 import { extractGrapesComposerCss, mergeAuthorCssChunks } from './editor/payload.js';
 import { STYLE_SPACING_SAFELIST } from './style-spacing-safelist.js';
@@ -145,8 +147,17 @@ function injectLivePageCss(editor, css) {
     }
 
     // Keep live JIT last so dark:/responsive utilities win over canvas theme sheets.
-    doc.head.appendChild(styleEl);
+    // Re-append only when needed — repeated appendChild on every compile churns iframes.
+    if (styleEl.parentNode !== doc.head || styleEl !== doc.head.lastElementChild) {
+        doc.head.appendChild(styleEl);
+    }
+
     styleEl.textContent = String(css ?? '').trim();
+}
+
+/** Undo CSS selector escapes so `.hover\:bg-red-500` indexes as `hover:bg-red-500`. */
+function unescapeCssClassSelector(raw) {
+    return String(raw ?? '').replace(/\\(.)/g, '$1');
 }
 
 function cssDefinesUtility(css, className) {
@@ -154,9 +165,60 @@ function cssDefinesUtility(css, className) {
         return false;
     }
 
-    const escaped = className.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (cssUtilityClassIndex(css).has(className)) {
+        return true;
+    }
 
-    return new RegExp(`\\.${escaped}(?:\\b|[\\[:])`).test(css);
+    // Arbitrary values (`bg-[#fff]`) may not match the fast index regex — fall back once.
+    const escaped = String(className)
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/:/g, '\\:');
+
+    return new RegExp(`\\.${escaped}(?:[\\s{:,>+~\\[]|$)`).test(css);
+}
+
+/** @type {string|null} */
+let cssUtilityIndexSource = null;
+
+/** @type {Set<string>|null} */
+let cssUtilityIndex = null;
+
+/**
+ * Index utility selectors once per CSS blob — regex-per-class on large saved sheets
+ * blocked the main thread for tens of seconds at editor open.
+ *
+ * @param {string} css
+ * @returns {Set<string>}
+ */
+function cssUtilityClassIndex(css) {
+    const normalized = String(css ?? '');
+
+    if (cssUtilityIndexSource === normalized && cssUtilityIndex) {
+        return cssUtilityIndex;
+    }
+
+    const index = new Set();
+    // Tailwind v4 emits escaped selectors: .hover\:bg-red-500, .md\:flex, .w-1\/2
+    const re = /\.((?:\\.|[-\w])+)/g;
+    let match;
+
+    while ((match = re.exec(normalized)) !== null) {
+        const className = unescapeCssClassSelector(match[1]);
+
+        if (className !== '') {
+            index.add(className);
+        }
+    }
+
+    cssUtilityIndexSource = normalized;
+    cssUtilityIndex = index;
+
+    return index;
+}
+
+function resetCssUtilityClassIndex() {
+    cssUtilityIndexSource = null;
+    cssUtilityIndex = null;
 }
 
 function isIgnorableClassToken(className) {
@@ -168,8 +230,12 @@ function isIgnorableClassToken(className) {
         || token.startsWith('voodbuilder-');
 }
 
+function isPastedComponentInstance(component) {
+    return Boolean(component?.getAttributes?.()?.['data-voodbuilder-component']);
+}
+
 function collectComponentClassSet(component, into = new Set()) {
-    if (! component) {
+    if (! component || isPastedComponentInstance(component)) {
         return into;
     }
 
@@ -223,6 +289,7 @@ export function pageCssCoversClass(editor, className) {
 export function applyPageLiveCss(editor, css) {
     const normalized = String(css ?? '').trim();
 
+    resetCssUtilityClassIndex();
     editor.__voodbuilderPageLiveCss = normalized;
     injectLivePageCss(editor, normalized);
 }
@@ -290,6 +357,102 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     let rateLimitedUntil = 0;
     let rateLimitWarned = false;
 
+    const hasSeededPageLiveCss = () => (editor.__voodbuilderPageLiveCss ?? '').trim() !== '';
+
+    const syncBootTracking = () => {
+        try {
+            const html = collectPageLevelHtml(editor);
+
+            if (html !== '') {
+                lastHtml = html;
+            }
+
+            lastClassSet = currentPageClassSet();
+        } catch {
+            // Canvas/frame may not be ready yet.
+        }
+    };
+
+    let bootCompileTimer = null;
+    let bootCompileScheduled = false;
+
+    const scheduleBootCompile = () => {
+        if (bootCompileScheduled && editor.__voodbuilderPageCssSeededFromServer === true) {
+            return;
+        }
+
+        bootCompileScheduled = true;
+        window.clearTimeout(bootCompileTimer);
+        bootCompileTimer = window.setTimeout(() => {
+            bootCompileTimer = null;
+
+            // Saved page CSS from the server already matches the published page — no JIT at open.
+            if (editor.__voodbuilderPageCssSeededFromServer === true) {
+                syncBootTracking();
+
+                return;
+            }
+
+            syncBootTracking();
+
+            const classSet = currentPageClassSet();
+
+            if (hasSeededPageLiveCss() && ! classSetNeedsCompile(classSet)) {
+                lastClassSet = classSet;
+
+                return;
+            }
+
+            if (hasSeededPageLiveCss()) {
+                scheduleIfMissingUtilities(INITIAL_BUILD_DELAY_MS);
+            } else {
+                pendingInvalidate = true;
+                schedule(INITIAL_BUILD_DELAY_MS);
+            }
+        }, INITIAL_BUILD_DELAY_MS);
+    };
+
+    const deferBootCompile = () => {
+        if (editor.__voodbuilderPageCssSeededFromServer === true) {
+            syncBootTracking();
+
+            return;
+        }
+
+        const run = () => scheduleBootCompile();
+
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(run, { timeout: 2500 });
+        } else {
+            window.setTimeout(run, 0);
+        }
+    };
+
+    /** One compile check after boot chrome/layer sync finishes (layout setClass storms). */
+    const schedulePostBootCssCheck = () => {
+        let attempts = 0;
+
+        const run = () => {
+            attempts += 1;
+
+            if (shouldDeferCssRebuild(editor)) {
+                if (attempts < 40) {
+                    window.setTimeout(run, 120);
+                }
+
+                return;
+            }
+
+            syncBootTracking();
+
+            if (classSetNeedsCompile(currentPageClassSet())) {
+                scheduleIfMissingUtilities(INITIAL_BUILD_DELAY_MS);
+            }
+        };
+
+        window.setTimeout(run, 300);
+    };
+
     const isUserCanvasDrag = () => (
         editor.__voodbuilderActiveBlockDrag
         || editor.__voodbuilderCssRebuildUserDrag === true
@@ -301,7 +464,21 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         || editor.__voodbuilderCssRebuildDragLock === true
     );
 
-    const currentPageClassSet = () => collectComponentClassSet(editor.getWrapper?.());
+    /**
+     * Class tokens that page JIT must satisfy — must mirror `collectPageLevelHtml()`.
+     * Chrome-shell page editor: only the page-content slot (nav/footer use theme CSS).
+     */
+    const currentPageClassSet = () => {
+        if (editor.__voodbuilderChromeShellMode) {
+            const slot = findPageContentSlotInEditor(editor);
+
+            if (slot) {
+                return collectComponentClassSet(slot);
+            }
+        }
+
+        return collectComponentClassSet(editor.getWrapper?.());
+    };
 
     const classSetNeedsCompile = (classSet) => {
         for (const token of classSet) {
@@ -329,26 +506,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         return false;
     };
 
-    const selectorNeedsLiveCss = (selector) => {
-        const name = String(
-            selector?.getLabel?.()
-            ?? selector?.get?.('name')
-            ?? selector?.id
-            ?? '',
-        ).trim().replace(/^\./, '');
-
-        if (name === '' || lastClassSet.has(name) || pageCssCoversClass(editor, name)) {
-            return false;
-        }
-
-        return true;
-    };
-
     const schedule = (delay = DEBOUNCE_MS) => {
         if (
             ! frameReady
-            || editor.__voodbuilderBulkStructureUpdate
-            || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            || shouldDeferCssRebuild(editor)
         ) {
             return;
         }
@@ -382,6 +543,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
     /** Schedule only when new utilities are missing (reorder/move must no-op). */
     const scheduleIfMissingUtilities = (delay = DEBOUNCE_MS) => {
+        if (shouldDeferCssRebuild(editor)) {
+            return;
+        }
+
         if (pendingInvalidate) {
             schedule(delay);
 
@@ -450,7 +615,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         }
 
         if (
-            (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            shouldDeferCssRebuild(editor)
             || isDragLocked()
         ) {
             return;
@@ -585,12 +750,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             lastClassSet = classSet;
             applyPageLiveCss(editor, mergeCompiledPageCssWithAuthorIdRules(editor, css));
             editor.trigger('voodbuilder:page-css-compiled', { css: editor.__voodbuilderPageLiveCss ?? css, html });
-
-            try {
-                editor.refresh?.();
-            } catch {
-                // Optional canvas paint after live sheet swap.
-            }
+            // Do not editor.refresh() here — it re-registers every class selector and
+            // retriggers inspector MutationObservers (compile overlay stuck + main-thread storms).
         } catch (error) {
             consecutiveFailures += 1;
 
@@ -667,42 +828,47 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         }
     };
     editor.__voodbuilderApplyPageLiveCss = (css) => {
-        lastHtml = collectPageLevelHtml(editor);
-        lastClassSet = currentPageClassSet();
-        applyPageLiveCss(editor, css);
+        const normalized = String(css ?? '').trim();
+        applyPageLiveCss(editor, normalized);
+
+        if (normalized !== '') {
+            editor.__voodbuilderPageCssSeededFromServer = true;
+            syncBootTracking();
+        }
     };
+    editor.__voodbuilderSyncPageCssBootTracking = syncBootTracking;
     editor.__voodbuilderInvalidatePageCss = () => {
+        editor.__voodbuilderPageCssSeededFromServer = false;
+        bootCompileScheduled = false;
         lastHtml = '';
         lastClassSet = new Set();
         pendingInvalidate = true;
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Live compile only when classes/selectors introduce utilities missing from live CSS.
+    // Live compile only on class changes — never selector:add/update (SM paint / refresh storms).
     editor.on('component:update:classes', (component) => {
+        if (shouldDeferCssRebuild(editor) || isDragLocked()) {
+            return;
+        }
+
         if (classSetNeedsCompile(collectComponentClassSet(component))) {
-            schedule();
-        }
-    });
-    editor.on('selector:add', (selector) => {
-        if (selectorNeedsLiveCss(selector)) {
-            schedule();
-        }
-    });
-    editor.on('selector:update', (selector) => {
-        if (selectorNeedsLiveCss(selector)) {
             schedule();
         }
     });
 
     // Dropped blocks / templates may land without a classes event (Grapes reuses tokens).
     editor.on('component:add', (component) => {
+        if (shouldDeferCssRebuild(editor)) {
+            return;
+        }
+
         if (
             ! component
             || component.getAttributes?.()?.['data-voodbuilder-top-drop-spacer']
+            || component.getAttributes?.()?.['data-voodbuilder-bottom-drop-spacer']
             || component.getAttributes?.()?.['data-voodbuilder-inner-drop']
             || isDragLocked()
-            || editor.__voodbuilderBulkStructureUpdate
         ) {
             return;
         }
@@ -777,25 +943,29 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     editor.on('load', () => {
         editorLoaded = true;
         resetEditorBuildStatus(editor);
-        pendingInvalidate = true;
-        schedule(INITIAL_BUILD_DELAY_MS);
+
+        if (editor.__voodbuilderPageCssSeededFromServer === true) {
+            syncBootTracking();
+        } else {
+            deferBootCompile();
+        }
+
+        schedulePostBootCssCheck();
     });
 
     editor.on('canvas:frame:load', () => {
         frameReady = true;
         applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
-        pendingInvalidate = true;
-        schedule(INITIAL_BUILD_DELAY_MS);
+        deferBootCompile();
     });
 
     if (editor.Canvas?.getFrameEl?.()) {
         frameReady = true;
-        pendingInvalidate = true;
-        schedule(INITIAL_BUILD_DELAY_MS);
+        deferBootCompile();
     }
 
     if (editorLoaded) {
-        pendingInvalidate = true;
-        schedule(INITIAL_BUILD_DELAY_MS);
+        deferBootCompile();
+        schedulePostBootCssCheck();
     }
 }

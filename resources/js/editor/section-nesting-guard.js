@@ -101,13 +101,41 @@ function draggedComponentContainsCatalogSection(component) {
     return Boolean(findCatalogSectionInTree(component));
 }
 
+function draggedComponentIsSectionLike(srcComponent) {
+    if (! srcComponent?.get) {
+        return false;
+    }
+
+    if (isCatalogSection(srcComponent)) {
+        return true;
+    }
+
+    const tag = String(srcComponent.get('tagName') ?? '').toLowerCase();
+
+    if (tag === 'section') {
+        return true;
+    }
+
+    const attrs = srcComponent.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-section-block']) {
+        return true;
+    }
+
+    if (attrs['data-voodbuilder-layout'] === 'section') {
+        return true;
+    }
+
+    return draggedComponentContainsCatalogSection(srcComponent);
+}
+
 export function configureSectionDropTarget(section) {
     if (! isCatalogSection(section) || section.get('_voodbuilderSectionDropBound')) {
         return;
     }
 
     section.set('_voodbuilderSectionDropBound', true);
-    section.set('droppable', (srcComponent) => ! draggedComponentContainsCatalogSection(srcComponent));
+    section.set('droppable', (srcComponent) => ! draggedComponentIsSectionLike(srcComponent));
 }
 
 function bindAllSectionDropTargets(editor) {

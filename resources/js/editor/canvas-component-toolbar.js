@@ -71,7 +71,8 @@ function isInnerDropSlotComponent(component) {
 }
 
 function isTopDropSpacerComponent(component) {
-    return Boolean(component?.getAttributes?.()?.['data-voodbuilder-top-drop-spacer']);
+    return Boolean(component?.getAttributes?.()?.['data-voodbuilder-top-drop-spacer']
+        || component?.getAttributes?.()?.['data-voodbuilder-bottom-drop-spacer']);
 }
 
 function listRealSiblings(component) {

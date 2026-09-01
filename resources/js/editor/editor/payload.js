@@ -13,6 +13,7 @@ import {
 } from '../components-ui.js';
 import { syncConditionsForExport } from '../conditions-ui.js';
 import { findPageContentSlotInEditor } from '../chrome-content-slot-utils.js';
+import { purgeOrphanPageContentNodes } from '../page-content-orphans.js';
 import { extractChromeLayoutHtml } from '../editor-chrome-layout.js';
 import { ensureCtaButtonsForExport } from '../editor-button-link.js';
 import { ensureIconsForExport } from '../editor-utility-blocks.js';
@@ -477,6 +478,13 @@ export function buildPayload(editor, options = {}) {
         runExportStep('syncAnimatedCountersForExport', () => syncAnimatedCountersForExport(editor));
         runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
         runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
+        runExportStep('purgeOrphanPageContentNodes', () => {
+            const slot = findPageContentSlotInEditor(editor);
+
+            if (slot) {
+                purgeOrphanPageContentNodes(slot);
+            }
+        });
         runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
         runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
         runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));

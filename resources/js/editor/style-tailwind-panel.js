@@ -17,6 +17,7 @@ import { applyEditorFontFamily, previewEditorFontFamily } from './fonts/fonts-ui
 import { findFontByStack, styleManagerFontOptions, cssSafeFontStack } from './fonts/catalog.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import { createImageUrlField } from './editor-form-ui.js';
+import { isEditorBooting } from './editor-lifecycle.js';
 import {
     BACKGROUND_OPTIONS,
     BG_POSITION_OPTIONS,
@@ -69,7 +70,9 @@ import {
     STYLE_UTILITY_GROUPS,
     TEXT_ALIGN_OPTIONS,
     TEXT_ALIGN_SEGMENTS,
+    TEXT_COLOR_GRADIENT_VALUE,
     TEXT_COLOR_OPTIONS,
+    TEXT_GRADIENT_BASE_CLASSES,
     TEXT_DECORATION_OPTIONS,
     TEXT_DECORATION_SEGMENTS,
     TEXT_TRANSFORM_OPTIONS,
@@ -78,8 +81,10 @@ import {
     WIDTH_OPTIONS,
     classSetFromOptions,
     componentClassList,
+    hasTextGradientClasses,
     replaceClassGroup,
     resolveGroupValue,
+    resolveSolidTextColor,
     utilityConflictGroupIds,
 } from './style-tailwind-class-groups.js';
 
@@ -90,6 +95,85 @@ const GROUP_SETS = Object.fromEntries(
 const GROUP_INLINE = Object.fromEntries(
     STYLE_UTILITY_GROUPS.map((group) => [group.id, group.inlineProps ?? []]),
 );
+
+const TEXT_GRADIENT_GROUP_IDS = [
+    'text-gradient-direction',
+    'text-gradient-from',
+    'text-gradient-via',
+    'text-gradient-to',
+];
+
+const SHARED_GRADIENT_GROUP_IDS = [
+    'gradient-direction',
+    'gradient-from',
+    'gradient-via',
+    'gradient-to',
+];
+
+function clearTextGradientUtilities(component, { includeGradientStops = true } = {}) {
+    if (! component) {
+        return;
+    }
+
+    for (const cls of TEXT_GRADIENT_BASE_CLASSES) {
+        component.removeClass?.(cls);
+    }
+
+    if (! includeGradientStops) {
+        return;
+    }
+
+    for (const id of [...TEXT_GRADIENT_GROUP_IDS, ...SHARED_GRADIENT_GROUP_IDS]) {
+        const groupSet = GROUP_SETS[id];
+
+        if (groupSet) {
+            replaceClassGroup(component, groupSet, null);
+        }
+    }
+}
+
+function ensureTextGradientBase(component) {
+    if (! component) {
+        return;
+    }
+
+    for (const cls of TEXT_GRADIENT_BASE_CLASSES) {
+        if (! componentClassList(component).includes(cls)) {
+            component.addClass?.(cls);
+        }
+    }
+}
+
+function clearSolidTextColorUtilities(component) {
+    if (! component) {
+        return;
+    }
+
+    for (const opt of TEXT_COLOR_OPTIONS) {
+        const value = opt.value;
+
+        if (! value || value === TEXT_COLOR_GRADIENT_VALUE || value === 'text-transparent') {
+            continue;
+        }
+
+        component.removeClass?.(value);
+    }
+}
+
+function defaultTextGradientDirection(component) {
+    const classes = componentClassList(component);
+    const direction = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
+
+    if (direction && direction !== 'bg-none') {
+        return;
+    }
+
+    replaceClassGroup(
+        component,
+        GROUP_SETS['text-gradient-direction'],
+        'bg-gradient-to-r',
+    );
+}
 
 const SANITIZE_PROPERTIES = [
     'box-shadow',
@@ -407,10 +491,19 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
         const el = root.querySelector(`[data-voodbuilder-tw-group="${group.id}"]`);
 
         if (el) {
-            el.value = resolveGroupValue(classes, group.options);
+            if (group.id === 'text-color') {
+                el.value = hasTextGradientClasses(classes)
+                    ? TEXT_COLOR_GRADIENT_VALUE
+                    : resolveSolidTextColor(classes);
+            } else {
+                el.value = resolveGroupValue(classes, group.options);
+            }
+
             el.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
         }
     }
+
+    syncTypographyTextGradient(root, component);
 
     const fontSelect = root.querySelector('[data-voodbuilder-tw-font-family]');
 
@@ -493,7 +586,90 @@ export function watchComponentClassList(component, onChange) {
 function applyGroup(editor, component, groupId, value) {
     const groupSet = GROUP_SETS[groupId];
 
-    if (! groupSet || ! component) {
+    if (! component) {
+        return;
+    }
+
+    if (groupId === 'text-color') {
+        editor.__voodbuilderTwStyleApplying = true;
+
+        try {
+            if (value === TEXT_COLOR_GRADIENT_VALUE) {
+                ensureTextGradientBase(component);
+                clearSolidTextColorUtilities(component);
+                clearStyleProperty(editor, component, 'color');
+                defaultTextGradientDirection(component);
+            } else if (value) {
+                clearTextGradientUtilities(component);
+                replaceClassGroup(component, groupSet, value, { alsoClear: [] });
+                clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+            } else if (hasTextGradientClasses(componentClassList(component))) {
+                clearTextGradientUtilities(component);
+                clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+            } else {
+                replaceClassGroup(component, groupSet, null, { alsoClear: [] });
+                clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+            }
+
+            try {
+                component.view?.updateClasses?.();
+            } catch {
+                // View may be unavailable during bulk updates.
+            }
+
+            scheduleClassCompile(editor);
+            editor?.trigger?.('update');
+            editor?.trigger?.('component:update', component);
+        } finally {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+
+        return;
+    }
+
+    if (TEXT_GRADIENT_GROUP_IDS.includes(groupId)) {
+        if (! groupSet) {
+            return;
+        }
+
+        editor.__voodbuilderTwStyleApplying = true;
+
+        try {
+            ensureTextGradientBase(component);
+            clearSolidTextColorUtilities(component);
+            clearStyleProperty(editor, component, 'color');
+
+            if (groupId === 'text-gradient-direction' && value && value !== 'bg-none') {
+                clearStyleProperty(editor, component, 'background-image');
+            }
+
+            if (
+                (groupId === 'text-gradient-from' || groupId === 'text-gradient-via' || groupId === 'text-gradient-to')
+                && value
+            ) {
+                clearStyleProperty(editor, component, 'background-image');
+            }
+
+            replaceClassGroup(component, groupSet, value || null);
+            clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+
+            try {
+                component.view?.updateClasses?.();
+            } catch {
+                // View may be unavailable during bulk updates.
+            }
+
+            scheduleClassCompile(editor);
+            editor?.trigger?.('update');
+            editor?.trigger?.('component:update', component);
+        } finally {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+
+        return;
+    }
+
+    if (! groupSet) {
         return;
     }
 
@@ -502,14 +678,19 @@ function applyGroup(editor, component, groupId, value) {
 
     try {
         const alsoClearIds = [...utilityConflictGroupIds(groupId)];
+        const classes = componentClassList(component);
+        const textGradientActive = hasTextGradientClasses(classes);
 
         // Solid color clears gradient stops; gradient direction clears solid color + image.
-        if (groupId === 'background' && value) {
+        if (groupId === 'background' && value && ! textGradientActive) {
             alsoClearIds.push('gradient-direction', 'gradient-from', 'gradient-via', 'gradient-to');
         }
 
         if (groupId === 'gradient-direction' && value && value !== 'bg-none') {
-            alsoClearIds.push('background');
+            if (! textGradientActive) {
+                alsoClearIds.push('background');
+            }
+
             clearStyleProperty(editor, component, 'background-image');
         }
 
@@ -518,6 +699,15 @@ function applyGroup(editor, component, groupId, value) {
             && value
         ) {
             clearStyleProperty(editor, component, 'background-image');
+        }
+
+        if (
+            (groupId === 'gradient-direction' || groupId === 'gradient-from' || groupId === 'gradient-via' || groupId === 'gradient-to')
+            && textGradientActive
+        ) {
+            ensureTextGradientBase(component);
+            clearSolidTextColorUtilities(component);
+            clearStyleProperty(editor, component, 'color');
         }
 
         const alsoClear = alsoClearIds
@@ -860,6 +1050,39 @@ function buildTypographySector(labels, addLabel) {
             ${segmentControlHtml({ label: labels.classStyleTextTransform ?? 'Text transform', groupId: 'text-transform', segments: TEXT_TRANSFORM_SEGMENTS, clearLabel, authoredHint: labels.classStyleAuthoredHint ?? 'Value set' })}
             ${segmentControlHtml({ label: labels.classStyleTextDecoration ?? 'Text decoration', groupId: 'text-decoration', segments: TEXT_DECORATION_SEGMENTS, clearLabel, authoredHint: labels.classStyleAuthoredHint ?? 'Value set' })}
             ${fieldHtml({ label: labels.classStyleTextColor ?? 'Text color', selectAttr: 'data-voodbuilder-tw-group="text-color"', addAttr: 'data-voodbuilder-tw-group-add="text-color"', options: TEXT_COLOR_OPTIONS, addLabel, searchable: true, searchPlaceholder: searchPh, live: true })}
+            <details class="voodbuilder-editor-deco-fold voodbuilder-editor-typo-gradient" data-voodbuilder-typo-fold="text-gradient" hidden>
+                <summary class="voodbuilder-editor-deco-fold__summary">
+                    <span>${escapeHtml(labels.classStyleGradient ?? 'Gradient')}</span>
+                    <span class="voodbuilder-editor-deco-block__dot" data-voodbuilder-typo-dot="text-gradient" hidden title="${escapeAttr(labels.classStyleAuthoredHint ?? 'Value set')}" aria-hidden="true"></span>
+                </summary>
+                <div class="voodbuilder-editor-deco-fold__body">
+                    ${decoLiveFieldHtml({
+                        label: labels.classStyleGradientDir ?? 'Direction',
+                        groupId: 'text-gradient-direction',
+                        options: GRADIENT_DIRECTION_OPTIONS,
+                    })}
+                    <div class="voodbuilder-editor-deco-stops">
+                        ${decoLiveFieldHtml({
+                            label: labels.classStyleGradientFrom ?? 'From',
+                            groupId: 'text-gradient-from',
+                            options: GRADIENT_FROM_OPTIONS,
+                            searchPlaceholder: searchPh,
+                        })}
+                        ${decoLiveFieldHtml({
+                            label: labels.classStyleGradientVia ?? 'Via',
+                            groupId: 'text-gradient-via',
+                            options: GRADIENT_VIA_OPTIONS,
+                            searchPlaceholder: searchPh,
+                        })}
+                        ${decoLiveFieldHtml({
+                            label: labels.classStyleGradientTo ?? 'To',
+                            groupId: 'text-gradient-to',
+                            options: GRADIENT_TO_OPTIONS,
+                            searchPlaceholder: searchPh,
+                        })}
+                    </div>
+                </div>
+            </details>
             ${fieldHtml({ label: labels.classStyleLeading ?? 'Line height', selectAttr: 'data-voodbuilder-tw-group="leading"', addAttr: 'data-voodbuilder-tw-group-add="leading"', options: LEADING_OPTIONS, addLabel, live: true })}
             ${fieldHtml({ label: labels.classStyleTracking ?? 'Letter spacing', selectAttr: 'data-voodbuilder-tw-group="tracking"', addAttr: 'data-voodbuilder-tw-group-add="tracking"', options: TRACKING_OPTIONS, addLabel, live: true })}
         `,
@@ -872,6 +1095,37 @@ const PANEL_SEGMENT_GROUPS = {
     'text-decoration': TEXT_DECORATION_OPTIONS,
     'border-style': BORDER_STYLE_OPTIONS,
 };
+
+function syncTypographyTextGradient(root, component) {
+    const classes = componentClassList(component);
+    const isGradient = hasTextGradientClasses(classes);
+    const fold = root.querySelector('[data-voodbuilder-typo-fold="text-gradient"]');
+
+    if (fold) {
+        fold.hidden = ! isGradient;
+
+        if (isGradient && String(fold.tagName ?? '').toUpperCase() === 'DETAILS') {
+            fold.open = true;
+        }
+    }
+
+    const gradDir = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
+    const gradFrom = resolveGroupValue(classes, GRADIENT_FROM_OPTIONS);
+    const gradVia = resolveGroupValue(classes, GRADIENT_VIA_OPTIONS);
+    const gradTo = resolveGroupValue(classes, GRADIENT_TO_OPTIONS);
+    const hasStops = Boolean(
+        (gradDir && gradDir !== 'bg-none')
+        || gradFrom
+        || gradVia
+        || gradTo,
+    );
+
+    const dot = root.querySelector('[data-voodbuilder-typo-dot="text-gradient"]');
+
+    if (dot) {
+        dot.hidden = ! hasStops;
+    }
+}
 
 function syncTypographySegments(root, component) {
     const classes = componentClassList(component);
@@ -1887,6 +2141,10 @@ function wireSectorFields(editor, sector, labels = {}) {
         'font-weight',
         'text-align',
         'text-color',
+        'text-gradient-direction',
+        'text-gradient-from',
+        'text-gradient-via',
+        'text-gradient-to',
         'leading',
         'tracking',
         'text-transform',
@@ -2023,48 +2281,107 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
     const addLabel = labels.classAnimationAdd ?? labels.classStyleAdd ?? 'Add';
 
-    const ensure = () => {
-        hideNativeStyleManagerSectors(stylesMount);
+    let ensureTimer = null;
+    let twObserver = null;
+    let ensuring = false;
 
-        if (
-            stylesMount.querySelector('[data-voodbuilder-tw-sector="dimension"]')
-            && stylesMount.querySelector('[data-voodbuilder-tw-sector="spacing"]')
-        ) {
+    const sectorsReady = () => (
+        stylesMount.querySelector('[data-voodbuilder-tw-sector="dimension"]')
+        && stylesMount.querySelector('[data-voodbuilder-tw-sector="spacing"]')
+    );
+
+    const runEnsure = () => {
+        if (ensuring) {
             return;
         }
 
-        // Rebuild Tailwind sectors when Spacing was still nested under Dimension.
-        for (const stale of stylesMount.querySelectorAll('[data-voodbuilder-tw-sector]')) {
-            stale.remove();
+        ensuring = true;
+        twObserver?.disconnect();
+
+        try {
+            hideNativeStyleManagerSectors(stylesMount);
+
+            if (sectorsReady()) {
+                return;
+            }
+
+            // Rebuild Tailwind sectors when Spacing was still nested under Dimension.
+            for (const stale of stylesMount.querySelectorAll('[data-voodbuilder-tw-sector]')) {
+                stale.remove();
+            }
+
+            const dimension = buildDimensionSector(labels, addLabel);
+            const spacing = buildSpacingSector(labels);
+            const decorations = buildDecorationsSector(labels);
+            const typography = buildTypographySector(labels, addLabel);
+
+            for (const sector of [dimension, spacing, decorations, typography]) {
+                wireSectorFields(editor, sector, labels);
+            }
+
+            placeSectors(stylesMount, [dimension, spacing, decorations, typography]);
+
+            // Marker for MutationObserver idempotency when sectors move
+            if (! stylesMount.querySelector('[data-voodbuilder-tw-root]')) {
+                const marker = document.createElement('div');
+                marker.hidden = true;
+                marker.dataset.voodbuilderTwRoot = '';
+                stylesMount.appendChild(marker);
+            }
+
+            syncSelectsFromComponent(stylesMount, editor.getSelected(), editor);
+        } finally {
+            ensuring = false;
+            twObserver?.observe(stylesMount, { childList: true, subtree: true });
         }
-
-        const dimension = buildDimensionSector(labels, addLabel);
-        const spacing = buildSpacingSector(labels);
-        const decorations = buildDecorationsSector(labels);
-        const typography = buildTypographySector(labels, addLabel);
-
-        for (const sector of [dimension, spacing, decorations, typography]) {
-            wireSectorFields(editor, sector, labels);
-        }
-
-        placeSectors(stylesMount, [dimension, spacing, decorations, typography]);
-
-        // Marker for MutationObserver idempotency when sectors move
-        if (! stylesMount.querySelector('[data-voodbuilder-tw-root]')) {
-            const marker = document.createElement('div');
-            marker.hidden = true;
-            marker.dataset.voodbuilderTwRoot = '';
-            stylesMount.appendChild(marker);
-        }
-
-        syncSelectsFromComponent(stylesMount, editor.getSelected(), editor);
     };
 
-    const observer = new MutationObserver(() => {
-        hideNativeStyleManagerSectors(stylesMount);
-        ensure();
+    const scheduleEnsure = () => {
+        if (isEditorBooting(editor) || ensuring) {
+            return;
+        }
+
+        window.clearTimeout(ensureTimer);
+        ensureTimer = window.setTimeout(runEnsure, 160);
+    };
+
+    const ensure = () => {
+        scheduleEnsure();
+    };
+
+    twObserver = new MutationObserver((mutations) => {
+        if (isEditorBooting(editor) || ensuring) {
+            return;
+        }
+
+        // Ignore churn inside our Tailwind sectors (select sync, chip paint).
+        const external = mutations.some((mutation) => {
+            for (const node of mutation.addedNodes) {
+                if (!(node instanceof Element)) {
+                    continue;
+                }
+
+                if (node.closest?.('[data-voodbuilder-tw-sector]')) {
+                    return false;
+                }
+
+                if (node.hasAttribute?.('data-voodbuilder-tw-sector')) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        });
+
+        if (! external && sectorsReady()) {
+            return;
+        }
+
+        scheduleEnsure();
     });
-    observer.observe(stylesMount, { childList: true, subtree: true });
+    twObserver.observe(stylesMount, { childList: true, subtree: true });
 
     let stopClassWatch = null;
 
@@ -2100,7 +2417,10 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     editor.on('load', () => window.setTimeout(ensure, 60));
     editor.on('component:selected', (component) => {
         window.setTimeout(() => {
-            ensure();
+            if (! sectorsReady()) {
+                ensure();
+            }
+
             sanitizeInventedStyles(editor, component);
             syncSelectsFromComponent(stylesMount, component, editor, { resetLinkPref: true });
             attachClassWatch(component);

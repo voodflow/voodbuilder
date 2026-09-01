@@ -5,6 +5,7 @@
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
+import { shouldDeferCssRebuild } from './editor-lifecycle.js';
 import { componentHasRenderableView, safeFindComponents } from './tailwind-visual-style.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-component-live-css';
@@ -52,7 +53,10 @@ function injectLiveComponentCss(editor, css) {
     }
 
     // Keep live JIT last so dark:/responsive utilities win over canvas theme sheets.
-    doc.head.appendChild(styleEl);
+    if (styleEl.parentNode !== doc.head || styleEl !== doc.head.lastElementChild) {
+        doc.head.appendChild(styleEl);
+    }
+
     styleEl.textContent = String(css ?? '').trim();
 }
 
@@ -116,8 +120,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     const schedule = (delay = DEBOUNCE_MS) => {
         if (
             ! frameReady
-            || editor.__voodbuilderBulkStructureUpdate
-            || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            || shouldDeferCssRebuild(editor)
             || editor.__voodbuilderCssRebuildDragLock
             || editor.__voodbuilderActiveBlockDrag
         ) {
@@ -138,7 +141,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
 
     const rebuild = async () => {
         if (
-            (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0
+            shouldDeferCssRebuild(editor)
             || editor.__voodbuilderCssRebuildDragLock
             || editor.__voodbuilderActiveBlockDrag
         ) {

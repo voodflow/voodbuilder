@@ -1,5 +1,5 @@
 /**
- * Block drag UX: compact label chip, top drop spacer, scroll room above first block.
+ * Block drag UX: compact label chip, top/bottom drop spacers, scroll room for page-level drops.
  */
 
 import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
@@ -11,7 +11,10 @@ const DRAG_BODY_CLASS = 'voodbuilder-editor-block-dragging';
 const SECTION_GAP_DROP_CLASS = 'voodbuilder-editor-section-gap-drop';
 const SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const SPACER_TYPE = 'voodbuilder-top-drop-spacer';
+const BOTTOM_SPACER_ATTR = 'data-voodbuilder-bottom-drop-spacer';
+const BOTTOM_SPACER_TYPE = 'voodbuilder-bottom-drop-spacer';
 const TOP_DROP_EDGE_PX = 72;
+const BOTTOM_DROP_EDGE_PX = 96;
 
 function isPointerNearCanvasTop(clientX, clientY, frame, fromFrameWindow = false) {
     if (! frame) {
@@ -136,6 +139,154 @@ function isTopDropSpacerComponent(component) {
         || component?.get?.('type') === SPACER_TYPE;
 }
 
+function isBottomDropSpacerComponent(component) {
+    return Boolean(component?.getAttributes?.()?.[BOTTOM_SPACER_ATTR])
+        || component?.get?.('type') === BOTTOM_SPACER_TYPE;
+}
+
+function isEditorDropSpacerComponent(component) {
+    return isTopDropSpacerComponent(component) || isBottomDropSpacerComponent(component);
+}
+
+function getBottomDropSpacer(editor) {
+    return editor.Canvas?.getDocument?.()?.querySelector?.(`[${BOTTOM_SPACER_ATTR}]`) ?? null;
+}
+
+function setBottomDropSpacerActive(editor, active) {
+    getBottomDropSpacer(editor)?.classList?.toggle('is-active', active);
+}
+
+function isPointerOverBottomSpacer(editor, clientX, clientY, fromFrameWindow = false) {
+    const frame = editor.Canvas?.getFrameEl?.();
+    const doc = editor.Canvas?.getDocument?.();
+
+    if (! frame || ! doc) {
+        return false;
+    }
+
+    const frameRect = frame.getBoundingClientRect();
+    const x = fromFrameWindow ? clientX : (clientX - frameRect.left);
+    const y = fromFrameWindow ? clientY : (clientY - frameRect.top);
+    const target = doc.elementFromPoint(x, y);
+
+    return Boolean(target?.closest?.(`[${BOTTOM_SPACER_ATTR}]`));
+}
+
+/**
+ * True when the pointer is on the bottom spacer or in the band above it
+ * (easier target between the last section and chrome footer).
+ */
+function wantsBottomDropAtPoint(editor, clientX, clientY, fromFrameWindow = false) {
+    if (isPointerOverBottomSpacer(editor, clientX, clientY, fromFrameWindow)) {
+        return true;
+    }
+
+    const frame = editor.Canvas?.getFrameEl?.();
+    const bottomSpacer = getBottomDropSpacer(editor);
+
+    if (! frame || ! bottomSpacer) {
+        return false;
+    }
+
+    const frameRect = frame.getBoundingClientRect();
+    const x = fromFrameWindow ? clientX : (clientX - frameRect.left);
+    const y = fromFrameWindow ? clientY : (clientY - frameRect.top);
+    const spacerRect = bottomSpacer.getBoundingClientRect();
+
+    if (x < spacerRect.left - 8 || x > spacerRect.right + 8) {
+        return false;
+    }
+
+    return y >= (spacerRect.top - BOTTOM_DROP_EDGE_PX) && y <= (spacerRect.bottom + 16);
+}
+
+function updateBottomDropSpacerState(editor, clientX, clientY, fromFrameWindow = false) {
+    setBottomDropSpacerActive(editor, wantsBottomDropAtPoint(editor, clientX, clientY, fromFrameWindow));
+}
+
+function pageContentInsertIndex(editor, slot, { preferTop = false, preferBottom = false } = {}) {
+    const kids = slot.components?.() ?? [];
+    const first = kids.at?.(0) ?? kids[0];
+    const bottomIndex = [...kids].findIndex((child) => isBottomDropSpacerComponent(child));
+
+    if (preferTop) {
+        return isTopDropSpacerComponent(first) ? 1 : 0;
+    }
+
+    if (preferBottom && bottomIndex >= 0) {
+        return bottomIndex;
+    }
+
+    return bottomIndex >= 0 ? bottomIndex : (kids.length ?? 0);
+}
+
+/**
+ * Ensure a newly dropped block sits just before the bottom spacer (last page block).
+ *
+ * @param {object} editor
+ * @param {object} component
+ * @returns {boolean}
+ */
+function relocateBlockFromBottomSpacer(editor, component) {
+    if (! component || isEditorDropSpacerComponent(component)) {
+        return false;
+    }
+
+    if (editor.__voodbuilderChromeLayoutMode) {
+        return false;
+    }
+
+    if (typeof component.move !== 'function' || component.isRemoved?.()) {
+        return false;
+    }
+
+    const host = editor.__voodbuilderChromeShellMode
+        ? findPageContentSlotInEditor(editor)
+        : editor.getWrapper?.();
+
+    if (! host) {
+        return false;
+    }
+
+    const parent = component.parent?.();
+    const kids = host.components?.() ?? [];
+    const bottomIndex = [...kids].findIndex((child) => isBottomDropSpacerComponent(child));
+
+    if (bottomIndex < 0) {
+        return false;
+    }
+
+    if (isBottomDropSpacerComponent(parent)) {
+        if (parent.parent?.() !== host && editor.__voodbuilderChromeShellMode) {
+            return false;
+        }
+
+        component.move(host, { at: bottomIndex });
+        editor.select?.(component);
+
+        return true;
+    }
+
+    const compIndex = kids.indexOf(component);
+    const pointerWantsBottom = editor.__voodbuilderPointerOverBottomSpacer === true;
+
+    if (pointerWantsBottom && parent !== host && compIndex >= 0 && compIndex !== bottomIndex - 1) {
+        component.move(host, { at: bottomIndex });
+        editor.select?.(component);
+
+        return true;
+    }
+
+    if (parent === host && compIndex > bottomIndex) {
+        component.move(host, { at: bottomIndex });
+        editor.select?.(component);
+
+        return true;
+    }
+
+    return false;
+}
+
 /**
  * Ensure a newly dropped block sits right after the top spacer (first real page block).
  *
@@ -220,8 +371,10 @@ function insertBlockAtTop(editor, block) {
         const slot = findPageContentSlotInEditor(editor);
 
         if (slot) {
-            const first = slot.components?.().at?.(0);
-            const at = isTopDropSpacerComponent(first) ? 1 : 0;
+            const at = pageContentInsertIndex(editor, slot, {
+                preferTop: editor.__voodbuilderPointerOverTopSpacer === true,
+                preferBottom: editor.__voodbuilderPointerOverBottomSpacer === true,
+            });
             const added = slot.append(content, { at });
             const component = Array.isArray(added) ? added[0] : added;
 
@@ -291,9 +444,8 @@ function insertBlockIntoPageContent(editor, block) {
 
     const first = slot.components?.().at?.(0);
     const preferTop = editor.__voodbuilderPointerOverTopSpacer === true;
-    const at = preferTop
-        ? (isTopDropSpacerComponent(first) ? 1 : 0)
-        : (slot.components?.()?.length ?? 0);
+    const preferBottom = editor.__voodbuilderPointerOverBottomSpacer === true;
+    const at = pageContentInsertIndex(editor, slot, { preferTop, preferBottom });
     const added = slot.append(content, { at });
     const component = Array.isArray(added) ? added[0] : added;
 
@@ -316,7 +468,10 @@ function isPointerOverPageContent(editor) {
     const point = editor.__voodbuilderLastDragPoint ?? editor.__voodbuilderLastDropPoint;
 
     if (! doc || ! frame || ! point) {
-        return Boolean(editor.__voodbuilderPointerOverTopSpacer);
+        return Boolean(
+            editor.__voodbuilderPointerOverTopSpacer
+            || editor.__voodbuilderPointerOverBottomSpacer,
+        );
     }
 
     const rect = frame.getBoundingClientRect();
@@ -348,7 +503,14 @@ function bindBlockDragPointerTracking(editor) {
             event.clientY,
             fromFrameWindow,
         );
+        editor.__voodbuilderPointerOverBottomSpacer = wantsBottomDropAtPoint(
+            editor,
+            event.clientX,
+            event.clientY,
+            fromFrameWindow,
+        );
         updateTopDropSpacerState(editor, event.clientX, event.clientY, fromFrameWindow);
+        updateBottomDropSpacerState(editor, event.clientX, event.clientY, fromFrameWindow);
         syncChromeDropZoneHighlight(editor);
 
         if (editor.__voodbuilderActiveBlockDrag) {
@@ -378,6 +540,7 @@ function unbindBlockDragPointerTracking(editor) {
     frame?.contentWindow?.removeEventListener('pointermove', track, true);
     delete editor.__voodbuilderBlockDragPointerTrack;
     delete editor.__voodbuilderPointerOverTopSpacer;
+    delete editor.__voodbuilderPointerOverBottomSpacer;
 }
 
 function beginTopDropSession(editor, block) {
@@ -386,7 +549,7 @@ function beginTopDropSession(editor, block) {
     editor.__voodbuilderDragBlockLabel = String(
         block?.get?.('label') ?? block?.getLabel?.() ?? editor.__voodbuilderDragBlockLabel ?? '',
     ).trim();
-    ensureTopDropSpacer(editor);
+    syncDropSpacers(editor);
     setCanvasDragState(editor, true);
     bindBlockDragPointerTracking(editor);
     startDragHighlightLoop(editor);
@@ -517,7 +680,7 @@ function ensurePageContentSlotPlacement(editor, component) {
         return component;
     }
 
-    if (isTopDropSpacerComponent(component)) {
+    if (isTopDropSpacerComponent(component) || isBottomDropSpacerComponent(component)) {
         return component;
     }
 
@@ -631,6 +794,7 @@ function setCanvasDragState(editor, active) {
 
     if (! active) {
         setTopDropSpacerActive(editor, false);
+        setBottomDropSpacerActive(editor, false);
         setSectionGapDropState(editor, false);
     }
 }
@@ -653,7 +817,9 @@ function isSectionLikeComponent(component) {
         || attrs['data-voodbuilder-layout'] === 'section'
         || type === 'voodbuilder-section'
         || type === SPACER_TYPE
-        || attrs[SPACER_ATTR] != null;
+        || type === BOTTOM_SPACER_TYPE
+        || attrs[SPACER_ATTR] != null
+        || attrs[BOTTOM_SPACER_ATTR] != null;
 }
 
 /**
@@ -990,6 +1156,7 @@ function isPageContentSlotDropAffordable(pageSlot) {
 
     return children.every((child) => (
         child.hasAttribute?.('data-voodbuilder-top-drop-spacer')
+        || child.hasAttribute?.('data-voodbuilder-bottom-drop-spacer')
         || child.hasAttribute?.('data-voodbuilder-inner-drop')
     ));
 }
@@ -1148,7 +1315,7 @@ export function registerTopDropSpacerType(editor) {
             defaults: {
                 type: SPACER_TYPE,
                 tagName: 'div',
-                name: 'Drop zone',
+                name: 'Drop zone (top)',
                 draggable: false,
                 // Droppable so Grapes accepts the blue-line drop on the top band; anything
                 // nested inside is immediately promoted after the spacer via relocate.
@@ -1171,6 +1338,114 @@ export function registerTopDropSpacerType(editor) {
             },
         },
     });
+
+    editor.DomComponents.addType(BOTTOM_SPACER_TYPE, {
+        isComponent: (element) => element?.hasAttribute?.(BOTTOM_SPACER_ATTR) === true,
+        model: {
+            defaults: {
+                type: BOTTOM_SPACER_TYPE,
+                tagName: 'div',
+                name: 'Drop zone (bottom)',
+                draggable: false,
+                droppable: true,
+                selectable: false,
+                highlightable: false,
+                hoverable: false,
+                badgable: false,
+                removable: false,
+                copyable: false,
+                layerable: false,
+                stylable: false,
+                attributes: {
+                    [BOTTOM_SPACER_ATTR]: '1',
+                    class: 'voodbuilder-editor-bottom-drop-spacer',
+                },
+            },
+        },
+    });
+}
+
+export function ensureBottomDropSpacer(editor) {
+    if (editor.__voodbuilderChromeLayoutMode) {
+        removeBottomDropSpacer(editor);
+
+        return;
+    }
+
+    const host = editor.__voodbuilderChromeShellMode
+        ? findPageContentSlotInEditor(editor)
+        : editor.getWrapper?.();
+
+    if (! host) {
+        removeBottomDropSpacer(editor);
+
+        return;
+    }
+
+    if (editor.__voodbuilderChromeShellMode) {
+        const wrapper = editor.getWrapper?.();
+
+        if (wrapper) {
+            for (const spacer of safeFindComponents(wrapper, `[${BOTTOM_SPACER_ATTR}]`)) {
+                if (spacer.parent?.() !== host) {
+                    spacer.remove();
+                }
+            }
+        }
+    }
+
+    const existing = [...safeFindComponents(host, `[${BOTTOM_SPACER_ATTR}]`)];
+    const children = host.components?.();
+    const last = children?.at?.((children?.length ?? 0) - 1);
+
+    // Must be idempotent: a blind remove + append fires component:remove on every
+    // call, which re-enters spacer maintenance on the next frame and locks the editor.
+    if (existing.length === 1 && existing[0] === last) {
+        return;
+    }
+
+    for (const spacer of existing) {
+        spacer.remove();
+    }
+
+    host.append({
+        type: BOTTOM_SPACER_TYPE,
+    });
+}
+
+/**
+ * Single entry point for drop-sentinel maintenance.
+ *
+ * The flag makes our own remove/add events inert: GrapesJS fires them synchronously,
+ * so listeners that call back into this function cannot start a feedback loop.
+ *
+ * @param {object} editor
+ */
+export function syncDropSpacers(editor) {
+    if (editor.__voodbuilderDropSpacerSyncing) {
+        return;
+    }
+
+    editor.__voodbuilderDropSpacerSyncing = true;
+
+    try {
+        ensureTopDropSpacer(editor);
+        ensureBottomDropSpacer(editor);
+    } finally {
+        editor.__voodbuilderDropSpacerSyncing = false;
+    }
+}
+
+export function removeBottomDropSpacer(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    for (const spacer of safeFindComponents(wrapper, `[${BOTTOM_SPACER_ATTR}]`)) {
+        spacer.remove();
+    }
 }
 
 export function ensureTopDropSpacer(editor) {
@@ -1243,6 +1518,8 @@ export function removeTopDropSpacer(editor) {
     for (const spacer of safeFindComponents(wrapper, `[${SPACER_ATTR}]`)) {
         spacer.remove();
     }
+
+    removeBottomDropSpacer(editor);
 }
 
 export function detachTopDropSpacerForExport(editor) {
@@ -1252,36 +1529,51 @@ export function detachTopDropSpacerForExport(editor) {
         return;
     }
 
-    const spacer = safeFindComponents(wrapper, `[${SPACER_ATTR}]`)[0];
+    const topSpacer = safeFindComponents(wrapper, `[${SPACER_ATTR}]`)[0];
+    const bottomSpacer = safeFindComponents(wrapper, `[${BOTTOM_SPACER_ATTR}]`)[0];
 
-    if (! spacer) {
-        return;
+    if (topSpacer) {
+        editor.__voodbuilderDetachedTopDropSpacer = topSpacer;
+        topSpacer.remove();
     }
 
-    editor.__voodbuilderDetachedTopDropSpacer = spacer;
-    spacer.remove();
+    if (bottomSpacer) {
+        editor.__voodbuilderDetachedBottomDropSpacer = bottomSpacer;
+        bottomSpacer.remove();
+    }
 }
 
 export function restoreTopDropSpacerAfterExport(editor) {
-    const spacer = editor.__voodbuilderDetachedTopDropSpacer;
-
-    if (! spacer) {
-        return;
-    }
+    const topSpacer = editor.__voodbuilderDetachedTopDropSpacer;
+    const bottomSpacer = editor.__voodbuilderDetachedBottomDropSpacer;
 
     if (editor.__voodbuilderChromeShellMode) {
         const slot = findPageContentSlotInEditor(editor);
 
         if (slot) {
-            slot.append(spacer, { at: 0 });
-            delete editor.__voodbuilderDetachedTopDropSpacer;
+            if (topSpacer) {
+                slot.append(topSpacer, { at: 0 });
+                delete editor.__voodbuilderDetachedTopDropSpacer;
+            }
+
+            if (bottomSpacer) {
+                slot.append(bottomSpacer);
+                delete editor.__voodbuilderDetachedBottomDropSpacer;
+            }
 
             return;
         }
     }
 
-    editor.getWrapper?.()?.append(spacer, { at: 0 });
-    delete editor.__voodbuilderDetachedTopDropSpacer;
+    if (topSpacer) {
+        editor.getWrapper?.()?.append(topSpacer, { at: 0 });
+        delete editor.__voodbuilderDetachedTopDropSpacer;
+    }
+
+    if (bottomSpacer) {
+        editor.getWrapper?.()?.append(bottomSpacer);
+        delete editor.__voodbuilderDetachedBottomDropSpacer;
+    }
 }
 
 export function registerCanvasBlockDrag(editor) {
@@ -1295,7 +1587,7 @@ export function registerCanvasBlockDrag(editor) {
     gateGrapesAutoscrollToRealDrags(editor);
 
     editor.on('load', () => {
-        ensureTopDropSpacer(editor);
+        syncDropSpacers(editor);
         gateGrapesAutoscrollToRealDrags(editor);
         hardenGrapesAutoScrollers(editor);
         stopEditorIdleMotionLoops(editor);
@@ -1359,7 +1651,7 @@ export function registerCanvasBlockDrag(editor) {
     }, 750);
 
     editor.on('component:add', (component) => {
-        if (isTopDropSpacerComponent(component)) {
+        if (isEditorDropSpacerComponent(component) || editor.__voodbuilderDropSpacerSyncing) {
             return;
         }
 
@@ -1370,14 +1662,24 @@ export function registerCanvasBlockDrag(editor) {
                 return;
             }
 
-            ensureTopDropSpacer(editor);
+            if (relocateBlockFromBottomSpacer(editor, component)) {
+                markTopDropHandled(editor);
+
+                return;
+            }
+
+            syncDropSpacers(editor);
         });
     });
 
     editor.on('component:remove', (component) => {
-        if (isTopDropSpacerComponent(component)) {
-            window.requestAnimationFrame(() => ensureTopDropSpacer(editor));
+        if (editor.__voodbuilderDropSpacerSyncing || ! isEditorDropSpacerComponent(component)) {
+            return;
         }
+
+        window.requestAnimationFrame(() => {
+            syncDropSpacers(editor);
+        });
     });
 
     editor.on('block:drag:start', (block, event) => {
@@ -1444,6 +1746,17 @@ export function registerCanvasBlockDrag(editor) {
                 )
             );
 
+        const overBottomSpacer = editor.__voodbuilderPointerOverBottomSpacer === true
+            || (
+                point
+                && wantsBottomDropAtPoint(
+                    editor,
+                    point.x,
+                    point.y,
+                    point.fromFrameWindow === true,
+                )
+            );
+
         if (component) {
             component = ensurePageContentSlotPlacement(editor, component);
         }
@@ -1451,15 +1764,24 @@ export function registerCanvasBlockDrag(editor) {
         if (component) {
             if (relocateBlockFromTopSpacer(editor, component)) {
                 markTopDropHandled(editor);
+            } else if (relocateBlockFromBottomSpacer(editor, component)) {
+                markTopDropHandled(editor);
             }
-        } else if (overTopSpacer && block) {
-            // Grapes cancelled the drop (common when the blue line sits on the top band).
+        } else if ((overTopSpacer || overBottomSpacer) && block) {
             delete editor.__voodbuilderTopDropHandled;
-            insertBlockAtTop(editor, block);
+
+            if (overTopSpacer) {
+                insertBlockAtTop(editor, block);
+            } else {
+                insertBlockIntoPageContent(editor, block);
+            }
         } else if (block && isPointerOverPageContent(editor)) {
             // Grapes cancelled over the content slot (decorative overlays stole the hit).
-            delete editor.__voodbuilderTopDropHandled;
-            insertBlockIntoPageContent(editor, block);
+            // Do not fallback-insert when a real block was already placed (e.g. saved components).
+            if (! component) {
+                delete editor.__voodbuilderTopDropHandled;
+                insertBlockIntoPageContent(editor, block);
+            }
         }
 
         endTopDropSession(editor);

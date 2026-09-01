@@ -22,8 +22,10 @@ import {
     WIDTH_OPTIONS,
     classSetFromOptions,
     hasAuthoredStyleUtilities,
+    hasTextGradientClasses,
     replaceClassGroup,
     resolveGroupValue,
+    resolveSolidTextColor,
 } from '../../resources/js/editor/style-tailwind-class-groups.js';
 import {
     syncSelectsFromComponent,
@@ -48,6 +50,7 @@ describe('style tailwind class groups', () => {
         expect(ids).toContain('shadow');
         expect(ids).toContain('font-size');
         expect(ids).toContain('text-color');
+        expect(ids).toContain('text-gradient-direction');
         expect(ids).toContain('tracking');
         expect(ids).toContain('text-transform');
         expect(ids).toContain('text-decoration');
@@ -200,6 +203,33 @@ describe('style tailwind class groups', () => {
         expect(classes).not.toContain('bg-vp-brand-1');
         expect(classes).toContain('gap-4');
         expect(classes).toContain('mx-auto');
+    });
+
+    it('detects gradient text mode from clip utilities or gradient stops with transparent text', () => {
+        expect(hasTextGradientClasses([
+            'bg-clip-text',
+            'text-transparent',
+            'bg-gradient-to-r',
+            'from-purple-500',
+            'to-green-500',
+        ])).toBe(true);
+
+        expect(hasTextGradientClasses([
+            'text-transparent',
+            'bg-gradient-to-r',
+            'from-purple-500',
+            'to-green-800',
+        ])).toBe(true);
+
+        expect(hasTextGradientClasses(['text-purple-500'])).toBe(false);
+        expect(resolveSolidTextColor(['text-purple-500'])).toBe('text-purple-500');
+        expect(resolveSolidTextColor([
+            'bg-clip-text',
+            'text-transparent',
+            'from-purple-500',
+            'bg-gradient-to-r',
+            'to-green-500',
+        ])).toBe('');
     });
 
     it('includes common decoration utilities without invented shadow defaults', () => {

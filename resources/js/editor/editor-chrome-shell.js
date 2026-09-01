@@ -6,7 +6,12 @@
 import { isFooterBlock, isNavBlock } from './chrome/ids.js';
 import { lockChromePreview } from './chrome/blocks/preview.js';
 import { normalizeSiteNavChromeButtons } from './plugins/voodbuilder-editor.js';
-import { ensureTopDropSpacer, clearCanvasDragArtifacts } from './canvas-block-drag.js';
+import { clearCanvasDragArtifacts, syncDropSpacers } from './canvas-block-drag.js';
+import {
+    isEditorDropSentinelComponent,
+    isOrphanPageContentNode,
+    purgeOrphanPageContentNodes,
+} from './page-content-orphans.js';
 import {
     forEachGrapesComponent,
     isGrapesComponent,
@@ -148,8 +153,10 @@ function isEditorDropSentinel(component) {
 
     return Boolean(
         attrs['data-voodbuilder-top-drop-spacer']
+        || attrs['data-voodbuilder-bottom-drop-spacer']
         || attrs['data-voodbuilder-inner-drop']
         || type === 'voodbuilder-top-drop-spacer'
+        || type === 'voodbuilder-bottom-drop-spacer'
         || type === 'voodbuilder-inner-drop-slot',
     );
 }
@@ -326,6 +333,8 @@ function purgeChromeBleedFromSlot(slot) {
     }
 
     purgeChromeBleedFromContentSlot(slot);
+
+    purgeOrphanPageContentNodes(slot);
 
     const removable = [];
 
@@ -972,6 +981,10 @@ export function extractChromeShellPageHtml(editor) {
                 return;
             }
 
+            if (isEditorDropSentinelComponent(component) || isOrphanPageContentNode(component)) {
+                return;
+            }
+
             parts.push(component.toHTML({
                 keepInlineStyle: true,
                 withProps: true,
@@ -1048,7 +1061,8 @@ export function registerChromeShellEditor(editor, options = {}) {
             hideChromeShellBlocks(editor);
             purgeLeakedChromeCtaButtons(editor);
             // After shell reshuffle — keep a drop target before the first page block.
-            ensureTopDropSpacer(editor);
+            syncDropSpacers(editor);
+            purgeOrphanPageContentNodes(findPageContentSlot(editor));
             structureChanged = beforeIds !== chromeShellStructureFingerprint(editor);
 
             // Re-render layers only when the shell tree actually changed — otherwise
@@ -1122,6 +1136,8 @@ export function registerChromeShellEditor(editor, options = {}) {
         if (
             editor.__voodbuilderBulkStructureUpdate
             || editor.__voodbuilderRichTextWriting
+            // Drop sentinels are editor chrome: never promote them, never reshuffle for them.
+            || isEditorDropSentinelComponent(component)
         ) {
             return;
         }
@@ -1189,6 +1205,7 @@ export function registerChromeShellEditor(editor, options = {}) {
             bootstrapping
             || editor.__voodbuilderChromeShellRefreshing
             || editor.__voodbuilderBulkStructureUpdate
+            || isEditorDropSentinelComponent(component)
         ) {
             return;
         }
@@ -1214,6 +1231,7 @@ export function registerChromeShellEditor(editor, options = {}) {
 
                 if (slot) {
                     purgeChromeBleedFromSlot(slot);
+                    purgeOrphanPageContentNodes(slot);
                 }
 
                 promoteComponentIntoContentSlot(editor, component);

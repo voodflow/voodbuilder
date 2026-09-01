@@ -101,6 +101,7 @@ import {
     startEditorBoot,
     waitForEditorBootTasks,
 } from '../editor-build-status.js';
+import { isEditorBooting } from '../editor-lifecycle.js';
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -843,6 +844,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             elementsSource: options.elementsSourceUrl ?? null,
         },
         elementsSourceUrl: options.elementsSourceUrl ?? null,
+        elementsCatalogs: options.elementsCatalogs ?? [],
         flags: {
             popupMode: Boolean(options.popupMode),
             chromeLayoutMode: Boolean(options.chromeLayoutMode),
@@ -1911,7 +1913,7 @@ async function loadBlocks(editor, blocksUrl, labels = {}) {
 }
 
 function refreshEditorLayout(editor) {
-    if (! editor || editor.__voodbuilderBooting === true) {
+    if (! editor || isEditorBooting(editor)) {
         return;
     }
 
@@ -2114,6 +2116,7 @@ function mountFrontendEditor() {
         blocksUrl: config.blocksUrl ?? null,
         blockAllowlist: config.blockAllowlist ?? null,
         elementsSourceUrl: config.elementsSourceUrl ?? null,
+        elementsCatalogs: config.elementsCatalogs ?? [],
         siteNavDefaults: config.siteNavDefaults ?? { stickyNav: false },
         footerColumnOptions: config.footerColumnOptions ?? {},
         newsletterLists: config.newsletterLists ?? {},

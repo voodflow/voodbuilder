@@ -6,6 +6,7 @@
 import { componentClassString, copyTextToClipboard, splitClassTokens } from './clipboard.js';
 import { choiceDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
+import { isEditorBooting, shouldSuppressInspectorDomScan } from './editor-lifecycle.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
@@ -56,6 +57,10 @@ const GROUP_CATEGORY = {
     'font-weight': 'typography',
     'text-align': 'typography',
     'text-color': 'typography',
+    'text-gradient-direction': 'typography',
+    'text-gradient-from': 'typography',
+    'text-gradient-via': 'typography',
+    'text-gradient-to': 'typography',
     leading: 'typography',
     tracking: 'typography',
     'text-transform': 'typography',
@@ -138,6 +143,10 @@ function renderGroupedClassChips(mount, editor) {
     tagsRoot.classList.add('voodbuilder-clm-tags--native-hidden');
     // Hide Grapes chips but keep the manual class input.
     tagsRoot.querySelectorAll('.gjs-clm-tag, .clm-tag').forEach((tag) => {
+        if (tag.hidden && tag.getAttribute('data-vb-native-chip-hidden') === '1') {
+            return;
+        }
+
         tag.hidden = true;
         tag.setAttribute('data-vb-native-chip-hidden', '1');
     });
@@ -838,22 +847,59 @@ export function registerTailwindClassSuggestions(editor, options = {}) {
         removeClassFromSelected(editor, label);
     }, true);
 
-    const scan = () => {
-        ensureClassesCopyButtons(mount, editor, labels);
+    let scanTimer = null;
+    let scanFrame = null;
+    let scanning = false;
 
-        for (const input of mount.querySelectorAll('[data-input]')) {
-            wireClassInput(editor, input, hintEl, labels);
+    const scan = () => {
+        if (shouldSuppressInspectorDomScan(editor, { busy: scanning })) {
+            return;
         }
 
-        renderGroupedClassChips(mount, editor);
+        scanning = true;
+        observer.disconnect();
+
+        try {
+            ensureClassesCopyButtons(mount, editor, labels);
+
+            for (const input of mount.querySelectorAll('[data-input]')) {
+                wireClassInput(editor, input, hintEl, labels);
+            }
+
+            renderGroupedClassChips(mount, editor);
+        } finally {
+            scanning = false;
+            observer.observe(mount, { childList: true, subtree: true });
+        }
     };
 
-    const observer = new MutationObserver(() => scan());
-    observer.observe(mount, { childList: true, subtree: true });
-    scan();
+    const scheduleScan = () => {
+        if (shouldSuppressInspectorDomScan(editor, { busy: scanning })) {
+            return;
+        }
 
-    editor.on('component:update', scan);
-    editor.on('component:selected', scan);
-    editor.on('component:styleUpdate', scan);
-    editor.on('voodbuilder:page-css-compiled', scan);
+        window.clearTimeout(scanTimer);
+        scanTimer = window.setTimeout(() => {
+            scanTimer = null;
+
+            if (scanFrame != null) {
+                return;
+            }
+
+            scanFrame = window.requestAnimationFrame(() => {
+                scanFrame = null;
+                scan();
+            });
+        }, 48);
+    };
+
+    const observer = new MutationObserver(() => scheduleScan());
+    observer.observe(mount, { childList: true, subtree: true });
+
+    editor.on('load', () => {
+        window.setTimeout(scheduleScan, 0);
+    });
+    editor.on('component:selected', scheduleScan);
+    editor.on('component:styleUpdate', scheduleScan);
+    editor.on('voodbuilder:page-css-compiled', scheduleScan);
 }

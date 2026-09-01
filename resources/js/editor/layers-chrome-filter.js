@@ -6,6 +6,7 @@
 import { readBlockId } from './core/block-tree.js';
 import { forEachGrapesComponent, walkComponentTree, safeRenderEditorLayers } from './tailwind-visual-style.js';
 import { sanitizeEditorLayerTree } from './core/component-model.js';
+import { isEditorBooting, shouldSuppressLayersSync } from './editor-lifecycle.js';
 import {
     isChromeDropZoneComponent,
     isChromeLayoutModeEditor,
@@ -14,6 +15,7 @@ import {
 } from './chrome-content-slot-utils.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
+const BOTTOM_DROP_SPACER_ATTR = 'data-voodbuilder-bottom-drop-spacer';
 const INNER_DROP_SLOT_ATTR = 'data-voodbuilder-inner-drop';
 const PAGE_CONTENT_ATTR = 'data-voodbuilder-page-content';
 const CONTENT_SLOT_ATTR = 'data-voodbuilder-content-slot';
@@ -30,8 +32,10 @@ function shouldHideFromLayers(component) {
 
     if (
         attrs[TOP_DROP_SPACER_ATTR]
+        || attrs[BOTTOM_DROP_SPACER_ATTR]
         || attrs[INNER_DROP_SLOT_ATTR]
         || type === 'voodbuilder-top-drop-spacer'
+        || type === 'voodbuilder-bottom-drop-spacer'
         || type === 'voodbuilder-inner-drop-slot'
     ) {
         return true;
@@ -236,42 +240,50 @@ export function registerLayersChromeFilter(editor) {
     editor.__voodbuilderLayersChromeFilterRegistered = true;
 
     let layersRenderFrame = null;
+    let layersRenderTimer = null;
     let syncAllTimer = null;
     let syncing = false;
 
-    const shouldSuppress = () => Boolean(
-        syncing
-        || editor.__voodbuilderLayoutStructureRefreshing
-        || editor.__voodbuilderLayoutDynamicRefreshPending
-        || editor.__voodbuilderChromeShellRefreshing
-        || editor.__voodbuilderActiveBlockDrag
-        || editor.__voodbuilderBulkStructureUpdate,
-    );
+    const shouldSuppress = () => shouldSuppressLayersSync(editor, { syncing });
+
+    const setLayersFilterSyncing = (active) => {
+        editor.__voodbuilderLayersChromeFilterSyncing = active === true;
+    };
 
     const scheduleLayersRender = () => {
         if (layersRenderFrame != null || shouldSuppress()) {
             return;
         }
 
-        layersRenderFrame = window.requestAnimationFrame(() => {
-            layersRenderFrame = null;
+        window.clearTimeout(layersRenderTimer);
+        layersRenderTimer = window.setTimeout(() => {
+            layersRenderTimer = null;
 
-            if (shouldSuppress()) {
+            if (layersRenderFrame != null || shouldSuppress()) {
                 return;
             }
 
-            syncing = true;
+            layersRenderFrame = window.requestAnimationFrame(() => {
+                layersRenderFrame = null;
 
-            try {
-                sanitizeEditorLayerTree(editor);
-                safeRenderEditorLayers(editor);
-            } finally {
-                // Ignore remove events emitted by sanitize until the stack unwinds.
-                window.queueMicrotask(() => {
-                    syncing = false;
-                });
-            }
-        });
+                if (shouldSuppress()) {
+                    return;
+                }
+
+                syncing = true;
+                setLayersFilterSyncing(true);
+
+                try {
+                    sanitizeEditorLayerTree(editor);
+                    safeRenderEditorLayers(editor);
+                } finally {
+                    window.queueMicrotask(() => {
+                        syncing = false;
+                        setLayersFilterSyncing(false);
+                    });
+                }
+            });
+        }, 120);
     };
 
     const shouldSync = () => {
@@ -298,6 +310,7 @@ export function registerLayersChromeFilter(editor) {
         }
 
         syncing = true;
+        setLayersFilterSyncing(true);
 
         try {
             walkComponentTree(wrapper, (component) => {
@@ -308,9 +321,24 @@ export function registerLayersChromeFilter(editor) {
         } finally {
             window.queueMicrotask(() => {
                 syncing = false;
+                setLayersFilterSyncing(false);
                 scheduleLayersRender();
             });
         }
+    };
+
+    let bootLayersSyncTimer = null;
+
+    const scheduleBootLayersSync = () => {
+        if (! isChromeShellModeEditor(editor) && ! isChromeLayoutModeEditor(editor)) {
+            return;
+        }
+
+        window.clearTimeout(bootLayersSyncTimer);
+        bootLayersSyncTimer = window.setTimeout(() => {
+            bootLayersSyncTimer = null;
+            syncAll();
+        }, 180);
     };
 
     const syncSubtree = (component) => {
@@ -336,12 +364,14 @@ export function registerLayersChromeFilter(editor) {
         }
 
         syncing = true;
+        setLayersFilterSyncing(true);
 
         try {
             applyLayersChromeFilter(component, wrapper, editor);
         } finally {
             window.queueMicrotask(() => {
                 syncing = false;
+                setLayersFilterSyncing(false);
                 scheduleLayersRender();
             });
         }
@@ -356,7 +386,11 @@ export function registerLayersChromeFilter(editor) {
         syncAllTimer = window.setTimeout(syncAll, 120);
     };
 
-    editor.on('load', syncAll);
+    editor.on('load', () => {
+        scheduleBootLayersSync();
+        // Boot splash clears within ~2s — sync layers once the tree stops churning.
+        window.setTimeout(scheduleBootLayersSync, 2200);
+    });
     editor.on('voodbuilder:chrome-layout-ready', syncAll);
     editor.on('voodbuilder:site-chrome-updated', debouncedSyncAll);
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
@@ -367,7 +401,13 @@ export function registerLayersChromeFilter(editor) {
 
         debouncedSyncAll();
     });
-    editor.on('component:add', syncSubtree);
+    editor.on('component:add', (component) => {
+        if (isEditorBooting(editor)) {
+            return;
+        }
+
+        syncSubtree(component);
+    });
     editor.on('component:remove', (component) => {
         if (shouldSuppress()) {
             return;

@@ -179,8 +179,10 @@ export function duplicateCanvasComponent(component, editor = null) {
 
     if (
         attrs['data-voodbuilder-top-drop-spacer']
+        || attrs['data-voodbuilder-bottom-drop-spacer']
         || attrs['data-voodbuilder-inner-drop']
         || String(clone.get?.('type') ?? '') === 'voodbuilder-top-drop-spacer'
+        || String(clone.get?.('type') ?? '') === 'voodbuilder-bottom-drop-spacer'
         || String(clone.get?.('type') ?? '') === 'voodbuilder-inner-drop-slot'
     ) {
         clone.remove?.();

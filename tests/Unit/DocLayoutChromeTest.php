@@ -135,6 +135,9 @@ class DocLayoutChromeTest extends TestCase
         $landing = (string) file_get_contents(
             VoodbuilderPaths::packagePath().'/resources/css/landing.css',
         );
+        $siteTheme = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/themes/site/theme.css',
+        );
 
         // Sticky footer (main flex-1 under body min-h-screen) created a huge gap
         // between short page content and the chrome footer on the published front.
@@ -144,6 +147,11 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringNotContainsString(
             'min-h-[calc(100vh-4rem)] bg-vp-bg',
             $landing,
+        );
+        $this->assertStringContainsString("@apply min-h-0 bg-vp-bg", $siteTheme);
+        $this->assertStringContainsString(
+            'body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme=\'site\'] .voodbuilder-site-shell',
+            $siteTheme,
         );
     }
 

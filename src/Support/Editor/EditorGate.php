@@ -168,6 +168,7 @@ final class EditorGate
             'elementsSourceUrl' => EditorCommunityBlockCatalog::elementsLibraryActive()
                 ? self::optionalEditorRoute('voodbuilder.editor.elements.source')
                 : null,
+            'elementsCatalogs' => self::elementsCatalogOptions(),
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings')
                 : null,
@@ -1019,6 +1020,7 @@ final class EditorGate
     public static function normalizePayload(array $payload, bool $recompilePageCss = false): array
     {
         $html = EditorHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
+        $html = EditorHtmlSanitizer::stripOrphanPageContentText($html);
         // Drop data-gjs-* before editor reload/save. Stale props (e.g. corrupted
         // data-gjs-droppable="e=>!x7(e)") and content/ctaLabel fights blank CTAs.
         $html = EditorHtmlSanitizer::stripEditorOnlyAttributes($html);
@@ -1067,6 +1069,33 @@ final class EditorGate
     private static function editorRoute(string $name, mixed $parameters = []): string
     {
         return route($name, $parameters, absolute: false);
+    }
+
+    /**
+     * Library bundles exposed in the Elements modal (Wireframes, Voodflow, …).
+     *
+     * @return list<array{id: string, label: string}>
+     */
+    private static function elementsCatalogOptions(): array
+    {
+        if (! EditorCommunityBlockCatalog::elementsLibraryActive()) {
+            return [];
+        }
+
+        if (! class_exists(\Voodflow\VoodbuilderElements\Catalog\ElementsCatalogBundles::class)) {
+            return [];
+        }
+
+        $options = [];
+
+        foreach (\Voodflow\VoodbuilderElements\Catalog\ElementsCatalogBundles::all() as $id => $catalog) {
+            $options[] = [
+                'id' => (string) $id,
+                'label' => (string) ($catalog['label'] ?? ucfirst((string) $id)),
+            ];
+        }
+
+        return $options;
     }
 
     /**

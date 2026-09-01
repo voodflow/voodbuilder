@@ -172,4 +172,54 @@ class EditorHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('data-vb-count-suffix="+"', $repaired);
         $this->assertStringContainsString('vb-animated-counter', $repaired);
     }
+
+    public function test_strip_orphan_page_content_text_removes_bare_text_payload(): void
+    {
+        $orphan = "→\n\n                    Explore products";
+
+        $this->assertSame('', EditorHtmlSanitizer::stripOrphanPageContentText($orphan));
+    }
+
+    public function test_strip_orphan_page_content_text_removes_text_left_with_editor_spacers(): void
+    {
+        $orphan = '<div data-voodbuilder-top-drop-spacer="1" class="voodbuilder-editor-top-drop-spacer"></div>'
+            ."→\nExplore products";
+
+        $this->assertSame('', EditorHtmlSanitizer::stripOrphanPageContentText($orphan));
+    }
+
+    public function test_strip_orphan_page_content_text_preserves_section_markup(): void
+    {
+        $html = '<section class="voodbuilder-editor-section"><p>Hello</p></section>';
+
+        $this->assertSame($html, EditorHtmlSanitizer::stripOrphanPageContentText($html));
+    }
+
+    public function test_normalizes_app_origin_urls_to_root_relative(): void
+    {
+        config(['app.url' => 'http://localhost:8010']);
+
+        $html = '<a href="http://localhost:8010/pages/about">About</a>'
+            .'<a href="http://localhost:8010">Home</a>'
+            .'<img src="http://localhost:8010/vendor/voodbuilder/voodbuilder-mark.svg">'
+            .'<a href="https://example.com/external">External</a>';
+
+        $sanitized = EditorHtmlSanitizer::normalizeSameOriginUrls($html);
+
+        $this->assertStringContainsString('href="/pages/about"', $sanitized);
+        $this->assertStringContainsString('href="/"', $sanitized);
+        $this->assertStringContainsString('src="/vendor/voodbuilder/voodbuilder-mark.svg"', $sanitized);
+        $this->assertStringContainsString('href="https://example.com/external"', $sanitized);
+        $this->assertStringNotContainsString('localhost:8010', $sanitized);
+    }
+
+    public function test_strip_orphan_page_content_text_removes_root_text_before_sections(): void
+    {
+        $html = "→\nExplore products\n<section class=\"voodbuilder-editor-section\"><p>Hello</p></section>";
+
+        $this->assertSame(
+            '<section class="voodbuilder-editor-section"><p>Hello</p></section>',
+            EditorHtmlSanitizer::stripOrphanPageContentText($html),
+        );
+    }
 }

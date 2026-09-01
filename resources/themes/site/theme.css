@@ -104,8 +104,13 @@ html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] butt
     background-color: var(--color-vp-gray-soft);
 }
 
+/* Content-driven height (matches editor). Opt-in viewport fill: body.voodbuilder-sticky-footer */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
-    @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
+    @apply min-h-0 bg-vp-bg;
+}
+
+body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
+    @apply min-h-[calc(100vh-4rem)];
 }
 
 body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell {

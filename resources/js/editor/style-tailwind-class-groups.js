@@ -491,7 +491,14 @@ export const TEXT_DECORATION_SEGMENTS = [
     { value: 'overline', label: 'Overline', icon: 'overline' },
 ];
 
+/** Sentinel for Typography → Text color (not a Tailwind class). */
+export const TEXT_COLOR_GRADIENT_VALUE = '__vb_text_gradient__';
+
+/** Required utilities for gradient text (background clipped to glyphs). */
+export const TEXT_GRADIENT_BASE_CLASSES = ['bg-clip-text', 'text-transparent'];
+
 export const TEXT_COLOR_OPTIONS = withNone([
+    { value: TEXT_COLOR_GRADIENT_VALUE, label: 'Gradient' },
     { value: 'text-inherit', label: 'inherit' },
     { value: 'text-current', label: 'current' },
     { value: 'text-transparent', label: 'transparent' },
@@ -564,6 +571,14 @@ export const STYLE_UTILITY_GROUPS = [
     { id: 'gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
     { id: 'gradient-via', options: GRADIENT_VIA_OPTIONS, inlineProps: [] },
     { id: 'gradient-to', options: GRADIENT_TO_OPTIONS, inlineProps: [] },
+    {
+        id: 'text-gradient-direction',
+        options: GRADIENT_DIRECTION_OPTIONS,
+        inlineProps: [],
+    },
+    { id: 'text-gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
+    { id: 'text-gradient-via', options: GRADIENT_VIA_OPTIONS, inlineProps: [] },
+    { id: 'text-gradient-to', options: GRADIENT_TO_OPTIONS, inlineProps: [] },
     { id: 'border-width', options: BORDER_WIDTH_OPTIONS, inlineProps: ['border', 'border-width'] },
     { id: 'border-t-width', options: BORDER_T_WIDTH_OPTIONS, inlineProps: ['border-top-width'] },
     { id: 'border-r-width', options: BORDER_R_WIDTH_OPTIONS, inlineProps: ['border-right-width'] },
@@ -626,6 +641,47 @@ export function resolveGroupValue(classes, options) {
     }
 
     return '';
+}
+
+/**
+ * True when the component uses Tailwind gradient text (clip + transparent + gradient stops).
+ *
+ * @param {Iterable<string>|string[]} classes
+ */
+export function hasTextGradientClasses(classes) {
+    const set = new Set([...(classes ?? [])].map((name) => String(name ?? '').trim()).filter(Boolean));
+
+    if (TEXT_GRADIENT_BASE_CLASSES.every((name) => set.has(name))) {
+        return true;
+    }
+
+    if (! set.has('text-transparent')) {
+        return false;
+    }
+
+    const direction = resolveGroupValue(set, GRADIENT_DIRECTION_OPTIONS);
+
+    return Boolean(
+        (direction && direction !== 'bg-none')
+        || resolveGroupValue(set, GRADIENT_FROM_OPTIONS)
+        || resolveGroupValue(set, GRADIENT_VIA_OPTIONS)
+        || resolveGroupValue(set, GRADIENT_TO_OPTIONS),
+    );
+}
+
+/**
+ * Solid text color utility, ignoring gradient-text mode.
+ *
+ * @param {Iterable<string>|string[]} classes
+ */
+export function resolveSolidTextColor(classes) {
+    if (hasTextGradientClasses(classes)) {
+        return '';
+    }
+
+    return resolveGroupValue(classes, TEXT_COLOR_OPTIONS.filter(
+        (opt) => opt.value !== TEXT_COLOR_GRADIENT_VALUE,
+    ));
 }
 
 /**

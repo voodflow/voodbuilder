@@ -46,9 +46,72 @@ final class EditorHtmlSanitizer
 
         return FontStylesheets::sanitizeInlineFontFamilies(
             self::repairAnimatedBlocks(
-                self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+                self::normalizeSameOriginUrls(
+                    self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+                ),
             ),
         );
+    }
+
+    /**
+     * Rewrite absolute app-origin URLs to root-relative.
+     *
+     * The link picker and asset helpers serialize absolute URLs into the canvas. Baking the
+     * origin into stored HTML breaks every internal link and image as soon as the site moves
+     * to another domain or port (dev → staging → prod, tenant domains).
+     */
+    public static function normalizeSameOriginUrls(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, '//')) {
+            return $html;
+        }
+
+        foreach (self::appOrigins() as $origin) {
+            $quoted = preg_quote($origin, '~');
+
+            // "https://host/pages/x" → "/pages/x"
+            $html = preg_replace('~'.$quoted.'(?=/)~i', '', $html) ?? $html;
+            // "https://host" (bare, or followed by query/fragment) → "/"
+            $html = preg_replace('~'.$quoted.'(?=["\'?#\s>])~i', '/', $html) ?? $html;
+        }
+
+        return $html;
+    }
+
+    /**
+     * Origins that belong to this installation. Both are needed: `app.url` is the configured
+     * canonical host, `url('/')` is what the running request (or proxy) actually serves.
+     *
+     * @return list<string>
+     */
+    private static function appOrigins(): array
+    {
+        $origins = [];
+
+        foreach ([config('app.url'), url('/')] as $candidate) {
+            $origin = self::originFromUrl((string) $candidate);
+
+            if ($origin !== '' && ! in_array($origin, $origins, true)) {
+                $origins[] = $origin;
+            }
+        }
+
+        return $origins;
+    }
+
+    private static function originFromUrl(string $url): string
+    {
+        $parts = parse_url(trim($url));
+        $host = $parts['host'] ?? '';
+
+        if (! is_string($host) || $host === '') {
+            return '';
+        }
+
+        $scheme = is_string($parts['scheme'] ?? null) ? $parts['scheme'] : 'http';
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+
+        return $scheme.'://'.$host.$port;
     }
 
     /**
@@ -769,6 +832,67 @@ final class EditorHtmlSanitizer
         return preg_replace('/%(?![0-9A-Fa-f]{2})/', '%25', $value) ?? $value;
     }
 
+    /**
+     * Drop page HTML that is only bare text (no block markup). Often left after deleting
+     * a section when Grapes serializes orphan textnodes — visible on canvas, not in Layers.
+     */
+    public static function stripOrphanPageContentText(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        $html = self::stripEditorOnlyElements($html);
+
+        if (trim($html) === '') {
+            return '';
+        }
+
+        if (! str_contains($html, '<')) {
+            return '';
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $loaded = $document->loadHTML(
+            '<?xml encoding="utf-8"?><body>'.$html.'</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($loaded !== true) {
+            return $html;
+        }
+
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if (! $body instanceof \DOMElement) {
+            return $html;
+        }
+
+        $removedText = false;
+
+        foreach ([...$body->childNodes] as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $body->removeChild($child);
+                $removedText = true;
+            }
+        }
+
+        if (! $removedText) {
+            return $html;
+        }
+
+        $clean = '';
+
+        foreach ($body->childNodes as $child) {
+            $clean .= $document->saveHTML($child);
+        }
+
+        return trim($clean);
+    }
+
     public static function stripEditorOnlyElements(string $html): string
     {
         if ($html === '') {
@@ -778,6 +902,16 @@ final class EditorHtmlSanitizer
         if (str_contains($html, 'data-voodbuilder-top-drop-spacer')) {
             $stripped = preg_replace(
                 '/<div\b[^>]*\bdata-voodbuilder-top-drop-spacer\b[^>]*>\s*<\/div>/i',
+                '',
+                $html,
+            );
+
+            $html = is_string($stripped) ? $stripped : $html;
+        }
+
+        if (str_contains($html, 'data-voodbuilder-bottom-drop-spacer')) {
+            $stripped = preg_replace(
+                '/<div\b[^>]*\bdata-voodbuilder-bottom-drop-spacer\b[^>]*>\s*<\/div>/i',
                 '',
                 $html,
             );

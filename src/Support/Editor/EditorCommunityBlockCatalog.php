@@ -123,6 +123,7 @@ final class EditorCommunityBlockCatalog
         'vb-hero-1', 'vb-hero-3', 'vb-hero-4', 'vb-hero-5', 'vb-hero-6',
         'vb-landing01-hero', 'vb-landing02-hero', 'vb-hero-cinematic', 'vb-bg-video',
         'vb-hero-plasma', 'vb-hero-aurora',
+        'vb-voodflow-hero-aurora', 'vb-voodflow-product-grid',
         // Content extras
         'vb-content-1', 'vb-content-2', 'vb-content-3', 'vb-content-4',
         'vb-content-6', 'vb-content-7', 'vb-content-8',

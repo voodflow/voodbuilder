@@ -5,22 +5,22 @@
     min-height: 4rem;
 }
 
-.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop])) {
+.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop])) {
     min-height: 0;
 }
 
-.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) {
+.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop]))) {
     min-height: 12rem;
 }
 
-body.voodbuilder-editor-block-dragging .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) {
+body.voodbuilder-editor-block-dragging .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop]))) {
     min-height: min(28rem, 55vh) !important;
     outline: 2px dashed color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 45%, transparent);
     outline-offset: -2px;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 6%, transparent);
 }
 
-body.voodbuilder-editor-block-dragging .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop]))) > .voodbuilder-editor-top-drop-spacer {
+body.voodbuilder-editor-block-dragging .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop]))) > .voodbuilder-editor-top-drop-spacer {
     min-height: 100% !important;
     height: 100% !important;
     max-height: none !important;
@@ -32,7 +32,7 @@ body.voodbuilder-editor-block-dragging .voodbuilder-chrome-content-slot[data-voo
 }
 
 .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:empty::before,
-.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-inner-drop])))::before {
+.voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop])))::before {
     content: attr(data-placeholder);
     display: block;
     padding: 1rem;

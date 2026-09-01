@@ -4,6 +4,7 @@
 
 import { componentClassString } from './clipboard.js';
 import { resolveComponentFromElement } from './component-context-menu.js';
+import { isEditorBooting } from './editor-lifecycle.js';
 
 const POPOVER_ID = 'voodbuilder-editor-class-hover-popover';
 const HIDE_DELAY_MS = 120;
@@ -222,7 +223,7 @@ export function registerCanvasClassHoverPopover(editor, options = {}) {
             return;
         }
 
-        if (editor.__voodbuilderBooting || editor.Canvas?.isDragging?.()) {
+        if (isEditorBooting(editor) || editor.Canvas?.isDragging?.()) {
             hide();
 
             return;
