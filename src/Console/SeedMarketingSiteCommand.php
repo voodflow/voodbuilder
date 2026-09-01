@@ -17,7 +17,7 @@ class SeedMarketingSiteCommand extends Command
     {
         $seeder->run();
 
-        $this->components->info('Marketing site seeded. Open /pages/a in the browser.');
+        $this->components->info('Marketing site seeded (pages + main/footer menus). Open /pages/a in the browser.');
 
         return self::SUCCESS;
     }

@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\MarketingSiteContent;
+use Voodflow\Voodbuilder\Support\MarketingSiteMenus;
 
 /**
  * Local-only marketing site for the Voodflow plugin ecosystem.
@@ -20,17 +21,24 @@ final class VoodflowMarketingSiteSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->seedPages();
+        MarketingSiteMenus::seed();
+    }
+
+    protected function seedPages(): void
+    {
         foreach (MarketingSiteContent::pages() as $slug => $definition) {
             SitePage::query()->updateOrCreate(
                 ['slug' => $slug],
                 [
                     'title' => $definition['title'],
+                    'locale' => MarketingSiteMenus::LOCALE,
                     'builder' => PageBuilder::Visual,
                     'layout' => $definition['layout'] ?? 'landing',
                     'sub_theme' => $definition['sub_theme'] ?? 'events',
                     'published' => true,
                     'published_at' => now(),
-                    'is_home' => ($definition['is_home'] ?? false),
+                    'is_home' => false,
                     'builder_payload' => [
                         'html' => $definition['html'],
                         'css' => $definition['css'] ?? '',
