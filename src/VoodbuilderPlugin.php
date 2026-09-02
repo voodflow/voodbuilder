@@ -10,7 +10,6 @@ use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\ThemeStudioPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
-use Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
@@ -49,13 +48,7 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = ChromeLayoutResource::class;
         }
 
-        // Registered on config alone. Whether it is reachable and whether it shows in the
-        // sidebar is MediaLibraryResource::canAccess(), which also stands down for
-        // voodflow/vmedia — that question cannot be answered here, because the companion
-        // activates inside its own plugin's register() and the host lists it after ours.
-        if (config('voodbuilder.media_library.enabled', true) && config('voodbuilder.modules.media_library.enabled', true)) {
-            $resources[] = MediaLibraryResource::class;
-        }
+        // Media library lives in voodflow/vmedia (VmediaPlugin), a hard requirement.
 
         $panel
             ->resources($resources)

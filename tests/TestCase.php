@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
+use Voodflow\Vmedia\VmediaServiceProvider;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
@@ -33,6 +34,9 @@ abstract class TestCase extends BaseTestCase
         return array_values(array_filter([
             LivewireServiceProvider::class,
             LaravelSEOServiceProvider::class,
+            // Unguarded, unlike the optional companions below: media is a hard requirement,
+            // and the editor cannot boot without its upload endpoint.
+            VmediaServiceProvider::class,
             VoodbuilderServiceProvider::class,
             class_exists(VpopupsServiceProvider::class)
                 ? VpopupsServiceProvider::class

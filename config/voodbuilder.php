@@ -38,9 +38,6 @@ return [
         'pages' => [
             'enabled' => env('VOODBUILDER_MODULE_PAGES', true),
         ],
-        'media_library' => [
-            'enabled' => env('VOODBUILDER_MODULE_MEDIA_LIBRARY', true),
-        ],
         'dynamic_data' => [
             'enabled' => env('VOODBUILDER_MODULE_DYNAMIC_DATA', true),
         ],
@@ -200,14 +197,6 @@ return [
         'directory' => 'voodbuilder',
         'max_size' => 2048,
         'social_max_size' => 4096,
-    ],
-
-    /*
-    | Reusable site media (Spatie Media Library + Filament Spatie plugin).
-    | Managed in Admin → Media library; Editor AssetManager lists the same collections.
-    */
-    'media_library' => [
-        'enabled' => env('VOODBUILDER_MEDIA_LIBRARY_ENABLED', true),
     ],
 
     'notifications' => [

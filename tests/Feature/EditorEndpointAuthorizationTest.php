@@ -59,17 +59,27 @@ final class EditorEndpointAuthorizationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_media_upload_requires_page_builder_access(): void
+    /**
+     * Media endpoints answer to media permissions, not to the page builder permission.
+     *
+     * They used to be this package's, gated by EnsurePageBuilderAccess. They are now
+     * voodflow/vmedia's, and it gates them on `Create:MediaItem` — which is the right
+     * question to ask: the same user can already add media from the media library screen,
+     * so demanding page builder access at the upload endpoint would deny nothing while
+     * implying a boundary that is not there.
+     *
+     * The point still worth enforcing is that they are gated by *something*, which
+     * test_every_editor_route_is_gated_or_explicitly_public checks across the whole prefix.
+     */
+    public function test_media_endpoints_are_not_reachable_without_authorization(): void
     {
+        Gate::define('usePageBuilder', static fn (): bool => false);
+
+        $this->postJson(route('voodbuilder.editor.upload'))->assertUnauthorized();
+        $this->getJson(route('voodbuilder.editor.media.index'))->assertUnauthorized();
+
         $this->actingAsNonBuilder()
             ->postJson(route('voodbuilder.editor.upload'))
-            ->assertForbidden();
-    }
-
-    public function test_media_index_requires_page_builder_access(): void
-    {
-        $this->actingAsNonBuilder()
-            ->getJson(route('voodbuilder.editor.media.index'))
             ->assertForbidden();
     }
 

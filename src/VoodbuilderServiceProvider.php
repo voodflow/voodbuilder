@@ -19,6 +19,7 @@ use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Vmedia\Support\Integration\PluginVaultRootBootstrap;
+use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
@@ -34,7 +35,6 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
-use Voodflow\Voodbuilder\Http\Controllers\EditorAssetController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBlockRenderController;
@@ -49,7 +49,6 @@ use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
-use Voodflow\Voodbuilder\Models\MediaLibrary;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
@@ -158,14 +157,13 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
     {
         Relation::morphMap([
             'site_page' => SitePage::class,
-            'voodbuilder_media_library' => MediaLibrary::class,
         ]);
 
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
 
-        $this->app->booted(fn (): mixed => class_exists(PluginVaultRootBootstrap::class)
-            ? PluginVaultRootBootstrap::ensureFor('voodbuilder')
-            : null);
+        $this->ensureMediaRuntime();
+
+        $this->app->booted(static fn (): mixed => PluginVaultRootBootstrap::ensureFor('voodbuilder'));
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
@@ -257,23 +255,37 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
             });
 
-        $this->app->booted(function (): void {
-            // Skip only when companion (or a prior registrar) actually exposed upload.
-            // Vmedia::isActive() alone is not enough: Filament can activate the plugin
-            // before HTTP routes land (or nest them under filament.*), which left
-            // EditorGate resolving a missing voodbuilder.editor.upload and 500'd ?edit=1
-            // — the page editor never mounted, so saves could not persist.
-            if ($this->editorMediaUploadRouteRegistered()) {
+        // Media list/upload/replace/galleries belong to voodflow/vmedia, which is a hard
+        // requirement — see ensureMediaRuntime().
+    }
+
+    /**
+     * Make sure the media runtime is up, whether or not the host registered its panel plugin.
+     *
+     * The editor cannot open without an upload endpoint: EditorGate resolves the URL at boot
+     * and previously 500'd `?edit=1` when the route was missing, so the page never mounted
+     * and saves could not persist. Registering VmediaPlugin on a Filament panel is what
+     * normally activates those routes, but that is a panel concern and the editor is not —
+     * a host can reasonably keep the media resources out of the sidebar and still expect
+     * the canvas to accept an image.
+     *
+     * Activating is idempotent, so doing it here simply removes the ordering question.
+     */
+    protected function ensureMediaRuntime(): void
+    {
+        // Deferred: Vmedia registers its HTTP routes outside Filament's route group, and
+        // calling it mid-boot is how route names ended up nested under `filament.`.
+        $this->app->booted(static function (): void {
+            // The route, not Vmedia::isActive(). The active flag is static and outlives an
+            // application refresh, so between tests it reads true while the router has been
+            // emptied — and the early return then left the editor with no upload endpoint.
+            if (Route::has('vmedia.media.upload')) {
                 return;
             }
 
-            Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:voodbuilder-editor'])
-                ->prefix('voodbuilder/editor')
-                ->name('voodbuilder.editor.')
-                ->group(function (): void {
-                    Route::get('media', [EditorAssetController::class, 'index'])->name('media.index');
-                    Route::post('upload', [EditorAssetController::class, 'store'])->name('upload');
-                });
+            // Clears that same stale flag, which would otherwise make activate() a no-op.
+            Vmedia::reset();
+            Vmedia::activate();
         });
     }
 
@@ -294,12 +306,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     ->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
             },
         );
-    }
-
-    protected function editorMediaUploadRouteRegistered(): bool
-    {
-        return Route::has('vmedia.media.upload')
-            || Route::has('voodbuilder.editor.upload');
     }
 
     protected function registerAdminRoutes(): void

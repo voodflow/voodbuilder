@@ -80,13 +80,8 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('voodbuilder_media_libraries')) {
-            Schema::create('voodbuilder_media_libraries', function (Blueprint $table): void {
-                $table->id();
-                $table->string('name')->default('Site media');
-                $table->timestamps();
-            });
-        }
+        // No media library table: media is voodflow/vmedia's, and the 2026_09_02 migration
+        // drops this one where an earlier install already created it.
 
         if (! Schema::hasTable('voodbuilder_model_integrations')) {
             Schema::create('voodbuilder_model_integrations', function (Blueprint $table): void {
