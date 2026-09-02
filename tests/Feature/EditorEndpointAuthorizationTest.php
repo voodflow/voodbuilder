@@ -7,6 +7,10 @@ namespace Voodflow\Voodbuilder\Tests\Feature;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use ReflectionException;
+use ReflectionMethod;
+use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -81,5 +85,87 @@ final class EditorEndpointAuthorizationTest extends TestCase
         $this->postJson(route('voodbuilder.editor.compile-css'), [
             'html' => '<div></div>',
         ])->assertUnauthorized();
+    }
+
+    /**
+     * Sweep the whole prefix rather than named endpoints.
+     *
+     * Companions register their own groups under `voodbuilder/editor`, and a companion can
+     * override a URI the core already gated: voodbuilder-dynamic-data re-registered
+     * `bindings` without a gate and silently won. Enumerating the router is the only way
+     * that regression shows up in CI.
+     */
+    public function test_every_editor_route_is_gated_or_explicitly_public(): void
+    {
+        // Public form submission is the one intentional exception: visitors post to it.
+        $publicByDesign = ['voodbuilder.editor.forms.submit'];
+
+        $ungated = [];
+
+        foreach (Route::getRoutes() as $route) {
+            if (! str_starts_with($route->uri(), 'voodbuilder/editor')) {
+                continue;
+            }
+
+            if (in_array($route->getName(), $publicByDesign, true)) {
+                continue;
+            }
+
+            $middleware = $route->gatherMiddleware();
+
+            if (in_array(EnsurePageBuilderAccess::class, $middleware, true)) {
+                continue;
+            }
+
+            // Otherwise the controller (or a companion middleware) must gate it itself.
+            if ($this->hasOwnAuthorizationGate($route->getActionName())) {
+                continue;
+            }
+
+            $ungated[] = $route->uri().' ['.($route->getName() ?? 'unnamed').']';
+        }
+
+        $this->assertSame(
+            [],
+            $ungated,
+            "Editor routes reachable by any authenticated user:\n".implode("\n", $ungated),
+        );
+    }
+
+    /**
+     * Whether the controller behind a route performs its own authorization check.
+     */
+    private function hasOwnAuthorizationGate(string $action): bool
+    {
+        if (! str_contains($action, '@') && ! str_ends_with($action, 'Controller')) {
+            $class = $action;
+            $method = '__invoke';
+        } else {
+            [$class, $method] = array_pad(explode('@', $action, 2), 2, '__invoke');
+        }
+
+        if (! class_exists($class)) {
+            return false;
+        }
+
+        try {
+            $file = (new ReflectionMethod($class, $method))->getFileName();
+        } catch (ReflectionException) {
+            return false;
+        }
+
+        if ($file === false) {
+            return false;
+        }
+
+        $source = (string) file_get_contents($file);
+
+        foreach (['PageBuilderAccess', 'EditorGate::canEdit', 'EditorChromeLayoutEditorGate', 'EntitlementGate', 'authorize'] as $marker) {
+            if (str_contains($source, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
