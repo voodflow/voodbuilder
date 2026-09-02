@@ -26,6 +26,7 @@ use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
+use Voodflow\Voodbuilder\Support\MediaCompanion;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -1283,20 +1284,12 @@ final class EditorGate
      */
     private static function mediaCompanionBrowserEnabled(): bool
     {
-        $class = 'Voodflow\\Vmedia\\Vmedia';
-
-        if (! class_exists($class) || ! method_exists($class, 'isActive')) {
-            return false;
-        }
-
-        try {
-            return (bool) $class::isActive()
-                && (
-                    Route::has('vmedia.media.galleries')
-                    || Route::has('voodbuilder.editor.media.galleries')
-                );
-        } catch (\Throwable) {
-            return false;
-        }
+        // Active is necessary but not sufficient: the companion defers its HTTP routes out
+        // of Filament's route group, so the browser is only usable once they exist.
+        return MediaCompanion::isActive()
+            && (
+                Route::has('vmedia.media.galleries')
+                || Route::has('voodbuilder.editor.media.galleries')
+            );
     }
 }

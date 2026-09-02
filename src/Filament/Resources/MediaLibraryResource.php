@@ -22,6 +22,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Voodflow\Voodbuilder\Filament\Resources\MediaLibraryResource\Pages\ManageMediaLibrary;
 use Voodflow\Voodbuilder\Models\MediaLibrary;
 use Voodflow\Voodbuilder\Support\Editor\EditorMediaLibrary;
+use Voodflow\Voodbuilder\Support\MediaCompanion;
 use Voodflow\Voodbuilder\Support\PublicDiskUrl;
 
 /**
@@ -57,8 +58,22 @@ class MediaLibraryResource extends Resource
         return __('voodbuilder::admin.media_library.title');
     }
 
+    /**
+     * Also decides whether this appears in the sidebar, via Filament's default
+     * shouldRegisterNavigation().
+     *
+     * The companion check has to live here rather than where the resource is registered.
+     * VoodbuilderPlugin::register() used to make this call, but `Vmedia::activate()` runs
+     * inside VmediaPlugin::register(), which the host lists after ours — so at that moment
+     * the companion always looks absent, and the admin showed two "Media library" entries
+     * pointing at different tables. By access time every plugin has registered.
+     */
     public static function canAccess(): bool
     {
+        if (MediaCompanion::ownsAdminLibrary()) {
+            return false;
+        }
+
         return (bool) config('voodbuilder.media_library.enabled', true)
             && (bool) config('voodbuilder.modules.media_library.enabled', true);
     }

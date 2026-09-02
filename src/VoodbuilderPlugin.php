@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\ThemeStudioPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
@@ -50,8 +49,11 @@ class VoodbuilderPlugin implements Plugin
             $resources[] = ChromeLayoutResource::class;
         }
 
-        // Prefer voodflow/vmedia when its Filament plugin is active.
-        if (MediaLibraryResource::canAccess() && ! self::mediaCompanionActive()) {
+        // Registered on config alone. Whether it is reachable and whether it shows in the
+        // sidebar is MediaLibraryResource::canAccess(), which also stands down for
+        // voodflow/vmedia — that question cannot be answered here, because the companion
+        // activates inside its own plugin's register() and the host lists it after ours.
+        if (config('voodbuilder.media_library.enabled', true) && config('voodbuilder.modules.media_library.enabled', true)) {
             $resources[] = MediaLibraryResource::class;
         }
 
@@ -67,14 +69,5 @@ class VoodbuilderPlugin implements Plugin
     public function boot(Panel $panel): void
     {
         //
-    }
-
-    protected static function mediaCompanionActive(): bool
-    {
-        $class = Vmedia::class;
-
-        return class_exists($class)
-            && method_exists($class, 'isActive')
-            && (bool) $class::isActive();
     }
 }
