@@ -737,6 +737,33 @@ body.voodbuilder-editor-editing .voodbuilder-editor-boot-overlay:not([hidden]) {
     letter-spacing: 0.01em;
 }
 
+.voodbuilder-editor-boot-splash__progress {
+    width: 13rem;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.22);
+    overflow: hidden;
+}
+
+.voodbuilder-editor-boot-splash__progress-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #a78bfa 0%, #2dd4bf 100%);
+    /* Eases between real milestones; it never animates on its own, so a stalled phase
+       reads as a stalled bar instead of fake progress. */
+    transition: width 320ms ease-out;
+}
+
+.voodbuilder-editor-boot-splash__slow {
+    margin: 0;
+    max-width: 20rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
 .voodbuilder-editor-status-spinner {
     display: flex;
     flex-direction: column;

@@ -84,6 +84,26 @@ export function animatedMarkMarkup(size = 96) {
     `;
 }
 
+/**
+ * Boot phases, in the order the editor actually reaches them.
+ *
+ * Each id maps to a milestone we already wait on, so the bar tracks work instead of
+ * animating on a timer: `shell` once the panels exist, `canvas` when the frame and its
+ * stylesheets have settled and the document is revealed, `content` when the dynamic block
+ * refresh has resolved, `ready` when the editor accepts input.
+ */
+export const EDITOR_BOOT_PHASES = ['shell', 'canvas', 'content', 'ready'];
+
+const BOOT_PHASE_FALLBACK_LABELS = {
+    shell: 'Preparing the workspace…',
+    canvas: 'Rendering your page…',
+    content: 'Loading blocks and elements…',
+    ready: 'Finishing up…',
+};
+
+/** How long a single phase may run before we admit it is slow. */
+const BOOT_PHASE_SLOW_MS = 4_000;
+
 /** Full-screen boot splash (editor cold start). */
 function bootSplashMarkup({ label, brand, version }) {
     const name = wordmark(brand);
@@ -98,9 +118,112 @@ function bootSplashMarkup({ label, brand, version }) {
                 <span class="voodbuilder-editor-boot-splash__name">${escapeHtml(name)}</span>
                 ${ver !== '' ? `<span class="voodbuilder-editor-boot-splash__version">${escapeHtml(ver)}</span>` : ''}
             </div>
-            <p class="voodbuilder-editor-boot-splash__hint">${escapeHtml(label)}</p>
+            <p class="voodbuilder-editor-boot-splash__hint" data-voodbuilder-boot-phase-label>${escapeHtml(label)}</p>
+            <div
+                class="voodbuilder-editor-boot-splash__progress"
+                data-voodbuilder-boot-progress
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="${EDITOR_BOOT_PHASES.length}"
+                aria-valuenow="0"
+            >
+                <span class="voodbuilder-editor-boot-splash__progress-bar" data-voodbuilder-boot-progress-bar></span>
+            </div>
+            <p class="voodbuilder-editor-boot-splash__slow" data-voodbuilder-boot-slow hidden></p>
         </div>
     `;
+}
+
+function bootPhaseLabel(editor, phaseId) {
+    return editor?.__voodbuilderBootPhaseLabels?.[phaseId]
+        ?? BOOT_PHASE_FALLBACK_LABELS[phaseId]
+        ?? '';
+}
+
+function renderBootPhase(editor) {
+    const overlay = editor?.__voodbuilderBootOverlay;
+    const phaseId = editor?.__voodbuilderBootPhase;
+
+    if (! overlay || ! phaseId) {
+        return;
+    }
+
+    const index = EDITOR_BOOT_PHASES.indexOf(phaseId);
+    const total = EDITOR_BOOT_PHASES.length;
+    // Report the phase as entered, not completed: a bar that only moves on completion sits
+    // at zero through the longest step.
+    const done = index < 0 ? 0 : index + 1;
+
+    const label = overlay.querySelector('[data-voodbuilder-boot-phase-label]');
+    const progress = overlay.querySelector('[data-voodbuilder-boot-progress]');
+    const bar = overlay.querySelector('[data-voodbuilder-boot-progress-bar]');
+    const text = bootPhaseLabel(editor, phaseId);
+
+    if (label) {
+        label.textContent = text;
+    }
+
+    if (progress) {
+        progress.setAttribute('aria-valuenow', String(done));
+        progress.setAttribute('aria-valuetext', `${done}/${total} — ${text}`);
+    }
+
+    if (bar) {
+        bar.style.width = `${Math.round((done / total) * 100)}%`;
+    }
+
+    const splash = overlay.querySelector('.voodbuilder-editor-boot-splash');
+
+    if (splash) {
+        splash.setAttribute('aria-label', text);
+    }
+}
+
+function armBootPhaseSlowHint(editor) {
+    window.clearTimeout(editor.__voodbuilderBootSlowTimer);
+
+    editor.__voodbuilderBootSlowTimer = window.setTimeout(() => {
+        const overlay = editor.__voodbuilderBootOverlay;
+        const slow = overlay?.querySelector('[data-voodbuilder-boot-slow]');
+
+        if (! slow || editor.__voodbuilderBooting !== true) {
+            return;
+        }
+
+        // Naming the stuck step is the whole point: an unqualified splash makes a slow
+        // load indistinguishable from a hung editor.
+        slow.textContent = editor.__voodbuilderBootLabels?.slow
+            ?? 'This is taking longer than usual — still working.';
+        slow.hidden = false;
+    }, BOOT_PHASE_SLOW_MS);
+}
+
+/**
+ * Advance the splash to a boot phase. Never moves backwards, so a late event from an
+ * earlier phase cannot make the bar retreat.
+ */
+export function setEditorBootPhase(editor, phaseId) {
+    if (! editor || ! EDITOR_BOOT_PHASES.includes(phaseId)) {
+        return;
+    }
+
+    const current = EDITOR_BOOT_PHASES.indexOf(editor.__voodbuilderBootPhase ?? '');
+
+    if (EDITOR_BOOT_PHASES.indexOf(phaseId) <= current) {
+        return;
+    }
+
+    editor.__voodbuilderBootPhase = phaseId;
+
+    const overlay = editor.__voodbuilderBootOverlay;
+    const slow = overlay?.querySelector('[data-voodbuilder-boot-slow]');
+
+    if (slow) {
+        slow.hidden = true;
+    }
+
+    renderBootPhase(editor);
+    armBootPhaseSlowHint(editor);
 }
 
 /** Compact spinner for style compile overlays. */
@@ -251,6 +374,16 @@ export function registerEditorBuildStatus(editor, shell, labels = {}, meta = {})
         editor.__voodbuilderCanvasBuildOverlay = overlay;
     }
 
+    editor.__voodbuilderBootPhaseLabels = {
+        shell: labels.bootPhaseShell ?? BOOT_PHASE_FALLBACK_LABELS.shell,
+        canvas: labels.bootPhaseCanvas ?? BOOT_PHASE_FALLBACK_LABELS.canvas,
+        content: labels.bootPhaseContent ?? BOOT_PHASE_FALLBACK_LABELS.content,
+        ready: labels.bootPhaseReady ?? BOOT_PHASE_FALLBACK_LABELS.ready,
+    };
+    editor.__voodbuilderBootLabels = {
+        slow: labels.bootSlow ?? 'This is taking longer than usual — still working.',
+    };
+
     const bootHost = shell?.shell ?? shell?.mounts?.canvas?.closest('.voodbuilder-editor-shell');
 
     if (bootHost && ! bootHost.querySelector('[data-voodbuilder-boot-overlay]')) {
@@ -273,24 +406,39 @@ export function registerEditorBuildStatus(editor, shell, labels = {}, meta = {})
     };
 }
 
+/**
+ * Upper bound on the splash, after which we hand the editor over regardless.
+ *
+ * The old bound was 3 500 ms, which is shorter than a normal cold boot: the splash
+ * routinely vanished before the canvas document was even revealed, so the author faced an
+ * editor that looked ready and ignored input for seconds. The cap is now a genuine
+ * emergency exit rather than the usual path — the phase milestones dismiss the splash.
+ */
+const BOOT_FAILSAFE_MS = 20_000;
+
 export function startEditorBoot(editor) {
     if (! editor) {
         return;
     }
 
     editor.__voodbuilderBooting = true;
+    editor.__voodbuilderBootPhase = null;
     syncBootOverlay(editor);
+    setEditorBootPhase(editor, 'shell');
 
     window.clearTimeout(editor.__voodbuilderBootFailsafeTimer);
     editor.__voodbuilderBootFailsafeTimer = window.setTimeout(() => {
         if (editor.__voodbuilderBooting === true) {
-            console.warn('VoodBuilder Editor: boot splash failsafe — forcing editor unlock.');
+            console.warn(
+                'VoodBuilder Editor: boot failsafe — forcing editor unlock at phase',
+                editor.__voodbuilderBootPhase,
+            );
             finishEditorBoot(editor);
             document.querySelector('.voodbuilder-editor-root--booting')
                 ?.classList.remove('voodbuilder-editor-root--booting');
             resetEditorBuildStatus(editor);
         }
-    }, 3500);
+    }, BOOT_FAILSAFE_MS);
 }
 
 export function finishEditorBoot(editor) {
@@ -300,6 +448,9 @@ export function finishEditorBoot(editor) {
 
     window.clearTimeout(editor.__voodbuilderBootFailsafeTimer);
     editor.__voodbuilderBootFailsafeTimer = null;
+    window.clearTimeout(editor.__voodbuilderBootSlowTimer);
+    editor.__voodbuilderBootSlowTimer = null;
+    setEditorBootPhase(editor, 'ready');
     editor.__voodbuilderBooting = false;
     syncBootOverlay(editor);
 }

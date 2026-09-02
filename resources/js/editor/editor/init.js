@@ -100,6 +100,7 @@ import {
 import {
     finishEditorBoot,
     registerEditorBuildStatus,
+    setEditorBootPhase,
     startEditorBoot,
     waitForEditorBootTasks,
 } from '../editor-build-status.js';
@@ -622,19 +623,34 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
         shellRoot.classList.remove('voodbuilder-editor-root--booting');
     };
 
+    /**
+     * Dynamic blocks fetch their markup from the server, so their content lands after the
+     * canvas is painted. Handing over before that means the author sees the page reflow
+     * under the cursor; waiting for it is bounded, because the gate always resolves and
+     * startEditorBoot() holds a hard deadline over the whole boot.
+     */
+    const waitForDynamicBlocks = () => Promise.race([
+        Promise.resolve(editor.__voodbuilderDynamicBlocksPending),
+        new Promise((resolve) => {
+            window.setTimeout(resolve, 6_000);
+        }),
+    ]);
+
     const reveal = () => {
         if (! revealPromise) {
-            // Dismiss the splash as soon as boot can progress. Waiting for canvas
-            // styles/frame first left the UI stuck when later `load` handlers blocked
-            // the main thread for tens of seconds (layout editor especially).
-            dismissBootSplash();
-
             revealPromise = (async () => {
                 try {
+                    setEditorBootPhase(editor, 'canvas');
                     await waitForCanvasPresentation(editor, revealOptions);
+                    setEditorBootPhase(editor, 'content');
+                    await waitForDynamicBlocks();
                 } catch (error) {
                     console.warn('Voodbuilder Editor: canvas presentation wait failed.', error);
                 } finally {
+                    // The splash used to be dismissed here *and* before the await, which
+                    // handed over an editor that had not rendered its page yet: it looked
+                    // ready and ignored input for seconds. The phases now report the real
+                    // milestones, so waiting is honest instead of silent.
                     dismissBootSplash();
                 }
             })();
@@ -652,7 +668,7 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
         void reveal();
     });
 
-    // Hard deadline so a blocked main thread still clears the splash once it yields.
+    // Start the wait even if neither event fires (blocked main thread, cached frame).
     window.setTimeout(() => {
         void reveal();
     }, 2_000);

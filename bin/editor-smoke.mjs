@@ -2,7 +2,8 @@
  * Editor boot smoke test.
  *
  * Verifies that the code-split editor still boots: splash dismissed, block catalog
- * populated, no console errors, and that heavy chunks stay off the boot path.
+ * populated, no console errors, and that heavy chunks stay off the boot path. Also checks
+ * the splash reports real progress and does not hand over a canvas that is still blank.
  *
  * Playwright is not a project dependency — run this from an environment that provides it
  * (`npx playwright install chromium`, or point VOODBUILDER_CHROMIUM at an existing build).
@@ -60,6 +61,64 @@ await Promise.all([
 requestedScripts.length = 0;
 errors.length = 0;
 
+/**
+ * Record the boot splash phases and the moment the canvas actually shows the page.
+ *
+ * The splash used to be dismissed roughly three seconds before the page appeared, so the
+ * author faced an editor that looked ready and ignored input. Sampling both lets the smoke
+ * run fail if that ordering ever comes back.
+ */
+await page.addInitScript(() => {
+    window.__voodbuilderBootLog = [];
+
+    const t0 = performance.now();
+    const at = () => Math.round(performance.now() - t0);
+    const seen = new Set();
+
+    const record = (event) => {
+        if (seen.has(event)) {
+            return;
+        }
+
+        seen.add(event);
+        window.__voodbuilderBootLog.push({ at: at(), event });
+    };
+
+    const watch = () => {
+        const overlay = document.querySelector('[data-voodbuilder-boot-overlay]');
+
+        if (overlay) {
+            const step = overlay
+                .querySelector('[data-voodbuilder-boot-progress]')
+                ?.getAttribute('aria-valuenow');
+
+            if (! overlay.hidden && step) {
+                record(`phase:${step}`);
+            }
+
+            if (overlay.hidden) {
+                record('splash-dismissed');
+            }
+        }
+
+        try {
+            const canvasDoc = document
+                .querySelector('.gjs-frame, .gjs-cv-canvas iframe')
+                ?.contentDocument;
+
+            if (canvasDoc?.body?.classList.contains('voodbuilder-canvas-ready')) {
+                record('canvas-visible');
+            }
+        } catch {
+            // Canvas frame not reachable yet.
+        }
+
+        requestAnimationFrame(watch);
+    };
+
+    requestAnimationFrame(watch);
+});
+
 const started = Date.now();
 
 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
@@ -85,7 +144,10 @@ try {
 await page.waitForTimeout(3_000);
 
 const state = await page.evaluate(async () => {
-    const canvasFrame = document.querySelector('iframe');
+    // Must not fall back to a bare `iframe`: the host page keeps its own embeds (a hero
+    // YouTube player sits earlier in the document), and querySelector returns the first
+    // match in document order, not the first selector that matches.
+    const canvasFrame = document.querySelector('.gjs-frame, .gjs-cv-canvas iframe');
     const canvasDoc = canvasFrame?.contentDocument ?? null;
 
     // Responsiveness: how many animation frames land in one second.
@@ -113,6 +175,20 @@ const state = await page.evaluate(async () => {
     };
 });
 
+const bootLog = await page.evaluate(() => window.__voodbuilderBootLog ?? []);
+const timeOf = (event) => bootLog.find((entry) => entry.event === event)?.at ?? null;
+const canvasVisibleAt = timeOf('canvas-visible');
+const splashDismissedAt = timeOf('splash-dismissed');
+const phasesSeen = bootLog
+    .filter((entry) => entry.event.startsWith('phase:'))
+    .map((entry) => Number(entry.event.slice('phase:'.length)));
+
+// The splash must outlive the blank canvas, and it must report more than one step.
+const splashOutlivesBlankCanvas = canvasVisibleAt !== null
+    && splashDismissedAt !== null
+    && splashDismissedAt >= canvasVisibleAt;
+const reportsProgress = new Set(phasesSeen).size > 1;
+
 const bootScripts = requestedScripts.filter((name) => /\.js$/.test(name ?? ''));
 const loadedTailwindCompiler = bootScripts.some((n) => n?.includes('vendor-tailwind-compiler'));
 const loadedCodeMirror = bootScripts.some((n) => n?.includes('code-editor-field-cm'));
@@ -123,6 +199,13 @@ console.log(JSON.stringify({
     url,
     bootMs,
     ...state,
+    boot: {
+        log: bootLog,
+        canvasVisibleAt,
+        splashDismissedAt,
+        splashOutlivesBlankCanvas,
+        reportsProgress,
+    },
     scriptsRequested: bootScripts.length,
     loadedVendorGrapes,
     lazyStayedLazy: {
@@ -136,5 +219,9 @@ console.log(JSON.stringify({
 await page.screenshot({ path: '/tmp/editor-smoke.png', fullPage: false });
 await browser.close();
 
-const ok = bootMs !== null && state.blocks > 0 && errors.length === 0;
+const ok = bootMs !== null
+    && state.blocks > 0
+    && errors.length === 0
+    && splashOutlivesBlankCanvas
+    && reportsProgress;
 process.exit(ok ? 0 : 1);
