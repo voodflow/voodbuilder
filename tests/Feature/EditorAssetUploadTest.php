@@ -15,6 +15,7 @@ use Spatie\MediaLibrary\MediaLibraryServiceProvider;
 use Voodflow\Voodbuilder\Models\MediaLibrary;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class EditorAssetUploadTest extends TestCase
@@ -74,6 +75,7 @@ class EditorAssetUploadTest extends TestCase
         ])->save();
 
         $this->actingAs($user);
+        PageBuilderAccess::authorizeUsing(static fn (): bool => true);
 
         $response = $this->post(route('voodbuilder.editor.upload'), [
             'file' => UploadedFile::fake()->image('hero.jpg', 1200, 800),
@@ -113,6 +115,7 @@ class EditorAssetUploadTest extends TestCase
         ])->save();
 
         $this->actingAs($user);
+        PageBuilderAccess::authorizeUsing(static fn (): bool => true);
 
         $response = $this->post(route('voodbuilder.editor.upload'), [
             'file' => UploadedFile::fake()->create('clip.mp4', 2048, 'video/mp4'),
@@ -150,6 +153,7 @@ class EditorAssetUploadTest extends TestCase
         ])->save();
 
         $this->actingAs($user);
+        PageBuilderAccess::authorizeUsing(static fn (): bool => true);
 
         $library = MediaLibrary::current();
         $library->addMedia(UploadedFile::fake()->image('hero.jpg'))

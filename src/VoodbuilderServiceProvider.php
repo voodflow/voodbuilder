@@ -18,6 +18,7 @@ use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Voodflow\Vmedia\Support\Integration\PluginVaultRootBootstrap;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
@@ -43,6 +44,7 @@ use Voodflow\Voodbuilder\Http\Controllers\EditorCompileCssController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorMediaPreviewController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
+use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
@@ -59,7 +61,6 @@ use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
-use Voodflow\Vmedia\Support\Integration\PluginVaultRootBootstrap;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -76,9 +77,9 @@ use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
+use Voodflow\Voodbuilder\Support\Editor\VoodbuilderEditorBlockConfigs;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
-use Voodflow\Voodbuilder\Support\Editor\VoodbuilderEditorBlockConfigs;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
@@ -231,7 +232,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
     {
         $this->configureEditorRateLimiters();
 
-        Route::middleware(['web', 'auth', 'throttle:voodbuilder-editor'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:voodbuilder-editor'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {
@@ -249,7 +250,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             });
 
         // Separate quota from catalog/bindings — page JIT can burst without starving the library.
-        Route::middleware(['web', 'auth', 'throttle:voodbuilder-compile-css'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:voodbuilder-compile-css'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {
@@ -266,7 +267,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 return;
             }
 
-            Route::middleware(['web', 'auth', 'throttle:voodbuilder-editor'])
+            Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:voodbuilder-editor'])
                 ->prefix('voodbuilder/editor')
                 ->name('voodbuilder.editor.')
                 ->group(function (): void {
