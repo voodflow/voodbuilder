@@ -133,8 +133,13 @@ export function resolveSettings(component, editor) {
     }
 
     // Keep the last explicit chrome settings root even when the selection is ambiguous
-    // (e.g. wrapper/canvas chrome outside nav/footer zones).
-    pushRoot(getActiveLayoutSettingsRoot(editor));
+    // (e.g. wrapper/canvas chrome outside nav/footer zones). It is exempt from the
+    // ownership check below, which is what "even when the selection is ambiguous" means:
+    // an ambiguous selection owns nothing, so requiring ownership would push the root and
+    // then discard it, blanking the panel the author had deliberately opened. Being last
+    // in priority, it only ever applies when no owning root matched.
+    const activeSettingsRoot = getActiveLayoutSettingsRoot(editor);
+    pushRoot(activeSettingsRoot);
 
     for (const descriptor of registry.values()) {
         if (typeof descriptor.findRoot !== 'function') {
@@ -147,7 +152,7 @@ export function resolveSettings(component, editor) {
     }
 
     for (const root of roots) {
-        if (! rootOwnsSelection(component, root)) {
+        if (root !== activeSettingsRoot && ! rootOwnsSelection(component, root)) {
             continue;
         }
 

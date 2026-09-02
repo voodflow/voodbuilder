@@ -725,7 +725,10 @@ export function shouldShowContentWidthToolbar(component, editor) {
 function syncContentWidthDom(component, mode, editor) {
     const el = component?.getEl?.() ?? component?.view?.el;
 
-    if (! (el instanceof Element)) {
+    // Duck-typed rather than `instanceof Element`: the canvas element belongs to the
+    // iframe's realm, where the constructor is a different object, and the module is also
+    // exercised outside a browser.
+    if (! el || el.nodeType !== 1 || typeof el.setAttribute !== 'function') {
         return;
     }
 
