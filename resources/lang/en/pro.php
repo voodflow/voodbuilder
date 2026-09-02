@@ -29,6 +29,13 @@ return [
         'save' => 'Save',
         'saving' => 'Saving…',
         'saved' => 'Saved',
+        'status' => [
+            'saved' => 'Saved',
+            'saving' => 'Saving…',
+            'unsaved' => 'Unsaved changes',
+            'draft_at' => 'draft saved {time}',
+            'draft_hint' => 'Your work is backed up and can be recovered from Revisions, but it is not published until you save.',
+        ],
         'error' => 'Could not save the page. Try again.',
         'session_expired' => 'Your session expired. Reload the page and try again.',
         'forbidden' => 'You do not have permission for this action.',

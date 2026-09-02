@@ -173,6 +173,10 @@ async function offerRecovery({ editor, labels, draft, applyPayload }) {
  * @param {() => object} options.buildPayload      serialize the current canvas
  * @param {(editor: object, payload: object) => void} options.applyPayload  load a payload back
  * @param {object} options.config                  editor config (autosave urls + intervals)
+ * @param {(event: { kind: 'unsaved'|'draft-parked', at: number }) => void} [options.onStatus]
+ *        change notifications for the topbar readout. Driven from the fingerprints the
+ *        autosave already computes, so the readout costs no extra listener and cannot
+ *        report changes during boot, when the baseline is being established.
  */
 export function registerEditorAutosave(editor, options = {}) {
     const config = options.config ?? {};
@@ -199,6 +203,18 @@ export function registerEditorAutosave(editor, options = {}) {
     let lastServerFingerprint = null;
     let busy = false;
     let stopped = false;
+
+    const notify = (kind) => {
+        if (typeof options.onStatus !== 'function') {
+            return;
+        }
+
+        try {
+            options.onStatus({ kind, at: Date.now() });
+        } catch (error) {
+            console.warn('VoodBuilder autosave: status listener failed.', error);
+        }
+    };
 
     // Baseline: whatever was on the page when the editor opened is already saved, so it
     // must not be offered back as unsaved work.
@@ -235,6 +251,10 @@ export function registerEditorAutosave(editor, options = {}) {
         if (fingerprint === lastLocalFingerprint) {
             return;
         }
+
+        // The canvas has moved past what is published — the readout should say so even
+        // if the IndexedDB write below fails.
+        notify('unsaved');
 
         busy = true;
 
@@ -292,6 +312,7 @@ export function registerEditorAutosave(editor, options = {}) {
 
             if (response.ok) {
                 lastServerFingerprint = fingerprint;
+                notify('draft-parked');
             } else {
                 console.warn('VoodBuilder autosave: server refused the draft.', response.status);
             }
@@ -338,9 +359,26 @@ export function registerEditorAutosave(editor, options = {}) {
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     const api = {
-        /** Called after a real save: the nets are empty again. */
-        markSaved: (payload) => {
-            markClean(payload ?? currentPayload() ?? {});
+        /**
+         * Called after a real save: the nets are empty again.
+         *
+         * The baseline is always re-read from the canvas, never taken from the payload
+         * that was sent. Saving bakes styles and purges editor-only nodes, and the
+         * response seeds the live stylesheet, so the markup that went to the server is
+         * not what the canvas serializes to a moment later — using it as the baseline
+         * made the editor report unsaved changes seconds after a successful save.
+         *
+         * Re-read a second time once that tail has settled, because parts of it (page
+         * CSS rebuild, font prefetch) are deliberately asynchronous.
+         */
+        markSaved: () => {
+            markClean(currentPayload() ?? {});
+            window.setTimeout(() => {
+                if (! stopped) {
+                    markClean(currentPayload() ?? {});
+                }
+            }, 2_000);
+
             void deleteLocalDraft(draftKey);
 
             if (config.autosaveDiscardUrl) {

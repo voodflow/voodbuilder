@@ -101,6 +101,34 @@ function editingContextMarkup(context) {
     `;
 }
 
+/**
+ * Place a companion control in the topbar actions group.
+ *
+ * Callers used to anchor on the save-state readout, which put them to the left of it.
+ * The readout now leads the group, so controls belong between it and Exit: everything
+ * that acts on the page stays adjacent to Save.
+ *
+ * @param {HTMLElement|null} actionsMount  `.voodbuilder-editor-topbar__actions`
+ * @param {HTMLElement} control
+ */
+export function mountTopbarAction(actionsMount, control) {
+    if (! actionsMount || ! control) {
+        return;
+    }
+
+    const exitLink = actionsMount.querySelector('[data-voodbuilder-editor-exit]')
+        // Older shells had no marker on the exit link.
+        ?? actionsMount.querySelector('.voodbuilder-editor-topbar__btn--ghost[href]');
+
+    if (exitLink) {
+        actionsMount.insertBefore(control, exitLink);
+
+        return;
+    }
+
+    actionsMount.appendChild(control);
+}
+
 export function buildEditorShell(container, labels = {}, meta = {}) {
     const hideTemplates = Boolean(meta.hideTemplates);
     const brand = String(meta.brand ?? 'VoodBuilder').trim() || 'VoodBuilder';
@@ -122,10 +150,16 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                 </div>
                 <div class="voodbuilder-editor-topbar__tools"></div>
                 <div class="voodbuilder-editor-topbar__actions">
-                    <span class="voodbuilder-editor-topbar__saved" data-voodbuilder-editor-saved hidden>${escapeHtml(labels.saved ?? 'Saved')}</span>
+                    <span
+                        class="voodbuilder-editor-topbar__status"
+                        data-voodbuilder-editor-saved
+                        aria-live="polite"
+                        hidden
+                    ></span>
                     <a
                         href="${escapeHtml(meta.exitUrl ?? '#')}"
                         class="voodbuilder-editor-topbar__btn voodbuilder-editor-topbar__btn--ghost"
+                        data-voodbuilder-editor-exit
                     >${escapeHtml(labels.exitEditor ?? 'Exit editor')}</a>
                     <button
                         type="button"

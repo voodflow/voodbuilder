@@ -5,6 +5,7 @@
 import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
 import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
+import { withoutUndo } from './editor-undo.js';
 
 const DRAG_CHIP_CLASS = 'voodbuilder-editor-drag-chip';
 const DRAG_BODY_CLASS = 'voodbuilder-editor-block-dragging';
@@ -1429,8 +1430,13 @@ export function syncDropSpacers(editor) {
     editor.__voodbuilderDropSpacerSyncing = true;
 
     try {
-        ensureTopDropSpacer(editor);
-        ensureBottomDropSpacer(editor);
+        // Spacers are editing scaffolding, not content. Recording them made undo appear
+        // dead: maintenance runs after the author's change, so the first undo reverted a
+        // spacer instead of the change.
+        withoutUndo(editor, () => {
+            ensureTopDropSpacer(editor);
+            ensureBottomDropSpacer(editor);
+        });
     } finally {
         editor.__voodbuilderDropSpacerSyncing = false;
     }

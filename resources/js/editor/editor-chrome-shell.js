@@ -7,6 +7,7 @@ import { isFooterBlock, isNavBlock } from './chrome/ids.js';
 import { lockChromePreview } from './chrome/blocks/preview.js';
 import { normalizeSiteNavChromeButtons } from './plugins/voodbuilder-editor.js';
 import { clearCanvasDragArtifacts, syncDropSpacers } from './canvas-block-drag.js';
+import { withoutUndo } from './editor-undo.js';
 import {
     isEditorDropSentinelComponent,
     isOrphanPageContentNode,
@@ -1027,12 +1028,19 @@ export function registerChromeShellEditor(editor, options = {}) {
 
         try {
             const beforeIds = chromeShellStructureFingerprint(editor);
-            applyChromeShellLocks(editor, shellOptions);
-            hideChromeShellBlocks(editor);
-            purgeLeakedChromeCtaButtons(editor);
-            // After shell reshuffle — keep a drop target before the first page block.
-            syncDropSpacers(editor);
-            purgeOrphanPageContentNodes(findPageContentSlot(editor));
+
+            // None of this is an author edit: it locks shell parts, hides chrome blocks
+            // and evicts host-page nodes that bled into the canvas. Recording it spent
+            // the author's undo steps on invisible bookkeeping.
+            withoutUndo(editor, () => {
+                applyChromeShellLocks(editor, shellOptions);
+                hideChromeShellBlocks(editor);
+                purgeLeakedChromeCtaButtons(editor);
+                // After shell reshuffle — keep a drop target before the first page block.
+                syncDropSpacers(editor);
+                purgeOrphanPageContentNodes(findPageContentSlot(editor));
+            });
+
             structureChanged = beforeIds !== chromeShellStructureFingerprint(editor);
 
             // Re-render layers only when the shell tree actually changed — otherwise

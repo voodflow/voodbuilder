@@ -29,6 +29,13 @@ return [
         'save' => 'Salva',
         'saving' => 'Salvataggio…',
         'saved' => 'Salvato',
+        'status' => [
+            'saved' => 'Salvato',
+            'saving' => 'Salvataggio…',
+            'unsaved' => 'Modifiche non salvate',
+            'draft_at' => 'bozza salvata alle {time}',
+            'draft_hint' => 'Il lavoro è al sicuro e recuperabile dalle Revisioni, ma non è pubblicato finché non salvi.',
+        ],
         'error' => 'Impossibile salvare la pagina. Riprova.',
         'session_expired' => 'Sessione scaduta. Ricarica la pagina e riprova.',
         'forbidden' => 'Non hai i permessi per questa operazione.',

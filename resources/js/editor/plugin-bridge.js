@@ -33,6 +33,26 @@ const plugins = new Map();
 let bridgeExposed = false;
 
 /**
+ * The booted editor, for callers that arrive after `bootEditorPlugins`.
+ *
+ * A companion loaded from a separate script tag has no `mount(editor)` argument to
+ * work from, and neither do the audit scripts under `bin/`. Both used to have no way
+ * in short of reading private view state off the DOM.
+ *
+ * @type {object|null}
+ */
+let bootedEditor = null;
+
+/**
+ * The editor instance driving this page, or null before boot.
+ *
+ * @returns {object|null}
+ */
+export function getBootedEditor() {
+    return bootedEditor;
+}
+
+/**
  * Register (or replace) an editor companion plugin.
  *
  * @param {EditorPluginDefinition} definition
@@ -116,6 +136,7 @@ export function exposeEditorBridge() {
     const api = {
         registerPlugin: registerEditorPlugin,
         listPlugins: listEditorPlugins,
+        getEditor: getBootedEditor,
         registerFonts,
         registerFontProvider,
         getFontCatalog,
@@ -138,6 +159,8 @@ export async function bootEditorPlugins(editor, context = {}) {
     if (! editor) {
         return;
     }
+
+    bootedEditor = editor;
 
     exposeEditorBridge();
 

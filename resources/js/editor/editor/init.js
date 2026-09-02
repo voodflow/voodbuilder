@@ -106,6 +106,8 @@ import {
 } from '../editor-build-status.js';
 import { isEditorBooting } from '../editor-lifecycle.js';
 import { registerEditorAutosave } from '../editor-autosave.js';
+import { createSaveStatus } from '../editor-save-status.js';
+import { registerUndoCommands, resetUndoHistory, undoManagerInitOptions } from '../editor-undo.js';
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -637,6 +639,7 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
     const dismissBootSplash = () => {
         finishEditorBoot(editor);
         shellRoot.classList.remove('voodbuilder-editor-root--booting');
+        resetUndoHistory(editor);
         announceCanvasReady?.();
         announceCanvasReady = null;
     };
@@ -747,6 +750,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         avoidInlineStyle: false,
         jsInHtml: false,
         storageManager: false,
+        undoManager: undoManagerInitOptions(),
         noticeOnUnload: options.noticeOnUnload ?? false,
         showDevices: layoutOptions.showDevices ?? chromeOptions.showDevices,
         deviceManager: chromeOptions.deviceManager,
@@ -1060,6 +1064,8 @@ export function initVoodbuilderEditor(container, options = {}) {
             delete editor.__voodbuilderPendingPageLiveCss;
         }
     }
+
+    registerUndoCommands(editor);
 
     configureEditorChrome(editor, {
         labels,
@@ -2187,10 +2193,22 @@ function mountFrontendEditor() {
     // Loading a stored payload back into the canvas is not just setComponents(): the
     // markup needs sanitizing, the live stylesheet needs seeding and the Style Manager
     // needs rehydrating. Draft recovery and revision restore share this one applier.
-    editor.__voodbuilderApplyPayload = (payload = {}) => applyInitialContent(
-        editor,
-        { html: payload.html ?? '', css: payload.css ?? '' },
-        { replaceCanvas: true },
+    editor.__voodbuilderApplyPayload = (payload = {}) => {
+        applyInitialContent(
+            editor,
+            { html: payload.html ?? '', css: payload.css ?? '' },
+            { replaceCanvas: true },
+        );
+
+        // The whole canvas was swapped. Stepping back across that boundary would
+        // interleave the new tree with the old one, so the restored state becomes the
+        // new floor of the history.
+        resetUndoHistory(editor);
+    };
+
+    const saveStatus = createSaveStatus(
+        document.querySelector('[data-voodbuilder-editor-saved]'),
+        config.labels ?? {},
     );
 
     const autosave = registerEditorAutosave(editor, {
@@ -2200,6 +2218,15 @@ function mountFrontendEditor() {
         // that on a timer would let a background task rewrite the canvas under the author.
         buildPayload: (target) => buildPayload(target, { mutate: false }),
         applyPayload: (target, payload) => target.__voodbuilderApplyPayload(payload),
+        onStatus: ({ kind, at }) => {
+            if (kind === 'draft-parked') {
+                saveStatus.draftParked(at);
+
+                return;
+            }
+
+            saveStatus.unsaved();
+        },
     });
 
     if (autosave) {
@@ -2214,7 +2241,6 @@ function mountFrontendEditor() {
     }
 
     const saveButton = document.querySelector('[data-voodbuilder-editor-save]');
-    const savedIndicator = document.querySelector('[data-voodbuilder-editor-saved]');
     const saveLabel = document.querySelector('[data-voodbuilder-editor-save-label]');
 
     if (! saveButton) {
@@ -2228,9 +2254,7 @@ function mountFrontendEditor() {
             saveLabel.textContent = config.labels?.saving ?? 'Saving…';
         }
 
-        if (savedIndicator) {
-            savedIndicator.hidden = true;
-        }
+        saveStatus.saving();
 
         try {
             let payload;
@@ -2281,18 +2305,14 @@ function mountFrontendEditor() {
                     ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }
 
-            autosave?.markSaved(payload);
+            autosave?.markSaved();
 
-            if (savedIndicator) {
-                savedIndicator.hidden = false;
-            }
-
-            window.setTimeout(() => {
-                if (savedIndicator) {
-                    savedIndicator.hidden = true;
-                }
-            }, 2500);
+            // Stays until the next edit: the readout answers "does the live site match
+            // this canvas", which does not stop being true after a couple of seconds.
+            saveStatus.saved();
         } catch (error) {
+            saveStatus.unsaved();
+
             console.error('VoodBuilder page save failed', error);
 
             const detail = error instanceof Error ? error.message.trim() : '';

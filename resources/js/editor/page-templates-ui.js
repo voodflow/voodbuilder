@@ -6,6 +6,7 @@ import { alertDialog, componentMetaDialog, confirmDialog, promptDialog } from '.
 import { editorApiHeaders, resolveApiErrorMessage } from './editor-api.js';
 import { buildPayload } from './editor.js';
 import { lucideIcon } from './editor-icons.js';
+import { mountTopbarAction } from './editor-layout.js';
 import { applyPageTemplateWithPrompt } from './page-template-apply.js';
 
 export { applyTemplatePayload } from './page-template-apply.js';
@@ -32,13 +33,7 @@ export function registerPageTemplatesUi(editor, options = {}) {
     button.innerHTML = lucideIcon('layers', 18);
     button.addEventListener('click', () => openModal());
 
-    const savedIndicator = toolbarMount.parentElement?.querySelector('[data-voodbuilder-editor-saved]');
-
-    if (savedIndicator) {
-        toolbarMount.insertBefore(button, savedIndicator);
-    } else {
-        toolbarMount.appendChild(button);
-    }
+    mountTopbarAction(toolbarMount, button);
 
     const modal = document.createElement('div');
     modal.className = 'voodbuilder-editor-modal';

@@ -475,14 +475,29 @@ body.voodbuilder-editor-editing .voodbuilder-editor-frontend__canvas .gjs-blocks
     gap: 0.5rem;
 }
 
-.voodbuilder-editor-topbar__saved[hidden] {
+/*
+ * Save state readout. Leads the actions group, which is right-anchored, so it grows
+ * leftwards into empty space and never shifts the buttons next to it.
+ */
+.voodbuilder-editor-topbar__status[hidden] {
     display: none;
 }
 
-.voodbuilder-editor-topbar__saved:not([hidden]) {
+.voodbuilder-editor-topbar__status {
+    margin-right: 0.125rem;
     font-size: 0.75rem;
     font-weight: 500;
+    white-space: nowrap;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-topbar__status.is-saved {
     color: #059669;
+}
+
+.voodbuilder-editor-topbar__status.is-unsaved {
+    color: var(--color-vp-text-2, #64748b);
+    cursor: help;
 }
 
 .voodbuilder-editor-topbar__btn {

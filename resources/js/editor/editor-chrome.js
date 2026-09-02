@@ -610,12 +610,13 @@ function mountViewPageAction(actionsMount, viewPageUrl, labels = {}) {
     link.setAttribute('aria-label', labels.viewPage ?? 'View page');
     link.innerHTML = lucideIcon('external-link', 18);
 
-    const exitLink = actionsMount.querySelector('.voodbuilder-editor-topbar__btn--ghost[href]');
+    const exitLink = actionsMount.querySelector('[data-voodbuilder-editor-exit]')
+        ?? actionsMount.querySelector('.voodbuilder-editor-topbar__btn--ghost[href]');
 
     if (exitLink) {
         actionsMount.insertBefore(link, exitLink);
     } else {
-        actionsMount.prepend(link);
+        actionsMount.appendChild(link);
     }
 }
 
