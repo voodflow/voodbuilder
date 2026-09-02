@@ -97,6 +97,9 @@ final class EditionCapabilityMatrix
             'components.import-export',
             'components.global-classes',
             'components.team-share',
+            // Author JS in the public page. Top tier only, and off unless asked for: the
+            // channel executes in every visitor's browser and no component type feeds it.
+            'pages.custom-js',
             'dynamic-data.custom-providers',
             'marketplace.consume',
             'marketplace.submit',

@@ -10,6 +10,7 @@ use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\ThemePalette;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
  * Editor Renderer.
@@ -77,6 +78,13 @@ final class EditorRenderer
         $js = $page->builder_payload['js'] ?? null;
 
         if (! filled($js)) {
+            return null;
+        }
+
+        // This lands in a <script> on the public page. EditorJsSanitizer is a regex
+        // deny-list (it blocks fetch and eval, not the rest of the DOM API), so the channel
+        // stays shut unless the installation explicitly holds the capability.
+        if (! Voodbuilder::can('pages.custom-js')) {
             return null;
         }
 
