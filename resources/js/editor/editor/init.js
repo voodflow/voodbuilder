@@ -7,7 +7,9 @@
 import '../inspector-color-preload.js';
 import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
-import 'grapesjs/dist/css/grapes.min.css';
+// GrapesJS CSS is imported by resources/css/editor/editor.css, which Vite always emits
+// alongside this entry (VoodbuilderPaths::viteInputEntries). Importing it here too shipped
+// every gjs-* rule in both bundles.
 import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';

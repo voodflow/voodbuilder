@@ -7,7 +7,6 @@
  */
 
 import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
-import { createFocusPointPlugin } from './jodit-focus-point-plugin.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 export const CMD_EDIT_IMAGE = 'voodbuilder:edit-image';
@@ -28,6 +27,17 @@ async function loadImageEditorCtor() {
     imageEditorCtorPromise ??= import('@jodit/image-editor').then((mod) => mod.ImageEditor);
 
     return imageEditorCtorPromise;
+}
+
+/**
+ * Kept behind import() alongside the constructor: the plugin imports @jodit/image-editor
+ * statically, so a top-level import here pulls the whole library into the boot chunk even
+ * though the constructor itself is lazy.
+ */
+async function loadFocusPointPluginFactory() {
+    const mod = await import('./jodit-focus-point-plugin.js');
+
+    return mod.createFocusPointPlugin;
 }
 
 /**
@@ -899,7 +909,10 @@ async function openImageEditorModal(editor, target, options = {}) {
 
     try {
         const blob = await loadImageBlob(target, src);
-        const ImageEditor = await loadImageEditorCtor();
+        const [ImageEditor, createFocusPointPlugin] = await Promise.all([
+            loadImageEditorCtor(),
+            loadFocusPointPluginFactory(),
+        ]);
         setModalStatus('');
 
         activeEditor = new ImageEditor({
