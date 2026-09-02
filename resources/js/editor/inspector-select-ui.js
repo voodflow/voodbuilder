@@ -52,6 +52,101 @@ function triggerLabel(trigger) {
     return trigger.querySelector('.voodbuilder-editor-select-trigger-label');
 }
 
+let generatedIdCounter = 0;
+
+function ensureElementId(el, prefix) {
+    if (! el.id) {
+        generatedIdCounter += 1;
+        el.id = `${prefix}-${generatedIdCounter}`;
+    }
+
+    return el.id;
+}
+
+/**
+ * Find the element that visually names a select.
+ *
+ * Three conventions coexist: our own form helpers emit `label[for]`, some panels nest the
+ * control inside a `<label>`, and the Style Manager reuses the GrapesJS `gjs-sm-label`
+ * markup, which is a plain span sitting next to the field.
+ */
+function findFieldLabel(select) {
+    if (select.id) {
+        const explicit = select.getRootNode?.()?.querySelector?.(`label[for="${CSS.escape(select.id)}"]`);
+
+        if (explicit) {
+            return { el: explicit, explicit: true };
+        }
+    }
+
+    const wrapping = select.closest('label');
+
+    if (wrapping) {
+        return { el: wrapping, explicit: false };
+    }
+
+    const property = select.closest('.gjs-sm-property, .gjs-trt-trait, .voodbuilder-editor-form-row');
+    const text = property?.querySelector(
+        '.gjs-sm-label-text, .gjs-label, .voodbuilder-editor-form-label, .voodbuilder-editor-settings__label',
+    );
+
+    return text ? { el: text, explicit: false } : null;
+}
+
+/**
+ * Text of a placeholder option, stripped of decorative dashes ("- State -" → "State").
+ */
+function placeholderOptionText(select) {
+    const placeholder = Array.from(select.options).find((option) => option.value === '');
+
+    return (placeholder?.textContent ?? '')
+        .replace(/^[\s\-–—]+|[\s\-–—]+$/g, '')
+        .trim();
+}
+
+/**
+ * Give the custom select an accessible name, and make its label clickable again.
+ *
+ * Enhancing a select hides the native control (`aria-hidden`, `tabIndex = -1`) and puts a
+ * button in its place. That leaves any `label[for]` pointing at an element assistive tech
+ * has been told to ignore, so the visible control ends up with no name at all — and
+ * clicking the label focuses nothing a user can see. Re-pointing the label at the trigger
+ * fixes both at once, because `button` is a labelable element.
+ */
+function nameCustomSelect(select, trigger, list) {
+    const found = findFieldLabel(select);
+    const triggerId = ensureElementId(trigger, 'voodbuilder-select-trigger');
+
+    if (found?.el && (found.el.textContent ?? '').trim() !== '') {
+        const labelId = ensureElementId(found.el, 'voodbuilder-select-label');
+
+        if (found.explicit) {
+            found.el.htmlFor = triggerId;
+        }
+
+        trigger.setAttribute('aria-labelledby', labelId);
+        list.setAttribute('aria-labelledby', labelId);
+
+        return;
+    }
+
+    // No visible label: fall back to whatever the field already carried. `title` is a weak
+    // name, but it is the only thing some Style Manager unit fields have, and the
+    // placeholder option is what a sighted user reads on upstream selects that ship with
+    // no label at all (the class manager's state picker, for one).
+    const fallback = [
+        select.getAttribute('aria-label'),
+        select.getAttribute('title'),
+        placeholderOptionText(select),
+        select.getAttribute('name'),
+    ].map((value) => (value ?? '').trim()).find((value) => value !== '');
+
+    if (fallback) {
+        trigger.setAttribute('aria-label', fallback);
+        list.setAttribute('aria-label', fallback);
+    }
+}
+
 function findGrapesView(el) {
     let node = el;
 
@@ -606,6 +701,8 @@ function enhanceSelect(select) {
         select.parentNode?.insertBefore(wrap, select);
         wrap.append(trigger, select, chevron, list);
     }
+
+    nameCustomSelect(select, trigger, list);
 
     const openDropdown = () => {
         closeOpenSelects(wrap);
