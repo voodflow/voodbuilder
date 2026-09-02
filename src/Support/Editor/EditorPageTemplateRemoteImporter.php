@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
+use Voodflow\Voodbuilder\Support\SafeRemoteUrl;
 
 /**
  * Editor Page Template Remote Importer.
@@ -111,31 +112,12 @@ final class EditorPageTemplateRemoteImporter
             ]);
         }
 
-        $host = strtolower((string) ($parts['host'] ?? ''));
-
-        if ($host === '' || self::isBlockedHost($host)) {
+        if (SafeRemoteUrl::isBlockedHost((string) ($parts['host'] ?? ''))) {
             throw ValidationException::withMessages([
                 'url' => __('voodbuilder::pro.page_templates.import_url_blocked'),
             ]);
         }
 
         return $trimmed;
-    }
-
-    private static function isBlockedHost(string $host): bool
-    {
-        if (in_array($host, ['localhost', '127.0.0.1', '0.0.0.0', '::1'], true)) {
-            return true;
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return ! filter_var(
-                $host,
-                FILTER_VALIDATE_IP,
-                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
-            );
-        }
-
-        return str_ends_with($host, '.local') || str_ends_with($host, '.internal');
     }
 }

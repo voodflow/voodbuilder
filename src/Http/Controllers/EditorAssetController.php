@@ -6,10 +6,12 @@ namespace Voodflow\Voodbuilder\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\File;
 use Voodflow\Voodbuilder\Support\Editor\EditorMediaLibrary;
+use Voodflow\Voodbuilder\Support\Editor\EditorSvgSanitizer;
 
 /**
  * HTTP controller: Editor Asset upload + reusable Spatie media library listing.
@@ -67,6 +69,8 @@ class EditorAssetController extends Controller
             ],
         ]);
 
+        $this->sanitizeSvgInPlace($validated['file']);
+
         $media = EditorMediaLibrary::store($validated['file']);
         $payload = EditorMediaLibrary::toAssetPayload($media);
 
@@ -76,5 +80,34 @@ class EditorAssetController extends Controller
             'data' => [$payload['src']],
             'media' => $payload,
         ]);
+    }
+
+    /**
+     * Clean an uploaded SVG before it reaches the public disk.
+     *
+     * Rewrites the temporary file so the stored copy is the sanitized one. Unlike vmedia,
+     * this controller has no upload guard, and an SVG served from the site's own origin
+     * executes its own script.
+     */
+    private function sanitizeSvgInPlace(UploadedFile $file): void
+    {
+        $isSvg = strtolower($file->getClientOriginalExtension()) === 'svg'
+            || str_contains((string) $file->getMimeType(), 'svg');
+
+        if (! $isSvg) {
+            return;
+        }
+
+        $path = $file->getRealPath();
+
+        if ($path === false || ! is_readable($path)) {
+            return;
+        }
+
+        $sanitized = EditorSvgSanitizer::sanitize((string) file_get_contents($path));
+
+        abort_if($sanitized === '', 422, 'The SVG could not be parsed and was rejected.');
+
+        file_put_contents($path, $sanitized);
     }
 }
