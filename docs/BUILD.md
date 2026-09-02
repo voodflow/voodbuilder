@@ -38,6 +38,35 @@ Use `--skip-npm` if your CI or monorepo manages Node dependencies separately.
 
 Paths differ for `vendor/voodflow/voodbuilder` installs — `VoodbuilderPaths` resolves them.
 
+### Editor chunk splitting (recommended)
+
+The editor entry pulls in GrapesJS, which is about half its weight and only changes on a
+deliberate upgrade. Without a chunking strategy it shares one chunk with our editor
+modules, so every deploy of ours invalidates the vendor half too and returning authors
+re-download the whole bundle for a one-line change.
+
+Wire the strategy the package ships — the installer does not patch this, because it edits
+your `build` block rather than the input list:
+
+```js
+// vite.config.js
+import { voodbuilderManualChunks } from './packages/voodflow/voodbuilder/bin/voodbuilder-manual-chunks.js';
+
+export default defineConfig({
+    build: {
+        // The editor entry is large by nature; silence the size warning for it.
+        chunkSizeWarningLimit: 3500,
+        rollupOptions: {
+            output: { manualChunks: voodbuilderManualChunks },
+        },
+    },
+    // …
+});
+```
+
+Measured on the reference install, this moves ~425 KiB raw (~110 KiB gzip) off the boot
+path and leaves ~278 KiB gzip of GrapesJS cached independently of our releases.
+
 ### Regenerating Tailblocks (optional)
 
 Only needed when you run `php artisan voodbuilder:build-tailblocks`:
