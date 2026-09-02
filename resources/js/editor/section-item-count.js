@@ -165,6 +165,26 @@ function markedItems(root) {
  * @param {object} section
  * @returns {{ root: object|null, items: object[], min: number, max: number, columns: number }}
  */
+/**
+ * Query a section for its items container.
+ *
+ * `Component.find()` runs a selector against the component's rendered element, so it
+ * throws for a component that has no view yet — which is exactly the state components are
+ * in while the canvas is being replaced (draft recovery, revision restore). This is called
+ * from selection matching, where a throw surfaces as an uncaught error and abandons the
+ * whole inspector pass, so an unrendered section has to read as "no items".
+ *
+ * @param {object} section
+ * @returns {object|null}
+ */
+function findItemsRoot(section) {
+    try {
+        return section.find?.('[data-vb-items-root]')?.[0] ?? null;
+    } catch {
+        return null;
+    }
+}
+
 export function findSectionItems(section) {
     const attrs = section.getAttributes?.() ?? {};
     const min = Math.max(1, Number.parseInt(attrs['data-vb-item-min'] ?? '1', 10) || 1);
@@ -177,8 +197,7 @@ export function findSectionItems(section) {
     const columns = columnsAttr > 0
         ? Math.max(1, Math.min(6, columnsAttr))
         : Math.max(1, Math.min(6, itemCount || 4));
-    const roots = section.find?.('[data-vb-items-root]') ?? [];
-    const root = roots[0] ?? null;
+    const root = findItemsRoot(section);
 
     if (! root) {
         return { root: null, items: [], min, max, columns };
