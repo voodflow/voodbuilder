@@ -424,6 +424,18 @@ return [
         ],
         'revisions' => [
             'max_to_keep' => (int) env('VOODBUILDER_EDITOR_REVISIONS_MAX', 50),
+            // Autosaves have their own budget so unattended writes cannot evict the
+            // history an author curated. A handful is enough: they only ever describe
+            // work that has not been saved yet.
+            'max_autosaves_to_keep' => (int) env('VOODBUILDER_EDITOR_AUTOSAVES_MAX', 5),
+        ],
+
+        'autosave' => [
+            'enabled' => (bool) env('VOODBUILDER_EDITOR_AUTOSAVE', true),
+            // Server-side parking is the coarse net; the local draft below covers the
+            // seconds in between without touching the database.
+            'interval_ms' => (int) env('VOODBUILDER_EDITOR_AUTOSAVE_INTERVAL_MS', 120_000),
+            'local_draft_interval_ms' => (int) env('VOODBUILDER_EDITOR_LOCAL_DRAFT_INTERVAL_MS', 5_000),
         ],
         'component_categories' => [
             'General',

@@ -71,8 +71,11 @@ class EditorPageController extends Controller
 
         ComponentRuntimeBridge::syncComponentCssLibraryFromPageHtml($normalized['html']);
 
-        app(SitePageRevisionRecorder::class)
-            ->recordIfChanged($sitePage, $previousPayload);
+        $recorder = app(SitePageRevisionRecorder::class);
+        $recorder->recordIfChanged($sitePage, $previousPayload);
+        // The work is published, so there is nothing left to recover. Keeping the autosaves
+        // would greet the author with a recovery offer for the page they just saved.
+        $recorder->discardAutosaves($sitePage);
 
         return response()->json([
             'saved' => true,

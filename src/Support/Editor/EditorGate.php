@@ -190,6 +190,23 @@ final class EditorGate
                     'revision' => '__REVISION__',
                 ])
                 : null,
+            'autosaveUrl' => HistoryModule::isEnabled()
+                ? self::optionalEditorRoute('voodbuilder.editor.pages.autosave', $page)
+                : null,
+            'autosaveDiscardUrl' => HistoryModule::isEnabled()
+                ? self::optionalEditorRoute('voodbuilder.editor.pages.autosave.discard', $page)
+                : null,
+            'autosave' => [
+                // Autosave parks work as a revision and never publishes, so it stays on
+                // even for a page the author has not saved yet.
+                'enabled' => HistoryModule::isEnabled()
+                    && (bool) config('voodbuilder.editor.autosave.enabled', true),
+                'intervalMs' => (int) config('voodbuilder.editor.autosave.interval_ms', 120_000),
+                'localDraftIntervalMs' => (int) config(
+                    'voodbuilder.editor.autosave.local_draft_interval_ms',
+                    5_000,
+                ),
+            ],
             'globalClassesUrl' => ComponentRuntimeBridge::moduleEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.global-classes.index')
                 : null,
@@ -587,6 +604,12 @@ final class EditorGate
             'bootPhaseContent' => __('voodbuilder::pro.editor_ui.boot_phase_content'),
             'bootPhaseReady' => __('voodbuilder::pro.editor_ui.boot_phase_ready'),
             'bootSlow' => __('voodbuilder::pro.editor_ui.boot_slow'),
+            'autosaveRecoverTitle' => __('voodbuilder::pro.autosave.recover_title'),
+            'autosaveRecoverMessage' => __('voodbuilder::pro.autosave.recover_message'),
+            'autosaveRecoverConfirm' => __('voodbuilder::pro.autosave.recover_confirm'),
+            'autosaveRecoverDiscard' => __('voodbuilder::pro.autosave.recover_discard'),
+            'autosaveAgeMinutes' => __('voodbuilder::pro.autosave.age_minutes'),
+            'autosaveAgeHours' => __('voodbuilder::pro.autosave.age_hours'),
             'toggleLibraryPanel' => __('voodbuilder::pro.editor_ui.toggle_library_panel'),
             'toggleInspectorPanel' => __('voodbuilder::pro.editor_ui.toggle_inspector_panel'),
             'resizeLibraryPanel' => __('voodbuilder::pro.editor_ui.resize_library_panel'),
@@ -598,6 +621,8 @@ final class EditorGate
             'revisionsRestoreError' => __('voodbuilder::pro.revisions.restore_error'),
             'revisionsPreview' => __('voodbuilder::pro.revisions.preview'),
             'revisionsEmpty' => __('voodbuilder::pro.revisions.empty'),
+            'revisionsKindManual' => __('voodbuilder::pro.revisions.kind_manual'),
+            'revisionsKindAutosave' => __('voodbuilder::pro.revisions.kind_autosave'),
             'conditionsTitle' => __('voodbuilder::pro.conditions.title'),
             'conditionsHint' => __('voodbuilder::pro.conditions.hint'),
             'conditionsEmpty' => __('voodbuilder::pro.conditions.empty'),
@@ -1068,6 +1093,34 @@ final class EditorGate
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)
                 : $project,
         ]);
+    }
+
+    /**
+     * Security pass for a draft that is stored but not published.
+     *
+     * Deliberately narrower than {@see normalizePayload()}: it skips the Tailwind pass,
+     * font detection and the publishing normalizers. Two reasons. Compiling the page
+     * stylesheet on every autosave tick would put the most expensive step of a save on a
+     * timer. And a draft exists to be handed back to the canvas untouched — the publishing
+     * rewrites would make the recovered page differ from what the author was looking at,
+     * and every rewrite would also register as a change, so an idle editor would keep
+     * writing "new" drafts. What stays is the part that must never be deferred: a draft is
+     * restorable, so it cannot carry markup or JS a real save would have stripped.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array{html: string, css: string, js: string}
+     */
+    public static function sanitizeDraftPayload(array $payload): array
+    {
+        $html = EditorHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
+        $html = EditorCustomCodeSanitizer::sanitize($html);
+        $html = EditorHtmlSecuritySanitizer::sanitize($html);
+
+        return [
+            'html' => $html,
+            'css' => (string) ($payload['css'] ?? ''),
+            'js' => EditorJsSanitizer::sanitize((string) ($payload['js'] ?? '')),
+        ];
     }
 
     /**

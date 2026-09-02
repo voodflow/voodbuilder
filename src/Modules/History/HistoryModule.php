@@ -8,6 +8,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Contracts\RegistersRoutes;
 use Voodflow\Voodbuilder\Http\Controllers\EditorPageRevisionsController;
+use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -36,7 +37,7 @@ final class HistoryModule extends AbstractVoodBuilderModule implements Registers
 
     public function registerRoutes(Router $router, ModuleContext $context): void
     {
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:60,1'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {
@@ -44,6 +45,12 @@ final class HistoryModule extends AbstractVoodBuilderModule implements Registers
                     ->name('pages.revisions.index');
                 Route::post('pages/{sitePage}/revisions/{revision}/restore', [EditorPageRevisionsController::class, 'restore'])
                     ->name('pages.revisions.restore');
+                // Autosave writes a revision and never touches builder_payload, so its own
+                // throttle is looser than a save's: the editor calls it on a timer.
+                Route::post('pages/{sitePage}/autosave', [EditorPageRevisionsController::class, 'autosave'])
+                    ->name('pages.autosave');
+                Route::delete('pages/{sitePage}/autosave', [EditorPageRevisionsController::class, 'discardAutosaves'])
+                    ->name('pages.autosave.discard');
             });
     }
 

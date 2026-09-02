@@ -105,6 +105,7 @@ import {
     waitForEditorBootTasks,
 } from '../editor-build-status.js';
 import { isEditorBooting } from '../editor-lifecycle.js';
+import { registerEditorAutosave } from '../editor-autosave.js';
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
 import { registerEditorVideoSafety, syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -207,14 +208,22 @@ function canvasHasRenderedHtml(editor) {
     return html.length > 20;
 }
 
-function applyInitialContent(editor, initial) {
+/**
+ * @param {object} editor
+ * @param {{ html?: string, css?: string }} initial
+ * @param {{ replaceCanvas?: boolean }} [options]
+ *   replaceCanvas=true → overwrite whatever the canvas holds (draft recovery, revision
+ *   restore). Default is boot behaviour: never fight content the page manager already put
+ *   there.
+ */
+function applyInitialContent(editor, initial, options = {}) {
     if (! initial.html?.trim() && ! initial.css?.trim()) {
         return;
     }
 
     const hasCanvas = canvasIframeHasContent(editor);
 
-    if (initial.html?.trim() && ! hasCanvas) {
+    if (initial.html?.trim() && (options.replaceCanvas === true || ! hasCanvas)) {
         editor.setComponents(sanitizeBlockHtml(initial.html));
     }
 
@@ -618,9 +627,18 @@ function registerCanvasBootGate(editor, shellRoot, shell, options = {}) {
         chromeShellMode: Boolean(options.chromeShellMode),
     };
 
+    // Anything that must not touch the canvas before the author can see it (draft
+    // recovery, for one) waits on this instead of guessing a delay.
+    let announceCanvasReady = null;
+    editor.__voodbuilderCanvasReady = new Promise((resolve) => {
+        announceCanvasReady = resolve;
+    });
+
     const dismissBootSplash = () => {
         finishEditorBoot(editor);
         shellRoot.classList.remove('voodbuilder-editor-root--booting');
+        announceCanvasReady?.();
+        announceCanvasReady = null;
     };
 
     /**
@@ -2166,6 +2184,35 @@ function mountFrontendEditor() {
         refreshBlocksLibraryUi(editor);
     }
 
+    // Loading a stored payload back into the canvas is not just setComponents(): the
+    // markup needs sanitizing, the live stylesheet needs seeding and the Style Manager
+    // needs rehydrating. Draft recovery and revision restore share this one applier.
+    editor.__voodbuilderApplyPayload = (payload = {}) => applyInitialContent(
+        editor,
+        { html: payload.html ?? '', css: payload.css ?? '' },
+        { replaceCanvas: true },
+    );
+
+    const autosave = registerEditorAutosave(editor, {
+        config,
+        csrf: resolveCsrfToken(config.csrf),
+        // Read-only snapshot: the save path bakes styles and purges components, and doing
+        // that on a timer would let a background task rewrite the canvas under the author.
+        buildPayload: (target) => buildPayload(target, { mutate: false }),
+        applyPayload: (target, payload) => target.__voodbuilderApplyPayload(payload),
+    });
+
+    if (autosave) {
+        // Only once the canvas actually holds the saved page: the draft is compared
+        // against what the author would otherwise be looking at, and a prompt over a
+        // blank canvas asks about work the author cannot see.
+        void Promise.resolve(editor.__voodbuilderCanvasReady)
+            .then(() => autosave.recover())
+            .catch((error) => {
+                console.warn('VoodBuilder autosave: recovery check failed.', error);
+            });
+    }
+
     const saveButton = document.querySelector('[data-voodbuilder-editor-save]');
     const savedIndicator = document.querySelector('[data-voodbuilder-editor-saved]');
     const saveLabel = document.querySelector('[data-voodbuilder-editor-save-label]');
@@ -2233,6 +2280,8 @@ function mountFrontendEditor() {
                 editor.__voodbuilderInvalidatePageCss?.()
                     ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }
+
+            autosave?.markSaved(payload);
 
             if (savedIndicator) {
                 savedIndicator.hidden = false;

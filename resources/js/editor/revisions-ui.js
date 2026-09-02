@@ -18,6 +18,22 @@ export function registerRevisionsUi(editor, options = {}) {
         return;
     }
 
+    /**
+     * Stored markup needs the boot-time treatment (sanitize, live stylesheet, style
+     * hydration) before it is canvas content. setComponents() alone brings the page back
+     * unstyled with an empty Style Manager.
+     */
+    const loadPayload = (payload = {}) => {
+        if (typeof editor.__voodbuilderApplyPayload === 'function') {
+            editor.__voodbuilderApplyPayload(payload);
+
+            return;
+        }
+
+        editor.setComponents(payload.html ?? '');
+        editor.setStyle(payload.css ?? '');
+    };
+
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'voodbuilder-editor-topbar__btn voodbuilder-editor-topbar__btn--ghost';
@@ -73,7 +89,15 @@ export function registerRevisionsUi(editor, options = {}) {
             }
 
             const payload = await response.json();
-            renderList(payload.revisions ?? []);
+
+            // The autosave is not history — it is work that was never saved — but it
+            // restores through the same endpoint, so it belongs at the top of the same
+            // list rather than behind a second piece of UI.
+            const offer = payload.autosave
+                ? [{ ...payload.autosave, kind: 'autosave' }]
+                : [];
+
+            renderList([...offer, ...(payload.revisions ?? [])]);
         } catch {
             listEl.innerHTML = '<p class="voodbuilder-editor-hint">Could not load revisions.</p>';
         }
@@ -92,9 +116,17 @@ export function registerRevisionsUi(editor, options = {}) {
             const row = document.createElement('div');
             row.className = 'voodbuilder-editor-revision-row';
 
+            const kindLabel = revision.kind === 'autosave'
+                ? (labels.revisionsKindAutosave ?? 'Autosaved')
+                : (labels.revisionsKindManual ?? null);
+
             const meta = document.createElement('div');
             meta.className = 'voodbuilder-editor-revision-row__meta';
-            meta.textContent = `${revision.created_at ?? ''}${revision.created_by ? ` — ${revision.created_by}` : ''}`;
+            meta.textContent = [
+                kindLabel,
+                revision.created_at ?? '',
+                revision.created_by,
+            ].filter(Boolean).join(' — ');
 
             const actions = document.createElement('div');
             actions.className = 'voodbuilder-editor-revision-row__actions';
@@ -104,10 +136,7 @@ export function registerRevisionsUi(editor, options = {}) {
             previewBtn.className = 'voodbuilder-editor-btn voodbuilder-editor-btn--ghost';
             previewBtn.textContent = labels.revisionsPreview ?? 'Preview';
             previewBtn.addEventListener('click', () => {
-                const payload = revision.builder_payload ?? {};
-
-                editor.setComponents(payload.html ?? '');
-                editor.setStyle(payload.css ?? '');
+                loadPayload(revision.builder_payload ?? {});
                 closeModal();
             });
 
@@ -148,10 +177,8 @@ export function registerRevisionsUi(editor, options = {}) {
                 }
 
                 const payload = await response.json();
-                const restored = payload.builder_payload ?? {};
 
-                editor.setComponents(restored.html ?? '');
-                editor.setStyle(restored.css ?? '');
+                loadPayload(payload.builder_payload ?? {});
                 closeModal();
             });
 

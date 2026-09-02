@@ -271,6 +271,17 @@ return [
         'restore_error' => 'Impossibile ripristinare la revisione.',
         'preview' => 'Anteprima',
         'empty' => 'Nessuna revisione. Le revisioni vengono create quando salvi le modifiche.',
+        'kind_manual' => 'Salvata da te',
+        'kind_autosave' => 'Salvataggio automatico',
+    ],
+
+    'autosave' => [
+        'recover_title' => 'Trovate modifiche non salvate',
+        'recover_message' => 'Questa pagina ha modifiche non salvate di {age}. Vuoi ripristinarle?',
+        'recover_confirm' => 'Ripristina',
+        'recover_discard' => 'Scarta',
+        'age_minutes' => '{minutes} minuti fa',
+        'age_hours' => '{hours} ore fa',
     ],
 
     'conditions' => [

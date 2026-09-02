@@ -271,6 +271,17 @@ return [
         'restore_error' => 'Could not restore revision.',
         'preview' => 'Preview',
         'empty' => 'No revisions yet. Revisions are created when you save changes.',
+        'kind_manual' => 'Saved by you',
+        'kind_autosave' => 'Autosaved',
+    ],
+
+    'autosave' => [
+        'recover_title' => 'Unsaved changes found',
+        'recover_message' => 'This page has unsaved changes from {age}. Restore them?',
+        'recover_confirm' => 'Restore',
+        'recover_discard' => 'Discard',
+        'age_minutes' => '{minutes} minutes ago',
+        'age_hours' => '{hours} hours ago',
     ],
 
     'conditions' => [
