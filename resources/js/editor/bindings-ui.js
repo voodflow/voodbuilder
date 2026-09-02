@@ -1211,7 +1211,7 @@ function preferredDynamicPageSourceId(editor) {
     return allowed[0] ?? null;
 }
 
-function shouldOfferBindingSource(sourceId, component, editor = null) {
+export function shouldOfferBindingSource(sourceId, component, editor = null) {
     if (isRepeatListSource(sourceId)) {
         return false;
     }
@@ -1224,10 +1224,13 @@ function shouldOfferBindingSource(sourceId, component, editor = null) {
         return false;
     }
 
-    const allowedCurrent = dynamicPageCurrentSourceIds(editor);
-
-    if (isCurrentBindingSource(sourceId) && allowedCurrent.length > 0) {
-        return allowedCurrent.includes(sourceId);
+    if (isCurrentBindingSource(sourceId)) {
+        // A `.current` source reads the record the URL resolved to, so it only means
+        // anything on a dynamic page for its own channel. An ordinary page has no such
+        // record and the list is empty — which used to skip this check and offer the
+        // source anyway, letting an author bind a field that could never resolve. The
+        // result looked like a bug in the binding rather than a page that cannot host it.
+        return dynamicPageCurrentSourceIds(editor).includes(sourceId);
     }
 
     return true;
@@ -1690,8 +1693,14 @@ function applyBindingToComponent(editor, component, bindingKey, option, labels =
     const sourceId = option?.source?.id ?? '';
     const previewValues = editor?.__voodbuilderBindingsPreviewValues ?? {};
     const resolvedPreview = previewValues[bindingKey];
-    const initialText = fieldType === 'text' && resolvedPreview != null && String(resolvedPreview).trim() !== ''
-        ? String(resolvedPreview).trim()
+    // A binding that resolves to nothing still has to be visible to whoever is editing.
+    // Sources like `vevents.current.*` only resolve on a dynamic page for that channel, so
+    // on an ordinary page the preview is legitimately empty — and writing that empty string
+    // left an author staring at a collapsed element with no hint that a binding is on it.
+    const initialText = fieldType === 'text'
+        ? (resolvedPreview != null && String(resolvedPreview).trim() !== ''
+            ? String(resolvedPreview).trim()
+            : placeholderForBinding(sourceLabel, fieldLabel))
         : '';
 
     if (hasStructuralChildren(component) && component.getAttributes()['data-voodbuilder-repeat']) {
@@ -3114,7 +3123,19 @@ export async function refreshBindingPreviews(editor, options = {}) {
                             }
                         }
                     } else if (fieldType === 'text' && isPlaceholderText(element?.textContent?.trim() ?? '')) {
-                        paintPreviewOnElement(component, '', 'text', { allowEmpty: true });
+                        // Restore the placeholder rather than clear it. This branch used to
+                        // blank the element on every preview refresh, which is why a binding
+                        // that cannot resolve here — `*.current.*` outside its dynamic page —
+                        // vanished moments after being applied.
+                        paintPreviewOnElement(
+                            component,
+                            placeholderForBinding(
+                                option?.source?.label ?? 'Dynamic',
+                                option?.field?.label ?? bindingKey,
+                            ),
+                            'text',
+                            { allowEmpty: true },
+                        );
                     }
                 }
 

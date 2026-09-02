@@ -26,7 +26,6 @@ use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionHooks;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorConditionsAttributeNormalizer;
 use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
-use Voodflow\Voodbuilder\Support\MediaCompanion;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 use Voodflow\Voodbuilder\Support\ThemePalette;
@@ -1001,7 +1000,7 @@ final class EditorGate
         }
 
         if (self::isEditing($page)) {
-            $html = app(EditorBindingRenderer::class)->render($html, $page);
+            $html = app(EditorBindingRenderer::class)->renderForEditor($html, $page);
             $html = GlobalTextTags::replaceInHtml($html);
         }
 
@@ -1284,12 +1283,10 @@ final class EditorGate
      */
     private static function mediaCompanionBrowserEnabled(): bool
     {
-        // Active is necessary but not sufficient: the companion defers its HTTP routes out
-        // of Filament's route group, so the browser is only usable once they exist.
-        return MediaCompanion::isActive()
-            && (
-                Route::has('vmedia.media.galleries')
-                || Route::has('voodbuilder.editor.media.galleries')
-            );
+        // The route, not a package flag: vmedia defers its HTTP routes out of Filament's
+        // route group, so being installed and even active says nothing about whether the
+        // browser can be called yet.
+        return Route::has('vmedia.media.galleries')
+            || Route::has('voodbuilder.editor.media.galleries');
     }
 }

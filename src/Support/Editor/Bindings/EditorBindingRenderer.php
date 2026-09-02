@@ -21,6 +21,49 @@ final class EditorBindingRenderer
 
     public function render(string $html, ?SitePage $page = null, mixed $repeatItem = null): string
     {
+        return $this->apply(
+            $html,
+            $page,
+            $repeatItem,
+            BindingContext::forPage($page, $repeatItem),
+            forEditor: false,
+        );
+    }
+
+    /**
+     * Same bindings, but for the authoring canvas.
+     *
+     * Publishing and editing want opposite things from an unresolved binding. A visitor
+     * should see nothing — an empty slot, or no element at all. An author needs to see that
+     * the binding is there, or the element collapses to nothing and looks broken: that is
+     * what happened to `*.current.*` sources, which by design only resolve on a dynamic page
+     * for their channel and therefore never resolve while editing an ordinary page.
+     *
+     * Preview entities are used too, so a dynamic page shows real content (the first
+     * published event, say) instead of a placeholder.
+     */
+    public function renderForEditor(string $html, ?SitePage $page = null): string
+    {
+        return $this->apply(
+            $html,
+            $page,
+            null,
+            // Chrome layouts are edited without a page, so there is nothing to draw preview
+            // entities from — every `*.current.*` source falls through to its placeholder.
+            $page instanceof SitePage
+                ? BindingContext::forEditorPreview($page)
+                : BindingContext::forPage(null),
+            forEditor: true,
+        );
+    }
+
+    private function apply(
+        string $html,
+        ?SitePage $page,
+        mixed $repeatItem,
+        BindingContext $context,
+        bool $forEditor,
+    ): string {
         if ($html === '' || (! self::containsBindAttribute($html) && ! self::containsRepeatAttribute($html))) {
             return $html;
         }
@@ -34,11 +77,10 @@ final class EditorBindingRenderer
             return $html;
         }
 
-        $context = BindingContext::forPage($page, $repeatItem);
         $document = $this->loadDocument($html);
 
         foreach ($this->boundElements($document) as $element) {
-            $this->applyBinding($element, $context);
+            $this->applyBinding($element, $context, $forEditor);
         }
 
         return $this->extractBodyHtml($document) ?? $html;
@@ -83,7 +125,7 @@ final class EditorBindingRenderer
         return $elements;
     }
 
-    protected function applyBinding(DOMElement $element, BindingContext $context): void
+    protected function applyBinding(DOMElement $element, BindingContext $context, bool $forEditor = false): void
     {
         $bindingKey = trim($element->getAttribute(BindingAttributes::BIND));
         $hrefKey = trim($element->getAttribute(BindingAttributes::BIND_HREF));
@@ -112,7 +154,20 @@ final class EditorBindingRenderer
                     } elseif ($field->type !== BindingField::TYPE_IMAGE && $field->type !== BindingField::TYPE_URL) {
                         $currentText = trim((string) $element->textContent);
 
-                        if (BindingPlaceholders::isPlaceholderText($currentText)) {
+                        if ($forEditor) {
+                            // Give the author something to see and click. Counts as resolved
+                            // so the hide-when-empty rule below cannot delete the element out
+                            // from under them.
+                            if ($currentText === '' || BindingPlaceholders::isPlaceholderText($currentText)) {
+                                $this->applyTextBinding(
+                                    $element,
+                                    $this->placeholderFor($parsed->sourceId, $field),
+                                    strtolower($element->tagName),
+                                );
+                            }
+
+                            $contentResolved = true;
+                        } elseif (BindingPlaceholders::isPlaceholderText($currentText)) {
                             $this->applyTextBinding($element, '', strtolower($element->tagName));
                             $contentResolved = true;
                         }
@@ -133,6 +188,14 @@ final class EditorBindingRenderer
             }
         }
 
+        if ($forEditor) {
+            // Neither of the publish-time steps below belongs in the canvas: deleting the
+            // element would take the author's work off the page for a value that is only
+            // missing here, and stripping hide-when-empty would drop their setting on the
+            // next save.
+            return;
+        }
+
         if ($this->shouldHideWhenEmpty($element) && (! $contentResolved || ! $hrefResolved)) {
             $element->parentNode?->removeChild($element);
 
@@ -141,6 +204,18 @@ final class EditorBindingRenderer
 
         $element->removeAttribute('contenteditable');
         $element->removeAttribute(BindingAttributes::HIDE_WHEN_EMPTY);
+    }
+
+    /**
+     * `[Current event: Title]` — the same shape the editor's JS and the storage normalizer use,
+     * so a placeholder written by any of them is recognised by the others.
+     */
+    protected function placeholderFor(string $sourceId, BindingField $field): string
+    {
+        return BindingPlaceholders::text(
+            $this->registry->source($sourceId)?->label() ?? 'Dynamic',
+            $field->label,
+        );
     }
 
     protected function shouldHideWhenEmpty(DOMElement $element): bool

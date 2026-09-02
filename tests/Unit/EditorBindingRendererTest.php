@@ -162,6 +162,87 @@ class EditorBindingRendererTest extends TestCase
         // Deferred trigger: HTML shows "from" until runtime animates.
         $this->assertMatchesRegularExpression('/data-vb-count-to="22"[^>]*>0</', $rendered);
     }
+
+    /**
+     * Publishing and editing want opposite things from a binding that resolves to nothing.
+     *
+     * A visitor should see an empty slot; an author must see that the binding is there, or
+     * the element collapses and looks broken. That is what happened to `*.current.*` sources,
+     * which only resolve on a dynamic page for their channel — so on an ordinary page the
+     * author's text vanished the moment they bound it.
+     */
+    public function test_an_unresolved_binding_keeps_its_placeholder_in_the_canvas(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<h2 data-voodbuilder-bind="demo.latest.subtitle">[Latest item: Subtitle]</h2>';
+
+        $rendered = (new EditorBindingRenderer($registry))->renderForEditor($html);
+
+        $this->assertStringContainsString('[Latest item: Subtitle]', $rendered);
+        $this->assertStringContainsString('data-voodbuilder-bind="demo.latest.subtitle"', $rendered);
+    }
+
+    public function test_an_unresolved_binding_renders_empty_for_a_visitor(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<h2 data-voodbuilder-bind="demo.latest.subtitle">[Latest item: Subtitle]</h2>';
+
+        $rendered = (new EditorBindingRenderer($registry))->render($html);
+
+        $this->assertStringNotContainsString('[Latest item: Subtitle]', $rendered);
+    }
+
+    public function test_the_canvas_labels_an_unresolved_binding_that_was_left_empty(): void
+    {
+        // An element saved with no text at all still has to announce its binding, otherwise
+        // reopening the editor shows a zero-height element with no way to find it.
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<h2 data-voodbuilder-bind="demo.latest.subtitle"></h2>';
+
+        $rendered = (new EditorBindingRenderer($registry))->renderForEditor($html);
+
+        $this->assertStringContainsString('[Latest item: Subtitle]', $rendered);
+    }
+
+    public function test_the_canvas_never_deletes_a_hide_when_empty_element(): void
+    {
+        // Publishing removes it, which is the point of the setting. Doing that while editing
+        // would take the author's element off the page for a value missing only here.
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<p>Hi <span class="vb-rich-text-dynamic" data-voodbuilder-bind="demo.latest.subtitle"'
+            .' data-voodbuilder-hide-when-empty="1">[Latest item: Subtitle]</span> there</p>';
+
+        $rendered = (new EditorBindingRenderer($registry))->renderForEditor($html);
+
+        $this->assertStringContainsString('data-voodbuilder-bind="demo.latest.subtitle"', $rendered);
+        $this->assertStringContainsString(
+            'data-voodbuilder-hide-when-empty="1"',
+            $rendered,
+            'Stripping the attribute in the canvas loses the setting on the next save.',
+        );
+    }
+
+    public function test_a_resolvable_binding_still_shows_real_content_in_the_canvas(): void
+    {
+        // The placeholder is the fallback, not the behaviour: whatever resolves must win.
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<h2 data-voodbuilder-bind="demo.latest.title">[Latest item: Title]</h2>';
+
+        $rendered = (new EditorBindingRenderer($registry))->renderForEditor($html);
+
+        $this->assertStringContainsString('>Hello world<', $rendered);
+        $this->assertStringNotContainsString('[Latest item: Title]', $rendered);
+    }
 }
 
 final class FakeLatestBindingSource implements EditorBindingSource
@@ -193,6 +274,8 @@ final class FakeLatestBindingSource implements EditorBindingSource
             new BindingField('url', 'URL', BindingField::TYPE_URL),
             new BindingField('image', 'Cover', BindingField::TYPE_IMAGE),
             new BindingField('read_count', 'Read count', BindingField::TYPE_TEXT),
+            // Declared but never resolvable — stands in for `*.current.*` off its page.
+            new BindingField('subtitle', 'Subtitle', BindingField::TYPE_TEXT),
         ];
     }
 

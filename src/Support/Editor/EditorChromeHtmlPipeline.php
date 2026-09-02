@@ -32,7 +32,9 @@ final class EditorChromeHtmlPipeline
 
         $html = app(EditorElementConditionRenderer::class)->render($html, null);
         $html = ComponentRuntimeBridge::renderComponentHtml($html, null);
-        $html = app(EditorBindingRenderer::class)->render($html, null);
+        $html = $canvasPreview
+            ? app(EditorBindingRenderer::class)->renderForEditor($html, null)
+            : app(EditorBindingRenderer::class)->render($html, null);
 
         $html = app(EditorDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
 
