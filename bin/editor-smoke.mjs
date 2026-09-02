@@ -84,22 +84,50 @@ await page.addInitScript(() => {
         window.__voodbuilderBootLog.push({ at: at(), event });
     };
 
-    const watch = () => {
+    const recordCurrentPhase = () => {
         const overlay = document.querySelector('[data-voodbuilder-boot-overlay]');
 
-        if (overlay) {
-            const step = overlay
-                .querySelector('[data-voodbuilder-boot-progress]')
-                ?.getAttribute('aria-valuenow');
-
-            if (! overlay.hidden && step) {
-                record(`phase:${step}`);
-            }
-
-            if (overlay.hidden) {
-                record('splash-dismissed');
-            }
+        if (! overlay) {
+            return;
         }
+
+        const step = overlay
+            .querySelector('[data-voodbuilder-boot-progress]')
+            ?.getAttribute('aria-valuenow');
+
+        if (! overlay.hidden && step) {
+            record(`phase:${step}`);
+        }
+
+        if (overlay.hidden) {
+            record('splash-dismissed');
+        }
+    };
+
+    // Observed rather than sampled: boot saturates the main thread, so requestAnimationFrame
+    // skips whole phases and the run would report "no progress" for a splash that did
+    // advance. Mutation records are delivered even when frames are starved.
+    let observing = false;
+    let observingCanvas = false;
+    const observePhases = () => {
+        // Init scripts run before the document exists, and once per frame.
+        if (observing || ! document.documentElement) {
+            return;
+        }
+
+        observing = true;
+
+        new MutationObserver(recordCurrentPhase).observe(document.documentElement, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ['aria-valuenow', 'hidden'],
+        });
+    };
+
+    const watch = () => {
+        observePhases();
+        recordCurrentPhase();
 
         try {
             const canvasDoc = document
@@ -108,6 +136,17 @@ await page.addInitScript(() => {
 
             if (canvasDoc?.body?.classList.contains('voodbuilder-canvas-ready')) {
                 record('canvas-visible');
+            } else if (canvasDoc?.body && ! observingCanvas) {
+                // The canvas lives in its own document, so the observer above cannot see
+                // it. Without this the ready class is only sampled per frame and the
+                // handover ordering is decided by tens of milliseconds of lag.
+                observingCanvas = true;
+
+                new MutationObserver(() => {
+                    if (canvasDoc.body.classList.contains('voodbuilder-canvas-ready')) {
+                        record('canvas-visible');
+                    }
+                }).observe(canvasDoc.body, { attributes: true, attributeFilter: ['class'] });
             }
         } catch {
             // Canvas frame not reachable yet.
