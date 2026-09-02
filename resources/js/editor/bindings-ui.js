@@ -2917,6 +2917,42 @@ function mountDynamicInspectorPanel(editor, mount, catalog, labels, previewOptio
             mode: 'inline',
             mount,
         });
+
+        void adoptFreshCatalog(selected);
+    };
+
+    /**
+     * Pick up integrations edited in the admin while this editor stayed open.
+     *
+     * The catalog is fetched once at boot, so adding a model integration — or giving an
+     * existing one its fields — left the picker showing a source with an empty field list,
+     * and nothing short of reloading the page would fill it. The refetch is behind a TTL and
+     * only re-renders when the catalog actually differs, so reselecting components does not
+     * rebuild the panel underneath the author.
+     */
+    const adoptFreshCatalog = async (selectedAtRequest) => {
+        const previous = previewOptions.catalog ?? catalog;
+        const fresh = await loadBindingsCatalog(previewOptions.bindingsUrl).catch(() => null);
+
+        if (! fresh || fresh === previous) {
+            return;
+        }
+
+        const withGate = previewOptions.dynamicDataCollections === true
+            ? fresh
+            : { ...fresh, repeatSources: [] };
+
+        if (JSON.stringify(withGate) === JSON.stringify(previous)) {
+            return;
+        }
+
+        previewOptions.catalog = withGate;
+        editor.__voodbuilderBindingsCatalog = withGate;
+
+        // Only redraw if the author is still looking at the same element.
+        if (workingTarget() === selectedAtRequest) {
+            renderPanel();
+        }
     };
 
     editor.on('component:selected', (component) => {
@@ -2955,12 +2991,27 @@ function isBindingPanelComponentAlive(component) {
     }
 }
 
-async function loadBindingsCatalog(bindingsUrl) {
+/**
+ * How long a fetched catalog is trusted before the next caller refetches it.
+ *
+ * The catalog used to be fetched once and kept for the lifetime of the page, so an editor
+ * left open never saw a model integration added or given new fields in the admin: the source
+ * appeared with an empty field list and no amount of reopening the panel would fill it. A
+ * short window is enough, because the staleness only matters right after someone edits an
+ * integration, and refetching is one small request.
+ */
+const BINDINGS_CATALOG_TTL_MS = 30000;
+
+let bindingsCatalogFetchedAt = 0;
+
+async function loadBindingsCatalog(bindingsUrl, force = false) {
     if (! bindingsUrl) {
         return { groups: [], sources: [] };
     }
 
-    if (bindingsCatalog) {
+    const isFresh = Date.now() - bindingsCatalogFetchedAt < BINDINGS_CATALOG_TTL_MS;
+
+    if (bindingsCatalog && isFresh && ! force) {
         return bindingsCatalog;
     }
 
@@ -2970,10 +3021,17 @@ async function loadBindingsCatalog(bindingsUrl) {
     });
 
     if (! response.ok) {
+        // Keep serving the previous catalog rather than blanking every picker on one
+        // failed request.
+        if (bindingsCatalog) {
+            return bindingsCatalog;
+        }
+
         throw new Error(`Bindings request failed (${response.status})`);
     }
 
     bindingsCatalog = await response.json();
+    bindingsCatalogFetchedAt = Date.now();
 
     return bindingsCatalog;
 }
