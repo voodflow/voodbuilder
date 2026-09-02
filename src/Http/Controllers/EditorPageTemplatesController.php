@@ -107,6 +107,9 @@ class EditorPageTemplatesController extends Controller
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
         // Marketplace install link — Core consume path (no authoring plugin required).
         abort_unless(TemplatesModule::isEnabled(), 403);
+        // Same entitlement as catalog()/installCatalogEntry(): an arbitrary URL is the less
+        // curated of the two remote paths, so it cannot be the more permissive one.
+        EntitlementGate::authorize('templates.remote-install');
 
         $validated = $request->validate([
             'url' => ['required', 'string', 'max:2000'],

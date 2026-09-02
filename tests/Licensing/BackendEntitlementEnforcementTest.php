@@ -115,4 +115,77 @@ class BackendEntitlementEnforcementTest extends TestCase
             ->postJson(route('voodbuilder.editor.page-templates.import'), ['import' => []])
             ->assertForbidden();
     }
+
+    private function builderUser(string $email): User
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill(['name' => 'Ed', 'email' => $email])->save();
+
+        return $user;
+    }
+
+    /**
+     * The UI hides import/export via `entitlements.componentsImport`, but hiding a button is
+     * not enforcement: on Professional the capability is absent while the module is installed,
+     * so the route has to refuse the call itself.
+     */
+    public function test_professional_edition_forbids_components_import(): void
+    {
+        if (! Route::has('voodbuilder.editor.components.import')) {
+            $this->markTestSkipped('Components routes absent when module disabled at boot.');
+        }
+
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL),
+        );
+
+        $this->assertFalse(Voodbuilder::can('components.import'));
+
+        $this->actingAs($this->builderUser('entitlement-cmp-import@example.com'))
+            ->postJson(route('voodbuilder.editor.components.import'), [
+                'components' => [['name' => 'Card', 'html' => '<div></div>']],
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_professional_edition_forbids_components_export(): void
+    {
+        if (! Route::has('voodbuilder.editor.components.export')) {
+            $this->markTestSkipped('Components routes absent when module disabled at boot.');
+        }
+
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL),
+        );
+
+        $this->assertFalse(Voodbuilder::can('components.export'));
+
+        $this->actingAs($this->builderUser('entitlement-cmp-export@example.com'))
+            ->postJson(route('voodbuilder.editor.components.export'), ['ids' => []])
+            ->assertForbidden();
+    }
+
+    public function test_community_edition_forbids_template_install_from_url(): void
+    {
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
+        );
+
+        $this->assertFalse(Voodbuilder::can('templates.remote-install'));
+
+        $this->actingAs($this->builderUser('entitlement-tpl-url@example.com'))
+            ->postJson(route('voodbuilder.editor.page-templates.import-url'), [
+                'url' => 'https://example.com/bundle.json',
+            ])
+            ->assertForbidden();
+    }
 }
