@@ -352,9 +352,15 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
 
     modeRow.append(visualBtn, codeBtn);
 
+    // Both surfaces edit the same field, so they carry the same name. Without it the
+    // visual surface announces itself as an unnamed text box, and the code surface as an
+    // unnamed multiline field.
+    const fieldName = labels.richTextSettingsTitle ?? 'Rich text';
+
     const toolbar = document.createElement('div');
     toolbar.className = 'voodbuilder-editor-rte-toolbar';
     toolbar.setAttribute('role', 'toolbar');
+    toolbar.setAttribute('aria-label', fieldName);
 
     const surface = document.createElement('div');
     surface.className = 'voodbuilder-editor-rte__surface';
@@ -365,11 +371,13 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
     visual.spellcheck = true;
     visual.setAttribute('role', 'textbox');
     visual.setAttribute('aria-multiline', 'true');
+    visual.setAttribute('aria-label', fieldName);
     visual.innerHTML = html;
 
     const code = document.createElement('textarea');
     code.className = 'voodbuilder-editor-rte__code';
     code.hidden = true;
+    code.setAttribute('aria-label', fieldName);
     code.value = html;
     code.spellcheck = false;
 

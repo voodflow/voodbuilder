@@ -75,6 +75,7 @@ function createFallbackCodeField({
     value = '',
     minHeight = '12rem',
     lineWrapping = false,
+    language = null,
     onChange = null,
 }) {
     if (! mount) {
@@ -83,6 +84,9 @@ function createFallbackCodeField({
 
     const textarea = document.createElement('textarea');
     textarea.className = 'voodbuilder-editor-input voodbuilder-editor-input--textarea voodbuilder-editor-component-code-modal__textarea';
+    // The mount it replaces sits under a heading, not a label, so the field would
+    // otherwise announce itself as an unnamed multiline text box.
+    textarea.setAttribute('aria-label', language ? `${String(language).toUpperCase()} code` : 'Code');
     textarea.spellcheck = false;
     textarea.value = value;
     textarea.style.minHeight = minHeight;

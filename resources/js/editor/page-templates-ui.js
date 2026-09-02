@@ -65,7 +65,7 @@ export function registerPageTemplatesUi(editor, options = {}) {
                     <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost" data-voodbuilder-page-template-export>
                         ${labels.pageTemplatesExport ?? 'Export all'}
                     </button>
-                    <input type="file" accept="application/json,.json" hidden data-voodbuilder-page-template-import-input />
+                    <input type="file" accept="application/json,.json" hidden aria-label="${labels.pageTemplatesImport ?? 'Import templates'}" data-voodbuilder-page-template-import-input />
                 </div>
                 <div class="voodbuilder-editor-page-templates-catalog" data-voodbuilder-page-templates-catalog hidden></div>
                 <div data-voodbuilder-page-templates-list></div>

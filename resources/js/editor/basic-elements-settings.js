@@ -874,7 +874,9 @@ function createIconPicker({
     colorSwatch.type = 'color';
     colorSwatch.className = 'voodbuilder-editor-icon-picker__swatch';
     colorSwatch.value = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(iconColor) ? iconColor : '#64748b';
+    // The text field next to it owns the visible label, so the swatch needs its own name.
     colorSwatch.title = labels.iconColor ?? 'Color';
+    colorSwatch.setAttribute('aria-label', labels.iconColorPicker ?? labels.iconColor ?? 'Color');
     colorText.insertAdjacentElement('afterend', colorSwatch);
     colorField.classList.add('voodbuilder-editor-icon-picker__color');
 

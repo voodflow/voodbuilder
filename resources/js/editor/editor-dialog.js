@@ -46,12 +46,16 @@ function openDialog({ title, message, type, labels = {}, confirmLabel, cancelLab
                 ? (labels.dialogPromptTitle ?? 'Input')
                 : (labels.dialogAlertTitle ?? 'Notice'));
 
+        // The wrapping label carries no text, so the field's name has to come from the
+        // dialog itself: the question being asked is the message, or the title when the
+        // dialog has none.
         const promptField = type === 'prompt'
             ? `<label class="voodbuilder-editor-dialog__field">
                     <input
                         type="text"
                         class="voodbuilder-editor-input"
                         data-voodbuilder-dialog-input
+                        aria-labelledby="${message ? 'voodbuilder-dialog-message' : 'voodbuilder-dialog-title'}"
                         value="${escapeHtml(defaultValue)}"
                         placeholder="${escapeHtml(placeholder)}"
                     />
@@ -59,7 +63,7 @@ function openDialog({ title, message, type, labels = {}, confirmLabel, cancelLab
             : '';
 
         const messageBlock = message
-            ? `<p class="voodbuilder-editor-dialog__message">${escapeHtml(message)}</p>`
+            ? `<p class="voodbuilder-editor-dialog__message" id="voodbuilder-dialog-message">${escapeHtml(message)}</p>`
             : '';
 
         const resolvedLinkLabel = linkLabel ?? labels.learnMore ?? 'Learn more';

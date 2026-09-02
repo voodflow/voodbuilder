@@ -183,7 +183,7 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
                 <div class="voodbuilder-editor-templates-import__dropzone" data-voodbuilder-page-template-import-drop tabindex="0" role="button">
                     <p class="voodbuilder-editor-hint">${escapeHtml(labels.pageTemplatesImportDrop ?? 'Drop JSON files here')}</p>
                     <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--block" data-voodbuilder-page-template-import-select>${escapeHtml(labels.pageTemplatesImportSelect ?? 'Browse')}</button>
-                    <input type="file" accept="application/json,.json" hidden data-voodbuilder-page-template-import-input />
+                    <input type="file" accept="application/json,.json" hidden aria-label="${escapeHtml(labels.pageTemplatesImportSelect ?? 'Browse')}" data-voodbuilder-page-template-import-input />
                 </div>
                 <button type="button" class="voodbuilder-editor-btn voodbuilder-editor-btn--ghost voodbuilder-editor-btn--block" data-voodbuilder-page-template-import-cancel>${escapeHtml(labels.pageTemplatesImportCancel ?? 'Cancel')}</button>
             </section>

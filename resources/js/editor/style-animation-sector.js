@@ -213,6 +213,10 @@ function optionsHtml(options) {
     )).join('');
 }
 
+function attrValue(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
 /** Compact SM row: label | combobox (select + Add), like Dimension/Border radius units. */
 function fieldHtml({ label, selectAttr, addAttr, options, addLabel }) {
     return `
@@ -220,7 +224,7 @@ function fieldHtml({ label, selectAttr, addAttr, options, addLabel }) {
             <div class="gjs-sm-label"><span class="gjs-sm-label-text">${label}</span></div>
             <div class="gjs-fields">
                 <div class="voodbuilder-editor-anim-combobox">
-                    <select class="voodbuilder-editor-input voodbuilder-editor-input--select" ${selectAttr}>
+                    <select class="voodbuilder-editor-input voodbuilder-editor-input--select" aria-label="${attrValue(label)}" ${selectAttr}>
                         ${optionsHtml(options)}
                     </select>
                     <button type="button" class="voodbuilder-editor-anim-combobox__add" ${addAttr}>

@@ -210,10 +210,19 @@ function escapeAttr(value) {
     return escapeHtml(value).replace(/'/g, '&#39;');
 }
 
-function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable = false, searchPlaceholder = 'Search…', live = false }) {
+/**
+ * @param {{ ariaLabel?: string }} args
+ *   ariaLabel — name for a field whose visible label is deliberately blank because the
+ *   surrounding block heading already reads as its label. Without it the control has no
+ *   programmatic name at all.
+ */
+function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable = false, searchPlaceholder = 'Search…', live = false, ariaLabel = null }) {
     const searchAttr = searchable
         ? ` data-vb-search="1" data-vb-search-placeholder="${escapeAttr(searchPlaceholder)}"`
         : '';
+
+    const accessibleName = String(ariaLabel ?? label ?? '').trim();
+    const nameAttr = accessibleName === '' ? '' : ` aria-label="${escapeAttr(accessibleName)}"`;
 
     const addButton = live
         ? ''
@@ -226,7 +235,7 @@ function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable =
             <div class="gjs-sm-label"><span class="gjs-sm-label-text">${escapeHtml(label)}</span></div>
             <div class="gjs-fields">
                 <div class="voodbuilder-editor-anim-combobox${live ? ' voodbuilder-editor-anim-combobox--solo' : ''}">
-                    <select class="voodbuilder-editor-input voodbuilder-editor-input--select"${searchAttr} ${selectAttr}>
+                    <select class="voodbuilder-editor-input voodbuilder-editor-input--select"${nameAttr}${searchAttr} ${selectAttr}>
                         ${optionsHtml(options)}
                     </select>
                     ${addButton}
@@ -824,9 +833,10 @@ function buildSpacingSector(labels) {
     });
 }
 
-function decoLiveFieldHtml({ label, groupId, options, searchPlaceholder = null }) {
+function decoLiveFieldHtml({ label, groupId, options, searchPlaceholder = null, ariaLabel = null }) {
     return fieldHtml({
         label,
+        ariaLabel,
         selectAttr: `data-voodbuilder-tw-group="${groupId}"`,
         addAttr: `data-voodbuilder-tw-group-add="${groupId}"`,
         options,
@@ -986,7 +996,10 @@ function buildDecorationsSector(labels) {
                     </div>
                     <div class="voodbuilder-editor-deco-radius-all" data-voodbuilder-deco-radius-mode="all">
                         ${decoLiveFieldHtml({
+                            // Blank on purpose: the block heading above reads as this
+                            // field's label, so repeating it would just add noise.
                             label: '',
+                            ariaLabel: labels.classStyleRounded ?? 'Rounded',
                             groupId: 'rounded',
                             options: ROUNDED_OPTIONS,
                         })}
@@ -1940,9 +1953,9 @@ function openSpacingScalePopover(editor, sector, anchor, kind, side, labels = {}
     pop.innerHTML = `
         <div class="voodbuilder-editor-spacing-popover__head">
             <span>${escapeHtml(labels.classStyleSpacingScale ?? 'Tailwind scale')}</span>
-            <input type="search" class="voodbuilder-editor-spacing-popover__search" placeholder="${escapeAttr(labels.classStyleSpacingSearch ?? 'Search…')}" autocomplete="off" />
+            <input type="search" class="voodbuilder-editor-spacing-popover__search" aria-label="${escapeAttr(labels.classStyleSpacingSearch ?? 'Search…')}" placeholder="${escapeAttr(labels.classStyleSpacingSearch ?? 'Search…')}" autocomplete="off" />
         </div>
-        <div class="voodbuilder-editor-spacing-popover__grid" role="listbox"></div>
+        <div class="voodbuilder-editor-spacing-popover__grid" role="listbox" aria-label="${escapeAttr(labels.classStyleSpacingScale ?? 'Tailwind scale')}"></div>
     `;
 
     const grid = pop.querySelector('.voodbuilder-editor-spacing-popover__grid');

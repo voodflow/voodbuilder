@@ -181,6 +181,7 @@ export function registerComponentsUi(editor, options = {}) {
                         accept=".json,application/json"
                         multiple
                         hidden
+                        aria-label="${escapeHtml(labels.componentsImportSelect ?? 'Browse')}"
                         data-voodbuilder-components-import-input
                     />
                 </div>

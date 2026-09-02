@@ -142,7 +142,7 @@ export async function openMediaBrowser(args) {
                         <select class="voodbuilder-media-browser__gallery-select" data-mb-gallery-select aria-label="Gallery"></select>
                     </div>
                     <div class="voodbuilder-media-browser__dropzone" data-mb-dropzone>
-                        <input type="file" data-mb-file multiple hidden />
+                        <input type="file" data-mb-file multiple hidden aria-label="Upload files" />
                         <div class="voodbuilder-media-browser__dropzone-inner">
                             <strong data-mb-drop-title>Upload</strong>
                             <span data-mb-drop-hint>Select a gallery to set the upload destination</span>
@@ -155,7 +155,7 @@ export async function openMediaBrowser(args) {
                         <div class="voodbuilder-media-browser__sentinel" data-mb-sentinel aria-hidden="true"></div>
                     </div>
                     <div class="voodbuilder-media-browser__url-row">
-                        <input type="url" data-mb-url class="voodbuilder-editor-input" placeholder="Or paste an external URL…" />
+                        <input type="url" data-mb-url class="voodbuilder-editor-input" aria-label="External media URL" placeholder="Or paste an external URL…" />
                         <button type="button" class="voodbuilder-editor-btn" data-mb-url-add>Add URL</button>
                     </div>
                 </div>

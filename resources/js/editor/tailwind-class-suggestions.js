@@ -673,6 +673,9 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
     input.dataset.voodbuilderTwSuggest = '1';
     input.setAttribute('autocomplete', 'off');
     input.placeholder = labels.classInputPlaceholder ?? 'Add new class…';
+    // Upstream ships this field with no label, and a placeholder is not a name — it
+    // disappears the moment the author starts typing.
+    input.setAttribute('aria-label', labels.classInputPlaceholder ?? 'Add new class…');
 
     const list = ensureSuggestList(input);
     const field = input.closest('.gjs-field, .clm-tags, .gjs-clm-tags') ?? input.parentElement;

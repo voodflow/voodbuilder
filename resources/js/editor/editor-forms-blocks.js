@@ -234,11 +234,15 @@ export function registerNewsletterFormSettings(editor) {
             title.textContent = newsletterSettingLabel(editor, 'newsletterTitle', 'Newsletter');
             wrapper.appendChild(title);
 
+            const selectId = 'voodbuilder-editor-newsletter-list';
+
             const label = document.createElement('label');
             label.className = 'voodbuilder-editor-settings__label';
+            label.htmlFor = selectId;
             label.textContent = newsletterSettingLabel(editor, 'newsletterList', 'Newsletter list');
 
             const select = document.createElement('select');
+            select.id = selectId;
             select.className = 'voodbuilder-editor-settings__input';
 
             Object.entries(lists).forEach(([value, text]) => {
