@@ -182,7 +182,13 @@ final class EditorBindingStorageNormalizer
             return;
         }
 
-        $placeholder = '';
+        // Storing an empty string here is what emptied bound CTAs: the author lost the only
+        // hint of what the element renders, `data-voodbuilder-cta-label=""` gave the
+        // sanitizer nothing to restore, and the renderer's placeholder cleanup
+        // (BindingPlaceholders::isPlaceholderText) never matched. The placeholder never
+        // reaches visitors — applyTextBinding() overwrites both text and label with the
+        // resolved value, and blanks them when the binding resolves to nothing.
+        $placeholder = BindingPlaceholders::text($sourceLabel, $fieldLabel);
 
         while ($element->firstChild !== null) {
             $element->removeChild($element->firstChild);
