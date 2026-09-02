@@ -90,7 +90,12 @@ final class EditorRenderer
         $html = ComponentRuntimeBridge::renderComponentHtml($html, $page);
         $html = app(EditorBindingRenderer::class)->render($html, $page);
         $html = app(EditorDynamicBlockRenderer::class)->render($html, $page);
+        $html = GlobalTextTags::replaceInHtml($html);
 
-        return GlobalTextTags::replaceInHtml($html);
+        // Last gate before `{!! !!}`. The save path sanitizes too, but the render must never
+        // trust the database: seeders, template imports, revisions restored from older
+        // versions and direct writes all reach this point without passing through EditorGate.
+        // Author JS has its own channel (`js()`), so body scripts are never legitimate here.
+        return EditorHtmlSecuritySanitizer::sanitize($html);
     }
 }

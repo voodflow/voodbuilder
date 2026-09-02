@@ -31,6 +31,7 @@ use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
 use Voodflow\Voodbuilder\Voodbuilder;
+use Voodflow\VoodbuilderElements\Catalog\ElementsCatalogBundles;
 
 /**
  * Editor Gate.
@@ -1028,6 +1029,9 @@ final class EditorGate
         $html = EditorDynamicBlockAttributeNormalizer::normalize($html);
         $html = EditorConditionsAttributeNormalizer::normalize($html);
         $html = EditorCustomCodeSanitizer::sanitize($html);
+        // Structural pass over a real DOM parse: the regex sanitizer above cannot see
+        // unquoted handlers, `<svg/onload=…>` or entity-encoded schemes.
+        $html = EditorHtmlSecuritySanitizer::sanitize($html);
         $html = EditorCodeBlockNormalizer::normalize($html);
         $css = (string) ($payload['css'] ?? '');
         $js = (string) ($payload['js'] ?? '');
@@ -1082,13 +1086,13 @@ final class EditorGate
             return [];
         }
 
-        if (! class_exists(\Voodflow\VoodbuilderElements\Catalog\ElementsCatalogBundles::class)) {
+        if (! class_exists(ElementsCatalogBundles::class)) {
             return [];
         }
 
         $options = [];
 
-        foreach (\Voodflow\VoodbuilderElements\Catalog\ElementsCatalogBundles::all() as $id => $catalog) {
+        foreach (ElementsCatalogBundles::all() as $id => $catalog) {
             $options[] = [
                 'id' => (string) $id,
                 'label' => (string) ($catalog['label'] ?? ucfirst((string) $id)),
