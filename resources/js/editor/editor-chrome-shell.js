@@ -344,7 +344,6 @@ function purgeChromeBleedFromSlot(slot) {
             || isChromeShellPart(component)
             || looksLikeSiteChromeStructure(component)
             || isEditorHostBleedComponent(component)
-            || isCookieSettingsCtaClone(component)
         ) {
             removable.push(component);
         }
@@ -826,33 +825,32 @@ function promoteComponentIntoContentSlot(editor, component) {
     return true;
 }
 
+/**
+ * Fallback net for companion overlays that reach the canvas.
+ *
+ * The actual fix is server-side: `EditorHostChrome::REQUEST_ATTRIBUTE` tells packages that
+ * inject public-page UI to stand down before the host page renders, so nothing is left to
+ * clean up. This stays for installs pinned to companion versions that predate the contract,
+ * and it matches structural markers only.
+ *
+ * It deliberately no longer matches button labels. Deleting any CTA whose text read
+ * "Cookie settings" also deleted the perfectly legitimate footer button an author had
+ * placed to reopen consent preferences — silent data loss on every refresh.
+ */
 function isEditorHostBleedComponent(component) {
     const attrs = component.getAttributes?.() ?? {};
     const classes = component.getClasses?.() ?? [];
-    const type = String(component.get?.('type') ?? '');
 
-    if (
-        attrs['data-cookie-preferences']
+    return Boolean(
+        // Documented opt-out for companions that render into the host page.
+        attrs['data-voodbuilder-host-overlay']
+        || attrs['data-cookie-preferences']
         || attrs['data-cc']
         || classes.includes('cc-revoke')
         || classes.includes('cc-window')
         || classes.includes('cc-banner')
-        || classes.includes('voodbuilder-mobile-nav__cookie-link')
-    ) {
-        return true;
-    }
-
-    if (type === 'voodbuilder-cta-button') {
-        const label = String(component.get?.('ctaLabel') ?? component.get?.('content') ?? '')
-            .trim()
-            .toLowerCase();
-
-        if (label === 'cookie settings' || label === 'impostazioni cookie') {
-            return true;
-        }
-    }
-
-    return false;
+        || classes.includes('voodbuilder-mobile-nav__cookie-link'),
+    );
 }
 
 /**
@@ -872,7 +870,7 @@ export function purgeLeakedChromeCtaButtons(editor) {
             return;
         }
 
-        if (isEditorHostBleedComponent(component) || isCookieSettingsCtaClone(component)) {
+        if (isEditorHostBleedComponent(component)) {
             leaked.push(component);
         }
 
@@ -890,34 +888,6 @@ export function purgeLeakedChromeCtaButtons(editor) {
     });
 
     return leaked.length;
-}
-
-function isCookieSettingsCtaClone(component) {
-    if (String(component.get?.('type') ?? '') !== 'voodbuilder-cta-button') {
-        return false;
-    }
-
-    const label = String(
-        component.get?.('ctaLabel')
-        ?? extractButtonLabelSafe(component)
-        ?? '',
-    ).trim().toLowerCase();
-
-    return label === 'cookie settings' || label === 'impostazioni cookie';
-}
-
-function extractButtonLabelSafe(component) {
-    try {
-        const el = component.getEl?.();
-
-        if (el?.textContent?.trim()) {
-            return el.textContent.trim();
-        }
-    } catch {
-        // Canvas view may be missing.
-    }
-
-    return String(component.get?.('content') ?? component.get?.('text') ?? '');
 }
 
 function hideChromeShellBlocks(editor) {
@@ -1151,8 +1121,8 @@ export function registerChromeShellEditor(editor, options = {}) {
                 return;
             }
 
-            // Drop cookie/CTA bleed immediately — do not promote into page content.
-            if (isEditorHostBleedComponent(component) || isCookieSettingsCtaClone(component)) {
+            // Drop host-overlay bleed immediately — do not promote into page content.
+            if (isEditorHostBleedComponent(component)) {
                 try {
                     component.remove();
                 } catch {

@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorHostChrome;
 
 /**
  * Site Page View Data.
@@ -20,6 +21,12 @@ final class SitePageViewData
     {
         $canEditEditor = EditorGate::canEdit($page);
         $editorEditor = EditorGate::isEditing($page);
+
+        if ($editorEditor) {
+            // Set before the layout renders, so view composers that inject public-page
+            // overlays can stand down instead of leaking into the authoring canvas.
+            EditorHostChrome::markActive();
+        }
 
         return array_merge([
             'page' => $page,

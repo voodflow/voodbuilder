@@ -92,6 +92,35 @@ After `npm update` on GrapesJS: smoke-test `?edit=1` (blocks, traits, save/reloa
 | **vpopups / vcookiebar** | Modules + blocks / content channels |
 | **Dynamics / Components / Templates** | Soft-gated registries (`RepeatListRegistry`, etc.) — APIs no-op or upsell when package absent |
 
+### Editor context contract (public-page overlays)
+
+Any companion that injects UI into the public page — consent banners, chat bubbles, scroll-to-top,
+notification bars — **must stand down while the editor owns the viewport**.
+
+This is not cosmetic. The editor absorbs host page markup into the authoring canvas, so an injected
+overlay stops being an overlay and becomes editable content pinned over the author's footer, in the
+page's saved HTML.
+
+Read the request attribute; do not depend on this package:
+
+```php
+// In your View composer / middleware / Blade guard.
+if (request()->attributes->getBoolean('voodbuilder.editor_active')) {
+    return; // the editor owns the viewport
+}
+```
+
+| Rule | Why |
+|------|-----|
+| Never test `?edit=1` yourself | Any visitor can append it. A consent banner that disappears for the public is a compliance failure, not a UX one. The core only sets the attribute after checking the builder permission. |
+| Read the literal string, don't import | Keeps your package installable with no page builder present. The name is frozen: `EditorHostChrome::REQUEST_ATTRIBUTE`. |
+| Overlay you cannot suppress? Mark it | Add `data-voodbuilder-host-overlay` to the root node and the editor will keep it out of page content. |
+
+Reference implementation: `Vcookiebar::shouldStandDownForEditor()` plus `vcookiebar`'s
+`EditorContextOptOutTest`. The core's own fallback (`isEditorHostBleedComponent()` in
+`editor-chrome-shell.js`) exists only for companion versions predating this contract — do not rely
+on it.
+
 ### Media browser contract (vmedia)
 
 - Register `VmediaPlugin` on the Filament panel and keep `VMEDIA_ENABLED=true`.
