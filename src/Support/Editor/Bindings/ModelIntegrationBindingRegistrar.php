@@ -23,9 +23,12 @@ final class ModelIntegrationBindingRegistrar
 
         $this->bindings->register(new ModelIntegrationLatestBindingSource($integration));
 
-        // `.item` bindings belong to Pro collections (companion package).
+        // `.item` bindings are how a field inside an already-published repeat resolves, so
+        // registration follows the render path, not the entitlement: a page that stopped
+        // resolving its own bindings would render the placeholder text to visitors. The
+        // editor decides separately whether to *offer* them — see EditorBindingsController.
         if (
-            DynamicDataCollectionsBridge::moduleEnabled()
+            DynamicDataCollectionsBridge::renderingEnabled()
             && class_exists(ModelIntegrationItemBindingSource::class)
         ) {
             $this->bindings->register(new ModelIntegrationItemBindingSource($integration));

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Voodflow\Voodbuilder\Licensing\AuthorScriptPolicy;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingRenderer;
 use Voodflow\Voodbuilder\Support\Editor\Conditions\EditorElementConditionRenderer;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\ThemePalette;
-use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
  * Editor Renderer.
@@ -77,18 +77,17 @@ final class EditorRenderer
     {
         $js = $page->builder_payload['js'] ?? null;
 
-        if (! filled($js)) {
+        // The only entitlement this render path consults, and the reasoning for the
+        // exception lives in AuthorScriptPolicy. Short version: withholding a script leaves
+        // the page whole, so it is safe to be strict here — unlike content, which renders
+        // regardless of licence state.
+        $js = AuthorScriptPolicy::keepOrDiscard($js);
+
+        if ($js === '') {
             return null;
         }
 
-        // This lands in a <script> on the public page. EditorJsSanitizer is a regex
-        // deny-list (it blocks fetch and eval, not the rest of the DOM API), so the channel
-        // stays shut unless the installation explicitly holds the capability.
-        if (! Voodbuilder::can('pages.custom-js')) {
-            return null;
-        }
-
-        return EditorJsSanitizer::sanitize((string) $js);
+        return EditorJsSanitizer::sanitize($js);
     }
 
     public function render(SitePage $page): string

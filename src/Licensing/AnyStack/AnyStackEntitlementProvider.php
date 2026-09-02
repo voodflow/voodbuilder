@@ -108,7 +108,12 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
             }
         }
 
-        // Soft fail: Community capabilities only — never break public rendering.
+        // Soft fail to Community. This is survivable because published content does not ask
+        // this provider anything: rendering a page, expanding a stored List repeat and
+        // resolving its bindings all happen without consulting capabilities, by design. See
+        // DynamicDataCollectionsBridge::renderingEnabled(). What an installation loses here
+        // is authoring — the repeat picker, template export, the components library — plus
+        // author scripts, which is the one deliberate exception (AuthorScriptPolicy).
         return [
             'edition' => EditionCapabilityMatrix::EDITION_COMMUNITY,
             'active' => true,

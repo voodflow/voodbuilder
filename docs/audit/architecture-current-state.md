@@ -44,6 +44,13 @@ These are feature-level contracts, not module lifecycle contracts.
 
 ## Licensing today
 
+> **Superseded (2 September 2026).** This section describes the `0.0.11` snapshot. Licensing
+> now lives in `src/Licensing/`: an `EditionCapabilityMatrix`, an `EntitlementManager` with
+> config/testing/AnyStack providers, and a documented boundary — capabilities gate authoring
+> only, and published pages render without consulting them
+> (`Support/Editor/DynamicDataCollectionsBridge::renderingEnabled()`). The class named below
+> was never called by anything and has been deleted.
+
 `Support/License/VoodbuilderLicense` validates a key when `config('voodbuilder.license.enforce')` is true. There is **no** capability matrix, plan resolver, or AnyStack adapter.
 
 ## Editor policy (already correct)

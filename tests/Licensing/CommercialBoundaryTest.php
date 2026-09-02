@@ -59,7 +59,11 @@ class CommercialBoundaryTest extends TestCase
         $this->assertTrue(DynamicDataModule::isEnabled());
         $this->assertTrue(Route::has('voodbuilder.editor.bindings'));
         $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
-        $this->assertFalse(DynamicDataCollectionsBridge::moduleEnabled());
+        $this->assertFalse(DynamicDataCollectionsBridge::authoringEnabled());
+
+        // The commercial boundary stops at authoring. Expanding a repeat that is already in
+        // a published page is not a feature being used, it is content being displayed.
+        $this->assertTrue(DynamicDataCollectionsBridge::renderingEnabled());
     }
 
     public function test_community_edition_matrix_excludes_dynamic_data_capabilities(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Illuminate\Support\Facades\Route;
+use Voodflow\Voodbuilder\Licensing\AuthorScriptPolicy;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
@@ -224,7 +225,7 @@ final class EditorGate
                 ? self::optionalEditorRoute('voodbuilder.editor.page-templates.catalog')
                 : null,
             'fonts' => Voodbuilder::fonts()->toEditorPayload(),
-            'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
+            'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),
             'entitlements' => [
                 'edition' => Voodbuilder::entitlements()->edition(),
                 'templatesLocal' => TemplatesModule::isEnabled(),
@@ -244,7 +245,7 @@ final class EditorGate
                     && Voodbuilder::can('components.code-import'),
                 // Plugin registration unlocks single; collections still need Pro entitlement.
                 'dynamicDataSingle' => self::dynamicDataEnabled(),
-                'dynamicDataCollections' => DynamicDataCollectionsBridge::moduleEnabled(),
+                'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),
                 'popupsBuilder' => Voodbuilder::can('popups.builder'),
                 'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
                 'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
@@ -1069,7 +1070,9 @@ final class EditorGate
         $html = EditorHtmlSecuritySanitizer::sanitize($html);
         $html = EditorCodeBlockNormalizer::normalize($html);
         $css = (string) ($payload['css'] ?? '');
-        $js = (string) ($payload['js'] ?? '');
+        // Withheld at write time as well as at render: an installation that may not run
+        // author scripts should not be storing them either.
+        $js = AuthorScriptPolicy::keepOrDiscard($payload['js'] ?? null);
         $project = $payload['project'] ?? null;
 
         $migratedHtml = EditorImportedTailwindSupport::bakeSvgPaintInHtml(
@@ -1124,7 +1127,7 @@ final class EditorGate
         return [
             'html' => $html,
             'css' => (string) ($payload['css'] ?? ''),
-            'js' => EditorJsSanitizer::sanitize((string) ($payload['js'] ?? '')),
+            'js' => EditorJsSanitizer::sanitize(AuthorScriptPolicy::keepOrDiscard($payload['js'] ?? null)),
         ];
     }
 

@@ -56,18 +56,20 @@ assistenza ti costerà ogni licenza venduta.
 | `vcookiebar` | 1 414 | 7 | 0 | Funzionante, autonomo |
 | `voodbuilder-elements` | 913 | **0** | 0 | Runtime del catalogo remoto |
 | `voodbuilder-templates` | 187 | **0** | 0 | Solo interruttore di authoring |
-| `voodbuilder-analitycs` | 344 | **0** | 0 | **Impalcatura vuota** |
+| `voodbuilder-analytics` | 344 | **0** | 0 | **Impalcatura vuota** |
 | `voodbuilder-elements-catalog` | 0 | 0 | 0 | Contenuti: 77 item JSON |
 
 Tre osservazioni che il listino deve rispettare.
 
-**`voodbuilder-analitycs` non è vendibile e oggi non è nemmeno accendibile.** La dashboard Filament è
+**`voodbuilder-analytics` non è vendibile e oggi non è nemmeno accendibile.** La dashboard Filament è
 un segnaposto testuale, le route sono commentate, e il modulo richiede la capability
 `analytics.dashboard` che **non esiste nella matrice edizioni**: con il driver `config` non si attiva
-mai. Va tolto dai piani commerciali e messo in roadmap. Nota separata ma urgente: il nome del
-pacchetto Composer contiene un errore di battitura — `voodbuilder-analitycs` — e i nomi Composer
-pubblicati non si cambiano senza rompere gli installati. Da correggere **prima** di qualsiasi
-pubblicazione.
+mai. Va tolto dai piani commerciali e messo in roadmap. L'assenza dalla matrice è ora dichiarata nel
+codice, così nessuno perde un pomeriggio a capire perché registrare il plugin non produce nulla.
+
+Il nome del pacchetto conteneva un errore di battitura — `voodbuilder-analitycs` — ed è stato
+**corretto il 2 settembre 2026**, prima di qualsiasi pubblicazione: i nomi Composer pubblicati non si
+cambiano senza rompere gli installati. Resta da rinominare il repository remoto.
 
 **`voodbuilder-templates` e `voodbuilder-elements` non sono pacchetti, sono cancelli.** Il primo sono
 187 righe che accendono l'authoring dei template, mentre la logica HTTP resta nel core; il secondo
@@ -318,7 +320,28 @@ e serve **prima** del primo cliente, non dopo.
 
 ---
 
-## 8. La decisione che blocca il lancio: cosa accade a licenza scaduta
+## 8. Cosa accade a licenza scaduta — **risolto il 2 settembre 2026**
+
+> **Esito.** Scelta e implementata la prima opzione: authoring e rendering sono separati. Le
+> capability governano cosa si può creare e modificare; il rendering di una pagina pubblicata non
+> le consulta. `DynamicDataCollectionsBridge` ora espone `authoringEnabled()` (modulo +
+> entitlement, usata dall'editor) e `renderingEnabled()` (solo modulo, usata dal renderer e dalla
+> registrazione dei binding `.item`, perché una pagina che smette di risolvere i propri binding
+> mostrerebbe il testo segnaposto ai visitatori). La regola è fissata da
+> `tests/Licensing/PublishedContentIgnoresLicenceTest.php`, che rende la pagina su Community e
+> verifica che l'output sia identico byte per byte a quello Agency.
+>
+> Verificando ho trovato che il difetto era peggiore di come è descritto qui sotto: senza la
+> capability il visitatore non vedeva una lista vuota, vedeva il **template** grezzo del repeat,
+> cioè il contenuto segnaposto dell'autore ("Title") accanto al messaggio di lista vuota.
+>
+> Unica eccezione deliberata: il **JavaScript d'autore** (`Licensing/AuthorScriptPolicy`). Non è
+> contenuto, è codice arbitrario con la sessione del visitatore a portata di mano, e negarlo
+> lascia la pagina intera — nessuna sezione sparisce. Ora è controllato anche **in scrittura**, non
+> solo in lettura: prima un'installazione senza capability accumulava script in database che non
+> avrebbe mai eseguito. Chiuso nello stesso passaggio il buco per cui il JS dei **chrome layout**
+> finiva su ogni pagina pubblica senza passare da nessun controllo, cioè era il modo per eseguire
+> script scavalcando la capability che l'editor di pagina pretende.
 
 Oggi il comportamento è questo. `AnyStackEntitlementProvider::graceSnapshot()` riusa l'ultimo scatto
 per sette giorni; oltre, ripiega sulle capability **Community**. Il commento nel codice dice «Soft
@@ -360,9 +383,22 @@ del danno di togliere una funzione a chi la paga.
 
 L'ordine è dettato dalle dipendenze, non dalle preferenze.
 
-**Prima di poter vendere qualsiasi cosa.** Chiudere la decisione §8 e implementarla. Correggere il nome
-di `voodbuilder-analitycs`. Collegare o rimuovere `VoodbuilderLicense::validateKey()`. Separare
-l'`autoload-dev` del monorepo. Dichiarare la politica semver e portare i vincoli dei companion a `^0.1`.
+**Prima di poter vendere qualsiasi cosa** — ~~da fare~~ **fatto il 2 settembre 2026**, tranne dove
+indicato:
+
+- ✅ Decisione §8 chiusa e implementata, con test di regressione.
+- ✅ Nome corretto: il pacchetto è `voodflow/voodbuilder-analytics`, namespace
+  `Voodflow\VoodbuilderAnalytics`. Resta da rinominare il **repository remoto**. Documentato anche
+  perché il modulo non si accende: `analytics.dashboard` è volutamente assente dalla matrice
+  finché la dashboard è un segnaposto.
+- ✅ `VoodbuilderLicense` **rimossa**. Non era collegata: nessuna riga di codice la chiamava. Era un
+  secondo sistema di licenze morto accanto a quello vero, che faceva credere a un'applicazione
+  di `license.enforce` inesistente. Rimosse anche le chiavi di config `enforce` e `secret`.
+- ✅ Politica semver dichiarata in `docs/VERSIONING.md`, con l'elenco esplicito di cosa è API
+  pubblica. Core portato a `0.1.0`, i cinque companion da `>=0.0.11` a `^0.1`.
+- ⏳ `autoload-dev` del monorepo: i percorsi `../` sono innocui in produzione (Composer ignora
+  l'`autoload-dev` delle dipendenze), quindi non è un blocco. Il problema vero è il **namespace
+  condiviso**, che va sciolto con il lavoro §4 e nel frattempo è documentato.
 
 **Primo SKU a listino: VoodForms.** È il più maturo, è autonomo, non dipende dalle decisioni sul
 builder, e ti fa imparare il flusso Anystack completo — prodotto, repository privato, chiave,
@@ -386,14 +422,31 @@ portato i test a un livello decente.
 
 ---
 
-## 10. Decisioni che servono da te
+## 10. Decisioni prese
 
-1. **Comportamento a licenza scaduta** (§8): separare authoring da rendering, allungare la grazia, o
-   lasciare così e dichiararlo.
-2. **Per sviluppatore o per sito.** Propongo per sviluppatore con siti illimitati; il per-sito richiede
-   di costruire l'attivazione per dominio, che oggi non esiste.
-3. **I prezzi.** 149 € Pro, 349 € Agency, 199 € VoodForms, 79 € VoodPopups, rinnovi al 60%.
-4. **Finestra early adopter** sì o no, e a quale prezzo.
-5. **VoodPopups: SKU a sé o incluso in Agency.** Incluso semplifica il listino, a sé aggiunge una voce
-   di ricavo su un pacchetto poco testato.
-6. **`vmedia` resta MIT** o passa a licenza commerciale insieme al verticale eventi.
+Aggiornato il 2 settembre 2026.
+
+1. **Licenza scaduta: separare authoring da rendering.** Implementato, vedi §8. Le capability
+   governano solo cosa si può creare e modificare.
+2. **Licenza per sviluppatore, siti illimitati.** Il per-sito richiederebbe di costruire
+   l'attivazione per dominio, che oggi non esiste.
+3. **Prezzi confermati:** 149 € Pro, 349 € Agency, 199 € VoodForms, 79 € VoodPopups, rinnovi al 60%.
+4. **Nessuna finestra early adopter.** Sconta prima di aver dimostrato il valore e fissa un'ancora
+   di prezzo bassa nei confronti dei primi clienti, quelli che parleranno del prodotto.
+5. **VoodPopups resta uno SKU autonomo** al prezzo indicato.
+6. **`vmedia` resta MIT.** È una dipendenza richiesta da più companion; renderla commerciale
+   aggiungerebbe una chiave da gestire su un pacchetto che non è un argomento di vendita.
+
+### Ancora aperte
+
+- **Comportamento su disservizio di rete dell'endpoint licenze.** Oggi resta *fail-closed* dopo 7
+  giorni: si perde l'authoring commerciale, non il rendering. Va deciso se allungare la grazia o
+  mantenere a tempo indeterminato le capability dell'ultimo scatto valido in caso di errore di rete
+  (fallire in apertura), distinguendolo da una scadenza legittima. Non blocca il lancio ora che il
+  rendering è al sicuro.
+- **Rinomina del repository remoto** di `voodbuilder-analytics`. Il pacchetto locale, il nome
+  Composer e i namespace sono corretti; il remoto è ancora
+  `git@voodflow-git:voodflow/voodbuilder-analitycs.git`.
+- **Namespace condiviso** tra core e companion (`Voodflow\Voodbuilder\Support\Editor\Bindings\`,
+  `Voodflow\Voodbuilder\Modules\*`). Documentato in `docs/VERSIONING.md`, da sciogliere insieme al
+  lavoro su manifest e SDK.

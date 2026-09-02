@@ -65,7 +65,7 @@ class EditorBindingsPreviewController extends Controller
      */
     protected function listPreviewValues(Request $request, SitePage $sitePage, BindingRegistry $registry): array
     {
-        if (! DynamicDataCollectionsBridge::moduleEnabled()) {
+        if (! DynamicDataCollectionsBridge::authoringEnabled()) {
             return [];
         }
 
@@ -147,7 +147,7 @@ class EditorBindingsPreviewController extends Controller
      */
     protected function repeatConfigsFromRequest(Request $request, ModelIntegrationRegistry $integrations): array
     {
-        if (! DynamicDataCollectionsBridge::moduleEnabled() || ! class_exists(RepeatListRegistry::class)) {
+        if (! DynamicDataCollectionsBridge::authoringEnabled() || ! class_exists(RepeatListRegistry::class)) {
             return [];
         }
 

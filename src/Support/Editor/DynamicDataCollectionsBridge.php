@@ -14,27 +14,49 @@ use Voodflow\Voodbuilder\Voodbuilder;
 /**
  * Optional List-repeat hooks into voodflow/voodbuilder-dynamic-data.
  *
- * Requires the Dynamic Data Filament plugin (DynamicDataModule) plus the
- * dynamic-data.collections entitlement for Pro/Agency List repeat.
+ * Two questions that look alike and are not. "May this installation *build* a List
+ * repeat?" is commercial: it needs the Filament plugin and the
+ * dynamic-data.collections entitlement. "Must this published page still show the list
+ * it already contains?" is not, and it must never consult the entitlement — see
+ * {@see renderingEnabled()}.
  */
 final class DynamicDataCollectionsBridge
 {
-    public static function moduleEnabled(): bool
+    /**
+     * May the author create and configure List repeats?
+     *
+     * Drives the editor: the repeat source catalog, the bindings panel, live preview.
+     */
+    public static function authoringEnabled(): bool
+    {
+        return self::renderingEnabled() && Voodbuilder::can('dynamic-data.collections');
+    }
+
+    /**
+     * Can a repeat that is already stored in a page be expanded?
+     *
+     * Deliberately blind to entitlements. A repeat is not a feature the reader is using,
+     * it is the author's content: the section holding the list was written while the
+     * licence was valid, and the visitor is looking at a page that has been published.
+     * Consulting the entitlement here would mean a lapsed renewal — or an outage of our
+     * own licensing endpoint outliving the grace window — silently empties product grids
+     * and article lists on live customer sites. Billing state is allowed to stop authoring;
+     * it is not allowed to unpublish content that is already public.
+     *
+     * The plugin check stays: without the companion package there is no renderer to call.
+     */
+    public static function renderingEnabled(): bool
     {
         if (! self::safeClassExists(DynamicDataModule::class)) {
             return false;
         }
 
-        if (! DynamicDataModule::isEnabled()) {
-            return false;
-        }
-
-        return Voodbuilder::can('dynamic-data.collections');
+        return DynamicDataModule::isEnabled();
     }
 
     public static function renderRepeats(string $html, ?SitePage $page = null): string
     {
-        if (! self::moduleEnabled() || ! self::safeClassExists(EditorRepeatRenderer::class)) {
+        if (! self::renderingEnabled() || ! self::safeClassExists(EditorRepeatRenderer::class)) {
             return $html;
         }
 
@@ -50,7 +72,7 @@ final class DynamicDataCollectionsBridge
      */
     public static function repeatSourcesCatalog(): array
     {
-        if (! self::moduleEnabled()) {
+        if (! self::authoringEnabled()) {
             return [];
         }
 

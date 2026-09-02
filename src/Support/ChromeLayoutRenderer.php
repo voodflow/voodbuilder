@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use DOMDocument;
 use DOMElement;
+use Voodflow\Voodbuilder\Licensing\AuthorScriptPolicy;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\Editor\EditorChromeHtmlPipeline;
 use Voodflow\Voodbuilder\Support\Editor\EditorPastedComponentNormalizer;
@@ -32,7 +33,12 @@ final class ChromeLayoutRenderer
                     ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
                 ),
             ),
-            'js' => trim($payload['js']),
+            // Chrome layouts have their own `js` column, and chrome-app.blade.php drops it
+            // into a <script> on every public page — so it is the same arbitrary-code
+            // channel as a page's own script and answers to the same policy. It used to
+            // bypass it entirely, which made the header the way to run JS without the
+            // capability the page editor asks for.
+            'js' => trim(AuthorScriptPolicy::keepOrDiscard($payload['js'])),
         ];
     }
 

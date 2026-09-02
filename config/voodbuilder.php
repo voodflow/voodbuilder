@@ -53,14 +53,20 @@ return [
     ],
 
     /*
-    | Licence edition drives capability resolution (Phase 7).
-    | AnyStack adapter arrives in Phase 10 — keep remote calls out of Core paths.
+    | Licence edition drives capability resolution.
+    |
+    | Capabilities gate *authoring*. Rendering a published page does not consult them, so a
+    | lapsed licence or an unreachable licensing endpoint cannot empty a live site — see
+    | Support/Editor/DynamicDataCollectionsBridge::renderingEnabled(). The single exception
+    | is author-written JavaScript (Licensing/AuthorScriptPolicy).
+    |
+    | There is no separate "enforce" switch. A key-pattern check used to live in
+    | Support/License/VoodbuilderLicense, uncalled by anything and satisfied by any string
+    | starting with `vb_`; it was removed rather than left to imply a second gate.
     */
     'license' => [
         'edition' => env('VOODBUILDER_EDITION', 'community'),
         'key' => env('VOODBUILDER_LICENSE_KEY', ''),
-        'secret' => env('VOODBUILDER_LICENSE_SECRET', ''),
-        'enforce' => env('VOODBUILDER_LICENSE_ENFORCE', false),
         /*
         | Driver: config (local edition matrix) | anystack (remote) | testing
         */
