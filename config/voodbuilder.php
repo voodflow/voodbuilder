@@ -95,9 +95,17 @@ return [
     | See Voodflow\Voodbuilder\Support\ThemeConvention.
     */
     'sub_themes' => [
+        // Fallback labels when companion packages are not installed. Full skins are
+        // registered by vdocs (docs) and vtuts (tutorials) via Voodbuilder::subTheme().
         'docs' => [
             'label' => 'Documentation',
-            'description' => 'Clean reading layout for documentation and tutorials.',
+            'description' => 'Clean reading layout for documentation.',
+            'type' => 'content',
+            'capabilities' => ['doc'],
+        ],
+        'tutorials' => [
+            'label' => 'Tutorials',
+            'description' => 'Tutorial catalogue and lesson reading layout.',
             'type' => 'content',
             'capabilities' => ['doc'],
         ],
@@ -133,7 +141,7 @@ return [
         ],
         'news' => [
             'label' => 'News',
-            'description' => 'Editorial magazine layout with story grids and sidebars.',
+            'description' => 'Editorial magazine layout for story grids and sidebars.',
             'type' => 'content',
             'capabilities' => ['article'],
             'css' => 'themes/news/theme.css',
@@ -158,17 +166,22 @@ return [
         'news' => 'article',
         'events' => 'landing',
         'exhibitors' => 'landing',
+        'partners' => 'landing',
+        'sponsors' => 'landing',
         'pages' => 'landing',
     ],
 
     /*
     | Default visual theme per content channel (route package area).
-    | Overridable in Admin → Settings → Appearance. Plugins do not ship themes.
+    | Overridable in Theme Studio. Companion packages may register owned themes
+    | (docs → vdocs, tutorials → vtuts) via Voodbuilder::subTheme().
     */
     'content_channel_defaults' => [
         'events' => 'site',
         'exhibitors' => 'site',
-        'tutorials' => 'docs',
+        'partners' => 'site',
+        'sponsors' => 'site',
+        'tutorials' => 'tutorials',
         'docs' => 'docs',
         'blog' => 'blog',
         'news' => 'news',

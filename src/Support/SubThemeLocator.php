@@ -43,6 +43,12 @@ final class SubThemeLocator
             return SubThemeLocation::app($id);
         }
 
+        // Plugin-owned themes (absolute CSS from vdocs/vtuts/…) are not
+        // app-scaffold locations — export/clone still uses registry metadata.
+        if (SubThemeCssPath::absolute($cssPath) !== null) {
+            return null;
+        }
+
         return null;
     }
 

@@ -16,8 +16,8 @@ final class SubThemeScaffolder
     {
         $id = Str::kebab($name);
 
-        if ($id === '' || in_array($id, ['default', 'docs'], true)) {
-            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs".');
+        if ($id === '' || in_array($id, ['default', 'docs', 'tutorials'], true)) {
+            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs" or "tutorials".');
         }
 
         if (! preg_match('/^[a-z][a-z0-9-]*$/', $id)) {
@@ -86,8 +86,8 @@ final class SubThemeScaffolder
     {
         $id = Str::kebab($name);
 
-        if ($id === '' || in_array($id, ['default', 'docs'], true)) {
-            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs".');
+        if ($id === '' || in_array($id, ['default', 'docs', 'tutorials'], true)) {
+            return new SubThemeScaffoldResult(false, $id, 'Choose a name other than "docs" or "tutorials".');
         }
 
         if (! preg_match('/^[a-z][a-z0-9-]*$/', $id)) {

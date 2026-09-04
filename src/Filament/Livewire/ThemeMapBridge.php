@@ -28,6 +28,9 @@ class ThemeMapBridge extends Component
     /** @var array<string, mixed> */
     public array $payload = [];
 
+    /** Prefer the assignment list; React map stays available as advanced view. */
+    public bool $showGraph = false;
+
     /**
      * @param  array<string, string>  $channelThemes
      */
@@ -66,6 +69,30 @@ class ThemeMapBridge extends Component
         $this->payload = ThemeMapPayload::build($this->subTheme, $this->channelThemes);
         $this->dispatch('voodbuilder-theme-map-refresh', payload: $this->payload);
         $this->js(ThemeMapAssets::mountJs());
+    }
+
+    public function toggleGraph(): void
+    {
+        $this->showGraph = ! $this->showGraph;
+
+        if ($this->showGraph) {
+            $this->refreshPayload();
+        }
+    }
+
+    public function assignAreaTheme(string $areaId, string $themeId): void
+    {
+        $themeId = SubThemeResolver::resolveId($themeId) ?? $themeId;
+
+        if ($areaId === 'site_pages') {
+            $this->applyAssignments($themeId, $this->channelThemes);
+
+            return;
+        }
+
+        $overrides = $this->channelThemes;
+        $overrides[$areaId] = $themeId;
+        $this->applyAssignments($this->subTheme, $overrides);
     }
 
     /**
