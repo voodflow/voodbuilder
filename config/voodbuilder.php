@@ -89,9 +89,13 @@ return [
     ],
 
     /*
-    | Visual themes (distinct from light/dark mode).
-    | Bundled themes live in packages/voodflow/voodbuilder/resources/themes/{id}/.
-    | App themes from `php artisan voodbuilder:make-subtheme` live in resources/voodbuilder/themes/{id}/.
+    | Visual themes / skins (Theme Studio catalog).
+    | Distinct from light/dark mode (Settings → Appearance) and from chrome Layouts
+    | (Admin → Layouts: header/footer shell assigned per content channel).
+    |
+    | Bundled skins: packages/voodflow/voodbuilder/resources/themes/{id}/
+    | App skins: resources/voodbuilder/themes/{id}/ (make-subtheme / Theme Studio import)
+    | Companion-owned skins register via Voodbuilder::subTheme() (vdocs, vtuts, …).
     | See Voodflow\Voodbuilder\Support\ThemeConvention.
     */
     'sub_themes' => [
@@ -129,34 +133,45 @@ return [
     ],
 
     /*
-    | Required visual capability per content channel (route package area).
-    | Used to filter compatible themes in Admin → Settings → Appearance.
+    | Required SubThemeCapability per content channel id.
+    | Theme Studio → Assignments filters theme pickers with this map.
+    | Channels themselves are registered by companions (Voodbuilder::contentChannel)
+    | or listed under content_channels below — not by this array alone.
+    |
+    | Site Pages ("Site pages" / Pagine del sito) use settings `sub_theme`, not a
+    | channel row: the `pages` channel stays for routing/search/chrome only
+    | (ThemeBindings::shouldShowChannelBinding hides it from Assignments).
     */
     'content_channel_capabilities' => [
+        'pages' => 'landing',
         'docs' => 'doc',
         'tutorials' => 'doc',
-        'blog' => 'article',
-        'news' => 'article',
         'events' => 'landing',
         'exhibitors' => 'landing',
         'partners' => 'landing',
         'sponsors' => 'landing',
-        'pages' => 'landing',
+        // Reserved until an article package registers those channels + skins:
+        'blog' => 'article',
+        'news' => 'article',
     ],
 
     /*
-    | Default visual theme per content channel (route package area).
-    | Overridable in Theme Studio. Companion packages may register owned themes
-    | (docs → vdocs, tutorials → vtuts) via Voodbuilder::subTheme().
-    | blog/news defaults are omitted until a package owns those themes.
+    | Default skin when Theme Studio has no per-channel override.
+    | Overridable in Theme Studio → Assignments. Companions may own defaults
+    | (docs → docs via vdocs, tutorials → tutorials via vtuts).
+    |
+    | Site Pages use `sub_theme` (not this map). `pages` is kept for chrome-layout
+    | resolution when a layout is assigned to the pages channel.
+    | blog/news omitted until a package owns those themes.
     */
     'content_channel_defaults' => [
+        'pages' => 'site',
         'events' => 'site',
         'exhibitors' => 'site',
         'partners' => 'site',
         'sponsors' => 'site',
-        'tutorials' => 'tutorials',
         'docs' => 'docs',
+        'tutorials' => 'tutorials',
     ],
 
     /*
@@ -272,7 +287,9 @@ return [
         'editor_only' => env('VOODBUILDER_PAGES_EDITOR_ONLY', true),
         'default_builder' => PageBuilder::normalize(env('VOODBUILDER_PAGES_DEFAULT_BUILDER', 'visual'))?->value ?? 'visual',
         /*
-        | Per-page sub-theme override in Admin → Pages. Channel defaults live in Settings.
+        | Per-page visual theme in Admin → Pages (Aspetto). Default area theme stays
+        | in Theme Studio → Assignments (“Site pages”). When true, authors can override
+        | the skin for a single page without changing the channel default.
         */
         'allow_sub_theme_override' => env('VOODBUILDER_PAGES_ALLOW_SUB_THEME_OVERRIDE', true),
     ],
@@ -295,7 +312,7 @@ return [
 
     'popups' => [
         'enabled' => env('VOODBUILDER_POPUPS_ENABLED', true),
-        // null = use site default sub-theme (Settings → Appearance), same as page/layout editors.
+        // null = use site default sub-theme (Theme Studio → Site pages), same as page/layout editors.
         'editor_sub_theme' => env('VOODBUILDER_POPUPS_EDITOR_SUB_THEME'),
     ],
 
@@ -311,15 +328,18 @@ return [
 
     /*
     | External content systems (blog, news, shop, …) register here or via Voodbuilder::contentChannel().
-    | Each channel can define route patterns (menu highlight + sub-theme) and optional search.
+    | Each channel can define route patterns (menu highlight + sub-theme resolution) and optional search.
+    | Companions (vdocs, vtuts, vevents, …) usually register in their service provider instead.
     |
     | Example:
     | 'blog' => [
     |     'label' => 'Blog',
     |     'routes' => ['blog.*'],
-    |     'search' => \App\Models\BlogPost::class, // static voodbuilderSearch($term, $limit) method
+    |     'search' => \App\Models\BlogPost::class, // static voodbuilderSearch($term, $limit)
     | ],
-    | Default visual theme per channel: content_channel_defaults (not on the channel array).
+    |
+    | Default skin per channel: content_channel_defaults / Theme Studio Assignments
+    | (not a key on the channel array). Chrome shell: Admin → Layouts.
     */
     'content_channels' => [
         //
@@ -327,6 +347,8 @@ return [
 
     /*
     | Editor chrome layouts — header/footer shell around plugin content.
+    | Assign layouts to content channels in Admin → Layouts (not in Theme Studio).
+    | Theme Studio skins the page; Layouts choose the chrome shell.
     */
     'chrome_layouts' => [
         'enabled' => env('VOODBUILDER_CHROME_LAYOUTS_ENABLED', true),
