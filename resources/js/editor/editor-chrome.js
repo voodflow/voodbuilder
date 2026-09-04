@@ -7,11 +7,6 @@ import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { registerEditorPanelToggles } from './editor-panel-toggles.js';
 import { registerEditorPanelResize } from './editor-panel-resize.js';
 import {
-    readInnerDropSlotsVisiblePreference,
-    saveInnerDropSlotsVisiblePreference,
-    setInnerDropSlotsVisible,
-} from './inner-drop-slots.js';
-import {
     isClassHoverPopoverEnabled,
     readClassHoverPopoverPreference,
     saveClassHoverPopoverPreference,
@@ -144,34 +139,6 @@ function setupComponentOutlineToggle(editor, button, shellRoot) {
     });
 
     editor.stopCommand(CMD_COMPONENT_OUTLINE);
-    syncButton();
-}
-
-function setupInnerDropSlotsToggle(editor, button, shellRoot) {
-    const syncButton = () => {
-        const active = editor.__voodbuilderInnerDropSlotsVisible === true;
-        button.classList.toggle('is-active', active);
-        button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    };
-
-    button.addEventListener('click', () => {
-        const next = ! (editor.__voodbuilderInnerDropSlotsVisible === true);
-        saveInnerDropSlotsVisiblePreference(next);
-        setInnerDropSlotsVisible(editor, next, shellRoot);
-        syncButton();
-    });
-
-    editor.on('load', () => {
-        setInnerDropSlotsVisible(editor, readInnerDropSlotsVisiblePreference(), shellRoot);
-        syncButton();
-    });
-
-    editor.on('canvas:frame:load', () => {
-        setInnerDropSlotsVisible(editor, editor.__voodbuilderInnerDropSlotsVisible === true, shellRoot);
-        syncButton();
-    });
-
-    setInnerDropSlotsVisible(editor, readInnerDropSlotsVisiblePreference(), shellRoot);
     syncButton();
 }
 
@@ -487,13 +454,6 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
     });
     setupComponentOutlineToggle(editor, outlineButton, shellRoot);
 
-    const dropSlotsButton = createToolButton({
-        id: 'inner-drop-slots',
-        icon: 'square-dashed',
-        title: labels.innerDropSlots ?? 'Show drop zones',
-    });
-    setupInnerDropSlotsToggle(editor, dropSlotsButton, shellRoot);
-
     const classHoverButton = createToolButton({
         id: 'class-hover-popover',
         icon: 'tags',
@@ -520,7 +480,6 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
 
     const canvasGroup = createToolGroup([
         outlineButton,
-        dropSlotsButton,
         classHoverButton,
         globalTagsButton,
         previewButton,

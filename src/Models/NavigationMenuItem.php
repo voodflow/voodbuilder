@@ -280,7 +280,7 @@ class NavigationMenuItem extends Model
                 && $resolved->section_home;
         }
 
-        return request()->routeIs('voodbuilder.pages.show')
+        return request()->routeIs('voodbuilder.pages.show', 'voodbuilder.pages.show.nested')
             && SitePageResolver::publishedForMenu((string) $this->link)?->getKey()
                 === SitePageResolver::publishedForMenu((string) request()->route('slug'))?->getKey();
     }

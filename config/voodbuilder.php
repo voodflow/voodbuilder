@@ -275,6 +275,12 @@ return [
         'enabled' => true,
         'route_prefix' => 'pages',
         /*
+        | When true, pages nested under a menu Group/Page get URLs like
+        | /{prefix}/{parent-segment}/{slug} (e.g. /pages/products/a-voodflow).
+        | Top-level menu pages stay /{prefix}/{slug}. Legacy flat URLs still resolve.
+        */
+        'menu_paths' => (bool) env('VOODBUILDER_PAGES_MENU_PATHS', false),
+        /*
         | Visual Editor is always used for new pages (no Content builder select).
         | Kept for documentation / older hosts; SitePageForm::editorOnly() is hard-true.
         */

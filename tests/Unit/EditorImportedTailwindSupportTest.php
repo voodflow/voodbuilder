@@ -117,6 +117,19 @@ class EditorImportedTailwindSupportTest extends TestCase
         $this->assertStringNotContainsString('fill: #000000', $baked);
     }
 
+    public function test_bake_svg_paint_keeps_stroke_only_when_paint_is_brand_color(): void
+    {
+        $html = '<svg class="text-violet-400 opacity-20" fill="none" stroke="currentColor" style="color: #a78bfa">'
+            .'<circle cx="50" cy="50" r="40"/><path d="M10 10h80" stroke="currentColor"/></svg>';
+
+        $baked = EditorImportedTailwindSupport::bakeSvgPaintInHtml($html);
+
+        $this->assertStringContainsString('fill="none"', $baked);
+        $this->assertStringContainsString('fill: none', $baked);
+        $this->assertStringNotContainsString('fill="#a78bfa"', $baked);
+        $this->assertStringContainsString('stroke="#a78bfa"', $baked);
+    }
+
     public function test_parse_background_url_class_handles_quoted_and_unquoted_urls(): void
     {
         $quotedClass = "bg-[url('https://example.com/a.jpg')]";

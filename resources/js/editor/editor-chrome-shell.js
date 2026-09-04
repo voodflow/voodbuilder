@@ -958,14 +958,14 @@ export function extractChromeShellPageHtml(editor) {
 
             parts.push(component.toHTML({
                 keepInlineStyle: true,
-                withProps: true,
+                withProps: false,
             }));
         });
     } else {
         forEachGrapesComponent(slot, (component) => {
             parts.push(component.toHTML({
                 keepInlineStyle: true,
-                withProps: true,
+                withProps: false,
             }));
         });
     }
@@ -979,7 +979,7 @@ export function extractChromeShellPageHtml(editor) {
     // Grapes sometimes reports children while forEach yields nothing — unwrap slot HTML.
     const wrapped = String(slot.toHTML?.({
         keepInlineStyle: true,
-        withProps: true,
+        withProps: false,
     }) ?? '').trim();
 
     if (wrapped === '') {

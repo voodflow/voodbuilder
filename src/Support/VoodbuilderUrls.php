@@ -57,6 +57,10 @@ final class VoodbuilderUrls
             }
         }
 
+        if (SitePageMenuPath::enabled()) {
+            return SitePageMenuPath::url($page);
+        }
+
         if (! Route::has('voodbuilder.pages.show')) {
             return url('/pages/'.$page->slug);
         }

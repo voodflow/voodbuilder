@@ -229,7 +229,6 @@ return [
         'undo' => 'Annulla',
         'redo' => 'Ripeti',
         'outline' => 'Mostra contorni',
-        'inner_drop_slots' => 'Mostra zone di drop',
         'class_hover_popover' => 'Mostra info classi al passaggio',
         'preview' => 'Anteprima',
         'theme_dark' => 'Modalità scura',

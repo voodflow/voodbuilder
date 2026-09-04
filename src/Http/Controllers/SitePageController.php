@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
+use Voodflow\Voodbuilder\Support\SitePageMenuPath;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 
@@ -20,7 +21,16 @@ class SitePageController extends Controller
 {
     public function show(Request $request, string $slug): View
     {
-        $page = SitePageResolver::publishedFromSlug($slug);
+        // Always read nested segment from the route bag — do not rely on method-arg
+        // order ({section}/{slug} vs $slug/$section), which can swap under dispatch.
+        $section = $request->route('section');
+        $section = is_string($section) && $section !== '' ? $section : null;
+        $slug = is_string($request->route('slug')) && $request->route('slug') !== ''
+            ? (string) $request->route('slug')
+            : $slug;
+
+        $resolvedSlug = SitePageMenuPath::resolveSlugFromRoute($section, $slug);
+        $page = SitePageResolver::publishedFromSlug($resolvedSlug);
 
         if ($page->is_home) {
             abort(404);

@@ -809,13 +809,45 @@ final class EditorCanvas
         svg[fill="none"] rect:not([fill]),
         svg[fill="none"] line:not([fill]),
         svg[fill="none"] polyline:not([fill]),
-        svg[fill="none"] polygon:not([fill]) {
+        svg[fill="none"] polygon:not([fill]),
+        svg[fill="none"] ellipse:not([fill]),
+        svg[fill="none"] path[fill="none"],
+        svg[fill="none"] circle[fill="none"],
+        svg[fill="none"] rect[fill="none"],
+        svg[fill="none"] path[fill="currentColor"],
+        svg[fill="none"] circle[fill="currentColor"],
+        svg[fill="none"] rect[fill="currentColor"] {
             fill: none !important;
         }
 
+        svg[fill="none"][stroke],
         svg[fill="none"][stroke="currentColor"],
+        svg[fill="none"] [stroke],
         svg[fill="none"] [stroke="currentColor"] {
             stroke: currentColor;
+        }
+
+        /* Style-bag fill:none (after bake) must keep watermarks stroke-only. */
+        svg[style*="fill: none"],
+        svg[style*="fill:none"] {
+            fill: none !important;
+        }
+
+        svg[style*="fill: none"] path,
+        svg[style*="fill:none"] path,
+        svg[style*="fill: none"] circle,
+        svg[style*="fill:none"] circle,
+        svg[style*="fill: none"] rect,
+        svg[style*="fill:none"] rect,
+        svg[style*="fill: none"] ellipse,
+        svg[style*="fill:none"] ellipse,
+        svg[style*="fill: none"] polygon,
+        svg[style*="fill:none"] polygon,
+        svg[style*="fill: none"] polyline,
+        svg[style*="fill:none"] polyline,
+        svg[style*="fill: none"] line,
+        svg[style*="fill:none"] line {
+            fill: none !important;
         }
 
         .gjs-selected [data-voodbuilder-editor-site-header] .voodbuilder-header-icon-btn,

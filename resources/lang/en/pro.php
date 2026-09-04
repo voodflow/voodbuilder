@@ -229,7 +229,6 @@ return [
         'undo' => 'Undo',
         'redo' => 'Redo',
         'outline' => 'Show outlines',
-        'inner_drop_slots' => 'Show drop zones',
         'class_hover_popover' => 'Show class tip on hover',
         'preview' => 'Preview',
         'theme_dark' => 'Dark mode',

@@ -583,7 +583,6 @@ final class EditorGate
             'undo' => __('voodbuilder::pro.editor_ui.undo'),
             'redo' => __('voodbuilder::pro.editor_ui.redo'),
             'outline' => __('voodbuilder::pro.editor_ui.outline'),
-            'innerDropSlots' => __('voodbuilder::pro.editor_ui.inner_drop_slots'),
             'classHoverPopover' => __('voodbuilder::pro.editor_ui.class_hover_popover'),
             'preview' => __('voodbuilder::pro.editor_ui.preview'),
             'themeDark' => __('voodbuilder::pro.editor_ui.theme_dark'),

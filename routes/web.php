@@ -42,17 +42,6 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
             ->name('voodbuilder.search');
     }
 
-    if (config('voodbuilder.pages.enabled', true)) {
-        $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
-
-        Route::get('/'.$prefix.'/{slug}', [SitePageController::class, 'show'])
-            ->name('voodbuilder.pages.show');
-
-        Route::post('/'.$prefix.'/{slug}/unlock', SitePageUnlockController::class)
-            ->middleware('throttle:10,1')
-            ->name('voodbuilder.pages.unlock');
-    }
-
     if (config('voodbuilder.auth.enabled', true)) {
         Route::middleware('guest')->group(function (): void {
             Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -70,5 +59,50 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
         Route::middleware('auth')
             ->get('/'.trim((string) config('voodbuilder.account.route', 'account'), '/'), AccountController::class)
             ->name('voodbuilder.account');
+    }
+
+    // Site pages last: when route_prefix is empty, {slug} must not shadow login/search/etc.
+    if (config('voodbuilder.pages.enabled', true)) {
+        $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
+        $menuPaths = (bool) config('voodbuilder.pages.menu_paths', false);
+        $base = $prefix !== '' ? '/'.$prefix : '';
+        $reserved = implode('|', array_filter([
+            'login',
+            'register',
+            'logout',
+            'search',
+            'account',
+            'admin',
+            'livewire',
+            'filament',
+            'storage',
+            'vendor',
+            'build',
+            'up',
+            trim((string) config('voodbuilder.search.route', 'search'), '/'),
+            trim((string) config('voodbuilder.account.route', 'account'), '/'),
+        ]));
+
+        if ($menuPaths) {
+            $sectionPattern = $prefix === '' && $reserved !== ''
+                ? '^(?!('.$reserved.')$)[A-Za-z0-9\-]+$'
+                : '[A-Za-z0-9\-]+';
+
+            Route::get($base.'/{section}/{slug}', [SitePageController::class, 'show'])
+                ->where(['section' => $sectionPattern, 'slug' => '[A-Za-z0-9\-]+'])
+                ->name('voodbuilder.pages.show.nested');
+        }
+
+        $slugPattern = $prefix === '' && $reserved !== ''
+            ? '^(?!('.$reserved.')$)[A-Za-z0-9\-]+$'
+            : '[A-Za-z0-9\-]+';
+
+        Route::get($base.'/{slug}', [SitePageController::class, 'show'])
+            ->where(['slug' => $slugPattern])
+            ->name('voodbuilder.pages.show');
+
+        Route::post($base.'/{slug}/unlock', SitePageUnlockController::class)
+            ->middleware('throttle:10,1')
+            ->name('voodbuilder.pages.unlock');
     }
 });

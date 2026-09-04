@@ -495,11 +495,21 @@ export function buildPayload(editor, options = {}) {
         runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));
     }
 
-    let html = editor.getHtml({
-        cleanId: false,
-        withProps: true,
-        keepInlineStyle: true,
-    });
+    let html;
+
+    try {
+        html = editor.getHtml({
+            cleanId: false,
+            // withProps:true calls Component.toJSON() for every node (full subtree each
+            // time) — on large pasted pages that overflows the call stack. Server
+            // normalizePayload already strips data-gjs-* anyway.
+            withProps: false,
+            keepInlineStyle: true,
+        });
+    } catch (error) {
+        console.error('VoodBuilder getHtml failed; retrying without inline style opts', error);
+        html = editor.getHtml();
+    }
 
     if (editor.__voodbuilderChromeShellMode) {
         const slotHtml = extractChromeShellPageHtml(editor);

@@ -68,35 +68,35 @@ final class MarketingSiteContent
                 'name' => 'Voodflow',
                 'tagline' => 'Workflow automation',
                 'description' => 'Visual flows, triggers, credentials, and model integrations — the automation core of the suite.',
-                'href' => '/pages/a-voodflow',
+                'href' => '/products/a-voodflow',
             ],
             [
                 'slug' => 'voodbuilder',
                 'name' => 'VoodBuilder',
                 'tagline' => 'Visual site builder',
                 'description' => 'Marketing pages, chrome layouts, themes, and Editor blocks — ship landings without leaving Laravel.',
-                'href' => '/pages/a-voodbuilder',
+                'href' => '/products/a-voodbuilder',
             ],
             [
                 'slug' => 'events-suite',
                 'name' => 'Events & Exhibitors',
                 'tagline' => 'Trade fair package',
                 'description' => 'vevents, vexhibitors, vpartners, and vsponsors — one package for event and exhibition sites.',
-                'href' => '/pages/a-events-suite',
+                'href' => '/products/a-events-suite',
             ],
             [
                 'slug' => 'vdocs',
                 'name' => 'vdocs',
                 'tagline' => 'Documentation',
                 'description' => 'Fixed docs channel with sections, search, and Filament authoring for product documentation.',
-                'href' => '/pages/a-vdocs',
+                'href' => '/products/a-vdocs',
             ],
             [
                 'slug' => 'vtuts',
                 'name' => 'vtuts',
                 'tagline' => 'Tutorials',
                 'description' => 'Series, categories, and step-by-step lessons with a public tutorials channel.',
-                'href' => '/pages/a-vtuts',
+                'href' => '/products/a-vtuts',
             ],
         ];
     }
@@ -107,7 +107,7 @@ final class MarketingSiteContent
             eyebrow: 'Voodflow ecosystem',
             title: 'Build faster with a modular Filament plugin suite',
             subtitle: 'Voodflow brings workflow automation, visual pages, documentation, tutorials, and event management into one Laravel-native stack — designed for teams already on Filament.',
-            primaryHref: '/pages/a-voodflow',
+            primaryHref: '/products/a-voodflow',
             primaryLabel: 'Explore Voodflow',
             secondaryHref: '#products',
             secondaryLabel: 'View products',
@@ -128,7 +128,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Ready to ship on Laravel?',
                 subtitle: 'Start with Voodflow automation and VoodBuilder landings, then add docs, tutorials, or the events package as your product grows.',
-                href: '/pages/a-voodflow',
+                href: '/products/a-voodflow',
                 label: 'Get started with Voodflow',
             );
     }
@@ -141,7 +141,7 @@ final class MarketingSiteContent
             subtitle: 'Design flows in Filament, trigger them on schedules, webhooks, and model events, and integrate credentials, queues, and third-party APIs — without a separate automation SaaS.',
             primaryHref: '#features',
             primaryLabel: 'See capabilities',
-            secondaryHref: '/pages/a',
+            secondaryHref: '/a',
             secondaryLabel: 'Back to home',
             image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1920&q=80',
         )
@@ -158,7 +158,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Automate your next release workflow',
                 subtitle: 'Pair Voodflow with VoodBuilder landings and vdocs product pages for a complete go-to-market stack.',
-                href: '/pages/a',
+                href: '/a',
                 label: 'Explore the suite',
             );
     }
@@ -171,7 +171,7 @@ final class MarketingSiteContent
             subtitle: 'A visual page builder with chrome layouts, sub-themes, navigation menus, and Editor blocks. Ship product landings like this one without a headless CMS.',
             primaryHref: '#features',
             primaryLabel: 'See what you get',
-            secondaryHref: '/pages/a-voodflow',
+            secondaryHref: '/products/a-voodflow',
             secondaryLabel: 'Pair with Voodflow',
             image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&q=80',
         )
@@ -194,7 +194,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Build your next landing in Filament',
                 subtitle: 'Use VoodBuilder for marketing pages and pair with vdocs or vtuts for product education.',
-                href: '/pages/a-vdocs',
+                href: '/products/a-vdocs',
                 label: 'See vdocs',
             );
     }
@@ -207,7 +207,7 @@ final class MarketingSiteContent
             subtitle: 'A coordinated package — vevents, vexhibitors, vpartners, and vsponsors — for public event sites, exhibitor directories, partner listings, and sponsor tiers.',
             primaryHref: '#package',
             primaryLabel: 'What\'s included',
-            secondaryHref: '/pages/a-voodbuilder',
+            secondaryHref: '/products/a-voodbuilder',
             secondaryLabel: 'Built on VoodBuilder',
             image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1920&q=80',
         )
@@ -232,7 +232,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Launch your next fair site on Laravel',
                 subtitle: 'Combine the events suite with VoodBuilder landings and Voodflow automations for registrations and notifications.',
-                href: '/pages/a-voodflow',
+                href: '/products/a-voodflow',
                 label: 'Explore Voodflow',
             );
     }
@@ -258,7 +258,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Docs and marketing on one stack',
                 subtitle: 'Pair vdocs with VoodBuilder landings and vtuts for onboarding content.',
-                href: '/pages/a-vtuts',
+                href: '/products/a-vtuts',
                 label: 'See vtuts',
             );
     }
@@ -284,7 +284,7 @@ final class MarketingSiteContent
             .self::ctaSection(
                 title: 'Educate users without leaving Laravel',
                 subtitle: 'Combine vtuts with vdocs reference material and Voodflow automations for certification flows.',
-                href: '/pages/a-vdocs',
+                href: '/products/a-vdocs',
                 label: 'See vdocs',
             );
     }

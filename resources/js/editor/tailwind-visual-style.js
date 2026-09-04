@@ -1529,9 +1529,41 @@ function stripConflictingTextColorClasses(component) {
 }
 
 function svgRootFillIsNone(component) {
-    const rootFill = String(component?.getAttributes?.()?.fill ?? '').toLowerCase();
+    const attributes = component?.getAttributes?.() ?? {};
+    const rootFill = String(attributes.fill ?? '').toLowerCase().trim();
 
-    return rootFill === 'none';
+    if (rootFill === 'none') {
+        return true;
+    }
+
+    const styleFill = String(parseStyleAttribute(attributes.style).fill ?? '').toLowerCase().trim();
+
+    return styleFill === 'none';
+}
+
+function svgHasUsableStroke(component) {
+    const attributes = component?.getAttributes?.() ?? {};
+    const rootStroke = String(attributes.stroke ?? '').toLowerCase().trim();
+
+    if (rootStroke !== '' && rootStroke !== 'none') {
+        return true;
+    }
+
+    const styleStroke = String(parseStyleAttribute(attributes.style).stroke ?? '').toLowerCase().trim();
+
+    if (styleStroke !== '' && styleStroke !== 'none') {
+        return true;
+    }
+
+    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
+        const stroke = String(child.getAttributes?.()?.stroke ?? '').toLowerCase().trim();
+
+        if (stroke !== '' && stroke !== 'none') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function isStrokeOnlyCurrentColorSvg(component) {
@@ -1539,26 +1571,27 @@ function isStrokeOnlyCurrentColorSvg(component) {
         return false;
     }
 
+    if (String(component.get?.('tagName') ?? '').toLowerCase() !== 'svg') {
+        return false;
+    }
+
     if (! svgRootFillIsNone(component)) {
         return false;
     }
 
-    const attributes = component.getAttributes?.() ?? {};
-    const rootStroke = String(attributes.stroke ?? '').toLowerCase();
-
-    if (rootStroke === 'currentcolor') {
+    if (svgHasUsableStroke(component)) {
         return true;
     }
 
     for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
-        const stroke = String(child.getAttributes?.()?.stroke ?? '').toLowerCase();
+        const fill = String(child.getAttributes?.()?.fill ?? '').toLowerCase().trim();
 
-        if (stroke === 'currentcolor') {
-            return true;
+        if (fill !== '' && fill !== 'none' && ! fill.startsWith('url(')) {
+            return false;
         }
     }
 
-    return false;
+    return true;
 }
 
 function isPaintableFillValue(fill, { rootFillIsNone = false } = {}) {
@@ -1568,7 +1601,7 @@ function isPaintableFillValue(fill, { rootFillIsNone = false } = {}) {
         return false;
     }
 
-    if (value === '' && rootFillIsNone) {
+    if (rootFillIsNone && (value === '' || value === 'currentcolor')) {
         return false;
     }
 
@@ -1588,6 +1621,7 @@ function isPaintableStrokeValue(stroke) {
 function applyPaintToSvgShapeDescendants(svgComponent, paint) {
     const normalizedPaint = stripImportant(paint);
     const rootFillIsNone = svgRootFillIsNone(svgComponent);
+    const strokeOnly = isStrokeOnlyCurrentColorSvg(svgComponent);
 
     for (const child of safeFindComponents(svgComponent, '*')) {
         const tag = String(child.get?.('tagName') ?? '').toLowerCase();
@@ -1601,12 +1635,19 @@ function applyPaintToSvgShapeDescendants(svgComponent, paint) {
         const stroke = String(childAttributes.stroke ?? '');
         let changed = false;
 
-        if (isPaintableFillValue(fill, { rootFillIsNone })) {
+        if (strokeOnly) {
+            const fillValue = fill.toLowerCase().trim();
+
+            if (fillValue === '' || fillValue === 'currentcolor' || isGenericBlackPaint(fill)) {
+                childAttributes.fill = 'none';
+                changed = true;
+            }
+        } else if (isPaintableFillValue(fill, { rootFillIsNone })) {
             childAttributes.fill = normalizedPaint;
             changed = true;
         }
 
-        if (isPaintableStrokeValue(stroke)) {
+        if (isPaintableStrokeValue(stroke) || (strokeOnly && stroke.toLowerCase() === 'currentcolor')) {
             childAttributes.stroke = normalizedPaint;
             changed = true;
         }
@@ -1645,11 +1686,13 @@ function svgRootPaintStyles(component, paint) {
     const strokeAttr = String(attributes.stroke ?? '').toLowerCase();
     const styles = { color: paint };
 
-    if (fillAttr !== 'none') {
+    if (isStrokeOnlyCurrentColorSvg(component) || fillAttr === 'none' || svgRootFillIsNone(component)) {
+        styles.fill = 'none';
+    } else {
         styles.fill = paint;
     }
 
-    if (strokeAttr === 'currentcolor' || strokeAttr === '' || strokeAttr === 'none') {
+    if (strokeAttr === 'currentcolor' || strokeAttr === '' || strokeAttr === 'none' || isStrokeOnlyCurrentColorSvg(component)) {
         styles.stroke = paint;
     }
 
@@ -1926,8 +1969,35 @@ function bakeSvgPaintOnComponent(editor, component) {
         return;
     }
 
-    if (isStrokeOnlyCurrentColorSvg(component) && (! paint || isGenericBlackPaint(paint))) {
+    // Stroke-only SVGs (watermarks, Lucide-style icons): never bake a solid fill,
+    // even when the resolved paint is a brand/theme color.
+    if (isStrokeOnlyCurrentColorSvg(component)) {
         stripSpuriousSvgBakedPaint(component);
+
+        const attributes = { ...(component.getAttributes?.() ?? {}) };
+        attributes.fill = 'none';
+
+        const rootStyles = { fill: 'none' };
+
+        if (paint) {
+            rootStyles.color = paint;
+            rootStyles.stroke = paint;
+        }
+
+        for (const property of ['stroke-width', 'opacity']) {
+            if (exportStyles[property]) {
+                rootStyles[property] = exportStyles[property];
+            }
+        }
+
+        attributes.style = mergeStyleAttribute(attributes.style, rootStyles);
+        component.setAttributes(attributes);
+        component.removeStyle?.('fill');
+        component.addStyle({ fill: 'none !important', ...(paint ? { color: ensureImportantStyleValue(paint), stroke: ensureImportantStyleValue(paint) } : {}) }, { inline: true });
+
+        if (paint) {
+            applyPaintToSvgShapeDescendants(component, paint);
+        }
 
         return;
     }
