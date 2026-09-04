@@ -99,6 +99,7 @@ class ThemePaletteTest extends TestCase
 
         $this->assertStringContainsString('html:not(.dark){--color-vp-brand-1:#47cc49!important', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#47cc49!important", $css);
+        $this->assertStringNotContainsString('--color-vp-brand-1:#c8102e', $css);
         $this->assertStringContainsString('--vp-c-brand-1:var(--color-vp-brand-1)', $css);
         $this->assertStringNotContainsString('--color-indigo-500:var(--color-vp-brand-3)', $css);
         $this->assertStringNotContainsString('--color-violet-600:var(--color-vp-brand-2)', $css);
@@ -149,7 +150,7 @@ class ThemePaletteTest extends TestCase
 
         $css = ThemePalette::criticalDocumentCss('site');
 
-        $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#c8102e!important", $css);
+        $this->assertStringNotContainsString('--color-vp-brand-1:#c8102e', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark){--color-vp-brand-1:#47cc49!important", $css);
     }
 
@@ -292,6 +293,45 @@ class ThemePaletteTest extends TestCase
         $this->assertStringContainsString('--vx-header-bg:#9e2ca0', $css);
         $this->assertStringNotContainsString('--vx-header-bg:#0f172a', $css);
         $this->assertStringContainsString("html[data-voodbuilder-sub-theme='site']:not(.dark)", $css);
+    }
+
+    #[Test]
+    public function it_omits_bundled_brand_from_canvas_css_when_admin_overrides(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => [
+                'label' => 'Site',
+                'css' => 'themes/site/theme.css',
+            ],
+        ]);
+        app(SubThemeRegistry::class)->register('site', [
+            'label' => 'Site',
+            'css' => 'themes/site/theme.css',
+        ]);
+
+        VoodbuilderSettings::saveData([
+            'sub_theme_colors' => ThemePalette::normalize([
+                'site' => [
+                    'custom' => true,
+                    'light' => [
+                        'primary' => '#47cc49',
+                        'secondary' => '#d68527',
+                    ],
+                    'dark' => [
+                        'primary' => '#83cf81',
+                        'secondary' => '#b668a1',
+                    ],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::cssForCanvas('site');
+
+        $this->assertStringContainsString('--color-vp-brand-1:#47cc49!important', $css);
+        $this->assertStringContainsString('--color-vp-brand-1:#83cf81!important', $css);
+        $this->assertStringNotContainsString('--color-vp-brand-1:#c8102e', $css);
+        $this->assertStringNotContainsString('--color-vp-brand-1:#f87171', $css);
     }
 
     #[Test]

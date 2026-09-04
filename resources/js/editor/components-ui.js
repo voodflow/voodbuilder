@@ -1676,6 +1676,7 @@ function hydrateComponentInstance(component, catalog) {
         component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
         ensureComponentScopeAttribute(component);
         applyComponentInstancePresentation(component, item);
+        editor.__voodbuilderScheduleComponentCssRebuild?.(200);
 
         return;
     }
@@ -1702,6 +1703,8 @@ function hydrateComponentInstance(component, catalog) {
         [PROPS_ATTR]: attrs[PROPS_ATTR] ?? JSON.stringify(defaultProps(item)),
         class: 'voodbuilder-editor-component-instance',
     });
+
+    editor.__voodbuilderScheduleComponentCssRebuild?.(200);
 }
 
 function ensureComponentScopeAttribute(component) {

@@ -13,7 +13,7 @@ final class SyncThemeStylesheetImports
 {
     /**
      * Drop @import lines that point to missing files.
-     * App sub-themes are Vite entries (EditorAssets), not bundled into theme.css.
+     * App sub-themes are runtime skins (RuntimeSubThemeStylesheet), not bundled into theme.css.
      */
     public static function sync(): bool
     {
@@ -44,7 +44,7 @@ final class SyncThemeStylesheetImports
                 continue;
             }
 
-            // Legacy app-theme @imports: prune (loaded on demand via Vite).
+            // Legacy app-theme @imports: prune (served at runtime via ThemePalette).
             if (str_contains($importPath, 'resources/voodbuilder/themes/')
                 || str_contains($importPath, '../themes/blog/')
                 || str_contains($importPath, '../themes/news/')) {

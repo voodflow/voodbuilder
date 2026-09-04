@@ -9,7 +9,6 @@ use Filament\Forms\Components\Hidden;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\CanUseDatabaseTransactions;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
@@ -25,10 +24,7 @@ use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
 
 /**
- * Theme Studio — first-class visual theme catalog + channel assignment map.
- *
- * Clone/customize themes and orchestrate which theme powers each site area
- * (Landing, Docs, Tutorials, Blog, …). Not a Settings tab: product surface.
+ * Theme Studio — pick a theme to recolor, assign themes to site areas.
  *
  * @property-read Schema $form
  */
@@ -45,10 +41,6 @@ class ThemeStudioPage extends Page
     /** @var array<string, mixed>|null */
     public ?array $data = [];
 
-    /** Right stage: channel map (`map`) or theme customize desk (`edit`). */
-    public string $studioMode = 'map';
-
-    /** Theme currently open in the customize desk (shared across catalog ↔ editor). */
     public ?string $editingThemeId = null;
 
     public static function getNavigationGroup(): ?string
@@ -79,20 +71,23 @@ class ThemeStudioPage extends Page
             ? $data['content_channel_sub_themes']
             : [];
 
+        $siteTheme = SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
+            ?? SubThemeResolver::SITE;
+
         $this->data = [
-            'sub_theme' => SubThemeResolver::resolveId((string) ($data['sub_theme'] ?? SubThemeResolver::SITE))
-                ?? SubThemeResolver::SITE,
+            'sub_theme' => $siteTheme,
             'content_channel_sub_themes' => ThemeBindings::expandChannelThemesForForm($channelThemes),
         ];
+        $this->editingThemeId = $siteTheme;
 
         $this->form->fill($this->data);
+        $this->dispatch('voodbuilder-theme-studio-edit', id: $siteTheme);
     }
 
     #[On('voodbuilder-theme-studio-edit')]
     public function onThemeStudioEdit(string $id): void
     {
         $this->editingThemeId = $id;
-        $this->studioMode = 'edit';
     }
 
     #[On('theme-studio-open-editor')]
@@ -101,14 +96,11 @@ class ThemeStudioPage extends Page
         if (filled($id)) {
             $this->editingThemeId = $id;
         }
-
-        $this->studioMode = 'edit';
     }
 
     #[On('theme-studio-close-editor')]
     public function closeEditorMode(): void
     {
-        $this->studioMode = 'map';
         $this->editingThemeId = null;
     }
 
@@ -151,7 +143,6 @@ class ThemeStudioPage extends Page
                 $data['content_channel_sub_themes'] = $this->data['content_channel_sub_themes'];
             }
 
-            // Merge only theme assignment keys — never wipe Site/SEO from Settings.
             VoodbuilderSettings::saveData([
                 'sub_theme' => $data['sub_theme'] ?? SubThemeResolver::SITE,
                 'content_channel_sub_themes' => is_array($data['content_channel_sub_themes'] ?? null)
@@ -217,19 +208,25 @@ class ThemeStudioPage extends Page
         ]);
     }
 
+    /**
+     * @return array<Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('save')
+                ->label(__('voodbuilder::settings.theme_studio_save'))
+                ->action('save')
+                ->keyBindings(['mod+s'])
+                ->color('primary'),
+        ];
+    }
+
     public function getFormContentComponent(): Component
     {
         return Form::make([EmbeddedSchema::make('form')])
             ->id('theme-studio-form')
-            ->livewireSubmitHandler('save')
-            ->footer([
-                Actions::make([
-                    Action::make('save')
-                        ->label(__('voodbuilder::settings.theme_studio_save'))
-                        ->submit('save')
-                        ->keyBindings(['mod+s']),
-                ]),
-            ]);
+            ->livewireSubmitHandler('save');
     }
 
     public function getTitle(): string|Htmlable

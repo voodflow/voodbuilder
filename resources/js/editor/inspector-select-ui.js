@@ -181,13 +181,13 @@ function setNativeSelectValue(select, value) {
 function commitSelectValue(select, value) {
     setNativeSelectValue(select, value);
 
-    // Style panel Tailwind selects are custom markup (not Grapes PropertyView).
-    // Never route through SM inputValueChanged — that swallows `change` and blocks
-    // font-size / font-weight / decorations apply.
+    // Style panel Tailwind + Animation selects are custom markup (not Grapes PropertyView).
+    // Never route through SM inputValueChanged — that swallows `change` and blocks apply.
     if (
         select.matches?.(
-            '[data-voodbuilder-tw-group], [data-voodbuilder-tw-font-family], [data-vb-font-search], [data-vb-search]',
+            '[data-voodbuilder-tw-group], [data-voodbuilder-tw-font-family], [data-vb-font-search], [data-vb-search], [data-voodbuilder-anim-type], [data-voodbuilder-anim-interaction], [data-voodbuilder-anim-iteration], [data-voodbuilder-anim-duration], [data-voodbuilder-anim-delay], [data-voodbuilder-anim-ease], [data-voodbuilder-anim-direction], [data-voodbuilder-anim-fill], [data-voodbuilder-anim-transition], [data-voodbuilder-anim-transition-duration], [data-voodbuilder-anim-transition-ease], [data-voodbuilder-anim-transition-delay]',
         )
+        || select.closest?.('.voodbuilder-editor-anim-property')
     ) {
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -772,6 +772,7 @@ function enhanceSelect(select) {
     });
 
     select.addEventListener('change', () => syncCustomSelect(wrap));
+    select.addEventListener('vb:sync-label', () => syncCustomSelect(wrap));
     select.addEventListener('vb:options-changed', () => {
         buildOptionList(select, list, wrap);
     });

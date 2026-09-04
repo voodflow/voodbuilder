@@ -7,7 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Symfony\Component\Process\Process;
 
 /**
- * Theme Asset Compiler.
+ * Optional developer helper: sync package stylesheet imports and rebuild Vite.
+ *
+ * App themes created in Theme Studio do not need this — they load as runtime CSS.
  */
 final class ThemeAssetCompiler
 {
@@ -34,12 +36,11 @@ final class ThemeAssetCompiler
         return $process->isSuccessful();
     }
 
+    /**
+     * After Theme Studio create/clone/import: no Vite rebuild — app themes are runtime skins.
+     */
     public static function scheduleCompile(?string $workingDirectory = null): void
     {
-        $workingDirectory ??= base_path();
-
-        dispatch(static function () use ($workingDirectory): void {
-            self::compile($workingDirectory);
-        })->afterResponse();
+        SyncThemeStylesheetImports::sync();
     }
 }

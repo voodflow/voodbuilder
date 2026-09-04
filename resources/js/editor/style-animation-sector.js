@@ -6,6 +6,11 @@
  */
 
 import { replayEditorCanvasAnimations } from './vb-runtime.js';
+import {
+    componentClassList,
+    replaceClassGroup,
+} from './style-tailwind-class-groups.js';
+import { VISIBLE_MARKER_CLASS } from './style-animation-safelist.js';
 
 const INTERACTION_OPTIONS = [
     { value: '', label: 'always' },
@@ -17,7 +22,6 @@ const INTERACTION_OPTIONS = [
 /** Real Tailwind variant prefixes (not the “on visible” marker). */
 const CSS_INTERACTION_PREFIXES = ['', 'hover:', 'active:'];
 const VISIBLE_INTERACTION = 'visible';
-const VISIBLE_MARKER_CLASS = 'vb-animate-on-visible';
 
 const ANIMATION_OPTIONS = [
     { value: '', label: 'none' },
@@ -217,19 +221,16 @@ function attrValue(value) {
     return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-/** Compact SM row: label | combobox (select + Add), like Dimension/Border radius units. */
-function fieldHtml({ label, selectAttr, addAttr, options, addLabel }) {
+/** Compact SM row: label | select (live apply on change, same as Style Dimension/Typography). */
+function fieldHtml({ label, selectAttr, options }) {
     return `
-        <div class="gjs-sm-property voodbuilder-editor-anim-property">
+        <div class="gjs-sm-property voodbuilder-editor-anim-property voodbuilder-editor-anim-property--live">
             <div class="gjs-sm-label"><span class="gjs-sm-label-text">${label}</span></div>
             <div class="gjs-fields">
-                <div class="voodbuilder-editor-anim-combobox">
+                <div class="voodbuilder-editor-anim-combobox voodbuilder-editor-anim-combobox--solo">
                     <select class="voodbuilder-editor-input voodbuilder-editor-input--select" aria-label="${attrValue(label)}" ${selectAttr}>
                         ${optionsHtml(options)}
                     </select>
-                    <button type="button" class="voodbuilder-editor-anim-combobox__add" ${addAttr}>
-                        ${addLabel}
-                    </button>
                 </div>
             </div>
         </div>
@@ -283,12 +284,19 @@ function findSectorByTitle(stylesMount, titleNeedle) {
     return null;
 }
 
-function scheduleClassCompile(editor) {
-    // Only compile when live CSS is missing utilities for current classes.
-    editor.__voodbuilderSchedulePageCssRebuild?.(0);
+function componentHasAnimationUtility(component) {
+    return componentClassList(component).some((name) => {
+        const base = name.replace(/^!/, '').replace(/^(?:hover|active):/, '');
+
+        return base === VISIBLE_MARKER_CLASS
+            || base.startsWith('animate-')
+            || base === 'transition'
+            || base.startsWith('transition-')
+            || /^(?:duration|delay|ease)-/.test(base);
+    });
 }
 
-function scheduleEditorAnimationReplay(editor, delayMs = 80) {
+function scheduleEditorAnimationReplay(editor, delayMs = 80, component = null) {
     if (! editor) {
         return;
     }
@@ -309,49 +317,20 @@ function scheduleEditorAnimationReplay(editor, delayMs = 80) {
                 return;
             }
 
-            replayEditorCanvasAnimations({ root: frameDoc });
+            // Prefer the edited node — replaying the whole frame looks like a canvas reload
+            // (every animate-* / on-visible block restarts at once).
+            let root = frameDoc;
+            const el = component?.getEl?.() ?? component?.view?.el ?? null;
+
+            if (el && frameDoc.contains(el)) {
+                root = el;
+            }
+
+            replayEditorCanvasAnimations({ root });
         } catch {
             // Optional in editor.
         }
     }, delayMs);
-}
-
-function componentClassList(component) {
-    return [...(component?.getClasses?.() ?? [])]
-        .map((name) => String(name ?? '').trim())
-        .filter((name) => name !== '');
-}
-
-/**
- * Replace one exclusive utility group atomically via setClass when available.
- * Avoids partial remove/add races that can drop values like animate-bounce.
- */
-function replaceClassGroup(component, groupSet, nextClass) {
-    if (! component) {
-        return;
-    }
-
-    const kept = componentClassList(component).filter((name) => ! groupSet.has(name));
-
-    if (nextClass) {
-        kept.push(nextClass);
-    }
-
-    if (typeof component.setClass === 'function') {
-        component.setClass(kept);
-
-        return;
-    }
-
-    for (const name of componentClassList(component)) {
-        if (groupSet.has(name)) {
-            component.removeClass?.(name);
-        }
-    }
-
-    if (nextClass) {
-        component.addClass?.(nextClass);
-    }
 }
 
 function findPrefixedAnimation(classes) {
@@ -449,17 +428,17 @@ function resolveMappedClass(classes, options, legacyMap = {}, { useLegacy = true
  * Keep iteration/direction/duration/… on the same variant as the animation
  * (hover:animate-spin + hover:animate-twice). Bare modifiers lose to the
  * animation shorthand when it is re-applied on :hover/:active.
+ *
+ * Uses shared replaceClassGroup (removeClass + addClass) — never setClass,
+ * which races Grapes SelectorManager and can drop utilities from Classes.
  */
 function reprefixAnimationModifiers(component, prefix) {
     if (! component) {
         return;
     }
 
-    let next = componentClassList(component);
-    let changed = false;
-
     for (const { bases, set } of ANIMATION_MODIFIER_GROUPS) {
-        const current = next.find((name) => set.has(name));
+        const current = componentClassList(component).find((name) => set.has(name));
 
         if (! current) {
             continue;
@@ -472,36 +451,13 @@ function reprefixAnimationModifiers(component, prefix) {
         }
 
         const desired = `${prefix}${base}`;
+        const duplicates = componentClassList(component).filter((name) => set.has(name));
 
-        if (current === desired && next.filter((name) => set.has(name)).length === 1) {
+        if (current === desired && duplicates.length === 1) {
             continue;
         }
 
-        next = next.filter((name) => ! set.has(name));
-        next.push(desired);
-        changed = true;
-    }
-
-    if (! changed) {
-        return;
-    }
-
-    if (typeof component.setClass === 'function') {
-        component.setClass(next);
-
-        return;
-    }
-
-    for (const name of componentClassList(component)) {
-        if (ANIMATION_MODIFIER_GROUPS.some(({ set }) => set.has(name))) {
-            component.removeClass?.(name);
-        }
-    }
-
-    for (const name of next) {
-        if (ANIMATION_MODIFIER_GROUPS.some(({ set }) => set.has(name))) {
-            component.addClass?.(name);
-        }
+        replaceClassGroup(component, set, desired);
     }
 }
 
@@ -516,34 +472,43 @@ function hasTransitionUtility(classes) {
 }
 
 function syncSelectsFromComponent(root, component) {
-    if (! root) {
+    if (! root || root.__voodbuilderAnimSyncingSelects) {
         return;
     }
 
-    const classes = new Set(component?.getClasses?.() ?? []);
-    const found = findPrefixedAnimation(classes);
-    const useLegacyTiming = ! hasTransitionUtility(classes);
+    root.__voodbuilderAnimSyncingSelects = true;
 
-    const setSelect = (attr, value) => {
-        const el = root.querySelector(attr);
+    try {
+        const classes = new Set(componentClassList(component));
+        const found = findPrefixedAnimation(classes);
+        const useLegacyTiming = ! hasTransitionUtility(classes);
 
-        if (el) {
-            el.value = value;
-        }
-    };
+        const setSelect = (attr, value) => {
+            const el = root.querySelector(attr);
 
-    setSelect('[data-voodbuilder-anim-interaction]', interactionSelectValue(component, root));
-    setSelect('[data-voodbuilder-anim-type]', found.base);
-    setSelect('[data-voodbuilder-anim-iteration]', resolveMappedClass(classes, ITERATION_OPTIONS));
-    setSelect('[data-voodbuilder-anim-duration]', resolveMappedClass(classes, DURATION_OPTIONS, LEGACY_DURATION_MAP, { useLegacy: useLegacyTiming }));
-    setSelect('[data-voodbuilder-anim-delay]', resolveMappedClass(classes, DELAY_OPTIONS));
-    setSelect('[data-voodbuilder-anim-ease]', resolveMappedClass(classes, EASE_OPTIONS, LEGACY_EASE_MAP, { useLegacy: useLegacyTiming }));
-    setSelect('[data-voodbuilder-anim-direction]', resolveMappedClass(classes, DIRECTION_OPTIONS));
-    setSelect('[data-voodbuilder-anim-fill]', resolveMappedClass(classes, FILL_OPTIONS));
-    setSelect('[data-voodbuilder-anim-transition]', resolveMappedClass(classes, TRANSITION_OPTIONS));
-    setSelect('[data-voodbuilder-anim-transition-duration]', resolveMappedClass(classes, TRANSITION_DURATION_OPTIONS));
-    setSelect('[data-voodbuilder-anim-transition-ease]', resolveMappedClass(classes, TRANSITION_EASE_OPTIONS));
-    setSelect('[data-voodbuilder-anim-transition-delay]', resolveMappedClass(classes, TRANSITION_DELAY_OPTIONS));
+            if (el && el.value !== value) {
+                el.value = value;
+                // Refresh custom-select trigger label without dispatching change
+                // (that would re-enter apply → overlay / replay loops).
+                el.dispatchEvent(new Event('vb:sync-label', { bubbles: false }));
+            }
+        };
+
+        setSelect('[data-voodbuilder-anim-interaction]', interactionSelectValue(component, root));
+        setSelect('[data-voodbuilder-anim-type]', found.base);
+        setSelect('[data-voodbuilder-anim-iteration]', resolveMappedClass(classes, ITERATION_OPTIONS));
+        setSelect('[data-voodbuilder-anim-duration]', resolveMappedClass(classes, DURATION_OPTIONS, LEGACY_DURATION_MAP, { useLegacy: useLegacyTiming }));
+        setSelect('[data-voodbuilder-anim-delay]', resolveMappedClass(classes, DELAY_OPTIONS));
+        setSelect('[data-voodbuilder-anim-ease]', resolveMappedClass(classes, EASE_OPTIONS, LEGACY_EASE_MAP, { useLegacy: useLegacyTiming }));
+        setSelect('[data-voodbuilder-anim-direction]', resolveMappedClass(classes, DIRECTION_OPTIONS));
+        setSelect('[data-voodbuilder-anim-fill]', resolveMappedClass(classes, FILL_OPTIONS));
+        setSelect('[data-voodbuilder-anim-transition]', resolveMappedClass(classes, TRANSITION_OPTIONS));
+        setSelect('[data-voodbuilder-anim-transition-duration]', resolveMappedClass(classes, TRANSITION_DURATION_OPTIONS));
+        setSelect('[data-voodbuilder-anim-transition-ease]', resolveMappedClass(classes, TRANSITION_EASE_OPTIONS));
+        setSelect('[data-voodbuilder-anim-transition-delay]', resolveMappedClass(classes, TRANSITION_DELAY_OPTIONS));
+    } finally {
+        root.__voodbuilderAnimSyncingSelects = false;
+    }
 }
 
 function applyAnimationWithInteraction(component, root) {
@@ -564,7 +529,6 @@ function applyModifierWithInteraction(component, root, groupSet, selectAttr) {
 }
 
 function buildAnimationSector(editor, labels = {}) {
-    const addLabel = labels.classAnimationAdd ?? 'Add';
     const sector = document.createElement('div');
     sector.className = 'gjs-sm-sector voodbuilder-editor-sm-sector-animation';
     sector.dataset.voodbuilderAnimationSector = '';
@@ -595,96 +559,72 @@ function buildAnimationSector(editor, labels = {}) {
                     ${fieldHtml({
                         label: labels.classAnimationType ?? 'Preset',
                         selectAttr: 'data-voodbuilder-anim-type',
-                        addAttr: 'data-voodbuilder-anim-type-add',
                         options: ANIMATION_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationInteraction ?? 'Interaction',
                         selectAttr: 'data-voodbuilder-anim-interaction',
-                        addAttr: 'data-voodbuilder-anim-interaction-add',
                         options: INTERACTION_OPTIONS,
-                        addLabel,
                     })}
                 `, { active: true })}
                 ${panelHtml('timing', `
                     ${fieldHtml({
                         label: labels.classAnimationIteration ?? 'Iterations',
                         selectAttr: 'data-voodbuilder-anim-iteration',
-                        addAttr: 'data-voodbuilder-anim-iteration-add',
                         options: ITERATION_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationDuration ?? 'Cycle duration',
                         selectAttr: 'data-voodbuilder-anim-duration',
-                        addAttr: 'data-voodbuilder-anim-duration-add',
                         options: DURATION_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationDelay ?? 'Delay',
                         selectAttr: 'data-voodbuilder-anim-delay',
-                        addAttr: 'data-voodbuilder-anim-delay-add',
                         options: DELAY_OPTIONS,
-                        addLabel,
                     })}
                 `)}
                 ${panelHtml('easing', `
                     ${fieldHtml({
                         label: labels.classAnimationMotion ?? 'Easing',
                         selectAttr: 'data-voodbuilder-anim-ease',
-                        addAttr: 'data-voodbuilder-anim-ease-add',
                         options: EASE_OPTIONS,
-                        addLabel,
                     })}
                 `)}
                 ${panelHtml('direction', `
                     ${fieldHtml({
                         label: labels.classAnimationDirection ?? 'Direction',
                         selectAttr: 'data-voodbuilder-anim-direction',
-                        addAttr: 'data-voodbuilder-anim-direction-add',
                         options: DIRECTION_OPTIONS,
-                        addLabel,
                     })}
                 `)}
                 ${panelHtml('fill', `
                     ${fieldHtml({
                         label: labels.classAnimationFill ?? 'Fill mode',
                         selectAttr: 'data-voodbuilder-anim-fill',
-                        addAttr: 'data-voodbuilder-anim-fill-add',
                         options: FILL_OPTIONS,
-                        addLabel,
                     })}
                 `)}
                 ${panelHtml('transition', `
                     ${fieldHtml({
                         label: labels.classAnimationTransition ?? 'Transition',
                         selectAttr: 'data-voodbuilder-anim-transition',
-                        addAttr: 'data-voodbuilder-anim-transition-add',
                         options: TRANSITION_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationTransitionDuration ?? 'Duration',
                         selectAttr: 'data-voodbuilder-anim-transition-duration',
-                        addAttr: 'data-voodbuilder-anim-transition-duration-add',
                         options: TRANSITION_DURATION_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationTransitionEase ?? 'Easing',
                         selectAttr: 'data-voodbuilder-anim-transition-ease',
-                        addAttr: 'data-voodbuilder-anim-transition-ease-add',
                         options: TRANSITION_EASE_OPTIONS,
-                        addLabel,
                     })}
                     ${fieldHtml({
                         label: labels.classAnimationTransitionDelay ?? 'Delay',
                         selectAttr: 'data-voodbuilder-anim-transition-delay',
-                        addAttr: 'data-voodbuilder-anim-transition-delay-add',
                         options: TRANSITION_DELAY_OPTIONS,
-                        addLabel,
                     })}
                 `)}
             </div>
@@ -734,8 +674,12 @@ function buildAnimationSector(editor, labels = {}) {
 
     activateTab('preset');
 
-    const bindField = (selectAttr, addAttr, groupSet, { transform } = {}) => {
+    const bindField = (selectAttr, groupSet, { transform } = {}) => {
         const apply = () => {
+            if (sector.__voodbuilderAnimSyncingSelects) {
+                return;
+            }
+
             const selected = editor.getSelected();
 
             if (! selected) {
@@ -749,36 +693,43 @@ function buildAnimationSector(editor, labels = {}) {
                 replaceClassGroup(selected, groupSet, value || null);
             }
 
-            scheduleClassCompile(editor);
-            scheduleEditorAnimationReplay(editor);
+            try {
+                selected.view?.updateClasses?.();
+            } catch {
+                // View may be unavailable during bulk updates.
+            }
+
+            // Replay only the edited node — never the whole canvas document.
+            scheduleEditorAnimationReplay(editor, 80, selected);
             syncSelectsFromComponent(sector, selected);
+            editor?.trigger?.('component:update', selected);
         };
 
-        sector.querySelector(addAttr)?.addEventListener('click', apply);
+        sector.querySelector(selectAttr)?.addEventListener('change', apply);
     };
 
-    const bindModifierField = (selectAttr, addAttr, groupSet) => {
-        bindField(selectAttr, addAttr, groupSet, {
+    const bindModifierField = (selectAttr, groupSet) => {
+        bindField(selectAttr, groupSet, {
             transform: (component, root) => applyModifierWithInteraction(component, root, groupSet, selectAttr),
         });
     };
 
-    bindField('[data-voodbuilder-anim-type]', '[data-voodbuilder-anim-type-add]', ANIMATION_CLASS_SET, {
+    bindField('[data-voodbuilder-anim-type]', ANIMATION_CLASS_SET, {
         transform: applyAnimationWithInteraction,
     });
-    bindField('[data-voodbuilder-anim-interaction]', '[data-voodbuilder-anim-interaction-add]', ANIMATION_CLASS_SET, {
+    bindField('[data-voodbuilder-anim-interaction]', ANIMATION_CLASS_SET, {
         transform: applyAnimationWithInteraction,
     });
-    bindModifierField('[data-voodbuilder-anim-iteration]', '[data-voodbuilder-anim-iteration-add]', ITERATION_CLASS_SET);
-    bindModifierField('[data-voodbuilder-anim-duration]', '[data-voodbuilder-anim-duration-add]', DURATION_CLASS_SET);
-    bindModifierField('[data-voodbuilder-anim-delay]', '[data-voodbuilder-anim-delay-add]', DELAY_CLASS_SET);
-    bindModifierField('[data-voodbuilder-anim-ease]', '[data-voodbuilder-anim-ease-add]', EASE_CLASS_SET);
-    bindModifierField('[data-voodbuilder-anim-direction]', '[data-voodbuilder-anim-direction-add]', DIRECTION_CLASS_SET);
-    bindModifierField('[data-voodbuilder-anim-fill]', '[data-voodbuilder-anim-fill-add]', FILL_CLASS_SET);
-    bindField('[data-voodbuilder-anim-transition]', '[data-voodbuilder-anim-transition-add]', TRANSITION_CLASS_SET);
-    bindField('[data-voodbuilder-anim-transition-duration]', '[data-voodbuilder-anim-transition-duration-add]', TRANSITION_DURATION_CLASS_SET);
-    bindField('[data-voodbuilder-anim-transition-ease]', '[data-voodbuilder-anim-transition-ease-add]', TRANSITION_EASE_CLASS_SET);
-    bindField('[data-voodbuilder-anim-transition-delay]', '[data-voodbuilder-anim-transition-delay-add]', TRANSITION_DELAY_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-iteration]', ITERATION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-duration]', DURATION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-delay]', DELAY_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-ease]', EASE_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-direction]', DIRECTION_CLASS_SET);
+    bindModifierField('[data-voodbuilder-anim-fill]', FILL_CLASS_SET);
+    bindField('[data-voodbuilder-anim-transition]', TRANSITION_CLASS_SET);
+    bindField('[data-voodbuilder-anim-transition-duration]', TRANSITION_DURATION_CLASS_SET);
+    bindField('[data-voodbuilder-anim-transition-ease]', TRANSITION_EASE_CLASS_SET);
+    bindField('[data-voodbuilder-anim-transition-delay]', TRANSITION_DELAY_CLASS_SET);
 
     editor.on('component:selected', (component) => {
         if (! component) {
@@ -796,7 +747,7 @@ function buildAnimationSector(editor, labels = {}) {
             syncVisibleMarker(component, selectValue);
 
             if (before !== componentClassList(component).join(' ')) {
-                scheduleClassCompile(editor);
+                scheduleEditorAnimationReplay(editor, 80, component);
             }
         }
 
@@ -804,12 +755,27 @@ function buildAnimationSector(editor, labels = {}) {
     });
 
     editor.on('component:update:classes', (component) => {
-        syncSelectsFromComponent(sector, component ?? editor.getSelected());
-        scheduleEditorAnimationReplay(editor, 120);
+        const selected = editor.getSelected();
+        const target = component ?? selected;
+
+        if (selected && target === selected) {
+            syncSelectsFromComponent(sector, selected);
+        }
+
+        // Only the changed node — a full-frame replay flashed every animated block
+        // and felt like the editor was reloading / recompiling.
+        if (target && componentHasAnimationUtility(target)) {
+            scheduleEditorAnimationReplay(editor, 120, target);
+        }
     });
 
+    // Real page JIT (rare) may need a wider refresh; keep it scoped to selection when possible.
     editor.on('voodbuilder:page-css-compiled', () => {
-        scheduleEditorAnimationReplay(editor, 40);
+        const selected = editor.getSelected();
+
+        if (selected && componentHasAnimationUtility(selected)) {
+            scheduleEditorAnimationReplay(editor, 40, selected);
+        }
     });
 
     syncSelectsFromComponent(sector, editor.getSelected());
@@ -850,6 +816,18 @@ function placeAnimationSector(stylesMount, sector) {
     const sectorsRoot = stylesMount.querySelector('.gjs-sm-sectors') ?? stylesMount;
     sectorsRoot.appendChild(sector);
 }
+
+/** @internal Exported for unit tests. */
+export {
+    ANIMATION_CLASS_SET,
+    DURATION_CLASS_SET,
+    applyAnimationWithInteraction,
+    applyModifierWithInteraction,
+    reprefixAnimationModifiers,
+    replaceClassGroup,
+};
+
+export { STYLE_ANIMATION_BUNDLED_UTILITIES } from './style-animation-safelist.js';
 
 export function registerStyleAnimationSector(editor, options = {}) {
     const stylesMount = options.mount;

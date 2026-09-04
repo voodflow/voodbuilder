@@ -110,8 +110,8 @@ return [
             'capabilities' => ['doc'],
         ],
         'site' => [
-            'label' => 'Landing page',
-            'description' => 'Marketing pages, home, and site sections with hero blocks.',
+            'label' => 'VoodBuilder base',
+            'description' => 'Base theme for pages built with the page builder.',
             'type' => 'marketing',
             'capabilities' => ['landing'],
             'css' => 'themes/site/theme.css',
@@ -125,34 +125,7 @@ return [
                 'hide_site_footer' => false,
             ],
         ],
-        'blog' => [
-            'label' => 'Blog',
-            'description' => 'Ghost-inspired reading layout for blog archives and posts.',
-            'type' => 'content',
-            'capabilities' => ['article'],
-            'css' => 'themes/blog/theme.css',
-            'layouts' => [
-                'home' => 'voodbuilder::themes.blog.layouts.home',
-                'landing' => 'voodbuilder::themes.blog.layouts.landing',
-                'page' => 'voodbuilder::themes.blog.layouts.page',
-                'article' => 'voodbuilder::themes.blog.layouts.article',
-                'section_index' => 'voodbuilder::themes.blog.layouts.section-index',
-            ],
-        ],
-        'news' => [
-            'label' => 'News',
-            'description' => 'Editorial magazine layout for story grids and sidebars.',
-            'type' => 'content',
-            'capabilities' => ['article'],
-            'css' => 'themes/news/theme.css',
-            'layouts' => [
-                'home' => 'voodbuilder::themes.news.layouts.home',
-                'landing' => 'voodbuilder::themes.news.layouts.landing',
-                'page' => 'voodbuilder::themes.news.layouts.page',
-                'article' => 'voodbuilder::themes.news.layouts.article',
-                'section_index' => 'voodbuilder::themes.news.layouts.section-index',
-            ],
-        ],
+        // Article themes (blog/news) belong to dedicated packages — register via Voodbuilder::subTheme().
     ],
 
     /*
@@ -175,6 +148,7 @@ return [
     | Default visual theme per content channel (route package area).
     | Overridable in Theme Studio. Companion packages may register owned themes
     | (docs → vdocs, tutorials → vtuts) via Voodbuilder::subTheme().
+    | blog/news defaults are omitted until a package owns those themes.
     */
     'content_channel_defaults' => [
         'events' => 'site',
@@ -183,8 +157,6 @@ return [
         'sponsors' => 'site',
         'tutorials' => 'tutorials',
         'docs' => 'docs',
-        'blog' => 'blog',
-        'news' => 'news',
     ],
 
     /*

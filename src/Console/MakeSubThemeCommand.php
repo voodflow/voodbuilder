@@ -42,9 +42,9 @@ class MakeSubThemeCommand extends Command
         }
 
         if ($result->importAppended) {
-            $this->components->info('Registered CSS as a Vite input (loaded only when this sub-theme is active).');
+            $this->components->info('Theme CSS is ready as a runtime skin (no Vite rebuild required).');
         } else {
-            $this->components->warn('Add the theme CSS path to vite.config.js `input`, then run npm run build.');
+            $this->components->warn('Theme CSS file was not written — check disk permissions.');
         }
 
         $viewsRoot = ThemeConvention::appViewsPath($result->id).'/layouts';
@@ -53,7 +53,7 @@ class MakeSubThemeCommand extends Command
         $this->components->info("Sub-theme \"{$result->id}\" created.");
         $this->line("  CSS:     {$result->cssPath}");
         $this->line("  Layouts: {$viewsRoot}/");
-        $this->line('Customize colors in Admin → Settings → Layouts, or edit the theme CSS file.');
+        $this->line('Customize colors in Admin → Theme Studio, or edit the theme CSS file.');
 
         return self::SUCCESS;
     }

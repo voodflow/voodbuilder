@@ -35,6 +35,7 @@
 /* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
    published pages match the Editor even when page JIT CSS is stale/partial. */
 @source '../js/editor/style-animation-sector.js';
+@source '../js/editor/style-animation-safelist.js';
 @source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
 @source inline("animate-spin-reverse-slow");
 @source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");

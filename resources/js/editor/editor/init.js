@@ -354,6 +354,12 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         if (style.textContent !== css) {
             style.textContent = css;
         }
+
+        // Canvas stylesheets (theme.css / section-utilities) may append after frameStyle.
+        // Keep the Theme Studio palette last so --color-vp-brand-* always wins.
+        if (style.parentNode === doc.head && doc.head.lastElementChild !== style) {
+            doc.head.appendChild(style);
+        }
     };
 
     const ensureChromeLayoutStyle = (doc) => {
@@ -380,6 +386,10 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         if (style.textContent !== css) {
             style.textContent = css;
         }
+
+        if (style.parentNode === doc.head && doc.head.lastElementChild !== style) {
+            doc.head.appendChild(style);
+        }
     };
 
     const apply = (isDark = null) => {
@@ -402,10 +412,11 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
             doc.body?.classList.remove('voodbuilder-popup-editor-canvas');
         }
 
-        ensurePaletteStyle(doc);
         ensureChromeLayoutStyle(doc);
+        ensurePaletteStyle(doc);
     };
 
+    editor.__voodbuilderApplyCanvasTheme = apply;
     editor.on('canvas:frame:load', () => apply());
     editor.on('load', () => apply());
     window.addEventListener('voodbuilder:theme-changed', (event) => {
@@ -573,6 +584,9 @@ function waitForCanvasPresentation(editor, options = {}) {
                 revealCanvasDocument(editor.Canvas?.getWindow?.(), revealOptions);
             });
         }
+
+        // Stylesheets finished loading — re-stamp Theme Studio tokens after them.
+        editor.__voodbuilderApplyCanvasTheme?.();
     });
 }
 

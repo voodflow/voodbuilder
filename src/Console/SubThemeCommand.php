@@ -130,8 +130,10 @@ class SubThemeCommand extends Command
             $this->components->info('Imported admin color overrides.');
         }
 
-        if (! $result->importAppended) {
-            $this->components->warn('Run npm run build to compile the imported theme stylesheet.');
+        if ($result->importAppended) {
+            $this->components->info('Theme CSS ready as a runtime skin (no Vite rebuild).');
+        } else {
+            $this->components->warn('Theme CSS file was not written.');
         }
 
         return self::SUCCESS;
@@ -164,8 +166,10 @@ class SubThemeCommand extends Command
 
         $this->components->info("Cloned \"{$sourceId}\" as \"{$result->id}\".");
 
-        if (! $result->importAppended) {
-            $this->components->warn('Run npm run build to compile the cloned theme stylesheet.');
+        if ($result->importAppended) {
+            $this->components->info('Theme CSS ready as a runtime skin (no Vite rebuild).');
+        } else {
+            $this->components->warn('Theme CSS file was not written.');
         }
 
         return self::SUCCESS;

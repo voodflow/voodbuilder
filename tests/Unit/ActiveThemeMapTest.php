@@ -95,14 +95,14 @@ class ActiveThemeMapTest extends TestCase
         $assignments = ActiveThemeMap::assignments([
             'sub_theme' => 'site',
             'content_channel_sub_themes' => [
-                'tutorials' => 'blog',
+                'tutorials' => 'docs',
             ],
         ]);
 
         $tutorial = collect($assignments)->firstWhere('area_id', 'tutorials');
 
         $this->assertNotNull($tutorial);
-        $this->assertSame('blog', $tutorial['theme_id']);
+        $this->assertSame('docs', $tutorial['theme_id']);
         $this->assertSame('override', $tutorial['source']);
     }
 }

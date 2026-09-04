@@ -140,7 +140,11 @@ CSS;
 
         $lightBuiltin = self::variablesToCssRule(
             "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
-            self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
+            ),
         );
 
         if ($lightBuiltin !== null) {
@@ -162,7 +166,11 @@ CSS;
 
         $darkBuiltin = self::variablesToCssRule(
             "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
-            self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
+            ),
         );
 
         if ($darkBuiltin !== null) {
@@ -180,6 +188,13 @@ CSS;
 
         if ($darkSemantic !== null) {
             $rules[] = $darkSemantic;
+        }
+
+        // Layout/shell rules from app theme.css (before admin palette so Theme Studio colors win).
+        $runtime = self::runtimeStylesheetForPalette($subThemeId);
+
+        if ($runtime !== '') {
+            $rules[] = $runtime;
         }
 
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
@@ -395,6 +410,12 @@ CSS;
             self::CANVAS_HEADER_BACKGROUND_CSS,
             ...self::builtinSubThemeRulesForCanvas($subThemeId),
         ];
+
+        $runtime = self::runtimeStylesheetForPalette($subThemeId);
+
+        if ($runtime !== '') {
+            $rules[] = $runtime;
+        }
 
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $palette = $colors[$subThemeId] ?? null;
@@ -792,7 +813,11 @@ CSS;
 
         $lightColorRule = self::variablesToCssRule(
             'html:not(.dark)',
-            self::filterSubThemeVariables($lightValues),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeVariables($lightValues),
+            ),
         );
 
         if ($lightColorRule !== null) {
@@ -814,7 +839,11 @@ CSS;
 
         $darkColorRule = self::variablesToCssRule(
             'html.dark',
-            self::filterSubThemeVariables($darkValues),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeVariables($darkValues),
+            ),
         );
 
         if ($darkColorRule !== null) {
@@ -968,6 +997,59 @@ CSS;
     }
 
     /**
+     * Drop bundled brand/surface tokens when Theme Studio already overrides them.
+     * Keeps the Editor canvas from flashing (or sticking on) stale theme.css pinks/reds
+     * when a later stylesheet races the palette inject.
+     *
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private static function withoutAdminOverriddenColorVariables(string $subThemeId, bool $dark, array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        foreach (self::adminOverriddenColorVariableNames($subThemeId, $dark) as $name) {
+            unset($variables[$name]);
+        }
+
+        return $variables;
+    }
+
+    /**
+     * App theme.css served at runtime — keep layout/chrome, drop tokens Theme Studio owns.
+     */
+    private static function runtimeStylesheetForPalette(string $subThemeId): string
+    {
+        $runtime = RuntimeSubThemeStylesheet::forTheme($subThemeId);
+
+        if ($runtime === '' || ! self::themeHasCustomColors($subThemeId)) {
+            return $runtime;
+        }
+
+        $tokens = array_values(array_unique([
+            ...self::adminOverriddenColorVariableNames($subThemeId, false),
+            ...self::adminOverriddenColorVariableNames($subThemeId, true),
+            ...self::adminOverriddenSemanticVariableNames($subThemeId, false),
+            ...self::adminOverriddenSemanticVariableNames($subThemeId, true),
+        ]));
+
+        if ($tokens === []) {
+            return $runtime;
+        }
+
+        $pattern = '/(?:'.implode('|', array_map(
+            static fn (string $token): string => preg_quote($token, '/'),
+            $tokens,
+        )).')\s*:\s*[^;}{]+;?/i';
+
+        $stripped = preg_replace($pattern, '', $runtime);
+
+        return is_string($stripped) ? trim($stripped) : $runtime;
+    }
+
+    /**
      * @return list<string>
      */
     private static function adminOverriddenSemanticVariableNames(string $subThemeId, bool $dark): array
@@ -992,6 +1074,47 @@ CSS;
         if (($mode['header_text'] ?? null) !== null) {
             $names[] = '--vx-header-text';
             $names[] = '--vx-header-muted';
+        }
+
+        if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {
+            $names[] = '--vx-accent';
+        }
+
+        return $names;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function adminOverriddenColorVariableNames(string $subThemeId, bool $dark): array
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $mode = is_array($colors[$subThemeId] ?? null)
+            ? ($colors[$subThemeId][$dark ? 'dark' : 'light'] ?? [])
+            : [];
+
+        if (! is_array($mode)) {
+            return [];
+        }
+
+        $names = [];
+
+        if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {
+            $names[] = '--color-vp-brand-1';
+            $names[] = '--color-vp-brand-2';
+            $names[] = '--color-vp-brand-3';
+        }
+
+        if (($mode['body_bg'] ?? null) !== null) {
+            $names[] = '--color-vp-bg';
+            $names[] = '--color-vp-bg-alt';
+            $names[] = '--color-vp-bg-elv';
+        }
+
+        if (($mode['text'] ?? null) !== null) {
+            $names[] = '--color-vp-text-1';
+            $names[] = '--color-vp-text-2';
+            $names[] = '--color-vp-text-3';
         }
 
         return $names;

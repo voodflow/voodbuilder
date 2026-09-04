@@ -6,6 +6,8 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Illuminate\Support\Facades\Vite;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
+use Voodflow\Voodbuilder\Support\RuntimeSubThemeStylesheet;
+use Voodflow\Voodbuilder\Support\SubThemeCssPath;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
@@ -95,7 +97,8 @@ final class EditorAssets
     }
 
     /**
-     * Active sub-theme CSS as a Vite entry (null when already bundled in theme.css = site).
+     * Active sub-theme CSS as a Vite entry (null when already bundled in theme.css = site,
+     * or when the theme is an app skin served at runtime — see RuntimeSubThemeStylesheet).
      */
     public static function subThemeCssViteEntry(?string $subTheme): ?string
     {
@@ -108,6 +111,12 @@ final class EditorAssets
         $absolute = self::resolveSubThemeCssAbsolutePath($id);
 
         if ($absolute === null || ! is_file($absolute)) {
+            return null;
+        }
+
+        // App themes (Theme Studio / make-subtheme) are plain CSS injected via ThemePalette —
+        // never list them in vite.config.js so a WIP theme cannot break the editor build.
+        if (RuntimeSubThemeStylesheet::isRuntimeServedPath($absolute)) {
             return null;
         }
 

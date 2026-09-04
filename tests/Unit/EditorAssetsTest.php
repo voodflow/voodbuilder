@@ -48,19 +48,24 @@ class EditorAssetsTest extends TestCase
         ));
     }
 
-    public function test_page_vite_entries_include_active_sub_theme_css(): void
+    public function test_page_vite_entries_skip_runtime_app_sub_theme_css(): void
     {
         $this->assertNull(EditorAssets::subThemeCssViteEntry('site'));
 
+        // App themes under resources/voodbuilder/themes are runtime skins, not Vite inputs.
         $landing = EditorAssets::subThemeCssViteEntry('landing-fra');
+        $this->assertNull($landing);
 
-        if ($landing !== null) {
-            $public = EditorAssets::pageViteEntries(false, false, 'landing-fra');
-            $this->assertContains($landing, $public);
-        }
+        $public = EditorAssets::pageViteEntries(false, false, 'landing-fra');
+        $this->assertFalse(collect($public)->contains(
+            fn (string $entry): bool => str_contains($entry, 'resources/voodbuilder/themes/'),
+        ));
+        $this->assertFalse(collect($public)->contains(
+            fn (string $entry): bool => str_contains($entry, 'themes/blog/') || str_contains($entry, 'themes/news/'),
+        ));
 
-        $blog = EditorAssets::subThemeCssViteEntry('blog');
-        $this->assertNotNull($blog);
-        $this->assertStringEndsWith('themes/blog/theme.css', $blog);
+        // Removed package article skins are not Vite entries either.
+        $this->assertNull(EditorAssets::subThemeCssViteEntry('blog'));
+        $this->assertNull(EditorAssets::subThemeCssViteEntry('news'));
     }
 }

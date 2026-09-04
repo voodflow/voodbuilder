@@ -1,17 +1,21 @@
 /**
  * Recompiles scoped Tailwind utilities for pasted components in the canvas iframe.
- * Triggered by class changes only — Style Manager inline styles do not need compile-css.
+ * Triggered by library drops / class changes — Style Manager inline styles do not need compile-css.
  * Uses the same compile-css API as code import (Tailwind v4 via compile-component-tailwind.mjs).
  */
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
 import { shouldDeferCssRebuild } from './editor-lifecycle.js';
 import { componentHasRenderableView, safeFindComponents } from './tailwind-visual-style.js';
+import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+import { componentClassList } from './style-tailwind-class-groups.js';
+import { STYLE_ANIMATION_BUNDLED_UTILITIES, VISIBLE_MARKER_CLASS } from './style-animation-safelist.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-component-live-css';
 const DEBOUNCE_MS = 450;
 const BUILD_SCOPE = 'component-css';
 const INITIAL_BUILD_DELAY_MS = 120;
+const AFTER_DROP_DELAY_MS = 200;
 
 function collectPastedComponentsHtml(editor) {
     const parts = [];
@@ -69,11 +73,47 @@ function isInsidePastedComponent(component) {
         return true;
     }
 
+    if (component.getAttributes?.()?.['data-voodbuilder-component']) {
+        return true;
+    }
+
     try {
-        return Boolean(component.closest?.('.voodbuilder-pasted-component'));
+        return Boolean(
+            component.closest?.('.voodbuilder-pasted-component')
+            || component.closest?.('[data-voodbuilder-component]'),
+        );
     } catch {
         return false;
     }
+}
+
+/**
+ * Animation-sector tokens only — Style Manager animation toggles must not flash JIT.
+ * Do NOT treat general Style-panel / spacing safelist tokens as "skip compile":
+ * library component drops often use those and still need scoped compile-css.
+ */
+function isAnimationCatalogUtility(className) {
+    const token = String(className ?? '').trim().replace(/^!/, '');
+
+    if (token === '' || token === VISIBLE_MARKER_CLASS) {
+        return true;
+    }
+
+    const base = token.replace(/^(?:hover|active):/, '');
+
+    if (STYLE_ANIMATION_BUNDLED_UTILITIES.has(token) || STYLE_ANIMATION_BUNDLED_UTILITIES.has(base)) {
+        return true;
+    }
+
+    return /^(?:animate-(?:spin|ping|pulse|bounce|wiggle|wiggle-more|rotate-[xy]|jump(?:-in|-out)?|shake|fade(?:-(?:up|down|left|right))?|flip-(?:up|down)|infinite|once|twice|thrice|duration-\d+|delay-(?:none|\d+)|ease(?:-linear|-in|-out|-in-out)?|normal|reverse|alternate(?:-reverse)?|fill-(?:none|forwards|backwards|both))|transition(?:-all|-colors|-opacity|-shadow|-transform|-none)?|duration-\d+|ease-(?:linear|in|out|in-out)|delay-\d+)$/.test(base);
+}
+
+function classFingerprintFromHtml(html) {
+    return [...String(html ?? '').matchAll(/\bclass="([^"]*)"/g)]
+        .flatMap((match) => String(match[1] ?? '').split(/\s+/))
+        .filter(Boolean)
+        .sort()
+        .join(' ');
 }
 
 export function registerComponentTailwindAutobuild(editor, options = {}) {
@@ -100,6 +140,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
     let lastCss = '';
     let frameReady = false;
     let editorLoaded = false;
+    let pendingAfterDrag = false;
     let initialBuildResolve = null;
     let initialBuildAttempts = 0;
     const initialBuildDone = new Promise((resolve) => {
@@ -124,6 +165,8 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             || editor.__voodbuilderCssRebuildDragLock
             || editor.__voodbuilderActiveBlockDrag
         ) {
+            pendingAfterDrag = true;
+
             return;
         }
 
@@ -131,6 +174,46 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         timer = setTimeout(() => {
             void rebuild();
         }, delay);
+    };
+
+    /** Force a rebuild after drag lock releases (library / block drops). */
+    const scheduleAfterDrag = (delay = AFTER_DROP_DELAY_MS, attempts = 0) => {
+        pendingAfterDrag = true;
+
+        window.setTimeout(() => {
+            if (
+                (editor.__voodbuilderCssRebuildDragLock || editor.__voodbuilderActiveBlockDrag)
+                && attempts < 20
+            ) {
+                scheduleAfterDrag(delay, attempts + 1);
+
+                return;
+            }
+
+            if (! pendingAfterDrag) {
+                return;
+            }
+
+            pendingAfterDrag = false;
+            schedule(delay);
+        }, delay);
+    };
+
+    editor.__voodbuilderScheduleComponentCssRebuild = (delay = DEBOUNCE_MS) => {
+        if (
+            editor.__voodbuilderCssRebuildDragLock
+            || editor.__voodbuilderActiveBlockDrag
+        ) {
+            scheduleAfterDrag(typeof delay === 'number' ? delay : AFTER_DROP_DELAY_MS);
+
+            return;
+        }
+
+        schedule(typeof delay === 'number' ? delay : DEBOUNCE_MS);
+    };
+    editor.__voodbuilderForceComponentCssRebuild = (delay = DEBOUNCE_MS) => {
+        pendingAfterDrag = false;
+        schedule(typeof delay === 'number' ? delay : DEBOUNCE_MS);
     };
 
     editor.__voodbuilderCssRebuildCancelHooks = editor.__voodbuilderCssRebuildCancelHooks ?? [];
@@ -145,6 +228,8 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             || editor.__voodbuilderCssRebuildDragLock
             || editor.__voodbuilderActiveBlockDrag
         ) {
+            pendingAfterDrag = true;
+
             return;
         }
 
@@ -153,6 +238,9 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
 
         if (html === '') {
             injectLiveComponentCss(editor, '');
+            lastHtml = '';
+            lastCss = '';
+            editor.__voodbuilderComponentCssClassFingerprint = '';
 
             if (editorLoaded && initialBuildAttempts >= 2) {
                 finishInitialBuild();
@@ -172,15 +260,38 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         }
 
         // Same class tokens in different order: treat as structure-only.
-        const classFingerprint = [...html.matchAll(/\bclass="([^"]*)"/g)]
-            .flatMap((match) => String(match[1] ?? '').split(/\s+/))
-            .filter(Boolean)
-            .sort()
-            .join(' ');
+        const classFingerprint = classFingerprintFromHtml(html);
         const previousFingerprint = editor.__voodbuilderComponentCssClassFingerprint ?? '';
 
         if (classFingerprint === previousFingerprint && lastCss !== '') {
             lastHtml = html;
+            finishInitialBuild();
+
+            return;
+        }
+
+        const htmlTokens = [...html.matchAll(/\bclass="([^"]*)"/g)]
+            .flatMap((match) => String(match[1] ?? '').split(/\s+/))
+            .map((token) => token.trim())
+            .filter(Boolean);
+        const previousTokenSet = new Set(
+            String(previousFingerprint ?? '').split(/\s+/).filter(Boolean),
+        );
+        const newTokens = htmlTokens.filter((token) => ! previousTokenSet.has(token));
+        const newlyUncovered = newTokens.filter(
+            (token) => ! pageCssCoversClass(editor, token),
+        );
+
+        // Skip JIT only when the author solely toggled Animation-sector utilities
+        // (theme.css / animated plugin already ships them). Library drops and Style
+        // utilities that need scoped compile-css must still hit the endpoint.
+        const onlyAnimationGains = newTokens.length > 0
+            && newlyUncovered.length === 0
+            && newTokens.every((token) => isAnimationCatalogUtility(token));
+
+        if (onlyAnimationGains && lastCss !== '') {
+            lastHtml = html;
+            editor.__voodbuilderComponentCssClassFingerprint = classFingerprint;
             finishInitialBuild();
 
             return;
@@ -227,21 +338,59 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         }
     };
 
-    // Pasted library components: recompile only when their Tailwind classes change.
-    // Style Manager inline edits must not hit compile-css.
-    // Skip while dragging; leftover unused rules after remove are fine until next edit/save.
+    // Class edits inside a pasted tree — skip when every token is already theme-backed
+    // (Animation sector + Style catalogs). Uncovered utilities still need JIT.
     editor.on('component:update:classes', (component) => {
         if (editor.__voodbuilderCssRebuildDragLock || editor.__voodbuilderActiveBlockDrag) {
             return;
         }
 
-        if (isInsidePastedComponent(component)) {
-            schedule();
+        if (! isInsidePastedComponent(component)) {
+            return;
         }
+
+        const uncovered = componentClassList(component).some(
+            (token) => ! pageCssCoversClass(editor, token),
+        );
+
+        if (! uncovered) {
+            return;
+        }
+
+        schedule();
     });
 
-    editor.on('block:drag:start', () => clearTimeout(timer));
-    editor.on('sorter:drag:start', () => clearTimeout(timer));
+    // Library / Elements drop: hydrate finishes after component:add — compile realtime.
+    editor.on('component:add', (component) => {
+        if (! isInsidePastedComponent(component)) {
+            return;
+        }
+
+        if (editor.__voodbuilderCssRebuildDragLock || editor.__voodbuilderActiveBlockDrag) {
+            scheduleAfterDrag();
+
+            return;
+        }
+
+        schedule(AFTER_DROP_DELAY_MS);
+    });
+
+    editor.on('block:drag:start', () => {
+        clearTimeout(timer);
+        pendingAfterDrag = false;
+    });
+    editor.on('sorter:drag:start', () => {
+        clearTimeout(timer);
+    });
+
+    editor.on('block:drag:stop', () => {
+        scheduleAfterDrag();
+    });
+    editor.on('sorter:drag:end', () => {
+        if (pendingAfterDrag) {
+            scheduleAfterDrag();
+        }
+    });
 
     editor.on('load', () => {
         editorLoaded = true;

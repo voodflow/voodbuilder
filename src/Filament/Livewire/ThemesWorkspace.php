@@ -14,6 +14,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\ActiveThemeMap;
 use Voodflow\Voodbuilder\Support\SubThemeCloner;
 use Voodflow\Voodbuilder\Support\SubThemeExporter;
 use Voodflow\Voodbuilder\Support\SubThemeImporter;
@@ -44,6 +45,8 @@ class ThemesWorkspace extends Component
     public bool $metaEditable = false;
 
     public bool $canEditColors = false;
+
+    public bool $canDelete = false;
 
     /** @var array<string, string|int|null> */
     public array $light = [];
@@ -107,17 +110,73 @@ class ThemesWorkspace extends Component
      */
     public string $studioRole = 'full';
 
-    public function mount(string $studioRole = 'full', ?string $initialThemeId = null): void
-    {
+    /** Brand tab: colors-first desk (no close / lighter chrome). */
+    public bool $brandDesk = false;
+
+    /** Theme Studio desk: denser edit UI + live preview. */
+    public bool $studioDesk = false;
+
+    /** Which palette drives the live preview swatches. */
+    public string $previewMode = 'light';
+
+    /** Catalog filter tab when studioDesk: plugin | custom. */
+    public string $catalogTab = 'custom';
+
+    public function mount(
+        string $studioRole = 'full',
+        ?string $initialThemeId = null,
+        bool $brandDesk = false,
+        bool $studioDesk = false,
+    ): void {
         $this->studioRole = match ($studioRole) {
             'catalog', 'editor', 'full' => $studioRole,
             default => 'full',
         };
+        $this->brandDesk = $brandDesk;
+        $this->studioDesk = $studioDesk;
         $this->syncThemeGroups();
+
+        if ($this->studioDesk && $this->groups['custom'] === []) {
+            $this->catalogTab = 'plugin';
+        }
 
         if ($this->studioRole === 'editor' && filled($initialThemeId) && app(SubThemeRegistry::class)->exists($initialThemeId)) {
             $this->hydrateEditorFor($initialThemeId);
         }
+    }
+
+    public function setPreviewMode(string $mode): void
+    {
+        if (in_array($mode, ['light', 'dark'], true)) {
+            $this->previewMode = $mode;
+        }
+    }
+
+    public function setCatalogTab(string $tab): void
+    {
+        if (in_array($tab, ['plugin', 'custom'], true)) {
+            $this->catalogTab = $tab;
+        }
+    }
+
+    #[On('voodbuilder-studio-clone-editing')]
+    public function cloneEditingTheme(): void
+    {
+        if ($this->studioRole !== 'editor' || $this->selectedId === null) {
+            return;
+        }
+
+        $this->openCloneModal($this->selectedId);
+    }
+
+    #[On('voodbuilder-studio-export-editing')]
+    public function exportEditingTheme(): void
+    {
+        if ($this->studioRole !== 'editor' || $this->selectedId === null) {
+            return;
+        }
+
+        $this->exportTheme($this->selectedId);
     }
 
     /**
@@ -132,6 +191,7 @@ class ThemesWorkspace extends Component
         $this->description = $card['description'];
         $this->metaEditable = $card['can_edit_meta'];
         $this->canEditColors = $card['can_edit_colors'];
+        $this->canDelete = $card['can_delete'];
         $this->light = ThemePresenter::modeColors($id, 'light');
         $this->dark = ThemePresenter::modeColors($id, 'dark');
         $this->seedPrimary = $this->light['primary'] ?? '#3451b2';
@@ -142,6 +202,16 @@ class ThemesWorkspace extends Component
     #[On('voodbuilder-themes-changed')]
     public function refreshThemeCatalog(): void
     {
+        $this->syncThemeGroups();
+    }
+
+    #[On('voodbuilder-theme-colors-updated')]
+    public function refreshThemeCatalogColors(): void
+    {
+        if ($this->studioRole === 'editor') {
+            return;
+        }
+
         $this->syncThemeGroups();
     }
 
@@ -188,6 +258,11 @@ class ThemesWorkspace extends Component
     #[On('voodbuilder-theme-studio-edit')]
     public function onStudioEdit(string $id): void
     {
+        // Brand desk stays locked to the Site pages layout via hydrate only.
+        if ($this->brandDesk) {
+            return;
+        }
+
         if ($this->studioRole === 'catalog') {
             $this->selectedId = app(SubThemeRegistry::class)->exists($id) ? $id : null;
 
@@ -201,6 +276,28 @@ class ThemesWorkspace extends Component
 
             $this->hydrateEditorFor($id);
         }
+    }
+
+    /**
+     * Load theme into the editor without asking Theme Studio to switch tabs.
+     */
+    #[On('voodbuilder-theme-studio-hydrate')]
+    public function onStudioHydrate(string $id): void
+    {
+        if ($this->studioRole !== 'editor' && $this->studioRole !== 'full') {
+            return;
+        }
+
+        // Brand desk always follows Site pages layout; layout editor ignores these.
+        if (! $this->brandDesk) {
+            return;
+        }
+
+        if (! app(SubThemeRegistry::class)->exists($id)) {
+            return;
+        }
+
+        $this->hydrateEditorFor($id);
     }
 
     #[On('voodbuilder-theme-studio-highlight')]
@@ -338,9 +435,32 @@ class ThemesWorkspace extends Component
         }
 
         $this->themeSlug = SubThemeManager::slugFromLabel((string) $value);
+
+        if ($this->studioDesk) {
+            $this->persistMetadata(notify: false);
+        }
+    }
+
+    public function updatedThemeSlug(?string $value): void
+    {
+        if ($this->studioDesk) {
+            $this->persistMetadata(notify: false);
+        }
+    }
+
+    public function updatedDescription(?string $value): void
+    {
+        if ($this->studioDesk) {
+            $this->persistMetadata(notify: false);
+        }
     }
 
     public function saveMetadata(): void
+    {
+        $this->persistMetadata(notify: true);
+    }
+
+    protected function persistMetadata(bool $notify = true): void
     {
         if ($this->selectedId === null || ! $this->metaEditable) {
             return;
@@ -366,7 +486,9 @@ class ThemesWorkspace extends Component
             $this->dispatch('voodbuilder-themes-changed');
         }
 
-        Notification::make()->title(__('voodbuilder::settings.theme_workspace_meta_saved'))->success()->send();
+        if ($notify) {
+            Notification::make()->title(__('voodbuilder::settings.theme_workspace_meta_saved'))->success()->send();
+        }
     }
 
     public function persistColors(): void
@@ -375,23 +497,121 @@ class ThemesWorkspace extends Component
             return;
         }
 
+        $this->writePaletteToThemes([$this->selectedId]);
+        $this->dispatch('voodbuilder-theme-colors-updated');
+    }
+
+    /**
+     * Copy the current desk palette onto every layout currently assigned in Areas.
+     */
+    public function applyColorsToAssignedLayouts(): void
+    {
+        if ($this->selectedId === null || ! $this->canEditColors || ! $this->brandDesk) {
+            return;
+        }
+
+        $targets = $this->assignedThemeIds();
+
+        if ($targets === []) {
+            $targets = [$this->selectedId];
+        }
+
+        $this->writePaletteToThemes($targets);
+
+        Notification::make()
+            ->title(__('voodbuilder::settings.theme_studio_colors_applied_all'))
+            ->success()
+            ->send();
+
+        $this->dispatch('voodbuilder-theme-colors-updated');
+    }
+
+    /**
+     * @param  list<string>  $themeIds
+     */
+    private function writePaletteToThemes(array $themeIds): void
+    {
         $colors = VoodbuilderSettings::get('sub_theme_colors', []);
 
         if (! is_array($colors)) {
             $colors = [];
         }
 
-        $colors[$this->selectedId] = [
+        $palette = [
             'custom' => true,
             'light' => $this->filterModeForPersist($this->light),
             'dark' => $this->filterModeForPersist($this->dark),
         ];
 
+        foreach ($themeIds as $themeId) {
+            if ($themeId === '') {
+                continue;
+            }
+
+            $colors[$themeId] = $palette;
+        }
+
         VoodbuilderSettings::saveData([
             'sub_theme_colors' => ThemePalette::normalize($colors),
         ]);
+    }
 
-        $this->dispatch('voodbuilder-theme-colors-updated');
+    /**
+     * Theme ids currently used by Site pages + content channels.
+     *
+     * @return list<string>
+     */
+    private function assignedThemeIds(): array
+    {
+        $data = [
+            'sub_theme' => VoodbuilderSettings::get('sub_theme'),
+            'content_channel_sub_themes' => VoodbuilderSettings::get('content_channel_sub_themes', []),
+        ];
+
+        $ids = [];
+
+        foreach (ActiveThemeMap::assignments($data) as $row) {
+            $themeId = (string) ($row['theme_id'] ?? '');
+
+            if ($themeId !== '') {
+                $ids[$themeId] = $themeId;
+            }
+        }
+
+        return array_values($ids);
+    }
+
+    /**
+     * Options for the site-colors layout picker (assigned layouts first, then others).
+     *
+     * @return array<string, string>
+     */
+    public function brandThemeOptions(): array
+    {
+        $registry = app(SubThemeRegistry::class);
+        $assigned = $this->assignedThemeIds();
+        $options = [];
+
+        foreach ($assigned as $themeId) {
+            $options[$themeId] = $registry->label($themeId);
+        }
+
+        foreach ($registry->ids() as $themeId) {
+            if (! isset($options[$themeId])) {
+                $options[$themeId] = $registry->label($themeId);
+            }
+        }
+
+        return $options;
+    }
+
+    public function selectBrandTheme(string $id): void
+    {
+        if (! $this->brandDesk || ! app(SubThemeRegistry::class)->exists($id)) {
+            return;
+        }
+
+        $this->hydrateEditorFor($id);
     }
 
     public function openGenerateModal(): void
@@ -575,7 +795,7 @@ class ThemesWorkspace extends Component
         $this->notify(
             Notification::make()
                 ->title(__('voodbuilder::settings.clone_theme_created'))
-                ->body(__('voodbuilder::settings.theme_assets_rebuilding'))
+                ->body(__('voodbuilder::settings.clone_theme_ready'))
                 ->success(),
         );
 
@@ -592,7 +812,7 @@ class ThemesWorkspace extends Component
 
     public function confirmDelete(): void
     {
-        if ($this->selectedId === null) {
+        if ($this->selectedId === null || ! $this->canDelete) {
             return;
         }
 
@@ -611,7 +831,7 @@ class ThemesWorkspace extends Component
 
     public function deleteTheme(): void
     {
-        if ($this->selectedId === null) {
+        if ($this->selectedId === null || ! $this->canDelete) {
             return;
         }
 
@@ -723,7 +943,7 @@ class ThemesWorkspace extends Component
         $this->notify(
             Notification::make()
                 ->title(__('voodbuilder::settings.import_theme_imported'))
-                ->body(trim($body.' '.__('voodbuilder::settings.theme_assets_rebuilding')))
+                ->body($body)
                 ->success(),
         );
 
@@ -759,6 +979,7 @@ class ThemesWorkspace extends Component
                 ->all(),
             'colorKeyLabel' => ThemePresenter::colorLabel($this->colorKey),
             'canPasteColorScheme' => $this->canPasteColorScheme(),
+            'brandThemeOptions' => $this->brandDesk ? $this->brandThemeOptions() : [],
         ]);
     }
 

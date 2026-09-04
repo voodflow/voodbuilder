@@ -20,7 +20,8 @@ import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
 import { extractGrapesComposerCss, mergeAuthorCssChunks } from './editor/payload.js';
 import { STYLE_SPACING_SAFELIST } from './style-spacing-safelist.js';
 import { STYLE_COLOR_SAFELIST } from './style-color-safelist.js';
-import { STYLE_UTILITY_GROUPS } from './style-tailwind-class-groups.js';
+import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
+import { STYLE_ANIMATION_BUNDLED_UTILITIES } from './style-animation-safelist.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-page-live-css';
 const DEBOUNCE_MS = 450;
@@ -69,8 +70,31 @@ const CANVAS_BUNDLED_UTILITIES = (() => {
         }
     }
 
+    // Animation sector catalog is checked live in pageCssCoversClass (theme.css /
+    // section-utilities.css already ship those tokens). Do not copy at init —
+    // a circular import can leave the Set empty during this IIFE.
+
     return set;
 })();
+
+function isGrapesPrivateClassName(className) {
+    return /^c\d+[a-z0-9]*$/i.test(String(className ?? '').trim());
+}
+
+function isCanvasBundledUtility(className) {
+    const token = String(className ?? '').trim();
+
+    if (token === '') {
+        return true;
+    }
+
+    if (CANVAS_BUNDLED_UTILITIES.has(token)) {
+        return true;
+    }
+
+    // Live check — Animation safelist must not depend on IIFE copy timing.
+    return STYLE_ANIMATION_BUNDLED_UTILITIES.has(token);
+}
 
 function collectPageLevelHtml(editor) {
     // Chrome-shell page editor: compile only the page content slot — full getHtml()
@@ -227,7 +251,8 @@ function isIgnorableClassToken(className) {
     return token === ''
         || token.startsWith('gjs-')
         || token.startsWith('vb-')
-        || token.startsWith('voodbuilder-');
+        || token.startsWith('voodbuilder-')
+        || isGrapesPrivateClassName(token);
 }
 
 function isPastedComponentInstance(component) {
@@ -239,9 +264,7 @@ function collectComponentClassSet(component, into = new Set()) {
         return into;
     }
 
-    for (const className of (component.getClasses?.() ?? [])) {
-        const token = String(className ?? '').trim();
-
+    for (const token of componentClassList(component)) {
         if (! isIgnorableClassToken(token)) {
             into.add(token);
         }
@@ -267,10 +290,15 @@ function sameClassSet(left, right) {
 }
 
 export function pageCssCoversClass(editor, className) {
-    const normalized = String(className ?? '').trim();
+    let normalized = String(className ?? '').trim();
 
     if (normalized === '' || isIgnorableClassToken(normalized)) {
         return true;
+    }
+
+    // Important modifier — coverage follows the base utility.
+    if (normalized.startsWith('!')) {
+        normalized = normalized.slice(1);
     }
 
     // Theme / section utility tokens ship outside page live CSS.
@@ -278,12 +306,34 @@ export function pageCssCoversClass(editor, className) {
         return true;
     }
 
-    // Style panel spacing/dimension catalogs are baked into section-utilities.css.
-    if (CANVAS_BUNDLED_UTILITIES.has(normalized)) {
+    // Style panel catalogs (section-utilities) + Animation sector (theme.css).
+    if (isCanvasBundledUtility(normalized)) {
+        return true;
+    }
+
+    // Defensive: Animation catalog patterns even if the Set failed to hydrate.
+    if (isAnimationCatalogUtility(normalized)) {
         return true;
     }
 
     return cssDefinesUtility(editor?.__voodbuilderPageLiveCss ?? '', normalized);
+}
+
+function isAnimationCatalogUtility(className) {
+    const token = String(className ?? '').trim().replace(/^!/, '');
+
+    if (token === 'vb-animate-on-visible') {
+        return true;
+    }
+
+    // Strip interaction variants used by the Animation sector.
+    const base = token.replace(/^(?:hover|active):/, '');
+
+    if (STYLE_ANIMATION_BUNDLED_UTILITIES.has(token) || STYLE_ANIMATION_BUNDLED_UTILITIES.has(base)) {
+        return true;
+    }
+
+    return /^(?:animate-(?:spin|ping|pulse|bounce|wiggle|wiggle-more|rotate-[xy]|jump(?:-in|-out)?|shake|fade(?:-(?:up|down|left|right))?|flip-(?:up|down)|infinite|once|twice|thrice|duration-\d+|delay-(?:none|\d+)|ease(?:-linear|-in|-out|-in-out)?|normal|reverse|alternate(?:-reverse)?|fill-(?:none|forwards|backwards|both))|transition(?:-all|-colors|-opacity|-shadow|-transform|-none)?|duration-\d+|ease-(?:linear|in|out|in-out)|delay-\d+)$/.test(base);
 }
 
 export function applyPageLiveCss(editor, css) {
@@ -663,8 +713,15 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             return;
         }
 
-        // New tokens only: compile if any are missing from live CSS.
-        if (! pendingInvalidate && ! classSetNeedsCompile(classSet)) {
+        // Only NEW uncovered utilities justify compile-css + "Compiling styles…".
+        // Pre-existing custom/BEM classes on the page must not force a rebuild when the
+        // author only toggles Animation/Style catalog utilities (already in theme).
+        const newlyUncovered = [...classSet].filter(
+            (token) => ! lastClassSet.has(token) && ! pageCssCoversClass(editor, token),
+        );
+
+        if (newlyUncovered.length === 0) {
+            pendingInvalidate = false;
             lastHtml = html;
             lastClassSet = classSet;
 
@@ -846,13 +903,33 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedule(INITIAL_BUILD_DELAY_MS);
     };
 
-    // Live compile only on class changes — never selector:add/update (SM paint / refresh storms).
+    // Live compile only when a class change introduces utilities missing from theme/live CSS.
+    // Do not JIT because the same node also has older custom/BEM classes.
     editor.on('component:update:classes', (component) => {
         if (shouldDeferCssRebuild(editor) || isDragLocked()) {
             return;
         }
 
-        if (classSetNeedsCompile(collectComponentClassSet(component))) {
+        const tokens = collectComponentClassSet(component);
+        let needsCompile = false;
+
+        for (const token of tokens) {
+            if (lastClassSet.has(token)) {
+                continue;
+            }
+
+            if (pageCssCoversClass(editor, token)) {
+                lastClassSet.add(token);
+
+                continue;
+            }
+
+            needsCompile = true;
+
+            break;
+        }
+
+        if (needsCompile) {
             schedule();
         }
     });

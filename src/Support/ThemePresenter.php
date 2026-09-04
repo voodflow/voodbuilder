@@ -54,6 +54,9 @@ final class ThemePresenter
         $location = SubThemeLocator::resolve($id);
         $definition = SubThemeLocator::definitionFor($id);
 
+        $capabilities = $registry->capabilities($id);
+        $shell = $capabilities[0] ?? null;
+
         return [
             'id' => $id,
             'label' => $registry->label($id),
@@ -64,9 +67,12 @@ final class ThemePresenter
             'is_app' => $location?->isApp() ?? false,
             'can_delete' => $location?->isApp() ?? false,
             'can_edit_meta' => $location?->isApp() ?? false,
-            'can_edit_colors' => $location?->isApp() ?? false,
+            // Palette overrides live in settings for any theme id (Brand kit without clone).
+            'can_edit_colors' => true,
             'can_export' => $location !== null,
             'has_custom_colors' => ThemePalette::themeHasCustomColors($id),
+            'shell' => $shell?->value,
+            'shell_label' => $shell?->label() ?? '',
             'type' => is_array($definition) && isset($definition['type'])
                 ? (is_object($definition['type']) ? $definition['type']->value : (string) $definition['type'])
                 : 'marketing',
