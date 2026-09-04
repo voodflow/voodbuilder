@@ -755,8 +755,10 @@ CSS;
 
     private static function tokenBridgeCss(string $selector): string
     {
-        // Bridge Tailblocks/Tailwind palette tokens → Voodbuilder brand so canvas
-        // utilities (bg-indigo-500, …) match compile-css / published popup CSS.
+        // Bridge only Voodbuilder design tokens (--vp-c-*). Do NOT alias Tailwind
+        // palette scales (indigo/violet/…) onto --color-vp-brand-*: authors use
+        // text-violet-400 / text-sky-400 as literal decorative colors; theme-aware
+        // UI must use vp-brand-* utilities explicitly.
         return $selector.'{'
             .'--vp-c-brand-1:var(--color-vp-brand-1);'
             .'--vp-c-brand-2:var(--color-vp-brand-2);'
@@ -768,18 +770,7 @@ CSS;
             .'--vp-c-bg-elv:var(--color-vp-bg-elv);'
             .'--vp-c-text-1:var(--color-vp-text-1);'
             .'--vp-c-text-2:var(--color-vp-text-2);'
-            .'--vp-c-text-3:var(--color-vp-text-3);'
-            .'--color-indigo-400:var(--color-vp-brand-1);'
-            .'--color-indigo-500:var(--color-vp-brand-3);'
-            .'--color-indigo-600:var(--color-vp-brand-2);'
-            .'--color-indigo-700:var(--color-vp-brand-2);'
-            .'--color-indigo-200:color-mix(in srgb,var(--color-vp-brand-1) 28%,transparent);'
-            .'--color-blue-500:var(--color-vp-brand-3);'
-            .'--color-blue-600:var(--color-vp-brand-2);'
-            .'--color-purple-500:var(--color-vp-brand-3);'
-            .'--color-purple-600:var(--color-vp-brand-2);'
-            .'--color-violet-500:var(--color-vp-brand-3);'
-            .'--color-violet-600:var(--color-vp-brand-2)'
+            .'--vp-c-text-3:var(--color-vp-text-3)'
             .'}';
     }
 

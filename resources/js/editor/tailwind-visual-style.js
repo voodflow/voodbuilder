@@ -235,10 +235,12 @@ export function walkComponentTree(component, callback) {
 }
 
 export function safeFindComponents(component, selector) {
-    if (! component?.find || ! componentHasRenderableView(component)) {
+    if (! component?.find) {
         return [];
     }
 
+    // Attribute-only walks (stroke-only detection / paint scrub) must work even
+    // when getEl() is not ready yet — otherwise Save leaves color:none on SVGs.
     try {
         const matches = component.find(selector);
 
@@ -268,6 +270,54 @@ function normalizeCssColorValue(value) {
     const stripped = stripImportant(value).trim().toLowerCase();
 
     return NAMED_CSS_COLORS[stripped] ?? stripImportant(value);
+}
+
+/**
+ * True when a value can be used as SVG color/stroke paint (not cleared / none / currentColor).
+ *
+ * `fill: none` on stroke-only watermarks is a real attribute but must NEVER become
+ * `color`/`stroke` — that produced `style="color:none;stroke:none"` and hid icons.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isUsableSvgPaint(value) {
+    if (value == null) {
+        return false;
+    }
+
+    const normalized = stripImportant(value).trim().toLowerCase();
+
+    if (normalized === '' || normalized === 'currentcolor' || normalized === 'transparent') {
+        return false;
+    }
+
+    if (normalized.startsWith('url(')) {
+        return false;
+    }
+
+    // Reuse cleared detection (none / unset / invented SM empties).
+    if (isClearedStyleValue('color', normalized) || isClearedStyleValue('stroke', normalized)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @param {...unknown} candidates
+ * @returns {string}
+ */
+function firstUsableSvgPaint(...candidates) {
+    for (const candidate of candidates) {
+        if (! isUsableSvgPaint(candidate)) {
+            continue;
+        }
+
+        return normalizeCssColorValue(candidate);
+    }
+
+    return '';
 }
 
 const VISUAL_SURFACE_PATTERN = /(?:^|-)(?:rounded|bg-|border-(?:gray|vp|indigo|slate|white|black|opacity)|shadow)/;
@@ -649,7 +699,8 @@ export function bakeAuthorStylesToComposerForExport(editor) {
         }
 
         // Ensure HTML serialization carries the same paints (reload + front without CSS).
-        component.addStyle?.(inlineStyles, { inline: true });
+        // noEvent: avoid SVG paint styleUpdate ↔ addStyle recursion on Save.
+        component.addStyle?.(inlineStyles, SILENT_INLINE_STYLE);
 
         // Tailwind Style panel owns text-* utilities — never strip them on Save bake.
         if (! editor.__voodbuilderTailwindStyleOnly) {
@@ -728,7 +779,7 @@ export function hydrateAuthorStylesFromIdRules(editor) {
             return;
         }
 
-        component.addStyle?.(next, { inline: true });
+        component.addStyle?.(next, SILENT_INLINE_STYLE);
         updated += 1;
     });
 
@@ -966,7 +1017,7 @@ export function promotePrivateStyleClassesToIdRules(editor) {
         }
 
         if (Object.keys(merged).length > 0) {
-            component.addStyle?.(stylesForInlinePersist(merged), { inline: true });
+            component.addStyle?.(stylesForInlinePersist(merged), SILENT_INLINE_STYLE);
         }
 
         updated += 1;
@@ -1047,7 +1098,7 @@ export function detachPrivateStyleClassesOntoId(editor, rootComponent) {
             }
 
             if (Object.keys(next).length > 0) {
-                component.addStyle?.(stylesForInlinePersist(next), { inline: true });
+                component.addStyle?.(stylesForInlinePersist(next), SILENT_INLINE_STYLE);
             }
         }
 
@@ -1401,6 +1452,35 @@ const EXPORT_PAINT_PROPERTIES = [
     'opacity',
 ];
 
+/**
+ * SVG paint writes must not re-emit component:styleUpdate: the styleUpdate handler
+ * calls propagateSvgExportStyle → addStyle again and overflows the call stack
+ * (especially during Save bake of pages with icons/watermarks).
+ */
+const SILENT_INLINE_STYLE = { inline: true, noEvent: true };
+
+/**
+ * @param {object|null|undefined} editor
+ * @param {() => void} fn
+ */
+function runWithSvgPaintGuard(editor, fn) {
+    if (editor?.__voodbuilderApplyingSvgPaint) {
+        return;
+    }
+
+    if (editor) {
+        editor.__voodbuilderApplyingSvgPaint = true;
+    }
+
+    try {
+        fn();
+    } finally {
+        if (editor) {
+            editor.__voodbuilderApplyingSvgPaint = false;
+        }
+    }
+}
+
 const TEXT_COLOR_CLASS_PATTERN = /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:white|black|primary(?:-foreground)?|foreground(?:-inverse)?|inverse|layer-foreground|gray-\d+|vp-(?:text-[123]|brand-\d+))(?:\/[\d.]+)?$/;
 
 const TAILWIND_TEXT_COLOR_CLASS_PATTERN = /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:vp-|gray-|white|black|primary|foreground)/;
@@ -1461,21 +1541,72 @@ function svgPreservesTailwindPaint(component) {
 }
 
 function stripSpuriousSvgBakedPaint(component) {
-    if (! svgPreservesTailwindPaint(component)) {
+    if (! isSvgElement(component)) {
+        return false;
+    }
+
+    const strokeOnly = isStrokeOnlyCurrentColorSvg(component);
+    const preserves = svgPreservesTailwindPaint(component) || strokeOnly;
+
+    if (! preserves) {
         return false;
     }
 
     const attributes = { ...(component.getAttributes?.() ?? {}) };
     const attributeStyle = parseStyleAttribute(attributes.style);
-    const bakedPaint = attributeStyle.color || attributeStyle.fill || attributeStyle.stroke;
+    let changed = false;
 
-    if (! bakedPaint || ! isGenericBlackPaint(bakedPaint)) {
-        return false;
+    // Drop cleared/none/black paints that override stroke="currentColor" / parent text-*.
+    // Classic corruption after Save: style="color:none;stroke:none;fill:none".
+    for (const property of ['color', 'fill', 'stroke']) {
+        const value = attributeStyle[property];
+
+        if (value == null || value === '') {
+            continue;
+        }
+
+        const normalized = stripImportant(value).toLowerCase();
+        const isNoneFill = property === 'fill' && normalized === 'none';
+        const mustStrip = isNoneFill
+            || ! isUsableSvgPaint(value)
+            || isGenericBlackPaint(value);
+
+        if (! mustStrip) {
+            continue;
+        }
+
+        delete attributeStyle[property];
+        component.removeStyle?.(property);
+        changed = true;
     }
 
     for (const property of ['color', 'fill', 'stroke']) {
-        delete attributeStyle[property];
-        component.removeStyle?.(property);
+        const inline = component.getStyle?.({ inline: true })?.[property];
+
+        if (inline == null || inline === '') {
+            continue;
+        }
+
+        const normalized = stripImportant(inline).toLowerCase();
+        const isNoneFill = property === 'fill' && normalized === 'none';
+
+        if (
+            isNoneFill
+            || ! isUsableSvgPaint(inline)
+            || isGenericBlackPaint(inline)
+        ) {
+            component.removeStyle?.(property);
+            changed = true;
+        }
+    }
+
+    if (strokeOnly && String(attributes.fill ?? '').toLowerCase() !== 'none') {
+        attributes.fill = 'none';
+        changed = true;
+    }
+
+    if (! changed) {
+        return false;
     }
 
     const remainingStyle = Object.entries(attributeStyle)
@@ -1484,28 +1615,59 @@ function stripSpuriousSvgBakedPaint(component) {
 
     if (remainingStyle) {
         attributes.style = remainingStyle;
+        component.setAttributes(attributes);
     } else {
         delete attributes.style;
+        component.setAttributes(attributes);
+        component.removeAttributes?.('style');
     }
 
-    component.setAttributes(attributes);
+    if (strokeOnly) {
+        component.addAttributes?.({ fill: 'none' });
+    }
 
     for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
         const childAttributes = { ...(child.getAttributes?.() ?? {}) };
-        let changed = false;
+        let childChanged = false;
 
         if (isGenericBlackPaint(childAttributes.fill)) {
             childAttributes.fill = svgRootFillIsNone(component) ? 'none' : 'currentColor';
-            changed = true;
+            childChanged = true;
         }
 
         if (isGenericBlackPaint(childAttributes.stroke)) {
             childAttributes.stroke = 'currentColor';
-            changed = true;
+            childChanged = true;
         }
 
-        if (! changed) {
+        const childStyle = parseStyleAttribute(childAttributes.style);
+
+        for (const property of ['color', 'fill', 'stroke']) {
+            if (childStyle[property] == null) {
+                continue;
+            }
+
+            if (isUsableSvgPaint(childStyle[property]) && ! isGenericBlackPaint(childStyle[property])) {
+                continue;
+            }
+
+            delete childStyle[property];
+            child.removeStyle?.(property);
+            childChanged = true;
+        }
+
+        if (! childChanged) {
             continue;
+        }
+
+        const next = Object.entries(childStyle)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('; ');
+
+        if (next) {
+            childAttributes.style = next;
+        } else {
+            delete childAttributes.style;
         }
 
         child.removeStyle?.('fill');
@@ -1566,6 +1728,20 @@ function svgHasUsableStroke(component) {
     return false;
 }
 
+function svgShapeHasOnlyAccentOrEmptyFills(component) {
+    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
+        const fill = String(child.getAttributes?.()?.fill ?? '').toLowerCase().trim();
+
+        if (fill === '' || fill === 'none' || fill === 'currentcolor' || fill.startsWith('url(')) {
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
 function isStrokeOnlyCurrentColorSvg(component) {
     if (! isSvgElement(component)) {
         return false;
@@ -1575,23 +1751,29 @@ function isStrokeOnlyCurrentColorSvg(component) {
         return false;
     }
 
-    if (! svgRootFillIsNone(component)) {
-        return false;
-    }
+    const rootFill = String(component.getAttributes?.()?.fill ?? '').toLowerCase().trim();
+    const rootFillIsNone = svgRootFillIsNone(component);
+    const hasStroke = svgHasUsableStroke(component);
 
-    if (svgHasUsableStroke(component)) {
+    // Classic Lucide / watermark: fill="none" + stroke.
+    if (rootFillIsNone && hasStroke) {
         return true;
     }
 
-    for (const child of safeFindComponents(component, SVG_SHAPE_SELECTOR)) {
-        const fill = String(child.getAttributes?.()?.fill ?? '').toLowerCase().trim();
-
-        if (fill !== '' && fill !== 'none' && ! fill.startsWith('url(')) {
-            return false;
+    // Grapes sometimes drops fill="none" from the root while keeping stroke and
+    // empty / currentColor children (VoodFlow / VoodMedia watermarks). Still treat
+    // as stroke-only so bake never paints solid fills onto large circles/paths.
+    if (hasStroke && svgShapeHasOnlyAccentOrEmptyFills(component)) {
+        if (rootFill === '' || rootFill === 'none' || rootFill === 'currentcolor') {
+            return true;
         }
     }
 
-    return true;
+    if (! rootFillIsNone) {
+        return false;
+    }
+
+    return svgShapeHasOnlyAccentOrEmptyFills(component);
 }
 
 function isPaintableFillValue(fill, { rootFillIsNone = false } = {}) {
@@ -1638,7 +1820,11 @@ function applyPaintToSvgShapeDescendants(svgComponent, paint) {
         if (strokeOnly) {
             const fillValue = fill.toLowerCase().trim();
 
-            if (fillValue === '' || fillValue === 'currentcolor' || isGenericBlackPaint(fill)) {
+            // Keep intentional accent dots (fill="currentColor"). Force missing /
+            // inherited / spurious black fills to none so watermark shapes stay hollow.
+            if (fillValue === 'currentcolor') {
+                // preserve
+            } else if (fillValue === '' || fillValue === 'none' || isGenericBlackPaint(fill)) {
                 childAttributes.fill = 'none';
                 changed = true;
             }
@@ -1675,7 +1861,7 @@ function syncSvgCurrentColorChildren(component, value) {
         const stroke = String(child.getAttributes?.()?.stroke ?? '').toLowerCase();
 
         if (fill === 'currentcolor' || stroke === 'currentcolor') {
-            child.addStyle({ color: paint }, { inline: true });
+            child.addStyle({ color: paint }, SILENT_INLINE_STYLE);
         }
     });
 }
@@ -1704,6 +1890,10 @@ function applyCustomSvgPaint(editor, component, property, value) {
         return;
     }
 
+    if (! isUsableSvgPaint(value)) {
+        return;
+    }
+
     if (! componentHasRenderableView(component)) {
         return;
     }
@@ -1713,7 +1903,7 @@ function applyCustomSvgPaint(editor, component, property, value) {
     const paint = ensureImportantStyleValue(normalizeCssColorValue(value));
 
     if (property === 'fill' || property === 'color' || property === 'stroke') {
-        component.addStyle(svgRootPaintStyles(component, paint), { inline: true });
+        component.addStyle(svgRootPaintStyles(component, paint), SILENT_INLINE_STYLE);
         syncSvgCurrentColorChildren(component, value);
         applyPaintToSvgShapeDescendants(component, paint);
 
@@ -1746,7 +1936,7 @@ function applySvgExportStyle(editor, component, property, value) {
     const attributes = { ...(component.getAttributes?.() ?? {}) };
     attributes.style = mergeStyleAttribute(attributes.style, { [property]: normalized });
     component.setAttributes(attributes);
-    component.addStyle({ [property]: ensureImportantStyleValue(normalized) }, { inline: true });
+    component.addStyle({ [property]: ensureImportantStyleValue(normalized) }, SILENT_INLINE_STYLE);
 
     if (editor) {
         bakeSvgPaintOnComponent(editor, component);
@@ -1756,13 +1946,41 @@ function applySvgExportStyle(editor, component, property, value) {
     }
 }
 
-function propagateSvgPaint(editor, component, property, value) {
+function findParentSvgComponent(component) {
+    let current = component;
+
+    while (current) {
+        if (String(current.get?.('tagName') ?? '').toLowerCase() === 'svg') {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
+function applySvgPaintPropagation(editor, component, property, value) {
     if (! component || value == null || value === '') {
         return;
     }
 
-    if (isSvgElement(component)) {
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+    // Style Manager may target a circle/path child. Always bake paint on the
+    // owning <svg> so stroke-only watermarks keep root fill="none".
+    if (tag === 'svg') {
         applyCustomSvgPaint(editor, component, property, value);
+
+        return;
+    }
+
+    if (SVG_TAGS.has(tag) && tag !== 'svg') {
+        const svg = findParentSvgComponent(component);
+
+        if (svg) {
+            applyCustomSvgPaint(editor, svg, property, value);
+        }
 
         return;
     }
@@ -1780,34 +1998,42 @@ function propagateSvgPaint(editor, component, property, value) {
     }
 }
 
+function propagateSvgPaint(editor, component, property, value) {
+    runWithSvgPaintGuard(editor, () => {
+        applySvgPaintPropagation(editor, component, property, value);
+    });
+}
+
 function propagateSvgExportStyle(editor, component, property, value) {
-    if (! component || value == null || value === '') {
-        return;
-    }
+    runWithSvgPaintGuard(editor, () => {
+        if (! component || value == null || value === '') {
+            return;
+        }
 
-    if (property === 'color' || property === 'fill' || property === 'stroke') {
-        propagateSvgPaint(editor, component, property, value);
+        if (property === 'color' || property === 'fill' || property === 'stroke') {
+            applySvgPaintPropagation(editor, component, property, value);
 
-        return;
-    }
+            return;
+        }
 
-    if (! EXPORT_PAINT_PROPERTIES.includes(property)) {
-        return;
-    }
+        if (! EXPORT_PAINT_PROPERTIES.includes(property)) {
+            return;
+        }
 
-    if (isSvgElement(component)) {
-        applySvgExportStyle(editor, component, property, value);
+        if (isSvgElement(component)) {
+            applySvgExportStyle(editor, component, property, value);
 
-        return;
-    }
+            return;
+        }
 
-    if (! componentHasRenderableView(component)) {
-        return;
-    }
+        if (! componentHasRenderableView(component)) {
+            return;
+        }
 
-    for (const svg of safeFindComponents(component, 'svg')) {
-        applySvgExportStyle(editor, svg, property, value);
-    }
+        for (const svg of safeFindComponents(component, 'svg')) {
+            applySvgExportStyle(editor, svg, property, value);
+        }
+    });
 }
 
 function stripImportant(value) {
@@ -1855,23 +2081,23 @@ function mergeStyleAttribute(existing, declarations) {
 
 function resolvePaintFromSvgAttributes(component) {
     const attributeStyle = parseStyleAttribute(component.getAttributes?.()?.style);
-    let paint = attributeStyle.color || attributeStyle.fill || attributeStyle.stroke;
+    const fromStyle = firstUsableSvgPaint(
+        attributeStyle.color,
+        attributeStyle.fill,
+        attributeStyle.stroke,
+    );
 
-    if (paint) {
-        return paint;
+    if (fromStyle) {
+        return fromStyle;
     }
 
     for (const child of safeFindComponents(component, '*')) {
         const fill = String(child.getAttributes?.()?.fill ?? '');
-
-        if (fill && ! ['currentcolor', 'none', ''].includes(fill.toLowerCase())) {
-            return fill;
-        }
-
         const stroke = String(child.getAttributes?.()?.stroke ?? '');
+        const fromChild = firstUsableSvgPaint(fill, stroke);
 
-        if (stroke && ! ['currentcolor', 'none', ''].includes(stroke.toLowerCase())) {
-            return stroke;
+        if (fromChild) {
+            return fromChild;
         }
     }
 
@@ -1880,31 +2106,35 @@ function resolvePaintFromSvgAttributes(component) {
 
 function resolveEffectivePaint(editor, component) {
     const inline = component.getStyle?.() ?? {};
-    let paint = stripImportant(inline.color || inline.fill || inline.stroke);
+    const fromInline = firstUsableSvgPaint(inline.color, inline.fill, inline.stroke);
 
-    if (paint) {
-        return paint;
+    if (fromInline) {
+        return fromInline;
     }
 
     const attributeStyle = parseStyleAttribute(component.getAttributes?.()?.style);
-    paint = attributeStyle.color || attributeStyle.fill || attributeStyle.stroke;
+    const fromAttr = firstUsableSvgPaint(
+        attributeStyle.color,
+        attributeStyle.fill,
+        attributeStyle.stroke,
+    );
 
-    if (paint) {
-        return paint;
+    if (fromAttr) {
+        return fromAttr;
     }
 
-    paint = resolvePaintFromSvgAttributes(component);
+    const fromChildren = resolvePaintFromSvgAttributes(component);
 
-    if (paint) {
-        return paint;
+    if (fromChildren) {
+        return fromChildren;
     }
 
     for (const rule of collectComponentStyleRules(editor, component)) {
         const ruleStyle = rule.getStyle?.() ?? {};
-        paint = stripImportant(ruleStyle.color || ruleStyle.fill || ruleStyle.stroke);
+        const fromRule = firstUsableSvgPaint(ruleStyle.color, ruleStyle.fill, ruleStyle.stroke);
 
-        if (paint) {
-            return paint;
+        if (fromRule) {
+            return fromRule;
         }
     }
 
@@ -1922,9 +2152,27 @@ function resolveSvgExportStyles(editor, component) {
             ?? attributeStyle[property],
         );
 
-        if (value) {
-            styles[property] = value;
+        if (! value) {
+            continue;
         }
+
+        // Never export cleared paints (none) as author color/stroke.
+        if (
+            (property === 'color' || property === 'fill' || property === 'stroke')
+            && ! isUsableSvgPaint(value)
+            && ! (property === 'fill' && stripImportant(value).toLowerCase() === 'none')
+        ) {
+            continue;
+        }
+
+        if (
+            (property === 'color' || property === 'stroke')
+            && ! isUsableSvgPaint(value)
+        ) {
+            continue;
+        }
+
+        styles[property] = value;
     }
 
     for (const rule of collectComponentStyleRules(editor, component)) {
@@ -1937,9 +2185,22 @@ function resolveSvgExportStyles(editor, component) {
 
             const value = stripImportant(ruleStyle[property]);
 
-            if (value) {
-                styles[property] = value;
+            if (! value) {
+                continue;
             }
+
+            if (
+                (property === 'color' || property === 'stroke')
+                && ! isUsableSvgPaint(value)
+            ) {
+                continue;
+            }
+
+            if (property === 'fill' && ! isUsableSvgPaint(value) && stripImportant(value).toLowerCase() !== 'none') {
+                continue;
+            }
+
+            styles[property] = value;
         }
     }
 
@@ -1947,58 +2208,108 @@ function resolveSvgExportStyles(editor, component) {
 }
 
 function bakeSvgPaintOnComponent(editor, component) {
+    // Scrub corrupt none/black paints even when the canvas view is not mounted yet
+    // (autosave / export can run before every SVG has getEl()).
+    stripSpuriousSvgBakedPaint(component);
+
     if (! componentHasRenderableView(component)) {
         return;
     }
 
-    stripSpuriousSvgBakedPaint(component);
-
     const exportStyles = resolveSvgExportStyles(editor, component);
-    const paint = normalizeCssColorValue(
-        exportStyles.color
-        || exportStyles.fill
-        || exportStyles.stroke
-        || resolveEffectivePaint(editor, component),
+    const paint = firstUsableSvgPaint(
+        exportStyles.color,
+        exportStyles.fill,
+        exportStyles.stroke,
+        resolveEffectivePaint(editor, component),
     );
 
-    if (paint && svgPreservesTailwindPaint(component) && isGenericBlackPaint(paint)) {
-        return;
-    }
-
-    if (! paint && Object.keys(exportStyles).length === 0) {
-        return;
-    }
-
     // Stroke-only SVGs (watermarks, Lucide-style icons): never bake a solid fill,
-    // even when the resolved paint is a brand/theme color.
+    // even when the resolved paint is a brand/theme color. Also normalize when
+    // there is no paint yet so empty shapes get explicit fill="none".
     if (isStrokeOnlyCurrentColorSvg(component)) {
         stripSpuriousSvgBakedPaint(component);
 
         const attributes = { ...(component.getAttributes?.() ?? {}) };
         attributes.fill = 'none';
 
-        const rootStyles = { fill: 'none' };
+        const rootStyles = {};
+        const preserves = svgPreservesTailwindPaint(component);
+        const shouldBakePaint = Boolean(
+            paint
+            && ! (preserves && isGenericBlackPaint(paint)),
+        );
 
-        if (paint) {
+        // Parent-driven watermarks (text-* on wrapper): leave color/stroke to
+        // currentColor. Only bake when we have a real author paint.
+        if (shouldBakePaint && ! preserves) {
+            rootStyles.color = paint;
+            rootStyles.stroke = paint;
+        } else if (shouldBakePaint && preserves && ! isGenericBlackPaint(paint)) {
+            // Explicit SM color on a stroke-only icon that also has text-* — keep
+            // prior behaviour for catalog icons with baked brand colors.
             rootStyles.color = paint;
             rootStyles.stroke = paint;
         }
 
-        for (const property of ['stroke-width', 'opacity']) {
-            if (exportStyles[property]) {
-                rootStyles[property] = exportStyles[property];
+        // fill:none belongs on the attribute; avoid style color/stroke:none leftovers.
+        attributes.style = (() => {
+            const parsed = parseStyleAttribute(attributes.style);
+
+            delete parsed.color;
+            delete parsed.fill;
+            delete parsed.stroke;
+
+            for (const [key, value] of Object.entries(rootStyles)) {
+                parsed[key] = stripImportant(value);
             }
+
+            // Keep non-paint style bits (stroke-width, opacity, …).
+            for (const property of ['stroke-width', 'opacity']) {
+                if (exportStyles[property]) {
+                    parsed[property] = stripImportant(exportStyles[property]);
+                }
+            }
+
+            const entries = Object.entries(parsed);
+
+            return entries.length > 0
+                ? entries.map(([key, value]) => `${key}: ${value}`).join('; ')
+                : undefined;
+        })();
+
+        if (! attributes.style) {
+            delete attributes.style;
+            component.setAttributes(attributes);
+            component.removeAttributes?.('style');
+            component.addAttributes?.({ fill: 'none' });
+        } else {
+            component.setAttributes(attributes);
         }
 
-        attributes.style = mergeStyleAttribute(attributes.style, rootStyles);
-        component.setAttributes(attributes);
+        component.removeStyle?.('color');
         component.removeStyle?.('fill');
-        component.addStyle({ fill: 'none !important', ...(paint ? { color: ensureImportantStyleValue(paint), stroke: ensureImportantStyleValue(paint) } : {}) }, { inline: true });
+        component.removeStyle?.('stroke');
 
-        if (paint) {
-            applyPaintToSvgShapeDescendants(component, paint);
+        if (Object.keys(rootStyles).length > 0) {
+            component.addStyle({
+                ...(rootStyles.color ? {
+                    color: ensureImportantStyleValue(rootStyles.color),
+                    stroke: ensureImportantStyleValue(rootStyles.stroke),
+                } : {}),
+            }, SILENT_INLINE_STYLE);
         }
 
+        applyPaintToSvgShapeDescendants(component, paint || 'currentColor');
+
+        return;
+    }
+
+    if (paint && svgPreservesTailwindPaint(component) && isGenericBlackPaint(paint)) {
+        return;
+    }
+
+    if (! paint && Object.keys(exportStyles).length === 0) {
         return;
     }
 
@@ -2089,8 +2400,11 @@ function stripPaintFromRule(editor, rule) {
 
 function inspectorStylesFromSvgAttributes(component) {
     const attributeStyle = parseStyleAttribute(component.getAttributes?.()?.style);
-    const paint = normalizeCssColorValue(
-        attributeStyle.color || attributeStyle.fill || attributeStyle.stroke || resolvePaintFromSvgAttributes(component),
+    const paint = firstUsableSvgPaint(
+        attributeStyle.color,
+        attributeStyle.fill,
+        attributeStyle.stroke,
+        resolvePaintFromSvgAttributes(component),
     );
     const styles = {};
 
@@ -2118,7 +2432,7 @@ export function restoreSvgPaintInspectorStyle(component) {
         return;
     }
 
-    component.addStyle(styles, { inline: true });
+    component.addStyle(styles, SILENT_INLINE_STYLE);
 
     const paint = stripImportant(styles.color || styles.fill || styles.stroke);
 
@@ -2302,7 +2616,7 @@ function applyPaintStyle(component, style) {
     }
 
     if (Object.keys(style).length > 0) {
-        component.addStyle(style, { inline: true });
+        component.addStyle(style, SILENT_INLINE_STYLE);
     }
 }
 
@@ -2858,7 +3172,15 @@ export function registerVisualStyleInspector(editor) {
         const inlineValue = String(persistValue).replace(/\s*!important\s*$/i, '').trim();
 
         try {
-            target.addStyle?.({ [propertyName]: inlineValue }, { inline: true });
+            // Paint props: silent write — otherwise component:styleUpdate re-enters
+            // SVG bake (Maximum call stack size exceeded on Save / color pick).
+            const styleOpts = EXPORT_PAINT_PROPERTIES.includes(propertyName)
+                || propertyName === 'color'
+                || propertyName === 'font-family'
+                ? SILENT_INLINE_STYLE
+                : { inline: true };
+
+            target.addStyle?.({ [propertyName]: inlineValue }, styleOpts);
         } catch {
             // ignore
         }
@@ -2919,7 +3241,7 @@ function clearForwardedStyle(target, property) {
 
 export function registerVisualStyleTarget(editor) {
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
-        if (isPurgingBackground(editor) || ! component) {
+        if (isPurgingBackground(editor) || ! component || editor.__voodbuilderApplyingSvgPaint) {
             return;
         }
 
@@ -2974,9 +3296,10 @@ export function registerVisualStyleTarget(editor) {
             // Always persist on the visual target as inline + #id so chrome-shell
             // export (and reload) does not depend on private .c* classes.
             // Inline must stay SM-friendly (no !important) — same as style:property:update.
+            // noEvent: paint/forward writes must not re-enter this handler via SVG bake.
             const persistValue = ensureImportantStyleValue(value);
             const inlineValue = String(persistValue).replace(/\s*!important\s*$/i, '').trim();
-            target.addStyle({ [property]: inlineValue }, { inline: true });
+            target.addStyle({ [property]: inlineValue }, SILENT_INLINE_STYLE);
 
             const targetId = target.getId?.();
 

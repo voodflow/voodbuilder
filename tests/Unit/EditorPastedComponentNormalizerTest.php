@@ -419,7 +419,7 @@ CSS;
         $this->assertStringContainsString('--text-3xl', $stripped);
         $this->assertStringContainsString('--color-white', $stripped);
         $this->assertStringNotContainsString('--color-vp-brand-1', $stripped);
-        $this->assertStringNotContainsString('--color-indigo-500', $stripped);
+        $this->assertStringContainsString('--color-indigo-500', $stripped);
         $this->assertStringContainsString('.text-white', $stripped);
         $this->assertStringContainsString('.text-3xl', $stripped);
     }

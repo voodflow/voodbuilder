@@ -107,6 +107,44 @@ class EditorImportedTailwindSupportTest extends TestCase
         $this->assertStringContainsString('stroke="currentColor"', $prepared);
     }
 
+    public function test_strip_spurious_and_bake_recover_color_none_watermark_corruption(): void
+    {
+        $html = <<<'HTML'
+<div class="text-violet-400/10">
+<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="0.5" class="w-full h-full" style="color:none !important;stroke:none !important;fill:none !important;">
+  <circle cx="100" cy="100" r="60" fill="none"></circle>
+  <circle cx="100" cy="100" r="4" fill="currentColor" style="color:none !important;"></circle>
+</svg>
+</div>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertStringNotContainsString('color:none', $prepared);
+        $this->assertStringNotContainsString('stroke:none', $prepared);
+        $this->assertStringNotContainsString('color: none', $prepared);
+        $this->assertStringNotContainsString('stroke: none', $prepared);
+        $this->assertStringContainsString('stroke="currentColor"', $prepared);
+        $this->assertStringContainsString('fill="none"', $prepared);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="4"[^>]*fill="currentColor"/', $prepared);
+    }
+
+    public function test_resolve_svg_paint_ignores_none_color(): void
+    {
+        $document = new \DOMDocument;
+        $document->loadHTML(
+            '<svg fill="none" stroke="currentColor" style="color:none;stroke:none;fill:none"><circle fill="currentColor"/></svg>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+        $svg = $document->getElementsByTagName('svg')->item(0);
+
+        $this->assertInstanceOf(\DOMElement::class, $svg);
+        $this->assertNull(EditorImportedTailwindSupport::resolveSvgPaintFromElement($svg));
+        $this->assertFalse(EditorImportedTailwindSupport::isUsableSvgPaint('none'));
+        $this->assertFalse(EditorImportedTailwindSupport::isUsableSvgPaint('none !important'));
+        $this->assertTrue(EditorImportedTailwindSupport::isUsableSvgPaint('#a78bfa'));
+    }
+
     public function test_bake_svg_paint_skips_black_fill_on_stroke_only_icons(): void
     {
         $html = '<svg fill="none" stroke="currentColor" style="color: #000000"><path d="M0 0" fill="#000000" stroke="#000000"/></svg>';
@@ -128,6 +166,47 @@ class EditorImportedTailwindSupportTest extends TestCase
         $this->assertStringContainsString('fill: none', $baked);
         $this->assertStringNotContainsString('fill="#a78bfa"', $baked);
         $this->assertStringContainsString('stroke="#a78bfa"', $baked);
+    }
+
+    public function test_bake_svg_paint_keeps_voodflow_watermark_stroke_only_with_accent_dot(): void
+    {
+        $html = <<<'HTML'
+<svg class="text-violet-400/10" fill="none" stroke="currentColor" stroke-width="0.5" style="color: #a78bfa">
+  <circle cx="100" cy="100" r="60" stroke-dasharray="4 8"></circle>
+  <circle cx="100" cy="100" r="85" stroke-dasharray="2 12"></circle>
+  <path d="M40 100 Q 80 50, 100 100 T 160 100"></path>
+  <path d="M100 40 Q 50 80, 100 100 T 100 160"></path>
+  <circle cx="100" cy="100" r="15"></circle>
+  <circle cx="100" cy="100" r="4" fill="currentColor"></circle>
+</svg>
+HTML;
+
+        $baked = EditorImportedTailwindSupport::bakeSvgPaintInHtml($html);
+
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="60"[^>]*fill="none"/', $baked);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="85"[^>]*fill="none"/', $baked);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="15"[^>]*fill="none"/', $baked);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="4"[^>]*fill="currentColor"/', $baked);
+        $this->assertStringNotContainsString('fill="#a78bfa"', $baked);
+        $this->assertStringContainsString('fill: none', $baked);
+    }
+
+    public function test_bake_svg_paint_recovers_stroke_only_when_root_fill_none_was_dropped(): void
+    {
+        // Grapes can drop fill="none" from the <svg> while leaving stroke + empty shapes.
+        $html = '<svg stroke="currentColor" style="color: #818cf8">'
+            .'<circle cx="100" cy="100" r="75"></circle>'
+            .'<path d="M 100 25 L 165 137.5 L 35 137.5 Z"></path>'
+            .'<circle cx="100" cy="100" r="4" fill="currentColor"></circle>'
+            .'</svg>';
+
+        $baked = EditorImportedTailwindSupport::bakeSvgPaintInHtml($html);
+
+        $this->assertStringContainsString('fill="none"', $baked);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="75"[^>]*fill="none"/', $baked);
+        $this->assertMatchesRegularExpression('/<path[^>]*fill="none"/', $baked);
+        $this->assertMatchesRegularExpression('/<circle[^>]*r="4"[^>]*fill="currentColor"/', $baked);
+        $this->assertStringNotContainsString('fill="#818cf8"', $baked);
     }
 
     public function test_parse_background_url_class_handles_quoted_and_unquoted_urls(): void

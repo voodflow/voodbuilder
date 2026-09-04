@@ -67,25 +67,49 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
-            if (! self::svgPreservesTailwindCurrentColorPaint($svg)) {
+            $strokeOnly = self::svgIsStrokeOnlyCurrentColorIcon($svg);
+
+            if (! self::svgPreservesTailwindCurrentColorPaint($svg) && ! $strokeOnly) {
                 continue;
             }
 
             $style = self::parseStyleAttribute($svg->getAttribute('style'));
-            $bakedPaint = $style['color'] ?? $style['fill'] ?? $style['stroke'] ?? null;
-
-            if ($bakedPaint === null || ! self::isGenericBlackPaint($bakedPaint)) {
-                continue;
-            }
+            $changed = false;
 
             foreach (['color', 'fill', 'stroke'] as $property) {
-                unset($style[$property]);
+                if (! isset($style[$property])) {
+                    continue;
+                }
+
+                $value = $style[$property];
+                $normalized = strtolower(trim(preg_replace('/\s*!important\s*$/i', '', $value) ?? $value));
+                $isNoneFill = $property === 'fill' && $normalized === 'none';
+
+                // Restore currentColor watermarks corrupted by Save bake
+                // (style="color:none;stroke:none;fill:none") or generic black.
+                // Keep real brand paints — bakeSvgPaintInHtml may re-apply them.
+                if (
+                    $isNoneFill
+                    || ! self::isUsableSvgPaint($value)
+                    || self::isGenericBlackPaint($value)
+                ) {
+                    unset($style[$property]);
+                    $changed = true;
+                }
+            }
+
+            if (! $changed && ! $strokeOnly) {
+                continue;
             }
 
             if ($style === []) {
                 $svg->removeAttribute('style');
             } else {
                 $svg->setAttribute('style', self::serializeStyleAttribute($style));
+            }
+
+            if ($strokeOnly) {
+                $svg->setAttribute('fill', 'none');
             }
 
             foreach ($svg->getElementsByTagName('*') as $node) {
@@ -102,6 +126,35 @@ final class EditorImportedTailwindSupport
 
                 if (self::isGenericBlackPaint($node->getAttribute('stroke'))) {
                     $node->setAttribute('stroke', 'currentColor');
+                }
+
+                $childStyle = self::parseStyleAttribute($node->getAttribute('style'));
+                $childChanged = false;
+
+                foreach (['color', 'fill', 'stroke'] as $property) {
+                    if (! isset($childStyle[$property])) {
+                        continue;
+                    }
+
+                    if (
+                        self::isUsableSvgPaint($childStyle[$property])
+                        && ! self::isGenericBlackPaint($childStyle[$property])
+                    ) {
+                        continue;
+                    }
+
+                    unset($childStyle[$property]);
+                    $childChanged = true;
+                }
+
+                if (! $childChanged) {
+                    continue;
+                }
+
+                if ($childStyle === []) {
+                    $node->removeAttribute('style');
+                } else {
+                    $node->setAttribute('style', self::serializeStyleAttribute($childStyle));
                 }
             }
         }
@@ -143,30 +196,58 @@ final class EditorImportedTailwindSupport
         return false;
     }
 
-    protected static function svgIsStrokeOnlyCurrentColorIcon(DOMElement $svg): bool
+    protected static function svgShapeHasOnlyAccentOrEmptyFills(DOMElement $svg): bool
     {
-        if (! self::svgRootFillIsNone($svg)) {
-            return false;
-        }
-
-        if (self::svgHasUsableStroke($svg)) {
-            return true;
-        }
-
-        // Stroke-only watermarks / icons: fill="none" and no filled shapes.
         foreach ($svg->getElementsByTagName('*') as $node) {
             if (! $node instanceof DOMElement) {
                 continue;
             }
 
+            if (! in_array(strtolower($node->tagName), ['path', 'circle', 'rect', 'polygon', 'polyline', 'line', 'ellipse'], true)) {
+                continue;
+            }
+
             $fill = strtolower(trim($node->getAttribute('fill')));
 
-            if ($fill !== '' && $fill !== 'none' && ! str_starts_with($fill, 'url(')) {
-                return false;
+            // Accent dots use fill="currentColor"; empty/none inherit stroke-only root.
+            if ($fill === '' || $fill === 'none' || $fill === 'currentcolor' || str_starts_with($fill, 'url(')) {
+                continue;
+            }
+
+            // Any other explicit fill means this is a filled icon, not a stroke watermark.
+            return false;
+        }
+
+        return true;
+    }
+
+    protected static function svgIsStrokeOnlyCurrentColorIcon(DOMElement $svg): bool
+    {
+        $rootFill = strtolower(trim($svg->getAttribute('fill')));
+        $rootFillIsNone = self::svgRootFillIsNone($svg);
+        $hasStroke = self::svgHasUsableStroke($svg);
+
+        // Classic Lucide / watermark: fill="none" + stroke.
+        if ($rootFillIsNone && $hasStroke) {
+            return true;
+        }
+
+        // Grapes/export sometimes drops fill="none" from the root while keeping
+        // stroke + empty/currentColor children (VoodFlow / VoodMedia watermarks).
+        // Treat those as stroke-only so bake never paints solid fills onto shapes.
+        if ($hasStroke && self::svgShapeHasOnlyAccentOrEmptyFills($svg)) {
+            if ($rootFill === '' || $rootFill === 'none' || $rootFill === 'currentcolor') {
+                return true;
             }
         }
 
-        return self::svgRootFillIsNone($svg);
+        if (! $rootFillIsNone) {
+            return false;
+        }
+
+        // Stroke-only watermarks / icons: fill="none" and no filled shapes
+        // (aside from optional currentColor accent dots).
+        return self::svgShapeHasOnlyAccentOrEmptyFills($svg);
     }
 
     protected static function svgHasUsableStroke(DOMElement $svg): bool
@@ -232,9 +313,19 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
+            if (! in_array(strtolower($node->tagName), ['path', 'circle', 'rect', 'polygon', 'polyline', 'line', 'ellipse'], true)) {
+                continue;
+            }
+
             $fill = strtolower(trim($node->getAttribute('fill')));
 
-            if ($fill === '' || self::isGenericBlackPaint($node->getAttribute('fill')) || $fill === 'currentcolor') {
+            // Keep intentional accent fills (currentColor dots). Force missing /
+            // inherited / spurious black fills to none so large circles stay hollow.
+            if ($fill === 'currentcolor') {
+                continue;
+            }
+
+            if ($fill === '' || $fill === 'none' || self::isGenericBlackPaint($node->getAttribute('fill'))) {
                 $node->setAttribute('fill', 'none');
             }
 
@@ -288,7 +379,13 @@ final class EditorImportedTailwindSupport
                 $style = self::parseStyleAttribute($svg->getAttribute('style'));
                 $bakedPaint = $style['color'] ?? $style['fill'] ?? $style['stroke'] ?? null;
 
-                if ($bakedPaint !== null && self::isGenericBlackPaint($bakedPaint)) {
+                if (
+                    $bakedPaint !== null
+                    && (
+                        self::isGenericBlackPaint($bakedPaint)
+                        || ! self::isUsableSvgPaint($bakedPaint)
+                    )
+                ) {
                     self::restoreStrokeOnlySvgCurrentColorPaint($svg);
 
                     continue;
@@ -298,6 +395,12 @@ final class EditorImportedTailwindSupport
             $paint = self::resolveSvgPaintFromElement($svg);
 
             if ($paint === null) {
+                // Even without a resolvable paint, force explicit fill="none" on
+                // stroke-only watermark shapes so Grapes cannot inherit a solid fill.
+                if (self::svgIsStrokeOnlyCurrentColorIcon($svg)) {
+                    self::restoreStrokeOnlySvgCurrentColorPaint($svg);
+                }
+
                 continue;
             }
 
@@ -307,20 +410,42 @@ final class EditorImportedTailwindSupport
         return self::extractBodyHtml($document) ?? $html;
     }
 
+    /**
+     * True when a CSS paint can drive SVG color/stroke (not none / cleared / currentColor).
+     */
+    public static function isUsableSvgPaint(string $paint): bool
+    {
+        $normalized = strtolower(trim(preg_replace('/\s*!important\s*$/i', '', $paint) ?? $paint));
+
+        if ($normalized === '' || $normalized === 'currentcolor' || $normalized === 'transparent') {
+            return false;
+        }
+
+        if (str_starts_with($normalized, 'url(')) {
+            return false;
+        }
+
+        if (in_array($normalized, ['none', 'unset', 'initial', 'inherit'], true)) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static function resolveSvgPaintFromElement(DOMElement $svg): ?string
     {
         $style = self::parseStyleAttribute($svg->getAttribute('style'));
 
-        if (isset($style['color']) && $style['color'] !== '') {
-            return $style['color'];
-        }
+        foreach (['color', 'fill', 'stroke'] as $property) {
+            if (! isset($style[$property]) || $style[$property] === '') {
+                continue;
+            }
 
-        if (isset($style['fill']) && $style['fill'] !== '' && strtolower($style['fill']) !== 'none') {
-            return $style['fill'];
-        }
+            if (! self::isUsableSvgPaint($style[$property])) {
+                continue;
+            }
 
-        if (isset($style['stroke']) && $style['stroke'] !== '' && strtolower($style['stroke']) !== 'none') {
-            return $style['stroke'];
+            return $style[$property];
         }
 
         foreach ($svg->getElementsByTagName('*') as $node) {
@@ -328,16 +453,16 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
-            $fill = strtolower($node->getAttribute('fill'));
+            $fill = $node->getAttribute('fill');
 
-            if ($fill !== '' && $fill !== 'currentcolor' && $fill !== 'none') {
-                return $node->getAttribute('fill');
+            if ($fill !== '' && self::isUsableSvgPaint($fill)) {
+                return $fill;
             }
 
-            $stroke = strtolower($node->getAttribute('stroke'));
+            $stroke = $node->getAttribute('stroke');
 
-            if ($stroke !== '' && $stroke !== 'currentcolor' && $stroke !== 'none') {
-                return $node->getAttribute('stroke');
+            if ($stroke !== '' && self::isUsableSvgPaint($stroke)) {
+                return $stroke;
             }
         }
 
@@ -372,10 +497,17 @@ final class EditorImportedTailwindSupport
                     continue;
                 }
 
+                if (! in_array(strtolower($node->tagName), ['path', 'circle', 'rect', 'polygon', 'polyline', 'line', 'ellipse'], true)) {
+                    continue;
+                }
+
                 $fill = strtolower(trim($node->getAttribute('fill')));
 
-                if ($fill === '' || $fill === 'currentcolor' || self::isGenericBlackPaint($node->getAttribute('fill'))) {
-                    $node->setAttribute('fill', 'none');
+                // Preserve accent dots; force every other shape to explicit fill none.
+                if ($fill !== 'currentcolor') {
+                    if ($fill === '' || $fill === 'none' || self::isGenericBlackPaint($node->getAttribute('fill'))) {
+                        $node->setAttribute('fill', 'none');
+                    }
                 }
 
                 $stroke = strtolower(trim($node->getAttribute('stroke')));

@@ -1018,6 +1018,184 @@ describe('theme-tokens background clear', () => {
         expect(styleUpdatePropertyNames(null)).toEqual([]);
     });
 
+    it('bakeAuthorStylesToComposerForExport does not recurse on SVG color paints', async () => {
+        const { bakeAuthorStylesToComposerForExport, registerVisualStyleTarget } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const listeners = [];
+        const inline = {
+            color: '#dc2626',
+            fill: '#dc2626',
+            stroke: '#dc2626',
+        };
+        let addStyleDepth = 0;
+        let maxDepth = 0;
+
+        const svg = {
+            cid: 'svg-1',
+            getId: () => 'icon-1',
+            get: (key) => (key === 'tagName' ? 'svg' : undefined),
+            getAttributes: () => ({ fill: 'currentColor', stroke: 'currentColor' }),
+            getClasses: () => [],
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            components: () => [],
+            addStyle(next, opts) {
+                addStyleDepth += 1;
+                maxDepth = Math.max(maxDepth, addStyleDepth);
+
+                if (addStyleDepth > 25) {
+                    throw new RangeError('Maximum call stack size exceeded');
+                }
+
+                Object.assign(inline, next);
+
+                // Mimic GrapesJS: emit styleUpdate unless noEvent.
+                if (! opts?.noEvent) {
+                    for (const listener of listeners) {
+                        listener(svg, { style: { ...next } });
+                    }
+                }
+
+                addStyleDepth -= 1;
+            },
+            removeStyle() {},
+            setAttributes() {},
+            view: { render() {}, updateStyles() {} },
+        };
+
+        const editor = {
+            __voodbuilderTailwindStyleOnly: true,
+            on(event, handler) {
+                if (event === 'component:styleUpdate') {
+                    listeners.push(handler);
+                }
+            },
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule() {},
+                getClassRule: () => null,
+                getRules: () => [],
+                remove() {},
+            },
+            getWrapper: () => ({
+                onAll: (cb) => cb(svg),
+            }),
+            Styles: {},
+            StyleManager: { select() {} },
+        };
+
+        registerVisualStyleTarget(editor);
+        expect(() => bakeAuthorStylesToComposerForExport(editor)).not.toThrow();
+        expect(maxDepth).toBeLessThan(10);
+        expect(inline.color).toBeTruthy();
+    });
+
+    it('bakeSvgPaintForExport clears color:none corruption on stroke-only watermarks', async () => {
+        const { bakeSvgPaintForExport } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        let attrs = {
+            fill: 'none',
+            stroke: 'currentColor',
+            style: 'color:none !important;stroke:none !important;fill:none !important;',
+            viewBox: '0 0 200 200',
+        };
+        const inline = {
+            color: 'none !important',
+            stroke: 'none !important',
+            fill: 'none !important',
+        };
+
+        const accent = {
+            cid: 'dot-1',
+            get: (key) => (key === 'tagName' ? 'circle' : undefined),
+            getAttributes: () => ({ fill: 'currentColor', style: 'color:none !important;', r: '4' }),
+            setAttributes() {},
+            removeStyle() {},
+            components: () => [],
+        };
+
+        const shapes = [
+            {
+                cid: 'c-60',
+                get: (key) => (key === 'tagName' ? 'circle' : undefined),
+                getAttributes: () => ({ fill: 'none', r: '60' }),
+                setAttributes() {},
+                removeStyle() {},
+                components: () => [],
+            },
+            accent,
+        ];
+
+        const svg = {
+            cid: 'svg-wm',
+            get: (key) => (key === 'tagName' ? 'svg' : undefined),
+            getAttributes: () => ({ ...attrs }),
+            setAttributes(next) {
+                attrs = { ...attrs, ...next };
+
+                for (const [key, value] of Object.entries(next)) {
+                    if (value === undefined) {
+                        delete attrs[key];
+                    }
+                }
+            },
+            removeAttributes(key) {
+                delete attrs[key];
+            },
+            addAttributes(next) {
+                attrs = { ...attrs, ...next };
+            },
+            getClasses: () => ['w-full', 'h-full'],
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            removeStyle(prop) {
+                delete inline[prop];
+            },
+            addStyle(next) {
+                Object.assign(inline, next);
+            },
+            components: () => shapes,
+            getEl: () => ({
+                nodeType: 1,
+                querySelectorAll: () => [],
+            }),
+            view: { el: {}, render() {}, updateStyles() {} },
+            find: (selector) => {
+                if (selector === '*' || String(selector).includes('circle') || String(selector).includes('path')) {
+                    return shapes;
+                }
+
+                return [];
+            },
+        };
+
+        const editor = {
+            getWrapper: () => ({
+                onAll: (cb) => {
+                    cb(svg);
+                    shapes.forEach(cb);
+                },
+            }),
+            Css: {
+                getIdRule: () => null,
+                setIdRule() {},
+                getRules: () => [],
+                getComponentRules: () => [],
+            },
+        };
+
+        bakeSvgPaintForExport(editor);
+
+        expect(String(attrs.style ?? '')).not.toMatch(/color\s*:\s*none/i);
+        expect(String(attrs.style ?? '')).not.toMatch(/stroke\s*:\s*none/i);
+        expect(inline.color == null || inline.color === '' || ! /none/i.test(String(inline.color))).toBe(true);
+        expect(inline.stroke == null || inline.stroke === '' || ! /none/i.test(String(inline.stroke))).toBe(true);
+        expect(attrs.fill).toBe('none');
+        expect(attrs.stroke).toBe('currentColor');
+    });
+
     it('hydrateAuthorStylesFromIdRules restores background-color after reload', async () => {
         const { hydrateAuthorStylesFromIdRules } = await import(
             '../../resources/js/editor/tailwind-visual-style.js'

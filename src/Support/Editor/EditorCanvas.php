@@ -813,12 +813,11 @@ final class EditorCanvas
         svg[fill="none"] ellipse:not([fill]),
         svg[fill="none"] path[fill="none"],
         svg[fill="none"] circle[fill="none"],
-        svg[fill="none"] rect[fill="none"],
-        svg[fill="none"] path[fill="currentColor"],
-        svg[fill="none"] circle[fill="currentColor"],
-        svg[fill="none"] rect[fill="currentColor"] {
+        svg[fill="none"] rect[fill="none"] {
             fill: none !important;
         }
+
+        /* Accent dots may keep fill="currentColor"; do not blank them. */
 
         svg[fill="none"][stroke],
         svg[fill="none"][stroke="currentColor"],
@@ -833,20 +832,26 @@ final class EditorCanvas
             fill: none !important;
         }
 
-        svg[style*="fill: none"] path,
-        svg[style*="fill:none"] path,
-        svg[style*="fill: none"] circle,
-        svg[style*="fill:none"] circle,
-        svg[style*="fill: none"] rect,
-        svg[style*="fill:none"] rect,
-        svg[style*="fill: none"] ellipse,
-        svg[style*="fill:none"] ellipse,
-        svg[style*="fill: none"] polygon,
-        svg[style*="fill:none"] polygon,
-        svg[style*="fill: none"] polyline,
-        svg[style*="fill:none"] polyline,
-        svg[style*="fill: none"] line,
-        svg[style*="fill:none"] line {
+        svg[style*="fill: none"] path:not([fill]),
+        svg[style*="fill:none"] path:not([fill]),
+        svg[style*="fill: none"] circle:not([fill]),
+        svg[style*="fill:none"] circle:not([fill]),
+        svg[style*="fill: none"] rect:not([fill]),
+        svg[style*="fill:none"] rect:not([fill]),
+        svg[style*="fill: none"] ellipse:not([fill]),
+        svg[style*="fill:none"] ellipse:not([fill]),
+        svg[style*="fill: none"] polygon:not([fill]),
+        svg[style*="fill:none"] polygon:not([fill]),
+        svg[style*="fill: none"] polyline:not([fill]),
+        svg[style*="fill:none"] polyline:not([fill]),
+        svg[style*="fill: none"] line:not([fill]),
+        svg[style*="fill:none"] line:not([fill]),
+        svg[style*="fill: none"] path[fill="none"],
+        svg[style*="fill:none"] path[fill="none"],
+        svg[style*="fill: none"] circle[fill="none"],
+        svg[style*="fill:none"] circle[fill="none"],
+        svg[style*="fill: none"] rect[fill="none"],
+        svg[style*="fill:none"] rect[fill="none"] {
             fill: none !important;
         }
 

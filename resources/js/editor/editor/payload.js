@@ -214,10 +214,49 @@ export function extractGrapesComposerCss(css) {
             continue;
         }
 
-        kept.push(`${selectors} {${body}}`);
+        const cleanedBody = sanitizeClearedPaintRuleBody(body);
+
+        if (cleanedBody === '') {
+            continue;
+        }
+
+        kept.push(`${selectors} {${cleanedBody}}`);
     }
 
     return kept.join('\n');
+}
+
+/**
+ * Remove cleared SVG paint declarations (color/stroke/fill:none) from a CSS rule body.
+ *
+ * @param {string} body
+ * @returns {string}
+ */
+export function sanitizeClearedPaintRuleBody(body) {
+    return String(body ?? '')
+        .split(';')
+        .map((chunk) => chunk.trim())
+        .filter((chunk) => {
+            if (chunk === '') {
+                return false;
+            }
+
+            const colon = chunk.indexOf(':');
+
+            if (colon === -1) {
+                return true;
+            }
+
+            const property = chunk.slice(0, colon).trim().toLowerCase();
+            const value = chunk.slice(colon + 1).trim();
+
+            if (! ['color', 'fill', 'stroke'].includes(property)) {
+                return true;
+            }
+
+            return ! shouldOmitAuthorStyleValue(property, value);
+        })
+        .join('; ');
 }
 
 /**

@@ -320,16 +320,16 @@ final class EditorPastedComponentNormalizer
             return '';
         }
 
-        // Keep structural Tailwind theme tokens (:root --spacing, --text-*, --color-white, …).
-        // Only strip palette/brand declarations — deleting whole :root blocks removed
-        // --color-white / typography tokens and broke .text-white / fonts on the frontend.
+        // Keep structural Tailwind theme tokens (:root --spacing, --text-*, --color-white, …)
+        // and default palette scales (--color-violet-400, …). Only strip live site theme
+        // tokens that ThemePalette re-injects (--color-vp-*, --vx-header-*).
         $css = preg_replace('/\/\*! tailwindcss.*?\*\//s', '', $css) ?? $css;
 
         if (preg_match_all('/((?:\:root|\:host)[^{]*\{)([^{}]*)(\})/s', $css, $matches, PREG_SET_ORDER) > 0) {
             foreach ($matches as $match) {
                 $declarations = $match[2];
                 $cleaned = preg_replace(
-                    '/--(?:color-vp-[a-z0-9-]+|color-(?:indigo|purple|violet|blue|pink)-\d+|vx-header-[a-z0-9-]+)\s*:\s*[^;]+;?\s*/i',
+                    '/--(?:color-vp-[a-z0-9-]+|vx-header-[a-z0-9-]+)\s*:\s*[^;]+;?\s*/i',
                     '',
                     $declarations,
                 );

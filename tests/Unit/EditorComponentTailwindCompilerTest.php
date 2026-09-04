@@ -64,4 +64,21 @@ class EditorComponentTailwindCompilerTest extends TestCase
             $css,
         );
     }
+
+    public function test_page_compile_keeps_literal_palette_color_variables(): void
+    {
+        if (EditorComponentTailwindCompiler::compile('<span class="text-sm">probe</span>') === null) {
+            $this->markTestSkipped('Node.js Tailwind compiler is not available in this environment.');
+        }
+
+        $css = EditorPastedComponentNormalizer::compilePageTailwindCss(
+            '<div class="text-violet-400/10 text-indigo-400/10 text-sky-400/10">Watermark</div>',
+        );
+
+        $this->assertMatchesRegularExpression('/--color-violet-400\s*:/', $css);
+        $this->assertMatchesRegularExpression('/--color-indigo-400\s*:/', $css);
+        $this->assertMatchesRegularExpression('/--color-sky-400\s*:/', $css);
+        $this->assertStringContainsString('.text-violet-400\\/10', $css);
+        $this->assertStringNotContainsString('var(--color-vp-brand', $css);
+    }
 }

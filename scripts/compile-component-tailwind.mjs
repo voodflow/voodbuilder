@@ -34,6 +34,7 @@ const LEGACY_PALETTE_NAMES = [
     'green',
 ];
 
+/** @deprecated Palette CSS vars are no longer stripped — kept for callers/tests. */
 function isLegacyPaletteColorVariable(prop) {
     if (! prop.startsWith('--color-')) {
         return false;
@@ -453,26 +454,70 @@ function rewriteAnimateVarFallbacks(root, themeVariables) {
 }
 
 function stripScopedVpThemeOverrides(root) {
+    // Only strip live theme tokens (--color-vp-*). Tailwind palette scales
+    // (--color-violet-400, --color-sky-500, …) must remain: utilities resolve to
+    // var(--color-*) and without the definition the declaration is invalid and
+    // color inherits from the page (e.g. white watermarks on dark sections).
     root.walkDecls((decl) => {
-        if (decl.prop.startsWith('--color-vp-') || isLegacyPaletteColorVariable(decl.prop)) {
+        if (decl.prop.startsWith('--color-vp-')) {
             decl.remove();
         }
     });
 }
 
+/**
+ * Intentionally a no-op.
+ *
+ * Older builds remapped indigo/purple/violet utilities onto --color-vp-brand-*,
+ * which made decorative palette colors (product-card watermarks, multi-hue
+ * sections) follow the theme and lose opacity mixes. Theme-aware UI must use
+ * vp-brand-* utilities; Tailwind palette colors stay literal.
+ */
 function rewriteLegacyPaletteUtilityColors(root) {
-    root.walkDecls((decl) => {
-        if (! ['background-color', 'outline-color', 'border-color', 'color'].includes(decl.prop)) {
+    // no-op — see comment above
+}
+
+/**
+ * Heal CSS already corrupted by the old rewrite (bare brand var inside /N opacity
+ * utilities). Reconstruct color-mix with the opacity from the selector.
+ */
+function healBrandOpacityUtilityColors(root) {
+    root.walkRules((rule) => {
+        const selector = String(rule.selector ?? '');
+        const opacityMatch = selector.match(/\\\/(\d+)\b/);
+
+        if (! opacityMatch) {
             return;
         }
 
-        const value = String(decl.value ?? '');
+        const opacity = Number(opacityMatch[1]);
 
-        if (/var\(--color-(?:indigo|purple|violet)-\d+\)/i.test(value)) {
-            decl.value = decl.prop === 'background-color'
-                ? 'var(--color-vp-brand-3, var(--color-vp-brand-1, #0d9488))'
-                : 'var(--color-vp-brand-2, var(--color-vp-brand-1, #0d9488))';
+        if (! Number.isFinite(opacity) || opacity <= 0 || opacity >= 100) {
+            return;
         }
+
+        rule.walkDecls((decl) => {
+            if (! ['background-color', 'outline-color', 'border-color', 'color'].includes(decl.prop)) {
+                return;
+            }
+
+            const value = String(decl.value ?? '').trim();
+
+            // Bare brand (or legacy palette) var — restore opacity mix.
+            if (
+                ! /color-mix\s*\(/i.test(value)
+                && /var\(--color-(?:vp-brand-[123]|(?:indigo|purple|violet)-\d+)/i.test(value)
+            ) {
+                decl.value = `color-mix(in oklab, ${value} ${opacity}%, transparent)`;
+
+                return;
+            }
+
+            // Existing brand mix with wrong % (nested var() broke earlier heals).
+            if (/color-mix\s*\(/i.test(value) && /var\(--color-vp-brand-/.test(value)) {
+                decl.value = value.replace(/(\d+)%(\s*,\s*transparent\s*\))/i, `${opacity}%$2`);
+            }
+        });
     });
 }
 
@@ -514,6 +559,7 @@ function optimizeComponentCss(css, scope) {
 
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
+    healBrandOpacityUtilityColors(root);
     rewriteAnimateVarFallbacks(root, themeVariables);
 
     const scopedDeclarations = INHERITED_THEME_PROPS.map((prop) => postcss.decl({ prop, value: 'inherit' }));
@@ -1000,6 +1046,7 @@ function optimizePageCss(css) {
     stripPagePreflight(root);
     stripScopedVpThemeOverrides(root);
     rewriteLegacyPaletteUtilityColors(root);
+    healBrandOpacityUtilityColors(root);
     rewriteThemeVarFallbacks(root);
     rewriteAnimateVarFallbacks(root, themeVariables);
     flattenNestedMediaQueries(root);
