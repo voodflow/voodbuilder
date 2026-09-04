@@ -141,8 +141,16 @@
                             @if (! empty($area['description']))
                                 <div class="voodbuilder-theme-assignments__meta">{{ $area['description'] }}</div>
                             @endif
-                            @if (! empty($area['chrome_layout']))
-                                <div class="voodbuilder-theme-assignments__meta">{{ $area['chrome_layout'] }}</div>
+                            @php
+                                $chrome = $area['chrome_layout'] ?? null;
+                                $chromeLabel = is_array($chrome)
+                                    ? (string) ($chrome['name'] ?? '')
+                                    : (is_string($chrome) ? $chrome : '');
+                            @endphp
+                            @if ($chromeLabel !== '')
+                                <div class="voodbuilder-theme-assignments__meta">
+                                    {{ __('voodbuilder::settings.theme_map_chrome_layout') }}: {{ $chromeLabel }}
+                                </div>
                             @endif
                         </td>
                         <td>
