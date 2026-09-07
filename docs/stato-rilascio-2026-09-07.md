@@ -10,7 +10,7 @@
 - Free: categorie **Layout, Basic, Media, Single, Site** + **~10 sezioni Elements locali** (non remote).
 - Library remota: solo con companion **`voodbuilder-elements`**.
 - Components / Templates / Popups / Dynamic Data: solo con il rispettivo companion.
-- `vpopups` venduto a parte; il core non assume che esista.
+- `vpopups` venduto a parte ma **richiede** `voodbuilder ^0.1` (stesso editor)
 - Una sola demo completa (simile al sito ufficiale Voodflow, modificabile) — a carico product owner.
 - Prima del publish companion: security + test; cookie deve bloccare davvero.
 - Catalogo remoto: blocchi come gallery/slider devono diventare configurabili.
