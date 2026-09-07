@@ -45,10 +45,10 @@ Optional: [laravel/fortify](https://laravel.com/docs/fortify) for public login /
 
 ```bash
 composer require voodflow/voodbuilder
-php artisan voodbuilder:install --with-npm-build
+php artisan voodbuilder:install
 ```
 
-`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json`, and can compile assets.
+`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json`, runs `npm install`, and **`npm run build`** when Node/npm is on PATH (use `--skip-npm-build` to skip the compile step).
 
 Then register plugins on your Filament panel (only VoodBuilder is required — the others if you installed those packages):
 
@@ -62,14 +62,16 @@ Then register plugins on your Filament panel (only VoodBuilder is required — t
 ])
 ```
 
-If you skipped the build step: `npm run build` (or `npm run dev`).
+If you skipped the build (`--skip-npm` / `--skip-npm-build` / no Node): `npm run build` or `npm run dev` from the app root.
+
+**Why a host build?** Theme CSS and the editor compile through **your** app’s Vite (Tailwind + `public/build/manifest.json`). The package cannot ship a one-size-fits-all prebuilt bundle.
 
 **Menu visibility:** without Filament Shield / Spatie Permission, anyone who can open the admin panel sees Pages, Navigation, and Layouts. With Shield, generate and assign the resource permissions (or set `VOODBUILDER_AUTHORIZATION=panel` in `.env`).
 
 > Stock Laravel `GET /` in `routes/web.php` overrides the VoodBuilder home route — the install command removes it.  
 > Do **not** publish duplicate package migrations.
 
-Flags: `--skip-npm`, `--skip-seed`, `--skip-migrate`, `--force`.
+Flags: `--skip-npm`, `--skip-npm-build`, `--skip-seed`, `--skip-migrate`, `--force`.
 
 If Composer reports a Guzzle conflict on a fresh Laravel app:
 

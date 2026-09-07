@@ -12,6 +12,7 @@
         $chromeLayoutEditor ?? false,
         $voodbuilderSubTheme,
     );
+    $voodbuilderHostViteReady = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::hostViteReady();
     $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
 @endphp
 <!doctype html>
@@ -41,14 +42,26 @@
     {{-- Page fonts before theme CSS so @font-face + woff2 preload start as early as possible. --}}
     @stack('fonts')
 
-    @if ($voodbuilderEditorAssetsReady)
+    @if ($voodbuilderHostViteReady && $voodbuilderEditorAssetsReady)
         @vite($voodbuilderViteEntries)
+    @elseif (! $voodbuilderHostViteReady)
+        <style>
+            .voodbuilder-vite-missing{margin:1rem auto;max-width:40rem;padding:1rem 1.25rem;border-radius:.75rem;background:#fffbeb;color:#92400e;font:14px/1.5 system-ui,sans-serif}
+            .voodbuilder-vite-missing code{font-size:.9em}
+        </style>
     @elseif ($editorEditor ?? false)
         <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
+    @unless ($voodbuilderHostViteReady)
+        <div class="voodbuilder-vite-missing" role="status">
+            Frontend assets are not built yet. From the Laravel app root run
+            <code>php artisan voodbuilder:install</code>
+            (builds when npm is available) or <code>npm run build</code> / <code>npm run dev</code>.
+        </div>
+    @endunless
     @unless ($hideSiteNav ?? false)
         <x-voodbuilder::nav
             :has-doc-sidebar="$voodbuilderHasDocSidebar"

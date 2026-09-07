@@ -22,8 +22,9 @@ class InstallCommand extends Command
                             {--force : Overwrite already published files}
                             {--skip-migrate : Publish configs and migrations without running migrate}
                             {--skip-seed : Skip seeding default Voodbuilder data}
-                            {--skip-npm : Do not patch package.json or run npm install}
-                            {--with-npm-build : Run npm run build after npm install}';
+                            {--skip-npm : Do not patch package.json or run npm install / build}
+                            {--skip-npm-build : After npm install, skip npm run build}
+                            {--with-npm-build : Deprecated; build already runs by default when npm is available}';
 
     protected $description = 'Publish Voodbuilder and dependency configs/migrations, then run migrate and seed';
 
@@ -244,9 +245,8 @@ class InstallCommand extends Command
 
         $this->components->info('npm install completed.');
 
-        if (! $this->option('with-npm-build')) {
-            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and visual editor.');
-            $this->components->warn('Tip: pass `--with-npm-build` to compile assets during install.');
+        if ($this->option('skip-npm-build')) {
+            $this->components->warn('Skipped npm run build (--skip-npm-build). Run `npm run build` (or `npm run dev`) before opening the public site.');
 
             return;
         }
@@ -260,6 +260,7 @@ class InstallCommand extends Command
         if (! $build->successful()) {
             $this->components->error('npm run build failed.');
             $this->line($build->errorOutput());
+            $this->components->warn('Fix the npm error, then run `npm run build` (or `npm run dev`) from the app root.');
 
             return;
         }
@@ -332,10 +333,10 @@ class InstallCommand extends Command
 
         if ($this->option('skip-npm') || ! $this->npmIsAvailable()) {
             $this->line('  2. Frontend assets — from your Laravel app root:');
-            $this->line('     php artisan voodbuilder:install --with-npm-build');
+            $this->line('     php artisan voodbuilder:install');
             $this->line('     (or: npm install && npm run build)');
             $this->newLine();
-        } elseif (! $this->option('with-npm-build')) {
+        } elseif ($this->option('skip-npm-build')) {
             $this->line('  2. Frontend assets — compile if you skipped the build step:');
             $this->line('     npm run build    # or: npm run dev');
             $this->newLine();

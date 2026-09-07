@@ -165,13 +165,26 @@ final class EditorAssets
         return true;
     }
 
+    /**
+     * Whether the host app has a Vite build (or `npm run dev` hot server).
+     * Public layouts must not call @vite when this is false — Laravel throws.
+     */
+    public static function hostViteReady(): bool
+    {
+        if (class_exists(Vite::class) && Vite::isRunningHot()) {
+            return true;
+        }
+
+        return is_file(public_path('build/manifest.json'));
+    }
+
     public static function buildInstructions(): string
     {
         $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
 
         if ($missing !== []) {
             return 'Missing npm packages: '.implode(', ', $missing).'. '
-                .'Run `php artisan voodbuilder:install --skip-migrate --skip-seed --with-npm-build` '
+                .'Run `php artisan voodbuilder:install` '
                 .'(or `php artisan voodbuilder:sync-npm-deps --install`, then `npm run build`).';
         }
 
@@ -179,7 +192,7 @@ final class EditorAssets
         $style = self::editorStyleEntry();
 
         return "Add `{$script}` and `{$style}` to vite.config.js input, then run `npm install --legacy-peer-deps && npm run build`. "
-            .'Or run `php artisan voodbuilder:install --skip-migrate --skip-seed --with-npm-build`.';
+            .'Or run `php artisan voodbuilder:install`.';
     }
 
     /**
