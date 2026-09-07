@@ -18,7 +18,7 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | **Theme Studio** | Map colours / sub-themes to Site pages and content channels |
 | **Page access** | Public, registered-only, profile-based gates, optional password unlock |
 | **Menu-driven URLs** | Pages get public routes from Navigation (e.g. `/about` or `/company/about`) |
-| **Media** | Works with [`voodflow/vmedia`](https://github.com/voodflow/vmedia) (Composer dependency; register the Filament plugin when you want the admin UI) |
+| **Media** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) is required by Composer; register its Filament plugin for the admin media UI |
 | **Chrome layouts** | Shared header / footer shells per channel, editable in the same builder |
 
 ![Style inspector](art/editor-styles.png)
@@ -34,6 +34,7 @@ Optional packages (cookie bar, Elements, Dynamic Data, Templates, Components, Po
 - PHP **8.4+**
 - Laravel **12+** / **13+**
 - Filament **5+**
+- Node.js + npm (for the host Vite build)
 - Vite + Tailwind CSS **v4** (theme CSS compiles in **your** app)
 - [`voodflow/vmedia`](https://github.com/voodflow/vmedia) (pulled in by Composer)
 
@@ -44,47 +45,52 @@ Optional: [laravel/fortify](https://laravel.com/docs/fortify) for public login /
 ## Installation
 
 ```bash
-composer require voodflow/voodbuilder
+composer require voodflow/voodbuilder -W
 php artisan voodbuilder:install
 ```
 
-`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json`, runs `npm install`, and **`npm run build`** when Node/npm is on PATH (use `--skip-npm-build` to skip the compile step).
+`-W` lets Composer settle Guzzle when a fresh Laravel app locked Guzzle 8 while a dependency needs Guzzle 7.
 
-Then register plugins on your Filament panel (only VoodBuilder is required — the others if you installed those packages):
+`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json` (Editor, Tailwind, CodeMirror, fonts, …), runs `npm install`, and **`npm run build`** when npm is on PATH.
+
+Then register plugins on your Filament panel. **Only `VoodbuilderPlugin` is required** — add others only if those packages are installed:
 
 ```php
 ->plugins([
     \Voodflow\Voodbuilder\VoodbuilderPlugin::make(),
-    \Voodflow\Vmedia\VmediaPlugin::make(), // optional media admin
-    \Voodflow\Vcookiebar\VcookiebarPlugin::make(), // optional cookie bar
-    // \Voodflow\Vpopups\VpopupsPlugin::make(), // optional popups
-    // \Voodflow\Vforms\VformsPlugin::make(), // optional forms
+    \Voodflow\Vmedia\VmediaPlugin::make(), // recommended: media admin UI
+    // \Voodflow\Vcookiebar\VcookiebarPlugin::make(),
+    // \Voodflow\Vpopups\VpopupsPlugin::make(),
+    // \Voodflow\Vforms\VformsPlugin::make(),
 ])
 ```
 
-If you skipped the build (`--skip-npm` / `--skip-npm-build` / no Node): `npm run build` or `npm run dev` from the app root.
+After install you should see **Pages**, **Menus**, **Theme Studio**, **Settings** (and Layouts when enabled) under the **Voodbuilder** nav group.
 
-**Why a host build?** Theme CSS and the editor compile through **your** app’s Vite (Tailwind + `public/build/manifest.json`). The package cannot ship a one-size-fits-all prebuilt bundle.
+### Frontend build
 
-**Menu visibility:** without Filament Shield / Spatie Permission, anyone who can open the admin panel sees Pages, Navigation, and Layouts. With Shield, generate and assign the resource permissions (or set `VOODBUILDER_AUTHORIZATION=panel` in `.env`).
+Theme CSS and the editor compile through **your** app’s Vite (`public/build/manifest.json`). The package cannot ship a one-size-fits-all prebuilt bundle.
+
+- Default: `voodbuilder:install` already runs `npm run build`
+- Skip compile: `--skip-npm-build` / `--skip-npm`, then later `npm run build` or `npm run dev`
+- If the public site shows a yellow “assets not built” notice, run `npm run build` from the app root
+
+### Admin menu & permissions
+
+- **Without Filament Shield:** anyone who can open the Filament panel sees VoodBuilder resources
+- **With Filament Shield:** generate and assign resource permissions, or set `VOODBUILDER_AUTHORIZATION=panel` in `.env` to allow all panel users
 
 > Stock Laravel `GET /` in `routes/web.php` overrides the VoodBuilder home route — the install command removes it.  
 > Do **not** publish duplicate package migrations.
 
 Flags: `--skip-npm`, `--skip-npm-build`, `--skip-seed`, `--skip-migrate`, `--force`.
 
-If Composer reports a Guzzle conflict on a fresh Laravel app:
-
-```bash
-composer require voodflow/voodbuilder -W
-```
-
 ---
 
 ## Site pages & routing
 
-1. **Admin → Site → Pages** — create a page and open the visual editor.  
-2. **Admin → Site → Navigation** — link menu items to the page (or to a named route / URL).  
+1. **Admin → Voodbuilder → Pages** — create a page and open the visual editor.  
+2. **Admin → Voodbuilder → Menus** — link menu items to the page (or to a named route / URL).  
 3. Public URLs come from config:
 
 | Mode | Example |
@@ -113,7 +119,7 @@ Per page you can combine:
 
 ## Theme Studio
 
-**Admin → Themes** maps sub-themes (palettes + optional CSS) to areas:
+**Admin → Voodbuilder → Theme Studio** maps sub-themes (palettes + optional CSS) to areas:
 
 - Site pages  
 - Content channels (docs, tutorials, events, …) when those packages register channels  
