@@ -126,8 +126,16 @@ export function initCarousels() {
 
         root.dataset.vbCarouselReady = '1';
 
-        root.querySelector('[data-carousel-prev]')?.addEventListener('click', () => scrollCarousel(track, -1));
-        root.querySelector('[data-carousel-next]')?.addEventListener('click', () => scrollCarousel(track, 1));
+        root.querySelector('[data-carousel-prev]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            scrollCarousel(track, -1);
+        });
+        root.querySelector('[data-carousel-next]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            scrollCarousel(track, 1);
+        });
     });
 }
 

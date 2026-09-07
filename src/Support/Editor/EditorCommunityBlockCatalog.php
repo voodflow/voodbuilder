@@ -60,39 +60,25 @@ final class EditorCommunityBlockCatalog
     ];
 
     /**
-     * ~2 essentials per free marketing / animated category.
+     * Free local section pack (~10): enough to assemble a full marketing template
+     * without the remote Elements companion. Distinct from api.voodflow.com items.
      *
      * @var list<string>
      */
     public const COMMUNITY_SECTION_BLOCK_IDS = [
-        // Hero
         'vb-hero-2',
         'vb-bg-image',
-        // Content
         'vb-content-5',
-        'vb-landing02-faq',
-        // Features
         'vb-feature-1',
         'vb-feature-2',
-        // Articles
-        'vb-blog-1',
-        'vb-landing01-articles',
-        // Animated
+        'vb-testimonial-1',
+        'vb-team-1',
+        'vb-step-1',
+        'vb-cta-1',
+        'vb-landing02-faq',
+        // Lightweight JS tiles kept local for Community demos
         'voodbuilder-animated-cta',
         'voodbuilder-animated-stats',
-        // Testimonials
-        'vb-testimonial-1',
-        'vb-testimonial-2',
-        // Team
-        'vb-team-1',
-        'vb-team-2',
-        // Steps
-        'vb-step-1',
-        'vb-step-2',
-        // CTA
-        'vb-cta-1',
-        'vb-landing01-cta',
-        // Tabs (one preset)
         'voodbuilder-tabs-pills',
     ];
 
@@ -133,9 +119,9 @@ final class EditorCommunityBlockCatalog
         'vb-feature-3', 'vb-feature-4', 'vb-feature-5', 'vb-feature-6',
         'vb-feature-7', 'vb-feature-8',
         'vb-landing01-features', 'vb-landing02-features', 'vb-landing02-toolkit',
-        // Articles extras
-        'vb-blog-2', 'vb-blog-3', 'vb-blog-4', 'vb-blog-5',
-        'vb-landing02-articles', 'vb-articles-featured-stories', 'vb-articles-explore-cards',
+        // Articles extras (+ demoted from Community free pack)
+        'vb-blog-1', 'vb-blog-2', 'vb-blog-3', 'vb-blog-4', 'vb-blog-5',
+        'vb-landing01-articles', 'vb-landing02-articles', 'vb-articles-featured-stories', 'vb-articles-explore-cards',
         // Gallery (entire category)
         'vb-gallery-1', 'vb-gallery-2', 'vb-gallery-3',
         'vb-gallery-mission-cards', 'vb-slider-images', 'vb-slider-videos',
@@ -143,15 +129,15 @@ final class EditorCommunityBlockCatalog
         'vb-statistic-1', 'vb-statistic-2', 'vb-statistic-3', 'vb-stats-cinematic-band',
         'vb-stats-count-up', 'vb-stats-metrics-band',
         // Testimonials extras
-        'vb-testimonial-3', 'vb-landing01-testimonials',
+        'vb-testimonial-2', 'vb-testimonial-3', 'vb-landing01-testimonials',
         // Team extras
-        'vb-team-3',
+        'vb-team-2', 'vb-team-3',
         // Steps extras
-        'vb-step-3',
+        'vb-step-2', 'vb-step-3',
         // Pricing (entire category)
         'vb-pricing-1', 'vb-pricing-2',
         // CTA extras
-        'vb-cta-2', 'vb-cta-3', 'vb-cta-4',
+        'vb-cta-2', 'vb-cta-3', 'vb-cta-4', 'vb-landing01-cta',
         'vb-cta-glow-pulse', 'vb-cta-split-shimmer',
         // Contact (entire category)
         'vb-contact-1', 'vb-contact-2', 'vb-contact-3',
@@ -268,7 +254,12 @@ final class EditorCommunityBlockCatalog
                     return true;
                 }
 
-                // Unknown / companion-injected IDs stay visible.
+                // Official companion catalog IDs belong to Elements / Pro — never in Community sidebar.
+                if (self::isCompanionBlockId($id)) {
+                    return false;
+                }
+
+                // Unknown third-party IDs stay visible.
                 return ! isset($coreOwned[$id]);
             },
         ));

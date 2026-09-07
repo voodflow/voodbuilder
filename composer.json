@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "VoodBuilder — commercial Filament plugin for public site themes, site pages, and Editor page builder on Laravel.",
-    "version": "0.1.0",
+    "description": "VoodBuilder \u2014 commercial Filament plugin for public site themes, site pages, and Editor page builder on Laravel.",
+    "version": "0.1.1",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -40,11 +40,12 @@
             "Voodflow\\Vforms\\": "../vforms/src/",
             "Voodflow\\Vcookiebar\\": "../vcookiebar/src/",
             "Voodflow\\VoodbuilderComponents\\": "../voodbuilder-components/src/",
-            "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src/Modules/Components/",
+            "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src-voodbuilder/Modules/Components/",
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
-            "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src/Modules/DynamicData/",
-            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource/",
-            "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/"
+            "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src-voodbuilder/Modules/DynamicData/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource/",
+            "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/",
+            "Voodflow\\VoodbuilderElements\\": "../voodbuilder-elements/src/"
         },
         "classmap": [
             "../vpopups/src/Models/",
@@ -52,11 +53,11 @@
             "../vpopups/src/Http/Controllers/",
             "../vpopups/src/Filament/Resources/PopupResource.php",
             "../vpopups/src/Filament/Actions/",
-            "../voodbuilder-components/src/Models/",
-            "../voodbuilder-components/src/Http/Controllers/",
-            "../voodbuilder-components/src/Support/Editor/",
-            "../voodbuilder-dynamic-data/src/Support/Editor/Bindings/",
-            "../voodbuilder-dynamic-data/src/Filament/Resources/ModelIntegrationResource.php"
+            "../voodbuilder-components/src-voodbuilder/Models/",
+            "../voodbuilder-components/src-voodbuilder/Http/Controllers/",
+            "../voodbuilder-components/src-voodbuilder/Support/Editor/",
+            "../voodbuilder-dynamic-data/src-voodbuilder/Support/Editor/Bindings/",
+            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource.php"
         ]
     },
     "require-dev": {

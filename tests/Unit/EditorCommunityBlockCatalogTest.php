@@ -30,10 +30,9 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertContains('vb-hero-2', $ids);
         $this->assertContains('voodbuilder-heading', $ids);
         $this->assertContains('acme-custom', $ids);
-        // After Elements extract, former companion IDs are not core-owned:
-        // if registered (Elements plugin / third party) they stay visible.
-        $this->assertContains('vb-hero-1', $ids);
-        $this->assertContains('vb-gallery-1', $ids);
+        // Official companion catalog IDs stay out of Community (Elements / Pro Library).
+        $this->assertNotContains('vb-hero-1', $ids);
+        $this->assertNotContains('vb-gallery-1', $ids);
         $this->assertNotContains('chrome_content_slot', $ids);
         $this->assertFalse(EditorCommunityBlockCatalog::isCompanionBlockId('vb-hero-2'));
         $this->assertTrue(EditorCommunityBlockCatalog::isCompanionBlockId('vb-gallery-1'));
@@ -54,7 +53,7 @@ class EditorCommunityBlockCatalogTest extends TestCase
 
         $this->assertContains('chrome_content_slot', $ids);
         $this->assertContains('site_nav_simple', $ids);
-        $this->assertContains('vb-gallery-1', $ids);
+        $this->assertNotContains('vb-gallery-1', $ids);
     }
 
     public function test_professional_shows_full_library_when_registered(): void

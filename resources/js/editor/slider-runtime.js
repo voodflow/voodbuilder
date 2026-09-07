@@ -39,8 +39,16 @@ function wireScrollSlider(root) {
 
     root.dataset.vbScrollSliderReady = '1';
 
-    root.querySelector('[data-vb-slider-prev]')?.addEventListener('click', () => scrollSliderTrack(track, -1));
-    root.querySelector('[data-vb-slider-next]')?.addEventListener('click', () => scrollSliderTrack(track, 1));
+    root.querySelector('[data-vb-slider-prev]')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        scrollSliderTrack(track, -1);
+    });
+    root.querySelector('[data-vb-slider-next]')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        scrollSliderTrack(track, 1);
+    });
 
     if (root.getAttribute('data-vb-slider-autoplay') !== '1') {
         return;

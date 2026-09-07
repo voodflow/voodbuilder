@@ -77,10 +77,17 @@ export const UTILITY_BLOCK_WIREFRAMES = {
     video: tablerThumb(
         '<path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"/><path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>',
     ),
-    'voodbuilder-reading-time': wireframe('<circle cx="24" cy="24" r="10"/><path d="M24 18v6l4 2"/>'),
-    'voodbuilder-reading-progress': wireframe('<path d="M8 28h32"/><rect x="8" y="26" width="18" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>'),
-    'voodbuilder-social-share': wireframe(
-        '<path d="M18 8a3 3 0 1 0-2.8 4"/><path d="M6 15l9.2-5"/><path d="M18 16a3 3 0 1 0-2.8 4"/><path d="M6 9l9.2 5"/>',
+    'voodbuilder-reading-time': tablerThumb(
+        // ti-clock
+        '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/>',
+    ),
+    'voodbuilder-reading-progress': tablerThumb(
+        // ti-line
+        '<path d="M4 12h16"/><path d="M4 12v.01"/><path d="M20 12v.01"/><path d="M8 12h8" stroke-width="2.5"/>',
+    ),
+    'voodbuilder-social-share': tablerThumb(
+        // ti-share
+        '<path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8.7 10.7l6.6 -3.4"/><path d="M8.7 13.3l6.6 3.4"/>',
     ),
     'voodbuilder-image-gallery': wireframe(
         '<rect x="8" y="12" width="13" height="13" rx="1.5"/>'
