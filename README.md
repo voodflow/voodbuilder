@@ -18,15 +18,14 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | **Theme Studio** | Map colours / sub-themes to Site pages and content channels |
 | **Page access** | Public, registered-only, profile-based gates, optional password unlock |
 | **Menu-driven URLs** | Pages get public routes from Navigation (e.g. `/about` or `/company/about`) |
-| **Media** | Bundled [`voodflow/vmedia`](https://github.com/voodflow/vmedia) — vault, galleries, Editor image picker |
-| **Cookie consent** | Bundled [`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar) — consent bar that can block scripts until accepted |
+| **Media** | Works with [`voodflow/vmedia`](https://github.com/voodflow/vmedia) (Composer dependency; register the Filament plugin when you want the admin UI) |
 | **Chrome layouts** | Shared header / footer shells per channel, editable in the same builder |
 
 ![Style inspector](art/editor-styles.png)
 
 ![Layers panel](art/editor-layers.png)
 
-Optional packages (Elements, Dynamic Data, Templates, Components, Popups, and content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
+Optional packages (cookie bar, Elements, Dynamic Data, Templates, Components, Popups, content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
 
 ---
 
@@ -36,11 +35,9 @@ Optional packages (Elements, Dynamic Data, Templates, Components, Popups, and co
 - Laravel **12+** / **13+**
 - Filament **5+**
 - Vite + Tailwind CSS **v4** (theme CSS compiles in **your** app)
-- [ralphjsmit/laravel-seo](https://github.com/ralphjsmit/laravel-seo)
-- [spatie/laravel-settings](https://github.com/spatie/laravel-settings)
-- [spatie/laravel-medialibrary](https://github.com/spatie/laravel-medialibrary) (via vmedia)
+- [`voodflow/vmedia`](https://github.com/voodflow/vmedia) (pulled in by Composer)
 
-Optional: [laravel/fortify](https://github.com/laravel/fortify) for public login / `/account`.
+Optional: [laravel/fortify](https://laravel.com/docs/fortify) for public login / `/account`.
 
 ---
 
@@ -51,26 +48,32 @@ composer require voodflow/voodbuilder
 php artisan voodbuilder:install --with-npm-build
 ```
 
-Typical first install also pulls **vmedia** and **vcookiebar**. Then register Filament plugins:
+`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json`, and can compile assets.
+
+Then register plugins on your Filament panel (only VoodBuilder is required — the others if you installed those packages):
 
 ```php
-use Voodflow\Voodbuilder\VoodbuilderPlugin;
-use Voodflow\Vmedia\VmediaPlugin;
-use Voodflow\Vcookiebar\VcookiebarPlugin;
-
-$panel->plugins([
-    VoodbuilderPlugin::make(),
-    VmediaPlugin::make(),
-    VcookiebarPlugin::make(),
-]);
+->plugins([
+    \Voodflow\Voodbuilder\VoodbuilderPlugin::make(),
+    \Voodflow\Vmedia\VmediaPlugin::make(), // optional media admin
+    \Voodflow\Vcookiebar\VcookiebarPlugin::make(), // optional cookie bar
+    // \Voodflow\Vpopups\VpopupsPlugin::make(), // optional popups
+    // \Voodflow\Vforms\VformsPlugin::make(), // optional forms
+])
 ```
 
-`voodbuilder:install` publishes config, runs migrations, seeds demo navigation/pages when allowed, patches Vite / `package.json`, and can compile assets (`--with-npm-build`).
+If you skipped the build step: `npm run build` (or `npm run dev`).
 
 > Stock Laravel `GET /` in `routes/web.php` overrides the VoodBuilder home route — the install command removes it.  
 > Do **not** publish duplicate package migrations.
 
 Flags: `--skip-npm`, `--skip-seed`, `--skip-migrate`, `--force`.
+
+If Composer reports a Guzzle conflict on a fresh Laravel app:
+
+```bash
+composer require voodflow/voodbuilder -W
+```
 
 ---
 

@@ -24,8 +24,7 @@
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
         "spatie/laravel-sluggable": "^3.8",
-        "voodflow/vmedia": "^0.2",
-        "voodflow/vcookiebar": "^0.1"
+        "voodflow/vmedia": "^0.2"
     },
     "autoload": {
         "psr-4": {
@@ -75,6 +74,7 @@
         }
     },
     "suggest": {
+        "voodflow/vcookiebar": "Optional cookie / consent bar for the public site (can gate tracking scripts).",
         "voodflow/vpopups": "Paid add-on: popup builder (requires VoodBuilder). Same GrapesJS editor, targeting, analytics.",
         "voodflow/vforms": "Paid add-on: managed forms and submissions with optional VoodBuilder blocks.",
         "voodflow/voodbuilder-elements": "Paid companion: remote Elements library (api.voodflow.com) for Pro/Agency section catalog.",

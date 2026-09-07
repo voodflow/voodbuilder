@@ -323,10 +323,10 @@ class InstallCommand extends Command
         $this->line('  1. Filament panel — register plugins once in your Panel provider:');
         $this->line('     ->plugins([');
         $this->line('         \\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make(),');
-        $this->line('         \\Voodflow\\Vpopups\\VpopupsPlugin::make(), // optional popups');
-        $this->line('         \\Voodflow\\Vmedia\\VmediaPlugin::make(), // optional media');
-        $this->line('         \\Voodflow\\Vforms\\VformsPlugin::make(), // optional forms');
+        $this->line('         \\Voodflow\\Vmedia\\VmediaPlugin::make(), // optional media admin');
         $this->line('         \\Voodflow\\Vcookiebar\\VcookiebarPlugin::make(), // optional cookie bar');
+        $this->line('         // \\Voodflow\\Vpopups\\VpopupsPlugin::make(), // optional popups');
+        $this->line('         // \\Voodflow\\Vforms\\VformsPlugin::make(), // optional forms');
         $this->line('     ])');
         $this->newLine();
 
@@ -348,7 +348,7 @@ class InstallCommand extends Command
         $this->line('  - package.json npm dependencies (Editor, Tailwind, fonts)');
         $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
-        $this->line('  - Spatie Media Library config + media table migration');
+        $this->line('  - media library config + media table migration (via vmedia)');
         $this->line('  - migrations and seed data');
         $this->newLine();
 
