@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
     "description": "VoodBuilder \u2014 commercial Filament plugin for public site themes, site pages, and Editor page builder on Laravel.",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "type": "library",
     "license": "proprietary",
     "keywords": [

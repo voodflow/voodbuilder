@@ -66,15 +66,21 @@ Se ometti `capabilities`, il core usa `EditionCapabilityMatrix::forEdition($edit
 
 **Raccomandazione pratica per il lancio:** vendi vpopups come **add-on Anystack** del prodotto `voodbuilder` (Agency lo include; Pro/Community lo acquistano a 79 €) così una sola chiave `voodbuilder` sblocca anche il repo popups. Eviti un secondo driver finché non lo implementi.
 
-### 3. Community gratis — perché crearla comunque
+### 3. Community gratis — se Anystack free non permette prodotti a 0 €
 
-Crea il piano Community a **0 €** con:
+Sul **piano gratuito Anystack** spesso non puoi creare un prodotto/piano Community a prezzo zero.
+In quel caso **non bloccare il lancio**:
 
-- download di `voodbuilder` (e istruzioni per `vcookiebar` / `vmedia` pubblici);
-- **registrazione email obbligatoria** per ottenere la chiave (anche se free);
-- checkbox marketing opt-in separato (GDPR).
+| Cosa | Come |
+|---|---|
+| Core Community | Pubblica `voodbuilder` (e MIT `vcookiebar`/`vmedia`) su **Packagist / repo pubblico** senza chiave |
+| Lead + email marketing | Form sul sito voodflow.com (“Download Community”) con email + opt-in GDPR → MailerLite/Brevo/… |
+| Conteggio install | Packagist download stats (grezzo) + lead form; **non** Anystack |
+| Pro / Agency / Popups | Solo questi su Anystack (piani a pagamento) |
 
-Così Anystack diventa la fonte di “quante install Community ci sono” e della mailing list legittima. Senza chiave free **non hai conteggio né email**.
+Quando passerai a un piano Anystack che supporta prodotti free, allora potrai aggiungere Community 0 € con chiave e unificare lead+licenza.
+
+**Non** creare un “Community” a 1 € solo per aggirare il limite: confonde il listino e costringe a gestire rimborsi/chiavi inutili.
 
 ## Variabili env lato cliente (builder)
 

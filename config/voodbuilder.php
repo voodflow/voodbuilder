@@ -312,7 +312,8 @@ return [
 
     'popups' => [
         'enabled' => env('VOODBUILDER_POPUPS_ENABLED', true),
-        // null = use site default sub-theme (Theme Studio → Site pages), same as page/layout editors.
+        // null = Site pages channel theme (Theme Studio → Site pages), same as chrome/page editors.
+        // Override with VOODBUILDER_POPUPS_EDITOR_SUB_THEME when needed.
         'editor_sub_theme' => env('VOODBUILDER_POPUPS_EDITOR_SUB_THEME'),
     ],
 
