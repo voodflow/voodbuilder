@@ -28,11 +28,11 @@ these same terms (inbound = outbound), unless otherwise agreed in writing.
 
 Professional / Agency capabilities and companion packages (for example
 Elements, Components, Dynamic Data, Templates, VoodPopups, and other
-add-ons) are licensed separately under commercial terms via Voodflow /
-Anystack. A Community install does **not** grant those rights.
+add-ons) are licensed separately under commercial terms via Voodflow
+(https://voodflow.com). A Community install does **not** grant those rights.
 
 Bundled free dependencies such as `voodflow/vmedia` and `voodflow/vcookiebar`
-keep their own licences (typically MIT + trademark NOTICE).
+keep their own licences (typically MIT).
 
 ## Contact
 
