@@ -665,6 +665,13 @@ export function renderVideoContentSettings({ mount, traitsMount = null, componen
                 runWithSettingsChangeGuard(editor, () => {
                     section.addAttributes({ 'data-vb-min-height': value });
                     section.addStyle({ 'min-height': value });
+
+                    const content = safeFindComponents(
+                        section,
+                        '[data-voodbuilder-role="content"], [data-voodbuilder-dropzone="content"]',
+                    )[0];
+
+                    content?.addStyle?.({ 'min-height': value });
                 });
             },
         }),

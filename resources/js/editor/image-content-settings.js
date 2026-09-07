@@ -209,7 +209,7 @@ function shouldOfferHeroBackgroundSettings(component, section) {
     const role = String(attrs['data-voodbuilder-role'] ?? '');
     const classes = componentClasses(component);
 
-    if (role === 'media' || role === 'shade' || role === 'content') {
+    if (role === 'media' || role === 'shade') {
         return true;
     }
 
@@ -665,6 +665,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
         ?? 'cover',
     );
     let position = String(section?.getAttributes?.()?.['data-vb-bg-position'] ?? 'center');
+    let minHeight = String(section?.getAttributes?.()?.['data-vb-min-height'] ?? '70vh');
 
     if (imageStyle['object-position']?.includes('top')) {
         position = 'top';
@@ -844,6 +845,37 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                     position = value;
                     runWithSettingsChangeGuard(editor, () => {
                         applyHeroPresentation(image, section, { position: value });
+                    });
+                },
+            }),
+        );
+
+        fields.append(
+            createSelectField({
+                label: labels.imageSettingsMinHeight ?? labels.videoSettingsMinHeight ?? 'Minimum height',
+                name: 'bgMinHeight',
+                value: minHeight,
+                options: [
+                    { value: '50vh', label: '50vh' },
+                    { value: '70vh', label: '70vh' },
+                    { value: '100vh', label: '100vh' },
+                ],
+                onChange: (value) => {
+                    minHeight = value;
+                    runWithSettingsChangeGuard(editor, () => {
+                        if (! section) {
+                            return;
+                        }
+
+                        section.addAttributes({ 'data-vb-min-height': value });
+                        section.addStyle({ 'min-height': value });
+
+                        const content = safeFindComponents(
+                            section,
+                            '[data-voodbuilder-role="content"], [data-voodbuilder-dropzone="content"]',
+                        )[0];
+
+                        content?.addStyle?.({ 'min-height': value });
                     });
                 },
             }),

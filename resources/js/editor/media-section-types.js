@@ -626,9 +626,60 @@ function registerBackgroundVideoType(editor) {
 }
 
 /**
+ * Re-apply media-hero inline presentation (min-height, object-fit, …) after CSS JIT
+ * so compile/style sync cannot leave a collapsed section.
+ *
+ * @param {import('grapesjs').Editor} editor
+ */
+export function resyncMediaHeroSections(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    safeFindComponents(
+        wrapper,
+        '[data-voodbuilder-section-block="vb-bg-image"], [data-voodbuilder-block="vb-bg-image"], [data-voodbuilder-section-block="vb-bg-video"], [data-voodbuilder-block="vb-bg-video"]',
+    ).forEach((section) => {
+        const id = String(
+            section.getAttributes?.()?.['data-voodbuilder-section-block']
+            ?? section.getAttributes?.()?.['data-voodbuilder-block']
+            ?? section.get?.('type')
+            ?? '',
+        ).trim();
+
+        if (id === 'vb-bg-video') {
+            syncBackgroundVideoSection(section);
+        } else {
+            syncBackgroundImageSection(section);
+        }
+    });
+}
+
+/**
  * @param {import('grapesjs').Editor} editor
  */
 export function registerMediaSectionTypes(editor) {
     registerBackgroundImageType(editor);
     registerBackgroundVideoType(editor);
+
+    if (editor.__voodbuilderMediaHeroResyncRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderMediaHeroResyncRegistered = true;
+
+    const scheduleResync = () => {
+        window.requestAnimationFrame(() => {
+            try {
+                resyncMediaHeroSections(editor);
+            } catch (error) {
+                console.warn('Voodbuilder Editor: could not resync media heroes.', error);
+            }
+        });
+    };
+
+    editor.on('voodbuilder:page-css-compiled', scheduleResync);
+    editor.on('load', scheduleResync);
 }

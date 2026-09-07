@@ -229,6 +229,75 @@ function isHeroCatalogSection(section) {
     return sectionCatalogBlockId(section).startsWith('vb-hero-');
 }
 
+/**
+ * Full-bleed media heroes are editable catalog sections (copy / CTAs / Layers),
+ * not companion dynamic previews. Flattening their tree hid Layers children and
+ * blocked text selection after chrome-shell lockDynamicPreviewContent passes.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isMediaHeroSection(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const id = String(
+        attrs['data-voodbuilder-block']
+        ?? attrs['data-voodbuilder-section-block']
+        ?? component.get?.('type')
+        ?? '',
+    ).trim();
+
+    return id === 'vb-bg-image' || id === 'vb-bg-video';
+}
+
+/**
+ * @param {object} component
+ */
+function unlockMediaHeroEditableTree(component) {
+    const walk = (node) => {
+        if (! node?.set) {
+            return;
+        }
+
+        node.set({
+            locked: false,
+            removable: true,
+            copyable: true,
+            draggable: true,
+            droppable: true,
+            selectable: true,
+            hoverable: true,
+            highlightable: true,
+            layerable: true,
+            editable: true,
+            stylable: true,
+            badgable: true,
+        }, { silent: true });
+
+        node.components?.()?.forEach?.((child) => walk(child));
+    };
+
+    // Root stays closed for nesting (section-in-section), but must stay in Layers
+    // with expandable children.
+    component.set({
+        locked: false,
+        droppable: false,
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
+        layerable: true,
+        removable: true,
+        copyable: true,
+        draggable: true,
+        stylable: true,
+    }, { silent: true });
+
+    component.components?.()?.forEach?.((child) => walk(child));
+}
+
 function registerLayoutSectionType(editor) {
     const sectionTypeDefinition = {
         isComponent: (element) => {
@@ -388,6 +457,14 @@ function lockDynamicPreviewContent(component, editor = null) {
     });
 
     if (locked) {
+        return;
+    }
+
+    // Media heroes: keep children selectable + layerable (text, CTAs, Layers tree).
+    if (isMediaHeroSection(component)) {
+        unlockMediaHeroEditableTree(component);
+        resolvedEditor?.Layers?.setLocked?.(component, false);
+
         return;
     }
 

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-09-07
+
+### Fixed
+
+- Media heroes (`vb-bg-image` / `vb-bg-video`) keep expandable Layers children — chrome-shell lock no longer flattens their tree
+- Background image Content settings include Minimum height (50/70/100vh); height is re-applied after page CSS compile
+- Clicking hero copy/content no longer opens Background settings (only media layer / section root)
+
 ## [0.1.13] - 2026-09-07
 
 ### Fixed

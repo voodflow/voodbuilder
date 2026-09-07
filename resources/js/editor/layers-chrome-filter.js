@@ -131,6 +131,26 @@ function isLayoutBlockRoot(component, editor) {
         || blockId === 'site_header';
 }
 
+function isMediaHeroSectionRoot(component) {
+    const id = readBlockId(component);
+
+    return id === 'vb-bg-image' || id === 'vb-bg-video';
+}
+
+function isInsideMediaHeroSection(component) {
+    let current = component?.parent?.();
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        if (isMediaHeroSectionRoot(current)) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
 function isChromeStructureComponent(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
@@ -223,6 +243,20 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
                 selectable: true,
                 hoverable: true,
                 highlightable: true,
+            }, { silent: true });
+        }
+    }
+
+    // Media heroes must keep an expandable Layers tree even if a later
+    // lockDynamicPreviewContent pass flattened children (layerable:false).
+    if (isMediaHeroSectionRoot(component) || isInsideMediaHeroSection(component)) {
+        if (! shouldHideFromLayers(component)) {
+            component.set({
+                layerable: true,
+                selectable: true,
+                hoverable: true,
+                highlightable: true,
+                locked: false,
             }, { silent: true });
         }
     }
