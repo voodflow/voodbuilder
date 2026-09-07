@@ -6,16 +6,19 @@ namespace Voodflow\Voodbuilder\Console;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
-use Voodflow\Voodbuilder\Support\GrapesJs\SectionBlocksCatalogBuilder;
-use Voodflow\Voodbuilder\Support\GrapesJs\SoundmitGrapesJsLanding;
+use Voodflow\Voodbuilder\Support\Editor\DemoEditorLanding;
+use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
 use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 
+/**
+ * Artisan command: Build Sections.
+ */
 class BuildSectionsCommand extends Command
 {
     protected $signature = 'voodbuilder:build-sections
                             {--theme=indigo : Accent color for the upstream section source}';
 
-    protected $description = 'Build the Voodbuilder GrapesJS section block catalog (section-blocks.json)';
+    protected $description = 'Build the Voodbuilder Editor section block catalog (section-blocks.json)';
 
     public function handle(): int
     {
@@ -66,7 +69,7 @@ class BuildSectionsCommand extends Command
         $sectionCount = (new SectionBlocksCatalogBuilder)->write();
 
         $this->components->info('Voodbuilder section catalog ready ('.$sectionCount.' blocks): '.SectionBlocksCatalogBuilder::outputPath());
-        SoundmitGrapesJsLanding::writeUtilitiesCatalog();
+        DemoEditorLanding::writeUtilitiesCatalog();
         $this->components->warn('Run `npm run build` so section-utilities.css is compiled for the canvas.');
 
         return self::SUCCESS;

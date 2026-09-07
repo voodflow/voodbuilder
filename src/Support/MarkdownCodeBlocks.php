@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Spatie\LaravelMarkdown\MarkdownRenderer;
 
+/**
+ * Markdown Code Blocks.
+ */
 final class MarkdownCodeBlocks
 {
     public static function normalizeFencedCodeBlocks(string $markdown): string

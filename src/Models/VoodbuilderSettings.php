@@ -6,11 +6,15 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelThemes;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Voodbuilder Settings.
+ */
 class VoodbuilderSettings extends Model
 {
     protected $table = 'voodbuilder_settings';
@@ -31,7 +35,6 @@ class VoodbuilderSettings extends Model
         return [
             'site_title' => config('voodbuilder.site_title', config('app.name')),
             'brand_name' => null,
-            'show_site_title' => true,
             'show_notification_bell' => true,
             'show_theme_toggle' => true,
             'theme_mode' => 'system',
@@ -67,6 +70,16 @@ class VoodbuilderSettings extends Model
             'theme_presets' => [],
             'active_theme_preset_id' => null,
         ];
+    }
+
+    /**
+     * Backwards-compatible alias used by tests to build initial `data` payloads.
+     *
+     * @return array<string, mixed>
+     */
+    public static function docss(): array
+    {
+        return static::defaults();
     }
 
     public static function data(): array
@@ -159,7 +172,14 @@ class VoodbuilderSettings extends Model
             return (string) $brand;
         }
 
-        return static::siteTitle();
+        $title = static::siteTitle();
+
+        // Framework / empty app name is not a public brand — use the package name.
+        if ($title === '' || strcasecmp($title, 'Laravel') === 0) {
+            return 'VoodBuilder';
+        }
+
+        return $title;
     }
 
     public static function primaryLocale(): string
@@ -194,12 +214,41 @@ class VoodbuilderSettings extends Model
 
     public static function logoUrl(): ?string
     {
-        return static::assetUrl('logo', config('voodbuilder.logo'));
+        $uploaded = static::assetUrl('logo', config('voodbuilder.logo'));
+
+        // No custom upload: fall back to the animated VoodBuilder mark (not Laravel / app icons).
+        return $uploaded ?? BrandMarkAssets::url();
+    }
+
+    /**
+     * Uploaded favicon, or the Voodflow brand mark when none is configured.
+     */
+    public static function faviconUrl(): string
+    {
+        return static::assetUrl('favicon')
+            ?? BrandMarkAssets::faviconUrl();
     }
 
     public static function logoMobileUrl(): ?string
     {
+        // Only a dedicated mobile upload — chrome resolve falls back across the matrix.
         return static::assetUrl('logo_mobile');
+    }
+
+    /**
+     * User-uploaded (or config) desktop logo only — null when using the package default mark.
+     */
+    public static function customLogoUrl(): ?string
+    {
+        return static::assetUrl('logo', config('voodbuilder.logo'));
+    }
+
+    /**
+     * True when a user-uploaded (or config) desktop logo is set — not the package default mark.
+     */
+    public static function hasCustomLogo(): bool
+    {
+        return static::customLogoUrl() !== null;
     }
 
     public static function assetUrl(string $key, mixed $fallback = null): ?string

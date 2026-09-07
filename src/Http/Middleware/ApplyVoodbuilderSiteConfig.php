@@ -11,6 +11,9 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
+/**
+ * Apply Voodbuilder Site Config.
+ */
 class ApplyVoodbuilderSiteConfig
 {
     public function handle(Request $request, Closure $next): Response

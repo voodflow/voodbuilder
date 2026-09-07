@@ -59,9 +59,9 @@ Il collo di bottiglia è quasi tutto **PHP prima di inviare un byte al browser**
 
 ### Causa principale: ricompilazione Tailwind a ogni richiesta
 
-In `GrapesJsPastedComponentNormalizer::resolvedCssForStoredHtml()` il CSS **viene sempre ricompilato** via subprocess Node, anche se è già salvato nel DB:
+In `EditorPastedComponentNormalizer::resolvedCssForStoredHtml()` il CSS **viene sempre ricompilato** via subprocess Node, anche se è già salvato nel DB:
 
-**File:** `src/Support/GrapesJs/GrapesJsPastedComponentNormalizer.php`
+**File:** `src/Support/Editor/EditorPastedComponentNormalizer.php`
 
 ```php
 public static function resolvedCssForStoredHtml(string $html, ?string $storedCss): string
@@ -76,7 +76,7 @@ public static function resolvedCssForStoredHtml(string $html, ?string $storedCss
         // ...
 ```
 
-`compileTailwindCss()` invoca `GrapesJsComponentTailwindCompiler::compile()` che lancia:
+`compileTailwindCss()` invoca `EditorComponentTailwindCompiler::compile()` che lancia:
 
 ```bash
 node packages/voodflow/voodbuilder/scripts/compile-component-tailwind.mjs
@@ -91,7 +91,7 @@ Ogni componente in libreria costa **~500–1.200 ms** di subprocess Node, **anch
 **File:** `resources/views/pages/site-page.blade.php`
 
 ```blade
-@if ($page->usesGrapesJsBuilder() && filled($page->renderedStyles()))
+@if ($page->usesEditorBuilder() && filled($page->renderedStyles()))
     <style>{!! $page->renderedStyles() !!}</style>
 @endif
 ```
@@ -117,12 +117,12 @@ Request /
   → HomeController
     → SitePage::homePage("en")
     → view site-page.blade.php
-      → renderedContent()  [69ms]  → GrapesJsRenderer::render()
-      → renderedStyles()   [×2]    → GrapesJsRenderer::css()
-          → GrapesJsComponentCssRenderer::cssForHtml()
+      → renderedContent()  [69ms]  → EditorRenderer::render()
+      → renderedStyles()   [×2]    → EditorRenderer::css()
+          → EditorComponentCssRenderer::cssForHtml()
               → per ogni BuilderComponent:
                   → resolvedCssForStoredHtml()  → Node Tailwind compile (~600ms each)
-                  → GrapesJsComponentInstanceCssScoper::scopeCssToComponentInstance()
+                  → EditorComponentInstanceCssScoper::scopeCssToComponentInstance()
   → ~10s TTFB
   → 341KB HTML + 223KB CSS inline
 ```
@@ -133,12 +133,12 @@ Request /
 |---|---|
 | `src/Http/Controllers/HomeController.php` | Entry point homepage |
 | `src/Models/SitePage.php` | `renderedContent()`, `renderedStyles()` |
-| `src/Support/GrapesJs/GrapesJsRenderer.php` | `render()`, `css()` |
-| `src/Support/GrapesJs/GrapesJsComponentCssRenderer.php` | `cssForHtml()` — loop componenti |
-| `src/Support/GrapesJs/GrapesJsPastedComponentNormalizer.php` | `resolvedCssForStoredHtml()` — ricompila sempre |
-| `src/Support/GrapesJs/GrapesJsComponentTailwindCompiler.php` | Subprocess Node |
+| `src/Support/Editor/EditorRenderer.php` | `render()`, `css()` |
+| `src/Support/Editor/EditorComponentCssRenderer.php` | `cssForHtml()` — loop componenti |
+| `src/Support/Editor/EditorPastedComponentNormalizer.php` | `resolvedCssForStoredHtml()` — ricompila sempre |
+| `src/Support/Editor/EditorComponentTailwindCompiler.php` | Subprocess Node |
 | `scripts/compile-component-tailwind.mjs` | JIT Tailwind v4 |
-| `src/Support/GrapesJs/GrapesJsComponentInstanceCssScoper.php` | Scope CSS per istanza |
+| `src/Support/Editor/EditorComponentInstanceCssScoper.php` | Scope CSS per istanza |
 | `resources/views/pages/site-page.blade.php` | Doppia chiamata `renderedStyles()` |
 
 ---
@@ -201,9 +201,9 @@ L'**architettura del builder è solida**, ma l'**output di publish non è ancora
    - Modificare `resolvedCssForStoredHtml()` per saltare `compileTailwindCss()` quando il CSS stored è valido.
 2. **Fix Blade**: una sola chiamata, es.:
    ```blade
-   @php $grapesJsStyles = $page->renderedStyles(); @endphp
-   @if ($page->usesGrapesJsBuilder() && filled($grapesJsStyles))
-       <style>{!! $grapesJsStyles !!}</style>
+   @php $editorStyles = $page->renderedStyles(); @endphp
+   @if ($page->usesEditorBuilder() && filled($editorStyles))
+       <style>{!! $editorStyles !!}</style>
    @endif
    ```
 3. **Cache del CSS risolto** per pagina (request cache minimo; in produzione Redis/file con invalidazione al save).
@@ -215,8 +215,8 @@ L'**architettura del builder è solida**, ma l'**output di publish non è ancora
 
 5. Spostare il CSS componenti in **file statico versionato** (`/build/pages/home-{hash}.css`) invece di 223 KB inline.
 6. **Deduplicare** CSS per `component_id` (già parzialmente fatto, ma lo scoping genera comunque blocchi enormi).
-7. **Strip attributi GrapesJS** in fase di publish (`data-gjs-*`, classi `voodbuilder-gjs-*` non necessarie).
-   - Aggiungere normalizer in `GrapesJsRenderer::html()` o pipeline publish.
+7. **Strip attributi Editor** in fase di publish (`data-gjs-*`, classi `voodbuilder-editor-*` non necessarie).
+   - Aggiungere normalizer in `EditorRenderer::html()` o pipeline publish.
 
 ### Medio — qualità output
 
@@ -250,10 +250,10 @@ L'**architettura del builder è solida**, ma l'**output di publish non è ancora
 ### Test esistenti rilevanti
 
 ```bash
-php artisan test --compact --filter=GrapesJsComponentTailwindCompilerTest
-php artisan test --compact --filter=GrapesJsPastedComponentNormalizerTest
-php artisan test --compact --filter=GrapesJsComponentInstanceCssScoperTest
-php artisan test --compact --filter=SitePageGrapesJsTest
+php artisan test --compact --filter=EditorComponentTailwindCompilerTest
+php artisan test --compact --filter=EditorPastedComponentNormalizerTest
+php artisan test --compact --filter=EditorComponentInstanceCssScoperTest
+php artisan test --compact --filter=SitePageEditorTest
 ```
 
 ### Comandi utili per verificare fix
@@ -293,21 +293,21 @@ print('inline CSS bytes:', sum(len(s) for s in styles))
 
 ### Task 2 — Skip ricompilazione Tailwind al render (fix principale)
 
-- File: `src/Support/GrapesJs/GrapesJsPastedComponentNormalizer.php`
+- File: `src/Support/Editor/EditorPastedComponentNormalizer.php`
 - In `resolvedCssForStoredHtml()`: se `$storedCss` contiene già CSS compilato per `.voodbuilder-pasted-component` e l'HTML non è cambiato, usare quello senza chiamare Node
 - Opzionale: hash HTML (`md5($html)`) salvato insieme al CSS per invalidazione
-- Aggiungere/aggiornare test in `GrapesJsPastedComponentNormalizerTest`
+- Aggiungere/aggiornare test in `EditorPastedComponentNormalizerTest`
 - Verificare: `renderedStyles()` singola < 100 ms
 
 ### Task 3 — Cache request-level del CSS pagina
 
-- File: `src/Support/GrapesJs/GrapesJsRenderer.php` o `SitePage.php`
+- File: `src/Support/Editor/EditorRenderer.php` o `SitePage.php`
 - Memoizzare risultato di `css()` per istanza `SitePage` nella stessa request
 - Verificare: doppia chiamata = 0 ms aggiuntivi
 
-### Task 4 — Strip attributi GrapesJS al publish
+### Task 4 — Strip attributi Editor al publish
 
-- Nuovo normalizer o estensione pipeline in `GrapesJsRenderer::html()`
+- Nuovo normalizer o estensione pipeline in `EditorRenderer::html()`
 - Rimuovere `data-gjs-*`, `data-gjs-tagname`, attributi editor
 - Test con HTML di esempio dalla homepage
 

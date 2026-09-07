@@ -1,6 +1,6 @@
 # Visual themes — mental model and admin guide
 
-Voodbuilder separates **what you see** (visual themes / sub-themes) from **how you edit content** (RichEditor, GrapesJS, vdocs, vtuts) and from **global site settings** (logo, SEO, dark/light toggle, menus, analytics).
+Voodbuilder separates **what you see** (visual themes / sub-themes) from **how you edit content** (RichEditor, Editor, vdocs, vtuts) and from **global site settings** (logo, SEO, dark/light toggle, menus, analytics).
 
 This guide explains the admin UI in plain language and maps it to real site setups.
 
@@ -12,7 +12,7 @@ This guide explains the admin UI in plain language and maps it to real site setu
 |-------|------------------|----------------|
 | **Global appearance** | Light/dark default, theme toggle, logo, menus | Settings → Appearance, Site, Navigation |
 | **Visual theme per area** | Layout + colours for marketing pages vs docs vs blog | Settings → Theme → **Visual themes by area** |
-| **Page content** | HTML, GrapesJS canvas, RichEditor blocks | Pages, vdocs, vtuts, companion packages |
+| **Page content** | HTML, Editor canvas, RichEditor blocks | Pages, vdocs, vtuts, companion packages |
 
 **Light/dark mode** is global. It does not pick a visual theme — it only switches CSS variables on the active theme.
 
@@ -66,26 +66,26 @@ After you change bindings manually and save, **Active preset** shows *Custom* �
 ### 1. Documentation / tutorials only
 
 - **Apply preset:** Documentation only  
-- **Home:** vdocs index route, or a Site Page with RichEditor (no GrapesJS required)  
+- **Home:** vdocs index route, or a Site Page with RichEditor (no Editor required)  
 - **Docs / Tutorials:** Documentation theme (automatic with preset)
 
-### 2. Landing page only (GrapesJS)
+### 2. Landing page only (Editor)
 
 - **Marketing pages:** Showcase  
-- **Pages → Home:** Layout = *Home* or *Landing*, Builder = *GrapesJS*, build the page in the frontend editor (`?edit=1`)  
+- **Pages → Home:** Layout = *Home* or *Landing*, Builder = *Editor*, build the page in the frontend editor (`?edit=1`)  
 - No vdocs/vtuts required
 
 ### 3. Landing + documentation / tutorials
 
 - **Apply preset:** Cosmolab public site (or set manually: Showcase + Documentation for docs/tutorials)  
-- **Home / landings:** GrapesJS or RichEditor under Showcase  
+- **Home / landings:** Editor or RichEditor under Showcase  
 - **Internal docs:** vdocs/vtuts keep doc layout and dynamic content
 
-### 4. GrapesJS home + blog / news with dynamic lists
+### 4. Editor home + blog / news with dynamic lists
 
-- **Marketing pages:** Showcase (home built with GrapesJS)  
+- **Marketing pages:** Showcase (home built with Editor)  
 - **Blog channel:** Blog or News sub-theme (for article pages under `/pages/blog-*` or a companion blog package)  
-- **Dynamic blocks:** Register RichEditor/GrapesJS blocks that render latest posts (see [GRAPESJS.md](./GRAPESJS.md))
+- **Dynamic blocks:** Register RichEditor/Editor blocks that render latest posts (see [EDITOR.md](./EDITOR.md))
 
 Global settings (dark/light, menus, logo, SEO, tracking) stay under **Appearance**, **Site**, **SEO**, **Analytics** — unchanged.
 
@@ -98,7 +98,7 @@ Global settings (dark/light, menus, logo, SEO, tracking) stay under **Appearance
 | `default` | Documentation | Content | vdocs, vtuts, doc-style pages |
 | `blog` | Blog | Content | Long-form articles, section indexes |
 | `news` | News | Content | Editorial / magazine layout |
-| `events` | Showcase | Marketing | Landing pages, GrapesJS full-width canvas |
+| `events` | Showcase | Marketing | Landing pages, Editor full-width canvas |
 
 **Content themes** support `doc` and/or `article` capabilities.  
 **Marketing themes** support `landing` capability (Site Pages, landings).
@@ -164,7 +164,7 @@ Use Voodbuilder tokens (`--color-vp-bg`, `--color-vp-text-1`, `bg-vp-bg`, `text-
 
 Override Blade layouts when you need a different shell (header structure, grid, footer):
 
-- `resources/views/voodbuilder/themes/polito/layouts/landing.blade.php` — full-width GrapesJS canvas  
+- `resources/views/voodbuilder/themes/polito/layouts/landing.blade.php` — full-width Editor canvas  
 - `…/home.blade.php` — homepage wrapper  
 - `…/page.blade.php` — standard CMS pages  
 
@@ -246,8 +246,8 @@ The `pages` channel is for route matching only. Site Pages use **Marketing pages
 **Do I need presets?**  
 No. Use **Apply preset** once for a quick start, then tune bindings manually.
 
-**Can one page use GrapesJS and another use docs layout?**  
-Yes. Home = Showcase + GrapesJS. `/docs/*` = Documentation via channel binding.
+**Can one page use Editor and another use docs layout?**  
+Yes. Home = Showcase + Editor. `/docs/*` = Documentation via channel binding.
 
 **Where is light/dark?**  
 Settings → Appearance. Independent from visual theme.
@@ -256,5 +256,5 @@ Settings → Appearance. Independent from visual theme.
 
 ## Related docs
 
-- [GRAPESJS.md](./GRAPESJS.md) — page builder, blocks, Tailblocks  
+- [EDITOR.md](./EDITOR.md) — page builder, blocks, Tailblocks  
 - [BUILD.md](./BUILD.md) — npm, Vite, compilation workflow

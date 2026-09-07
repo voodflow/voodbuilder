@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Default Home Content.
+ */
 final class DefaultHomeContent
 {
     /** @return array<string, mixed> */

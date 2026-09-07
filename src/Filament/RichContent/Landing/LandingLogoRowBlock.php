@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Support\LandingBlockContent;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Logo Row Block.
+ */
 class LandingLogoRowBlock extends RichContentCustomBlock
 {
     public static function getId(): string

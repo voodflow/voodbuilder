@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsEditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorHostChrome;
 
+/**
+ * Site Page View Data.
+ */
 final class SitePageViewData
 {
     /**
@@ -15,17 +19,26 @@ final class SitePageViewData
      */
     public static function make(SitePage $page, array $extra = []): array
     {
-        $canEditGrapesJs = GrapesJsEditorGate::canEdit($page);
-        $grapesJsEditor = GrapesJsEditorGate::isEditing($page);
+        $canEditEditor = EditorGate::canEdit($page);
+        $editorEditor = EditorGate::isEditing($page);
+
+        if ($editorEditor) {
+            // Set before the layout renders, so view composers that inject public-page
+            // overlays can stand down instead of leaking into the authoring canvas.
+            EditorHostChrome::markActive();
+        }
 
         return array_merge([
             'page' => $page,
-            'voodbuilderSubTheme' => $page->resolvedSubTheme(),
-            'hideSiteNav' => SiteChrome::shouldHideNav($page, $grapesJsEditor),
-            'hideSiteFooter' => SiteChrome::shouldHideFooter($page, $grapesJsEditor),
-            'canEditGrapesJs' => $canEditGrapesJs,
-            'grapesJsEditor' => $grapesJsEditor,
-            'grapesJsConfig' => $grapesJsEditor ? GrapesJsEditorGate::config($page) : null,
+            'voodbuilderChromeLayout' => ChromeLayoutManagedContent::chromeLayoutForSitePage($page),
+            'voodbuilderSubTheme' => ChromeLayoutManagedContent::sitePageUsesChromeShell($page)
+                ? ChromeLayoutSubThemeResolver::forSitePage($page)
+                : $page->resolvedSubTheme(),
+            'hideSiteNav' => SiteChrome::shouldHideNav($page, $editorEditor),
+            'hideSiteFooter' => SiteChrome::shouldHideFooter($page, $editorEditor),
+            'canEditEditor' => $canEditEditor,
+            'editorEditor' => $editorEditor,
+            'editorConfig' => $editorEditor ? EditorGate::config($page) : null,
         ], $extra);
     }
 }

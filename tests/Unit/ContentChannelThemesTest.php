@@ -153,7 +153,7 @@ class ContentChannelThemesTest extends TestCase
         ]);
 
         $this->assertSame('docs', ContentChannelThemes::configuredDefaultFor('docs'));
-        $this->assertSame('docs', ContentChannelThemes::configuredDefaultFor('tutorials'));
+        $this->assertSame('tutorials', ContentChannelThemes::configuredDefaultFor('tutorials'));
         $this->assertNull(ContentChannelThemes::configuredDefaultFor('blog'));
     }
 }

@@ -1,0 +1,14 @@
+---
+description: VoodBuilder companion modules, facade registration, and peer plugins
+globs: packages/voodflow/voodbuilder/src/{Voodbuilder.php,Modules/**,Contracts/**,Licensing/**}
+alwaysApply: false
+---
+
+# VoodBuilder — companion & SDK APIs
+
+- Register modules with `Voodbuilder::registerModule()` during `Application::booting()`
+- Prefer facade methods (`editorBlock`, `editorServerBlock`, `contentChannel`, `menuItemType`, …) over touching registries directly
+- Use entitlements (`can` / `cannot`) — never hard-code SKU/edition strings
+- Peer pattern: Vforms/Vpopups/etc. soft-gate with `class_exists` and register modules; core must not hard-require them
+- Host integrations: `config/voodbuilder-integrations.php` or AppServiceProvider
+- Docs: `docs/developer/companion-integration.md`, `docs/manual/developer/extending-overview.md`, `docs/SDK_PLUGIN_API.md`

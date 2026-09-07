@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Sub Theme Resolver.
+ */
 final class SubThemeResolver
 {
     public const DEFAULT = 'docs';
@@ -28,19 +31,7 @@ final class SubThemeResolver
 
     public static function forPage(SitePage $page): string
     {
-        $raw = is_string($page->sub_theme) ? trim($page->sub_theme) : null;
-
-        if ($raw === '') {
-            $raw = null;
-        }
-
-        $theme = self::resolveId($raw);
-
-        if ($theme !== null) {
-            return $theme;
-        }
-
-        return self::siteDefault();
+        return ChromeLayoutSubThemeResolver::forSitePage($page);
     }
 
     public static function normalize(?string $theme): string

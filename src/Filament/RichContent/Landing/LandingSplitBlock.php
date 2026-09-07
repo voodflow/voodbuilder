@@ -15,6 +15,9 @@ use Voodflow\Voodbuilder\Support\LandingBlockContent;
 use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Split Block.
+ */
 class LandingSplitBlock extends RichContentCustomBlock
 {
     public static function getId(): string

@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 
+/**
+ * Navigation Menu Preview.
+ */
 final class NavigationMenuPreview
 {
     /**

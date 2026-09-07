@@ -1,0 +1,115 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Tests\Unit;
+
+use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
+use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
+use Voodflow\Voodbuilder\Support\SiteChrome;
+use Voodflow\Voodbuilder\Tests\TestCase;
+
+class ChromeLayoutManagedContentTest extends TestCase
+{
+    public function test_strips_nav_and_footer_blocks_from_page_html(): void
+    {
+        $html = <<<'HTML'
+<div data-voodbuilder-block="site_nav_simple" class="voodbuilder-editor-dynamic"><div data-voodbuilder-editor-site-header="">Nav</div></div>
+<section><h1>Hero</h1></section>
+<div data-voodbuilder-block="site_footer_columns_simple" class="voodbuilder-editor-dynamic">Footer</div>
+HTML;
+
+        $stripped = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($html);
+
+        $this->assertStringContainsString('Hero', $stripped);
+        $this->assertStringNotContainsString('site_nav_simple', $stripped);
+        $this->assertStringNotContainsString('site_footer_columns_simple', $stripped);
+    }
+
+    public function test_strips_chrome_editor_bleed_text_from_page_html(): void
+    {
+        $html = <<<'HTML'
+<section><h1>Hero</h1></section>
+ButtonNotificationsButtonButton
+HTML;
+
+        $stripped = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
+
+        $this->assertStringContainsString('Hero', $stripped);
+        $this->assertStringNotContainsString('ButtonNotifications', $stripped);
+    }
+
+    public function test_strips_single_button_bleed_text_from_page_html(): void
+    {
+        $html = <<<'HTML'
+<section><h1>Hero</h1></section>
+<div>Button</div>
+HTML;
+
+        $stripped = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
+
+        $this->assertStringContainsString('Hero', $stripped);
+        $this->assertStringNotContainsString('>Button<', $stripped);
+    }
+
+    public function test_keeps_styled_button_cta_labeled_button(): void
+    {
+        $html = '<a class="bg-indigo-500 text-white">Button</a>';
+
+        $stripped = ChromeLayoutManagedContent::stripChromeEditorBleedFromPageHtml($html);
+
+        $this->assertStringContainsString('bg-indigo-500', $stripped);
+        $this->assertStringContainsString('>Button<', $stripped);
+    }
+
+    public function test_chrome_layout_for_site_page_uses_page_override(): void
+    {
+        $channelLayout = ChromeLayout::query()->create([
+            'name' => 'Channel shell',
+            'slug' => 'channel-shell',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'channel_ids' => ['pages'],
+        ]);
+
+        $pageLayout = ChromeLayout::query()->create([
+            'name' => 'Page shell',
+            'slug' => 'page-shell',
+            'html' => '<header>Custom</header><div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+        ]);
+
+        ChromeLayoutResolver::forgetCache();
+
+        $page = new SitePage([
+            'chrome_layout_id' => $pageLayout->id,
+        ]);
+
+        $this->assertSame($pageLayout->id, ChromeLayoutManagedContent::chromeLayoutForSitePage($page)?->id);
+        $this->assertNotSame($channelLayout->id, ChromeLayoutManagedContent::chromeLayoutForSitePage($page)?->id);
+    }
+
+    public function test_site_chrome_hidden_when_chrome_layout_assigned_to_pages_channel(): void
+    {
+        ChromeLayout::query()->create([
+            'name' => 'Site shell',
+            'slug' => 'site-shell',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'channel_ids' => ['pages'],
+        ]);
+
+        ChromeLayoutResolver::forgetCache();
+
+        $page = new SitePage([
+            'hide_site_nav' => false,
+            'hide_site_footer' => false,
+        ]);
+
+        $this->assertTrue(ChromeLayoutManagedContent::sitePageUsesChromeShell($page));
+        $this->assertTrue(SiteChrome::shouldHideNav($page));
+        $this->assertTrue(SiteChrome::shouldHideFooter($page));
+    }
+}

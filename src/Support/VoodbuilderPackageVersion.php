@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Voodbuilder Package Version.
+ */
 final class VoodbuilderPackageVersion
 {
     public static function current(): string

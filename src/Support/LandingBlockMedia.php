@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Landing Block Media.
+ */
 final class LandingBlockMedia
 {
     public static function publicUrl(mixed $path): ?string

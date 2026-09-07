@@ -9,13 +9,10 @@
     use Voodflow\Voodbuilder\Enums\MenuItemType;
 
     /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
-    $hasChildren = $item->hasChildren();
+    $children = $item->navigationChildren();
+    $hasChildren = $children->isNotEmpty();
     $isActive = $item->isActive();
     $hasParentLink = $hasChildren && $item->type !== MenuItemType::Group && $item->hasResolvableLink();
-    $groupedChildren = $hasChildren
-        ? $item->children->filter(fn ($child) => $child->hasChildren())
-        : collect();
-    $isMegaPanel = $groupedChildren->count() >= 2;
 @endphp
 
 @if ($hasChildren)
@@ -47,7 +44,7 @@
                 </svg>
             </button>
 
-            <div data-voodbuilder-nav-mobile-panel @hidden(!$isActive)>
+            <div data-voodbuilder-nav-mobile-panel @unless($isActive) hidden @endunless>
                 <ul class="mt-1 space-y-1 pl-3">
                 @if ($hasParentLink)
                     <li>
@@ -65,7 +62,7 @@
                     </li>
                 @endif
 
-                @foreach ($item->children as $child)
+                @foreach ($children as $child)
                     <x-voodbuilder::menu-nav-mobile-item :item="$child" :depth="1" />
                 @endforeach
                 </ul>
@@ -98,69 +95,26 @@
                 data-voodbuilder-nav-dropdown-panel
                 hidden
                 role="menu"
-                @class([
-                    'absolute top-[calc(100%+0.5rem)] left-0 z-50 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-lg',
-                    'grid min-w-[32rem] grid-cols-2 gap-4 p-4' => $isMegaPanel,
-                    'min-w-[14rem] py-2' => ! $isMegaPanel,
-                ])
+                class="voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50 overflow-visible"
             >
                 @if ($hasParentLink)
                     <a
                         href="{{ $item->resolveUrl() }}"
                         role="menuitem"
                         @class([
-                            'block px-3 py-2 text-sm font-medium transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+                            'font-semibold' => $item->isSelfActive(),
                             'text-vp-brand-1' => $item->isSelfActive(),
-                            'text-vp-text-1' => ! $item->isSelfActive(),
-                            'col-span-full' => $isMegaPanel,
                         ])
                         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                     >
                         {{ __($item->label) }}
                     </a>
 
-                    <div @class(['my-1 h-px bg-vp-divider', 'col-span-full' => $isMegaPanel]) aria-hidden="true"></div>
+                    <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
                 @endif
 
-                @foreach ($item->children as $child)
-                    @if ($child->hasChildren())
-                        <div @class(['space-y-1', 'px-1' => $isMegaPanel, 'px-0 py-0' => ! $isMegaPanel])>
-                            <p @class([
-                                'px-3 py-1 text-xs font-semibold uppercase tracking-wide text-vp-text-3',
-                                'px-0' => $isMegaPanel,
-                            ])>
-                                {{ __($child->label) }}
-                            </p>
-
-                            @foreach ($child->children as $grandchild)
-                                <a
-                                    href="{{ $grandchild->resolveUrl() }}"
-                                    role="menuitem"
-                                    @class([
-                                        'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
-                                        'font-medium text-vp-brand-1' => $grandchild->isActive(),
-                                        'text-vp-text-2' => ! $grandchild->isActive(),
-                                    ])
-                                    @if ($grandchild->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                                >
-                                    {{ __($grandchild->label) }}
-                                </a>
-                            @endforeach
-                        </div>
-                    @else
-                        <a
-                            href="{{ $child->resolveUrl() }}"
-                            role="menuitem"
-                            @class([
-                                'block px-3 py-2 text-sm transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
-                                'font-medium text-vp-brand-1' => $child->isActive(),
-                                'text-vp-text-2' => ! $child->isActive(),
-                            ])
-                            @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                        >
-                            {{ __($child->label) }}
-                        </a>
-                    @endif
+                @foreach ($children as $child)
+                    <x-voodbuilder::menu-nav-dropdown-item :item="$child" :depth="0" />
                 @endforeach
             </div>
         </div>

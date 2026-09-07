@@ -6,12 +6,14 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation.
+ */
 final class Navigation
 {
     /** @return Collection<int, NavigationMenuItem> */
@@ -21,7 +23,7 @@ final class Navigation
             return collect();
         }
 
-        if (! Schema::hasTable('voodbuilder_menus')) {
+        if (! NavigationMenuResolver::menusTableExists()) {
             return collect();
         }
 
@@ -32,9 +34,11 @@ final class Navigation
         if (is_array($cached)) {
             if (! self::menuExistsForSlug($menuSlug)) {
                 Cache::forget($cacheKey);
-            } else {
-                return self::hydrateItems($cached);
+
+                return collect();
             }
+
+            return self::hydrateItems($cached);
         }
 
         $items = self::loadItems($menuSlug);
@@ -46,7 +50,7 @@ final class Navigation
 
     public static function linkDisplay(string $menuSlug): MenuLinkDisplay
     {
-        if (! Schema::hasTable('voodbuilder_menus')) {
+        if (! NavigationMenuResolver::menusTableExists()) {
             return MenuLinkDisplay::TextOnly;
         }
 
@@ -73,6 +77,8 @@ final class Navigation
 
     public static function clearCache(?string $menuSlug = null, ?string $locale = null): void
     {
+        NavigationMenuResolver::clearSchemaCache();
+
         if ($menuSlug !== null) {
             foreach (self::slugAliases($menuSlug) as $slug) {
                 if ($locale !== null) {
@@ -95,7 +101,7 @@ final class Navigation
             return;
         }
 
-        if (! Schema::hasTable('voodbuilder_menus')) {
+        if (! NavigationMenuResolver::menusTableExists()) {
             return;
         }
 
@@ -152,7 +158,7 @@ final class Navigation
         return [
             'label' => $item->label,
             'icon' => $item->icon,
-            'type' => $item->type->value,
+            'type' => $item->typeKey(),
             'link' => $item->link,
             'route_parameters' => $item->route_parameters,
             'route_match' => $item->route_match,

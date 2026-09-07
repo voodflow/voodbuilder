@@ -1,12 +1,12 @@
-# GrapesJS field bindings
+# Editor field bindings
 
-Connect any element in a GrapesJS layout to **live server data** using `data-voodbuilder-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
+Connect any element in a Editor layout to **live server data** using `data-voodbuilder-bind`. Values are resolved on every page view — nothing is baked into static HTML at save time (except placeholders for the editor).
 
 ---
 
 ## Editor workflow
 
-1. Open a GrapesJS page with `?edit=1`.
+1. Open a Editor page with `?edit=1`.
 2. Select an element (`h1`, `p`, `img`, `a`, `button`, …).
 3. Click **Make dynamic** (🔗).
 4. Choose **Data source** and **Field**.
@@ -15,8 +15,8 @@ Connect any element in a GrapesJS layout to **live server data** using `data-voo
 | Binding type | Element | Behaviour |
 |--------------|---------|-----------|
 | **text** | `h1`–`h6`, `p`, `span`, … | Replaces inner text with live value. Not editable inline (content is dynamic). |
-| **url** | `a` | Sets `href`. **Label text is editable** (double-click). |
-| **url** | `button` | Auto-converts to `<a role="button">` (same classes). **Double-click edits the label.** |
+| **text** | CTA / Text link (`a`) | Replaces **label** (`data-voodbuilder-bind`). Can combine with a separate URL bind. |
+| **url** | `a` / CTA | Sets `href` via `data-voodbuilder-bind-href` (preferred) or legacy `data-voodbuilder-bind`. Label stays static unless also text-bound. |
 | **image** | `img` | Sets `src` (and `alt` when needed). |
 
 Remove a binding: select element → **Clear dynamic binding** (✕).
@@ -25,24 +25,47 @@ Remove a binding: select element → **Clear dynamic binding** (✕).
 
 ## HTML contract
 
-Saved markup uses a single attribute:
+Saved markup uses `data-voodbuilder-bind` for content/label, and optionally `data-voodbuilder-bind-href` for an independent URL:
 
 ```html
 <h1 data-voodbuilder-bind="vtuts.latest.title">[Latest tutorial: Title]</h1>
-<a data-voodbuilder-bind="vtuts.latest.url" href="#">Read more</a>
-<button type="button" data-voodbuilder-bind="vtuts.latest.url">Start here</button>
+<a data-voodbuilder-bind-href="vtuts.latest.url" href="#">Read more</a>
+<a data-voodbuilder-cta="true"
+   data-voodbuilder-bind="users.item.name"
+   data-voodbuilder-bind-href="users.item.profile_url"
+   href="#">[Users: Name]</a>
+<span data-voodbuilder-bind="users.auth.name" data-voodbuilder-hide-when-empty="1">[Users: Name]</span>
+<span data-voodbuilder-bind="users.latest.name" data-voodbuilder-hide-when-empty="1">[Users: Name]</span>
 <img data-voodbuilder-bind="vtuts.latest.image" src="…" alt="">
 ```
 
+**Model Integration contexts:**
+
+| Source | Meaning |
+|--------|---------|
+| `{alias}.auth` | Authenticated session user (`auth()->user()`). Only registered when the integration model is `Authenticatable`. |
+| `{alias}.latest` | Newest DB record (`latest('id')`, with public/published scopes when present). |
+| `{alias}.item` | Current row inside `data-voodbuilder-repeat="{alias}.list"`. |
+
+**Rich Text dynamic tags:** Bricks-style menu — top group **User profile** inserts `{alias}.auth`; model groups (Users, Tutorials, …) insert `.latest` outside a list or `.item` inside that model’s repeat. Empty values are removed on the public page (`data-voodbuilder-hide-when-empty`).
+
+Use-case guide (IT): [DYNAMIC_DATA_USE_CASES.md](./DYNAMIC_DATA_USE_CASES.md).
+
+**Global text tags** (always on, not model bindings): `{current_year}`, `{brand_name}`, `{site_name}`, `{site_url}`, `{logged_username}` — see that doc. Footer copyright default is `© {current_year} {brand_name}`. Guest → empty `{logged_username}`.
+
+**Block visibility:** use existing `data-voodbuilder-conditions` (logged-in, role, locale, path, dates, …) to show/hide whole sections — independent from field bindings.
+
+Legacy (still supported): URL on `data-voodbuilder-bind` alone sets `href`.
+
 Format: `{sourceId}.{fieldId}` — e.g. `vtuts.latest.introduction`.
 
-The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-voodbuilder-bind` only.
+The server **must not** leave unresolved `{{ }}` templates in HTML. Use `data-voodbuilder-bind` / `data-voodbuilder-bind-href` only.
 
 ---
 
 ## Field types
 
-Defined in `Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField`:
+Defined in `Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField`:
 
 | Type | PHP constant | Use for |
 |------|--------------|---------|
@@ -65,11 +88,11 @@ declare(strict_types=1);
 
 namespace My\Package\Voodbuilder;
 
-use Voodflow\Voodbuilder\Contracts\GrapesJsBindingSource;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingField;
+use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingField;
 
-final class LatestItemBindingSource implements GrapesJsBindingSource
+final class LatestItemBindingSource implements EditorBindingSource
 {
     public function id(): string
     {
@@ -135,7 +158,7 @@ public function boot(): void
         return;
     }
 
-    Voodbuilder::grapesJsBindingSource(new LatestItemBindingSource);
+    Voodbuilder::editorBindingSource(new LatestItemBindingSource);
 }
 ```
 
@@ -178,8 +201,8 @@ Use it to scope queries (locale, site, channel).
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /voodbuilder/grapesjs/bindings` | Catalog grouped by package (Make dynamic modal) |
-| `GET /voodbuilder/grapesjs/bindings/preview/{sitePage}` | Live values for editor preview |
+| `GET /voodbuilder/editor/bindings` | Catalog grouped by package (Make dynamic modal) |
+| `GET /voodbuilder/editor/bindings/preview/{sitePage}` | Live values for editor preview |
 
 ---
 
@@ -188,11 +211,11 @@ Use it to scope queries (locale, site, channel).
 On public view and in the editor (`?edit=1` initial HTML):
 
 1. Load `builder_payload.html`
-2. `GrapesJsBindingRenderer` finds `data-voodbuilder-bind`
-3. `BindingRegistry` resolves each key via your `GrapesJsBindingSource`
+2. `EditorBindingRenderer` finds `data-voodbuilder-bind`
+3. `BindingRegistry` resolves each key via your `EditorBindingSource`
 4. DOM is updated (text / `href` / `src` / `onclick` on buttons)
 
-On **save**, `GrapesJsBindingStorageNormalizer` strips live values back to placeholders so the database does not store stale copy.
+On **save**, `EditorBindingStorageNormalizer` strips live values back to placeholders so the database does not store stale copy.
 
 ---
 
@@ -203,8 +226,8 @@ Image fields (`BindingField::TYPE_IMAGE`) must resolve to a **browser-loadable U
 | Level | Who | How |
 |-------|-----|-----|
 | **1 — Conventions** | Voodbuilder | `BindingMediaUrlResolver` tries Spatie Media Library collections, `{field}Url()` accessors, and public-disk paths automatically. |
-| **2 — Binding source** | Plugin author | Return the final URL from `GrapesJsBindingSource::resolve()` (optionally via a package helper such as `MyMedia::url($record)`). |
-| **3 — Editor proxy** | Voodbuilder | When previewing in the editor (`BindingContext::editorPreview`), non-public Spatie media is served via `GET /voodbuilder/grapesjs/media/{id}` (auth required). |
+| **2 — Binding source** | Plugin author | Return the final URL from `EditorBindingSource::resolve()` (optionally via a package helper such as `MyMedia::url($record)`). |
+| **3 — Editor proxy** | Voodbuilder | When previewing in the editor (`BindingContext::editorPreview`), non-public Spatie media is served via `GET /voodbuilder/editor/media/{id}` (auth required). |
 | **4 — Custom hook** | Plugin author | Register a resolver for exotic storage (CDN, signed URLs, WordPress attachments, …). |
 
 ### Level 2 example (recommended for third-party plugins)
@@ -248,10 +271,10 @@ Repeat a container for each record returned by a registered model integration li
 ### HTML contract
 
 ```html
-<div data-voodbuilder-repeat="vtuts.latest_list" data-voodbuilder-repeat-limit="6">
+<div data-voodbuilder-repeat="vtuts.list" data-voodbuilder-repeat-limit="6" data-voodbuilder-repeat-offset="0" data-voodbuilder-repeat-sort="published_at" data-voodbuilder-repeat-sort-dir="desc">
   <article data-voodbuilder-repeat-item>
-    <h2 data-voodbuilder-bind="vtuts.list_item.title">Title</h2>
-    <a data-voodbuilder-bind="vtuts.list_item.url" href="#">Read more</a>
+    <h2 data-voodbuilder-bind="vtuts.item.title">Title</h2>
+    <a data-voodbuilder-bind="vtuts.item.url" href="#">Read more</a>
   </article>
   <p data-voodbuilder-repeat-empty>No tutorials published yet.</p>
 </div>
@@ -259,14 +282,27 @@ Repeat a container for each record returned by a registered model integration li
 
 | Attribute | Purpose |
 |-----------|---------|
-| `data-voodbuilder-repeat` | List key from a model integration (same registry as Dynamic panel → List repeat) |
+| `data-voodbuilder-repeat` | List key (`vtuts.list`, or a Model Integration `alias.list`) |
 | `data-voodbuilder-repeat-limit` | Max items (1–24, default 6) |
+| `data-voodbuilder-repeat-offset` | Skip the first N records (0–100). Use with a separate “Latest” binding or a second repeat (`limit=1`) for featured+list layouts |
 | `data-voodbuilder-repeat-sort` | Optional sort column |
 | `data-voodbuilder-repeat-sort-dir` | `asc` or `desc` |
+| `data-voodbuilder-repeat-filter` | Optional JSON object of BelongsTo filters (`{"category":"3"}`) from Model Integration relations |
 | `data-voodbuilder-repeat-item` | Marks the template node duplicated for each record |
 | `data-voodbuilder-repeat-empty` | Optional fallback shown when the list returns zero records |
 
 Inside the item template, bind fields with **List item** sources (not “Latest record”).
+
+### Featured + sidebar list
+
+For a block with one large story and a list of the next items, use **two** bindings (same sort):
+
+1. Large card: bind fields with **Latest tutorial** / **Latest record**.
+2. Sidebar container (`flex-col` with the small cards): open the **Dynamic** tab → **List repeat** → `Tutorials · Repeat list`, set **Skip first = 1**, **Items = 3**, sort `published_at` desc. Then select title/image/link **inside** the first card and bind with **List item (tutorial)**.
+
+Do not put “Latest tutorial” on each sidebar row — that always resolves to the same newest record. Do not put “Latest” on the list container itself — use the List repeat panel.
+
+**Legacy:** `vtuts.latest_list` still resolves as an alias of `vtuts.list`.
 
 ### Empty state
 
@@ -284,7 +320,7 @@ Configure list repeat in the editor: select the grid/container → Inspector →
 
 ## Vtuts: `vtuts.latest`
 
-Registered by `Voodflow\Vtuts\Support\VtutsGrapesJsBlocks`.
+Registered by `Voodflow\Vtuts\Support\VtutsEditorBlocks`.
 
 Resolves the **latest publicly listed tutorial** for the current locale (`published_at` desc).
 
@@ -322,15 +358,15 @@ Resolves the **latest publicly listed tutorial** for the current locale (`publis
 ```php
 $registry = app(BindingRegistry::class);
 $html = '<h1 data-voodbuilder-bind="mypackage.latest.title">Placeholder</h1>';
-$rendered = app(GrapesJsBindingRenderer::class)->render($html, $page);
+$rendered = app(EditorBindingRenderer::class)->render($html, $page);
 ```
 
-Register your fake source on the registry in unit tests (see `GrapesJsBindingRendererTest` in voodbuilder).
+Register your fake source on the registry in unit tests (see `EditorBindingRendererTest` in voodbuilder).
 
 ---
 
 ## Related
 
-- [GRAPESJS.md](./GRAPESJS.md) — page builder setup, blocks, Tailblocks
-- `Voodbuilder::grapesJsBindingSource()` — registration helper
-- `Voodbuilder::grapesJsServerBlock()` — when you need full HTML widgets instead of single fields
+- [EDITOR.md](./EDITOR.md) — page builder setup, blocks, Tailblocks
+- `Voodbuilder::editorBindingSource()` — registration helper
+- `Voodbuilder::editorServerBlock()` — when you need full HTML widgets instead of single fields

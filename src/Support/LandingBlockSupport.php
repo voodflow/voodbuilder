@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Landing Block Support.
+ */
 final class LandingBlockSupport
 {
     /** @return array<string, string> */
@@ -109,7 +112,7 @@ final class LandingBlockSupport
         return [
             'class' => match ($tone) {
                 'dark' => 'bg-vp-text-1 text-white',
-                'light' => 'bg-vp-bg-alt text-vp-text-1 border border-vp-divider',
+                'light' => 'bg-vp-bg-alt text-vp-text-1 ring-1 ring-black/5',
                 default => 'bg-vp-brand-1 text-white',
             },
             'style' => '',

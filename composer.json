@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "VoodBuilder — commercial Filament plugin for public site themes, site pages, and GrapesJS page builder on Laravel.",
-    "version": "0.0.10",
+    "description": "VoodBuilder \u2014 commercial Filament plugin for public site themes, site pages, and Editor page builder on Laravel.",
+    "version": "0.1.1",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -15,13 +15,15 @@
     "require": {
         "php": "^8.4",
         "filament/filament": "^5.0",
+        "filament/spatie-laravel-media-library-plugin": "^5.0",
         "illuminate/contracts": "^12.0|^13.0",
-        "jeffersongoncalves/filament-cookie-consent": "^3.2",
         "ralphjsmit/laravel-seo": "^1.8",
         "solution-forest/filament-nestable-tree": "^1.0",
+        "spatie/laravel-medialibrary": "^11.0",
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
-        "spatie/laravel-sluggable": "^3.8"
+        "spatie/laravel-sluggable": "^3.8",
+        "voodflow/vmedia": "^0.2"
     },
     "autoload": {
         "psr-4": {
@@ -32,18 +34,51 @@
     "autoload-dev": {
         "psr-4": {
             "Voodflow\\Voodbuilder\\Tests\\": "tests/",
-            "Voodflow\\Vtuts\\": "../vtuts/src/"
-        }
+            "Voodflow\\Vtuts\\": "../vtuts/src/",
+            "Voodflow\\Vpopups\\": "../vpopups/src/",
+            "Voodflow\\Vmedia\\": "../vmedia/src/",
+            "Voodflow\\Vforms\\": "../vforms/src/",
+            "Voodflow\\Vcookiebar\\": "../vcookiebar/src/",
+            "Voodflow\\VoodbuilderComponents\\": "../voodbuilder-components/src/",
+            "Voodflow\\Voodbuilder\\Modules\\Components\\": "../voodbuilder-components/src-voodbuilder/Modules/Components/",
+            "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
+            "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src-voodbuilder/Modules/DynamicData/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource/",
+            "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/",
+            "Voodflow\\VoodbuilderElements\\": "../voodbuilder-elements/src/"
+        },
+        "classmap": [
+            "../vpopups/src/Models/",
+            "../vpopups/src/Enums/",
+            "../vpopups/src/Http/Controllers/",
+            "../vpopups/src/Filament/Resources/PopupResource.php",
+            "../vpopups/src/Filament/Actions/",
+            "../voodbuilder-components/src-voodbuilder/Models/",
+            "../voodbuilder-components/src-voodbuilder/Http/Controllers/",
+            "../voodbuilder-components/src-voodbuilder/Support/Editor/",
+            "../voodbuilder-dynamic-data/src-voodbuilder/Support/Editor/Bindings/",
+            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource.php"
+        ]
     },
     "require-dev": {
         "orchestra/testbench": "^10.0|^11.0",
-        "phpunit/phpunit": "^11.0"
+        "phpunit/phpunit": "^11.0",
+        "spatie/laravel-markdown": "^2.7"
     },
     "extra": {
         "laravel": {
             "providers": [
                 "Voodflow\\Voodbuilder\\VoodbuilderServiceProvider"
             ]
+        },
+        "suggest": {
+            "voodflow/vpopups": "FilamentPHP 5 plugin: popup builder, runtime and analytics (standalone; optional VoodBuilder integration).",
+            "voodflow/vmedia": "Required free companion: media vault, galleries, and Editor asset browser (alt/caption/credits).",
+            "voodflow/vforms": "FilamentPHP 5 plugin: managed forms and submissions (standalone; optional VoodBuilder blocks).",
+            "voodflow/vcookiebar": "FilamentPHP 5 plugin: cookie consent bar (standalone; optional VoodBuilder blocks).",
+            "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",
+            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat.",
+            "voodflow/voodbuilder-templates": "FilamentPHP 5 plugin: page template authoring (save, JSON import/export, multi-select)."
         }
     },
     "minimum-stability": "dev",

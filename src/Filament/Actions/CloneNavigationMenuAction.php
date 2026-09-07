@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\NavigationMenuPlacements;
 use Voodflow\Voodbuilder\Support\NavigationMenuTranslation;
 
+/**
+ * Filament action: Clone Navigation Menu.
+ */
 class CloneNavigationMenuAction
 {
     public static function make(): Action

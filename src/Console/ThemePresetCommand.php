@@ -8,6 +8,9 @@ use Illuminate\Console\Command;
 use Voodflow\Voodbuilder\Support\ThemePreset;
 use Voodflow\Voodbuilder\Support\ThemePresetManager;
 
+/**
+ * Artisan command: Theme Preset.
+ */
 class ThemePresetCommand extends Command
 {
     protected $signature = 'voodbuilder:theme

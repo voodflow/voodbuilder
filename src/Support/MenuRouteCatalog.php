@@ -10,6 +10,9 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Str;
 
+/**
+ * Menu Route Catalog.
+ */
 final class MenuRouteCatalog
 {
     /** @var Closure(string, string): (Field|null)|null */
@@ -60,17 +63,12 @@ final class MenuRouteCatalog
             return [];
         }
 
-        $required = [];
+        $uri = $route->uri();
 
-        if (preg_match_all('/\{([^}?]+)(\??)\}/', $route->uri(), $matches, PREG_SET_ORDER) !== false) {
-            foreach ($matches as $match) {
-                if (($match[2] ?? '') === '') {
-                    $required[] = $match[1];
-                }
-            }
-        }
-
-        return $required;
+        return array_values(array_filter(
+            $route->parameterNames(),
+            static fn (string $name): bool => ! preg_match('/\{'.preg_quote($name, '/').'\?\}/', $uri),
+        ));
     }
 
     /** @return list<string> */

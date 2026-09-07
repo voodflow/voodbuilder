@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Sub Theme Locator.
+ */
 final class SubThemeLocator
 {
     public static function resolve(string $id): ?SubThemeLocation
@@ -38,6 +41,12 @@ final class SubThemeLocator
 
         if (str_starts_with($cssPath, 'resources/voodbuilder/themes/')) {
             return SubThemeLocation::app($id);
+        }
+
+        // Plugin-owned themes (absolute CSS from vdocs/vtuts/…) are not
+        // app-scaffold locations — export/clone still uses registry metadata.
+        if (SubThemeCssPath::absolute($cssPath) !== null) {
+            return null;
         }
 
         return null;

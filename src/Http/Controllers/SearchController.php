@@ -11,6 +11,9 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Support\SiteSearch;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
+/**
+ * HTTP controller: Search.
+ */
 class SearchController extends Controller
 {
     public function __invoke(Request $request): View

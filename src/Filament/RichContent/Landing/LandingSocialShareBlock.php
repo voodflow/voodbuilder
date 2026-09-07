@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 use Voodflow\Voodbuilder\Support\SocialShareSupport;
 
+/**
+ * Rich content / landing block: Landing Social Share Block.
+ */
 class LandingSocialShareBlock extends RichContentCustomBlock
 {
     public static function getId(): string

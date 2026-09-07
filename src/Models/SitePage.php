@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use RalphJSmit\Laravel\SEO\Support\AlternateTag;
@@ -19,15 +20,21 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Voodflow\Vevents\Support\EventRichContentContext;
+use Voodflow\Voodbuilder\Casts\AsPageBuilder;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
+use Voodflow\Voodbuilder\Enums\PageVisibility;
+use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
+use Voodflow\Voodbuilder\Support\Editor\EditorRenderer;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
-use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Page.
+ */
 class SitePage extends Model implements HasRichContent
 {
     use HasSEO;
@@ -46,6 +53,7 @@ class SitePage extends Model implements HasRichContent
         'builder',
         'builder_payload',
         'layout',
+        'chrome_layout_id',
         'hide_site_footer',
         'hide_site_nav',
         'sub_theme',
@@ -53,25 +61,55 @@ class SitePage extends Model implements HasRichContent
         'excerpt',
         'section_home',
         'is_home',
+        'is_dynamic',
+        'dynamic_channel',
+        'dynamic_routes',
+        'dynamic_priority',
         'locale',
         'translation_group_id',
         'published',
         'published_at',
+        'visibility',
+        'password_protected',
     ];
 
     protected function casts(): array
     {
         return [
             'content' => 'array',
-            'builder' => PageBuilder::class,
+            'builder' => AsPageBuilder::class,
             'builder_payload' => 'array',
             'is_home' => 'boolean',
+            'is_dynamic' => 'boolean',
+            'dynamic_routes' => 'array',
+            'dynamic_priority' => 'integer',
             'hide_site_footer' => 'boolean',
             'hide_site_nav' => 'boolean',
             'section_home' => 'boolean',
             'published' => 'boolean',
             'published_at' => 'datetime',
+            'visibility' => PageVisibility::class,
+            'password_protected' => 'boolean',
         ];
+    }
+
+    /**
+     * Logical claimable route names owned by this dynamic template.
+     *
+     * @return list<string>
+     */
+    public function dynamicRouteNames(): array
+    {
+        $routes = $this->dynamic_routes;
+
+        if (! is_array($routes)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(static fn (mixed $route): string => trim((string) $route), $routes),
+            static fn (string $route): bool => $route !== '',
+        ));
     }
 
     protected function setUpRichContent(): void
@@ -93,11 +131,23 @@ class SitePage extends Model implements HasRichContent
         });
     }
 
+    /** @return BelongsTo<ChromeLayout, $this> */
+    public function chromeLayout(): BelongsTo
+    {
+        return $this->belongsTo(ChromeLayout::class, 'chrome_layout_id');
+    }
+
     /** @return HasMany<SitePage, $this> */
     public function translations(): HasMany
     {
         return $this->hasMany(self::class, 'translation_group_id', 'translation_group_id')
             ->whereKeyNot($this->getKey());
+    }
+
+    /** @return HasMany<SitePageCredential, $this> */
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(SitePageCredential::class, 'site_page_id');
     }
 
     public function translationFor(string $locale): ?self
@@ -173,15 +223,16 @@ class SitePage extends Model implements HasRichContent
         return VoodbuilderUrls::page($this);
     }
 
-    public function usesGrapesJsBuilder(): bool
+    public function usesEditorBuilder(): bool
     {
-        return ($this->builder ?? PageBuilder::RichEditor) === PageBuilder::GrapesJs;
+        // Visual Editor is the only supported builder for new pages; blank → Visual.
+        return (PageBuilder::normalize($this->builder) ?? PageBuilder::Visual) === PageBuilder::Visual;
     }
 
     public function renderedContent(): string
     {
-        if ($this->usesGrapesJsBuilder()) {
-            return app(GrapesJsRenderer::class)->render($this);
+        if ($this->usesEditorBuilder()) {
+            return app(EditorRenderer::class)->render($this);
         }
 
         if (blank($this->content)) {
@@ -209,13 +260,13 @@ class SitePage extends Model implements HasRichContent
             return $this->renderedStylesCache['styles'];
         }
 
-        if (! $this->usesGrapesJsBuilder()) {
+        if (! $this->usesEditorBuilder()) {
             $this->renderedStylesCache = ['resolved' => true, 'styles' => null];
 
             return null;
         }
 
-        $styles = app(GrapesJsRenderer::class)->css($this);
+        $styles = app(EditorRenderer::class)->css($this);
         $this->renderedStylesCache = ['resolved' => true, 'styles' => $styles];
 
         return $styles;
@@ -223,11 +274,11 @@ class SitePage extends Model implements HasRichContent
 
     public function renderedScripts(): ?string
     {
-        if (! $this->usesGrapesJsBuilder()) {
+        if (! $this->usesEditorBuilder()) {
             return null;
         }
 
-        return app(GrapesJsRenderer::class)->js($this);
+        return app(EditorRenderer::class)->js($this);
     }
 
     public function usesAutomaticLayout(): bool
@@ -266,7 +317,7 @@ class SitePage extends Model implements HasRichContent
 
     public function resolvedSubTheme(): string
     {
-        return SubThemeResolver::forPage($this);
+        return ChromeLayoutSubThemeResolver::forSitePage($this);
     }
 
     public function isSectionHome(): bool
@@ -457,14 +508,14 @@ class SitePage extends Model implements HasRichContent
             return $page;
         }
 
-        if (! class_exists(Locales::class) || $locale === Locales::default()) {
+        if ($locale === SiteLocales::default()) {
             return null;
         }
 
         $defaultHome = static::query()
             ->published()
             ->where('is_home', true)
-            ->where('locale', Locales::default())
+            ->where('locale', SiteLocales::default())
             ->first();
 
         return $defaultHome?->translationFor($locale);

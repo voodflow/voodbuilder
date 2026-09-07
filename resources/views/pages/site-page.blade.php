@@ -1,29 +1,79 @@
 @php
+    use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+    use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
+    use Voodflow\Voodbuilder\Voodbuilder;
+
     $voodbuilderSubTheme = $voodbuilderSubTheme ?? $page->resolvedSubTheme();
+    $pageContentWidth = ChromeLayoutContentWidth::resolve($voodbuilderChromeLayout ?? null, $page);
+
+    $pageFontIds = $page->builder_payload['fonts'] ?? null;
+
+    if (! is_array($pageFontIds) || $pageFontIds === []) {
+        $pageFontIds = Voodbuilder::fonts()->detectUsedIds(
+            (string) ($page->builder_payload['css'] ?? '')."\n".(string) ($page->builder_payload['html'] ?? ''),
+        );
+    }
+
+    $pageFontUrls = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
+        ? FontStylesheets::urlsFor($pageFontIds)
+        : [];
+    $pageFontFileUrls = $pageFontUrls !== []
+        ? FontStylesheets::fontFileUrlsFor($pageFontIds)
+        : [];
 @endphp
 
 @extends($page->layoutView())
 
-@if ($grapesJsEditor ?? false)
+{{-- Early stack (before @vite): preload woff2 + font CSS so first paint uses the right face. --}}
+@if ($pageFontUrls !== [])
+    @push('fonts')
+        @foreach ($pageFontFileUrls as $pageFontFileUrl)
+            <link rel="preload" href="{{ $pageFontFileUrl }}" as="font" type="font/woff2" crossorigin>
+        @endforeach
+        @foreach ($pageFontUrls as $pageFontUrl)
+            <link rel="stylesheet" href="{{ $pageFontUrl }}">
+        @endforeach
+    @endpush
+@endif
+
+@php
+    $editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
+        ? $page->renderedStyles()
+        : null;
+@endphp
+@if (filled($editorStyles))
+    @push('head')
+        <style id="voodbuilder-page-css">{!! $editorStyles !!}</style>
+    @endpush
+@endif
+
+{{-- Form chrome/steps CSS: injected by vforms VoodbuilderThemeBridge when that companion is present. --}}
+
+@if ($editorEditor ?? false)
     @section('body_class_extra')
-        voodbuilder-grapesjs-editing
+        voodbuilder-editor-editing
     @endsection
+
+    @if ($editorEditor ?? false)
+    @push('head')
+        <style id="voodbuilder-editor-host-chrome-critical">{!! \Voodflow\Voodbuilder\Support\Editor\EditorHostChrome::criticalHideCss() !!}</style>
+    @endpush
+    @endif
 
     @push('scripts-before-livewire')
         <style>
-            .voodbuilder-grapesjs-mode .voodbuilder-landing-shell,
-            .voodbuilder-grapesjs-mode .voodbuilder-site-shell,
-            .voodbuilder-grapesjs-mode .voodbuilder-polito-content {
-                max-width: none;
-                padding: 0;
-            }
-
-            .voodbuilder-grapesjs-mode .VPRichPage--landing {
-                width: 100%;
-                max-width: none;
+            body.voodbuilder-editor-editing :is(main, .voodbuilder-landing-shell, .voodbuilder-site-shell, .voodbuilder-site-content, .voodbuilder-polito-content, .VPRichPage, .VPRichPage--landing) {
+                max-width: none !important;
+                width: 100% !important;
+                margin-inline: 0 !important;
+                padding-inline: 0;
             }
         </style>
     @endpush
+@elseif (! empty($pageGate))
+    @section('body_class_extra')
+        voodbuilder-page-gated
+    @endsection
 @endif
 
 @section($page->contentSection())
@@ -47,18 +97,25 @@
 
     <div @class([
         'VPRichPage',
-        'VPRichPage--landing' => $page->usesFullWidthLayout(),
-        'voodbuilder-grapesjs-mode' => $grapesJsEditor ?? false,
+        // Landing full-bleed only for real page content — gate stays contained (80rem).
+        'VPRichPage--landing' => empty($pageGate) && (
+            ($voodbuilderChromeLayout ?? null) !== null
+            || ChromeLayoutContentWidth::isFull($pageContentWidth)
+            || $page->usesEditorBuilder()
+        ),
+        'VPRichPage--gate' => ! empty($pageGate),
+        'voodbuilder-editor-mode' => $editorEditor ?? false,
     ])>
-        @if ($grapesJsEditor ?? false)
-            @include('voodbuilder::partials.grapesjs-frontend-editor', [
-                'grapesJsConfig' => $grapesJsConfig,
+        @if ($editorEditor ?? false)
+            @include('voodbuilder::partials.editor-frontend-editor', [
+                'editorConfig' => $editorConfig,
             ])
+        @elseif (! empty($pageGate))
+            @include('voodbuilder::partials.page-gate')
         @else
-            @php($grapesJsStyles = $page->usesGrapesJsBuilder() ? $page->renderedStyles() : null)
-            @if (filled($grapesJsStyles))
-                <style>{!! $grapesJsStyles !!}</style>
-            @endif
+            @foreach (\Voodflow\Voodbuilder\Support\Editor\EditorCanvas::publishedStyleUrls() as $publishedStyleUrl)
+                <link rel="stylesheet" href="{{ $publishedStyleUrl }}">
+            @endforeach
 
             {!! $page->renderedContent() !!}
 
@@ -69,8 +126,8 @@
     </div>
 @endsection
 
-@if (($canEditGrapesJs ?? false) && ! ($grapesJsEditor ?? false))
+@if (($canEditEditor ?? false) && ! ($editorEditor ?? false))
     @push('overlays')
-        @include('voodbuilder::partials.grapesjs-edit-launch')
+        @include('voodbuilder::partials.editor-edit-launch')
     @endpush
 @endif

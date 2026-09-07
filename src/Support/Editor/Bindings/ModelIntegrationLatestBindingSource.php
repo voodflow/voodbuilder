@@ -1,0 +1,69 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support\Editor\Bindings;
+
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * Model Integration Latest Binding Source.
+ */
+final class ModelIntegrationLatestBindingSource extends AbstractModelIntegrationBindingSource
+{
+    public function id(): string
+    {
+        return $this->integration->getAlias().'.latest';
+    }
+
+    public function label(): string
+    {
+        return $this->integration->name.' · '.__('voodbuilder::model_integrations.bindings.latest');
+    }
+
+    public function fields(): array
+    {
+        return $this->fieldsForEssentialKeys();
+    }
+
+    public function resolve(string $fieldId, BindingContext $context): ?string
+    {
+        $record = $this->resolveLatestRecord();
+
+        if (! $record instanceof Model) {
+            return null;
+        }
+
+        return $this->resolveFieldValue($record, $fieldId, $context);
+    }
+
+    protected function resolveLatestRecord(): ?Model
+    {
+        $class = $this->integration->model_class;
+
+        if (! class_exists($class) || ! is_subclass_of($class, Model::class)) {
+            return null;
+        }
+
+        $query = $class::query();
+        $eagerLoads = $this->relationEagerLoads();
+
+        if ($eagerLoads !== []) {
+            $query->with($eagerLoads);
+        }
+
+        if (
+            method_exists($class, 'scopePubliclyListed')
+            || (new \ReflectionClass($class))->hasMethod('publiclyListed')
+        ) {
+            $query->publiclyListed();
+        } elseif (
+            method_exists($class, 'scopePublished')
+            || (new \ReflectionClass($class))->hasMethod('published')
+        ) {
+            $query->published();
+        }
+
+        return $query->latest('id')->first();
+    }
+}

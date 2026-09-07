@@ -8,6 +8,9 @@ use Closure;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
+/**
+ * Content Channel Registry.
+ */
 final class ContentChannelRegistry
 {
     /** @var array<string, PublicContentChannel> */
@@ -70,15 +73,29 @@ final class ContentChannelRegistry
 
     public function matchesCurrentRequest(): ?PublicContentChannel
     {
+        if (request()->route()?->getName() === null) {
+            return null;
+        }
+
+        $bestChannel = null;
+        $bestScore = -1;
+
         foreach ($this->channels as $channel) {
             foreach ($channel->routePatterns() as $pattern) {
-                if (request()->routeIs($pattern)) {
-                    return $channel;
+                if (! request()->routeIs($pattern)) {
+                    continue;
+                }
+
+                $score = strlen($pattern) - (substr_count($pattern, '*') * 8);
+
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $bestChannel = $channel;
                 }
             }
         }
 
-        return null;
+        return $bestChannel;
     }
 
     /**
@@ -118,8 +135,8 @@ final class ContentChannelRegistry
                 return $search::voodbuilderSearch($term, $limit);
             }
 
-            if (method_exists($search, 'vpressSearch')) {
-                return $search::vpressSearch($term, $limit);
+            if (method_exists($search, 'voodbuilderSearch')) {
+                return $search::voodbuilderSearch($term, $limit);
             }
 
             return collect();

@@ -1,0 +1,214 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support;
+
+use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+use Voodflow\Voodbuilder\Models\SitePage;
+
+/**
+ * Navigation menus for the local Voodflow marketing site (slug prefix "a").
+ */
+final class MarketingSiteMenus
+{
+    public const LOCALE = 'en';
+
+    public static function seed(): void
+    {
+        self::seedMainMenu();
+        self::seedFooterMenus();
+
+        Navigation::clearCache();
+    }
+
+    protected static function seedMainMenu(): void
+    {
+        $main = NavigationMenu::query()->updateOrCreate(
+            ['slug' => 'main', 'locale' => self::LOCALE],
+            ['name' => 'Main navigation'],
+        );
+
+        NavigationMenuItem::query()->where('menu_id', $main->getKey())->delete();
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $main->getKey(),
+            'label' => 'Home',
+            'type' => MenuItemType::Page,
+            'link' => 'a',
+            'sort_order' => 0,
+        ]);
+
+        $productsGroup = NavigationMenuItem::query()->create([
+            'menu_id' => $main->getKey(),
+            'label' => 'Products',
+            'type' => MenuItemType::Group,
+            'sort_order' => 1,
+        ]);
+
+        foreach (MarketingSiteContent::productLandings() as $index => $product) {
+            NavigationMenuItem::query()->create([
+                'menu_id' => $main->getKey(),
+                'parent_id' => $productsGroup->getKey(),
+                'label' => $product['name'],
+                'type' => MenuItemType::Page,
+                'link' => 'a-'.$product['slug'],
+                'sort_order' => $index,
+            ]);
+        }
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $main->getKey(),
+            'label' => 'Contact',
+            'type' => MenuItemType::Url,
+            'link' => 'https://voodflow.com',
+            'sort_order' => 2,
+        ]);
+    }
+
+    protected static function seedFooterMenus(): void
+    {
+        $footer = NavigationMenu::query()->updateOrCreate(
+            ['slug' => 'footer', 'locale' => self::LOCALE],
+            ['name' => 'Footer'],
+        );
+
+        NavigationMenuItem::query()->where('menu_id', $footer->getKey())->delete();
+
+        $footer->items()->createMany([
+            [
+                'label' => 'Home',
+                'type' => MenuItemType::Page,
+                'link' => 'a',
+                'sort_order' => 0,
+            ],
+            [
+                'label' => 'Voodflow',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 1,
+            ],
+            [
+                'label' => 'Contact',
+                'type' => MenuItemType::Url,
+                'link' => 'https://voodflow.com',
+                'sort_order' => 2,
+            ],
+        ]);
+
+        self::seedFooterColumn(1, [
+            [
+                'label' => 'Home',
+                'type' => MenuItemType::Page,
+                'link' => 'a',
+                'sort_order' => 0,
+            ],
+            [
+                'label' => 'Voodflow',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 1,
+            ],
+            [
+                'label' => 'VoodBuilder',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodbuilder',
+                'sort_order' => 2,
+            ],
+        ]);
+
+        self::seedFooterColumn(2, self::productFooterLinks());
+
+        self::seedFooterColumn(3, [
+            [
+                'label' => 'White-label licensing',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 0,
+            ],
+            [
+                'label' => 'OEM / multi-tenant',
+                'type' => MenuItemType::Page,
+                'link' => 'a-voodflow',
+                'sort_order' => 1,
+            ],
+            [
+                'label' => 'Contact',
+                'type' => MenuItemType::Url,
+                'link' => 'https://voodflow.com',
+                'sort_order' => 2,
+            ],
+        ]);
+
+        self::seedFooterColumn(4, self::policyFooterLinks());
+    }
+
+    /**
+     * @param  list<array{label: string, type: MenuItemType, link: string, sort_order: int}>  $items
+     */
+    protected static function seedFooterColumn(int $index, array $items): void
+    {
+        $menu = NavigationMenu::query()->updateOrCreate(
+            ['slug' => 'footer_col_'.$index, 'locale' => self::LOCALE],
+            ['name' => 'Footer column '.$index],
+        );
+
+        NavigationMenuItem::query()->where('menu_id', $menu->getKey())->delete();
+
+        if ($items === []) {
+            return;
+        }
+
+        $menu->items()->createMany($items);
+    }
+
+    /**
+     * @return list<array{label: string, type: MenuItemType, link: string, sort_order: int}>
+     */
+    protected static function productFooterLinks(): array
+    {
+        $links = [];
+
+        foreach (MarketingSiteContent::productLandings() as $index => $product) {
+            $links[] = [
+                'label' => $product['name'],
+                'type' => MenuItemType::Page,
+                'link' => 'a-'.$product['slug'],
+                'sort_order' => $index,
+            ];
+        }
+
+        return $links;
+    }
+
+    /**
+     * @return list<array{label: string, type: MenuItemType, link: string, sort_order: int}>
+     */
+    protected static function policyFooterLinks(): array
+    {
+        $links = [];
+        $sortOrder = 0;
+
+        foreach ([
+            'privacy-policy' => 'Privacy Policy',
+            'cookie-policy' => 'Cookie Policy',
+        ] as $slug => $label) {
+            if (! SitePage::query()->where('slug', $slug)->exists()) {
+                continue;
+            }
+
+            $links[] = [
+                'label' => $label,
+                'type' => MenuItemType::Page,
+                'link' => $slug,
+                'sort_order' => $sortOrder,
+            ];
+
+            $sortOrder++;
+        }
+
+        return $links;
+    }
+}

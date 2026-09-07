@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Menu Item Type enumeration.
+ */
 enum MenuItemType: string implements HasLabel
 {
     case Group = 'group';

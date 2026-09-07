@@ -8,6 +8,7 @@ return [
         'menus' => 'Menus',
         'pages' => 'Pages',
         'settings' => 'Settings',
+        'theme_studio' => 'Theme Studio',
         'content_channels' => 'Channel themes',
         'footer_column_placement' => 'Footer column :number',
         'link_display' => 'Link display',
@@ -38,6 +39,7 @@ return [
         'sub_theme' => 'Visual theme',
         'sub_theme_inherit' => 'Site default',
         'layout_auto' => 'Automatic',
+        'canvas_width' => 'Content width',
         'layout_standard' => 'Standard page',
         'layout_full_width' => 'Full width (marketing)',
         'excerpt' => 'Excerpt',
@@ -46,9 +48,21 @@ return [
         'section_home' => 'Section home',
         'sub_items' => 'Sub-items',
         'language' => 'Language',
+        'lang' => 'Translations',
         'target_language' => 'Target language',
         'translations' => 'Translations',
+        'translations_to_delete' => 'Translations to delete',
         'menu_clone_name' => 'Menu name',
+        'visibility' => 'Access level',
+        'password_protected' => 'Password protection',
+        'password_credentials' => 'Access credentials',
+        'credential_email' => 'Email (optional)',
+        'credential_password' => 'Password',
+        'is_dynamic' => 'Dynamic page',
+        'dynamic_channel' => 'Model / channel',
+        'dynamic_routes' => 'URL patterns (routes)',
+        'dynamic_priority' => 'Priority',
+        'dynamic_preview_url' => 'Example public URL',
     ],
 
     'actions' => [
@@ -56,7 +70,10 @@ return [
         'translate_menu' => 'Translate to…',
         'clone_menu' => 'Clone menu',
         'clone_menu_placement' => 'Copy to placement…',
+        'delete_translations' => 'Delete translations',
+        'actions' => 'Actions',
         'more' => 'Actions',
+        'add_credential' => 'Add credential',
     ],
 
     'translation' => [
@@ -64,6 +81,9 @@ return [
         'modal_heading' => 'Create page translation',
         'modal_description' => 'A draft copy will be created with the same layout and content. Update the title, slug, and body for the target language.',
         'none_yet' => 'No linked translations yet.',
+        'delete_translations_heading' => 'Delete translations',
+        'delete_translations_modal_description' => 'Select which translations to remove. The canonical row in the group is always kept.',
+        'canonical_kept_notice' => 'Original kept: :locale — :title',
     ],
 
     'menu_translation' => [
@@ -87,6 +107,9 @@ return [
         'menu_cloned' => 'Menu cloned',
         'home_reassigned' => 'Other home pages updated',
         'home_reassigned_body' => ':count other page(s) are no longer marked as home.',
+        'translations_delete_none_selected' => 'Select at least one translation to delete.',
+        'translations_deleted' => 'Translations deleted',
+        'translations_deleted_body' => ':count translation(s) removed: :list',
     ],
 
     'home_takeover' => [
@@ -112,7 +135,10 @@ return [
     ],
 
     'sections' => [
+        'content' => 'Content',
         'appearance' => 'Appearance (optional)',
+        'access' => 'Access',
+        'dynamic' => 'Dynamic routing',
     ],
 
     'menu_preview' => [
@@ -130,16 +156,28 @@ return [
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
-        'menu_grapes_pages_only' => 'Only GrapesJS pages are listed. Use “Open visual editor” to edit the selected page on the site.',
-        'menu_tree' => 'Drag to reorder or drop an item onto another to create a submenu. Maximum 2 levels (top-level and sub-items). Use "Dropdown group" for labels without a link.',
+        'menu_editor_pages_only' => 'Only Editor pages are listed. Use “Open visual editor” to edit the selected page on the site.',
+        'menu_tree' => 'Drag using the grip icon (☰). To create a submenu, drop the item on the centre of a top-level row — a “Submenu here” badge appears. Top or bottom edge reorders at the same level. Sub-items show a coloured left rail. Maximum 2 levels. Use "Dropdown group" for labels without a link.',
+        'menu_tree_drag' => 'Drag to reorder; drop on centre of a top-level item to nest',
+        'menu_tree_nest_here' => 'Submenu here',
         'sub_theme_site' => 'Default visual theme for Site Pages (home, landing, CMS). Configure per-area bindings below.',
-        'sub_theme_page' => 'Leave “Site default” to use :theme from Settings → Theme. Change only when this single page needs a different look.',
+        'sub_theme_page' => 'With “Site default”, this page inherits the Site pages theme from Theme Studio (currently: :theme). Pick another only when this page needs a different look.',
         'excerpt' => 'Short summary for section listings, cards, and SEO.',
         'section_home' => 'Marks this page as the index for its section (lists sibling pages in the sidebar).',
         'home_page_locale' => 'One home per language. Linked translations (same page, other locales) can all be home. Turning on a new home disables other pages.',
         'home_page_layout' => 'Home pages are served at /. Choose “Automatic” unless you need a different layout.',
         'layout_auto_home' => 'Uses full width edge-to-edge (recommended for the site home).',
         'layout_auto_page' => 'Uses a standard contained page width.',
-        'sub_theme_marketing_recommended' => 'Full-width pages work best with a marketing theme (Site or your custom theme).',
+        'sub_theme_marketing_recommended' => 'Full-width pages work best with VoodBuilder base or a custom theme cloned from it.',
+        'visibility' => 'Who can view this page on the public site. Uses Spatie roles / the subscriber ability when Shield is present.',
+        'password_protected' => 'Optional bypass: unlock with a password for previews, client reviews, or one-off invites — even if the access level is Registered/Subscriber. Subscribers (or registered users) who already qualify still see the page without the password.',
+        'password_credentials' => 'One or more passwords. Leave email empty for password-only access. Works as an alternate path alongside the access level.',
+        'credential_password' => 'Leave blank when editing to keep the current password.',
+        'is_dynamic' => 'Reuse this Visual Editor page as a template for many URLs (e.g. one exhibitor profile for every /exhibitors/{slug}). Companion plugin routes keep the URL patterns; this page claims them when published.',
+        'dynamic_channel' => 'Which companion model/channel supplies route parameters and binding sources (.current).',
+        'dynamic_routes' => 'Select one or more claimable routes. Each encodes its path parameters (1+n segments). The same template can own both /exhibitors/{slug} and /exhibitors/{slug}/events/{eventSlug}.',
+        'dynamic_priority' => 'If multiple dynamic pages claim the same route, the highest priority wins.',
+        'dynamic_preview_url' => 'Sample URL used for “Open visual editor” and binding previews.',
     ],
+
 ];

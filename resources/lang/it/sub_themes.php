@@ -8,8 +8,8 @@ return [
         'marketing' => 'Sito marketing',
     ],
     'capabilities' => [
-        'doc' => 'Documentazione',
-        'article' => 'Articolo / blog',
-        'landing' => 'Landing / marketing',
+        'doc' => 'Lettura',
+        'article' => 'Articoli',
+        'landing' => 'Marketing',
     ],
 ];

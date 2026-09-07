@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterSocialBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterSocialBlock;
 use Voodflow\Voodbuilder\Support\MenuTablerIcons;
 use Voodflow\Voodbuilder\Tests\TestCase;
 

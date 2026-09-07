@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Enums\SubThemeCapability;
 use Voodflow\Voodbuilder\Enums\SubThemeType;
 
+/**
+ * Sub Theme Registry.
+ */
 final class SubThemeRegistry
 {
     /** @var array<string, array{label: string, description?: string, type?: SubThemeType, capabilities?: list<SubThemeCapability>, layouts?: array<string, string>, css?: string}> */

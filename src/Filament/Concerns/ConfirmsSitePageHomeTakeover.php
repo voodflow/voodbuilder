@@ -9,6 +9,9 @@ use Filament\Support\Exceptions\Halt;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageHome;
 
+/**
+ * Confirms Site Page Home Takeover trait.
+ */
 trait ConfirmsSitePageHomeTakeover
 {
     protected bool $homeTakeoverConfirmed = false;
@@ -16,6 +19,7 @@ trait ConfirmsSitePageHomeTakeover
     public function confirmHomeTakeoverAction(): Action
     {
         return Action::make('confirmHomeTakeover')
+            ->hidden()
             ->modalHeading(__('voodbuilder::admin.home_takeover.heading'))
             ->modalDescription(fn (): string => __('voodbuilder::admin.home_takeover.description', [
                 'pages' => SitePageHome::conflictSummary($this->homeTakeoverCandidate()),

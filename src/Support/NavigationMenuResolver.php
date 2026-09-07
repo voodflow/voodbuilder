@@ -10,8 +10,15 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation Menu Resolver.
+ */
 final class NavigationMenuResolver
 {
+    private static ?bool $localizationEnabled = null;
+
+    private static ?bool $menusTableExists = null;
+
     /**
      * @param  list<string>  $slugs
      * @return Collection<int, NavigationMenuItem>
@@ -31,15 +38,19 @@ final class NavigationMenuResolver
 
     public static function localizationEnabled(): bool
     {
-        return SitePageResolver::localizationEnabled()
-            && Schema::hasTable('voodbuilder_menus')
+        if (self::$localizationEnabled !== null) {
+            return self::$localizationEnabled;
+        }
+
+        return self::$localizationEnabled = SitePageResolver::localizationEnabled()
+            && self::menusTableExists()
             && Schema::hasColumn('voodbuilder_menus', 'locale')
             && Schema::hasColumn('voodbuilder_menus', 'translation_group_id');
     }
 
     public static function forPlacement(string $slug, ?string $locale = null): ?NavigationMenu
     {
-        if (! Schema::hasTable('voodbuilder_menus')) {
+        if (! self::menusTableExists()) {
             return null;
         }
 
@@ -99,5 +110,20 @@ final class NavigationMenuResolver
             'landing_footer' => __('Landing footer columns'),
             default => $slug,
         };
+    }
+
+    public static function clearSchemaCache(): void
+    {
+        self::$localizationEnabled = null;
+        self::$menusTableExists = null;
+    }
+
+    public static function menusTableExists(): bool
+    {
+        if (self::$menusTableExists !== null) {
+            return self::$menusTableExists;
+        }
+
+        return self::$menusTableExists = Schema::hasTable('voodbuilder_menus');
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Profile Menu Link Registry.
+ */
 final class ProfileMenuLinkRegistry
 {
     /** @var list<callable(): (array{label: string, url: string}|null)> */

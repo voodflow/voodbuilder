@@ -12,6 +12,9 @@ use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Navigation Menu.
+ */
 class NavigationMenu extends Model
 {
     protected $table = 'voodbuilder_menus';

@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Text Section Block.
+ */
 class LandingTextSectionBlock extends RichContentCustomBlock
 {
     public static function getId(): string

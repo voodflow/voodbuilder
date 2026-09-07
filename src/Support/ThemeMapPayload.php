@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
+use Voodflow\Voodbuilder\Enums\SubThemeCapability;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Map Payload.
+ */
 final class ThemeMapPayload
 {
     /**
@@ -33,12 +37,21 @@ final class ThemeMapPayload
 
         foreach (app(SubThemeRegistry::class)->ids() as $id) {
             $card = ThemePresenter::card($id);
+            $capabilities = app(SubThemeRegistry::class)->capabilities($id);
             $themes[] = [
                 'id' => $id,
                 'label' => $card['label'],
                 'preview' => $card['preview'],
                 'surface' => $card['surface'],
                 'strip' => $card['strip'],
+                'capabilities' => array_map(
+                    static fn (SubThemeCapability $capability): string => $capability->value,
+                    $capabilities,
+                ),
+                'capability_labels' => array_map(
+                    static fn (SubThemeCapability $capability): string => $capability->label(),
+                    $capabilities,
+                ),
             ];
         }
 
@@ -52,6 +65,9 @@ final class ThemeMapPayload
                 : self::channelDescription($areaId);
 
             $allowedThemeIds = ThemeBindings::allowedThemeIdsForArea($areaId);
+            $requiredCapability = $areaId === 'site_pages'
+                ? ThemeBindings::sitePagesCapability()
+                : ThemeBindings::requiredCapabilityForChannelId($areaId);
 
             $areas[] = [
                 'id' => $areaId,
@@ -61,6 +77,9 @@ final class ThemeMapPayload
                 'theme_id' => $row['theme_id'],
                 'source' => $row['source'],
                 'allowed_theme_ids' => $allowedThemeIds,
+                'required_capability' => $requiredCapability->value,
+                'required_capability_label' => $requiredCapability->label(),
+                'chrome_layout' => self::chromeLayoutSummaryForArea($areaId),
                 'inherited_theme_id' => $areaId === 'site_pages'
                     ? $subTheme
                     : self::inheritedThemeForChannel($areaId, $subTheme),
@@ -85,6 +104,11 @@ final class ThemeMapPayload
                 'inherited' => (string) __('voodbuilder::settings.theme_map_inherited'),
                 'edit_theme' => (string) __('voodbuilder::settings.theme_map_edit_theme'),
                 'invalid_binding' => (string) __('voodbuilder::settings.theme_map_invalid_binding'),
+                'invalid_binding_detail' => (string) __('voodbuilder::settings.theme_map_invalid_binding_detail'),
+                'required_capability' => (string) __('voodbuilder::settings.theme_map_required_capability'),
+                'chrome_layout' => (string) __('voodbuilder::settings.theme_map_chrome_layout'),
+                'chrome_layout_none' => (string) __('voodbuilder::settings.theme_map_chrome_layout_none'),
+                'theme_capabilities' => (string) __('voodbuilder::settings.theme_map_theme_capabilities'),
                 'legend_explicit' => (string) __('voodbuilder::settings.theme_map_legend_explicit'),
                 'legend_inherited' => (string) __('voodbuilder::settings.theme_map_legend_inherited'),
                 'legend_controls' => (string) __('voodbuilder::settings.theme_map_legend_controls'),
@@ -140,5 +164,27 @@ final class ThemeMapPayload
         }
 
         return ThemeBindings::channelRoutesSummary($channel);
+    }
+
+    /**
+     * @return array{name: string, id: string}|null
+     */
+    protected static function chromeLayoutSummaryForArea(string $areaId): ?array
+    {
+        if (! ChromeLayoutResolver::enabled()) {
+            return null;
+        }
+
+        $channelId = $areaId === 'site_pages' ? 'pages' : $areaId;
+        $layout = ChromeLayoutResolver::resolveForChannel($channelId);
+
+        if ($layout === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $layout->getKey(),
+            'name' => $layout->name,
+        ];
     }
 }

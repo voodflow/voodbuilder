@@ -2,11 +2,17 @@
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
     use Voodflow\Voodbuilder\Support\SubThemeResolver;
 
-    $voodbuilderSubTheme = $voodbuilderSubTheme ?? $vpressSubTheme ?? SubThemeResolver::forCurrentRoute();
+    $voodbuilderSubTheme = $voodbuilderSubTheme ?? SubThemeResolver::forCurrentRoute();
     $voodbuilderContentChannel = app(ContentChannelRegistry::class)->matchesCurrentRequest()?->id();
     $voodbuilderBodyClass = trim((string) $__env->yieldContent('body_class'));
     $voodbuilderHasDocSidebar = str_contains($voodbuilderBodyClass, 'voodbuilder-has-doc-sidebar');
     $voodbuilderShowReadingProgress = str_contains($voodbuilderBodyClass, 'voodbuilder-has-reading-progress');
+    $voodbuilderViteEntries = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::pageViteEntries(
+        $editorEditor ?? false,
+        $chromeLayoutEditor ?? false,
+        $voodbuilderSubTheme,
+    );
+    $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
 @endphp
 <!doctype html>
 <html
@@ -32,10 +38,14 @@
 
     <x-voodbuilder::geo-ai-meta />
 
-    @include('cookie-consent::cookie-consent-head')
+    {{-- Page fonts before theme CSS so @font-face + woff2 preload start as early as possible. --}}
+    @stack('fonts')
 
-    @vite(config('voodbuilder.assets.vite', \Voodflow\Voodbuilder\Support\VoodbuilderPaths::defaultViteEntries()))
-    @livewireStyles
+    @if ($voodbuilderEditorAssetsReady)
+        @vite($voodbuilderViteEntries)
+    @elseif ($editorEditor ?? false)
+        <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
+    @endif
     @stack('head')
 </head>
 <body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
@@ -46,7 +56,8 @@
         />
     @endunless
 
-    <main class="flex-1">
+    {{-- Content-driven height (matches editor). Opt-in sticky footer: body.voodbuilder-sticky-footer --}}
+    <main>
         @yield('content')
     </main>
 
@@ -54,12 +65,11 @@
         <x-voodbuilder::footer />
     @endif
 
-    @include('cookie-consent::cookie-consent-body')
     <x-voodbuilder::monitoring-scripts />
     <x-voodbuilder::popups-boot />
 
     @stack('scripts-before-livewire')
-    @livewireScripts
+    {{-- Livewire JS/CSS auto-inject when a component is rendered; avoid shipping 500KB+ on static pages. --}}
     <x-voodbuilder::site-scripts />
     @stack('scripts')
     @stack('overlays')

@@ -4,33 +4,14 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Illuminate\Support\Facades\File;
-
+/**
+ * App themes are runtime skins (ThemePalette + RuntimeSubThemeStylesheet).
+ * This helper used to append a Vite input; it now only confirms the CSS file exists.
+ */
 final class AppendThemeStylesheetImport
 {
     public static function append(string $absoluteCssPath): bool
     {
-        $importPath = ThemeConvention::cssImportPathFromBundle($absoluteCssPath);
-
-        if ($importPath === null) {
-            return false;
-        }
-
-        $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
-
-        if (! is_file($bundlePath)) {
-            return false;
-        }
-
-        $importLine = "@import '{$importPath}';";
-        $contents = File::get($bundlePath);
-
-        if (str_contains($contents, $importLine)) {
-            return false;
-        }
-
-        File::put($bundlePath, rtrim($contents)."\n{$importLine}\n");
-
-        return true;
+        return is_file($absoluteCssPath);
     }
 }

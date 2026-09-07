@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingMediaUrlResolver;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingMediaUrlResolver;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class BindingMediaUrlResolverTest extends TestCase
@@ -36,7 +36,7 @@ class BindingMediaUrlResolverTest extends TestCase
     public function test_uses_editor_media_proxy_path(): void
     {
         $this->assertSame(
-            '/voodbuilder/grapesjs/media/23',
+            '/voodbuilder/editor/media/23',
             BindingMediaUrlResolver::editorMediaPreviewPath(23),
         );
     }

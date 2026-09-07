@@ -21,7 +21,7 @@
 .voodbuilder-tm__canvas {
     position: relative;
     flex: 1 1 auto;
-    min-height: 520px;
+    min-height: 640px;
     border-radius: var(--vp-tm-radius);
     overflow: hidden;
     border: 1px solid rgb(226 232 240);
@@ -31,7 +31,7 @@
 .voodbuilder-tm__canvas .react-flow {
     width: 100%;
     height: 100%;
-    min-height: 520px;
+    min-height: 640px;
 }
 
 .voodbuilder-tm__canvas .react-flow__viewport {
@@ -61,7 +61,7 @@
 }
 
 .voodbuilder-tm-node {
-    width: 200px;
+    width: 240px;
     border-radius: 0.625rem;
     border: 1px solid rgb(226 232 240);
     background: #fff;
@@ -81,11 +81,13 @@
 
 .voodbuilder-tm-node--area {
     border-left: 3px solid var(--vp-tm-accent, #64748b);
-    background: color-mix(in srgb, var(--vp-tm-surface, #f8fafc) 88%, white);
+    /* Keep a dark-friendly card surface; tint lightly from the bound theme. */
+    background: color-mix(in srgb, var(--vp-tm-surface, #f8fafc) 22%, #fff);
 }
 
 .dark .voodbuilder-tm-node--area {
-    background: color-mix(in srgb, var(--vp-tm-surface, #1e293b) 70%, rgb(30 41 59));
+    /* Theme surfaces are often light-mode body colors — do not wash out dark UI text. */
+    background: color-mix(in srgb, var(--vp-tm-accent, #64748b) 14%, rgb(30 41 59));
 }
 
 .voodbuilder-tm-node__strip {
@@ -120,12 +122,17 @@
 .voodbuilder-tm-node__routes {
     font-size: 0.6875rem;
     line-height: 1.35;
-    color: rgb(100 116 139);
+    color: rgb(71 85 105);
 }
 
 .dark .voodbuilder-tm-node__meta,
 .dark .voodbuilder-tm-node__routes {
-    color: rgb(148 163 184);
+    color: rgb(203 213 225);
+}
+
+.dark .voodbuilder-tm-node--area .voodbuilder-tm-node__meta,
+.dark .voodbuilder-tm-node--area .voodbuilder-tm-node__routes {
+    color: rgb(226 232 240);
 }
 
 .voodbuilder-tm-node__routes {
@@ -150,6 +157,46 @@
 .dark .voodbuilder-tm-node__badge {
     color: rgb(203 213 225);
     background: rgb(51 65 85);
+}
+
+.voodbuilder-tm-node__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+}
+
+.voodbuilder-tm-node__tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: rgb(51 65 85);
+    background: rgb(241 245 249);
+}
+
+.dark .voodbuilder-tm-node__tag {
+    color: rgb(226 232 240);
+    background: rgb(51 65 85);
+}
+
+.voodbuilder-tm-node__tag--required {
+    margin-top: 0.15rem;
+    color: rgb(30 64 175);
+    background: rgb(219 234 254);
+}
+
+.dark .voodbuilder-tm-node__tag--required {
+    color: rgb(191 219 254);
+    background: rgb(30 58 138);
+}
+
+.voodbuilder-tm-node__meta--layout {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
 }
 
 .voodbuilder-tm-node__actions {

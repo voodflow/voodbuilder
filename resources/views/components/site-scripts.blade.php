@@ -1,7 +1,7 @@
 <script>
     (function () {
         const root = document.documentElement;
-        const config = window.__voodbuilderTheme || window.__vpressTheme || {
+        const config = window.__voodbuilderTheme || {
             showToggle: true,
             defaultMode: 'system',
             locked: false,
@@ -568,7 +568,7 @@
             return tablist.parentElement;
         }
 
-        function initGrapesJsTabs(root) {
+        function initEditorTabs(root) {
             if (! root || root.dataset.voodbuilderTabsReady === '1') {
                 return;
             }
@@ -680,7 +680,7 @@
         }
 
         document.querySelectorAll('[role="tablist"]').forEach((tablist) => {
-            initGrapesJsTabs(findTabsRoot(tablist));
+            initEditorTabs(findTabsRoot(tablist));
         });
     })();
 </script>

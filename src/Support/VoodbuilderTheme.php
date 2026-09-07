@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Voodbuilder Theme.
+ */
 final class VoodbuilderTheme
 {
     public static function showToggle(): bool

@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Support\SubThemeScaffolder;
 use Voodflow\Voodbuilder\Support\ThemeConvention;
 
+/**
+ * Artisan command: Make Sub Theme.
+ */
 class MakeSubThemeCommand extends Command
 {
     protected $signature = 'voodbuilder:make-subtheme
@@ -39,9 +42,9 @@ class MakeSubThemeCommand extends Command
         }
 
         if ($result->importAppended) {
-            $this->components->info('Added @import to the voodbuilder theme bundle.');
+            $this->components->info('Theme CSS is ready as a runtime skin (no Vite rebuild required).');
         } else {
-            $this->components->warn('Could not append @import automatically — run npm run build after adding the import.');
+            $this->components->warn('Theme CSS file was not written — check disk permissions.');
         }
 
         $viewsRoot = ThemeConvention::appViewsPath($result->id).'/layouts';
@@ -50,7 +53,7 @@ class MakeSubThemeCommand extends Command
         $this->components->info("Sub-theme \"{$result->id}\" created.");
         $this->line("  CSS:     {$result->cssPath}");
         $this->line("  Layouts: {$viewsRoot}/");
-        $this->line('Customize colors in Admin → Settings → Layouts, or edit the theme CSS file.');
+        $this->line('Customize colors in Admin → Theme Studio, or edit the theme CSS file.');
 
         return self::SUCCESS;
     }

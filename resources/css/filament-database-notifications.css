@@ -1,0 +1,19 @@
+/**
+ * Filament admin database notifications (Voodbuilder AdminDatabaseNotifications).
+ * Evita scroll orizzontale con titoli e messaggi lunghi.
+ */
+
+.fi-modal.fi-no-database > .fi-modal-window-ctn > .fi-modal-window {
+    overflow-x: hidden;
+}
+
+.fi-modal.fi-no-database .fi-no-notification-main,
+.fi-modal.fi-no-database .fi-no-notification-text {
+    min-width: 0;
+}
+
+.fi-modal.fi-no-database .fi-no-notification-title,
+.fi-modal.fi-no-database .fi-no-notification-body {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}

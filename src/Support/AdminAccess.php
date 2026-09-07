@@ -8,6 +8,9 @@ use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
+/**
+ * Admin Access.
+ */
 final class AdminAccess
 {
     public static function userCanAccessPanel(?string $panelId = null): bool

@@ -19,94 +19,412 @@
     @apply w-full;
 }
 
-/* GrapesJS site_header block: fixed nav needs layout space so content does not jump underneath. */
-[data-voodbuilder-gjs-site-header].voodbuilder-site-header-spacer {
+/* Editor site_header block: fixed nav needs layout space so content does not jump underneath. */
+[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
     height: 4rem;
 }
 
 .voodbuilder-full-width-shell,
 .voodbuilder-site-shell:has(.VPRichPage--landing),
 :where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
-:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode),
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-editor-mode),
 main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(.VPRichPage--landing) {
     @apply max-w-none w-full p-0;
 }
 
-.VPRichPage--landing > :is(section, .voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .voodbuilder-gjs-section, .voodbuilder-gjs-footer):first-child {
-    @apply pt-0;
+/*
+ * Soft chrome flush for the first landing block when the author has NOT set
+ * py-* / pt-* utilities. MUST stay in @layer components + :where() so Tailwind
+ * utilities (py-24, pt-8, …) win — never unlayered :is(...):first-child { pt-0 }
+ * (specificity ~0,3,0 beats utilities and breaks editor ↔ front parity: the
+ * canvas often has a drop-spacer as :first-child, so the rule never fires there).
+ */
+@layer components {
+    :where(
+        .VPRichPage--landing > :is(section, .voodbuilder-editor-hero, .voodbuilder-editor-cta, .voodbuilder-editor-section, .voodbuilder-editor-footer):first-child
+    ) {
+        padding-top: 0;
+    }
 }
 
 .VPRichPage--landing {
-    @apply w-full max-w-none;
+    @apply w-full max-w-none font-sans text-vp-text-1 antialiased;
+}
+
+/* Layout content width: constrain page body (wrappers between main and VPRichPage are ok).
+ * Beat theme palette `--width-vp-layout: … !important` with equal/higher specificity. */
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full']:not(.dark),
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='full'],
+body[data-voodbuilder-page-width='full'] {
+    --width-vp-layout: 100% !important;
+}
+
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained'],
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard']:not(.dark),
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom']:not(.dark),
+html[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained']:not(.dark),
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='standard'],
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='custom'],
+html.dark[data-voodbuilder-sub-theme][data-voodbuilder-page-width='contained'],
+body[data-voodbuilder-page-width='standard'],
+body[data-voodbuilder-page-width='custom'],
+body[data-voodbuilder-page-width='contained'] {
+    --width-vp-layout: var(--voodbuilder-page-content-max, 80rem) !important;
+}
+
+/* Published page only — never shrink the Editor host workspace. */
+html[data-voodbuilder-page-width='standard']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='custom']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+html[data-voodbuilder-page-width='contained']:not(:has(body.voodbuilder-editor-editing)) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='standard']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='custom']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell),
+body[data-voodbuilder-page-width='contained']:not(.voodbuilder-editor-editing) :is(main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+    width: 100%;
+    max-width: var(--voodbuilder-page-content-max, 80rem) !important;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-site-content, main .voodbuilder-site-shell) {
+    max-width: none !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+}
+
+:is(html, body)[data-voodbuilder-page-width='standard'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='custom'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero),
+:is(html, body)[data-voodbuilder-page-width='contained'] .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+}
+
+/* Optional: nav/footer follow the same content max width (only when content is constrained). */
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] {
+    width: 100%;
+    max-width: var(--voodbuilder-page-content-max, 80rem) !important;
+    margin-inline: auto;
+    box-sizing: border-box;
 }
 
 /*
- * Embedded site nav (GrapesJS block) keeps horizontal gutters.
+ * chrome_width=full keeps nav/footer bars edge-to-edge (shell itself stays 100%).
+ * page-width=full sets --width-vp-layout: 100% on the document for page content;
+ * without restoring a layout measure on the chrome shell, footer/nav containers
+ * also go full-bleed. Sub-themes that define --width-vp-layout on the shell keep
+ * winning (higher specificity / !important).
+ */
+:is(html, body)[data-voodbuilder-chrome-width='full'][data-voodbuilder-page-width='full'] [data-voodbuilder-chrome-shell] {
+    --width-vp-layout: var(--voodbuilder-chrome-layout-max, 80rem);
+}
+
+/*
+ * Fixed site headers escape parent max-width (positioned against the viewport).
+ * When chrome matches content, pin the bar to the same content column.
+ */
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] header[role='banner'].fixed,
+:is(html, body)[data-voodbuilder-chrome-width='content']:is(
+    [data-voodbuilder-page-width='standard'],
+    [data-voodbuilder-page-width='custom'],
+    [data-voodbuilder-page-width='contained']
+) [data-voodbuilder-chrome-shell] header[role='banner'].sticky {
+    left: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+    right: max(0px, calc(50% - (var(--voodbuilder-page-content-max, 80rem) / 2))) !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+/*
+ * Embedded site nav (Editor block) keeps horizontal gutters.
  * vp:px-0 in saved markup is for doc-sidebar layout only and must not zero in-page nav padding.
  */
 @media (min-width: 48rem) {
-    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+    [data-voodbuilder-editor-site-header] header[role='banner'] .px-6 {
         padding-inline: calc(var(--spacing, 0.25rem) * 8) !important;
     }
 }
 
 @media (max-width: 47.99rem) {
-    [data-voodbuilder-gjs-site-header] header[role='banner'] .px-6 {
+    [data-voodbuilder-editor-site-header] header[role='banner'] .px-6 {
         padding-inline: calc(var(--spacing, 0.25rem) * 6) !important;
     }
 }
 
-/* Root GrapesJS sections are full-bleed; inner copy stays padded via px-* on the block. */
-.VPRichPage--landing > section.voodbuilder-gjs-section {
-    @apply mx-0 w-full max-w-none;
+/*
+ * Element content-width toggle (toolbar on full-width pages).
+ * Page-level --width-vp-layout is 100% in full mode; these attrs restore a boxed measure.
+ * Do NOT wrap in :where() — must beat .voodbuilder-editor-container { max-width: var(--width-vp-layout) }.
+ */
+@layer components {
+    :where([data-voodbuilder-content-width='normal']) {
+        width: 100%;
+        max-width: 80rem;
+        margin-inline: auto;
+        box-sizing: border-box;
+    }
+
+    :where([data-voodbuilder-content-width='custom']) {
+        width: 100%;
+        max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+        margin-inline: auto;
+        box-sizing: border-box;
+    }
+
+    :where([data-voodbuilder-content-width='full']) {
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+        box-sizing: border-box;
+    }
 }
 
-.VPRichPage--landing > section.voodbuilder-gjs-section:empty {
+/* Unlayered — wins over soft :where(.voodbuilder-editor-container) defaults. */
+.voodbuilder-editor-container[data-voodbuilder-content-width='normal'],
+.container[data-voodbuilder-content-width='normal'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='normal'] {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-container[data-voodbuilder-content-width='custom'],
+.container[data-voodbuilder-content-width='custom'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='custom'] {
+    width: 100%;
+    max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-container[data-voodbuilder-content-width='full'],
+.container[data-voodbuilder-content-width='full'],
+[data-voodbuilder-role='content'][data-voodbuilder-content-width='full'] {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    box-sizing: border-box;
+}
+
+/* Cancel hero 100vw breakout when the author boxes the element. */
+.VPRichPage--landing :is(
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
+    .vp-landing-hero
+)[data-voodbuilder-content-width='normal'],
+.VPRichPage--landing :is(
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
+    .vp-landing-hero
+)[data-voodbuilder-content-width='custom'] {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+}
+
+.VPRichPage--landing :is(
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
+    .vp-landing-hero
+)[data-voodbuilder-content-width='custom'] {
+    max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+}
+
+.VPRichPage--landing :is(
+    .voodbuilder-editor-hero,
+    .voodbuilder-editor-cta,
+    .vp-landing-hero
+)[data-voodbuilder-content-width='full'] {
+    width: 100vw;
+    max-width: 100vw;
+    margin-inline: calc(50% - 50vw);
+}
+
+/*
+ * ─── Author content parity (editor canvas ↔ published front) ─────────────
+ * Single source for authored content: this file (via theme.css).
+ * Canvas loads theme.css too — do NOT put content layout only in
+ * chrome-layout-canvas.css / section-utilities.css / frameStyle duplicates.
+ * Editor-only chrome (drop slots, device toggles, gjs placeholders) stays
+ * canvas-side. Defaults MUST NOT beat Tailwind utilities (mx-auto, max-w-*,
+ * px-*, py-*, pt-*, pb-*, …): use @layer components + :where() so author
+ * utilities win. Never unlayered high-specificity padding/margin resets on
+ * sections/containers (see first-child chrome flush above).
+ */
+
+/*
+ * Root Editor sections: no forced margin/max-width.
+ * Block HTML already includes w-full when needed; authors add mx-auto / max-w-*.
+ */
+.VPRichPage--landing > section.voodbuilder-editor-section:empty {
     @apply hidden m-0 min-h-0 p-0;
 }
 
 /* Escape nested .container wrappers when blocks were dropped inside footer columns. */
-.VPRichPage--landing :is(.voodbuilder-gjs-hero, .voodbuilder-gjs-cta, .vp-landing-hero) {
+.VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero) {
     @apply relative w-full max-w-none;
     width: 100vw;
     max-width: 100vw;
     margin-inline: calc(50% - 50vw);
 }
 
-.VPRichPage--landing .voodbuilder-gjs-footer > :is(.container, .voodbuilder-gjs-container):has(> .voodbuilder-gjs-hero, > section.voodbuilder-gjs-hero) {
-    @apply max-w-none px-0 pt-0;
+/*
+ * Footer column hosting a nested hero: soft escape from boxed measure/gutters.
+ * @layer + :where so author px-* / pt-* / max-w-* on that container still win.
+ */
+@layer components {
+    :where(
+        .VPRichPage--landing .voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container):has(> .voodbuilder-editor-hero, > section.voodbuilder-editor-hero)
+    ) {
+        max-width: none;
+        padding-inline: 0;
+        padding-top: 0;
+    }
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section :is(.container, .voodbuilder-gjs-container) {
-    @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+/*
+ * Default measure for classic section containers (catalog blocks).
+ * :where() → specificity 0; author max-w-* / mx-* / w-* always win.
+ * Same contract as EditorCanvas::frameStyle for editor parity.
+ */
+@layer components {
+    :where(
+        .voodbuilder-editor-section > .container:not(.voodbuilder-hero-media),
+        .voodbuilder-editor-section > .voodbuilder-editor-container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-editor-section .container:not(.voodbuilder-hero-media),
+        .VPRichPage--landing .voodbuilder-editor-section .voodbuilder-editor-container:not(.voodbuilder-hero-media),
+        footer.voodbuilder-editor-footer > .container,
+        footer.voodbuilder-editor-footer > .voodbuilder-editor-container,
+        footer.voodbuilder-editor-dynamic > .container,
+        footer.voodbuilder-editor-dynamic > .voodbuilder-editor-container
+    ) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+        /* Default horizontal gutter (px-5). Author px-* / px-0 utilities win (@layer utilities). */
+        padding-inline: 1.25rem;
+        box-sizing: border-box;
+    }
+
+    /* Layout package containers: fill parent only — never invent a max-width. */
+    :where(
+        [data-voodbuilder-layout='container'].vb-layout-row,
+        [data-voodbuilder-layout='container'][data-vb-layout-preset]
+    ) {
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
+/*
+ * Keep section media 1:1 between Editor canvas and published pages.
+ * @layer + :where so h-* / max-h-* utilities on content images still win.
+ */
+@layer components {
+    :where(
+        .voodbuilder-editor-section img:not(.voodbuilder-hero-media__img),
+        [data-voodbuilder-chrome-shell] .voodbuilder-editor-section img:not(.voodbuilder-hero-media__img)
+    ) {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+.voodbuilder-editor-section .voodbuilder-hero-media,
+.VPRichPage--landing .voodbuilder-editor-section .voodbuilder-hero-media,
+[data-voodbuilder-chrome-shell] .voodbuilder-editor-section .voodbuilder-hero-media {
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+}
+
+/*
+ * Nav brand logos: let Tailwind height utilities (h-6…h-12 from logo_size) control
+ * size. Only cap horizontal overflow so wide bitmaps do not blow the header.
+ * Full-width brand option opts out of the max-width cap.
+ */
+header[role='banner'] a:not([data-voodbuilder-brand-logo-full='1']) img.vb-brand-logo,
+.voodbuilder-mobile-nav__brand img.vb-brand-logo {
+    width: auto;
+    max-width: min(100%, 16.25rem);
+    object-fit: contain;
+}
+
+header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
+[data-voodbuilder-footer-brand-link][data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo {
+    width: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/*
+ * Classic landing section width/padding traits (LandingBlockSupport).
+ * Bleed stays unlayered (intentional full-bleed chrome, like hero breakout).
+ * Contained/narrow/full/padding-* are soft defaults — @layer + :where so
+ * author mx-* / max-w-* / px-* / py-* utilities always win.
+ */
 .VPRichPage--landing > .vp-landing-section--bleed {
     @apply relative left-1/2 w-screen max-w-none -translate-x-1/2;
 }
 
-.VPRichPage--landing > .vp-landing-section--full {
-    @apply w-full max-w-none px-0;
-}
+@layer components {
+    :where(.VPRichPage--landing > .vp-landing-section--full) {
+        width: 100%;
+        max-width: none;
+        padding-inline: 0;
+    }
 
-.VPRichPage--landing > .vp-landing-section--contained {
-    @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 md:px-8;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--contained) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+        padding-inline: 1.5rem;
+    }
 
-.VPRichPage--landing > .vp-landing-section--narrow {
-    @apply mx-auto w-full max-w-3xl px-6 md:px-8;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--narrow) {
+        width: 100%;
+        max-width: 48rem; /* max-w-3xl */
+        margin-inline: auto;
+        padding-inline: 1.5rem;
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-none {
-    @apply py-0;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--padding-none) {
+        padding-block: 0;
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-default {
-    @apply py-10 md:py-14;
-}
+    :where(.VPRichPage--landing > .vp-landing-section--padding-default) {
+        padding-block: 2.5rem; /* py-10 */
+    }
 
-.VPRichPage--landing > .vp-landing-section--padding-large {
-    @apply py-16 md:py-24;
+    :where(.VPRichPage--landing > .vp-landing-section--padding-large) {
+        padding-block: 4rem; /* py-16 */
+    }
+
+    @media (min-width: 48rem) {
+        :where(.VPRichPage--landing > .vp-landing-section--contained),
+        :where(.VPRichPage--landing > .vp-landing-section--narrow) {
+            padding-inline: 2rem; /* md:px-8 */
+        }
+
+        :where(.VPRichPage--landing > .vp-landing-section--padding-default) {
+            padding-block: 3.5rem; /* md:py-14 */
+        }
+
+        :where(.VPRichPage--landing > .vp-landing-section--padding-large) {
+            padding-block: 6rem; /* md:py-24 */
+        }
+    }
 }
 
 .vp-landing-hero {
@@ -125,9 +443,14 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-vp-text-2;
 }
 
-/* GrapesJS layout video blocks (YouTube/Vimeo/HTML5) on published pages */
+/*
+ * Video hosts — same rules in editor canvas and published pages.
+ * Do NOT key off data-gjs-type: those attributes are stripped on publish
+ * (EditorHtmlSanitizer::stripEditorOnlyAttributes). Stable class: .vb-video-host.
+ * Exclude full-bleed hero backgrounds (cover-scaled in theme.css).
+ */
 :is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"],
-.vb-video-host {
+.vb-video-host:not(.voodbuilder-hero-media__iframe):not(.voodbuilder-hero-media__video):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media video) {
     position: relative;
     display: block;
     width: 100%;
@@ -138,8 +461,14 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     overflow: hidden;
 }
 
-:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"] > :is(iframe, video, .gjs-no-pointer),
-:is(body.voodbuilder-canvas-ready, .VPRichPage) .vb-video-facade--fill {
+/*
+ * Fill media inside a host wrapper (canvas div[data-gjs-type=video], or any
+ * .vb-video-host that is not the media element itself).
+ */
+:is(body.voodbuilder-canvas-ready, .VPRichPage) [data-gjs-type="video"] > :is(iframe, video, .gjs-no-pointer, .vb-video-facade),
+.vb-video-host:not(iframe):not(video) > :is(iframe, video, .gjs-no-pointer, .vb-video-facade),
+:is(body.voodbuilder-canvas-ready, .VPRichPage) .vb-video-facade--fill,
+.vb-video-facade--fill {
     position: absolute !important;
     inset: 0;
     width: 100% !important;
@@ -161,11 +490,12 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     max-width: 100%;
 }
 
+/* Naked embeds (no .vb-video-host / facade) — keep 16:9 without fighting host children. */
 .VPRichPage :is(
-    video:not([data-gjs-type="video"] *),
-    iframe[src*='youtube']:not([data-gjs-type="video"] *),
-    iframe[src*='youtube-nocookie']:not([data-gjs-type="video"] *),
-    iframe[src*='vimeo']:not([data-gjs-type="video"] *)
+    video:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade *):not(.voodbuilder-hero-media video):not(.voodbuilder-hero-media__video),
+    iframe[src*='youtube']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe),
+    iframe[src*='youtube-nocookie']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe),
+    iframe[src*='vimeo']:not(.vb-video-host):not(.vb-video-host *):not(.vb-video-facade):not(.vb-video-facade *):not(.voodbuilder-hero-media iframe):not(.voodbuilder-hero-media__iframe)
 ) {
     display: block;
     width: 100% !important;
@@ -212,29 +542,165 @@ main > :where(.mx-auto, .voodbuilder-site-shell, .voodbuilder-home-shell, .voodb
     @apply absolute inset-0 h-full w-full border-0;
 }
 
+/*
+ * Content-driven height by default (footer follows content, like the editor).
+ * Do not force shells to fill the viewport — that pushed chrome footers below
+ * the fold on short pages. Opt-in sticky footer: body.voodbuilder-sticky-footer.
+ */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-events-shell:has(.VPRichPage--landing) {
-    @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
+    @apply bg-vp-bg;
+}
+
+body.voodbuilder-sticky-footer > main {
+    flex: 1 1 auto;
+}
+
+body.voodbuilder-sticky-footer .voodbuilder-events-shell:has(.VPRichPage--landing) {
+    min-height: calc(100vh - 4rem);
+}
+
+body:has(> [data-voodbuilder-chrome-shell]) :is(
+    .voodbuilder-site-shell,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell
+) {
+    min-height: auto;
 }
 
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-landing-shell:has(.VPRichPage--landing) {
     @apply max-w-none p-0;
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
+/*
+ * Access gate: keep shell + skeleton at layout width (80rem), even on home/landing.
+ * Without this, :has(.VPRichPage--landing) / full-width home shells stretch the gate.
+ */
+.VPRichPage--gate {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+:is(
+    .voodbuilder-site-content,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell,
+    .voodbuilder-site-shell
+):has(.VPRichPage--gate) {
+    max-width: 80rem !important;
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+    padding-block: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.voodbuilder-page-gate {
+    max-width: 80rem;
+    width: 100%;
+    margin-inline: auto;
+}
+
+/*
+ * Gated pages: lock viewport height so nav + main + footer fit without page scroll.
+ * Card stays centered in the remaining main area (gap from nav and footer).
+ */
+body.voodbuilder-page-gated {
+    height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+}
+
+body.voodbuilder-page-gated > main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.voodbuilder-page-gated > main > :is(
+    .voodbuilder-site-shell,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell,
+    .voodbuilder-full-width-shell
+) {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+body.voodbuilder-page-gated :is(
+    .voodbuilder-site-content,
+    .voodbuilder-home-shell,
+    .voodbuilder-landing-shell
+) {
+    min-height: 0 !important;
+    padding-block: 0 !important;
+}
+
+body.voodbuilder-page-gated .voodbuilder-page-gate > .relative {
+    /* Keep breathing room from nav/footer without forcing scroll */
+    margin-block: 0.75rem;
+}
+
+.VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) {
     @apply text-vp-text-2;
 }
 
-.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered) {
+.VPRichPage :is(.voodbuilder-editor-component-instance, .voodbuilder-component-rendered) {
     position: relative;
     min-height: 0;
     overflow: visible;
     outline: none;
 }
 
-.VPRichPage :is(.voodbuilder-gjs-component-instance, .voodbuilder-component-rendered):has(.voodbuilder-pasted-component) {
+.VPRichPage :is(.voodbuilder-editor-component-instance, .voodbuilder-component-rendered):has(.voodbuilder-pasted-component) {
     min-height: 0;
 }
 
-.VPRichPage--landing .voodbuilder-gjs-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
+.VPRichPage--landing .voodbuilder-editor-section:is(.bg-vp-bg, .bg-vp-bg-elv, .bg-vp-bg-alt, .bg-vp-gray-soft, .bg-white) :is(h1, h2, h3, h4, .title-font):not(:where([class*='text-white'], [class*='text-vp-text'], [class*='text-gray-'], [class*='text-indigo-'], [class*='text-red-'], [class*='text-slate-'], [class*='text-zinc-'])) {
     @apply text-vp-text-1;
+}
+
+/* Core Image caption (figure.vb-image) — below / overlay / none.
+ * Do not force w-full here: in flex/grid slots the figure must keep the
+ * image's width utilities (md:w-1/2, lg:w-3/5, …) or the media drops a row. */
+.vb-image {
+    @apply relative m-0;
+}
+
+.vb-image > img {
+    @apply block w-full h-auto;
+}
+
+.vb-image__caption {
+    @apply m-0 text-sm leading-relaxed text-vp-text-2;
+}
+
+.vb-image--caption-below .vb-image__caption {
+    @apply mt-2;
+}
+
+/* Overlay caption is absolute to the figure. In flex/grid rows the figure
+ * otherwise stretches to the tall sibling (e.g. step list) and the caption
+ * sits in empty space below the bitmap — keep height tied to the image. */
+.vb-image--caption-overlay {
+    @apply relative overflow-hidden self-start;
+    height: fit-content;
+    max-height: fit-content;
+}
+
+.vb-image--caption-overlay .vb-image__caption {
+    @apply absolute inset-x-0 bottom-0 z-10 px-3 py-2 text-white;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.65), transparent);
 }

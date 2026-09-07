@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Npm For Voodbuilder.
+ */
 final class ConfigureNpmForVoodbuilder
 {
     /**
@@ -103,9 +106,9 @@ final class ConfigureNpmForVoodbuilder
      */
     public static function requiredDevDependencies(): array
     {
-        return [
-            '@fontsource-variable/inter' => '^5.2.8',
-            '@fontsource/jetbrains-mono' => '^5.2.8',
+        $base = [
+            '@jodit/image-editor' => '^0.2.5',
+            '@tabler/icons' => '^3.45.0',
             '@tailwindcss/vite' => '^4.3.0',
             'grapesjs' => '^0.23.2',
             'grapesjs-blocks-basic' => '^1.0.2',
@@ -115,7 +118,58 @@ final class ConfigureNpmForVoodbuilder
             'grapesjs-tabs' => '^1.0.6',
             'grapesjs-tailwindcss-plugin' => '^0.1.10',
             'tailwindcss' => '^4.3.0',
+            'tailwindcss-animated' => '^2.0.0',
         ];
+
+        $fonts = self::fontsourcePackagesFromCatalog();
+
+        $merged = array_merge($base, $fonts);
+        ksort($merged);
+
+        return $merged;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fontsourcePackagesFromCatalog(): array
+    {
+        $path = dirname(__DIR__, 2).'/resources/fonts/core-catalog.json';
+
+        if (! is_file($path)) {
+            return [
+                '@fontsource-variable/inter' => '^5.2.8',
+                '@fontsource/jetbrains-mono' => '^5.2.8',
+            ];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $packages = [];
+
+        foreach ($decoded as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            if (($entry['provider'] ?? '') !== 'fontsource') {
+                continue;
+            }
+
+            $package = trim((string) ($entry['package'] ?? ''));
+
+            if ($package === '') {
+                continue;
+            }
+
+            $packages[$package] = '^5.2.8';
+        }
+
+        return $packages;
     }
 
     /**
@@ -142,21 +196,30 @@ final class ConfigureNpmForVoodbuilder
             $scripts = [];
         }
 
+        // Tabler catalog is built by the Vite plugin (vite.config.js); avoid running the
+        // Node script twice during `npm run build`.
+        $preferredBuild = 'php artisan voodbuilder:sync-theme-imports && vite build';
         $build = $scripts['build'] ?? null;
 
-        if (! is_string($build) || $build === '') {
-            $scripts['build'] = 'php artisan voodbuilder:sync-theme-imports && vite build';
+        if (! is_string($build) || $build === '' || $build === 'vite build') {
+            $scripts['build'] = $preferredBuild;
             $package['scripts'] = $scripts;
 
             return;
         }
 
-        if (str_contains($build, 'voodbuilder:sync-theme-imports') || ! str_contains($build, 'vite build')) {
-            return;
-        }
+        if (str_contains($build, 'build-tabler-icons-catalog') && str_contains($build, 'vite build')) {
+            $scripts['build'] = preg_replace(
+                '#(?:^|&&\s*)node\s+packages/voodflow/voodbuilder/bin/build-tabler-icons-catalog\.js\s*(?:&&\s*)?#',
+                '',
+                $build,
+            ) ?? $build;
+            $scripts['build'] = trim(preg_replace('#\s*&&\s*&&\s*#', ' && ', $scripts['build']) ?? $scripts['build']);
 
-        if ($build === 'vite build') {
-            $scripts['build'] = 'php artisan voodbuilder:sync-theme-imports && vite build';
+            if ($scripts['build'] === '' || $scripts['build'] === 'vite build') {
+                $scripts['build'] = $preferredBuild;
+            }
+
             $package['scripts'] = $scripts;
         }
     }

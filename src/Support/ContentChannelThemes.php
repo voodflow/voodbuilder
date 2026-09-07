@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Content Channel Themes.
+ */
 final class ContentChannelThemes
 {
     public static function resolveForChannel(PublicContentChannel $channel): ?string
@@ -27,7 +30,7 @@ final class ContentChannelThemes
     }
 
     /**
-     * Events and exhibitors often share the same visual theme (e.g. Soundmit).
+     * Events and exhibitors often share the same visual theme.
      * When one landing channel has an explicit override, the other can inherit it.
      */
     public static function peerLandingThemeFor(string $channelId): ?string
@@ -67,7 +70,13 @@ final class ContentChannelThemes
             return null;
         }
 
-        return SubThemeResolver::normalize($default);
+        $normalized = SubThemeResolver::normalize($default);
+
+        if (! ThemeBindings::isValidChannelBinding($channelId, $normalized)) {
+            return null;
+        }
+
+        return $normalized;
     }
 
     /**

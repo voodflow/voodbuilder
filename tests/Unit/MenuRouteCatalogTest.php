@@ -10,15 +10,13 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class MenuRouteCatalogTest extends TestCase
 {
-    protected function setUp(): void
+    protected function defineWebRoutes($router): void
     {
-        parent::setUp();
-
-        Route::get('/', fn () => 'home')->name('home');
-        Route::get('/tutorials', fn () => 'tutorials')->name('vtuts.index');
-        Route::get('/tutorials/{slug}', fn () => 'show')->name('vtuts.show');
-        Route::get('/tutorials/series/{seriesSlug}/{vtutSlug}', fn () => 'lesson')->name('vtuts.series.lesson');
-        Route::get('/admin', fn () => 'admin')->name('filament.admin.pages.dashboard');
+        $router->get('/', fn () => 'home')->name('home');
+        $router->get('/tutorials', fn () => 'tutorials')->name('vtuts.index');
+        $router->get('/tutorials/{slug}', fn () => 'show')->name('vtuts.show');
+        $router->get('/tutorials/series/{seriesSlug}/{vtutSlug}', fn () => 'lesson')->name('vtuts.series.lesson');
+        $router->get('/admin', fn () => 'admin')->name('filament.admin.pages.dashboard');
     }
 
     public function test_builds_active_patterns_for_route_groups(): void

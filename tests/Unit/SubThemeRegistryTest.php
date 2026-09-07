@@ -18,9 +18,9 @@ class SubThemeRegistryTest extends TestCase
 
         $this->assertTrue($registry->exists('docs'));
         $this->assertTrue($registry->exists('site'));
-        $this->assertTrue($registry->exists('blog'));
-        $this->assertTrue($registry->exists('news'));
-        $this->assertSame('Landing page', $registry->label('site'));
+        $this->assertFalse($registry->exists('blog'));
+        $this->assertFalse($registry->exists('news'));
+        $this->assertSame('VoodBuilder base', $registry->label('site'));
     }
 
     public function test_it_returns_layout_overrides_for_builtin_themes(): void
@@ -41,8 +41,6 @@ class SubThemeRegistryTest extends TestCase
 
         $this->assertTrue($registry->supportsCapability('docs', SubThemeCapability::Doc));
         $this->assertTrue($registry->supportsCapability('site', SubThemeCapability::Landing));
-        $this->assertTrue($registry->supportsCapability('blog', SubThemeCapability::Article));
-        $this->assertTrue($registry->supportsCapability('news', SubThemeCapability::Article));
         $this->assertFalse($registry->supportsCapability('docs', SubThemeCapability::Landing));
     }
 
@@ -54,12 +52,12 @@ class SubThemeRegistryTest extends TestCase
         $marketingIds = $registry->idsByType(SubThemeType::Marketing);
 
         $this->assertContains('docs', $contentIds);
-        $this->assertContains('blog', $contentIds);
-        $this->assertContains('news', $contentIds);
+        $this->assertNotContains('blog', $contentIds);
+        $this->assertNotContains('news', $contentIds);
         $this->assertContains('site', $marketingIds);
         $this->assertArrayHasKey('site', $registry->marketingOptions());
         $this->assertArrayHasKey('docs', $registry->contentOptions());
-        $this->assertArrayHasKey('blog', $registry->contentOptions());
+        $this->assertArrayNotHasKey('blog', $registry->contentOptions());
     }
 
     public function test_custom_registration_extends_registry(): void
@@ -96,12 +94,19 @@ class SubThemeRegistryTest extends TestCase
         $this->assertArrayHasKey('docs', $registry->optionsForCapability(SubThemeCapability::Doc));
     }
 
-    public function test_blog_channel_offers_article_themes(): void
+    public function test_article_channel_uses_registered_article_themes(): void
     {
+        $registry = app(SubThemeRegistry::class);
+        $registry->register('stories', [
+            'label' => 'Stories',
+            'type' => 'content',
+            'capabilities' => ['article'],
+        ]);
+
         $options = ThemeBindings::selectOptionsForChannel('blog');
 
-        $this->assertArrayHasKey('blog', $options);
-        $this->assertArrayHasKey('news', $options);
-        $this->assertNotSame([], $options);
+        $this->assertArrayHasKey('stories', $options);
+        $this->assertArrayNotHasKey('blog', $options);
+        $this->assertArrayNotHasKey('news', $options);
     }
 }

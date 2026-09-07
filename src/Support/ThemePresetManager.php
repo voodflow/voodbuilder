@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Preset Manager.
+ */
 final class ThemePresetManager
 {
     /**

@@ -11,10 +11,14 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use SolutionForest\FilamentNestableTree\Tree;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Navigation Menu Item Tree.
+ */
 class NavigationMenuItemTree
 {
     public const MAX_DEPTH = 2;
@@ -26,6 +30,7 @@ class NavigationMenuItemTree
             ->parentKeyField('parent_id')
             ->records(fn (): array => static::build($menu))
             ->maxDepth(static::MAX_DEPTH)
+            ->maxVisibleDepth(static::MAX_DEPTH)
             ->searchable()
             ->getRecordUsing(
                 fn (int|string $id): ?NavigationMenuItem => NavigationMenuItem::query()
@@ -133,10 +138,26 @@ class NavigationMenuItemTree
             ->values()
             ->map(function (NavigationMenuItem $item) use ($items, $depth): array {
                 return array_merge($item->toArray(), [
+                    'type_label' => static::resolveTypeLabel($item),
                     'children' => static::nestItems($items, $item->id, $depth + 1),
                 ]);
             })
             ->all();
+    }
+
+    protected static function resolveTypeLabel(NavigationMenuItem $item): string
+    {
+        if ($item->type instanceof MenuItemType) {
+            return (string) $item->type->getLabel();
+        }
+
+        $handler = $item->registeredTypeHandler();
+
+        if ($handler !== null) {
+            return $handler->label();
+        }
+
+        return filled($item->type) ? (string) $item->type : '';
     }
 
     /** @param  array<int, array<string, mixed>>  $nodes */

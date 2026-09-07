@@ -10,6 +10,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Partner Banner Block.
+ */
 class PartnerBannerBlock extends RichContentCustomBlock
 {
     public static function getId(): string

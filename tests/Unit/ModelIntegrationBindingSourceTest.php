@@ -6,8 +6,8 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingContext;
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\ModelIntegrationLatestBindingSource;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\ModelIntegrationLatestBindingSource;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ModelIntegrationBindingSourceTest extends TestCase
@@ -54,6 +54,38 @@ class ModelIntegrationBindingSourceTest extends TestCase
             '/storage/uploads/cover.webp',
             $source->resolve('cover_image', BindingContext::forPage(null)),
         );
+    }
+
+    public function test_exposes_relation_fields_in_catalog_groups(): void
+    {
+        $integration = new ModelIntegration([
+            'name' => 'Tutorials',
+            'model_class' => PlainImageRecord::class,
+            'model_alias' => 'vtut',
+            'fields' => [
+                'essential' => ['title'],
+                'relations' => [
+                    [
+                        'name' => 'category',
+                        'alias' => 'category',
+                        'fields' => ['name', 'slug'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $source = new ModelIntegrationLatestBindingSource($integration);
+        $fields = collect($source->fields());
+
+        $this->assertTrue($fields->contains(fn ($field) => $field->id === 'title'));
+        $this->assertTrue($fields->contains(fn ($field) => $field->id === 'category.name'));
+        $this->assertTrue($fields->contains(fn ($field) => $field->id === 'category.slug'));
+
+        $categoryName = $fields->first(fn ($field) => $field->id === 'category.name');
+
+        $this->assertNotNull($categoryName?->group);
+        $this->assertStringContainsString('Category', (string) $categoryName->group);
+        $this->assertArrayHasKey('group', $categoryName->toArray());
     }
 }
 

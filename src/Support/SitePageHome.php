@@ -9,6 +9,9 @@ use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Page Home.
+ */
 final class SitePageHome
 {
     /**

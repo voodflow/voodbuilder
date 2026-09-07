@@ -5,15 +5,22 @@
 
 @import './fonts.css';
 @import 'tailwindcss';
+@import 'tailwindcss-animated';
 @import './mobile-nav.css';
 @import '../themes/site/theme.css';
-@import '../themes/blog/theme.css';
-@import '../themes/news/theme.css';
 @import './landing.css';
+@import './editor/chrome-block-utilities.css';
+@import './editor/animated-blocks.css';
+/* Managed forms (.vforms-*) CSS is owned by voodflow/vforms and injected when
+ * that companion is present — do not @import form packages here. */
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 @custom-variant mac (&:where(.mac, .mac *));
 
+/*
+ * Public theme scan: chrome/views only.
+ * Section-block catalogs and Editor JS stay in section-utilities.css (canvas/editor).
+ */
 @source '../views/**/*.blade.php';
 @source '../../../../../resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vtuts/resources/views/**/*.blade.php';
@@ -23,10 +30,25 @@
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
-@source '../grapesjs/section-catalog.html';
-@source '../grapesjs/soundmit-landing-catalog.html';
-@source '../grapesjs/voodbuilder-home-landing-catalog.html';
-@source not '../../tests/**/*.php';
+@source '../../../../../packages/voodflow/vpopups/resources/js/editor/popups-ui.js';
+@source '../js/editor/popups-ui.js';
+/* Style Manager animation utilities (tailwindcss-animated) — keep in public theme so
+   published pages match the Editor even when page JIT CSS is stale/partial. */
+@source '../js/editor/style-animation-sector.js';
+@source '../js/editor/style-animation-safelist.js';
+@source inline("animate-logo-marquee [animation-duration:var(--logo-marquee-duration,28s)] [animation-direction:reverse] hover:[animation-play-state:paused]");
+@source inline("animate-spin-reverse-slow");
+@source inline("animate-duration-2000 animate-duration-3000 animate-duration-5000 animate-duration-8000 animate-duration-10000 animate-duration-15000 animate-duration-20000 animate-duration-30000");
+@source inline("grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 grid-cols-6 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-4");
+@source inline("grid-cols-[minmax(0,1fr)_minmax(0,2fr)] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,3fr)] grid-cols-[minmax(0,3fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]");
+@source inline("w-full vb-layout-row vb-layout-block vb-layout-div gap-4 gap-8 min-h-16 min-w-0 max-w-none");
+/* Catalog/page blocks store px-* / py-* on containers; keep utilities in the public theme. */
+@source inline("px-0 px-4 px-5 px-6 px-8 py-0 py-8 py-10 py-12 py-16 py-20 py-24 md:px-6 md:px-8");
+@source inline("p-0 p-1 p-2 p-3 p-4 p-5 p-6 p-8 p-10 p-12 p-14 p-16 p-20 p-24 m-0 m-1 m-2 m-3 m-4 m-5 m-6 m-8 m-auto mt-0 mt-2 mt-4 mt-6 mt-8 mb-0 mb-2 mb-4 mb-6 mb-8 mx-auto my-4 pt-4 pt-8 pb-4 pb-8 pl-4 pl-8 pr-4 pr-8");
+@source inline("uppercase lowercase capitalize normal-case underline overline line-through no-underline tracking-tighter tracking-tight tracking-normal tracking-wide tracking-wider tracking-widest");
+@source not '../../tests/**/*';
+@source not '../../../../../packages/**/tests/**/*';
+@source not '../../../../../vendor/**/tests/**/*';
 
 @theme {
     --breakpoint-vp: 60rem;
@@ -53,7 +75,32 @@
     --spacing-vp-sidebar: 17rem;
     --spacing-vp-aside: 14rem;
     --width-vp-content: 43rem;
-    --width-vp-layout: 90rem;
+    --width-vp-layout: 80rem;
+
+    /* Logo marquee — used by Logo scroll blocks via animate-logo-marquee */
+    --animate-logo-marquee: logo-marquee var(--logo-marquee-duration, 28s) linear infinite;
+    /* Slow reverse spin for decorative SVG watermarks (Tailwind Playground parity) */
+    --animate-spin-reverse-slow: spin-reverse-slow 18s linear infinite;
+}
+
+@keyframes logo-marquee {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes spin-reverse-slow {
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
 }
 
 .dark {
@@ -154,6 +201,8 @@
         --vx-header-muted: var(--color-vp-text-2);
     }
 
+    html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg,
+    html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg-alt,
     html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
     html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt {
         background-color: var(--vx-header-bg) !important;
@@ -192,12 +241,182 @@
 }
 
 @layer components {
+    /**
+     * Full-bleed hero media — must ship on the public theme (not only canvas
+     * section-utilities), otherwise editor cover ≠ live letterboxed image.
+     */
+    .voodbuilder-hero-media {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        /* Never inherit layout-container width (mx-auto / max-w) if mis-tagged. */
+        width: auto;
+        max-width: none;
+        margin-inline: 0;
+        /* Let the content layer / hit shield own the cursor — YouTube title
+           otherwise appears on hover wherever the layout container does not cover. */
+        pointer-events: none;
+    }
+
+    .voodbuilder-hero-media__img,
+    .voodbuilder-hero-media__video:where(video) {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        object-fit: var(--vb-object-fit, cover);
+        object-position: var(--vb-object-position, center);
+    }
+
+    /**
+     * YouTube / Vimeo background: keep a true 16:9 iframe and cover the host.
+     * Viewport vw/vh math fails on tall mobile heroes (70vh) and letterboxes the
+     * player (chrome visible). Size against the media host via container queries,
+     * then scale slightly so provider UI at the edges stays cropped.
+     */
+    .voodbuilder-hero-media__embed,
+    .voodbuilder-hero-media:has(> iframe) {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background-color: inherit;
+        container-type: size;
+        container-name: vb-hero-media;
+    }
+
+    .voodbuilder-hero-media iframe,
+    .voodbuilder-hero-media__iframe {
+        position: absolute !important;
+        top: 50%;
+        left: 50%;
+        border: 0 !important;
+        pointer-events: none !important;
+        max-width: none !important;
+        max-height: none !important;
+        aspect-ratio: auto !important;
+        /* CQ fallback; hero-video-runtime.js overwrites with px cover on boot. */
+        width: 177.78cqh !important;
+        height: 100cqh !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        /* Scale past 1.2 so the YouTube title strip (top) stays outside overflow. */
+        transform: translate(-50%, -50%) scale(1.35);
+        transition: opacity 0.35s ease;
+    }
+
+    @container vb-hero-media (min-aspect-ratio: 16/9) {
+        .voodbuilder-hero-media iframe,
+        .voodbuilder-hero-media__iframe {
+            width: 100cqw !important;
+            height: calc(100cqw * 9 / 16) !important;
+        }
+    }
+
+    @container vb-hero-media (max-aspect-ratio: 16/9) {
+        .voodbuilder-hero-media iframe,
+        .voodbuilder-hero-media__iframe {
+            height: 100cqh !important;
+            width: calc(100cqh * 16 / 9) !important;
+        }
+    }
+
+    /* Runtime sets .is-pending before load so YouTube chrome never flashes. */
+    .voodbuilder-hero-media iframe.is-pending,
+    .voodbuilder-hero-media__iframe.is-pending {
+        opacity: 0;
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-position='top'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        transform: translate(-50%, -40%) scale(1.35);
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-position='bottom'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        transform: translate(-50%, -60%) scale(1.35);
+    }
+
+    /**
+     * Re-enable hit-testing above the iframe (parent has pointer-events: none)
+     * so empty areas beside a max-width content column never hover YouTube.
+     */
+    .voodbuilder-hero-media__hit {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: auto;
+    }
+
+    .voodbuilder-editor-section:has(> .voodbuilder-hero-media) > [data-voodbuilder-role='content'],
+    .voodbuilder-editor-section:has(> .voodbuilder-hero-media) > .voodbuilder-editor-container {
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-fit='contain'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        width: 100% !important;
+        height: 100% !important;
+        transform: translate(-50%, -50%);
+    }
+
+    .voodbuilder-hero-media__embed[data-vb-embed-fit='fill'] :is(iframe, .voodbuilder-hero-media__iframe) {
+        width: 100% !important;
+        height: 100% !important;
+        transform: translate(-50%, -50%);
+    }
+
+    .voodbuilder-hero-media__shade {
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+    }
+
+    .voodbuilder-media-frame {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+    }
+
+    .voodbuilder-media-frame > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .voodbuilder-media-frame--thumb {
+        aspect-ratio: 7 / 6;
+        width: 7rem;
+        height: 6rem;
+        flex-shrink: 0;
+        border-radius: 0.5rem;
+    }
+
     .voodbuilder-header-icon-btn {
-        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1;
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1;
     }
 
     .voodbuilder-header-icon-btn svg {
         @apply h-5 w-5;
+    }
+
+    .site-notification-bell [role='menu'] {
+        overflow-x: hidden;
+        width: min(24rem, calc(100vw - 1.5rem));
+    }
+
+    .site-notification-bell [role='menu'] :is(a, button) {
+        white-space: normal;
+    }
+
+    .site-notification-bell [role='menu'] :is(a, button, p, span) {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
     }
 
     .voodbuilder-nav-profile-menu__dropdown {
@@ -221,6 +440,73 @@
 
     .voodbuilder-nav-profile-menu__dropdown[hidden] {
         display: none !important;
+    }
+
+    /* Soft measure — :where so author max-w-* / mx-* utilities win. */
+    :where(.voodbuilder-editor-container) {
+        @apply mx-auto w-full max-w-[var(--width-vp-layout)];
+    }
+
+    /* Content-width toolbar — beat the default container measure above. */
+    .voodbuilder-editor-container[data-voodbuilder-content-width='normal'],
+    .container[data-voodbuilder-content-width='normal'] {
+        max-width: 80rem;
+        margin-inline: auto;
+        width: 100%;
+    }
+
+    .voodbuilder-editor-container[data-voodbuilder-content-width='custom'],
+    .container[data-voodbuilder-content-width='custom'] {
+        max-width: var(--voodbuilder-element-content-max, var(--voodbuilder-page-content-max, 80rem));
+        margin-inline: auto;
+        width: 100%;
+    }
+
+    .voodbuilder-editor-container[data-voodbuilder-content-width='full'],
+    .container[data-voodbuilder-content-width='full'] {
+        max-width: none;
+        margin-inline: 0;
+        width: 100%;
+    }
+
+    /*
+     * Layout builder containers (Section → Container): fill the parent only.
+     * Author max-w-* / mx-auto on the Section (or Container) must control measure.
+     * Zero-specificity :where so utilities always win over this default.
+     */
+    :where(
+        [data-voodbuilder-layout='container'].voodbuilder-editor-container,
+        [data-voodbuilder-layout='container'].vb-layout-row
+    ) {
+        max-width: none;
+        margin-inline: 0;
+        width: 100%;
+    }
+
+    .body-font {
+        @apply font-sans text-vp-text-2 antialiased;
+    }
+
+    .title-font {
+        @apply font-sans tracking-tight;
+    }
+
+    /* Soft footer gutters — :where so author px-* / max-w-* / mx-* win. */
+    :where(
+        footer.voodbuilder-editor-footer > :is(.container, .voodbuilder-editor-container),
+        footer.voodbuilder-editor-dynamic > :is(.container, .voodbuilder-editor-container),
+        [data-voodbuilder-chrome-shell] footer > :is(.container, .voodbuilder-editor-container)
+    ) {
+        width: 100%;
+        max-width: var(--width-vp-layout, 80rem);
+        margin-inline: auto;
+        box-sizing: border-box;
+        padding-inline: 1.25rem;
+    }
+
+    footer.voodbuilder-editor-footer,
+    footer.voodbuilder-editor-dynamic {
+        @apply w-full;
     }
 
     .vp-doc {
@@ -503,12 +789,13 @@ summary,
     cursor: pointer;
 }
 
-.voodbuilder-grapesjs-edit-launch {
+.voodbuilder-editor-edit-launch {
+    /* Desktop-only floating CTA — hidden on mobile / drawer viewports. */
+    display: none;
     position: fixed;
-    right: 1.25rem;
-    bottom: 1.25rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
     z-index: 55;
-    display: inline-flex;
     align-items: center;
     margin: 0;
     border-radius: 9999px;
@@ -523,15 +810,14 @@ summary,
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.voodbuilder-grapesjs-edit-launch:hover {
+.voodbuilder-editor-edit-launch:hover {
     opacity: 0.92;
     transform: translateY(-1px);
 }
 
 @media (min-width: 768px) {
-    .voodbuilder-grapesjs-edit-launch {
-        right: 1.5rem;
-        bottom: 1.5rem;
+    .voodbuilder-editor-edit-launch {
+        display: inline-flex;
     }
 }
 
@@ -563,40 +849,581 @@ summary,
     }
 }
 
+/*
+ * Brand logos (nav/footer): dedicated visibility — do not rely on md: utilities,
+ * which can compile unscoped in this Tailwind build and show desktop+mobile together.
+ */
+.vb-brand-logo {
+    display: none !important;
+}
+
+@media (width < 60rem) {
+    html:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light,
+    html:not(.dark) header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--light,
+    html:not(.dark) footer .vb-brand-logo--mobile.vb-brand-logo--light {
+        display: block !important;
+    }
+
+    html.dark .vb-brand-logo--mobile.vb-brand-logo--dark,
+    html.dark header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+    html.dark footer .vb-brand-logo--mobile.vb-brand-logo--dark {
+        display: block !important;
+    }
+}
+
+@media (width >= 60rem) {
+    html:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light,
+    html:not(.dark) header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--light,
+    html:not(.dark) footer .vb-brand-logo--desktop.vb-brand-logo--light {
+        display: block !important;
+    }
+
+    html.dark .vb-brand-logo--desktop.vb-brand-logo--dark,
+    html.dark header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+    html.dark footer .vb-brand-logo--desktop.vb-brand-logo--dark {
+        display: block !important;
+    }
+}
+
+/* Canvas device mode (set by Editor) — beats theme media when frame width disagrees. */
+html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile,
+html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile,
+html[data-vb-logo-mode='desktop'] footer .vb-brand-logo--mobile,
+body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile {
+    display: none !important;
+}
+
+html[data-vb-logo-mode='desktop']:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop']:not(.dark) header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop']:not(.dark) footer .vb-brand-logo--desktop.vb-brand-logo--light,
+body[data-vb-logo-mode='desktop']:not(.dark) .vb-brand-logo--desktop.vb-brand-logo--light {
+    display: block !important;
+}
+
+html.dark[data-vb-logo-mode='desktop'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='desktop'] footer .vb-brand-logo--desktop.vb-brand-logo--dark {
+    display: block !important;
+}
+
+html[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop,
+html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--desktop,
+html[data-vb-logo-mode='mobile'] footer .vb-brand-logo--desktop,
+body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop {
+    display: none !important;
+}
+
+html[data-vb-logo-mode='mobile']:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile']:not(.dark) header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile']:not(.dark) footer .vb-brand-logo--mobile.vb-brand-logo--light,
+body[data-vb-logo-mode='mobile']:not(.dark) .vb-brand-logo--mobile.vb-brand-logo--light {
+    display: block !important;
+}
+
+html.dark[data-vb-logo-mode='mobile'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo--mobile.vb-brand-logo--dark {
+    display: block !important;
+}
+
+/*
+ * Logo part toggles (nav/footer): beat device logo display rules and
+ * display:contents wrappers so Show logo is independent from Show site name.
+ */
+[data-voodbuilder-chrome-part="logo"].hidden .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"].hidden [data-voodbuilder-brand-placeholder],
+[data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"][data-voodbuilder-chrome-hidden] [data-voodbuilder-brand-placeholder],
+[data-voodbuilder-chrome-part="logo"][hidden] .vb-brand-logo,
+[data-voodbuilder-chrome-part="logo"][hidden] [data-voodbuilder-brand-placeholder] {
+    display: none !important;
+}
+
+/* Header chrome icon buttons: never show Editor "Button" placeholder text. */
+.voodbuilder-header-icon-btn,
+button[data-mobile-nav-toggle],
+button[data-mobile-nav-close] {
+    font-size: 0;
+    line-height: 0;
+    color: inherit;
+}
+
+.voodbuilder-header-icon-btn svg,
+button[data-mobile-nav-toggle] svg,
+button[data-mobile-nav-close] svg {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.voodbuilder-header-icon-btn svg.h-6,
+button[data-mobile-nav-toggle] svg.h-6 {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 @media (width >= 80rem) {
     .xl\:block {
         display: block !important;
     }
 }
 
-@import './grapesjs/tabs.css';
-@import './grapesjs/forms.css';
-
 /*
  * Header link/icon colors: nav uses Tailwind text-vp-text-* (utilities layer).
  * These rules are intentionally unlayered so --vx-header-text from admin wins.
+ *
+ * Sub-themes (blog/news/landing-fra/…) and tabs/forms are separate Vite entries
+ * loaded only when needed — see EditorAssets::pageViteEntries().
  */
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt,
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt {
+    background-color: var(--vx-header-bg, var(--color-vp-bg)) !important;
+}
+
+html[data-voodbuilder-sub-theme] header[role='banner'],
+[data-voodbuilder-chrome-shell] header[role='banner'] {
+    border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 12%, transparent);
+}
+
+/*
+ * The Blade nav also ships an explicit 1px strip (`[data-voodbuilder-header-divider]`).
+ * Together with the CSS border-bottom above that becomes a double seam (reads as a
+ * bright/white line). Hide the strip everywhere — the CSS border is the single source.
+ * Baked chrome HTML in saved layouts still contains the strip, so CSS must hide it.
+ */
+[data-voodbuilder-header-divider] {
+    display: none !important;
+}
+
+/* Page editor: no divider under the navbar between chrome and first content block.
+ * Layout editor (editor-scope=layout) keeps the subtle CSS border. */
+body[data-voodbuilder-editor-scope='page'] header[role='banner'],
+html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+}
+
+/**
+ * Shared elevated dropdown panel (TailwindPlus / Catalyst-like).
+ * Unlayered so these beat Blade utility classes (`rounded-lg`, `shadow-lg`, `border`, …)
+ * and restyle baked chrome HTML already stored in Editor layouts.
+ *
+ * Light: no hard border (shadow only) — matches “avevamo rimosso i bordi”.
+ * Dark: low-contrast ring (≈ ring-white/10), never solid vp-divider / bright outline.
+ * Shadows use black, not vp-text-1 (which is light in dark and reads as a white halo).
+ */
+.voodbuilder-dropdown-panel,
+.voodbuilder-nav-profile-menu__dropdown,
+[data-voodbuilder-nav-dropdown-panel] {
+    min-width: 14rem;
+    padding-block: 0.25rem !important;
+    padding-inline: 0 !important;
+    border-radius: 0.5rem !important;
+    border: 0 !important;
+    outline: none !important;
+    background-color: var(--color-vp-bg-elv) !important;
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+html.dark .voodbuilder-dropdown-panel,
+html.dark .voodbuilder-nav-profile-menu__dropdown,
+html.dark [data-voodbuilder-nav-dropdown-panel] {
+    box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.1),
+        0 10px 15px -3px rgb(0 0 0 / 0.45),
+        0 4px 6px -4px rgb(0 0 0 / 0.35) !important;
+}
+
+.voodbuilder-nav-profile-menu__dropdown {
+    overflow: hidden;
+}
+
+[data-voodbuilder-nav-dropdown-panel]:not(:has([data-voodbuilder-nav-dropdown-nested])) {
+    overflow: hidden;
+}
+
+.voodbuilder-dropdown-panel :is(a, button, [role='menuitem']),
+.voodbuilder-nav-profile-menu__dropdown :is(a, button, [role='menuitem']),
+[data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']) {
+    display: flex;
+    width: calc(100% - 0.5rem);
+    align-items: center;
+    gap: 0.625rem;
+    box-sizing: border-box;
+    margin-inline: 0.25rem;
+    padding: 0.4375rem 0.625rem !important;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--color-vp-text-1);
+    text-align: left;
+    text-decoration: none;
+    background-color: transparent;
+    border: 0 !important;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
+}
+
+.voodbuilder-dropdown-panel :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+.voodbuilder-nav-profile-menu__dropdown :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+[data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']):is(:hover, :focus-visible) {
+    background-color: var(--color-vp-gray-soft) !important;
+    color: var(--color-vp-brand-1) !important;
+    outline: none;
+}
+
+.voodbuilder-dropdown-separator,
+.voodbuilder-dropdown-panel > .h-px,
+.voodbuilder-nav-profile-menu__dropdown > .h-px,
+[data-voodbuilder-nav-dropdown-panel] > .h-px {
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin-block: 0.25rem;
+    margin-inline: 0;
+    border: 0;
+    /* Soft full-width hairline — muted in both themes (not solid bright divider). */
+    background-color: color-mix(in srgb, var(--color-vp-text-1) 10%, transparent);
+}
+
+/*
+ * Header chrome colors must not leak into the mobile drawer (light surface).
+ * Keep in sync with ThemePalette::HEADER_CHROME_CSS exclusions.
+ */
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-muted) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(a, button):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)):is(:hover, :focus-visible) {
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(a, button):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)):not(.voodbuilder-header-icon-btn):is(:hover, :focus-visible) {
     color: color-mix(in srgb, var(--vx-header-text) 88%, #ffffff) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
-    color: var(--color-vp-brand-1) !important;
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
+    /* Remap brand hover: brand-1 often matches a branded header_bg and vanishes. */
+    color: color-mix(in srgb, var(--vx-header-text) 88%, #ffffff) !important;
 }
 
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text) !important;
 }
 
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:not(:where([data-mobile-nav], [data-mobile-nav] *)) {
+    color: var(--vx-header-text, var(--color-vp-text-2)) !important;
+    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-2)) 10%, transparent) !important;
+}
 
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover, :focus-visible):not(:where([data-mobile-nav], [data-mobile-nav] *)) {
+    /* Keep header-text (not brand-1) so icons stay visible on branded headers. */
+    color: var(--vx-header-text, var(--color-vp-text-1)) !important;
+    background: color-mix(in srgb, var(--vx-header-text, var(--color-vp-text-1)) 22%, transparent) !important;
+}
 
+/*
+ * Chrome layouts render header/footer as body siblings around <main>.
+ * Default is content-driven (no main flex-1) so the footer sits after content —
+ * same as the editor canvas. Sticky footer is opt-in via body.voodbuilder-sticky-footer
+ * (see landing.css). Still neutralize shell min-heights under chrome so short pages
+ * do not push the footer below the fold.
+ */
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-home-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-landing-shell,
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-events-shell {
+    min-height: auto;
+}
 
-@import '../../../../../resources/voodbuilder/themes/seires/theme.css';
+/*
+ * Layout Container presets (Bricks-like): stack columns on small viewports.
+ * Desktop tracks come from Tailwind grid-cols-* utilities (not inline style).
+ * !important beats those utilities on mobile.
+ */
+[data-voodbuilder-layout='container'][data-vb-layout-preset],
+.vb-layout-row[data-vb-layout-preset] {
+    display: grid;
+    width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    [data-voodbuilder-layout='container'][data-vb-layout-preset],
+    .vb-layout-row[data-vb-layout-preset] {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+a[data-voodbuilder-cta='true']:empty,
+button[data-voodbuilder-cta='true']:empty {
+    min-width: 5.5rem;
+    min-height: 2.25rem;
+}
+
+a[data-voodbuilder-cta='true']:empty::before,
+button[data-voodbuilder-cta='true']:empty::before {
+    content: attr(data-voodbuilder-cta-label);
+}
+
+/*
+ * Catalog Elements BEM hooks (plasma / aurora / CTA motion).
+ * Must live in theme.css — Library import + chrome-shell save only persist Tailwind
+ * utilities and #id paints; embedded <style> from remote items does not survive.
+ */
+@keyframes vb-plasma-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes vb-plasma-spin-rev {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes vb-plasma-drift {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(4%, -3%, 0) scale(1.08);
+    }
+}
+
+.vb-hero-plasma__stage {
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+}
+
+.vb-hero-plasma__orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(48px);
+    opacity: 0.55;
+    will-change: transform;
+    /* Parent stage is PE-none, but pointer-events is not inherited — keep orbs
+     * non-interactive so they never steal clicks/drops from content above. */
+    pointer-events: none;
+}
+
+.vb-hero-plasma__orb--a {
+    width: 42vw;
+    height: 42vw;
+    left: 8%;
+    top: 5%;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 70%, #a78bfa);
+    animation:
+        vb-plasma-spin 28s linear infinite,
+        vb-plasma-drift 11s ease-in-out infinite;
+}
+
+.vb-hero-plasma__orb--b {
+    width: 36vw;
+    height: 36vw;
+    right: 0;
+    top: 18%;
+    background: color-mix(in srgb, var(--color-vp-brand-2, #3a5ccc) 65%, #22d3ee);
+    animation:
+        vb-plasma-spin-rev 34s linear infinite,
+        vb-plasma-drift 13s ease-in-out infinite reverse;
+}
+
+.vb-hero-plasma__orb--c {
+    width: 48vw;
+    height: 48vw;
+    left: 28%;
+    bottom: -18%;
+    background: color-mix(in srgb, var(--color-vp-brand-3, #5672cd) 55%, #f472b6);
+    animation:
+        vb-plasma-spin 40s linear infinite,
+        vb-plasma-drift 15s ease-in-out infinite;
+}
+
+@keyframes vb-aurora-a {
+    0%,
+    100% {
+        transform: translate(-8%, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(6%, 4%) rotate(25deg);
+    }
+}
+
+@keyframes vb-aurora-b {
+    0%,
+    100% {
+        transform: translate(10%, -4%) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(-8%, 6%) rotate(-30deg);
+    }
+}
+
+@keyframes vb-aurora-c {
+    0%,
+    100% {
+        transform: translate(0, 8%) scale(1);
+    }
+
+    50% {
+        transform: translate(-4%, -6%) scale(1.15);
+    }
+}
+
+.vb-hero-aurora__mesh {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.vb-hero-aurora__blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    opacity: 0.5;
+    will-change: transform;
+}
+
+.vb-hero-aurora__blob--1 {
+    width: 55%;
+    height: 55%;
+    left: -10%;
+    top: -15%;
+    background: #6366f1;
+    animation: vb-aurora-a 16s ease-in-out infinite;
+}
+
+.vb-hero-aurora__blob--2 {
+    width: 50%;
+    height: 50%;
+    right: -12%;
+    top: 10%;
+    background: #22d3ee;
+    animation: vb-aurora-b 19s ease-in-out infinite;
+}
+
+.vb-hero-aurora__blob--3 {
+    width: 45%;
+    height: 45%;
+    left: 30%;
+    bottom: -20%;
+    background: #ec4899;
+    animation: vb-aurora-c 14s ease-in-out infinite;
+}
+
+@keyframes vb-cta-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 45%, transparent);
+    }
+
+    50% {
+        box-shadow: 0 0 0 14px transparent;
+    }
+}
+
+@keyframes vb-cta-rise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.vb-cta-glow-pulse__btn {
+    animation: vb-cta-glow 2.4s ease-out infinite;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child] {
+    opacity: 0;
+    animation: vb-cta-rise 0.7s ease forwards;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='1'] {
+    animation-delay: 0.05s;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='2'] {
+    animation-delay: 0.18s;
+}
+
+.vb-cta-glow-pulse [data-vb-anim-child='3'] {
+    animation-delay: 0.32s;
+}
+
+@keyframes vb-cta-shimmer {
+    0% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+@keyframes vb-cta-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.vb-cta-split-shimmer__card {
+    position: relative;
+    overflow: hidden;
+}
+
+.vb-cta-split-shimmer__sheen {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.35) 50%,
+        transparent 60%
+    );
+    animation: vb-cta-shimmer 3.2s ease-in-out infinite;
+}
+
+.vb-cta-split-shimmer__orb {
+    animation: vb-cta-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vb-hero-plasma__orb,
+    .vb-hero-aurora__blob,
+    .vb-cta-glow-pulse__btn,
+    .vb-cta-glow-pulse [data-vb-anim-child],
+    .vb-cta-split-shimmer__sheen,
+    .vb-cta-split-shimmer__orb {
+        animation: none !important;
+    }
+
+    .vb-cta-glow-pulse [data-vb-anim-child] {
+        opacity: 1 !important;
+    }
+}

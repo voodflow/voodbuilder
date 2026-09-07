@@ -206,7 +206,7 @@ return [
 
     'layouts' => [
         'full_width' => 'Full width (marketing)',
-        'full_width_help' => 'Full-width canvas for GrapesJS and landing blocks. Hide site nav/footer when the page includes its own chrome.',
+        'full_width_help' => 'Full-width canvas for Editor and landing blocks. Hide site nav/footer when the page includes its own chrome.',
         'landing' => 'Landing (no margins)',
         'landing_help' => 'Full-width canvas for landing blocks. Hide the site footer when using a landing footer block.',
         'hide_site_footer' => 'Hide site footer',

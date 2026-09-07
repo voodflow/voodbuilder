@@ -12,6 +12,9 @@ use Filament\Forms\Components\TextInput;
 use Voodflow\Voodbuilder\Filament\Forms\LandingBlockForm;
 use Voodflow\Voodbuilder\Support\RichContentBlockPreview;
 
+/**
+ * Rich content / landing block: Landing Steps Block.
+ */
 class LandingStepsBlock extends RichContentCustomBlock
 {
     public static function getId(): string

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-07-23
+
+### Fixed
+
+- Admin database notifications bell: extend Filament panel `DatabaseNotifications` Livewire component so the topbar trigger renders correctly
+
 ## [0.0.10] - 2026-06-10
 
 ### Added

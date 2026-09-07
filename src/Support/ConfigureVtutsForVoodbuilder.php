@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Configure Vtuts For Voodbuilder.
+ */
 final class ConfigureVtutsForVoodbuilder
 {
     public static function apply(bool $force = false): bool

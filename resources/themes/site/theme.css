@@ -63,16 +63,16 @@ html[data-voodbuilder-sub-theme='site'] header[role='banner'] {
     border-bottom: 1px solid color-mix(in srgb, var(--vx-header-text) 12%, transparent);
 }
 
-/* Header nav uses light text; exclude dropdown panels (light surface, dark text). */
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+/* Header nav uses light text; exclude dropdowns + mobile drawer (light surfaces). */
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(.text-vp-text-1, .text-vp-text-2, .text-vp-text-3):not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: var(--vx-header-text);
 }
 
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] :is(a, button):hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)):not(.voodbuilder-header-icon-btn) {
     color: #ffffff;
 }
 
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'], [role='menu'] *, [data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *, [data-mobile-nav], [data-mobile-nav] *)) {
     color: #fca5a5;
 }
 
@@ -104,8 +104,17 @@ html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] butt
     background-color: var(--color-vp-gray-soft);
 }
 
+/* Content-driven height (matches editor). Opt-in viewport fill: body.voodbuilder-sticky-footer */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
-    @apply min-h-[calc(100vh-4rem)] bg-vp-bg;
+    @apply min-h-0 bg-vp-bg;
+}
+
+body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
+    @apply min-h-[calc(100vh-4rem)];
+}
+
+body:has(> [data-voodbuilder-chrome-shell]) .voodbuilder-site-shell {
+    min-height: auto;
 }
 
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content {
@@ -113,9 +122,9 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content {
 }
 
 
-/* Landing / home pages built with GrapesJS or rich-content blocks */
+/* Landing / home pages built with Editor or rich-content blocks */
 :where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .VPRichPage--landing),
-:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-grapesjs-mode) {
+:where(.voodbuilder-site-content, .voodbuilder-home-shell, .voodbuilder-landing-shell):has(> .voodbuilder-editor-mode) {
     max-width: none;
     padding: 0;
 }
@@ -125,17 +134,11 @@ html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-content:has(.VPRichPag
     padding: 0;
 }
 
-html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
-
-@media (min-width: 768px) {
-    html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing > section:not(.ve-landing-hero):not(.ve-landing-footer) {
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-}
+/*
+ * Do NOT force high-specificity padding on landing sections — that beat author
+ * utilities. Default gutters live in landing.css :where(.voodbuilder-editor-container)
+ * (specificity 0); author px-* / px-0 still win.
+ */
 
 html[data-voodbuilder-sub-theme='site'] .VPRichPage--landing .ve-landing-hero {
     width: 100vw;

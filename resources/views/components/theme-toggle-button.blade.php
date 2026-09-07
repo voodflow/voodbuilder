@@ -5,7 +5,7 @@
 @php
     $buttonClass = match ($variant) {
         'mobile' => 'voodbuilder-mobile-nav__tool',
-        default => 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-vp-text-1 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1',
+        default => '',
     };
 @endphp
 
@@ -13,6 +13,8 @@
     type="button"
     @if ($variant === 'menu') role="menuitem" @endif
     data-theme-toggle
+    data-gjs-type="voodbuilder-chrome-button"
+    data-gjs-selectable="false"
     data-theme-label-dark="{{ __('voodbuilder::nav.enable_dark_mode') }}"
     data-theme-label-light="{{ __('voodbuilder::nav.enable_light_mode') }}"
     {{ $attributes->merge(['class' => $buttonClass]) }}

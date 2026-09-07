@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Sub Theme Location.
+ */
 final readonly class SubThemeLocation
 {
     public function __construct(

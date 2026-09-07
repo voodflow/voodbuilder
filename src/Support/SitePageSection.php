@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Site Page Section.
+ */
 final class SitePageSection
 {
     public const BLOG = 'blog';

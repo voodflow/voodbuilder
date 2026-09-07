@@ -9,6 +9,9 @@ use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Site Pages Content Channel.
+ */
 final class SitePagesContentChannel implements PublicContentChannel
 {
     public function id(): string
@@ -23,7 +26,7 @@ final class SitePagesContentChannel implements PublicContentChannel
 
     public function routePatterns(): array
     {
-        return ['voodbuilder.pages.*'];
+        return ['voodbuilder.pages.*', 'home', 'home.localized'];
     }
 
     public function subTheme(): ?string

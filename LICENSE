@@ -1,9 +1,24 @@
 Copyright (c) Voodflow. All rights reserved.
 
-VoodBuilder (voodflow/voodbuilder) is proprietary commercial software.
+VoodBuilder (voodflow/voodbuilder) is proprietary software published by Voodflow.
 
-You may use, install, and modify this package only under a valid
-license agreement with Voodflow. Unauthorized copying, distribution,
-sublicensing, or public disclosure is prohibited.
+## Freemium / dual licensing model
+
+The base VoodBuilder package provides a free (Community) edition suitable for
+building and publishing public sites with the visual page editor, themes, and
+core Filament admin surfaces.
+
+Paid companion plugins and/or a commercial subscription unlock extended
+capabilities (for example Elements, Components, Dynamic Data, Templates,
+Analytics, and other Agency/Enterprise features). Those companions are licensed
+separately under their own commercial terms.
+
+## Use
+
+You may use, install, and modify this package only under a valid license
+agreement with Voodflow appropriate to your edition (free base and/or paid
+companions/subscription). Unauthorized copying, distribution, sublicensing, or
+public disclosure of proprietary source beyond the rights granted by your
+license is prohibited.
 
 For licensing inquiries, contact Voodflow.

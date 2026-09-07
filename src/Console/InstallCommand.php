@@ -12,8 +12,10 @@ use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureRoutesForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureVtutsForVoodbuilder;
-use Voodflow\Voodbuilder\Support\DisableFilamentCookieBanner;
 
+/**
+ * Artisan command: Install.
+ */
 class InstallCommand extends Command
 {
     protected $signature = 'voodbuilder:install
@@ -26,16 +28,17 @@ class InstallCommand extends Command
     protected $description = 'Publish Voodbuilder and dependency configs/migrations, then run migrate and seed';
 
     /**
-     * Publish order matters: Spatie settings table must exist before cookie consent settings migrations run.
+     * Publish order matters: Spatie settings table must exist before packages that depend on it.
      *
      * @var array<string, string|null>
      */
     protected array $publishTags = [
         'config' => 'spatie/laravel-settings',
         'migrations' => 'spatie/laravel-settings',
-        'cookie-consent-settings-migrations' => 'jeffersongoncalves/laravel-cookie-consent',
         'seo-config' => 'ralphjsmit/laravel-seo',
         'seo-migrations' => 'ralphjsmit/laravel-seo',
+        'medialibrary-config' => 'spatie/laravel-medialibrary',
+        'medialibrary-migrations' => 'spatie/laravel-medialibrary',
         'voodbuilder-config' => 'voodflow/voodbuilder',
     ];
 
@@ -72,6 +75,12 @@ class InstallCommand extends Command
 
             $this->components->info("Publishing {$tag}...");
 
+            if ($tag === 'medialibrary-migrations' && $this->mediaTableMigrationIsAvailable()) {
+                $this->components->warn('Skipping medialibrary-migrations: media table migration already present.');
+
+                continue;
+            }
+
             $arguments = ['--tag' => $tag, ...$publishOptions];
 
             if ($tag === 'config' && InstalledVersions::isInstalled('spatie/laravel-settings')) {
@@ -96,8 +105,6 @@ class InstallCommand extends Command
         $this->configureViteIntegration();
 
         $this->configureNpmIntegration();
-
-        $this->configureCookieConsentForFrontendOnly();
 
         if ($this->option('skip-migrate')) {
             $this->components->info('Skipped migrations (--skip-migrate). Run `php artisan migrate` when ready.');
@@ -126,6 +133,17 @@ class InstallCommand extends Command
         }
 
         return $this->finish(self::SUCCESS);
+    }
+
+    protected function mediaTableMigrationIsAvailable(): bool
+    {
+        foreach (glob(database_path('migrations/*create_media_table.php')) ?: [] as $file) {
+            if (is_file($file)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function settingsTableMigrationIsAvailable(): bool
@@ -177,7 +195,7 @@ class InstallCommand extends Command
         }
 
         if (ConfigureViteForVoodbuilder::apply($this->option('force'))) {
-            $this->components->info('Updated vite.config.js with voodbuilder theme and GrapesJS entries.');
+            $this->components->info('Updated vite.config.js with voodbuilder theme and Editor entries.');
         } else {
             $this->components->warn('vite.config.js already references voodbuilder Vite entries (or file could not be updated).');
         }
@@ -227,7 +245,7 @@ class InstallCommand extends Command
         $this->components->info('npm install completed.');
 
         if (! $this->option('with-npm-build')) {
-            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and GrapesJS editor.');
+            $this->components->warn('Run `npm run build` (or `npm run dev`) to compile the public theme and visual editor.');
             $this->components->warn('Tip: pass `--with-npm-build` to compile assets during install.');
 
             return;
@@ -254,22 +272,6 @@ class InstallCommand extends Command
         $result = Process::run('npm --version');
 
         return $result->successful();
-    }
-
-    protected function configureCookieConsentForFrontendOnly(): void
-    {
-        if (! InstalledVersions::isInstalled('jeffersongoncalves/filament-cookie-consent')) {
-            return;
-        }
-
-        $composerPath = base_path('composer.json');
-
-        if (! DisableFilamentCookieBanner::applyToComposerJson($composerPath)) {
-            return;
-        }
-
-        $this->components->info('Disabled Filament auto-discovery for filament-cookie-consent (banner stays on public site).');
-        $this->components->warn('Run `composer dump-autoload` so the admin panel stops loading the cookie banner.');
     }
 
     protected function publishNotificationsTableMigration(): void
@@ -318,8 +320,14 @@ class InstallCommand extends Command
         $this->components->info('Host app checklist (manual steps only):');
         $this->newLine();
 
-        $this->line('  1. Filament panel — register the plugin once in your Panel provider:');
-        $this->line('     ->plugins([\\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make()])');
+        $this->line('  1. Filament panel — register plugins once in your Panel provider:');
+        $this->line('     ->plugins([');
+        $this->line('         \\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make(),');
+        $this->line('         \\Voodflow\\Vpopups\\VpopupsPlugin::make(), // optional popups');
+        $this->line('         \\Voodflow\\Vmedia\\VmediaPlugin::make(), // optional media');
+        $this->line('         \\Voodflow\\Vforms\\VformsPlugin::make(), // optional forms');
+        $this->line('         \\Voodflow\\Vcookiebar\\VcookiebarPlugin::make(), // optional cookie bar');
+        $this->line('     ])');
         $this->newLine();
 
         if ($this->option('skip-npm') || ! $this->npmIsAvailable()) {
@@ -337,10 +345,11 @@ class InstallCommand extends Command
         $this->newLine();
 
         $this->line('  Automatic setup already handled by voodbuilder:install:');
-        $this->line('  - package.json npm dependencies (GrapesJS, Tailwind, fonts)');
-        $this->line('  - vite.config.js theme + GrapesJS entries');
+        $this->line('  - package.json npm dependencies (Editor, Tailwind, fonts)');
+        $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
-        $this->line('  - migrations, seed data, cookie-consent panel exclusion');
+        $this->line('  - Spatie Media Library config + media table migration');
+        $this->line('  - migrations and seed data');
         $this->newLine();
 
         $this->components->success('voodflow/voodbuilder installed successfully.');

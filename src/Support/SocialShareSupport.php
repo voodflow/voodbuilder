@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Social Share Support.
+ */
 final class SocialShareSupport
 {
     /** @return array<string, string> */

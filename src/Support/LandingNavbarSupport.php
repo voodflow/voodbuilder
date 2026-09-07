@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Landing Navbar Support.
+ */
 final class LandingNavbarSupport
 {
     /** @var list<string> */

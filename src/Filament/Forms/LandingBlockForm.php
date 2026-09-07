@@ -14,6 +14,9 @@ use Voodflow\Voodbuilder\Support\LandingBlockContent;
 use Voodflow\Voodbuilder\Support\LandingBlockMedia;
 use Voodflow\Voodbuilder\Support\LandingBlockSupport;
 
+/**
+ * Landing Block Form.
+ */
 final class LandingBlockForm
 {
     /** @return array<int, mixed> */

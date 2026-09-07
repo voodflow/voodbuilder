@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Voodflow\Voodbuilder\Support\GrapesJs\Bindings\BindingImageAltResolver;
+use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageAltResolver;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class BindingImageAltResolverTest extends TestCase

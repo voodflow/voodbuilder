@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Enums;
 
+/**
+ * Page Builder enumeration.
+ */
 enum PageBuilder: string
 {
     case RichEditor = 'rich_editor';
-    case GrapesJs = 'grapesjs';
+    case Visual = 'visual';
 
     public function label(): string
     {
         return match ($this) {
             self::RichEditor => __('voodbuilder::pro.builders.rich_editor'),
-            self::GrapesJs => __('voodbuilder::pro.builders.grapesjs'),
+            self::Visual => __('voodbuilder::pro.builders.visual'),
         };
     }
 
@@ -24,10 +27,32 @@ enum PageBuilder: string
         }
 
         if (blank($state)) {
-            return $builder === self::RichEditor;
+            return $builder === self::Visual;
         }
 
-        return self::tryFrom((string) $state) === $builder;
+        return self::normalize($state) === $builder;
+    }
+
+    /**
+     * Dual-read: accept legacy persisted value `grapesjs` as Visual.
+     */
+    public static function normalize(mixed $state): ?self
+    {
+        if ($state instanceof self) {
+            return $state;
+        }
+
+        if (blank($state)) {
+            return null;
+        }
+
+        $value = (string) $state;
+
+        if ($value === 'grapesjs') {
+            return self::Visual;
+        }
+
+        return self::tryFrom($value);
     }
 
     /**

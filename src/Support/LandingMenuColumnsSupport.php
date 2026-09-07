@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Support;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 
+/**
+ * Landing Menu Columns Support.
+ */
 final class LandingMenuColumnsSupport
 {
     /**

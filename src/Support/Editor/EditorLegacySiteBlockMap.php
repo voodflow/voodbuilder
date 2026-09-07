@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Voodflow\Voodbuilder\Support\Editor;
+
+/**
+ * Maps deprecated Editor site chrome block IDs to their replacements.
+ */
+final class EditorLegacySiteBlockMap
+{
+    public static function resolve(string $blockId): ?string
+    {
+        if ($blockId !== 'site_nav_simple' && str_starts_with($blockId, 'site_nav_')) {
+            return 'site_nav_simple';
+        }
+
+        return match ($blockId) {
+            'site_header' => 'site_nav_simple',
+            'site_footer' => 'site_footer_columns_simple',
+            'site_footer_a', 'site_footer_columns_mission' => 'site_footer_columns_simple',
+            'site_footer_b', 'site_footer_columns_brand_end' => 'site_footer_columns_simple',
+            'site_footer_c', 'site_footer_e' => 'site_footer_columns_simple',
+            'site_footer_columns_cta', 'site_footer_columns_newsletter_below' => 'site_footer_columns_simple',
+            'site_footer_d' => 'site_footer_social',
+            default => null,
+        };
+    }
+}

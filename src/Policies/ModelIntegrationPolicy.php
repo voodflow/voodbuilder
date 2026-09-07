@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Policies;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 
+/**
+ * Authorization policy for Model Integration.
+ */
 final class ModelIntegrationPolicy
 {
     public function viewAny(Authenticatable $user): bool

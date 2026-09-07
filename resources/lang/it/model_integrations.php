@@ -10,9 +10,13 @@ return [
 
     'bindings' => [
         'package' => 'Integrazioni modello',
+        'auth' => 'Profilo utente',
         'latest' => 'Ultimo record',
         'list_item' => 'Elemento lista',
         'repeat_source' => 'Lista ripetuta',
+        'relation_group' => 'Relazione · :name',
+        'filter_by' => 'Filtra per :name',
+        'filter_any' => 'Qualsiasi',
     ],
 
     'sections' => [

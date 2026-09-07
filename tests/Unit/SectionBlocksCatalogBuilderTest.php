@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
-use Tests\TestCase;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsBrandingNormalizer;
-use Voodflow\Voodbuilder\Support\GrapesJs\GrapesJsRenderer;
-use Voodflow\Voodbuilder\Support\GrapesJs\SectionBlocksCatalogBuilder;
+use Voodflow\Voodbuilder\Support\Editor\EditorBrandingNormalizer;
+use Voodflow\Voodbuilder\Support\Editor\EditorRenderer;
+use Voodflow\Voodbuilder\Support\Editor\SectionBlocksCatalogBuilder;
+use Voodflow\Voodbuilder\Tests\TestCase;
 
 class SectionBlocksCatalogBuilderTest extends TestCase
 {
@@ -23,7 +23,7 @@ class SectionBlocksCatalogBuilderTest extends TestCase
 
         $this->assertNotEmpty($blocks);
 
-        $footer = collect($blocks)->first(fn (array $block): bool => str_contains((string) ($block['id'] ?? ''), 'footer'));
+        $footer = collect($blocks)->first(fn (array $block): bool => ($block['category'] ?? '') === 'Footer');
 
         $this->assertNotNull($footer);
         $this->assertStringContainsString('VoodBuilder', (string) $footer['content']);
@@ -36,13 +36,13 @@ class SectionBlocksCatalogBuilderTest extends TestCase
         $html = '<footer><span>Tailblocks</span><p>© 2020 Tailblocks</p></footer>';
 
         $page = new SitePage([
-            'builder' => PageBuilder::GrapesJs,
+            'builder' => PageBuilder::Visual,
             'builder_payload' => ['html' => $html, 'css' => '', 'js' => ''],
         ]);
 
-        $rendered = (new GrapesJsRenderer)->html($page);
+        $rendered = (new EditorRenderer)->html($page);
 
         $this->assertStringContainsString('Tailblocks', $rendered);
-        $this->assertStringNotContainsString(GrapesJsBrandingNormalizer::BRAND_NAME, $rendered);
+        $this->assertStringNotContainsString(EditorBrandingNormalizer::BRAND_NAME, $rendered);
     }
 }

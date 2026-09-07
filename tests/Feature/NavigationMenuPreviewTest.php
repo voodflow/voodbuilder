@@ -6,8 +6,9 @@ namespace Voodflow\Voodbuilder\Tests\Feature;
 
 use Illuminate\Foundation\Auth\User;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteFooterColumnsSimpleBlock;
-use Voodflow\Voodbuilder\Support\GrapesJs\SiteNavSimpleBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsSimpleBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteNavSimpleBlock;
+use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class NavigationMenuPreviewTest extends TestCase
@@ -39,14 +40,14 @@ class NavigationMenuPreviewTest extends TestCase
         $this->actingAs($user)
             ->get(route('voodbuilder.admin.navigation-menus.preview', $menu))
             ->assertOk()
-            ->assertSee('data-voodbuilder-gjs-site-header', false);
+            ->assertSee('data-voodbuilder-editor-site-header', false);
     }
 
     public function test_site_nav_block_renders_theme_navigation_slots(): void
     {
         $html = SiteNavSimpleBlock::toHtml(SiteNavSimpleBlock::defaultConfig(), []);
 
-        $this->assertStringContainsString('data-voodbuilder-gjs-site-header', $html);
+        $this->assertStringContainsString('data-voodbuilder-editor-site-header', $html);
         $this->assertStringContainsString('data-mobile-nav-toggle', $html);
     }
 
@@ -73,11 +74,26 @@ class NavigationMenuPreviewTest extends TestCase
 
     public function test_canvas_block_code_toolbar_command_is_registered_in_editor_bundle(): void
     {
-        $editorJs = file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/editor.js'));
+        $packagePath = VoodbuilderPaths::packagePath();
+        $initJs = file_get_contents($packagePath.'/resources/js/editor/editor/init.js');
+        $toolbarJs = file_get_contents($packagePath.'/resources/js/editor/canvas-component-toolbar.js');
 
-        $this->assertIsString($editorJs);
-        $this->assertStringContainsString('registerCanvasBlockCodeEditor', $editorJs);
-        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', file_get_contents(base_path('packages/voodflow/voodbuilder/resources/js/grapesjs/canvas-component-toolbar.js')));
+        $this->assertIsString($initJs);
+        $this->assertStringContainsString('registerCanvasBlockCodeEditor', $initJs);
+        $this->assertStringContainsString('registerJoditImageEditor', $initJs);
+        $this->assertStringContainsString('CMD_EDIT_BLOCK_CODE', $toolbarJs);
+        $this->assertStringContainsString('CMD_EDIT_IMAGE', $toolbarJs);
+        $this->assertFileExists($packagePath.'/resources/js/editor/jodit-image-editor.js');
+        $this->assertFileExists($packagePath.'/resources/js/editor/dropzone-types.js');
+        $this->assertStringContainsString('registerDropzoneTypes', $initJs);
+        $this->assertFileExists($packagePath.'/resources/js/editor/inner-drop-slots.js');
+        $this->assertStringContainsString('registerInnerDropSlots', $initJs);
+        $this->assertFileExists($packagePath.'/resources/js/editor/context-insert-elements.js');
+        $this->assertStringContainsString('buildContextInsertSubmenu', file_get_contents($packagePath.'/resources/js/editor/component-context-menu.js'));
+        $this->assertFileExists($packagePath.'/resources/js/editor/image-content-settings.js');
+        $this->assertFileExists($packagePath.'/resources/js/editor/image-canvas-dblclick.js');
+        $this->assertStringContainsString('renderImageContentSettings', file_get_contents($packagePath.'/resources/js/editor/blocks/settings/ui.js'));
+        $this->assertStringContainsString('registerImageCanvasDblClick', $initJs);
     }
 
     public function test_site_nav_block_uses_full_width_row_by_default(): void

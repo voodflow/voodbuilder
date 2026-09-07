@@ -2,6 +2,7 @@
     'hasDocSidebar' => false,
     'enableNotifications' => true,
     'canvasPreview' => false,
+    'brandConfig' => [],
 ])
 
 @php
@@ -15,12 +16,12 @@
     $mainItems = Navigation::items('main');
     $extraItems = Navigation::items('header_extra');
     $docSections = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
-        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
         && Route::has('vdocs.index')
         ? \Voodflow\Vdocs\Support\DocNavigation::sections()
         : collect();
     $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
-        && \Voodflow\Vdocs\Support\DocNavigation::enabled()
+        && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
         && \Voodflow\Vdocs\Support\DocNavigation::isActive();
     $showNotificationBell = $enableNotifications && (bool) VoodbuilderSettings::get('show_notification_bell', true);
     $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
@@ -28,15 +29,22 @@
     $searchEnabled = Route::has('voodbuilder.search');
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
-    $brandName = VoodbuilderSettings::brandName();
-    $logoMobileUrl = VoodbuilderSettings::logoMobileUrl();
-    $logoUrl = VoodbuilderSettings::logoUrl();
-    $cookieConsent = function_exists('cookie_consent_settings') ? cookie_consent_settings() : null;
+    $brandConfig = is_array($brandConfig) ? $brandConfig : [];
+    $cookiePolicyPage = \Voodflow\Voodbuilder\Models\SitePage::query()
+        ->where('slug', 'cookie-policy')
+        ->where('published', true)
+        ->first();
+    $cookiePolicyUrl = $cookiePolicyPage?->getUrl();
 @endphp
 
 <div
     class="voodbuilder-mobile-nav"
     data-mobile-nav
+    data-gjs-selectable="false"
+    data-gjs-editable="false"
+    data-gjs-droppable="false"
+    data-gjs-removable="false"
+    data-gjs-copyable="false"
     hidden
     aria-hidden="true"
 >
@@ -54,30 +62,22 @@
         data-mobile-nav-panel
     >
         <div class="voodbuilder-mobile-nav__header">
+            {{-- Brand logo stays in the page header only — avoid duplicate logo in offcanvas. --}}
             <div class="voodbuilder-mobile-nav__brand">
-                <a href="{{ VoodbuilderUrls::home() }}" data-mobile-nav-close>
-                    @if ($logoMobileUrl || $logoUrl)
-                        <img
-                            src="{{ $logoMobileUrl ?? $logoUrl }}"
-                            alt=""
-                            class="h-8 w-auto max-w-[140px] object-contain object-left"
-                        >
-                        <span class="sr-only">{{ $brandName }}</span>
-                    @else
-                        <span>{{ $brandName }}</span>
-                    @endif
-                </a>
+                <span class="inline-flex items-center text-base font-semibold text-vp-text-1">
+                    {{ VoodbuilderSettings::brandName() }}
+                </span>
             </div>
 
             <button
                 type="button"
-                class="voodbuilder-mobile-nav__close"
+                class="voodbuilder-mobile-nav__close voodbuilder-header-icon-btn"
                 data-mobile-nav-close
+                data-gjs-type="voodbuilder-chrome-button"
+                data-gjs-selectable="false"
                 aria-label="{{ __('Close menu') }}"
             >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="x"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
             </button>
         </div>
 
@@ -154,7 +154,7 @@
 
                 <div class="voodbuilder-mobile-nav__actions">
                     @if ($canvasPreview)
-                        <span class="voodbuilder-mobile-nav__action text-vp-text-2">{{ __('voodbuilder::account.nav') }}</span>
+                        <span class="voodbuilder-mobile-nav__action">{{ __('voodbuilder::account.nav') }}</span>
                     @else
                         @if ($showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account'))
                             <a href="{{ route('voodbuilder.account') }}" class="voodbuilder-mobile-nav__account" data-mobile-nav-close>
@@ -198,15 +198,14 @@
                 </div>
             @endauth
 
-            @if ($cookieConsent && filled($cookieConsent->content_href))
+            @if (! $canvasPreview && filled($cookiePolicyUrl))
                 <div class="voodbuilder-mobile-nav__legal">
                     <a
-                        href="{{ $cookieConsent->content_href }}"
+                        href="{{ $cookiePolicyUrl }}"
                         class="voodbuilder-mobile-nav__cookie-link"
-                        @if (filled($cookieConsent->content_target)) target="{{ $cookieConsent->content_target }}" @endif
                         data-mobile-nav-close
                     >
-                        {{ $cookieConsent->content_policy }}
+                        {{ __('voodbuilder::nav.cookie_policy') }}
                     </a>
                     <span class="voodbuilder-mobile-nav__legal-separator" aria-hidden="true">·</span>
                     <button type="button" class="voodbuilder-mobile-nav__cookie-link" data-cookie-preferences>

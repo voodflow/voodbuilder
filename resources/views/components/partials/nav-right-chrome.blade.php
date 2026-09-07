@@ -41,9 +41,8 @@
                         data-gjs-selectable="false"
                         aria-label="{{ __('voodbuilder::search.button') }}"
                     >
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
+                        {{-- Tabler outline: search (subset only) --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="search"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
                     </button>
                 </div>
             @else
@@ -66,12 +65,11 @@
                     data-voodbuilder-notification-bell-preview
                     data-gjs-type="voodbuilder-chrome-button"
                     data-gjs-selectable="false"
-                    title="{{ __('voodbuilder::pro.grapesjs.blocks.site_header_bell_preview') }}"
+                    title="{{ __('voodbuilder::pro.editor.blocks.site_header_bell_preview') }}"
                     aria-label="{{ __('voodbuilder::notifications.bell_label') }}"
                 >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
+                    {{-- Tabler outline: bell (subset only) --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="bell"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
                 </button>
             @else
                 @auth
@@ -95,19 +93,17 @@
     <button
         type="button"
         @class([
-            'h-9 w-9 items-center justify-center rounded-full text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1',
+            'voodbuilder-header-icon-btn',
             $mobileToggleClass,
         ])
         data-mobile-nav-toggle
-        data-gjs-type="default"
+        data-gjs-type="voodbuilder-chrome-button"
         data-gjs-selectable="false"
         aria-controls="voodbuilder-mobile-nav"
         aria-expanded="false"
         aria-label="{{ __('Open menu') }}"
         @if ($hideMobileToggle) hidden @endif
     >
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="menu-2"><path d="M4 6l16 0"/><path d="M4 12l16 0"/><path d="M4 18l16 0"/></svg>
     </button>
 </div>

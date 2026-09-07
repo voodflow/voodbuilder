@@ -8,6 +8,7 @@ return [
         'menus' => 'Menu',
         'pages' => 'Pagine',
         'settings' => 'Impostazioni',
+        'theme_studio' => 'Theme Studio',
         'content_channels' => 'Temi canali',
         'footer_column_placement' => 'Footer colonna :number',
         'link_display' => 'Visualizzazione link',
@@ -38,6 +39,7 @@ return [
         'sub_theme' => 'Tema visivo',
         'sub_theme_inherit' => 'Predefinito sito',
         'layout_auto' => 'Automatico',
+        'canvas_width' => 'Larghezza contenuto',
         'layout_standard' => 'Pagina standard',
         'layout_full_width' => 'Tutta larghezza (marketing)',
         'excerpt' => 'Estratto',
@@ -46,9 +48,21 @@ return [
         'section_home' => 'Home sezione',
         'sub_items' => 'Sotto-voci',
         'language' => 'Lingua',
+        'lang' => 'Traduzioni',
         'target_language' => 'Lingua di destinazione',
         'translations' => 'Traduzioni',
+        'translations_to_delete' => 'Traduzioni da eliminare',
         'menu_clone_name' => 'Nome menu',
+        'visibility' => 'Livello di accesso',
+        'password_protected' => 'Protezione con password',
+        'password_credentials' => 'Credenziali di accesso',
+        'credential_email' => 'Email (opzionale)',
+        'credential_password' => 'Password',
+        'is_dynamic' => 'Pagina dinamica',
+        'dynamic_channel' => 'Modello / canale',
+        'dynamic_routes' => 'Pattern URL (route)',
+        'dynamic_priority' => 'Priorità',
+        'dynamic_preview_url' => 'URL pubblico di esempio',
     ],
 
     'actions' => [
@@ -56,7 +70,10 @@ return [
         'translate_menu' => 'Traduci in…',
         'clone_menu' => 'Clona menu',
         'clone_menu_placement' => 'Copia in placement…',
+        'delete_translations' => 'Elimina traduzioni',
+        'actions' => 'Azioni',
         'more' => 'Azioni',
+        'add_credential' => 'Aggiungi credenziale',
     ],
 
     'translation' => [
@@ -64,6 +81,9 @@ return [
         'modal_heading' => 'Crea traduzione pagina',
         'modal_description' => 'Verrà creata una bozza con lo stesso layout e contenuto. Aggiorna titolo, slug e testi per la lingua scelta.',
         'none_yet' => 'Nessuna traduzione collegata.',
+        'delete_translations_heading' => 'Elimina traduzioni',
+        'delete_translations_modal_description' => 'Seleziona quali traduzioni rimuovere. La riga canonica del gruppo viene sempre mantenuta.',
+        'canonical_kept_notice' => 'Originale mantenuto: :locale — :title',
     ],
 
     'menu_translation' => [
@@ -87,6 +107,9 @@ return [
         'menu_cloned' => 'Menu clonato',
         'home_reassigned' => 'Altre home aggiornate',
         'home_reassigned_body' => ':count altra/e pagina/e non sono più contrassegnate come home.',
+        'translations_delete_none_selected' => 'Seleziona almeno una traduzione da eliminare.',
+        'translations_deleted' => 'Traduzioni eliminate',
+        'translations_deleted_body' => ':count traduzione/i rimossa/e: :list',
     ],
 
     'home_takeover' => [
@@ -112,7 +135,10 @@ return [
     ],
 
     'sections' => [
+        'content' => 'Contenuto',
         'appearance' => 'Aspetto (opzionale)',
+        'access' => 'Accesso',
+        'dynamic' => 'Routing dinamico',
     ],
 
     'menu_preview' => [
@@ -130,16 +156,28 @@ return [
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_icon' => 'Nome icona Tabler (es. brand-facebook). Compatibile con daljo25/filament-tabler-icons.',
-        'menu_grapes_pages_only' => 'Sono elencate solo le pagine GrapesJS. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
-        'menu_tree' => 'Trascina per riordinare o rilascia una voce su un’altra per creare un sottomenu. Massimo 2 livelli (principale + sotto-voci). Usa "Gruppo dropdown" per etichette senza link.',
+        'menu_editor_pages_only' => 'Sono elencate solo le pagine Editor. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
+        'menu_tree' => 'Trascina con l’icona grip (☰). Per creare un sottomenu, rilascia la voce al centro di una riga di primo livello — compare il badge “Sottomenu qui”. Il bordo superiore/inferiore riordina allo stesso livello. Le sotto-voci hanno una barra colorata a sinistra. Massimo 2 livelli. Usa "Gruppo dropdown" per etichette senza link.',
+        'menu_tree_drag' => 'Trascina per riordinare; rilascia al centro di una voce di primo livello per annidare',
+        'menu_tree_nest_here' => 'Sottomenu qui',
         'sub_theme_site' => 'Tema visivo predefinito per le Site Page (home, landing, CMS). Configura le assegnazioni per area sotto.',
-        'sub_theme_page' => 'Lascia “Predefinito sito” per usare :theme da Settings → Theme. Cambia solo se questa pagina deve avere un aspetto diverso.',
+        'sub_theme_page' => 'Con “Predefinito sito” questa pagina eredita il tema dell’area Pagine del sito in Theme Studio (ora: :theme). Scegline un altro solo se questa pagina deve avere un aspetto diverso.',
         'excerpt' => 'Breve riassunto per elenchi di sezione, card e SEO.',
         'section_home' => 'Contrassegna questa pagina come indice della sezione (elenca le pagine correlate nella sidebar).',
         'home_page_locale' => 'Una home per lingua. Le traduzioni collegate (stessa pagina, altre lingue) possono essere tutte home. Attivando una nuova home, le altre pagine vengono disattivate.',
         'home_page_layout' => 'Le home sono servite su /. Scegli “Automatico” salvo esigenze diverse.',
         'layout_auto_home' => 'Usa tutta la larghezza edge-to-edge (consigliato per la home del sito).',
         'layout_auto_page' => 'Usa la larghezza contenuta della pagina standard.',
-        'sub_theme_marketing_recommended' => 'Le pagine a tutta larghezza funzionano meglio con un tema marketing (Site o il tuo tema custom).',
+        'sub_theme_marketing_recommended' => 'Le pagine a tutta larghezza funzionano meglio con VoodBuilder base o un tema custom clonato da quello.',
+        'visibility' => 'Chi può vedere questa pagina sul sito pubblico. Usa i ruoli Spatie / l’ability subscriber se Shield è presente.',
+        'password_protected' => 'Bypass opzionale: sblocca con password per anteprime, clienti o accessi una tantum — anche se il livello è Registered/Subscriber. Chi ha già il livello richiesto vede la pagina senza password.',
+        'password_credentials' => 'Una o più password. Lascia l’email vuota per accesso solo con password. Funziona come percorso alternativo rispetto al livello di accesso.',
+        'credential_password' => 'In modifica, lascia vuoto per mantenere la password attuale.',
+        'is_dynamic' => 'Riusa questa pagina Visual Editor come template per molte URL (es. una scheda espositore per ogni /exhibitors/{slug}). Le route del companion restano i pattern URL; questa pagina le reclama se pubblicata.',
+        'dynamic_channel' => 'Quale companion fornisce i parametri di route e le binding source (.current).',
+        'dynamic_routes' => 'Seleziona una o più route reclamabili. Ognuna definisce i propri parametri di path (1+n segmenti). Lo stesso template può coprire /exhibitors/{slug} e /exhibitors/{slug}/events/{eventSlug}.',
+        'dynamic_priority' => 'Se più pagine dinamiche reclamano la stessa route, vince la priorità più alta.',
+        'dynamic_preview_url' => 'URL di esempio per “Apri editor visuale” e anteprima binding.',
     ],
+
 ];

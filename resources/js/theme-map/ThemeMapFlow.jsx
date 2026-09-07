@@ -13,21 +13,22 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-const THEME_COLUMN_X = 48;
-const AREA_COLUMN_X = 360;
-const START_Y = 16;
-const THEME_ROW_GAP = 76;
-const AREA_ROW_GAP = 24;
-const THEME_NODE_HEIGHT = 54;
-const CANVAS_PADDING_BOTTOM = 40;
-const AREA_NODE_WIDTH = 200;
-const THEME_MAP_MIN_CANVAS_HEIGHT = 520;
+const THEME_COLUMN_X = 40;
+const AREA_COLUMN_X = 420;
+const START_Y = 20;
+const THEME_ROW_GAP = 84;
+const AREA_ROW_GAP = 28;
+const THEME_NODE_HEIGHT = 58;
+const CANVAS_PADDING_BOTTOM = 48;
+const AREA_NODE_WIDTH = 248;
+const THEME_MAP_MIN_CANVAS_HEIGHT = 640;
 
 function estimateAreaNodeHeight(area) {
     const padding = 24;
     const titleHeight = 18;
     const badgeReserve = 22;
-    let height = padding + titleHeight + badgeReserve;
+    const stripReserve = 4;
+    let height = padding + titleHeight + badgeReserve + stripReserve;
 
     if (area.description) {
         const charsPerLine = Math.floor(AREA_NODE_WIDTH / 6.2);
@@ -35,7 +36,19 @@ function estimateAreaNodeHeight(area) {
         height += lines * 12 + 2;
     }
 
-    return Math.max(100, height + 10);
+    if (area.routes) {
+        height += 14;
+    }
+
+    if (area.required_capability_label) {
+        height += 16;
+    }
+
+    if (area.chrome_layout?.name || area.chrome_layout_label) {
+        height += 16;
+    }
+
+    return Math.max(110, height + 10);
 }
 
 function buildAreaLayouts(areas) {
@@ -94,6 +107,13 @@ function ThemeNode({ data }) {
             </div>
             <div className="voodbuilder-tm-node__body">
                 <span className="voodbuilder-tm-node__title">{data.label}</span>
+                {(data.capability_labels ?? []).length > 0 ? (
+                    <span className="voodbuilder-tm-node__tags">
+                        {(data.capability_labels ?? []).map((label) => (
+                            <span key={label} className="voodbuilder-tm-node__tag">{label}</span>
+                        ))}
+                    </span>
+                ) : null}
             </div>
             <Handle type="source" position={Position.Right} className="voodbuilder-tm-handle" />
         </div>
@@ -110,10 +130,30 @@ function AreaNode({ data }) {
             }}
         >
             <Handle type="target" position={Position.Left} className="voodbuilder-tm-handle" />
+            <div className="voodbuilder-tm-node__strip" aria-hidden="true">
+                {(data.strip ?? []).map((color) => (
+                    <span key={color} style={{ background: color }} />
+                ))}
+            </div>
             <div className="voodbuilder-tm-node__body">
                 <span className="voodbuilder-tm-node__title">{data.label}</span>
                 {data.description ? (
                     <span className="voodbuilder-tm-node__meta">{data.description}</span>
+                ) : null}
+                {data.routes ? (
+                    <span className="voodbuilder-tm-node__meta voodbuilder-tm-node__meta--routes">{data.routes}</span>
+                ) : null}
+                {data.required_capability_label ? (
+                    <span className="voodbuilder-tm-node__tag voodbuilder-tm-node__tag--required">
+                        {data.required_capability_prefix}
+                        {data.required_capability_label}
+                    </span>
+                ) : null}
+                {data.chrome_layout_label ? (
+                    <span className="voodbuilder-tm-node__meta voodbuilder-tm-node__meta--layout">
+                        {data.chrome_layout_prefix}
+                        <strong>{data.chrome_layout_label}</strong>
+                    </span>
                 ) : null}
                 {data.inherited ? (
                     <span className="voodbuilder-tm-node__badge">{data.inheritedLabel}</span>
@@ -209,8 +249,14 @@ function buildNodes(payload) {
                 id: area.id,
                 label: area.label,
                 description: area.description,
+                routes: area.routes,
+                required_capability_label: area.required_capability_label,
+                required_capability_prefix: payload.i18n?.required_capability ?? 'Requires: ',
+                chrome_layout_label: area.chrome_layout?.name ?? null,
+                chrome_layout_prefix: payload.i18n?.chrome_layout ?? 'Chrome layout: ',
                 preview: theme.preview ?? '#64748b',
                 surface: theme.surface ?? 'rgb(248 250 252)',
+                strip: theme.strip ?? [],
                 inherited: edge?.inherited ?? edgeInherited(area.id, themeId, payload, payload.channel_overrides ?? {}),
                 inheritedLabel: payload.i18n?.inherited ?? 'Inherited',
             },
@@ -361,6 +407,7 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                             ...node.data,
                             preview: theme.preview ?? '#64748b',
                             surface: theme.surface ?? 'rgb(248 250 252)',
+                            strip: theme.strip ?? [],
                             inherited: edge?.data?.inherited ?? false,
                         },
                     };
@@ -401,11 +448,22 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
 
             const area = payloadRef.current.areas?.find((item) => item.id === areaId);
             const allowed = area?.allowed_theme_ids ?? [];
+            const theme = payloadRef.current.themes?.find((item) => item.id === themeId);
 
             if (allowed.length > 0 && !allowed.includes(themeId)) {
+                const detail = payloadRef.current.i18n?.invalid_binding_detail
+                    ?? 'This theme does not support the capability required by this area.';
+                const required = area?.required_capability_label ?? '';
+                const themeCaps = (theme?.capability_labels ?? []).join(', ');
+
                 window.alert(
-                    payloadRef.current.i18n?.invalid_binding
-                        ?? 'That theme cannot be applied to this area.',
+                    [
+                        payloadRef.current.i18n?.invalid_binding
+                            ?? 'That theme cannot be applied to this area.',
+                        required ? `${payloadRef.current.i18n?.required_capability ?? 'Requires:'} ${required}` : '',
+                        themeCaps ? `${payloadRef.current.i18n?.theme_capabilities ?? 'Theme supports:'} ${themeCaps}` : '',
+                        detail,
+                    ].filter(Boolean).join('\n\n'),
                 );
 
                 return;
@@ -509,6 +567,7 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                                 ...node.data,
                                 preview: theme.preview ?? '#64748b',
                                 surface: theme.surface ?? 'rgb(248 250 252)',
+                                strip: theme.strip ?? [],
                                 inherited: edge?.data?.inherited ?? false,
                             },
                         };
@@ -523,6 +582,22 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
         [setEdges, setNodes, syncAssignments],
     );
 
+    const isValidConnection = useCallback((connection) => {
+        const areaNodeId = connection.target;
+        const themeNodeId = connection.source;
+
+        if (!areaNodeId?.startsWith('area:') || !themeNodeId?.startsWith('theme:')) {
+            return false;
+        }
+
+        const areaId = areaNodeId.replace('area:', '');
+        const themeId = themeNodeId.replace('theme:', '');
+        const area = payloadRef.current.areas?.find((item) => item.id === areaId);
+        const allowed = area?.allowed_theme_ids ?? [];
+
+        return allowed.length === 0 || allowed.includes(themeId);
+    }, []);
+
     const canvasHeight = canvasHeightFor(payload);
 
     return (
@@ -536,6 +611,7 @@ function ThemeMapCanvas({ payload, onAssignmentsChange }) {
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     onEdgesDelete={onEdgesDelete}
+                    isValidConnection={isValidConnection}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
                     nodesDraggable

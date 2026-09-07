@@ -13,6 +13,9 @@ use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\NavigationMenuTranslation;
 use Voodflow\Vtuts\Support\Locales;
 
+/**
+ * Filament action: Create Navigation Menu Translation.
+ */
 class CreateNavigationMenuTranslationAction
 {
     public static function make(): Action

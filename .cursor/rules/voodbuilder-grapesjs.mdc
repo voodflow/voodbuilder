@@ -1,0 +1,17 @@
+---
+description: Keep GrapesJS vanilla; put editor customizations in Support/Editor and resources/js/editor
+globs: packages/voodflow/voodbuilder/{resources/js/editor/**,src/Support/Editor/**,package.json}
+alwaysApply: false
+---
+
+# VoodBuilder — GrapesJS / editor code
+
+- **Never patch** `node_modules/grapesjs` or other Editor npm packages — lost on `npm update`
+- Keep upstream GrapesJS **vanilla**; pin version in host/root `package.json` (semver range, not `*`)
+- Custom behaviour only in:
+  - `resources/js/editor/` — bootstrap, plugins, UI, traits
+  - `resources/css/editor/` — chrome / block-preview styles
+  - `src/Support/Editor/` — PHP blocks, preview HTML, render pipeline
+- Extend via public APIs: `grapesjs.init` options, `editor.on`, `DomComponents.addType`, `VoodbuilderEditor.registerPlugin`
+- After GrapesJS upgrade: smoke-test `?edit=1` (blocks, traits, save/reload) — see `docs/EDITOR.md`
+- Companions ship their own `resources/js/editor/plugin.js`; do not merge paid UI into core

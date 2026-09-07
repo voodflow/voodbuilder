@@ -9,6 +9,9 @@ use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Voodflow\Voodbuilder\Filament\Forms\LandingFooterForm;
 use Voodflow\Voodbuilder\Support\LandingFooterSupport;
 
+/**
+ * Rich content / landing block: Landing Footer Block.
+ */
 class LandingFooterBlock extends RichContentCustomBlock
 {
     public static function getId(): string

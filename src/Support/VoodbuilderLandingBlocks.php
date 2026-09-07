@@ -19,6 +19,9 @@ use Voodflow\Voodbuilder\Filament\RichContent\Landing\LandingStepsBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\Landing\LandingTextSectionBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\Landing\LandingVideoBlock;
 
+/**
+ * Voodbuilder Landing Blocks.
+ */
 final class VoodbuilderLandingBlocks
 {
     /** @return list<class-string> */

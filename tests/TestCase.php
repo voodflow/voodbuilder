@@ -6,13 +6,24 @@ namespace Voodflow\Voodbuilder\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use JeffersonGoncalves\CookieConsent\Settings\CookieConsentSettings;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RalphJSmit\Laravel\SEO\LaravelSEOServiceProvider;
-use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
+use Voodflow\Vmedia\VmediaServiceProvider;
+use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
+use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
+use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
+use Voodflow\VoodbuilderComponents\VoodbuilderComponentsServiceProvider;
+use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicData;
+use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicDataServiceProvider;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
+use Voodflow\VoodbuilderTemplates\VoodbuilderTemplatesServiceProvider;
+use Voodflow\Vpopups\Vpopups;
+use Voodflow\Vpopups\VpopupsServiceProvider;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -20,11 +31,26 @@ abstract class TestCase extends BaseTestCase
 
     protected function getPackageProviders($app): array
     {
-        return [
+        return array_values(array_filter([
             LivewireServiceProvider::class,
             LaravelSEOServiceProvider::class,
+            // Unguarded, unlike the optional companions below: media is a hard requirement,
+            // and the editor cannot boot without its upload endpoint.
+            VmediaServiceProvider::class,
             VoodbuilderServiceProvider::class,
-        ];
+            class_exists(VpopupsServiceProvider::class)
+                ? VpopupsServiceProvider::class
+                : null,
+            class_exists(VoodbuilderComponentsServiceProvider::class)
+                ? VoodbuilderComponentsServiceProvider::class
+                : null,
+            class_exists(VoodbuilderDynamicDataServiceProvider::class)
+                ? VoodbuilderDynamicDataServiceProvider::class
+                : null,
+            class_exists(VoodbuilderTemplatesServiceProvider::class)
+                ? VoodbuilderTemplatesServiceProvider::class
+                : null,
+        ]));
     }
 
     protected function defineEnvironment($app): void
@@ -36,26 +62,15 @@ abstract class TestCase extends BaseTestCase
             'prefix' => '',
             'foreign_key_constraints' => true,
         ]);
+        $app['config']->set('cache.default', 'array');
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('voodbuilder.pages.enabled', true);
         $app['config']->set('voodbuilder.pages.prefix', 'pages');
         $app['config']->set('voodbuilder.home.route_enabled', false);
-
-        $app['config']->set('settings', [
-            'settings' => [
-                CookieConsentSettings::class,
-            ],
-            'default_repository' => 'database',
-            'repositories' => [
-                'database' => [
-                    'type' => DatabaseSettingsRepository::class,
-                    'model' => null,
-                    'table' => 'settings',
-                    'connection' => null,
-                ],
-            ],
-        ]);
+        // Package still ships Agency surfaces in-repo; tests use Agency until proprietary splits exist.
+        $app['config']->set('voodbuilder.license.edition', 'agency');
+        $app['config']->set('voodbuilder.license.cache', false);
     }
 
     protected function setUp(): void
@@ -64,53 +79,41 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutVite();
 
-        $this->seedCookieConsentSettings();
+        // Filament panel plugins are not registered in Testbench; activate companion runtimes for package tests.
+        if (class_exists(Vpopups::class)) {
+            EditorGate::flushLabelProviders();
+            Vpopups::reset();
+            Vpopups::activate();
+        }
+
+        if (class_exists(VoodbuilderComponents::class)) {
+            VoodbuilderComponents::reset();
+            VoodbuilderComponents::activate();
+        }
+
+        if (class_exists(VoodbuilderDynamicData::class)) {
+            VoodbuilderDynamicData::reset();
+            VoodbuilderDynamicData::activate();
+        }
+
+        if (class_exists(VoodbuilderTemplates::class)) {
+            VoodbuilderTemplates::reset();
+            VoodbuilderTemplates::activate();
+        }
+
+        NavigationMenuResolver::clearSchemaCache();
+        SitePageResolver::clearSchemaCache();
+        ChromeLayoutResolver::forgetCache();
     }
 
-    protected function seedCookieConsentSettings(): void
+    protected function tearDown(): void
     {
-        if (! class_exists(CookieConsentSettings::class)) {
-            return;
-        }
+        PageBuilderAccess::authorizeUsing(null);
 
-        $defaults = [
-            'css_url' => 'https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css',
-            'js_url' => 'https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js',
-            'content_header' => 'Cookies used on the website!',
-            'content_message' => 'This website uses cookies to ensure you get the best experience on our website.',
-            'content_dismiss' => 'Got it!',
-            'content_allow' => 'Allow cookies',
-            'content_deny' => 'Decline',
-            'content_link' => 'Learn more',
-            'content_href' => null,
-            'content_close' => '&#x274c;',
-            'content_target' => '_blank',
-            'content_policy' => 'Cookie Policy',
-            'popup_background' => '#696969',
-            'popup_text' => '#FFFFFF',
-            'popup_link' => '#FFFFFF',
-            'button_background' => 'transparent',
-            'button_border' => '#f8e71c',
-            'button_text' => '#f8e71c',
-            'highlight_background' => '#f8e71c',
-            'highlight_border' => '#f8e71c',
-            'highlight_text' => '#000000',
-            'position' => 'bottom-left',
-            'theme' => 'block',
-        ];
+        NavigationMenuResolver::clearSchemaCache();
+        SitePageResolver::clearSchemaCache();
 
-        $now = now();
-
-        foreach ($defaults as $name => $value) {
-            DB::table('settings')->insert([
-                'group' => 'cookie_consent',
-                'name' => $name,
-                'locked' => false,
-                'payload' => json_encode($value, JSON_THROW_ON_ERROR),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
+        parent::tearDown();
     }
 
     protected function defineDatabaseMigrations(): void
@@ -153,6 +156,25 @@ abstract class TestCase extends BaseTestCase
             $table->json('payload');
             $table->timestamps();
             $table->unique(['group', 'name']);
+        });
+
+        $schema->create('media', function (Blueprint $table): void {
+            $table->id();
+            $table->morphs('model');
+            $table->uuid()->nullable()->unique();
+            $table->string('collection_name');
+            $table->string('name');
+            $table->string('file_name');
+            $table->string('mime_type')->nullable();
+            $table->string('disk');
+            $table->string('conversions_disk')->nullable();
+            $table->unsignedBigInteger('size');
+            $table->json('manipulations');
+            $table->json('custom_properties');
+            $table->json('generated_conversions');
+            $table->json('responsive_images');
+            $table->unsignedInteger('order_column')->nullable()->index();
+            $table->nullableTimestamps();
         });
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');

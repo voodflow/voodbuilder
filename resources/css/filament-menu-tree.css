@@ -1,0 +1,127 @@
+/* Voodbuilder: clearer nestable-tree drag handles + nesting cues */
+
+.filament-nestable-tree .fi-tree-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    cursor: grab;
+    color: var(--gray-500, #6b7280);
+    background-color: color-mix(in oklab, var(--gray-500, #6b7280) 8%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-drag-handle {
+    color: var(--gray-400, #9ca3af);
+    background-color: color-mix(in oklab, var(--gray-400, #9ca3af) 12%, transparent);
+}
+
+.filament-nestable-tree .fi-tree-node-row:hover .fi-tree-drag-handle {
+    color: var(--gray-700, #374151);
+    background-color: color-mix(in oklab, var(--gray-500, #6b7280) 16%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row:hover .fi-tree-drag-handle {
+    color: var(--gray-200, #e5e7eb);
+    background-color: color-mix(in oklab, var(--gray-400, #9ca3af) 20%, transparent);
+}
+
+.filament-nestable-tree .fi-tree-drag-handle:active {
+    cursor: grabbing;
+}
+
+.filament-nestable-tree .fi-tree-drag-handle svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.filament-nestable-tree .fi-tree-node-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.filament-nestable-tree .fi-tree-node-type {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--gray-500, #6b7280);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-type {
+    color: var(--gray-400, #9ca3af);
+}
+
+/* Nested rows: left rail + slightly softer surface */
+.filament-nestable-tree .fi-tree-node-row--nested {
+    box-shadow:
+        inset 3px 0 0 0 var(--primary-400, #818cf8),
+        0 1px 2px 0 rgb(0 0 0 / 0.05);
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 4%, var(--color-white, #fff));
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--nested {
+    box-shadow:
+        inset 3px 0 0 0 var(--primary-400, #818cf8),
+        0 1px 2px 0 rgb(0 0 0 / 0.2);
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 8%, transparent);
+}
+
+/* While dragging: highlight valid top-level nest targets */
+.filament-nestable-tree .fi-tree-node-row--nest-target {
+    outline: 1px dashed color-mix(in oklab, var(--primary-500, #6366f1) 45%, transparent);
+    outline-offset: -1px;
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--nest-target {
+    outline-color: color-mix(in oklab, var(--primary-400, #818cf8) 55%, transparent);
+}
+
+/* Drop-as-child target: stronger ring + tinted background */
+.filament-nestable-tree .fi-tree-node-row--drop-inside {
+    outline: 2px solid var(--primary-500, #6366f1);
+    outline-offset: -2px;
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 12%, var(--color-white, #fff));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary-500, #6366f1) 20%, transparent);
+}
+
+.dark .filament-nestable-tree .fi-tree-node-row--drop-inside {
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 18%, transparent);
+}
+
+/* Inline badge when hovering the nest zone */
+.filament-nestable-tree .fi-tree-nest-hint {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+    border-radius: 9999px;
+    padding-inline: 0.625rem;
+    padding-block: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--primary-700, #4338ca);
+    background-color: color-mix(in oklab, var(--primary-500, #6366f1) 14%, var(--color-white, #fff));
+    pointer-events: none;
+}
+
+.dark .filament-nestable-tree .fi-tree-nest-hint {
+    color: var(--primary-200, #c7d2fe);
+    background-color: color-mix(in oklab, var(--primary-400, #818cf8) 22%, transparent);
+}
+
+/* Dragged row: ghost indent preview */
+.filament-nestable-tree .fi-tree-node-row--dragging {
+    opacity: 0.45;
+    transform: scale(0.99);
+}
+
+/* Reorder indicators (plugin pseudo-elements) — slightly thicker for visibility */
+.filament-nestable-tree .fi-tree-node-row--drop-before::before,
+.filament-nestable-tree .fi-tree-node-row--drop-after::after {
+    height: 3px;
+}

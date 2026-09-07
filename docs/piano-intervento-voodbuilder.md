@@ -1,7 +1,7 @@
 # Piano di intervento VoodBuilder
 
 > **Origine:** brainstorm in [`IDEE.md`](./IDEE.md) (ispirazione Bricks Builder).  
-> **Scopo:** prioritizzare cosa implementare, in che ordine e con quale approccio nel nostro stack (Laravel 13, Filament 5, GrapesJS, Tailwind v4).  
+> **Scopo:** prioritizzare cosa implementare, in che ordine e con quale approccio nel nostro stack (Laravel 13, Filament 5, Editor, Tailwind v4).  
 > **Stato:** documento di pianificazione — da rivedere in fase di pulizia docs.
 
 ---
@@ -22,13 +22,13 @@
 
 | Area | Stato attuale | File / doc |
 |------|---------------|------------|
-| Libreria componenti | Import codice, catalogo, export JSON slim | `components-ui.js`, `GrapesJsComponentExportNormalizer` |
+| Libreria componenti | Import codice, catalogo, export JSON slim | `components-ui.js`, `EditorComponentExportNormalizer` |
 | Dynamic data | `data-voodbuilder-bind`, pannello Dynamic, preview | [`BINDINGS.md`](./BINDINGS.md) |
 | Condizioni | Visibilità elementi per contesto | `conditions-ui.js` |
 | Classi globali | CRUD classi riutilizzabili | `global-classes-ui.js` |
-| Repeat / query loop | `data-voodbuilder-repeat` su binding | `GrapesJsRepeatRenderer` |
+| Repeat / query loop | `data-voodbuilder-repeat` su binding | `EditorRepeatRenderer` |
 | Menu sito | Backend Filament, 2 livelli, placement `main` / `header_extra` / `footer` | README § Navigation |
-| Revisioni pagina | Snapshot `builder_payload` | `GrapesJsPageRevisionsController` |
+| Revisioni pagina | Snapshot `builder_payload` | `EditorPageRevisionsController` |
 | Performance CSS | Compile in editor, zero JIT in pubblico | [`analisi-homepage-performance-2026-07-02.md`](./analisi-homepage-performance-2026-07-02.md) |
 | Toolbar canvas | Lucide, parent select, clone, dynamic | `canvas-component-toolbar.js` |
 
@@ -47,8 +47,8 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 **Perché ora:** il catalogo componenti esiste; manca solo il ponte dal canvas/layer senza passare dalla libreria.
 
 **Approccio:**
-- Estendere `canvas-context-menu.js` e/o menu layer GrapesJS.
-- Riutilizzare API `GrapesJsComponentsController` (stesso payload di export normalizer).
+- Estendere `canvas-context-menu.js` e/o menu layer Editor.
+- Riutilizzare API `EditorComponentsController` (stesso payload di export normalizer).
 - Opzione “salva selezione” vs “salva ramo intero”.
 
 **Dipendenze:** nessuna nuova tabella.
@@ -85,7 +85,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 **Approccio:**
 - Lista utility da preset Tailwind v4 del progetto (JSON generato in build).
 - Integrazione in `global-classes-ui.js` / trait `classes` del componente.
-- Al save: `GrapesJsComponentTailwindCompiler` già ricompila — collegare feedback in editor.
+- Al save: `EditorComponentTailwindCompiler` già ricompila — collegare feedback in editor.
 
 **Rischio:** classi inventate senza significato — mitigare con whitelist + `arbitrary` opzionale.
 
@@ -95,7 +95,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 **Stato:** implementato (luglio 2026) — 8 varianti navbar Tailwind UI (`site_nav_*`) e 8 footer (`site_footer_*`), menu da Admin → Menu (voodpress) con supporto multilivello fino a 3 livelli. Legacy `site_header` / `site_footer_a`… mappati automaticamente.
 
-**Cosa:** blocchi GrapesJS per header come nel tema base: logo, slot menu `main` + `header_extra`, icona search, login, notifiche (placeholder o binding).
+**Cosa:** blocchi Editor per header come nel tema base: logo, slot menu `main` + `header_extra`, icona search, login, notifiche (placeholder o binding).
 
 **Perché ora:** i menu sono in DB ma l’header in pagina è ancora spesso manuale o hardcoded nel layout.
 
@@ -112,7 +112,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 **Stato:** implementato (luglio 2026) — batch 1 in categoria Basic/Media: Divider, Icon box, Styled list, Embed.
 
-**Cosa:** audit rispetto a [Bricks elements](https://bricksbuilder.io/elements/) — aggiungere solo ciò che manca e ha senso in GrapesJS (divider, icon box, list styled, embed, map, countdown, pricing table già parzialmente da sezioni).
+**Cosa:** audit rispetto a [Bricks elements](https://bricksbuilder.io/elements/) — aggiungere solo ciò che manca e ha senso in Editor (divider, icon box, list styled, embed, map, countdown, pricing table già parzialmente da sezioni).
 
 **Approccio:**
 - Tabella gap in issue tracker.
@@ -123,15 +123,15 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ## Fase 2 — Medio termine (🟡 M, priorità 3–5)
 
-### 2.1 Template pagina: salva / importa — 🟡 M · P3 ✅ GA (solo editor GrapesJS)
+### 2.1 Template pagina: salva / importa — 🟡 M · P3 ✅ GA (solo editor Editor)
 
-**Stato:** GA (luglio 2026) — tabella `voodbuilder_page_templates`, API CRUD + import/export JSON, pulsante topbar editor (icona layers). **Solo nell'editor GrapesJS** (`?edit=1`), non in creazione pagina Filament.
+**Stato:** GA (luglio 2026) — tabella `voodbuilder_page_templates`, API CRUD + import/export JSON, pulsante topbar editor (icona layers). **Solo nell'editor Editor** (`?edit=1`), non in creazione pagina Filament.
 
 **Cosa:** salvare una pagina intera come template e inserirla in un nuovo documento (come componenti ma scope pagina: html + css + js + conditions).
 
 **Approccio:**
 - Modello `voodbuilder_page_templates`.
-- Export/import JSON simmetrico a `GrapesJsPageTemplateBundle`.
+- Export/import JSON simmetrico a `EditorPageTemplateBundle`.
 - UI: azione in topbar editor (save / apply / delete / import bundle / export all).
 
 **Prossimo passo marketplace:** catalogo remoto in editor (`VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL`) + install da URL/bundle con un click. ✅ fase A (luglio 2026).
@@ -156,7 +156,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 ### 2.3 Potenziamento menu builder (admin) — 🟡 M · P3 (fase A ✅ · fase B ✅ RC)
 
 **Stato:** fase A implementata (luglio 2026) — anteprima iframe header/footer nel form Filament modifica menu.  
-**Stato fase B RC:** picker pagine limitato a builder GrapesJS + link “Apri editor visuale” (`?edit=1`) sotto la select pagina.
+**Stato fase B RC:** picker pagine limitato a builder Editor + link “Apri editor visuale” (`?edit=1`) sotto la select pagina.
 
 **Cosa:** esperienza admin più visuale: anteprima header live, drag migliorato, assegnazione icone voce, badge, visibilità per ruolo.
 
@@ -164,7 +164,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 **Approccio:**
 - Fase A: preview iframe header nel form Filament.
-- Fase B: collegamento voci a pagine GrapesJS / rotte app.
+- Fase B: collegamento voci a pagine Editor / rotte app.
 - Non duplicare un builder canvas per i menu nella v1.
 
 **Riferimento Bricks:** [Menu builder](https://bricksbuilder.io/menu-builder/).
@@ -175,10 +175,10 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 **Cosa:** estendere repeat binding: filtri UI, ordinamento, paginazione, template item, empty state.
 
-**Stato:** base con `data-voodbuilder-repeat` e sorgenti plugin. **RC:** `data-voodbuilder-repeat-empty` documentato in [`BINDINGS.md`](./BINDINGS.md) e gestito da `GrapesJsRepeatRenderer`.
+**Stato:** base con `data-voodbuilder-repeat` e sorgenti plugin. **RC:** `data-voodbuilder-repeat-empty` documentato in [`BINDINGS.md`](./BINDINGS.md) e gestito da `EditorRepeatRenderer`.
 
 **Approccio:**
-- Trait GrapesJS “Query loop” sul container.
+- Trait Editor “Query loop” sul container.
 - Allineamento API a `BindingSource` esistenti.
 - Doc espansioni in `BINDINGS.md`.
 
@@ -208,16 +208,20 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ---
 
-### 2.7 Font manager (solo font liberi, no Google Fonts) — 🟡 M · P5
+### 2.7 Font manager (solo font liberi, no Google Fonts) — 🟡 M · P5 ✅ MVP
 
-**Cosa:** catalogo font self-hosted (Inter, Instrument Sans, JetBrains Mono già in Vite), attivazione per sub-tema.
+**Stato:** MVP (luglio 2026) — catalogo Fontsource (~50) in Core, Style Manager + lazy load editor, detect su save, publish via Vite manifest. Estendibile con plugin (`registerFonts` / `registerFontProvider`, es. Bunny).
+
+**Cosa:** catalogo font self-hosted; preview realtime in editor; solo font usati sul frontend pubblico.
 
 **Approccio:**
-- Tabella font + file in `storage/app/fonts`.
-- `@font-face` generato al publish.
-- Escludere CDN Google per privacy/GDPR.
+- `resources/fonts/core-catalog.json` + `FontCatalog` / JS catalog.
+- Vite: entry publish + `voodbuilder-fonts-manifest.json`.
+- Plugin companion per provider extra (Bunny / altri) senza CDN Google in Core.
 
-**Vincolo:** solo licenze OSS commercial-friendly documentate.
+**Vincolo:** solo licenze OSS commercial-friendly documentate. No Google Fonts CDN in Core.
+
+**Riferimento:** `docs/FONTS.md`.
 
 ---
 
@@ -225,7 +229,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 
 ### 3.1 Popup builder — 🔴 L · P6 ✅ MVP
 
-**Stato:** MVP (luglio 2026) — `voodbuilder_popups`, Filament CRUD regole, editor GrapesJS dedicato, runtime frontend con trigger load/delay/scroll/exit intent/click, frequency cap, targeting audience/path.
+**Stato:** MVP (luglio 2026) — `voodbuilder_popups`, Filament CRUD regole, editor Editor dedicato, runtime frontend con trigger load/delay/scroll/exit intent/click, frequency cap, targeting audience/path.
 
 **Cosa:** modali/popup con trigger (load, exit intent, click, tempo), frequenza, audience (logged, ruolo, pagina).
 
@@ -234,7 +238,7 @@ Implementare per primi: basso rischio, valore visibile subito nell’editor.
 - Screenshot anteprima template (2.2)
 
 **Approccio:**
-- Modello `voodbuilder_popups` + payload GrapesJS.
+- Modello `voodbuilder_popups` + payload Editor.
 - Script leggero frontend per trigger e cookie frequency cap.
 - Integrazione conditions esistenti.
 
@@ -335,7 +339,7 @@ Backlog prodotto
 - [ ] Senza nodo empty: container vuoto, nessun attributo repeat in HTML renderizzato
 
 ### Menu admin (fase B)
-- [ ] Modifica menu → tipo **Page** → select mostra solo pagine GrapesJS
+- [ ] Modifica menu → tipo **Page** → select mostra solo pagine Editor
 - [ ] Seleziona pagina → link **Apri editor visuale** apre `?edit=1` in nuova scheda
 - [ ] Pagine Rich editor non compaiono nel picker
 

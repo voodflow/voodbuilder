@@ -10,10 +10,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Voodflow\Voodbuilder\Casts\MenuItemTypeCast;
+use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
+use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
+/**
+ * Navigation Menu Item.
+ */
 class NavigationMenuItem extends Model
 {
     protected $table = 'voodbuilder_menu_items';
@@ -34,7 +40,7 @@ class NavigationMenuItem extends Model
     protected function casts(): array
     {
         return [
-            'type' => MenuItemType::class,
+            'type' => MenuItemTypeCast::class,
             'route_parameters' => 'array',
             'open_in_new_tab' => 'boolean',
             'sort_order' => 'integer',
@@ -95,11 +101,63 @@ class NavigationMenuItem extends Model
 
     public function hasChildren(): bool
     {
+        if ($this->navigationChildren()->isNotEmpty()) {
+            return true;
+        }
+
         if ($this->relationLoaded('children')) {
             return $this->children->isNotEmpty();
         }
 
         return $this->children()->exists();
+    }
+
+    /**
+     * Children used for front-end rendering (persisted + registered type children).
+     *
+     * @return Collection<int, NavigationMenuItem>
+     */
+    public function navigationChildren(): Collection
+    {
+        $handler = $this->registeredTypeHandler();
+
+        if ($handler !== null) {
+            $dynamic = $handler->resolveChildren($this);
+
+            if ($dynamic->isNotEmpty()) {
+                return $dynamic;
+            }
+        }
+
+        if ($this->relationLoaded('children')) {
+            return $this->children;
+        }
+
+        if (! $this->exists) {
+            return collect();
+        }
+
+        return $this->children()->orderBy('sort_order')->get();
+    }
+
+    public function typeKey(): string
+    {
+        return $this->type instanceof MenuItemType
+            ? $this->type->value
+            : (string) $this->type;
+    }
+
+    public function registeredTypeHandler(): ?MenuItemTypeHandler
+    {
+        if ($this->type instanceof MenuItemType) {
+            return null;
+        }
+
+        if (! function_exists('app') || ! app()->bound(MenuItemTypeRegistry::class)) {
+            return null;
+        }
+
+        return app(MenuItemTypeRegistry::class)->get($this->typeKey());
     }
 
     public function resolveUrl(): string
@@ -108,11 +166,22 @@ class NavigationMenuItem extends Model
             return '#';
         }
 
+        $handler = $this->registeredTypeHandler();
+
+        if ($handler !== null) {
+            return $handler->resolveUrl($this);
+        }
+
+        if (! $this->type instanceof MenuItemType) {
+            return '#';
+        }
+
         return match ($this->type) {
             MenuItemType::Page => $this->resolvePageUrl(),
             MenuItemType::Route => $this->resolveRouteUrl(),
             MenuItemType::Url => (string) ($this->link ?? '#'),
             MenuItemType::Mail => $this->resolveMailUrl(),
+            MenuItemType::Group => '#',
         };
     }
 
@@ -120,6 +189,12 @@ class NavigationMenuItem extends Model
     {
         if ($this->type === MenuItemType::Group) {
             return false;
+        }
+
+        $handler = $this->registeredTypeHandler();
+
+        if ($handler !== null) {
+            return $handler->hasResolvableLink($this);
         }
 
         return $this->resolveUrl() !== '#';
@@ -158,13 +233,19 @@ class NavigationMenuItem extends Model
             return true;
         }
 
-        return $this->loadedChildren()->contains(fn (NavigationMenuItem $child): bool => $child->isActive());
+        return $this->navigationChildren()->contains(fn (NavigationMenuItem $child): bool => $child->isActive());
     }
 
     public function isSelfActive(): bool
     {
         if ($this->type === MenuItemType::Group) {
             return false;
+        }
+
+        $handler = $this->registeredTypeHandler();
+
+        if ($handler !== null) {
+            return $handler->isActive($this);
         }
 
         if ($this->type === MenuItemType::Page) {
@@ -199,7 +280,7 @@ class NavigationMenuItem extends Model
                 && $resolved->section_home;
         }
 
-        return request()->routeIs('voodbuilder.pages.show')
+        return request()->routeIs('voodbuilder.pages.show', 'voodbuilder.pages.show.nested')
             && SitePageResolver::publishedForMenu((string) $this->link)?->getKey()
                 === SitePageResolver::publishedForMenu((string) request()->route('slug'))?->getKey();
     }
@@ -220,11 +301,5 @@ class NavigationMenuItem extends Model
         }
 
         return str_starts_with($email, 'mailto:') ? $email : 'mailto:'.$email;
-    }
-
-    /** @return Collection<int, NavigationMenuItem> */
-    protected function loadedChildren(): Collection
-    {
-        return $this->relationLoaded('children') ? $this->children : collect();
     }
 }

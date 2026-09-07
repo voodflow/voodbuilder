@@ -6,10 +6,16 @@ namespace Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Voodflow\Voodbuilder\Filament\Concerns\ScopesListTableToCanonicalTranslationGroups;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 
+/**
+ * List Navigation Menus.
+ */
 class ListNavigationMenus extends ListRecords
 {
+    use ScopesListTableToCanonicalTranslationGroups;
+
     protected static string $resource = NavigationMenuResource::class;
 
     protected function getHeaderActions(): array

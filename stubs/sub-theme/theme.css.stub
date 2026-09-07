@@ -1,6 +1,9 @@
 /**
  * {{ name }} sub-theme — layout shell for Site Pages.
- * Colors can be set in Admin → Settings → Layouts without editing this file.
+ * Colors: Admin → Theme Studio (instant, no build).
+ *
+ * Plain CSS only — served at runtime via ThemePalette (not a Vite entry).
+ * Prefer CSS variables and var(--color-vp-*) over Tailwind @apply.
  */
 
 html[data-voodbuilder-sub-theme='{{ id }}'] {
@@ -9,9 +12,24 @@ html[data-voodbuilder-sub-theme='{{ id }}'] {
 }
 
 html[data-voodbuilder-sub-theme='{{ id }}'] .voodbuilder-{{ id }}-content {
-    @apply mx-auto w-full max-w-[var(--width-vp-layout)] px-6 md:px-8;
+    margin-inline: auto;
+    width: 100%;
+    max-width: var(--width-vp-layout);
+    padding-inline: 1.5rem;
 }
 
-html[data-voodbuilder-sub-theme='{{ id }}'] .voodbuilder-{{ id }}-content:not(:has(.VPRichPage--landing)):not(:has(.voodbuilder-grapesjs-frontend)) {
-    @apply py-12 md:py-24;
+@media (min-width: 768px) {
+    html[data-voodbuilder-sub-theme='{{ id }}'] .voodbuilder-{{ id }}-content {
+        padding-inline: 2rem;
+    }
+}
+
+html[data-voodbuilder-sub-theme='{{ id }}'] .voodbuilder-{{ id }}-content:not(:has(.VPRichPage--landing)):not(:has(.voodbuilder-editor-frontend)) {
+    padding-block: 3rem;
+}
+
+@media (min-width: 768px) {
+    html[data-voodbuilder-sub-theme='{{ id }}'] .voodbuilder-{{ id }}-content:not(:has(.VPRichPage--landing)):not(:has(.voodbuilder-editor-frontend)) {
+        padding-block: 6rem;
+    }
 }

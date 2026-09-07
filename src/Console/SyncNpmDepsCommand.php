@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Process;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
 
+/**
+ * Artisan command: Sync Npm Deps.
+ */
 class SyncNpmDepsCommand extends Command
 {
     protected $signature = 'voodbuilder:sync-npm-deps
@@ -39,7 +42,7 @@ class SyncNpmDepsCommand extends Command
 
         if (is_file(base_path('vite.config.js'))) {
             if (ConfigureViteForVoodbuilder::apply($this->option('force'))) {
-                $this->components->info('Updated vite.config.js with voodbuilder theme and GrapesJS entries.');
+                $this->components->info('Updated vite.config.js with voodbuilder theme and Editor entries.');
             }
         } else {
             $this->components->warn('vite.config.js not found — add Voodbuilder Vite entries manually.');

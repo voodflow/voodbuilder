@@ -7,6 +7,9 @@ namespace Voodflow\Voodbuilder\Console;
 use Illuminate\Console\Command;
 use Voodflow\Voodbuilder\Support\ThemeAssetCompiler;
 
+/**
+ * Artisan command: Compile Theme Assets.
+ */
 class CompileThemeAssetsCommand extends Command
 {
     protected $signature = 'voodbuilder:compile-theme-assets';

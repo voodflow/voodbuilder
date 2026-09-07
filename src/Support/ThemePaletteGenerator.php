@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+/**
+ * Theme Palette Generator.
+ */
 final class ThemePaletteGenerator
 {
     public static function seedFromThemeId(string $id): string

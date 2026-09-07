@@ -12,8 +12,8 @@ class PublicDiskUrlTest extends TestCase
     public function test_builds_relative_storage_path(): void
     {
         $this->assertSame(
-            '/storage/voodbuilder/grapesjs/photo.jpg',
-            PublicDiskUrl::fromPath('voodbuilder/grapesjs/photo.jpg'),
+            '/storage/voodbuilder/photo.jpg',
+            PublicDiskUrl::fromPath('voodbuilder/photo.jpg'),
         );
     }
 }

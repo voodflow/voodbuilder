@@ -10,6 +10,9 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\LandingMenuPlacements;
 use Voodflow\Voodbuilder\Support\LandingNavbarSupport;
 
+/**
+ * Landing Navbar Form.
+ */
 final class LandingNavbarForm
 {
     /** @return array<int, mixed> */

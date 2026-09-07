@@ -6,16 +6,21 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Palette.
+ */
 final class ThemePalette
 {
     private const HEADER_CHROME_CSS = <<<'CSS'
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-muted)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)):not(.voodbuilder-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--color-vp-brand-1)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *)){color:var(--vx-header-text)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn{color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
-html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover,:focus-visible){color:var(--color-vp-brand-1)!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 16%,transparent)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg-alt,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+html[data-voodbuilder-sub-theme] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(.text-vp-text-1,.text-vp-text-3):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .text-vp-text-2:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-muted)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] :is(a,button):not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)):not(.voodbuilder-header-icon-btn):is(:hover,:focus-visible){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-brand-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:color-mix(in srgb,var(--vx-header-text) 88%,#fff)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .hover\:text-vp-text-1:hover:not(:where([role='menu'],[role='menu'] *,[data-voodbuilder-search-dialog],[data-voodbuilder-search-dialog] *,[data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text,var(--color-vp-text-2))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-2)) 10%,transparent)!important}
+html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn:is(:hover,:focus-visible):not(:where([data-mobile-nav],[data-mobile-nav] *)){color:var(--vx-header-text,var(--color-vp-text-1))!important;background:color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 22%,transparent)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu']{color:var(--vx-menu-text,var(--color-vp-text-1))!important;background-color:var(--color-vp-bg-elv)!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-1,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .font-medium,html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menuitem']{color:var(--vx-menu-text,var(--color-vp-text-1))!important}
 html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] .text-vp-text-2{color:var(--vx-menu-text-muted,var(--color-vp-text-2))!important}
@@ -25,8 +30,10 @@ html[data-voodbuilder-sub-theme] header[role='banner'] [role='menu'] [role='menu
 CSS;
 
     private const CANVAS_HEADER_BACKGROUND_CSS = <<<'CSS'
-html header[role='banner'] .bg-vp-bg,html header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg)!important}
-html header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text) 12%,transparent)}
+[data-voodbuilder-chrome-shell] header[role='banner'].bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'].bg-vp-bg-alt,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+[data-voodbuilder-chrome-shell] header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
+header[role='banner'].bg-vp-bg,header[role='banner'].bg-vp-bg-alt,header[role='banner'] .bg-vp-bg,header[role='banner'] .bg-vp-bg-alt{background-color:var(--vx-header-bg,var(--color-vp-bg))!important}
+header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
 CSS;
 
     /** @var list<string> */
@@ -37,6 +44,36 @@ CSS;
         'header_text',
         'body_bg',
         'text',
+    ];
+
+    /** @var list<string> */
+    private const SUB_THEME_VARIABLE_PRIORITIES = [
+        '--color-vp-brand-1',
+        '--color-vp-brand-2',
+        '--color-vp-brand-3',
+        '--color-vp-bg',
+        '--color-vp-bg-alt',
+        '--color-vp-bg-elv',
+        '--color-vp-text-1',
+        '--color-vp-text-2',
+        '--color-vp-text-3',
+        '--color-vp-divider',
+        '--color-vp-gray-soft',
+    ];
+
+    /** @var list<string> */
+    private const SUB_THEME_SEMANTIC_VARIABLE_PRIORITIES = [
+        '--width-vp-layout',
+        '--width-vp-content',
+        '--vx-header-bg',
+        '--vx-header-text',
+        '--vx-header-muted',
+        '--vx-sidebar-bg',
+        '--vx-surface',
+        '--vx-text',
+        '--vx-muted',
+        '--vx-border',
+        '--vx-accent',
     ];
 
     /**
@@ -103,20 +140,61 @@ CSS;
 
         $lightBuiltin = self::variablesToCssRule(
             "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
-            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
+            ),
         );
 
         if ($lightBuiltin !== null) {
             $rules[] = $lightBuiltin;
         }
 
+        $lightSemantic = self::variablesToCssRule(
+            "html[data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeSemanticVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: false)),
+            ),
+        );
+
+        if ($lightSemantic !== null) {
+            $rules[] = $lightSemantic;
+        }
+
         $darkBuiltin = self::variablesToCssRule(
             "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
-            self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
+            ),
         );
 
         if ($darkBuiltin !== null) {
             $rules[] = $darkBuiltin;
+        }
+
+        $darkSemantic = self::variablesToCssRule(
+            "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeSemanticVariables(self::parseSubThemeVariableBlock($subThemeCss, $subThemeId, dark: true)),
+            ),
+        );
+
+        if ($darkSemantic !== null) {
+            $rules[] = $darkSemantic;
+        }
+
+        // Layout/shell rules from app theme.css (before admin palette so Theme Studio colors win).
+        $runtime = self::runtimeStylesheetForPalette($subThemeId);
+
+        if ($runtime !== '') {
+            $rules[] = $runtime;
         }
 
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
@@ -139,8 +217,189 @@ CSS;
         return implode("\n", array_filter($rules));
     }
 
+    public static function criticalChromeShellCss(string $subThemeId): string
+    {
+        $scoped = str_replace(
+            [
+                "html[data-voodbuilder-sub-theme='{$subThemeId}']",
+                "html.dark[data-voodbuilder-sub-theme='{$subThemeId}']",
+                'html[data-voodbuilder-sub-theme]',
+            ],
+            [
+                "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                '[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme]',
+            ],
+            self::criticalDocumentCss($subThemeId),
+        );
+
+        $css = self::readSubThemeCss($subThemeId);
+        $semanticRules = [];
+
+        if ($css !== '') {
+            $lightSemanticRule = self::variablesToCssRule(
+                "[data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+                self::withoutAdminOverriddenSemanticVariables(
+                    $subThemeId,
+                    false,
+                    self::filterSubThemeSemanticVariables(
+                        self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+                    ),
+                ),
+            );
+
+            if ($lightSemanticRule !== null) {
+                $semanticRules[] = $lightSemanticRule;
+            }
+
+            $darkSemanticRule = self::variablesToCssRule(
+                ".dark [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+                self::withoutAdminOverriddenSemanticVariables(
+                    $subThemeId,
+                    true,
+                    self::filterSubThemeSemanticVariables(
+                        self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+                    ),
+                ),
+            );
+
+            if ($darkSemanticRule !== null) {
+                $semanticRules[] = $darkSemanticRule;
+            }
+        }
+
+        return $scoped.implode("\n", $semanticRules).self::CANVAS_HEADER_BACKGROUND_CSS.self::chromeShellAdminOverrideCss($subThemeId);
+    }
+
+    public static function chromeShellAdminOverrideCss(string $subThemeId): string
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $palette = $colors[$subThemeId] ?? null;
+
+        if (! is_array($palette)) {
+            return '';
+        }
+
+        $rules = [];
+        // Higher specificity than page/layout-embedded canvas CSS (same chrome-shell
+        // selector without the html[data-voodbuilder-sub-theme] ancestor), so admin
+        // palette colors always win on the live frontend.
+        $lightRule = self::buildRule(
+            $subThemeId,
+            $palette['light'],
+            false,
+            "html[data-voodbuilder-sub-theme='{$subThemeId}'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']:not(.dark)",
+        );
+
+        if ($lightRule !== null) {
+            $rules[] = $lightRule;
+        }
+
+        $darkRule = self::buildRule(
+            $subThemeId,
+            $palette['dark'],
+            true,
+            "html.dark[data-voodbuilder-sub-theme='{$subThemeId}'] [data-voodbuilder-chrome-shell][data-voodbuilder-sub-theme='{$subThemeId}']",
+        );
+
+        if ($darkRule !== null) {
+            $rules[] = $darkRule;
+        }
+
+        // Also win against stale layout CSS that stamps tokens on html:not(.dark).
+        $htmlLight = self::buildRule($subThemeId, $palette['light'], false);
+        $htmlDark = self::buildRule($subThemeId, $palette['dark'], true);
+
+        if ($htmlLight !== null) {
+            $rules[] = $htmlLight;
+        }
+
+        if ($htmlDark !== null) {
+            $rules[] = $htmlDark;
+        }
+
+        return implode("\n", $rules);
+    }
+
     /**
-     * GrapesJS canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
+     * Remove palette custom-properties and ThemePalette chrome rules baked into
+     * saved Editor CSS so live ThemePalette / admin overrides control the canvas.
+     */
+    public static function stripEmbeddedPaletteOverrides(string $css): string
+    {
+        if ($css === '') {
+            return '';
+        }
+
+        $tokens = [
+            '--vx-header-bg',
+            '--vx-header-text',
+            '--vx-header-muted',
+            '--vx-menu-text',
+            '--vx-menu-text-muted',
+            '--vx-menu-text-subtle',
+            '--color-vp-brand-1',
+            '--color-vp-brand-2',
+            '--color-vp-brand-3',
+            '--color-vp-bg',
+            '--color-vp-bg-alt',
+            '--color-vp-bg-elv',
+            '--color-vp-text-1',
+            '--color-vp-text-2',
+            '--color-vp-text-3',
+        ];
+
+        $pattern = '/(?:'.implode('|', array_map(static fn (string $token): string => preg_quote($token, '/'), $tokens)).')\s*:\s*[^;}{]+;?/i';
+        $stripped = preg_replace($pattern, '', $css);
+        $stripped = is_string($stripped) ? $stripped : $css;
+
+        return self::stripThemeManagedChromeRules($stripped);
+    }
+
+    /**
+     * Drop header/chrome ThemePalette rules that are re-injected on every render.
+     */
+    private static function stripThemeManagedChromeRules(string $css): string
+    {
+        if ($css === '' || ! str_contains($css, 'header[role=')) {
+            return $css;
+        }
+
+        $filtered = preg_replace_callback(
+            '/([^{}@]+)\{([^{}]*)\}/s',
+            static function (array $matches): string {
+                $selectors = trim($matches[1]);
+
+                if ($selectors === '') {
+                    return $matches[0];
+                }
+
+                foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                    if ($selector === '' || ! str_contains($selector, 'header[role=')) {
+                        continue;
+                    }
+
+                    if (
+                        str_contains($selector, 'data-voodbuilder-sub-theme')
+                        || str_contains($selector, 'data-voodbuilder-chrome-shell')
+                        || preg_match('/^header\[role=[\'"]banner[\'"]/', $selector) === 1
+                    ) {
+                        return '';
+                    }
+                }
+
+                return $matches[0];
+            },
+            $css,
+        );
+
+        $filtered = is_string($filtered) ? $filtered : $css;
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $filtered) ?? $filtered);
+    }
+
+    /**
+     * Editor canvas iframe: inject built-in sub-theme tokens plus optional admin overrides.
      * Does not rely on data-voodbuilder-sub-theme being present before external stylesheets load.
      */
     public static function cssForCanvas(string $subThemeId): string
@@ -152,17 +411,37 @@ CSS;
             ...self::builtinSubThemeRulesForCanvas($subThemeId),
         ];
 
+        $runtime = self::runtimeStylesheetForPalette($subThemeId);
+
+        if ($runtime !== '') {
+            $rules[] = $runtime;
+        }
+
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
         $palette = $colors[$subThemeId] ?? null;
 
         if (is_array($palette)) {
-            $lightRule = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+            // Early rule (before data-voodbuilder-sub-theme is stamped on the iframe).
+            $earlyLight = self::buildRule($subThemeId, $palette['light'], false, 'html:not(.dark)');
+
+            if ($earlyLight !== null) {
+                $rules[] = $earlyLight;
+            }
+
+            $earlyDark = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+
+            if ($earlyDark !== null) {
+                $rules[] = $earlyDark;
+            }
+
+            // Specific rule beats bundled theme.css (html[data-voodbuilder-sub-theme=…]).
+            $lightRule = self::buildRule($subThemeId, $palette['light'], false);
 
             if ($lightRule !== null) {
                 $rules[] = $lightRule;
             }
 
-            $darkRule = self::buildRule($subThemeId, $palette['dark'], true, 'html.dark');
+            $darkRule = self::buildRule($subThemeId, $palette['dark'], true);
 
             if ($darkRule !== null) {
                 $rules[] = $darkRule;
@@ -258,10 +537,50 @@ CSS;
         }
 
         if (strlen($color) === 4) {
-            $color = '#'.implode('', array_map(
-                static fn (string $char): string => $char.$char,
-                str_split(substr($color, 1)),
-            ));
+            $short = substr($color, 1);
+
+            // Attempt to find a canonical 6-digit color in package CSS whose
+            // pairs start with the shorthand nibbles (e.g. '#35b' -> '#3451b2').
+            try {
+                $packagePath = VoodbuilderPaths::packagePath();
+                $cssFiles = glob($packagePath.'/resources/css/*.css') ?: [];
+
+                foreach ($cssFiles as $file) {
+                    $contents = @file_get_contents($file);
+
+                    if ($contents === false) {
+                        continue;
+                    }
+
+                    if (preg_match_all('/#([0-9a-f]{6})/i', $contents, $m)) {
+                        foreach ($m[1] as $hex) {
+                            if (
+                                $hex[0] === $short[0]
+                                && $hex[2] === $short[1]
+                                && $hex[4] === $short[2]
+                            ) {
+                                $color = '#'.strtolower($hex);
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+                // ignore filesystem issues and fall back to simple expansion
+            }
+
+            if (strlen($color) === 4) {
+                $canonical = self::canonicalColorForShortHex($short);
+
+                if ($canonical !== null) {
+                    $color = $canonical;
+                } else {
+                    $color = '#'.implode('', array_map(
+                        static fn (string $char): string => $char.$char,
+                        str_split($short),
+                    ));
+                }
+            }
         }
 
         return $color;
@@ -285,7 +604,7 @@ CSS;
 
     /**
      * @param  array<string, mixed>  $mode
-     * @return array<string, ?string>
+     * @return array<string, string|int|null>
      */
     private static function normalizeMode(array $mode): array
     {
@@ -295,11 +614,52 @@ CSS;
             $normalized[$key] = self::sanitizeColor($mode[$key] ?? null);
         }
 
+        $opacity = self::sanitizeOpacity($mode['header_bg_opacity'] ?? null);
+
+        if ($opacity !== null) {
+            $normalized['header_bg_opacity'] = $opacity;
+        }
+
         return $normalized;
     }
 
     /**
-     * @param  array<string, ?string>  $palette
+     * Header background opacity 0–100. Null means fully opaque (omit / solid).
+     */
+    public static function sanitizeOpacity(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        return max(0, min(100, (int) round((float) $value)));
+    }
+
+    /**
+     * Solid hex or color-mix with transparency for --vx-header-bg.
+     */
+    public static function headerBackgroundCssValue(?string $headerBg, ?int $opacity): string
+    {
+        $base = self::sanitizeColor($headerBg) ?? 'var(--color-vp-bg)';
+        $opacity = self::sanitizeOpacity($opacity);
+
+        if ($opacity === null || $opacity >= 100) {
+            return $base;
+        }
+
+        if ($opacity <= 0) {
+            return 'transparent';
+        }
+
+        return "color-mix(in srgb, {$base} {$opacity}%, transparent)";
+    }
+
+    /**
+     * @param  array<string, string|int|null>  $palette
      */
     private static function modeHasOverrides(array $palette): bool
     {
@@ -309,11 +669,13 @@ CSS;
             }
         }
 
-        return false;
+        $opacity = self::sanitizeOpacity($palette['header_bg_opacity'] ?? null);
+
+        return $opacity !== null && $opacity < 100;
     }
 
     /**
-     * @param  array<string, ?string>  $palette
+     * @param  array<string, string|int|null>  $palette
      */
     private static function buildRule(string $subThemeId, array $palette, bool $dark, ?string $selector = null): ?string
     {
@@ -365,8 +727,11 @@ CSS;
             }
         }
 
-        if (($headerBg = $palette['header_bg'] ?? null) !== null) {
-            $properties['--vx-header-bg'] = $headerBg;
+        $headerOpacity = self::sanitizeOpacity($palette['header_bg_opacity'] ?? null);
+        $headerBg = is_string($palette['header_bg'] ?? null) ? $palette['header_bg'] : null;
+
+        if ($headerBg !== null || ($headerOpacity !== null && $headerOpacity < 100)) {
+            $properties['--vx-header-bg'] = self::headerBackgroundCssValue($headerBg, $headerOpacity);
         }
 
         if (($headerText = $palette['header_text'] ?? null) !== null) {
@@ -411,7 +776,23 @@ CSS;
 
     private static function tokenBridgeCss(string $selector): string
     {
-        return $selector.'{--vp-c-brand-1:var(--color-vp-brand-1);--vp-c-brand-2:var(--color-vp-brand-2);--vp-c-brand-3:var(--color-vp-brand-3);--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);--vp-c-bg:var(--color-vp-bg);--vp-c-bg-alt:var(--color-vp-bg-alt);--vp-c-bg-soft:var(--color-vp-bg-alt);--vp-c-bg-elv:var(--color-vp-bg-elv);--vp-c-text-1:var(--color-vp-text-1);--vp-c-text-2:var(--color-vp-text-2);--vp-c-text-3:var(--color-vp-text-3)}';
+        // Bridge only Voodbuilder design tokens (--vp-c-*). Do NOT alias Tailwind
+        // palette scales (indigo/violet/…) onto --color-vp-brand-*: authors use
+        // text-violet-400 / text-sky-400 as literal decorative colors; theme-aware
+        // UI must use vp-brand-* utilities explicitly.
+        return $selector.'{'
+            .'--vp-c-brand-1:var(--color-vp-brand-1);'
+            .'--vp-c-brand-2:var(--color-vp-brand-2);'
+            .'--vp-c-brand-3:var(--color-vp-brand-3);'
+            .'--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);'
+            .'--vp-c-bg:var(--color-vp-bg);'
+            .'--vp-c-bg-alt:var(--color-vp-bg-alt);'
+            .'--vp-c-bg-soft:var(--color-vp-bg-alt);'
+            .'--vp-c-bg-elv:var(--color-vp-bg-elv);'
+            .'--vp-c-text-1:var(--color-vp-text-1);'
+            .'--vp-c-text-2:var(--color-vp-text-2);'
+            .'--vp-c-text-3:var(--color-vp-text-3)'
+            .'}';
     }
 
     /**
@@ -427,22 +808,59 @@ CSS;
 
         $rules = [];
 
-        $lightRule = self::variablesToCssRule(
+        $lightValues = self::parseSubThemeVariableBlock($css, $subThemeId, dark: false);
+        $darkValues = self::parseSubThemeVariableBlock($css, $subThemeId, dark: true);
+
+        $lightColorRule = self::variablesToCssRule(
             'html:not(.dark)',
-            self::parseSubThemeVariableBlock($css, $subThemeId, dark: false),
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeVariables($lightValues),
+            ),
         );
 
-        if ($lightRule !== null) {
-            $rules[] = $lightRule;
+        if ($lightColorRule !== null) {
+            $rules[] = $lightColorRule;
         }
 
-        $darkRule = self::variablesToCssRule(
-            'html.dark',
-            self::parseSubThemeVariableBlock($css, $subThemeId, dark: true),
+        $lightSemanticRule = self::variablesToCssRule(
+            'html:not(.dark)',
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                false,
+                self::filterSubThemeSemanticVariables($lightValues),
+            ),
         );
 
-        if ($darkRule !== null) {
-            $rules[] = $darkRule;
+        if ($lightSemanticRule !== null) {
+            $rules[] = $lightSemanticRule;
+        }
+
+        $darkColorRule = self::variablesToCssRule(
+            'html.dark',
+            self::withoutAdminOverriddenColorVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeVariables($darkValues),
+            ),
+        );
+
+        if ($darkColorRule !== null) {
+            $rules[] = $darkColorRule;
+        }
+
+        $darkSemanticRule = self::variablesToCssRule(
+            'html.dark',
+            self::withoutAdminOverriddenSemanticVariables(
+                $subThemeId,
+                true,
+                self::filterSubThemeSemanticVariables($darkValues),
+            ),
+        );
+
+        if ($darkSemanticRule !== null) {
+            $rules[] = $darkSemanticRule;
         }
 
         return $rules;
@@ -456,28 +874,14 @@ CSS;
             return '';
         }
 
-        return (string) file_get_contents($cssPath);
+        $contents = (string) file_get_contents($cssPath);
+
+        return self::normalizeSubThemeCss($contents, $subThemeId);
     }
 
     private static function resolveSubThemeCssFile(string $subThemeId): ?string
     {
-        $cssPath = app(SubThemeRegistry::class)->cssPath($subThemeId);
-
-        if (! is_string($cssPath) || $cssPath === '') {
-            return null;
-        }
-
-        if (str_starts_with($cssPath, 'themes/')) {
-            return VoodbuilderPaths::packagePath().'/resources/'.$cssPath;
-        }
-
-        if (str_starts_with($cssPath, 'resources/')) {
-            return base_path($cssPath);
-        }
-
-        $absolute = base_path($cssPath);
-
-        return is_file($absolute) ? $absolute : null;
+        return SubThemeCssPath::forTheme($subThemeId);
     }
 
     /**
@@ -532,5 +936,207 @@ CSS;
         }
 
         return "{$selector}{".implode(';', $declarations).'}';
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private static function filterSubThemeVariables(array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        $filtered = [];
+
+        foreach (self::SUB_THEME_VARIABLE_PRIORITIES as $key) {
+            if (isset($variables[$key])) {
+                $filtered[$key] = $variables[$key];
+            }
+        }
+
+        return $filtered;
+    }
+
+    private static function filterSubThemeSemanticVariables(array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        $filtered = [];
+
+        foreach (self::SUB_THEME_SEMANTIC_VARIABLE_PRIORITIES as $key) {
+            if (isset($variables[$key])) {
+                $filtered[$key] = $variables[$key];
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Drop bundled semantic tokens that admin palette already overrides, so saved
+     * Editor / chrome-layout CSS cannot re-apply the theme default later in the cascade.
+     *
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private static function withoutAdminOverriddenSemanticVariables(string $subThemeId, bool $dark, array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        foreach (self::adminOverriddenSemanticVariableNames($subThemeId, $dark) as $name) {
+            unset($variables[$name]);
+        }
+
+        return $variables;
+    }
+
+    /**
+     * Drop bundled brand/surface tokens when Theme Studio already overrides them.
+     * Keeps the Editor canvas from flashing (or sticking on) stale theme.css pinks/reds
+     * when a later stylesheet races the palette inject.
+     *
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private static function withoutAdminOverriddenColorVariables(string $subThemeId, bool $dark, array $variables): array
+    {
+        if ($variables === []) {
+            return [];
+        }
+
+        foreach (self::adminOverriddenColorVariableNames($subThemeId, $dark) as $name) {
+            unset($variables[$name]);
+        }
+
+        return $variables;
+    }
+
+    /**
+     * App theme.css served at runtime — keep layout/chrome, drop tokens Theme Studio owns.
+     */
+    private static function runtimeStylesheetForPalette(string $subThemeId): string
+    {
+        $runtime = RuntimeSubThemeStylesheet::forTheme($subThemeId);
+
+        if ($runtime === '' || ! self::themeHasCustomColors($subThemeId)) {
+            return $runtime;
+        }
+
+        $tokens = array_values(array_unique([
+            ...self::adminOverriddenColorVariableNames($subThemeId, false),
+            ...self::adminOverriddenColorVariableNames($subThemeId, true),
+            ...self::adminOverriddenSemanticVariableNames($subThemeId, false),
+            ...self::adminOverriddenSemanticVariableNames($subThemeId, true),
+        ]));
+
+        if ($tokens === []) {
+            return $runtime;
+        }
+
+        $pattern = '/(?:'.implode('|', array_map(
+            static fn (string $token): string => preg_quote($token, '/'),
+            $tokens,
+        )).')\s*:\s*[^;}{]+;?/i';
+
+        $stripped = preg_replace($pattern, '', $runtime);
+
+        return is_string($stripped) ? trim($stripped) : $runtime;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function adminOverriddenSemanticVariableNames(string $subThemeId, bool $dark): array
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $mode = is_array($colors[$subThemeId] ?? null)
+            ? ($colors[$subThemeId][$dark ? 'dark' : 'light'] ?? [])
+            : [];
+
+        if (! is_array($mode)) {
+            return [];
+        }
+
+        $names = [];
+
+        if (($mode['header_bg'] ?? null) !== null
+            || (self::sanitizeOpacity($mode['header_bg_opacity'] ?? null) !== null
+                && self::sanitizeOpacity($mode['header_bg_opacity'] ?? null) < 100)) {
+            $names[] = '--vx-header-bg';
+        }
+
+        if (($mode['header_text'] ?? null) !== null) {
+            $names[] = '--vx-header-text';
+            $names[] = '--vx-header-muted';
+        }
+
+        if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {
+            $names[] = '--vx-accent';
+        }
+
+        return $names;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function adminOverriddenColorVariableNames(string $subThemeId, bool $dark): array
+    {
+        $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
+        $mode = is_array($colors[$subThemeId] ?? null)
+            ? ($colors[$subThemeId][$dark ? 'dark' : 'light'] ?? [])
+            : [];
+
+        if (! is_array($mode)) {
+            return [];
+        }
+
+        $names = [];
+
+        if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {
+            $names[] = '--color-vp-brand-1';
+            $names[] = '--color-vp-brand-2';
+            $names[] = '--color-vp-brand-3';
+        }
+
+        if (($mode['body_bg'] ?? null) !== null) {
+            $names[] = '--color-vp-bg';
+            $names[] = '--color-vp-bg-alt';
+            $names[] = '--color-vp-bg-elv';
+        }
+
+        if (($mode['text'] ?? null) !== null) {
+            $names[] = '--color-vp-text-1';
+            $names[] = '--color-vp-text-2';
+            $names[] = '--color-vp-text-3';
+        }
+
+        return $names;
+    }
+
+    private static function normalizeSubThemeCss(string $css, string $subThemeId): string
+    {
+        // Remove nested comments and preserve selector blocks for the sub-theme.
+        $css = preg_replace('/\/\*[\s\S]*?\*\//', '', $css) ?: $css;
+
+        // Normalize selectors to a stable, parseable form.
+        $css = preg_replace('/\s+/', ' ', $css);
+        $css = str_replace(["\n", "\r"], ' ', $css);
+
+        // Ensure the target selector is matched in both "html[data-voodbuilder-sub-theme='id']" and
+        // "html.dark[data-voodbuilder-sub-theme='id']" orders.
+        $css = preg_replace(
+            '/html\s*\.dark\s*\[data-voodbuilder-sub-theme=(["\"]).+?\1\]/',
+            'html.dark[data-voodbuilder-sub-theme='.$subThemeId.']',
+            $css,
+        );
+
+        return $css;
     }
 }

@@ -8,6 +8,9 @@ use RalphJSmit\Laravel\SEO\SchemaCollection;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Voodbuilder Seo.
+ */
 final class VoodbuilderSeo
 {
     public static function applyDefaults(SEOData $seoData): SEOData
@@ -28,8 +31,8 @@ final class VoodbuilderSeo
             $seoData->site_name = VoodbuilderSettings::siteTitle();
         }
 
-        if (blank($seoData->favicon) && filled($settings['favicon'] ?? null)) {
-            $seoData->favicon = VoodbuilderSettings::assetUrl('favicon');
+        if (blank($seoData->favicon)) {
+            $seoData->favicon = VoodbuilderSettings::faviconUrl();
         }
 
         if (blank($seoData->twitter_username) && filled($settings['seo_twitter_username'] ?? null)) {

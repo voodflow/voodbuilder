@@ -6,9 +6,13 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
+/**
+ * Voodbuilder Urls.
+ */
 final class VoodbuilderUrls
 {
     public static function home(?string $locale = null): string
@@ -41,6 +45,20 @@ final class VoodbuilderUrls
     {
         if ($page->is_home) {
             return self::home($page->locale);
+        }
+
+        if ($page->is_dynamic && filled($page->dynamic_channel)) {
+            $preview = app(DynamicPageRegistry::class)
+                ->get((string) $page->dynamic_channel)
+                ?->previewUrl($page);
+
+            if (filled($preview)) {
+                return $preview;
+            }
+        }
+
+        if (SitePageMenuPath::enabled()) {
+            return SitePageMenuPath::url($page);
         }
 
         if (! Route::has('voodbuilder.pages.show')) {

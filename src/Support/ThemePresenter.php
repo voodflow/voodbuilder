@@ -6,6 +6,9 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 
+/**
+ * Theme Presenter.
+ */
 final class ThemePresenter
 {
     /** @var list<string> */
@@ -51,6 +54,9 @@ final class ThemePresenter
         $location = SubThemeLocator::resolve($id);
         $definition = SubThemeLocator::definitionFor($id);
 
+        $capabilities = $registry->capabilities($id);
+        $shell = $capabilities[0] ?? null;
+
         return [
             'id' => $id,
             'label' => $registry->label($id),
@@ -61,9 +67,12 @@ final class ThemePresenter
             'is_app' => $location?->isApp() ?? false,
             'can_delete' => $location?->isApp() ?? false,
             'can_edit_meta' => $location?->isApp() ?? false,
-            'can_edit_colors' => $location?->isApp() ?? false,
+            // Palette overrides live in settings for any theme id (Brand kit without clone).
+            'can_edit_colors' => true,
             'can_export' => $location !== null,
             'has_custom_colors' => ThemePalette::themeHasCustomColors($id),
+            'shell' => $shell?->value,
+            'shell_label' => $shell?->label() ?? '',
             'type' => is_array($definition) && isset($definition['type'])
                 ? (is_object($definition['type']) ? $definition['type']->value : (string) $definition['type'])
                 : 'marketing',
@@ -120,7 +129,7 @@ final class ThemePresenter
     }
 
     /**
-     * @return array<string, ?string>
+     * @return array<string, string|int|null>
      */
     public static function modeColors(string $themeId, string $mode): array
     {
@@ -131,6 +140,12 @@ final class ThemePresenter
 
         foreach (self::COLOR_KEYS as $key) {
             $resolved[$key] = ThemePalette::sanitizeColor($modeColors[$key] ?? null);
+        }
+
+        $opacity = ThemePalette::sanitizeOpacity($modeColors['header_bg_opacity'] ?? null);
+
+        if ($opacity !== null) {
+            $resolved['header_bg_opacity'] = $opacity;
         }
 
         return $resolved;

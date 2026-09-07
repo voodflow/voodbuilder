@@ -8,6 +8,9 @@ use Closure;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
+/**
+ * Configured Content Channel.
+ */
 final class ConfiguredContentChannel implements PublicContentChannel
 {
     /**

@@ -1,5 +1,5 @@
 <div
-    class="relative"
+    class="relative site-notification-bell"
     x-data="{ open: @entangle('open') }"
     @click.outside="open = false"
     wire:poll.30s
@@ -28,11 +28,11 @@
         x-transition
         role="menu"
         aria-label="{{ __('voodbuilder::notifications.panel_label') }}"
-        class="absolute top-[calc(100%+0.5rem)] right-0 z-50 w-80 overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-lg"
+        class="absolute top-[calc(100%+0.5rem)] right-0 z-50 w-[min(24rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-lg"
     >
-        <div class="flex items-center justify-between gap-2 border-b border-vp-divider px-4 py-3">
-            <span class="text-sm font-semibold text-vp-text-1">{{ __('voodbuilder::notifications.panel_title') }}</span>
-            <div class="flex items-center gap-2">
+        <div class="flex min-w-0 items-center justify-between gap-2 border-b border-vp-divider px-4 py-3">
+            <span class="min-w-0 truncate text-sm font-semibold text-vp-text-1">{{ __('voodbuilder::notifications.panel_title') }}</span>
+            <div class="flex shrink-0 items-center gap-2">
                 @if ($this->unreadCount > 0)
                     <button type="button" class="text-xs text-vp-brand-1 hover:underline" wire:click="markAllAsRead">
                         {{ __('voodbuilder::notifications.mark_all_read') }}
@@ -46,22 +46,22 @@
             </div>
         </div>
 
-        <div class="max-h-80 overflow-y-auto">
+        <div class="max-h-80 overflow-y-auto overflow-x-hidden overscroll-y-contain">
             @forelse ($this->items as $item)
                 <div @class([
-                    'group relative border-b border-vp-divider last:border-b-0',
+                    'group relative min-w-0 border-b border-vp-divider last:border-b-0',
                     'bg-vp-gray-soft/40' => ! $item['read'],
                 ])>
                     @if (filled($item['url']))
                         <a
                             href="{{ $item['url'] }}"
-                            class="block px-4 py-3 pr-10 text-left transition-colors hover:bg-vp-gray-soft"
+                            class="block min-w-0 px-4 py-3 pr-10 text-left transition-colors hover:bg-vp-gray-soft"
                             role="menuitem"
                             wire:navigate="false"
                             wire:click="markAsRead('{{ $item['id'] }}')"
                         >
-                            <span class="block text-sm font-medium text-vp-text-1">{{ $item['title'] }}</span>
-                            <span class="mt-0.5 block text-xs text-vp-text-2">{{ $item['body'] }}</span>
+                            <span class="block text-sm font-medium break-words text-vp-text-1">{{ $item['title'] }}</span>
+                            <span class="mt-0.5 block text-xs break-words text-vp-text-2">{{ $item['body'] }}</span>
                             <span class="mt-1 block text-[11px] text-vp-text-3">{{ $item['created_at'] }}</span>
                         </a>
                     @else
@@ -71,8 +71,8 @@
                             role="menuitem"
                             wire:click="markAsRead('{{ $item['id'] }}')"
                         >
-                            <span class="block text-sm font-medium text-vp-text-1">{{ $item['title'] }}</span>
-                            <span class="mt-0.5 block text-xs text-vp-text-2">{{ $item['body'] }}</span>
+                            <span class="block text-sm font-medium break-words text-vp-text-1">{{ $item['title'] }}</span>
+                            <span class="mt-0.5 block text-xs break-words text-vp-text-2">{{ $item['body'] }}</span>
                             <span class="mt-1 block text-[11px] text-vp-text-3">{{ $item['created_at'] }}</span>
                         </button>
                     @endif
