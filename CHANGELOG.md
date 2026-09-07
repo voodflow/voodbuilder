@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-09-07
+
+### Changed
+
+- Layout editor: hide Templates tab (page templates belong on pages, not chrome)
+- Layout editor sidebar: enforce SITE chrome allowlist in JS (no LAYOUT / Basic tiles)
+
+### Fixed
+
+- Hero / section Tailwind compiles again on drop (not only after Save) — drag-lock no longer drops pending JIT
+- Sticky/fixed SITE nav reserves height when spacer class is missing (editor + published chrome shells)
+
 ## [0.1.9] - 2026-09-07
 
 ### Changed

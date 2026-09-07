@@ -21,12 +21,26 @@
 
 /* Editor + published SITE nav: reserve space when sticky/fixed header leaves the flow. */
 .voodbuilder-site-header-spacer,
-[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
+[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer,
+[data-voodbuilder-editor-site-header]:has(> header[role='banner'].fixed) {
     min-height: 4rem;
+    box-sizing: border-box;
 }
 
-[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
+[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer,
+[data-voodbuilder-editor-site-header]:has(> header[role='banner'].fixed) {
     height: 4rem;
+}
+
+/*
+ * Published chrome splits before/main/after into sibling shells. When the header is
+ * position:fixed the before-shell collapses unless we reserve height (spacer class
+ * can be missing after Grapes round-trips).
+ */
+body > [data-voodbuilder-chrome-shell]:has(header[role='banner'].fixed),
+[data-voodbuilder-chrome-shell-part='before']:has(header[role='banner'].fixed) {
+    min-height: 4rem;
+    box-sizing: border-box;
 }
 
 .voodbuilder-full-width-shell,

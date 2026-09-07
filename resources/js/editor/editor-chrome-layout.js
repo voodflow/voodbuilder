@@ -547,6 +547,9 @@ function applyChromeLayoutBlockFilter(editor) {
     }
 
     const hasSlot = Boolean(findContentSlot(editor));
+    const allowlist = Array.isArray(editor.__voodbuilderBlockAllowlist)
+        ? editor.__voodbuilderBlockAllowlist
+        : null;
 
     blockManager.getAll().forEach((block) => {
         const id = String(block.get('id') ?? block.id ?? '');
@@ -554,6 +557,13 @@ function applyChromeLayoutBlockFilter(editor) {
 
         if (id === CONTENT_SLOT_BLOCK_ID) {
             block.set('visible', ! hasSlot);
+
+            return;
+        }
+
+        // Chrome layout editor: only SITE nav/footer (allowlist from PHP).
+        if (allowlist) {
+            block.set('visible', allowlist.includes(id));
 
             return;
         }

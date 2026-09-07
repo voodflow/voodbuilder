@@ -569,7 +569,11 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         }
 
         // Editor fires selector:add as soon as a block drag starts — never compile mid-drag.
+        // Queue a rebuild so drop/invalidate still compiles once the lock clears.
         if (isDragLocked()) {
+            pendingInvalidate = true;
+            pendingAfterDrag = true;
+
             return;
         }
 
@@ -642,14 +646,18 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
                 const dropped = pendingAfterDragComponent;
                 pendingAfterDragComponent = null;
 
-                // Compile only when the drop introduced utilities missing from the live
-                // sheet. Forcing JIT on every library drop made Forms feel multi-second.
+                // Library drops / forced invalidate must compile even when coverage
+                // heuristics think catalog utilities already cover the tree.
                 if (
-                    componentNeedsLiveCss(dropped)
+                    pendingInvalidate
+                    || componentNeedsLiveCss(dropped)
                     || classSetNeedsCompile(currentPageClassSet())
                 ) {
+                    pendingInvalidate = true;
                     schedule(DEBOUNCE_MS);
                 }
+            } else if (pendingInvalidate || classSetNeedsCompile(currentPageClassSet())) {
+                schedule(DEBOUNCE_MS);
             }
         }, 80);
     };
@@ -672,6 +680,11 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             shouldDeferCssRebuild(editor)
             || isDragLocked()
         ) {
+            if (isDragLocked()) {
+                pendingInvalidate = true;
+                pendingAfterDrag = true;
+            }
+
             return;
         }
 
@@ -720,12 +733,12 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         // Only NEW uncovered utilities justify compile-css + "Compiling styles…".
         // Pre-existing custom/BEM classes on the page must not force a rebuild when the
         // author only toggles Animation/Style catalog utilities (already in theme).
+        // Explicit invalidate (drop / save seed / ForcePageCssRebuild) always compiles.
         const newlyUncovered = [...classSet].filter(
             (token) => ! lastClassSet.has(token) && ! pageCssCoversClass(editor, token),
         );
 
-        if (newlyUncovered.length === 0) {
-            pendingInvalidate = false;
+        if (newlyUncovered.length === 0 && ! pendingInvalidate) {
             lastHtml = html;
             lastClassSet = classSet;
 
@@ -976,10 +989,12 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         beginDragLock();
     });
     editor.on('block:drag:stop', (component) => {
-        // Release the drag lock; compile only if the new tree needs missing utilities.
+        // Always invalidate after a library drop so section HTML (hero gradients,
+        // etc.) compiles even when coverage heuristics no-op.
+        pendingInvalidate = true;
         endDragLock({
-            flush: Boolean(component) || classSetNeedsCompile(currentPageClassSet()),
-            component,
+            flush: true,
+            component: component ?? null,
         });
     });
     editor.on('sorter:drag:end', () => {

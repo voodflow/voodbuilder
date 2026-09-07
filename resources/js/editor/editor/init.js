@@ -762,8 +762,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
-        // In chrome layout editor we still want the "Templates" tab visible for base templates.
-        // We only hide the tab when we cannot load templates at all.
+        // Hide Templates when no catalog URL (layout editor never exposes page templates).
         hideTemplates: !Boolean(options.pageTemplatesUrl),
         editingContext: resolveEditingContext(options, labels),
     }) : null;

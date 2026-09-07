@@ -47,6 +47,7 @@ import { registerMediaSectionTypes } from '../media-section-types.js';
 import { registerDropzoneTypes } from '../dropzone-types.js';
 import { registerInnerDropSlots } from '../inner-drop-slots.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
+import { isEditorBlockAllowed } from '../block-allowlist.js';
 import {
     isClearedBackground,
     isClearedBackgroundImage,
@@ -1531,6 +1532,10 @@ function registerDynamicBlockType(editor) {
 
 function registerBlocks(editor, blocks = []) {
     for (const block of blocks) {
+        if (! isEditorBlockAllowed(editor, block.id)) {
+            continue;
+        }
+
         const content = typeof block.content === 'string'
             ? sanitizeBlockHtml(block.content)
             : block.content;

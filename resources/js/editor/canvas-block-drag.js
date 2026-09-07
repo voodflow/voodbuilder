@@ -383,7 +383,8 @@ function insertBlockAtTop(editor, block) {
                 markTopDropHandled(editor);
                 editor.select?.(component);
                 // Defer: drag session may still hold CssRebuildDragLock / ActiveBlockDrag.
-                window.setTimeout(() => editor.__voodbuilderSchedulePageCssRebuild?.(0), 120);
+                // Force invalidate — soft "missing utilities" checks can no-op after animation safelist.
+                window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
             }
 
             return component ?? null;
@@ -400,7 +401,7 @@ function insertBlockAtTop(editor, block) {
             if (component) {
                 markTopDropHandled(editor);
                 editor.select?.(component);
-                window.setTimeout(() => editor.__voodbuilderSchedulePageCssRebuild?.(0), 120);
+                window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
             }
 
             return component ?? null;
@@ -417,7 +418,7 @@ function insertBlockAtTop(editor, block) {
     if (component) {
         markTopDropHandled(editor);
         editor.select?.(component);
-        window.setTimeout(() => editor.__voodbuilderSchedulePageCssRebuild?.(0), 120);
+        window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
     }
 
     return component ?? null;
@@ -453,7 +454,7 @@ function insertBlockIntoPageContent(editor, block) {
     if (component) {
         markTopDropHandled(editor);
         editor.select?.(component);
-        window.setTimeout(() => editor.__voodbuilderSchedulePageCssRebuild?.(0), 120);
+        window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
     }
 
     return component ?? null;

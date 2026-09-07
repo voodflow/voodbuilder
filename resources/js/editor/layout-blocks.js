@@ -3,6 +3,7 @@
  * Container opens a floating column-layout picker (equal + asymmetric presets).
  */
 
+import { isEditorBlockAllowed } from './block-allowlist.js';
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { lucideIcon } from './editor-icons.js';
 
@@ -929,6 +930,24 @@ export function registerLayoutBlocks(editor, labels = {}) {
 
     editor.__voodbuilderLayoutBlocksRegistered = true;
 
+    const layoutBlockIds = [
+        'voodbuilder-layout-section',
+        'voodbuilder-layout-container',
+        'voodbuilder-layout-block',
+        'voodbuilder-layout-div',
+    ];
+
+    for (const id of ['column1', 'column2', 'column3', 'column3-7', ...layoutBlockIds]) {
+        if (bm.get(id)) {
+            bm.remove(id);
+        }
+    }
+
+    // Layout editor chrome allowlist (SITE nav/footer only) must not show LAYOUT tiles.
+    if (! layoutBlockIds.some((id) => isEditorBlockAllowed(editor, id))) {
+        return;
+    }
+
     const wireframes = layoutWireframes();
     const category = {
         id: LAYOUT_BLOCK_CATEGORY,
@@ -937,43 +956,45 @@ export function registerLayoutBlocks(editor, labels = {}) {
         order: -190,
     };
 
-    for (const id of ['column1', 'column2', 'column3', 'column3-7']) {
-        if (bm.get(id)) {
-            bm.remove(id);
-        }
+    if (isEditorBlockAllowed(editor, 'voodbuilder-layout-section')) {
+        bm.add('voodbuilder-layout-section', {
+            label: labels.layoutSection ?? 'Section',
+            category,
+            media: wireframes['voodbuilder-layout-section'],
+            content: sectionContentHtml(),
+            select: true,
+        });
     }
 
-    bm.add('voodbuilder-layout-section', {
-        label: labels.layoutSection ?? 'Section',
-        category,
-        media: wireframes['voodbuilder-layout-section'],
-        content: sectionContentHtml(),
-        select: true,
-    });
+    if (isEditorBlockAllowed(editor, 'voodbuilder-layout-container')) {
+        bm.add('voodbuilder-layout-container', {
+            label: labels.layoutContainer ?? 'Container',
+            category,
+            media: wireframes['voodbuilder-layout-container'],
+            content: containerContentHtml(),
+            select: true,
+        });
+    }
 
-    bm.add('voodbuilder-layout-container', {
-        label: labels.layoutContainer ?? 'Container',
-        category,
-        media: wireframes['voodbuilder-layout-container'],
-        content: containerContentHtml(),
-        select: true,
-    });
+    if (isEditorBlockAllowed(editor, 'voodbuilder-layout-block')) {
+        bm.add('voodbuilder-layout-block', {
+            label: labels.layoutBlock ?? 'Block',
+            category,
+            media: wireframes['voodbuilder-layout-block'],
+            content: blockContentHtml(),
+            select: true,
+        });
+    }
 
-    bm.add('voodbuilder-layout-block', {
-        label: labels.layoutBlock ?? 'Block',
-        category,
-        media: wireframes['voodbuilder-layout-block'],
-        content: blockContentHtml(),
-        select: true,
-    });
-
-    bm.add('voodbuilder-layout-div', {
-        label: labels.layoutDiv ?? 'Div',
-        category,
-        media: wireframes['voodbuilder-layout-div'],
-        content: divContentHtml(),
-        select: true,
-    });
+    if (isEditorBlockAllowed(editor, 'voodbuilder-layout-div')) {
+        bm.add('voodbuilder-layout-div', {
+            label: labels.layoutDiv ?? 'Div',
+            category,
+            media: wireframes['voodbuilder-layout-div'],
+            content: divContentHtml(),
+            select: true,
+        });
+    }
 }
 
 /**

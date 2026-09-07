@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
-use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
@@ -79,13 +78,10 @@ final class EditorChromeLayoutEditorGate
                 ? self::optionalEditorRoute('voodbuilder.editor.components.index')
                 : null,
             'compileCssUrl' => self::optionalEditorRoute('voodbuilder.editor.compile-css') ?? '',
-            // Allow "Templates" tab in chrome layout editor too.
-            // Even without the optional templates authoring plugin, we can still load base templates.
-            'pageTemplatesUrl' => TemplatesModule::isEnabled()
-                ? self::optionalEditorRoute('voodbuilder.editor.page-templates.index')
-                : null,
+            // Layout editor is chrome-only (nav/footer). Page templates belong on pages.
+            'pageTemplatesUrl' => null,
             'pageTemplatesCatalogUrl' => null,
-            'templateCategories' => PageTemplateCategories::all(),
+            'templateCategories' => [],
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.editor.plugins', []),
