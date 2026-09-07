@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-09-07
+
+### Fixed
+
+- Editor media browser refreshes the upload album when browsing a folder, then opens that album after upload
+- Published sticky/fixed SITE nav: page `main` gets top padding so the first block starts below the bar (not under it)
+
 ## [0.1.10] - 2026-09-07
 
 ### Changed

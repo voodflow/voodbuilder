@@ -34,13 +34,33 @@
 
 /*
  * Published chrome splits before/main/after into sibling shells. When the header is
- * position:fixed the before-shell collapses unless we reserve height (spacer class
- * can be missing after Grapes round-trips).
+ * position:fixed the before-shell can collapse to 0 — pad main so the first page
+ * block starts below the nav (Y + header height), not under it.
  */
+body:has(> [data-voodbuilder-chrome-shell] header[role='banner'].fixed) > main {
+    padding-top: 4rem;
+    box-sizing: border-box;
+}
+
+body:has(> [data-voodbuilder-chrome-shell] header[role='banner'].fixed) > [data-voodbuilder-chrome-shell]:has(header[role='banner'].fixed) {
+    /* Fixed header paints over the viewport; do not also reserve flow space here
+       (main already has padding-top) or the page gets an 8rem gap. */
+    min-height: 0;
+    height: 0;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
 body > [data-voodbuilder-chrome-shell]:has(header[role='banner'].fixed),
 [data-voodbuilder-chrome-shell-part='before']:has(header[role='banner'].fixed) {
-    min-height: 4rem;
     box-sizing: border-box;
+}
+
+/* Editor unified chrome-shell: keep spacer / before-part height (page content is a sibling slot). */
+[data-voodbuilder-chrome-shell-part='before']:has(header[role='banner'].fixed) {
+    min-height: 4rem;
 }
 
 .voodbuilder-full-width-shell,

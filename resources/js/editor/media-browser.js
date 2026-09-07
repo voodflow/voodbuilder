@@ -269,10 +269,14 @@ export async function openMediaBrowser(args) {
 
     const updateUploadHint = () => {
         const path = state.uploadGallery?.path || state.uploadGallery?.name;
+        const browsingGroup = selectedGallery()?.kind === 'group';
 
         if (path) {
-            els.subtitle.textContent = labels.mediaBrowserUploadSubtitle
-                ?? `Uploads go to ${path} · browse any gallery to choose`;
+            els.subtitle.textContent = browsingGroup
+                ? (labels.mediaBrowserFolderUploadSubtitle
+                    ?? `Browsing a folder · uploads go to ${path}`)
+                : (labels.mediaBrowserUploadSubtitle
+                    ?? `Uploads go to ${path} · browse any gallery to choose`);
             els.dropHint.textContent = labels.mediaBrowserUploadDropHint
                 ?? `Uploads → ${path}`;
 
@@ -579,6 +583,12 @@ export async function openMediaBrowser(args) {
         state.uploading = false;
         els.dropzone.classList.remove('is-uploading');
         els.progress.hidden = true;
+
+        // After upload, land on the album that received files (never leave the user on an empty folder view).
+        if (state.uploadGalleryId != null) {
+            state.galleryId = Number(state.uploadGalleryId);
+        }
+
         await fetchGalleries();
         await fetchPage({ reset: true });
     };
@@ -616,7 +626,8 @@ export async function openMediaBrowser(args) {
         if (galleryBtn) {
             const raw = galleryBtn.getAttribute('data-mb-gallery');
             state.galleryId = raw ? Number(raw) : null;
-            void fetchPage({ reset: true });
+            // Refresh upload_gallery_* so folders map to their Library album before drop.
+            void fetchGalleries().then(() => fetchPage({ reset: true }));
 
             return;
         }
@@ -646,7 +657,7 @@ export async function openMediaBrowser(args) {
     els.gallerySelect?.addEventListener('change', () => {
         const raw = els.gallerySelect.value;
         state.galleryId = raw ? Number(raw) : null;
-        void fetchPage({ reset: true });
+        void fetchGalleries().then(() => fetchPage({ reset: true }));
     });
 
     els.search?.addEventListener('input', () => {
