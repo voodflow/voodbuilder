@@ -178,6 +178,54 @@ export function findInspectableRoot(component, editor) {
 export const resolveInspectableBlockRoot = findInspectableRoot;
 
 /**
+ * Media heroes (`vb-bg-image` / `vb-bg-video`): promote only when the click lands on the
+ * background media layer — never when editing copy/CTAs in the content stack.
+ *
+ * @param {object|null|undefined} raw
+ * @param {object|null|undefined} root
+ * @returns {boolean}
+ */
+export function isMediaHeroBackgroundHit(raw, root) {
+    if (! raw || ! root || raw === root) {
+        return false;
+    }
+
+    let current = raw;
+
+    while (current && current !== root && current.get?.('type') !== 'wrapper') {
+        const attrs = current.getAttributes?.() ?? {};
+        const role = String(attrs['data-voodbuilder-role'] ?? '').trim();
+        const classes = [...(current.getClasses?.() ?? [])].map((name) => String(name ?? ''));
+
+        // Content stack / dropzones win — keep text, headings, buttons selectable.
+        if (
+            role === 'content'
+            || attrs['data-voodbuilder-dropzone'] != null
+            || attrs['data-voodbuilder-text'] != null
+            || attrs['data-voodbuilder-rich-text'] != null
+            || attrs['data-voodbuilder-cta'] === 'true'
+            || classes.includes('vb-rich-text')
+        ) {
+            return false;
+        }
+
+        if (
+            role === 'media'
+            || role === 'shade'
+            || classes.includes('voodbuilder-hero-media')
+            || classes.some((name) => name.startsWith('voodbuilder-hero-media__'))
+            || attrs['data-vb-embed-bg'] != null
+        ) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+/**
  * Block roots stay the inspector settings target even when layer filters mark them
  * non-selectable (e.g. chrome shell children hidden by layers-chrome-filter).
  *
@@ -240,21 +288,15 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
 
     const rawType = String(raw.get?.('type') ?? '');
 
-    // ONLY media heroes promote to the section so Background image/video settings
-    // open immediately. Do not steal selection inside blog cards, features, etc.
+    // Media heroes: promote only background-layer hits so Background settings open,
+    // while headings / copy / CTAs in the content stack stay selectable.
     if (
         (rootId === 'vb-bg-image' || rootId === 'vb-bg-video')
         && rawType !== 'voodbuilder-cta-button'
         && rawType !== 'link'
+        && isMediaHeroBackgroundHit(raw, root)
     ) {
-        const rawTagEarly = String(raw.get?.('tagName') ?? '').toLowerCase();
-        const inlineTagsEarly = new Set([
-            'a', 'span', 'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'code', 'small', 'sub', 'sup',
-        ]);
-
-        if (! inlineTagsEarly.has(rawTagEarly)) {
-            return true;
-        }
+        return true;
     }
 
     // Page / popup editor: keep the exact clicked node (img, card, text, …).

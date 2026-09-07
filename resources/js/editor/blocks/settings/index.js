@@ -12,6 +12,7 @@ export {
     findLayoutChromeZoneBlockRoot,
     resolveInspectableBlockRoot,
     shouldPromoteSelectionToRoot,
+    isMediaHeroBackgroundHit,
     isBlockRoot,
     ensureRootInspectable,
     BLOCK_ID_ATTR,

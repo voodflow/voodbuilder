@@ -168,11 +168,28 @@ describe('blocks/settings/select', () => {
         expect(shouldPromoteSelectionToRoot(image, root, {})).toBe(false);
     });
 
-    it('shouldPromoteSelectionToRoot promotes inside media heroes only', () => {
+    it('shouldPromoteSelectionToRoot promotes only media-layer hits inside media heroes', () => {
         const root = mockComponent({ [ATTR.block]: 'vb-bg-image' });
-        const overlay = mockComponent({ tagName: 'div', class: 'absolute inset-0' }, [], root);
+        const media = mockComponent({
+            tagName: 'div',
+            class: 'voodbuilder-hero-media',
+            'data-voodbuilder-role': 'media',
+        }, [], root);
+        const img = mockComponent({
+            tagName: 'img',
+            class: 'voodbuilder-hero-media__img',
+        }, [], media);
+        const content = mockComponent({
+            tagName: 'div',
+            'data-voodbuilder-role': 'content',
+        }, [], root);
+        const heading = mockComponent({ tagName: 'h1' }, [], content);
+        const copy = mockComponent({ tagName: 'p' }, [], content);
 
-        expect(shouldPromoteSelectionToRoot(overlay, root, {})).toBe(true);
+        expect(shouldPromoteSelectionToRoot(img, root, {})).toBe(true);
+        expect(shouldPromoteSelectionToRoot(media, root, {})).toBe(true);
+        expect(shouldPromoteSelectionToRoot(heading, root, {})).toBe(false);
+        expect(shouldPromoteSelectionToRoot(copy, root, {})).toBe(false);
     });
 
     it('shouldPromoteSelectionToRoot keeps animated nodes selectable in chrome layout Style tab', () => {

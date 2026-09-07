@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-09-07
+
+### Fixed
+
+- Media heroes promote selection to the section only when clicking the background media layer; headings, copy, and CTAs in the content stack stay selectable
+- Content panel no longer steals Rich Text clicks inside media heroes to open Background settings
+
 ## [0.1.12] - 2026-09-07
 
 ### Fixed

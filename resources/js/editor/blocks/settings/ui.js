@@ -564,31 +564,7 @@ export function registerSettingsUi(editor, mount) {
             {
                 const richHost = findRichTextHost(rawSelected);
 
-                // Inside media heroes, Content must open Background image settings first —
-                // promote/select the section instead of stealing into rich-text traits.
                 if (richHost) {
-                    const heroRoot = findInspectableRoot(rawSelected, editor);
-                    const heroId = heroRoot ? readBlockId(heroRoot) : '';
-
-                    if (heroId === 'vb-bg-image' || heroId === 'vb-bg-video') {
-                        if (isImageSettingsComponent(heroRoot) || isImageSettingsComponent(rawSelected)) {
-                            closeAllInspectorSelects();
-                            maybePromoteSelectionForHighlight(rawSelected, heroRoot);
-                            renderImageContentSettings({
-                                mount,
-                                traitsMount,
-                                component: heroRoot ?? rawSelected,
-                                editor,
-                                labels,
-                            });
-                            renderedRoot = null;
-                            renderedRootBlockId = '';
-                            renderedDescriptorId = null;
-
-                            return;
-                        }
-                    }
-
                     if (rawSelected !== richHost && editor.getSelected?.() !== richHost) {
                         window.requestAnimationFrame(() => {
                             editor.select?.(richHost, { scroll: false });
