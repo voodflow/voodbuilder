@@ -238,17 +238,17 @@ class VoodbuilderSeeder extends Seeder
         );
 
         $main->items()->delete();
-        $main->items()->createMany([
-            [
-                'label' => 'Home',
-                'type' => MenuItemType::Route,
-                'link' => 'home',
-                'route_match' => 'home',
-                'sort_order' => 0,
-            ],
+
+        // Fresh installs start with empty menus — authors add links after creating pages.
+        // Optional demo sections may append items below.
+        $demoItems = [
             ...$this->tutorialMenuItems(),
             ...$this->themeDemoMenuItems(),
-        ]);
+        ];
+
+        if ($demoItems !== []) {
+            $main->items()->createMany($demoItems);
+        }
 
         $footer = NavigationMenu::query()->updateOrCreate(
             ['slug' => 'footer'],

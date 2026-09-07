@@ -95,9 +95,22 @@ final class EditorCommunityBlockCatalog
     ];
 
     /**
-     * Chrome-layout-only Site helper (hidden from page Site category).
+     * Chrome-layout-only Site helper (on canvas via starter HTML; not a sidebar tile).
      */
     public const CHROME_ONLY_BLOCK_ID = 'chrome_content_slot';
+
+    /**
+     * Layout editor sidebar: header/footer chrome only (content slot is already on canvas).
+     *
+     * @var list<string>
+     */
+    public const CHROME_LAYOUT_SIDEBAR_BLOCK_IDS = [
+        'site_nav_simple',
+        'site_footer_columns_simple',
+        'site_footer_columns_newsletter',
+        'site_footer_centered',
+        'site_footer_social',
+    ];
 
     /**
      * Core-owned IDs that leave Community sidebar for the Elements companion / Pro library.
@@ -191,6 +204,12 @@ final class EditorCommunityBlockCatalog
     {
         $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
 
+        // Layout editor: only nav/footer SITE blocks — never landing sections or the
+        // page-content slot tile (slot is already injected in starter HTML).
+        if ($chromeLayoutEditor) {
+            return self::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS;
+        }
+
         // Pro / Agency (and any host with full-library capability): show every registered
         // block. The Elements companion adds a remote Library modal — it must not hide
         // local Animates / Tabs / Community tiles from the page or popup sidebar.
@@ -199,16 +218,10 @@ final class EditorCommunityBlockCatalog
         }
 
         // Community: foundation + free local section pack (incl. animated CTA / tabs).
-        $ids = [
+        return array_values(array_unique([
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,
-        ];
-
-        if ($chromeLayoutEditor) {
-            $ids[] = self::CHROME_ONLY_BLOCK_ID;
-        }
-
-        return array_values(array_unique($ids));
+        ]));
     }
 
     /**
@@ -222,21 +235,27 @@ final class EditorCommunityBlockCatalog
 
         $allowlist = self::sidebarAllowlist($chromeLayoutEditor);
         $coreOwned = array_fill_keys(self::coreOwnedIds(), true);
+        $chromeSidebar = array_fill_keys(self::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS, true);
 
         return array_values(array_filter(
             $blocks,
-            static function (array $block) use ($excluded, $allowlist, $coreOwned, $chromeLayoutEditor): bool {
+            static function (array $block) use ($excluded, $allowlist, $coreOwned, $chromeLayoutEditor, $chromeSidebar): bool {
                 $id = (string) ($block['id'] ?? '');
 
                 if ($id === '' || in_array($id, $excluded, true)) {
                     return false;
                 }
 
+                // Content slot stays on the canvas via starter HTML — never a sidebar tile.
                 if ($id === self::CHROME_ONLY_BLOCK_ID) {
-                    return $chromeLayoutEditor;
+                    return false;
                 }
 
-                // Full library: everything except chrome slot on page editor.
+                if ($chromeLayoutEditor) {
+                    return isset($chromeSidebar[$id]);
+                }
+
+                // Full library: everything except chrome slot.
                 if ($allowlist === null) {
                     return true;
                 }

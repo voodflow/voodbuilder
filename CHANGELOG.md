@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-09-07
+
+### Changed
+
+- Layout editor sidebar: SITE chrome only (nav/footer); no Page content tile, no landing sections
+- Fresh seed menus start empty (no default Home link)
+- Layout editor Dynamics tab soft-gates like the page editor when the companion is missing
+
+### Fixed
+
+- Sticky SITE nav reserves space on the published site (first block no longer hidden under the bar)
+- Hero background image click opens Background image settings without hunting Layers
+
+
 ## [0.1.8] - 2026-09-07
 
 ### Fixed

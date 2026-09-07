@@ -66,7 +66,9 @@ final class EditorChromeLayoutEditorGate
             'initial' => self::initialPayload($layout),
             'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks').'?chrome=1',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),
-            'bindingsUrl' => self::optionalEditorRoute('voodbuilder.editor.bindings'),
+            'bindingsUrl' => self::dynamicDataEnabled()
+                ? self::optionalEditorRoute('voodbuilder.editor.bindings')
+                : null,
             'linkTargetsUrl' => self::optionalEditorRoute('voodbuilder.editor.link-targets') ?? '',
             'blocksRenderUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks.render') ?? '',
             'codeHighlightUrl' => self::optionalEditorRoute('voodbuilder.editor.code.highlight') ?? '',
@@ -104,6 +106,8 @@ final class EditorChromeLayoutEditorGate
                 'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
                 'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
                 'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
+                'dynamicDataSingle' => self::dynamicDataEnabled(),
+                'dynamicDataCollections' => false,
             ],
             'labels' => EditorGate::sharedEditorLabels(),
         ];
@@ -182,5 +186,16 @@ final class EditorChromeLayoutEditorGate
         }
 
         return null;
+    }
+
+    private static function dynamicDataEnabled(): bool
+    {
+        $class = 'Voodflow\\Voodbuilder\\Modules\\DynamicData\\DynamicDataModule';
+
+        try {
+            return class_exists($class) && $class::isEnabled();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

@@ -223,6 +223,25 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
     // Keep smart CTA buttons selectable — they own Content traits (URL / page / menu).
     const rawType = String(raw.get?.('type') ?? '');
 
+    // Media heroes: always promote to the section so Background image settings open
+    // immediately (authors otherwise have to hunt the root in Layers).
+    const rootIdEarly = readBlockId(root);
+
+    if (
+        (rootIdEarly === 'vb-bg-image' || rootIdEarly === 'vb-bg-video')
+        && rawType !== 'voodbuilder-cta-button'
+        && rawType !== 'link'
+    ) {
+        const rawTagEarly = String(raw.get?.('tagName') ?? '').toLowerCase();
+        const inlineTagsEarly = new Set([
+            'a', 'span', 'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'code', 'small', 'sub', 'sup',
+        ]);
+
+        if (! inlineTagsEarly.has(rawTagEarly)) {
+            return true;
+        }
+    }
+
     if (
         rawType === 'voodbuilder-cta-button'
         || rawType === 'voodbuilder-animated-counter'

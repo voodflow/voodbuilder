@@ -45,7 +45,7 @@ final class VoodbuilderMediaSections
         $image = EditorPlaceholderNormalizer::neutralImageDataUri();
 
         return <<<HTML
-<section class="voodbuilder-editor-section relative overflow-hidden bg-zinc-950 text-white" data-voodbuilder-section-block="vb-bg-image" data-vb-bg-size="cover" data-vb-bg-position="center" data-vb-bg-opacity="0.55" data-vb-min-height="70vh" style="min-height:70vh;">
+<section class="voodbuilder-editor-section relative overflow-hidden bg-zinc-950 text-white" data-voodbuilder-block="vb-bg-image" data-voodbuilder-section-block="vb-bg-image" data-vb-bg-size="cover" data-vb-bg-position="center" data-vb-bg-opacity="0.55" data-vb-min-height="70vh" style="min-height:70vh;">
   <div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;">
     <img src="{$image}" alt="" class="voodbuilder-hero-media__img" style="position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;opacity:0.55;object-fit:cover;object-position:center;" loading="eager" />
     <div class="voodbuilder-hero-media__shade bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30 lg:bg-gradient-to-r lg:from-zinc-950 lg:via-zinc-950/80 lg:to-transparent" data-voodbuilder-role="shade" style="pointer-events:none;position:absolute;inset:0;"></div>

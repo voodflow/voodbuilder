@@ -19,7 +19,12 @@
     @apply w-full;
 }
 
-/* Editor site_header block: fixed nav needs layout space so content does not jump underneath. */
+/* Editor + published SITE nav: reserve space when sticky/fixed header leaves the flow. */
+.voodbuilder-site-header-spacer,
+[data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
+    min-height: 4rem;
+}
+
 [data-voodbuilder-editor-site-header].voodbuilder-site-header-spacer {
     height: 4rem;
 }

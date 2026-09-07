@@ -39,21 +39,43 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertNotContains('vb-gallery-1', EditorCommunityBlockCatalog::coreOwnedIds());
     }
 
-    public function test_community_chrome_editor_keeps_content_slot(): void
+    public function test_community_chrome_editor_sidebar_is_site_chrome_only(): void
     {
         $this->useEdition(EditionCapabilityMatrix::EDITION_COMMUNITY);
 
         $filtered = EditorCommunityBlockCatalog::filterEditorBlocks([
             ['id' => 'chrome_content_slot', 'label' => 'Slot'],
             ['id' => 'site_nav_simple', 'label' => 'Nav'],
+            ['id' => 'site_footer_centered', 'label' => 'Footer'],
+            ['id' => 'vb-hero-2', 'label' => 'Hero'],
             ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
+            ['id' => 'voodbuilder-heading', 'label' => 'Heading'],
         ], chromeLayoutEditor: true);
 
         $ids = array_column($filtered, 'id');
 
-        $this->assertContains('chrome_content_slot', $ids);
-        $this->assertContains('site_nav_simple', $ids);
-        $this->assertNotContains('vb-gallery-1', $ids);
+        $this->assertSame(
+            ['site_nav_simple', 'site_footer_centered'],
+            $ids,
+        );
+        $this->assertNotContains('chrome_content_slot', $ids);
+        $this->assertNotContains('vb-hero-2', $ids);
+        $this->assertNotContains('voodbuilder-heading', $ids);
+    }
+
+    public function test_professional_chrome_editor_also_limits_sidebar_to_site_chrome(): void
+    {
+        $this->useEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL);
+
+        $filtered = EditorCommunityBlockCatalog::filterEditorBlocks([
+            ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
+            ['id' => 'site_nav_simple', 'label' => 'Nav'],
+            ['id' => 'chrome_content_slot', 'label' => 'Slot'],
+        ], chromeLayoutEditor: true);
+
+        $ids = array_column($filtered, 'id');
+
+        $this->assertSame(['site_nav_simple'], $ids);
     }
 
     public function test_professional_shows_full_library_when_registered(): void

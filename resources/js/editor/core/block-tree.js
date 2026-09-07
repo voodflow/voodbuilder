@@ -14,7 +14,10 @@ export function readBlockId(component) {
     }
 
     const attrs = component.getAttributes?.() ?? {};
-    const fromAttrs = attrs[ATTR.block] ?? attrs['data-voodbuilder-block'] ?? '';
+    const fromAttrs = attrs[ATTR.block]
+        ?? attrs['data-voodbuilder-block']
+        ?? attrs['data-voodbuilder-section-block']
+        ?? '';
 
     if (String(fromAttrs).trim() !== '') {
         return String(fromAttrs).trim();
@@ -31,13 +34,20 @@ export function readBlockId(component) {
     }
 
     try {
-        const fromEl = component.getEl?.()?.getAttribute?.(ATTR.block);
+        const fromEl = component.getEl?.()?.getAttribute?.(ATTR.block)
+            ?? component.getEl?.()?.getAttribute?.('data-voodbuilder-section-block');
 
         if (fromEl != null && String(fromEl).trim() !== '') {
             return String(fromEl).trim();
         }
     } catch {
         // Canvas frame may not be ready yet.
+    }
+
+    const type = String(component.get?.('type') ?? '');
+
+    if (type === 'vb-bg-image' || type === 'vb-bg-video') {
+        return type;
     }
 
     return '';
