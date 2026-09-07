@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Contracts\RegistersRoutes;
 use Voodflow\Voodbuilder\Http\Controllers\EditorFormController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorPageController;
+use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -51,7 +52,7 @@ final class PagesModule extends AbstractVoodBuilderModule implements RegistersRo
                 Route::post('forms/{sitePage}', EditorFormController::class)->name('forms.submit');
             });
 
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:60,1'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {

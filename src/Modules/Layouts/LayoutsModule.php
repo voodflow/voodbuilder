@@ -10,6 +10,7 @@ use Voodflow\Voodbuilder\Contracts\RegistersBlocks;
 use Voodflow\Voodbuilder\Contracts\RegistersRoutes;
 use Voodflow\Voodbuilder\Http\Controllers\ChromeLayoutEditorController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorChromeLayoutController;
+use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
@@ -43,7 +44,7 @@ final class LayoutsModule extends AbstractVoodBuilderModule implements Registers
 
     public function registerRoutes(Router $router, ModuleContext $context): void
     {
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:60,1'])
             ->prefix('voodbuilder/editor')
             ->name('voodbuilder.editor.')
             ->group(function (): void {
@@ -51,7 +52,7 @@ final class LayoutsModule extends AbstractVoodBuilderModule implements Registers
                     ->name('chrome-layouts.content.update');
             });
 
-        Route::middleware(['web', 'auth', 'throttle:60,1'])
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:60,1'])
             ->prefix('voodbuilder')
             ->name('voodbuilder.')
             ->group(function (): void {

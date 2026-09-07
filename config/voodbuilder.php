@@ -418,7 +418,7 @@ return [
             'max_project_bytes' => 5_000_000,
         ],
         'plugins' => [
-            'forms' => env('VOODBUILDER_EDITOR_FORMS', true),
+            'forms' => env('VOODBUILDER_EDITOR_FORMS', false),
             'style_bg' => env('VOODBUILDER_EDITOR_STYLE_BG', true),
             'tabs' => env('VOODBUILDER_EDITOR_TABS', true),
             'custom_code' => env('VOODBUILDER_EDITOR_CUSTOM_CODE', false),
