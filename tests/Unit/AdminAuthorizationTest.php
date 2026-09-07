@@ -14,9 +14,11 @@ final class AdminAuthorizationTest extends TestCase
     {
         config(['voodbuilder.authorization.driver' => 'auto']);
 
-        // Cosmolab / typical Filament Shield apps ship Spatie Permission.
-        // Fresh Filament-only installs do not — those fall back to panel access.
-        $this->assertIsBool(AdminAuthorization::usesPermissionAuthorizer());
+        // Shield-only detection (Spatie alone must not hide resources).
+        $this->assertSame(
+            class_exists(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::class),
+            AdminAuthorization::usesPermissionAuthorizer(),
+        );
     }
 
     public function test_permissions_driver_defers_to_user_can(): void
