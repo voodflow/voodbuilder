@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-09-07
+
+### Fixed
+
+- Install patches `site-runtime.js` into `vite.config.js` (public `@vite` no longer 500s after a successful build)
+- Public layout skips Vite entries missing from the manifest instead of throwing
+
+
 ## [0.1.5] - 2026-09-07
 
 ### Fixed

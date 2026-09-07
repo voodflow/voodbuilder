@@ -28,4 +28,14 @@ class VoodbuilderPathsTest extends TestCase
         $this->assertStringEndsWith('resources/js/site-runtime.js', $entries[2]);
         $this->assertFileExists(VoodbuilderPaths::packagePath().'/resources/js/site-runtime.js');
     }
+
+    public function test_vite_input_entries_include_site_runtime(): void
+    {
+        $entries = VoodbuilderPaths::viteInputEntries();
+
+        $this->assertTrue(
+            collect($entries)->contains(fn (string $entry): bool => str_ends_with($entry, 'resources/js/site-runtime.js')),
+            'ConfigureViteForVoodbuilder must patch site-runtime.js into vite.config.js input',
+        );
+    }
 }

@@ -12,7 +12,8 @@
         $chromeLayoutEditor ?? false,
         $voodbuilderSubTheme,
     );
-    $voodbuilderHostViteReady = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::hostViteReady();
+    $voodbuilderHostViteReady = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::hostViteReady()
+        && $voodbuilderViteEntries !== [];
     $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
 @endphp
 <!doctype html>

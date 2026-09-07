@@ -88,6 +88,7 @@ final class VoodbuilderPaths
     {
         $entries = [
             self::themeCssRelativePath(),
+            self::relativeToBasePath(self::viteSourcePath().'/resources/js/site-runtime.js'),
             self::editorViteEntry(),
             self::editorCssEntry(),
             self::editorTabsCssEntry(),

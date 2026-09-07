@@ -84,16 +84,41 @@ final class EditorAssets
         ?string $subTheme = null,
     ): array {
         if ($editorEditor) {
-            return self::editorPageViteEntries($chromeLayoutEditor, $subTheme);
+            return self::onlyResolvableViteEntries(
+                self::editorPageViteEntries($chromeLayoutEditor, $subTheme),
+            );
         }
 
         $configured = config('voodbuilder.assets.vite');
 
-        if (is_array($configured) && $configured !== []) {
-            return self::withOptionalPublicCss(array_values($configured), $subTheme);
+        $entries = is_array($configured) && $configured !== []
+            ? self::withOptionalPublicCss(array_values($configured), $subTheme)
+            : self::withOptionalPublicCss(VoodbuilderPaths::defaultViteEntries(), $subTheme);
+
+        return self::onlyResolvableViteEntries($entries);
+    }
+
+    /**
+     * Drop entries missing from the Vite manifest so @vite does not 500 the public site
+     * when vite.config.js was patched before a new package entry existed.
+     *
+     * @param  list<string>  $entries
+     * @return list<string>
+     */
+    public static function onlyResolvableViteEntries(array $entries): array
+    {
+        if (class_exists(Vite::class) && Vite::isRunningHot()) {
+            return $entries;
         }
 
-        return self::withOptionalPublicCss(VoodbuilderPaths::defaultViteEntries(), $subTheme);
+        if (! is_file(public_path('build/manifest.json'))) {
+            return $entries;
+        }
+
+        return array_values(array_filter(
+            $entries,
+            static fn (mixed $entry): bool => is_string($entry) && $entry !== '' && self::hasBuiltAsset($entry),
+        ));
     }
 
     /**
