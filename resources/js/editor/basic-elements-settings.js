@@ -92,11 +92,74 @@ export function isTextLinkComponent(component) {
         return false;
     }
 
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-cta'] === 'true'
+        || attrs['data-voodbuilder-skip-cta'] != null
+        || attrs['data-voodbuilder-icon'] != null) {
+        return false;
+    }
+
     if (component.get('type') === 'voodbuilder-text-link') {
         return true;
     }
 
-    return (component.getClasses?.() ?? []).includes('vb-text-link');
+    if ((component.getClasses?.() ?? []).includes('vb-text-link')) {
+        return true;
+    }
+
+    // Catalog / remote sections often ship plain <a> (Grapes type "link").
+    if (String(component.get('tagName') ?? '').toLowerCase() !== 'a'
+        && component.get('type') !== 'link') {
+        return false;
+    }
+
+    return ! isInsideChromeShell(component);
+}
+
+/**
+ * Walk up to the nearest content text link (so selecting text/SVG inside <a> still opens link settings).
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+export function findTextLinkHost(component) {
+    let current = component;
+
+    while (current?.get) {
+        if (isTextLinkComponent(current)) {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
+function isInsideChromeShell(component) {
+    let current = component;
+
+    while (current?.get) {
+        const attrs = current.getAttributes?.() ?? {};
+
+        if (attrs['data-voodbuilder-editor-site-header'] != null
+            || attrs['data-voodbuilder-editor-site-footer'] != null
+            || attrs['data-voodbuilder-chrome-shell'] != null
+            || attrs['data-voodbuilder-chrome-shell-part'] != null) {
+            return true;
+        }
+
+        const tag = String(current.get('tagName') ?? '').toLowerCase();
+
+        if (tag === 'nav') {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
 }
 
 export function isDividerComponent(component) {

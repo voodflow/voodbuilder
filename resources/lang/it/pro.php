@@ -44,6 +44,8 @@ return [
         'editing_context_layout' => 'Layout',
         'editing_context_popup' => 'Popup',
         'editing_context_untitled' => 'Senza titolo',
+        'preview_theme' => 'Anteprima come',
+        'preview_theme_hint' => 'Anteprima i colori come su quest\'area del sito. In pubblico il popup eredita comunque il tema della pagina host.',
     ],
 
     'bindings' => [

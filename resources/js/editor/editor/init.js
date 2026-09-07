@@ -87,6 +87,7 @@ import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
 import { registerPopupsUi } from '../popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents, promotePrivateStyleClassesToIdRules, hydrateAuthorStylesFromIdRules } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
+import { registerPopupPreviewThemeSelect } from '../popup-preview-theme.js';
 import { extractChromeShellPageHtml, registerChromeShellEditor } from '../editor-chrome-shell.js';
 import { extractChromeLayoutHtml, registerChromeLayoutEditor, applyEditorScopeBlockVisibility, refreshChromeLayoutBlockCatalog, reconcileLayoutChromeBlockSettings } from '../editor-chrome-layout.js';
 import {
@@ -326,6 +327,11 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         return;
     }
 
+    editor.__voodbuilderSubTheme = subTheme;
+    editor.__voodbuilderThemePaletteCss = String(themeOptions.themePaletteCss ?? '').trim();
+    editor.__voodbuilderChromeLayoutCss = String(themeOptions.chromeLayoutCss ?? '').trim();
+    editor.__voodbuilderPopupMode = Boolean(themeOptions.popupMode);
+
     const resolveDark = (isDark = null) => {
         if (typeof isDark === 'boolean') {
             return isDark;
@@ -337,7 +343,7 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     };
 
     const ensurePaletteStyle = (doc) => {
-        const css = String(themeOptions.themePaletteCss ?? '').trim();
+        const css = String(editor.__voodbuilderThemePaletteCss ?? '').trim();
 
         if (! css || ! doc?.head) {
             return;
@@ -355,15 +361,15 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
             style.textContent = css;
         }
 
-        // Canvas stylesheets (theme.css / section-utilities) may append after frameStyle.
-        // Keep the Theme Studio palette last so --color-vp-brand-* always wins.
+        // Keep the Theme Studio palette last so --color-vp-* always wins over
+        // live JIT (`#voodbuilder-page-live-css` / component live CSS).
         if (style.parentNode === doc.head && doc.head.lastElementChild !== style) {
             doc.head.appendChild(style);
         }
     };
 
     const ensureChromeLayoutStyle = (doc) => {
-        const css = String(themeOptions.chromeLayoutCss ?? '').trim();
+        const css = String(editor.__voodbuilderChromeLayoutCss ?? '').trim();
 
         if (! doc?.head) {
             return;
@@ -399,14 +405,27 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
             return;
         }
 
-        doc.documentElement.setAttribute('data-voodbuilder-sub-theme', subTheme);
+        const activeSubTheme = String(editor.__voodbuilderSubTheme ?? subTheme).trim();
+
+        if (activeSubTheme) {
+            doc.documentElement.setAttribute('data-voodbuilder-sub-theme', activeSubTheme);
+        }
 
         const prefersDark = resolveDark(isDark);
+        const root = doc.documentElement;
 
-        doc.documentElement.classList.toggle('dark', prefersDark);
-        doc.documentElement.style.colorScheme = prefersDark ? 'dark' : 'light';
+        // Re-stamp `.dark` even when already set so late-inserted Grapes nodes
+        // pick up html.dark custom properties without a manual theme toggle.
+        if (prefersDark) {
+            root.classList.remove('dark');
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
 
-        if (themeOptions.popupMode) {
+        root.style.colorScheme = prefersDark ? 'dark' : 'light';
+
+        if (editor.__voodbuilderPopupMode) {
             doc.body?.classList.add('voodbuilder-popup-editor-canvas');
         } else {
             doc.body?.classList.remove('voodbuilder-popup-editor-canvas');
@@ -419,6 +438,10 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     editor.__voodbuilderApplyCanvasTheme = apply;
     editor.on('canvas:frame:load', () => apply());
     editor.on('load', () => apply());
+    // Library drops can paint before palette order / .dark recalc settles.
+    editor.on('block:drag:stop', () => {
+        window.requestAnimationFrame(() => apply());
+    });
     window.addEventListener('voodbuilder:theme-changed', (event) => {
         apply(event?.detail?.isDark);
     });
@@ -1114,6 +1137,12 @@ export function initVoodbuilderEditor(container, options = {}) {
         chromeLayoutCss: options.chromeLayoutCss ?? '',
         popupMode: Boolean(options.popupMode),
     });
+
+    registerPopupPreviewThemeSelect(editor, options, {
+        toolsMount: shell?.mounts?.canvasToolbar ?? null,
+        shell: shell?.shell ?? null,
+    });
+
     editor.__voodbuilderPopupMode = Boolean(options.popupMode);
     editor.__voodbuilderPopupDisplayWidthPx = (() => {
         const raw = String(options.popupDisplayWidth ?? '').trim();
@@ -2151,6 +2180,9 @@ function mountFrontendEditor() {
         popupMode: config.popupMode ?? false,
         popupName: config.popupName ?? null,
         popupDisplayWidth: config.popupDisplayWidth ?? null,
+        previewThemeArea: config.previewThemeArea ?? null,
+        previewThemeOptions: config.previewThemeOptions ?? [],
+        previewThemePalettes: config.previewThemePalettes ?? {},
         pageId: config.pageId ?? null,
         pageTitle: config.pageTitle ?? null,
         chromeShellMode: config.chromeShellMode ?? false,

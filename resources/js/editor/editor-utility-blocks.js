@@ -173,6 +173,29 @@ function registerLinkableType(editor, typeName, defaults = {}) {
 
     editor.DomComponents.addType(typeName, {
         extend: 'link',
+        isComponent: (element) => {
+            if (! element || String(element.tagName ?? '').toUpperCase() !== 'A') {
+                return false;
+            }
+
+            if (element.getAttribute?.('data-voodbuilder-cta') === 'true'
+                || element.hasAttribute?.('data-voodbuilder-skip-cta')
+                || element.hasAttribute?.('data-voodbuilder-icon')) {
+                return false;
+            }
+
+            if (element.classList?.contains?.('vb-text-link')
+                || element.getAttribute?.('data-vb-link-type')) {
+                return { type: typeName };
+            }
+
+            // Plain content anchors from catalog sections (e.g. gallery "Read more").
+            if (element.closest?.('nav, [data-voodbuilder-editor-site-header], [data-voodbuilder-editor-site-footer], [data-voodbuilder-chrome-shell], [data-voodbuilder-chrome-shell-part]')) {
+                return false;
+            }
+
+            return { type: typeName };
+        },
         model: {
             defaults: {
                 ...baseDefaults,
@@ -181,6 +204,13 @@ function registerLinkableType(editor, typeName, defaults = {}) {
             },
             init() {
                 this.on('change:linkType change:data-vb-link-type change:href change:target', () => applyLinkProps(this));
+
+                const classes = this.getClasses?.() ?? [];
+
+                if (! classes.includes('vb-text-link')) {
+                    this.addClass?.('vb-text-link');
+                }
+
                 applyLinkProps(this);
             },
         },

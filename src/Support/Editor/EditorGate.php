@@ -577,6 +577,8 @@ final class EditorGate
             'editingContextLayout' => __('voodbuilder::pro.frontend.editing_context_layout'),
             'editingContextPopup' => __('voodbuilder::pro.frontend.editing_context_popup'),
             'editingContextUntitled' => __('voodbuilder::pro.frontend.editing_context_untitled'),
+            'previewTheme' => __('voodbuilder::pro.frontend.preview_theme'),
+            'previewThemeHint' => __('voodbuilder::pro.frontend.preview_theme_hint'),
             'deviceDesktop' => __('voodbuilder::pro.editor_ui.device_desktop'),
             'deviceTablet' => __('voodbuilder::pro.editor_ui.device_tablet'),
             'deviceMobile' => __('voodbuilder::pro.editor_ui.device_mobile'),

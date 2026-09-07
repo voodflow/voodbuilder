@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product docs & support
+    url: https://voodflow.com
+    about: User guides, pricing, and commercial support live on voodflow.com — not in this repository.
+  - name: Security report
+    url: https://voodflow.com
+    about: Do not file public issues for vulnerabilities. See SECURITY.md and contact Voodflow privately.

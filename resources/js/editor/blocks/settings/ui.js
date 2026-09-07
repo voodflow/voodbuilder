@@ -38,6 +38,7 @@ import { isValidGrapesComponent } from '../../core/component-model.js';
 import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
 import {
     findIconHost,
+    findTextLinkHost,
     isDividerComponent,
     isTextLinkComponent,
     renderDividerSettings,
@@ -575,6 +576,32 @@ export function registerSettingsUi(editor, mount) {
                         mount,
                         traitsMount,
                         component: richHost,
+                        editor,
+                        labels,
+                    });
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
+
+                    return;
+                }
+            }
+
+            {
+                const textLinkHost = findTextLinkHost(rawSelected);
+
+                if (textLinkHost) {
+                    if (rawSelected !== textLinkHost && editor.getSelected?.() !== textLinkHost) {
+                        window.requestAnimationFrame(() => {
+                            editor.select?.(textLinkHost, { scroll: false });
+                        });
+                    }
+
+                    closeAllInspectorSelects();
+                    renderTextLinkSettings({
+                        mount,
+                        traitsMount,
+                        component: textLinkHost,
                         editor,
                         labels,
                     });

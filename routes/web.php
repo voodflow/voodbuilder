@@ -66,6 +66,8 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
         $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
         $menuPaths = (bool) config('voodbuilder.pages.menu_paths', false);
         $base = $prefix !== '' ? '/'.$prefix : '';
+        // Package / framework prefixes must never be claimed as menu-path sections.
+        // Otherwise e.g. GET /vmedia/media is shadowed by pages.show.nested → empty media browser.
         $reserved = implode('|', array_filter([
             'login',
             'register',
@@ -79,13 +81,23 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
             'vendor',
             'build',
             'up',
+            'voodbuilder',
+            'vmedia',
+            'vcookiebar',
+            'vpopups',
+            'vforms',
+            'galleries',
             trim((string) config('voodbuilder.search.route', 'search'), '/'),
             trim((string) config('voodbuilder.account.route', 'account'), '/'),
+            trim((string) config('vmedia.routes.prefix', 'vmedia'), '/'),
+            trim((string) config('vmedia.public.prefix', 'galleries'), '/'),
         ]));
 
         if ($menuPaths) {
+            // Lookahead must use (?:/|$) — bare `$` means end of the full URI, so
+            // `/vmedia/media` would still match section=vmedia (remaining path ≠ "vmedia").
             $sectionPattern = $prefix === '' && $reserved !== ''
-                ? '^(?!('.$reserved.')$)[A-Za-z0-9\-]+$'
+                ? '(?!(?:'.$reserved.')(?:/|$))[A-Za-z0-9\-]+'
                 : '[A-Za-z0-9\-]+';
 
             Route::get($base.'/{section}/{slug}', [SitePageController::class, 'show'])
@@ -94,7 +106,7 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
         }
 
         $slugPattern = $prefix === '' && $reserved !== ''
-            ? '^(?!('.$reserved.')$)[A-Za-z0-9\-]+$'
+            ? '(?!(?:'.$reserved.')$)[A-Za-z0-9\-]+'
             : '[A-Za-z0-9\-]+';
 
         Route::get($base.'/{slug}', [SitePageController::class, 'show'])

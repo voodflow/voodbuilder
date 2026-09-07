@@ -44,6 +44,8 @@ return [
         'editing_context_layout' => 'Layout',
         'editing_context_popup' => 'Popup',
         'editing_context_untitled' => 'Untitled',
+        'preview_theme' => 'Preview as',
+        'preview_theme_hint' => 'Preview colors as they appear on this site area. Live pages still use the host page theme.',
     ],
 
     'bindings' => [

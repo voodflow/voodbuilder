@@ -75,11 +75,29 @@ final class EditorSmartButtonAnnotatorTest extends TestCase
     }
 
     #[Test]
-    public function it_skips_plain_text_links(): void
+    public function it_promotes_plain_text_links_without_making_them_ctas(): void
     {
         $html = '<a class="text-vp-brand-1 underline underline-offset-2" href="/docs">Docs</a>';
         $out = EditorSmartButtonAnnotator::annotate($html);
 
         $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('vb-text-link', $out);
+        $this->assertStringContainsString('data-vb-link-type="url"', $out);
+        $this->assertStringContainsString('href="/docs"', $out);
+    }
+
+    #[Test]
+    public function it_promotes_gallery_read_more_anchors_as_text_links(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section">
+  <a class="text-indigo-500 inline-flex items-center" href="#">Read more<svg class="w-4 h-4 ml-2"></svg></a>
+</section>
+HTML;
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('vb-text-link', $out);
+        $this->assertStringContainsString('data-vb-link-type="url"', $out);
     }
 }

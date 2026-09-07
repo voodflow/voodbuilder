@@ -12,6 +12,7 @@
  * Style Manager paints are inline — they must NOT trigger compile-css.
  * Never compile during block/sorter drag (selector:add storms on drag-start).
  */
+import { placeCanvasLiveStyle } from './canvas-live-style.js';
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
@@ -170,13 +171,16 @@ function injectLivePageCss(editor, css) {
         styleEl.id = LIVE_STYLE_ID;
     }
 
-    // Keep live JIT last so dark:/responsive utilities win over canvas theme sheets.
-    // Re-append only when needed — repeated appendChild on every compile churns iframes.
-    if (styleEl.parentNode !== doc.head || styleEl !== doc.head.lastElementChild) {
-        doc.head.appendChild(styleEl);
-    }
-
+    // Before Theme Studio palette — see canvas-live-style.js.
+    placeCanvasLiveStyle(doc, styleEl);
     styleEl.textContent = String(css ?? '').trim();
+
+    // Palette must stay last after live inject (do not toggle .dark here — JIT is hot).
+    const palette = doc.getElementById('voodbuilder-canvas-theme-palette');
+
+    if (palette?.parentNode === doc.head && doc.head.lastElementChild !== palette) {
+        doc.head.appendChild(palette);
+    }
 }
 
 /** Undo CSS selector escapes so `.hover\:bg-red-500` indexes as `hover:bg-red-500`. */

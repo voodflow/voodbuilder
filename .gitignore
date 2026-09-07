@@ -5,3 +5,10 @@
 /node_modules/
 composer.lock
 .phpunit.result.cache
+.DS_Store
+*.log
+
+# Internal engineering docs (kept locally; not published on the public remote)
+/docs/
+
+.cursor/

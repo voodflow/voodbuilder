@@ -55,7 +55,27 @@
 
                 const container = document.createElement('div');
                 container.innerHTML = html;
-                Array.from(container.children).forEach(function (node) {
+
+                Array.from(container.childNodes).forEach(function (node) {
+                    if (node.nodeType !== 1) {
+                        target.appendChild(node.cloneNode(true));
+                        return;
+                    }
+
+                    if (node.tagName === 'SCRIPT') {
+                        const script = document.createElement('script');
+                        Array.from(node.attributes).forEach(function (attr) {
+                            script.setAttribute(attr.name, attr.value);
+                        });
+                        if (node.src) {
+                            script.src = node.src;
+                        } else {
+                            script.text = node.textContent || '';
+                        }
+                        target.appendChild(script);
+                        return;
+                    }
+
                     target.appendChild(node);
                 });
             }

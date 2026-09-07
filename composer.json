@@ -1,6 +1,6 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "VoodBuilder \u2014 commercial Filament plugin for public site themes, site pages, and Editor page builder on Laravel.",
+    "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel (Community free / source-available; Pro companions optional).",
     "version": "0.1.3",
     "type": "library",
     "license": "proprietary",
@@ -10,6 +10,7 @@
         "voodbuilder",
         "theme",
         "page-builder",
+        "grapesjs",
         "voodflow"
     ],
     "require": {
@@ -23,7 +24,8 @@
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
         "spatie/laravel-sluggable": "^3.8",
-        "voodflow/vmedia": "^0.2"
+        "voodflow/vmedia": "^0.2",
+        "voodflow/vcookiebar": "^0.1"
     },
     "autoload": {
         "psr-4": {
@@ -70,16 +72,24 @@
             "providers": [
                 "Voodflow\\Voodbuilder\\VoodbuilderServiceProvider"
             ]
-        },
-        "suggest": {
-            "voodflow/vpopups": "FilamentPHP 5 plugin: popup builder, runtime and analytics (standalone; optional VoodBuilder integration).",
-            "voodflow/vmedia": "Required free companion: media vault, galleries, and Editor asset browser (alt/caption/credits).",
-            "voodflow/vforms": "FilamentPHP 5 plugin: managed forms and submissions (standalone; optional VoodBuilder blocks).",
-            "voodflow/vcookiebar": "FilamentPHP 5 plugin: cookie consent bar (standalone; optional VoodBuilder blocks).",
-            "voodflow/voodbuilder-components": "FilamentPHP 5 plugin: saved components library and global classes for VoodBuilder.",
-            "voodflow/voodbuilder-dynamic-data": "FilamentPHP 5 plugin: Dynamic Data bindings, Model Integrations, and List repeat.",
-            "voodflow/voodbuilder-templates": "FilamentPHP 5 plugin: page template authoring (save, JSON import/export, multi-select)."
         }
+    },
+    "suggest": {
+        "voodflow/vpopups": "Paid add-on: popup builder (requires VoodBuilder). Same GrapesJS editor, targeting, analytics.",
+        "voodflow/vforms": "Paid add-on: managed forms and submissions with optional VoodBuilder blocks.",
+        "voodflow/voodbuilder-elements": "Paid companion: remote Elements library (api.voodflow.com) for Pro/Agency section catalog.",
+        "voodflow/voodbuilder-components": "Paid companion: saved components library and global classes.",
+        "voodflow/voodbuilder-dynamic-data": "Paid companion: Dynamic Data bindings, Model Integrations, and List repeat.",
+        "voodflow/voodbuilder-templates": "Paid companion: page template authoring (save, JSON import/export)."
+    },
+    "archive": {
+        "exclude": [
+            "/docs",
+            "/tests",
+            "/.github",
+            "/phpunit.xml.dist",
+            "/.cursor"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true

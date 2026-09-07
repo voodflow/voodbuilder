@@ -3,6 +3,7 @@
  * Triggered by library drops / class changes — Style Manager inline styles do not need compile-css.
  * Uses the same compile-css API as code import (Tailwind v4 via compile-component-tailwind.mjs).
  */
+import { placeCanvasLiveStyle } from './canvas-live-style.js';
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
 import { shouldDeferCssRebuild } from './editor-lifecycle.js';
@@ -56,12 +57,15 @@ function injectLiveComponentCss(editor, css) {
         styleEl.id = LIVE_STYLE_ID;
     }
 
-    // Keep live JIT last so dark:/responsive utilities win over canvas theme sheets.
-    if (styleEl.parentNode !== doc.head || styleEl !== doc.head.lastElementChild) {
-        doc.head.appendChild(styleEl);
-    }
-
+    // Before Theme Studio palette — see canvas-live-style.js.
+    placeCanvasLiveStyle(doc, styleEl);
     styleEl.textContent = String(css ?? '').trim();
+
+    const palette = doc.getElementById('voodbuilder-canvas-theme-palette');
+
+    if (palette?.parentNode === doc.head && doc.head.lastElementChild !== palette) {
+        doc.head.appendChild(palette);
+    }
 }
 
 function isInsidePastedComponent(component) {

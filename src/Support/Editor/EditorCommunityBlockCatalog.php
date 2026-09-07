@@ -191,23 +191,14 @@ final class EditorCommunityBlockCatalog
     {
         $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
 
-        // Elements plugin owns the section catalog (Library modal). Local sidebar =
-        // foundation only (Layout / Basic / Media / Site…). Animated / Tabs live in Library.
-        if (self::elementsLibraryActive()) {
-            $ids = [...self::FOUNDATION_BLOCK_IDS];
-
-            if ($chromeLayoutEditor) {
-                $ids[] = self::CHROME_ONLY_BLOCK_ID;
-            }
-
-            return array_values(array_unique($ids));
-        }
-
+        // Pro / Agency (and any host with full-library capability): show every registered
+        // block. The Elements companion adds a remote Library modal — it must not hide
+        // local Animates / Tabs / Community tiles from the page or popup sidebar.
         if (! self::limitsLibrary()) {
-            // Full Pro library without Elements plugin (legacy) — keep chrome slot off pages.
             return null;
         }
 
+        // Community: foundation + free local section pack (incl. animated CTA / tabs).
         $ids = [
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,

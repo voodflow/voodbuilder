@@ -520,7 +520,12 @@
                 : null;
 
             if (trigger) {
-                document.querySelector('.cc-revoke')?.click();
+                event.preventDefault();
+                if (typeof window.__vcookiebar?.open === 'function') {
+                    window.__vcookiebar.open();
+                } else {
+                    document.querySelector('.cc-revoke')?.click();
+                }
             }
         });
 

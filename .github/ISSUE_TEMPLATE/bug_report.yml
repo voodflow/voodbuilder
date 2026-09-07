@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible bug in the Community core package
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve VoodBuilder. For licensing, billing, or Pro/Agency companions, use https://voodflow.com instead of GitHub Issues.
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: Composer version or git tag (e.g. 0.1.3)
+      placeholder: 0.1.3
+    validations:
+      required: true
+  - type: input
+    id: stack
+    attributes:
+      label: Stack
+      description: PHP / Laravel / Filament versions
+      placeholder: PHP 8.4 · Laravel 13 · Filament 5
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Expected vs actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps; redact secrets and customer data
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra context
+      description: Logs, screenshots, related companions (optional)
+    validations:
+      required: false

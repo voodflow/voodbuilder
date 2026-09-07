@@ -353,6 +353,49 @@ body.voodbuilder-editor-editing .voodbuilder-editor-frontend__canvas .gjs-blocks
     min-width: 0;
 }
 
+.voodbuilder-editor-topbar__preview-theme {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0.35rem;
+    max-width: min(18rem, 42vw);
+    min-width: 0;
+}
+
+.voodbuilder-editor-topbar__preview-theme-label {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: color-mix(in srgb, var(--color-vp-text-2, #64748b) 92%, transparent);
+    white-space: nowrap;
+}
+
+.voodbuilder-editor-topbar__preview-theme-select {
+    min-width: 0;
+    max-width: 100%;
+    height: 2rem;
+    padding: 0 1.75rem 0 0.65rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-vp-divider, #e2e8f0);
+    background-color: var(--color-vp-surface, var(--color-vp-bg-elv, #fff));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.55rem center;
+    background-size: 0.75rem;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    appearance: none;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-topbar__preview-theme-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-vp-brand-1, #2563eb) 28%, transparent);
+}
+
 .voodbuilder-editor-topbar-tools-inner {
     display: flex;
     align-items: center;

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 /**
- * Marks Tailblocks-style CTAs as smart buttons without changing visual classes.
+ * Marks Tailblocks-style CTAs as smart buttons, and content anchors as Text links,
+ * without changing their visual classes.
  */
 final class EditorSmartButtonAnnotator
 {
@@ -43,7 +44,7 @@ final class EditorSmartButtonAnnotator
                 continue;
             }
 
-            self::promote($button);
+            self::promoteCta($button);
         }
 
         foreach ($xpath->query('.//a', $body) ?: [] as $anchor) {
@@ -55,11 +56,17 @@ final class EditorSmartButtonAnnotator
                 continue;
             }
 
-            if (! self::looksLikeButton($anchor)) {
+            if (self::looksLikeButton($anchor)) {
+                self::promoteCta($anchor);
+
                 continue;
             }
 
-            self::promote($anchor);
+            if (self::shouldSkipTextLink($anchor)) {
+                continue;
+            }
+
+            self::promoteTextLink($anchor);
         }
 
         $inner = '';
@@ -104,6 +111,45 @@ final class EditorSmartButtonAnnotator
         return str_contains($class, ' cc-')
             || str_contains($class, ' carousel')
             || str_contains($class, ' swiper');
+    }
+
+    private static function shouldSkipTextLink(\DOMElement $anchor): bool
+    {
+        if ($anchor->hasAttribute('data-voodbuilder-skip-cta')
+            || $anchor->hasAttribute('data-voodbuilder-icon')
+            || $anchor->hasAttribute('data-cookie-preferences')
+            || $anchor->hasAttribute('data-cc')
+            || $anchor->hasAttribute('data-mobile-nav-toggle')
+            || $anchor->hasAttribute('data-mobile-nav-close')
+            || $anchor->hasAttribute('data-theme-toggle')
+        ) {
+            return true;
+        }
+
+        // Already a Text link (or CTA handled earlier).
+        $class = ' '.$anchor->getAttribute('class').' ';
+
+        if (str_contains($class, ' vb-text-link ')) {
+            return false;
+        }
+
+        if (self::hasAncestorWithAttribute($anchor, 'data-voodbuilder-editor-site-header')
+            || self::hasAncestorWithAttribute($anchor, 'data-voodbuilder-editor-site-footer')
+            || self::hasAncestorWithAttribute($anchor, 'data-voodbuilder-chrome-shell')
+            || self::hasAncestorWithAttribute($anchor, 'data-voodbuilder-chrome-shell-part')
+        ) {
+            return true;
+        }
+
+        if (self::hasAncestorTag($anchor, 'nav')) {
+            return true;
+        }
+
+        $classPadded = ' '.$anchor->getAttribute('class').' ';
+
+        return str_contains($classPadded, ' cc-')
+            || str_contains($classPadded, ' carousel')
+            || str_contains($classPadded, ' swiper');
     }
 
     private static function hasAncestorTag(\DOMElement $element, string $tag): bool
@@ -181,7 +227,26 @@ final class EditorSmartButtonAnnotator
         return $hasFill || $hasOutline || $hasInlineFlex;
     }
 
-    private static function promote(\DOMElement $element): void
+    private static function promoteTextLink(\DOMElement $anchor): void
+    {
+        $class = trim($anchor->getAttribute('class'));
+        $tokens = preg_split('/\s+/', $class, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (! in_array('vb-text-link', $tokens, true)) {
+            $tokens[] = 'vb-text-link';
+            $anchor->setAttribute('class', implode(' ', $tokens));
+        }
+
+        if (! $anchor->hasAttribute('data-vb-link-type')) {
+            $anchor->setAttribute('data-vb-link-type', 'url');
+        }
+
+        if (! $anchor->hasAttribute('href') || trim($anchor->getAttribute('href')) === '') {
+            $anchor->setAttribute('href', '#');
+        }
+    }
+
+    private static function promoteCta(\DOMElement $element): void
     {
         $label = trim(preg_replace('/\s+/', ' ', $element->textContent ?? '') ?? '');
 

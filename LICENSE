@@ -1,24 +1,39 @@
 Copyright (c) Voodflow. All rights reserved.
 
-VoodBuilder (voodflow/voodbuilder) is proprietary software published by Voodflow.
+VoodBuilder (`voodflow/voodbuilder`) is published by Voodflow under a
+**Community Free (source-available)** model for the core package, with
+separately licensed paid companions.
 
-## Freemium / dual licensing model
+## Community Free (this package)
 
-The base VoodBuilder package provides a free (Community) edition suitable for
-building and publishing public sites with the visual page editor, themes, and
-core Filament admin surfaces.
+You may **use, install, study, and modify** this package in your own
+Laravel / Filament projects — including commercial projects — **without
+a fee**, for the Community feature set described in the README and product
+docs on https://voodflow.com.
 
-Paid companion plugins and/or a commercial subscription unlock extended
-capabilities (for example Elements, Components, Dynamic Data, Templates,
-Analytics, and other Agency/Enterprise features). Those companions are licensed
-separately under their own commercial terms.
+This is **source-available and free to use**. It is **not** an OSI-approved
+open-source licence (for example it is not MIT/Apache). In particular you
+may **not**, without a separate written agreement from Voodflow:
 
-## Use
+- redistribute this package (or a substantial modified fork) as a competing
+  product, SaaS, or “drop-in” page-builder package under another brand;
+- remove or obscure Voodflow / VoodBuilder trademarks, notices, or attribution
+  in a way that presents the software as your own product offering;
+- claim that paid companion features are included when they are not.
 
-You may use, install, and modify this package only under a valid license
-agreement with Voodflow appropriate to your edition (free base and/or paid
-companions/subscription). Unauthorized copying, distribution, sublicensing, or
-public disclosure of proprietary source beyond the rights granted by your
-license is prohibited.
+Contributions submitted to the public repository are accepted only under
+these same terms (inbound = outbound), unless otherwise agreed in writing.
 
-For licensing inquiries, contact Voodflow.
+## Paid companions & editions
+
+Professional / Agency capabilities and companion packages (for example
+Elements, Components, Dynamic Data, Templates, VoodPopups, and other
+add-ons) are licensed separately under commercial terms via Voodflow /
+Anystack. A Community install does **not** grant those rights.
+
+Bundled free dependencies such as `voodflow/vmedia` and `voodflow/vcookiebar`
+keep their own licences (typically MIT + trademark NOTICE).
+
+## Contact
+
+Licensing and commercial inquiries: https://voodflow.com

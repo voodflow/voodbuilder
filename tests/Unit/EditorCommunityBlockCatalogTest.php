@@ -74,6 +74,18 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertNotContains('chrome_content_slot', $ids);
     }
 
+    public function test_community_keeps_animates_and_tabs_tiles(): void
+    {
+        $this->useEdition(EditionCapabilityMatrix::EDITION_COMMUNITY);
+
+        $allowlist = EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false);
+
+        $this->assertIsArray($allowlist);
+        $this->assertContains('voodbuilder-animated-cta', $allowlist);
+        $this->assertContains('voodbuilder-tabs-pills', $allowlist);
+        $this->assertContains('voodbuilder-animated-stats', $allowlist);
+    }
+
     private function useEdition(string $edition): void
     {
         Voodbuilder::entitlements()->useProvider(

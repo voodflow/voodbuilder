@@ -1,0 +1,7 @@
+# Path-based archive exclusions (Composer `archive` + Git export-ignore).
+# Engineering notes under /docs stay local (gitignored) — never ship in dist.
+/.cursor export-ignore
+/tests export-ignore
+/phpunit.xml.dist export-ignore
+/.github export-ignore
+/art/*.png export-ignore
