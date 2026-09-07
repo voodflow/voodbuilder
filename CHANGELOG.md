@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-09-07
+
+### Fixed
+
+- Admin Pages / Navigation / Layouts visible on Filament installs without Shield (use current panel for access checks)
+- Install / sync-npm now adds CodeMirror + js-beautify packages required by the editor build
+
+
 ## [0.0.11] - 2026-07-23
 
 ### Fixed

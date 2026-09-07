@@ -107,6 +107,12 @@ final class ConfigureNpmForVoodbuilder
     public static function requiredDevDependencies(): array
     {
         $base = [
+            '@codemirror/commands' => '^6.10.0',
+            '@codemirror/lang-css' => '^6.3.0',
+            '@codemirror/lang-html' => '^6.4.0',
+            '@codemirror/language' => '^6.12.0',
+            '@codemirror/state' => '^6.7.0',
+            '@codemirror/view' => '^6.43.0',
             '@jodit/image-editor' => '^0.2.5',
             '@tabler/icons' => '^3.45.0',
             '@tailwindcss/vite' => '^4.3.0',
@@ -117,6 +123,7 @@ final class ConfigureNpmForVoodbuilder
             'grapesjs-style-bg' => '^2.0.2',
             'grapesjs-tabs' => '^1.0.6',
             'grapesjs-tailwindcss-plugin' => '^0.1.10',
+            'js-beautify' => '^1.15.0',
             'tailwindcss' => '^4.3.0',
             'tailwindcss-animated' => '^2.0.0',
         ];

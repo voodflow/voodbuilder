@@ -13,8 +13,8 @@ use Illuminate\Contracts\Auth\Authenticatable;
  * hides Pages / Menus / Layouts on a stock Filament install with no permission
  * package. Driver:
  *
- * - `auto` (default): use named abilities when Spatie Permission or Filament
- *   Shield is present; otherwise allow any user who can access the admin panel.
+ * - `auto` (default): use named abilities when Filament Shield is present;
+ *   otherwise allow Filament panel users (see AdminAccess).
  * - `permissions`: always require named abilities (Shield / custom Gate).
  * - `panel`: always allow Filament panel users (ignore named abilities).
  */
@@ -37,6 +37,8 @@ final class AdminAuthorization
 
     private static function auto(Authenticatable $user, string $ability): bool
     {
+        // Filament Shield present → honour named abilities (Cosmolab / multi-role apps).
+        // Spatie Permission alone is ignored — it often appears without assigned abilities.
         if (self::usesPermissionAuthorizer()) {
             return self::canAbility($user, $ability);
         }
@@ -53,7 +55,6 @@ final class AdminAuthorization
 
     public static function usesPermissionAuthorizer(): bool
     {
-        return class_exists(\Spatie\Permission\PermissionServiceProvider::class)
-            || class_exists(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::class);
+        return class_exists(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::class);
     }
 }
