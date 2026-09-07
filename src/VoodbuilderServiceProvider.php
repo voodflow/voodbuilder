@@ -49,7 +49,9 @@ use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
+use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
+use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
@@ -59,7 +61,10 @@ use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
+use Voodflow\Voodbuilder\Policies\ChromeLayoutPolicy;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
+use Voodflow\Voodbuilder\Policies\NavigationMenuPolicy;
+use Voodflow\Voodbuilder\Policies\SitePagePolicy;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -159,6 +164,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             'site_page' => SitePage::class,
         ]);
 
+        Gate::policy(SitePage::class, SitePagePolicy::class);
+        Gate::policy(NavigationMenu::class, NavigationMenuPolicy::class);
+        Gate::policy(ChromeLayout::class, ChromeLayoutPolicy::class);
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
 
         $this->ensureMediaRuntime();

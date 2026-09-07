@@ -64,6 +64,8 @@ Then register plugins on your Filament panel (only VoodBuilder is required — t
 
 If you skipped the build step: `npm run build` (or `npm run dev`).
 
+**Menu visibility:** without Filament Shield / Spatie Permission, anyone who can open the admin panel sees Pages, Navigation, and Layouts. With Shield, generate and assign the resource permissions (or set `VOODBUILDER_AUTHORIZATION=panel` in `.env`).
+
 > Stock Laravel `GET /` in `routes/web.php` overrides the VoodBuilder home route — the install command removes it.  
 > Do **not** publish duplicate package migrations.
 

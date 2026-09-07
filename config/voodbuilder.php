@@ -14,6 +14,18 @@ return [
     'marketing_url' => env('VOODBUILDER_MARKETING_URL', 'https://voodflow.com/voodbuilder'),
 
     /*
+    | Admin Filament resource authorization (Pages, Menus, Chrome layouts).
+    |
+    | auto         — Shield / Spatie Permission present → named abilities
+    |                (ViewAny:SitePage, …); otherwise any Filament panel user
+    | permissions  — always named abilities (custom Gate / Shield)
+    | panel        — always Filament panel access (ignore named abilities)
+    */
+    'authorization' => [
+        'driver' => env('VOODBUILDER_AUTHORIZATION', 'auto'),
+    ],
+
+    /*
     | Internal module enablement (same package; physical splits come later).
     */
     'modules' => [

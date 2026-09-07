@@ -342,6 +342,9 @@ class InstallCommand extends Command
         }
 
         $this->line('  3. Customize config/voodbuilder.php and manage Site → Settings in Filament.');
+        $this->line('     Authorization: without Shield/Spatie Permission, panel users see all');
+        $this->line('     VoodBuilder resources. With Shield, generate & assign permissions');
+        $this->line('     (or set VOODBUILDER_AUTHORIZATION=panel).');
         $this->newLine();
 
         $this->line('  Automatic setup already handled by voodbuilder:install:');
