@@ -51,7 +51,7 @@ php artisan voodbuilder:install
 
 `-W` lets Composer settle Guzzle when a fresh Laravel app locked Guzzle 8 while a dependency needs Guzzle 7.
 
-`voodbuilder:install` publishes config, runs migrations, seeds demo data when allowed, patches Vite / `package.json` (Editor, Tailwind, CodeMirror, fonts, …), runs `npm install`, and **`npm run build`** when npm is on PATH.
+`voodbuilder:install` publishes config, runs migrations, seeds **settings + empty menus** (no sample pages by default), patches Vite / `package.json` (Editor, Tailwind, CodeMirror, fonts, …), runs `npm install`, and **`npm run build`** when npm is on PATH.
 
 Then register plugins on your Filament panel. **Only `VoodbuilderPlugin` is required** — add others only if those packages are installed:
 
@@ -66,6 +66,8 @@ Then register plugins on your Filament panel. **Only `VoodbuilderPlugin` is requ
 ```
 
 After install you should see **Pages**, **Menus**, **Theme Studio**, **Settings** (and Layouts when enabled) under the **Voodbuilder** nav group.
+
+**First visit to `/`:** with no home page yet, the public site shows a setup card (create a **Layout**, then a **Page**). The default Blade header/footer is hidden on that screen — it is not a Layout record. Opt-in sample pages: `VOODBUILDER_SEED_SAMPLE_PAGES=true`.
 
 ### Frontend build
 
@@ -89,9 +91,10 @@ Flags: `--skip-npm`, `--skip-npm-build`, `--skip-seed`, `--skip-migrate`, `--for
 
 ## Site pages & routing
 
-1. **Admin → Voodbuilder → Pages** — create a page and open the visual editor.  
-2. **Admin → Voodbuilder → Menus** — link menu items to the page (or to a named route / URL).  
-3. Public URLs come from config:
+1. **Admin → Voodbuilder → Layouts** — create a site shell (header/footer), then enable it.  
+2. **Admin → Voodbuilder → Pages** — create a home page and open the visual editor.  
+3. **Admin → Voodbuilder → Menus** — link menu items to the page (or to a named route / URL).  
+4. Public URLs come from config:
 
 | Mode | Example |
 |------|---------|

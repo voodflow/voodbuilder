@@ -193,6 +193,14 @@ return [
     'demo_site_sections' => (bool) env('VOODBUILDER_DEMO_SITE_SECTIONS', false),
 
     /*
+    | Install seeder defaults: settings, empty menus, permissions, starter templates.
+    | Sample pages (home / privacy / cookie) are opt-in — fresh sites start empty.
+    */
+    'seed' => [
+        'sample_pages' => (bool) env('VOODBUILDER_SEED_SAMPLE_PAGES', false),
+    ],
+
+    /*
     | Fallback logo path (relative to the public disk) or absolute URL.
     | Prefer uploading the logo in Admin → Site → Settings.
     */

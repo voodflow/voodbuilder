@@ -11,6 +11,7 @@ use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\EmptySiteGuidance;
 use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -76,6 +77,10 @@ class HomeController extends Controller
 
         return view(config('voodbuilder.home.fallback_view', 'voodbuilder::pages.welcome'), [
             'voodbuilderSubTheme' => SubThemeResolver::siteDefault(),
+            // Classic Blade nav/footer is not a Layout record — hide it on the empty state.
+            'hideSiteNav' => true,
+            'hideSiteFooter' => true,
+            'welcomeNeedsLayout' => EmptySiteGuidance::needsChromeLayout(),
         ]);
     }
 

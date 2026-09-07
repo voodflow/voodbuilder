@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-09-07
+
+### Changed
+
+- Fresh install no longer seeds sample pages (home / privacy / cookie); opt in with `VOODBUILDER_SEED_SAMPLE_PAGES=true`
+- Empty public home guides users to create a Layout first, then a Page (translatable EN/IT); Blade nav/footer hidden on that screen
+
+### Fixed
+
+- Home title seeder used a missing translation key (`voodbuilder::home.page_title`)
+
 ## [0.1.6] - 2026-09-07
 
 ### Fixed

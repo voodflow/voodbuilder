@@ -1,30 +1,43 @@
-@extends(config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'))
+@extends(\Voodflow\Voodbuilder\Support\PluginLayout::appShell())
 
 @php
     use Filament\Facades\Filament;
+    use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
     use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\EmptySiteGuidance;
 
-    $panel = Filament::getPanel('admin');
-    $adminUrl = auth()->check()
-        ? SitePageResource::getUrl('create')
-        : $panel->getLoginUrl();
-    $ctaLabel = auth()->check()
-        ? __('voodbuilder::home.empty.cta')
-        : __('voodbuilder::home.empty.cta_login');
+    $needsLayout = $welcomeNeedsLayout ?? EmptySiteGuidance::needsChromeLayout();
+    $authenticated = auth()->check();
+
+    $adminUrl = null;
+
+    try {
+        if ($authenticated) {
+            $adminUrl = $needsLayout
+                ? ChromeLayoutResource::getUrl('create')
+                : SitePageResource::getUrl('create');
+        } else {
+            $adminUrl = Filament::getPanel('admin')->getLoginUrl();
+        }
+    } catch (Throwable) {
+        $adminUrl = url('/admin');
+    }
+
+    $ctaLabel = EmptySiteGuidance::ctaLabel($authenticated);
 @endphp
 
 @section('content')
     <section class="mx-auto flex w-full max-w-2xl min-h-[min(100dvh,36rem)] flex-col items-center justify-center px-6 py-16 text-center">
-        <div class="w-full rounded-2xl border border-vp-divider bg-vp-bg-alt/60 px-8 py-12 shadow-sm">
+        <div class="w-full rounded-2xl bg-vp-bg-alt/60 px-8 py-12 ring-1 ring-black/5 shadow-sm">
             <p class="text-sm font-medium uppercase tracking-wide text-vp-brand-1">
                 {{ VoodbuilderSettings::brandName() }}
             </p>
             <h1 class="mt-3 text-3xl font-semibold tracking-tight text-vp-text-1">
-                {{ __('voodbuilder::home.empty.title') }}
+                {{ EmptySiteGuidance::title() }}
             </h1>
             <p class="mx-auto mt-4 max-w-md text-base leading-relaxed text-vp-text-2">
-                {{ __('voodbuilder::home.empty.description') }}
+                {{ EmptySiteGuidance::description() }}
             </p>
             <div class="mt-8">
                 <a

@@ -28,6 +28,22 @@ class VoodbuilderSeeder extends Seeder
             ['data' => VoodbuilderSettings::defaults()],
         );
 
+        $this->seedPageTemplates();
+        $this->seedPermissions();
+        $this->seedMenus();
+
+        if ($this->shouldSeedSamplePages()) {
+            $this->seedSamplePages();
+        }
+    }
+
+    protected function shouldSeedSamplePages(): bool
+    {
+        return (bool) config('voodbuilder.seed.sample_pages', false);
+    }
+
+    protected function seedSamplePages(): void
+    {
         SitePage::query()->updateOrCreate(
             ['slug' => 'privacy-policy'],
             [
@@ -54,10 +70,7 @@ class VoodbuilderSeeder extends Seeder
 
         $this->seedHomePage();
         $this->seedThemeDemoPages();
-        $this->seedPageTemplates();
-        $this->seedPermissions();
-
-        $this->seedMenus();
+        $this->seedSamplePageMenus();
     }
 
     protected function seedPageTemplates(): void
@@ -241,6 +254,28 @@ class VoodbuilderSeeder extends Seeder
             ['slug' => 'footer'],
             ['name' => 'Footer'],
         );
+        $footer->items()->delete();
+
+        foreach ([1, 2, 3, 4] as $index) {
+            $column = NavigationMenu::query()->updateOrCreate(
+                ['slug' => 'footer_col_'.$index],
+                ['name' => 'Footer column '.$index],
+            );
+            $column->items()->delete();
+        }
+
+        Navigation::clearCache();
+    }
+
+    /**
+     * Attach legal / demo links only when sample pages are seeded.
+     */
+    protected function seedSamplePageMenus(): void
+    {
+        $footer = NavigationMenu::query()->updateOrCreate(
+            ['slug' => 'footer'],
+            ['name' => 'Footer'],
+        );
 
         $footer->items()->delete();
         $footer->items()->createMany([
@@ -258,13 +293,6 @@ class VoodbuilderSeeder extends Seeder
             ],
         ]);
 
-        $this->seedFooterColumnMenus();
-
-        Navigation::clearCache();
-    }
-
-    protected function seedFooterColumnMenus(): void
-    {
         $columns = [
             1 => [
                 [
@@ -306,6 +334,8 @@ class VoodbuilderSeeder extends Seeder
                 $menu->items()->createMany($items);
             }
         }
+
+        Navigation::clearCache();
     }
 
     /** @return list<array<string, mixed>> */
@@ -330,6 +360,10 @@ class VoodbuilderSeeder extends Seeder
     protected function themeDemoMenuItems(): array
     {
         if (! (bool) config('voodbuilder.demo_site_sections', false)) {
+            return [];
+        }
+
+        if (! $this->shouldSeedSamplePages()) {
             return [];
         }
 
