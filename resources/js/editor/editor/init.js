@@ -759,11 +759,18 @@ export function initVoodbuilderEditor(container, options = {}) {
     const initial = options.initial ?? {};
     const labels = options.labels ?? {};
     const useLayout = options.layout !== false;
+    const chromeLayoutMode = Boolean(options.chromeLayoutMode);
+    // Layout / chrome editors never expose page templates (Landing 01, …).
+    const pageTemplatesUrl = chromeLayoutMode || options.hideTemplates === true
+        ? null
+        : (options.pageTemplatesUrl ?? null);
+    const hideTemplates = chromeLayoutMode
+        || options.hideTemplates === true
+        || ! Boolean(pageTemplatesUrl);
     const shell = useLayout ? buildEditorShell(container, labels, {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
-        // Hide Templates when no catalog URL (layout editor never exposes page templates).
-        hideTemplates: !Boolean(options.pageTemplatesUrl),
+        hideTemplates,
         editingContext: resolveEditingContext(options, labels),
     }) : null;
 
@@ -914,7 +921,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             components: options.componentsUrl ?? null,
             popups: options.popupsUrl ?? null,
             bindings: options.bindingsUrl ?? null,
-            pageTemplates: options.pageTemplatesUrl ?? null,
+            pageTemplates: pageTemplatesUrl,
             upload: options.uploadUrl ?? null,
             linkTargets: options.linkTargetsUrl ?? null,
             elementsSource: options.elementsSourceUrl ?? null,
@@ -1374,9 +1381,9 @@ export function initVoodbuilderEditor(container, options = {}) {
         }
 
         if (! options.popupMode) {
-            if (options.pageTemplatesUrl) {
+            if (pageTemplatesUrl && ! chromeLayoutMode) {
                 registerPageTemplatesSidebar(editor, {
-                    pageTemplatesUrl: options.pageTemplatesUrl,
+                    pageTemplatesUrl,
                     pageTemplatesCatalogUrl: options.entitlements?.templatesRemoteInstall
                         ? (options.pageTemplatesCatalogUrl ?? null)
                         : null,
@@ -2169,8 +2176,13 @@ function mountFrontendEditor() {
         templateCategories: config.templateCategories ?? [],
         revisionsUrl: config.revisionsUrl,
         revisionsRestoreUrl: config.revisionsRestoreUrl,
-        pageTemplatesUrl: config.pageTemplatesUrl,
-        pageTemplatesCatalogUrl: config.pageTemplatesCatalogUrl ?? null,
+        pageTemplatesUrl: config.hideTemplates === true || config.chromeLayoutMode
+            ? null
+            : config.pageTemplatesUrl,
+        pageTemplatesCatalogUrl: config.hideTemplates === true || config.chromeLayoutMode
+            ? null
+            : (config.pageTemplatesCatalogUrl ?? null),
+        hideTemplates: config.hideTemplates === true || Boolean(config.chromeLayoutMode),
         fonts: config.fonts ?? null,
         popupsUrl: config.popupsUrl ?? null,
         popupsPagePathsUrl: config.popupsPagePathsUrl ?? null,

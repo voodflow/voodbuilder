@@ -1,3 +1,9 @@
+/* Page templates belong on pages — never show the Templates library tab in layout editor. */
+body.voodbuilder-chrome-layout-editor .voodbuilder-editor-library-tab[data-voodbuilder-library="templates"],
+body.voodbuilder-chrome-layout-editor .voodbuilder-editor-library-panel[data-voodbuilder-library-panel="templates"] {
+    display: none !important;
+}
+
 /* Page editor: empty / spacer-only slots keep a real hit target.
  * Appending the top-drop spacer makes :empty false — without this override the
  * slot collapses to ~0px and canvas drops vanish (wrapper is not droppable). */

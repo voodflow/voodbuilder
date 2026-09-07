@@ -11,6 +11,7 @@ import {
     isChromeLayoutModeEditor,
     sanitizeChromeContentSlotChildren,
 } from './chrome-content-slot-utils.js';
+import { isPageTemplateBlockId } from './page-template-block-utils.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
@@ -557,6 +558,13 @@ function applyChromeLayoutBlockFilter(editor) {
 
         if (id === CONTENT_SLOT_BLOCK_ID) {
             block.set('visible', ! hasSlot);
+
+            return;
+        }
+
+        // Never expose full-page templates in the layout editor.
+        if (isPageTemplateBlockId(id)) {
+            block.set('visible', false);
 
             return;
         }

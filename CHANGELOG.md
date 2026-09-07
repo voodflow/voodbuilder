@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-09-07
+
+### Fixed
+
+- Layout editor: Templates tab stays hidden and page templates (Landing 01/02, …) are never registered or visible — templates remain page-editor only
+
 ## [0.1.14] - 2026-09-07
 
 ### Fixed

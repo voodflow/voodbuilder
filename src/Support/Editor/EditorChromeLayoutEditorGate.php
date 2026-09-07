@@ -81,6 +81,7 @@ final class EditorChromeLayoutEditorGate
             // Layout editor is chrome-only (nav/footer). Page templates belong on pages.
             'pageTemplatesUrl' => null,
             'pageTemplatesCatalogUrl' => null,
+            'hideTemplates' => true,
             'templateCategories' => [],
             'packageVersion' => VoodbuilderPackageVersion::current(),
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),

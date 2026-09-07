@@ -26,6 +26,7 @@ class EditorChromeLayoutEditorGateTest extends TestCase
 
         $this->assertTrue($config['chromeLayoutMode']);
         $this->assertNull($config['pageTemplatesUrl']);
+        $this->assertTrue($config['hideTemplates']);
         $this->assertSame([], $config['templateCategories']);
         $this->assertSame(
             EditorCommunityBlockCatalog::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS,
