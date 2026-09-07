@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-09-07
+
+### Fixed
+
+- Layout / page visual editor 403 on Shield-less Filament installs: `AdminAccess` no longer requires an active Filament panel request (editor runs outside `/admin`)
+
 ## [0.1.7] - 2026-09-07
 
 ### Changed

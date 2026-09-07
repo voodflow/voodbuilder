@@ -25,7 +25,12 @@ class ChromeLayoutEditorController extends Controller
         EditorHostChrome::markActive();
 
         $config = EditorChromeLayoutEditorGate::config($chromeLayout);
-        $config['exitUrl'] = ChromeLayoutResource::getUrl('edit', ['record' => $chromeLayout]);
+
+        try {
+            $config['exitUrl'] = ChromeLayoutResource::getUrl('edit', ['record' => $chromeLayout]);
+        } catch (\Throwable) {
+            // Filament resource routes may be absent in package tests / partial installs.
+        }
 
         return view('voodbuilder::pages.chrome-layout-editor', [
             'layout' => $chromeLayout,

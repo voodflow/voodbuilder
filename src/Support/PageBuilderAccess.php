@@ -30,11 +30,27 @@ final class PageBuilderAccess
             return false;
         }
 
-        if (AdminAccess::userCanAccessPanel()) {
-            return true;
+        // Match AdminAuthorization: without Shield, Filament panel users may use the editor
+        // (Pages + Layouts visual editor share this gate).
+        $driver = (string) config('voodbuilder.authorization.driver', 'auto');
+
+        if ($driver === 'panel') {
+            return AdminAccess::userCanAccessPanel();
         }
 
-        return self::userHasBuilderPermission(auth()->user());
+        if ($driver === 'permissions') {
+            return self::userHasBuilderPermission(auth()->user())
+                || AdminAccess::userCanAccessPanel();
+        }
+
+        // auto
+        if (AdminAuthorization::usesPermissionAuthorizer()) {
+            return self::userHasBuilderPermission(auth()->user())
+                || AdminAccess::userCanAccessPanel();
+        }
+
+        return AdminAccess::userCanAccessPanel()
+            || self::userHasBuilderPermission(auth()->user());
     }
 
     public static function userHasBuilderPermission(?Authenticatable $user = null): bool

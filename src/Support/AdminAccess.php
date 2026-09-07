@@ -22,7 +22,15 @@ final class AdminAccess
             return false;
         }
 
-        foreach (self::candidatePanels($panelId) as $panel) {
+        $panels = self::candidatePanels($panelId);
+
+        if ($panels === []) {
+            // Panel registry empty (misconfig / early boot). Filament's default without
+            // FilamentUser is "allow all panels" — keep editor usable on Shield-less installs.
+            return self::allowsAuthenticatedWithoutPanelContext($user);
+        }
+
+        foreach ($panels as $panel) {
             if (self::userMayAccess($user, $panel)) {
                 return true;
             }
@@ -83,9 +91,30 @@ final class AdminAccess
             return $user->canAccessPanel($panel);
         }
 
-        // Already authenticated inside a Filament request without FilamentUser —
-        // treat as allowed for package resource visibility (non-Shield installs).
-        return Filament::getCurrentPanel()?->getId() === $panel->getId();
+        // Filament allows every panel when FilamentUser is not implemented.
+        // Do NOT require getCurrentPanel() — the visual editor runs outside /admin
+        // (e.g. /voodbuilder/chrome-layouts/{id}/editor?edit=1) on Shield-less installs.
+        return true;
+    }
+
+    /**
+     * When no Panel instances are resolvable, still allow Shield-less Community installs
+     * that never implemented FilamentUser (Filament itself allows all panels in that case).
+     */
+    protected static function allowsAuthenticatedWithoutPanelContext(Authenticatable $user): bool
+    {
+        if ($user instanceof FilamentUser) {
+            // Need a Panel instance to evaluate canAccessPanel().
+            return false;
+        }
+
+        if (AdminAuthorization::usesPermissionAuthorizer()) {
+            return false;
+        }
+
+        $driver = (string) config('voodbuilder.authorization.driver', 'auto');
+
+        return in_array($driver, ['auto', 'panel'], true);
     }
 
     protected static function resolvePanel(?string $panelId): ?Panel
@@ -97,7 +126,7 @@ final class AdminAccess
         $panelId ??= (string) config('voodbuilder.admin_panel_id', 'admin');
 
         try {
-            return Filament::getPanel($panelId);
+            return Filament::getPanel($panelId, isStrict: false);
         } catch (\Throwable) {
             return null;
         }
