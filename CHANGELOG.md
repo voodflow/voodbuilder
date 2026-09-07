@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-09-07
+
+### Fixed
+
+- Canvas selection no longer jumps to the whole section for every catalog block — only media heroes (`vb-bg-image` / `vb-bg-video`) still promote to the root so Background settings open; blog cards and similar keep the clicked image/element
+
 ## [0.1.11] - 2026-09-07
 
 ### Fixed

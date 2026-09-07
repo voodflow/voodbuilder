@@ -161,17 +161,35 @@ describe('blocks/settings/select', () => {
         expect(shouldPromoteSelectionToRoot(inner, root, editor)).toBe(true);
     });
 
-    it('shouldPromoteSelectionToRoot keeps animated nodes selectable', () => {
+    it('shouldPromoteSelectionToRoot keeps blog/card images selectable (not promote-to-section)', () => {
+        const root = mockComponent({ [ATTR.block]: 'vb-blog-1' });
+        const image = mockComponent({ tagName: 'img', type: 'image' }, [], root);
+
+        expect(shouldPromoteSelectionToRoot(image, root, {})).toBe(false);
+    });
+
+    it('shouldPromoteSelectionToRoot promotes inside media heroes only', () => {
+        const root = mockComponent({ [ATTR.block]: 'vb-bg-image' });
+        const overlay = mockComponent({ tagName: 'div', class: 'absolute inset-0' }, [], root);
+
+        expect(shouldPromoteSelectionToRoot(overlay, root, {})).toBe(true);
+    });
+
+    it('shouldPromoteSelectionToRoot keeps animated nodes selectable in chrome layout Style tab', () => {
         const root = mockComponent({ [ATTR.block]: 'site_footer_social' });
         const plasma = mockComponent({
             class: 'h-32 blur-[100px] animate-spin animate-duration-1000',
+            tagName: 'div',
         }, [], root);
 
-        expect(shouldPromoteSelectionToRoot(plasma, root, {})).toBe(false);
+        expect(shouldPromoteSelectionToRoot(plasma, root, {
+            __voodbuilderChromeLayoutMode: true,
+            __voodbuilderInspectorActiveTab: 'style',
+        })).toBe(false);
     });
 
     it('shouldPromoteSelectionToRoot skips while layers selection is pinned', () => {
-        const root = mockComponent({ [ATTR.block]: 'site_footer_social' });
+        const root = mockComponent({ [ATTR.block]: 'vb-bg-image' });
         const inner = mockComponent({ class: 'inner' }, [], root);
         const editor = {
             __voodbuilderLayersSelectionPin: inner,

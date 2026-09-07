@@ -191,6 +191,21 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         return false;
     }
 
+    const rawId = readBlockId(raw);
+    const rootId = readBlockId(root);
+
+    if (rootId === '') {
+        return false;
+    }
+
+    // Layer tree pick: never steal selection to the block root.
+    if (
+        editor?.__voodbuilderLayersSelectionPin
+        && Date.now() < Number(editor.__voodbuilderLayersSelectionPinUntil ?? 0)
+    ) {
+        return false;
+    }
+
     // Layout editor: keep the clicked chrome child selected so Style/Classes can
     // target inner containers (e.g. py-* on the footer inner wrapper). Content
     // settings still resolve the block root via findInspectableRoot.
@@ -218,17 +233,17 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         ) {
             return false;
         }
+
+        // Content tab + plain chrome child: promote so nav/footer settings open.
+        return rawId === '' || rawId !== rootId;
     }
 
-    // Keep smart CTA buttons selectable — they own Content traits (URL / page / menu).
     const rawType = String(raw.get?.('type') ?? '');
 
-    // Media heroes: always promote to the section so Background image settings open
-    // immediately (authors otherwise have to hunt the root in Layers).
-    const rootIdEarly = readBlockId(root);
-
+    // ONLY media heroes promote to the section so Background image/video settings
+    // open immediately. Do not steal selection inside blog cards, features, etc.
     if (
-        (rootIdEarly === 'vb-bg-image' || rootIdEarly === 'vb-bg-video')
+        (rootId === 'vb-bg-image' || rootId === 'vb-bg-video')
         && rawType !== 'voodbuilder-cta-button'
         && rawType !== 'link'
     ) {
@@ -242,79 +257,7 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         }
     }
 
-    if (
-        rawType === 'voodbuilder-cta-button'
-        || rawType === 'voodbuilder-animated-counter'
-        || rawType === 'voodbuilder-container'
-        || rawType === 'voodbuilder-section'
-        || rawType === 'voodbuilder-layout-block'
-        || rawType === 'voodbuilder-layout-div'
-        || rawType === 'voodbuilder-icon'
-        || rawType === 'voodbuilder-text-link'
-        || rawType === 'voodbuilder-text'
-        || rawType === 'voodbuilder-rich-text'
-    ) {
-        return false;
-    }
-
-    const rawAttrs = raw.getAttributes?.() ?? {};
-
-    if (
-        rawAttrs['data-voodbuilder-layout'] === 'section'
-        || rawAttrs['data-voodbuilder-layout'] === 'container'
-        || rawAttrs['data-voodbuilder-layout'] === 'block'
-        || rawAttrs['data-voodbuilder-layout'] === 'div'
-    ) {
-        return false;
-    }
-    if (
-        rawAttrs['data-voodbuilder-animated-counter'] != null
-        || rawAttrs['data-vb-count-to'] != null
-        || (raw.getClasses?.() ?? []).includes('vb-animated-counter')
-    ) {
-        return false;
-    }
-
-    // Animated utilities (spin/plasma/etc.): keep the exact node so Style → Animation works.
-    const rawClasses = [...(raw.getClasses?.() ?? [])].map((name) => String(name ?? ''));
-
-    if (rawClasses.some((name) => /(?:^|:)animate-[\w-]+/.test(name))) {
-        return false;
-    }
-
-    // Layer tree pick: never steal selection to the block root.
-    if (
-        editor?.__voodbuilderLayersSelectionPin
-        && Date.now() < Number(editor.__voodbuilderLayersSelectionPinUntil ?? 0)
-    ) {
-        return false;
-    }
-
-    // Keep inline RTE targets selectable — promote-to-block-root stole the
-    // newly created <a>/<span> so Link had nowhere to edit the URL and Wrap
-    // for styles could not receive Style Manager classes.
-    const rawTag = String(raw.get?.('tagName') ?? '').toLowerCase();
-    const inlineTags = new Set([
-        'a', 'span', 'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'code', 'small', 'sub', 'sup',
-    ]);
-
-    if (inlineTags.has(rawTag) || rawType === 'link' || rawType === 'textnode' || rawType === 'text') {
-        return false;
-    }
-
-    if (
-        (rawTag === 'a' && rawAttrs['data-voodbuilder-cta'] === 'true')
-        || (rawTag === 'button' && rawAttrs['data-voodbuilder-cta'] === 'true')
-    ) {
-        return false;
-    }
-
-    const rawId = readBlockId(raw);
-    const rootId = readBlockId(root);
-
-    if (rootId === '') {
-        return false;
-    }
-
-    return rawId === '' || rawId !== rootId;
+    // Page / popup editor: keep the exact clicked node (img, card, text, …).
+    // Block Content settings still resolve via findInspectableRoot without re-select.
+    return false;
 }
