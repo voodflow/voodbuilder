@@ -23,6 +23,7 @@ import {
     applyDynamicCounterValue,
     isAnimatedCounterComponent,
 } from './editor-animated-blocks.js';
+import { findHeroMediaImage } from './media-section-types.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -93,11 +94,80 @@ function isLinkableInteractive(component) {
     return tag === 'button' || tag === 'a';
 }
 
-function fieldTypeMatchesComponent(fieldType, component) {
+/**
+ * Full-bleed background image heroes store the photo on an inner <img>, but authors
+ * usually select the section (or media layer) in the canvas / Layers panel.
+ */
+export function isBackgroundImageHeroComponent(component) {
+    if (! component?.get && ! component?.getAttributes) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const id = String(
+        attrs['data-voodbuilder-block']
+        ?? attrs['data-voodbuilder-section-block']
+        ?? component.get?.('type')
+        ?? '',
+    ).trim();
+
+    return id === 'vb-bg-image' || id.includes('vb-bg-image');
+}
+
+function isHeroMediaLayerComponent(component) {
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-role'] === 'media') {
+        return true;
+    }
+
+    const classes = component.getClasses?.() ?? [];
+
+    return classes.includes('voodbuilder-hero-media');
+}
+
+/**
+ * Resolve the <img> that should receive an image field binding for a hero selection.
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+export function resolveBackgroundImageBindTarget(component) {
+    if (! component) {
+        return null;
+    }
+
+    if (componentTag(component) === 'img') {
+        return component;
+    }
+
+    if (! isBackgroundImageHeroComponent(component) && ! isHeroMediaLayerComponent(component)) {
+        return null;
+    }
+
+    return findHeroMediaImage(component) ?? null;
+}
+
+function syncHeroSectionBackgroundSrc(imageComponent, src) {
+    let node = imageComponent;
+
+    while (node) {
+        if (isBackgroundImageHeroComponent(node)) {
+            const next = String(src ?? '').trim();
+            node.addAttributes({ 'data-vb-bg-src': next !== '' ? next : null }, { silent: true });
+
+            return;
+        }
+
+        node = typeof node.parent === 'function' ? node.parent() : null;
+    }
+}
+
+export function fieldTypeMatchesComponent(fieldType, component) {
     const tag = componentTag(component);
 
     if (fieldType === 'image') {
-        return tag === 'img';
+        return tag === 'img' || resolveBackgroundImageBindTarget(component) !== null;
     }
 
     if (fieldType === 'url') {
@@ -1260,7 +1330,17 @@ function canAcceptFieldBinding(component, fieldType) {
     return fieldTypeMatchesComponent(fieldType, component);
 }
 
-function resolveFieldBindingTarget(component, fieldType) {
+export function resolveFieldBindingTarget(component, fieldType) {
+    // Hero sections match image fields for the Field dropdown, but the bind attribute
+    // must live on the inner <img> (publish render + preview paint expect an img tag).
+    if (fieldType === 'image') {
+        const heroImg = resolveBackgroundImageBindTarget(component);
+
+        if (heroImg) {
+            return heroImg;
+        }
+    }
+
     if (canAcceptFieldBinding(component, fieldType)) {
         return component;
     }
@@ -1609,6 +1689,7 @@ function paintPreviewOnElement(component, value, fieldType, { altText = null, al
         element.setAttribute('src', src);
         component.addAttributes({ src }, { silent: true });
         component.set('src', src, { silent: true });
+        syncHeroSectionBackgroundSrc(component, src);
 
         const resolvedAlt = altText ?? (isPlaceholderAlt(component.getAttributes()?.alt) ? '' : component.getAttributes()?.alt);
 

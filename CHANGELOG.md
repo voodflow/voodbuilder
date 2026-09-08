@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-09-08
+
+### Fixed
+
+- Dynamic binding Field list for Hero · background image: image fields (e.g. featured image) appear when the section or media layer is selected, not only when the inner `<img>` is selected; bind retargets to the hero media image and keeps `data-vb-bg-src` in sync
+
 ## [0.1.16] - 2026-09-08
 
 ### Fixed

@@ -89,6 +89,23 @@ class EditorBindingRendererTest extends TestCase
         $this->assertStringNotContainsString('[Latest item: Cover]', $rendered);
     }
 
+    public function test_image_binding_on_background_image_hero_updates_inner_img(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<section data-voodbuilder-block="vb-bg-image" data-voodbuilder-bind="demo.latest.image" data-vb-bg-src="old.jpg">'
+            .'<div data-voodbuilder-role="media">'
+            .'<img class="voodbuilder-hero-media__img" src="old.jpg" alt=""/>'
+            .'</div>'
+            .'</section>';
+
+        $rendered = (new EditorBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('src="https://example.test/cover.jpg"', $rendered);
+        $this->assertStringContainsString('data-vb-bg-src="https://example.test/cover.jpg"', $rendered);
+    }
+
     public function test_text_binding_on_cta_button_updates_label(): void
     {
         $registry = new BindingRegistry;

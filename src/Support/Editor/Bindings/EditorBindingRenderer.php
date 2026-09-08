@@ -231,25 +231,68 @@ final class EditorBindingRenderer
 
     protected function applyImageBinding(DOMElement $element, string $url, string $bindingKey, BindingContext $context): void
     {
-        if (strtolower($element->tagName) !== 'img') {
+        $decoded = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $target = $this->resolveImageBindingElement($element);
+
+        if ($target === null) {
             return;
         }
 
-        $element->setAttribute('src', html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $target->setAttribute('src', $decoded);
+
+        if (strtolower($element->tagName) !== 'img') {
+            $element->setAttribute('data-vb-bg-src', $decoded);
+        }
 
         $alt = $this->imageAltResolver()->resolve($bindingKey, $context);
 
         if ($alt !== null && $alt !== '') {
-            $element->setAttribute('alt', htmlspecialchars($alt, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $target->setAttribute('alt', htmlspecialchars($alt, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
             return;
         }
 
-        $currentAlt = trim($element->getAttribute('alt'));
+        $currentAlt = trim($target->getAttribute('alt'));
 
         if ($currentAlt === '' || BindingImageAltResolver::isPlaceholderAlt($currentAlt)) {
-            $element->setAttribute('alt', '');
+            $target->setAttribute('alt', '');
         }
+    }
+
+    /**
+     * Image bindings usually live on <img>. Background image heroes may carry the
+     * bind on the section / media layer — retarget to the hero media image.
+     */
+    protected function resolveImageBindingElement(DOMElement $element): ?DOMElement
+    {
+        if (strtolower($element->tagName) === 'img') {
+            return $element;
+        }
+
+        $blockId = trim(
+            $element->getAttribute('data-voodbuilder-block')
+            ?: $element->getAttribute('data-voodbuilder-section-block'),
+        );
+
+        $isHero = $blockId === 'vb-bg-image'
+            || str_contains($blockId, 'vb-bg-image')
+            || $element->getAttribute('data-voodbuilder-role') === 'media';
+
+        if (! $isHero) {
+            return null;
+        }
+
+        $xpath = new \DOMXPath($element->ownerDocument);
+        $nodes = $xpath->query('.//img[contains(concat(" ", normalize-space(@class), " "), " voodbuilder-hero-media__img ")] | .//img', $element);
+
+        if ($nodes === false || $nodes->length === 0) {
+            return null;
+        }
+
+        /** @var DOMElement $first */
+        $first = $nodes->item(0);
+
+        return $first;
     }
 
     protected function imageAltResolver(): BindingImageAltResolver

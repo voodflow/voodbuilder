@@ -46,7 +46,7 @@ const PROVIDER_OPTIONS = [
  * @param {import('grapesjs').Component} section
  * @returns {import('grapesjs').Component | undefined}
  */
-function findHeroMediaImage(section) {
+export function findHeroMediaImage(section) {
     return safeFindComponents(section, '[data-voodbuilder-role="media"] img, .voodbuilder-hero-media__img')[0];
 }
 
@@ -245,8 +245,11 @@ function syncBackgroundImageSection(section) {
         image.addStyle(imageStyles);
 
         const bgSrc = String(attrs['data-vb-bg-src'] ?? '').trim();
+        const imageBound = String(image.getAttributes?.()?.['data-voodbuilder-bind'] ?? '').trim() !== '';
 
-        if (bgSrc !== '') {
+        // Bound heroes own their src via binding preview / publish render — do not
+        // overwrite with a stale static data-vb-bg-src after CSS JIT resync.
+        if (bgSrc !== '' && ! imageBound) {
             image.addAttributes({ src: bgSrc });
         }
     }
