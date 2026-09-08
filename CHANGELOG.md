@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-09-08
+
+### Fixed
+
+- Content channel matching: patterns like `vtuts.*` / `vdocs.*` (score `-1`) no longer fail to match — tutorials/docs now resolve their chrome layout instead of falling back to the classic app shell nav
+
 ## [0.1.15] - 2026-09-07
 
 ### Fixed

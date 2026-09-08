@@ -78,7 +78,7 @@ final class ContentChannelRegistry
         }
 
         $bestChannel = null;
-        $bestScore = -1;
+        $bestScore = null;
 
         foreach ($this->channels as $channel) {
             foreach ($channel->routePatterns() as $pattern) {
@@ -86,9 +86,13 @@ final class ContentChannelRegistry
                     continue;
                 }
 
+                // Prefer longer / more specific patterns. A single wildcard like
+                // `vtuts.*` scores -1 — must still beat an uninitialized score,
+                // otherwise tutorials/docs never match and chrome stays on the
+                // classic app shell instead of the channel layout.
                 $score = strlen($pattern) - (substr_count($pattern, '*') * 8);
 
-                if ($score > $bestScore) {
+                if ($bestScore === null || $score > $bestScore) {
                     $bestScore = $score;
                     $bestChannel = $channel;
                 }
