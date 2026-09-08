@@ -240,15 +240,18 @@
         opacity: 0;
     }
 
-    /* Standalone Utilities blocks (editor + published pages) */
+    /* Standalone Utilities blocks (editor + published pages).
+     * Always fixed under the sticky nav — never bake position:relative into saved HTML
+     * (inline styles from the editor used to override this and scroll away with the page). */
     .vb-reading-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 60;
-        height: var(--spacing-vp-progress, 3px);
-        min-height: var(--spacing-vp-progress, 3px);
+        position: fixed !important;
+        top: var(--spacing-vp-nav, 4rem) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 50;
+        height: var(--spacing-vp-progress, 3px) !important;
+        min-height: var(--spacing-vp-progress, 3px) !important;
+        margin: 0 !important;
         pointer-events: none;
         background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
     }
@@ -258,7 +261,8 @@
         display: block;
         height: 100%;
         width: 0;
-        background: var(--color-vp-brand-1, #6366f1);
+        max-width: 100%;
+        background: var(--color-vp-brand-1, #6366f1) !important;
         transition: width 0.12s linear;
     }
 

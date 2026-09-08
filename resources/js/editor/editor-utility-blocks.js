@@ -390,8 +390,7 @@ function registerReadingProgressType(editor) {
                 droppable: false,
                 attributes: {
                     'data-voodbuilder-progress': '',
-                    class: 'vb-reading-progress relative w-full bg-vp-divider',
-                    style: 'position:relative;top:auto;left:auto;right:auto;z-index:1;margin:0.5rem 0;height:3px;min-height:3px;background:color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent)',
+                    class: 'vb-reading-progress w-full bg-vp-divider',
                 },
                 components: [
                     {
@@ -402,10 +401,29 @@ function registerReadingProgressType(editor) {
                         attributes: {
                             'data-reading-progress': '',
                             class: 'vb-reading-progress__bar absolute top-0 left-0 h-full bg-vp-brand-1',
-                            style: 'width:42%;height:100%;background:var(--color-vp-brand-1, #6366f1)',
                         },
                     },
                 ],
+            },
+            init() {
+                // Drop editor-only inline positioning so public CSS can keep the bar fixed.
+                const style = String(this.getAttributes?.()?.style ?? '');
+
+                if (/position\s*:\s*relative/i.test(style) || /top\s*:\s*auto/i.test(style)) {
+                    const cleaned = style
+                        .split(';')
+                        .map((part) => part.trim())
+                        .filter((part) => part !== '' && ! /^(position|top|left|right|z-index|margin)\s*:/i.test(part))
+                        .join('; ');
+
+                    if (cleaned) {
+                        this.addAttributes({ style: cleaned });
+                    } else {
+                        this.removeAttributes('style');
+                    }
+                }
+
+                this.removeClass?.('relative');
             },
         },
     });

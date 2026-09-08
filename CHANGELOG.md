@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-09-08
+
+### Fixed
+
+- Reading progress stays fixed under the sticky nav on published pages (no more scrolling away); editor-only relative positioning is no longer saved as inline styles
+
 ## [0.1.20] - 2026-09-08
 
 ### Fixed

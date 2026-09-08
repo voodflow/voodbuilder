@@ -52,9 +52,10 @@
      * Icon host box — canvas preview compiles this sheet, not frontend.css.
      * Keep sizes in rem so SVG w-full/h-full cannot explode to the column width.
      *
-     * Editor canvas: keep standalone progress selectable (fixed + width:0 is invisible).
-     * Public pages keep position:fixed via theme.css.
+     * Editor canvas: keep standalone progress in document flow (selectable).
+     * Public pages use position:fixed under the sticky nav (theme.css).
      */
+    [data-gjs-type="wrapper"] .vb-reading-progress,
     [data-gjs-type] .vb-reading-progress,
     .gjs-selected.vb-reading-progress,
     .vb-reading-progress.gjs-selected {
@@ -62,17 +63,20 @@
         top: auto !important;
         left: auto !important;
         right: auto !important;
-        z-index: 1;
+        z-index: 1 !important;
         display: block;
         width: 100%;
-        margin: 0.5rem 0;
+        margin: 0.5rem 0 !important;
+        height: 3px !important;
+        min-height: 3px !important;
         pointer-events: auto;
     }
 
+    [data-gjs-type="wrapper"] .vb-reading-progress__bar,
     [data-gjs-type] .vb-reading-progress__bar,
     [data-gjs-type] .vb-reading-progress > [data-reading-progress] {
-        width: 42%;
-        background: var(--color-vp-brand-1, #6366f1);
+        width: 42% !important;
+        background: var(--color-vp-brand-1, #6366f1) !important;
     }
 
     .vb-icon-link {

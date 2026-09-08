@@ -5554,10 +5554,10 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 /* VoodBuilder utility blocks */
 .vb-reading-progress {
     position: fixed;
-    top: 0;
+    top: var(--spacing-vp-nav, 4rem);
     left: 0;
     right: 0;
-    z-index: 60;
+    z-index: 50;
     height: 3px;
     min-height: 3px;
     pointer-events: none;
@@ -5572,9 +5572,8 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     transition: width 0.12s linear;
 }
 
-/* Editor canvas: fixed + width:0 is invisible / hard to select — keep in flow with a demo fill. */
-.gjs-dashed .vb-reading-progress,
-[data-gjs-type] .vb-reading-progress {
+/* Editor chrome (not canvas): demo only when dashed body — canvas uses section-utilities. */
+.gjs-dashed .vb-reading-progress {
     position: relative;
     top: auto;
     left: auto;
@@ -5586,8 +5585,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     pointer-events: auto;
 }
 
-.gjs-dashed .vb-reading-progress__bar,
-[data-gjs-type] .vb-reading-progress__bar {
+.gjs-dashed .vb-reading-progress__bar {
     width: 42%;
 }
 
