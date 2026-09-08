@@ -371,6 +371,68 @@ function registerReadingTimeType(editor) {
     });
 }
 
+function registerReadingProgressType(editor) {
+    if (editor.DomComponents.getType('voodbuilder-reading-progress')) {
+        return;
+    }
+
+    editor.DomComponents.addType('voodbuilder-reading-progress', {
+        isComponent: (element) => (
+            element?.hasAttribute?.('data-voodbuilder-progress') === true
+            && (
+                element.classList?.contains('vb-reading-progress')
+                || element.querySelector?.('[data-reading-progress]')
+            )
+        ),
+        model: {
+            defaults: {
+                tagName: 'div',
+                droppable: false,
+                attributes: {
+                    'data-voodbuilder-progress': '',
+                    class: 'vb-reading-progress relative w-full bg-vp-divider',
+                    style: 'position:relative;top:auto;left:auto;right:auto;z-index:1;margin:0.5rem 0;height:3px;min-height:3px;background:color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent)',
+                },
+                components: [
+                    {
+                        tagName: 'div',
+                        droppable: false,
+                        selectable: false,
+                        hoverable: false,
+                        attributes: {
+                            'data-reading-progress': '',
+                            class: 'vb-reading-progress__bar absolute top-0 left-0 h-full bg-vp-brand-1',
+                            style: 'width:42%;height:100%;background:var(--color-vp-brand-1, #6366f1)',
+                        },
+                    },
+                ],
+            },
+        },
+    });
+}
+
+function registerSocialShareType(editor) {
+    if (editor.DomComponents.getType('voodbuilder-social-share')) {
+        return;
+    }
+
+    editor.DomComponents.addType('voodbuilder-social-share', {
+        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-social-share') === true,
+        model: {
+            defaults: {
+                tagName: 'div',
+                droppable: false,
+                attributes: {
+                    'data-voodbuilder-social-share': '',
+                    'data-share-url': '',
+                    class: 'vp-social-links flex flex-wrap gap-2 vb-social-share',
+                },
+                components: buildSocialShareLinks(),
+            },
+        },
+    });
+}
+
 function buildSocialShareLinks() {
     return SOCIAL_NETWORKS.map((network) => ({
         tagName: network.key === 'copy_link' ? 'button' : 'a',
@@ -533,24 +595,16 @@ const BLOCKS = [
         id: 'voodbuilder-reading-progress',
         label: 'Reading progress',
         category: SINGLE_BLOCK_CATEGORY,
-        content: `
-            <div class="vb-reading-progress relative w-full bg-vp-divider" data-voodbuilder-progress aria-hidden="true" style="position:relative;top:auto;left:auto;right:auto;z-index:1;margin:0.5rem 0;height:3px;min-height:3px;background:color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent)">
-                <div class="vb-reading-progress__bar absolute top-0 left-0 h-full bg-vp-brand-1" data-reading-progress style="width:42%;height:100%;background:var(--color-vp-brand-1, #6366f1)"></div>
-            </div>
-        `,
+        content: {
+            type: 'voodbuilder-reading-progress',
+        },
     },
     {
         id: 'voodbuilder-social-share',
         label: 'Social sharing',
         category: SINGLE_BLOCK_CATEGORY,
         content: {
-            tagName: 'div',
-            classes: ['vp-social-links', 'flex', 'flex-wrap', 'gap-2', 'vb-social-share'],
-            attributes: {
-                'data-voodbuilder-social-share': '',
-                'data-share-url': '',
-            },
-            components: buildSocialShareLinks(),
+            type: 'voodbuilder-social-share',
         },
     },
     {
@@ -724,6 +778,8 @@ export function registerUtilityBlockComponentTypes(editor) {
         name: 'Text link',
     });
     registerReadingTimeType(editor);
+    registerReadingProgressType(editor);
+    registerSocialShareType(editor);
     registerImageGalleryType(editor);
 }
 
@@ -831,6 +887,8 @@ export function configureUtilityBlocksCanvas(editor) {
         const type = component?.get?.('type');
         const attrs = component?.getAttributes?.() ?? {};
         const isUtilityPreview = type === 'voodbuilder-reading-time'
+            || type === 'voodbuilder-reading-progress'
+            || type === 'voodbuilder-social-share'
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-reading-time')
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-progress')
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-social-share')

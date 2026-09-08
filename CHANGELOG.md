@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-09-08
+
+### Fixed
+
+- Page content orphan purge no longer deletes Utilities / Basic / Media dropped on the home page root (reading progress, reading time, social share, headings, …) right after drag-stop
+
 ## [0.1.19] - 2026-09-08
 
 ### Changed
