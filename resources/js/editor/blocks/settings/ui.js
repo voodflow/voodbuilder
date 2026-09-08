@@ -40,9 +40,11 @@ import {
     findIconHost,
     findTextLinkHost,
     isDividerComponent,
+    isReadingProgressComponent,
     isTextLinkComponent,
     renderDividerSettings,
     renderIconSettings,
+    renderReadingProgressSettings,
     renderTextLinkSettings,
 } from '../../basic-elements-settings.js';
 import {
@@ -664,6 +666,22 @@ export function registerSettingsUi(editor, mount) {
             if (isDividerComponent(rawSelected)) {
                 closeAllInspectorSelects();
                 renderDividerSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isReadingProgressComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                renderReadingProgressSettings({
                     mount,
                     traitsMount,
                     component: rawSelected,

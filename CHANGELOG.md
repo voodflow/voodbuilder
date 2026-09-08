@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-09-08
+
+### Added
+
+- Reading progress Content settings: color (Brand / Brand 2 / Light / Dark) and thickness (2–6px)
+
+### Fixed
+
+- Reading progress advances on marketing pages without an article root (page scroll); standalone tracks stay visible under the sticky nav
+
 ## [0.1.21] - 2026-09-08
 
 ### Fixed

@@ -6,7 +6,7 @@ import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
-import { applyIconToComponent, findIconHost, isIconComponent, readIconColor } from './basic-elements-settings.js';
+import { applyIconToComponent, findIconHost, isIconComponent, readIconColor, applyReadingProgressAppearance } from './basic-elements-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
 import { settleEditorCanvasPreview } from './vb-runtime.js';
 
@@ -390,6 +390,8 @@ function registerReadingProgressType(editor) {
                 droppable: false,
                 attributes: {
                     'data-voodbuilder-progress': '',
+                    'data-vb-progress-color': 'brand',
+                    'data-vb-progress-thickness': '3',
                     class: 'vb-reading-progress w-full bg-vp-divider',
                 },
                 components: [
@@ -406,24 +408,10 @@ function registerReadingProgressType(editor) {
                 ],
             },
             init() {
-                // Drop editor-only inline positioning so public CSS can keep the bar fixed.
-                const style = String(this.getAttributes?.()?.style ?? '');
-
-                if (/position\s*:\s*relative/i.test(style) || /top\s*:\s*auto/i.test(style)) {
-                    const cleaned = style
-                        .split(';')
-                        .map((part) => part.trim())
-                        .filter((part) => part !== '' && ! /^(position|top|left|right|z-index|margin)\s*:/i.test(part))
-                        .join('; ');
-
-                    if (cleaned) {
-                        this.addAttributes({ style: cleaned });
-                    } else {
-                        this.removeAttributes('style');
-                    }
-                }
-
-                this.removeClass?.('relative');
+                applyReadingProgressAppearance(this);
+                this.on('change:attributes:data-vb-progress-color change:attributes:data-vb-progress-thickness', () => {
+                    applyReadingProgressAppearance(this);
+                });
             },
         },
     });

@@ -189,8 +189,7 @@
         const article = document.querySelector(
             '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-voodbuilder-article]',
         );
-        const bar = document.querySelector('[data-reading-progress]');
-        const progressTrack = bar?.closest('[data-voodbuilder-progress]');
+        const progressTracks = [...document.querySelectorAll('[data-voodbuilder-progress]')];
         const isPageScrollable = () => document.documentElement.scrollHeight > window.innerHeight + 2;
 
         const getOutlineScrollOffset = () => {
@@ -203,30 +202,73 @@
 
         const getOutlineSpyOffset = () => getOutlineScrollOffset();
 
-        let progressScrollable = null;
+        const resolveProgressColor = (track) => {
+            const raw = String(track.getAttribute('data-vb-progress-color') || 'brand').trim();
 
-        const syncProgressLayout = (scrollable) => {
-            if (! progressTrack) {
-                return;
+            if (raw.startsWith('#') || raw.startsWith('rgb') || raw.startsWith('hsl') || raw.startsWith('var(')) {
+                return raw;
             }
 
-            if (progressScrollable === scrollable) {
-                return;
-            }
+            const map = {
+                brand: 'var(--color-vp-brand-1, #6366f1)',
+                'brand-2': 'var(--color-vp-brand-2, #818cf8)',
+                light: '#e2e8f0',
+                dark: '#0f172a',
+            };
 
-            progressScrollable = scrollable;
-            root.style.setProperty('--spacing-vp-progress', scrollable ? '2px' : '0px');
-            progressTrack.hidden = ! scrollable;
-            progressTrack.toggleAttribute('data-inactive', ! scrollable);
-
-            if (! scrollable) {
-                bar.style.width = '0%';
-            }
-
-            window.dispatchEvent(new Event('resize'));
+            return map[raw] || map.brand;
         };
 
-        if (article && bar && progressTrack) {
+        const applyProgressAppearance = (track) => {
+            const thickness = Number.parseInt(track.getAttribute('data-vb-progress-thickness') || '3', 10);
+            const px = Number.isFinite(thickness) && thickness > 0 ? thickness : 3;
+
+            track.style.setProperty('--vb-progress-color', resolveProgressColor(track));
+            track.style.setProperty('--vb-progress-height', `${px}px`);
+        };
+
+        progressTracks.forEach((progressTrack) => {
+            const bar = progressTrack.querySelector('[data-reading-progress]');
+
+            if (! (bar instanceof HTMLElement)) {
+                return;
+            }
+
+            applyProgressAppearance(progressTrack);
+
+            // site-runtime / vb-runtime may already own this track.
+            if (progressTrack.dataset.vbProgressReady === '1') {
+                return;
+            }
+
+            progressTrack.dataset.vbProgressReady = '1';
+            progressTrack.removeAttribute('hidden');
+            progressTrack.removeAttribute('data-inactive');
+
+            let progressScrollable = null;
+
+            const syncProgressLayout = (scrollable) => {
+                if (progressScrollable === scrollable) {
+                    return;
+                }
+
+                progressScrollable = scrollable;
+
+                // Nav-embedded tracks collapse when the page is not scrollable.
+                // Standalone Utilities (.vb-reading-progress) stay visible.
+                if (! progressTrack.classList.contains('vb-reading-progress')) {
+                    root.style.setProperty('--spacing-vp-progress', scrollable ? '2px' : '0px');
+                    progressTrack.hidden = ! scrollable;
+                    progressTrack.toggleAttribute('data-inactive', ! scrollable);
+                }
+
+                if (! scrollable) {
+                    bar.style.width = '0%';
+                }
+
+                window.dispatchEvent(new Event('resize'));
+            };
+
             const updateProgress = () => {
                 const scrollable = isPageScrollable();
 
@@ -236,13 +278,24 @@
                     return;
                 }
 
-                const rect = article.getBoundingClientRect();
                 const scrollTop = window.scrollY || document.documentElement.scrollTop;
-                const top = scrollTop + rect.top;
-                const height = article.offsetHeight;
                 const viewport = window.innerHeight;
-                const max = Math.max(height - viewport, 1);
-                const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+
+                if (article) {
+                    const rect = article.getBoundingClientRect();
+                    const top = scrollTop + rect.top;
+                    const height = article.offsetHeight;
+                    const max = Math.max(height - viewport, 1);
+                    const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+
+                    bar.style.width = `${progress * 100}%`;
+                    progressTrack.classList.toggle('is-active', progress > 0.001);
+
+                    return;
+                }
+
+                const max = Math.max(document.documentElement.scrollHeight - viewport, 1);
+                const progress = Math.min(Math.max(scrollTop / max, 0), 1);
 
                 bar.style.width = `${progress * 100}%`;
                 progressTrack.classList.toggle('is-active', progress > 0.001);
@@ -252,7 +305,7 @@
             window.addEventListener('scroll', updateProgress, { passive: true });
             window.addEventListener('resize', updateProgress);
             window.addEventListener('load', updateProgress);
-        }
+        });
 
         const searchRoot = document.querySelector('[data-voodbuilder-search]');
 

@@ -174,6 +174,91 @@ export function isDividerComponent(component) {
         || String(component.get('tagName') ?? '').toLowerCase() === 'hr';
 }
 
+export function isReadingProgressComponent(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    const type = String(component.get('type') ?? '');
+    const attrs = component.getAttributes?.() ?? {};
+
+    return type === 'voodbuilder-reading-progress'
+        || attrs['data-voodbuilder-progress'] != null
+        || (component.getClasses?.() ?? []).includes('vb-reading-progress');
+}
+
+const READING_PROGRESS_COLORS = [
+    { value: 'brand', label: 'Brand (default)' },
+    { value: 'brand-2', label: 'Brand 2' },
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+];
+
+const READING_PROGRESS_THICKNESS = [
+    { value: '2', label: '2px' },
+    { value: '3', label: '3px' },
+    { value: '4', label: '4px' },
+    { value: '6', label: '6px' },
+];
+
+/**
+ * @param {string} raw
+ * @returns {string}
+ */
+export function resolveReadingProgressCssColor(raw) {
+    const value = String(raw || 'brand').trim();
+
+    if (value.startsWith('#') || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('var(')) {
+        return value;
+    }
+
+    const map = {
+        brand: 'var(--color-vp-brand-1, #6366f1)',
+        'brand-2': 'var(--color-vp-brand-2, #818cf8)',
+        light: '#e2e8f0',
+        dark: '#0f172a',
+    };
+
+    return map[value] || map.brand;
+}
+
+/**
+ * @param {object} component
+ */
+export function applyReadingProgressAppearance(component) {
+    if (! isReadingProgressComponent(component)) {
+        return;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const color = String(attrs['data-vb-progress-color'] || 'brand');
+    const thickness = String(attrs['data-vb-progress-thickness'] || '3');
+    const cssColor = resolveReadingProgressCssColor(color);
+    const px = Number.parseInt(thickness, 10);
+    const height = `${Number.isFinite(px) && px > 0 ? px : 3}px`;
+
+    const style = String(attrs.style ?? '')
+        .split(';')
+        .map((part) => part.trim())
+        .filter((part) => (
+            part !== ''
+            && ! /^--vb-progress-(color|height)\s*:/i.test(part)
+            && ! /^(position|top|left|right|z-index|margin)\s*:/i.test(part)
+        ));
+
+    style.push(`--vb-progress-color: ${cssColor}`);
+    style.push(`--vb-progress-height: ${height}`);
+
+    component.addAttributes({
+        'data-voodbuilder-progress': '',
+        'data-vb-progress-color': color,
+        'data-vb-progress-thickness': thickness,
+        style: style.join('; '),
+    });
+
+    component.removeClass?.('relative');
+}
+
 const ICON_SIZES = [
     { value: 'size-6', label: 'S (24px)' },
     { value: 'size-8', label: 'M (32px)' },
@@ -1715,6 +1800,86 @@ export function renderDividerSettings({ mount, traitsMount = null, component, ed
     fields.append(hint, colorField);
     mount.appendChild(section);
     editor.__voodbuilderEnhanceInspectorSelects?.(mount);
+
+    return true;
+}
+
+/**
+ * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
+ */
+export function renderReadingProgressSettings({ mount, traitsMount = null, component, editor, labels = {} }) {
+    if (! mount || ! component) {
+        return false;
+    }
+
+    const key = componentKey(component);
+    const existing = mount.querySelector('[data-voodbuilder-reading-progress-settings]');
+
+    if (existing && existing.getAttribute('data-component-key') === key) {
+        traitsMount?.classList.add('hidden');
+        mount.hidden = false;
+
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    let color = String(attrs['data-vb-progress-color'] || 'brand');
+    let thickness = String(attrs['data-vb-progress-thickness'] || '3');
+
+    if (! READING_PROGRESS_COLORS.some((item) => item.value === color)) {
+        color = 'brand';
+    }
+
+    if (! READING_PROGRESS_THICKNESS.some((item) => item.value === thickness)) {
+        thickness = '3';
+    }
+
+    traitsMount?.classList.add('hidden');
+    traitsMount?.replaceChildren?.();
+    mount.hidden = false;
+    mount.replaceChildren();
+
+    const { section, fields } = createFormSection(labels.readingProgressSettingsTitle ?? 'Reading progress');
+    section.setAttribute('data-voodbuilder-reading-progress-settings', '');
+    section.setAttribute('data-component-key', key);
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-editor-form-hint';
+    hint.textContent = labels.readingProgressSettingsHint
+        ?? 'Fixed under the sticky nav on the published page. Default color follows the brand token.';
+
+    const colorField = createSelectField({
+        label: labels.readingProgressColor ?? 'Color',
+        name: 'progressColor',
+        value: color,
+        options: READING_PROGRESS_COLORS,
+        onChange: (value) => {
+            color = value;
+            runWithSettingsChangeGuard(editor, () => {
+                component.addAttributes({ 'data-vb-progress-color': color });
+                applyReadingProgressAppearance(component);
+            });
+        },
+    });
+
+    const thicknessField = createSelectField({
+        label: labels.readingProgressThickness ?? 'Thickness',
+        name: 'progressThickness',
+        value: thickness,
+        options: READING_PROGRESS_THICKNESS,
+        onChange: (value) => {
+            thickness = value;
+            runWithSettingsChangeGuard(editor, () => {
+                component.addAttributes({ 'data-vb-progress-thickness': thickness });
+                applyReadingProgressAppearance(component);
+            });
+        },
+    });
+
+    fields.append(hint, colorField, thicknessField);
+    mount.appendChild(section);
+    editor.__voodbuilderEnhanceInspectorSelects?.(mount);
+    applyReadingProgressAppearance(component);
 
     return true;
 }

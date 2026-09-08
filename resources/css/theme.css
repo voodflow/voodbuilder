@@ -244,16 +244,19 @@
      * Always fixed under the sticky nav — never bake position:relative into saved HTML
      * (inline styles from the editor used to override this and scroll away with the page). */
     .vb-reading-progress {
+        --vb-progress-color: var(--color-vp-brand-1, #6366f1);
+        --vb-progress-height: 3px;
         position: fixed !important;
         top: var(--spacing-vp-nav, 4rem) !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 50;
-        height: var(--spacing-vp-progress, 3px) !important;
-        min-height: var(--spacing-vp-progress, 3px) !important;
+        height: var(--vb-progress-height) !important;
+        min-height: var(--vb-progress-height) !important;
         margin: 0 !important;
         pointer-events: none;
-        background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
+        overflow: visible;
+        background: color-mix(in srgb, var(--vb-progress-color) 18%, transparent);
     }
 
     .vb-reading-progress__bar,
@@ -262,7 +265,7 @@
         height: 100%;
         width: 0;
         max-width: 100%;
-        background: var(--color-vp-brand-1, #6366f1) !important;
+        background: var(--vb-progress-color) !important;
         transition: width 0.12s linear;
     }
 

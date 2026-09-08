@@ -128,6 +128,31 @@ export function initReadingProgress(options = {}) {
     const win = doc.defaultView ?? window;
     const demo = options.demo === true;
 
+    const resolveProgressColor = (track) => {
+        const raw = String(track.getAttribute('data-vb-progress-color') || 'brand').trim();
+
+        if (raw.startsWith('#') || raw.startsWith('rgb') || raw.startsWith('hsl') || raw.startsWith('var(')) {
+            return raw;
+        }
+
+        const map = {
+            brand: 'var(--color-vp-brand-1, #6366f1)',
+            'brand-2': 'var(--color-vp-brand-2, #818cf8)',
+            light: '#e2e8f0',
+            dark: '#0f172a',
+        };
+
+        return map[raw] || map.brand;
+    };
+
+    const applyProgressAppearance = (track) => {
+        const thickness = Number.parseInt(track.getAttribute('data-vb-progress-thickness') || '3', 10);
+        const px = Number.isFinite(thickness) && thickness > 0 ? thickness : 3;
+
+        track.style.setProperty('--vb-progress-color', resolveProgressColor(track));
+        track.style.setProperty('--vb-progress-height', `${px}px`);
+    };
+
     root.querySelectorAll('[data-voodbuilder-progress]').forEach((track) => {
         const bar = track.querySelector('[data-reading-progress]');
 
@@ -135,6 +160,7 @@ export function initReadingProgress(options = {}) {
             return;
         }
 
+        applyProgressAppearance(track);
         track.dataset.vbProgressReady = '1';
         track.removeAttribute('hidden');
         track.removeAttribute('data-inactive');
