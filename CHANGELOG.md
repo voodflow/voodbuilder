@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-09-08
+
+### Fixed
+
+- Reading progress thickness actually applies (bar was capped at 2px by nav progress CSS)
+
+### Changed
+
+- Reading progress color picker: Brand tokens + full Tailwind palette (slate-50 … rose-950); thickness options up to 12px
+
 ## [0.1.22] - 2026-09-08
 
 ### Added

@@ -234,6 +234,11 @@
                 return;
             }
 
+            // Standalone Utilities block — owned by site-runtime (full Tailwind color map).
+            if (progressTrack.classList.contains('vb-reading-progress')) {
+                return;
+            }
+
             applyProgressAppearance(progressTrack);
 
             // site-runtime / vb-runtime may already own this track.

@@ -8,6 +8,13 @@ import {
     createTextField,
 } from './editor-form-ui.js';
 import {
+    applyReadingProgressCssVars,
+    readingProgressColorOptions,
+    READING_PROGRESS_THICKNESS,
+    resolveReadingProgressCssColor,
+    resolveReadingProgressThicknessPx,
+} from './reading-progress-appearance.js';
+import {
     DEFAULT_TABLER_ICON,
     DEFAULT_TABLER_ICON_STROKE,
     DEFAULT_TABLER_ICON_STYLE,
@@ -183,44 +190,19 @@ export function isReadingProgressComponent(component) {
     const attrs = component.getAttributes?.() ?? {};
 
     return type === 'voodbuilder-reading-progress'
-        || attrs['data-voodbuilder-progress'] != null
-        || (component.getClasses?.() ?? []).includes('vb-reading-progress');
+        || (
+            attrs['data-voodbuilder-progress'] != null
+            && (component.getClasses?.() ?? []).includes('vb-reading-progress')
+        );
 }
 
-const READING_PROGRESS_COLORS = [
-    { value: 'brand', label: 'Brand (default)' },
-    { value: 'brand-2', label: 'Brand 2' },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-];
-
-const READING_PROGRESS_THICKNESS = [
-    { value: '2', label: '2px' },
-    { value: '3', label: '3px' },
-    { value: '4', label: '4px' },
-    { value: '6', label: '6px' },
-];
+const READING_PROGRESS_COLORS = readingProgressColorOptions();
 
 /**
  * @param {string} raw
  * @returns {string}
  */
-export function resolveReadingProgressCssColor(raw) {
-    const value = String(raw || 'brand').trim();
-
-    if (value.startsWith('#') || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('var(')) {
-        return value;
-    }
-
-    const map = {
-        brand: 'var(--color-vp-brand-1, #6366f1)',
-        'brand-2': 'var(--color-vp-brand-2, #818cf8)',
-        light: '#e2e8f0',
-        dark: '#0f172a',
-    };
-
-    return map[value] || map.brand;
-}
+export { resolveReadingProgressCssColor };
 
 /**
  * @param {object} component
@@ -232,10 +214,9 @@ export function applyReadingProgressAppearance(component) {
 
     const attrs = component.getAttributes?.() ?? {};
     const color = String(attrs['data-vb-progress-color'] || 'brand');
-    const thickness = String(attrs['data-vb-progress-thickness'] || '3');
+    const thickness = String(attrs['data-vb-progress-thickness'] || '4');
     const cssColor = resolveReadingProgressCssColor(color);
-    const px = Number.parseInt(thickness, 10);
-    const height = `${Number.isFinite(px) && px > 0 ? px : 3}px`;
+    const height = `${resolveReadingProgressThicknessPx(thickness)}px`;
 
     const style = String(attrs.style ?? '')
         .split(';')
@@ -243,7 +224,7 @@ export function applyReadingProgressAppearance(component) {
         .filter((part) => (
             part !== ''
             && ! /^--vb-progress-(color|height)\s*:/i.test(part)
-            && ! /^(position|top|left|right|z-index|margin)\s*:/i.test(part)
+            && ! /^(position|top|left|right|z-index|margin|height|min-height)\s*:/i.test(part)
         ));
 
     style.push(`--vb-progress-color: ${cssColor}`);
@@ -257,6 +238,12 @@ export function applyReadingProgressAppearance(component) {
     });
 
     component.removeClass?.('relative');
+
+    const el = component.getEl?.();
+
+    if (el instanceof HTMLElement) {
+        applyReadingProgressCssVars(el);
+    }
 }
 
 const ICON_SIZES = [
@@ -1824,14 +1811,14 @@ export function renderReadingProgressSettings({ mount, traitsMount = null, compo
 
     const attrs = component.getAttributes?.() ?? {};
     let color = String(attrs['data-vb-progress-color'] || 'brand');
-    let thickness = String(attrs['data-vb-progress-thickness'] || '3');
+    let thickness = String(attrs['data-vb-progress-thickness'] || '4');
 
     if (! READING_PROGRESS_COLORS.some((item) => item.value === color)) {
         color = 'brand';
     }
 
     if (! READING_PROGRESS_THICKNESS.some((item) => item.value === thickness)) {
-        thickness = '3';
+        thickness = '4';
     }
 
     traitsMount?.classList.add('hidden');
@@ -1846,7 +1833,7 @@ export function renderReadingProgressSettings({ mount, traitsMount = null, compo
     const hint = document.createElement('p');
     hint.className = 'voodbuilder-editor-form-hint';
     hint.textContent = labels.readingProgressSettingsHint
-        ?? 'Fixed under the sticky nav on the published page. Default color follows the brand token.';
+        ?? 'Fixed under the sticky nav. Color defaults to Brand; pick any Tailwind shade (e.g. red-500). Thickness is the bar height in pixels.';
 
     const colorField = createSelectField({
         label: labels.readingProgressColor ?? 'Color',
