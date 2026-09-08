@@ -802,10 +802,9 @@ function mountElementsLibraryUpsell(shell, labels = {}, editor = null) {
     const entitlements = editor?.__voodbuilderEntitlements ?? {};
 
     // Elements plugin active → SOURCE UI owns the library (no upsell).
-    if (
-        canEntitlement(entitlements, 'elementsLibrary')
-        || canEntitlement(entitlements, 'blocksOfficialComplete')
-    ) {
+    // Pro capability alone is not enough: without the companion, keep the soft upsell
+    // above the limited local Elements accordion (same pattern as other companions).
+    if (canEntitlement(entitlements, 'elementsLibrary')) {
         return;
     }
 

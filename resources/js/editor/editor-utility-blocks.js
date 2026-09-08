@@ -1,5 +1,5 @@
 /**
- * VoodBuilder utility blocks — Basic, Media, and Single (post) elements.
+ * VoodBuilder utility blocks — Basic, Media, and Utilities (post helpers).
  */
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
@@ -8,10 +8,13 @@ import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
 import { applyIconToComponent, findIconHost, isIconComponent, readIconColor } from './basic-elements-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
+import { settleEditorCanvasPreview } from './vb-runtime.js';
 
 export const BASIC_BLOCK_CATEGORY = 'Basic';
 export const MEDIA_BLOCK_CATEGORY = 'Media';
-export const SINGLE_BLOCK_CATEGORY = 'Single';
+/** @deprecated Use UTILITIES_BLOCK_CATEGORY */
+export const SINGLE_BLOCK_CATEGORY = 'Utilities';
+export const UTILITIES_BLOCK_CATEGORY = 'Utilities';
 
 const LINK_TYPE_OPTIONS = [
     { id: 'none', label: 'None' },
@@ -531,8 +534,8 @@ const BLOCKS = [
         label: 'Reading progress',
         category: SINGLE_BLOCK_CATEGORY,
         content: `
-            <div class="vb-reading-progress" data-voodbuilder-progress>
-                <div class="vb-reading-progress__bar" data-reading-progress></div>
+            <div class="vb-reading-progress relative w-full bg-vp-divider" data-voodbuilder-progress aria-hidden="true" style="position:relative;top:auto;left:auto;right:auto;z-index:1;margin:0.5rem 0;height:3px;min-height:3px;background:color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent)">
+                <div class="vb-reading-progress__bar absolute top-0 left-0 h-full bg-vp-brand-1" data-reading-progress style="width:42%;height:100%;background:var(--color-vp-brand-1, #6366f1)"></div>
             </div>
         `,
     },
@@ -824,6 +827,31 @@ export function configureUtilityBlocksCanvas(editor) {
         window.setTimeout(syncAllIcons, 250);
     });
     editor.on('component:add', bindLinkables);
+    editor.on('component:add', (component) => {
+        const type = component?.get?.('type');
+        const attrs = component?.getAttributes?.() ?? {};
+        const isUtilityPreview = type === 'voodbuilder-reading-time'
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-reading-time')
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-progress')
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-social-share')
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-reading-progress');
+
+        if (! isUtilityPreview) {
+            return;
+        }
+
+        window.setTimeout(() => {
+            try {
+                const frameDoc = editor.Canvas?.getDocument?.();
+
+                if (frameDoc) {
+                    settleEditorCanvasPreview({ root: frameDoc, playCounters: false });
+                }
+            } catch {
+                // Optional.
+            }
+        }, 60);
+    });
     editor.on('component:selected', (component) => {
         const host = findIconHost(component);
 

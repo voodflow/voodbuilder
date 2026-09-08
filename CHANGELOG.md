@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-09-08
+
+### Changed
+
+- Sidebar category **Single** renamed to **Utilities** (alias kept for older labels)
+- With Elements companion active, the left accordion keeps foundation tiles only (Layout / Basic / Media / Utilities / Site); section templates live in the Library modal
+- Elements soft upsell shows when the companion is missing, even if Pro capability is present
+
+### Fixed
+
+- Reading time, reading progress, and social share utilities render in the editor canvas (runtime targets the canvas frame; progress bar no longer stuck at `width:0` / missing brand fill)
+- Standalone progress / reading-time / social-share styles ship in `theme.css` and canvas `section-utilities.css`
+
 ## [0.1.18] - 2026-09-08
 
 ### Fixed

@@ -47,7 +47,7 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-audio',
         'voodbuilder-carousel',
         'voodbuilder-slider',
-        // Single
+        // Single → Utilities
         'voodbuilder-reading-time',
         'voodbuilder-reading-progress',
         'voodbuilder-social-share',
@@ -210,14 +210,16 @@ final class EditorCommunityBlockCatalog
             return self::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS;
         }
 
-        // Pro / Agency (and any host with full-library capability): show every registered
-        // block. The Elements companion adds a remote Library modal — it must not hide
-        // local Animates / Tabs / Community tiles from the page or popup sidebar.
-        if (! self::limitsLibrary()) {
-            return null;
+        // Elements companion active → SOURCE / Library owns section templates.
+        // Keep only foundation tiles in the left accordion (Layout, Basic, Media,
+        // Utilities, Site). Free marketing sections would duplicate the remote catalog.
+        if (self::elementsLibraryActive()) {
+            return self::FOUNDATION_BLOCK_IDS;
         }
 
-        // Community: foundation + free local section pack (incl. animated CTA / tabs).
+        // No Elements plugin: limited local library — foundation + free section pack
+        // (and soft upsell in the Library panel). Pro capability alone does not dump
+        // the full remote catalog into the accordion; that requires Elements.
         return array_values(array_unique([
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,

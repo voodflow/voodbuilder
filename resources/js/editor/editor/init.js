@@ -115,6 +115,7 @@ import {
     initCarousels,
     initReadingTime,
     initSocialShare,
+    initReadingProgress,
     settleEditorCanvasPreview,
 } from '../vb-runtime.js';
 import { registerCanvasContextMenu } from '../canvas-context-menu.js';
@@ -1514,8 +1515,9 @@ export function initVoodbuilderEditor(container, options = {}) {
         try {
             const frameDoc = editor.Canvas?.getDocument?.() ?? document;
 
-            initReadingTime();
-            initSocialShare();
+            initReadingTime({ root: frameDoc });
+            initSocialShare({ root: frameDoc });
+            initReadingProgress({ root: frameDoc, demo: true });
             initCarousels();
             // Large page templates: settle to final state — do not force-replay
             // counters/keyframes/logo-scroll (that janks the editor + spam Layers).

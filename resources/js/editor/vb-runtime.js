@@ -16,14 +16,20 @@ function formatReadingTime(minutes) {
     return `${value} min read`;
 }
 
-export function initReadingTime() {
-    document.querySelectorAll('[data-voodbuilder-reading-time]').forEach((node) => {
+/**
+ * @param {{ root?: Document|ParentNode }} [options]
+ */
+export function initReadingTime(options = {}) {
+    const root = options.root ?? document;
+    const doc = root.nodeType === 9 ? root : (root.ownerDocument ?? document);
+
+    root.querySelectorAll('[data-voodbuilder-reading-time]').forEach((node) => {
         const article = node.closest('[data-voodbuilder-article]')
-            ?? document.querySelector('[data-voodbuilder-article], [data-doc-article], [data-vdocs-article], article');
+            ?? root.querySelector('[data-voodbuilder-article], [data-doc-article], [data-vdocs-article], article');
 
         const wordsPerMinute = Number.parseInt(node.getAttribute('data-vb-words-per-minute') ?? '200', 10);
         const wpm = Number.isFinite(wordsPerMinute) && wordsPerMinute > 0 ? wordsPerMinute : 200;
-        const words = wordsInElement(article ?? document.body);
+        const words = wordsInElement(article ?? doc.body);
         const minutes = words / wpm;
 
         node.textContent = formatReadingTime(minutes);
@@ -50,16 +56,22 @@ function buildShareUrl(network, pageUrl, title) {
     }
 }
 
-export function initSocialShare() {
-    const pageUrl = window.location.href;
-    const title = document.title;
+/**
+ * @param {{ root?: Document|ParentNode }} [options]
+ */
+export function initSocialShare(options = {}) {
+    const root = options.root ?? document;
+    const doc = root.nodeType === 9 ? root : (root.ownerDocument ?? document);
+    const win = doc.defaultView ?? window;
+    const pageUrl = win.location?.href || window.location.href;
+    const title = doc.title || document.title;
 
-    document.querySelectorAll('[data-voodbuilder-social-share]').forEach((root) => {
-        const shareUrl = root.getAttribute('data-share-url')?.trim() || pageUrl;
+    root.querySelectorAll('[data-voodbuilder-social-share]').forEach((shareRoot) => {
+        const shareUrl = shareRoot.getAttribute('data-share-url')?.trim() || pageUrl;
 
-        root.setAttribute('data-share-url', shareUrl);
+        shareRoot.setAttribute('data-share-url', shareUrl);
 
-        root.querySelectorAll('[data-network]').forEach((control) => {
+        shareRoot.querySelectorAll('[data-network]').forEach((control) => {
             const network = control.getAttribute('data-network');
 
             if (! network) {
@@ -78,13 +90,13 @@ export function initSocialShare() {
         });
     });
 
-    if (window.__vbSocialShareCopyInit) {
+    if (doc.__vbSocialShareCopyInit) {
         return;
     }
 
-    window.__vbSocialShareCopyInit = true;
+    doc.__vbSocialShareCopyInit = true;
 
-    document.addEventListener('click', (event) => {
+    doc.addEventListener('click', (event) => {
         const button = event.target.closest('[data-network="copy_link"]');
 
         if (! button || ! navigator.clipboard) {
@@ -101,6 +113,73 @@ export function initSocialShare() {
                 button.textContent = original;
             }, 2000);
         });
+    });
+}
+
+/**
+ * Reading progress bar — page/article scroll. In the editor canvas, paints a
+ * visible demo width so the 2px fixed track is not invisible at width:0.
+ *
+ * @param {{ root?: Document|ParentNode, demo?: boolean }} [options]
+ */
+export function initReadingProgress(options = {}) {
+    const root = options.root ?? document;
+    const doc = root.nodeType === 9 ? root : (root.ownerDocument ?? document);
+    const win = doc.defaultView ?? window;
+    const demo = options.demo === true;
+
+    root.querySelectorAll('[data-voodbuilder-progress]').forEach((track) => {
+        const bar = track.querySelector('[data-reading-progress]');
+
+        if (! (bar instanceof HTMLElement) || track.dataset.vbProgressReady === '1') {
+            return;
+        }
+
+        track.dataset.vbProgressReady = '1';
+        track.removeAttribute('hidden');
+        track.removeAttribute('data-inactive');
+
+        if (demo) {
+            bar.style.width = bar.style.width && bar.style.width !== '0px' && bar.style.width !== '0%'
+                ? bar.style.width
+                : '42%';
+            track.classList.add('is-active');
+
+            return;
+        }
+
+        const article = root.querySelector(
+            '[data-voodbuilder-article], [data-doc-article], [data-vdocs-article], [data-tutorial-article], article',
+        );
+
+        const update = () => {
+            const scrollEl = doc.documentElement;
+            const scrollTop = win.scrollY || scrollEl.scrollTop || 0;
+            const viewport = win.innerHeight || 0;
+
+            if (article instanceof HTMLElement) {
+                const rect = article.getBoundingClientRect();
+                const top = scrollTop + rect.top;
+                const height = article.offsetHeight;
+                const max = Math.max(height - viewport, 1);
+                const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+
+                bar.style.width = `${progress * 100}%`;
+                track.classList.toggle('is-active', progress > 0.001);
+
+                return;
+            }
+
+            const max = Math.max(scrollEl.scrollHeight - viewport, 1);
+            const progress = Math.min(Math.max(scrollTop / max, 0), 1);
+
+            bar.style.width = `${progress * 100}%`;
+            track.classList.toggle('is-active', progress > 0.001);
+        };
+
+        update();
+        win.addEventListener('scroll', update, { passive: true });
+        win.addEventListener('resize', update);
     });
 }
 
@@ -182,6 +261,7 @@ export function initSliders() {
 export function initVbRuntime() {
     initReadingTime();
     initSocialShare();
+    initReadingProgress();
     initCarousels();
     initSliders();
     initScrollSliders();
@@ -791,6 +871,14 @@ export function replayEditorCanvasAnimations(options = {}) {
 export function settleEditorCanvasPreview(options = {}) {
     const root = options.root ?? document;
     const playCounters = options.playCounters !== false;
+
+    try {
+        initReadingTime({ root });
+        initSocialShare({ root });
+        initReadingProgress({ root, demo: true });
+    } catch {
+        // Optional utility previews.
+    }
 
     root.querySelectorAll('[data-voodbuilder-animated-cta]').forEach((node) => {
         node.classList.add('is-visible');

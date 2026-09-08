@@ -5558,15 +5558,45 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     left: 0;
     right: 0;
     z-index: 60;
-    height: 2px;
+    height: 3px;
+    min-height: 3px;
     pointer-events: none;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
 }
 
 .vb-reading-progress__bar {
     height: 100%;
     width: 0;
+    min-width: 0;
     background: var(--color-vp-brand-1, #6366f1);
     transition: width 0.12s linear;
+}
+
+/* Editor canvas: fixed + width:0 is invisible / hard to select — keep in flow with a demo fill. */
+.gjs-dashed .vb-reading-progress,
+[data-gjs-type] .vb-reading-progress {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+    pointer-events: auto;
+}
+
+.gjs-dashed .vb-reading-progress__bar,
+[data-gjs-type] .vb-reading-progress__bar {
+    width: 42%;
+}
+
+.vb-reading-time {
+    color: var(--color-vp-text-3, #64748b);
+}
+
+.vb-social-share {
+    color: var(--color-vp-text-1, #0f172a);
 }
 
 .vb-icon-link {
