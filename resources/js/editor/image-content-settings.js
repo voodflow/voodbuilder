@@ -253,7 +253,10 @@ export function resolveImageSettingsContext(component) {
     }
 
     if (isImageComponent(component)) {
-        if (isDynamicallyBoundImage(component)) {
+        // Bound inline images stay managed via Connect to live data. Hero media is
+        // different: authors still need Background settings to pick a static photo
+        // (which clears the binding) after trying a dynamic featured image.
+        if (isDynamicallyBoundImage(component) && ! isHeroMediaImage(component)) {
             return null;
         }
 
@@ -277,7 +280,7 @@ export function resolveImageSettingsContext(component) {
 
     const image = findHeroMediaImage(section);
 
-    if (! image || isDynamicallyBoundImage(image)) {
+    if (! image) {
         return null;
     }
 
@@ -530,6 +533,17 @@ export function applyImageSrc(image, section, url, meta = null) {
         } else if (currentAlt === '' || currentAlt === 'Image') {
             attrs.alt = libraryName || '';
         }
+    }
+
+    // Picking a static library/URL photo replaces a dynamic image binding on heroes.
+    const hadDynamicBind = String(image.getAttributes?.()?.['data-voodbuilder-bind'] ?? '').trim() !== '';
+
+    if (hadDynamicBind) {
+        image.removeAttributes?.('data-voodbuilder-bind');
+        image.removeClass?.('voodbuilder-editor-bound');
+        image.set?.({
+            name: section ? 'Background image' : (image.get?.('name') ?? 'Image'),
+        });
     }
 
     image.set('src', next);
@@ -899,9 +913,20 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
     const hint = document.createElement('p');
     hint.className = 'voodbuilder-editor-hint';
-    hint.textContent = mode === 'hero'
-        ? (labels.imageSettingsHeroHint ?? 'Choose a photo for the hero background. SVG placeholders cannot be cropped until you upload a real image.')
-        : (labels.imageSettingsCaptionHint ?? labels.imageSettingsHint ?? 'Choose or upload an image. Use “None” to keep the caption in data attributes and place text manually.');
+    const heroBound = mode === 'hero' && isDynamicallyBoundImage(image);
+
+    if (heroBound) {
+        hint.textContent = labels.imageSettingsHeroDynamicHint
+            ?? 'This background is connected to live data. Choose a static photo to disconnect it, or use Connect to live data to change the field.';
+    } else if (mode === 'hero') {
+        hint.textContent = labels.imageSettingsHeroHint
+            ?? 'Choose a photo for the hero background. SVG placeholders cannot be cropped until you upload a real image.';
+    } else {
+        hint.textContent = labels.imageSettingsCaptionHint
+            ?? labels.imageSettingsHint
+            ?? 'Choose or upload an image. Use “None” to keep the caption in data attributes and place text manually.';
+    }
+
     fields.append(hint);
 
     mount.appendChild(form);

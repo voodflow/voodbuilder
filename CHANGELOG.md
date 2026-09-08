@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-09-08
+
+### Fixed
+
+- Hero · background image: Background settings (Choose static photo) stay available after a dynamic image bind; choosing a library image clears the live-data binding
+
 ## [0.1.17] - 2026-09-08
 
 ### Fixed
