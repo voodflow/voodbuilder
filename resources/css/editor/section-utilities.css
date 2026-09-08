@@ -67,8 +67,8 @@
         display: block;
         width: 100%;
         margin: 0.5rem 0 !important;
-        height: 3px !important;
-        min-height: 3px !important;
+        height: var(--vb-progress-height, 3px) !important;
+        min-height: var(--vb-progress-height, 3px) !important;
         pointer-events: auto;
     }
 
