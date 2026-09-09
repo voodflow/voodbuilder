@@ -80,6 +80,10 @@ const ATTR = {
     color: 'data-vb-share-color',
     customColor: 'data-vb-share-custom-color',
     content: 'data-vb-share-content',
+    /** Optional share title → email subject, X/WhatsApp text. Empty = page title. */
+    shareTitle: 'data-share-title',
+    /** Optional email-only subject override. Empty = share title / page title. */
+    emailSubject: 'data-vb-share-email-subject',
 };
 
 function runWithSettingsChangeGuard(editor, callback) {
@@ -218,7 +222,7 @@ export function readSocialShareNetworks(component) {
 
 /**
  * @param {object} component
- * @returns {{ networks: string[], shape: string, color: string, customColor: string, content: string }}
+ * @returns {{ networks: string[], shape: string, color: string, customColor: string, content: string, shareTitle: string, emailSubject: string }}
  */
 export function readSocialShareOptions(component) {
     const attrs = component.getAttributes?.() ?? {};
@@ -226,6 +230,8 @@ export function readSocialShareOptions(component) {
     let color = String(attrs[ATTR.color] || 'social');
     let content = String(attrs[ATTR.content] || 'icon-text');
     let customColor = String(attrs[ATTR.customColor] || '#1877F2').trim() || '#1877F2';
+    const shareTitle = String(attrs[ATTR.shareTitle] ?? attrs['data-share-title'] ?? '').trim();
+    const emailSubject = String(attrs[ATTR.emailSubject] ?? '').trim();
 
     if (! SOCIAL_SHARE_SHAPE_OPTIONS.some((item) => item.value === shape)) {
         shape = 'square';
@@ -249,6 +255,8 @@ export function readSocialShareOptions(component) {
         color,
         customColor,
         content,
+        shareTitle,
+        emailSubject,
     };
 }
 
@@ -321,7 +329,7 @@ export function buildSocialShareItemDefinitions(networks = SOCIAL_SHARE_DEFAULT_
  * Persist options on the root and rebuild child buttons.
  *
  * @param {object} component
- * @param {Partial<{ networks: string[], shape: string, color: string, customColor: string, content: string }>} [patch]
+ * @param {Partial<{ networks: string[], shape: string, color: string, customColor: string, content: string, shareTitle: string, emailSubject: string }>} [patch]
  */
 export function applySocialShareOptions(component, patch = {}) {
     if (! isSocialShareComponent(component)) {
@@ -335,6 +343,8 @@ export function applySocialShareOptions(component, patch = {}) {
         color: patch.color ?? current.color,
         customColor: patch.customColor ?? current.customColor,
         content: patch.content ?? current.content,
+        shareTitle: patch.shareTitle !== undefined ? String(patch.shareTitle ?? '').trim() : current.shareTitle,
+        emailSubject: patch.emailSubject !== undefined ? String(patch.emailSubject ?? '').trim() : current.emailSubject,
     };
 
     if (next.networks.length === 0) {
@@ -347,6 +357,8 @@ export function applySocialShareOptions(component, patch = {}) {
         [ATTR.color]: next.color,
         [ATTR.customColor]: next.customColor,
         [ATTR.content]: next.content,
+        [ATTR.shareTitle]: next.shareTitle,
+        [ATTR.emailSubject]: next.emailSubject,
     };
 
     if (next.color === 'custom') {
@@ -379,7 +391,12 @@ export function applySocialShareOptions(component, patch = {}) {
         }
     }
 
-    rebuildSocialShareItems(component, next.networks);
+    const networksChanged = patch.networks !== undefined
+        && patch.networks.join(',') !== current.networks.join(',');
+
+    if (networksChanged) {
+        rebuildSocialShareItems(component, next.networks);
+    }
 }
 
 /**
@@ -585,10 +602,42 @@ export function renderSocialShareSettings({ mount, traitsMount = null, component
         },
     });
 
+    const { field: shareTitleField, input: shareTitleInput } = createTextField({
+        label: labels.socialShareTitle ?? 'Share title',
+        name: 'shareTitle',
+        value: options.shareTitle,
+        placeholder: labels.socialShareTitlePlaceholder ?? 'Defaults to page title',
+    });
+
+    shareTitleInput?.addEventListener('change', () => {
+        const value = String(shareTitleInput.value || '').trim();
+        options = { ...options, shareTitle: value };
+        runWithSettingsChangeGuard(editor, () => {
+            applySocialShareOptions(host, { shareTitle: value });
+        });
+    });
+
+    const { field: emailSubjectField, input: emailSubjectInput } = createTextField({
+        label: labels.socialShareEmailSubject ?? 'Email subject',
+        name: 'shareEmailSubject',
+        value: options.emailSubject,
+        placeholder: labels.socialShareEmailSubjectPlaceholder ?? 'Defaults to share title / page title',
+    });
+
+    emailSubjectInput?.addEventListener('change', () => {
+        const value = String(emailSubjectInput.value || '').trim();
+        options = { ...options, emailSubject: value };
+        runWithSettingsChangeGuard(editor, () => {
+            applySocialShareOptions(host, { emailSubject: value });
+        });
+    });
+
     fields.append(
         hint,
         networksLabel,
         createCheckboxGrid(networkFields),
+        shareTitleField,
+        emailSubjectField,
         shapeField,
         colorField,
         customColorField,

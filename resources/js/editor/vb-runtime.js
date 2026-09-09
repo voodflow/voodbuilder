@@ -37,9 +37,11 @@ export function initReadingTime(options = {}) {
     });
 }
 
-function buildShareUrl(network, pageUrl, title) {
+function buildShareUrl(network, pageUrl, title, emailSubject = '') {
     const encodedUrl = encodeURIComponent(pageUrl);
     const encodedTitle = encodeURIComponent(title);
+    const mailSubject = encodeURIComponent(String(emailSubject || title || '').trim() || title);
+    const mailBody = encodeURIComponent([title, pageUrl].filter(Boolean).join('\n\n'));
 
     switch (network) {
         case 'facebook':
@@ -51,7 +53,7 @@ function buildShareUrl(network, pageUrl, title) {
         case 'whatsapp':
             return `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
         case 'email':
-            return `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+            return `mailto:?subject=${mailSubject}&body=${mailBody}`;
         default:
             return '#';
     }
@@ -65,10 +67,12 @@ export function initSocialShare(options = {}) {
     const doc = root.nodeType === 9 ? root : (root.ownerDocument ?? document);
     const win = doc.defaultView ?? window;
     const pageUrl = win.location?.href || window.location.href;
-    const title = doc.title || document.title;
+    const pageTitle = doc.title || document.title;
 
     root.querySelectorAll('[data-voodbuilder-social-share]').forEach((shareRoot) => {
         const shareUrl = shareRoot.getAttribute('data-share-url')?.trim() || pageUrl;
+        const shareTitle = shareRoot.getAttribute('data-share-title')?.trim() || pageTitle;
+        const emailSubject = shareRoot.getAttribute('data-vb-share-email-subject')?.trim() || shareTitle;
 
         shareRoot.setAttribute('data-share-url', shareUrl);
 
@@ -86,7 +90,7 @@ export function initSocialShare(options = {}) {
             }
 
             if (control.tagName === 'A') {
-                control.setAttribute('href', buildShareUrl(network, shareUrl, title));
+                control.setAttribute('href', buildShareUrl(network, shareUrl, shareTitle, emailSubject));
             }
         });
     });

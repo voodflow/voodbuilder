@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-09-09
+
+### Added
+
+- Social share: configurable Share title and Email subject (mailto subject); empty falls back to page title; email body includes title + URL
+
 ## [0.1.27] - 2026-09-09
 
 ### Fixed
