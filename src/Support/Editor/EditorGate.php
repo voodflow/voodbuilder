@@ -1140,8 +1140,9 @@ final class EditorGate
     }
 
     /**
-     * Library bundles exposed in the Elements modal (Components, Voodflow, Templates, …).
+     * Library bundles exposed in the Elements modal (Elements, Voodflow, Templates, …).
      * Bundle id `wireframes` is kept for the remote catalog URL path.
+     * Naming: Elements = provided catalog; Components = user library; Templates = user + marketplace.
      *
      * @return list<array{id: string, label: string}>
      */
