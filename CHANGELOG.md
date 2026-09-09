@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.37] - 2026-09-09
+
+### Changed
+
+- Library remote catalog label: **Components** (was Wireframes); bundle id `wireframes` unchanged for API URLs
+
 ## [0.1.36] - 2026-09-09
 
 ### Fixed
