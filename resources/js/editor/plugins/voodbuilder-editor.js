@@ -1241,6 +1241,13 @@ function registerDynamicBlockGuards(editor) {
             return;
         }
 
+        // Media heroes are editable catalog sections typed as dynamic via
+        // data-voodbuilder-block — never cascade-delete the whole hero when a
+        // child (social share, CTA, copy) is removed.
+        if (isMediaHeroSection(dynamic)) {
+            return;
+        }
+
         if (isSiteFooterBlock(dynamic.getAttributes()['data-voodbuilder-block']) && ! isInsideProtectedSlot(removed)) {
             return;
         }
@@ -1258,6 +1265,10 @@ function pruneEmptyDynamicBlocks(editor) {
         const blockId = component.getAttributes()['data-voodbuilder-block'];
 
         if (isSiteFooterBlock(blockId)) {
+            return;
+        }
+
+        if (blockId === 'vb-bg-image' || blockId === 'vb-bg-video' || isMediaHeroSection(component)) {
             return;
         }
 
@@ -1521,6 +1532,11 @@ function registerDynamicBlockType(editor) {
             const blockId = element?.getAttribute?.('data-voodbuilder-block');
 
             if (! blockId) {
+                return false;
+            }
+
+            // Dedicated media-section types own these IDs — do not steal parse as dynamic.
+            if (blockId === 'vb-bg-image' || blockId === 'vb-bg-video') {
                 return false;
             }
 

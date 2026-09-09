@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.27] - 2026-09-09
+
+### Fixed
+
+- Deleting Social share (or any child) inside Hero · background image/video no longer removes the entire hero — media heroes are excluded from dynamic companion cascade-delete and from `voodbuilder-dynamic` parse steal
+
 ## [0.1.26] - 2026-09-09
 
 ### Fixed
