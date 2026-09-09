@@ -1,5 +1,7 @@
 # VoodBuilder (`voodflow/voodbuilder`)
 
+![VoodBuilder — Filament Visual Page Builder by VoodFlow](art/promo.png)
+
 Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor with a usable **Community (free)** edition.
 
 ![VoodBuilder editor overview](art/editor-overview.png)
