@@ -29,7 +29,7 @@ export function registerComponentInstanceType(editor, getCatalog = () => []) {
                 name: 'Component',
                 tagName: 'div',
                 draggable: true,
-                droppable: false,
+                droppable: true,
                 removable: true,
                 copyable: true,
                 layerable: true,

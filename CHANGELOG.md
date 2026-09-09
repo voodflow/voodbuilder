@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.33] - 2026-09-09
+
+### Fixed
+
+- Stop resurrecting deleted component content: empty instance shells are no longer refilled from the catalog on save/reload (hydrate/ensure)
+
 ## [0.1.32] - 2026-09-09
 
 ### Fixed

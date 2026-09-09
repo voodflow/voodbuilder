@@ -1665,49 +1665,16 @@ function hydrateComponentInstance(component, catalog, editor = null) {
 
     const item = catalog.find((entry) => String(entry.id) === String(componentId));
 
-    if (! item?.html) {
+    if (! item) {
         return;
     }
 
-    if (component.get(COMPONENT_HYDRATED_KEY)) {
-        ensureComponentScopeAttribute(component);
-        applyComponentInstancePresentation(component, item);
-
-        return;
-    }
-
-    if (hasMeaningfulComponentBody(component) && component.find('.voodbuilder-pasted-component').length > 0) {
-        component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
-        ensureComponentScopeAttribute(component);
-        applyComponentInstancePresentation(component, item);
-        editor?.__voodbuilderScheduleComponentCssRebuild?.(200);
-
-        return;
-    }
-
-    component.set({
-        type: COMPONENT_TYPE,
-        name: formatComponentInstanceName(item.name),
-        draggable: true,
-        droppable: true,
-        removable: true,
-        copyable: true,
-        layerable: true,
-        selectable: true,
-        highlightable: true,
-        editable: false,
-    });
-
-    component.components(item.html);
+    // Never inject catalog HTML here. Empty wrappers must stay empty so author deletions
+    // survive save/reload; new drops already embed HTML via buildComponentContent().
+    // Library updates push via reapplyComponentInstancesOnCanvas().
     component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
-
-    component.addAttributes({
-        [COMPONENT_ATTR]: String(componentId),
-        [COMPONENT_SCOPE_ATTR]: String(componentId),
-        [PROPS_ATTR]: attrs[PROPS_ATTR] ?? JSON.stringify(defaultProps(item)),
-        class: 'voodbuilder-editor-component-instance',
-    });
-
+    ensureComponentScopeAttribute(component);
+    applyComponentInstancePresentation(component, item);
     editor?.__voodbuilderScheduleComponentCssRebuild?.(200);
 }
 
@@ -1977,7 +1944,10 @@ function escapeHtml(value) {
 }
 
 /**
- * Embed catalog HTML into empty component instances so getHtml() matches the canvas.
+ * Keep empty component shells empty on save.
+ *
+ * Previously this re-hydrated from the catalog whenever the body was empty, which
+ * resurrected deleted content after "Saved" and on the published page.
  */
 export function ensureComponentInstancesForExport(editor) {
     const catalog = editor.__voodbuilderComponentsCatalog;
@@ -1988,8 +1958,11 @@ export function ensureComponentInstancesForExport(editor) {
 
     editor.getWrapper().find(`[${COMPONENT_ATTR}]`).forEach((component) => {
         if (! hasMeaningfulComponentBody(component)) {
-            hydrateComponentInstance(component, catalog, editor);
+            return;
         }
+
+        // Presentation / scope only — never refill from catalog here.
+        hydrateComponentInstance(component, catalog, editor);
     });
 }
 
