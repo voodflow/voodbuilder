@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.34] - 2026-09-09
+
+### Changed
+
+- Align with VoodMedia plugin-owned vault registry: register Builder root via `RegistersPluginVault`
+- Asset Manager uses only `vmedia.media.*` routes (drop transitional `voodbuilder.editor.*` media aliases)
+
 ## [0.1.33] - 2026-09-09
 
 ### Fixed

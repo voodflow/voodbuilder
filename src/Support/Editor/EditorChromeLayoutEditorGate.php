@@ -176,13 +176,11 @@ final class EditorChromeLayoutEditorGate
 
     private static function mediaUploadUrl(): ?string
     {
-        foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
-            if (Route::has($name)) {
-                return self::editorRoute($name);
-            }
+        if (! Route::has('vmedia.media.upload')) {
+            return null;
         }
 
-        return null;
+        return self::editorRoute('vmedia.media.upload');
     }
 
     private static function dynamicDataEnabled(): bool

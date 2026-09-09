@@ -101,13 +101,10 @@ class EditorGateTest extends TestCase
         $this->assertSame('/voodbuilder/editor/pages/'.$page->getKey(), $config['saveUrl']);
         $this->assertIsString($config['uploadUrl']);
 
-        if (
-            Route::has('vmedia.media.upload')
-            || Route::has('voodbuilder.editor.upload')
-        ) {
+        if (Route::has('vmedia.media.upload')) {
             $this->assertNotSame('', $config['uploadUrl']);
         } else {
-            // Companion inactive and core fallback not registered — editor must still boot.
+            // Companion inactive — editor must still boot.
             $this->assertSame('', $config['uploadUrl']);
         }
     }
@@ -137,11 +134,6 @@ class EditorGateTest extends TestCase
         if (Route::has('vmedia.media.upload')) {
             $this->assertSame(
                 route('vmedia.media.upload', absolute: false),
-                $uploadUrl,
-            );
-        } elseif (Route::has('voodbuilder.editor.upload')) {
-            $this->assertSame(
-                route('voodbuilder.editor.upload', absolute: false),
                 $uploadUrl,
             );
         } else {

@@ -18,7 +18,7 @@ use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Voodflow\Vmedia\Support\Integration\PluginVaultRootBootstrap;
+use Voodflow\Vmedia\Support\Integration\RegistersPluginVault;
 use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
@@ -171,7 +171,14 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         $this->ensureMediaRuntime();
 
-        $this->app->booted(static fn (): mixed => PluginVaultRootBootstrap::ensureFor('voodbuilder'));
+        if (class_exists(RegistersPluginVault::class)) {
+            RegistersPluginVault::register(
+                'voodbuilder',
+                'voodbuilder',
+                fn (): string => (string) __('vmedia::admin.plugin_roots.voodbuilder'),
+            );
+            RegistersPluginVault::ensureOnBoot($this->app, 'voodbuilder');
+        }
 
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();

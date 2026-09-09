@@ -1230,50 +1230,42 @@ final class EditorGate
     }
 
     /**
-     * Prefer vmedia package routes; fall back to transitional voodbuilder.editor.* aliases.
+     * Prefer vmedia package routes for Asset Manager.
      */
     private static function mediaUploadUrl(): ?string
     {
-        foreach (['vmedia.media.upload', 'voodbuilder.editor.upload'] as $name) {
-            if (Route::has($name)) {
-                return self::editorRoute($name);
-            }
+        if (! Route::has('vmedia.media.upload')) {
+            return null;
         }
 
-        return null;
+        return self::editorRoute('vmedia.media.upload');
     }
 
     private static function mediaReplaceUrl(): ?string
     {
-        foreach (['vmedia.media.replace', 'voodbuilder.editor.media.replace'] as $name) {
-            if (Route::has($name)) {
-                return self::editorRoute($name);
-            }
+        if (! Route::has('vmedia.media.replace')) {
+            return null;
         }
 
-        return null;
+        return self::editorRoute('vmedia.media.replace');
     }
 
     private static function mediaLibraryIndexUrl(): ?string
     {
-        foreach (['vmedia.media.index', 'voodbuilder.editor.media.index'] as $name) {
-            if (Route::has($name)) {
-                return self::editorRoute($name);
-            }
+        if (! Route::has('vmedia.media.index')) {
+            return null;
         }
 
-        return null;
+        return self::editorRoute('vmedia.media.index');
     }
 
     private static function mediaGalleriesIndexUrl(): ?string
     {
-        foreach (['vmedia.media.galleries', 'voodbuilder.editor.media.galleries'] as $name) {
-            if (Route::has($name)) {
-                return self::editorRoute($name);
-            }
+        if (! Route::has('vmedia.media.galleries')) {
+            return null;
         }
 
-        return null;
+        return self::editorRoute('vmedia.media.galleries');
     }
 
     /**
@@ -1284,7 +1276,6 @@ final class EditorGate
         // The route, not a package flag: vmedia defers its HTTP routes out of Filament's
         // route group, so being installed and even active says nothing about whether the
         // browser can be called yet.
-        return Route::has('vmedia.media.galleries')
-            || Route::has('voodbuilder.editor.media.galleries');
+        return Route::has('vmedia.media.galleries');
     }
 }
