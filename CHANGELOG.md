@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.32] - 2026-09-09
+
+### Fixed
+
+- Editor refresh: stop false "Could not load the block library" notice caused by `hydrateComponentInstance` referencing undefined `editor` during component catalog sync; isolate post-fetch failures in `loadBlocks`
+
 ## [0.1.31] - 2026-09-09
 
 ### Fixed

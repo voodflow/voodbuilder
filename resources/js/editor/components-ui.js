@@ -99,7 +99,9 @@ export function registerComponentsUi(editor, options = {}) {
     const deletingIds = new Set();
 
     editor.__voodbuilderComponentsCatalog = catalog;
-    editor.__voodbuilderHydrateComponentInstance = hydrateComponentInstance;
+    editor.__voodbuilderHydrateComponentInstance = (component, catalogArg = catalog) => {
+        hydrateComponentInstance(component, catalogArg, editor);
+    };
 
     registerComponentInstanceType(editor, () => catalog);
 
@@ -872,8 +874,10 @@ export function registerComponentsUi(editor, options = {}) {
             catalog = [...remote, ...localOnly];
             syncCatalog();
             updateEmptyState();
-            ensureComponentsLibraryVisible(editor, libraryMounts, getActiveLibraryId);
-        } catch {
+            ensureComponentsLibraryVisible(editor, libraryMounts, getActiveLibraryId());
+        } catch (error) {
+            console.error('Voodbuilder Editor: could not sync component catalog.', error);
+
             if (loadId !== catalogLoadVersion) {
                 return;
             }
@@ -986,7 +990,7 @@ export function registerComponentsUi(editor, options = {}) {
         const attrs = component.getAttributes?.({ noClass: true, noStyle: true }) ?? {};
 
         if (attrs[COMPONENT_ATTR]) {
-            window.requestAnimationFrame(() => hydrateComponentInstance(component, catalog));
+            window.requestAnimationFrame(() => hydrateComponentInstance(component, catalog, editor));
         }
     });
     editor.on('canvas:frame:load', () => injectComponentCatalogCss(editor, catalog));
@@ -1588,7 +1592,7 @@ function parseImportPayload(payload) {
 
 function hydrateComponentInstances(editor, catalog) {
     editor.getWrapper().find(`[${COMPONENT_ATTR}]`).forEach((component) => {
-        hydrateComponentInstance(component, catalog);
+        hydrateComponentInstance(component, catalog, editor);
     });
 }
 
@@ -1651,7 +1655,7 @@ function hasMeaningfulComponentBody(component) {
     });
 }
 
-function hydrateComponentInstance(component, catalog) {
+function hydrateComponentInstance(component, catalog, editor = null) {
     const attrs = component.getAttributes?.({ noClass: true, noStyle: true }) ?? {};
     const componentId = attrs[COMPONENT_ATTR];
 
@@ -1676,7 +1680,7 @@ function hydrateComponentInstance(component, catalog) {
         component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
         ensureComponentScopeAttribute(component);
         applyComponentInstancePresentation(component, item);
-        editor.__voodbuilderScheduleComponentCssRebuild?.(200);
+        editor?.__voodbuilderScheduleComponentCssRebuild?.(200);
 
         return;
     }
@@ -1704,7 +1708,7 @@ function hydrateComponentInstance(component, catalog) {
         class: 'voodbuilder-editor-component-instance',
     });
 
-    editor.__voodbuilderScheduleComponentCssRebuild?.(200);
+    editor?.__voodbuilderScheduleComponentCssRebuild?.(200);
 }
 
 function ensureComponentScopeAttribute(component) {
@@ -1984,7 +1988,7 @@ export function ensureComponentInstancesForExport(editor) {
 
     editor.getWrapper().find(`[${COMPONENT_ATTR}]`).forEach((component) => {
         if (! hasMeaningfulComponentBody(component)) {
-            hydrateComponentInstance(component, catalog);
+            hydrateComponentInstance(component, catalog, editor);
         }
     });
 }

@@ -1992,11 +1992,24 @@ async function loadBlocks(editor, blocksUrl, labels = {}) {
             console.error('Voodbuilder Editor: block previews failed after catalog load.', error);
         }
 
-        editor.__voodbuilderSyncComponentsCatalog?.();
-        refreshBlocksLibraryUi(editor);
+        try {
+            editor.__voodbuilderSyncComponentsCatalog?.();
+        } catch (error) {
+            console.error('Voodbuilder Editor: component catalog sync failed after blocks load.', error);
+        }
+
+        try {
+            refreshBlocksLibraryUi(editor);
+        } catch (error) {
+            console.error('Voodbuilder Editor: blocks library UI refresh failed.', error);
+        }
     } catch (error) {
         console.error('Voodbuilder Editor: could not load block catalog.', error);
-        refreshBlocksLibraryUi(editor);
+        try {
+            refreshBlocksLibraryUi(editor);
+        } catch {
+            // Ignore secondary UI failures after a catalog load error.
+        }
 
         void alertDialog({
             message: labels.blocksLoadError ?? 'Could not load the block library. Reload the editor or check your session.',
