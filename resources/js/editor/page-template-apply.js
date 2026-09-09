@@ -13,8 +13,15 @@ import { scanLinkableButtons } from './editor-button-link.js';
 import {
     restoreContentWidthFromAttributes,
 } from './content-width-toolbar.js';
+import {
+    beginEditorBuild,
+    endEditorBuild,
+    setEditorBuildLabel,
+} from './editor-build-status.js';
 
 const CHROME_PLACEHOLDER_BLOCK_RE = /data-voodbuilder-block="(?:site_nav_simple|site_footer_columns_simple|site_header|site_footer[^"]*)"/i;
+const TEMPLATE_APPLY_SCOPE = 'page-template';
+const MEANINGFUL_MEDIA_TAGS = new Set(['img', 'video', 'iframe', 'svg', 'picture', 'table', 'form', 'canvas']);
 
 export function templatePayload(template) {
     if (template?.builder_payload) {
@@ -70,6 +77,76 @@ export function stripChromePlaceholdersFromTemplateHtml(html) {
     }
 }
 
+/**
+ * Editor-only chrome (drop spacers, template drop markers) is not author content.
+ *
+ * @param {object|null|undefined} component
+ */
+export function isIgnorablePageContentComponent(component) {
+    if (! component) {
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const type = String(component.get?.('type') ?? '');
+
+    if (
+        attrs['data-voodbuilder-top-drop-spacer']
+        || attrs['data-voodbuilder-bottom-drop-spacer']
+        || attrs['data-voodbuilder-inner-drop']
+        || attrs['data-voodbuilder-page-template-drop']
+        || type === 'voodbuilder-top-drop-spacer'
+        || type === 'voodbuilder-bottom-drop-spacer'
+        || type === 'voodbuilder-inner-drop-slot'
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * True when the component tree has real page content (sections, copy, media).
+ * Empty wrappers and drop sentinels alone must not trigger Replace/Append.
+ *
+ * @param {object|null|undefined} component
+ */
+export function componentHasMeaningfulPageContent(component) {
+    if (! component || isIgnorablePageContentComponent(component)) {
+        return false;
+    }
+
+    const children = typeof component.components === 'function'
+        ? [...(component.components() ?? [])]
+        : [];
+
+    if (children.some((child) => componentHasMeaningfulPageContent(child))) {
+        return true;
+    }
+
+    const text = String(component.get?.('content') ?? '').trim();
+
+    if (text !== '') {
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (
+        attrs['data-voodbuilder-section-block']
+        || attrs['data-voodbuilder-block']
+        || attrs['data-voodbuilder-component']
+        || attrs.src
+        || attrs['data-src']
+    ) {
+        return true;
+    }
+
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+    return MEANINGFUL_MEDIA_TAGS.has(tag);
+}
+
 export function pageHasContent(editor) {
     if (editor?.__voodbuilderChromeShellMode) {
         const slot = findPageContentSlotInEditor(editor);
@@ -78,15 +155,11 @@ export function pageHasContent(editor) {
             return false;
         }
 
-        return slot.components().some((component) => {
-            if (component.components().length > 0) {
-                return true;
-            }
+        const children = typeof slot.components === 'function'
+            ? [...(slot.components() ?? [])]
+            : [];
 
-            const text = String(component.get('content') ?? '').trim();
-
-            return text.length > 0;
-        });
+        return children.some((component) => componentHasMeaningfulPageContent(component));
     }
 
     const wrapper = editor?.getWrapper?.();
@@ -95,15 +168,11 @@ export function pageHasContent(editor) {
         return false;
     }
 
-    return wrapper.components().some((component) => {
-        if (component.components().length > 0) {
-            return true;
-        }
+    const children = typeof wrapper.components === 'function'
+        ? [...(wrapper.components() ?? [])]
+        : [];
 
-        const text = String(component.get('content') ?? '').trim();
-
-        return text.length > 0;
-    });
+    return children.some((component) => componentHasMeaningfulPageContent(component));
 }
 
 function settleTemplateCanvas(editor) {
@@ -152,6 +221,33 @@ export function forceTemplatePageCssRebuild(editor, delayMs = 250) {
 
     schedule(() => {
         globalThis.setTimeout(run, delayMs);
+    });
+}
+
+/**
+ * @param {object} editor
+ * @param {number} [timeoutMs]
+ * @returns {Promise<void>}
+ */
+function waitForPageCssCompiled(editor, timeoutMs = 20_000) {
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const finish = () => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            editor.off?.('voodbuilder:page-css-compiled', onCompiled);
+            globalThis.clearTimeout(timer);
+            resolve();
+        };
+
+        const onCompiled = () => finish();
+        const timer = globalThis.setTimeout(finish, timeoutMs);
+
+        editor.on?.('voodbuilder:page-css-compiled', onCompiled);
     });
 }
 
@@ -293,6 +389,7 @@ export function appendTemplatePayload(editor, template) {
 export async function applyPageTemplateWithPrompt(editor, template, labels = {}, options = {}) {
     const manageSuspend = options.alreadySuspended !== true;
     let applied = false;
+    let buildStarted = false;
 
     if (manageSuspend) {
         editor.__voodbuilderSetCssRebuildSuspended?.(true);
@@ -300,8 +397,9 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
 
     try {
         let mode = 'replace';
+        const hasContent = pageHasContent(editor);
 
-        if (pageHasContent(editor)) {
+        if (hasContent) {
             const choice = await choiceDialog({
                 title: labels.pageTemplatesApplyChoiceTitle ?? 'Apply page template',
                 message: labels.pageTemplatesApplyChoiceMessage ?? 'This page already has content. Replace it or add the template below the existing content?',
@@ -331,6 +429,16 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
             mode = choice;
         }
 
+        beginEditorBuild(editor, TEMPLATE_APPLY_SCOPE);
+        buildStarted = true;
+        setEditorBuildLabel(
+            editor,
+            labels.pageTemplatesApplying ?? 'Applying template…',
+        );
+
+        // Yield so the canvas overlay paints before Grapes parses a large HTML tree.
+        await new Promise((resolve) => globalThis.requestAnimationFrame(() => resolve()));
+
         if (mode === 'keep') {
             appendTemplatePayload(editor, template);
         } else {
@@ -338,6 +446,11 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
         }
 
         applied = true;
+
+        setEditorBuildLabel(
+            editor,
+            labels.compilingStyles ?? 'Compiling styles…',
+        );
 
         return true;
     } finally {
@@ -350,6 +463,15 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
         // Elements Library import — not only when this call owns the suspend lock.
         if (applied) {
             forceTemplatePageCssRebuild(editor);
+            await waitForPageCssCompiled(editor);
+        }
+
+        if (buildStarted) {
+            endEditorBuild(editor, TEMPLATE_APPLY_SCOPE);
+            setEditorBuildLabel(
+                editor,
+                labels.compilingStyles ?? 'Compiling styles…',
+            );
         }
     }
 }

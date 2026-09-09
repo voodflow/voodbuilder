@@ -287,9 +287,8 @@ function syncCanvasCompileOverlay(editor) {
         return;
     }
 
-    const busy = ! editor?.__voodbuilderBooting
-        && ((BUILD_SCOPES.get('page-css') ?? 0) > 0
-            || (BUILD_SCOPES.get('component-css') ?? 0) > 0);
+    // Any in-flight build (template apply, page JIT, component JIT) — not only CSS scopes.
+    const busy = ! editor?.__voodbuilderBooting && totalBuildCount() > 0;
 
     overlay.hidden = ! busy;
     overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
@@ -315,6 +314,31 @@ export function beginEditorBuild(editor, scope = 'default') {
     BUILD_SCOPES.set(scope, (BUILD_SCOPES.get(scope) ?? 0) + 1);
     armStuckBuildFailsafe(editor);
     syncClassesOverlay(editor);
+}
+
+/**
+ * Update the visible label on canvas / classes compile overlays (multi-step apply).
+ *
+ * @param {object|null|undefined} editor
+ * @param {string} label
+ */
+export function setEditorBuildLabel(editor, label) {
+    const text = String(label ?? '').trim();
+
+    if (text === '') {
+        return;
+    }
+
+    for (const overlay of [
+        editor?.__voodbuilderCanvasBuildOverlay,
+        editor?.__voodbuilderClassesBuildOverlay,
+    ]) {
+        const labelEl = overlay?.querySelector?.('.voodbuilder-editor-status-spinner__label');
+
+        if (labelEl) {
+            labelEl.textContent = text;
+        }
+    }
 }
 
 export function endEditorBuild(editor, scope = 'default') {

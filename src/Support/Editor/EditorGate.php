@@ -783,6 +783,7 @@ final class EditorGate
             'pageTemplatesApplyChoiceMessage' => __('voodbuilder::pro.page_templates.apply_choice_message'),
             'pageTemplatesApplyReplace' => __('voodbuilder::pro.page_templates.apply_replace'),
             'pageTemplatesApplyKeep' => __('voodbuilder::pro.page_templates.apply_keep'),
+            'pageTemplatesApplying' => __('voodbuilder::pro.page_templates.applying'),
             'pageTemplatesSidebarHint' => __('voodbuilder::pro.page_templates.sidebar_hint'),
             'pageTemplatesDelete' => __('voodbuilder::pro.page_templates.delete'),
             'pageTemplatesDeleteConfirm' => __('voodbuilder::pro.page_templates.delete_confirm'),

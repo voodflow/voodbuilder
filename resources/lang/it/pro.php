@@ -469,6 +469,7 @@ return [
         'apply_choice_message' => 'La pagina contiene già elementi. Sostituirli o aggiungere il template sotto il contenuto esistente?',
         'apply_replace' => 'Sostituisci contenuto esistente',
         'apply_keep' => 'Mantieni contenuto esistente',
+        'applying' => 'Applicazione template…',
         'sidebar_hint' => 'Trascina un template sulla pagina per applicare il layout completo.',
         'delete' => 'Elimina',
         'delete_confirm' => 'Eliminare questo template pagina?',

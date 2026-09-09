@@ -469,6 +469,7 @@ return [
         'apply_choice_message' => 'This page already has content. Replace it or add the template below the existing content?',
         'apply_replace' => 'Replace existing content',
         'apply_keep' => 'Keep existing content',
+        'applying' => 'Applying template…',
         'sidebar_hint' => 'Drag a template onto the page to apply the full layout.',
         'delete' => 'Delete',
         'delete_confirm' => 'Delete this page template?',

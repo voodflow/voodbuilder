@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.39] - 2026-09-09
+
+### Added
+
+- Product landing page template kit (`voodflow-builder-product-landing.json`) for Templates import
+- Page template apply: canvas build overlay labels (“Applying template…” / “Compiling styles…”)
+
+### Fixed
+
+- Empty chrome-shell pages (drop spacers only) no longer prompt Replace/Append when applying a template
+- Canvas compile overlay also covers template-apply builds, not only page/component CSS scopes
+
+### Changed
+
+- Landing CTA buttons stay compact pills on mobile (`w-fit`, no full-width stack)
+
 ## [0.1.38] - 2026-09-09
 
 ### Changed
