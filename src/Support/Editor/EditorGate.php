@@ -236,13 +236,10 @@ final class EditorGate
                 // Marketplace install-from-URL is always available when Templates module is on.
                 'templatesImportUrl' => TemplatesModule::isEnabled(),
                 'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
-                'componentsLibrary' => ComponentRuntimeBridge::moduleEnabled(),
-                'componentsImport' => ComponentRuntimeBridge::moduleEnabled()
-                    && Voodbuilder::can('components.import'),
-                'componentsExport' => ComponentRuntimeBridge::moduleEnabled()
-                    && Voodbuilder::can('components.export'),
-                'componentsCodeImport' => ComponentRuntimeBridge::moduleEnabled()
-                    && Voodbuilder::can('components.code-import'),
+                'componentsLibrary' => ComponentAuthoringBridge::canUseLibrary(),
+                'componentsImport' => ComponentAuthoringBridge::canImport(),
+                'componentsExport' => ComponentAuthoringBridge::canExport(),
+                'componentsCodeImport' => ComponentAuthoringBridge::canCodeImport(),
                 // Plugin registration unlocks single; collections still need Pro entitlement.
                 'dynamicDataSingle' => self::dynamicDataEnabled(),
                 'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),

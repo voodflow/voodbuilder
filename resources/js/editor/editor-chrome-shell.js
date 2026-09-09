@@ -265,10 +265,11 @@ function configureChromeShellPartWrapper(editor, component, part) {
         removable: false,
         draggable: false,
         copyable: false,
-        // Selectable so the page editor can show “edit this in layout X”.
+        // Selectable so a click can show “edit this in layout X” — but not hoverable:
+        // in page edit, chrome is not authorable (layout editor only).
         selectable: true,
-        hoverable: true,
-        highlightable: true,
+        hoverable: false,
+        highlightable: false,
         editable: false,
         stylable: false,
         layerable: true,

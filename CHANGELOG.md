@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.30] - 2026-09-09
+
+### Fixed
+
+- Components import/export: companion plugin unlocks APIs (edition matrix is soft upsell only); optional Shield abilities when defined
+- Page editor chrome (header/footer): no hover outline — layout editor only
+
 ## [0.1.29] - 2026-09-09
 
 ### Fixed

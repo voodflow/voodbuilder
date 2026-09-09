@@ -151,6 +151,7 @@ export function migrateNavId(component) {
 export function lockNavPreview(component, editor, opts = {}) {
     const blockId = component.getAttributes()[ATTR.block];
     const layoutMode = Boolean(component.em?.__voodbuilderChromeLayoutMode ?? editor?.__voodbuilderChromeLayoutMode);
+    const shellMode = Boolean(component.em?.__voodbuilderChromeShellMode ?? editor?.__voodbuilderChromeShellMode);
 
     if (! isNavBlock(blockId) && ! isHeaderBlock(blockId)) {
         return false;
@@ -160,8 +161,8 @@ export function lockNavPreview(component, editor, opts = {}) {
 
     component.set({
         selectable: true,
-        highlightable: true,
-        hoverable: true,
+        highlightable: layoutMode,
+        hoverable: layoutMode,
         layerable: true,
         name: typeof resolveBlockLayerLabel === 'function'
             ? resolveBlockLayerLabel(blockId)
@@ -178,6 +179,23 @@ export function lockNavPreview(component, editor, opts = {}) {
             layerable: true,
             stylable: true,
             badgable: true,
+        }, { silent: true });
+        opts.normalizeMenuButtons?.(component);
+        opts.normalizeChromeButtons?.(component);
+
+        return true;
+    }
+
+    if (shellMode) {
+        // Page editor: match footer — no hover outlines on chrome preview.
+        suppressChromeBlockDescendants(component);
+        component.set({
+            selectable: true,
+            hoverable: false,
+            highlightable: false,
+            editable: false,
+            stylable: false,
+            badgable: false,
         }, { silent: true });
         opts.normalizeMenuButtons?.(component);
         opts.normalizeChromeButtons?.(component);

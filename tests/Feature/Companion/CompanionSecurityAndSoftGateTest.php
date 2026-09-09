@@ -74,14 +74,15 @@ class CompanionSecurityAndSoftGateTest extends TestCase
         }
     }
 
-    public function test_components_import_export_require_agency_entitlement(): void
+    public function test_components_import_export_allowed_when_companion_plugin_active(): void
     {
         if (! Route::has('voodbuilder.editor.components.import')) {
             $this->markTestSkipped('Components routes not registered.');
         }
 
+        // Companion plugin is the commercial gate — edition matrix must not block.
         Voodbuilder::entitlements()->useProvider(
-            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL),
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );
 
         $user = $this->builderUser('companion-cmp@example.com');
@@ -90,11 +91,11 @@ class CompanionSecurityAndSoftGateTest extends TestCase
             ->postJson(route('voodbuilder.editor.components.import'), [
                 'components' => [['name' => 'X', 'html' => '<div></div>']],
             ])
-            ->assertForbidden();
+            ->assertCreated();
 
         $this->actingAs($user)
             ->postJson(route('voodbuilder.editor.components.export'), ['ids' => []])
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_community_free_pack_excludes_demoted_sections(): void

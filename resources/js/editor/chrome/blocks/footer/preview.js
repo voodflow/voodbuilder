@@ -121,8 +121,8 @@ export function lockFooterPreview(component, editor, opts = {}) {
 
     component.set({
         selectable: true,
-        highlightable: true,
-        hoverable: true,
+        highlightable: layoutMode,
+        hoverable: layoutMode,
         layerable: true,
         name: typeof opts.resolveBlockLayerLabel === 'function'
             ? opts.resolveBlockLayerLabel(blockId)
@@ -144,7 +144,16 @@ export function lockFooterPreview(component, editor, opts = {}) {
     }
 
     if (shellMode) {
+        // Page editor: chrome is read-only preview — no hover outline (layout edits only).
         suppressChromeBlockDescendants(component);
+        component.set({
+            selectable: true,
+            hoverable: false,
+            highlightable: false,
+            editable: false,
+            stylable: false,
+            badgable: false,
+        }, { silent: true });
 
         return true;
     }

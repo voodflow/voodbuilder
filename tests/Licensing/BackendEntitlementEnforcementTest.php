@@ -138,14 +138,18 @@ class BackendEntitlementEnforcementTest extends TestCase
      * not enforcement: on Professional the capability is absent while the module is installed,
      * so the route has to refuse the call itself.
      */
-    public function test_professional_edition_forbids_components_import(): void
+    /**
+     * Without the Components companion routes, these stay skipped.
+     * With the companion active, import/export are unlocked by the plugin (not Agency edition).
+     */
+    public function test_components_import_unlocked_by_companion_not_edition(): void
     {
         if (! Route::has('voodbuilder.editor.components.import')) {
             $this->markTestSkipped('Components routes absent when module disabled at boot.');
         }
 
         Voodbuilder::entitlements()->useProvider(
-            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL),
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );
 
         $this->assertFalse(Voodbuilder::can('components.import'));
@@ -154,24 +158,24 @@ class BackendEntitlementEnforcementTest extends TestCase
             ->postJson(route('voodbuilder.editor.components.import'), [
                 'components' => [['name' => 'Card', 'html' => '<div></div>']],
             ])
-            ->assertForbidden();
+            ->assertCreated();
     }
 
-    public function test_professional_edition_forbids_components_export(): void
+    public function test_components_export_unlocked_by_companion_not_edition(): void
     {
         if (! Route::has('voodbuilder.editor.components.export')) {
             $this->markTestSkipped('Components routes absent when module disabled at boot.');
         }
 
         Voodbuilder::entitlements()->useProvider(
-            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL),
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );
 
         $this->assertFalse(Voodbuilder::can('components.export'));
 
         $this->actingAs($this->builderUser('entitlement-cmp-export@example.com'))
             ->postJson(route('voodbuilder.editor.components.export'), ['ids' => []])
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_community_edition_forbids_template_install_from_url(): void
