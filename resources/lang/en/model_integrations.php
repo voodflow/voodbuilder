@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'navigation' => [
-        'group' => 'Voodbuilder',
+        'group' => 'VoodBuilder',
         'label' => 'Model integrations',
     ],
 

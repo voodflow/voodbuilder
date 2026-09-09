@@ -22,11 +22,11 @@ class VoodbuilderPluginTest extends TestCase
     {
         app()->setLocale('en');
 
-        $this->assertSame('Voodbuilder', NavigationMenuResource::getNavigationGroup());
+        $this->assertSame('VoodBuilder', NavigationMenuResource::getNavigationGroup());
         $this->assertSame('Menus', NavigationMenuResource::getNavigationLabel());
-        $this->assertSame('Voodbuilder', SitePageResource::getNavigationGroup());
+        $this->assertSame('VoodBuilder', SitePageResource::getNavigationGroup());
         $this->assertSame('Pages', SitePageResource::getNavigationLabel());
-        $this->assertSame('Voodbuilder', VoodbuilderSettingsPage::getNavigationGroup());
+        $this->assertSame('VoodBuilder', VoodbuilderSettingsPage::getNavigationGroup());
         $this->assertSame('Settings', VoodbuilderSettingsPage::getNavigationLabel());
     }
 

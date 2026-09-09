@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'navigation' => [
-        'group' => 'Voodbuilder',
+        'group' => 'VoodBuilder',
         'menus' => 'Menu',
         'pages' => 'Pagine',
         'settings' => 'Impostazioni',
