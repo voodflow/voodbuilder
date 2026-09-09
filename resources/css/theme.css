@@ -241,13 +241,14 @@
     }
 
     /* Standalone Utilities blocks (editor + published pages).
-     * Always fixed under the sticky nav — never bake position:relative into saved HTML
-     * (inline styles from the editor used to override this and scroll away with the page). */
+     * Fixed to the viewport; --vb-progress-top is set by JS under the visible
+     * site header (or 0 when the nav scrolls away / is not sticky). */
     .vb-reading-progress {
         --vb-progress-color: var(--color-vp-brand-1, #6366f1);
         --vb-progress-height: 3px;
+        --vb-progress-top: 0px;
         position: fixed !important;
-        top: var(--spacing-vp-nav, 4rem) !important;
+        top: var(--vb-progress-top) !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 50;

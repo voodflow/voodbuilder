@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-09-09
+
+### Fixed
+
+- Reading progress pins under the visible site header, or flush to the viewport top when the nav scrolls away (no more floating gap with a non-sticky menu)
+
 ## [0.1.28] - 2026-09-09
 
 ### Added

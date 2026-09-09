@@ -5553,8 +5553,9 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 /* VoodBuilder utility blocks */
 .vb-reading-progress {
+    --vb-progress-top: 0px;
     position: fixed;
-    top: var(--spacing-vp-nav, 4rem);
+    top: var(--vb-progress-top);
     left: 0;
     right: 0;
     z-index: 50;

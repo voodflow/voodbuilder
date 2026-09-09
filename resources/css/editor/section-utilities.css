@@ -53,7 +53,7 @@
      * Keep sizes in rem so SVG w-full/h-full cannot explode to the column width.
      *
      * Editor canvas: keep standalone progress in document flow (selectable).
-     * Public pages use position:fixed under the sticky nav (theme.css).
+     * Public pages: position:fixed; top from --vb-progress-top (under visible header or 0).
      */
     [data-gjs-type="wrapper"] .vb-reading-progress,
     [data-gjs-type] .vb-reading-progress,

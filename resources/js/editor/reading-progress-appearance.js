@@ -125,3 +125,66 @@ export function applyReadingProgressCssVars(track) {
     track.style.setProperty('--vb-progress-color', color);
     track.style.setProperty('--vb-progress-height', `${px}px`);
 }
+
+const SITE_HEADER_SELECTORS = [
+    'header[role="banner"]',
+    '[data-voodbuilder-editor-site-header]',
+    '[data-voodbuilder-site-header]',
+    '[data-voodbuilder-chrome="header"]',
+].join(',');
+
+/**
+ * Bottom edge (px) of any site header still covering the top of the viewport.
+ * Static nav scrolled away → 0 (progress sticks to the viewport top).
+ * Sticky/fixed nav docked → nav height (progress sits under it).
+ *
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {number}
+ */
+export function resolveReadingProgressTopPx(doc = document, win = window) {
+    let maxBottom = 0;
+
+    doc.querySelectorAll(SITE_HEADER_SELECTORS).forEach((el) => {
+        if (! (el instanceof HTMLElement)) {
+            return;
+        }
+
+        const style = win.getComputedStyle(el);
+
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+            return;
+        }
+
+        const rect = el.getBoundingClientRect();
+
+        if (rect.height < 1 || rect.bottom <= 0) {
+            return;
+        }
+
+        // Still covering the top edge (stuck sticky/fixed, or in-flow at page top).
+        if (rect.top <= 1) {
+            maxBottom = Math.max(maxBottom, rect.bottom);
+        }
+    });
+
+    return Math.max(0, Math.round(maxBottom));
+}
+
+/**
+ * Pin standalone progress under the visible site header, or flush to the viewport top.
+ *
+ * @param {HTMLElement} track
+ * @param {{ doc?: Document, win?: Window }} [options]
+ */
+export function applyReadingProgressTop(track, options = {}) {
+    if (! (track instanceof HTMLElement) || ! track.classList.contains('vb-reading-progress')) {
+        return;
+    }
+
+    const doc = options.doc ?? track.ownerDocument ?? document;
+    const win = options.win ?? doc.defaultView ?? window;
+    const top = resolveReadingProgressTopPx(doc, win);
+
+    track.style.setProperty('--vb-progress-top', `${top}px`);
+}

@@ -1833,7 +1833,7 @@ export function renderReadingProgressSettings({ mount, traitsMount = null, compo
     const hint = document.createElement('p');
     hint.className = 'voodbuilder-editor-form-hint';
     hint.textContent = labels.readingProgressSettingsHint
-        ?? 'Fixed under the sticky nav. Color defaults to Brand; pick any Tailwind shade (e.g. red-500). Thickness is the bar height in pixels.';
+        ?? 'Stays fixed while scrolling: under the site header when it covers the top, otherwise flush to the viewport top. Color defaults to Brand; thickness is the bar height in pixels.';
 
     const colorField = createSelectField({
         label: labels.readingProgressColor ?? 'Color',

@@ -3,7 +3,7 @@
  */
 
 import { initScrollSliders } from './slider-runtime.js';
-import { applyReadingProgressCssVars } from './reading-progress-appearance.js';
+import { applyReadingProgressCssVars, applyReadingProgressTop } from './reading-progress-appearance.js';
 
 function wordsInElement(element) {
     const text = element?.innerText ?? element?.textContent ?? '';
@@ -154,6 +154,7 @@ export function initReadingProgress(options = {}) {
         }
 
         applyReadingProgressCssVars(track);
+        applyReadingProgressTop(track, { doc, win });
 
         if (track.dataset.vbProgressReady === '1') {
             return;
@@ -180,6 +181,8 @@ export function initReadingProgress(options = {}) {
         const usePageScroll = track.classList.contains('vb-reading-progress') || ! (article instanceof HTMLElement);
 
         const update = () => {
+            applyReadingProgressTop(track, { doc, win });
+
             const scrollEl = doc.documentElement;
             const scrollTop = win.scrollY || scrollEl.scrollTop || 0;
             const viewport = win.innerHeight || 0;
