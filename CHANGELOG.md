@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.40] - 2026-09-09
+
+### Security
+
+- Page template remote catalog/install sends `X-VoodBuilder-Catalog-Token` and rewrites absolute CDN `bundle_url` values to relative paths for the browser
+
+### Changed
+
+- Default `page_templates.catalog_url` → `https://api.voodflow.com/voodbuilder/templates/page-catalog.json`
+
 ## [0.1.39] - 2026-09-09
 
 ### Added

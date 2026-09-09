@@ -338,7 +338,15 @@ return [
     ],
 
     'page_templates' => [
-        'catalog_url' => env('VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL'),
+        'catalog_url' => env(
+            'VOODBUILDER_PAGE_TEMPLATE_CATALOG_URL',
+            'https://api.voodflow.com/voodbuilder/templates/page-catalog.json',
+        ),
+        // Same secret as Elements catalog (X-VoodBuilder-Catalog-Token). Server-side only.
+        'catalog_token' => env(
+            'VOODBUILDER_PAGE_TEMPLATE_CATALOG_TOKEN',
+            env('VOODBUILDER_CATALOG_TOKEN', env('VOODBUILDER_ELEMENTS_CATALOG_TOKEN')),
+        ),
     ],
 
     'search' => [
