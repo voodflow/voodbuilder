@@ -343,6 +343,7 @@ function setupLibraryTabs(mounts, labels = {}, editor = null) {
         if (editor) {
             editor.__voodbuilderActiveLibrary = libraryId;
             editor.__voodbuilderRelocateLibrary?.(libraryId);
+            editor.trigger?.('voodbuilder:active-library-changed', { libraryId });
         }
 
         libraryTabs.closest('.voodbuilder-editor-shell')

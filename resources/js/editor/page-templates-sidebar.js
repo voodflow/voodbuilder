@@ -9,7 +9,7 @@ import { buildPayload } from './editor.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import { refreshComponentBlocksLibrary } from './components-ui.js';
-import { applyPageTemplateWithPrompt } from './page-template-apply.js';
+import { applyPageTemplateWithPrompt, forceTemplatePageCssRebuild } from './page-template-apply.js';
 import {
     PAGE_TEMPLATE_BLOCK_PREFIX,
     PAGE_TEMPLATE_CATEGORY_PREFIX,
@@ -958,11 +958,9 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             applyingTemplate = false;
             editor.__voodbuilderFlushCssRebuildOnResume = true;
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
-            // Force compile after template HTML lands (schedule-if-missing can no-op
-            // when a partial live CSS fingerprint already matches).
-            window.requestAnimationFrame(() => {
-                editor.__voodbuilderInvalidatePageCss?.();
-            });
+            // applyPageTemplateWithPrompt already force-rebuilds; keep an extra
+            // invalidate after the outer suspend unlock for drop races.
+            forceTemplatePageCssRebuild(editor, 320);
         }
     });
 

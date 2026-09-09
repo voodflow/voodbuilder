@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.36] - 2026-09-09
+
+### Fixed
+
+- Page template apply/append: force Tailwind JIT after replace-or-append so styles compile in the canvas without waiting for Save
+- Page CSS schedule no longer drops rebuilds while bulk structure updates / CSS suspend are active
+
+### Changed
+
+- Emit `voodbuilder:active-library-changed` when switching Elements / Components / Templates sidebar tabs (for companion Library UI)
+
 ## [0.1.35] - 2026-09-09
 
 ### Changed

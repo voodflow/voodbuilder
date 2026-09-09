@@ -561,10 +561,20 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     };
 
     const schedule = (delay = DEBOUNCE_MS) => {
-        if (
-            ! frameReady
-            || shouldDeferCssRebuild(editor)
-        ) {
+        if (! frameReady) {
+            // canvas:frame:load seeds boot compile; do not spin timers before the iframe exists.
+            pendingInvalidate = true;
+
+            return;
+        }
+
+        // Boot / bulk template apply / suspend: keep the intent and retry — a bare
+        // return here used to drop ForcePageCssRebuild until the next Save.
+        if (shouldDeferCssRebuild(editor)) {
+            pendingInvalidate = true;
+            clearTimeout(timer);
+            timer = setTimeout(() => schedule(delay), 120);
+
             return;
         }
 

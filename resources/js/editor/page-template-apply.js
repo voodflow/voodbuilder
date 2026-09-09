@@ -119,6 +119,69 @@ function settleTemplateCanvas(editor) {
 }
 
 /**
+ * Force page Tailwind JIT after template HTML lands.
+ * Soft schedule-if-missing can no-op when fingerprints match a partial live sheet;
+ * Save always recompiles — apply must be equally reliable.
+ *
+ * @param {object} editor
+ * @param {number} [delayMs]
+ */
+export function forceTemplatePageCssRebuild(editor, delayMs = 250) {
+    const run = () => {
+        try {
+            editor.__voodbuilderForcePageCssRebuild?.(0);
+        } catch {
+            try {
+                editor.__voodbuilderInvalidatePageCss?.();
+            } catch {
+                // Optional JIT hooks.
+            }
+        }
+
+        try {
+            editor.trigger?.('voodbuilder:page-css-invalidate');
+        } catch {
+            // Optional invalidate bus.
+        }
+    };
+
+    // Grapes finishes parsing setComponents/append after a few frames — compiling
+    // too early yields CSS for a partial tree (styles only appear after Save).
+    const schedule = globalThis.requestAnimationFrame?.bind(globalThis)
+        ?? ((cb) => globalThis.setTimeout(cb, 0));
+
+    schedule(() => {
+        globalThis.setTimeout(run, delayMs);
+    });
+}
+
+/**
+ * Apply stored template CSS without wiping live utilities when the payload has none.
+ * Starter templates often ship `css: null` and rely entirely on canvas JIT.
+ *
+ * @param {object} editor
+ * @param {string} css
+ * @param {{ replace?: boolean }} [options]
+ */
+function applyTemplateCssPayload(editor, css, options = {}) {
+    const normalized = String(css ?? '').trim();
+    const replace = options.replace === true;
+
+    if (normalized !== '') {
+        editor.setStyle(normalized);
+        editor.__voodbuilderApplyPageLiveCss?.(normalized);
+
+        return;
+    }
+
+    if (replace) {
+        // Clear Style Manager / composer rules from the previous page, but keep
+        // the live utility sheet until forceTemplatePageCssRebuild replaces it.
+        editor.setStyle('');
+    }
+}
+
+/**
  * @param {object} editor
  * @param {() => void} work
  */
@@ -149,7 +212,8 @@ function runBulkStructureUpdate(editor, work) {
                 // Prompt/drop still owns the suspend lock — compile after it releases.
                 editor.__voodbuilderFlushCssRebuildOnResume = true;
             } else {
-                editor.__voodbuilderSchedulePageCssRebuild?.(200);
+                // Force, not schedule-if-missing: replace/append always needs a full JIT.
+                editor.__voodbuilderForcePageCssRebuild?.(200);
             }
 
             editor.__voodbuilderAfterBulkStructureUpdate?.();
@@ -185,13 +249,11 @@ export function applyTemplatePayload(editor, template) {
         editor.setComponents(html);
     });
 
-    editor.setStyle(payload.css ?? '');
+    applyTemplateCssPayload(editor, payload.css ?? '', { replace: true });
 
     if (typeof payload.js === 'string' && payload.js.trim() !== '') {
         editor.setJs?.(payload.js);
     }
-
-    editor.__voodbuilderApplyPageLiveCss?.(payload.css ?? '');
 }
 
 export function appendTemplatePayload(editor, template) {
@@ -215,7 +277,7 @@ export function appendTemplatePayload(editor, template) {
         }
     });
 
-    if (payload.css) {
+    if (String(payload.css ?? '').trim() !== '') {
         const existingCss = String(editor.getCss?.() ?? '').trim();
         const mergedCss = [existingCss, payload.css].filter((chunk) => chunk !== '').join('\n');
         editor.setStyle(mergedCss);
@@ -230,6 +292,7 @@ export function appendTemplatePayload(editor, template) {
 
 export async function applyPageTemplateWithPrompt(editor, template, labels = {}, options = {}) {
     const manageSuspend = options.alreadySuspended !== true;
+    let applied = false;
 
     if (manageSuspend) {
         editor.__voodbuilderSetCssRebuildSuspended?.(true);
@@ -274,14 +337,19 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
             applyTemplatePayload(editor, template);
         }
 
+        applied = true;
+
         return true;
     } finally {
         if (manageSuspend) {
             editor.__voodbuilderFlushCssRebuildOnResume = true;
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
-            window.requestAnimationFrame(() => {
-                editor.__voodbuilderInvalidatePageCss?.();
-            });
+        }
+
+        // Always force JIT after replace/append (and after suspend unlock), matching
+        // Elements Library import — not only when this call owns the suspend lock.
+        if (applied) {
+            forceTemplatePageCssRebuild(editor);
         }
     }
 }
