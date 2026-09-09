@@ -1173,6 +1173,18 @@ export function promoteRoot(editor, component) {
         return iconHost;
     }
 
+    const socialHost = findSocialShareHost(component);
+
+    if (socialHost) {
+        if (component && socialHost !== component && editor.getSelected?.() !== socialHost) {
+            editor.select(socialHost, { scroll: false });
+        }
+
+        refreshBlockSettingsUi(editor);
+
+        return socialHost;
+    }
+
     const richHost = findRichTextHost(component);
 
     if (richHost && component && richHost !== component) {

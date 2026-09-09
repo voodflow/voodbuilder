@@ -271,6 +271,7 @@ function iconSvgMarkup(paths, name) {
  */
 export function buildSocialShareItemDefinition(network) {
     const isCopy = network.key === 'copy_link';
+    // Always <a>: GrapesJS `button` defaults inject the literal text "Button".
     const iconHtml = (
         `<span class="vb-social-share__icon" aria-hidden="true">${iconSvgMarkup(network.paths, network.icon)}</span>`
         + `<span class="vb-social-share__label" data-vb-share-label>${network.label}</span>`
@@ -278,16 +279,27 @@ export function buildSocialShareItemDefinition(network) {
 
     return {
         type: 'voodbuilder-social-share-item',
-        tagName: isCopy ? 'button' : 'a',
-        classes: ['vb-social-share__btn', 'inline-flex', 'items-center', 'gap-2', 'text-sm', 'font-medium', 'transition'],
+        tagName: 'a',
+        name: network.label,
+        classes: ['vb-social-share__btn', 'inline-flex', 'items-center', 'justify-center', 'gap-2', 'text-sm', 'font-medium', 'transition'],
+        droppable: false,
+        editable: false,
+        selectable: false,
+        hoverable: false,
+        highlightable: false,
+        layerable: false,
+        draggable: false,
+        copyable: false,
+        removable: false,
         attributes: {
             'data-network': network.key,
             'data-vb-share-item': 'true',
             'data-voodbuilder-skip-cta': 'true',
             'aria-label': network.label,
+            href: '#',
             ...(isCopy
-                ? { type: 'button', 'data-copy-url': '', 'data-copied-label': 'Copied' }
-                : { href: '#', target: '_blank', rel: 'noopener noreferrer' }),
+                ? { role: 'button', 'data-copy-url': '', 'data-copied-label': 'Copied' }
+                : { target: '_blank', rel: 'noopener noreferrer' }),
         },
         components: iconHtml,
     };
@@ -418,9 +430,11 @@ export function ensureSocialShareDefaults(component) {
         || [...childModels].some((child) => {
             const childAttrs = child?.getAttributes?.() ?? {};
             const type = child?.get?.('type');
+            const tag = String(child?.get?.('tagName') ?? '').toLowerCase();
 
             return type === 'link'
                 || type === 'button'
+                || tag === 'button'
                 || childAttrs['data-voodbuilder-skip-cta'] !== 'true'
                 || childAttrs['data-vb-share-item'] !== 'true';
         });

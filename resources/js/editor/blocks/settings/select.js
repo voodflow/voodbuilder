@@ -204,7 +204,12 @@ export function isMediaHeroBackgroundHit(raw, root) {
             || attrs['data-voodbuilder-text'] != null
             || attrs['data-voodbuilder-rich-text'] != null
             || attrs['data-voodbuilder-cta'] === 'true'
+            || attrs['data-voodbuilder-social-share'] != null
+            || attrs['data-vb-share-item'] === 'true'
+            || attrs['data-network'] != null
             || classes.includes('vb-rich-text')
+            || classes.includes('vb-social-share')
+            || classes.includes('vb-social-share__btn')
         ) {
             return false;
         }
@@ -294,6 +299,8 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
         (rootId === 'vb-bg-image' || rootId === 'vb-bg-video')
         && rawType !== 'voodbuilder-cta-button'
         && rawType !== 'link'
+        && rawType !== 'voodbuilder-social-share'
+        && rawType !== 'voodbuilder-social-share-item'
         && isMediaHeroBackgroundHit(raw, root)
     ) {
         return true;

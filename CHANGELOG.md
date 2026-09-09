@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.26] - 2026-09-09
+
+### Fixed
+
+- Social share round + icon-only chips stay circular (no stretched ovals); labels hide in icon mode
+- Copy/share controls no longer show Grapes “Button” text — all items are share links under the Social share root
+- Selecting social share inside a media hero no longer promotes delete/selection to the whole Hero block
+
 ## [0.1.25] - 2026-09-09
 
 ### Added

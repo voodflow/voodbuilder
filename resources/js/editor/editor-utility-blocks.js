@@ -426,15 +426,24 @@ function registerSocialShareType(editor) {
             ),
             model: {
                 defaults: {
+                    tagName: 'a',
+                    name: 'Share link',
                     droppable: false,
                     editable: false,
                     stylable: false,
-                    highlightable: true,
-                    selectable: true,
-                    hoverable: true,
+                    // Click selects the Social share root (avoids Link/Button + hero delete).
+                    selectable: false,
+                    hoverable: false,
+                    highlightable: false,
+                    badgable: false,
+                    layerable: false,
+                    draggable: false,
+                    copyable: false,
+                    removable: false,
                     attributes: {
                         'data-vb-share-item': 'true',
                         'data-voodbuilder-skip-cta': 'true',
+                        href: '#',
                     },
                 },
             },
@@ -450,7 +459,13 @@ function registerSocialShareType(editor) {
         model: {
             defaults: {
                 tagName: 'div',
+                name: 'Social share',
                 droppable: false,
+                selectable: true,
+                hoverable: true,
+                highlightable: true,
+                removable: true,
+                copyable: true,
                 attributes: {
                     'data-voodbuilder-social-share': '',
                     'data-share-url': '',
