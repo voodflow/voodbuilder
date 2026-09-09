@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-09-09
+
+### Fixed
+
+- Reading progress on marketing pages no longer jumps 0→100%: ignore bare `<article>` cards and use full-page scroll for the Utilities progress block
+
 ## [0.1.23] - 2026-09-08
 
 ### Fixed

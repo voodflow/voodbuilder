@@ -155,16 +155,19 @@ export function initReadingProgress(options = {}) {
             return;
         }
 
+        // Prefer explicit article roots. Never use bare `article` — marketing pages
+        // often include card <article> elements that make progress jump 0→100.
         const article = root.querySelector(
-            '[data-voodbuilder-article], [data-doc-article], [data-vdocs-article], [data-tutorial-article], article',
+            '[data-voodbuilder-article], [data-doc-article], [data-vdocs-article], [data-tutorial-article]',
         );
+        const usePageScroll = track.classList.contains('vb-reading-progress') || ! (article instanceof HTMLElement);
 
         const update = () => {
             const scrollEl = doc.documentElement;
             const scrollTop = win.scrollY || scrollEl.scrollTop || 0;
             const viewport = win.innerHeight || 0;
 
-            if (article instanceof HTMLElement) {
+            if (! usePageScroll && article instanceof HTMLElement) {
                 const rect = article.getBoundingClientRect();
                 const top = scrollTop + rect.top;
                 const height = article.offsetHeight;
