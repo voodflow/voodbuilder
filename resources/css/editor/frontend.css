@@ -4675,6 +4675,28 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 .voodbuilder-editor-code-editor-host {
     width: 100%;
     min-width: 0;
+    min-height: 6rem;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--color-vp-text-1, #0f172a) 22%, transparent);
+    border-radius: 0.5rem;
+    background: var(--color-vp-bg-alt, #f6f6f7);
+    overflow: hidden;
+}
+
+.voodbuilder-editor-component-code-modal__code-editor--html {
+    min-height: 14rem;
+}
+
+.voodbuilder-editor-component-code-modal__code-editor--css {
+    min-height: 6rem;
+}
+
+.voodbuilder-editor-component-code-modal__code-editor .cm-editor {
+    min-height: inherit;
+    height: 100%;
+    font-size: 0.75rem;
+    border: 0 !important;
+    border-radius: 0 !important;
 }
 
 .voodbuilder-editor-component-code-modal__code-editor--html .cm-editor {
@@ -4685,12 +4707,20 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     min-height: 6rem;
 }
 
-.voodbuilder-editor-component-code-modal__code-editor .cm-editor {
-    font-size: 0.75rem;
-}
-
 .voodbuilder-editor-component-code-modal__code-editor .cm-scroller {
     overflow: auto;
+}
+
+.voodbuilder-editor-component-code-modal__code-editor .voodbuilder-editor-component-code-modal__textarea {
+    display: block;
+    width: 100%;
+    min-height: inherit;
+    height: 100%;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    resize: vertical;
+    background: transparent;
 }
 
 .voodbuilder-editor-component-code-modal__optional {

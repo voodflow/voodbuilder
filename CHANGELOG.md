@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.31] - 2026-09-09
+
+### Fixed
+
+- Import-from-code: visible HTML/CSS editors (fallback textareas + contrast) and alphabetical component categories
+- Do not invent "Button"/"Send" labels on empty or icon-only `<button>` markup (annotator, Grapes forms button, CTA morph)
+
 ## [0.1.30] - 2026-09-09
 
 ### Fixed

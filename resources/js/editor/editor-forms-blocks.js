@@ -90,6 +90,7 @@ function buildStyledFormContent() {
                         type: 'button',
                         attributes: { type: 'submit' },
                         text: 'Send',
+                        components: 'Send',
                     },
                 ],
             },

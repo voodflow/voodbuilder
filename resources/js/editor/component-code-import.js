@@ -76,6 +76,7 @@ function createFallbackCodeField({
     minHeight = '12rem',
     lineWrapping = false,
     language = null,
+    placeholder = '',
     onChange = null,
 }) {
     if (! mount) {
@@ -89,6 +90,8 @@ function createFallbackCodeField({
     textarea.setAttribute('aria-label', language ? `${String(language).toUpperCase()} code` : 'Code');
     textarea.spellcheck = false;
     textarea.value = value;
+    textarea.placeholder = String(placeholder ?? '').trim()
+        || (language === 'css' ? 'Optional CSS…' : 'Paste HTML here…');
     textarea.style.minHeight = minHeight;
     textarea.wrap = lineWrapping ? 'soft' : 'off';
     mount.replaceChildren(textarea);
@@ -595,46 +598,69 @@ function openComponentCodeDialog({
                 ? String(initialHtml ?? '')
                 : '';
         const initialCssValue = isEdit ? String(component.css ?? '') : '';
+        const htmlMinHeight = isCanvasEdit ? '18rem' : '14rem';
+
+        // Format is best-effort: never block field mounting if CodeMirror/beautify fail to load.
+        let formattedHtml = initialHtmlValue;
+        let formattedCss = initialCssValue;
 
         try {
             await ensureCodeEditorReady();
-
-            const [formattedHtml, formattedCss] = await Promise.all([
+            [formattedHtml, formattedCss] = await Promise.all([
                 formatCodeForEditor(initialHtmlValue, 'html'),
                 formatCodeForEditor(initialCssValue, 'css'),
             ]);
-
-            htmlEditor = await mountCodeField({
-                mount: htmlHost,
-                value: formattedHtml,
-                language: 'html',
-                minHeight: isCanvasEdit ? '18rem' : '14rem',
-                lineWrapping: false,
-                onChange: (value) => {
-                    const parsed = parsePastedComponentSource(value);
-
-                    if (! getCssValue().trim() && parsed.extractedCss) {
-                        void formatCodeForEditor(parsed.extractedCss, 'css').then((nextCss) => {
-                            cssEditor?.setValue(nextCss);
-                        });
-                    }
-
-                    scheduleCompile(value);
-                },
-            });
-
-            cssEditor = await mountCodeField({
-                mount: cssHost,
-                value: formattedCss,
-                language: 'css',
-                minHeight: '6rem',
-                onChange: () => {
-                    refreshPreview();
-                },
-            });
         } catch (error) {
-            console.error('Voodbuilder: could not mount code editor fields.', error);
+            console.error('Voodbuilder: CodeMirror unavailable, using textarea fields.', error);
         }
+
+        htmlEditor = await mountCodeField({
+            mount: htmlHost,
+            value: formattedHtml,
+            language: 'html',
+            minHeight: htmlMinHeight,
+            lineWrapping: false,
+            placeholder: labels.componentsCodeImportHtmlPlaceholder ?? 'Paste HTML here…',
+            onChange: (value) => {
+                const parsed = parsePastedComponentSource(value);
+
+                if (! getCssValue().trim() && parsed.extractedCss) {
+                    void formatCodeForEditor(parsed.extractedCss, 'css').then((nextCss) => {
+                        cssEditor?.setValue(nextCss);
+                    }).catch(() => {
+                        cssEditor?.setValue(parsed.extractedCss);
+                    });
+                }
+
+                scheduleCompile(value);
+            },
+        }) ?? createFallbackCodeField({
+            mount: htmlHost,
+            value: formattedHtml,
+            language: 'html',
+            minHeight: htmlMinHeight,
+            lineWrapping: false,
+            placeholder: labels.componentsCodeImportHtmlPlaceholder ?? 'Paste HTML here…',
+            onChange: (value) => scheduleCompile(value),
+        });
+
+        cssEditor = await mountCodeField({
+            mount: cssHost,
+            value: formattedCss,
+            language: 'css',
+            minHeight: '6rem',
+            placeholder: labels.componentsCodeImportCssPlaceholder ?? 'Optional CSS…',
+            onChange: () => {
+                refreshPreview();
+            },
+        }) ?? createFallbackCodeField({
+            mount: cssHost,
+            value: formattedCss,
+            language: 'css',
+            minHeight: '6rem',
+            placeholder: labels.componentsCodeImportCssPlaceholder ?? 'Optional CSS…',
+            onChange: () => refreshPreview(),
+        });
 
         wrapToggle?.addEventListener('click', () => {
             htmlEditor?.toggleLineWrapping?.();

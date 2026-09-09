@@ -3,23 +3,23 @@
  */
 
 const DEFAULT_CATEGORIES = [
-    'General',
-    'Hero',
-    'Content',
-    'Features',
     'Articles',
-    'Gallery',
-    'Stats',
-    'Testimonials',
-    'Team',
-    'Steps',
-    'Pricing',
-    'CTA',
-    'Contact',
-    'Shop',
-    'Header',
-    'Footer',
     'Code',
+    'Contact',
+    'Content',
+    'CTA',
+    'Features',
+    'Footer',
+    'Gallery',
+    'General',
+    'Header',
+    'Hero',
+    'Pricing',
+    'Shop',
+    'Stats',
+    'Steps',
+    'Team',
+    'Testimonials',
 ];
 
 /** @type {Record<string, string>} */
@@ -59,12 +59,23 @@ const CATEGORY_ALIASES = {
 };
 
 /**
+ * @param {string[]} categories
+ * @returns {string[]}
+ */
+function sortCategoriesAlphabetically(categories) {
+    return [...categories].sort((left, right) => left.localeCompare(right, undefined, {
+        sensitivity: 'base',
+        numeric: true,
+    }));
+}
+
+/**
  * @param {string[] | undefined} categories
  * @returns {string[]}
  */
 export function resolveComponentCategories(categories) {
     if (Array.isArray(categories) && categories.length > 0) {
-        return categories.map((value) => String(value));
+        return sortCategoriesAlphabetically(categories.map((value) => String(value)));
     }
 
     return [...DEFAULT_CATEGORIES];
@@ -78,7 +89,8 @@ export function resolveComponentCategories(categories) {
  */
 export function normalizeComponentCategory(value, categories, fallback) {
     const list = resolveComponentCategories(categories);
-    const defaultFallback = fallback ?? list[0] ?? 'General';
+    const defaultFallback = fallback
+        ?? (list.includes('General') ? 'General' : (list[0] ?? 'General'));
     const raw = String(value ?? '').trim();
 
     if (! raw) {

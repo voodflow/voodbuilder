@@ -781,11 +781,17 @@ final class EditorHtmlSanitizer
                 continue;
             }
 
+            // Icon-only CTAs (svg/img children, no text) — never wipe icons with "Button".
+            foreach ($anchor->childNodes as $child) {
+                if ($child instanceof \DOMElement) {
+                    continue 2;
+                }
+            }
+
             $label = trim($anchor->getAttribute('data-voodbuilder-cta-label'));
 
             if ($label === '') {
-                $label = 'Button';
-                $anchor->setAttribute('data-voodbuilder-cta-label', $label);
+                continue;
             }
 
             while ($anchor->firstChild !== null) {

@@ -25,6 +25,7 @@ import {
     highlightSpecialChars,
     keymap,
     lineNumbers,
+    placeholder as placeholderExtension,
     rectangularSelection,
 } from '@codemirror/view';
 import beautify from 'js-beautify';
@@ -34,8 +35,18 @@ const wrapCompartment = new Compartment();
 const reviewCompartment = new Compartment();
 
 function editorSurfaceIsDark() {
-    return document.documentElement.classList.contains('dark')
-        || Boolean(document.querySelector('.voodbuilder-editor-root.dark, .voodbuilder-editor-root .dark'));
+    if (document.documentElement.classList.contains('dark')) {
+        return true;
+    }
+
+    if (document.body?.classList.contains('dark')) {
+        return true;
+    }
+
+    // Filament panel / VoodBuilder shell may nest `.dark` below the document root.
+    return Boolean(document.querySelector(
+        '.fi-body.dark, .fi-main.dark, .voodbuilder-editor-root.dark, .voodbuilder-editor-root .dark, .dark .voodbuilder-editor-modal',
+    ));
 }
 
 function escapeRegExp(value) {
@@ -46,11 +57,15 @@ function buildEditorTheme(dark) {
     return EditorView.theme({
         '&': {
             color: dark ? '#e2e8f0' : '#1e293b',
-            backgroundColor: dark ? '#0f172a' : '#f8fafc',
+            backgroundColor: dark ? '#0b0d12' : '#f8fafc',
         },
         '.cm-content': {
             caretColor: dark ? '#a5b4fc' : '#4f46e5',
             padding: '0.5rem 0',
+            minHeight: '4rem',
+        },
+        '.cm-placeholder': {
+            color: dark ? '#64748b' : '#94a3b8',
         },
         '.cm-scroller': {
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -58,9 +73,9 @@ function buildEditorTheme(dark) {
             overflowX: 'auto',
         },
         '.cm-gutters': {
-            backgroundColor: dark ? '#111827' : '#f1f5f9',
-            color: dark ? '#64748b' : '#94a3b8',
-            borderRight: `1px solid ${dark ? '#1f2937' : '#e2e8f0'}`,
+            backgroundColor: dark ? '#12141a' : '#f1f5f9',
+            color: dark ? '#94a3b8' : '#94a3b8',
+            borderRight: `1px solid ${dark ? '#2a2f3a' : '#e2e8f0'}`,
         },
         '&.cm-focused .cm-activeLine': {
             backgroundColor: dark ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.08)',
@@ -165,6 +180,7 @@ export function createCodeEditorField({
     language = 'html',
     minHeight = '12rem',
     lineWrapping = false,
+    placeholder = '',
     onChange = null,
 }) {
     if (! mount) {
@@ -173,6 +189,8 @@ export function createCodeEditorField({
 
     const dark = editorSurfaceIsDark();
     const languageExtension = language === 'css' ? cssLanguage() : htmlLanguage();
+    const placeholderText = String(placeholder ?? '').trim()
+        || (language === 'css' ? 'Optional CSS…' : 'Paste HTML here…');
 
     const updateListener = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -202,13 +220,14 @@ export function createCodeEditorField({
             rectangularSelection(),
             highlightActiveLine(),
             languageExtension,
+            placeholderExtension(placeholderText),
             buildEditorTheme(dark),
             wrapCompartment.of(lineWrapping ? EditorView.lineWrapping : []),
             reviewCompartment.of([]),
             EditorView.theme({
                 '&': {
                     minHeight,
-                    border: `1px solid ${dark ? '#1f2937' : '#e2e8f0'}`,
+                    border: `1px solid ${dark ? '#3f4555' : '#cbd5e1'}`,
                     borderRadius: '0.5rem',
                     overflow: 'hidden',
                 },

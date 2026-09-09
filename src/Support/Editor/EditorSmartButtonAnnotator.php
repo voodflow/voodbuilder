@@ -40,7 +40,7 @@ final class EditorSmartButtonAnnotator
                 continue;
             }
 
-            if (self::shouldSkipButton($button)) {
+            if (self::shouldSkipButton($button) || self::isIconOrEmptyButton($button)) {
                 continue;
             }
 
@@ -111,6 +111,29 @@ final class EditorSmartButtonAnnotator
         return str_contains($class, ' cc-')
             || str_contains($class, ' carousel')
             || str_contains($class, ' swiper');
+    }
+
+    /**
+     * Empty color swatches and icon-only controls must stay native <button>s —
+     * never invent a "Button" CTA label for them.
+     */
+    private static function isIconOrEmptyButton(\DOMElement $button): bool
+    {
+        $class = strtolower($button->getAttribute('class'));
+
+        if (
+            preg_match('/(?:^|\s)rounded-full(?:\s|$)/', $class) === 1
+            && preg_match('/(?:^|\s)w-(?:\d+|\[)/', $class) === 1
+            && preg_match('/(?:^|\s)h-(?:\d+|\[)/', $class) === 1
+            && preg_match('/(?:^|\s)px-(?:\d+|\[)/', $class) !== 1
+        ) {
+            return true;
+        }
+
+        $label = trim(preg_replace('/\s+/u', ' ', $button->textContent ?? '') ?? '');
+
+        // Empty markup, or only structural children (svg/img) with no author text.
+        return $label === '';
     }
 
     private static function shouldSkipTextLink(\DOMElement $anchor): bool
@@ -248,10 +271,11 @@ final class EditorSmartButtonAnnotator
 
     private static function promoteCta(\DOMElement $element): void
     {
-        $label = trim(preg_replace('/\s+/', ' ', $element->textContent ?? '') ?? '');
+        $label = trim(preg_replace('/\s+/u', ' ', $element->textContent ?? '') ?? '');
 
+        // Never invent "Button" — only promote when author text is present.
         if ($label === '') {
-            $label = 'Button';
+            return;
         }
 
         $element->setAttribute('data-voodbuilder-cta', 'true');

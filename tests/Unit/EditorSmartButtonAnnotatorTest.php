@@ -100,4 +100,38 @@ HTML;
         $this->assertStringContainsString('vb-text-link', $out);
         $this->assertStringContainsString('data-vb-link-type="url"', $out);
     }
+
+    #[Test]
+    public function it_keeps_empty_color_swatch_buttons_native(): void
+    {
+        $html = '<button class="border-2 border-gray-300 rounded-full w-6 h-6 focus:outline-none"></button>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringNotContainsString('Button', $out);
+        $this->assertStringContainsString('<button', $out);
+    }
+
+    #[Test]
+    public function it_keeps_icon_only_buttons_native(): void
+    {
+        $html = '<button class="rounded-full w-10 h-10 bg-gray-200 p-0 border-0 inline-flex items-center justify-center"><svg viewBox="0 0 24 24"><path d="M12 2z"></path></svg></button>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringNotContainsString('Button', $out);
+        $this->assertStringContainsString('<button', $out);
+        $this->assertStringContainsString('<svg', $out);
+    }
+
+    #[Test]
+    public function it_promotes_text_button_including_literal_button_label(): void
+    {
+        $html = '<button class="flex ml-auto text-white bg-indigo-500 border-0 py-2 px-6 rounded">Button</button>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringContainsString('data-voodbuilder-cta="true"', $out);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Button"', $out);
+        $this->assertStringContainsString('>Button</a>', $out);
+    }
 }

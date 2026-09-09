@@ -17,16 +17,22 @@ final class EditorComponentCategoryNormalizer
         $configured = config('voodbuilder.editor.component_categories');
 
         if (is_array($configured) && $configured !== []) {
-            return array_values(array_map(static fn (mixed $value): string => (string) $value, $configured));
+            $categories = array_values(array_map(static fn (mixed $value): string => (string) $value, $configured));
+        } else {
+            $categories = self::defaultCategories();
         }
 
-        return self::defaultCategories();
+        natcasesort($categories);
+
+        return array_values($categories);
     }
 
     public static function normalize(?string $category, ?string $fallback = null): ?string
     {
         $categories = self::categories();
-        $fallback ??= $categories[0] ?? 'General';
+        $fallback ??= in_array('General', $categories, true)
+            ? 'General'
+            : ($categories[0] ?? 'General');
         $raw = trim((string) $category);
 
         if ($raw === '') {
@@ -58,23 +64,23 @@ final class EditorComponentCategoryNormalizer
     private static function defaultCategories(): array
     {
         return [
-            'General',
-            'Hero',
-            'Content',
-            'Features',
             'Articles',
-            'Gallery',
-            'Stats',
-            'Testimonials',
-            'Team',
-            'Steps',
-            'Pricing',
-            'CTA',
-            'Contact',
-            'Shop',
-            'Header',
-            'Footer',
             'Code',
+            'Contact',
+            'Content',
+            'CTA',
+            'Features',
+            'Footer',
+            'Gallery',
+            'General',
+            'Header',
+            'Hero',
+            'Pricing',
+            'Shop',
+            'Stats',
+            'Steps',
+            'Team',
+            'Testimonials',
         ];
     }
 

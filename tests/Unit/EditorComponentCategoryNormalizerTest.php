@@ -29,4 +29,14 @@ class EditorComponentCategoryNormalizerTest extends TestCase
         $this->assertSame('General', EditorComponentCategoryNormalizer::normalize(null));
         $this->assertSame('General', EditorComponentCategoryNormalizer::normalize(''));
     }
+
+    public function test_categories_are_sorted_alphabetically(): void
+    {
+        $categories = EditorComponentCategoryNormalizer::categories();
+        $sorted = $categories;
+        natcasesort($sorted);
+
+        $this->assertSame(array_values($sorted), $categories);
+        $this->assertContains('General', $categories);
+    }
 }

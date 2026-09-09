@@ -151,11 +151,12 @@ function isChromeIconButtonElement(element) {
 function patchFormsButtonType(editor) {
     const existing = editor.DomComponents.getType('button');
 
-    if (! existing) {
+    if (! existing?.model) {
         return;
     }
 
     const previousIsComponent = existing.isComponent;
+    const Model = existing.model;
 
     // Mutate in place — do not addType('button') again or it would outrank
     // voodbuilder-chrome-button (addType unshifts).
@@ -170,6 +171,64 @@ function patchFormsButtonType(editor) {
 
         return element?.tagName === 'BUTTON' ? { type: 'button' } : false;
     };
+
+    // grapesjs-plugin-forms defaults text to "Send" and init() replaces empty /
+    // icon-only <button> children with that label. Keep author markup intact.
+    const defaults = Model.prototype.defaults;
+    const resolvedDefaults = typeof defaults === 'function' ? defaults.call(Model.prototype) : { ...defaults };
+
+    Model.prototype.defaults = {
+        ...resolvedDefaults,
+        text: '',
+    };
+
+    Model.prototype.init = function patchFormsButtonInit() {
+        const components = this.components();
+        const models = [...(components?.models ?? components ?? [])];
+        const textNodes = models.filter((child) => {
+            const type = child?.get?.('type');
+
+            return child?.is?.('textnode') || type === 'textnode' || type === 'text';
+        });
+        const structural = models.filter((child) => {
+            const type = child?.get?.('type');
+
+            return ! (child?.is?.('textnode') || type === 'textnode' || type === 'text');
+        });
+        const fromChild = textNodes
+            .map((child) => String(child.get?.('content') ?? '').trim())
+            .filter(Boolean)
+            .join(' ');
+
+        this.off('change:text', this.__onTextChange);
+        this.on('change:text', this.__onTextChange);
+
+        if (structural.length > 0) {
+            this.set('text', fromChild, { silent: true });
+
+            return;
+        }
+
+        if (fromChild !== '') {
+            this.set('text', fromChild, { silent: true });
+
+            return;
+        }
+
+        // Empty <button></button> from HTML — do not invent "Send"/"Button".
+        // Explicit block drops should pass components/text themselves (see form submit).
+        this.set('text', '', { silent: true });
+    };
+
+    const buttonBlock = editor.BlockManager?.get?.('button');
+
+    if (buttonBlock) {
+        buttonBlock.set('content', {
+            type: 'button',
+            text: 'Send',
+            components: 'Send',
+        });
+    }
 }
 
 function protectSiteHeaderButton(component) {

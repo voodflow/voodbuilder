@@ -13,6 +13,129 @@ import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js
 
 export const CTA_LABEL_ATTR = 'data-voodbuilder-cta-label';
 
+/** Grapes forms / CTA defaults — never treat these as author copy on empty/icon buttons. */
+const INVENTED_BUTTON_LABELS = new Set(['button', 'send']);
+
+function componentChildModels(component) {
+    const children = component?.components?.();
+
+    return [...(children?.models ?? children ?? [])];
+}
+
+function isTextishChild(child) {
+    const type = child?.get?.('type');
+
+    return child?.is?.('textnode') || type === 'textnode' || type === 'text';
+}
+
+function buttonHasStructuralChildren(component) {
+    return componentChildModels(component).some((child) => ! isTextishChild(child));
+}
+
+function readAuthorTextNodes(component) {
+    return componentChildModels(component)
+        .filter((child) => isTextishChild(child))
+        .map((child) => String(child.get?.('content') ?? '').trim())
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+}
+
+/**
+ * True for empty color swatches / icon-only controls that must not become CTAs.
+ */
+function isIconOrEmptyButton(component) {
+    if (buttonHasStructuralChildren(component)) {
+        return true;
+    }
+
+    const attrs = component?.getAttributes?.() ?? {};
+    const classes = `${attrs.class ?? ''} ${(component?.getClasses?.() ?? []).join(' ')}`.toLowerCase();
+
+    // Tailwind swatches: rounded-full + fixed box, no horizontal CTA padding.
+    if (
+        /\brounded-full\b/.test(classes)
+        && /\bw-(?:\d+|\[)/.test(classes)
+        && /\bh-(?:\d+|\[)/.test(classes)
+        && ! /\bpx-(?:\d+|\[)/.test(classes)
+    ) {
+        return true;
+    }
+
+    const authorText = readAuthorTextNodes(component);
+
+    if (authorText === '' && componentChildModels(component).length === 0) {
+        return true;
+    }
+
+    return false;
+}
+
+function shouldPromoteNativeButtonToCta(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (attrs['data-voodbuilder-cta'] === 'true') {
+        return true;
+    }
+
+    if (isIconOrEmptyButton(component)) {
+        return false;
+    }
+
+    return readAuthorTextNodes(component) !== '';
+}
+
+/**
+ * Strip CTA/"Button" leftovers from icon-only or empty swatch buttons.
+ */
+function neutralizeNonCtaButton(component) {
+    if (! component) {
+        return;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const authorText = readAuthorTextNodes(component);
+    const inventedOnly = authorText !== '' && INVENTED_BUTTON_LABELS.has(authorText.toLowerCase());
+    const structural = buttonHasStructuralChildren(component);
+
+    if (! isIconOrEmptyButton(component) && ! (structural && inventedOnly)) {
+        return;
+    }
+
+    if (attrs['data-voodbuilder-cta'] === 'true' || attrs[CTA_LABEL_ATTR]) {
+        const next = { ...attrs };
+        delete next['data-voodbuilder-cta'];
+        delete next[CTA_LABEL_ATTR];
+        delete next['data-vb-link-type'];
+        delete next['data-vb-link'];
+        component.setAttributes(next);
+    }
+
+    if (component.get?.('type') === 'voodbuilder-cta-button') {
+        component.set('type', 'button', { silent: true });
+    }
+
+    if (structural && inventedOnly) {
+        componentChildModels(component)
+            .filter((child) => isTextishChild(child))
+            .forEach((child) => {
+                if (INVENTED_BUTTON_LABELS.has(String(child.get?.('content') ?? '').trim().toLowerCase())) {
+                    child.remove?.();
+                }
+            });
+    } else if (! structural && inventedOnly) {
+        component.components?.('');
+    }
+
+    if (component.get?.('ctaLabel')) {
+        component.set('ctaLabel', '', { silent: true });
+    }
+
+    if (component.get?.('text')) {
+        component.set('text', structural ? '' : '', { silent: true });
+    }
+}
+
 export function extractButtonLabel(component) {
     const attrs = component.getAttributes?.() ?? {};
     const fromAttr = String(attrs[CTA_LABEL_ATTR] ?? '').trim();
@@ -71,7 +194,8 @@ export function extractButtonLabel(component) {
         return String(component.get('content')).trim();
     }
 
-    return 'Button';
+    // Never invent "Button" for empty / icon markup — only palette defaults do that.
+    return '';
 }
 
 /**
@@ -80,9 +204,9 @@ export function extractButtonLabel(component) {
  */
 function patchCtaDomLabel(component, text) {
     const el = component?.getEl?.();
-    const label = String(text ?? '').trim() || 'Button';
+    const label = String(text ?? '').trim();
 
-    if (! el) {
+    if (! el || label === '') {
         return;
     }
 
@@ -105,8 +229,7 @@ function patchCtaDomLabel(component, text) {
             return;
         }
 
-        el.appendChild(el.ownerDocument.createTextNode(label));
-
+        // Icon-only buttons: never append a default label next to the icon.
         return;
     }
 
@@ -634,12 +757,18 @@ function isLinkableCtaComponent(component) {
     }
 
     const tag = String(component.get('tagName') ?? '').toLowerCase();
+    const attrs = component.getAttributes?.() ?? {};
 
     if (tag === 'button') {
-        return true;
+        if (attrs['data-voodbuilder-cta'] === 'true') {
+            return true;
+        }
+
+        // Plain empty / icon buttons stay native <button> — no CTA morph / "Button" label.
+        return shouldPromoteNativeButtonToCta(component);
     }
 
-    return tag === 'a' && component.getAttributes?.()?.['data-voodbuilder-cta'] === 'true';
+    return tag === 'a' && attrs['data-voodbuilder-cta'] === 'true';
 }
 
 /**
@@ -720,6 +849,14 @@ function upgradeLinkableButton(component, editor) {
         return;
     }
 
+    const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+    if (tag === 'button' && ! shouldPromoteNativeButtonToCta(component)) {
+        neutralizeNonCtaButton(component);
+
+        return;
+    }
+
     if (! isLinkableCtaComponent(component)) {
         return;
     }
@@ -742,7 +879,12 @@ function upgradeLinkableButton(component, editor) {
         component.addAttributes({ 'data-voodbuilder-cta': 'true' }, { silent: true });
     }
 
-    const label = readPersistedCtaLabel(component) || extractButtonLabel(component) || 'Button';
+    const label = readPersistedCtaLabel(component) || extractButtonLabel(component);
+
+    // Text CTAs without author copy stay without an invented "Button" label.
+    if (label === '') {
+        return;
+    }
 
     if (component.get('type') === 'voodbuilder-cta-button' && component.__vbLinkMorphApplied) {
         persistCtaLabel(component, label);
@@ -962,7 +1104,11 @@ export function scanLinkableButtons(editor, root = editor.getWrapper?.()) {
         // Promote Tailblocks/template CTAs that lack data-voodbuilder-cta yet.
         promoteButtonLikeAnchor(component);
 
-        if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
+        const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+        if (tag === 'button' && ! shouldPromoteNativeButtonToCta(component)) {
+            neutralizeNonCtaButton(component);
+        } else if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
             upgradeLinkableButton(component, editor);
         }
 
@@ -1054,6 +1200,12 @@ function promoteButtonLikeAnchor(component) {
             return;
         }
 
+        if (! shouldPromoteNativeButtonToCta(component)) {
+            neutralizeNonCtaButton(component);
+
+            return;
+        }
+
         component.addAttributes({ 'data-voodbuilder-cta': 'true' });
 
         return;
@@ -1077,9 +1229,8 @@ function promoteButtonLikeAnchor(component) {
 }
 
 /**
- * Before getHtml / chrome-shell extract: guarantee every CTA has attr + textnode label.
- * Default "Button" must be written into the model — otherwise getHtml emits empty <a>
- * and reload shows a collapsed blank until the user selects it.
+ * Before getHtml / chrome-shell extract: guarantee every real CTA has attr + textnode label.
+ * Do not invent "Button" on empty/icon-only native buttons.
  */
 export function ensureCtaButtonsForExport(editor) {
     const wrapper = editor?.getWrapper?.();
@@ -1089,9 +1240,17 @@ export function ensureCtaButtonsForExport(editor) {
     }
 
     const visit = (component) => {
-        if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
+        const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+        if (tag === 'button' && ! shouldPromoteNativeButtonToCta(component)) {
+            neutralizeNonCtaButton(component);
+        } else if (isLinkableCtaComponent(component) || component.get?.('type') === 'voodbuilder-cta-button') {
             upgradeLinkableButton(component, editor);
-            persistCtaLabel(component, extractButtonLabel(component) || 'Button');
+            const label = extractButtonLabel(component);
+
+            if (label !== '') {
+                persistCtaLabel(component, label);
+            }
         }
 
         component.components?.()?.forEach?.((child) => visit(child));
@@ -1192,7 +1351,11 @@ export function configureLinkableButtons(editor) {
             return;
         }
 
-        persistCtaLabel(component, extractButtonLabel(component) || 'Button');
+        const label = extractButtonLabel(component);
+
+        if (label !== '') {
+            persistCtaLabel(component, label);
+        }
     });
 
     // Do NOT rescan on page-css-compiled — compile fires often (including cache
