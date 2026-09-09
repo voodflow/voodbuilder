@@ -1032,11 +1032,13 @@ function promoteButtonLikeAnchor(component) {
 
     if (
         attrs['data-voodbuilder-skip-cta'] === 'true'
+        || attrs['data-vb-share-item'] === 'true'
         || attrs['data-vx-gallery-index'] != null
         || attrs['data-vx-gallery-close'] != null
         || attrs['data-vx-gallery-prev'] != null
         || attrs['data-vx-gallery-next'] != null
         || component.closest?.('[data-vx-gallery]')
+        || component.closest?.('[data-voodbuilder-social-share]')
     ) {
         return;
     }

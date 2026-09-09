@@ -7,6 +7,11 @@ import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
 import { applyIconToComponent, findIconHost, isIconComponent, readIconColor, applyReadingProgressAppearance } from './basic-elements-settings.js';
+import {
+    buildSocialShareItemDefinitions,
+    ensureSocialShareDefaults,
+    SOCIAL_SHARE_DEFAULT_NETWORKS,
+} from './social-share-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
 import { settleEditorCanvasPreview } from './vb-runtime.js';
 
@@ -23,15 +28,6 @@ const LINK_TYPE_OPTIONS = [
     { id: 'media', label: 'Media file' },
     { id: 'lightbox-image', label: 'Lightbox image' },
     { id: 'lightbox-video', label: 'Lightbox video' },
-];
-
-const SOCIAL_NETWORKS = [
-    { key: 'facebook', label: 'Facebook' },
-    { key: 'x', label: 'X' },
-    { key: 'linkedin', label: 'LinkedIn' },
-    { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'email', label: 'Email' },
-    { key: 'copy_link', label: 'Copy link' },
 ];
 
 const ICON_SVG = tablerIconSvg(DEFAULT_TABLER_ICON, { sizeClass: 'w-full h-full' });
@@ -418,6 +414,33 @@ function registerReadingProgressType(editor) {
 }
 
 function registerSocialShareType(editor) {
+    if (! editor.DomComponents.getType('voodbuilder-social-share-item')) {
+        editor.DomComponents.addType('voodbuilder-social-share-item', {
+            isComponent: (element) => (
+                element?.getAttribute?.('data-vb-share-item') === 'true'
+                || (
+                    element?.hasAttribute?.('data-network') === true
+                    && element?.closest?.('[data-voodbuilder-social-share]') != null
+                    && element?.getAttribute?.('data-voodbuilder-skip-cta') === 'true'
+                )
+            ),
+            model: {
+                defaults: {
+                    droppable: false,
+                    editable: false,
+                    stylable: false,
+                    highlightable: true,
+                    selectable: true,
+                    hoverable: true,
+                    attributes: {
+                        'data-vb-share-item': 'true',
+                        'data-voodbuilder-skip-cta': 'true',
+                    },
+                },
+            },
+        });
+    }
+
     if (editor.DomComponents.getType('voodbuilder-social-share')) {
         return;
     }
@@ -431,39 +454,20 @@ function registerSocialShareType(editor) {
                 attributes: {
                     'data-voodbuilder-social-share': '',
                     'data-share-url': '',
+                    'data-vb-share-networks': SOCIAL_SHARE_DEFAULT_NETWORKS.join(','),
+                    'data-vb-share-shape': 'square',
+                    'data-vb-share-color': 'social',
+                    'data-vb-share-custom-color': '#1877F2',
+                    'data-vb-share-content': 'icon-text',
                     class: 'vp-social-links flex flex-wrap gap-2 vb-social-share',
                 },
-                components: buildSocialShareLinks(),
+                components: buildSocialShareItemDefinitions(),
+            },
+            init() {
+                ensureSocialShareDefaults(this);
             },
         },
     });
-}
-
-function buildSocialShareLinks() {
-    return SOCIAL_NETWORKS.map((network) => ({
-        tagName: network.key === 'copy_link' ? 'button' : 'a',
-        type: network.key === 'copy_link' ? 'button' : 'link',
-        classes: [
-            'inline-flex',
-            'items-center',
-            'rounded-md',
-            'border',
-            'border-current/20',
-            'px-3',
-            'py-1.5',
-            'text-sm',
-            'font-medium',
-            'transition',
-            'hover:border-current/40',
-        ],
-        attributes: {
-            'data-network': network.key,
-            ...(network.key === 'copy_link'
-                ? { type: 'button', 'data-copy-url': '' }
-                : { href: '#', target: '_blank', rel: 'noopener noreferrer' }),
-        },
-        components: network.label,
-    }));
 }
 
 const BLOCKS = [

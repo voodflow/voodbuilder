@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-09-09
+
+### Added
+
+- Social share Content settings: enable/disable networks, square/round shape, brand/transparent/custom color, icon+text / icon / text
+
+### Fixed
+
+- Social share buttons no longer open link/CTA editor — share URLs stay fixed per network
+
 ## [0.1.24] - 2026-09-09
 
 ### Fixed

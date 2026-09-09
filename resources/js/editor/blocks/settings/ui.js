@@ -48,6 +48,10 @@ import {
     renderTextLinkSettings,
 } from '../../basic-elements-settings.js';
 import {
+    findSocialShareHost,
+    renderSocialShareSettings,
+} from '../../social-share-settings.js';
+import {
     isBasicTextComponent,
     findRichTextHost,
 } from '../../text-elements.js';
@@ -517,6 +521,32 @@ export function registerSettingsUi(editor, mount) {
                 showCourtesyEmptyState(labels);
 
                 return;
+            }
+
+            {
+                const socialHost = findSocialShareHost(rawSelected);
+
+                if (socialHost) {
+                    if (rawSelected !== socialHost && editor.getSelected?.() !== socialHost) {
+                        window.requestAnimationFrame(() => {
+                            editor.select?.(socialHost, { scroll: false });
+                        });
+                    }
+
+                    closeAllInspectorSelects();
+                    renderSocialShareSettings({
+                        mount,
+                        traitsMount,
+                        component: socialHost,
+                        editor,
+                        labels,
+                    });
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
+
+                    return;
+                }
             }
 
             ensureSmartCtaButton(rawSelected, editor);

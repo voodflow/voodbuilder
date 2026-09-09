@@ -108,10 +108,23 @@ export function initSocialShare(options = {}) {
 
         event.preventDefault();
         navigator.clipboard.writeText(url).then(() => {
-            const original = button.textContent;
-            button.textContent = button.getAttribute('data-copied-label') || 'Copied';
+            const label = button.querySelector('[data-vb-share-label]');
+            const copied = button.getAttribute('data-copied-label') || 'Copied';
+
+            if (label) {
+                const original = label.textContent;
+                label.textContent = copied;
+                window.setTimeout(() => {
+                    label.textContent = original;
+                }, 2000);
+
+                return;
+            }
+
+            const original = button.innerHTML;
+            button.textContent = copied;
             window.setTimeout(() => {
-                button.textContent = original;
+                button.innerHTML = original;
             }, 2000);
         });
     });
