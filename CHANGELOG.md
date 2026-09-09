@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.35] - 2026-09-09
+
+### Changed
+
+- Filament navigation group label is **VoodBuilder** (was `Voodbuilder`)
+
 ## [0.1.34] - 2026-09-09
 
 ### Changed
