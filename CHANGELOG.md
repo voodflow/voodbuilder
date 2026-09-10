@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.45] - 2026-09-10
+
+### Fixed
+
+- Popup code-import CSS: keep content gutters (do not zero `.px-8` on copy stacks)
+
 ## [0.1.44] - 2026-09-10
 
 ### Added

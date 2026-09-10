@@ -195,7 +195,8 @@ function buildPreviewDocument({ html, css, canvasStyles = [], pageLiveCss = '', 
 .voodbuilder-popup-body .py-24 { padding-block: 2.5rem; }
 .voodbuilder-popup-body .py-10 { padding-block: 1.25rem; }
 .voodbuilder-popup-body .mb-12, .voodbuilder-popup-body .mb-20 { margin-bottom: 1.5rem; }
-.voodbuilder-popup-body .px-8 { padding-inline: 0; }
+.voodbuilder-popup-body [data-voodbuilder-role='content'] { box-sizing: border-box; padding-inline: max(1.25rem, env(safe-area-inset-left, 0px)) max(1.25rem, env(safe-area-inset-right, 0px)); }
+.voodbuilder-popup-body .px-8:not([data-voodbuilder-role='content']) { padding-inline: 1.25rem; }
 .voodbuilder-popup-body .lg\\:w-2\\/3,
 .voodbuilder-popup-body .lg\\:w-1\\/2,
 .voodbuilder-popup-body .md\\:w-2\\/3,
