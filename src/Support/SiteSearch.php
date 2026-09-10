@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Collection;
+use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 
 /**
  * Site Search.
@@ -66,7 +67,7 @@ final class SiteSearch
     }
 
     /**
-     * @return array<string, \Voodflow\Voodbuilder\Contracts\PublicContentChannel>
+     * @return array<string, PublicContentChannel>
      */
     protected static function indexableChannels(): array
     {
