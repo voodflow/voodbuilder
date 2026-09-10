@@ -20,11 +20,43 @@ export const CONTENT_WIDTH_CUSTOM = 'custom';
 
 export const STANDARD_CONTENT_MAX = '80rem';
 
+/** Readable column inside a popup panel (sm–xl dialogs are ~24–56rem wide). */
+export const POPUP_CONTENT_MAX_NORMAL = '24rem';
+
 const TOOLBAR_FLAG = 'data-voodbuilder-toolbar';
 const HERO_MEDIA_CLASS = 'voodbuilder-hero-media';
 const CONTAINER_CLASS = 'voodbuilder-editor-container';
 const SECTION_CLASS = 'voodbuilder-editor-section';
+const MAX_WIDTH_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?max-w-/;
 const LEAF_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'img', 'svg', 'path', 'ul', 'ol', 'li', 'input', 'textarea', 'label', 'br', 'hr', 'i', 'em', 'strong', 'small', 'code', 'pre']);
+
+/**
+ * @param {object|null|undefined} editor
+ * @returns {boolean}
+ */
+export function isPopupEditorContext(editor) {
+    return editor?.__voodbuilderPopupMode === true;
+}
+
+/**
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+export function resolveNormalContentMax(editor) {
+    return isPopupEditorContext(editor) ? POPUP_CONTENT_MAX_NORMAL : STANDARD_CONTENT_MAX;
+}
+
+/**
+ * Tailwind arbitrary max-width class for the normal cycle step.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+export function normalContentMaxClass(editor) {
+    const max = resolveNormalContentMax(editor);
+
+    return max === STANDARD_CONTENT_MAX ? 'max-w-[80rem]' : `max-w-[${max}]`;
+}
 
 /**
  * @param {unknown} raw
@@ -71,8 +103,10 @@ export function getEditorPageContentWidth(editor) {
  * @returns {boolean}
  */
 export function isFullWidthPageContext(editor) {
-    if (editor?.__voodbuilderPopupMode === true) {
-        return false;
+    // Popup canvas is already a bounded panel — still allow the content-width
+    // cycle so authors can box/center columns (modes use POPUP_CONTENT_MAX_NORMAL).
+    if (isPopupEditorContext(editor)) {
+        return true;
     }
 
     if (editor?.__voodbuilderFullWidthPage === true) {
@@ -166,7 +200,9 @@ export function readComponentContentWidthMode(component, editor) {
     const style = component?.getStyle?.() ?? {};
     const maxWidth = String(style.maxWidth ?? style['max-width'] ?? '').trim();
 
-    if (maxWidth === STANDARD_CONTENT_MAX || maxWidth === '80rem') {
+    const normalMax = resolveNormalContentMax(editor);
+
+    if (maxWidth === normalMax || maxWidth === STANDARD_CONTENT_MAX || maxWidth === '80rem' || maxWidth === POPUP_CONTENT_MAX_NORMAL) {
         return CONTENT_WIDTH_NORMAL;
     }
 
@@ -178,11 +214,15 @@ export function readComponentContentWidthMode(component, editor) {
 
     const classes = component?.getClasses?.() ?? [];
 
-    if (classes.includes('max-w-[80rem]') || classes.includes('max-w-[var(--width-vp-layout)]')) {
-        // On a full page, --width-vp-layout is 100% — treat explicit 80rem class only.
-        if (classes.includes('max-w-[80rem]')) {
-            return CONTENT_WIDTH_NORMAL;
-        }
+    const normalClass = normalContentMaxClass(editor);
+
+    if (classes.includes(normalClass) || classes.includes('max-w-[80rem]') || classes.includes(`max-w-[${POPUP_CONTENT_MAX_NORMAL}]`)) {
+        return CONTENT_WIDTH_NORMAL;
+    }
+
+    if (classes.includes('max-w-[var(--width-vp-layout)]')) {
+        // On a full page, --width-vp-layout is 100% — not a boxed measure.
+        return CONTENT_WIDTH_FULL;
     }
 
     return CONTENT_WIDTH_FULL;
@@ -256,7 +296,7 @@ function stripConflictingWidthUtilities(component) {
             return false;
         }
 
-        if (/^(sm:|md:|lg:|xl:|2xl:)?max-w-/.test(token)) {
+        if (MAX_WIDTH_CLASS_RE.test(token)) {
             return false;
         }
 
@@ -523,9 +563,13 @@ export function ensureSectionContentWrapper(section) {
  * @param {object} component
  * @returns {object|null}
  */
-export function resolveContentWidthTarget(component) {
+export function resolveContentWidthTarget(component, editor = null) {
     if (! component) {
         return null;
+    }
+
+    if (isPopupColumnWidthTarget(component, editor)) {
+        return component;
     }
 
     if (isDynamicRichContentHost(component)) {
@@ -553,6 +597,45 @@ export function resolveContentWidthTarget(component) {
     }
 
     return null;
+}
+
+/**
+ * Popup-only: Layout Div / boxed max-w columns (hero copy stacks, etc.).
+ * Pages keep the section→content shell model; popups need the button on the
+ * selected column so authors can shrink + center inside the panel.
+ *
+ * @param {object} component
+ * @param {object|null|undefined} editor
+ * @returns {boolean}
+ */
+export function isPopupColumnWidthTarget(component, editor) {
+    if (! isPopupEditorContext(editor) || ! component) {
+        return false;
+    }
+
+    if (isLeafLikeComponent(component) || isDecorativeSectionChild(component)) {
+        return false;
+    }
+
+    if (isContentWidthSection(component) || isContentWidthContainer(component)) {
+        return false;
+    }
+
+    const type = String(component.get?.('type') ?? '');
+    const classes = componentClasses(component);
+
+    if (type === 'voodbuilder-layout-div' || classes.includes('vb-layout-div')) {
+        return true;
+    }
+
+    if (classes.some((token) => MAX_WIDTH_CLASS_RE.test(String(token)))) {
+        return true;
+    }
+
+    const style = component.getStyle?.() ?? {};
+    const maxWidth = String(style.maxWidth ?? style['max-width'] ?? '').trim();
+
+    return maxWidth !== '' && maxWidth !== 'none' && maxWidth !== '100%';
 }
 
 /**
@@ -712,6 +795,10 @@ export function shouldShowContentWidthToolbar(component, editor) {
         return true;
     }
 
+    if (isPopupColumnWidthTarget(component, editor)) {
+        return true;
+    }
+
     return isBarePageContentContainer(component);
 }
 
@@ -741,7 +828,7 @@ function syncContentWidthDom(component, mode, editor) {
 
     if (mode === CONTENT_WIDTH_NORMAL) {
         el.style.width = '100%';
-        el.style.maxWidth = STANDARD_CONTENT_MAX;
+        el.style.maxWidth = resolveNormalContentMax(editor);
         el.style.marginLeft = 'auto';
         el.style.marginRight = 'auto';
 
@@ -792,10 +879,14 @@ export function applyComponentContentWidth(component, mode, editor) {
 
         // Durable Tailwind utilities survive save/reload better than private CssComposer
         // classes alone (chrome-shell export keeps #id rules, not .cNNNN).
+        const normalClass = normalContentMaxClass(editor);
         const classes = [...(component.getClasses?.() ?? [])].filter((name) => {
             const token = String(name);
 
-            return token !== 'max-w-[80rem]' && token !== 'mx-auto';
+            return token !== 'max-w-[80rem]'
+                && token !== `max-w-[${POPUP_CONTENT_MAX_NORMAL}]`
+                && token !== normalClass
+                && token !== 'mx-auto';
         });
 
         if (! classes.includes('w-full')) {
@@ -808,14 +899,14 @@ export function applyComponentContentWidth(component, mode, editor) {
                 classes.push('mx-auto');
             }
 
-            if (! classes.includes('max-w-[80rem]')) {
-                classes.push('max-w-[80rem]');
+            if (! classes.includes(normalClass)) {
+                classes.push(normalClass);
             }
 
             component.setClass(classes);
             component.addStyle({
                 width: '100%',
-                'max-width': STANDARD_CONTENT_MAX,
+                'max-width': resolveNormalContentMax(editor),
                 'margin-left': 'auto',
                 'margin-right': 'auto',
             }, SILENT_STYLE);
@@ -897,7 +988,7 @@ export function cycleSelectedContentWidth(editor, labels = {}) {
         return;
     }
 
-    const component = resolveContentWidthTarget(selected);
+    const component = resolveContentWidthTarget(selected, editor);
 
     if (! component) {
         return;
@@ -923,6 +1014,11 @@ export function cycleSelectedContentWidth(editor, labels = {}) {
  */
 export function contentWidthModeLabel(mode, labels = {}, editor = null) {
     if (mode === CONTENT_WIDTH_NORMAL) {
+        if (isPopupEditorContext(editor)) {
+            return labels.contentWidthNormalPopup
+                ?? `Normal (${POPUP_CONTENT_MAX_NORMAL})`;
+        }
+
         return labels.contentWidthNormal ?? 'Normal (80rem)';
     }
 
@@ -980,7 +1076,7 @@ export function buildContentWidthToolbarButton(component, editor, labels = {}) {
         return null;
     }
 
-    const target = resolveContentWidthTarget(component) ?? component;
+    const target = resolveContentWidthTarget(component, editor) ?? component;
     const mode = readComponentContentWidthMode(target, editor);
 
     return {
@@ -1014,7 +1110,7 @@ export function ensureCanvasContentWidthToolbarState(editor, component, labels =
         return;
     }
 
-    const target = resolveContentWidthTarget(component) ?? component;
+    const target = resolveContentWidthTarget(component, editor) ?? component;
     const mode = readComponentContentWidthMode(target, editor);
     button.classList.remove('is-full', 'is-normal', 'is-custom');
     button.classList.add(`is-${mode}`);

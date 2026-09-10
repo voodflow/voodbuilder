@@ -15,13 +15,16 @@
 
     $mainItems = Navigation::items('main');
     $extraItems = Navigation::items('header_extra');
-    $docSections = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
+    $docNav = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
         && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
-        && Route::has('vdocs.index')
+        && Route::has('vdocs.index');
+    $docTopics = $docNav
+        ? \Voodflow\Vdocs\Support\DocNavigation::navTopics()
+        : collect();
+    $docSections = $docNav && $docTopics->isEmpty()
         ? \Voodflow\Vdocs\Support\DocNavigation::sections()
         : collect();
-    $docsNavActive = class_exists(\Voodflow\Vdocs\Support\DocNavigation::class)
-        && \Voodflow\Vdocs\Support\DocNavigation::shouldAutoInject()
+    $docsNavActive = $docNav
         && \Voodflow\Vdocs\Support\DocNavigation::isActive();
     $showNotificationBell = $enableNotifications && (bool) VoodbuilderSettings::get('show_notification_bell', true);
     $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
@@ -100,10 +103,14 @@
                 </div>
             @endif
 
-            @if ($docSections->isNotEmpty())
+            @if ($docTopics->isNotEmpty() || $docSections->isNotEmpty())
                 <div @class(['voodbuilder-mobile-nav__section' => $mainItems->isNotEmpty() || $extraItems->isNotEmpty()])>
                     <ul class="voodbuilder-mobile-nav__links">
-                        <x-voodbuilder::mobile-docs-nav :sections="$docSections" :active="$docsNavActive" />
+                        <x-voodbuilder::mobile-docs-nav
+                            :topics="$docTopics"
+                            :sections="$docSections"
+                            :active="$docsNavActive"
+                        />
                     </ul>
                 </div>
             @endif

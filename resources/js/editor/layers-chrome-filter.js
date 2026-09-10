@@ -13,6 +13,7 @@ import {
     isChromeShellModeEditor,
     isPageContentSlotComponent,
 } from './chrome-content-slot-utils.js';
+import { isMediaHeroId } from './media-hero.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
 const BOTTOM_DROP_SPACER_ATTR = 'data-voodbuilder-bottom-drop-spacer';
@@ -132,9 +133,7 @@ function isLayoutBlockRoot(component, editor) {
 }
 
 function isMediaHeroSectionRoot(component) {
-    const id = readBlockId(component);
-
-    return id === 'vb-bg-image' || id === 'vb-bg-video';
+    return isMediaHeroId(readBlockId(component));
 }
 
 function isInsideMediaHeroSection(component) {

@@ -1974,6 +1974,33 @@ describe('content width preserves layout gap', () => {
         expect(component.__classes()).toContain('bg-vp-brand-1');
         expect(component.__classes()).not.toContain('mx-auto');
     });
+
+    it('popup mode enables content-width on boxed columns with panel max', async () => {
+        const {
+            isFullWidthPageContext,
+            shouldShowContentWidthToolbar,
+            applyComponentContentWidth,
+            CONTENT_WIDTH_ATTR,
+            CONTENT_WIDTH_NORMAL,
+            POPUP_CONTENT_MAX_NORMAL,
+        } = await import('../../resources/js/editor/content-width-toolbar.js');
+
+        const editor = { __voodbuilderPopupMode: true };
+        const column = mockWidthTarget(['max-w-3xl', 'vb-layout-div']);
+        column.get = (key) => (key === 'type' ? 'voodbuilder-layout-div' : undefined);
+        column.getAttributes = () => ({});
+
+        expect(isFullWidthPageContext(editor)).toBe(true);
+        expect(shouldShowContentWidthToolbar(column, editor)).toBe(true);
+
+        applyComponentContentWidth(column, CONTENT_WIDTH_NORMAL, editor);
+
+        expect(column.__attrs()[CONTENT_WIDTH_ATTR]).toBe('normal');
+        expect(column.__classes()).toContain('mx-auto');
+        expect(column.__classes()).toContain(`max-w-[${POPUP_CONTENT_MAX_NORMAL}]`);
+        expect(column.__style()['max-width']).toBe(POPUP_CONTENT_MAX_NORMAL);
+        expect(column.__classes()).not.toContain('max-w-3xl');
+    });
 });
 
 describe('basic-elements-settings icon apply', () => {

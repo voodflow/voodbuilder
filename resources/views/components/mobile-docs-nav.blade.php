@@ -1,10 +1,14 @@
 @props([
-    'sections',
+    'topics' => null,
+    'sections' => null,
     'active' => false,
 ])
 
 @php
     use Voodflow\Vdocs\Support\DocNavigation;
+
+    $topics = collect($topics ?? []);
+    $sections = collect($sections ?? []);
 @endphp
 
 <li x-data="{ open: {{ $active ? 'true' : 'false' }} }">
@@ -32,39 +36,70 @@
 
     <div x-show="open" x-collapse.duration.300ms x-cloak>
         <ul class="mt-1 space-y-1 pl-3">
-            <li>
-                <a
-                    href="{{ DocNavigation::indexUrl() }}"
-                    @class([
-                        'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
-                        'is-active' => request()->routeIs('vdocs.index'),
-                    ])
-                    data-mobile-nav-close
-                >
-                    {{ __('vdocs::nav.overview') }}
-                </a>
-            </li>
-            @foreach ($sections as $section)
-                @php
-                    $isActiveSection = request()->routeIs('vdocs.show', 'vdocs.segment')
-                        && in_array($section->slug, [
-                            (string) request()->route('section'),
-                            (string) request()->route('segment'),
-                        ], true);
-                @endphp
+            @if ($topics->isNotEmpty())
+                @if ($topics->count() > 1)
+                    <li>
+                        <a
+                            href="{{ DocNavigation::indexUrl() }}"
+                            @class([
+                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
+                                'is-active' => request()->routeIs('vdocs.index'),
+                            ])
+                            data-mobile-nav-close
+                        >
+                            {{ __('vdocs::nav.overview') }}
+                        </a>
+                    </li>
+                @endif
+                @foreach ($topics as $topic)
+                    <li>
+                        <a
+                            href="{{ DocNavigation::topicUrl($topic) }}"
+                            @class([
+                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
+                                'is-active' => request()->route('topic') === $topic->slug,
+                            ])
+                            data-mobile-nav-close
+                        >
+                            {{ $topic->title }}
+                        </a>
+                    </li>
+                @endforeach
+            @else
                 <li>
                     <a
-                        href="{{ DocNavigation::sectionUrl($section) }}"
+                        href="{{ DocNavigation::indexUrl() }}"
                         @class([
                             'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
-                            'is-active' => $isActiveSection,
+                            'is-active' => request()->routeIs('vdocs.index'),
                         ])
                         data-mobile-nav-close
                     >
-                        {{ $section->title }}
+                        {{ __('vdocs::nav.overview') }}
                     </a>
                 </li>
-            @endforeach
+                @foreach ($sections as $section)
+                    @php
+                        $isActiveSection = request()->routeIs('vdocs.show', 'vdocs.segment')
+                            && in_array($section->slug, [
+                                (string) request()->route('section'),
+                                (string) request()->route('segment'),
+                            ], true);
+                    @endphp
+                    <li>
+                        <a
+                            href="{{ DocNavigation::sectionUrl($section) }}"
+                            @class([
+                                'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
+                                'is-active' => $isActiveSection,
+                            ])
+                            data-mobile-nav-close
+                        >
+                            {{ $section->title }}
+                        </a>
+                    </li>
+                @endforeach
+            @endif
         </ul>
     </div>
 </li>

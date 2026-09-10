@@ -18,6 +18,7 @@ import { registerTopDropSpacerType } from '../canvas-block-drag.js';
 import { resolveBlockLayerLabel } from '../layer-display-name.js';
 import { registerComponentInstanceType } from '../component-instance-type.js';
 import { encodeBlockConfig, parseBlockConfig } from '../voodbuilder-dynamic-config.js';
+import { isMediaHeroComponent, isMediaHeroId } from '../media-hero.js';
 import {
     chromeIconSvgForAttrs,
     isChromeIconPlaceholderText,
@@ -238,19 +239,7 @@ function isHeroCatalogSection(section) {
  * @returns {boolean}
  */
 function isMediaHeroSection(component) {
-    if (! component?.get) {
-        return false;
-    }
-
-    const attrs = component.getAttributes?.() ?? {};
-    const id = String(
-        attrs['data-voodbuilder-block']
-        ?? attrs['data-voodbuilder-section-block']
-        ?? component.get?.('type')
-        ?? '',
-    ).trim();
-
-    return id === 'vb-bg-image' || id === 'vb-bg-video';
+    return isMediaHeroComponent(component);
 }
 
 /**
@@ -1268,7 +1257,7 @@ function pruneEmptyDynamicBlocks(editor) {
             return;
         }
 
-        if (blockId === 'vb-bg-image' || blockId === 'vb-bg-video' || isMediaHeroSection(component)) {
+        if (isMediaHeroId(blockId) || isMediaHeroSection(component)) {
             return;
         }
 
@@ -1536,7 +1525,7 @@ function registerDynamicBlockType(editor) {
             }
 
             // Dedicated media-section types own these IDs — do not steal parse as dynamic.
-            if (blockId === 'vb-bg-image' || blockId === 'vb-bg-video') {
+            if (isMediaHeroId(blockId)) {
                 return false;
             }
 

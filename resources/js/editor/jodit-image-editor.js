@@ -7,6 +7,7 @@
  */
 
 import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
+import { isBackgroundImageHeroId } from './media-hero.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 export const CMD_EDIT_IMAGE = 'voodbuilder:edit-image';
@@ -121,9 +122,20 @@ export function isRasterEditableSrc(src) {
  */
 function findBackgroundSectionImage(component) {
     const type = String(component.get?.('type') ?? '');
-    const blockId = String(component.getAttributes?.()?.['data-voodbuilder-section-block'] ?? '');
+    const attrs = component.getAttributes?.() ?? {};
+    const blockId = String(
+        attrs['data-voodbuilder-block']
+        ?? attrs['data-voodbuilder-section-block']
+        ?? '',
+    );
 
-    if (type !== 'vb-bg-image' && ! blockId.includes('vb-bg-image')) {
+    if (! isBackgroundImageHeroId(type) && ! isBackgroundImageHeroId(blockId)
+        && ! Object.prototype.hasOwnProperty.call(attrs, 'data-vb-bg-src')) {
+        return null;
+    }
+
+    // Video heroes are not image-edit targets.
+    if (blockId.includes('vb-bg-video') || type === 'vb-bg-video') {
         return null;
     }
 
@@ -695,9 +707,17 @@ function applyEditedSrc(editor, component, url, meta = {}) {
     while (parent) {
         const attrs = parent.getAttributes?.() ?? {};
         const type = String(parent.get?.('type') ?? '');
-        const blockId = String(attrs['data-voodbuilder-section-block'] ?? '');
+        const blockId = String(
+            attrs['data-voodbuilder-block']
+            ?? attrs['data-voodbuilder-section-block']
+            ?? '',
+        );
 
-        if (type === 'vb-bg-image' || blockId.includes('vb-bg-image') || Object.prototype.hasOwnProperty.call(attrs, 'data-vb-bg-src')) {
+        if (
+            isBackgroundImageHeroId(type)
+            || isBackgroundImageHeroId(blockId)
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-vb-bg-src')
+        ) {
             parent.addAttributes({ 'data-vb-bg-src': url });
             break;
         }

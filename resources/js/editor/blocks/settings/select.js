@@ -16,6 +16,7 @@ import {
     isChromeLayoutContentSlotComponent,
     isChromeLayoutModeEditor,
 } from '../../chrome-content-slot-utils.js';
+import { isMediaHeroId } from '../../media-hero.js';
 
 export {
     readBlockId,
@@ -178,7 +179,7 @@ export function findInspectableRoot(component, editor) {
 export const resolveInspectableBlockRoot = findInspectableRoot;
 
 /**
- * Media heroes (`vb-bg-image` / `vb-bg-video`): promote only when the click lands on the
+ * Media heroes: promote only when the click lands on the
  * background media layer — never when editing copy/CTAs in the content stack.
  *
  * @param {object|null|undefined} raw
@@ -296,7 +297,7 @@ export function shouldPromoteSelectionToRoot(raw, root, editor = null) {
     // Media heroes: promote only background-layer hits so Background settings open,
     // while headings / copy / CTAs in the content stack stay selectable.
     if (
-        (rootId === 'vb-bg-image' || rootId === 'vb-bg-video')
+        isMediaHeroId(rootId)
         && rawType !== 'voodbuilder-cta-button'
         && rawType !== 'link'
         && rawType !== 'voodbuilder-social-share'

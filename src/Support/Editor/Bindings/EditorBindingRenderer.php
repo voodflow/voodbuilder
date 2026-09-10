@@ -275,7 +275,9 @@ final class EditorBindingRenderer
         );
 
         $isHero = $blockId === 'vb-bg-image'
+            || $blockId === 'vb-hero-cinematic'
             || str_contains($blockId, 'vb-bg-image')
+            || str_contains($blockId, 'vb-hero-cinematic')
             || $element->getAttribute('data-voodbuilder-role') === 'media';
 
         if (! $isHero) {

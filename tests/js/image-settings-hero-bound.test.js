@@ -82,4 +82,34 @@ describe('resolveImageSettingsContext for hero backgrounds', () => {
 
         expect(resolveImageSettingsContext(img)).toBeNull();
     });
+
+    it('treats vb-hero-cinematic like a background image hero for settings', async () => {
+        const { isBackgroundImageHeroId, isMediaHeroId } = await import('../../resources/js/editor/media-hero.js');
+
+        expect(isBackgroundImageHeroId('vb-hero-cinematic')).toBe(true);
+        expect(isMediaHeroId('vb-hero-cinematic')).toBe(true);
+
+        const section = mockComponent({
+            tag: 'section',
+            attrs: {
+                'data-voodbuilder-block': 'vb-hero-cinematic',
+                'data-voodbuilder-section-block': 'vb-hero-cinematic',
+                'data-vb-bg-src': '',
+            },
+            type: 'vb-hero-cinematic',
+        });
+        const img = mockComponent({
+            tag: 'img',
+            classes: ['voodbuilder-hero-media__img'],
+            attrs: { src: '/cinematic.jpg' },
+            parent: section,
+        });
+        section.__heroImg = img;
+
+        const context = resolveImageSettingsContext(section);
+
+        expect(context).not.toBeNull();
+        expect(context?.mode).toBe('hero');
+        expect(context?.image).toBe(img);
+    });
 });

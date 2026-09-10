@@ -3,6 +3,7 @@
  */
 
 import { ATTR } from './attrs.js';
+import { isMediaHeroId } from '../media-hero.js';
 
 /**
  * @param {object|null|undefined} component
@@ -46,7 +47,7 @@ export function readBlockId(component) {
 
     const type = String(component.get?.('type') ?? '');
 
-    if (type === 'vb-bg-image' || type === 'vb-bg-video') {
+    if (isMediaHeroId(type)) {
         return type;
     }
 

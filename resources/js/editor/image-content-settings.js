@@ -11,6 +11,7 @@ import {
     createTextareaField,
 } from './editor-form-ui.js';
 import { CMD_EDIT_IMAGE, isDynamicallyBoundImage, isRasterEditableSrc } from './jodit-image-editor.js';
+import { isBackgroundImageHeroId } from './media-hero.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const CAPTION_DISPLAY_NONE = 'none';
@@ -201,7 +202,7 @@ function shouldOfferHeroBackgroundSettings(component, section) {
         return true;
     }
 
-    if (String(component.get?.('type') ?? '') === 'vb-bg-image') {
+    if (isBackgroundImageHeroId(component.get?.('type'))) {
         return true;
     }
 
@@ -552,11 +553,15 @@ export function applyImageSrc(image, section, url, meta = null) {
     if (section) {
         const sectionAttrs = section.getAttributes?.() ?? {};
         const type = String(section.get?.('type') ?? '');
-        const blockId = String(sectionAttrs['data-voodbuilder-section-block'] ?? '');
+        const blockId = String(
+            sectionAttrs['data-voodbuilder-block']
+            ?? sectionAttrs['data-voodbuilder-section-block']
+            ?? '',
+        );
 
         if (
-            type === 'vb-bg-image'
-            || blockId.includes('vb-bg-image')
+            isBackgroundImageHeroId(type)
+            || isBackgroundImageHeroId(blockId)
             || Object.prototype.hasOwnProperty.call(sectionAttrs, 'data-vb-bg-src')
             || findHeroMediaImage(section) === image
         ) {

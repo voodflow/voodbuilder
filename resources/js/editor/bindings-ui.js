@@ -24,6 +24,9 @@ import {
     isAnimatedCounterComponent,
 } from './editor-animated-blocks.js';
 import { findHeroMediaImage } from './media-section-types.js';
+import {
+    isBackgroundImageHeroComponent as isBackgroundImageHeroComponentShared,
+} from './media-hero.js';
 
 export const NEUTRAL_IMAGE_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">'
@@ -99,19 +102,7 @@ function isLinkableInteractive(component) {
  * usually select the section (or media layer) in the canvas / Layers panel.
  */
 export function isBackgroundImageHeroComponent(component) {
-    if (! component?.get && ! component?.getAttributes) {
-        return false;
-    }
-
-    const attrs = component.getAttributes?.() ?? {};
-    const id = String(
-        attrs['data-voodbuilder-block']
-        ?? attrs['data-voodbuilder-section-block']
-        ?? component.get?.('type')
-        ?? '',
-    ).trim();
-
-    return id === 'vb-bg-image' || id.includes('vb-bg-image');
+    return isBackgroundImageHeroComponentShared(component);
 }
 
 function isHeroMediaLayerComponent(component) {

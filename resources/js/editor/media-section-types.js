@@ -1,8 +1,12 @@
 /**
- * Editor component types for vb-bg-image and vb-bg-video media hero sections.
- * Traits on the section sync data-* attributes to child img/video/embed elements.
+ * Editor component types for media hero sections (background image / video /
+ * Elements cinematic). Traits on the section sync data-* to child media.
  */
 
+import {
+    isBackgroundImageHeroId,
+    mediaHeroSectionSelector,
+} from './media-hero.js';
 import {
     buildHeroEmbedSrc,
     isHeroEmbedProvider,
@@ -469,7 +473,10 @@ function registerMediaHeroType(editor, typeId, blockId, name, sync, traits) {
                 return false;
             }
 
-            return element.getAttribute?.('data-voodbuilder-section-block') === blockId;
+            const sectionBlock = element.getAttribute?.('data-voodbuilder-section-block');
+            const block = element.getAttribute?.('data-voodbuilder-block');
+
+            return sectionBlock === blockId || block === blockId;
         },
         extend: 'default',
         model: {
@@ -505,6 +512,40 @@ function registerMediaHeroType(editor, typeId, blockId, name, sync, traits) {
     });
 }
 
+const BACKGROUND_IMAGE_TRAITS = [
+    { type: 'text', name: 'data-vb-bg-src', label: 'Background image URL', changeProp: true },
+    {
+        type: 'select',
+        name: 'data-vb-bg-size',
+        label: 'Image fit',
+        options: BG_SIZE_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-bg-position',
+        label: 'Image position',
+        options: BG_POSITION_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'number',
+        name: 'data-vb-bg-opacity',
+        label: 'Image opacity',
+        min: 0.3,
+        max: 1,
+        step: 0.05,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-min-height',
+        label: 'Minimum height',
+        options: MIN_HEIGHT_OPTIONS,
+        changeProp: true,
+    },
+];
+
 function registerBackgroundImageType(editor) {
     registerMediaHeroType(
         editor,
@@ -512,39 +553,17 @@ function registerBackgroundImageType(editor) {
         'vb-bg-image',
         'Hero · background image',
         syncBackgroundImageSection,
-        [
-            { type: 'text', name: 'data-vb-bg-src', label: 'Background image URL', changeProp: true },
-            {
-                type: 'select',
-                name: 'data-vb-bg-size',
-                label: 'Image fit',
-                options: BG_SIZE_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-bg-position',
-                label: 'Image position',
-                options: BG_POSITION_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'number',
-                name: 'data-vb-bg-opacity',
-                label: 'Image opacity',
-                min: 0.3,
-                max: 1,
-                step: 0.05,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-min-height',
-                label: 'Minimum height',
-                options: MIN_HEIGHT_OPTIONS,
-                changeProp: true,
-            },
-        ],
+        BACKGROUND_IMAGE_TRAITS,
+    );
+
+    // Elements catalog cinematic hero — same sync / vmedia path as vb-bg-image.
+    registerMediaHeroType(
+        editor,
+        'vb-hero-cinematic',
+        'vb-hero-cinematic',
+        'Hero · cinematic full-bleed',
+        syncBackgroundImageSection,
+        BACKGROUND_IMAGE_TRAITS,
     );
 }
 
@@ -643,7 +662,7 @@ export function resyncMediaHeroSections(editor) {
 
     safeFindComponents(
         wrapper,
-        '[data-voodbuilder-section-block="vb-bg-image"], [data-voodbuilder-block="vb-bg-image"], [data-voodbuilder-section-block="vb-bg-video"], [data-voodbuilder-block="vb-bg-video"]',
+        mediaHeroSectionSelector(),
     ).forEach((section) => {
         const id = String(
             section.getAttributes?.()?.['data-voodbuilder-section-block']
@@ -652,9 +671,9 @@ export function resyncMediaHeroSections(editor) {
             ?? '',
         ).trim();
 
-        if (id === 'vb-bg-video') {
+        if (id === 'vb-bg-video' || id.includes('vb-bg-video')) {
             syncBackgroundVideoSection(section);
-        } else {
+        } else if (isBackgroundImageHeroId(id)) {
             syncBackgroundImageSection(section);
         }
     });

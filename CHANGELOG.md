@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.44] - 2026-09-10
+
+### Added
+
+- Popup editor: content-width toolbar (full ↔ normal 24rem, centered) — including Layout Div / max-w columns
+- Media-hero registry includes Elements `vb-hero-cinematic` (same vmedia / Background path as `vb-bg-image`)
+
+### Fixed
+
+- Legacy Docs auto-inject (header + mobile) lists navigable product topics like the Documentation menu item type
+- Remote Hero · cinematic full-bleed was not wired as a media hero (no Background / vmedia picker)
+
 ## [0.1.43] - 2026-09-10
 
 ### Added
