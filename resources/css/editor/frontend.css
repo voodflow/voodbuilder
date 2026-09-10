@@ -13,7 +13,8 @@
     flex: 1 1 auto;
     width: 100%;
     min-height: 0;
-    overflow: hidden;
+    /* Visible so Grapes component toolbars are not clipped at the canvas edge */
+    overflow: visible;
 }
 
 /* Editor uses absolute positioning for the canvas; only set height on the root editor. */
@@ -2676,6 +2677,7 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
     left: 0 !important;
     width: 100% !important;
     height: 100%;
+    overflow: visible;
     scrollbar-gutter: auto;
 }
 
