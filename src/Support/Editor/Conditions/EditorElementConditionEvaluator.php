@@ -78,7 +78,7 @@ final class EditorElementConditionEvaluator
             'user_role' => $this->compareRole($compare, (string) $value),
             'locale' => $this->compareString(app()->getLocale(), $compare, (string) $value),
             'route_name' => $this->compareRouteName($compare, (string) $value),
-            'page_path' => $this->compareString('/'.ltrim(request()->path(), '/'), $compare, '/'.ltrim((string) $value, '/')),
+            'page_path' => $this->comparePagePath('/'.ltrim(request()->path(), '/'), $compare, '/'.ltrim((string) $value, '/')),
             'date_before' => $this->compareDateBefore((string) $value),
             'date_after' => $this->compareDateAfter((string) $value),
             default => EditorConditionHooks::evaluate($key, $condition, $page) ?? false,
@@ -111,6 +111,20 @@ final class EditorElementConditionEvaluator
             '!=', 'is_not' => ! $hasRole,
             default => $hasRole,
         };
+    }
+
+    /**
+     * "/" is a substring of every path — "contains /" must mean homepage only.
+     */
+    protected function comparePagePath(string $actual, string $compare, string $expected): bool
+    {
+        if ($expected === '/' && in_array($compare, ['contains', 'not_contains'], true)) {
+            return $compare === 'contains'
+                ? $actual === '/'
+                : $actual !== '/';
+        }
+
+        return $this->compareString($actual, $compare, $expected);
     }
 
     protected function compareString(string $actual, string $compare, string $expected): bool

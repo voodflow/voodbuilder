@@ -52,6 +52,7 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
      *     identifier: ?string,
      *     expires_at: ?string,
      *     message: ?string,
+     *     catalog_credentials: ?array<string, string>,
      *     fetched_at: int,
      * }
      */
@@ -66,6 +67,9 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
                 'identifier' => $fresh['identifier'] ?? $this->licenceKey,
                 'expires_at' => $fresh['expires_at'] ?? null,
                 'message' => $fresh['message'] ?? null,
+                'catalog_credentials' => is_array($fresh['catalog_credentials'] ?? null)
+                    ? $fresh['catalog_credentials']
+                    : null,
                 'fetched_at' => time(),
             ];
             Cache::forever(self::SNAPSHOT_CACHE_KEY, $snapshot);
@@ -84,6 +88,7 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
      *     identifier: ?string,
      *     expires_at: ?string,
      *     message: ?string,
+     *     catalog_credentials: ?array<string, string>,
      *     fetched_at: int,
      * }
      */
@@ -103,6 +108,9 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
                     'identifier' => isset($cached['identifier']) ? (string) $cached['identifier'] : null,
                     'expires_at' => isset($cached['expires_at']) ? (string) $cached['expires_at'] : null,
                     'message' => (string) ($cached['message'] ?? __('voodbuilder::license.grace_active')),
+                    'catalog_credentials' => is_array($cached['catalog_credentials'] ?? null)
+                        ? array_map('strval', $cached['catalog_credentials'])
+                        : null,
                     'fetched_at' => (int) $cached['fetched_at'],
                 ];
             }
@@ -121,6 +129,7 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
             'identifier' => $this->licenceKey !== '' ? $this->licenceKey : 'community-fallback',
             'expires_at' => null,
             'message' => (string) __('voodbuilder::license.remote_unavailable'),
+            'catalog_credentials' => null,
             'fetched_at' => time(),
         ];
     }

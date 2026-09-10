@@ -35,6 +35,7 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
+use Voodflow\Voodbuilder\Http\Controllers\Admin\LicenseStatusController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsPreviewController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBlockRenderController;
@@ -325,7 +326,14 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     protected function registerAdminRoutes(): void
     {
-        // Menu preview routes are owned by MenusModule.
+        // Stable JSON contract for a future Filament licenses dashboard plugin.
+        Route::middleware(['web', 'auth', EnsurePageBuilderAccess::class, 'throttle:60,1'])
+            ->prefix('voodbuilder/admin/license')
+            ->name('voodbuilder.admin.license.')
+            ->group(function (): void {
+                Route::get('status', [LicenseStatusController::class, 'status'])->name('status');
+                Route::post('refresh', [LicenseStatusController::class, 'refresh'])->name('refresh');
+            });
     }
 
     protected function registerEditorBlocks(): void

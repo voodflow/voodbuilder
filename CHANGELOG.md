@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.43] - 2026-09-10
+
+### Added
+
+- Admin license dashboard API: `GET|POST /voodbuilder/admin/license/{status,refresh}` (`schema_version: 1`) for a future Filament licenses dashboard plugin
+- `CatalogCredentialResolver` — prefers AnyStack `catalog_credentials` from the entitlements snapshot, falls back to env CDN token
+- Docs: `docs/ANYSTACK_SETUP.md` (endpoint contract, catalog credentials, distribution map)
+
+### Changed
+
+- Library SOURCE catalogs: Elements and/or Templates companions only (Components stay in the left sidebar)
+
+### Fixed
+
+- Condition `page_path contains /` matches the homepage only (before it matched every URL because `/` is a substring of all paths)
 
 ## [0.1.40] - 2026-09-09
 

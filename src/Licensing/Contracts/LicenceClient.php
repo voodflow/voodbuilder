@@ -17,6 +17,7 @@ interface LicenceClient
      *     identifier?: string|null,
      *     expires_at?: string|null,
      *     message?: string|null,
+     *     catalog_credentials?: array<string, string>|null,
      * }
      *
      * @throws LicenceClientException

@@ -69,6 +69,38 @@ final class AnyStackLicenceClient implements LicenceClient
             'identifier' => isset($payload['identifier']) ? (string) $payload['identifier'] : $licenceKey,
             'expires_at' => isset($payload['expires_at']) ? (string) $payload['expires_at'] : null,
             'message' => isset($payload['message']) ? (string) $payload['message'] : null,
+            'catalog_credentials' => self::normalizeCatalogCredentials($payload['catalog_credentials'] ?? null),
         ];
+    }
+
+    /**
+     * Optional per-licence CDN credentials from AnyStack (elements / page_templates).
+     *
+     * @return array<string, string>|null
+     */
+    private static function normalizeCatalogCredentials(mixed $raw): ?array
+    {
+        if (! is_array($raw)) {
+            return null;
+        }
+
+        $out = [];
+
+        foreach ($raw as $product => $token) {
+            if (! is_string($product) || ! is_string($token)) {
+                continue;
+            }
+
+            $product = trim($product);
+            $token = trim($token);
+
+            if ($product === '' || $token === '') {
+                continue;
+            }
+
+            $out[$product] = $token;
+        }
+
+        return $out === [] ? null : $out;
     }
 }

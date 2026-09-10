@@ -152,6 +152,10 @@ final class EditorPageTemplateRemoteImporter
 
     protected static function catalogToken(): string
     {
+        if (class_exists(\Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver::class)) {
+            return \Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver::pageTemplatesCredential() ?? '';
+        }
+
         return trim((string) (
             config('voodbuilder.page_templates.catalog_token')
             ?: config('voodbuilder-elements.catalog_token')

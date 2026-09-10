@@ -167,10 +167,10 @@ final class EditorGate
             'initial' => self::initialPayload($page),
             'blocksUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: false),
-            'elementsSourceUrl' => EditorCommunityBlockCatalog::elementsLibraryActive()
+            'elementsCatalogs' => ($libraryCatalogs = self::sharedElementsCatalogOptions()),
+            'elementsSourceUrl' => $libraryCatalogs !== []
                 ? self::optionalEditorRoute('voodbuilder.editor.elements.source')
                 : null,
-            'elementsCatalogs' => self::sharedElementsCatalogOptions(),
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings')
                 : null,
@@ -315,13 +315,14 @@ final class EditorGate
     }
 
     /**
-     * Elements companion catalog list for the Library SOURCE UI.
+     * Library modal bundles: Elements companion and/or Templates companion.
+     * Components (user-authored) never appear here — left sidebar only.
      *
      * @return list<array{id: string, label: string}>
      */
-    public static function sharedElementsCatalogOptions(): array
+    public static function sharedElementsCatalogOptions(bool $includeTemplates = true): array
     {
-        return self::elementsCatalogOptions();
+        return self::elementsCatalogOptions($includeTemplates);
     }
 
     /**
@@ -1161,25 +1162,41 @@ final class EditorGate
     }
 
     /**
-     * Library bundles exposed in the Elements modal (Elements, Voodflow, Templates, …).
+     * Library bundles for the SOURCE modal (Elements remote + optional Templates remote).
      * Bundle id `wireframes` is kept for the remote catalog URL path.
-     * Naming: Elements = provided catalog; Components = user library; Templates = user + marketplace.
      *
      * @return list<array{id: string, label: string}>
      */
-    private static function elementsCatalogOptions(): array
+    private static function elementsCatalogOptions(bool $includeTemplates = true): array
     {
-        if (! EditorCommunityBlockCatalog::elementsLibraryActive()) {
+        if (! class_exists(ElementsCatalogBundles::class)) {
             return [];
         }
 
-        if (! class_exists(ElementsCatalogBundles::class)) {
+        $elementsActive = EditorCommunityBlockCatalog::elementsLibraryActive();
+        $templatesActive = $includeTemplates && TemplateAuthoringBridge::pluginInstalled();
+
+        if (! $elementsActive && ! $templatesActive) {
+            return [];
+        }
+
+        if (! Route::has('voodbuilder.editor.elements.source')) {
             return [];
         }
 
         $options = [];
 
         foreach (ElementsCatalogBundles::all() as $id => $catalog) {
+            $isTemplates = ElementsCatalogBundles::isTemplatesBundle((string) $id);
+
+            if ($isTemplates) {
+                if (! $templatesActive) {
+                    continue;
+                }
+            } elseif (! $elementsActive) {
+                continue;
+            }
+
             $options[] = [
                 'id' => (string) $id,
                 'label' => (string) ($catalog['label'] ?? ucfirst((string) $id)),
