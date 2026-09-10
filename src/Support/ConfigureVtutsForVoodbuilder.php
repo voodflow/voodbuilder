@@ -7,7 +7,8 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\File;
 
 /**
- * Configure Vtuts For Voodbuilder.
+ * Align published vtuts config with Voodbuilder hosts (locale fallback only).
+ * Reading layouts stay owned by vtuts (`vtuts::layouts.voodbuilder`).
  */
 final class ConfigureVtutsForVoodbuilder
 {
@@ -23,8 +24,8 @@ final class ConfigureVtutsForVoodbuilder
         $original = $contents;
 
         $layoutReplacements = [
-            "'layout' => 'vtuts::layouts.page'" => "'layout' => 'voodbuilder::layouts.page'",
-            "'doc_layout' => 'vtuts::layouts.doc'" => "'doc_layout' => 'voodbuilder::layouts.doc'",
+            "'layout' => 'voodbuilder::layouts.page'" => "'layout' => 'vtuts::layouts.voodbuilder-page'",
+            "'doc_layout' => 'voodbuilder::layouts.doc'" => "'doc_layout' => 'vtuts::layouts.voodbuilder'",
         ];
 
         foreach ($layoutReplacements as $search => $replace) {

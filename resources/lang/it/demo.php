@@ -50,7 +50,7 @@ return [
             'pairing-vtuts' => [
                 'title' => 'Abbinare voodbuilder e vtuts',
                 'excerpt' => 'Layout condivisi per i tutorial mentre il blog mantiene le proprie colonne.',
-                'p1' => 'Le pagine doc dei tutorial usano voodbuilder::layouts.doc per sidebar, outline e barra di avanzamento.',
+                'p1' => 'Le pagine doc dei tutorial usano vtuts::layouts.voodbuilder dentro lo shell chrome di Voodbuilder (sidebar, outline, barra di avanzamento).',
                 'p2' => 'Diario e news possono evolvere separatamente mentre i tutorial restano ottimizzati per l’apprendimento.',
             ],
         ],

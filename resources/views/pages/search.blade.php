@@ -1,11 +1,9 @@
-@extends(config('voodbuilder.layouts.doc', 'voodbuilder::layouts.doc'), [
-    'hasSidebar' => false,
-    'hasAside' => false,
-    'showProgress' => false,
+@extends(\Voodflow\Voodbuilder\Support\PluginLayout::resolve('page'), [
     'title' => __('voodbuilder::search.title'),
 ])
 
-@section('doc')
+@section('page')
+    <div class="mx-auto w-full max-w-[min(100%,var(--width-vp-content))]">
     <header class="mb-12 pt-4 sm:pt-6">
         <h1 class="text-[2rem] font-bold leading-tight tracking-tight text-vp-text-1">
             {{ __('voodbuilder::search.title') }}
@@ -189,4 +187,5 @@
             </nav>
         @endif
     @endif
+    </div>
 @endsection

@@ -8,8 +8,6 @@ use Voodflow\Voodbuilder\Http\Controllers\AuthController;
 use Voodflow\Voodbuilder\Http\Controllers\HomeController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchSuggestController;
-use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
-use Voodflow\Voodbuilder\Http\Controllers\SitePageUnlockController;
 use Voodflow\Vtuts\Support\Locales;
 
 $localeMiddleware = [];
@@ -65,65 +63,7 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
             ->get('/'.trim((string) config('voodbuilder.account.route', 'account'), '/'), AccountController::class)
             ->name('voodbuilder.account');
     }
-
-    // Site pages last: when route_prefix is empty, {slug} must not shadow login/search/etc.
-    if (config('voodbuilder.pages.enabled', true)) {
-        $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
-        $menuPaths = (bool) config('voodbuilder.pages.menu_paths', false);
-        $base = $prefix !== '' ? '/'.$prefix : '';
-        // Package / framework prefixes must never be claimed as menu-path sections.
-        // Otherwise e.g. GET /vmedia/media is shadowed by pages.show.nested → empty media browser.
-        $reserved = implode('|', array_filter([
-            'login',
-            'register',
-            'logout',
-            'search',
-            'account',
-            'admin',
-            'livewire',
-            'filament',
-            'storage',
-            'vendor',
-            'build',
-            'up',
-            'voodbuilder',
-            'vmedia',
-            'vcookiebar',
-            'vpopups',
-            'vforms',
-            'galleries',
-            'docs',
-            'tutorials',
-            trim((string) config('voodbuilder.search.route', 'search'), '/'),
-            trim((string) config('voodbuilder.account.route', 'account'), '/'),
-            trim((string) config('vmedia.routes.prefix', 'vmedia'), '/'),
-            trim((string) config('vmedia.public.prefix', 'galleries'), '/'),
-            trim((string) config('vdocs.prefix', 'docs'), '/'),
-            trim((string) config('vtuts.prefix', 'tutorials'), '/'),
-        ]));
-
-        if ($menuPaths) {
-            // Lookahead must use (?:/|$) — bare `$` means end of the full URI, so
-            // `/vmedia/media` would still match section=vmedia (remaining path ≠ "vmedia").
-            $sectionPattern = $prefix === '' && $reserved !== ''
-                ? '(?!(?:'.$reserved.')(?:/|$))[A-Za-z0-9\-]+'
-                : '[A-Za-z0-9\-]+';
-
-            Route::get($base.'/{section}/{slug}', [SitePageController::class, 'show'])
-                ->where(['section' => $sectionPattern, 'slug' => '[A-Za-z0-9\-]+'])
-                ->name('voodbuilder.pages.show.nested');
-        }
-
-        $slugPattern = $prefix === '' && $reserved !== ''
-            ? '(?!(?:'.$reserved.')$)[A-Za-z0-9\-]+'
-            : '[A-Za-z0-9\-]+';
-
-        Route::get($base.'/{slug}', [SitePageController::class, 'show'])
-            ->where(['slug' => $slugPattern])
-            ->name('voodbuilder.pages.show');
-
-        Route::post($base.'/{slug}/unlock', SitePageUnlockController::class)
-            ->middleware('throttle:10,1')
-            ->name('voodbuilder.pages.unlock');
-    }
 });
+
+// Site-page catch-alls are registered in VoodbuilderServiceProvider after boot so
+// companions can Voodbuilder::reservePathPrefix() first.

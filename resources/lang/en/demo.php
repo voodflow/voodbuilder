@@ -50,7 +50,7 @@ return [
             'pairing-vtuts' => [
                 'title' => 'Pairing voodbuilder with vtuts',
                 'excerpt' => 'Shared layouts for tutorials while the blog keeps its own column layout.',
-                'p1' => 'Tutorial doc pages reuse voodbuilder::layouts.doc for sidebars, outlines, and reading progress.',
+                'p1' => 'Tutorial doc pages use vtuts::layouts.voodbuilder inside the Voodbuilder chrome shell (sidebar, outline, reading progress).',
                 'p2' => 'Your journal and news desk can evolve independently while tutorials stay optimized for learning.',
             ],
         ],

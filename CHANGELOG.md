@@ -6,15 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `Voodbuilder::reservePathPrefix()` / `ReservedPathRegistry` — companions (and third parties) declare public URL prefixes so site-page catch-alls never claim them
+- Site-page catch-alls register after boot so reserved prefixes from all packages are known
 - Content channel **Search** (`search`) for Theme Map / Layouts; inherits Documentation chrome by default; excluded from search filter pills
-- Search results page uses the **doc layout** (narrow column, like documentation articles)
+- Search results page uses the **page** chrome (narrow reading measure via content width)
 - `SearchExcerpt` helper — plain-text snippets without raw Markdown (`##`, `**`, links, …)
 - Settings → **Search**: results per page, per channel, snippet length (with config fallbacks)
 - Search ranking (title / meta / body), match-centered snippets, and `<mark>` highlights
 - Search pagination with deep-linkable `?page=` (keeps `q` / `type`)
 - Header search palette: live top matches (Filament-style), keyboard nav, recent searches, link to full results
 - Developer docs: PHP SDK [Site search](docs/manual/developer/php-sdk/site-search.md) — how companions make content searchable
-- Doc reading typography closer to VitePress (`.vp-doc` sizes/spacing, 43rem content width, sidebar weights)
+- Doc reading typography closer to VitePress (`.vp-doc` sizes/spacing, content width tokens, sidebar weights)
 - **Layouts → Reading typography**: FontCatalog family + base size (`sm`–`xl`, default 17px) for docs/tutorials via `--vp-font-family-doc` / `--vp-font-size-doc`
 - Site Page admin **SEO** section (meta title, description, robots, canonical) on the morph `seo` relation
 - Site Page JSON-LD breadcrumbs (and Article schema for section articles)
@@ -22,15 +24,17 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Reading layouts are owned by companions (`vdocs::layouts.voodbuilder`, `vtuts::layouts.voodbuilder`); `voodbuilder::layouts.doc` remains a deprecated shim
+- Site search uses `PluginLayout::resolve('page')` instead of the doc reading layout
 - Documentation search hits show **Topic › Section** as meta, plus a short content excerpt
 - Search results UI: card list, softer filters, cleaner hierarchy
 - Search filter pills show result counts; empty channels are omitted
 - “All” results are a single ranked list with channel headers when the channel changes
-- Doc layout: content+TOC as `w-fit` pack beside the sidebar (`gap-10`); article uses `--width-vp-content` without filling leftover viewport
+- Doc layout: content+TOC as `w-fit` pack beside the sidebar; article uses `--width-vp-content` without filling leftover viewport
 
 ### Fixed
 
-- With empty page `route_prefix` + `menu_paths`, reserve `docs` / `tutorials` (and `vdocs`/`vtuts` config prefixes) so site pages no longer shadow companion public routes (`/tutorials/…` → 404)
+- With empty page `route_prefix` + `menu_paths`, companions reserve their prefixes so site pages no longer shadow public routes (`/tutorials/…` → 404)
 - Search `<mark>` contrast: readable ink on brand tint in light and dark (no inherited light-on-yellow)
 - Search pagination: out-of-range `?page=` is clamped so a new query never shows an empty list while the count is > 0
 - Public layouts emit a single `<title>` via `{!! seo() !!}` (removed duplicate Blade title)

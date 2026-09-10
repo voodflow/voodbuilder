@@ -17,7 +17,7 @@ class ConfigureVtutsForVoodbuilderTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_patches_vtuts_layouts_and_fallback_url(): void
+    public function test_it_migrates_legacy_voodbuilder_layouts_and_fallback_url(): void
     {
         File::ensureDirectoryExists(config_path());
 
@@ -25,8 +25,8 @@ class ConfigureVtutsForVoodbuilderTest extends TestCase
 <?php
 
 return [
-    'layout' => 'vtuts::layouts.page',
-    'doc_layout' => 'vtuts::layouts.doc',
+    'layout' => 'voodbuilder::layouts.page',
+    'doc_layout' => 'voodbuilder::layouts.doc',
     'localization' => [
         'fallback_url' => null,
     ],
@@ -37,8 +37,8 @@ PHP);
 
         $contents = File::get(config_path('vtuts.php'));
 
-        $this->assertStringContainsString("'layout' => 'voodbuilder::layouts.page'", $contents);
-        $this->assertStringContainsString("'doc_layout' => 'voodbuilder::layouts.doc'", $contents);
+        $this->assertStringContainsString("'layout' => 'vtuts::layouts.voodbuilder-page'", $contents);
+        $this->assertStringContainsString("'doc_layout' => 'vtuts::layouts.voodbuilder'", $contents);
         $this->assertStringContainsString('LocaleSwitcher::currentPageUrlWithLocale', $contents);
     }
 }

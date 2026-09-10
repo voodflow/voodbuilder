@@ -36,6 +36,7 @@ use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\Fonts\FontDefinition;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 
@@ -113,6 +114,25 @@ class Voodbuilder
         }
 
         $registry->registerFromArray($id, $definition);
+    }
+
+    /**
+     * Reserve first-segment public path prefixes so site-page catch-alls never claim them.
+     *
+     * Call from a companion ServiceProvider::register() / booting() callback.
+     * Example: Voodbuilder::reservePathPrefix(config('vdocs.prefix', 'docs'));
+     */
+    public static function reservePathPrefix(string ...$prefixes): void
+    {
+        app(ReservedPathRegistry::class)->reserve(...$prefixes);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function reservedPathPrefixes(): array
+    {
+        return app(ReservedPathRegistry::class)->all();
     }
 
     /**

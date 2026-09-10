@@ -93,6 +93,7 @@ return [
     'layouts' => [
         'app' => 'voodbuilder::layouts.app',
         'chrome_app' => 'voodbuilder::layouts.chrome-app',
+        // Deprecated shim — companions own reading layouts (vdocs::layouts.voodbuilder, …).
         'doc' => 'voodbuilder::layouts.doc',
         'full_width' => 'voodbuilder::layouts.full-width',
         'home' => 'voodbuilder::layouts.home',

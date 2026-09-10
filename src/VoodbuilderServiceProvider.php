@@ -93,8 +93,10 @@ use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SitePageRoutes;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
@@ -154,6 +156,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(MenuItemTypeRegistry::class);
         $this->app->singleton(ModuleRegistry::class);
         $this->app->singleton(FontCatalog::class);
+        $this->app->singleton(ReservedPathRegistry::class);
         $this->app->singleton(EntitlementManager::class, function (): EntitlementManager {
             return new EntitlementManager(EntitlementProviderFactory::make());
         });
@@ -171,6 +174,11 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
 
         $this->ensureMediaRuntime();
+
+        // After all packages boot (and reserve path prefixes), register catch-alls last.
+        $this->app->booted(static function (): void {
+            SitePageRoutes::register();
+        });
 
         if (class_exists(RegistersPluginVault::class)) {
             RegistersPluginVault::register(

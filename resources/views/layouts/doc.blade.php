@@ -1,5 +1,11 @@
 @extends(\Voodflow\Voodbuilder\Support\PluginLayout::appShell())
 
+{{--
+  @deprecated Companion packages own reading layouts (vdocs::layouts.voodbuilder,
+  vtuts::layouts.voodbuilder). This shim keeps legacy SitePage / search hosts working
+  for one release — prefer PluginLayout::resolve('page') or a companion layout.
+--}}
+
 @php
     $voodbuilderBodyClasses = trim(implode(' ', array_filter([
         ($hasSidebar ?? false) ? 'voodbuilder-has-doc-sidebar' : null,
@@ -16,12 +22,6 @@
 @endif
 
 @section('content')
-    {{--
-      Left sidebar: untouched.
-      Content + right TOC: one shrink-wrapped pack, start after the sidebar (like VitePress),
-      with a clear gutter between article and “On this page”. Never let the article column
-      flex to full leftover width (that parks the TOC on the far right).
-    --}}
     <div @class([
         'w-full',
         'vp:flex vp:items-stretch' => $hasSidebar,
@@ -41,7 +41,6 @@
 
         <div @class([
             'min-w-0 w-full',
-            // Desktop: 80px from left sidebar to the reading block (as verified in DevTools)
             'vp:flex-1 vp:ml-[80px]' => $hasSidebar,
         ])>
             <div
@@ -54,16 +53,12 @@
             >
                 <div @class([
                     'flex w-fit max-w-full items-start gap-24 xl:gap-28',
-                    // Home: full template row
                     'mx-auto w-full max-w-[var(--width-vp-layout)]' => ! $isReadingLayout,
-                    // Reading with sidebar: pack starts at left of the content area (next to nav)
                     'mr-auto' => $hasSidebar,
-                    // Reading without sidebar: center the pack
                     'mx-auto' => $isReadingLayout && ! $hasSidebar,
                 ])>
                     <div @class([
                         'min-w-0',
-                        // Article column — theme token; must NOT be w-full of the leftover viewport
                         'w-[min(100%,var(--width-vp-content))]' => $isReadingLayout,
                         'w-full' => ! $isReadingLayout,
                     ])>
