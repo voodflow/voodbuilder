@@ -7,6 +7,7 @@ use Voodflow\Voodbuilder\Http\Controllers\AccountController;
 use Voodflow\Voodbuilder\Http\Controllers\AuthController;
 use Voodflow\Voodbuilder\Http\Controllers\HomeController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchController;
+use Voodflow\Voodbuilder\Http\Controllers\SearchSuggestController;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageUnlockController;
 use Voodflow\Vtuts\Support\Locales;
@@ -40,6 +41,10 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
 
         Route::get('/'.$searchRoute, SearchController::class)
             ->name('voodbuilder.search');
+
+        Route::get('/'.$searchRoute.'/suggest', SearchSuggestController::class)
+            ->middleware('throttle:60,1')
+            ->name('voodbuilder.search.suggest');
     }
 
     if (config('voodbuilder.auth.enabled', true)) {
@@ -87,10 +92,14 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
             'vpopups',
             'vforms',
             'galleries',
+            'docs',
+            'tutorials',
             trim((string) config('voodbuilder.search.route', 'search'), '/'),
             trim((string) config('voodbuilder.account.route', 'account'), '/'),
             trim((string) config('vmedia.routes.prefix', 'vmedia'), '/'),
             trim((string) config('vmedia.public.prefix', 'galleries'), '/'),
+            trim((string) config('vdocs.prefix', 'docs'), '/'),
+            trim((string) config('vtuts.prefix', 'tutorials'), '/'),
         ]));
 
         if ($menuPaths) {

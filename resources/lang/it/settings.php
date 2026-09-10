@@ -39,8 +39,20 @@ return [
         'theme' => 'Layout',
         'themes' => 'Temi',
         'seo' => 'SEO',
+        'search' => 'Ricerca',
         'geo_ai' => 'GEO & AI',
         'analytics' => 'Analytics',
+    ],
+
+    'search' => [
+        'section' => 'Ricerca sul sito',
+        'section_description' => 'Quanti risultati caricare e quanto lunghi gli snippet nella pagina di ricerca pubblica.',
+        'per_page' => 'Risultati per pagina',
+        'per_page_help' => 'Hit mostrati per pagina dopo il ranking (5–50).',
+        'per_type' => 'Risultati per canale',
+        'per_type_help' => 'Massimo di hit recuperati da ogni canale di contenuto prima del merge (5–100).',
+        'snippet_length' => 'Lunghezza snippet',
+        'snippet_length_help' => 'Lunghezza approssimativa (caratteri) dello snippet centrato sul match (80–300).',
     ],
 
     'theme_studio_subheading' => 'Catalogo temi, colori con anteprima e assegnazioni per area — senza scroll interni.',

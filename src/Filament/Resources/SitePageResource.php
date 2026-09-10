@@ -43,6 +43,7 @@ use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Filament\Actions\CreateSitePageTranslationAction;
 use Voodflow\Voodbuilder\Filament\Actions\DeleteSitePageTranslationsAction;
 use Voodflow\Voodbuilder\Filament\Columns\TranslationLocaleColumn;
+use Voodflow\Voodbuilder\Filament\Components\SitePageSeoFields;
 use Voodflow\Voodbuilder\Filament\Concerns\ConfiguresTranslatableLocaleField;
 use Voodflow\Voodbuilder\Filament\Concerns\ListsCanonicalTranslationGroups;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\CreateSitePage;
@@ -444,6 +445,12 @@ class SitePageResource extends Resource
                                         return $message;
                                     }),
                             ]),
+
+                        Section::make(__('voodbuilder::admin.sections.seo'))
+                            ->description(__('voodbuilder::admin.helpers.seo_section'))
+                            ->schema(SitePageSeoFields::make())
+                            ->collapsible()
+                            ->persistCollapsed(),
                     ])
                     ->columnSpan(['lg' => 1]),
             ]);

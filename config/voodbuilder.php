@@ -352,7 +352,10 @@ return [
     'search' => [
         'enabled' => true,
         'route' => 'search',
+        'per_page' => 10,
         'per_type' => 20,
+        'snippet_length' => 160,
+        'suggest_limit' => 8,
     ],
 
     /*

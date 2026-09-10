@@ -40,4 +40,41 @@ class MenuPathReservedPrefixesTest extends TestCase
 
         $this->assertSame('vmedia.media.index', $route->getName());
     }
+
+    public function test_tutorials_and_docs_are_not_shadowed_by_site_pages(): void
+    {
+        $nested = collect(Route::getRoutes())->first(
+            fn ($route): bool => $route->getName() === 'voodbuilder.pages.show.nested',
+        );
+        $flat = collect(Route::getRoutes())->first(
+            fn ($route): bool => $route->getName() === 'voodbuilder.pages.show',
+        );
+
+        $this->assertNotNull($nested);
+        $this->assertNotNull($flat);
+
+        $this->assertFalse(
+            $nested->matches(Request::create('/tutorials/introduction-to-pure-data', 'GET')),
+            'Nested site-page route must not match /tutorials/{slug}',
+        );
+        $this->assertFalse(
+            $flat->matches(Request::create('/tutorials', 'GET')),
+            'Flat site-page route must not match /tutorials',
+        );
+        $this->assertFalse(
+            $nested->matches(Request::create('/docs/getting-started', 'GET')),
+            'Nested site-page route must not match /docs/{slug}',
+        );
+        $this->assertFalse(
+            $flat->matches(Request::create('/docs', 'GET')),
+            'Flat site-page route must not match /docs',
+        );
+
+        if (Route::has('vtuts.show')) {
+            $this->assertSame(
+                'vtuts.show',
+                Route::getRoutes()->match(Request::create('/tutorials/introduction-to-pure-data', 'GET'))->getName(),
+            );
+        }
+    }
 }

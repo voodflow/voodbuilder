@@ -12,6 +12,9 @@
     $searchUrl = Route::has('voodbuilder.search')
         ? VoodbuilderUrls::search()
         : null;
+    $suggestUrl = Route::has('voodbuilder.search.suggest')
+        ? VoodbuilderUrls::searchSuggest()
+        : null;
 @endphp
 
 @if ($canvasPreview)
@@ -30,7 +33,23 @@
         </button>
     </div>
 @elseif ($enabled && $searchUrl)
-    <div class="flex items-center" data-voodbuilder-search>
+    <div
+        class="flex items-center"
+        data-voodbuilder-search
+        @if ($suggestUrl) data-voodbuilder-search-suggest-url="{{ $suggestUrl }}" @endif
+        data-voodbuilder-search-url="{{ $searchUrl }}"
+        data-voodbuilder-search-i18n="{{ e(json_encode([
+            'hint' => __('voodbuilder::search.hint'),
+            'recent' => __('voodbuilder::search.recent'),
+            'results' => __('voodbuilder::search.suggest_results'),
+            'no_results' => __('voodbuilder::search.suggest_no_results'),
+            'view_all' => __('voodbuilder::search.view_all'),
+            'loading' => __('voodbuilder::search.suggest_loading'),
+            'select' => __('voodbuilder::search.kbd_select'),
+            'navigate' => __('voodbuilder::search.kbd_navigate'),
+            'close' => __('voodbuilder::search.kbd_close'),
+        ], JSON_UNESCAPED_UNICODE)) }}"
+    >
         <button
             type="button"
             class="voodbuilder-header-icon-btn"
@@ -47,7 +66,7 @@
 
         <div
             id="voodbuilder-search-dialog"
-            class="fixed inset-0 z-[60] items-start justify-center px-6 pt-24"
+            class="fixed inset-0 z-[60] items-start justify-center px-4 pt-28 sm:px-6 sm:pt-32 md:pt-[22vh]"
             data-voodbuilder-search-dialog
             hidden
             role="dialog"
@@ -55,7 +74,7 @@
             aria-label="{{ __('voodbuilder::search.button') }}"
         >
             <div class="absolute inset-0 bg-black/60" data-voodbuilder-search-close tabindex="-1"></div>
-            <div class="relative z-10 w-full max-w-[560px] overflow-hidden rounded-lg border border-vp-divider bg-vp-bg-elv shadow-xl">
+            <div class="relative z-10 flex w-full max-w-[560px] flex-col overflow-hidden rounded-xl bg-vp-bg-elv shadow-xl ring-1 ring-black/5">
                 <form action="{{ $searchUrl }}" method="get" class="flex items-center gap-2 border-b border-vp-divider px-4 py-3" data-voodbuilder-search-form>
                     <label class="sr-only" for="voodbuilder-search-input">{{ __('voodbuilder::search.button') }}</label>
                     <span class="text-vp-text-3" aria-hidden="true">
@@ -72,6 +91,10 @@
                         autocomplete="off"
                         spellcheck="false"
                         data-voodbuilder-search-input
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="voodbuilder-search-listbox"
+                        aria-expanded="false"
                     >
                     <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-text-1" data-voodbuilder-search-close aria-label="{{ __('voodbuilder::search.close') }}">
                         <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -79,7 +102,38 @@
                         </svg>
                     </button>
                 </form>
-                <p class="px-4 py-3 text-[13px] text-vp-text-3">{{ __('voodbuilder::search.hint') }}</p>
+
+                <div class="max-h-[min(22rem,55vh)] overflow-y-auto overscroll-contain" data-voodbuilder-search-panel>
+                    <p class="px-4 py-3 text-[13px] text-vp-text-3" data-voodbuilder-search-hint>
+                        {{ __('voodbuilder::search.hint') }}
+                    </p>
+                    <p class="hidden px-4 py-3 text-[13px] text-vp-text-3" data-voodbuilder-search-loading>
+                        {{ __('voodbuilder::search.suggest_loading') }}
+                    </p>
+                    <p class="hidden px-4 py-3 text-[13px] text-vp-text-3" data-voodbuilder-search-empty></p>
+                    <div
+                        id="voodbuilder-search-listbox"
+                        class="hidden py-2"
+                        data-voodbuilder-search-list
+                        role="listbox"
+                    ></div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-vp-divider px-4 py-2.5 text-[11px] text-vp-text-3">
+                    <span class="inline-flex items-center gap-1.5">
+                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↵</kbd>
+                        {{ __('voodbuilder::search.kbd_select') }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↑</kbd>
+                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↓</kbd>
+                        {{ __('voodbuilder::search.kbd_navigate') }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">esc</kbd>
+                        {{ __('voodbuilder::search.kbd_close') }}
+                    </span>
+                </div>
             </div>
         </div>
     </div>

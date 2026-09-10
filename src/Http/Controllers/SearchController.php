@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
+use Voodflow\Voodbuilder\Support\SearchSettings;
 use Voodflow\Voodbuilder\Support\SiteSearch;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
@@ -20,13 +21,31 @@ class SearchController extends Controller
     {
         $query = trim((string) $request->query('q', ''));
         $type = filled($request->query('type')) ? (string) $request->query('type') : null;
+        $page = max(1, (int) $request->query('page', 1));
 
         if ($type !== null && ! in_array($type, SiteSearch::availableTypes(), true)) {
             $type = null;
         }
 
-        $results = SiteSearch::search($query, $type);
-        $total = SiteSearch::totalCount($results);
+        $grouped = $query !== '' ? SiteSearch::search($query) : [];
+        $typeCounts = collect($grouped)
+            ->map(fn ($items): int => $items->count())
+            ->all();
+        $total = SiteSearch::totalCount($grouped);
+
+        $scoped = $type !== null
+            ? (isset($grouped[$type]) ? [$type => $grouped[$type]] : [])
+            : $grouped;
+
+        $flat = SiteSearch::flatten($scoped);
+        $paginator = $query !== '' && $total > 0
+            ? SiteSearch::paginate($flat, $page, $query, $type)
+            : null;
+
+        $filterTypes = collect(SiteSearch::availableTypes())
+            ->filter(fn (string $id): bool => ($typeCounts[$id] ?? 0) > 0)
+            ->values()
+            ->all();
 
         $seoTitle = $query !== ''
             ? __('voodbuilder::search.seo_title', ['query' => $query])
@@ -41,11 +60,13 @@ class SearchController extends Controller
         return view('voodbuilder::pages.search', [
             'query' => $query,
             'type' => $type,
-            'results' => $results,
+            'paginator' => $paginator,
             'total' => $total,
-            'availableTypes' => SiteSearch::availableTypes(),
+            'typeCounts' => $typeCounts,
+            'availableTypes' => $filterTypes,
             'typeLabels' => SiteSearch::typeLabels(),
             'searchUrl' => VoodbuilderUrls::search(),
+            'perPage' => SearchSettings::perPage(),
         ]);
     }
 }

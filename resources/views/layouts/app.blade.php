@@ -31,11 +31,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @php
-        use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-    @endphp
-    <title>{{ $title ?? VoodbuilderSettings::siteTitle() }}</title>
-
+    {{-- Title + meta come from ralphjsmit/laravel-seo (seo()->for(...) in controllers). --}}
     {!! seo() !!}
 
     <x-voodbuilder::geo-ai-meta />

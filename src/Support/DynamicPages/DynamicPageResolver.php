@@ -45,7 +45,13 @@ final class DynamicPageResolver
 
         DynamicPageRequestContext::bind($page, $channel, $entities);
 
-        seo()->for($page);
+        $seoSubject = DynamicPageSeo::subject($page, $entities);
+
+        if (method_exists($seoSubject, 'seo')) {
+            $seoSubject->loadMissing('seo');
+        }
+
+        seo()->for($seoSubject);
 
         $page->loadMissing('credentials');
 

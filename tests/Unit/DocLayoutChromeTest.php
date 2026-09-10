@@ -19,6 +19,16 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringNotContainsString('fixed top-0 bottom-0', $contents);
         $this->assertStringContainsString('sticky top-[var(--spacing-vp-nav-total)]', $contents);
         $this->assertStringContainsString('vp:flex vp:items-stretch', $contents);
+        // Content+TOC shrink-wrap next to sidebar; article must not fill leftover width.
+        $this->assertStringContainsString('w-fit max-w-full', $contents);
+        $this->assertStringContainsString('w-[min(100%,var(--width-vp-content))]', $contents);
+        $this->assertStringContainsString('gap-24', $contents);
+        $this->assertStringContainsString('vp:ml-[80px]', $contents);
+        $this->assertStringContainsString('voodbuilder-doc-sidebar-scroll', $contents);
+        $this->assertStringContainsString("'mr-auto' => \$hasSidebar", $contents);
+        $this->assertStringContainsString('w-[var(--spacing-vp-aside)]', $contents);
+        $this->assertStringNotContainsString('justify-center', $contents);
+        $this->assertStringNotContainsString('style="', $contents);
     }
 
     public function test_landing_css_keeps_full_chrome_bars_with_boxed_nav_footer_containers(): void
@@ -148,7 +158,7 @@ class DocLayoutChromeTest extends TestCase
             'min-h-[calc(100vh-4rem)] bg-vp-bg',
             $landing,
         );
-        $this->assertStringContainsString("@apply min-h-0 bg-vp-bg", $siteTheme);
+        $this->assertStringContainsString('@apply min-h-0 bg-vp-bg', $siteTheme);
         $this->assertStringContainsString(
             'body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme=\'site\'] .voodbuilder-site-shell',
             $siteTheme,

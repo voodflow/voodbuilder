@@ -144,6 +144,37 @@ class ChromeLayoutResolverTest extends TestCase
         $this->assertSame('standard', $resolved->content_width);
     }
 
+    public function test_search_inherits_docs_layout_via_peer_channel(): void
+    {
+        ChromeLayout::query()->create([
+            'name' => 'Site default',
+            'slug' => 'site-default',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'is_default' => true,
+            'channel_ids' => [],
+            'content_width' => 'full',
+        ]);
+
+        $docs = ChromeLayout::query()->create([
+            'name' => 'Docs chrome',
+            'slug' => 'docs-chrome',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'enabled' => true,
+            'is_default' => false,
+            'channel_ids' => ['docs'],
+            'content_width' => 'standard',
+        ]);
+
+        ChromeLayoutResolver::forgetCache();
+
+        $resolved = ChromeLayoutResolver::resolveForChannel('search');
+
+        $this->assertNotNull($resolved);
+        $this->assertSame($docs->id, $resolved->id);
+        $this->assertSame('standard', $resolved->content_width);
+    }
+
     public function test_explicit_tutorials_layout_beats_docs_peer(): void
     {
         $docs = ChromeLayout::query()->create([

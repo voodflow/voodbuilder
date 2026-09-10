@@ -318,6 +318,266 @@
             const searchDialog = searchRoot.querySelector('[data-voodbuilder-search-dialog]');
             const searchOpen = searchRoot.querySelector('[data-voodbuilder-search-open]');
             const searchInput = searchRoot.querySelector('[data-voodbuilder-search-input]');
+            const searchForm = searchRoot.querySelector('[data-voodbuilder-search-form]');
+            const suggestUrl = searchRoot.getAttribute('data-voodbuilder-search-suggest-url') || '';
+            const searchPageUrl = searchRoot.getAttribute('data-voodbuilder-search-url') || '';
+            const listEl = searchRoot.querySelector('[data-voodbuilder-search-list]');
+            const hintEl = searchRoot.querySelector('[data-voodbuilder-search-hint]');
+            const emptyEl = searchRoot.querySelector('[data-voodbuilder-search-empty]');
+            const loadingEl = searchRoot.querySelector('[data-voodbuilder-search-loading]');
+            let i18n = {};
+
+            try {
+                i18n = JSON.parse(searchRoot.getAttribute('data-voodbuilder-search-i18n') || '{}');
+            } catch (e) {
+                i18n = {};
+            }
+
+            const RECENT_KEY = 'voodbuilder.search.recent';
+            let activeIndex = -1;
+            let currentItems = [];
+            let debounceTimer = null;
+            let abortController = null;
+            let lastQuery = '';
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function readRecent() {
+                try {
+                    const raw = localStorage.getItem(RECENT_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+
+                    return Array.isArray(parsed) ? parsed.filter((item) => item && item.url && item.title).slice(0, 6) : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function pushRecent(item) {
+                if (! item?.url || ! item?.title) {
+                    return;
+                }
+
+                const next = [
+                    {
+                        title: item.title,
+                        url: item.url,
+                        meta: item.meta || item.channel_label || null,
+                        channel_label: item.channel_label || null,
+                    },
+                    ...readRecent().filter((row) => row.url !== item.url),
+                ].slice(0, 6);
+
+                try {
+                    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+                } catch (e) {
+                    // ignore quota / private mode
+                }
+            }
+
+            function setPanelMode(mode) {
+                hintEl?.classList.toggle('hidden', mode !== 'hint');
+                loadingEl?.classList.toggle('hidden', mode !== 'loading');
+                emptyEl?.classList.toggle('hidden', mode !== 'empty');
+                listEl?.classList.toggle('hidden', mode !== 'list');
+            }
+
+            function setActive(index) {
+                if (! listEl) {
+                    return;
+                }
+
+                const options = listEl.querySelectorAll('[data-voodbuilder-search-option]');
+                activeIndex = index;
+
+                options.forEach((option, i) => {
+                    const active = i === index;
+                    option.classList.toggle('is-active', active);
+                    option.setAttribute('aria-selected', active ? 'true' : 'false');
+
+                    if (active) {
+                        option.scrollIntoView({ block: 'nearest' });
+                    }
+                });
+            }
+
+            function renderItems(items, { heading = null, showViewAll = false, total = 0, query = '' } = {}) {
+                if (! listEl) {
+                    return;
+                }
+
+                currentItems = items;
+                activeIndex = items.length ? 0 : -1;
+
+                if (! items.length) {
+                    setPanelMode('empty');
+                    if (emptyEl) {
+                        emptyEl.textContent = (i18n.no_results || 'No results').replace(':query', query);
+                    }
+
+                    return;
+                }
+
+                const parts = [];
+
+                if (heading) {
+                    parts.push(`<p class="px-4 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-vp-text-3">${escapeHtml(heading)}</p>`);
+                }
+
+                items.forEach((item, index) => {
+                    const metaBits = [item.channel_label, item.meta]
+                        .filter(Boolean)
+                        .map((part) => escapeHtml(part));
+                    const meta = metaBits.length
+                        ? `<p class="mt-0.5 truncate text-[12px] text-vp-text-3">${metaBits.join(' › ')}</p>`
+                        : '';
+                    const title = item.title_html || escapeHtml(item.title || '');
+                    const href = escapeHtml(item.url || '#');
+
+                    parts.push(`
+                        <a
+                            href="${href}"
+                            class="vb-search-option mx-2 flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-vp-text-1 transition-colors"
+                            role="option"
+                            id="voodbuilder-search-option-${index}"
+                            data-voodbuilder-search-option
+                            data-index="${index}"
+                            aria-selected="${index === 0 ? 'true' : 'false'}"
+                        >
+                            <span class="mt-0.5 shrink-0 font-semibold text-vp-text-3" aria-hidden="true">#</span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate font-medium text-vp-text-1">${title}</span>
+                                ${meta}
+                            </span>
+                        </a>
+                    `);
+                });
+
+                if (showViewAll && searchPageUrl && query) {
+                    const href = escapeHtml(`${searchPageUrl}${searchPageUrl.includes('?') ? '&' : '?'}q=${encodeURIComponent(query)}`);
+                    const label = escapeHtml((i18n.view_all || 'View all').replace(':count', String(total || items.length)));
+                    parts.push(`
+                        <a
+                            href="${href}"
+                            class="mt-1 block border-t border-vp-divider px-4 py-2.5 text-[13px] font-medium text-vp-brand-1 hover:bg-vp-gray-soft"
+                            data-voodbuilder-search-view-all
+                        >${label}</a>
+                    `);
+                }
+
+                listEl.innerHTML = parts.join('');
+                setPanelMode('list');
+                setActive(0);
+
+                listEl.querySelectorAll('[data-voodbuilder-search-option]').forEach((option) => {
+                    option.addEventListener('mouseenter', () => {
+                        setActive(Number(option.getAttribute('data-index') || 0));
+                    });
+                    option.addEventListener('click', () => {
+                        const idx = Number(option.getAttribute('data-index') || 0);
+                        pushRecent(currentItems[idx]);
+                    });
+                });
+            }
+
+            function showIdle() {
+                const recent = readRecent();
+
+                if (recent.length) {
+                    renderItems(recent.map((row) => ({
+                        ...row,
+                        title_html: row.title,
+                    })), { heading: i18n.recent || 'Recent' });
+                    return;
+                }
+
+                if (hintEl && i18n.hint) {
+                    hintEl.textContent = i18n.hint;
+                }
+
+                setPanelMode('hint');
+                currentItems = [];
+                activeIndex = -1;
+            }
+
+            async function runSuggest(query) {
+                if (! suggestUrl || query.length < 2) {
+                    showIdle();
+                    return;
+                }
+
+                if (abortController) {
+                    abortController.abort();
+                }
+
+                abortController = new AbortController();
+                setPanelMode('loading');
+                lastQuery = query;
+
+                try {
+                    const url = `${suggestUrl}${suggestUrl.includes('?') ? '&' : '?'}q=${encodeURIComponent(query)}`;
+                    const response = await fetch(url, {
+                        headers: { Accept: 'application/json' },
+                        signal: abortController.signal,
+                        credentials: 'same-origin',
+                    });
+
+                    if (! response.ok) {
+                        throw new Error('suggest failed');
+                    }
+
+                    const data = await response.json();
+
+                    if (query !== lastQuery) {
+                        return;
+                    }
+
+                    renderItems(data.items || [], {
+                        heading: i18n.results || 'Results',
+                        showViewAll: (data.total || 0) > (data.items || []).length,
+                        total: data.total || 0,
+                        query,
+                    });
+                } catch (error) {
+                    if (error?.name === 'AbortError') {
+                        return;
+                    }
+
+                    setPanelMode('empty');
+                    if (emptyEl) {
+                        emptyEl.textContent = (i18n.no_results || 'No results').replace(':query', query);
+                    }
+                }
+            }
+
+            function scheduleSuggest() {
+                const query = (searchInput?.value || '').trim();
+
+                window.clearTimeout(debounceTimer);
+
+                if (query.length < 2) {
+                    showIdle();
+                    return;
+                }
+
+                debounceTimer = window.setTimeout(() => runSuggest(query), 220);
+            }
+
+            function goToActiveOrSearch() {
+                if (activeIndex >= 0 && currentItems[activeIndex]?.url) {
+                    pushRecent(currentItems[activeIndex]);
+                    window.location.href = currentItems[activeIndex].url;
+                    return;
+                }
+
+                searchForm?.requestSubmit();
+            }
 
             function setSearchOpen(open) {
                 if (! searchDialog || ! searchOpen) {
@@ -328,9 +588,15 @@
                 searchDialog.classList.toggle('hidden', ! open);
                 searchDialog.classList.toggle('flex', open);
                 searchOpen.setAttribute('aria-expanded', open ? 'true' : 'false');
+                searchInput?.setAttribute('aria-expanded', open ? 'true' : 'false');
 
                 if (open) {
-                    window.setTimeout(() => searchInput?.focus(), 0);
+                    window.setTimeout(() => {
+                        searchInput?.focus();
+                        scheduleSuggest();
+                    }, 0);
+                } else if (abortController) {
+                    abortController.abort();
                 }
             }
 
@@ -340,6 +606,46 @@
 
             searchRoot.querySelectorAll('[data-voodbuilder-search-close]').forEach((element) => {
                 element.addEventListener('click', () => setSearchOpen(false));
+            });
+
+            searchInput?.addEventListener('input', scheduleSuggest);
+
+            searchForm?.addEventListener('submit', (event) => {
+                if (activeIndex >= 0 && currentItems[activeIndex]?.url && (searchInput?.value || '').trim().length >= 2) {
+                    event.preventDefault();
+                    goToActiveOrSearch();
+                }
+            });
+
+            searchInput?.addEventListener('keydown', (event) => {
+                if (! searchDialog || searchDialog.hidden) {
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    if (! currentItems.length) {
+                        return;
+                    }
+                    setActive(Math.min(activeIndex + 1, currentItems.length - 1));
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (! currentItems.length) {
+                        return;
+                    }
+                    setActive(Math.max(activeIndex - 1, 0));
+                    return;
+                }
+
+                if (event.key === 'Enter') {
+                    if (activeIndex >= 0 && currentItems[activeIndex]?.url) {
+                        event.preventDefault();
+                        goToActiveOrSearch();
+                    }
+                }
             });
 
             document.addEventListener('keydown', (event) => {

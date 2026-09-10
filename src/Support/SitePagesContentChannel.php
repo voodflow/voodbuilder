@@ -43,6 +43,7 @@ final class SitePagesContentChannel implements PublicContentChannel
         }
 
         $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+        $snippetLength = SearchSettings::snippetLength();
 
         return SitePage::query()
             ->published()
@@ -52,15 +53,27 @@ final class SitePagesContentChannel implements PublicContentChannel
             )
             ->where(function ($query) use ($like): void {
                 $query->where('title', 'like', $like)
-                    ->orWhere('slug', 'like', $like);
+                    ->orWhere('slug', 'like', $like)
+                    ->orWhere('excerpt', 'like', $like);
             })
             ->orderBy('title')
             ->limit($limit)
             ->get()
-            ->map(fn (SitePage $page): array => [
-                'title' => $page->title,
-                'url' => $page->getUrl(),
-                'excerpt' => null,
-            ]);
+            ->map(function (SitePage $page) use ($term, $snippetLength): array {
+                $preferred = filled($page->excerpt) ? (string) $page->excerpt : null;
+                $body = SearchExcerpt::plainFromHtml($page->displayExcerpt());
+                $presented = SearchExcerpt::present($term, [$preferred], $body, $snippetLength);
+
+                return [
+                    'title' => $page->title,
+                    'url' => $page->getUrl(),
+                    'meta' => filled($page->section) ? (string) $page->section : null,
+                    'excerpt' => $presented['excerpt'],
+                    'excerpt_html' => $presented['excerpt_html'],
+                    'body' => $body,
+                    'preferred_excerpt' => $preferred,
+                    'score' => SearchExcerpt::score($term, (string) $page->title, $page->section, $body ?? $preferred),
+                ];
+            });
     }
 }

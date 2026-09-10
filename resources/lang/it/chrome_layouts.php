@@ -14,6 +14,8 @@ return [
 
     'sections' => [
         'details' => 'Dettagli',
+        'reading' => 'Tipografia di lettura',
+        'reading_help' => 'Famiglia e dimensione del testo degli articoli docs/tutorial quando questo layout avvolge quei canali. Usa lo stesso catalogo font aperti del page builder.',
     ],
 
     'fields' => [
@@ -36,6 +38,14 @@ return [
         'chrome_width_help' => 'Nav/footer a tutta larghezza, oppure allineati al contenuto sopra.',
         'chrome_width_full' => 'Tutta larghezza',
         'chrome_width_content' => 'Come il contenuto',
+        'reading_font' => 'Font articolo',
+        'reading_font_help' => 'Applicato a docs e tutorial (`.vp-doc`). Inter Variable resta il default del tema sito.',
+        'reading_font_size' => 'Dimensione base articolo',
+        'reading_font_size_help' => 'Corpo del testo nella colonna di lettura. I titoli scalano di conseguenza.',
+        'reading_font_size_sm' => 'Piccola (15px)',
+        'reading_font_size_md' => 'Media (16px)',
+        'reading_font_size_lg' => 'Grande (17px) — stile VitePress',
+        'reading_font_size_xl' => 'Extra grande (18px)',
     ],
 
     'actions' => [

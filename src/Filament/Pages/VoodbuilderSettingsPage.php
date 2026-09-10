@@ -221,6 +221,39 @@ class VoodbuilderSettingsPage extends Page
                                             ]),
                                     ]),
                             ]),
+                        Tab::make(__('voodbuilder::settings.tabs.search'))
+                            ->icon('heroicon-o-document-magnifying-glass')
+                            ->schema([
+                                Section::make(__('voodbuilder::settings.search.section'))
+                                    ->description(__('voodbuilder::settings.search.section_description'))
+                                    ->contained(false)
+                                    ->schema([
+                                        TextInput::make('search_per_page')
+                                            ->label(__('voodbuilder::settings.search.per_page'))
+                                            ->helperText(__('voodbuilder::settings.search.per_page_help'))
+                                            ->numeric()
+                                            ->minValue(5)
+                                            ->maxValue(50)
+                                            ->required()
+                                            ->default(10),
+                                        TextInput::make('search_per_type')
+                                            ->label(__('voodbuilder::settings.search.per_type'))
+                                            ->helperText(__('voodbuilder::settings.search.per_type_help'))
+                                            ->numeric()
+                                            ->minValue(5)
+                                            ->maxValue(100)
+                                            ->required()
+                                            ->default(20),
+                                        TextInput::make('search_snippet_length')
+                                            ->label(__('voodbuilder::settings.search.snippet_length'))
+                                            ->helperText(__('voodbuilder::settings.search.snippet_length_help'))
+                                            ->numeric()
+                                            ->minValue(80)
+                                            ->maxValue(300)
+                                            ->required()
+                                            ->default(160),
+                                    ]),
+                            ]),
                         Tab::make(__('voodbuilder::settings.tabs.seo'))
                             ->icon('heroicon-o-magnifying-glass')
                             ->schema([

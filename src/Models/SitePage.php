@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use RalphJSmit\Laravel\SEO\Schema\ArticleSchema;
+use RalphJSmit\Laravel\SEO\Schema\BreadcrumbListSchema;
+use RalphJSmit\Laravel\SEO\SchemaCollection;
 use RalphJSmit\Laravel\SEO\Support\AlternateTag;
 use RalphJSmit\Laravel\SEO\Support\HasSEO;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
@@ -447,11 +450,83 @@ class SitePage extends Model implements HasRichContent
 
     public function getDynamicSEOData(): SEOData
     {
+        $this->loadMissing('seo');
+
+        $seo = $this->seo?->exists ? $this->seo : null;
+        $pageUrl = VoodbuilderUrls::page($this);
+
         return new SEOData(
-            title: $this->title,
-            description: $this->displayExcerpt(),
+            title: filled($seo?->title) ? (string) $seo->title : $this->title,
+            description: $this->seoDescription($seo),
+            author: filled($seo?->author) ? (string) $seo->author : null,
+            image: filled($seo?->image) ? (string) $seo->image : null,
+            url: $pageUrl,
+            published_time: $this->published_at,
+            modified_time: $this->updated_at,
+            section: filled($this->section) ? (string) $this->section : null,
+            schema: $this->seoSchema(),
+            type: $this->isSectionArticle() ? 'article' : 'website',
+            locale: $this->locale,
+            robots: $this->seoRobots($seo),
+            canonical_url: filled($seo?->canonical_url)
+                ? (string) $seo->canonical_url
+                : $pageUrl,
             alternates: $this->seoAlternates(),
         );
+    }
+
+    protected function seoDescription(?Model $seo): ?string
+    {
+        if (filled($seo?->description)) {
+            return (string) $seo->description;
+        }
+
+        if (filled($this->excerpt)) {
+            return (string) $this->excerpt;
+        }
+
+        // Prefer site-wide default (VoodbuilderSeo) over stripped HTML from the canvas.
+        return null;
+    }
+
+    protected function seoRobots(?Model $seo): ?string
+    {
+        if (filled($seo?->getAttributes()['robots'] ?? null)) {
+            return (string) $seo->robots;
+        }
+
+        if ($this->password_protected || $this->visibility !== PageVisibility::Public) {
+            return 'noindex, nofollow';
+        }
+
+        return null;
+    }
+
+    protected function seoSchema(): SchemaCollection
+    {
+        $schema = SchemaCollection::initialize()
+            ->addBreadcrumbs(function (BreadcrumbListSchema $breadcrumbs): BreadcrumbListSchema {
+                $crumbs = [__('voodbuilder::seo.breadcrumb_home') => VoodbuilderUrls::home($this->locale)];
+
+                if ($this->isSectionArticle() && filled($this->section)) {
+                    $sectionHome = static::sectionHomePage((string) $this->section);
+
+                    if ($sectionHome !== null) {
+                        $crumbs[$sectionHome->title] = VoodbuilderUrls::page($sectionHome);
+                    }
+                }
+
+                // Current page is appended by BreadcrumbListSchema::initializeMarkup().
+                return $breadcrumbs->prependBreadcrumbs($crumbs);
+            });
+
+        if ($this->isSectionArticle()) {
+            $schema->addArticle(function (ArticleSchema $article): ArticleSchema {
+                return $article;
+            });
+        }
+
+        return $schema;
     }
 
     /** @return list<AlternateTag>|null */

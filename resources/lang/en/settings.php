@@ -39,8 +39,20 @@ return [
         'theme' => 'Layouts',
         'themes' => 'Themes',
         'seo' => 'SEO',
+        'search' => 'Search',
         'geo_ai' => 'GEO & AI',
         'analytics' => 'Analytics',
+    ],
+
+    'search' => [
+        'section' => 'Site search',
+        'section_description' => 'How many results to load and how long snippets are on the public search page.',
+        'per_page' => 'Results per page',
+        'per_page_help' => 'Number of hits shown per page after ranking (5–50).',
+        'per_type' => 'Results per channel',
+        'per_type_help' => 'Maximum hits fetched from each content channel before merging (5–100).',
+        'snippet_length' => 'Snippet length',
+        'snippet_length_help' => 'Approximate character length of the text snippet around the match (80–300).',
     ],
 
     'theme_studio_subheading' => 'Theme catalog, colors with live preview, and per-area assignments — no nested scrollbars.',

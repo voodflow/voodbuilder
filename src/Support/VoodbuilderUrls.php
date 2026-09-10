@@ -91,4 +91,13 @@ final class VoodbuilderUrls
 
         return route('voodbuilder.search', $query);
     }
+
+    public static function searchSuggest(array $query = []): string
+    {
+        if (! Route::has('voodbuilder.search.suggest')) {
+            return url('/search/suggest');
+        }
+
+        return route('voodbuilder.search.suggest', $query);
+    }
 }

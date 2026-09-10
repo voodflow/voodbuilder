@@ -1,6 +1,7 @@
 @php
     use Voodflow\Voodbuilder\Models\SitePage;
     use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+    use Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography;
     use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
     use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
@@ -64,7 +65,12 @@
                 '--voodbuilder-page-content-max: '.$pageContentMaxWidth,
                 '--width-vp-layout: '.$pageContentMaxWidth.' !important',
             ]
-            : ['--width-vp-layout: 100% !important']);
+            // Docs/tutorials with a left sidebar need a finite layout measure (VitePress
+            // --vp-layout-max-width). Forcing 100% zeroes --vp-outer-margin and parks the
+            // reading pack in the middle of the leftover viewport.
+            : ($voodbuilderHasDocSidebar
+                ? []
+                : ['--width-vp-layout: 100% !important']));
     if (! $isEditor && filled($elementContentMaxWidth)) {
         $pageWidthStyleParts[] = '--voodbuilder-element-content-max: '.$elementContentMaxWidth;
     }
@@ -76,6 +82,11 @@
     ) {
         $pageWidthStyleParts[] = '--voodbuilder-chrome-layout-max: '.($elementContentMaxWidth ?: ChromeLayoutContentWidth::STANDARD_MAX_WIDTH);
     }
+    $readingTypography = ChromeLayoutReadingTypography::resolve(
+        $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
+    );
+    $pageWidthStyleParts[] = '--vp-font-family-doc: '.$readingTypography['stack'];
+    $pageWidthStyleParts[] = '--vp-font-size-doc: '.$readingTypography['cssSize'];
     $pageWidthStyle = implode('; ', $pageWidthStyleParts);
 @endphp
 <!doctype html>
@@ -84,6 +95,10 @@
     data-voodbuilder-sub-theme="{{ $voodbuilderSubTheme }}"
     data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
     data-voodbuilder-chrome-width="{{ $chromeWidth }}"
+    data-vp-reading-size="{{ $readingTypography['size'] }}"
+    @if ($readingTypography['font'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
+        data-vp-reading-font="{{ $readingTypography['font'] }}"
+    @endif
     @if (filled($voodbuilderContentChannel))
         data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
     @endif
@@ -98,11 +113,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @php
-        use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-    @endphp
-    <title>{{ $title ?? VoodbuilderSettings::siteTitle() }}</title>
-
+    @foreach ($readingTypography['stylesheetUrls'] as $readingFontHref)
+        <link rel="stylesheet" href="{{ $readingFontHref }}">
+    @endforeach
+    {{-- Title + meta come from ralphjsmit/laravel-seo (seo()->for(...) in controllers). --}}
     {!! seo() !!}
 
     <x-voodbuilder::geo-ai-meta />

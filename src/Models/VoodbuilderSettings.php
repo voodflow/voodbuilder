@@ -69,6 +69,9 @@ class VoodbuilderSettings extends Model
             'content_channel_sub_themes' => [],
             'theme_presets' => [],
             'active_theme_preset_id' => null,
+            'search_per_page' => (int) config('voodbuilder.search.per_page', 10),
+            'search_per_type' => (int) config('voodbuilder.search.per_type', 20),
+            'search_snippet_length' => (int) config('voodbuilder.search.snippet_length', 160),
         ];
     }
 
@@ -122,7 +125,20 @@ class VoodbuilderSettings extends Model
             $data['content_channel_sub_themes'][$channelId] = SubThemeResolver::normalize((string) $themeId);
         }
 
+        $data['search_per_page'] = self::clampSearchInt($data['search_per_page'] ?? null, 5, 50, 10);
+        $data['search_per_type'] = self::clampSearchInt($data['search_per_type'] ?? null, 5, 100, 20);
+        $data['search_snippet_length'] = self::clampSearchInt($data['search_snippet_length'] ?? null, 80, 300, 160);
+
         return $data;
+    }
+
+    protected static function clampSearchInt(mixed $value, int $min, int $max, int $default): int
+    {
+        if (! is_numeric($value)) {
+            return $default;
+        }
+
+        return max($min, min($max, (int) $value));
     }
 
     /**

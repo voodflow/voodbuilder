@@ -14,6 +14,8 @@ return [
 
     'sections' => [
         'details' => 'Details',
+        'reading' => 'Reading typography',
+        'reading_help' => 'Font family and size for documentation / tutorial article bodies when this layout wraps those channels. Uses the same open font catalog as the page builder.',
     ],
 
     'fields' => [
@@ -36,6 +38,14 @@ return [
         'chrome_width_help' => 'Keep nav/footer edge-to-edge, or match the content width above.',
         'chrome_width_full' => 'Full width',
         'chrome_width_content' => 'Match content',
+        'reading_font' => 'Article font',
+        'reading_font_help' => 'Applied to docs and tutorials (`.vp-doc`). Default Inter Variable is always available from the site theme.',
+        'reading_font_size' => 'Article base size',
+        'reading_font_size_help' => 'Body text size for the reading column. Headings scale with it.',
+        'reading_font_size_sm' => 'Small (15px)',
+        'reading_font_size_md' => 'Medium (16px)',
+        'reading_font_size_lg' => 'Large (17px) — VitePress-like',
+        'reading_font_size_xl' => 'Extra large (18px)',
     ],
 
     'actions' => [

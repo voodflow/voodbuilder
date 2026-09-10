@@ -29,6 +29,8 @@ class ChromeLayout extends Model
         'content_width',
         'content_max_width',
         'chrome_width',
+        'reading_font',
+        'reading_font_size',
     ];
 
     /**
