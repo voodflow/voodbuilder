@@ -170,7 +170,7 @@ final class EditorGate
             'elementsSourceUrl' => EditorCommunityBlockCatalog::elementsLibraryActive()
                 ? self::optionalEditorRoute('voodbuilder.editor.elements.source')
                 : null,
-            'elementsCatalogs' => self::elementsCatalogOptions(),
+            'elementsCatalogs' => self::sharedElementsCatalogOptions(),
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings')
                 : null,
@@ -226,27 +226,7 @@ final class EditorGate
                 : null,
             'fonts' => Voodbuilder::fonts()->toEditorPayload(),
             'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),
-            'entitlements' => [
-                'edition' => Voodbuilder::entitlements()->edition(),
-                'templatesLocal' => TemplatesModule::isEnabled(),
-                'templatesPluginInstalled' => TemplateAuthoringBridge::pluginInstalled(),
-                'templatesAuthoring' => TemplateAuthoringBridge::isEnabled(),
-                'templatesImport' => TemplateAuthoringBridge::canImportJson(),
-                'templatesExport' => TemplateAuthoringBridge::canExport(),
-                // Marketplace install-from-URL is always available when Templates module is on.
-                'templatesImportUrl' => TemplatesModule::isEnabled(),
-                'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
-                'componentsLibrary' => ComponentAuthoringBridge::canUseLibrary(),
-                'componentsImport' => ComponentAuthoringBridge::canImport(),
-                'componentsExport' => ComponentAuthoringBridge::canExport(),
-                'componentsCodeImport' => ComponentAuthoringBridge::canCodeImport(),
-                // Plugin registration unlocks single; collections still need Pro entitlement.
-                'dynamicDataSingle' => self::dynamicDataEnabled(),
-                'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),
-                'popupsBuilder' => Voodbuilder::can('popups.builder'),
-                'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
-                'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
-            ],
+            'entitlements' => self::sharedEntitlements(),
             'popupsUrl' => Voodbuilder::modules()->isEnabled('popups')
                 ? self::optionalEditorRoute('voodbuilder.editor.popups.index')
                 : null,
@@ -302,6 +282,46 @@ final class EditorGate
         }
 
         return $merged;
+    }
+
+    /**
+     * Capability flags shared by page, chrome-layout and popup editor bootstraps.
+     *
+     * @return array<string, mixed>
+     */
+    public static function sharedEntitlements(): array
+    {
+        return [
+            'edition' => Voodbuilder::entitlements()->edition(),
+            'templatesLocal' => TemplatesModule::isEnabled(),
+            'templatesPluginInstalled' => TemplateAuthoringBridge::pluginInstalled(),
+            'templatesAuthoring' => TemplateAuthoringBridge::isEnabled(),
+            'templatesImport' => TemplateAuthoringBridge::canImportJson(),
+            'templatesExport' => TemplateAuthoringBridge::canExport(),
+            // Marketplace install-from-URL is always available when Templates module is on.
+            'templatesImportUrl' => TemplatesModule::isEnabled(),
+            'templatesRemoteInstall' => Voodbuilder::can('templates.remote-install'),
+            'componentsLibrary' => ComponentAuthoringBridge::canUseLibrary(),
+            'componentsImport' => ComponentAuthoringBridge::canImport(),
+            'componentsExport' => ComponentAuthoringBridge::canExport(),
+            'componentsCodeImport' => ComponentAuthoringBridge::canCodeImport(),
+            // Plugin registration unlocks single; collections still need Pro entitlement.
+            'dynamicDataSingle' => self::dynamicDataEnabled(),
+            'dynamicDataCollections' => DynamicDataCollectionsBridge::authoringEnabled(),
+            'popupsBuilder' => Voodbuilder::can('popups.builder'),
+            'blocksOfficialComplete' => Voodbuilder::can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
+            'elementsLibrary' => EditorCommunityBlockCatalog::elementsLibraryActive(),
+        ];
+    }
+
+    /**
+     * Elements companion catalog list for the Library SOURCE UI.
+     *
+     * @return list<array{id: string, label: string}>
+     */
+    public static function sharedElementsCatalogOptions(): array
+    {
+        return self::elementsCatalogOptions();
     }
 
     /**
