@@ -623,6 +623,30 @@ describe('theme-tokens background clear', () => {
         expect(extracted).not.toContain('animate-once');
     });
 
+    it('extractGrapesComposerCss drops theme Style Manager @keyframes (keep custom Library ones)', async () => {
+        const { extractGrapesComposerCss } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const css = `
+@keyframes fade-up{0%{opacity:0;transform:translateY(2rem)}100%{opacity:1;transform:none}}
+@keyframes flip-up{0%{transform:rotateX(90deg)}100%{transform:none}}
+@keyframes ping{75%,100%{transform:scale(2);opacity:0}}
+@keyframes vb-plasma-spin{to{transform:rotate(360deg)}}
+.vb-hero-plasma__orb{filter:blur(48px)}
+#hero{color:#fff}
+`;
+
+        const extracted = extractGrapesComposerCss(css);
+
+        expect(extracted).toContain('@keyframes vb-plasma-spin');
+        expect(extracted).toContain('.vb-hero-plasma__orb');
+        expect(extracted).toContain('#hero');
+        expect(extracted).not.toContain('@keyframes fade-up');
+        expect(extracted).not.toContain('@keyframes flip-up');
+        expect(extracted).not.toContain('@keyframes ping');
+    });
+
     it('extractGrapesComposerCss keeps custom BEM rules and @keyframes from Library embeds', async () => {
         const { extractGrapesComposerCss } = await import(
             '../../resources/js/editor/editor/payload.js'

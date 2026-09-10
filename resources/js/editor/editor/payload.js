@@ -117,6 +117,8 @@ function isAuthorStyleSelector(selectors) {
 
 /**
  * Extract @keyframes blocks (nested braces) so Library/embed animations survive save.
+ * Theme / Style Manager presets (fade-up, flip-up, ping, …) are NOT persisted — they
+ * live in theme.css via Tailwind CSS Animated and must stay class-driven.
  *
  * @param {string} css
  * @returns {{ keyframes: string[], remainder: string }}
@@ -165,7 +167,7 @@ function extractKeyframesBlocks(css) {
 
         const block = source.slice(i, end).trim();
 
-        if (block !== '') {
+        if (block !== '' && ! isThemeAnimationKeyframeBlock(block)) {
             keyframes.push(block);
         }
 
@@ -173,6 +175,25 @@ function extractKeyframesBlocks(css) {
     }
 
     return { keyframes, remainder };
+}
+
+/**
+ * @keyframes shipped by tailwindcss-animated / Style Manager presets.
+ * Custom Library motion (e.g. vb-plasma-spin) must still be persisted.
+ *
+ * @param {string} block
+ * @returns {boolean}
+ */
+export function isThemeAnimationKeyframeBlock(block) {
+    const match = String(block ?? '').match(/@keyframes\s+([^\s*{]+)/i);
+
+    if (! match) {
+        return false;
+    }
+
+    const name = String(match[1] ?? '').trim().toLowerCase();
+
+    return /^(?:fade|fade-up|fade-down|fade-left|fade-right|flip-up|flip-down|ping|bounce|spin|pulse|wiggle|wiggle-more|shake|jump|jump-in|jump-out|rotate-x|rotate-y)$/.test(name);
 }
 
 export function extractGrapesComposerCss(css) {
