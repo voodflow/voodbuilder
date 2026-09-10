@@ -28,6 +28,8 @@ final class ChromeLayoutResolver
     private const PEER_CHANNELS = [
         'docs' => 'tutorials',
         'tutorials' => 'docs',
+        // Search inherits Documentation chrome unless Search has its own layout.
+        'search' => 'docs',
     ];
 
     private static ?bool $tableExists = null;

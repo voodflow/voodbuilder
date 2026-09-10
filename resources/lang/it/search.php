@@ -18,6 +18,7 @@ return [
         'tutorials' => 'Tutorial',
         'docs' => 'Documentazione',
         'pages' => 'Pagine',
+        'search' => 'Ricerca',
     ],
     'sections' => [
         'tutorials' => 'Tutorial',

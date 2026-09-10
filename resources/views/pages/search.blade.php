@@ -1,6 +1,11 @@
-@extends(config('voodbuilder.layouts.page', 'voodbuilder::layouts.page'))
+@extends(config('voodbuilder.layouts.doc', 'voodbuilder::layouts.doc'), [
+    'hasSidebar' => false,
+    'hasAside' => false,
+    'showProgress' => false,
+    'title' => __('voodbuilder::search.title'),
+])
 
-@section('page')
+@section('doc')
     <header class="mb-8 border-b border-vp-divider pb-6">
         <h1 class="text-[2rem] font-bold leading-tight tracking-tight text-vp-text-1">
             {{ __('voodbuilder::search.title') }}
@@ -61,9 +66,14 @@
                 <h2 class="mb-4 text-lg font-semibold text-vp-text-1">
                     {{ $typeLabels[$channelId] ?? $channelId }}
                 </h2>
-                <div class="divide-y divide-vp-divider rounded-lg border border-vp-divider">
+                <div class="divide-y divide-vp-divider overflow-hidden rounded-2xl ring-1 ring-black/5">
                     @foreach ($items as $item)
                         <article class="px-4 py-4">
+                            @if (! empty($item['meta']))
+                                <p class="mb-1 text-[11px] font-semibold tracking-[0.06em] text-vp-text-2 uppercase">
+                                    {{ $item['meta'] }}
+                                </p>
+                            @endif
                             <h3 class="text-base font-semibold">
                                 <a href="{{ $item['url'] }}" class="text-vp-text-1 transition-colors hover:text-vp-brand-1">
                                     {{ $item['title'] }}

@@ -23,7 +23,7 @@ return [
         'is_default' => 'Layout predefinito',
         'is_default_help' => 'Fallback del sito: usato solo quando nessun altro layout è assegnato al canale della richiesta. Ha priorità inferiore rispetto agli assegnamenti per canale.',
         'channels' => 'Canali contenuto',
-        'channels_help' => 'Assegna questo layout a uno o più canali. Documentation e Tutorials sono canali distinti: se assegni solo Documentation, Tutorials eredita lo stesso chrome (e viceversa), a meno che non abbia un layout proprio. Gli assegnamenti vincono sempre sul layout predefinito.',
+        'channels_help' => 'Assegna questo layout a uno o più canali. Documentation e Tutorials condividono il chrome se ne assegni solo uno. Search eredita il chrome di Documentation finché non assegni Search esplicitamente. Gli assegnamenti vincono sempre sul layout predefinito.',
         'content_width' => 'Larghezza contenuto',
         'content_width_help' => 'Full, standard (~80rem) o max personalizzata per il contenuto pagina.',
         'content_width_full' => 'Tutta larghezza',

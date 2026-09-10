@@ -23,7 +23,7 @@ return [
         'is_default' => 'Default layout',
         'is_default_help' => 'Site-wide fallback: used only when no other layout is assigned to the current request channel. Channel assignments always take priority over the default.',
         'channels' => 'Content channels',
-        'channels_help' => 'Assign this layout to one or more channels. Documentation and Tutorials are separate channels: assigning only Documentation also covers Tutorials (and vice versa), unless that channel has its own layout. These assignments always beat the default layout.',
+        'channels_help' => 'Assign this layout to one or more channels. Documentation and Tutorials share chrome when only one is assigned. Search inherits Documentation chrome unless you assign Search explicitly. Assignments always beat the default layout.',
         'content_width' => 'Content width',
         'content_width_help' => 'Full, standard (~80rem), or a custom max for page content.',
         'content_width_full' => 'Full width',

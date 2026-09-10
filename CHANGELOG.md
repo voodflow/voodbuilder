@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Content channel **Search** (`search`) for Theme Map / Layouts; inherits Documentation chrome by default; excluded from search filter pills
+- Search results page uses the **doc layout** (narrow column, like documentation articles)
+
+### Changed
+
+- Documentation search hits show **Topic › Section** as meta, plus a short content excerpt
+
+## [0.1.46] - 2026-09-10
+
+### Added
+
+- Search content channel for chrome layout assignment (inherits Documentation unless Search is set)
+
+### Changed
+
+- Site search results use the Documentation layout chrome; channel filter excludes the Search surface itself
+
 ## [0.1.45] - 2026-09-10
 
 ### Fixed

@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 final class SiteSearch
 {
     /**
-     * @return array<string, Collection<int, array{title: string, url: string, excerpt?: string|null}>>
+     * @return array<string, Collection<int, array{title: string, url: string, excerpt?: string|null, meta?: string|null}>>
      */
     public static function search(string $term, ?string $type = null): array
     {
@@ -20,7 +20,7 @@ final class SiteSearch
         $results = [];
         $limit = self::perType();
 
-        foreach (app(ContentChannelRegistry::class)->all() as $id => $channel) {
+        foreach (self::indexableChannels() as $id => $channel) {
             if ($type !== null && $type !== $id) {
                 continue;
             }
@@ -40,7 +40,7 @@ final class SiteSearch
     }
 
     /**
-     * @param  array<string, Collection<int, array{title: string, url: string, excerpt?: string|null}>>  $results
+     * @param  array<string, Collection<int, array{title: string, url: string, excerpt?: string|null, meta?: string|null}>>  $results
      */
     public static function totalCount(array $results): int
     {
@@ -50,7 +50,7 @@ final class SiteSearch
     /** @return list<string> */
     public static function availableTypes(): array
     {
-        return array_keys(app(ContentChannelRegistry::class)->all());
+        return array_keys(self::indexableChannels());
     }
 
     /** @return array<string, string> */
@@ -58,11 +58,29 @@ final class SiteSearch
     {
         $labels = [];
 
-        foreach (app(ContentChannelRegistry::class)->all() as $id => $channel) {
+        foreach (self::indexableChannels() as $id => $channel) {
             $labels[$id] = $channel->label();
         }
 
         return $labels;
+    }
+
+    /**
+     * @return array<string, \Voodflow\Voodbuilder\Contracts\PublicContentChannel>
+     */
+    protected static function indexableChannels(): array
+    {
+        $channels = [];
+
+        foreach (app(ContentChannelRegistry::class)->all() as $id => $channel) {
+            if (method_exists($channel, 'appearsInSearchIndex') && $channel->appearsInSearchIndex() === false) {
+                continue;
+            }
+
+            $channels[$id] = $channel;
+        }
+
+        return $channels;
     }
 
     protected static function perType(): int

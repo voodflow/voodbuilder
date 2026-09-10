@@ -13,6 +13,7 @@ use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Modules\AbstractVoodBuilderModule;
 use Voodflow\Voodbuilder\Modules\ModuleContext;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
+use Voodflow\Voodbuilder\Support\SearchContentChannel;
 use Voodflow\Voodbuilder\Support\SitePagesContentChannel;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -64,6 +65,7 @@ final class PagesModule extends AbstractVoodBuilderModule implements RegistersRo
     public function register(ModuleContext $context): void
     {
         Voodbuilder::contentChannel('pages', new SitePagesContentChannel);
+        Voodbuilder::contentChannel('search', new SearchContentChannel);
         $this->registerRoutes($context->app->make(Router::class), $context);
     }
 

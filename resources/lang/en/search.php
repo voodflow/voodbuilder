@@ -18,6 +18,7 @@ return [
         'tutorials' => 'Tutorials',
         'docs' => 'Documentation',
         'pages' => 'Pages',
+        'search' => 'Search',
     ],
     'sections' => [
         'tutorials' => 'Tutorials',
