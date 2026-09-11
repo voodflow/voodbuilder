@@ -50,7 +50,6 @@ use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Livewire\AccountSettings;
 use Voodflow\Voodbuilder\Livewire\SiteNotificationBell;
-use Voodflow\Voodbuilder\Models\ApiDataSource;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
@@ -63,7 +62,6 @@ use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
-use Voodflow\Voodbuilder\Policies\ApiDataSourcePolicy;
 use Voodflow\Voodbuilder\Policies\ChromeLayoutPolicy;
 use Voodflow\Voodbuilder\Policies\ModelIntegrationPolicy;
 use Voodflow\Voodbuilder\Policies\NavigationMenuPolicy;
@@ -71,11 +69,8 @@ use Voodflow\Voodbuilder\Policies\SitePagePolicy;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
-use Voodflow\Voodbuilder\Support\DataSources\ApiDataSourceManager;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRelatedBindingSourceRegistry;
-use Voodflow\Voodbuilder\Support\Editor\Bindings\ApiDataSourceBindingRegistrar;
-use Voodflow\Voodbuilder\Support\Editor\Bindings\ApiDataSourceRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingImageResolverRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BuiltinBindingSources;
@@ -150,9 +145,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModelRegistry::class);
         $this->app->singleton(ReverseRelationRegistry::class);
         $this->app->singleton(ModelIntegrationRegistry::class);
-        $this->app->singleton(ApiDataSourceRegistry::class);
-        $this->app->singleton(ApiDataSourceManager::class);
-        $this->app->singleton(ApiDataSourceBindingRegistrar::class);
+        // ApiDataSource* singletons live in voodflow/voodbuilder-dynamic-api.
         // RepeatListRegistry / ModelIntegrationListResolver are bound by
         // voodbuilder-dynamic-data when that package is installed.
         $this->app->singleton(ModelIntegrationBindingRegistrar::class);
@@ -182,7 +175,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         Gate::policy(NavigationMenu::class, NavigationMenuPolicy::class);
         Gate::policy(ChromeLayout::class, ChromeLayoutPolicy::class);
         Gate::policy(ModelIntegration::class, ModelIntegrationPolicy::class);
-        Gate::policy(ApiDataSource::class, ApiDataSourcePolicy::class);
 
         $this->ensureMediaRuntime();
 

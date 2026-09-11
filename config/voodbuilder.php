@@ -442,22 +442,6 @@ return [
         'model_integrations' => [
             'excluded_models' => [],
         ],
-        /*
-        | API Data Sources (page bindings via {slug}.remote.*). Admin UI lives in
-        | voodbuilder-dynamic-data; Core owns resolve + SSRF hardening.
-        */
-        'api_data_sources' => [
-            'max_limit' => 25,
-            'callbacks' => [
-                // 'products-feed' => \App\Voodbuilder\ProductsFeedCallback::class,
-            ],
-            'http' => [
-                'timeout' => (int) env('VOODBUILDER_API_DATA_SOURCE_TIMEOUT', 10),
-                'connect_timeout' => (int) env('VOODBUILDER_API_DATA_SOURCE_CONNECT_TIMEOUT', 5),
-                'block_ssrf' => (bool) env('VOODBUILDER_API_DATA_SOURCE_BLOCK_SSRF', true),
-                'allow_relative_urls' => (bool) env('VOODBUILDER_API_DATA_SOURCE_ALLOW_RELATIVE', false),
-            ],
-        ],
         'payload' => [
             // Character limits (Laravel `max:` on strings). Pages with Forms / SVGs /
             // Style Manager #id rules routinely exceed the old 100–500KB caps.

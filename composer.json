@@ -45,9 +45,11 @@
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
             "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src-voodbuilder/Modules/DynamicData/",
             "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource/",
-            "Voodflow\\Voodbuilder\\Filament\\Resources\\ApiDataSourceResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ApiDataSourceResource/",
             "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/",
-            "Voodflow\\VoodbuilderElements\\": "../voodbuilder-elements/src/"
+            "Voodflow\\VoodbuilderElements\\": "../voodbuilder-elements/src/",
+            "Voodflow\\VoodbuilderDynamicApi\\": "../voodbuilder-dynamic-api/src/",
+            "Voodflow\\Voodbuilder\\Modules\\DynamicApi\\": "../voodbuilder-dynamic-api/src-voodbuilder/Modules/DynamicApi/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ApiDataSourceResource\\": "../voodbuilder-dynamic-api/src-voodbuilder/Filament/Resources/ApiDataSourceResource/"
         },
         "classmap": [
             "../vpopups/src/Models/",
@@ -60,7 +62,12 @@
             "../voodbuilder-components/src-voodbuilder/Support/Editor/",
             "../voodbuilder-dynamic-data/src-voodbuilder/Support/Editor/Bindings/",
             "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource.php",
-            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ApiDataSourceResource.php"
+            "../voodbuilder-dynamic-api/src-voodbuilder/Support/DataSources/",
+            "../voodbuilder-dynamic-api/src-voodbuilder/Support/Editor/Bindings/",
+            "../voodbuilder-dynamic-api/src-voodbuilder/Models/",
+            "../voodbuilder-dynamic-api/src-voodbuilder/Enums/",
+            "../voodbuilder-dynamic-api/src-voodbuilder/Policies/",
+            "../voodbuilder-dynamic-api/src-voodbuilder/Filament/Resources/ApiDataSourceResource.php"
         ]
     },
     "require-dev": {
@@ -82,7 +89,8 @@
         "voodflow/voodbuilder-elements": "Paid companion: remote Elements library (api.voodflow.com) for Pro/Agency section catalog.",
         "voodflow/voodbuilder-components": "Paid companion: saved components library and global classes.",
         "voodflow/voodbuilder-dynamic-data": "Paid companion: Dynamic Data bindings, Model Integrations, and List repeat.",
-        "voodflow/voodbuilder-templates": "Paid companion: page template authoring (save, JSON import/export)."
+        "voodflow/voodbuilder-templates": "Paid companion: page template authoring (save, JSON import/export).",
+        "voodflow/voodbuilder-dynamic-api": "Paid companion: HTTP/static/eloquent/callback API data sources for page bindings and List repeat."
     },
     "archive": {
         "exclude": [

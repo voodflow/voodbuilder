@@ -18,6 +18,8 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 use Voodflow\VoodbuilderComponents\VoodbuilderComponents;
 use Voodflow\VoodbuilderComponents\VoodbuilderComponentsServiceProvider;
+use Voodflow\VoodbuilderDynamicApi\VoodbuilderDynamicApi;
+use Voodflow\VoodbuilderDynamicApi\VoodbuilderDynamicApiServiceProvider;
 use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicData;
 use Voodflow\VoodbuilderDynamicData\VoodbuilderDynamicDataServiceProvider;
 use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
@@ -46,6 +48,9 @@ abstract class TestCase extends BaseTestCase
                 : null,
             class_exists(VoodbuilderDynamicDataServiceProvider::class)
                 ? VoodbuilderDynamicDataServiceProvider::class
+                : null,
+            class_exists(VoodbuilderDynamicApiServiceProvider::class)
+                ? VoodbuilderDynamicApiServiceProvider::class
                 : null,
             class_exists(VoodbuilderTemplatesServiceProvider::class)
                 ? VoodbuilderTemplatesServiceProvider::class
@@ -94,6 +99,11 @@ abstract class TestCase extends BaseTestCase
         if (class_exists(VoodbuilderDynamicData::class)) {
             VoodbuilderDynamicData::reset();
             VoodbuilderDynamicData::activate();
+        }
+
+        if (class_exists(VoodbuilderDynamicApi::class)) {
+            VoodbuilderDynamicApi::reset();
+            VoodbuilderDynamicApi::activate();
         }
 
         if (class_exists(VoodbuilderTemplates::class)) {
@@ -178,5 +188,10 @@ abstract class TestCase extends BaseTestCase
         });
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        $dynamicApiMigrations = __DIR__.'/../../voodbuilder-dynamic-api/database/migrations';
+        if (is_dir($dynamicApiMigrations)) {
+            $this->loadMigrationsFrom($dynamicApiMigrations);
+        }
     }
 }

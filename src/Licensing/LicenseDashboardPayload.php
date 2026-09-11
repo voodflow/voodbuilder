@@ -105,6 +105,7 @@ final class LicenseDashboardPayload
         $componentsInstalled = ComponentRuntimeBridge::moduleEnabled();
         $templatesInstalled = TemplateAuthoringBridge::pluginInstalled();
         $dynamicInstalled = self::safeClassExists('Voodflow\\VoodbuilderDynamicData\\VoodbuilderDynamicData');
+        $dynamicApiInstalled = self::safeClassExists('Voodflow\\VoodbuilderDynamicApi\\VoodbuilderDynamicApi');
         $vdocsInstalled = self::safeClassExists('Voodflow\\Vdocs\\Vdocs');
         $vtutsInstalled = self::safeClassExists('Voodflow\\Vtuts\\Vtuts');
         $vcookieInstalled = self::safeClassExists('Voodflow\\Vcookiebar\\Vcookiebar');
@@ -149,6 +150,12 @@ final class LicenseDashboardPayload
                 'distribution' => 'anystack',
                 'single' => $manager->can('dynamic-data.single'),
                 'collections' => $manager->can('dynamic-data.collections'),
+            ],
+            'dynamic_api' => [
+                'slug' => 'voodbuilder-dynamic-api',
+                'installed' => $dynamicApiInstalled,
+                'distribution' => 'anystack',
+                'custom_providers' => $manager->can('dynamic-data.custom-providers'),
             ],
             'popups' => [
                 'slug' => 'vpopups',
@@ -242,6 +249,8 @@ final class LicenseDashboardPayload
             ['slug' => 'voodbuilder-elements', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro + catalog CDN'],
             ['slug' => 'voodbuilder-components', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency'],
             ['slug' => 'voodbuilder-templates', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro'],
+            ['slug' => 'voodbuilder-dynamic-data', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro'],
+            ['slug' => 'voodbuilder-dynamic-api', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency custom providers'],
             ['slug' => 'vpopups', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Separate SKU'],
             ['slug' => 'vdocs', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
             ['slug' => 'vtuts', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
