@@ -61,14 +61,19 @@
                     ])
                     @if (! $hasSidebar && ! $hasAside)
                         data-voodbuilder-reading-column="content"
+                    @elseif (! $hasSidebar && $hasAside)
+                        data-voodbuilder-reading-column="pack"
                     @endif
                 >
-                    <div @class([
-                        'min-w-0',
-                        'w-[min(100%,var(--width-vp-content))]' => $hasSidebar && $isReadingLayout,
-                        'w-full flex-1 max-w-[min(100%,calc(var(--width-vp-layout)-var(--spacing-vp-aside)-7rem))]' => $isReadingLayout && ! $hasSidebar,
-                        'w-full max-w-[min(100%,var(--width-vp-content))]' => ! $isReadingLayout,
-                    ])>
+                    <div
+                        @class([
+                            'min-w-0',
+                            'w-[min(100%,var(--width-vp-content))]' => $hasSidebar && $isReadingLayout,
+                            'w-full flex-1 max-w-[min(100%,calc(var(--width-vp-layout)-var(--spacing-vp-aside)-7rem))]' => $isReadingLayout && ! $hasSidebar,
+                            'w-full max-w-[min(100%,var(--width-vp-content))]' => ! $isReadingLayout,
+                        ])
+                        data-voodbuilder-reading-article
+                    >
                         @yield('doc')
                     </div>
 

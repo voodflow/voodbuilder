@@ -4,7 +4,7 @@
  * Visible only when chromeLayoutMode && readingPreviews from companions.
  */
 
-import { tablerIcon } from './editor-icons.js';
+import { lucideIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
 
@@ -1009,8 +1009,8 @@ export function ensureReadingInspectorTab(shellMounts, labels = {}) {
     button.setAttribute('aria-selected', 'false');
     button.setAttribute('aria-label', labels.tabReading ?? 'Integration');
     button.title = labels.tabReading ?? 'Integration';
-    // Puzzle / components — companion integration, not typography (avoids the "T").
-    button.innerHTML = tablerIcon('components', 17);
+    // Lucide boxes — same family as other inspector tabs (tabler `components` rendered blank in some builds).
+    button.innerHTML = lucideIcon('boxes', 17);
     tablist.appendChild(button);
 
     const panel = document.createElement('div');

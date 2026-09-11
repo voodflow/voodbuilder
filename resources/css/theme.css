@@ -132,6 +132,22 @@
     margin-inline: auto;
 }
 
+/*
+ * Series lessons / no left sidebar + TOC: hug article+aside, center the pack.
+ */
+[data-voodbuilder-reading-column='pack'] {
+    width: max-content;
+    max-width: min(100%, var(--width-vp-layout, 90rem));
+    margin-inline: auto;
+}
+
+[data-voodbuilder-reading-column='pack'] > [data-voodbuilder-reading-article] {
+    width: min(100%, var(--width-vp-content, 48rem));
+    max-width: min(100%, var(--width-vp-content, 48rem));
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 @layer base {
     :root {
         --vp-outer-margin: max(0px, calc((100vw - var(--width-vp-layout)) / 2));

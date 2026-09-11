@@ -4,6 +4,52 @@ body.voodbuilder-chrome-layout-editor .voodbuilder-editor-library-panel[data-voo
     display: none !important;
 }
 
+/*
+ * Layout editor: keep the site header in normal flow so Progress + Page content
+ * drop zones stay visible under the menu (sticky/fixed nav otherwise covers them).
+ */
+body.voodbuilder-chrome-layout-editor header[role='banner'],
+body.voodbuilder-chrome-layout-editor header[role='banner'].sticky,
+body.voodbuilder-chrome-layout-editor header[role='banner'].fixed,
+body.voodbuilder-chrome-layout-editor [data-voodbuilder-chrome-shell] > header[role='banner'],
+body.voodbuilder-chrome-layout-editor .gjs-frame-wrapper header[role='banner'] {
+    position: relative !important;
+    top: auto !important;
+    inset: auto !important;
+}
+
+/* Progress strip: clearer empty affordance between header and page content */
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-drop-zone--progress:not(:has(> [data-voodbuilder-block])) {
+    min-height: 2.75rem;
+}
+
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-drop-zone--progress:empty::before,
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-drop-zone--progress:not(:has(> [data-voodbuilder-block]))::before {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
+}
+
+/* Page content slot: always show a readable empty band in the layout editor */
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-content-slot[data-voodbuilder-page-content],
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-content-slot[data-voodbuilder-content-slot]:not([data-voodbuilder-page-content]) {
+    min-height: 14rem;
+}
+
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:empty::before,
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-content-slot[data-voodbuilder-page-content]:not(:has(> :not([data-voodbuilder-top-drop-spacer], [data-voodbuilder-bottom-drop-spacer], [data-voodbuilder-inner-drop])))::before,
+body.voodbuilder-chrome-layout-editor .voodbuilder-chrome-content-slot[data-voodbuilder-content-slot]:not([data-voodbuilder-page-content])::before {
+    border: 1px dashed color-mix(in srgb, var(--color-vp-text-3, #9ca3af) 55%, transparent);
+    border-radius: 0.375rem;
+    margin: 0.25rem 0;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 92%, transparent);
+}
+
+/* Reading preview: less top clearance when header is no longer sticky in the layout editor */
+body.voodbuilder-chrome-layout-editor .voodbuilder-editor-reading__preview--canvas {
+    --vb-reading-clearance: 1.5rem;
+}
+
 /* Page editor: empty / spacer-only slots keep a real hit target.
  * Appending the top-drop spacer makes :empty false — without this override the
  * slot collapses to ~0px and canvas drops vanish (wrapper is not droppable). */

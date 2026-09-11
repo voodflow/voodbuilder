@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.49] - 2026-09-11
+
+### Fixed
+
+- Series / no-left-sidebar + TOC reading pack uses `data-voodbuilder-reading-column="pack"` so article+aside stay centered (not left-stuck when Tailwind `mx-auto` / max-width utilities are missing from the host Vite CSS)
+- Layout chrome editor: Integration tab icon uses Lucide `boxes` (Tabler `components` rendered blank in some builds)
+- Layout chrome editor: header is not sticky so Progress + Page content drop zones stay visible under the menu
+
 ## [0.1.48] - 2026-09-11
 
 ### Added
