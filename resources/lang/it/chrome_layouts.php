@@ -15,7 +15,21 @@ return [
     'sections' => [
         'details' => 'Dettagli',
         'reading' => 'Tipografia di lettura',
-        'reading_help' => 'Famiglia e dimensione del testo degli articoli docs/tutorial quando questo layout avvolge quei canali. Usa lo stesso catalogo font aperti del page builder.',
+        'reading_help' => 'Famiglia e dimensione del testo degli articoli docs/tutorial quando questo layout avvolge quei canali. L’anteprima live sotto usa le stesse variabili CSS consumate dai layout companion sul sito pubblico.',
+    ],
+
+    'preview' => [
+        'heading' => 'Anteprima lettura',
+        'hint' => 'Simula le pagine companion che estendono lo shell chrome di Voodbuilder.',
+        'sample' => 'Campione generico',
+        'sample_eyebrow' => 'Documentazione',
+        'sidebar' => 'Indice',
+        'nav_active' => 'Modello layout',
+        'nav_item' => 'Per iniziare',
+        'nav_item_alt' => 'Token tema',
+        'toc' => 'In questa pagina',
+        'toc_active' => 'Pattern consigliato',
+        'toc_item' => 'Section',
     ],
 
     'fields' => [
@@ -46,6 +60,8 @@ return [
         'reading_font_size_md' => 'Media (16px)',
         'reading_font_size_lg' => 'Grande (17px) — stile VitePress',
         'reading_font_size_xl' => 'Extra grande (18px)',
+        'reading_preview_channel' => 'Campione anteprima',
+        'reading_preview_channel_help' => 'I companion possono registrare un proprio campione con Voodbuilder::readingPreview(). La tipografia resta quella dei controlli sopra.',
     ],
 
     'actions' => [

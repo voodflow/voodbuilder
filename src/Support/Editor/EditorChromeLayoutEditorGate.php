@@ -10,6 +10,7 @@ use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
+use Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
@@ -44,6 +45,7 @@ final class EditorChromeLayoutEditorGate
         $subTheme = ChromeLayoutSubThemeResolver::forChromeLayout($layout);
         $contentWidth = ChromeLayoutContentWidth::fromLayout($layout);
         $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth($layout);
+        $readingTypography = ChromeLayoutReadingTypography::resolve($layout);
 
         return [
             'chromeLayoutMode' => true,
@@ -87,7 +89,7 @@ final class EditorChromeLayoutEditorGate
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.editor.plugins', []),
             'canvasStyles' => EditorCanvas::styleUrls(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme),
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme).self::readingTypographyCanvasCss($readingTypography),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => true,
@@ -95,6 +97,13 @@ final class EditorChromeLayoutEditorGate
                 ThemePalette::cssForCanvas($subTheme),
                 ThemePalette::criticalChromeShellCss($subTheme),
             ]))),
+            'readingTypography' => [
+                'font' => $readingTypography['font'],
+                'size' => $readingTypography['size'],
+                'stack' => $readingTypography['stack'],
+                'cssSize' => $readingTypography['cssSize'],
+                'stylesheetUrls' => $readingTypography['stylesheetUrls'],
+            ],
             'builderBrand' => config('voodbuilder.editor.builder.brand', 'VoodBuilder'),
             'globalTextTags' => GlobalTextTags::values(),
             'marketingUrl' => (string) config('voodbuilder.marketing_url', 'https://voodflow.com/voodbuilder'),
@@ -108,6 +117,28 @@ final class EditorChromeLayoutEditorGate
             ],
             'labels' => EditorGate::sharedEditorLabels(),
         ];
+    }
+
+    /**
+     * @param  array{stack: string, cssSize: string}  $readingTypography
+     */
+    private static function readingTypographyCanvasCss(array $readingTypography): string
+    {
+        $stack = $readingTypography['stack'];
+        $cssSize = $readingTypography['cssSize'];
+
+        return <<<CSS
+
+        :root, body, [data-gjs-type="wrapper"] {
+            --vp-font-family-doc: {$stack};
+            --vp-font-size-doc: {$cssSize};
+        }
+
+        .vp-doc {
+            font-family: var(--vp-font-family-doc, var(--font-sans));
+            font-size: var(--vp-font-size-doc, 17px);
+        }
+CSS;
     }
 
     /**

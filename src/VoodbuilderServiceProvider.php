@@ -93,6 +93,7 @@ use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
@@ -157,6 +158,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(ModuleRegistry::class);
         $this->app->singleton(FontCatalog::class);
         $this->app->singleton(ReservedPathRegistry::class);
+        $this->app->singleton(ReadingPreviewRegistry::class);
         $this->app->singleton(EntitlementManager::class, function (): EntitlementManager {
             return new EntitlementManager(EntitlementProviderFactory::make());
         });

@@ -36,6 +36,7 @@ use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
 use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\Fonts\FontDefinition;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
@@ -133,6 +134,16 @@ class Voodbuilder
     public static function reservedPathPrefixes(): array
     {
         return app(ReservedPathRegistry::class)->all();
+    }
+
+    /**
+     * Register a reading-typography preview sample for Layouts admin.
+     *
+     * @param  array{label: string, html: string, eyebrow?: string|null}|callable(): array{label: string, html: string, eyebrow?: string|null}  $definition
+     */
+    public static function readingPreview(string $channelId, array|callable $definition): void
+    {
+        app(ReadingPreviewRegistry::class)->register($channelId, $definition);
     }
 
     /**

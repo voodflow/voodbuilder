@@ -15,7 +15,21 @@ return [
     'sections' => [
         'details' => 'Details',
         'reading' => 'Reading typography',
-        'reading_help' => 'Font family and size for documentation / tutorial article bodies when this layout wraps those channels. Uses the same open font catalog as the page builder.',
+        'reading_help' => 'Font family and size for documentation / tutorial article bodies when this layout wraps those channels. Live preview below uses the same CSS variables companion layouts consume on the public site.',
+    ],
+
+    'preview' => [
+        'heading' => 'Reading preview',
+        'hint' => 'Mirrors companion pages that extend the Voodbuilder chrome shell.',
+        'sample' => 'Generic sample',
+        'sample_eyebrow' => 'Documentation',
+        'sidebar' => 'Contents',
+        'nav_active' => 'Layout model',
+        'nav_item' => 'Getting started',
+        'nav_item_alt' => 'Theme tokens',
+        'toc' => 'On this page',
+        'toc_active' => 'Recommended pattern',
+        'toc_item' => 'Section',
     ],
 
     'fields' => [
@@ -46,6 +60,8 @@ return [
         'reading_font_size_md' => 'Medium (16px)',
         'reading_font_size_lg' => 'Large (17px) — VitePress-like',
         'reading_font_size_xl' => 'Extra large (18px)',
+        'reading_preview_channel' => 'Preview sample',
+        'reading_preview_channel_help' => 'Companions can register their own sample via Voodbuilder::readingPreview(). Typography still comes from the controls above.',
     ],
 
     'actions' => [

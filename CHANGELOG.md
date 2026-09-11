@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Layouts → Reading typography: **live preview** of a companion-style article (sidebar + `.vp-doc` + TOC) driven by font/size CSS vars
+- `Voodbuilder::readingPreview($channelId, …)` / `ReadingPreviewRegistry` — third-party plugins register their own sample HTML for the Layout form
+- Chrome layout visual editor canvas receives `--vp-font-family-doc` / `--vp-font-size-doc` from the layout record
 - `Voodbuilder::reservePathPrefix()` / `ReservedPathRegistry` — companions (and third parties) declare public URL prefixes so site-page catch-alls never claim them
 - Site-page catch-alls register after boot so reserved prefixes from all packages are known
 - Content channel **Search** (`search`) for Theme Map / Layouts; inherits Documentation chrome by default; excluded from search filter pills
