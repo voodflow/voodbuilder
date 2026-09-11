@@ -45,6 +45,7 @@
             "Voodflow\\VoodbuilderDynamicData\\": "../voodbuilder-dynamic-data/src/",
             "Voodflow\\Voodbuilder\\Modules\\DynamicData\\": "../voodbuilder-dynamic-data/src-voodbuilder/Modules/DynamicData/",
             "Voodflow\\Voodbuilder\\Filament\\Resources\\ModelIntegrationResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource/",
+            "Voodflow\\Voodbuilder\\Filament\\Resources\\ApiDataSourceResource\\": "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ApiDataSourceResource/",
             "Voodflow\\VoodbuilderTemplates\\": "../voodbuilder-templates/src/",
             "Voodflow\\VoodbuilderElements\\": "../voodbuilder-elements/src/"
         },
@@ -58,7 +59,8 @@
             "../voodbuilder-components/src-voodbuilder/Http/Controllers/",
             "../voodbuilder-components/src-voodbuilder/Support/Editor/",
             "../voodbuilder-dynamic-data/src-voodbuilder/Support/Editor/Bindings/",
-            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource.php"
+            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ModelIntegrationResource.php",
+            "../voodbuilder-dynamic-data/src-voodbuilder/Filament/Resources/ApiDataSourceResource.php"
         ]
     },
     "require-dev": {

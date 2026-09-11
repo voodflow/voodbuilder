@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **API Data Sources** for page Dynamic Data: model `ApiDataSource`, drivers HTTP / static / eloquent / callback, `{slug}.remote.*` + `{slug}.item.*` bindings, `{slug}.list` List repeat, SSRF-hardened fetch, optional cache TTL, URL/header `{{token}}` interpolation (`config voodbuilder.api_data_sources`)
+- `Voodbuilder::registerApiDataSourceCallback()` for named callback drivers
+
 ## [0.1.49] - 2026-09-11
 
 ### Fixed

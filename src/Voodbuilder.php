@@ -20,6 +20,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
+use Voodflow\Voodbuilder\Support\DataSources\ApiDataSourceManager;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRelatedBindingSourceRegistry;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\BindingContext;
@@ -247,6 +248,15 @@ class Voodbuilder
     public static function editorBindingSource(EditorBindingSource $source): void
     {
         app(BindingRegistry::class)->register($source);
+    }
+
+    /**
+     * Register a named callback for API Data Source driver `callback`.
+     */
+    public static function registerApiDataSourceCallback(string $key, callable|string $callback): void
+    {
+        app(ApiDataSourceManager::class)
+            ->registerCallback($key, $callback);
     }
 
     /**

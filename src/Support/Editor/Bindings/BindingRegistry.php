@@ -84,6 +84,10 @@ final class BindingRegistry
             $bindingKey = str_replace('.latest.', '.item.', $bindingKey);
         }
 
+        if ($context->repeatItem !== null && str_contains($bindingKey, '.remote.')) {
+            $bindingKey = str_replace('.remote.', '.item.', $bindingKey);
+        }
+
         $parsed = BindingKey::tryParse($bindingKey, $this);
 
         if ($parsed === null) {
