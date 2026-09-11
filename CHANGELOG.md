@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.48] - 2026-09-11
+
 ### Added
 
-- Layouts → Reading typography: **live preview** of a companion-style article (sidebar + `.vp-doc` + TOC) driven by font/size CSS vars
-- `Voodbuilder::readingPreview($channelId, …)` / `ReadingPreviewRegistry` — third-party plugins register their own sample HTML for the Layout form
-- Chrome layout visual editor canvas receives `--vp-font-family-doc` / `--vp-font-size-doc` from the layout record
+- **Layout builder → Integration tab** (only when companions register `Voodbuilder::readingPreview()`): typography controls in the inspector; **live preview in Page content**; Primary / Secondary fonts; body size + primary/secondary type scales via Tailwind size tokens (`xs`…`9xl`); **Reset** restores defaults
+- Integration CSS vars on `<html>`: `--vp-font-family-doc`, `--vp-font-family-sidebar`, `--vp-font-size-doc`, `--vp-font-size-sidebar`, `--vp-doc-*`, `--vp-sidebar-{h1–h4,p}-{size,weight,leading}`
+- `Voodbuilder::readingPreview($channelId, …)` / `ReadingPreviewRegistry` — third-party plugins register sample HTML for the Layout builder Integration tab
+- Chrome layout visual editor canvas receives Integration typography CSS vars from the layout record
+- Layout chrome editor block sidebar includes **FOUNDATION** blocks (Layout / Basic / Media / Utilities / Site), not only Site nav/footer
+- **Chrome layout Progress zone** (optional strip between Header and Page content): drop Reading progress here so it is not nested in the nav; removing it no longer deletes the header. Published bar stays `position:fixed` and pins under sticky/fixed nav (or flush to the top when the menu scrolls away)
+- Academy / developer docs: [Chrome layout & Integration preview](docs/academy/developer/chrome-layout-integration.md) — companion checklist for channels, reading layouts, Integration samples, dedicated sub-themes
 - `Voodbuilder::reservePathPrefix()` / `ReservedPathRegistry` — companions (and third parties) declare public URL prefixes so site-page catch-alls never claim them
 - Site-page catch-alls register after boot so reserved prefixes from all packages are known
 - Content channel **Search** (`search`) for Theme Map / Layouts; inherits Documentation chrome by default; excluded from search filter pills
@@ -20,13 +26,14 @@ All notable changes to this project will be documented in this file.
 - Header search palette: live top matches (Filament-style), keyboard nav, recent searches, link to full results
 - Developer docs: PHP SDK [Site search](docs/manual/developer/php-sdk/site-search.md) — how companions make content searchable
 - Doc reading typography closer to VitePress (`.vp-doc` sizes/spacing, content width tokens, sidebar weights)
-- **Layouts → Reading typography**: FontCatalog family + base size (`sm`–`xl`, default 17px) for docs/tutorials via `--vp-font-family-doc` / `--vp-font-size-doc`
 - Site Page admin **SEO** section (meta title, description, robots, canonical) on the morph `seo` relation
 - Site Page JSON-LD breadcrumbs (and Article schema for section articles)
 - Dynamic templates prefer bound entity SEO (event, exhibitor, …) over the template page title
+- `data-voodbuilder-reading-column="content"` for no-rail reading pages (paywalls / simple articles)
 
 ### Changed
 
+- Integration typography is edited in the **layout visual builder** Integration tab (formerly Reading), not in Filament Layouts admin; settings apply to all companions on that chrome layout
 - Reading layouts are owned by companions (`vdocs::layouts.voodbuilder`, `vtuts::layouts.voodbuilder`); `voodbuilder::layouts.doc` remains a deprecated shim
 - Site search uses `PluginLayout::resolve('page')` instead of the doc reading layout
 - Documentation search hits show **Topic › Section** as meta, plus a short content excerpt
@@ -34,6 +41,7 @@ All notable changes to this project will be documented in this file.
 - Search filter pills show result counts; empty channels are omitted
 - “All” results are a single ranked list with channel headers when the channel changes
 - Doc layout: content+TOC as `w-fit` pack beside the sidebar; article uses `--width-vp-content` without filling leftover viewport
+- Locked / default dark theme syncs `--default-theme-mode` and Filament Alpine theme store so public pages with comment scripts do not flash light
 
 ### Fixed
 
@@ -43,6 +51,8 @@ All notable changes to this project will be documented in this file.
 - Public layouts emit a single `<title>` via `{!! seo() !!}` (removed duplicate Blade title)
 - Site Page meta description no longer falls back to stripped canvas HTML; uses excerpt → SEO override → site default
 - Gated / password-protected pages default to `noindex, nofollow` unless SEO robots is set
+- No-rail reading columns stay on `--width-vp-content` even when Tailwind arbitrary `max-w-[var(…)]` utilities are missing from the Vite CSS
+
 ## [0.1.46] - 2026-09-10
 
 ### Added

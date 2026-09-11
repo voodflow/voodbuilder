@@ -39,7 +39,7 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertNotContains('vb-gallery-1', EditorCommunityBlockCatalog::coreOwnedIds());
     }
 
-    public function test_community_chrome_editor_sidebar_is_site_chrome_only(): void
+    public function test_community_chrome_editor_sidebar_is_foundation_tiles(): void
     {
         $this->useEdition(EditionCapabilityMatrix::EDITION_COMMUNITY);
 
@@ -50,32 +50,41 @@ class EditorCommunityBlockCatalogTest extends TestCase
             ['id' => 'vb-hero-2', 'label' => 'Hero'],
             ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
             ['id' => 'voodbuilder-heading', 'label' => 'Heading'],
+            ['id' => 'voodbuilder-layout-section', 'label' => 'Section'],
+            ['id' => 'image', 'label' => 'Image'],
+            ['id' => 'voodbuilder-reading-time', 'label' => 'Reading'],
         ], chromeLayoutEditor: true);
 
         $ids = array_column($filtered, 'id');
 
-        $this->assertSame(
-            ['site_nav_simple', 'site_footer_centered'],
-            $ids,
-        );
+        $this->assertContains('site_nav_simple', $ids);
+        $this->assertContains('site_footer_centered', $ids);
+        $this->assertContains('voodbuilder-heading', $ids);
+        $this->assertContains('voodbuilder-layout-section', $ids);
+        $this->assertContains('image', $ids);
+        $this->assertContains('voodbuilder-reading-time', $ids);
         $this->assertNotContains('chrome_content_slot', $ids);
         $this->assertNotContains('vb-hero-2', $ids);
-        $this->assertNotContains('voodbuilder-heading', $ids);
+        $this->assertNotContains('vb-gallery-1', $ids);
     }
 
-    public function test_professional_chrome_editor_also_limits_sidebar_to_site_chrome(): void
+    public function test_professional_chrome_editor_also_limits_sidebar_to_foundation(): void
     {
         $this->useEdition(EditionCapabilityMatrix::EDITION_PROFESSIONAL);
 
         $filtered = EditorCommunityBlockCatalog::filterEditorBlocks([
             ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
             ['id' => 'site_nav_simple', 'label' => 'Nav'],
+            ['id' => 'voodbuilder-layout-container', 'label' => 'Container'],
             ['id' => 'chrome_content_slot', 'label' => 'Slot'],
         ], chromeLayoutEditor: true);
 
         $ids = array_column($filtered, 'id');
 
-        $this->assertSame(['site_nav_simple'], $ids);
+        $this->assertContains('site_nav_simple', $ids);
+        $this->assertContains('voodbuilder-layout-container', $ids);
+        $this->assertNotContains('vb-gallery-1', $ids);
+        $this->assertNotContains('chrome_content_slot', $ids);
     }
 
     public function test_professional_shows_full_library_when_registered(): void

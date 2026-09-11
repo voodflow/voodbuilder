@@ -14,7 +14,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -27,9 +26,7 @@ use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource\Pages\ListChrom
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
-use Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
-use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 
 /**
  * Filament resource: Chrome Layout.
@@ -136,40 +133,6 @@ class ChromeLayoutResource extends Resource
                             ->default(ChromeLayoutContentWidth::CHROME_FULL)
                             ->native(false)
                             ->helperText(__('voodbuilder::chrome_layouts.fields.chrome_width_help')),
-                    ]),
-                Section::make(__('voodbuilder::chrome_layouts.sections.reading'))
-                    ->description(__('voodbuilder::chrome_layouts.sections.reading_help'))
-                    ->schema([
-                        Select::make('reading_font')
-                            ->label(__('voodbuilder::chrome_layouts.fields.reading_font'))
-                            ->options(fn (): array => ChromeLayoutReadingTypography::fontOptions())
-                            ->default(ChromeLayoutReadingTypography::DEFAULT_FONT)
-                            ->searchable()
-                            ->native(false)
-                            ->live()
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.reading_font_help')),
-                        Select::make('reading_font_size')
-                            ->label(__('voodbuilder::chrome_layouts.fields.reading_font_size'))
-                            ->options(fn (): array => ChromeLayoutReadingTypography::sizeOptions())
-                            ->default(ChromeLayoutReadingTypography::DEFAULT_SIZE)
-                            ->native(false)
-                            ->live()
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.reading_font_size_help')),
-                        Select::make('reading_preview_channel')
-                            ->label(__('voodbuilder::chrome_layouts.fields.reading_preview_channel'))
-                            ->options(fn (): array => app(ReadingPreviewRegistry::class)->options())
-                            ->default('sample')
-                            ->native(false)
-                            ->live()
-                            ->dehydrated(false)
-                            ->helperText(__('voodbuilder::chrome_layouts.fields.reading_preview_channel_help')),
-                        View::make('voodbuilder::filament.reading-typography-preview')
-                            ->viewData(fn (Get $get): array => [
-                                'readingFont' => $get('reading_font'),
-                                'readingSize' => $get('reading_font_size'),
-                                'previewChannel' => $get('reading_preview_channel') ?: 'sample',
-                            ])
-                            ->columnSpanFull(),
                     ]),
             ]);
     }

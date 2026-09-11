@@ -28,10 +28,22 @@
             });
         }
 
+        function syncFilamentThemeStore(isDark) {
+            root.style.setProperty('--default-theme-mode', isDark ? 'dark' : 'light');
+
+            try {
+                if (window.Alpine && typeof window.Alpine.store === 'function') {
+                    window.Alpine.store('theme', isDark ? 'dark' : 'light');
+                }
+            } catch (error) {
+                // Alpine / Filament may not be on this page.
+            }
+        }
+
         function applyTheme(isDark) {
             root.classList.toggle('dark', isDark);
             root.style.colorScheme = isDark ? 'dark' : 'light';
-
+            syncFilamentThemeStore(isDark);
             syncThemeToggleUi(isDark);
 
             window.dispatchEvent(new CustomEvent('voodbuilder:theme-changed', {
@@ -42,6 +54,19 @@
         }
 
         applyTheme(root.classList.contains('dark'));
+
+        document.addEventListener('alpine:init', () => {
+            // Filament's dark-mode.js also listens on alpine:init; re-assert after it.
+            queueMicrotask(() => {
+                if (config.locked) {
+                    applyTheme(config.defaultMode === 'dark');
+
+                    return;
+                }
+
+                applyTheme(resolvePreferredDark());
+            });
+        });
 
         function readStoredTheme() {
             try {

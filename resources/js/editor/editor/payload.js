@@ -521,6 +521,7 @@ export function buildPayload(editor, options = {}) {
     };
 
     if (mutate) {
+        runExportStep('detachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:detach'));
         runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
         runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
         runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
@@ -636,7 +637,21 @@ export function buildPayload(editor, options = {}) {
         js: editor.getJs(),
     };
 
+    if (editor.__voodbuilderChromeLayoutMode && editor.__voodbuilderReadingTypography) {
+        payload.readingTypography = {
+            font: editor.__voodbuilderReadingTypography.font,
+            sidebarFont: editor.__voodbuilderReadingTypography.sidebarFont,
+            size: editor.__voodbuilderReadingTypography.size,
+            typeScale: editor.__voodbuilderReadingTypography.typeScale,
+            sidebarTypeScale: editor.__voodbuilderReadingTypography.sidebarTypeScale,
+        };
+    }
+
     restoreTopDropSpacerAfterExport(editor);
+
+    if (mutate) {
+        runExportStep('attachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:attach'));
+    }
 
     restoreSvgPaintInspectorStyles(editor);
 

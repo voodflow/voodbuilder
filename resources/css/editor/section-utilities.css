@@ -70,6 +70,8 @@
         height: var(--vb-progress-height, 3px) !important;
         min-height: var(--vb-progress-height, 3px) !important;
         pointer-events: auto;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     [data-gjs-type="wrapper"] .vb-reading-progress__bar,

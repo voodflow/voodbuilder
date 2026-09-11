@@ -5595,6 +5595,12 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     min-height: 3px;
     pointer-events: none;
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, transparent);
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.vb-reading-progress:not(.is-active) {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .vb-reading-progress__bar {
@@ -5616,6 +5622,8 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     width: 100%;
     margin: 0.5rem 0;
     pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
 }
 
 .gjs-dashed .vb-reading-progress__bar {

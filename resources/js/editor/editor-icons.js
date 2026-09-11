@@ -67,6 +67,7 @@ const PATHS = {
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     list: '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
     'list-ordered': '<path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h1"/><path d="M4 6h1.5a1.5 1.5 0 0 1 0 3H4"/><path d="M4 18h1.5a1.5 1.5 0 0 0 0-3H5"/>',
+    type: '<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/>',
 };
 
 /** Tabler icons (MIT — https://tabler.io/icons) for library tabs. */

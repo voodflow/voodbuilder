@@ -100,7 +100,11 @@ final class EditorCommunityBlockCatalog
     public const CHROME_ONLY_BLOCK_ID = 'chrome_content_slot';
 
     /**
-     * Layout editor sidebar: header/footer chrome only (content slot is already on canvas).
+     * Layout editor sidebar: foundation tiles (Layout / Basic / Media / Utilities / Site).
+     * Marketing sections stay out — those belong on pages, not chrome shells.
+     * Content slot stays on the canvas via starter HTML (never a sidebar tile).
+     *
+     * @deprecated Prefer {@see FOUNDATION_BLOCK_IDS}; kept for callers that only need Site chrome.
      *
      * @var list<string>
      */
@@ -204,10 +208,10 @@ final class EditorCommunityBlockCatalog
     {
         $chromeLayoutEditor ??= self::requestIsChromeLayoutEditor();
 
-        // Layout editor: only nav/footer SITE blocks — never landing sections or the
-        // page-content slot tile (slot is already injected in starter HTML).
+        // Layout editor: foundation tiles only (Layout, Basic, Media, Utilities, Site).
+        // No landing/marketing sections — those are for pages.
         if ($chromeLayoutEditor) {
-            return self::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS;
+            return self::FOUNDATION_BLOCK_IDS;
         }
 
         // Elements companion active → SOURCE / Library owns section templates.
@@ -217,9 +221,12 @@ final class EditorCommunityBlockCatalog
             return self::FOUNDATION_BLOCK_IDS;
         }
 
-        // No Elements plugin: limited local library — foundation + free section pack
-        // (and soft upsell in the Library panel). Pro capability alone does not dump
-        // the full remote catalog into the accordion; that requires Elements.
+        // Pro / full official library: no sidebar allowlist.
+        if (! self::limitsLibrary()) {
+            return null;
+        }
+
+        // Community: foundation + free section pack (and soft upsell in the Library panel).
         return array_values(array_unique([
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,
@@ -237,11 +244,11 @@ final class EditorCommunityBlockCatalog
 
         $allowlist = self::sidebarAllowlist($chromeLayoutEditor);
         $coreOwned = array_fill_keys(self::coreOwnedIds(), true);
-        $chromeSidebar = array_fill_keys(self::CHROME_LAYOUT_SIDEBAR_BLOCK_IDS, true);
+        $foundation = array_fill_keys(self::FOUNDATION_BLOCK_IDS, true);
 
         return array_values(array_filter(
             $blocks,
-            static function (array $block) use ($excluded, $allowlist, $coreOwned, $chromeLayoutEditor, $chromeSidebar): bool {
+            static function (array $block) use ($excluded, $allowlist, $coreOwned, $chromeLayoutEditor, $foundation): bool {
                 $id = (string) ($block['id'] ?? '');
 
                 if ($id === '' || in_array($id, $excluded, true)) {
@@ -254,7 +261,7 @@ final class EditorCommunityBlockCatalog
                 }
 
                 if ($chromeLayoutEditor) {
-                    return isset($chromeSidebar[$id]);
+                    return isset($foundation[$id]);
                 }
 
                 // Full library: everything except chrome slot.

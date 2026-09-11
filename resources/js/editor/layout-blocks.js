@@ -943,7 +943,7 @@ export function registerLayoutBlocks(editor, labels = {}) {
         }
     }
 
-    // Layout editor chrome allowlist (SITE nav/footer only) must not show LAYOUT tiles.
+    // Layout editor foundation allowlist must include LAYOUT tiles to register them.
     if (! layoutBlockIds.some((id) => isEditorBlockAllowed(editor, id))) {
         return;
     }

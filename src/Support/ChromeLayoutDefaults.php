@@ -51,6 +51,20 @@ HTML;
 HTML;
     }
 
+    public static function progressZoneHtml(): string
+    {
+        $placeholder = e(__('voodbuilder::chrome_layouts.editor.layout_progress_zone_placeholder'));
+
+        return <<<HTML
+<div
+    data-voodbuilder-chrome-drop-zone="progress"
+    data-placeholder="{$placeholder}"
+    data-gjs-type="voodbuilder-chrome-drop-zone"
+    class="voodbuilder-chrome-drop-zone voodbuilder-chrome-drop-zone--progress"
+></div>
+HTML;
+    }
+
     public static function footerZoneHtml(): string
     {
         $placeholder = e(__('voodbuilder::chrome_layouts.editor.layout_footer_zone_placeholder'));
@@ -67,6 +81,6 @@ HTML;
 
     public static function starterHtml(): string
     {
-        return self::navZoneHtml().self::contentSlotHtml().self::footerZoneHtml();
+        return self::navZoneHtml().self::progressZoneHtml().self::contentSlotHtml().self::footerZoneHtml();
     }
 }

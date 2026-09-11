@@ -40,8 +40,13 @@ class EditorCanvasTest extends TestCase
             $frameStyle,
         );
         $this->assertStringContainsString('[data-voodbuilder-chrome-drop-zone]', $frameStyle);
+        $this->assertStringContainsString('footer.voodbuilder-editor-footer', $frameStyle);
         $this->assertStringContainsString(
-            '--width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem))',
+            '--width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem)) !important',
+            $frameStyle,
+        );
+        $this->assertStringContainsString(
+            'max-width: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem)) !important',
             $frameStyle,
         );
         $this->assertStringContainsString('padding-inline: 1.25rem', $frameStyle);

@@ -137,7 +137,7 @@ class Voodbuilder
     }
 
     /**
-     * Register a reading-typography preview sample for Layouts admin.
+     * Register a reading-typography preview sample for the Layout visual builder.
      *
      * @param  array{label: string, html: string, eyebrow?: string|null}|callable(): array{label: string, html: string, eyebrow?: string|null}  $definition
      */

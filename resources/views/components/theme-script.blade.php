@@ -36,6 +36,20 @@
 
         document.documentElement.classList.toggle('dark', isDark);
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        // Filament comments share localStorage `theme` and --default-theme-mode;
+        // keep them aligned so alpine:init does not flash the public site to light.
+        document.documentElement.style.setProperty(
+            '--default-theme-mode',
+            isDark ? 'dark' : 'light',
+        );
+
+        if (config.locked) {
+            try {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            } catch (error) {
+                // Ignore storage failures.
+            }
+        }
 
         if (/Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent)) {
             document.documentElement.classList.add('mac');

@@ -30,6 +30,7 @@
             <aside
                 class="hidden w-[var(--vp-sidebar-outer-width)] shrink-0 bg-vp-bg-alt vp:block"
                 aria-label="{{ __('Sidebar') }}"
+                data-voodbuilder-reading-sidebar
             >
                 <div class="voodbuilder-doc-sidebar-scroll sticky top-[var(--spacing-vp-nav-total)] z-10 max-h-[calc(100vh-var(--spacing-vp-nav-total))] overflow-x-hidden overflow-y-auto overscroll-contain pb-24 pt-[calc(var(--spacing-vp-doc-offset)-var(--spacing-vp-nav-total))]">
                     <nav class="ml-auto w-[var(--spacing-vp-sidebar)] px-8 outline-0" aria-label="{{ __('Documentation') }}">
@@ -51,24 +52,30 @@
                 ])
                 @if ($showProgress ?? false) data-doc-article @endif
             >
-                <div @class([
-                    'flex w-fit max-w-full items-start gap-24 xl:gap-28',
-                    'mx-auto w-full max-w-[var(--width-vp-layout)]' => ! $isReadingLayout,
-                    'mr-auto' => $hasSidebar,
-                    'mx-auto' => $isReadingLayout && ! $hasSidebar,
-                ])>
+                <div
+                    @class([
+                        'flex max-w-full items-start gap-24 xl:gap-28',
+                        'w-fit mr-auto' => $hasSidebar,
+                        'mx-auto w-full max-w-[var(--width-vp-layout)]' => ! $hasSidebar && $hasAside,
+                        'mx-auto w-full max-w-[var(--width-vp-content)]' => ! $hasSidebar && ! $hasAside,
+                    ])
+                    @if (! $hasSidebar && ! $hasAside)
+                        data-voodbuilder-reading-column="content"
+                    @endif
+                >
                     <div @class([
                         'min-w-0',
-                        'w-[min(100%,var(--width-vp-content))]' => $isReadingLayout,
-                        'w-full' => ! $isReadingLayout,
+                        'w-[min(100%,var(--width-vp-content))]' => $hasSidebar && $isReadingLayout,
+                        'w-full flex-1 max-w-[min(100%,calc(var(--width-vp-layout)-var(--spacing-vp-aside)-7rem))]' => $isReadingLayout && ! $hasSidebar,
+                        'w-full max-w-[min(100%,var(--width-vp-content))]' => ! $isReadingLayout,
                     ])>
                         @yield('doc')
                     </div>
 
                     @if ($hasAside)
-                        <aside class="hidden w-[var(--spacing-vp-aside)] shrink-0 self-stretch xl:block">
+                        <aside class="hidden w-[var(--spacing-vp-aside)] shrink-0 self-stretch xl:block" data-voodbuilder-reading-sidebar>
                             <div @class([
-                                'sticky self-start overflow-y-auto overscroll-contain text-[14px] [&>nav+nav]:mt-5 [&>nav+nav]:border-t [&>nav+nav]:border-vp-divider [&>nav+nav]:pt-5',
+                                'sticky self-start overflow-y-auto overscroll-contain [&>nav+nav]:mt-5 [&>nav+nav]:border-t [&>nav+nav]:border-vp-divider [&>nav+nav]:pt-5',
                                 'top-[var(--spacing-vp-doc-offset)] max-h-[calc(100vh-var(--spacing-vp-doc-offset)-1rem)]' => $hasSidebar,
                                 'top-24 max-h-[calc(100vh-7rem)]' => ! $hasSidebar,
                             ])>

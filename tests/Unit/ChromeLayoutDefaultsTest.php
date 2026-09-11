@@ -16,10 +16,24 @@ class ChromeLayoutDefaultsTest extends TestCase
 
         $this->assertStringContainsString('data-voodbuilder-content-slot="main"', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome-drop-zone="nav"', $html);
+        $this->assertStringContainsString('data-voodbuilder-chrome-drop-zone="progress"', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome-drop-zone="footer"', $html);
         $this->assertStringContainsString('data-gjs-type="voodbuilder-chrome-drop-zone"', $html);
         $this->assertStringNotContainsString('site_header', $html);
         $this->assertStringNotContainsString('site_footer_columns_simple', $html);
+
+        $navPos = strpos($html, 'data-voodbuilder-chrome-drop-zone="nav"');
+        $progressPos = strpos($html, 'data-voodbuilder-chrome-drop-zone="progress"');
+        $slotPos = strpos($html, 'data-voodbuilder-content-slot="main"');
+        $footerPos = strpos($html, 'data-voodbuilder-chrome-drop-zone="footer"');
+
+        $this->assertNotFalse($navPos);
+        $this->assertNotFalse($progressPos);
+        $this->assertNotFalse($slotPos);
+        $this->assertNotFalse($footerPos);
+        $this->assertTrue($navPos < $progressPos);
+        $this->assertTrue($progressPos < $slotPos);
+        $this->assertTrue($slotPos < $footerPos);
     }
 
     public function test_content_slot_block_uses_shared_markup(): void

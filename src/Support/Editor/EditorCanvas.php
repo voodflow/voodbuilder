@@ -661,12 +661,43 @@ final class EditorCanvas
          *
          * Prefer --voodbuilder-page-content-max when set (standard/custom); otherwise
          * fall back to --voodbuilder-chrome-layout-max / 80rem (full page, mirrors landing.css).
-         * Scope to chrome parts only — never page-content (see full-bleed rule above). */
+         * Scope to chrome parts only — never page-content (see full-bleed rule above).
+         *
+         * !important: body/html set --width-vp-layout: 100% !important for the workspace;
+         * without !important here, some canvas rebuilds leave footer containers at 100%. */
         body[data-voodbuilder-chrome-width='full'] :is(
             [data-voodbuilder-chrome-shell],
             [data-voodbuilder-chrome-shell-part],
-            [data-voodbuilder-chrome-drop-zone]:not([data-voodbuilder-page-content])
+            [data-voodbuilder-chrome-drop-zone]:not([data-voodbuilder-page-content]),
+            footer.voodbuilder-editor-footer,
+            footer.voodbuilder-editor-dynamic,
+            [data-voodbuilder-editor-site-footer]
         ) {
+            --width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem)) !important;
+        }
+
+        /* Explicit container measure — mirrors theme.css / landing.css footer gutters.
+         * Do not rely on inherited custom props alone (Grapes can remount footer DOM). */
+        body[data-voodbuilder-chrome-width='full'] :is(
+            footer.voodbuilder-editor-footer,
+            footer.voodbuilder-editor-dynamic,
+            [data-voodbuilder-editor-site-footer]
+        ) > :is(.container, .voodbuilder-editor-container),
+        body[data-voodbuilder-chrome-width='full'] [data-voodbuilder-chrome-drop-zone]:not([data-voodbuilder-page-content]) :is(
+            footer.voodbuilder-editor-footer,
+            footer.voodbuilder-editor-dynamic
+        ) > :is(.container, .voodbuilder-editor-container) {
+            width: 100% !important;
+            max-width: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem)) !important;
+            margin-inline: auto !important;
+            box-sizing: border-box;
+        }
+
+        /* Same for site nav inner row when chrome is full-bleed. */
+        body[data-voodbuilder-chrome-width='full'] :is(
+            [data-voodbuilder-editor-site-header],
+            header[role='banner']
+        ) :is(.voodbuilder-editor-container, .container) {
             --width-vp-layout: var(--voodbuilder-page-content-max, var(--voodbuilder-chrome-layout-max, 80rem));
         }
 

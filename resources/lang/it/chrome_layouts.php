@@ -14,12 +14,12 @@ return [
 
     'sections' => [
         'details' => 'Dettagli',
-        'reading' => 'Tipografia di lettura',
+        'reading' => 'Tipografia integrazione',
         'reading_help' => 'Famiglia e dimensione del testo degli articoli docs/tutorial quando questo layout avvolge quei canali. L’anteprima live sotto usa le stesse variabili CSS consumate dai layout companion sul sito pubblico.',
     ],
 
     'preview' => [
-        'heading' => 'Anteprima lettura',
+        'heading' => 'Anteprima integrazione',
         'hint' => 'Simula le pagine companion che estendono lo shell chrome di Voodbuilder.',
         'sample' => 'Campione generico',
         'sample_eyebrow' => 'Documentazione',
@@ -86,6 +86,7 @@ return [
         'page_content_placeholder' => 'Trascina qui i blocchi per costruire la pagina',
         'layout_content_slot_placeholder' => 'Contenuto pagina — riempito automaticamente da ogni pagina.',
         'layout_nav_zone_placeholder' => 'Trascina qui i blocchi header',
+        'layout_progress_zone_placeholder' => 'Trascina qui la barra di lettura (opzionale)',
         'layout_footer_zone_placeholder' => 'Trascina qui i blocchi footer',
     ],
 

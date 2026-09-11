@@ -44,7 +44,7 @@
 @source inline("w-full vb-layout-row vb-layout-block vb-layout-div gap-4 gap-8 min-h-16 min-w-0 max-w-none");
 /* Catalog/page blocks store px-* / py-* on containers; keep utilities in the public theme. */
 @source inline("px-0 px-4 px-5 px-6 px-8 py-0 py-8 py-10 py-12 py-16 py-20 py-24 md:px-6 md:px-8");
-@source inline("p-0 p-1 p-2 p-3 p-4 p-5 p-6 p-8 p-10 p-12 p-14 p-16 p-20 p-24 m-0 m-1 m-2 m-3 m-4 m-5 m-6 m-8 m-auto mt-0 mt-2 mt-4 mt-6 mt-8 mb-0 mb-2 mb-4 mb-6 mb-8 mx-auto mr-auto ml-[80px] my-4 pt-4 pt-8 pb-4 pb-8 pl-4 pl-8 pr-4 pr-8 gap-8 gap-10 gap-14 gap-16 gap-24 gap-28 w-fit max-w-full w-[min(100%,var(--width-vp-content))] vp:ml-[80px] xl:gap-16 xl:gap-28");
+@source inline("p-0 p-1 p-2 p-3 p-4 p-5 p-6 p-8 p-10 p-12 p-14 p-16 p-20 p-24 m-0 m-1 m-2 m-3 m-4 m-5 m-6 m-8 m-auto mt-0 mt-2 mt-4 mt-6 mt-8 mb-0 mb-2 mb-4 mb-6 mb-8 mx-auto mr-auto ml-[80px] my-4 pt-4 pt-8 pb-4 pb-8 pl-4 pl-8 pr-4 pr-8 gap-8 gap-10 gap-14 gap-16 gap-24 gap-28 flex-1 w-fit max-w-full w-[min(100%,var(--width-vp-content))] max-w-[min(100%,var(--width-vp-content))] max-w-[min(100%,calc(var(--width-vp-layout)-var(--spacing-vp-aside)-7rem))] max-w-[var(--width-vp-layout)] max-w-[var(--width-vp-content)] vp:ml-[80px] xl:gap-16 xl:gap-28");
 @source inline("uppercase lowercase capitalize normal-case underline overline line-through no-underline tracking-tighter tracking-tight tracking-normal tracking-wide tracking-wider tracking-widest");
 @source not '../../tests/**/*';
 @source not '../../../../../packages/**/tests/**/*';
@@ -121,6 +121,17 @@
     --color-vp-code-gutter: #2e2e32;
 }
 
+/*
+ * Gate / no-rail reading pages: keep the article on the content measure.
+ * Do not rely on Tailwind arbitrary max-w-[var(--width-vp-content)] alone —
+ * those utilities are easy to miss in the published Vite CSS.
+ */
+[data-voodbuilder-reading-column='content'] {
+    width: 100%;
+    max-width: min(100%, var(--width-vp-content, 48rem));
+    margin-inline: auto;
+}
+
 @layer base {
     :root {
         --vp-outer-margin: max(0px, calc((100vw - var(--width-vp-layout)) / 2));
@@ -129,7 +140,7 @@
         --spacing-vp-nav-total: calc(var(--spacing-vp-nav) + var(--spacing-vp-progress));
         --spacing-vp-doc-offset: calc(var(--spacing-vp-nav-total) + 3rem);
         --vp-font-family-doc: var(--font-sans);
-        --vp-font-size-doc: 17px;
+        --vp-font-size-doc: var(--text-base);
     }
 
     html {
@@ -279,6 +290,14 @@
         pointer-events: none;
         overflow: visible;
         background: color-mix(in srgb, var(--vb-progress-color) 18%, transparent);
+        transition: opacity 0.15s ease, visibility 0.15s ease;
+    }
+
+    /* At 0% hide the whole track — no empty grey/tinted line under the nav. */
+    .vb-reading-progress:not(.is-active),
+    [data-voodbuilder-progress]:not(.vb-reading-progress):not(.is-active) {
+        opacity: 0;
+        visibility: hidden;
     }
 
     .vb-reading-progress__bar,
@@ -707,38 +726,33 @@
         font-family: var(--vp-font-family-doc, var(--font-sans));
         font-size: var(--vp-font-size-doc, 17px);
         @apply text-vp-text-1;
-        line-height: 1.75;
+        line-height: var(--vp-doc-p-leading, 1.75);
     }
 
     /* Page title outside markdown (vdocs / vtuts headers) — VitePress h1 @ ≥48rem */
     .vp-doc-title {
         font-family: var(--vp-font-family-doc, var(--font-sans));
-        @apply m-0 text-[1.75rem] leading-[1.25] font-semibold tracking-tight text-vp-text-1;
+        font-size: var(--vp-doc-h1-size, 2rem);
+        font-weight: var(--vp-doc-h1-weight, 600);
+        line-height: var(--vp-doc-h1-leading, 1.25);
+        @apply m-0 tracking-tight text-vp-text-1;
         letter-spacing: -0.02em;
-    }
-
-    @media (min-width: 48rem) {
-        .vp-doc-title {
-            font-size: 2rem;
-        }
     }
 
     .vp-doc h1 {
-        @apply mb-4 border-b border-vp-divider pb-2.5 text-[1.75rem] font-semibold text-vp-text-1;
+        @apply mb-4 border-b border-vp-divider pb-2.5 text-vp-text-1;
+        font-size: var(--vp-doc-h1-size, 2rem);
+        font-weight: var(--vp-doc-h1-weight, 600);
+        line-height: var(--vp-doc-h1-leading, 1.25);
         letter-spacing: -0.02em;
-        line-height: 1.25;
-    }
-
-    @media (min-width: 48rem) {
-        .vp-doc h1 {
-            font-size: 2rem;
-        }
     }
 
     .vp-doc h2 {
-        @apply mt-12 mb-4 border-t border-vp-divider pt-6 text-[1.5rem] font-semibold text-vp-text-1;
+        @apply mt-12 mb-4 border-t border-vp-divider pt-6 text-vp-text-1;
+        font-size: var(--vp-doc-h2-size, 1.5rem);
+        font-weight: var(--vp-doc-h2-weight, 600);
+        line-height: var(--vp-doc-h2-leading, 1.333);
         letter-spacing: -0.02em;
-        line-height: 1.333;
         scroll-margin-top: var(--spacing-vp-doc-offset);
     }
 
@@ -747,9 +761,11 @@
     }
 
     .vp-doc h3 {
-        @apply mt-8 mb-0 text-[1.25rem] font-semibold text-vp-text-1;
+        @apply mt-8 mb-0 text-vp-text-1;
+        font-size: var(--vp-doc-h3-size, 1.25rem);
+        font-weight: var(--vp-doc-h3-weight, 600);
+        line-height: var(--vp-doc-h3-leading, 1.4);
         letter-spacing: -0.01em;
-        line-height: 1.4;
         scroll-margin-top: var(--spacing-vp-doc-offset);
     }
 
@@ -760,15 +776,62 @@
     }
 
     .vp-doc h4 {
-        @apply mt-6 mb-0 text-[1.125rem] font-semibold text-vp-text-1;
+        @apply mt-6 mb-0 text-vp-text-1;
+        font-size: var(--vp-doc-h4-size, 1.125rem);
+        font-weight: var(--vp-doc-h4-weight, 600);
+        line-height: var(--vp-doc-h4-leading, 1.333);
         letter-spacing: -0.01em;
-        line-height: 1.333;
         scroll-margin-top: var(--spacing-vp-doc-offset);
     }
 
     .vp-doc p {
         @apply my-4;
-        line-height: 1.75;
+        font-size: var(--vp-doc-p-size, 1em);
+        font-weight: var(--vp-doc-p-weight, 400);
+        line-height: var(--vp-doc-p-leading, 1.75);
+    }
+
+    /* Companion reading sidebars (vdocs / vtuts / third-party) */
+    .voodbuilder-doc-sidebar-scroll,
+    .voodbuilder-doc-sidebar-scroll nav,
+    [data-voodbuilder-reading-sidebar] {
+        font-family: var(--vp-font-family-sidebar, var(--vp-font-family-doc, var(--font-sans)));
+        font-size: var(--vp-font-size-sidebar, var(--vp-sidebar-p-size, 0.875rem));
+    }
+
+    [data-voodbuilder-reading-sidebar] h1,
+    [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-title {
+        font-size: var(--vp-sidebar-h1-size, 1rem);
+        font-weight: var(--vp-sidebar-h1-weight, 600);
+        line-height: var(--vp-sidebar-h1-leading, 1.333);
+    }
+
+    [data-voodbuilder-reading-sidebar] h2,
+    [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-group {
+        font-size: var(--vp-sidebar-h2-size, 0.875rem);
+        font-weight: var(--vp-sidebar-h2-weight, 600);
+        line-height: var(--vp-sidebar-h2-leading, 1.4);
+    }
+
+    [data-voodbuilder-reading-sidebar] h3 {
+        font-size: var(--vp-sidebar-h3-size, 0.8125rem);
+        font-weight: var(--vp-sidebar-h3-weight, 500);
+        line-height: var(--vp-sidebar-h3-leading, 1.4);
+    }
+
+    [data-voodbuilder-reading-sidebar] h4 {
+        font-size: var(--vp-sidebar-h4-size, 0.8125rem);
+        font-weight: var(--vp-sidebar-h4-weight, 500);
+        line-height: var(--vp-sidebar-h4-leading, 1.333);
+    }
+
+    [data-voodbuilder-reading-sidebar] p,
+    [data-voodbuilder-reading-sidebar] li,
+    [data-voodbuilder-reading-sidebar] a.vp-reading-sidebar-link,
+    [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link {
+        font-size: var(--vp-sidebar-p-size, 0.875rem);
+        font-weight: var(--vp-sidebar-p-weight, 400);
+        line-height: var(--vp-sidebar-p-leading, 1.5);
     }
 
     .vp-doc a {
@@ -786,6 +849,12 @@
 
     .vp-doc ol {
         list-style: decimal;
+    }
+
+    .vp-doc li {
+        font-size: var(--vp-doc-p-size, 1em);
+        font-weight: var(--vp-doc-p-weight, 400);
+        line-height: var(--vp-doc-p-leading, 1.75);
     }
 
     .vp-doc li + li {
@@ -815,12 +884,19 @@
     }
 
     .vp-doc table {
-        @apply my-5 w-full border-collapse overflow-x-auto text-sm;
+        @apply my-5 w-full border-collapse overflow-x-auto;
+        font-size: var(--vp-doc-p-size, 1em);
+        font-weight: var(--vp-doc-p-weight, 400);
+        line-height: var(--vp-doc-p-leading, 1.75);
     }
 
     .vp-doc th,
     .vp-doc td {
         @apply border border-vp-divider px-3 py-2;
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+        font-family: inherit;
     }
 
     .vp-doc th {
@@ -925,12 +1001,13 @@
         background-color: transparent !important;
     }
 
-    /* VitePress VPDocAsideOutline: title 14px / links 13px (not tiny uppercase) */
+    /* TOC / outline — secondary reading scale (chrome layout Reading tab) */
     .vp-outline__title {
         margin-bottom: 0.25rem;
-        font-size: 14px;
-        font-weight: 600;
-        line-height: 2;
+        font-family: inherit;
+        font-size: var(--vp-sidebar-h2-size, 0.875rem);
+        font-weight: var(--vp-sidebar-h2-weight, 600);
+        line-height: var(--vp-sidebar-h2-leading, 1.4);
         letter-spacing: normal;
         text-transform: none;
         color: var(--color-vp-text-1);
@@ -949,9 +1026,10 @@
         margin-left: -1px;
         padding: 0.25rem 0 0.25rem 0.75rem;
         border-left: 2px solid transparent;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.5;
+        font-family: inherit;
+        font-size: var(--vp-sidebar-p-size, 0.875rem);
+        font-weight: var(--vp-sidebar-p-weight, 400);
+        line-height: var(--vp-sidebar-p-leading, 1.5);
         color: var(--color-vp-text-2);
         cursor: pointer;
         transition: color 0.2s, border-color 0.2s;

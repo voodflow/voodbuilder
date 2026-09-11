@@ -26,6 +26,8 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringContainsString('vp:ml-[80px]', $contents);
         $this->assertStringContainsString('voodbuilder-doc-sidebar-scroll', $contents);
         $this->assertStringContainsString("'mr-auto' => \$hasSidebar", $contents);
+        $this->assertStringContainsString('max-w-[var(--width-vp-content)]', $contents);
+        $this->assertStringContainsString("data-voodbuilder-reading-column=\"content\"", $contents);
         $this->assertStringContainsString('w-[var(--spacing-vp-aside)]', $contents);
         $this->assertStringNotContainsString('justify-center', $contents);
         $this->assertStringNotContainsString('style="', $contents);

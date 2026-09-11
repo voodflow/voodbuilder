@@ -14,12 +14,12 @@ return [
 
     'sections' => [
         'details' => 'Details',
-        'reading' => 'Reading typography',
+        'reading' => 'Integration typography',
         'reading_help' => 'Font family and size for documentation / tutorial article bodies when this layout wraps those channels. Live preview below uses the same CSS variables companion layouts consume on the public site.',
     ],
 
     'preview' => [
-        'heading' => 'Reading preview',
+        'heading' => 'Integration preview',
         'hint' => 'Mirrors companion pages that extend the Voodbuilder chrome shell.',
         'sample' => 'Generic sample',
         'sample_eyebrow' => 'Documentation',
@@ -86,6 +86,7 @@ return [
         'page_content_placeholder' => 'Drag blocks here to build your page',
         'layout_content_slot_placeholder' => 'Page content — filled automatically by each page.',
         'layout_nav_zone_placeholder' => 'Drop header blocks here',
+        'layout_progress_zone_placeholder' => 'Drop reading progress here (optional)',
         'layout_footer_zone_placeholder' => 'Drop footer blocks here',
     ],
 

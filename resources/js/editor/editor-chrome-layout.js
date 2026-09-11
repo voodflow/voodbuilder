@@ -1,6 +1,6 @@
 /**
- * Chrome layout editor — fixed Header / Page content / Footer drop zones.
- * Any block type can be dropped into header and footer zones.
+ * Chrome layout editor — fixed Header / Progress / Page content / Footer drop zones.
+ * Header and footer accept chrome blocks; Progress is an optional reading-progress strip.
  */
 
 import {
@@ -70,6 +70,10 @@ function layoutPlaceholders(options = {}) {
             options.layoutNavZonePlaceholder
             ?? 'Drop header blocks here',
         ),
+        progress: String(
+            options.layoutProgressZonePlaceholder
+            ?? 'Drop reading progress here (optional)',
+        ),
         footer: String(
             options.layoutFooterZonePlaceholder
             ?? 'Drop footer blocks here',
@@ -90,6 +94,24 @@ function blockTargetsFooterZone(block) {
     ).toLowerCase();
 
     return blockId.includes('footer') || blockId.startsWith('site_footer');
+}
+
+function isReadingProgressLayoutComponent(component) {
+    if (! component) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    const blockId = String(attrs['data-voodbuilder-block'] ?? '').toLowerCase();
+    const type = String(component.get?.('type') ?? '');
+    const classes = String(attrs.class ?? '');
+
+    return type === 'voodbuilder-reading-progress'
+        || blockId === 'voodbuilder-reading-progress'
+        || blockId.includes('reading-progress')
+        || classes.includes('vb-reading-progress')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-reading-progress')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-progress');
 }
 
 function isChromeLayoutMode(editor) {
@@ -261,7 +283,15 @@ function ensureDropZone(editor, wrapper, zone, placeholder, name) {
     let dropZone = findDropZone(editor, zone);
 
     if (! dropZone) {
-        const at = zone === 'nav' ? 0 : wrapper.components().length;
+        let at = wrapper.components().length;
+
+        if (zone === 'nav') {
+            at = 0;
+        } else if (zone === 'progress') {
+            const navZone = findDropZone(editor, 'nav');
+            const navIndex = safeComponentIndex(navZone);
+            at = navIndex >= 0 ? navIndex + 1 : 0;
+        }
 
         wrapper.append(buildDropZoneMarkup(zone, placeholder, name), { at });
         dropZone = findDropZone(editor, zone);
@@ -342,17 +372,25 @@ function normalizeZoneChildren(zone) {
     });
 }
 
-function relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone) {
+function relocateOrphanTopLevelBlocks(wrapper, navZone, progressZone, slot, footerZone) {
     if (! isValidMoveTarget(wrapper)) {
         return;
     }
 
-    const keep = new Set([navZone, slot, footerZone].filter((component) => isValidGrapesComponent(component)));
+    const keep = new Set(
+        [navZone, progressZone, slot, footerZone].filter((component) => isValidGrapesComponent(component)),
+    );
     const slotIndex = safeComponentIndex(slot);
     const children = [...wrapper.components().models ?? wrapper.components()];
 
     children.forEach((child) => {
         if (! isValidGrapesComponent(child) || keep.has(child) || isDropZone(child) || isContentSlot(child)) {
+            return;
+        }
+
+        if (isReadingProgressLayoutComponent(child) && isValidMoveTarget(progressZone)) {
+            safeMoveToEnd(child, progressZone);
+
             return;
         }
 
@@ -373,13 +411,103 @@ function relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone) {
     });
 }
 
+function migrateReadingProgressIntoProgressZone(navZone, progressZone, footerZone) {
+    if (! isValidMoveTarget(progressZone)) {
+        return;
+    }
+
+    const collect = (zone) => {
+        if (! zone) {
+            return [];
+        }
+
+        const found = [];
+
+        [...(zone.components?.()?.models ?? zone.components?.() ?? [])].forEach((child) => {
+            if (isReadingProgressLayoutComponent(child)) {
+                found.push(child);
+            }
+        });
+
+        try {
+            const matches = zone.find?.(
+                '.vb-reading-progress, [data-voodbuilder-block="voodbuilder-reading-progress"], [data-gjs-type="voodbuilder-reading-progress"]',
+            );
+            const list = Array.isArray(matches)
+                ? matches
+                : (matches ? [...matches] : []);
+
+            list.forEach((match) => {
+                if (isReadingProgressLayoutComponent(match) && ! found.includes(match)) {
+                    found.push(match);
+                }
+            });
+        } catch {
+            // Grapes find may throw on detached trees.
+        }
+
+        return found;
+    };
+
+    [...collect(navZone), ...collect(footerZone)].forEach((child) => {
+        if (! canMoveGrapesComponent(child) || child.parent?.() === progressZone) {
+            return;
+        }
+
+        safeMoveToEnd(child, progressZone);
+    });
+}
+
+function normalizeProgressZone(progressZone, navZone, footerZone) {
+    if (! progressZone?.components) {
+        return;
+    }
+
+    flattenDefaultWrappers(progressZone);
+
+    let keptProgress = false;
+    const children = [...progressZone.components().models ?? progressZone.components()];
+
+    children.forEach((child) => {
+        if (! isValidGrapesComponent(child)) {
+            return;
+        }
+
+        if (! isReadingProgressLayoutComponent(child)) {
+            const fallback = isValidMoveTarget(navZone) ? navZone : footerZone;
+
+            if (isValidMoveTarget(fallback) && canMoveGrapesComponent(child)) {
+                safeMoveToEnd(child, fallback);
+            }
+
+            return;
+        }
+
+        if (keptProgress) {
+            try {
+                child.remove();
+            } catch {
+                // Duplicate progress may already be detached.
+            }
+
+            return;
+        }
+
+        keptProgress = true;
+    });
+}
+
 function ensureContentSlot(editor, wrapper, placeholder) {
     let slot = findContentSlot(editor);
 
     if (! slot) {
         const navZone = findDropZone(editor, 'nav');
+        const progressZone = findDropZone(editor, 'progress');
+        const progressIndex = safeComponentIndex(progressZone);
         const navIndex = safeComponentIndex(navZone);
-        const at = navIndex >= 0 ? navIndex + 1 : 0;
+        const at = progressIndex >= 0
+            ? progressIndex + 1
+            : (navIndex >= 0 ? navIndex + 1 : 0);
         const escapedPlaceholder = String(placeholder ?? '').replace(/"/g, '&quot;');
 
         wrapper.append(
@@ -407,24 +535,34 @@ function ensureChromeLayoutStructure(editor, placeholders) {
     unwrapChromeShellWrapper(editor);
 
     const navZone = ensureDropZone(editor, wrapper, 'nav', placeholders.nav, 'Header zone');
+    const progressZone = ensureDropZone(
+        editor,
+        wrapper,
+        'progress',
+        placeholders.progress,
+        'Progress zone',
+    );
     const slot = ensureContentSlot(editor, wrapper, placeholders.contentSlot);
     const footerZone = ensureDropZone(editor, wrapper, 'footer', placeholders.footer, 'Footer zone');
 
-    relocateOrphanTopLevelBlocks(wrapper, navZone, slot, footerZone);
+    migrateReadingProgressIntoProgressZone(navZone, progressZone, footerZone);
+    relocateOrphanTopLevelBlocks(wrapper, navZone, progressZone, slot, footerZone);
 
-    const zoneOrder = [navZone, slot, footerZone].filter((component) => canMoveGrapesComponent(component));
+    const zoneOrder = [navZone, progressZone, slot, footerZone].filter((component) => canMoveGrapesComponent(component));
 
     zoneOrder.forEach((component, index) => {
         safeReorderComponent(component, wrapper, index);
     });
 
     normalizeZoneChildren(navZone);
+    normalizeProgressZone(progressZone, navZone, footerZone);
     normalizeZoneChildren(footerZone);
 
     unlockDropZoneChildren(editor, navZone);
+    unlockDropZoneChildren(editor, progressZone);
     unlockDropZoneChildren(editor, footerZone);
 
-    return { navZone, slot, footerZone };
+    return { navZone, progressZone, slot, footerZone };
 }
 
 function removeTopDropSpacerFromWrapper(wrapper) {
@@ -569,7 +707,7 @@ function applyChromeLayoutBlockFilter(editor) {
             return;
         }
 
-        // Chrome layout editor: only SITE nav/footer (allowlist from PHP).
+        // Chrome layout editor: foundation tiles (Layout / Basic / Media / Utilities / Site).
         if (allowlist) {
             block.set('visible', allowlist.includes(id));
 
@@ -619,6 +757,10 @@ function resolveTargetDropZone(editor, component) {
 
     if (isDropZone(parent)) {
         return parent;
+    }
+
+    if (isReadingProgressLayoutComponent(component)) {
+        return findDropZone(editor, 'progress') ?? findDropZoneAtPointer(editor);
     }
 
     return findDropZoneAtPointer(editor);
@@ -756,14 +898,17 @@ function wireLayoutChromeDropZoneCanvasClicks(editor) {
 
             const zone = zoneEl.getAttribute('data-voodbuilder-chrome-drop-zone');
 
-            if (zone !== 'nav' && zone !== 'footer') {
+            if (zone !== 'nav' && zone !== 'footer' && zone !== 'progress') {
                 return;
             }
 
             const dropZone = findDropZone(editor, zone);
-            const block = findPrimaryBlock(dropZone);
+            const block = zone === 'progress'
+                ? ([...(dropZone?.components?.()?.models ?? dropZone?.components?.() ?? [])]
+                    .find((child) => isReadingProgressLayoutComponent(child)) ?? null)
+                : findPrimaryBlock(dropZone);
 
-            if (! block || readBlockId(block) === '') {
+            if (! block || (zone !== 'progress' && readBlockId(block) === '')) {
                 return;
             }
 
@@ -931,11 +1076,14 @@ export function registerChromeLayoutEditor(editor, options = {}) {
         if (isContentSlot(component) || isDropZone(component)) {
             if (isDropZone(component)) {
                 const zone = component.getAttributes?.()?.[CHROME_DROP_ZONE_ATTR];
-                const block = (zone === 'nav' || zone === 'footer')
-                    ? getLayoutChromeBlock(editor, zone)
-                    : findPrimaryBlock(component);
+                const block = zone === 'progress'
+                    ? ([...(component.components?.()?.models ?? component.components?.() ?? [])]
+                        .find((child) => isReadingProgressLayoutComponent(child)) ?? null)
+                    : ((zone === 'nav' || zone === 'footer')
+                        ? getLayoutChromeBlock(editor, zone)
+                        : findPrimaryBlock(component));
 
-                if (block && readBlockId(block) !== '') {
+                if (block && (zone === 'progress' || readBlockId(block) !== '')) {
                     ensureRootInspectable(block);
                     setActiveLayoutSettingsRoot(editor, block, zone);
                     editor.select(block, { scroll: false });
@@ -1025,9 +1173,11 @@ export function registerChromeLayoutEditor(editor, options = {}) {
                 );
 
                 try {
-                    lockChromePreview(component, editor, {
-                        resolveBlockLayerLabel,
-                    });
+                    if (! isReadingProgressLayoutComponent(component)) {
+                        lockChromePreview(component, editor, {
+                            resolveBlockLayerLabel,
+                        });
+                    }
                 } catch (lockError) {
                     console.warn('Voodbuilder: could not lock chrome layout block.', lockError);
                 }

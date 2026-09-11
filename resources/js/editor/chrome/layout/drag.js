@@ -20,6 +20,18 @@ function blockTargetsFooterZone(block) {
     return blockId.includes('footer') || blockId.startsWith('site_footer');
 }
 
+function blockTargetsProgressZone(block) {
+    const blockId = String(
+        block?.get?.('attributes')?.[ATTR.block]
+        ?? block?.get?.('id')
+        ?? block?.id
+        ?? '',
+    ).toLowerCase();
+
+    return blockId === 'voodbuilder-reading-progress'
+        || blockId.includes('reading-progress');
+}
+
 function isLayoutContentSlot(component) {
     const attrs = component?.getAttributes?.() ?? {};
 
@@ -91,6 +103,7 @@ export function findLayoutDropZoneForPointer(editor) {
     const frame = editor.Canvas?.getFrameEl?.();
     const point = getLastDragPoint(editor);
     const navZone = findZone(editor, 'nav');
+    const progressZone = findZone(editor, 'progress');
     const slot = findLayoutContentSlot(editor);
     const footerZone = findZone(editor, 'footer');
 
@@ -110,7 +123,28 @@ export function findLayoutDropZoneForPointer(editor) {
     const slotBottom = slotTop + slotEl.offsetHeight;
 
     if (y < slotTop) {
-        return navZone;
+        const navEl = navZone?.getEl?.();
+        const progressEl = progressZone?.getEl?.();
+
+        if (progressEl) {
+            const progressTop = progressEl.offsetTop;
+            const progressBottom = progressTop + Math.max(progressEl.offsetHeight, 24);
+
+            if (y >= progressTop - 12 && y <= progressBottom + 12) {
+                return progressZone;
+            }
+        }
+
+        if (navEl) {
+            const navBottom = navEl.offsetTop + navEl.offsetHeight;
+
+            if (y <= navBottom + 8) {
+                return navZone;
+            }
+        }
+
+        // Gap between header and page content → reading-progress strip.
+        return progressZone ?? navZone;
     }
 
     if (y > slotBottom) {
@@ -121,9 +155,22 @@ export function findLayoutDropZoneForPointer(editor) {
 }
 
 function resolveLayoutDropZone(editor, block) {
+    if (blockTargetsProgressZone(block)) {
+        return findZone(editor, 'progress')
+            ?? findLayoutDropZoneForPointer(editor)
+            ?? findZone(editor, 'nav');
+    }
+
     const pointerZone = findLayoutDropZoneForPointer(editor);
 
     if (pointerZone) {
+        const zoneName = pointerZone.getAttributes?.()?.[ATTR.dropZone];
+
+        // Keep non-progress blocks out of the progress strip.
+        if (zoneName === 'progress') {
+            return findZone(editor, 'nav') ?? findZone(editor, 'footer');
+        }
+
         return pointerZone;
     }
 

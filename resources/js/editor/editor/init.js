@@ -98,6 +98,7 @@ import {
     refreshBlocksLibraryUi,
     resolveEditingContext,
 } from '../editor-layout.js';
+import { ensureReadingInspectorTab, registerReadingTypographyUi } from '../reading-typography-ui.js';
 import {
     finishEditorBoot,
     registerEditorBuildStatus,
@@ -1040,6 +1041,23 @@ export function initVoodbuilderEditor(container, options = {}) {
             fullWidthPage: options.fullWidthPage !== false,
         });
         configureEditorLayout(editor, shell, labels);
+
+        const readingPreviews = options.readingPreviews && typeof options.readingPreviews === 'object'
+            ? options.readingPreviews
+            : {};
+        const readingPreviewIds = Object.keys(readingPreviews);
+
+        if (options.chromeLayoutMode && readingPreviewIds.length > 0) {
+            shell.mounts = ensureReadingInspectorTab(shell.mounts, labels);
+            registerReadingTypographyUi(editor, {
+                mount: shell.mounts.reading,
+                readingTypography: options.readingTypography ?? null,
+                readingPreviews,
+                fonts: options.fonts ?? null,
+                labels,
+            });
+        }
+
         wireInspector(editor, shell, options, labels);
 
         if (shell?.mounts?.layers) {
@@ -2217,6 +2235,8 @@ function mountFrontendEditor() {
         chromeLayoutCss: config.chromeLayoutCss ?? '',
         chromeLayoutMode: config.chromeLayoutMode ?? false,
         chromeLayoutName: config.chromeLayoutName ?? null,
+        readingTypography: config.readingTypography ?? null,
+        readingPreviews: config.readingPreviews ?? {},
         pageContentWidth: config.pageContentWidth ?? null,
         chromeWidth: config.chromeWidth ?? 'full',
         fullWidthPage: config.fullWidthPage !== false,

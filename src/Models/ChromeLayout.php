@@ -31,6 +31,9 @@ class ChromeLayout extends Model
         'chrome_width',
         'reading_font',
         'reading_font_size',
+        'reading_sidebar_font',
+        'reading_type_scale',
+        'reading_sidebar_type_scale',
     ];
 
     /**
@@ -42,6 +45,8 @@ class ChromeLayout extends Model
             'enabled' => 'boolean',
             'is_default' => 'boolean',
             'channel_ids' => 'array',
+            'reading_type_scale' => 'array',
+            'reading_sidebar_type_scale' => 'array',
         ];
     }
 

@@ -15,6 +15,7 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Support\Editor\Bindings\EditorBindingStorageNormalizer;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
@@ -46,6 +47,7 @@ final class EditorChromeLayoutEditorGate
         $contentWidth = ChromeLayoutContentWidth::fromLayout($layout);
         $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth($layout);
         $readingTypography = ChromeLayoutReadingTypography::resolve($layout);
+        $readingPreviews = app(ReadingPreviewRegistry::class)->all();
 
         return [
             'chromeLayoutMode' => true,
@@ -80,7 +82,7 @@ final class EditorChromeLayoutEditorGate
                 ? self::optionalEditorRoute('voodbuilder.editor.components.index')
                 : null,
             'compileCssUrl' => self::optionalEditorRoute('voodbuilder.editor.compile-css') ?? '',
-            // Layout editor is chrome-only (nav/footer). Page templates belong on pages.
+            // Layout editor is chrome shell + foundation blocks (not page templates).
             'pageTemplatesUrl' => null,
             'pageTemplatesCatalogUrl' => null,
             'hideTemplates' => true,
@@ -99,11 +101,19 @@ final class EditorChromeLayoutEditorGate
             ]))),
             'readingTypography' => [
                 'font' => $readingTypography['font'],
+                'sidebarFont' => $readingTypography['sidebarFont'],
                 'size' => $readingTypography['size'],
                 'stack' => $readingTypography['stack'],
+                'sidebarStack' => $readingTypography['sidebarStack'],
                 'cssSize' => $readingTypography['cssSize'],
+                'sidebarCssSize' => $readingTypography['sidebarCssSize'],
+                'typeScale' => $readingTypography['typeScale'],
+                'sidebarTypeScale' => $readingTypography['sidebarTypeScale'],
                 'stylesheetUrls' => $readingTypography['stylesheetUrls'],
+                'cssVariables' => $readingTypography['cssVariables'],
             ],
+            'readingPreviews' => $readingPreviews,
+            'fonts' => Voodbuilder::fonts()->toEditorPayload(),
             'builderBrand' => config('voodbuilder.editor.builder.brand', 'VoodBuilder'),
             'globalTextTags' => GlobalTextTags::values(),
             'marketingUrl' => (string) config('voodbuilder.marketing_url', 'https://voodflow.com/voodbuilder'),
@@ -120,24 +130,60 @@ final class EditorChromeLayoutEditorGate
     }
 
     /**
-     * @param  array{stack: string, cssSize: string}  $readingTypography
+     * @param  array{stack: string, cssSize: string, cssVariables?: array<string, string>}  $readingTypography
      */
     private static function readingTypographyCanvasCss(array $readingTypography): string
     {
-        $stack = $readingTypography['stack'];
-        $cssSize = $readingTypography['cssSize'];
+        $variables = $readingTypography['cssVariables'] ?? [
+            '--vp-font-family-doc' => $readingTypography['stack'],
+            '--vp-font-size-doc' => $readingTypography['cssSize'],
+        ];
+
+        $decls = [];
+
+        foreach ($variables as $name => $value) {
+            $decls[] = "{$name}: {$value};";
+        }
+
+        $block = implode("\n            ", $decls);
 
         return <<<CSS
 
         :root, body, [data-gjs-type="wrapper"] {
-            --vp-font-family-doc: {$stack};
-            --vp-font-size-doc: {$cssSize};
+            {$block}
         }
 
         .vp-doc {
             font-family: var(--vp-font-family-doc, var(--font-sans));
             font-size: var(--vp-font-size-doc, 17px);
         }
+
+        .vp-doc h1 { font-size: var(--vp-doc-h1-size, 2rem); font-weight: var(--vp-doc-h1-weight, 600); line-height: var(--vp-doc-h1-leading, 1.25); }
+        .vp-doc h2 { font-size: var(--vp-doc-h2-size, 1.5rem); font-weight: var(--vp-doc-h2-weight, 600); line-height: var(--vp-doc-h2-leading, 1.333); }
+        .vp-doc h3 { font-size: var(--vp-doc-h3-size, 1.25rem); font-weight: var(--vp-doc-h3-weight, 600); line-height: var(--vp-doc-h3-leading, 1.4); }
+        .vp-doc h4 { font-size: var(--vp-doc-h4-size, 1.125rem); font-weight: var(--vp-doc-h4-weight, 600); line-height: var(--vp-doc-h4-leading, 1.333); }
+        .vp-doc p,
+        .vp-doc li,
+        .vp-doc table { font-size: var(--vp-doc-p-size, 1em); font-weight: var(--vp-doc-p-weight, 400); line-height: var(--vp-doc-p-leading, 1.75); }
+
+        .voodbuilder-doc-sidebar-scroll,
+        [data-voodbuilder-reading-sidebar] {
+            font-family: var(--vp-font-family-sidebar, var(--vp-font-family-doc, var(--font-sans)));
+            font-size: var(--vp-font-size-sidebar, var(--vp-sidebar-p-size, 0.875rem));
+        }
+
+        [data-voodbuilder-reading-sidebar] h1,
+        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-title { font-size: var(--vp-sidebar-h1-size, 1rem); font-weight: var(--vp-sidebar-h1-weight, 600); line-height: var(--vp-sidebar-h1-leading, 1.333); }
+        [data-voodbuilder-reading-sidebar] h2,
+        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-group { font-size: var(--vp-sidebar-h2-size, 0.875rem); font-weight: var(--vp-sidebar-h2-weight, 600); line-height: var(--vp-sidebar-h2-leading, 1.4); }
+        [data-voodbuilder-reading-sidebar] h3 { font-size: var(--vp-sidebar-h3-size, 0.8125rem); font-weight: var(--vp-sidebar-h3-weight, 500); line-height: var(--vp-sidebar-h3-leading, 1.4); }
+        [data-voodbuilder-reading-sidebar] h4 { font-size: var(--vp-sidebar-h4-size, 0.8125rem); font-weight: var(--vp-sidebar-h4-weight, 500); line-height: var(--vp-sidebar-h4-leading, 1.333); }
+        [data-voodbuilder-reading-sidebar] p,
+        [data-voodbuilder-reading-sidebar] li,
+        [data-voodbuilder-reading-sidebar] a.vp-reading-sidebar-link,
+        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link { font-size: var(--vp-sidebar-p-size, 0.875rem); font-weight: var(--vp-sidebar-p-weight, 400); line-height: var(--vp-sidebar-p-leading, 1.5); }
+        .vp-outline__title { font-size: var(--vp-sidebar-h2-size, 0.875rem); font-weight: var(--vp-sidebar-h2-weight, 600); line-height: var(--vp-sidebar-h2-leading, 1.4); }
+        .vp-outline__link { font-size: var(--vp-sidebar-p-size, 0.875rem); font-weight: var(--vp-sidebar-p-weight, 400); line-height: var(--vp-sidebar-p-leading, 1.5); }
 CSS;
     }
 

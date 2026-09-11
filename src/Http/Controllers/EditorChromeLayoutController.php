@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
+use Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography;
 use Voodflow\Voodbuilder\Support\ChromeLayoutResolver;
 use Voodflow\Voodbuilder\Support\Editor\EditorChromeLayoutEditorGate;
 
@@ -24,6 +25,12 @@ class EditorChromeLayoutController extends Controller
             'html' => ['nullable', 'string', 'max:500000'],
             'css' => ['nullable', 'string', 'max:250000'],
             'js' => ['nullable', 'string', 'max:100000'],
+            'readingTypography' => ['nullable', 'array'],
+            'readingTypography.font' => ['nullable', 'string', 'max:120'],
+            'readingTypography.sidebarFont' => ['nullable', 'string', 'max:120'],
+            'readingTypography.size' => ['nullable', 'string', 'max:16'],
+            'readingTypography.typeScale' => ['nullable', 'array'],
+            'readingTypography.sidebarTypeScale' => ['nullable', 'array'],
         ]);
 
         $normalized = EditorChromeLayoutEditorGate::normalizePayload([
@@ -32,18 +39,39 @@ class EditorChromeLayoutController extends Controller
             'js' => $validated['js'] ?? '',
         ]);
 
-        $chromeLayout->update([
+        $attributes = [
             'html' => $normalized['html'],
             'css' => $normalized['css'] !== '' ? $normalized['css'] : null,
             'js' => filled($normalized['js']) ? $normalized['js'] : null,
-        ]);
+        ];
+
+        if (array_key_exists('readingTypography', $validated) && is_array($validated['readingTypography'])) {
+            $attributes = [
+                ...$attributes,
+                ...ChromeLayoutReadingTypography::normalizeSavePayload($validated['readingTypography']),
+            ];
+        }
+
+        $chromeLayout->update($attributes);
 
         ChromeLayoutResolver::forgetCache();
+
+        $fresh = $chromeLayout->fresh();
+        $reading = ChromeLayoutReadingTypography::resolve($fresh);
 
         return response()->json([
             'saved' => true,
             'css' => $normalized['css'],
-            'updated_at' => $chromeLayout->fresh()?->updated_at?->toIso8601String(),
+            'readingTypography' => [
+                'font' => $reading['font'],
+                'sidebarFont' => $reading['sidebarFont'],
+                'size' => $reading['size'],
+                'typeScale' => $reading['typeScale'],
+                'sidebarTypeScale' => $reading['sidebarTypeScale'],
+                'cssVariables' => $reading['cssVariables'],
+                'stylesheetUrls' => $reading['stylesheetUrls'],
+            ],
+            'updated_at' => $fresh?->updated_at?->toIso8601String(),
         ]);
     }
 }

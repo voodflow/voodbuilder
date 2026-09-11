@@ -512,6 +512,8 @@ function setupInspectorTabs(mounts, editor) {
             setInspectorSidebarWidth(inspectorAside, tabId);
         }
 
+        editor.trigger?.('voodbuilder:inspector-tab', tabId);
+
         window.requestAnimationFrame(() => syncInspectorManagers(editor, tabId, {
             refreshInspectorPanels: tabId === 'dynamic' || tabId === 'conditions',
         }));
@@ -526,7 +528,8 @@ function setupInspectorTabs(mounts, editor) {
             return;
         }
 
-        activateTab(button.dataset.voodbuilderTab, { userInitiated: true });
+        // Always go through the editor hook so listeners (e.g. Reading preview) can wrap it.
+        editor.__voodbuilderActivateInspectorTab?.(button.dataset.voodbuilderTab, { userInitiated: true });
     });
 
     editor.on('component:selected', (component) => {

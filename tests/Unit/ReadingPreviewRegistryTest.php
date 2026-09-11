@@ -30,6 +30,8 @@ class ReadingPreviewRegistryTest extends TestCase
 
         $registry = app(ReadingPreviewRegistry::class);
 
+        $this->assertTrue($registry->hasCompanions());
+        $this->assertArrayHasKey('acme', $registry->all());
         $this->assertArrayHasKey('acme', $registry->options());
         $this->assertSame('Acme Docs', $registry->options()['acme']);
 

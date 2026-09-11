@@ -85,8 +85,9 @@
     $readingTypography = ChromeLayoutReadingTypography::resolve(
         $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
     );
-    $pageWidthStyleParts[] = '--vp-font-family-doc: '.$readingTypography['stack'];
-    $pageWidthStyleParts[] = '--vp-font-size-doc: '.$readingTypography['cssSize'];
+    foreach ($readingTypography['cssVariables'] as $cssVar => $cssValue) {
+        $pageWidthStyleParts[] = $cssVar.': '.$cssValue;
+    }
     $pageWidthStyle = implode('; ', $pageWidthStyleParts);
 @endphp
 <!doctype html>
@@ -98,6 +99,9 @@
     data-vp-reading-size="{{ $readingTypography['size'] }}"
     @if ($readingTypography['font'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
         data-vp-reading-font="{{ $readingTypography['font'] }}"
+    @endif
+    @if ($readingTypography['sidebarFont'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
+        data-vp-reading-sidebar-font="{{ $readingTypography['sidebarFont'] }}"
     @endif
     @if (filled($voodbuilderContentChannel))
         data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
