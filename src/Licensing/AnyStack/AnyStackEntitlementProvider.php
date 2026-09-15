@@ -14,7 +14,11 @@ use Voodflow\Voodbuilder\Licensing\LicenceStatus;
 
 /**
  * Fetches remote entitlements and falls back to a local snapshot during outages.
- * Never throws to callers — live sites keep last-known capabilities within grace.
+ *
+ * Never throws to callers. Outages fail open on the last successful snapshot so a
+ * billing outage cannot strip authoring mid-project. A deliberate inactive reply from
+ * AnyStack still downgrades authoring to Community; published pages never consult this
+ * provider for content rendering (see DynamicDataCollectionsBridge::renderingEnabled()).
  */
 final class AnyStackEntitlementProvider implements EntitlementProvider
 {
@@ -60,24 +64,63 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
     {
         try {
             $fresh = $this->client->fetchEntitlements($this->licenceKey);
-            $snapshot = [
-                'edition' => $fresh['edition'],
-                'active' => $fresh['active'],
-                'capabilities' => $fresh['capabilities'],
-                'identifier' => $fresh['identifier'] ?? $this->licenceKey,
-                'expires_at' => $fresh['expires_at'] ?? null,
-                'message' => $fresh['message'] ?? null,
-                'catalog_credentials' => is_array($fresh['catalog_credentials'] ?? null)
-                    ? $fresh['catalog_credentials']
-                    : null,
-                'fetched_at' => time(),
-            ];
+            $snapshot = $this->normalizeFreshSnapshot($fresh);
             Cache::forever(self::SNAPSHOT_CACHE_KEY, $snapshot);
 
             return $snapshot;
         } catch (LicenceClientException) {
-            return $this->graceSnapshot();
+            return $this->outageSnapshot();
         }
+    }
+
+    /**
+     * @param  array{
+     *     edition: string,
+     *     active: bool,
+     *     capabilities: list<string>,
+     *     identifier?: ?string,
+     *     expires_at?: ?string,
+     *     message?: ?string,
+     *     catalog_credentials?: ?array<string, string>,
+     * }  $fresh
+     * @return array{
+     *     edition: string,
+     *     active: bool,
+     *     capabilities: list<string>,
+     *     identifier: ?string,
+     *     expires_at: ?string,
+     *     message: ?string,
+     *     catalog_credentials: ?array<string, string>,
+     *     fetched_at: int,
+     * }
+     */
+    private function normalizeFreshSnapshot(array $fresh): array
+    {
+        $active = (bool) ($fresh['active'] ?? true);
+        $edition = (string) $fresh['edition'];
+        $capabilities = array_values(array_map('strval', $fresh['capabilities']));
+        $message = isset($fresh['message']) ? (string) $fresh['message'] : null;
+
+        // Legitimate non-renewal: AnyStack answered. Downgrade authoring only — never touch
+        // published rendering, which does not read this snapshot for content.
+        if (! $active) {
+            $edition = EditionCapabilityMatrix::EDITION_COMMUNITY;
+            $capabilities = EditionCapabilityMatrix::community();
+            $message = $message ?: (string) __('voodbuilder::license.expired');
+        }
+
+        return [
+            'edition' => $edition,
+            'active' => $active,
+            'capabilities' => $capabilities,
+            'identifier' => $fresh['identifier'] ?? $this->licenceKey,
+            'expires_at' => $fresh['expires_at'] ?? null,
+            'message' => $message,
+            'catalog_credentials' => is_array($fresh['catalog_credentials'] ?? null)
+                ? $fresh['catalog_credentials']
+                : null,
+            'fetched_at' => time(),
+        ];
     }
 
     /**
@@ -92,36 +135,33 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
      *     fetched_at: int,
      * }
      */
-    private function graceSnapshot(): array
+    private function outageSnapshot(): array
     {
         /** @var array<string, mixed>|null $cached */
         $cached = Cache::get(self::SNAPSHOT_CACHE_KEY);
 
         if (is_array($cached) && isset($cached['fetched_at'], $cached['capabilities'], $cached['edition'])) {
             $age = time() - (int) $cached['fetched_at'];
+            $withinGrace = $age <= $this->graceSeconds;
 
-            if ($age <= $this->graceSeconds) {
-                return [
-                    'edition' => (string) $cached['edition'],
-                    'active' => (bool) ($cached['active'] ?? true),
-                    'capabilities' => array_values(array_map('strval', (array) $cached['capabilities'])),
-                    'identifier' => isset($cached['identifier']) ? (string) $cached['identifier'] : null,
-                    'expires_at' => isset($cached['expires_at']) ? (string) $cached['expires_at'] : null,
-                    'message' => (string) ($cached['message'] ?? __('voodbuilder::license.grace_active')),
-                    'catalog_credentials' => is_array($cached['catalog_credentials'] ?? null)
-                        ? array_map('strval', $cached['catalog_credentials'])
-                        : null,
-                    'fetched_at' => (int) $cached['fetched_at'],
-                ];
-            }
+            return [
+                'edition' => (string) $cached['edition'],
+                'active' => (bool) ($cached['active'] ?? true),
+                'capabilities' => array_values(array_map('strval', (array) $cached['capabilities'])),
+                'identifier' => isset($cached['identifier']) ? (string) $cached['identifier'] : null,
+                'expires_at' => isset($cached['expires_at']) ? (string) $cached['expires_at'] : null,
+                'message' => (string) ($withinGrace
+                    ? ($cached['message'] ?? __('voodbuilder::license.grace_active'))
+                    : __('voodbuilder::license.stale_cache_fail_open')),
+                'catalog_credentials' => is_array($cached['catalog_credentials'] ?? null)
+                    ? array_map('strval', $cached['catalog_credentials'])
+                    : null,
+                'fetched_at' => (int) $cached['fetched_at'],
+            ];
         }
 
-        // Soft fail to Community. This is survivable because published content does not ask
-        // this provider anything: rendering a page, expanding a stored List repeat and
-        // resolving its bindings all happen without consulting capabilities, by design. See
-        // DynamicDataCollectionsBridge::renderingEnabled(). What an installation loses here
-        // is authoring — the repeat picker, template export, the components library — plus
-        // author scripts, which is the one deliberate exception (AuthorScriptPolicy).
+        // No prior success: Community authoring only. Public pages still render stored
+        // content without consulting capabilities.
         return [
             'edition' => EditionCapabilityMatrix::EDITION_COMMUNITY,
             'active' => true,

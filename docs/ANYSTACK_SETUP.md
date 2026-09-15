@@ -37,7 +37,7 @@ Expected response (extra fields ignored):
 
 ```json
 {
-  "edition": "professional",
+  "edition": "developer",
   "active": true,
   "capabilities": ["editor.core", "blocks.official.complete", "..."],
   "identifier": "seat-1",
@@ -50,8 +50,28 @@ Expected response (extra fields ignored):
 }
 ```
 
+`edition` values: `community` | `developer` | `professional` (alias of developer) | `agency`.  
+Core normalizes `developer` → runtime token `professional`. Omit `capabilities` to use `EditionCapabilityMatrix::forEdition()`.
+
+`active: false` (non-renewal): authoring falls to Community; **published pages keep rendering**.  
+Outage: fail-open on the last successful snapshot (never strip paid authoring because the license API is down).
+
 `catalog_credentials` is optional. When present, Core prefers it over `.env`
 for CDN `X-VoodBuilder-Catalog-Token` (Elements + page templates).
+
+## AnyStack products to create
+
+Listino: [PRICING.md](./PRICING.md).
+
+| AnyStack product | Price | Grants `edition` | Private Composer packages |
+|---|---|---|---|
+| VoodBuilder Community | 0 € | `community` | — (Packagist) |
+| VoodBuilder Developer | 149 €/yr · 1 seat | `developer` or `professional` | elements, dynamic-data, templates |
+| VoodBuilder Agency | 399 €/yr · ≤5 seats | `agency` | + components, dynamic-api, **vpopups** |
+| VoodPopups (standalone) | 79 €/yr | own product key | `vpopups` |
+| VoodForms | 199 €/yr | own product key | `vforms` |
+
+Entitlement endpoint product code for Core remains `"product": "voodbuilder"`.
 
 ## Admin API (future Filament licenses plugin)
 
@@ -79,10 +99,12 @@ Refresh forgets the AnyStack snapshot + local entitlement cache, then re-resolve
 |---------|---------|--------|
 | `vmedia` | Packagist | Released |
 | `voodbuilder` | Packagist | Community |
-| `voodbuilder-elements` | AnyStack | Catalog CDN |
+| `voodbuilder-elements` | AnyStack | Developer + Agency |
+| `voodbuilder-dynamic-data` | AnyStack | Developer + Agency |
+| `voodbuilder-templates` | AnyStack | Developer + Agency |
 | `voodbuilder-components` | AnyStack | Agency |
-| `voodbuilder-templates` | AnyStack | Pro |
-| `vpopups` | AnyStack | Separate SKU |
+| `voodbuilder-dynamic-api` | AnyStack | Agency |
+| `vpopups` | AnyStack | 79 € SKU or included in Agency |
 | `vdocs` / `vtuts` | AnyStack | Own licence |
 | `vcookiebar` | Packagist | When ready |
 

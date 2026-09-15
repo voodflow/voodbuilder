@@ -85,7 +85,8 @@ return [
         'anystack' => [
             'endpoint' => env('VOODBUILDER_ANYSTACK_ENDPOINT', ''),
             'timeout' => (int) env('VOODBUILDER_ANYSTACK_TIMEOUT', 5),
-            // Keep last successful entitlement for 7 days when remote is down.
+            // Soft window before the "stale cache" message. Outages always fail open on the
+            // last successful snapshot; only a deliberate inactive reply downgrades authoring.
             'grace_seconds' => (int) env('VOODBUILDER_ANYSTACK_GRACE_SECONDS', 604800),
         ],
     ],

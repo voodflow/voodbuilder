@@ -49,6 +49,32 @@ class EntitlementManagerTest extends TestCase
         $this->assertTrue(Voodbuilder::can('templates.import'));
         $this->assertTrue(Voodbuilder::cannot('components.library'));
         $this->assertTrue(Voodbuilder::cannot('templates.export'));
+        $this->assertTrue(Voodbuilder::cannot('dynamic-api.sources'));
+    }
+
+    public function test_developer_alias_matches_professional_matrix(): void
+    {
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
+        );
+
+        $this->assertSame(
+            EditionCapabilityMatrix::professional(),
+            EditionCapabilityMatrix::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
+        );
+        $this->assertSame('professional', Voodbuilder::entitlements()->edition());
+        $this->assertTrue(Voodbuilder::can('dynamic-data.collections'));
+        $this->assertTrue(Voodbuilder::cannot('dynamic-api.sources'));
+    }
+
+    public function test_agency_matrix_includes_dynamic_api(): void
+    {
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_AGENCY),
+        );
+
+        $this->assertTrue(Voodbuilder::can('dynamic-api.sources'));
+        $this->assertTrue(Voodbuilder::can('components.library'));
     }
 
     public function test_testing_provider_can_simulate_custom_capability_sets(): void

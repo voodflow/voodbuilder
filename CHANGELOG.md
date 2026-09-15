@@ -6,8 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Commercial editions: **Developer** (149 €/yr, alias of `professional`) + **Agency** (399 €/yr, ≤5 seats, includes Dynamic API + vpopups) — see `docs/PRICING.md`
+- AnyStack outages **fail open** on the last entitlement snapshot (no Community downgrade after grace); only `active: false` downgrades authoring
+- `edition: "developer"` accepted from AnyStack / config and normalized to `professional`
+- Agency matrix adds `dynamic-api.sources` / `dynamic-api.admin`
 - API Data Sources moved to paid companion `voodflow/voodbuilder-dynamic-api` (Core keeps only `.remote.` → `.item.` rewrite inside List repeat)
 - License dashboard payload includes `dynamic_api` product + distribution map entry
+
+### Fixed
+
+- Licence expiry / billing outage can no longer strip paid authoring solely because the remote endpoint is unreachable after the grace window
 
 ## [0.1.49] - 2026-09-11
 

@@ -218,6 +218,8 @@ final class LicenseDashboardPayload
         $mode = match (true) {
             $driver === 'anystack' && is_array($snapshot) && $withinGrace === true
                 && filled($snapshot['message'] ?? null) => 'grace',
+            $driver === 'anystack' && is_array($snapshot) && $withinGrace === false
+                && filled($snapshot['message'] ?? null) => 'stale_fail_open',
             $driver === 'anystack' && is_array($snapshot) => 'live_or_cached',
             $driver === 'anystack' => 'community_fallback_or_empty',
             default => 'config',
@@ -246,12 +248,12 @@ final class LicenseDashboardPayload
         return [
             ['slug' => 'vmedia', 'channel' => 'packagist', 'status' => 'released', 'notes' => 'MIT / public'],
             ['slug' => 'voodbuilder', 'channel' => 'packagist', 'status' => 'ready', 'notes' => 'Community'],
-            ['slug' => 'voodbuilder-elements', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro + catalog CDN'],
+            ['slug' => 'voodbuilder-elements', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
             ['slug' => 'voodbuilder-components', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency'],
-            ['slug' => 'voodbuilder-templates', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro'],
-            ['slug' => 'voodbuilder-dynamic-data', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Pro'],
-            ['slug' => 'voodbuilder-dynamic-api', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency custom providers'],
-            ['slug' => 'vpopups', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Separate SKU'],
+            ['slug' => 'voodbuilder-templates', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
+            ['slug' => 'voodbuilder-dynamic-data', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
+            ['slug' => 'voodbuilder-dynamic-api', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency'],
+            ['slug' => 'vpopups', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'SKU 79 €/yr or included in Agency'],
             ['slug' => 'vdocs', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
             ['slug' => 'vtuts', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
             ['slug' => 'vcookiebar', 'channel' => 'packagist', 'status' => 'planned', 'notes' => 'When ready'],

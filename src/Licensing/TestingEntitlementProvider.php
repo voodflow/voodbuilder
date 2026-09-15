@@ -30,12 +30,14 @@ final class TestingEntitlementProvider implements EntitlementProvider
 
     public static function forEdition(string $edition): self
     {
+        $normalized = EditionCapabilityMatrix::normalizeEdition($edition);
+
         return new self(
             EditionCapabilityMatrix::forEdition($edition),
             new LicenceStatus(
-                edition: $edition,
+                edition: $normalized,
                 active: true,
-                identifier: 'testing:'.$edition,
+                identifier: 'testing:'.$normalized,
             ),
         );
     }

@@ -46,15 +46,9 @@ final class AnyStackLicenceClient implements LicenceClient
         /** @var array<string, mixed> $payload */
         $payload = $response->json() ?? [];
 
-        $edition = strtolower((string) ($payload['edition'] ?? EditionCapabilityMatrix::EDITION_COMMUNITY));
-
-        if (! in_array($edition, [
-            EditionCapabilityMatrix::EDITION_COMMUNITY,
-            EditionCapabilityMatrix::EDITION_PROFESSIONAL,
-            EditionCapabilityMatrix::EDITION_AGENCY,
-        ], true)) {
-            $edition = EditionCapabilityMatrix::EDITION_COMMUNITY;
-        }
+        $edition = EditionCapabilityMatrix::normalizeEdition(
+            (string) ($payload['edition'] ?? EditionCapabilityMatrix::EDITION_COMMUNITY),
+        );
 
         $capabilities = $payload['capabilities'] ?? EditionCapabilityMatrix::forEdition($edition);
 

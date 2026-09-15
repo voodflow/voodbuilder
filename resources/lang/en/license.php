@@ -4,5 +4,7 @@ declare(strict_types=1);
 
 return [
     'grace_active' => 'Using cached licence entitlements while the licensing service is unreachable.',
-    'remote_unavailable' => 'Licensing service unavailable; falling back to Community capabilities. Public pages keep working.',
+    'stale_cache_fail_open' => 'Licensing service still unreachable; keeping the last known entitlements so authoring and public pages stay available.',
+    'expired' => 'Licence inactive or expired; authoring limited to Community. Published pages keep working.',
+    'remote_unavailable' => 'Licensing service unavailable and no cached entitlements; Community authoring only. Public pages keep working.',
 ];

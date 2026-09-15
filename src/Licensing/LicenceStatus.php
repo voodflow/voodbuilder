@@ -29,6 +29,6 @@ final class LicenceStatus
 
     public function isPaidEdition(): bool
     {
-        return in_array($this->edition, ['professional', 'agency'], true);
+        return in_array($this->edition, ['professional', 'developer', 'agency'], true);
     }
 }
