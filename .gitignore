@@ -8,8 +8,9 @@ composer.lock
 .DS_Store
 *.log
 
-# Internal engineering docs (kept locally; not published on the public remote)
-/docs/
+# Internal engineering docs (kept locally; not published on the public remote).
+# Allow publishing the Filament README promo under docs/images/.
+/docs/*
 !/docs/images/
 !/docs/images/**
 
