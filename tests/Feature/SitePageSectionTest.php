@@ -7,9 +7,28 @@ namespace Voodflow\Voodbuilder\Tests\Feature;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageSection;
 use Voodflow\Voodbuilder\Tests\TestCase;
+use Voodflow\Voodbuilder\Voodbuilder;
 
 class SitePageSectionTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Blog/news skins live outside Community core; register like a companion would.
+        Voodbuilder::subTheme('blog', [
+            'label' => 'Blog',
+            'type' => 'content',
+            'capabilities' => ['article'],
+            'css' => 'themes/blog/theme.css',
+            'layouts' => [
+                'section_index' => 'voodbuilder::themes.blog.layouts.section-index',
+                'article' => 'voodbuilder::themes.blog.layouts.article',
+                'page' => 'voodbuilder::themes.blog.layouts.page',
+            ],
+        ]);
+    }
+
     public function test_section_home_uses_section_index_layout(): void
     {
         $page = SitePage::query()->create([

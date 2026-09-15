@@ -132,10 +132,13 @@ HTML;
     public function test_resolve_svg_paint_ignores_none_color(): void
     {
         $document = new \DOMDocument;
+        $previous = libxml_use_internal_errors(true);
         $document->loadHTML(
             '<svg fill="none" stroke="currentColor" style="color:none;stroke:none;fill:none"><circle fill="currentColor"/></svg>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
         $svg = $document->getElementsByTagName('svg')->item(0);
 
         $this->assertInstanceOf(\DOMElement::class, $svg);

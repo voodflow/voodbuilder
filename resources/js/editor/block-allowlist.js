@@ -1,6 +1,12 @@
 /**
- * Community / Pro sidebar allowlist for BlockManager.add.
- * null / missing = full library (Pro) or host override.
+ * Community / Pro sidebar allowlist for **client-registered** BlockManager.add calls
+ * (layout, utilities, animated tiles, companion form contact, …).
+ *
+ * Server-loaded catalog blocks must NOT use this gate — PHP
+ * {@see EditorCommunityBlockCatalog::filterEditorBlocks} already filtered them and
+ * intentionally keeps third-party companion IDs (vforms managed forms, etc.).
+ *
+ * null / missing = full library (Pro without Elements accordion limit) or host override.
  */
 
 /**

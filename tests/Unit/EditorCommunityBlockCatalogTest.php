@@ -117,6 +117,28 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertContains('voodbuilder-animated-stats', $allowlist);
     }
 
+    public function test_vforms_managed_form_blocks_pass_sidebar_filter(): void
+    {
+        $this->useEdition(EditionCapabilityMatrix::EDITION_COMMUNITY);
+
+        $filtered = EditorCommunityBlockCatalog::filterEditorBlocks([
+            ['id' => 'voodbuilder-heading', 'label' => 'Heading'],
+            ['id' => 'voodbuilder-managed-form', 'label' => 'Managed form', 'category' => 'Forms'],
+            ['id' => 'voodbuilder-form-01a0a54c-f5a5-72d3-b3d1-d6a204250f98', 'label' => 'Lead', 'category' => 'Forms'],
+            ['id' => 'voodbuilder-form', 'label' => 'Contact form'],
+            ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
+        ], chromeLayoutEditor: false);
+
+        $ids = array_column($filtered, 'id');
+
+        $this->assertContains('voodbuilder-heading', $ids);
+        $this->assertContains('voodbuilder-managed-form', $ids);
+        $this->assertContains('voodbuilder-form-01a0a54c-f5a5-72d3-b3d1-d6a204250f98', $ids);
+        // Core contact form tile is Elements/Pro companion catalog — not Community sidebar.
+        $this->assertNotContains('voodbuilder-form', $ids);
+        $this->assertNotContains('vb-gallery-1', $ids);
+    }
+
     private function useEdition(string $edition): void
     {
         Voodbuilder::entitlements()->useProvider(

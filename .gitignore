@@ -10,5 +10,7 @@ composer.lock
 
 # Internal engineering docs (kept locally; not published on the public remote)
 /docs/
+!/docs/images/
+!/docs/images/**
 
 .cursor/

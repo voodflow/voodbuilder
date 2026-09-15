@@ -20,12 +20,12 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringContainsString('sticky top-[var(--spacing-vp-nav-total)]', $contents);
         $this->assertStringContainsString('vp:flex vp:items-stretch', $contents);
         // Content+TOC shrink-wrap next to sidebar; article must not fill leftover width.
-        $this->assertStringContainsString('w-fit max-w-full', $contents);
+        $this->assertStringContainsString("'w-fit mr-auto' => \$hasSidebar", $contents);
+        $this->assertStringContainsString('flex max-w-full', $contents);
         $this->assertStringContainsString('w-[min(100%,var(--width-vp-content))]', $contents);
         $this->assertStringContainsString('gap-24', $contents);
         $this->assertStringContainsString('vp:ml-[80px]', $contents);
         $this->assertStringContainsString('voodbuilder-doc-sidebar-scroll', $contents);
-        $this->assertStringContainsString("'mr-auto' => \$hasSidebar", $contents);
         $this->assertStringContainsString('max-w-[var(--width-vp-content)]', $contents);
         $this->assertStringContainsString("data-voodbuilder-reading-column=\"content\"", $contents);
         $this->assertStringContainsString('w-[var(--spacing-vp-aside)]', $contents);

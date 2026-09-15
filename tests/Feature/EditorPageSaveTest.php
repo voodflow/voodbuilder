@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 class EditorPageSaveTest extends TestCase
@@ -19,6 +20,7 @@ class EditorPageSaveTest extends TestCase
     protected function tearDown(): void
     {
         EditorGate::authorizeUsing(null);
+        PageBuilderAccess::authorizeUsing(null);
 
         parent::tearDown();
     }
@@ -40,6 +42,9 @@ class EditorPageSaveTest extends TestCase
                 ->id('admin')
                 ->path('admin'),
         );
+
+        // Editor routes also use EnsurePageBuilderAccess (not only EditorGate).
+        PageBuilderAccess::authorizeUsing(static fn (): bool => auth()->check());
 
         EditorGate::authorizeUsing(
             fn (SitePage $page): bool => $page->usesEditorBuilder() && auth()->check(),

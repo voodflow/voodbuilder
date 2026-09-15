@@ -86,7 +86,9 @@ class SitePageAccessGateTest extends TestCase
         $this->get('/pages/vault')
             ->assertOk()
             ->assertSee('Secret body', false)
-            ->assertDontSee(__('voodbuilder::gate.password.submit'), false);
+            // "Submit" alone appears elsewhere (e.g. type="submit"); assert the gate UI is gone.
+            ->assertDontSee(__('voodbuilder::gate.password.eyebrow'), false)
+            ->assertDontSee(__('voodbuilder::gate.password.password_placeholder'), false);
     }
 
     public function test_email_password_pair_requires_matching_email(): void

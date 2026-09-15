@@ -1,6 +1,6 @@
 # VoodBuilder (`voodflow/voodbuilder`)
 
-<img class="filament-hidden" src="art/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
+<img class="filament-hidden" src="docs/images/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
 
 Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor with a usable **Community (free)** edition.
 
@@ -17,17 +17,20 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 |------------|----------------|
 | **Visual editor** | Drag-and-drop canvas, device previews, undo / redo, revision history, autosave, style inspector |
 | **Community core** | Layout · Basic · Media · Single · Site blocks, plus local marketing sections (hero, features, CTA, FAQ, …) |
-| **Theme Studio** | Map colours / sub-themes to Site pages and content channels |
+| **Theme Studio** | Map colours / sub-themes to Site pages and content channels; global light / dark preference |
+| **Chrome layouts** | Shared header / footer / optional progress strip per channel; Integration tab for reading typography (live preview when companions register samples) |
+| **Site search** | Header palette + full results page — ranking, channel filters, snippets with highlights, deep-linkable pagination |
+| **SEO** | Per-page meta (title, description, robots, canonical), JSON-LD breadcrumbs / Article where relevant |
 | **Page access** | Public, registered-only, profile-based gates, optional password unlock |
 | **Menu-driven URLs** | Pages get public routes from Navigation (e.g. `/about` or `/company/about`) |
+| **Reserved paths** | Companions declare URL prefixes so site-page catch-alls never shadow docs / tutorials / APIs |
 | **Media** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) is required by Composer; register its Filament plugin for the admin media UI |
-| **Chrome layouts** | Shared header / footer shells per channel, editable in the same builder |
 
 ![Style inspector](art/editor-styles.png)
 
 ![Layers panel](art/editor-layers.png)
 
-Optional packages (cookie bar, Elements, Dynamic Data, Templates, Components, Popups, content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
+Optional packages (cookie bar, Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
 
 ---
 
@@ -111,14 +114,7 @@ Flags: `--skip-npm`, `--skip-npm-build`, `--skip-seed`, `--skip-migrate`, `--for
 ],
 ```
 
-Reserved first segments (`admin`, `vmedia`, `voodbuilder`, `login`, …) never become page sections, so package APIs are not shadowed.
-
-### Page access
-
-Per page you can combine:
-
-- **Visibility** — public / registered users / profile-based gates  
-- **Password** — unlock form; session TTL configurable (`password_unlock_minutes`)
+Reserved first segments (`admin`, `vmedia`, `voodbuilder`, `login`, …) never become page sections, so package APIs are not shadowed. Companions can also call `Voodbuilder::reservePathPrefix()` for their public routes.
 
 ---
 
@@ -127,9 +123,41 @@ Per page you can combine:
 **Admin → Voodbuilder → Theme Studio** maps sub-themes (palettes + optional CSS) to areas:
 
 - Site pages  
-- Content channels (docs, tutorials, events, …) when those packages register channels  
+- Content channels (docs, tutorials, events, search, …) when those packages register channels  
 
 Light / dark is a global preference on top of the area theme.
+
+---
+
+## Chrome layouts
+
+**Admin → Voodbuilder → Layouts** — edit the shared shell (header, optional Progress zone, page content slot, footer) in the same visual editor.
+
+- **Progress zone** — drop Reading Progress between header and page content so it is not nested in the nav  
+- **Integration tab** — typography controls (primary / secondary fonts, body + heading scales) with live preview when a companion registers `Voodbuilder::readingPreview()`  
+- Companions own reading layouts (`vdocs`, `vtuts`, …); core stays layout-agnostic via `Voodbuilder::reservePathPrefix()`
+
+---
+
+## Site search
+
+Built-in search across content channels that opt in:
+
+- Header search palette (live matches, keyboard nav, recent queries)  
+- Results page with ranking, channel filter pills, `<mark>` highlights, and `?page=` pagination  
+- Settings → **Search**: results per page, per channel, snippet length  
+
+Companions make content searchable via the PHP SDK — see package docs under `docs/manual/developer/php-sdk/site-search.md`.
+
+---
+
+## SEO & page access
+
+Per page you can combine:
+
+- **Visibility** — public / registered users / profile-based gates  
+- **Password** — unlock form; session TTL configurable (`password_unlock_minutes`)  
+- **SEO** — meta title, description, robots, canonical on the morph `seo` relation; gated pages default to `noindex` unless overridden  
 
 ---
 
@@ -140,6 +168,7 @@ Light / dark is a global preference on top of the area theme.
 - Device previews (desktop / tablet / mobile)  
 - Undo / redo and page revisions  
 - Media picker via vmedia  
+- Utilities such as reading progress and social share (specialized settings)
 
 ---
 

@@ -23,6 +23,13 @@ class VoodbuilderSettingsTest extends TestCase
             'label' => 'Blog custom',
             'capabilities' => ['article'],
         ]);
+
+        // Bundled blog CSS ships with the package but the skin is companion-owned in config.
+        app(SubThemeRegistry::class)->register('blog', [
+            'label' => 'Blog',
+            'capabilities' => ['article'],
+            'css' => 'themes/blog/theme.css',
+        ]);
     }
 
     public function test_save_data_updates_the_same_record_that_data_reads(): void

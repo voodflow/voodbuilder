@@ -82,6 +82,8 @@ class ActiveThemeMapTest extends TestCase
             'sub_theme' => 'site',
             'content_channel_sub_themes' => [
                 'docs' => 'docs',
+                // Same theme as docs → unique key list stays site + docs (tutorials default is its own skin).
+                'tutorials' => 'docs',
             ],
         ]);
 

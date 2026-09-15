@@ -48,7 +48,6 @@ import { registerMediaSectionTypes } from '../media-section-types.js';
 import { registerDropzoneTypes } from '../dropzone-types.js';
 import { registerInnerDropSlots } from '../inner-drop-slots.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
-import { isEditorBlockAllowed } from '../block-allowlist.js';
 import {
     isClearedBackground,
     isClearedBackgroundImage,
@@ -1614,7 +1613,11 @@ function registerDynamicBlockType(editor) {
 
 function registerBlocks(editor, blocks = []) {
     for (const block of blocks) {
-        if (! isEditorBlockAllowed(editor, block.id)) {
+        // Trust the server catalog: EditorCommunityBlockCatalog::filterEditorBlocks already
+        // applied Community / Elements / chrome rules while keeping third-party companion
+        // IDs (e.g. vforms `voodbuilder-managed-form`). Re-checking the JS foundation
+        // allowlist here would drop those tiles whenever Elements limits the Core accordion.
+        if (! block?.id) {
             continue;
         }
 

@@ -15,6 +15,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageRevision;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -45,6 +46,8 @@ class HistoryModuleTest extends TestCase
                 ->path('admin'),
         );
 
+        PageBuilderAccess::authorizeUsing(static fn (): bool => auth()->check());
+
         EditorGate::authorizeUsing(
             fn (SitePage $page): bool => $page->usesEditorBuilder() && auth()->check(),
         );
@@ -53,6 +56,7 @@ class HistoryModuleTest extends TestCase
     protected function tearDown(): void
     {
         EditorGate::authorizeUsing(null);
+        PageBuilderAccess::authorizeUsing(null);
 
         parent::tearDown();
     }
