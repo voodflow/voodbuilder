@@ -1,10 +1,10 @@
 # VoodBuilder (`voodflow/voodbuilder`)
 
-<img class="filament-hidden" src="docs/images/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
+<img class="filament-hidden" src="https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
 
 Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor with a usable **Community (free)** edition.
 
-![VoodBuilder editor overview](art/editor-overview.png)
+![VoodBuilder editor overview](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-overview.png)
 
 > **Docs & pricing:** [voodflow.com](https://voodflow.com)  
 > **License:** Community is free to use — see [LICENSE](LICENSE). Paid add-ons are separate products on [voodflow.com](https://voodflow.com).
@@ -26,9 +26,9 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | **Reserved paths** | Companions declare URL prefixes so site-page catch-alls never shadow docs / tutorials / APIs |
 | **Media** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) is required by Composer; register its Filament plugin for the admin media UI |
 
-![Style inspector](art/editor-styles.png)
+![Style inspector](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-styles.png)
 
-![Layers panel](art/editor-layers.png)
+![Layers panel](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-layers.png)
 
 Optional packages (cookie bar, Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
 
