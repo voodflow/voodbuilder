@@ -147,7 +147,7 @@ Built-in search across content channels that opt in:
 - Results page with ranking, channel filter pills, `<mark>` highlights, and `?page=` pagination  
 - Settings → **Search**: results per page, per channel, snippet length  
 
-Companions make content searchable via the PHP SDK — see package docs under `docs/manual/developer/php-sdk/site-search.md`.
+Companions make content searchable via the PHP SDK — see [Site search](docs/academy/developer/site-search.md).
 
 ---
 

@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.50] - 2026-09-16
+
+
 ### Changed
 
-- Commercial editions: **Developer** (149 €/yr, alias of `professional`) + **Agency** (399 €/yr, ≤5 seats, includes Dynamic API + vpopups) — see `docs/PRICING.md`
+- Commercial editions: **Developer** (149 €/yr, alias of `professional`) + **Agency** (399 €/yr, ≤5 seats, includes Dynamic API + vpopups)
 - AnyStack outages **fail open** on the last entitlement snapshot (no Community downgrade after grace); only `active: false` downgrades authoring
 - `edition: "developer"` accepted from AnyStack / config and normalized to `professional`
 - Agency matrix adds `dynamic-api.sources` / `dynamic-api.admin`
@@ -16,6 +19,11 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Licence expiry / billing outage can no longer strip paid authoring solely because the remote endpoint is unreachable after the grace window
+
+### Changed
+
+- Remove in-repo work documentation; keep `docs/images/` and public `docs/academy/`
+
 
 ## [0.1.49] - 2026-09-11
 
