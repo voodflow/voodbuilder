@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.63] - 2026-09-17
+
+### Fixed
+
+- Reading progress sits under the site header stacking context (`z-index: 20`) so profile/nav dropdowns are no longer covered by the bar
+
 ## [0.1.62] - 2026-09-17
 
 ### Fixed

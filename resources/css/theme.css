@@ -299,7 +299,8 @@
         top: var(--vb-progress-top) !important;
         left: 0 !important;
         right: 0 !important;
-        z-index: 50;
+        /* Below header (z-30) so profile/nav dropdowns are not covered. */
+        z-index: 20;
         height: var(--vb-progress-height) !important;
         min-height: var(--vb-progress-height) !important;
         margin: 0 !important;

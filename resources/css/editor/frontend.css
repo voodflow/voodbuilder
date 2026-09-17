@@ -5590,7 +5590,8 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     top: var(--vb-progress-top);
     left: 0;
     right: 0;
-    z-index: 50;
+    /* Below header (z-30) so nav/profile dropdowns stay on top. */
+    z-index: 20;
     height: 3px;
     min-height: 3px;
     pointer-events: none;
