@@ -494,8 +494,8 @@ final class EditorCanvas
             display: none !important;
         }
 
-        html body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
-        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light {
+        html:not(.dark) body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html:not(.dark) body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light {
             display: block !important;
         }
 
@@ -505,7 +505,8 @@ final class EditorCanvas
             display: none !important;
         }
 
-        html body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+        /* Theme class is on <html> only — never gate light logos with body:not(.dark). */
+        html:not(.dark) body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: block !important;
         }
 
@@ -533,14 +534,23 @@ final class EditorCanvas
 
         html:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
         html:not(.dark)[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
-        body:not(.dark)[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
-        body:not(.dark)[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+        html:not(.dark) body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html:not(.dark) body[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: block !important;
         }
 
         html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
-        html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
+        html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html.dark body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html.dark body[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
             display: block !important;
+        }
+
+        html.dark[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html.dark body[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html.dark body[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+            display: none !important;
         }
 
         /* Brand part toggles must beat device logo display rules (incl. placeholder). */

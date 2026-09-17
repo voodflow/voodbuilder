@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.57] - 2026-09-17
+
+### Fixed
+
+- Layout editor mobile + dark: only one brand logo (light/dark variants no longer both visible — theme class is on `html`, not `body`)
+
 ## [0.1.56] - 2026-09-17
 
 ### Fixed
