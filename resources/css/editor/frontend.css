@@ -5595,8 +5595,12 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     height: 3px;
     min-height: 3px;
     pointer-events: none;
-    /* Match theme.css — avoid brand-tinted track that reads as “full” in light mode. */
-    background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 12%, transparent);
+    /* Same hue as the fill; !important beats bg-vp-divider (white-ish in light). */
+    background: color-mix(
+        in srgb,
+        var(--vb-progress-color, var(--color-vp-brand-1, #6366f1)) 22%,
+        transparent
+    ) !important;
     transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 

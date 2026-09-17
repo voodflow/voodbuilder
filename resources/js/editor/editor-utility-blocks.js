@@ -388,7 +388,7 @@ function registerReadingProgressType(editor) {
                     'data-voodbuilder-progress': '',
                     'data-vb-progress-color': 'brand',
                     'data-vb-progress-thickness': '4',
-                    class: 'vb-reading-progress w-full bg-vp-divider',
+                    class: 'vb-reading-progress w-full',
                 },
                 components: [
                     {

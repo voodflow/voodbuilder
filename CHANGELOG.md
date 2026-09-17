@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.64] - 2026-09-17
+
+### Fixed
+
+- Reading progress track uses a soft mix of the progress color (not `bg-vp-divider` / white in light mode)
+
 ## [0.1.63] - 2026-09-17
 
 ### Fixed

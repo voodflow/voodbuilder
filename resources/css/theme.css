@@ -306,8 +306,13 @@
         margin: 0 !important;
         pointer-events: none;
         overflow: visible;
-        /* Neutral track in both themes — brand@18% looked like a full bar in light mode. */
-        background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 12%, transparent);
+        /* Same hue as the fill, soft enough to read as a track (not a full bar).
+         * !important beats author/utility bg-* (e.g. bg-vp-divider → white in light). */
+        background: color-mix(
+            in srgb,
+            var(--vb-progress-color, var(--color-vp-brand-1, #6366f1)) 22%,
+            transparent
+        ) !important;
         transition: opacity 0.15s ease, visibility 0.15s ease;
     }
 
