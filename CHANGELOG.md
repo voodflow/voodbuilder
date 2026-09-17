@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.62] - 2026-09-17
+
+### Fixed
+
+- Reading progress: light mode no longer looks instantly full (track uses a neutral tint instead of brand@18%; scroll math no longer jumps to 100% on tiny ranges; remeasures after theme toggle)
+
 ## [0.1.61] - 2026-09-17
 
 ### Fixed
