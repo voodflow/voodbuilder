@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.52] - 2026-09-17
+
+### Fixed
+
+- Layout editor logo Choose opens the vmedia browser (wire `mediaLibraryUrl` / `mediaGalleriesUrl` like the page editor)
+
 ## [0.1.51] - 2026-09-17
 
 ### Fixed

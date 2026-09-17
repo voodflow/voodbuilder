@@ -65,6 +65,12 @@ final class EditorChromeLayoutEditorGate
                 $chromeWidth,
             ),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
+            'mediaReplaceUrl' => self::mediaReplaceUrl(),
+            'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
+            // Same as page editor: vmedia browser needs both library + galleries routes.
+            'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
+                ? self::mediaGalleriesIndexUrl()
+                : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'initial' => self::initialPayload($layout),
             'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks').'?chrome=1',
@@ -258,6 +264,38 @@ CSS;
         }
 
         return self::editorRoute('vmedia.media.upload');
+    }
+
+    private static function mediaReplaceUrl(): ?string
+    {
+        if (! Route::has('vmedia.media.replace')) {
+            return null;
+        }
+
+        return self::editorRoute('vmedia.media.replace');
+    }
+
+    private static function mediaLibraryIndexUrl(): ?string
+    {
+        if (! Route::has('vmedia.media.index')) {
+            return null;
+        }
+
+        return self::editorRoute('vmedia.media.index');
+    }
+
+    private static function mediaGalleriesIndexUrl(): ?string
+    {
+        if (! Route::has('vmedia.media.galleries')) {
+            return null;
+        }
+
+        return self::editorRoute('vmedia.media.galleries');
+    }
+
+    private static function mediaCompanionBrowserEnabled(): bool
+    {
+        return Route::has('vmedia.media.galleries');
     }
 
     private static function dynamicDataEnabled(): bool

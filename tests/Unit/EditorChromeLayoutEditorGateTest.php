@@ -35,5 +35,30 @@ class EditorChromeLayoutEditorGateTest extends TestCase
             $config['blockAllowlist'],
         );
         $this->assertStringContainsString('chrome=1', (string) $config['blocksUrl']);
+        $this->assertArrayHasKey('mediaLibraryUrl', $config);
+        $this->assertArrayHasKey('mediaGalleriesUrl', $config);
+        $this->assertArrayHasKey('mediaReplaceUrl', $config);
+    }
+
+    public function test_layout_editor_config_wires_vmedia_browser_when_routes_exist(): void
+    {
+        if (! \Illuminate\Support\Facades\Route::has('vmedia.media.index')
+            || ! \Illuminate\Support\Facades\Route::has('vmedia.media.galleries')) {
+            $this->markTestSkipped('vmedia media routes are not registered in this testbench boot.');
+        }
+
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Media Gate Layout',
+            'slug' => 'media-gate-layout',
+            'html' => '<div data-voodbuilder-content-slot="main"></div>',
+            'css' => '',
+            'js' => '',
+            'enabled' => true,
+        ]);
+
+        $config = EditorChromeLayoutEditorGate::config($layout);
+
+        $this->assertNotEmpty($config['mediaLibraryUrl']);
+        $this->assertNotEmpty($config['mediaGalleriesUrl']);
     }
 }
