@@ -1194,7 +1194,16 @@ summary,
 html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile,
 html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile,
 html[data-vb-logo-mode='desktop'] footer .vb-brand-logo--mobile,
-body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile {
+body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile,
+/* Beat @media (width < 60rem) show rules (html:not(.dark) .mobile.light = 0,3,1). */
+html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop'] header[role='banner'] .vb-brand-logo--mobile.vb-brand-logo--dark,
+html[data-vb-logo-mode='desktop'] footer .vb-brand-logo--mobile.vb-brand-logo--light,
+html[data-vb-logo-mode='desktop'] footer .vb-brand-logo--mobile.vb-brand-logo--dark,
+body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile.vb-brand-logo--light,
+body[data-vb-logo-mode='desktop'] .vb-brand-logo--mobile.vb-brand-logo--dark {
     display: none !important;
 }
 
@@ -1215,7 +1224,15 @@ html.dark body[data-vb-logo-mode='desktop'] .vb-brand-logo--desktop.vb-brand-log
 html[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop,
 html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--desktop,
 html[data-vb-logo-mode='mobile'] footer .vb-brand-logo--desktop,
-body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop {
+body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop,
+html[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile'] header[role='banner'] .vb-brand-logo--desktop.vb-brand-logo--dark,
+html[data-vb-logo-mode='mobile'] footer .vb-brand-logo--desktop.vb-brand-logo--light,
+html[data-vb-logo-mode='mobile'] footer .vb-brand-logo--desktop.vb-brand-logo--dark,
+body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop.vb-brand-logo--light,
+body[data-vb-logo-mode='mobile'] .vb-brand-logo--desktop.vb-brand-logo--dark {
     display: none !important;
 }
 

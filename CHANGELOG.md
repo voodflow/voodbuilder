@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.58] - 2026-09-17
+
+### Fixed
+
+- Layout editor: Progress + Page content drop zones visible again (canvas rules now match `data-voodbuilder-editor-scope=layout` in the iframe, not only the outer Filament body class)
+- Footer brand/columns use `lg` breakpoint (and tablet device uses mobile logos) so intermediate widths no longer squeeze dual logos / cramped columns
+
 ## [0.1.57] - 2026-09-17
 
 ### Fixed

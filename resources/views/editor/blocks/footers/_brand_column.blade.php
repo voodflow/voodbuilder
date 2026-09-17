@@ -7,7 +7,7 @@
 
 <div
     @class([
-        'mx-auto w-full max-w-xs shrink-0 px-4 text-center md:mx-0 md:w-64 md:max-w-none md:text-left',
+        'mx-auto w-full max-w-xs shrink-0 px-4 text-center lg:mx-0 lg:w-64 lg:max-w-none lg:text-left',
         $brandColumnChrome['class'],
     ])
     data-voodbuilder-footer-brand-col

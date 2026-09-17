@@ -305,8 +305,8 @@ HTML;
         $this->assertStringNotContainsString('data-voodbuilder-chrome="footer-col-1" data-voodbuilder-chrome-hidden', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome="footer-col-2"', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome-hidden', $html);
-        $this->assertStringContainsString('md:col-start-1', $html);
-        $this->assertStringContainsString('md:col-start-4', $html);
+        $this->assertStringContainsString('lg:col-start-1', $html);
+        $this->assertStringContainsString('lg:col-start-4', $html);
         $this->assertStringContainsString('data-voodbuilder-footer-menu-cols', $html);
         $this->assertStringNotContainsString('data-voodbuilder-menu="footer"', $html);
     }
@@ -323,8 +323,8 @@ HTML;
         ], []);
 
         $this->assertStringContainsString('data-voodbuilder-footer-columns-redistribute="1"', $html);
-        $this->assertStringContainsString('md:flex-1', $html);
-        $this->assertStringNotContainsString('md:col-start-4', $html);
+        $this->assertStringContainsString('lg:flex-1', $html);
+        $this->assertStringNotContainsString('lg:col-start-4', $html);
     }
 
     #[Test]
@@ -339,10 +339,10 @@ HTML;
         ], []);
 
         $this->assertStringContainsString('data-voodbuilder-footer-columns-redistribute="0"', $html);
-        $this->assertStringContainsString('md:grid-cols-4', $html);
-        $this->assertStringContainsString('md:col-start-1', $html);
-        $this->assertStringContainsString('md:col-start-4', $html);
-        $this->assertStringNotContainsString('md:justify-end', $html);
+        $this->assertStringContainsString('lg:grid-cols-4', $html);
+        $this->assertStringContainsString('lg:col-start-1', $html);
+        $this->assertStringContainsString('lg:col-start-4', $html);
+        $this->assertStringNotContainsString('lg:justify-end', $html);
     }
 
     #[Test]
@@ -405,7 +405,7 @@ HTML;
         ], []);
 
         $this->assertStringContainsString('data-voodbuilder-footer-menu-cols', $html);
-        $this->assertStringContainsString('md:justify-end', $html);
+        $this->assertStringContainsString('lg:justify-end', $html);
     }
 
     #[Test]

@@ -157,11 +157,11 @@ function applySiteFooterMenuColumnsLayout(root) {
     el.querySelectorAll('[data-voodbuilder-footer-menu-cols]').forEach((node) => {
         node.classList.toggle('flex', redistribute);
         node.classList.toggle('flex-wrap', redistribute);
-        node.classList.toggle('md:flex-nowrap', redistribute);
+        node.classList.toggle('lg:flex-nowrap', redistribute);
         node.classList.toggle('grid', ! redistribute);
         node.classList.toggle('grid-cols-1', ! redistribute);
-        node.classList.toggle('md:grid-cols-4', ! redistribute);
-        node.classList.toggle('md:justify-end', redistribute && visibleCount === 1);
+        node.classList.toggle('lg:grid-cols-4', ! redistribute);
+        node.classList.toggle('lg:justify-end', redistribute && visibleCount === 1);
         node.setAttribute('data-voodbuilder-footer-columns-redistribute', redistribute ? '1' : '0');
     });
 
@@ -170,12 +170,12 @@ function applySiteFooterMenuColumnsLayout(root) {
         const visible = root.get(`voodbuilderShowFooterCol${index}`) === true;
 
         col.classList.toggle('basis-full', redistribute);
-        col.classList.toggle('md:mb-0', redistribute);
-        col.classList.toggle('md:basis-0', redistribute && visible);
-        col.classList.toggle('md:flex-1', redistribute && visible);
+        col.classList.toggle('lg:mb-0', redistribute);
+        col.classList.toggle('lg:basis-0', redistribute && visible);
+        col.classList.toggle('lg:flex-1', redistribute && visible);
 
         for (let columnIndex = 1; columnIndex <= 4; columnIndex++) {
-            col.classList.toggle(`md:col-start-${columnIndex}`, ! redistribute && visible && index === columnIndex);
+            col.classList.toggle(`lg:col-start-${columnIndex}`, ! redistribute && visible && index === columnIndex);
         }
     });
 }

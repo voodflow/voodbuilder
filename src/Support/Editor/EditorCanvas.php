@@ -486,42 +486,43 @@ final class EditorCanvas
         }
 
         html body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
-        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
         html body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
-        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
-        html body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile,
-        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile {
+        html body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--mobile {
             display: none !important;
         }
 
-        html:not(.dark) body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
-        html:not(.dark) body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light {
+        html:not(.dark) body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light {
             display: block !important;
         }
 
         html body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
         html body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark,
-        html body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop {
+        html body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--desktop,
+        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
+        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark,
+        html body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop {
             display: none !important;
         }
 
-        /* Theme class is on <html> only — never gate light logos with body:not(.dark). */
-        html:not(.dark) body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+        /* Theme class is on <html> only — never gate light logos with body:not(.dark).
+         * Tablet matches mobile logos (intermediate widths use the compact mark). */
+        html:not(.dark) body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html:not(.dark) body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: block !important;
         }
 
         html.dark body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
-        html.dark body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--light,
-        html.dark body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
+        html.dark body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light,
+        html.dark body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light {
             display: none !important;
         }
 
-        html.dark body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark,
-        html.dark body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark {
+        html.dark body[data-voodbuilder-editor-device='desktop'] .vb-brand-logo.vb-brand-logo--desktop.vb-brand-logo--dark {
             display: block !important;
         }
 
-        html.dark body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
+        html.dark body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark,
+        html.dark body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--dark {
             display: block !important;
         }
 

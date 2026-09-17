@@ -50,9 +50,9 @@ async function syncCanvasDeviceMode(editor) {
     doc.documentElement.setAttribute('data-voodbuilder-editor-device', deviceId);
     doc.body.setAttribute('data-voodbuilder-editor-device', deviceId);
 
-    // Explicit logo viewport mode so nav/footer switch even if theme media
-    // queries disagree with Editor frame sizing.
-    const logoMode = deviceId === 'mobilePortrait' ? 'mobile' : 'desktop';
+    const logoMode = (deviceId === 'mobilePortrait' || deviceId === 'tablet')
+        ? 'mobile'
+        : 'desktop';
     doc.documentElement.setAttribute('data-vb-logo-mode', logoMode);
     doc.body.setAttribute('data-vb-logo-mode', logoMode);
 

@@ -27,12 +27,20 @@ class EditorCanvasTest extends TestCase
             "html:not(.dark) body[data-voodbuilder-editor-device='mobilePortrait'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light",
             $frameStyle,
         );
+        $this->assertStringContainsString(
+            "html:not(.dark) body[data-voodbuilder-editor-device='tablet'] .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light",
+            $frameStyle,
+        );
         $this->assertStringNotContainsString(
             'body:not(.dark)[data-vb-logo-mode=',
             $frameStyle,
         );
         $this->assertStringContainsString(
             "html.dark body[data-vb-logo-mode='mobile'] footer .vb-brand-logo.vb-brand-logo--mobile.vb-brand-logo--light",
+            $frameStyle,
+        );
+        $this->assertStringContainsString(
+            "html[data-voodbuilder-editor-scope='layout'] header[role='banner']",
             $frameStyle,
         );
         $this->assertStringContainsString(
