@@ -95,16 +95,18 @@ final class VoodbuilderSeo
 
         $filtered = $tags->reject(fn (mixed $tag): bool => $tag instanceof FaviconTag)->values();
 
-        if ($light !== null) {
-            $filtered->push(new MediaFaviconLinkTag($light, '(prefers-color-scheme: light)'));
-        }
+        // Order matters: Chrome picks the *last matching* icon. Put the unscoped
+        // fallback first, then scheme-specific links so they win when they match.
+        // Safari tends to pick the first; the fallback covers that case.
+        $filtered->push(new MediaFaviconLinkTag($light ?? $dark ?? $fallback));
 
         if ($dark !== null) {
             $filtered->push(new MediaFaviconLinkTag($dark, '(prefers-color-scheme: dark)'));
         }
 
-        // Fallback for browsers that ignore media on icons.
-        $filtered->push(new MediaFaviconLinkTag($light ?? $dark ?? $fallback));
+        if ($light !== null) {
+            $filtered->push(new MediaFaviconLinkTag($light, '(prefers-color-scheme: light)'));
+        }
 
         return new TagCollection($filtered->all());
     }

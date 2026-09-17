@@ -84,9 +84,9 @@ class VoodbuilderSeoFaviconTest extends TestCase
         $mediaTags = $transformed->filter(fn (mixed $tag): bool => $tag instanceof MediaFaviconLinkTag)->values();
 
         $this->assertCount(3, $mediaTags);
-        $this->assertSame('(prefers-color-scheme: light)', $mediaTags[0]->attributes['media'] ?? null);
+        $this->assertArrayNotHasKey('media', $mediaTags[0]->attributes);
         $this->assertSame('(prefers-color-scheme: dark)', $mediaTags[1]->attributes['media'] ?? null);
-        $this->assertArrayNotHasKey('media', $mediaTags[2]->attributes);
+        $this->assertSame('(prefers-color-scheme: light)', $mediaTags[2]->attributes['media'] ?? null);
         $this->assertTrue($transformed->filter(fn (mixed $tag): bool => $tag instanceof FaviconTag)->isEmpty());
     }
 }

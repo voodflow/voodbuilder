@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.61] - 2026-09-17
+
+### Fixed
+
+- Favicon light/dark: emit unscoped fallback first, then `prefers-color-scheme` links last so Chromium picks the matching variant (previous order let the fallback always win)
+
 ## [0.1.60] - 2026-09-17
 
 ### Fixed
