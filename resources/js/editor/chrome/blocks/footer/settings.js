@@ -11,6 +11,8 @@ import {
     createFormSection,
     createFormTabs,
     createSelectField,
+    createTextField,
+    createTextareaField,
 } from '../../../editor-form-ui.js';
 import { isFooterBlock } from '../../ids.js';
 import {
@@ -22,6 +24,9 @@ import {
     footerColumnLabel,
     footerSettingLabel,
     FOOTER_SOCIAL_ALIGN_PROP,
+    FOOTER_TAGLINE_PROP,
+    FOOTER_COPYRIGHT_PROP,
+    FOOTER_DEFAULT_COPYRIGHT,
     normalizeFooterSocialAlign,
 } from './config.js';
 
@@ -162,6 +167,35 @@ export function registerFooterSettings(editor) {
                     }),
                 ]),
             );
+
+            const { field: taglineField, input: taglineInput } = createTextareaField({
+                label: label('footerTagline', 'Tagline'),
+                name: FOOTER_TAGLINE_PROP,
+                value: String(root.get(FOOTER_TAGLINE_PROP) ?? ''),
+                placeholder: label('footerTaglinePlaceholder', 'A Visual CMS for Laravel & Filament'),
+                rows: 2,
+            });
+            taglineInput.addEventListener('input', () => applyChange(FOOTER_TAGLINE_PROP, taglineInput.value));
+            taglineInput.addEventListener('change', () => applyChange(FOOTER_TAGLINE_PROP, taglineInput.value));
+            panels.brand.append(taglineField);
+
+            const { field: copyrightField, input: copyrightInput } = createTextField({
+                label: label('footerCopyright', 'Copyright'),
+                name: FOOTER_COPYRIGHT_PROP,
+                value: String(root.get(FOOTER_COPYRIGHT_PROP) ?? ''),
+                placeholder: label('footerCopyrightPlaceholder', FOOTER_DEFAULT_COPYRIGHT),
+            });
+            copyrightInput.addEventListener('input', () => applyChange(FOOTER_COPYRIGHT_PROP, copyrightInput.value));
+            copyrightInput.addEventListener('change', () => applyChange(FOOTER_COPYRIGHT_PROP, copyrightInput.value));
+            panels.brand.append(copyrightField);
+
+            const tagsHelp = document.createElement('p');
+            tagsHelp.className = 'voodbuilder-editor-form-hint';
+            tagsHelp.textContent = label(
+                'footerCopyTagsHelp',
+                'You can use text tags such as {current_year} and {brand_name}. Open “Available text tags” in the toolbar to copy them — they resolve on the published site and in this preview.',
+            );
+            panels.brand.append(tagsHelp);
 
             if (! hasLayoutOptions) {
                 panels.brand.append(

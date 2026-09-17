@@ -17,13 +17,17 @@ import {
     CHROME_LOGO_SIZE_PROP,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
-import { retagCurrentYear } from '../../../global-text-tags.js';
+import { retagCurrentYear, replaceGlobalTextTags, globalTextTagValues } from '../../../global-text-tags.js';
 import { setChromeVisible } from '../../visibility.js';
 import { isFooterBlock } from '../../ids.js';
 
 const footerRefreshTimers = new WeakMap();
 
 const FOOTER_LOGO_PROPS = new Set(chromeLogoFieldDefs().map((def) => def.prop));
+
+export const FOOTER_TAGLINE_PROP = 'voodbuilderTagline';
+export const FOOTER_COPYRIGHT_PROP = 'voodbuilderCopyright';
+export const FOOTER_DEFAULT_COPYRIGHT = '© {current_year} {brand_name}';
 
 export const FOOTER_SOCIAL_ALIGN_PROP = 'voodbuilderSocialAlign';
 export const FOOTER_SOCIAL_ALIGN_KEY = 'social_align';
@@ -231,6 +235,7 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
 
     applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize, logoSizeMobile, logoFullWidth);
     applyChromeLogoUrlsPreview(el, root);
+    applyFooterCopyPreview(el, root, editor);
     applyFooterSocialAlignPreview(el, socialAlign);
 
     if (footerBlockHasColumns(blockId)) {
@@ -240,6 +245,29 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
     if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
     }
+}
+
+/**
+ * Resolve tagline / copyright templates into the canvas (keeps {tags} in config).
+ *
+ * @param {HTMLElement} el
+ * @param {object} root
+ * @param {object|null} editor
+ */
+export function applyFooterCopyPreview(el, root, editor = null) {
+    const values = globalTextTagValues(editor);
+    const defaultTagline = editor?.__voodbuilderLabels?.footerDefaultTagline
+        ?? 'A Visual CMS for Laravel & Filament';
+    const taglineTemplate = String(root.get(FOOTER_TAGLINE_PROP) ?? '').trim() || defaultTagline;
+    const copyrightTemplate = String(root.get(FOOTER_COPYRIGHT_PROP) ?? '').trim() || FOOTER_DEFAULT_COPYRIGHT;
+
+    el.querySelectorAll('[data-voodbuilder-footer-tagline]').forEach((node) => {
+        node.textContent = replaceGlobalTextTags(taglineTemplate, values);
+    });
+
+    el.querySelectorAll('[data-voodbuilder-footer-copyright]').forEach((node) => {
+        node.textContent = replaceGlobalTextTags(copyrightTemplate, values);
+    });
 }
 
 /**
@@ -332,22 +360,26 @@ export function syncSiteFooterConfig(component) {
         config[def.key] = value !== '' ? value : null;
     }
 
-    // Persist canvas text edits so remount / frontend render keep author copy.
-    const taglineEl = el?.querySelector?.('[data-voodbuilder-footer-tagline]');
-    const copyrightEl = el?.querySelector?.('[data-voodbuilder-footer-copyright]');
-    const taglineText = String(taglineEl?.textContent ?? '').trim();
-    const copyrightText = String(copyrightEl?.textContent ?? '').trim();
+    // Settings props own templates (may include {current_year}). Empty → PHP defaults.
+    const taglineProp = component.get(FOOTER_TAGLINE_PROP);
+    const copyrightProp = component.get(FOOTER_COPYRIGHT_PROP);
 
-    if (taglineText !== '') {
-        config.tagline = taglineText;
-    } else if (config.tagline == null && component.get('voodbuilderConfig')?.tagline) {
-        config.tagline = component.get('voodbuilderConfig').tagline;
+    if (typeof taglineProp === 'string') {
+        const trimmed = taglineProp.trim();
+        config.tagline = trimmed !== '' ? trimmed : null;
+    } else {
+        const taglineFromDom = String(el?.querySelector?.('[data-voodbuilder-footer-tagline]')?.textContent ?? '').trim();
+        config.tagline = taglineFromDom !== '' ? taglineFromDom : (config.tagline ?? null);
     }
 
-    if (copyrightText !== '') {
-        config.copyright = retagCurrentYear(copyrightText);
-    } else if (config.copyright == null && component.get('voodbuilderConfig')?.copyright) {
-        config.copyright = component.get('voodbuilderConfig').copyright;
+    if (typeof copyrightProp === 'string') {
+        const trimmed = copyrightProp.trim();
+        config.copyright = trimmed !== '' ? retagCurrentYear(trimmed) : null;
+    } else {
+        const copyrightFromDom = String(el?.querySelector?.('[data-voodbuilder-footer-copyright]')?.textContent ?? '').trim();
+        config.copyright = copyrightFromDom !== ''
+            ? retagCurrentYear(copyrightFromDom)
+            : (config.copyright ?? null);
     }
 
     if (footerBlockHasColumns(blockId)) {
@@ -479,6 +511,13 @@ export function configureSiteFooterTraits(component, editor = null) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });
     }
 
+    component.set(FOOTER_TAGLINE_PROP, typeof config.tagline === 'string' ? config.tagline : '', { silent: true });
+    component.set(
+        FOOTER_COPYRIGHT_PROP,
+        typeof config.copyright === 'string' ? config.copyright : '',
+        { silent: true },
+    );
+
     if (typeof component.setTraits === 'function') {
         component.setTraits([]);
     } else {
@@ -511,6 +550,22 @@ export function registerFooterTextSync(editor) {
             const blockId = node.getAttributes?.()?.['data-voodbuilder-block'];
 
             if (isFooterBlock(blockId)) {
+                const taglineEl = node.getEl?.()?.querySelector?.('[data-voodbuilder-footer-tagline]');
+                const copyrightEl = node.getEl?.()?.querySelector?.('[data-voodbuilder-footer-copyright]');
+                const taglineText = String(taglineEl?.textContent ?? '').trim();
+                const copyrightText = String(copyrightEl?.textContent ?? '').trim();
+                const currentTagline = String(node.get(FOOTER_TAGLINE_PROP) ?? '');
+                const currentCopyright = String(node.get(FOOTER_COPYRIGHT_PROP) ?? '');
+
+                // Do not overwrite templates that still contain {tags} with resolved canvas text.
+                if (taglineText !== '' && ! currentTagline.includes('{')) {
+                    node.set(FOOTER_TAGLINE_PROP, taglineText, { silent: true });
+                }
+
+                if (copyrightText !== '' && ! currentCopyright.includes('{')) {
+                    node.set(FOOTER_COPYRIGHT_PROP, retagCurrentYear(copyrightText), { silent: true });
+                }
+
                 syncSiteFooterConfig(node);
 
                 return;

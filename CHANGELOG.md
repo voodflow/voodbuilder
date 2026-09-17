@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.53] - 2026-09-17
+
+### Added
+
+- Footer settings (Brand): editable **Tagline** and **Copyright** fields with `{current_year}` / `{brand_name}` text tags (resolved in canvas preview and on publish)
+
 ## [0.1.52] - 2026-09-17
 
 ### Fixed
