@@ -259,6 +259,40 @@ HTML;
     }
 
     #[Test]
+    public function hydrate_refreshes_footer_tagline_and_copyright_from_config(): void
+    {
+        $saved = <<<'HTML'
+<footer data-voodbuilder-block="site_footer_columns_simple" data-voodbuilder-config="{&quot;tagline&quot;:&quot;Synthesizers &amp; Music Tech Fair&quot;,&quot;copyright&quot;:&quot;© {current_year} Soundmit&quot;,&quot;show_tagline&quot;:true,&quot;show_copyright&quot;:true}">
+    <p data-voodbuilder-footer-tagline data-voodbuilder-chrome="footer-tagline">A Visual CMS for Laravel &amp; Filament</p>
+    <p data-voodbuilder-footer-copyright data-voodbuilder-chrome="copyright">© 2020 Old</p>
+</footer>
+HTML;
+
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, []);
+
+        $this->assertStringContainsString('Synthesizers &amp; Music Tech Fair', $hydrated);
+        $this->assertStringContainsString('© '.date('Y').' Soundmit', $hydrated);
+        $this->assertStringNotContainsString('A Visual CMS for Laravel', $hydrated);
+        $this->assertStringNotContainsString('© 2020 Old', $hydrated);
+    }
+
+    #[Test]
+    public function hydrate_keeps_footer_copy_when_config_was_stripped(): void
+    {
+        $saved = <<<'HTML'
+<footer class="voodbuilder-editor-dynamic">
+    <p data-voodbuilder-footer-tagline data-voodbuilder-chrome="footer-tagline">Keep me</p>
+    <p data-voodbuilder-footer-copyright data-voodbuilder-chrome="copyright">© Keep</p>
+</footer>
+HTML;
+
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, []);
+
+        $this->assertStringContainsString('>Keep me</p>', $hydrated);
+        $this->assertStringContainsString('>© Keep</p>', $hydrated);
+    }
+
+    #[Test]
     public function it_renders_only_selected_footer_columns(): void
     {
         $html = SiteFooterColumnsSimpleBlock::toPreviewHtml([

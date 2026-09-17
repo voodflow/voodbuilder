@@ -279,13 +279,78 @@ export function applyFooterCopyPreview(el, root, editor = null) {
         ?? 'A Visual CMS for Laravel & Filament';
     const taglineTemplate = String(root.get(FOOTER_TAGLINE_PROP) ?? '').trim() || defaultTagline;
     const copyrightTemplate = String(root.get(FOOTER_COPYRIGHT_PROP) ?? '').trim() || FOOTER_DEFAULT_COPYRIGHT;
+    const taglineText = replaceGlobalTextTags(taglineTemplate, values);
+    const copyrightText = replaceGlobalTextTags(copyrightTemplate, values);
 
     el.querySelectorAll('[data-voodbuilder-footer-tagline]').forEach((node) => {
-        node.textContent = replaceGlobalTextTags(taglineTemplate, values);
+        node.textContent = taglineText;
     });
 
     el.querySelectorAll('[data-voodbuilder-footer-copyright]').forEach((node) => {
-        node.textContent = replaceGlobalTextTags(copyrightTemplate, values);
+        node.textContent = copyrightText;
+    });
+
+    // GrapesJS serializes the component tree, not the live DOM — keep model text
+    // in sync so save/publish does not revert to the Blade default slogan.
+    syncFooterCopyComponentText(root, 'data-voodbuilder-footer-tagline', taglineText);
+    syncFooterCopyComponentText(root, 'data-voodbuilder-footer-copyright', copyrightText);
+}
+
+/**
+ * @param {object} root
+ * @param {string} attr
+ * @param {string} text
+ */
+function syncFooterCopyComponentText(root, attr, text) {
+    if (! root || typeof root.find !== 'function') {
+        return;
+    }
+
+    let matches = [];
+
+    try {
+        matches = root.find(`[${attr}]`) ?? [];
+    } catch {
+        return;
+    }
+
+    const list = typeof matches.forEach === 'function'
+        ? matches
+        : (Array.isArray(matches) ? matches : []);
+
+    list.forEach((component) => {
+        if (! component || typeof component.set !== 'function') {
+            return;
+        }
+
+        const children = typeof component.components === 'function'
+            ? component.components()
+            : null;
+
+        if (children && typeof children.forEach === 'function' && children.length > 0) {
+            let updated = false;
+
+            children.forEach((child) => {
+                if (! child || typeof child.set !== 'function') {
+                    return;
+                }
+
+                const childType = child.get?.('type');
+                const nested = typeof child.components === 'function' ? child.components() : null;
+                const isLeaf = ! nested || nested.length === 0;
+
+                if (childType === 'textnode' || isLeaf) {
+                    child.set('content', text, { silent: true });
+                    updated = true;
+                }
+            });
+
+            if (updated) {
+                return;
+            }
+        }
+
+        component.set('content', text, { silent: true });
     });
 }
 

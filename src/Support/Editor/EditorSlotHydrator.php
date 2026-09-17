@@ -20,6 +20,7 @@ final class EditorSlotHydrator
         self::hydrateBrands($document, $root, $preview, $config);
         self::hydrateMenus($document, $root, $preview, $config);
         self::hydrateFooterColumnTitles($document, $root);
+        self::hydrateFooterCopy($document, $root, $config);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
@@ -40,6 +41,7 @@ final class EditorSlotHydrator
         self::hydrateBrands($document, $document->documentElement, $preview, $config);
         self::hydrateMenus($document, $document->documentElement, $preview, $config);
         self::hydrateFooterColumnTitles($document, $document->documentElement);
+        self::hydrateFooterCopy($document, $document->documentElement, $config);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
@@ -145,6 +147,61 @@ final class EditorSlotHydrator
 
             $slotConfig = self::resolveConfigForElement($element, $config);
             self::replaceElementInnerHtml($document, $element, self::renderMenuList($menuSlug, $preview, $slotConfig));
+        }
+    }
+
+    /**
+     * Apply tagline / copyright from block config onto saved markup.
+     *
+     * Layout editor updates the live DOM from settings props, but GrapesJS may
+     * still serialize stale default copy into HTML. Slot hydrate must prefer
+     * data-voodbuilder-config so the published site matches Brand settings.
+     *
+     * Skip when no config remains (e.g. ChromeLayoutRenderer second pass after
+     * data-voodbuilder-config was stripped) so we do not wipe copy with defaults.
+     *
+     * @param  array<string, mixed>  $fallback
+     */
+    protected static function hydrateFooterCopy(DOMDocument $document, DOMElement $root, array $fallback = []): void
+    {
+        $brandName = VoodbuilderSettings::brandName();
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            $isTagline = $element->hasAttribute('data-voodbuilder-footer-tagline');
+            $isCopyright = $element->hasAttribute('data-voodbuilder-footer-copyright');
+
+            if (! $isTagline && ! $isCopyright) {
+                continue;
+            }
+
+            $config = self::resolveConfigForElement($element, $fallback);
+
+            if ($config === []) {
+                continue;
+            }
+
+            $normalized = SiteFooterConfig::normalize($config);
+            $text = $isTagline
+                ? SiteFooterConfig::resolveTagline(
+                    is_string($normalized['tagline'] ?? null) ? $normalized['tagline'] : null,
+                )
+                : SiteFooterConfig::resolveCopyright(
+                    is_string($normalized['copyright'] ?? null) ? $normalized['copyright'] : null,
+                    $brandName,
+                );
+
+            // Config attributes may still carry &amp; inside JSON string values.
+            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5);
+
+            while ($element->firstChild !== null) {
+                $element->removeChild($element->firstChild);
+            }
+
+            $element->appendChild($document->createTextNode($text));
         }
     }
 

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.56] - 2026-09-17
+
+### Fixed
+
+- Footer tagline / copyright from Brand settings now apply on the published site (slot hydrate reads `data-voodbuilder-config`; editor also syncs GrapesJS component text so save keeps custom copy)
+
 ## [0.1.55] - 2026-09-17
 
 ### Fixed

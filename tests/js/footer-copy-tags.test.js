@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     replaceGlobalTextTags,
     retagCurrentYear,
@@ -58,6 +58,9 @@ describe('footer copy tags', () => {
 
                 return undefined;
             },
+            find() {
+                return [];
+            },
         };
 
         const editor = {
@@ -71,5 +74,52 @@ describe('footer copy tags', () => {
 
         expect(el.tagline.textContent).toBe('Ship with Acme');
         expect(el.copyright.textContent).toBe('© 2099 Acme');
+    });
+
+    it('applyFooterCopyPreview syncs GrapesJS component content', () => {
+        const taglineChild = { set: vi.fn(), get: () => 'textnode', components: () => [] };
+        const copyrightChild = { set: vi.fn(), get: () => 'textnode', components: () => [] };
+        const taglineComp = {
+            set: vi.fn(),
+            components: () => ({ length: 1, forEach: (fn) => fn(taglineChild) }),
+        };
+        const copyrightComp = {
+            set: vi.fn(),
+            components: () => ({ length: 1, forEach: (fn) => fn(copyrightChild) }),
+        };
+
+        const el = {
+            querySelectorAll: () => [],
+        };
+
+        const root = {
+            get(name) {
+                if (name === 'voodbuilderTagline') {
+                    return 'Custom tagline';
+                }
+
+                if (name === 'voodbuilderCopyright') {
+                    return '© Custom';
+                }
+
+                return undefined;
+            },
+            find(selector) {
+                if (selector.includes('footer-tagline')) {
+                    return [taglineComp];
+                }
+
+                if (selector.includes('footer-copyright')) {
+                    return [copyrightComp];
+                }
+
+                return [];
+            },
+        };
+
+        applyFooterCopyPreview(el, root, null);
+
+        expect(taglineChild.set).toHaveBeenCalledWith('content', 'Custom tagline', { silent: true });
+        expect(copyrightChild.set).toHaveBeenCalledWith('content', '© Custom', { silent: true });
     });
 });
