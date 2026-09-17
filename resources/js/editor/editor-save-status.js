@@ -45,6 +45,7 @@ export function createSaveStatus(element, labels = {}) {
     const text = {
         saved: labels.statusSaved ?? labels.saved ?? 'Saved',
         saving: labels.statusSaving ?? labels.saving ?? 'Saving…',
+        compiling: labels.compilingStyles ?? 'Compiling styles…',
         unsaved: labels.statusUnsaved ?? 'Unsaved changes',
         draftAt: labels.statusDraftAt ?? 'draft saved {time}',
         draftHint: labels.statusDraftHint
@@ -56,8 +57,11 @@ export function createSaveStatus(element, labels = {}) {
             return;
         }
 
+        // compiling shares the saving chrome (busy / in-flight) so authors get feedback
+        // without a second visual language for "please wait".
         for (const name of ['idle', 'saved', 'saving', 'unsaved']) {
-            element.classList.toggle(`${STATE_CLASS_PREFIX}${name}`, state === name);
+            const active = state === name || (name === 'saving' && state === 'compiling');
+            element.classList.toggle(`${STATE_CLASS_PREFIX}${name}`, active);
         }
 
         if (state === 'idle') {
@@ -94,6 +98,11 @@ export function createSaveStatus(element, labels = {}) {
             state = 'saving';
             render();
         },
+        /** Page Tailwind JIT (or another scoped build) is still running before save. */
+        compiling: () => {
+            state = 'compiling';
+            render();
+        },
         /**
          * The canvas has unpublished changes.
          *
@@ -112,7 +121,7 @@ export function createSaveStatus(element, labels = {}) {
         draftParked: (timestamp = Date.now()) => {
             draftAt = timestamp;
 
-            if (state !== 'saving') {
+            if (state !== 'saving' && state !== 'compiling') {
                 state = 'unsaved';
             }
 

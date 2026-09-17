@@ -573,7 +573,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         if (shouldDeferCssRebuild(editor)) {
             pendingInvalidate = true;
             clearTimeout(timer);
-            timer = setTimeout(() => schedule(delay), 120);
+            timer = setTimeout(() => {
+                timer = null;
+                schedule(delay);
+            }, 120);
 
             return;
         }
@@ -597,7 +600,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
             settingsRetries += 1;
             clearTimeout(timer);
-            timer = setTimeout(() => schedule(delay), SETTINGS_RETRY_MS);
+            timer = setTimeout(() => {
+                timer = null;
+                schedule(delay);
+            }, SETTINGS_RETRY_MS);
 
             return;
         }
@@ -605,8 +611,10 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         settingsRetries = 0;
         clearTimeout(timer);
         timer = setTimeout(() => {
+            timer = null;
             void rebuild();
         }, delay);
+        editor.__voodbuilderPageCssPending = pendingInvalidate || Boolean(timer);
     };
 
     /** Schedule only when new utilities are missing (reorder/move must no-op). */
@@ -765,6 +773,8 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         const currentRequest = ++requestId;
         building = true;
         queuedWhileBuilding = false;
+        editor.__voodbuilderPageCssBuilding = true;
+        editor.__voodbuilderPageCssPending = false;
 
         beginEditorBuild(editor, BUILD_SCOPE);
 
@@ -853,6 +863,7 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             window.clearTimeout(fetchTimeout);
             endEditorBuild(editor, BUILD_SCOPE);
             building = false;
+            editor.__voodbuilderPageCssBuilding = false;
 
             // A force/invalidate during this request must not fall back to
             // scheduleIfMissingUtilities — that can no-op after a partial early compile
@@ -874,14 +885,83 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
 
                 schedule(delay);
             }
+
+            editor.__voodbuilderPageCssPending = pendingInvalidate || Boolean(timer);
         }
+    };
+
+    const syncPageCssBusyFlags = () => {
+        editor.__voodbuilderPageCssBuilding = building;
+        editor.__voodbuilderPageCssPending = pendingInvalidate || Boolean(timer);
+    };
+
+    /**
+     * Resolve when page CSS is idle (no in-flight compile, no pending debounce).
+     * Flushes a pending rebuild so Save does not sit silently through DEBOUNCE_MS.
+     *
+     * @param {number} [timeoutMs]
+     * @returns {Promise<void>}
+     */
+    const waitForPageCssIdle = (timeoutMs = 20_000) => {
+        syncPageCssBusyFlags();
+
+        const isIdle = () => ! building && ! pendingInvalidate && ! timer && ! isDragLocked();
+
+        if (isIdle()) {
+            return Promise.resolve();
+        }
+
+        // Author hit Save while debounce / post-drop compile is queued — run now.
+        if (pendingInvalidate || timer) {
+            schedule(0);
+        }
+
+        return new Promise((resolve) => {
+            let settled = false;
+
+            const finish = () => {
+                if (settled) {
+                    return;
+                }
+
+                settled = true;
+                window.clearInterval(poll);
+                window.clearTimeout(hardTimeout);
+                editor.off?.('voodbuilder:page-css-compiled', onCompiled);
+                syncPageCssBusyFlags();
+                resolve();
+            };
+
+            const tick = () => {
+                syncPageCssBusyFlags();
+
+                if (isIdle()) {
+                    finish();
+                }
+            };
+
+            const onCompiled = () => {
+                // A compile can immediately re-queue (queuedWhileBuilding / pendingInvalidate).
+                queueMicrotask(tick);
+                window.setTimeout(tick, Math.max(50, DEBOUNCE_MS + 20));
+            };
+
+            const poll = window.setInterval(tick, 100);
+            const hardTimeout = window.setTimeout(finish, timeoutMs);
+
+            editor.on?.('voodbuilder:page-css-compiled', onCompiled);
+            tick();
+        });
     };
 
     editor.__voodbuilderSchedulePageCssRebuild = scheduleIfMissingUtilities;
     editor.__voodbuilderForcePageCssRebuild = (delay = DEBOUNCE_MS) => {
         pendingInvalidate = true;
         schedule(delay);
+        syncPageCssBusyFlags();
     };
+    editor.__voodbuilderWaitForPageCssIdle = waitForPageCssIdle;
+    syncPageCssBusyFlags();
     editor.__voodbuilderSetCssRebuildSuspended = (suspended) => {
         const depth = Number(editor.__voodbuilderCssRebuildSuspendDepth ?? 0);
 

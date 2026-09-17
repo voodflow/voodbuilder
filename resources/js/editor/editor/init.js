@@ -101,6 +101,7 @@ import {
 import { ensureReadingInspectorTab, registerReadingTypographyUi } from '../reading-typography-ui.js';
 import {
     finishEditorBoot,
+    isEditorBuildBusy,
     registerEditorBuildStatus,
     setEditorBootPhase,
     startEditorBoot,
@@ -2342,13 +2343,54 @@ function mountFrontendEditor() {
     saveButton.addEventListener('click', async () => {
         saveButton.disabled = true;
 
-        if (saveLabel) {
-            saveLabel.textContent = config.labels?.saving ?? 'Saving…';
-        }
+        const compilingLabel = config.labels?.compilingStyles ?? 'Compiling styles…';
+        const savingLabel = config.labels?.saving ?? 'Saving…';
 
-        saveStatus.saving();
+        const setSaveLabel = (text) => {
+            if (saveLabel) {
+                saveLabel.textContent = text;
+            }
+        };
+
+        /**
+         * Let the browser paint disabled/busy chrome before sync work (buildPayload,
+         * collect HTML) freezes the main thread — otherwise Save looks hung.
+         */
+        const yieldToBrowser = () => new Promise((resolve) => {
+            const schedule = globalThis.requestAnimationFrame
+                ?? ((cb) => globalThis.setTimeout(cb, 0));
+
+            schedule(() => {
+                schedule(() => {
+                    globalThis.setTimeout(resolve, 0);
+                });
+            });
+        });
 
         try {
+            const cssBusy = Boolean(
+                editor.__voodbuilderPageCssBuilding
+                || editor.__voodbuilderPageCssPending
+                || isEditorBuildBusy(),
+            );
+
+            if (cssBusy) {
+                setSaveLabel(compilingLabel);
+                saveStatus.compiling();
+                await yieldToBrowser();
+
+                await editor.__voodbuilderWaitForPageCssIdle?.(20_000);
+            } else {
+                // Still yield once so "Saving…" can paint before buildPayload.
+                setSaveLabel(savingLabel);
+                saveStatus.saving();
+                await yieldToBrowser();
+            }
+
+            setSaveLabel(savingLabel);
+            saveStatus.saving();
+            await yieldToBrowser();
+
             let payload;
 
             try {

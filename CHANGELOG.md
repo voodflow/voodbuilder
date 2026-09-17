@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.59] - 2026-09-17
+
+### Fixed
+
+- Save no longer looks frozen after add/remove: UI paints “Compiling styles…” / “Saving…” before heavy `buildPayload`, and waits for pending page CSS JIT to finish (with feedback) instead of blocking the main thread silently
+
 ## [0.1.58] - 2026-09-17
 
 ### Fixed

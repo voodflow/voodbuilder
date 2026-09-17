@@ -268,6 +268,11 @@ function totalBuildCount() {
     return total;
 }
 
+/** True while any scoped build (page CSS, components, …) is in flight. */
+export function isEditorBuildBusy() {
+    return totalBuildCount() > 0;
+}
+
 function syncClassesOverlay(editor) {
     const overlay = editor?.__voodbuilderClassesBuildOverlay;
 
