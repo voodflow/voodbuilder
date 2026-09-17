@@ -3,7 +3,7 @@
  */
 
 import { initScrollSliders } from './slider-runtime.js';
-import { applyReadingProgressCssVars, applyReadingProgressTop } from './reading-progress-appearance.js';
+import { applyReadingProgressCssVars, applyReadingProgressTop, computeArticleScrollProgress, computePageScrollProgress } from './reading-progress-appearance.js';
 
 function wordsInElement(element) {
     const text = element?.innerText ?? element?.textContent ?? '';
@@ -183,25 +183,9 @@ export function initReadingProgress(options = {}) {
         const update = () => {
             applyReadingProgressTop(track, { doc, win });
 
-            const scrollEl = doc.documentElement;
-            const scrollTop = win.scrollY || scrollEl.scrollTop || 0;
-            const viewport = win.innerHeight || 0;
-
-            if (! usePageScroll && article instanceof HTMLElement) {
-                const rect = article.getBoundingClientRect();
-                const top = scrollTop + rect.top;
-                const height = article.offsetHeight;
-                const max = Math.max(height - viewport, 1);
-                const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
-
-                bar.style.width = `${progress * 100}%`;
-                track.classList.toggle('is-active', progress > 0.001);
-
-                return;
-            }
-
-            const max = Math.max(scrollEl.scrollHeight - viewport, 1);
-            const progress = Math.min(Math.max(scrollTop / max, 0), 1);
+            const progress = ! usePageScroll && article instanceof HTMLElement
+                ? computeArticleScrollProgress(article, win, doc)
+                : computePageScrollProgress(win, doc);
 
             bar.style.width = `${progress * 100}%`;
             track.classList.toggle('is-active', progress > 0.001);
@@ -210,6 +194,12 @@ export function initReadingProgress(options = {}) {
         update();
         win.addEventListener('scroll', update, { passive: true });
         win.addEventListener('resize', update);
+        // Logos / theme tokens reflow on dark↔light — remeasure after paint.
+        win.addEventListener('voodbuilder:theme-changed', () => {
+            win.requestAnimationFrame(() => {
+                win.requestAnimationFrame(update);
+            });
+        });
     });
 }
 

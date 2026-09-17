@@ -110,6 +110,55 @@ export function resolveReadingProgressThicknessPx(raw) {
 }
 
 /**
+ * Page-scroll reading progress 0…1. Returns 0 when the page is not meaningfully
+ * scrollable (avoids Math.max(range, 1) jumping straight to 100%).
+ *
+ * @param {Window} [win]
+ * @param {Document} [doc]
+ * @returns {number}
+ */
+export function computePageScrollProgress(win = window, doc = document) {
+    const scrollEl = doc.scrollingElement || doc.documentElement;
+    const viewport = win.innerHeight || 0;
+    const scrollTop = win.scrollY ?? scrollEl.scrollTop ?? 0;
+    const range = (scrollEl.scrollHeight || 0) - viewport;
+
+    if (range <= 2) {
+        return 0;
+    }
+
+    return Math.min(Math.max(scrollTop / range, 0), 1);
+}
+
+/**
+ * Article-scoped reading progress 0…1.
+ *
+ * @param {HTMLElement} article
+ * @param {Window} [win]
+ * @param {Document} [doc]
+ * @returns {number}
+ */
+export function computeArticleScrollProgress(article, win = window, doc = document) {
+    if (! (article instanceof HTMLElement)) {
+        return 0;
+    }
+
+    const scrollEl = doc.scrollingElement || doc.documentElement;
+    const viewport = win.innerHeight || 0;
+    const scrollTop = win.scrollY ?? scrollEl.scrollTop ?? 0;
+    const rect = article.getBoundingClientRect();
+    const top = scrollTop + rect.top;
+    const height = article.offsetHeight;
+    const range = height - viewport;
+
+    if (range <= 2) {
+        return 0;
+    }
+
+    return Math.min(Math.max((scrollTop - top) / range, 0), 1);
+}
+
+/**
  * Apply CSS variables on a live DOM track (published page / canvas).
  *
  * @param {HTMLElement} track

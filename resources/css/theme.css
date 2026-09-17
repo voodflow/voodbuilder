@@ -305,7 +305,8 @@
         margin: 0 !important;
         pointer-events: none;
         overflow: visible;
-        background: color-mix(in srgb, var(--vb-progress-color) 18%, transparent);
+        /* Neutral track in both themes — brand@18% looked like a full bar in light mode. */
+        background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 12%, transparent);
         transition: opacity 0.15s ease, visibility 0.15s ease;
     }
 

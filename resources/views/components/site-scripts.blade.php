@@ -305,18 +305,24 @@
                 syncProgressLayout(scrollable);
 
                 if (! scrollable) {
+                    bar.style.width = '0%';
+                    progressTrack.classList.remove('is-active');
+
                     return;
                 }
 
-                const scrollTop = window.scrollY || document.documentElement.scrollTop;
-                const viewport = window.innerHeight;
+                const scrollEl = document.scrollingElement || document.documentElement;
+                const scrollTop = window.scrollY || scrollEl.scrollTop || 0;
+                const viewport = window.innerHeight || 0;
 
                 if (article) {
                     const rect = article.getBoundingClientRect();
                     const top = scrollTop + rect.top;
                     const height = article.offsetHeight;
-                    const max = Math.max(height - viewport, 1);
-                    const progress = Math.min(Math.max((scrollTop - top) / max, 0), 1);
+                    const range = height - viewport;
+                    const progress = range <= 2
+                        ? 0
+                        : Math.min(Math.max((scrollTop - top) / range, 0), 1);
 
                     bar.style.width = `${progress * 100}%`;
                     progressTrack.classList.toggle('is-active', progress > 0.001);
@@ -324,8 +330,10 @@
                     return;
                 }
 
-                const max = Math.max(document.documentElement.scrollHeight - viewport, 1);
-                const progress = Math.min(Math.max(scrollTop / max, 0), 1);
+                const range = (scrollEl.scrollHeight || 0) - viewport;
+                const progress = range <= 2
+                    ? 0
+                    : Math.min(Math.max(scrollTop / range, 0), 1);
 
                 bar.style.width = `${progress * 100}%`;
                 progressTrack.classList.toggle('is-active', progress > 0.001);
@@ -335,6 +343,11 @@
             window.addEventListener('scroll', updateProgress, { passive: true });
             window.addEventListener('resize', updateProgress);
             window.addEventListener('load', updateProgress);
+            window.addEventListener('voodbuilder:theme-changed', () => {
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(updateProgress);
+                });
+            });
         });
 
         const searchRoot = document.querySelector('[data-voodbuilder-search]');
