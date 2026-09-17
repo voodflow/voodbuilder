@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.60] - 2026-09-17
+
+### Fixed
+
+- Layout editor: desktop nav / menu link groups stay selectable after reload (layers filter no longer flattens them; menu slots are style targets)
+- Nav/footer remount keeps author classes on menu slots (`uppercase`, `hover:*`, …) and promotes styles authored on the slot itself
+
 ## [0.1.59] - 2026-09-17
 
 ### Fixed

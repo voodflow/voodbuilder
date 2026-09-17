@@ -43,14 +43,42 @@ function suppressChromeBlockDescendants(component) {
 }
 
 /**
- * Layout editor: allow Style/Classes on the chrome tree while keeping menu/brand
- * slots and chrome icon buttons non-editable as free-form content.
+ * Durable chrome menu groups authors style (uppercase, hover utilities, …).
+ * CMS link nodes inside remain ephemeral; styles promote onto these slots.
+ *
+ * @param {Record<string, unknown>} attributes
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isChromeMenuStyleSlot(attributes, component) {
+    if (Object.prototype.hasOwnProperty.call(attributes, 'data-voodbuilder-desktop-nav')) {
+        return true;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(attributes, ATTR.menu)) {
+        return true;
+    }
+
+    const classes = component.getClasses?.() ?? [];
+
+    if (classes.includes('voodbuilder-mobile-nav__links')) {
+        return true;
+    }
+
+    return typeof attributes.class === 'string'
+        && attributes.class.includes('voodbuilder-mobile-nav__links');
+}
+
+/**
+ * Layout editor: allow Style/Classes on chrome structure (incl. menu link groups).
+ * Brand markup and chrome icon buttons stay non-editable as free-form content.
  *
  * @param {object} component
  */
 function enableChromeLayoutStylingTree(component) {
     const attributes = component.getAttributes?.() ?? {};
-    const protectedSlot = Boolean(attributes[ATTR.menu] || attributes[ATTR.brand]);
+    const menuStyleSlot = isChromeMenuStyleSlot(attributes, component);
+    const protectedBrand = Boolean(attributes[ATTR.brand]);
     const chromeIcon = Boolean(
         attributes['data-voodbuilder-search-open'] != null
         || attributes['data-voodbuilder-notification-bell-preview'] != null
@@ -60,7 +88,8 @@ function enableChromeLayoutStylingTree(component) {
         || attributes['data-theme-toggle'] != null
         || (component.getClasses?.() ?? []).includes('voodbuilder-header-icon-btn'),
     );
-    const lockContent = protectedSlot || chromeIcon;
+    // Menu groups are style targets — do not lock them with legacy "protected slot".
+    const lockContent = (protectedBrand || chromeIcon) && ! menuStyleSlot;
 
     component.set({
         removable: false,
@@ -69,7 +98,7 @@ function enableChromeLayoutStylingTree(component) {
         selectable: ! lockContent,
         hoverable: ! lockContent,
         highlightable: ! lockContent,
-        layerable: ! lockContent,
+        layerable: ! lockContent || menuStyleSlot,
         editable: false,
         stylable: ! lockContent,
         badgable: ! lockContent,

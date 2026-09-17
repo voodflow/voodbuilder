@@ -20,6 +20,7 @@ import voodbuilderEditorPlugin, {
     applySiteFooterColumns,
     applySiteFooterSettingsPreview,
     applySiteNavSettingsPreview,
+    captureChromeMenuSlotAuthorClasses,
     captureContainerAuthorClasses,
     configureSiteFooterTraits,
     configureSiteNavTraits,
@@ -34,6 +35,7 @@ import voodbuilderEditorPlugin, {
     refreshDynamicSlots,
     registerBlocks,
     registerSiteNavChromeButtonType,
+    restoreChromeMenuSlotAuthorClasses,
     restoreContainerAuthorClasses,
     sanitizeBlockHtml,
     syncDynamicBlockAttributes,
@@ -1750,6 +1752,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         if (isSiteNavBlock(blockId)) {
             const authorContainerClasses = captureContainerAuthorClasses(component);
+            const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
             component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -1758,6 +1761,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             });
             component.components(fresh.innerHTML);
             restoreContainerAuthorClasses(component, authorContainerClasses);
+            restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
             component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
             component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
             const preserveSelection = editor.getSelected?.();
@@ -1799,6 +1803,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
         const footerBlock = isSiteFooterBlock(blockId);
         const authorContainerClasses = captureContainerAuthorClasses(component);
+        const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
 
         if (footerBlock && fresh.tagName === 'FOOTER') {
             applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
@@ -1809,6 +1814,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 component.components(fresh.innerHTML);
                 restoreContainerAuthorClasses(component, authorContainerClasses);
             }
+
+            restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
         } else {
             component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
@@ -1829,6 +1836,8 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                 component.components(fresh.innerHTML);
                 restoreContainerAuthorClasses(component, authorContainerClasses);
             }
+
+            restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
         }
 
         component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;

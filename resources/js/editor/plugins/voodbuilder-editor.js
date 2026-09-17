@@ -1385,6 +1385,118 @@ function captureContainerAuthorClasses(component) {
         });
 }
 
+const CHROME_MENU_SLOT_SELECTOR = [
+    '[data-voodbuilder-desktop-nav]',
+    '[data-voodbuilder-menu]',
+    '.voodbuilder-mobile-nav__links',
+].join(', ');
+
+/**
+ * Stable key so author classes survive nav/footer dynamic remount.
+ *
+ * @param {object} node
+ * @param {number} desktopNavIndex
+ * @returns {string}
+ */
+function chromeMenuSlotAuthorKey(node, desktopNavIndex) {
+    const attrs = node.getAttributes?.() ?? {};
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-menu')) {
+        return `menu:${String(attrs['data-voodbuilder-menu'] ?? '').trim()}`;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav')) {
+        return `desktop-nav:${desktopNavIndex}`;
+    }
+
+    return 'mobile-links';
+}
+
+/**
+ * @param {object} component
+ * @returns {Record<string, { classes: string[], style: Record<string, string> }>}
+ */
+function captureChromeMenuSlotAuthorClasses(component) {
+    /** @type {Record<string, { classes: string[], style: Record<string, string> }>} */
+    const byKey = {};
+    let desktopNavIndex = 0;
+
+    safeFindComponents(component, CHROME_MENU_SLOT_SELECTOR).forEach((node) => {
+        const attrs = node.getAttributes?.() ?? {};
+        const isDesktopNav = Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav');
+        const key = chromeMenuSlotAuthorKey(node, isDesktopNav ? desktopNavIndex : 0);
+
+        if (isDesktopNav) {
+            desktopNavIndex += 1;
+        }
+
+        byKey[key] = {
+            classes: typeof node.getClasses === 'function'
+                ? [...node.getClasses()]
+                : String(attrs.class ?? '').split(/\s+/).filter(Boolean),
+            style: node.getStyle?.({ inline: true }) ?? {},
+        };
+    });
+
+    return byKey;
+}
+
+/**
+ * @param {object} component
+ * @param {Record<string, { classes: string[], style: Record<string, string> }>|null|undefined} authorByKey
+ */
+function restoreChromeMenuSlotAuthorClasses(component, authorByKey) {
+    if (! authorByKey || typeof authorByKey !== 'object') {
+        return;
+    }
+
+    let desktopNavIndex = 0;
+
+    safeFindComponents(component, CHROME_MENU_SLOT_SELECTOR).forEach((node) => {
+        const attrs = node.getAttributes?.() ?? {};
+        const isDesktopNav = Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav');
+        const key = chromeMenuSlotAuthorKey(node, isDesktopNav ? desktopNavIndex : 0);
+
+        if (isDesktopNav) {
+            desktopNavIndex += 1;
+        }
+
+        const author = authorByKey[key];
+
+        if (! author) {
+            return;
+        }
+
+        const authorClasses = Array.isArray(author.classes) ? author.classes : [];
+
+        if (authorClasses.length > 0) {
+            const fresh = typeof node.getClasses === 'function'
+                ? node.getClasses()
+                : String(node.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean);
+            const merged = mergeAuthorStructuralClasses(authorClasses, fresh);
+
+            if (typeof node.setClass === 'function') {
+                node.setClass(merged);
+            } else {
+                node.addAttributes?.({ class: merged.join(' ') });
+            }
+        }
+
+        const authorStyle = author.style && typeof author.style === 'object' ? author.style : {};
+        const stylePatch = {};
+
+        for (const [prop, value] of Object.entries(authorStyle)) {
+            if (value != null && value !== '') {
+                stylePatch[prop] = value;
+            }
+        }
+
+        if (Object.keys(stylePatch).length > 0) {
+            node.addStyle?.(stylePatch, { noEvent: true });
+        }
+    });
+}
+
 function restoreContainerAuthorClasses(component, authorClassLists) {
     if (! Array.isArray(authorClassLists) || authorClassLists.length === 0) {
         return;
@@ -1747,6 +1859,8 @@ export {
     applyFreshFooterAttributes,
     captureContainerAuthorClasses,
     restoreContainerAuthorClasses,
+    captureChromeMenuSlotAuthorClasses,
+    restoreChromeMenuSlotAuthorClasses,
     prioritizeBlockCategories,
     ensureLayoutSectionTraits,
     pruneEmptySections,

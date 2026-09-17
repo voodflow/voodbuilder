@@ -1349,6 +1349,49 @@ describe('theme-tokens background clear', () => {
         expect(slotClasses).toContain('uppercase');
     });
 
+    it('promoteChromeMenuSlotAuthorStyles also promotes classes authored on the slot itself', async () => {
+        const { promoteChromeMenuSlotAuthorStyles } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const addedRules = [];
+        const slotClasses = [];
+
+        const slot = {
+            getAttributes: () => ({ 'data-voodbuilder-desktop-nav': '' }),
+            getClasses: () => ['uppercase', 'hover:text-vp-brand-1'],
+            getStyle: () => ({}),
+            getId: () => 'slot-1',
+            addClass: (name) => {
+                slotClasses.push(name);
+            },
+            components: () => [],
+            parent: () => null,
+        };
+
+        const editor = {
+            Css: {
+                getAll: () => [],
+                getIdRule: () => null,
+                addRules: (cssText) => {
+                    addedRules.push(String(cssText));
+                },
+                remove: () => {},
+            },
+            getWrapper: () => ({
+                onAll: (cb) => {
+                    cb(slot);
+                },
+            }),
+        };
+
+        promoteChromeMenuSlotAuthorStyles(editor);
+
+        expect(slotClasses).toContain('uppercase');
+        expect(slotClasses).toContain('hover:text-vp-brand-1');
+        expect(addedRules.join('\n')).toContain('text-transform: uppercase');
+    });
+
     it('mergeCompiledPageCssWithAuthorIdRules keeps #id background after JIT rebuild', async () => {
         const { mergeCompiledPageCssWithAuthorIdRules } = await import(
             '../../resources/js/editor/page-tailwind-autobuild.js'

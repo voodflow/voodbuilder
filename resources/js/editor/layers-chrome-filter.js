@@ -162,6 +162,33 @@ function isChromeStructureComponent(component) {
     );
 }
 
+/**
+ * Durable menu groups authors style in the layout editor (nav links, footer menus).
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isChromeMenuStyleSlotComponent(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav')) {
+        return true;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-menu')) {
+        return true;
+    }
+
+    const classes = component?.getClasses?.() ?? [];
+
+    if (classes.includes('voodbuilder-mobile-nav__links')) {
+        return true;
+    }
+
+    return typeof attrs.class === 'string'
+        && attrs.class.includes('voodbuilder-mobile-nav__links');
+}
+
 function isPageContentShellNode(component) {
     return isPageContentSlotComponent(component)
         || Boolean(component?.getAttributes?.()?.[PAGE_CONTENT_ATTR]);
@@ -225,13 +252,34 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
         && ! inPageContentTree;
 
     if (inChromeShell) {
-        component.set({
-            layerable: false,
-            draggable: false,
-            selectable: false,
-            hoverable: false,
-            highlightable: false,
-        }, { silent: true });
+        if (isChromeLayoutModeEditor(editor)) {
+            // Layout editor: do not flatten selection — authors must pick menu link
+            // groups / inner wrappers for Style + Classes. Page shell still collapses.
+            if (isChromeMenuStyleSlotComponent(component)) {
+                component.set({
+                    layerable: true,
+                    selectable: true,
+                    hoverable: true,
+                    highlightable: true,
+                    stylable: true,
+                    badgable: true,
+                    draggable: false,
+                }, { silent: true });
+            } else {
+                component.set({
+                    layerable: false,
+                    draggable: false,
+                }, { silent: true });
+            }
+        } else {
+            component.set({
+                layerable: false,
+                draggable: false,
+                selectable: false,
+                hoverable: false,
+                highlightable: false,
+            }, { silent: true });
+        }
     } else if (inPageContentTree) {
         // Undo a previous chrome pass that blanked page-content descendants
         // (Hero looked “flat” with no expandable children).
@@ -244,6 +292,20 @@ function applyLayersChromeFilter(component, wrapper, editor, insideChromeShell =
                 highlightable: true,
             }, { silent: true });
         }
+    }
+
+    // Always re-assert menu style slots in layout editor (drop-zone path may skip
+    // inChromeShell, and hideFromLayers on site-header must not leave them dead).
+    if (isChromeLayoutModeEditor(editor) && isChromeMenuStyleSlotComponent(component)) {
+        component.set({
+            layerable: true,
+            selectable: true,
+            hoverable: true,
+            highlightable: true,
+            stylable: true,
+            badgable: true,
+            draggable: false,
+        }, { silent: true });
     }
 
     // Media heroes must keep an expandable Layers tree even if a later

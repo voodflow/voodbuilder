@@ -758,7 +758,7 @@ export function promoteChromeMenuSlotAuthorStyles(editor) {
     wrapper.onAll((component) => {
         const slot = findChromeMenuSlotAncestor(component);
 
-        if (! slot || slot === component) {
+        if (! slot) {
             return;
         }
 
@@ -770,15 +770,14 @@ export function promoteChromeMenuSlotAuthorStyles(editor) {
 
         const styles = collectChromeMenuPromotableStyles(editor, component);
 
-        if (Object.keys(styles).length === 0) {
-            return;
+        if (Object.keys(styles).length > 0) {
+            const merged = { ...(bySelector.get(selector) ?? {}), ...styles };
+            bySelector.set(selector, merged);
         }
 
-        const merged = { ...(bySelector.get(selector) ?? {}), ...styles };
-        bySelector.set(selector, merged);
-
         const promoteClasses = normalizeClassNames(component.getClasses?.() ?? [])
-            .filter((name) => Object.prototype.hasOwnProperty.call(CHROME_MENU_TYPOGRAPHY_CLASS_STYLES, name));
+            .filter((name) => Object.prototype.hasOwnProperty.call(CHROME_MENU_TYPOGRAPHY_CLASS_STYLES, name)
+                || /^(?:[a-z0-9-]+:)*hover:/.test(name));
 
         if (promoteClasses.length > 0) {
             const bag = slotClasses.get(slot) ?? new Set();
