@@ -12,6 +12,7 @@ import {
     sanitizeChromeContentSlotChildren,
 } from './chrome-content-slot-utils.js';
 import { isPageTemplateBlockId } from './page-template-block-utils.js';
+import { allowlistIncludesBlockId } from './block-allowlist.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
@@ -708,8 +709,9 @@ function applyChromeLayoutBlockFilter(editor) {
         }
 
         // Chrome layout editor: foundation tiles (Layout / Basic / Media / Utilities / Site).
+        // Allowlist may use logical ids (site_nav_simple) while BM uses voodbuilder-site_nav_simple.
         if (allowlist) {
-            block.set('visible', allowlist.includes(id));
+            block.set('visible', allowlistIncludesBlockId(allowlist, id));
 
             return;
         }

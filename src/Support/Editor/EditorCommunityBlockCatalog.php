@@ -202,6 +202,62 @@ final class EditorCommunityBlockCatalog
     }
 
     /**
+     * BlockManager / adapter IDs may use a `voodbuilder-` prefix while catalog
+     * constants keep the logical id (e.g. site_nav_simple ↔ voodbuilder-site_nav_simple).
+     *
+     * @return list<string>
+     */
+    public static function idAliases(string $blockId): array
+    {
+        $blockId = trim($blockId);
+
+        if ($blockId === '') {
+            return [];
+        }
+
+        $aliases = [$blockId];
+
+        if (str_starts_with($blockId, 'voodbuilder-')) {
+            $aliases[] = substr($blockId, strlen('voodbuilder-'));
+        } else {
+            $aliases[] = 'voodbuilder-'.$blockId;
+        }
+
+        return array_values(array_unique(array_filter($aliases, static fn (string $id): bool => $id !== '')));
+    }
+
+    /**
+     * @param  list<string>  $ids
+     * @return list<string>
+     */
+    public static function expandIdsForBlockManager(array $ids): array
+    {
+        $expanded = [];
+
+        foreach ($ids as $id) {
+            foreach (self::idAliases((string) $id) as $alias) {
+                $expanded[] = $alias;
+            }
+        }
+
+        return array_values(array_unique($expanded));
+    }
+
+    /**
+     * @param  array<string, true>  $lookup
+     */
+    public static function idMatchesLookup(string $blockId, array $lookup): bool
+    {
+        foreach (self::idAliases($blockId) as $alias) {
+            if (isset($lookup[$alias])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @return list<string>|null Null = no sidebar filter (full library).
      */
     public static function sidebarAllowlist(?bool $chromeLayoutEditor = null): ?array
@@ -211,14 +267,14 @@ final class EditorCommunityBlockCatalog
         // Layout editor: foundation tiles only (Layout, Basic, Media, Utilities, Site).
         // No landing/marketing sections — those are for pages.
         if ($chromeLayoutEditor) {
-            return self::FOUNDATION_BLOCK_IDS;
+            return self::expandIdsForBlockManager(self::FOUNDATION_BLOCK_IDS);
         }
 
         // Elements companion active → SOURCE / Library owns section templates.
         // Keep only foundation tiles in the left accordion (Layout, Basic, Media,
         // Utilities, Site). Free marketing sections would duplicate the remote catalog.
         if (self::elementsLibraryActive()) {
-            return self::FOUNDATION_BLOCK_IDS;
+            return self::expandIdsForBlockManager(self::FOUNDATION_BLOCK_IDS);
         }
 
         // Pro / full official library: no sidebar allowlist.
@@ -227,10 +283,10 @@ final class EditorCommunityBlockCatalog
         }
 
         // Community: foundation + free section pack (and soft upsell in the Library panel).
-        return array_values(array_unique([
+        return self::expandIdsForBlockManager([
             ...self::FOUNDATION_BLOCK_IDS,
             ...self::COMMUNITY_SECTION_BLOCK_IDS,
-        ]));
+        ]);
     }
 
     /**
@@ -243,12 +299,13 @@ final class EditorCommunityBlockCatalog
         $excluded = array_map('strval', (array) config('voodbuilder.editor.excluded_editor_blocks', []));
 
         $allowlist = self::sidebarAllowlist($chromeLayoutEditor);
-        $coreOwned = array_fill_keys(self::coreOwnedIds(), true);
-        $foundation = array_fill_keys(self::FOUNDATION_BLOCK_IDS, true);
+        $allowlistLookup = is_array($allowlist) ? array_fill_keys($allowlist, true) : null;
+        $coreOwned = array_fill_keys(self::expandIdsForBlockManager(self::coreOwnedIds()), true);
+        $foundation = array_fill_keys(self::expandIdsForBlockManager(self::FOUNDATION_BLOCK_IDS), true);
 
         return array_values(array_filter(
             $blocks,
-            static function (array $block) use ($excluded, $allowlist, $coreOwned, $chromeLayoutEditor, $foundation): bool {
+            static function (array $block) use ($excluded, $allowlistLookup, $coreOwned, $chromeLayoutEditor, $foundation): bool {
                 $id = (string) ($block['id'] ?? '');
 
                 if ($id === '' || in_array($id, $excluded, true)) {
@@ -256,20 +313,20 @@ final class EditorCommunityBlockCatalog
                 }
 
                 // Content slot stays on the canvas via starter HTML — never a sidebar tile.
-                if ($id === self::CHROME_ONLY_BLOCK_ID) {
+                if ($id === self::CHROME_ONLY_BLOCK_ID || in_array(self::CHROME_ONLY_BLOCK_ID, self::idAliases($id), true)) {
                     return false;
                 }
 
                 if ($chromeLayoutEditor) {
-                    return isset($foundation[$id]);
+                    return self::idMatchesLookup($id, $foundation);
                 }
 
                 // Full library: everything except chrome slot.
-                if ($allowlist === null) {
+                if ($allowlistLookup === null) {
                     return true;
                 }
 
-                if (in_array($id, $allowlist, true)) {
+                if (self::idMatchesLookup($id, $allowlistLookup)) {
                     return true;
                 }
 
@@ -279,7 +336,7 @@ final class EditorCommunityBlockCatalog
                 }
 
                 // Unknown third-party IDs stay visible.
-                return ! isset($coreOwned[$id]);
+                return ! self::idMatchesLookup($id, $coreOwned);
             },
         ));
     }
@@ -301,7 +358,9 @@ final class EditorCommunityBlockCatalog
 
     public static function isCompanionBlockId(string $id): bool
     {
-        return in_array($id, self::COMPANION_BLOCK_IDS, true);
+        $companion = array_fill_keys(self::expandIdsForBlockManager(self::COMPANION_BLOCK_IDS), true);
+
+        return self::idMatchesLookup($id, $companion);
     }
 
     public static function requestIsChromeLayoutEditor(): bool

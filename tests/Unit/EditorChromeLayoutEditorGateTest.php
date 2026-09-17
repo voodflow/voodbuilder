@@ -29,7 +29,9 @@ class EditorChromeLayoutEditorGateTest extends TestCase
         $this->assertTrue($config['hideTemplates']);
         $this->assertSame([], $config['templateCategories']);
         $this->assertSame(
-            EditorCommunityBlockCatalog::FOUNDATION_BLOCK_IDS,
+            EditorCommunityBlockCatalog::expandIdsForBlockManager(
+                EditorCommunityBlockCatalog::FOUNDATION_BLOCK_IDS,
+            ),
             $config['blockAllowlist'],
         );
         $this->assertStringContainsString('chrome=1', (string) $config['blocksUrl']);

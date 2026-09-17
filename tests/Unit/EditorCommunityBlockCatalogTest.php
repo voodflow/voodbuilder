@@ -47,6 +47,10 @@ class EditorCommunityBlockCatalogTest extends TestCase
             ['id' => 'chrome_content_slot', 'label' => 'Slot'],
             ['id' => 'site_nav_simple', 'label' => 'Nav'],
             ['id' => 'site_footer_centered', 'label' => 'Footer'],
+            // Adapter / BlockManager form used by EditorServerBlockAdapter
+            ['id' => 'voodbuilder-site_nav_simple', 'label' => 'Nav BM'],
+            ['id' => 'voodbuilder-site_footer_centered', 'label' => 'Footer BM'],
+            ['id' => 'voodbuilder-site_footer_columns_simple', 'label' => 'Footer cols'],
             ['id' => 'vb-hero-2', 'label' => 'Hero'],
             ['id' => 'vb-gallery-1', 'label' => 'Gallery'],
             ['id' => 'voodbuilder-heading', 'label' => 'Heading'],
@@ -59,6 +63,9 @@ class EditorCommunityBlockCatalogTest extends TestCase
 
         $this->assertContains('site_nav_simple', $ids);
         $this->assertContains('site_footer_centered', $ids);
+        $this->assertContains('voodbuilder-site_nav_simple', $ids);
+        $this->assertContains('voodbuilder-site_footer_centered', $ids);
+        $this->assertContains('voodbuilder-site_footer_columns_simple', $ids);
         $this->assertContains('voodbuilder-heading', $ids);
         $this->assertContains('voodbuilder-layout-section', $ids);
         $this->assertContains('image', $ids);
@@ -66,6 +73,17 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertNotContains('chrome_content_slot', $ids);
         $this->assertNotContains('vb-hero-2', $ids);
         $this->assertNotContains('vb-gallery-1', $ids);
+    }
+
+    public function test_chrome_sidebar_allowlist_includes_block_manager_site_chrome_ids(): void
+    {
+        $allowlist = EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true);
+
+        $this->assertIsArray($allowlist);
+        $this->assertContains('site_nav_simple', $allowlist);
+        $this->assertContains('voodbuilder-site_nav_simple', $allowlist);
+        $this->assertContains('site_footer_centered', $allowlist);
+        $this->assertContains('voodbuilder-site_footer_centered', $allowlist);
     }
 
     public function test_professional_chrome_editor_also_limits_sidebar_to_foundation(): void
