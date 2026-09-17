@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.55] - 2026-09-17
+
+### Fixed
+
+- Theme Studio: six palette color tiles (including Footer background) on a single row
+
 ## [0.1.54] - 2026-09-17
 
 ### Added

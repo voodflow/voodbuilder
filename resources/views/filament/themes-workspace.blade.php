@@ -778,7 +778,7 @@
 
         .voodbuilder-themes-ws__tiles {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 0.55rem;
             margin-bottom: 0;
         }
