@@ -43,6 +43,7 @@ final class ThemePaletteGenerator
             'secondary' => $secondary,
             'header_bg' => $headerBg,
             'header_text' => self::contrastingText($headerBg),
+            'footer_bg' => '#f8fafc',
             'body_bg' => '#ffffff',
             'text' => '#111827',
         ];
@@ -63,17 +64,22 @@ final class ThemePaletteGenerator
         $secondary = ThemePalette::sanitizeColor($light['secondary'] ?? null) ?? self::lighten($primary, 0.08);
         $headerBg = ThemePalette::sanitizeColor($light['header_bg'] ?? null) ?? '#020617';
         $bodyBg = ThemePalette::sanitizeColor($light['body_bg'] ?? null) ?? '#ffffff';
+        $footerBg = ThemePalette::sanitizeColor($light['footer_bg'] ?? null) ?? $bodyBg;
 
         $darkHeaderBg = self::mix($headerBg, '#000000', 0.72);
         $darkBodyBg = self::isLightSurface($bodyBg)
             ? self::mix($primary, '#0f172a', 0.08)
             : self::darken($bodyBg, 0.2);
+        $darkFooterBg = self::isLightSurface($footerBg)
+            ? self::mix($footerBg, '#0f172a', 0.12)
+            : self::darken($footerBg, 0.15);
 
         return [
             'primary' => self::lighten($primary, 0.38),
             'secondary' => self::lighten($secondary, 0.28),
             'header_bg' => $darkHeaderBg,
             'header_text' => self::contrastingText($darkHeaderBg),
+            'footer_bg' => $darkFooterBg,
             'body_bg' => $darkBodyBg,
             'text' => '#f8fafc',
         ];

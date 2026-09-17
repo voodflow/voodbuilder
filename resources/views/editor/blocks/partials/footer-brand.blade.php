@@ -10,19 +10,24 @@
     $logoSize = ChromeBrandLogos::normalizeSize($config['logo_size'] ?? null);
     $logoSizeMobile = ChromeBrandLogos::normalizeSize($config['logo_size_mobile'] ?? $logoSize);
     $logoFullWidth = (bool) ($config['logo_full_width'] ?? false);
+    $logoShape = ChromeBrandLogos::normalizeShape($config['logo_shape'] ?? null);
     $homeUrl = VoodbuilderUrls::home();
     $preview = (bool) ($preview ?? false);
     $showBrand = (bool) ($showBrand ?? true);
     $showSiteName = (bool) ($showSiteName ?? ($config['show_site_name'] ?? true));
+    $showLogoDesktop = $showBrand && (bool) ($config['show_logo_desktop'] ?? true);
+    $showLogoMobile = $showBrand && (bool) ($config['show_logo_mobile'] ?? true);
+    $showNameDesktop = $showSiteName && (bool) ($config['show_site_name_desktop'] ?? true);
+    $showNameMobile = $showSiteName && (bool) ($config['show_site_name_mobile'] ?? true);
     // Same as nav brand-logos: empty uploads resolve to the animated package mark.
-    $showLogo = $showBrand && $logos['has_any'];
-    $logoOnly = $showLogo && ! $showSiteName;
+    $showLogo = ($showLogoDesktop || $showLogoMobile) && $logos['has_any'];
+    $logoOnly = $showLogo && ! ($showNameDesktop || $showNameMobile);
     $wideLogo = $logoOnly || $logoFullWidth;
     $packageMark = $logos['has_any']
         && str_contains((string) ($logos['desktop_light'] ?? ''), BrandMarkAssets::PUBLIC_RELATIVE);
     // Editor preview always mounts both parts so toggles stay independent without remount.
     $mountLogo = $preview ? $logos['has_any'] : $showLogo;
-    $mountName = $preview || $showSiteName || $showLogo;
+    $mountName = $preview || $showNameDesktop || $showNameMobile || $showLogo;
 @endphp
 
 <a
@@ -36,6 +41,11 @@
     data-voodbuilder-brand-logo-full="{{ $logoFullWidth ? '1' : '0' }}"
     data-voodbuilder-logo-size="{{ $logoSize }}"
     data-voodbuilder-logo-size-mobile="{{ $logoSizeMobile }}"
+    data-voodbuilder-logo-shape="{{ $logoShape }}"
+    data-vb-show-logo-desktop="{{ $showLogoDesktop ? '1' : '0' }}"
+    data-vb-show-logo-mobile="{{ $showLogoMobile ? '1' : '0' }}"
+    data-vb-show-name-desktop="{{ $showNameDesktop ? '1' : '0' }}"
+    data-vb-show-name-mobile="{{ $showNameMobile ? '1' : '0' }}"
 >
     @if ($mountLogo)
         <span
@@ -53,7 +63,7 @@
                     alt="{{ $brandName }}"
                     @class([
                         'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--light',
-                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark),
+                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark, $logoShape),
                     ])
                 >
             @endif
@@ -63,7 +73,7 @@
                     alt="{{ $brandName }}"
                     @class([
                         'vb-brand-logo', 'vb-brand-logo--mobile', 'vb-brand-logo--dark',
-                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark),
+                        ChromeBrandLogos::footerLogoClass($logoSizeMobile, $logoOnly, false, $logoFullWidth, $packageMark, $logoShape),
                     ])
                 >
             @endif
@@ -73,7 +83,7 @@
                     alt="{{ $brandName }}"
                     @class([
                         'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--light',
-                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark),
+                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark, $logoShape),
                     ])
                 >
             @endif
@@ -83,7 +93,7 @@
                     alt="{{ $brandName }}"
                     @class([
                         'vb-brand-logo', 'vb-brand-logo--desktop', 'vb-brand-logo--dark',
-                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark),
+                        ChromeBrandLogos::footerLogoClass($logoSize, $logoOnly, true, $logoFullWidth, $packageMark, $logoShape),
                     ])
                 >
             @endif
@@ -94,9 +104,9 @@
         <span
             data-voodbuilder-chrome-part="site-name"
             @class([
-                'ml-3 text-xl' => $showSiteName,
-                'sr-only' => ! $showSiteName && $showLogo,
-                'hidden' => ! $showSiteName && ! $showLogo,
+                'ml-3 text-xl' => $showNameDesktop || $showNameMobile,
+                'sr-only' => ! ($showNameDesktop || $showNameMobile) && $showLogo,
+                'hidden' => ! ($showNameDesktop || $showNameMobile) && ! $showLogo,
             ])
         >{{ $brandName }}</span>
     @endif

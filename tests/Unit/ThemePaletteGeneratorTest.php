@@ -18,9 +18,11 @@ class ThemePaletteGeneratorTest extends TestCase
         $this->assertSame('#c8102e', $palette['light']['primary']);
         $this->assertSame('#0f172a', $palette['light']['header_bg']);
         $this->assertSame('#ffffff', $palette['light']['header_text']);
+        $this->assertSame('#f8fafc', $palette['light']['footer_bg']);
         $this->assertSame('#ffffff', $palette['light']['body_bg']);
         $this->assertSame('#111827', $palette['light']['text']);
         $this->assertSame('#f8fafc', $palette['dark']['text']);
+        $this->assertArrayHasKey('footer_bg', $palette['dark']);
         $this->assertNotSame($palette['light']['primary'], $palette['dark']['primary']);
     }
 

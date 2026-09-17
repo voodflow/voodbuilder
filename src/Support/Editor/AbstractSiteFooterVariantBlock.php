@@ -52,7 +52,13 @@ abstract class AbstractSiteFooterVariantBlock implements EditorConfigurableBlock
      */
     protected static function renderShell(array $config, bool $preview): string
     {
-        $merged = SiteFooterConfig::normalize(array_merge(static::defaultConfig(), $config));
+        // Pass only variant-specific seeds + user config. Full defaults live inside
+        // SiteFooterConfig::normalize so legacy show_brand=false is not overridden by
+        // default show_logo_desktop=true from a pre-normalized defaultConfig() merge.
+        $merged = SiteFooterConfig::normalize(array_merge(
+            ['columns' => static::defaultColumns()],
+            $config,
+        ));
 
         $inner = view('voodbuilder::editor.blocks.footers.'.static::variant(), [
             'config' => $merged,

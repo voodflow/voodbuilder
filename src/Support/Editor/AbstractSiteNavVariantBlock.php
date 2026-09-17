@@ -48,7 +48,9 @@ abstract class AbstractSiteNavVariantBlock implements EditorConfigurableBlock
      */
     protected static function renderShell(array $config, bool $preview): string
     {
-        $merged = SiteNavConfig::normalize(array_merge(static::defaultConfig(), $config));
+        // Normalize alone merges defaults; avoid pre-merging defaultConfig() so
+        // explicit show_logo=false is not overridden by default breakpoint flags.
+        $merged = SiteNavConfig::normalize($config);
 
         return view('voodbuilder::editor.blocks.site-nav', [
             'config' => $merged,

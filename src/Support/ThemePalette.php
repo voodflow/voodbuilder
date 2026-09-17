@@ -36,12 +36,22 @@ header[role='banner'].bg-vp-bg,header[role='banner'].bg-vp-bg-alt,header[role='b
 header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-text,var(--color-vp-text-1)) 12%,transparent)}
 CSS;
 
+    private const FOOTER_CHROME_CSS = <<<'CSS'
+html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-footer,html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-dynamic,html[data-voodbuilder-sub-theme] footer[role='contentinfo'],html[data-voodbuilder-sub-theme] [data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
+CSS;
+
+    private const CANVAS_FOOTER_BACKGROUND_CSS = <<<'CSS'
+[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-footer,[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-dynamic,[data-voodbuilder-chrome-shell] footer[role='contentinfo'],[data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
+footer.voodbuilder-editor-footer,footer.voodbuilder-editor-dynamic,footer[role='contentinfo']{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
+CSS;
+
     /** @var list<string> */
     private const COLOR_KEYS = [
         'primary',
         'secondary',
         'header_bg',
         'header_text',
+        'footer_bg',
         'body_bg',
         'text',
     ];
@@ -68,6 +78,7 @@ CSS;
         '--vx-header-bg',
         '--vx-header-text',
         '--vx-header-muted',
+        '--vx-footer-bg',
         '--vx-sidebar-bg',
         '--vx-surface',
         '--vx-text',
@@ -103,7 +114,7 @@ CSS;
     public static function css(): string
     {
         $colors = self::normalize(VoodbuilderSettings::get('sub_theme_colors', []));
-        $rules = [self::HEADER_CHROME_CSS, self::tokenBridgeCss('html[data-voodbuilder-sub-theme]')];
+        $rules = [self::HEADER_CHROME_CSS, self::FOOTER_CHROME_CSS, self::tokenBridgeCss('html[data-voodbuilder-sub-theme]')];
 
         foreach ($colors as $subThemeId => $palette) {
             $lightRule = self::buildRule((string) $subThemeId, $palette['light'], false);
@@ -133,6 +144,7 @@ CSS;
     {
         $rules = [
             self::HEADER_CHROME_CSS,
+            self::FOOTER_CHROME_CSS,
             self::tokenBridgeCss("html[data-voodbuilder-sub-theme='{$subThemeId}']"),
         ];
 
@@ -268,7 +280,7 @@ CSS;
             }
         }
 
-        return $scoped.implode("\n", $semanticRules).self::CANVAS_HEADER_BACKGROUND_CSS.self::chromeShellAdminOverrideCss($subThemeId);
+        return $scoped.implode("\n", $semanticRules).self::CANVAS_HEADER_BACKGROUND_CSS.self::CANVAS_FOOTER_BACKGROUND_CSS.self::chromeShellAdminOverrideCss($subThemeId);
     }
 
     public static function chromeShellAdminOverrideCss(string $subThemeId): string
@@ -407,7 +419,9 @@ CSS;
         $rules = [
             self::tokenBridgeCss('html'),
             self::headerChromeCssForCanvas(),
+            self::footerChromeCssForCanvas(),
             self::CANVAS_HEADER_BACKGROUND_CSS,
+            self::CANVAS_FOOTER_BACKGROUND_CSS,
             ...self::builtinSubThemeRulesForCanvas($subThemeId),
         ];
 
@@ -462,6 +476,15 @@ CSS;
             'html[data-voodbuilder-sub-theme]',
             'html',
             self::HEADER_CHROME_CSS,
+        );
+    }
+
+    public static function footerChromeCssForCanvas(): string
+    {
+        return str_replace(
+            'html[data-voodbuilder-sub-theme]',
+            'html',
+            self::FOOTER_CHROME_CSS,
         );
     }
 
@@ -597,6 +620,7 @@ CSS;
             'secondary' => $variables['--color-vp-brand-2'] ?? null,
             'header_bg' => $variables['--vx-header-bg'] ?? null,
             'header_text' => $variables['--vx-header-text'] ?? null,
+            'footer_bg' => $variables['--vx-footer-bg'] ?? null,
             'body_bg' => $variables['--color-vp-bg'] ?? null,
             'text' => $variables['--color-vp-text-1'] ?? null,
         ]);
@@ -737,6 +761,10 @@ CSS;
         if (($headerText = $palette['header_text'] ?? null) !== null) {
             $properties['--vx-header-text'] = $headerText;
             $properties['--vx-header-muted'] = "color-mix(in srgb, {$headerText} 72%, transparent)";
+        }
+
+        if (($footerBg = $palette['footer_bg'] ?? null) !== null) {
+            $properties['--vx-footer-bg'] = $footerBg;
         }
 
         if ($properties === []) {
@@ -1074,6 +1102,10 @@ CSS;
         if (($mode['header_text'] ?? null) !== null) {
             $names[] = '--vx-header-text';
             $names[] = '--vx-header-muted';
+        }
+
+        if (($mode['footer_bg'] ?? null) !== null) {
+            $names[] = '--vx-footer-bg';
         }
 
         if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {

@@ -448,6 +448,366 @@ function ensureImportantStyleValue(value) {
     return stringValue.includes('!important') ? stringValue : `${stringValue} !important`;
 }
 
+/** CSS properties safe to promote from ephemeral menu links onto durable selectors. */
+const CHROME_MENU_PROMOTE_STYLE_PROPS = new Set([
+    'text-transform',
+    'font-family',
+    'font-size',
+    'font-weight',
+    'font-style',
+    'letter-spacing',
+    'line-height',
+    'color',
+    'text-decoration',
+    'text-decoration-line',
+    'text-align',
+    'white-space',
+]);
+
+/** Tailwind typography utilities → CSS (menu items are wiped on dynamic re-render). */
+const CHROME_MENU_TYPOGRAPHY_CLASS_STYLES = {
+    uppercase: { 'text-transform': 'uppercase' },
+    lowercase: { 'text-transform': 'lowercase' },
+    capitalize: { 'text-transform': 'capitalize' },
+    'normal-case': { 'text-transform': 'none' },
+    italic: { 'font-style': 'italic' },
+    'not-italic': { 'font-style': 'normal' },
+    'font-thin': { 'font-weight': '100' },
+    'font-extralight': { 'font-weight': '200' },
+    'font-light': { 'font-weight': '300' },
+    'font-normal': { 'font-weight': '400' },
+    'font-medium': { 'font-weight': '500' },
+    'font-semibold': { 'font-weight': '600' },
+    'font-bold': { 'font-weight': '700' },
+    'font-extrabold': { 'font-weight': '800' },
+    'font-black': { 'font-weight': '900' },
+    'text-xs': { 'font-size': '0.75rem', 'line-height': '1rem' },
+    'text-sm': { 'font-size': '0.875rem', 'line-height': '1.25rem' },
+    'text-base': { 'font-size': '1rem', 'line-height': '1.5rem' },
+    'text-lg': { 'font-size': '1.125rem', 'line-height': '1.75rem' },
+    'text-xl': { 'font-size': '1.25rem', 'line-height': '1.75rem' },
+    'text-2xl': { 'font-size': '1.5rem', 'line-height': '2rem' },
+    'text-left': { 'text-align': 'left' },
+    'text-center': { 'text-align': 'center' },
+    'text-right': { 'text-align': 'right' },
+    'tracking-tighter': { 'letter-spacing': '-0.05em' },
+    'tracking-tight': { 'letter-spacing': '-0.025em' },
+    'tracking-normal': { 'letter-spacing': '0em' },
+    'tracking-wide': { 'letter-spacing': '0.025em' },
+    'tracking-wider': { 'letter-spacing': '0.05em' },
+    'tracking-widest': { 'letter-spacing': '0.1em' },
+};
+
+const CHROME_MENU_DURABLE_RULE_FLAG = 'data-vb-chrome-menu-style';
+
+/**
+ * Find the durable chrome menu slot that owns an ephemeral menu link/button.
+ *
+ * @param {object} component
+ * @returns {object|null}
+ */
+function findChromeMenuSlotAncestor(component) {
+    let node = component;
+
+    while (node) {
+        const attrs = node.getAttributes?.() ?? {};
+
+        if (
+            Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav')
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-menu')
+            || (typeof attrs.class === 'string' && attrs.class.includes('voodbuilder-mobile-nav__links'))
+            || (normalizeClassNames(node.getClasses?.() ?? []).includes('voodbuilder-mobile-nav__links'))
+        ) {
+            return node;
+        }
+
+        node = typeof node.parent === 'function' ? node.parent() : null;
+    }
+
+    return null;
+}
+
+/**
+ * @param {object} slot
+ * @returns {string|null}
+ */
+function durableChromeMenuSelector(slot) {
+    const attrs = slot.getAttributes?.() ?? {};
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-menu')) {
+        const slug = String(attrs['data-voodbuilder-menu'] ?? '').trim();
+
+        if (slug === '') {
+            return null;
+        }
+
+        const safe = slug.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+        return `[data-voodbuilder-menu="${safe}"] :is(a, button)`;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-desktop-nav')) {
+        return '[data-voodbuilder-desktop-nav] :is(a, button)';
+    }
+
+    const classes = normalizeClassNames(slot.getClasses?.() ?? []);
+
+    if (
+        classes.includes('voodbuilder-mobile-nav__links')
+        || (typeof attrs.class === 'string' && attrs.class.includes('voodbuilder-mobile-nav__links'))
+    ) {
+        return '.voodbuilder-mobile-nav__links :is(a, button)';
+    }
+
+    return null;
+}
+
+/**
+ * @param {string[]} classNames
+ * @returns {Record<string, string>}
+ */
+function stylesFromChromeMenuTypographyClasses(classNames) {
+    /** @type {Record<string, string>} */
+    const styles = {};
+
+    for (const className of classNames) {
+        const mapped = CHROME_MENU_TYPOGRAPHY_CLASS_STYLES[className];
+
+        if (! mapped) {
+            continue;
+        }
+
+        Object.assign(styles, mapped);
+    }
+
+    return styles;
+}
+
+/**
+ * @param {object} editor
+ * @param {object} component
+ * @returns {Record<string, string>}
+ */
+function collectChromeMenuPromotableStyles(editor, component) {
+    /** @type {Record<string, string>} */
+    const collected = {};
+
+    Object.assign(collected, stylesFromChromeMenuTypographyClasses(
+        normalizeClassNames(component.getClasses?.() ?? []),
+    ));
+
+    for (const rule of collectPrivateClassRules(editor, component)) {
+        Object.assign(collected, rule.getStyle?.() ?? {});
+    }
+
+    const id = component.getId?.();
+
+    if (id && editor.Css?.getIdRule) {
+        Object.assign(collected, editor.Css.getIdRule(id)?.getStyle?.() ?? {});
+    }
+
+    Object.assign(collected, component.getStyle?.({ inline: true }) ?? {});
+
+    /** @type {Record<string, string>} */
+    const promoted = {};
+
+    for (const [property, value] of Object.entries(collected)) {
+        if (! CHROME_MENU_PROMOTE_STYLE_PROPS.has(property)) {
+            continue;
+        }
+
+        if (value == null || value === '' || shouldOmitAuthorStyleValue(property, value)) {
+            continue;
+        }
+
+        let next = String(value).replace(/\s*!important\s*$/i, '').trim();
+
+        if (next === '') {
+            continue;
+        }
+
+        // Beat default menu link utilities (text-sm, font-medium, …).
+        if (
+            property === 'text-transform'
+            || property === 'font-family'
+            || property === 'font-size'
+            || property === 'font-weight'
+            || property === 'font-style'
+            || property === 'letter-spacing'
+            || property === 'line-height'
+            || property === 'color'
+        ) {
+            next = ensureImportantStyleValue(next);
+        }
+
+        promoted[property] = next;
+    }
+
+    return promoted;
+}
+
+/**
+ * @param {object} css
+ * @param {string} selector
+ * @returns {object|null}
+ */
+function findCssRuleBySelector(css, selector) {
+    const rules = css.getAll?.() ?? [];
+
+    for (const rule of rules) {
+        const selectors = rule.get?.('selectors') ?? [];
+        const names = selectors.map((item) => String(
+            item?.get?.('name') ?? item?.name ?? item ?? '',
+        )).filter(Boolean);
+        const joined = names.join('').replace(/\s+/g, ' ').trim();
+        const normalized = selector.replace(/\s+/g, ' ').trim();
+
+        if (joined === normalized || names.includes(normalized)) {
+            return rule;
+        }
+
+        // Grapes may store compound selectors as a single selectorAdd string.
+        const add = String(rule.get?.('selectorsAdd') ?? '').replace(/\s+/g, ' ').trim();
+
+        if (add === normalized) {
+            return rule;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * @param {object} css
+ * @param {string} selector
+ * @param {Record<string, string>} styles
+ */
+function upsertDurableChromeMenuRule(css, selector, styles) {
+    const existing = findCssRuleBySelector(css, selector);
+
+    if (existing) {
+        css.remove?.(existing);
+    }
+
+    const body = Object.entries(styles)
+        .map(([property, value]) => `${property}: ${value};`)
+        .join(' ');
+
+    // Raw CSS text survives getCss() and ChromeLayoutCssScoper; SelectorManager
+    // often cannot parse compound attribute + :is() selectors via setRule().
+    if (typeof css.addRules === 'function') {
+        css.addRules(`/* ${CHROME_MENU_DURABLE_RULE_FLAG} */\n${selector} { ${body} }`);
+
+        return;
+    }
+
+    if (typeof css.setRule === 'function') {
+        css.setRule(selector, styles);
+    }
+}
+
+/**
+ * @param {object} css
+ */
+function clearDurableChromeMenuRules(css) {
+    const rules = [...(css.getAll?.() ?? [])];
+
+    for (const rule of rules) {
+        const selectors = rule.get?.('selectors') ?? [];
+        const names = selectors.map((item) => String(
+            item?.get?.('name') ?? item?.name ?? item ?? '',
+        )).join(' ');
+        const add = String(rule.get?.('selectorsAdd') ?? '');
+        const cssText = String(rule.toCSS?.() ?? rule.get?.('style') ?? '');
+        const haystack = `${names} ${add} ${cssText}`;
+        const looksDurable = (
+            haystack.includes('data-voodbuilder-desktop-nav')
+            || haystack.includes('data-voodbuilder-menu=')
+            || haystack.includes('voodbuilder-mobile-nav__links')
+        ) && (
+            haystack.includes(':is(a, button)')
+            || haystack.includes('a, button')
+        );
+
+        if (looksDurable || haystack.includes(CHROME_MENU_DURABLE_RULE_FLAG)) {
+            css.remove?.(rule);
+        }
+    }
+}
+
+/**
+ * Lift typography authored on ephemeral nav/footer menu links onto durable
+ * structural CSS selectors that survive dynamic block / slot re-hydration.
+ *
+ * @param {object} editor
+ * @returns {number} number of durable selectors written
+ */
+export function promoteChromeMenuSlotAuthorStyles(editor) {
+    const wrapper = editor?.getWrapper?.();
+    const css = editor?.Css;
+
+    if (! wrapper?.onAll || ! css) {
+        return 0;
+    }
+
+    /** @type {Map<string, Record<string, string>>} */
+    const bySelector = new Map();
+    /** @type {Map<object, Set<string>>} */
+    const slotClasses = new Map();
+
+    wrapper.onAll((component) => {
+        const slot = findChromeMenuSlotAncestor(component);
+
+        if (! slot || slot === component) {
+            return;
+        }
+
+        const selector = durableChromeMenuSelector(slot);
+
+        if (! selector) {
+            return;
+        }
+
+        const styles = collectChromeMenuPromotableStyles(editor, component);
+
+        if (Object.keys(styles).length === 0) {
+            return;
+        }
+
+        const merged = { ...(bySelector.get(selector) ?? {}), ...styles };
+        bySelector.set(selector, merged);
+
+        const promoteClasses = normalizeClassNames(component.getClasses?.() ?? [])
+            .filter((name) => Object.prototype.hasOwnProperty.call(CHROME_MENU_TYPOGRAPHY_CLASS_STYLES, name));
+
+        if (promoteClasses.length > 0) {
+            const bag = slotClasses.get(slot) ?? new Set();
+            promoteClasses.forEach((name) => bag.add(name));
+            slotClasses.set(slot, bag);
+        }
+    });
+
+    clearDurableChromeMenuRules(css);
+
+    for (const [slot, classes] of slotClasses.entries()) {
+        // Footer menu slots keep their wrapper across hydrate — stamp utilities there too.
+        classes.forEach((name) => slot.addClass?.(name));
+    }
+
+    let written = 0;
+
+    for (const [selector, styles] of bySelector.entries()) {
+        if (Object.keys(styles).length === 0) {
+            continue;
+        }
+
+        upsertDurableChromeMenuRule(css, selector, styles);
+        written += 1;
+    }
+
+    return written;
+}
+
 function isPurgingBackground(editor) {
     return editor?.__voodbuilderPurgingBackground === true
         || editor?.__voodbuilderPurgingStyles === true;
@@ -581,6 +941,10 @@ export function bakeAuthorStylesToComposerForExport(editor) {
     // HTML clones reuse .cXXXX — promote every private class onto unique #id
     // rules before baking, with #id/inline winning over shared class paints.
     promotePrivateStyleClassesToIdRules(editor);
+
+    // Nav/footer menu nodes are re-rendered from the CMS on every load — lift
+    // typography off ephemeral links onto durable structural CSS selectors.
+    promoteChromeMenuSlotAuthorStyles(editor);
 
     const seen = new Set();
 

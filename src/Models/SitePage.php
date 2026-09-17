@@ -456,7 +456,7 @@ class SitePage extends Model implements HasRichContent
         $pageUrl = VoodbuilderUrls::page($this);
 
         return new SEOData(
-            title: filled($seo?->title) ? (string) $seo->title : $this->title,
+            title: $this->seoTitle($seo),
             description: $this->seoDescription($seo),
             author: filled($seo?->author) ? (string) $seo->author : null,
             image: filled($seo?->image) ? (string) $seo->image : null,
@@ -473,6 +473,20 @@ class SitePage extends Model implements HasRichContent
                 : $pageUrl,
             alternates: $this->seoAlternates(),
         );
+    }
+
+    protected function seoTitle(?Model $seo): string
+    {
+        if (filled($seo?->title)) {
+            return (string) $seo->title;
+        }
+
+        // Home tab should show the configured site title, not the page label "Home".
+        if ($this->is_home) {
+            return VoodbuilderSettings::siteTitle();
+        }
+
+        return (string) $this->title;
     }
 
     protected function seoDescription(?Model $seo): ?string

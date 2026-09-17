@@ -138,13 +138,23 @@ class VoodbuilderSettingsPage extends Page
                                             ->maxLength(255),
                                         $this->configurePublicBrandingUpload(
                                             FileUpload::make('favicon')
-                                                ->label(__('Favicon'))
+                                                ->label(__('voodbuilder::settings.favicon_light'))
                                                 ->disk($uploadDisk)
                                                 ->directory($uploadDirectory.'/favicons')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($faviconTypes)
                                                 ->maxSize(512)
-                                                ->helperText(__('Used when pages do not define their own favicon. Leave empty to use the Voodflow mark.')),
+                                                ->helperText(__('voodbuilder::settings.favicon_light_help')),
+                                        ),
+                                        $this->configurePublicBrandingUpload(
+                                            FileUpload::make('favicon_dark')
+                                                ->label(__('voodbuilder::settings.favicon_dark'))
+                                                ->disk($uploadDisk)
+                                                ->directory($uploadDirectory.'/favicons')
+                                                ->visibility('public')
+                                                ->acceptedFileTypes($faviconTypes)
+                                                ->maxSize(512)
+                                                ->helperText(__('voodbuilder::settings.favicon_dark_help')),
                                         ),
                                     ]),
                             ]),

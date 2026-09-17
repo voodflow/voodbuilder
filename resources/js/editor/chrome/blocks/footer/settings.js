@@ -136,16 +136,28 @@ export function registerFooterSettings(editor) {
             panels.brand.append(
                 createCheckboxGrid([
                     createCheckboxField({
-                        label: label('footerShowLogo', 'Show logo'),
-                        name: 'voodbuilderShowBrand',
-                        checked: root.get('voodbuilderShowBrand') !== false,
-                        onChange: (checked) => applyChange('voodbuilderShowBrand', checked),
+                        label: label('footerShowLogoDesktop', 'Show logo (desktop)'),
+                        name: 'voodbuilderShowLogoDesktop',
+                        checked: root.get('voodbuilderShowLogoDesktop') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowLogoDesktop', checked),
                     }),
                     createCheckboxField({
-                        label: label('footerShowSiteName', 'Show site name'),
-                        name: 'voodbuilderShowSiteName',
-                        checked: root.get('voodbuilderShowSiteName') !== false,
-                        onChange: (checked) => applyChange('voodbuilderShowSiteName', checked),
+                        label: label('footerShowLogoMobile', 'Show logo (mobile)'),
+                        name: 'voodbuilderShowLogoMobile',
+                        checked: root.get('voodbuilderShowLogoMobile') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowLogoMobile', checked),
+                    }),
+                    createCheckboxField({
+                        label: label('footerShowSiteNameDesktop', 'Show site name (desktop)'),
+                        name: 'voodbuilderShowSiteNameDesktop',
+                        checked: root.get('voodbuilderShowSiteNameDesktop') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSiteNameDesktop', checked),
+                    }),
+                    createCheckboxField({
+                        label: label('footerShowSiteNameMobile', 'Show site name (mobile)'),
+                        name: 'voodbuilderShowSiteNameMobile',
+                        checked: root.get('voodbuilderShowSiteNameMobile') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSiteNameMobile', checked),
                     }),
                     createCheckboxField({
                         label: label('footerShowTagline', 'Show tagline'),

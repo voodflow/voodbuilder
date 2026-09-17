@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
+use RalphJSmit\Laravel\SEO\TagManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Voodflow\Vmedia\Support\Integration\RegistersPluginVault;
@@ -163,6 +164,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(EntitlementManager::class, function (): EntitlementManager {
             return new EntitlementManager(EntitlementProviderFactory::make());
         });
+
+        // Controllers call seo()->for($page); layouts render {!! seo() !!}. Without a
+        // singleton the second resolve is a fresh TagManager and drops page SEO (title).
+        $this->app->singleton(TagManager::class);
     }
 
     public function packageBooted(): void
@@ -222,6 +227,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         SEOManager::SEODataTransformer(static function ($seoData) {
             return VoodbuilderSeo::applyDefaults($seoData);
+        });
+
+        SEOManager::tagTransformer(static function ($tags) {
+            return VoodbuilderSeo::transformTags($tags);
         });
 
         /** @var Router $router */

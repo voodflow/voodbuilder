@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageSeo;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -35,6 +36,24 @@ class SitePageSeoTest extends TestCase
         $this->assertSame('Custom meta description', $seo->description);
         $this->assertSame('noindex, follow', $seo->robots);
         $this->assertSame('https://example.test/about-canonical', $seo->canonical_url);
+    }
+
+    public function test_home_seo_title_uses_site_title_when_seo_title_empty(): void
+    {
+        VoodbuilderSettings::saveData([
+            ...VoodbuilderSettings::defaults(),
+            'site_title' => 'Acme Fair',
+        ]);
+
+        $page = SitePage::query()->create([
+            'title' => 'Home',
+            'slug' => 'home-seo-site-title',
+            'published' => true,
+            'is_home' => true,
+            'visibility' => PageVisibility::Public,
+        ]);
+
+        $this->assertSame('Acme Fair', $page->getDynamicSEOData()->title);
     }
 
     public function test_dynamic_seo_uses_excerpt_and_skips_stripped_html_fallback(): void

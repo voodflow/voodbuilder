@@ -63,11 +63,35 @@ class ChromeBrandLogosTest extends TestCase
 
         $this->assertFalse($normalized['show_logo']);
         $this->assertTrue($normalized['show_site_name']);
+        $this->assertFalse($normalized['show_logo_desktop']);
+        $this->assertFalse($normalized['show_logo_mobile']);
+        $this->assertTrue($normalized['show_site_name_desktop']);
+        $this->assertTrue($normalized['show_site_name_mobile']);
         $this->assertSame('/storage/logos/dark.png', $normalized['logo_desktop_dark']);
         $this->assertNull($normalized['logo_mobile_light']);
         $this->assertSame('xl', $normalized['logo_size']);
         $this->assertSame('sm', $normalized['logo_size_mobile']);
         $this->assertTrue($normalized['logo_full_width']);
+        $this->assertSame(ChromeBrandLogos::DEFAULT_SHAPE, $normalized['logo_shape']);
+    }
+
+    public function test_site_nav_config_keeps_per_breakpoint_visibility(): void
+    {
+        $normalized = SiteNavConfig::normalize([
+            'show_logo_desktop' => true,
+            'show_logo_mobile' => false,
+            'show_site_name_desktop' => false,
+            'show_site_name_mobile' => true,
+            'logo_shape' => 'circle',
+        ]);
+
+        $this->assertTrue($normalized['show_logo']);
+        $this->assertTrue($normalized['show_site_name']);
+        $this->assertTrue($normalized['show_logo_desktop']);
+        $this->assertFalse($normalized['show_logo_mobile']);
+        $this->assertFalse($normalized['show_site_name_desktop']);
+        $this->assertTrue($normalized['show_site_name_mobile']);
+        $this->assertSame('circle', $normalized['logo_shape']);
     }
 
     public function test_logo_size_maps_to_tailwind_height_classes(): void
@@ -77,10 +101,14 @@ class ChromeBrandLogosTest extends TestCase
         $this->assertSame('h-10', ChromeBrandLogos::heightClass('lg'));
         $this->assertSame('h-12', ChromeBrandLogos::heightClass('xl'));
         $this->assertSame('lg', ChromeBrandLogos::normalizeSize('nope'));
+        $this->assertSame('natural', ChromeBrandLogos::normalizeShape(null));
+        $this->assertSame('circle', ChromeBrandLogos::normalizeShape('circle'));
         $this->assertStringContainsString('h-12', ChromeBrandLogos::desktopLogoClass('xl'));
         $this->assertStringContainsString('w-full', ChromeBrandLogos::desktopLogoClass('lg', true));
         $this->assertStringContainsString('h-6', ChromeBrandLogos::footerLogoClass('sm', true));
-        $this->assertStringContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false));
+        $this->assertStringContainsString('object-contain', ChromeBrandLogos::footerLogoClass('md', false));
+        $this->assertStringNotContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false));
+        $this->assertStringContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false, true, false, false, 'circle'));
         $this->assertStringContainsString('w-full', ChromeBrandLogos::footerLogoClass('md', false, true, true));
         $this->assertStringContainsString('object-contain', ChromeBrandLogos::footerLogoClass('md', false, true, false, true));
         $this->assertStringNotContainsString('rounded-full', ChromeBrandLogos::footerLogoClass('md', false, true, false, true));

@@ -9,13 +9,17 @@ import {
     applyChromeLogoSizeClasses,
     applyChromeLogoUrlsPreview,
     chromeLogoFieldDefs,
+    CHROME_LOGO_DEFAULT_SHAPE,
     CHROME_LOGO_DEFAULT_SIZE,
     CHROME_LOGO_FULL_WIDTH_KEY,
     CHROME_LOGO_FULL_WIDTH_PROP,
+    CHROME_LOGO_SHAPE_KEY,
+    CHROME_LOGO_SHAPE_PROP,
     CHROME_LOGO_SIZE_KEY,
     CHROME_LOGO_SIZE_MOBILE_KEY,
     CHROME_LOGO_SIZE_MOBILE_PROP,
     CHROME_LOGO_SIZE_PROP,
+    normalizeChromeLogoShape,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
 import { setChromeVisible } from '../../visibility.js';
@@ -39,14 +43,26 @@ function siteHeaderTraitOptions(editor = null) {
     return [
         {
             type: 'checkbox',
-            label: label('navShowLogo', 'Show logo'),
-            name: 'voodbuilderShowLogo',
+            label: label('navShowLogoDesktop', 'Show logo (desktop)'),
+            name: 'voodbuilderShowLogoDesktop',
             changeProp: true,
         },
         {
             type: 'checkbox',
-            label: label('navShowSiteName', 'Show site name'),
-            name: 'voodbuilderShowSiteName',
+            label: label('navShowLogoMobile', 'Show logo (mobile)'),
+            name: 'voodbuilderShowLogoMobile',
+            changeProp: true,
+        },
+        {
+            type: 'checkbox',
+            label: label('navShowSiteNameDesktop', 'Show site name (desktop)'),
+            name: 'voodbuilderShowSiteNameDesktop',
+            changeProp: true,
+        },
+        {
+            type: 'checkbox',
+            label: label('navShowSiteNameMobile', 'Show site name (mobile)'),
+            name: 'voodbuilderShowSiteNameMobile',
             changeProp: true,
         },
         {
@@ -187,14 +203,53 @@ function reshapeSiteNavAlignDom(scope, alignCenter) {
  * Toggle logo vs site name independently inside the brand chrome (no full remount).
  *
  * @param {ParentNode} scope
- * @param {boolean} showLogo
- * @param {boolean} showSiteName
+ * @param {{
+ *   showLogo: boolean,
+ *   showSiteName: boolean,
+ *   showLogoDesktop: boolean,
+ *   showLogoMobile: boolean,
+ *   showNameDesktop: boolean,
+ *   showNameMobile: boolean,
+ *   logoSize?: string,
+ *   logoSizeMobile?: string,
+ *   logoFullWidth?: boolean,
+ *   logoShape?: string,
+ * }} opts
  */
-function applyNavBrandPartsPreview(scope, showLogo, showSiteName) {
+function applyNavBrandPartsPreview(scope, opts) {
+    const showLogo = opts.showLogo !== false;
+    const showSiteName = opts.showSiteName !== false;
+    const showLogoDesktop = opts.showLogoDesktop !== false;
+    const showLogoMobile = opts.showLogoMobile !== false;
+    const showNameDesktop = opts.showNameDesktop !== false;
+    const showNameMobile = opts.showNameMobile !== false;
+    const logoSize = normalizeChromeLogoSize(opts.logoSize);
+    const logoSizeMobile = normalizeChromeLogoSize(opts.logoSizeMobile ?? opts.logoSize);
+    const logoFullWidth = opts.logoFullWidth === true;
+    const logoShape = normalizeChromeLogoShape(opts.logoShape);
+
     scope.querySelectorAll('[data-voodbuilder-chrome="brand"]').forEach((brand) => {
+        const link = brand.matches?.('[data-voodbuilder-logo-size], [data-vb-show-logo-desktop]')
+            ? brand
+            : brand.querySelector?.('[data-voodbuilder-logo-size], [data-vb-show-logo-desktop], a, div');
+
+        if (link) {
+            link.setAttribute('data-voodbuilder-logo-size', logoSize);
+            link.setAttribute('data-voodbuilder-logo-size-mobile', logoSizeMobile);
+            link.setAttribute('data-voodbuilder-brand-logo-full', logoFullWidth ? '1' : '0');
+            link.setAttribute('data-voodbuilder-logo-shape', logoShape);
+            link.setAttribute('data-vb-show-logo-desktop', showLogoDesktop ? '1' : '0');
+            link.setAttribute('data-vb-show-logo-mobile', showLogoMobile ? '1' : '0');
+            link.setAttribute('data-vb-show-name-desktop', showNameDesktop ? '1' : '0');
+            link.setAttribute('data-vb-show-name-mobile', showNameMobile ? '1' : '0');
+            link.classList.toggle('w-full', logoFullWidth);
+            link.classList.toggle('min-w-0', logoFullWidth);
+        }
+
         brand.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
             node.classList.toggle('hidden', ! showLogo);
             node.classList.toggle('contents', showLogo);
+            node.classList.toggle('w-full', logoFullWidth);
             if (showLogo) {
                 node.removeAttribute('data-voodbuilder-chrome-hidden');
                 node.removeAttribute('hidden');
@@ -208,6 +263,12 @@ function applyNavBrandPartsPreview(scope, showLogo, showSiteName) {
             node.classList.toggle('sr-only', ! showSiteName && showLogo);
             node.classList.toggle('whitespace-nowrap', showSiteName);
         });
+    });
+
+    applyChromeLogoSizeClasses(scope, logoSize, {
+        sizeMobile: logoSizeMobile,
+        fullWidth: logoFullWidth,
+        shape: logoShape,
     });
 }
 
@@ -226,8 +287,12 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     const showSearch = root.get('voodbuilderShowSearch') === true;
     const showNotifications = root.get('voodbuilderShowNotifications') === true;
     const showProfile = root.get('voodbuilderShowProfileMenu') === true;
-    const showLogo = root.get('voodbuilderShowLogo') !== false;
-    const showSiteName = root.get('voodbuilderShowSiteName') !== false;
+    const showLogoDesktop = root.get('voodbuilderShowLogoDesktop') !== false;
+    const showLogoMobile = root.get('voodbuilderShowLogoMobile') !== false;
+    const showNameDesktop = root.get('voodbuilderShowSiteNameDesktop') !== false;
+    const showNameMobile = root.get('voodbuilderShowSiteNameMobile') !== false;
+    const showLogo = showLogoDesktop || showLogoMobile;
+    const showSiteName = showNameDesktop || showNameMobile;
     const alignCenter = root.get('voodbuilderMainNavAlign') === 'center';
     const stickyMode = root.get('voodbuilderStickyNav') ?? 'inherit';
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
@@ -235,6 +300,7 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
         root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
     );
     const logoFullWidth = root.get(CHROME_LOGO_FULL_WIDTH_PROP) === true;
+    const logoShape = normalizeChromeLogoShape(root.get(CHROME_LOGO_SHAPE_PROP));
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
 
     const scope = el.querySelector('[data-voodbuilder-editor-site-header]') ?? el;
@@ -277,12 +343,19 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
         }
     });
 
-    applyNavBrandPartsPreview(scope, showLogo, showSiteName);
-    applyChromeLogoUrlsPreview(scope, root);
-    applyChromeLogoSizeClasses(scope, logoSize, {
-        sizeMobile: logoSizeMobile,
-        fullWidth: logoFullWidth,
+    applyNavBrandPartsPreview(scope, {
+        showLogo,
+        showSiteName,
+        showLogoDesktop,
+        showLogoMobile,
+        showNameDesktop,
+        showNameMobile,
+        logoSize,
+        logoSizeMobile,
+        logoFullWidth,
+        logoShape,
     });
+    applyChromeLogoUrlsPreview(scope, root);
 
     if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
@@ -309,6 +382,10 @@ export function syncSiteHeaderConfig(component) {
     const stickyNav = ['inherit', 'sticky', 'static'].includes(component.get('voodbuilderStickyNav'))
         ? component.get('voodbuilderStickyNav')
         : 'inherit';
+    const showLogoDesktop = component.get('voodbuilderShowLogoDesktop') !== false;
+    const showLogoMobile = component.get('voodbuilderShowLogoMobile') !== false;
+    const showNameDesktop = component.get('voodbuilderShowSiteNameDesktop') !== false;
+    const showNameMobile = component.get('voodbuilderShowSiteNameMobile') !== false;
     const config = {
         ...(component.get('voodbuilderConfig') ?? {}),
         variant: 'simple',
@@ -317,8 +394,12 @@ export function syncSiteHeaderConfig(component) {
         show_search: component.get('voodbuilderShowSearch') === true,
         show_notifications: component.get('voodbuilderShowNotifications') === true,
         show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
-        show_logo: component.get('voodbuilderShowLogo') !== false,
-        show_site_name: component.get('voodbuilderShowSiteName') !== false,
+        show_logo_desktop: showLogoDesktop,
+        show_logo_mobile: showLogoMobile,
+        show_site_name_desktop: showNameDesktop,
+        show_site_name_mobile: showNameMobile,
+        show_logo: showLogoDesktop || showLogoMobile,
+        show_site_name: showNameDesktop || showNameMobile,
         [CHROME_LOGO_SIZE_KEY]: normalizeChromeLogoSize(
             component.get(CHROME_LOGO_SIZE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SIZE_KEY],
         ),
@@ -330,6 +411,9 @@ export function syncSiteHeaderConfig(component) {
         ),
         [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
             || component.get('voodbuilderConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
+        [CHROME_LOGO_SHAPE_KEY]: normalizeChromeLogoShape(
+            component.get(CHROME_LOGO_SHAPE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SHAPE_KEY],
+        ),
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -355,7 +439,8 @@ export function applySiteNavSettingChange(editor, root, name, value) {
         applySiteNavSettingsPreview(root, editor, {
             invalidateCss: name === CHROME_LOGO_SIZE_PROP
                 || name === CHROME_LOGO_SIZE_MOBILE_PROP
-                || name === CHROME_LOGO_FULL_WIDTH_PROP,
+                || name === CHROME_LOGO_FULL_WIDTH_PROP
+                || name === CHROME_LOGO_SHAPE_PROP,
         });
 
         // Logo URL changes need a server re-render; visibility / size are DOM-only.
@@ -377,13 +462,32 @@ export function configureSiteNavTraits(component, editor) {
 
     const config = component.get('voodbuilderConfig') ?? {};
 
+    const showLogo = config.show_logo !== false;
+    const showSiteName = config.show_site_name !== false;
+    const showLogoDesktop = Object.prototype.hasOwnProperty.call(config, 'show_logo_desktop')
+        ? config.show_logo_desktop !== false
+        : showLogo;
+    const showLogoMobile = Object.prototype.hasOwnProperty.call(config, 'show_logo_mobile')
+        ? config.show_logo_mobile !== false
+        : showLogo;
+    const showNameDesktop = Object.prototype.hasOwnProperty.call(config, 'show_site_name_desktop')
+        ? config.show_site_name_desktop !== false
+        : showSiteName;
+    const showNameMobile = Object.prototype.hasOwnProperty.call(config, 'show_site_name_mobile')
+        ? config.show_site_name_mobile !== false
+        : showSiteName;
+
     component.set('voodbuilderMainNavAlign', config.main_nav_align === 'center' ? 'center' : 'start', { silent: true });
     component.set('voodbuilderStickyNav', config.sticky_nav ?? 'inherit', { silent: true });
     component.set('voodbuilderShowSearch', config.show_search === true, { silent: true });
     component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
     component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
-    component.set('voodbuilderShowLogo', config.show_logo !== false, { silent: true });
-    component.set('voodbuilderShowSiteName', config.show_site_name !== false, { silent: true });
+    component.set('voodbuilderShowLogoDesktop', showLogoDesktop, { silent: true });
+    component.set('voodbuilderShowLogoMobile', showLogoMobile, { silent: true });
+    component.set('voodbuilderShowSiteNameDesktop', showNameDesktop, { silent: true });
+    component.set('voodbuilderShowSiteNameMobile', showNameMobile, { silent: true });
+    component.set('voodbuilderShowLogo', showLogoDesktop || showLogoMobile, { silent: true });
+    component.set('voodbuilderShowSiteName', showNameDesktop || showNameMobile, { silent: true });
     component.set(
         CHROME_LOGO_SIZE_PROP,
         normalizeChromeLogoSize(config[CHROME_LOGO_SIZE_KEY] ?? CHROME_LOGO_DEFAULT_SIZE),
@@ -397,6 +501,11 @@ export function configureSiteNavTraits(component, editor) {
         { silent: true },
     );
     component.set(CHROME_LOGO_FULL_WIDTH_PROP, config[CHROME_LOGO_FULL_WIDTH_KEY] === true, { silent: true });
+    component.set(
+        CHROME_LOGO_SHAPE_PROP,
+        normalizeChromeLogoShape(config[CHROME_LOGO_SHAPE_KEY] ?? CHROME_LOGO_DEFAULT_SHAPE),
+        { silent: true },
+    );
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });

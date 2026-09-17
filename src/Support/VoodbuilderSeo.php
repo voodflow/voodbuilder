@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Illuminate\Support\Str;
 use RalphJSmit\Laravel\SEO\SchemaCollection;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
+use RalphJSmit\Laravel\SEO\TagCollection;
+use RalphJSmit\Laravel\SEO\Tags\FaviconTag;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\Seo\MediaFaviconLinkTag;
 
 /**
  * Voodbuilder Seo.
@@ -16,6 +20,10 @@ final class VoodbuilderSeo
     public static function applyDefaults(SEOData $seoData): SEOData
     {
         $settings = VoodbuilderSettings::data();
+
+        if (self::shouldReplaceTitle($seoData->title)) {
+            $seoData->title = VoodbuilderSettings::siteTitle();
+        }
 
         if (blank($seoData->description) && filled($settings['seo_default_description'] ?? null)) {
             $seoData->description = (string) $settings['seo_default_description'];
@@ -68,6 +76,64 @@ final class VoodbuilderSeo
         $seoData->schema = self::mergeOrganizationSchema($seoData);
 
         return $seoData;
+    }
+
+    /**
+     * Emit light/dark favicon variants when configured.
+     *
+     * Browsers select via `prefers-color-scheme` (OS/browser chrome), not the site theme toggle.
+     */
+    public static function transformTags(TagCollection $tags): TagCollection
+    {
+        $light = VoodbuilderSettings::faviconLightUrl();
+        $dark = VoodbuilderSettings::faviconDarkUrl();
+        $fallback = VoodbuilderSettings::faviconUrl();
+
+        if ($light === null && $dark === null) {
+            return $tags;
+        }
+
+        $filtered = $tags->reject(fn (mixed $tag): bool => $tag instanceof FaviconTag)->values();
+
+        if ($light !== null) {
+            $filtered->push(new MediaFaviconLinkTag($light, '(prefers-color-scheme: light)'));
+        }
+
+        if ($dark !== null) {
+            $filtered->push(new MediaFaviconLinkTag($dark, '(prefers-color-scheme: dark)'));
+        }
+
+        // Fallback for browsers that ignore media on icons.
+        $filtered->push(new MediaFaviconLinkTag($light ?? $dark ?? $fallback));
+
+        return new TagCollection($filtered->all());
+    }
+
+    /**
+     * Replace empty titles and homepage URL-inferred host titles (e.g. "Localhost:8014").
+     */
+    public static function shouldReplaceTitle(?string $title): bool
+    {
+        if (blank($title)) {
+            return true;
+        }
+
+        if (! config('seo.title.infer_title_from_url', true)) {
+            return false;
+        }
+
+        $path = trim((string) (parse_url(url()->current(), PHP_URL_PATH) ?: ''), '/');
+
+        if ($path !== '') {
+            return false;
+        }
+
+        $inferred = Str::of(url()->current())
+            ->afterLast('/')
+            ->headline()
+            ->toString();
+
+        return $inferred !== '' && $title === $inferred;
     }
 
     protected static function mergeOrganizationSchema(SEOData $seoData): ?SchemaCollection

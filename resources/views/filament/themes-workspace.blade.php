@@ -947,6 +947,17 @@
             opacity: 0.85;
         }
 
+        .voodbuilder-themes-ws__live-preview-footer {
+            margin-top: 0.65rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.6875rem;
+            font-weight: 650;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: var(--lp-footer, var(--lp-bg));
+            color: var(--lp-text);
+        }
+
         .voodbuilder-themes-ws__live-preview-tag {
             display: inline-flex;
             align-items: center;
@@ -1325,7 +1336,7 @@
                     </div>
                     @php
                         $palette = $previewMode === 'dark' ? $dark : $light;
-                        $previewKeys = ['primary', 'secondary', 'body_bg', 'text', 'header_bg'];
+                        $previewKeys = ['primary', 'secondary', 'body_bg', 'text', 'header_bg', 'footer_bg'];
                     @endphp
                     <div class="voodbuilder-themes-ws__tiles">
                         @foreach ($previewKeys as $key)
@@ -1352,10 +1363,11 @@
                         $tx = $palette['text'] ?? '#0f172a';
                         $hd = $palette['header_bg'] ?? $bg;
                         $ht = $palette['header_text'] ?? $tx;
+                        $ft = $palette['footer_bg'] ?? $bg;
                     @endphp
                     <div
                         class="voodbuilder-themes-ws__live-preview"
-                        style="--lp-bg: {{ $bg }}; --lp-text: {{ $tx }}; --lp-primary: {{ $p }}; --lp-secondary: {{ $s }}; --lp-header: {{ $hd }}; --lp-header-text: {{ $ht }};"
+                        style="--lp-bg: {{ $bg }}; --lp-text: {{ $tx }}; --lp-primary: {{ $p }}; --lp-secondary: {{ $s }}; --lp-header: {{ $hd }}; --lp-header-text: {{ $ht }}; --lp-footer: {{ $ft }};"
                     >
                         <div class="voodbuilder-themes-ws__live-preview-label">
                             {{ __('voodbuilder::settings.theme_studio_live_preview') }}
@@ -1376,6 +1388,9 @@
                             <span class="voodbuilder-themes-ws__live-preview-tag">{{ __('voodbuilder::settings.theme_studio_live_preview_tag') }}</span>
                             <span class="voodbuilder-themes-ws__live-preview-btn">{{ __('voodbuilder::settings.theme_studio_live_preview_action') }}</span>
                             <p>{{ __('voodbuilder::settings.theme_studio_live_preview_sample') }}</p>
+                        </div>
+                        <div class="voodbuilder-themes-ws__live-preview-footer" aria-hidden="true">
+                            {{ __('voodbuilder::settings.theme_studio_live_preview_footer') }}
                         </div>
                     </div>
                 @else

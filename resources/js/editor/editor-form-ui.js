@@ -307,7 +307,21 @@ export const CHROME_LOGO_SIZE_MOBILE_PROP = 'voodbuilderLogoSizeMobile';
 export const CHROME_LOGO_SIZE_MOBILE_KEY = 'logo_size_mobile';
 export const CHROME_LOGO_FULL_WIDTH_PROP = 'voodbuilderLogoFullWidth';
 export const CHROME_LOGO_FULL_WIDTH_KEY = 'logo_full_width';
+export const CHROME_LOGO_SHAPE_PROP = 'voodbuilderLogoShape';
+export const CHROME_LOGO_SHAPE_KEY = 'logo_shape';
 export const CHROME_LOGO_DEFAULT_SIZE = 'lg';
+export const CHROME_LOGO_DEFAULT_SHAPE = 'natural';
+export const CHROME_LOGO_SHAPES = ['natural', 'circle'];
+
+/**
+ * @param {unknown} value
+ * @returns {'natural'|'circle'}
+ */
+export function normalizeChromeLogoShape(value) {
+    const shape = typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+    return CHROME_LOGO_SHAPES.includes(shape) ? shape : CHROME_LOGO_DEFAULT_SHAPE;
+}
 
 /**
  * @param {unknown} size
@@ -396,6 +410,10 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
     const mobile = normalizeChromeLogoSize(opts.sizeMobile ?? sizeDesktop);
     const fullWidth = opts.fullWidth === true
         || scope.querySelector?.('[data-voodbuilder-brand-logo-full="1"]') != null;
+    const shape = normalizeChromeLogoShape(
+        opts.shape
+            ?? scope.querySelector?.('[data-voodbuilder-logo-shape]')?.getAttribute('data-voodbuilder-logo-shape'),
+    );
     const defDesktop = CHROME_LOGO_SIZES[desktop];
     const defMobile = CHROME_LOGO_SIZES[mobile];
     const heightKeys = Object.values(CHROME_LOGO_SIZES).flatMap((entry) => [
@@ -420,6 +438,7 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
         node.setAttribute('data-voodbuilder-logo-size', desktop);
         node.setAttribute('data-voodbuilder-logo-size-mobile', mobile);
         node.setAttribute('data-voodbuilder-brand-logo-full', fullWidth ? '1' : '0');
+        node.setAttribute('data-voodbuilder-logo-shape', shape);
         node.classList.toggle('w-full', fullWidth);
         node.classList.toggle('min-w-0', fullWidth);
     });
@@ -428,10 +447,9 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
         const isDesktop = img.classList.contains('vb-brand-logo--desktop');
         const def = isDesktop ? defDesktop : defMobile;
         const logoOnly = img.closest('[data-voodbuilder-brand-logo-only="1"]') != null;
-        const footerContext = img.closest('[data-voodbuilder-footer-brand-link]') != null
-            || opts.footerAvatar === true;
         const packageMark = String(img.getAttribute('src') ?? '').includes('voodbuilder-mark.svg');
         const wide = fullWidth || logoOnly;
+        const circle = shape === 'circle' && ! wide && ! packageMark;
 
         heightKeys.forEach((cls) => {
             if (cls) {
@@ -439,7 +457,7 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
             }
         });
 
-        if (footerContext && ! wide && ! packageMark) {
+        if (circle) {
             def.square.split(/\s+/).forEach((cls) => img.classList.add(cls));
             img.classList.add('rounded-full', 'object-cover');
         } else {
@@ -449,7 +467,7 @@ export function applyChromeLogoSizeClasses(scope, sizeDesktop, opts = {}) {
                 img.classList.add('w-full', 'max-w-full');
             } else {
                 img.classList.add('w-auto');
-                img.classList.add(footerContext ? 'max-w-full' : (isDesktop ? def.desktopMax : def.mobileMax));
+                img.classList.add(isDesktop ? def.desktopMax : def.mobileMax);
             }
         }
     });
@@ -479,6 +497,16 @@ export function appendChromeLogoFields({ fields, root, editor, applyChange, labe
             ),
             options: chromeLogoSizeOptions(resolveLabel),
             onChange: (value) => applyChange(CHROME_LOGO_SIZE_MOBILE_PROP, value),
+        }),
+        createSelectField({
+            label: resolveLabel('logoShape', 'Logo shape'),
+            name: CHROME_LOGO_SHAPE_PROP,
+            value: normalizeChromeLogoShape(root.get(CHROME_LOGO_SHAPE_PROP)),
+            options: [
+                { value: 'natural', label: resolveLabel('logoShapeNatural', 'Natural (wide logos OK)') },
+                { value: 'circle', label: resolveLabel('logoShapeCircle', 'Circle (avatar crop)') },
+            ],
+            onChange: (value) => applyChange(CHROME_LOGO_SHAPE_PROP, value),
         }),
         createCheckboxField({
             label: resolveLabel('logoFullWidth', 'Full width in brand column'),

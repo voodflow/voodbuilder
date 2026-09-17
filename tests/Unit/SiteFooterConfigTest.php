@@ -59,6 +59,28 @@ class SiteFooterConfigTest extends TestCase
         $this->assertTrue($normalized['show_copyright']);
         $this->assertFalse($normalized['show_brand']);
         $this->assertTrue($normalized['show_tagline']);
+        $this->assertFalse($normalized['show_logo_desktop']);
+        $this->assertFalse($normalized['show_logo_mobile']);
+    }
+
+    #[Test]
+    public function per_breakpoint_brand_visibility_is_normalized(): void
+    {
+        $normalized = SiteFooterConfig::normalize([
+            'show_logo_desktop' => true,
+            'show_logo_mobile' => false,
+            'show_site_name_desktop' => false,
+            'show_site_name_mobile' => true,
+            'logo_shape' => 'circle',
+        ]);
+
+        $this->assertTrue($normalized['show_brand']);
+        $this->assertTrue($normalized['show_site_name']);
+        $this->assertTrue($normalized['show_logo_desktop']);
+        $this->assertFalse($normalized['show_logo_mobile']);
+        $this->assertFalse($normalized['show_site_name_desktop']);
+        $this->assertTrue($normalized['show_site_name_mobile']);
+        $this->assertSame('circle', $normalized['logo_shape']);
     }
 
     #[Test]
@@ -209,6 +231,31 @@ class SiteFooterConfigTest extends TestCase
         ]);
 
         $this->assertSame('Link Categorie', SiteFooterColumnPlacements::columnTitle(1));
+    }
+
+    #[Test]
+    public function hydrate_refreshes_footer_column_titles_from_menu_name(): void
+    {
+        NavigationMenu::query()->create([
+            'name' => 'Prodotti',
+            'slug' => 'footer_col_1',
+            'locale' => 'en',
+        ]);
+
+        $saved = <<<'HTML'
+<footer data-voodbuilder-block="site_footer_columns_simple">
+    <div data-voodbuilder-footer-col="1">
+        <h2 data-voodbuilder-footer-title>Footer column 1</h2>
+        <nav data-voodbuilder-menu="footer_col_1" aria-label="Footer column 1"></nav>
+    </div>
+</footer>
+HTML;
+
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, []);
+
+        $this->assertStringContainsString('>Prodotti</h2>', $hydrated);
+        $this->assertStringContainsString('aria-label="Prodotti"', $hydrated);
+        $this->assertStringNotContainsString('Footer column 1', $hydrated);
     }
 
     #[Test]

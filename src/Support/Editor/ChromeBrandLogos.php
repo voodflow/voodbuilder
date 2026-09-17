@@ -25,6 +25,11 @@ final class ChromeBrandLogos
 
     public const DEFAULT_SIZE = 'lg';
 
+    /** @var list<string> */
+    public const SHAPES = ['natural', 'circle'];
+
+    public const DEFAULT_SHAPE = 'natural';
+
     /**
      * Tailwind height utilities for brand logos (nav + footer).
      *
@@ -152,6 +157,7 @@ final class ChromeBrandLogos
         $out['logo_full_width'] = array_key_exists('logo_full_width', $config)
             ? (bool) $config['logo_full_width']
             : false;
+        $out['logo_shape'] = self::normalizeShape($config['logo_shape'] ?? null);
 
         return $out;
     }
@@ -161,6 +167,13 @@ final class ChromeBrandLogos
         $value = is_string($size) ? strtolower(trim($size)) : '';
 
         return in_array($value, self::SIZES, true) ? $value : self::DEFAULT_SIZE;
+    }
+
+    public static function normalizeShape(mixed $shape): string
+    {
+        $value = is_string($shape) ? strtolower(trim($shape)) : '';
+
+        return in_array($value, self::SHAPES, true) ? $value : self::DEFAULT_SHAPE;
     }
 
     /**
@@ -206,8 +219,8 @@ final class ChromeBrandLogos
     }
 
     /**
-     * Footer avatar-style logo (with site name) vs wide logo-only / full-width.
-     * Package default mark uses object-contain (same as nav) — not circular crop.
+     * Footer logo: natural (wide/contain) by default; optional circular crop.
+     * Package default mark always uses object-contain.
      */
     public static function footerLogoClass(
         mixed $size,
@@ -215,15 +228,17 @@ final class ChromeBrandLogos
         bool $desktop = true,
         bool $fullWidth = false,
         bool $packageMark = false,
+        mixed $shape = null,
     ): string {
         unset($desktop);
         $def = self::sizeDefinition($size);
+        $normalizedShape = self::normalizeShape($shape);
 
         if ($fullWidth || $logoOnly) {
             return trim($def['height'].' w-full max-w-full object-contain object-left');
         }
 
-        if ($packageMark) {
+        if ($packageMark || $normalizedShape !== 'circle') {
             return trim($def['height'].' w-auto '.$def['desktop_max'].' object-contain object-left');
         }
 

@@ -7,6 +7,7 @@ import { findLayoutChromeZoneBlockRoot } from '../../../blocks/settings/select.j
 import {
     appendChromeLogoFields,
     createCheckboxField,
+    createCheckboxGrid,
     createFormSection,
     createFormTabs,
     createSelectField,
@@ -107,18 +108,32 @@ export function registerNavSettings(editor) {
             );
 
             panels.brand.append(
-                createCheckboxField({
-                    label: label('navShowLogo', 'Show logo'),
-                    name: 'voodbuilderShowLogo',
-                    checked: root.get('voodbuilderShowLogo') !== false,
-                    onChange: (checked) => applyChange('voodbuilderShowLogo', checked),
-                }),
-                createCheckboxField({
-                    label: label('navShowSiteName', 'Show site name'),
-                    name: 'voodbuilderShowSiteName',
-                    checked: root.get('voodbuilderShowSiteName') !== false,
-                    onChange: (checked) => applyChange('voodbuilderShowSiteName', checked),
-                }),
+                createCheckboxGrid([
+                    createCheckboxField({
+                        label: label('navShowLogoDesktop', 'Show logo (desktop)'),
+                        name: 'voodbuilderShowLogoDesktop',
+                        checked: root.get('voodbuilderShowLogoDesktop') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowLogoDesktop', checked),
+                    }),
+                    createCheckboxField({
+                        label: label('navShowLogoMobile', 'Show logo (mobile)'),
+                        name: 'voodbuilderShowLogoMobile',
+                        checked: root.get('voodbuilderShowLogoMobile') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowLogoMobile', checked),
+                    }),
+                    createCheckboxField({
+                        label: label('navShowSiteNameDesktop', 'Show site name (desktop)'),
+                        name: 'voodbuilderShowSiteNameDesktop',
+                        checked: root.get('voodbuilderShowSiteNameDesktop') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSiteNameDesktop', checked),
+                    }),
+                    createCheckboxField({
+                        label: label('navShowSiteNameMobile', 'Show site name (mobile)'),
+                        name: 'voodbuilderShowSiteNameMobile',
+                        checked: root.get('voodbuilderShowSiteNameMobile') !== false,
+                        onChange: (checked) => applyChange('voodbuilderShowSiteNameMobile', checked),
+                    }),
+                ]),
             );
 
             appendChromeLogoFields({

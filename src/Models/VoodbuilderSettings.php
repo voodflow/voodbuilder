@@ -47,6 +47,7 @@ class VoodbuilderSettings extends Model
             'logo' => null,
             'logo_mobile' => null,
             'favicon' => null,
+            'favicon_dark' => null,
             'seo_default_description' => null,
             'seo_default_image' => null,
             'seo_site_name' => null,
@@ -237,12 +238,28 @@ class VoodbuilderSettings extends Model
     }
 
     /**
-     * Uploaded favicon, or the Voodflow brand mark when none is configured.
+     * Uploaded favicon (light / default), or the Voodflow brand mark when none is configured.
      */
     public static function faviconUrl(): string
     {
-        return static::assetUrl('favicon')
+        return static::faviconLightUrl()
             ?? BrandMarkAssets::faviconUrl();
+    }
+
+    /**
+     * Light-scheme favicon upload only (null when unset — no brand-mark fallback).
+     */
+    public static function faviconLightUrl(): ?string
+    {
+        return static::assetUrl('favicon');
+    }
+
+    /**
+     * Dark-scheme favicon upload only (null when unset).
+     */
+    public static function faviconDarkUrl(): ?string
+    {
+        return static::assetUrl('favicon_dark');
     }
 
     public static function logoMobileUrl(): ?string
@@ -290,7 +307,7 @@ class VoodbuilderSettings extends Model
             $data['default_ui_locale'] = $data['primary_locale'];
         }
 
-        foreach (['logo', 'logo_mobile', 'favicon', 'seo_default_image', 'geo_organization_logo'] as $uploadKey) {
+        foreach (['logo', 'logo_mobile', 'favicon', 'favicon_dark', 'seo_default_image', 'geo_organization_logo'] as $uploadKey) {
             if (array_key_exists($uploadKey, $data)) {
                 $data[$uploadKey] = static::normalizeUploadValue($data[$uploadKey]);
             }

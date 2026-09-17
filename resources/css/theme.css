@@ -1244,6 +1244,51 @@ html.dark[data-vb-logo-mode='mobile'] footer .vb-brand-logo--mobile.vb-brand-log
     display: none !important;
 }
 
+/* Per-breakpoint brand visibility (nav + footer). */
+@media (min-width: 768px) {
+    [data-vb-show-logo-desktop='0'] > [data-voodbuilder-chrome-part='logo'],
+    [data-vb-show-logo-desktop='0'] [data-voodbuilder-chrome-part='logo'] {
+        display: none !important;
+    }
+
+    [data-vb-show-name-desktop='0'] > [data-voodbuilder-chrome-part='site-name'],
+    [data-vb-show-name-desktop='0'] [data-voodbuilder-chrome-part='site-name'] {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    [data-vb-show-logo-mobile='0'] > [data-voodbuilder-chrome-part='logo'],
+    [data-vb-show-logo-mobile='0'] [data-voodbuilder-chrome-part='logo'] {
+        display: none !important;
+    }
+
+    [data-vb-show-name-mobile='0'] > [data-voodbuilder-chrome-part='site-name'],
+    [data-vb-show-name-mobile='0'] [data-voodbuilder-chrome-part='site-name'] {
+        display: none !important;
+    }
+}
+
+html[data-vb-logo-mode='desktop'] [data-vb-show-logo-desktop='0'] [data-voodbuilder-chrome-part='logo'],
+body[data-vb-logo-mode='desktop'] [data-vb-show-logo-desktop='0'] [data-voodbuilder-chrome-part='logo'],
+html[data-vb-logo-mode='desktop'] [data-vb-show-name-desktop='0'] [data-voodbuilder-chrome-part='site-name'],
+body[data-vb-logo-mode='desktop'] [data-vb-show-name-desktop='0'] [data-voodbuilder-chrome-part='site-name'],
+body[data-voodbuilder-editor-device='desktop'] [data-vb-show-logo-desktop='0'] [data-voodbuilder-chrome-part='logo'],
+body[data-voodbuilder-editor-device='tablet'] [data-vb-show-logo-desktop='0'] [data-voodbuilder-chrome-part='logo'],
+body[data-voodbuilder-editor-device='desktop'] [data-vb-show-name-desktop='0'] [data-voodbuilder-chrome-part='site-name'],
+body[data-voodbuilder-editor-device='tablet'] [data-vb-show-name-desktop='0'] [data-voodbuilder-chrome-part='site-name'] {
+    display: none !important;
+}
+
+html[data-vb-logo-mode='mobile'] [data-vb-show-logo-mobile='0'] [data-voodbuilder-chrome-part='logo'],
+body[data-vb-logo-mode='mobile'] [data-vb-show-logo-mobile='0'] [data-voodbuilder-chrome-part='logo'],
+html[data-vb-logo-mode='mobile'] [data-vb-show-name-mobile='0'] [data-voodbuilder-chrome-part='site-name'],
+body[data-vb-logo-mode='mobile'] [data-vb-show-name-mobile='0'] [data-voodbuilder-chrome-part='site-name'],
+body[data-voodbuilder-editor-device='mobilePortrait'] [data-vb-show-logo-mobile='0'] [data-voodbuilder-chrome-part='logo'],
+body[data-voodbuilder-editor-device='mobilePortrait'] [data-vb-show-name-mobile='0'] [data-voodbuilder-chrome-part='site-name'] {
+    display: none !important;
+}
+
 /* Header chrome icon buttons: never show Editor "Button" placeholder text. */
 .voodbuilder-header-icon-btn,
 button[data-mobile-nav-toggle],

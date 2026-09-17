@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.54] - 2026-09-17
+
+### Added
+
+- Footer / nav Brand: per-breakpoint visibility for logo and site name (desktop vs mobile)
+- Logo shape control: **Natural** (default, wide logos OK) or **Circle** (avatar crop)
+
+### Fixed
+
+- Footer Brand: Tagline and Copyright text fields visible in settings (ensure assets rebuilt after update)
+- Footer / nav logos no longer forced into a circle unless Circle shape is selected
+- Layout editor: typography on nav/footer menu links (e.g. uppercase) now persists after save/reload and on the published site (styles promoted to durable CSS selectors that survive dynamic menu re-render)
+- Footer column headings refresh from the assigned menu name on hydrate (no more stuck “Footer column N”)
+
+### Added
+
+- Theme Studio: **Footer background** color for light/dark palettes; site footer chrome uses `--vx-footer-bg`
+- Settings: light/dark favicon uploads (`prefers-color-scheme`); SEO TagManager singleton so page title survives layout `{!! seo() !!}`
+
 ## [0.1.53] - 2026-09-17
 
 ### Added

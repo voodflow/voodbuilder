@@ -27,12 +27,29 @@ final class SiteFooterConfig
      */
     public static function normalize(array $config): array
     {
+        $provided = $config;
         $normalized = array_merge(self::defaults(), $config);
 
-        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_site_name', 'show_tagline', 'footer_columns_redistribute'] as $flag) {
-            if (array_key_exists($flag, $config)) {
-                $normalized[$flag] = (bool) $config[$flag];
+        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_site_name', 'show_tagline', 'footer_columns_redistribute', 'show_logo_desktop', 'show_logo_mobile', 'show_site_name_desktop', 'show_site_name_mobile'] as $flag) {
+            if (array_key_exists($flag, $provided)) {
+                $normalized[$flag] = (bool) $provided[$flag];
             }
+        }
+
+        // Prefer explicit breakpoint flags; otherwise mirror legacy master flags.
+        // Only inspect $provided — defaults must not look like user input.
+        if (array_key_exists('show_logo_desktop', $provided) || array_key_exists('show_logo_mobile', $provided)) {
+            $normalized['show_brand'] = $normalized['show_logo_desktop'] || $normalized['show_logo_mobile'];
+        } elseif (array_key_exists('show_brand', $provided)) {
+            $normalized['show_logo_desktop'] = $normalized['show_brand'];
+            $normalized['show_logo_mobile'] = $normalized['show_brand'];
+        }
+
+        if (array_key_exists('show_site_name_desktop', $provided) || array_key_exists('show_site_name_mobile', $provided)) {
+            $normalized['show_site_name'] = $normalized['show_site_name_desktop'] || $normalized['show_site_name_mobile'];
+        } elseif (array_key_exists('show_site_name', $provided)) {
+            $normalized['show_site_name_desktop'] = $normalized['show_site_name'];
+            $normalized['show_site_name_mobile'] = $normalized['show_site_name'];
         }
 
         $normalized = array_merge($normalized, ChromeBrandLogos::normalizeConfigKeys($config));
@@ -63,6 +80,10 @@ final class SiteFooterConfig
             'show_brand' => true,
             'show_site_name' => true,
             'show_tagline' => true,
+            'show_logo_desktop' => true,
+            'show_logo_mobile' => true,
+            'show_site_name_desktop' => true,
+            'show_site_name_mobile' => true,
             'show_footer_col_1' => true,
             'show_footer_col_2' => true,
             'show_footer_col_3' => true,
@@ -78,6 +99,7 @@ final class SiteFooterConfig
             'logo_size' => ChromeBrandLogos::DEFAULT_SIZE,
             'logo_size_mobile' => ChromeBrandLogos::DEFAULT_SIZE,
             'logo_full_width' => false,
+            'logo_shape' => ChromeBrandLogos::DEFAULT_SHAPE,
         ];
     }
 

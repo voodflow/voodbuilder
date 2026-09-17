@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 
 /**
  * Editor Slot Hydrator.
@@ -18,6 +19,7 @@ final class EditorSlotHydrator
     {
         self::hydrateBrands($document, $root, $preview, $config);
         self::hydrateMenus($document, $root, $preview, $config);
+        self::hydrateFooterColumnTitles($document, $root);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
@@ -37,6 +39,7 @@ final class EditorSlotHydrator
 
         self::hydrateBrands($document, $document->documentElement, $preview, $config);
         self::hydrateMenus($document, $document->documentElement, $preview, $config);
+        self::hydrateFooterColumnTitles($document, $document->documentElement);
 
         if ($config !== []) {
             $normalized = SiteFooterConfig::normalize($config);
@@ -142,6 +145,45 @@ final class EditorSlotHydrator
 
             $slotConfig = self::resolveConfigForElement($element, $config);
             self::replaceElementInnerHtml($document, $element, self::renderMenuList($menuSlug, $preview, $slotConfig));
+        }
+    }
+
+    /**
+     * Keep column headings in sync with the assigned menu name (slot hydrate
+     * only refreshes nav inner HTML, so saved "Footer column N" would stick).
+     */
+    protected static function hydrateFooterColumnTitles(DOMDocument $document, DOMElement $root): void
+    {
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || ! $element->hasAttribute('data-voodbuilder-footer-col')) {
+                continue;
+            }
+
+            $index = (int) $element->getAttribute('data-voodbuilder-footer-col');
+
+            if ($index < 1 || $index > SiteFooterColumnPlacements::COLUMN_COUNT) {
+                continue;
+            }
+
+            $title = SiteFooterColumnPlacements::columnTitle($index);
+
+            foreach ($element->getElementsByTagName('*') as $child) {
+                if (! $child instanceof DOMElement) {
+                    continue;
+                }
+
+                if ($child->hasAttribute('data-voodbuilder-footer-title')) {
+                    while ($child->firstChild !== null) {
+                        $child->removeChild($child->firstChild);
+                    }
+
+                    $child->appendChild($document->createTextNode($title));
+                }
+
+                if ($child->hasAttribute('data-voodbuilder-menu')) {
+                    $child->setAttribute('aria-label', $title);
+                }
+            }
         }
     }
 

@@ -9,12 +9,16 @@ import {
     applyChromeLogoUrlsPreview,
     chromeLogoFieldDefs,
     CHROME_LOGO_DEFAULT_SIZE,
+    CHROME_LOGO_DEFAULT_SHAPE,
     CHROME_LOGO_FULL_WIDTH_KEY,
     CHROME_LOGO_FULL_WIDTH_PROP,
+    CHROME_LOGO_SHAPE_KEY,
+    CHROME_LOGO_SHAPE_PROP,
     CHROME_LOGO_SIZE_KEY,
     CHROME_LOGO_SIZE_MOBILE_KEY,
     CHROME_LOGO_SIZE_MOBILE_PROP,
     CHROME_LOGO_SIZE_PROP,
+    normalizeChromeLogoShape,
     normalizeChromeLogoSize,
 } from '../../../editor-form-ui.js';
 import { retagCurrentYear, replaceGlobalTextTags, globalTextTagValues } from '../../../global-text-tags.js';
@@ -198,14 +202,18 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
     const showMenu = root.get('voodbuilderShowFooterMenu') === true;
     const showTagline = root.get('voodbuilderShowTagline') !== false;
     const showCopyright = root.get('voodbuilderShowCopyright') !== false;
-    // Match nav: treat unset as on so toggles stay independent and visible immediately.
-    const showBrand = root.get('voodbuilderShowBrand') !== false;
-    const showSiteName = root.get('voodbuilderShowSiteName') !== false;
+    const showLogoDesktop = root.get('voodbuilderShowLogoDesktop') !== false;
+    const showLogoMobile = root.get('voodbuilderShowLogoMobile') !== false;
+    const showNameDesktop = root.get('voodbuilderShowSiteNameDesktop') !== false;
+    const showNameMobile = root.get('voodbuilderShowSiteNameMobile') !== false;
+    const showBrand = showLogoDesktop || showLogoMobile;
+    const showSiteName = showNameDesktop || showNameMobile;
     const logoSize = normalizeChromeLogoSize(root.get(CHROME_LOGO_SIZE_PROP));
     const logoSizeMobile = normalizeChromeLogoSize(
         root.get(CHROME_LOGO_SIZE_MOBILE_PROP) ?? logoSize,
     );
     const logoFullWidth = root.get(CHROME_LOGO_FULL_WIDTH_PROP) === true;
+    const logoShape = normalizeChromeLogoShape(root.get(CHROME_LOGO_SHAPE_PROP));
     const socialAlign = normalizeFooterSocialAlign(root.get(FOOTER_SOCIAL_ALIGN_PROP));
 
     el.querySelectorAll('[data-voodbuilder-chrome]').forEach((node) => {
@@ -233,7 +241,18 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
         }
     });
 
-    applyFooterBrandPartsPreview(el, showBrand, showSiteName, logoSize, logoSizeMobile, logoFullWidth);
+    applyFooterBrandPartsPreview(el, {
+        showBrand,
+        showSiteName,
+        showLogoDesktop,
+        showLogoMobile,
+        showNameDesktop,
+        showNameMobile,
+        logoSize,
+        logoSizeMobile,
+        logoFullWidth,
+        logoShape,
+    });
     applyChromeLogoUrlsPreview(el, root);
     applyFooterCopyPreview(el, root, editor);
     applyFooterSocialAlignPreview(el, socialAlign);
@@ -274,23 +293,31 @@ export function applyFooterCopyPreview(el, root, editor = null) {
  * Toggle logo vs site name independently inside the brand chrome (no full remount).
  *
  * @param {HTMLElement} el
- * @param {boolean} showBrand
- * @param {boolean} showSiteName
- * @param {string} [logoSize]
- * @param {string} [logoSizeMobile]
- * @param {boolean} [logoFullWidth]
+ * @param {{
+ *   showBrand: boolean,
+ *   showSiteName: boolean,
+ *   showLogoDesktop: boolean,
+ *   showLogoMobile: boolean,
+ *   showNameDesktop: boolean,
+ *   showNameMobile: boolean,
+ *   logoSize?: string,
+ *   logoSizeMobile?: string,
+ *   logoFullWidth?: boolean,
+ *   logoShape?: string,
+ * }} opts
  */
-function applyFooterBrandPartsPreview(
-    el,
-    showBrand,
-    showSiteName,
-    logoSize = CHROME_LOGO_DEFAULT_SIZE,
-    logoSizeMobile = logoSize,
-    logoFullWidth = false,
-) {
+function applyFooterBrandPartsPreview(el, opts) {
+    const showBrand = opts.showBrand !== false;
+    const showSiteName = opts.showSiteName !== false;
+    const showLogoDesktop = opts.showLogoDesktop !== false;
+    const showLogoMobile = opts.showLogoMobile !== false;
+    const showNameDesktop = opts.showNameDesktop !== false;
+    const showNameMobile = opts.showNameMobile !== false;
+    const logoSize = normalizeChromeLogoSize(opts.logoSize);
+    const logoSizeMobile = normalizeChromeLogoSize(opts.logoSizeMobile ?? opts.logoSize);
+    const logoFullWidth = opts.logoFullWidth === true;
+    const logoShape = normalizeChromeLogoShape(opts.logoShape);
     const logoOnly = showBrand && ! showSiteName;
-    const size = normalizeChromeLogoSize(logoSize);
-    const sizeMobile = normalizeChromeLogoSize(logoSizeMobile);
     const wide = logoOnly || logoFullWidth;
 
     el.querySelectorAll('[data-voodbuilder-footer-brand-link]').forEach((link) => {
@@ -298,8 +325,13 @@ function applyFooterBrandPartsPreview(
         link.classList.toggle('min-w-0', wide);
         link.setAttribute('data-voodbuilder-brand-logo-only', logoOnly ? '1' : '0');
         link.setAttribute('data-voodbuilder-brand-logo-full', logoFullWidth ? '1' : '0');
-        link.setAttribute('data-voodbuilder-logo-size', size);
-        link.setAttribute('data-voodbuilder-logo-size-mobile', sizeMobile);
+        link.setAttribute('data-voodbuilder-logo-size', logoSize);
+        link.setAttribute('data-voodbuilder-logo-size-mobile', logoSizeMobile);
+        link.setAttribute('data-voodbuilder-logo-shape', logoShape);
+        link.setAttribute('data-vb-show-logo-desktop', showLogoDesktop ? '1' : '0');
+        link.setAttribute('data-vb-show-logo-mobile', showLogoMobile ? '1' : '0');
+        link.setAttribute('data-vb-show-name-desktop', showNameDesktop ? '1' : '0');
+        link.setAttribute('data-vb-show-name-mobile', showNameMobile ? '1' : '0');
     });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="logo"]').forEach((node) => {
@@ -314,10 +346,10 @@ function applyFooterBrandPartsPreview(
         }
     });
 
-    applyChromeLogoSizeClasses(el, size, {
-        footerAvatar: true,
-        sizeMobile,
+    applyChromeLogoSizeClasses(el, logoSize, {
+        sizeMobile: logoSizeMobile,
         fullWidth: logoFullWidth,
+        shape: logoShape,
     });
 
     el.querySelectorAll('[data-voodbuilder-chrome-part="site-name"]').forEach((node) => {
@@ -330,6 +362,10 @@ function applyFooterBrandPartsPreview(
 export function syncSiteFooterConfig(component) {
     const blockId = component.getAttributes()['data-voodbuilder-block'];
     const el = component.getEl?.();
+    const showLogoDesktop = component.get('voodbuilderShowLogoDesktop') !== false;
+    const showLogoMobile = component.get('voodbuilderShowLogoMobile') !== false;
+    const showNameDesktop = component.get('voodbuilderShowSiteNameDesktop') !== false;
+    const showNameMobile = component.get('voodbuilderShowSiteNameMobile') !== false;
     const config = {
         ...(component.get('voodbuilderConfig') ?? {}),
         show_newsletter: component.get('voodbuilderShowNewsletter') !== false,
@@ -337,8 +373,12 @@ export function syncSiteFooterConfig(component) {
         show_footer_menu: component.get('voodbuilderShowFooterMenu') === true,
         show_tagline: component.get('voodbuilderShowTagline') !== false,
         show_copyright: component.get('voodbuilderShowCopyright') !== false,
-        show_brand: component.get('voodbuilderShowBrand') !== false,
-        show_site_name: component.get('voodbuilderShowSiteName') !== false,
+        show_logo_desktop: showLogoDesktop,
+        show_logo_mobile: showLogoMobile,
+        show_site_name_desktop: showNameDesktop,
+        show_site_name_mobile: showNameMobile,
+        show_brand: showLogoDesktop || showLogoMobile,
+        show_site_name: showNameDesktop || showNameMobile,
         [FOOTER_SOCIAL_ALIGN_KEY]: normalizeFooterSocialAlign(
             component.get(FOOTER_SOCIAL_ALIGN_PROP) ?? component.get('voodbuilderConfig')?.[FOOTER_SOCIAL_ALIGN_KEY],
         ),
@@ -353,6 +393,9 @@ export function syncSiteFooterConfig(component) {
         ),
         [CHROME_LOGO_FULL_WIDTH_KEY]: component.get(CHROME_LOGO_FULL_WIDTH_PROP) === true
             || component.get('voodbuilderConfig')?.[CHROME_LOGO_FULL_WIDTH_KEY] === true,
+        [CHROME_LOGO_SHAPE_KEY]: normalizeChromeLogoShape(
+            component.get(CHROME_LOGO_SHAPE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SHAPE_KEY],
+        ),
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -426,6 +469,7 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
             invalidateCss: name === CHROME_LOGO_SIZE_PROP
                 || name === CHROME_LOGO_SIZE_MOBILE_PROP
                 || name === CHROME_LOGO_FULL_WIDTH_PROP
+                || name === CHROME_LOGO_SHAPE_PROP
                 || name === FOOTER_SOCIAL_ALIGN_PROP,
         });
 
@@ -480,13 +524,32 @@ export function configureSiteFooterTraits(component, editor = null) {
         component.set(`voodbuilderShowFooterCol${index}`, columnVisibility[index] === true, { silent: true });
     }
 
+    const showBrand = config.show_brand !== false;
+    const showSiteName = config.show_site_name !== false;
+    const showLogoDesktop = Object.prototype.hasOwnProperty.call(config, 'show_logo_desktop')
+        ? config.show_logo_desktop !== false
+        : showBrand;
+    const showLogoMobile = Object.prototype.hasOwnProperty.call(config, 'show_logo_mobile')
+        ? config.show_logo_mobile !== false
+        : showBrand;
+    const showNameDesktop = Object.prototype.hasOwnProperty.call(config, 'show_site_name_desktop')
+        ? config.show_site_name_desktop !== false
+        : showSiteName;
+    const showNameMobile = Object.prototype.hasOwnProperty.call(config, 'show_site_name_mobile')
+        ? config.show_site_name_mobile !== false
+        : showSiteName;
+
     component.set('voodbuilderShowNewsletter', config.show_newsletter !== false, { silent: true });
     component.set('voodbuilderShowSocial', config.show_social !== false, { silent: true });
     component.set('voodbuilderShowFooterMenu', config.show_footer_menu !== false, { silent: true });
     component.set('voodbuilderShowTagline', resolveShowTaglineFromConfig(config, blockId), { silent: true });
     component.set('voodbuilderShowCopyright', config.show_copyright !== false, { silent: true });
-    component.set('voodbuilderShowBrand', config.show_brand !== false, { silent: true });
-    component.set('voodbuilderShowSiteName', config.show_site_name !== false, { silent: true });
+    component.set('voodbuilderShowLogoDesktop', showLogoDesktop, { silent: true });
+    component.set('voodbuilderShowLogoMobile', showLogoMobile, { silent: true });
+    component.set('voodbuilderShowSiteNameDesktop', showNameDesktop, { silent: true });
+    component.set('voodbuilderShowSiteNameMobile', showNameMobile, { silent: true });
+    component.set('voodbuilderShowBrand', showLogoDesktop || showLogoMobile, { silent: true });
+    component.set('voodbuilderShowSiteName', showNameDesktop || showNameMobile, { silent: true });
     component.set('voodbuilderFooterColumnsRedistribute', config.footer_columns_redistribute === true, { silent: true });
     component.set(
         FOOTER_SOCIAL_ALIGN_PROP,
@@ -506,6 +569,11 @@ export function configureSiteFooterTraits(component, editor = null) {
         { silent: true },
     );
     component.set(CHROME_LOGO_FULL_WIDTH_PROP, config[CHROME_LOGO_FULL_WIDTH_KEY] === true, { silent: true });
+    component.set(
+        CHROME_LOGO_SHAPE_PROP,
+        normalizeChromeLogoShape(config[CHROME_LOGO_SHAPE_KEY] ?? CHROME_LOGO_DEFAULT_SHAPE),
+        { silent: true },
+    );
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });

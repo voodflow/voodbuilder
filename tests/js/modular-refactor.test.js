@@ -1297,6 +1297,58 @@ describe('theme-tokens background clear', () => {
         expect(css).toContain('background-color:#daa0a0');
     });
 
+    it('promoteChromeMenuSlotAuthorStyles lifts uppercase onto durable nav selectors', async () => {
+        const { promoteChromeMenuSlotAuthorStyles } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const addedRules = [];
+        const slotClasses = [];
+
+        const slot = {
+            getAttributes: () => ({ 'data-voodbuilder-desktop-nav': '' }),
+            getClasses: () => [],
+            addClass: (name) => {
+                slotClasses.push(name);
+            },
+            parent: () => null,
+        };
+
+        const link = {
+            cid: 'link-1',
+            getId: () => 'ephemeral-link',
+            getAttributes: () => ({ href: '/' }),
+            getClasses: () => ['uppercase', 'inline-flex'],
+            getStyle: () => ({}),
+            components: () => [],
+            parent: () => slot,
+        };
+
+        const editor = {
+            Css: {
+                getAll: () => [],
+                getIdRule: () => null,
+                addRules: (cssText) => {
+                    addedRules.push(String(cssText));
+                },
+                remove: () => {},
+            },
+            getWrapper: () => ({
+                onAll: (cb) => {
+                    cb(link);
+                    cb(slot);
+                },
+            }),
+        };
+
+        const written = promoteChromeMenuSlotAuthorStyles(editor);
+
+        expect(written).toBe(1);
+        expect(addedRules.join('\n')).toContain('[data-voodbuilder-desktop-nav] :is(a, button)');
+        expect(addedRules.join('\n')).toContain('text-transform: uppercase');
+        expect(slotClasses).toContain('uppercase');
+    });
+
     it('mergeCompiledPageCssWithAuthorIdRules keeps #id background after JIT rebuild', async () => {
         const { mergeCompiledPageCssWithAuthorIdRules } = await import(
             '../../resources/js/editor/page-tailwind-autobuild.js'
