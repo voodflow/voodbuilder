@@ -10,8 +10,7 @@ use Voodflow\Voodbuilder\Licensing\Contracts\LicenceClientException;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
 
 /**
- * HTTP client for AnyStack-style entitlement endpoints.
- * Isolated behind LicenceClient — swap provider without touching Core callers.
+ * HTTP client for remote entitlement endpoints.
  */
 final class AnyStackLicenceClient implements LicenceClient
 {
@@ -23,7 +22,7 @@ final class AnyStackLicenceClient implements LicenceClient
     public function fetchEntitlements(string $licenceKey): array
     {
         if ($this->endpoint === '') {
-            throw LicenceClientException::unreachable('AnyStack endpoint is not configured.');
+            throw LicenceClientException::unreachable('Licence endpoint is not configured.');
         }
 
         try {
@@ -32,14 +31,15 @@ final class AnyStackLicenceClient implements LicenceClient
                 ->post(rtrim($this->endpoint, '/').'/entitlements', [
                     'licence_key' => $licenceKey,
                     'product' => 'voodbuilder',
+                    'fingerprint' => self::fingerprint(),
                 ]);
         } catch (\Throwable $e) {
-            throw LicenceClientException::unreachable('AnyStack request failed: '.$e->getMessage(), $e);
+            throw LicenceClientException::unreachable('Licence request failed: '.$e->getMessage(), $e);
         }
 
         if (! $response->successful()) {
             throw LicenceClientException::unreachable(
-                'AnyStack returned HTTP '.$response->status(),
+                'Licence endpoint returned HTTP '.$response->status(),
             );
         }
 
@@ -68,7 +68,7 @@ final class AnyStackLicenceClient implements LicenceClient
     }
 
     /**
-     * Optional per-licence CDN credentials from AnyStack (elements / page_templates).
+     * Optional per-licence CDN credentials from the entitlement payload.
      *
      * @return array<string, string>|null
      */
@@ -96,5 +96,12 @@ final class AnyStackLicenceClient implements LicenceClient
         }
 
         return $out === [] ? null : $out;
+    }
+
+    private static function fingerprint(): ?string
+    {
+        $url = (string) config('app.url', '');
+
+        return $url !== '' ? $url : null;
     }
 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Licensing;
 
 use Illuminate\Support\Facades\Route;
+use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
+use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
 use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Modules\DynamicData\DynamicDataModule;
 use Voodflow\Voodbuilder\Modules\Popups\PopupsModule;
@@ -17,12 +19,13 @@ use Voodflow\VoodbuilderTemplates\VoodbuilderTemplates;
 
 class CommercialBoundaryTest extends TestCase
 {
-    protected function defineEnvironment($app): void
+    protected function setUp(): void
     {
-        parent::defineEnvironment($app);
+        parent::setUp();
 
-        $app['config']->set('voodbuilder.license.edition', 'community');
-        $app['config']->set('voodbuilder.license.cache', false);
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
+        );
     }
 
     public function test_components_unlocks_with_companion_plugin_even_on_community(): void

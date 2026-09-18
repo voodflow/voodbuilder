@@ -62,33 +62,24 @@ return [
     ],
 
     /*
-    | Licence edition drives capability resolution.
-    |
-    | Capabilities gate *authoring*. Rendering a published page does not consult them, so a
-    | lapsed licence or an unreachable licensing endpoint cannot empty a live site — see
-    | Support/Editor/DynamicDataCollectionsBridge::renderingEnabled(). The single exception
-    | is author-written JavaScript (Licensing/AuthorScriptPolicy).
-    |
-    | There is no separate "enforce" switch. A key-pattern check used to live in
-    | Support/License/VoodbuilderLicense, uncalled by anything and satisfied by any string
-    | starting with `vb_`; it was removed rather than left to imply a second gate.
+    | Authoring capabilities are resolved remotely when a licence key is present.
+    | Rendering of published pages does not consult this matrix.
     */
     'license' => [
-        'edition' => env('VOODBUILDER_EDITION', 'community'),
         'key' => env('VOODBUILDER_LICENSE_KEY', ''),
         /*
-        | Driver: config (local edition matrix) | anystack (remote) | testing
+        | Driver: anystack (default) | testing (PHPUnit / Testbench only)
         */
-        'driver' => env('VOODBUILDER_LICENSE_DRIVER', 'config'),
+        'driver' => env('VOODBUILDER_LICENSE_DRIVER', 'anystack'),
+        'testing_edition' => env('VOODBUILDER_TESTING_EDITION', 'agency'),
         'cache' => env('VOODBUILDER_LICENSE_CACHE', true),
         'cache_ttl' => (int) env('VOODBUILDER_LICENSE_CACHE_TTL', 3600),
-        'anystack' => [
-            'endpoint' => env('VOODBUILDER_ANYSTACK_ENDPOINT', ''),
-            'timeout' => (int) env('VOODBUILDER_ANYSTACK_TIMEOUT', 5),
-            // Soft window before the "stale cache" message. Outages always fail open on the
-            // last successful snapshot; only a deliberate inactive reply downgrades authoring.
-            'grace_seconds' => (int) env('VOODBUILDER_ANYSTACK_GRACE_SECONDS', 604800),
-        ],
+        'endpoint' => env(
+            'VOODBUILDER_LICENSE_ENDPOINT',
+            'https://api.voodflow.com/v1/packages/voodbuilder',
+        ),
+        'timeout' => (int) env('VOODBUILDER_LICENSE_TIMEOUT', 5),
+        'grace_seconds' => (int) env('VOODBUILDER_LICENSE_GRACE_SECONDS', 604800),
     ],
 
     'layouts' => [

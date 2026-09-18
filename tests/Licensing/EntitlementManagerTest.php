@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Licensing;
 
 use Voodflow\Voodbuilder\Licensing\CapabilitySet;
-use Voodflow\Voodbuilder\Licensing\ConfigEntitlementProvider;
+use Voodflow\Voodbuilder\Licensing\CommunityEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
+use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
@@ -98,15 +99,39 @@ class EntitlementManagerTest extends TestCase
         $this->assertSame(3, $set->count());
     }
 
-    public function test_config_provider_follows_edition_setting(): void
+    public function test_community_provider_is_fixed(): void
     {
-        config()->set('voodbuilder.license.edition', 'community');
-        config()->set('voodbuilder.license.cache', false);
-
-        $manager = new EntitlementManager(new ConfigEntitlementProvider);
+        $manager = new EntitlementManager(new CommunityEntitlementProvider);
 
         $this->assertSame('community', $manager->edition());
         $this->assertTrue($manager->can('menus.admin'));
         $this->assertFalse($manager->can('components.create'));
+    }
+
+    public function test_factory_without_key_stays_community(): void
+    {
+        config()->set('voodbuilder.license.driver', 'anystack');
+        config()->set('voodbuilder.license.key', '');
+        config()->set('voodbuilder.license.cache', false);
+        config()->set('voodbuilder.license.testing_edition', 'agency');
+
+        $manager = new EntitlementManager(EntitlementProviderFactory::make());
+
+        $this->assertSame('community', $manager->edition());
+        $this->assertFalse($manager->can('dynamic-data.collections'));
+        $this->assertFalse($manager->can('components.library'));
+    }
+
+    public function test_factory_ignores_testing_edition_outside_testing_driver(): void
+    {
+        config()->set('voodbuilder.license.driver', 'anystack');
+        config()->set('voodbuilder.license.key', '');
+        config()->set('voodbuilder.license.cache', false);
+        config()->set('voodbuilder.license.testing_edition', 'agency');
+
+        $provider = EntitlementProviderFactory::make();
+
+        $this->assertInstanceOf(CommunityEntitlementProvider::class, $provider);
+        $this->assertSame('community', $provider->licenceStatus()->edition);
     }
 }

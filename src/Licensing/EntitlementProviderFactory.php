@@ -9,23 +9,26 @@ use Voodflow\Voodbuilder\Licensing\AnyStack\AnyStackLicenceClient;
 use Voodflow\Voodbuilder\Licensing\Contracts\EntitlementProvider;
 
 /**
- * Entitlement Provider Factory.
+ * Builds the entitlement provider used at runtime.
  */
 final class EntitlementProviderFactory
 {
     public static function make(): EntitlementProvider
     {
-        $driver = strtolower((string) config('voodbuilder.license.driver', 'config'));
+        $driver = strtolower((string) config('voodbuilder.license.driver', 'anystack'));
 
-        $provider = match ($driver) {
-            'anystack' => self::anyStack(),
-            'testing' => new TestingEntitlementProvider(
+        if ($driver === 'testing') {
+            $provider = new TestingEntitlementProvider(
                 EditionCapabilityMatrix::forEdition(
-                    (string) config('voodbuilder.license.edition', EditionCapabilityMatrix::EDITION_COMMUNITY),
+                    (string) config(
+                        'voodbuilder.license.testing_edition',
+                        EditionCapabilityMatrix::EDITION_AGENCY,
+                    ),
                 ),
-            ),
-            default => new ConfigEntitlementProvider,
-        };
+            );
+        } else {
+            $provider = self::remoteOrCommunity();
+        }
 
         if ((bool) config('voodbuilder.license.cache', true) && ! $provider instanceof AnyStackEntitlementProvider) {
             return new CachedEntitlementProvider(
@@ -37,21 +40,24 @@ final class EntitlementProviderFactory
         return $provider;
     }
 
-    private static function anyStack(): EntitlementProvider
+    private static function remoteOrCommunity(): EntitlementProvider
     {
-        $key = trim((string) config('voodbuilder.license.key', ''));
+        $key = LicenceKeyResolver::resolve();
 
         if ($key === '') {
-            return new ConfigEntitlementProvider;
+            return new CommunityEntitlementProvider;
         }
 
         return new AnyStackEntitlementProvider(
             client: new AnyStackLicenceClient(
-                endpoint: (string) config('voodbuilder.license.anystack.endpoint', ''),
-                timeoutSeconds: (int) config('voodbuilder.license.anystack.timeout', 5),
+                endpoint: (string) config(
+                    'voodbuilder.license.endpoint',
+                    'https://api.voodflow.com/v1/packages/voodbuilder',
+                ),
+                timeoutSeconds: (int) config('voodbuilder.license.timeout', 5),
             ),
             licenceKey: $key,
-            graceSeconds: (int) config('voodbuilder.license.anystack.grace_seconds', 604800),
+            graceSeconds: (int) config('voodbuilder.license.grace_seconds', 604800),
         );
     }
 }

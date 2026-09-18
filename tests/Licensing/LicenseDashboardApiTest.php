@@ -24,7 +24,7 @@ final class LicenseDashboardApiTest extends TestCase
 
         Cache::forget(AnyStackEntitlementProvider::SNAPSHOT_CACHE_KEY);
         config([
-            'voodbuilder.license.driver' => 'config',
+            'voodbuilder.license.driver' => 'testing',
             'voodbuilder.license.key' => 'vb_live_abcd1234efgh5678',
             'voodbuilder-elements.catalog_url' => 'https://api.voodflow.com/voodbuilder/elements/catalog.json',
             'voodbuilder-elements.catalog_token' => 'env-catalog-secret',
@@ -89,7 +89,7 @@ final class LicenseDashboardApiTest extends TestCase
             ]);
 
         $this->assertSame('vb_l****************5678', $response->json('licence.key_masked'));
-        $this->assertSame('vb_l****************5678', $response->json('licence.identifier'));
+        $this->assertTrue((bool) $response->json('licence.configured'));
         $payloadJson = (string) json_encode($response->json());
         $this->assertStringNotContainsString('vb_live_abcd1234efgh5678', $payloadJson);
         $this->assertSame('env', $response->json('catalog.elements.credential_source'));

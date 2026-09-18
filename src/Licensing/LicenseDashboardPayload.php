@@ -28,8 +28,8 @@ final class LicenseDashboardPayload
     {
         $manager ??= Voodbuilder::entitlements();
         $status = $manager->licenceStatus();
-        $driver = (string) config('voodbuilder.license.driver', 'config');
-        $key = trim((string) config('voodbuilder.license.key', ''));
+        $driver = (string) config('voodbuilder.license.driver', 'anystack');
+        $key = LicenceKeyResolver::resolve();
         $capabilities = $manager->capabilities()->all();
 
         return [
@@ -192,7 +192,7 @@ final class LicenseDashboardPayload
     {
         /** @var array<string, mixed>|null $snapshot */
         $snapshot = Cache::get(AnyStackEntitlementProvider::SNAPSHOT_CACHE_KEY);
-        $grace = (int) config('voodbuilder.license.anystack.grace_seconds', 604800);
+        $grace = (int) config('voodbuilder.license.grace_seconds', 604800);
         $fetchedAt = is_array($snapshot) ? (int) ($snapshot['fetched_at'] ?? 0) : null;
         $age = $fetchedAt !== null && $fetchedAt > 0 ? max(0, time() - $fetchedAt) : null;
         $withinGrace = $age !== null ? $age <= $grace : null;
@@ -204,7 +204,7 @@ final class LicenseDashboardPayload
                 && filled($snapshot['message'] ?? null) => 'stale_fail_open',
             $driver === 'anystack' && is_array($snapshot) => 'live_or_cached',
             $driver === 'anystack' => 'community_fallback_or_empty',
-            default => 'config',
+            default => 'testing',
         };
 
         return [
