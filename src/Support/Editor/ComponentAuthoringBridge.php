@@ -12,7 +12,7 @@ use Voodflow\Voodbuilder\Voodbuilder;
 /**
  * Components authoring unlock via voodflow/voodbuilder-components.
  *
- * The Filament companion plugin is the commercial gate (edition matrix alone is
+ * The Filament companion plugin is the plugin gate (edition matrix alone is
  * only a soft upsell when the plugin is absent). When Shield is installed,
  * PageBuilderAccess / AdminAuthorization still apply.
  */

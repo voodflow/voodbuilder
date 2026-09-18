@@ -16,9 +16,9 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
- * `.item` binding sources sit on both sides of the commercial boundary.
+ * `.item` binding sources sit on both sides of the authoring gate.
  *
- * They stay registered whatever the licence says, because a published page needs them to
+ * They stay registered whatever the edition says, because a published page needs them to
  * resolve the fields inside a repeat it already contains. But offering them in the editor
  * without collections would be a dead end — an `.item` binding only resolves inside a
  * repeat, and an author who cannot create one has nowhere to use it.

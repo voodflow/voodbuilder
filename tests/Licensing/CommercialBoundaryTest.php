@@ -61,8 +61,8 @@ class CommercialBoundaryTest extends TestCase
         $this->assertFalse(Voodbuilder::can('dynamic-data.collections'));
         $this->assertFalse(DynamicDataCollectionsBridge::authoringEnabled());
 
-        // The commercial boundary stops at authoring. Expanding a repeat that is already in
-        // a published page is not a feature being used, it is content being displayed.
+        // Authoring is gated; expanding a repeat that is already in
+        // a published page is content being displayed, not a new authoring feature.
         $this->assertTrue(DynamicDataCollectionsBridge::renderingEnabled());
     }
 

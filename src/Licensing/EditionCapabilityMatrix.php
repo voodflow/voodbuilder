@@ -6,10 +6,9 @@ namespace Voodflow\Voodbuilder\Licensing;
 
 /**
  * Edition → capability matrix from the 0.1.0 architecture plan (§7 / §11).
- * Community stays fully useful; Developer/Agency unlock proprietary surfaces.
+ * Community is the base matrix; Developer/Agency unlock additional surfaces.
  *
- * Marketing name is "Developer"; runtime token remains `professional` with `developer`
- * accepted as an alias so AnyStack SKUs can use either label.
+ * Runtime token remains `professional`; `developer` is accepted as an alias.
  */
 final class EditionCapabilityMatrix
 {
@@ -62,7 +61,7 @@ final class EditionCapabilityMatrix
             'themes.clone',
             'themes.map',
             'themes.studio',
-            // Dynamic Data is a paid companion plugin (voodbuilder-dynamic-data), not Core Community.
+            // Dynamic Data is a companion plugin (voodbuilder-dynamic-data), not Core.
             'menus.admin',
             'menus.preview',
             'layouts.chrome',

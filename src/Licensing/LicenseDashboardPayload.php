@@ -16,7 +16,6 @@ use Voodflow\Voodbuilder\Voodbuilder;
  * Versioned JSON payload for a future Filament licenses dashboard plugin.
  *
  * Stable contract: schema_version + products/catalog/cache_grace.
- * Community / Packagist hosts work without an AnyStack key.
  */
 final class LicenseDashboardPayload
 {
@@ -54,7 +53,6 @@ final class LicenseDashboardPayload
             'products' => self::products($manager),
             'catalog' => self::catalog(),
             'cache_grace' => self::cacheGrace($driver),
-            'distribution' => self::distributionMap(),
         ];
     }
 
@@ -115,14 +113,12 @@ final class LicenseDashboardPayload
             'core' => [
                 'slug' => 'voodbuilder',
                 'installed' => true,
-                'distribution' => 'packagist',
                 'edition_capability_ok' => true,
             ],
             'elements' => [
                 'slug' => 'voodbuilder-elements',
                 'installed' => $elementsInstalled,
                 'enabled' => $elementsActive,
-                'distribution' => 'anystack',
                 'requires_capability' => EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY,
                 'capability_granted' => $manager->can(EditorCommunityBlockCatalog::CAPABILITY_FULL_LIBRARY),
                 'catalog_ready' => CatalogCredentialResolver::elementsReady(),
@@ -131,7 +127,6 @@ final class LicenseDashboardPayload
                 'slug' => 'voodbuilder-components',
                 'installed' => $componentsInstalled,
                 'enabled' => $componentsInstalled,
-                'distribution' => 'anystack',
                 'requires_capability' => 'components.library',
                 'capability_granted' => $manager->can('components.library'),
             ],
@@ -140,54 +135,41 @@ final class LicenseDashboardPayload
                 'installed' => $templatesInstalled,
                 'module_enabled' => TemplatesModule::isEnabled(),
                 'authoring_enabled' => TemplateAuthoringBridge::isEnabled(),
-                'distribution' => 'anystack',
                 'remote_install' => $manager->can('templates.remote-install'),
                 'catalog_ready' => CatalogCredentialResolver::pageTemplatesReady(),
             ],
             'dynamic_data' => [
                 'slug' => 'voodbuilder-dynamic-data',
                 'installed' => $dynamicInstalled,
-                'distribution' => 'anystack',
                 'single' => $manager->can('dynamic-data.single'),
                 'collections' => $manager->can('dynamic-data.collections'),
             ],
             'dynamic_api' => [
                 'slug' => 'voodbuilder-dynamic-api',
                 'installed' => $dynamicApiInstalled,
-                'distribution' => 'anystack',
                 'custom_providers' => $manager->can('dynamic-data.custom-providers'),
             ],
             'popups' => [
                 'slug' => 'vpopups',
                 'installed' => $vpopupsInstalled,
-                'distribution' => 'anystack',
                 'module_enabled' => Voodbuilder::modules()->isEnabled('popups'),
                 'capability_builder' => $manager->can('popups.builder'),
-                'separate_sku' => true,
             ],
             'vdocs' => [
                 'slug' => 'vdocs',
                 'installed' => $vdocsInstalled,
-                'distribution' => 'anystack',
-                'licensed_by_voodbuilder' => false,
             ],
             'vtuts' => [
                 'slug' => 'vtuts',
                 'installed' => $vtutsInstalled,
-                'distribution' => 'anystack',
-                'licensed_by_voodbuilder' => false,
             ],
             'vmedia' => [
                 'slug' => 'vmedia',
                 'installed' => self::safeClassExists('Voodflow\\Vmedia\\Vmedia'),
-                'distribution' => 'packagist',
-                'licensed_by_voodbuilder' => false,
             ],
             'vcookiebar' => [
                 'slug' => 'vcookiebar',
                 'installed' => $vcookieInstalled,
-                'distribution' => 'packagist',
-                'licensed_by_voodbuilder' => false,
             ],
         ];
     }
@@ -229,34 +211,12 @@ final class LicenseDashboardPayload
             'provider' => $driver,
             'cache_enabled' => (bool) config('voodbuilder.license.cache', true),
             'cache_ttl_seconds' => (int) config('voodbuilder.license.cache_ttl', 3600),
-            'anystack_grace_seconds' => $grace,
+            'grace_seconds' => $grace,
             'snapshot_present' => is_array($snapshot),
             'snapshot_fetched_at' => $fetchedAt,
             'snapshot_age_seconds' => $age,
             'within_grace' => $withinGrace,
             'mode' => $mode,
-        ];
-    }
-
-    /**
-     * Commercial distribution map for the future dashboard UI.
-     *
-     * @return list<array{slug: string, channel: string, status: string, notes: string}>
-     */
-    private static function distributionMap(): array
-    {
-        return [
-            ['slug' => 'vmedia', 'channel' => 'packagist', 'status' => 'released', 'notes' => 'MIT / public'],
-            ['slug' => 'voodbuilder', 'channel' => 'packagist', 'status' => 'ready', 'notes' => 'Community'],
-            ['slug' => 'voodbuilder-elements', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
-            ['slug' => 'voodbuilder-components', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency'],
-            ['slug' => 'voodbuilder-templates', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
-            ['slug' => 'voodbuilder-dynamic-data', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Developer + Agency'],
-            ['slug' => 'voodbuilder-dynamic-api', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'Agency'],
-            ['slug' => 'vpopups', 'channel' => 'anystack', 'status' => 'almost_ready', 'notes' => 'SKU 79 €/yr or included in Agency'],
-            ['slug' => 'vdocs', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
-            ['slug' => 'vtuts', 'channel' => 'anystack', 'status' => 'released', 'notes' => 'Own licence'],
-            ['slug' => 'vcookiebar', 'channel' => 'packagist', 'status' => 'planned', 'notes' => 'When ready'],
         ];
     }
 

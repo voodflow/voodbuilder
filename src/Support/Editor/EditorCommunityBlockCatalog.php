@@ -136,7 +136,7 @@ final class EditorCommunityBlockCatalog
         'vb-feature-3', 'vb-feature-4', 'vb-feature-5', 'vb-feature-6',
         'vb-feature-7', 'vb-feature-8',
         'vb-landing01-features', 'vb-landing02-features', 'vb-landing02-toolkit',
-        // Articles extras (+ demoted from Community free pack)
+        // Articles extras (+ demoted from Community pack)
         'vb-blog-1', 'vb-blog-2', 'vb-blog-3', 'vb-blog-4', 'vb-blog-5',
         'vb-landing01-articles', 'vb-landing02-articles', 'vb-articles-featured-stories', 'vb-articles-explore-cards',
         // Gallery (entire category)

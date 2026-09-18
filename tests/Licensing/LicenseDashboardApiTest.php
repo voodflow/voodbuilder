@@ -86,7 +86,6 @@ final class LicenseDashboardApiTest extends TestCase
                     'page_templates',
                 ],
                 'cache_grace',
-                'distribution',
             ]);
 
         $this->assertSame('vb_l****************5678', $response->json('licence.key_masked'));

@@ -108,20 +108,16 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Commercial editions: **Developer** (149 €/yr, alias of `professional`) + **Agency** (399 €/yr, ≤5 seats, includes Dynamic API + vpopups)
-- AnyStack outages **fail open** on the last entitlement snapshot (no Community downgrade after grace); only `active: false` downgrades authoring
-- `edition: "developer"` accepted from AnyStack / config and normalized to `professional`
+- `edition: "developer"` accepted from config and normalized to `professional`
 - Agency matrix adds `dynamic-api.sources` / `dynamic-api.admin`
-- API Data Sources moved to paid companion `voodflow/voodbuilder-dynamic-api` (Core keeps only `.remote.` → `.item.` rewrite inside List repeat)
-- License dashboard payload includes `dynamic_api` product + distribution map entry
+- API Data Sources moved to companion `voodflow/voodbuilder-dynamic-api` (Core keeps only `.remote.` → `.item.` rewrite inside List repeat)
+- Entitlement outages **fail open** on the last snapshot (no Community downgrade after grace); only `active: false` downgrades authoring
+- License dashboard payload includes `dynamic_api` product entry
+- Remove in-repo work documentation; keep `docs/images/` only
 
 ### Fixed
 
-- Licence expiry / billing outage can no longer strip paid authoring solely because the remote endpoint is unreachable after the grace window
-
-### Changed
-
-- Remove in-repo work documentation; keep `docs/images/` and public `docs/academy/`
+- Licence expiry / entitlement outage can no longer strip paid authoring solely because the remote endpoint is unreachable after the grace window
 
 
 ## [0.1.49] - 2026-09-11
@@ -142,7 +138,7 @@ All notable changes to this project will be documented in this file.
 - Chrome layout visual editor canvas receives Integration typography CSS vars from the layout record
 - Layout chrome editor block sidebar includes **FOUNDATION** blocks (Layout / Basic / Media / Utilities / Site), not only Site nav/footer
 - **Chrome layout Progress zone** (optional strip between Header and Page content): drop Reading progress here so it is not nested in the nav; removing it no longer deletes the header. Published bar stays `position:fixed` and pins under sticky/fixed nav (or flush to the top when the menu scrolls away)
-- Academy / developer docs: [Chrome layout & Integration preview](docs/academy/developer/chrome-layout-integration.md) — companion checklist for channels, reading layouts, Integration samples, dedicated sub-themes
+- Academy / developer docs: Chrome layout & Integration preview (companion checklist for channels, reading layouts, Integration samples, dedicated sub-themes)
 - `Voodbuilder::reservePathPrefix()` / `ReservedPathRegistry` — companions (and third parties) declare public URL prefixes so site-page catch-alls never claim them
 - Site-page catch-alls register after boot so reserved prefixes from all packages are known
 - Content channel **Search** (`search`) for Theme Map / Layouts; inherits Documentation chrome by default; excluded from search filter pills
@@ -213,9 +209,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Admin license dashboard API: `GET|POST /voodbuilder/admin/license/{status,refresh}` (`schema_version: 1`) for a future Filament licenses dashboard plugin
-- `CatalogCredentialResolver` — prefers AnyStack `catalog_credentials` from the entitlements snapshot, falls back to env CDN token
-- Docs: `docs/ANYSTACK_SETUP.md` (endpoint contract, catalog credentials, distribution map)
+- Admin license dashboard API: `GET|POST /voodbuilder/admin/license/{status,refresh}` (`schema_version: 1`)
+- `CatalogCredentialResolver` — prefers entitlement snapshot credentials, falls back to env CDN token
 
 ### Changed
 

@@ -1,6 +1,6 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel (Community free / source-available; Pro companions optional).",
+    "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
     "version": "0.1.64",
     "type": "library",
     "license": "proprietary",
@@ -84,13 +84,13 @@
     },
     "suggest": {
         "voodflow/vcookiebar": "Optional cookie / consent bar for the public site (can gate tracking scripts).",
-        "voodflow/vpopups": "Paid add-on: popup builder (requires VoodBuilder). Same GrapesJS editor, targeting, analytics.",
-        "voodflow/vforms": "Paid add-on: managed forms and submissions with optional VoodBuilder blocks.",
-        "voodflow/voodbuilder-elements": "Paid companion: remote Elements library (api.voodflow.com) for Pro/Agency section catalog.",
-        "voodflow/voodbuilder-components": "Paid companion: saved components library and global classes.",
-        "voodflow/voodbuilder-dynamic-data": "Paid companion: Dynamic Data bindings, Model Integrations, and List repeat.",
-        "voodflow/voodbuilder-templates": "Paid companion: page template authoring (save, JSON import/export).",
-        "voodflow/voodbuilder-dynamic-api": "Paid companion: HTTP/static/eloquent/callback API data sources for page bindings and List repeat."
+        "voodflow/vpopups": "Popup builder for VoodBuilder (same GrapesJS editor, targeting, analytics).",
+        "voodflow/vforms": "Managed forms and submissions with optional VoodBuilder blocks.",
+        "voodflow/voodbuilder-elements": "Remote Elements library for the section catalog.",
+        "voodflow/voodbuilder-components": "Saved components library and global classes.",
+        "voodflow/voodbuilder-dynamic-data": "Dynamic Data bindings, Model Integrations, and List repeat.",
+        "voodflow/voodbuilder-templates": "Page template authoring (save, JSON import/export).",
+        "voodflow/voodbuilder-dynamic-api": "HTTP/static/eloquent/callback API data sources for page bindings and List repeat."
     },
     "archive": {
         "exclude": [

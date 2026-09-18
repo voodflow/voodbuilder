@@ -2,13 +2,11 @@
 
 <img class="filament-hidden" src="https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
 
-Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor with a usable **Community (free)** edition.
+Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor.
 
 ![VoodBuilder editor overview](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-overview.png)
 
-> **Docs & pricing:** [voodflow.com](https://voodflow.com)  
-> **License:** Community is free to use — see [LICENSE](LICENSE). Paid add-ons are separate products on [voodflow.com](https://voodflow.com).
-
+> **Docs:** [voodflow.com](https://voodflow.com)
 ---
 
 ## Features
@@ -16,7 +14,7 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | Capability | What you get |
 |------------|----------------|
 | **Visual editor** | Drag-and-drop canvas, device previews, undo / redo, revision history, autosave, style inspector |
-| **Community core** | Layout · Basic · Media · Single · Site blocks, plus local marketing sections (hero, features, CTA, FAQ, …) |
+| **Core blocks** | Layout · Basic · Media · Single · Site blocks, plus local marketing sections (hero, features, CTA, FAQ, …) |
 | **Theme Studio** | Map colours / sub-themes to Site pages and content channels; global light / dark preference |
 | **Chrome layouts** | Shared header / footer / optional progress strip per channel; Integration tab for reading typography (live preview when companions register samples) |
 | **Site search** | Header palette + full results page — ranking, channel filters, snippets with highlights, deep-linkable pagination |
@@ -147,7 +145,7 @@ Built-in search across content channels that opt in:
 - Results page with ranking, channel filter pills, `<mark>` highlights, and `?page=` pagination  
 - Settings → **Search**: results per page, per channel, snippet length  
 
-Companions make content searchable via the PHP SDK — see [Site search](docs/academy/developer/site-search.md).
+Companions make content searchable via the PHP SDK — details on [voodflow.com](https://voodflow.com).
 
 ---
 
@@ -176,14 +174,13 @@ Per page you can combine:
 
 | Where | What |
 |-------|------|
-| **[voodflow.com](https://voodflow.com)** | Guides, pricing, demos |
+| **[voodflow.com](https://voodflow.com)** | Guides and demos |
 | Package `CHANGELOG.md` | Release notes |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 
 ---
 
-## Licence & support
+## Support
 
-- Community core: free to use — see [LICENSE](LICENSE)  
-- Paid add-ons: [voodflow.com](https://voodflow.com)  
+- Docs: [voodflow.com](https://voodflow.com)  
 - Security: [SECURITY.md](SECURITY.md) (not via public issues)

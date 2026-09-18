@@ -80,7 +80,7 @@ class CompanionSecurityAndSoftGateTest extends TestCase
             $this->markTestSkipped('Components routes not registered.');
         }
 
-        // Companion plugin is the commercial gate — edition matrix must not block.
+        // Companion plugin is the plugin gate — edition matrix must not block.
         Voodbuilder::entitlements()->useProvider(
             TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
         );

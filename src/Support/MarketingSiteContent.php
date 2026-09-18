@@ -416,7 +416,7 @@ HTML;
     <div class="mx-auto max-w-3xl text-center">
       <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-vp-brand-2">Premium</p>
       <h2 class="text-3xl font-bold">AI superpowers inside Voodflow</h2>
-      <p class="mt-4 text-base leading-relaxed text-gray-300">Voodflow AI and Flow Weaver are premium add-ons for the automation core — agent nodes in flows, usage tracking, and an in-canvas assistant to design automations faster.</p>
+      <p class="mt-4 text-base leading-relaxed text-gray-300">Voodflow AI and Flow Weaver extend the automation core — agent nodes in flows, usage tracking, and an in-canvas assistant to design automations faster.</p>
     </div>
     <div class="mt-12 grid gap-6 md:grid-cols-2">
       <article class="rounded-2xl bg-white/5 p-8 ring-1 ring-white/10">
@@ -428,7 +428,7 @@ HTML;
         <p class="mt-2 text-sm leading-relaxed text-gray-300">Chat inside the flow editor to draft, refine, and apply automation blueprints without leaving Filament.</p>
       </article>
     </div>
-    <p class="mt-8 text-center text-sm text-gray-400">Available as premium extensions to Voodflow — not standalone plugins.</p>
+    <p class="mt-8 text-center text-sm text-gray-400">Optional extensions for Voodflow — not standalone apps.</p>
   </div>
 </section>
 HTML;
@@ -441,14 +441,14 @@ HTML;
   <div class="mx-auto max-w-6xl px-6">
     <div class="grid gap-8 md:grid-cols-2">
       <article class="rounded-2xl bg-vp-bg-elv p-8 ring-1 ring-black/5">
-        <p class="text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Commercial option</p>
-        <h3 class="mt-2 text-xl font-bold text-vp-text-1">White-label licensing</h3>
-        <p class="mt-3 text-sm leading-relaxed text-vp-text-2">Rebrand the suite for agencies and product studios shipping under their own identity. Sold separately — talk to us for packaging.</p>
+        <p class="text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Add-on</p>
+        <h3 class="mt-2 text-xl font-bold text-vp-text-1">White-label</h3>
+        <p class="mt-3 text-sm leading-relaxed text-vp-text-2">Rebrand the suite for agencies and product studios shipping under their own identity.</p>
       </article>
       <article class="rounded-2xl bg-vp-bg-elv p-8 ring-1 ring-black/5">
-        <p class="text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Commercial option</p>
+        <p class="text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Add-on</p>
         <h3 class="mt-2 text-xl font-bold text-vp-text-1">OEM / multi-tenant</h3>
-        <p class="mt-3 text-sm leading-relaxed text-vp-text-2">Tenant quotas, usage counters, and expiry automation for SaaS vendors embedding Voodflow. Licensed separately from core plugins.</p>
+        <p class="mt-3 text-sm leading-relaxed text-vp-text-2">Tenant quotas, usage counters, and expiry automation for SaaS vendors embedding Voodflow.</p>
       </article>
     </div>
   </div>
@@ -461,7 +461,7 @@ HTML;
         return <<<'HTML'
 <section id="premium" class="bg-gray-900 py-20 text-white body-font">
   <div class="mx-auto max-w-6xl px-6">
-    <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-vp-brand-2">Premium extensions</p>
+    <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-vp-brand-2">Extensions</p>
     <h2 class="text-3xl font-bold">AI built into your automations</h2>
     <p class="mt-4 max-w-2xl text-base leading-relaxed text-gray-300">Voodflow AI and Flow Weaver extend the core — they are not separate products. Add agent nodes, track usage, and design flows conversationally when you need more than deterministic steps.</p>
     <div class="mt-10 grid gap-6 md:grid-cols-2">
@@ -484,16 +484,16 @@ HTML;
         return <<<'HTML'
 <section class="bg-vp-bg-alt py-20 body-font">
   <div class="mx-auto max-w-6xl px-6">
-    <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Commercial options</p>
-    <h2 class="text-3xl font-bold text-vp-text-1">Scale with licensing that fits your business</h2>
+    <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-vp-brand-1">Platform options</p>
+    <h2 class="text-3xl font-bold text-vp-text-1">Scale for agencies and SaaS</h2>
     <div class="mt-10 grid gap-6 md:grid-cols-2">
       <article class="rounded-2xl bg-vp-bg-elv p-8 ring-1 ring-black/5">
-        <h3 class="text-lg font-semibold text-vp-text-1">White-label licensing</h3>
-        <p class="mt-2 text-sm leading-relaxed text-vp-text-2">Ship the suite under your brand for clients and reseller programs. Priced and contracted separately from individual plugins.</p>
+        <h3 class="text-lg font-semibold text-vp-text-1">White-label</h3>
+        <p class="mt-2 text-sm leading-relaxed text-vp-text-2">Ship the suite under your brand for clients and reseller programs.</p>
       </article>
       <article class="rounded-2xl bg-vp-bg-elv p-8 ring-1 ring-black/5">
         <h3 class="text-lg font-semibold text-vp-text-1">OEM / multi-tenant</h3>
-        <p class="mt-2 text-sm leading-relaxed text-vp-text-2">Embed Voodflow in your SaaS with tenant insights, quota enforcement, and expiry automation. OEM is a commercial license — not a feature toggle.</p>
+        <p class="mt-2 text-sm leading-relaxed text-vp-text-2">Embed Voodflow in your SaaS with tenant insights, quota enforcement, and expiry automation.</p>
       </article>
     </div>
   </div>
