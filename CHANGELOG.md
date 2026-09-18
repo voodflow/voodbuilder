@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.70] - 2026-09-18
+
+### Fixed
+
+- Library upsell race: mount companion plugins after editor layout so Elements can clear the soft upsell; skip upsell when Library catalogs/dock are already present
+
 ## [0.1.69] - 2026-09-18
 
 ### Fixed

@@ -812,6 +812,19 @@ function mountElementsLibraryUpsell(shell, labels = {}, editor = null) {
         return;
     }
 
+    // Library modal already owns SOURCE (Elements and/or Templates companion).
+    // Do not re-add the upsell after bootEditorPlugins mounted the dock button —
+    // that race left both Library + upsell visible with a Templates-only empty modal.
+    if (
+        editor?.__voodbuilderElementsLibraryMounted
+        || document.querySelector('[data-voodbuilder-elements-library-btn]')
+        || document.querySelector('.vb-elements-library-btn-row')
+        || (Array.isArray(editor?.__voodbuilderElementsCatalogs)
+            && editor.__voodbuilderElementsCatalogs.length > 0)
+    ) {
+        return;
+    }
+
     const blocksMount = shell?.mounts?.blocks ?? null;
     const panel = blocksMount?.closest('[data-voodbuilder-library-panel="blocks"]')
         ?? blocksMount?.parentElement

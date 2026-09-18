@@ -917,8 +917,12 @@ export function initVoodbuilderEditor(container, options = {}) {
     // Entitlements before companion mount — plugins gate UI on EditorGate flags.
     editor.__voodbuilderEntitlements = options.entitlements ?? {};
     editor.__voodbuilderLabels = labels;
-
-    void bootEditorPlugins(editor, {
+    editor.__voodbuilderElementsCatalogs = Array.isArray(options.elementsCatalogs)
+        ? options.elementsCatalogs
+        : [];
+    // Companion plugins mount after configureEditorLayout so Library can remove the
+    // soft upsell. Booting them earlier (void) let layout re-add the upsell on top.
+    editor.__voodbuilderPluginBootContext = {
         labels,
         entitlements: options.entitlements ?? {},
         vevents: options.vevents ?? null,
@@ -941,7 +945,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             imageEditor: options.imageEditor !== false,
         },
         csrf: options.csrf ?? '',
-    });
+    };
 
     editor.__voodbuilderVevents = options.vevents ?? null;
 
@@ -1068,6 +1072,10 @@ export function initVoodbuilderEditor(container, options = {}) {
             registerLayersChromeFilter(editor);
         }
     }
+
+    // After layout (upsell may render), then companions — Elements removes the upsell.
+    void bootEditorPlugins(editor, editor.__voodbuilderPluginBootContext ?? {});
+    delete editor.__voodbuilderPluginBootContext;
 
     if (shell?.mounts?.components) {
         if (options.componentsUrl) {
