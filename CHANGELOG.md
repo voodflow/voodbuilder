@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.66] - 2026-09-18
+
+### Fixed
+
+- Licence key is read from Composer `auth.json` / `COMPOSER_AUTH` inside VoodBuilder core (no dependency on `voodflow/voodflow`)
+
 ## [0.1.65] - 2026-09-18
 
 ### Changed

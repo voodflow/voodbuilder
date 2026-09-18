@@ -80,6 +80,13 @@ return [
         ),
         'timeout' => (int) env('VOODBUILDER_LICENSE_TIMEOUT', 5),
         'grace_seconds' => (int) env('VOODBUILDER_LICENSE_GRACE_SECONDS', 604800),
+        /*
+        | Preferred Composer http-basic hosts when reading auth.json / COMPOSER_AUTH.
+        | Empty preferred match falls back to any *.composer.sh entry.
+        | Extra paths are relative to base_path() unless absolute.
+        */
+        'composer_repository_hosts' => [],
+        'composer_auth_extra_paths' => [],
     ],
 
     'layouts' => [

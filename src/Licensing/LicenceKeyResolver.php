@@ -7,7 +7,11 @@ namespace Voodflow\Voodbuilder\Licensing;
 /**
  * Resolves the licence key for remote entitlement checks.
  *
- * Prefers explicit config, then Composer HTTP Basic password when available.
+ * Prefers explicit config, then Composer HTTP Basic password from auth.json /
+ * COMPOSER_AUTH (same secret used to download private packages).
+ *
+ * Does not depend on voodflow/voodflow — uses the in-package reader only so
+ * VoodBuilder-only installs unlock correctly and dual installs cannot conflict.
  */
 final class LicenceKeyResolver
 {
@@ -19,12 +23,10 @@ final class LicenceKeyResolver
             return self::stripFingerprint($fromConfig);
         }
 
-        if (class_exists(\Voodflow\Voodflow\Support\ComposerAnystackCredentialsReader::class)) {
-            $creds = \Voodflow\Voodflow\Support\ComposerAnystackCredentialsReader::read();
+        $creds = ComposerAnystackCredentialsReader::read();
 
-            if (is_array($creds) && isset($creds['key']) && is_string($creds['key']) && $creds['key'] !== '') {
-                return $creds['key'];
-            }
+        if (is_array($creds) && isset($creds['key']) && is_string($creds['key']) && $creds['key'] !== '') {
+            return self::stripFingerprint($creds['key']);
         }
 
         return '';
