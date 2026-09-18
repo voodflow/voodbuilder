@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.67] - 2026-09-18
+
+### Fixed
+
+- Discover companion editor plugins nested inside `voodbuilder-developer` / `voodbuilder-agency` Composer bundles (Library button and other companion JS)
+
 ## [0.1.66] - 2026-09-18
 
 ### Fixed

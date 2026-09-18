@@ -83,12 +83,14 @@ export function listEditorPlugins() {
 }
 
 /**
- * Discover official companion entrypoints when packages are path-installed as siblings.
+ * Discover official companion entrypoints when packages are path-installed as siblings
+ * or nested inside Anystack edition bundles (voodbuilder-developer / voodbuilder-agency).
  * Missing packages resolve to an empty glob — build stays green.
  */
 function discoverCompanionPlugins() {
     const modules = import.meta.glob(
         [
+            // Path-repo / standalone Composer packages (siblings of voodbuilder)
             '../../../../vpopups/resources/js/editor/plugin.js',
             '../../../../voodbuilder-components/resources/js/editor/plugin.js',
             '../../../../voodbuilder-dynamic-data/resources/js/editor/plugin.js',
@@ -97,6 +99,17 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-elements/resources/js/editor/plugin.js',
             '../../../../vevents/resources/js/editor/plugin.js',
             '../../../../vexhibitors/resources/js/editor/plugin.js',
+            // Anystack Developer bundle: vendor/voodflow/voodbuilder-developer/{addon}/…
+            '../../../../voodbuilder-developer/voodbuilder-elements/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-developer/voodbuilder-dynamic-data/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-developer/voodbuilder-templates/resources/js/editor/plugin.js',
+            // Anystack Agency bundle: vendor/voodflow/voodbuilder-agency/{addon}/…
+            '../../../../voodbuilder-agency/voodbuilder-elements/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-agency/voodbuilder-dynamic-data/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-agency/voodbuilder-templates/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-agency/voodbuilder-components/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-agency/voodbuilder-popups/resources/js/editor/plugin.js',
+            '../../../../voodbuilder-agency/voodbuilder-dynamic-api/resources/js/editor/plugin.js',
         ],
         { eager: true },
     );
