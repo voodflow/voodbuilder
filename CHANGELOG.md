@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.65] - 2026-09-18
+
+### Changed
+
+- Maintenance release
+
 ## [0.1.64] - 2026-09-17
 
 ### Fixed
