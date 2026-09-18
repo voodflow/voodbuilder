@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.69] - 2026-09-18
+
+### Fixed
+
+- Discover Popups editor UI inside `voodbuilder-agency` nests (same `@voodbuilder-editor` pattern as Elements)
+
 ## [0.1.68] - 2026-09-18
 
 ### Fixed

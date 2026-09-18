@@ -6,7 +6,10 @@
  */
 
 const popupUiModules = import.meta.glob(
-    '../../../../vpopups/resources/js/editor/popups-ui.js',
+    [
+        '../../../../vpopups/resources/js/editor/popups-ui.js',
+        '../../../../voodbuilder-agency/voodbuilder-popups/resources/js/editor/popups-ui.js',
+    ],
     { eager: true },
 );
 

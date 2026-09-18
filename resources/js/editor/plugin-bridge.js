@@ -91,7 +91,6 @@ function discoverCompanionPlugins() {
     const modules = import.meta.glob(
         [
             // Path-repo / standalone Composer packages (siblings of voodbuilder)
-            '../../../../vpopups/resources/js/editor/plugin.js',
             '../../../../voodbuilder-components/resources/js/editor/plugin.js',
             '../../../../voodbuilder-dynamic-data/resources/js/editor/plugin.js',
             '../../../../voodbuilder-templates/resources/js/editor/plugin.js',
@@ -108,8 +107,8 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-agency/voodbuilder-dynamic-data/resources/js/editor/plugin.js',
             '../../../../voodbuilder-agency/voodbuilder-templates/resources/js/editor/plugin.js',
             '../../../../voodbuilder-agency/voodbuilder-components/resources/js/editor/plugin.js',
-            '../../../../voodbuilder-agency/voodbuilder-popups/resources/js/editor/plugin.js',
             '../../../../voodbuilder-agency/voodbuilder-dynamic-api/resources/js/editor/plugin.js',
+            // Note: popups UI is discovered in ./popups-ui.js (not via plugin.js).
         ],
         { eager: true },
     );
