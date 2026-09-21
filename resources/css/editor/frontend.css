@@ -3756,16 +3756,17 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.55rem 0.75rem;
+    padding: 0.5rem 0.625rem;
     cursor: pointer;
     list-style: none;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    /* Match Style sector titles (.gjs-sm-sector-title) */
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-vp-text-2, #64748b);
+    color: var(--color-vp-text-2, #67676c);
     user-select: none;
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff));
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, var(--color-vp-bg-elv, #fff));
     border-bottom: 1px solid transparent;
 }
 

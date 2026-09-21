@@ -14,8 +14,9 @@ final class EditorElementConditionEvaluator
 {
     /**
      * @param  array{sets?: list<array{conditions?: list<array{key?: string, compare?: string, value?: mixed}>}>}  $definition
+     * @param  array{page_path?: string}  $context  Optional overrides (e.g. visitor path when evaluating via AJAX).
      */
-    public function passes(array $definition, ?SitePage $page = null): bool
+    public function passes(array $definition, ?SitePage $page = null, array $context = []): bool
     {
         $sets = $definition['sets'] ?? [];
 
@@ -27,7 +28,7 @@ final class EditorElementConditionEvaluator
 
         if ($matchAll) {
             foreach ($sets as $set) {
-                if (! $this->setPasses($set, $page)) {
+                if (! $this->setPasses($set, $page, $context)) {
                     return false;
                 }
             }
@@ -36,7 +37,7 @@ final class EditorElementConditionEvaluator
         }
 
         foreach ($sets as $set) {
-            if ($this->setPasses($set, $page)) {
+            if ($this->setPasses($set, $page, $context)) {
                 return true;
             }
         }
@@ -46,8 +47,9 @@ final class EditorElementConditionEvaluator
 
     /**
      * @param  array{conditions?: list<array{key?: string, compare?: string, value?: mixed}>}  $set
+     * @param  array{page_path?: string}  $context
      */
-    protected function setPasses(array $set, ?SitePage $page): bool
+    protected function setPasses(array $set, ?SitePage $page, array $context = []): bool
     {
         $conditions = $set['conditions'] ?? [];
 
@@ -56,7 +58,7 @@ final class EditorElementConditionEvaluator
         }
 
         foreach ($conditions as $condition) {
-            if (! $this->conditionPasses($condition, $page)) {
+            if (! $this->conditionPasses($condition, $page, $context)) {
                 return false;
             }
         }
@@ -66,8 +68,9 @@ final class EditorElementConditionEvaluator
 
     /**
      * @param  array{key?: string, compare?: string, value?: mixed}  $condition
+     * @param  array{page_path?: string}  $context
      */
-    protected function conditionPasses(array $condition, ?SitePage $page): bool
+    protected function conditionPasses(array $condition, ?SitePage $page, array $context = []): bool
     {
         $key = (string) ($condition['key'] ?? '');
         $compare = (string) ($condition['compare'] ?? '==');
@@ -78,13 +81,40 @@ final class EditorElementConditionEvaluator
             'user_role' => $this->compareRole($compare, (string) $value),
             'locale' => $this->compareString(app()->getLocale(), $compare, (string) $value),
             'route_name' => $this->compareRouteName($compare, (string) $value),
-            'page_path' => $this->comparePagePath('/'.ltrim(request()->path(), '/'), $compare, '/'.ltrim((string) $value, '/')),
+            'page_path' => $this->comparePagePath(
+                $this->resolveActualPagePath($context),
+                $compare,
+                $this->normalizePagePathValue((string) $value),
+            ),
             'date_before' => $this->compareDateBefore((string) $value),
             'date_after' => $this->compareDateAfter((string) $value),
             default => EditorConditionHooks::evaluate($key, $condition, $page) ?? false,
         };
 
         return $result;
+    }
+
+    /**
+     * @param  array{page_path?: string}  $context
+     */
+    protected function resolveActualPagePath(array $context): string
+    {
+        if (array_key_exists('page_path', $context) && is_string($context['page_path'])) {
+            return $this->normalizePagePathValue($context['page_path']);
+        }
+
+        return $this->normalizePagePathValue(request()->path());
+    }
+
+    protected function normalizePagePathValue(string $path): string
+    {
+        $trimmed = trim($path);
+
+        if ($trimmed === '' || $trimmed === '/') {
+            return '/';
+        }
+
+        return '/'.ltrim($trimmed, '/');
     }
 
     protected function compareBool(bool $actual, string $compare, bool $expected): bool

@@ -27,6 +27,23 @@ class EditorElementConditionEvaluatorTest extends TestCase
         $this->assertTrue($evaluator->passes($definition));
     }
 
+    public function test_page_path_context_overrides_request_path(): void
+    {
+        $evaluator = new EditorElementConditionEvaluator;
+        $definition = [
+            'match' => 'all',
+            'sets' => [
+                ['conditions' => [['key' => 'page_path', 'compare' => '==', 'value' => '/']]],
+            ],
+        ];
+
+        // Simulates the public popups AJAX endpoint path.
+        $this->app->instance('request', Request::create('/vpopups/popups/data', 'GET'));
+        $this->assertFalse($evaluator->passes($definition));
+        $this->assertTrue($evaluator->passes($definition, null, ['page_path' => '/']));
+        $this->assertFalse($evaluator->passes($definition, null, ['page_path' => '/blog']));
+    }
+
     public function test_any_group_match_shows_element(): void
     {
         $evaluator = new EditorElementConditionEvaluator;

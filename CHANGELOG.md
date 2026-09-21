@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.84] - 2026-09-21
+
+### Fixed
+
+- Popup page-path targeting uses the visitor page (query/`Referer`), not the AJAX `/popups/data` path — homepage `/` targeting works again
+
+## [0.1.83] - 2026-09-21
+
+### Fixed
+
+- Popup Settings accordion titles match Style sector size (`0.625rem` / weight 700)
+
 ## [0.1.82] - 2026-09-21
 
 ### Changed
