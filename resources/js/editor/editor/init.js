@@ -2368,32 +2368,37 @@ function mountFrontendEditor() {
         return;
     }
 
-    saveButton.addEventListener('click', async () => {
+    const yieldToBrowser = () => new Promise((resolve) => {
+        const schedule = globalThis.requestAnimationFrame
+            ?? ((cb) => globalThis.setTimeout(cb, 0));
+
+        schedule(() => {
+            schedule(() => {
+                globalThis.setTimeout(resolve, 0);
+            });
+        });
+    });
+
+    const setSaveLabel = (text) => {
+        if (saveLabel) {
+            saveLabel.textContent = text;
+        }
+    };
+
+    /**
+     * Shared page save used by the Save button and companion UIs (e.g. popups).
+     *
+     * @returns {Promise<boolean>}
+     */
+    const requestPageSave = async ({ showErrorDialog = true } = {}) => {
+        if (saveButton.disabled) {
+            return false;
+        }
+
         saveButton.disabled = true;
 
         const compilingLabel = config.labels?.compilingStyles ?? 'Compiling styles…';
         const savingLabel = config.labels?.saving ?? 'Saving…';
-
-        const setSaveLabel = (text) => {
-            if (saveLabel) {
-                saveLabel.textContent = text;
-            }
-        };
-
-        /**
-         * Let the browser paint disabled/busy chrome before sync work (buildPayload,
-         * collect HTML) freezes the main thread — otherwise Save looks hung.
-         */
-        const yieldToBrowser = () => new Promise((resolve) => {
-            const schedule = globalThis.requestAnimationFrame
-                ?? ((cb) => globalThis.setTimeout(cb, 0));
-
-            schedule(() => {
-                schedule(() => {
-                    globalThis.setTimeout(resolve, 0);
-                });
-            });
-        });
 
         try {
             const cssBusy = Boolean(
@@ -2409,7 +2414,6 @@ function mountFrontendEditor() {
 
                 await editor.__voodbuilderWaitForPageCssIdle?.(20_000);
             } else {
-                // Still yield once so "Saving…" can paint before buildPayload.
                 setSaveLabel(savingLabel);
                 saveStatus.saving();
                 await yieldToBrowser();
@@ -2455,11 +2459,6 @@ function mountFrontendEditor() {
             const saved = await response.json().catch(() => ({}));
 
             if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
-                // Do NOT editor.setStyle(saved.css): replacing CssComposer blanks the
-                // canvas for a frame (theme fallback flash). Author paints stay in
-                // CssComposer from buildPayload bake. Live sheet gets utilities only —
-                // never re-inject #id font rules (they would sit last and override
-                // the next font change until Save). Prefetch must not reassert.
                 editor.__voodbuilderApplyPageLiveCss?.(stripAuthorIdRules(saved.css));
                 void prefetchFontsFromCss(editor, saved.css);
             } else {
@@ -2468,22 +2467,25 @@ function mountFrontendEditor() {
             }
 
             autosave?.markSaved();
-
-            // Stays until the next edit: the readout answers "does the live site match
-            // this canvas", which does not stop being true after a couple of seconds.
             saveStatus.saved();
+
+            return true;
         } catch (error) {
             saveStatus.unsaved();
 
             console.error('VoodBuilder page save failed', error);
 
-            const detail = error instanceof Error ? error.message.trim() : '';
-            const base = config.labels?.error ?? 'Could not save the page.';
+            if (showErrorDialog) {
+                const detail = error instanceof Error ? error.message.trim() : '';
+                const base = config.labels?.error ?? 'Could not save the page.';
 
-            await alertDialog({
-                message: detail && detail !== base ? `${base}\n\n${detail}` : base,
-                labels: config.labels ?? {},
-            });
+                await alertDialog({
+                    message: detail && detail !== base ? `${base}\n\n${detail}` : base,
+                    labels: config.labels ?? {},
+                });
+            }
+
+            return false;
         } finally {
             saveButton.disabled = false;
 
@@ -2491,6 +2493,12 @@ function mountFrontendEditor() {
                 saveLabel.textContent = config.labels?.save ?? 'Save';
             }
         }
+    };
+
+    editor.__voodbuilderRequestPageSave = requestPageSave;
+
+    saveButton.addEventListener('click', async () => {
+        await requestPageSave({ showErrorDialog: true });
     });
 }
 

@@ -23,12 +23,61 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | **Menu-driven URLs** | Pages get public routes from Navigation (e.g. `/about` or `/company/about`) |
 | **Reserved paths** | Companions declare URL prefixes so site-page catch-alls never shadow docs / tutorials / APIs |
 | **Media** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) is required by Composer; register its Filament plugin for the admin media UI |
+| **Cookie bar** | [`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar) is required by Composer; register its Filament plugin for consent UI and script gating |
 
 ![Style inspector](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-styles.png)
 
 ![Layers panel](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-layers.png)
 
-Optional packages (cookie bar, Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. Details: **[voodflow.com](https://voodflow.com)**.
+Optional packages (Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. See **Editions** below and **[voodflow.com](https://voodflow.com)**.
+
+---
+
+## Editions
+
+VoodBuilder ships as **Community** (this package). Paid editions unlock companion plugins and capabilities via the same licence key / Anystack checkout.
+
+### Community
+
+What you get with `voodflow/voodbuilder` alone:
+
+- Visual page editor (GrapesJS), core blocks, Theme Studio, Chrome layouts
+- Site pages, menus, SEO, page access gates, site search shell
+- History / revisions, autosave, style inspector
+
+Install from Packagist / Composer — no licence key required for Community surfaces.
+
+### Developer
+
+Adds the day-to-day authoring companions for dynamic sites:
+
+- **Elements** — remote Elements library and ready-made blocks
+- **Dynamic Data** — bind Eloquent models to drive page content
+- **Templates** — save, reuse, and share page templates
+
+**Purchase:** [checkout.anystack.sh/voodbuilder-developer](https://checkout.anystack.sh/voodbuilder-developer)
+
+### Agency
+
+Everything in Developer, plus agency / multi-site tooling:
+
+- **Popups** — build, publish, and track popups in the same editor
+- **Components** — reusable components, UIKit import, custom code import
+- **Dynamic API** — HTTP, Eloquent, static, and callback data sources on pages
+
+**Purchase:** [checkout.anystack.sh/voodbuilder-agency](https://checkout.anystack.sh/voodbuilder-agency)
+
+| | Community | Developer | Agency |
+|--|:---------:|:---------:|:------:|
+| Core editor & Theme Studio | ✓ | ✓ | ✓ |
+| Elements library | | ✓ | ✓ |
+| Dynamic Data | | ✓ | ✓ |
+| Templates | | ✓ | ✓ |
+| Popups | | | ✓ |
+| Components | | | ✓ |
+| Dynamic API | | | ✓ |
+
+Companion packages still need to be required with Composer and registered on the Filament panel (see Installation). The licence unlocks their capabilities; Community can install some companions for soft-gated UI, but paid surfaces need a Developer or Agency key.
 
 ---
 
@@ -40,6 +89,7 @@ Optional packages (cookie bar, Elements, Dynamic Data, Dynamic API, Templates, C
 - Node.js + npm (for the host Vite build)
 - Vite + Tailwind CSS **v4** (theme CSS compiles in **your** app)
 - [`voodflow/vmedia`](https://github.com/voodflow/vmedia) (pulled in by Composer)
+- [`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar) (pulled in by Composer)
 
 Optional: [laravel/fortify](https://laravel.com/docs/fortify) for public login / `/account`.
 
@@ -62,7 +112,7 @@ Then register plugins on your Filament panel. **Only `VoodbuilderPlugin` is requ
 ->plugins([
     \Voodflow\Voodbuilder\VoodbuilderPlugin::make(),
     \Voodflow\Vmedia\VmediaPlugin::make(), // recommended: media admin UI
-    // \Voodflow\Vcookiebar\VcookiebarPlugin::make(),
+    \Voodflow\Vcookiebar\VcookiebarPlugin::make(), // recommended: consent / script gating
     // \Voodflow\Vpopups\VpopupsPlugin::make(),
     // \Voodflow\Vforms\VformsPlugin::make(),
 ])

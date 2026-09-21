@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-09-21
+
+### Added
+
+- README **Editions** section (Community / Developer / Agency) with Anystack checkout links
+
+### Changed
+
+- Page Save extracted for reuse by companion UIs (popups save the host page before Design / create)
+
 ## [0.1.71] - 2026-09-21
 
 ### Added

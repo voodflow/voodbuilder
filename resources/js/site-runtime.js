@@ -4,7 +4,7 @@ import { initVbRuntime } from './editor/vb-runtime.js';
 import { initSiteChrome } from './editor/site-chrome-runtime.js';
 
 function bootPopupsIfConfigured() {
-    if (! document.querySelector('[data-voodbuilder-popups-config]')) {
+    if (! document.querySelector('[data-voodbuilder-popups-config], [data-vpopups-config]')) {
         return;
     }
 

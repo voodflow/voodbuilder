@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
     "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
-    "version": "0.1.71",
+    "version": "0.1.72",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -24,7 +24,8 @@
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
         "spatie/laravel-sluggable": "^3.8",
-        "voodflow/vmedia": "^0.2"
+        "voodflow/vmedia": "^0.2",
+        "voodflow/vcookiebar": "^0.2"
     },
     "autoload": {
         "psr-4": {
@@ -83,7 +84,6 @@
         }
     },
     "suggest": {
-        "voodflow/vcookiebar": "Optional cookie / consent bar for the public site (can gate tracking scripts).",
         "voodflow/vpopups": "Popup builder for VoodBuilder (same GrapesJS editor, targeting, analytics).",
         "voodflow/vforms": "Managed forms and submissions with optional VoodBuilder blocks.",
         "voodflow/voodbuilder-elements": "Remote Elements library for the section catalog.",
