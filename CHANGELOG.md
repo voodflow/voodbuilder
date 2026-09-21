@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.88] - 2026-09-21
+
+### Changed
+
+- Edition modal: Core + Agency/Developer companion inventory (active / panel-registered / version) + Extra core & licences (Vmedia, Vcookiebar); Community shows only Core + extras; meta summary in columns; no vdocs/vtuts
+
 ## [0.1.87] - 2026-09-21
 
 ### Changed

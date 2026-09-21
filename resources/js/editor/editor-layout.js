@@ -171,35 +171,41 @@ function formatEditionExpiry(iso) {
 /**
  * @param {string} group
  * @param {Record<string, string>} labels
+ * @param {Record<string, unknown>} summary
  * @returns {string}
  */
-function editionPackageGroupLabel(group, labels = {}) {
+function editionPackageGroupLabel(group, labels = {}, summary = {}) {
     switch (group) {
         case 'core':
             return labels.editionInfoGroupCore ?? 'Core';
-        case 'edition':
+        case 'edition': {
+            const title = String(summary.edition_packages_title ?? '').trim();
+
+            if (title !== '') {
+                return title;
+            }
+
             return labels.editionInfoGroupEdition ?? 'Edition';
-        case 'companion':
-            return labels.editionInfoGroupCompanion ?? 'Companions';
-        case 'other':
-            return labels.editionInfoGroupOther ?? 'Other Voodflow plugins';
+        }
+        case 'extra':
+            return labels.editionInfoGroupExtra ?? 'Extra core & licences';
         default:
             return group;
     }
 }
 
 /**
- * @param {Record<string, unknown>} pkg
+ * @param {boolean|null|undefined} value
  * @param {Record<string, string>} labels
  * @returns {string}
  */
-function editionPackageActiveLabel(pkg, labels = {}) {
-    if (pkg.active === true) {
-        return labels.editionInfoPkgActive ?? 'Active';
+function editionPackageBoolLabel(value, labels = {}) {
+    if (value === true) {
+        return labels.editionInfoPkgYes ?? 'Yes';
     }
 
-    if (pkg.active === false) {
-        return labels.editionInfoPkgInactive ?? 'Installed (inactive)';
+    if (value === false) {
+        return labels.editionInfoPkgNo ?? 'No';
     }
 
     return labels.editionInfoPkgNa ?? '—';
@@ -257,7 +263,7 @@ function buildEditionModalBody(summary, labels = {}) {
             return;
         }
 
-        const group = String(pkg.group ?? 'companion');
+        const group = String(pkg.group ?? 'extra');
 
         if (! byGroup.has(group)) {
             byGroup.set(group, []);
@@ -266,48 +272,45 @@ function buildEditionModalBody(summary, labels = {}) {
         byGroup.get(group).push(pkg);
     });
 
-    const groupOrder = ['core', 'edition', 'companion', 'other'];
+    const groupOrder = ['core', 'edition', 'extra'];
     const packageSections = groupOrder
         .filter((group) => byGroup.has(group) && byGroup.get(group).length > 0)
         .map((group) => {
             const rows = byGroup.get(group).map((pkg) => {
-                const statusAttr = pkg.status === 'current'
-                    ? 'active'
-                    : (pkg.status === 'update' || pkg.status === 'ahead' ? 'warn' : '');
                 const activeAttr = pkg.active === true
                     ? 'active'
                     : (pkg.active === false ? 'warn' : '');
-                const affiliation = String(pkg.affiliation_label ?? '').trim();
-                const secondary = affiliation !== ''
-                    ? `<span class="voodbuilder-editor-edition-modal__pkg-affiliation">${escapeHtml(affiliation)}</span>`
-                    : `<span class="voodbuilder-editor-edition-modal__pkg-composer">${escapeHtml(pkg.composer ?? '')}</span>`;
+                const registeredAttr = pkg.registered === true
+                    ? 'active'
+                    : (pkg.registered === false ? 'warn' : '');
+                const version = pkg.installed === false
+                    ? (labels.editionInfoPkgMissing ?? 'Not installed')
+                    : (pkg.version ?? labels.editionInfoPkgNa ?? '—');
 
                 return `
                     <tr>
                         <th scope="row">
                             <span class="voodbuilder-editor-edition-modal__pkg-name">${escapeHtml(pkg.name ?? pkg.id ?? '')}</span>
-                            ${secondary}
+                            <span class="voodbuilder-editor-edition-modal__pkg-composer">${escapeHtml(pkg.composer ?? '')}</span>
                         </th>
-                        <td data-status="${activeAttr}">${escapeHtml(editionPackageActiveLabel(pkg, labels))}</td>
-                        <td>${escapeHtml(pkg.version ?? labels.editionInfoPkgNa ?? '—')}</td>
-                        <td>${escapeHtml(pkg.latest ?? labels.editionInfoPkgNa ?? '—')}</td>
-                        <td${statusAttr !== '' ? ` data-status="${statusAttr}"` : ''}>${escapeHtml(pkg.status_label ?? '')}</td>
+                        <td data-status="${activeAttr}">${escapeHtml(editionPackageBoolLabel(pkg.active, labels))}</td>
+                        <td data-status="${registeredAttr}">${escapeHtml(editionPackageBoolLabel(pkg.registered, labels))}</td>
+                        <td>${escapeHtml(version)}</td>
                     </tr>
                 `;
             }).join('');
 
             return `
                 <section class="voodbuilder-editor-edition-modal__group">
-                    <h3 class="voodbuilder-editor-edition-modal__group-title">${escapeHtml(editionPackageGroupLabel(group, labels))}</h3>
+                    <h3 class="voodbuilder-editor-edition-modal__group-title">${escapeHtml(editionPackageGroupLabel(group, labels, summary))}</h3>
                     <div class="voodbuilder-editor-edition-modal__table-wrap">
                         <table class="voodbuilder-editor-edition-modal__table">
                             <thead>
                                 <tr>
                                     <th scope="col">${escapeHtml(labels.editionInfoPkgName ?? 'Package')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPkgActive ?? 'Active')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPkgVersion ?? 'Installed')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPkgLatest ?? 'Latest')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPkgStatus ?? 'Status')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgActiveCol ?? 'Active')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgRegisteredCol ?? 'Registered')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgVersion ?? 'Version')}</th>
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>

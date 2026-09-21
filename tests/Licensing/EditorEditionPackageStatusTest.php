@@ -26,7 +26,7 @@ final class EditorEditionPackageStatusTest extends TestCase
         app(RemotePackageVersionClient::class)->forget('portal', 'voodbuilder');
         app(RemotePackageVersionClient::class)->forget('packagist', 'voodflow/voodbuilder');
         Voodbuilder::entitlements()->useProvider(
-            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_AGENCY),
         );
     }
 
@@ -93,7 +93,7 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertSame(VoodbuilderPackageVersion::current(), $summary['package_status_label']);
     }
 
-    public function test_summary_groups_packages_and_includes_edition_row(): void
+    public function test_agency_summary_lists_edition_companions_and_extras(): void
     {
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
@@ -101,16 +101,52 @@ final class EditorEditionPackageStatusTest extends TestCase
         ]);
 
         $summary = EditorEditionSummary::make();
-        $core = collect($summary['packages'])->firstWhere('id', 'voodbuilder');
-        $edition = collect($summary['packages'])->firstWhere('group', 'edition');
+        $byGroup = collect($summary['packages'])->groupBy('group');
 
+        $this->assertSame('Agency edition', $summary['edition_packages_title']);
+        $this->assertTrue($byGroup->has('core'));
+        $this->assertTrue($byGroup->has('edition'));
+        $this->assertTrue($byGroup->has('extra'));
+
+        $core = $byGroup->get('core')->firstWhere('id', 'voodbuilder');
         $this->assertIsArray($core);
-        $this->assertTrue($core['installed']);
         $this->assertSame('packagist', $core['channel']);
-        $this->assertSame('Community', $core['affiliation_label']);
-        $this->assertSame(VoodbuilderPackageVersion::current(), $core['version']);
+        $this->assertArrayHasKey('registered', $core);
+        $this->assertArrayHasKey('active', $core);
 
-        $this->assertIsArray($edition);
-        $this->assertSame('edition', $edition['group']);
+        $editionIds = $byGroup->get('edition')->pluck('id')->all();
+        $this->assertSame([
+            'voodbuilder-elements',
+            'voodbuilder-components',
+            'voodbuilder-templates',
+            'voodbuilder-dynamic-data',
+            'voodbuilder-dynamic-api',
+            'vpopups',
+        ], $editionIds);
+
+        $extraIds = $byGroup->get('extra')->pluck('id')->all();
+        $this->assertSame(['vmedia', 'vcookiebar'], $extraIds);
+
+        $this->assertFalse(
+            collect($summary['packages'])->contains(fn (array $row): bool => in_array($row['id'], ['vdocs', 'vtuts', 'voodflow'], true)),
+        );
+    }
+
+    public function test_community_summary_omits_edition_companions(): void
+    {
+        Voodbuilder::entitlements()->useProvider(
+            TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_COMMUNITY),
+        );
+
+        Http::fake([
+            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
+            'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
+        ]);
+
+        $summary = EditorEditionSummary::make();
+        $groups = collect($summary['packages'])->pluck('group')->unique()->values()->all();
+
+        $this->assertNull($summary['edition_packages_title']);
+        $this->assertSame(['core', 'extra'], $groups);
     }
 }

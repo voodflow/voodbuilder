@@ -3204,7 +3204,9 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem 1.25rem;
-    margin: 0 0 1rem;
+    margin: 0 0 1.15rem;
+    padding-bottom: 1rem;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
 }
 
 @media (min-width: 640px) {

@@ -15,20 +15,22 @@ use Voodflow\Voodbuilder\Voodbuilder;
 use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 
 /**
- * Installed Voodflow packages + local/remote version status for the edition modal.
+ * Package inventory for the edition modal.
  *
- * Groups: core (Packagist community), edition (Agency/Developer/Community),
- * companion (edition + free companions), other (Voodflow ecosystem plugins).
+ * Groups:
+ * - core: VoodBuilder (Packagist)
+ * - edition: companions bundled with Agency / Developer (always listed for that edition)
+ * - extra: Vmedia + Vcookiebar (free Packagist companions)
  *
  * @phpstan-type PackageRow array{
  *     id: string,
  *     name: string,
  *     composer: string,
- *     group: 'core'|'edition'|'companion'|'other',
+ *     group: 'core'|'edition'|'extra',
  *     channel: 'portal'|'packagist'|'none',
  *     channel_label: string,
- *     affiliation_label: string,
  *     installed: bool,
+ *     registered: bool|null,
  *     active: bool|null,
  *     version: ?string,
  *     latest: ?string,
@@ -39,30 +41,53 @@ use Voodflow\Voodbuilder\VoodbuilderServiceProvider;
 final class EditorPackageInventory
 {
     /**
+     * Companion package ids included in each paid edition bundle.
+     *
+     * @see resources/js/editor/plugin-bridge.js discoverCompanionPlugins()
+     *
+     * @var array<string, list<string>>
+     */
+    private const EDITION_COMPANIONS = [
+        'developer' => [
+            'voodbuilder-elements',
+            'voodbuilder-templates',
+            'voodbuilder-dynamic-data',
+        ],
+        'agency' => [
+            'voodbuilder-elements',
+            'voodbuilder-components',
+            'voodbuilder-templates',
+            'voodbuilder-dynamic-data',
+            'voodbuilder-dynamic-api',
+            'vpopups',
+        ],
+    ];
+
+    /**
      * @return list<PackageRow>
      */
     public static function make(?EntitlementManager $manager = null): array
     {
         $manager ??= Voodbuilder::entitlements();
         $remote = app(RemotePackageVersionClient::class);
-        $editionLabel = EditionCapabilityMatrix::marketingLabel($manager->licenceStatus()->edition);
+        $slug = EditionCapabilityMatrix::marketingSlug($manager->licenceStatus()->edition);
+        $allowedEditionIds = self::EDITION_COMPANIONS[$slug] ?? [];
         $rows = [];
 
         foreach (self::catalog() as $definition) {
-            $row = self::resolveRow($definition, $manager, $remote, $editionLabel);
+            $group = (string) $definition['group'];
+            $id = (string) $definition['id'];
 
-            // Always include core; edition community synthetic handled below; others only when installed.
-            if ($row['group'] === 'core' || $row['installed']) {
-                $rows[] = $row;
+            if ($group === 'edition') {
+                if ($allowedEditionIds === [] || ! in_array($id, $allowedEditionIds, true)) {
+                    continue;
+                }
             }
-        }
 
-        $hasPaidEditionPackage = collect($rows)->contains(
-            fn (array $row): bool => $row['group'] === 'edition' && in_array($row['id'], ['voodbuilder-agency', 'voodbuilder-developer'], true),
-        );
+            $row = self::resolveRow($definition, $remote);
 
-        if (! $hasPaidEditionPackage) {
-            $rows[] = self::communityEditionRow();
+            // Core, edition companions, and free extras are always listed (missing rows show as not installed).
+            $rows[] = $row;
         }
 
         return $rows;
@@ -80,166 +105,91 @@ final class EditorPackageInventory
                 'composer' => 'voodflow/voodbuilder',
                 'group' => 'core',
                 'channel' => 'packagist',
-                'affiliation' => 'community',
                 'fallback_class' => VoodbuilderServiceProvider::class,
                 'active' => true,
-            ],
-            [
-                'id' => 'voodbuilder-agency',
-                'name' => 'VoodBuilder Agency',
-                'composer' => 'voodflow/voodbuilder-agency',
-                'group' => 'edition',
-                'channel' => 'portal',
-                'portal_slug' => 'voodbuilder-agency',
-                'affiliation' => 'edition',
-                'active_resolver' => static fn (): ?bool => ComposerPackageVersion::isInstalled('voodflow/voodbuilder-agency') ? true : null,
-            ],
-            [
-                'id' => 'voodbuilder-developer',
-                'name' => 'VoodBuilder Developer',
-                'composer' => 'voodflow/voodbuilder-developer',
-                'group' => 'edition',
-                'channel' => 'portal',
-                'portal_slug' => 'voodbuilder-developer',
-                'affiliation' => 'edition',
-                'active_resolver' => static fn (): ?bool => ComposerPackageVersion::isInstalled('voodflow/voodbuilder-developer') ? true : null,
+                'registered' => true,
             ],
             [
                 'id' => 'voodbuilder-elements',
                 'name' => 'VoodBuilder Elements',
                 'composer' => 'voodflow/voodbuilder-elements',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\VoodbuilderElements\\VoodbuilderElementsServiceProvider',
+                'facade' => 'Voodflow\\VoodbuilderElements\\VoodbuilderElements',
                 'active_resolver' => static fn (): ?bool => EditorCommunityBlockCatalog::elementsLibraryActive(),
             ],
             [
                 'id' => 'voodbuilder-components',
                 'name' => 'VoodBuilder Components',
                 'composer' => 'voodflow/voodbuilder-components',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\VoodbuilderComponents\\VoodbuilderComponentsServiceProvider',
+                'facade' => 'Voodflow\\VoodbuilderComponents\\VoodbuilderComponents',
                 'active_resolver' => static fn (): ?bool => ComponentRuntimeBridge::moduleEnabled(),
             ],
             [
                 'id' => 'voodbuilder-templates',
                 'name' => 'VoodBuilder Templates',
                 'composer' => 'voodflow/voodbuilder-templates',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\VoodbuilderTemplates\\VoodbuilderTemplatesServiceProvider',
+                'facade' => 'Voodflow\\VoodbuilderTemplates\\VoodbuilderTemplates',
                 'active_resolver' => static fn (): ?bool => TemplateAuthoringBridge::pluginInstalled() && TemplatesModule::isEnabled(),
             ],
             [
                 'id' => 'voodbuilder-dynamic-data',
                 'name' => 'VoodBuilder Dynamic Data',
                 'composer' => 'voodflow/voodbuilder-dynamic-data',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\VoodbuilderDynamicData\\VoodbuilderDynamicDataServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::companionActivated('Voodflow\\VoodbuilderDynamicData\\VoodbuilderDynamicData'),
+                'facade' => 'Voodflow\\VoodbuilderDynamicData\\VoodbuilderDynamicData',
+                'active_resolver' => static fn (): ?bool => self::companionEnabled('Voodflow\\VoodbuilderDynamicData\\VoodbuilderDynamicData'),
             ],
             [
                 'id' => 'voodbuilder-dynamic-api',
                 'name' => 'VoodBuilder Dynamic API',
                 'composer' => 'voodflow/voodbuilder-dynamic-api',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\VoodbuilderDynamicApi\\VoodbuilderDynamicApiServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::companionActivated('Voodflow\\VoodbuilderDynamicApi\\VoodbuilderDynamicApi'),
+                'facade' => 'Voodflow\\VoodbuilderDynamicApi\\VoodbuilderDynamicApi',
+                'active_resolver' => static fn (): ?bool => self::companionEnabled('Voodflow\\VoodbuilderDynamicApi\\VoodbuilderDynamicApi'),
             ],
             [
                 'id' => 'vpopups',
                 'name' => 'VoodPopups',
                 'composer' => 'voodflow/vpopups',
-                'group' => 'companion',
+                'group' => 'edition',
                 'channel' => 'none',
-                'affiliation' => 'edition',
                 'fallback_class' => 'Voodflow\\Vpopups\\VpopupsServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::companionActivated('Voodflow\\Vpopups\\Vpopups')
+                'facade' => 'Voodflow\\Vpopups\\Vpopups',
+                'active_resolver' => static fn (): ?bool => self::companionEnabled('Voodflow\\Vpopups\\Vpopups')
                     ?? (Voodbuilder::modules()->isEnabled('popups') ? true : null),
             ],
             [
                 'id' => 'vmedia',
                 'name' => 'Vmedia',
                 'composer' => 'voodflow/vmedia',
-                'group' => 'companion',
+                'group' => 'extra',
                 'channel' => 'packagist',
-                'affiliation' => 'community',
                 'fallback_class' => 'Voodflow\\Vmedia\\VmediaServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::safeClassExists('Voodflow\\Vmedia\\Vmedia') ? true : null,
+                'facade' => 'Voodflow\\Vmedia\\Vmedia',
+                'active_resolver' => static fn (): ?bool => self::companionEnabled('Voodflow\\Vmedia\\Vmedia'),
             ],
             [
                 'id' => 'vcookiebar',
                 'name' => 'Vcookiebar',
                 'composer' => 'voodflow/vcookiebar',
-                'group' => 'companion',
+                'group' => 'extra',
                 'channel' => 'packagist',
-                'affiliation' => 'community',
                 'fallback_class' => 'Voodflow\\Vcookiebar\\VcookiebarServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::safeClassExists('Voodflow\\Vcookiebar\\Vcookiebar') ? true : null,
+                'facade' => 'Voodflow\\Vcookiebar\\Vcookiebar',
+                'active_resolver' => static fn (): ?bool => self::companionEnabled('Voodflow\\Vcookiebar\\Vcookiebar'),
             ],
-            [
-                'id' => 'voodflow',
-                'name' => 'Voodflow',
-                'composer' => 'voodflow/voodflow',
-                'group' => 'other',
-                'channel' => 'portal',
-                'portal_slug' => 'voodflow',
-                'affiliation' => 'other',
-                'fallback_class' => 'Voodflow\\Voodflow\\VoodflowServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::safeClassExists('Voodflow\\Voodflow\\Voodflow') ? true : null,
-            ],
-            [
-                'id' => 'vdocs',
-                'name' => 'VoodDocs',
-                'composer' => 'voodflow/vdocs',
-                'group' => 'other',
-                'channel' => 'none',
-                'affiliation' => 'other',
-                'fallback_class' => 'Voodflow\\Vdocs\\VdocsServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::companionActivated('Voodflow\\Vdocs\\Vdocs'),
-            ],
-            [
-                'id' => 'vtuts',
-                'name' => 'VoodTutorials',
-                'composer' => 'voodflow/vtuts',
-                'group' => 'other',
-                'channel' => 'none',
-                'affiliation' => 'other',
-                'fallback_class' => 'Voodflow\\Vtuts\\VtutsServiceProvider',
-                'active_resolver' => static fn (): ?bool => self::companionActivated('Voodflow\\Vtuts\\Vtuts'),
-            ],
-        ];
-    }
-
-    /**
-     * @return PackageRow
-     */
-    private static function communityEditionRow(): array
-    {
-        $version = VoodbuilderPackageVersion::current();
-
-        return [
-            'id' => 'community',
-            'name' => 'Community',
-            'composer' => 'voodflow/voodbuilder',
-            'group' => 'edition',
-            'channel' => 'none',
-            'channel_label' => self::channelLabel('none'),
-            'affiliation_label' => '',
-            'installed' => true,
-            'active' => true,
-            'version' => $version,
-            'latest' => null,
-            'status' => 'current',
-            'status_label' => (string) __('voodbuilder::pro.editor_ui.edition_info_package_current'),
         ];
     }
 
@@ -247,21 +197,19 @@ final class EditorPackageInventory
      * @param  array<string, mixed>  $definition
      * @return PackageRow
      */
-    private static function resolveRow(
-        array $definition,
-        EntitlementManager $manager,
-        RemotePackageVersionClient $remote,
-        string $editionLabel,
-    ): array {
-        unset($manager); // reserved for future capability overlays
-
+    private static function resolveRow(array $definition, RemotePackageVersionClient $remote): array
+    {
         $composer = (string) $definition['composer'];
         $fallback = isset($definition['fallback_class']) && is_string($definition['fallback_class'])
             ? $definition['fallback_class']
             : null;
+        $facade = isset($definition['facade']) && is_string($definition['facade'])
+            ? $definition['facade']
+            : null;
         $installed = $composer === 'voodflow/voodbuilder'
             || ComposerPackageVersion::isInstalled($composer)
-            || ($fallback !== null && self::safeClassExists($fallback));
+            || ($fallback !== null && self::safeClassExists($fallback))
+            || ($facade !== null && self::safeClassExists($facade));
         $version = $installed
             ? (
                 $composer === 'voodflow/voodbuilder'
@@ -279,11 +227,22 @@ final class EditorPackageInventory
             $latest = $remote->latest('packagist', $composer);
         }
 
+        $registered = null;
         $active = null;
+
+        if (array_key_exists('registered', $definition)) {
+            $registered = (bool) $definition['registered'];
+        } elseif ($installed) {
+            $registered = self::companionRegistered($facade);
+        } else {
+            $registered = false;
+        }
 
         if (array_key_exists('active', $definition)) {
             $active = (bool) $definition['active'];
-        } elseif ($installed && isset($definition['active_resolver']) && is_callable($definition['active_resolver'])) {
+        } elseif (! $installed) {
+            $active = false;
+        } elseif (isset($definition['active_resolver']) && is_callable($definition['active_resolver'])) {
             $resolved = ($definition['active_resolver'])();
             $active = is_bool($resolved) ? $resolved : null;
         }
@@ -302,33 +261,14 @@ final class EditorPackageInventory
             'group' => (string) $definition['group'],
             'channel' => $channel,
             'channel_label' => self::channelLabel($channel),
-            'affiliation_label' => self::affiliationLabel(
-                (string) ($definition['group'] ?? ''),
-                (string) ($definition['affiliation'] ?? ''),
-                $editionLabel,
-            ),
             'installed' => $installed,
+            'registered' => $registered,
             'active' => $active,
             'version' => $version,
             'latest' => $latest,
             'status' => $status,
             'status_label' => $statusLabel,
         ];
-    }
-
-    private static function affiliationLabel(string $group, string $affiliation, string $editionLabel): string
-    {
-        // Edition section already names Agency/Developer/Community — no secondary label.
-        if ($group === 'edition') {
-            return '';
-        }
-
-        return match ($affiliation) {
-            'community' => (string) __('voodbuilder::pro.editor_ui.edition_info_affiliation_community'),
-            'edition' => $editionLabel,
-            'other' => (string) __('voodbuilder::pro.editor_ui.edition_info_affiliation_other'),
-            default => '',
-        };
     }
 
     /**
@@ -389,21 +329,45 @@ final class EditorPackageInventory
     }
 
     /**
+     * Filament panel registration (`Plugin::register` → `activate()`).
+     *
+     * @param  class-string|null  $facade
+     */
+    private static function companionRegistered(?string $facade): ?bool
+    {
+        if ($facade === null || ! self::safeClassExists($facade)) {
+            return null;
+        }
+
+        try {
+            if (method_exists($facade, 'isActivated')) {
+                return (bool) $facade::isActivated();
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return true;
+    }
+
+    /**
+     * Runtime enablement (config / module), independent of panel registration.
+     *
      * @param  class-string  $class
      */
-    private static function companionActivated(string $class): ?bool
+    private static function companionEnabled(string $class): ?bool
     {
         if (! self::safeClassExists($class)) {
             return null;
         }
 
         try {
-            if (method_exists($class, 'isActivated') && method_exists($class, 'isEnabled')) {
-                return $class::isActivated() && $class::isEnabled();
-            }
-
             if (method_exists($class, 'isEnabled')) {
                 return (bool) $class::isEnabled();
+            }
+
+            if (method_exists($class, 'isActivated')) {
+                return (bool) $class::isActivated();
             }
         } catch (\Throwable) {
             return true;

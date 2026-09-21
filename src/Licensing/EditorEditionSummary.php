@@ -26,6 +26,7 @@ use Voodflow\Voodbuilder\Voodbuilder;
  *     package_status_label: string,
  *     licence_configured: bool,
  *     docs_url: string,
+ *     edition_packages_title: ?string,
  *     packages: list<array<string, mixed>>,
  * }
  */
@@ -56,6 +57,11 @@ final class EditorEditionSummary
             'package_status_label' => $package['label'],
             'licence_configured' => LicenceKeyResolver::resolve() !== '',
             'docs_url' => (string) config('voodbuilder.docs_url', 'https://docs.voodflow.com'),
+            'edition_packages_title' => match ($slug) {
+                'agency' => (string) __('voodbuilder::pro.editor_ui.edition_info_group_agency'),
+                'developer' => (string) __('voodbuilder::pro.editor_ui.edition_info_group_developer'),
+                default => null,
+            },
             'packages' => $packages,
         ];
     }
