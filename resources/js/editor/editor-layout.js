@@ -83,22 +83,196 @@ export function resolveEditingContext(options = {}, labels = {}) {
 }
 
 function editingContextMarkup(context) {
-    if (! context?.kind) {
+    if (! context?.kind && ! context?.name) {
         return '';
     }
 
+    const kind = String(context.kind ?? '').trim();
     const name = String(context.name ?? '').trim();
-    const label = name !== '' ? `${context.kind} · ${name}` : context.kind;
+    const title = name !== '' ? name : kind;
+    const hover = kind !== '' && name !== '' ? `${kind} · ${name}` : title;
+
+    if (title === '') {
+        return '';
+    }
 
     return `
-        <div class="voodbuilder-editor-topbar__editing-context" title="${escapeHtml(label)}">
-            <span class="voodbuilder-editor-topbar__editing-kind">${escapeHtml(context.kind)}</span>
-            ${name !== '' ? `
-                <span class="voodbuilder-editor-topbar__editing-sep" aria-hidden="true">·</span>
-                <span class="voodbuilder-editor-topbar__editing-name">${escapeHtml(name)}</span>
-            ` : ''}
+        <div class="voodbuilder-editor-topbar__editing-context" title="${escapeHtml(hover)}">
+            <span class="voodbuilder-editor-topbar__editing-name">${escapeHtml(title)}</span>
+            ${kind !== '' && name !== '' ? `<span class="voodbuilder-editor-topbar__editing-kind sr-only">${escapeHtml(kind)}</span>` : ''}
         </div>
     `;
+}
+
+/**
+ * @param {Record<string, unknown>|null|undefined} summary
+ * @param {Record<string, string>} labels
+ * @returns {string}
+ */
+function editionChromeMarkup(summary, labels = {}) {
+    if (! summary || typeof summary !== 'object') {
+        return '';
+    }
+
+    const badge = String(summary.badge ?? summary.label ?? '').trim();
+
+    if (badge === '') {
+        return '';
+    }
+
+    const infoLabel = labels.editionInfo ?? 'Edition details';
+
+    return `
+        <div class="voodbuilder-editor-topbar__edition" data-voodbuilder-edition-chrome>
+            <span class="voodbuilder-editor-topbar__edition-badge">${escapeHtml(badge)}</span>
+            <button
+                type="button"
+                class="voodbuilder-editor-topbar__edition-info"
+                data-voodbuilder-edition-info
+                aria-expanded="false"
+                aria-haspopup="dialog"
+                title="${escapeHtml(infoLabel)}"
+                aria-label="${escapeHtml(infoLabel)}"
+            >${lucideIcon('info', 14)}</button>
+            <div class="voodbuilder-editor-topbar__edition-popover" data-voodbuilder-edition-popover hidden role="dialog" aria-label="${escapeHtml(infoLabel)}"></div>
+        </div>
+    `;
+}
+
+/**
+ * @param {string|null|undefined} iso
+ * @returns {string}
+ */
+function formatEditionExpiry(iso) {
+    const raw = String(iso ?? '').trim();
+
+    if (raw === '') {
+        return '';
+    }
+
+    const date = new Date(raw);
+
+    if (Number.isNaN(date.getTime())) {
+        return raw;
+    }
+
+    try {
+        return date.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    } catch {
+        return raw;
+    }
+}
+
+/**
+ * @param {HTMLElement} host
+ * @param {Record<string, unknown>} summary
+ * @param {Record<string, string>} labels
+ */
+function fillEditionPopover(host, summary, labels = {}) {
+    const configured = summary.licence_configured === true;
+    const active = summary.active === true;
+    let status = labels.editionInfoStatusUnconfigured ?? 'No licence key';
+
+    if (configured) {
+        status = active
+            ? (labels.editionInfoStatusActive ?? 'Active')
+            : (labels.editionInfoStatusInactive ?? 'Inactive');
+    }
+
+    const expiresRaw = String(summary.expires_at ?? '').trim();
+    const expires = expiresRaw !== ''
+        ? formatEditionExpiry(expiresRaw)
+        : (labels.editionInfoExpiresNever ?? 'No expiry date');
+    const packageLabel = String(summary.package_status_label ?? summary.package_version ?? '').trim();
+    const packageStatus = String(summary.package_status ?? 'unknown').trim();
+    const packageStatusAttr = packageStatus === 'current'
+        ? 'active'
+        : (packageStatus === 'update' ? 'warn' : '');
+    const docsUrl = String(summary.docs_url ?? 'https://docs.voodflow.com').trim();
+    const message = String(summary.message ?? '').trim();
+    const edition = String(summary.label ?? summary.badge ?? '').trim();
+
+    const rows = [
+        edition !== ''
+            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfo ?? 'Edition')}</dt><dd>${escapeHtml(edition)}</dd></div>`
+            : '',
+        `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoStatus ?? 'Licence status')}</dt><dd data-status="${configured && active ? 'active' : 'warn'}">${escapeHtml(status)}</dd></div>`,
+        `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoExpires ?? 'Expires')}</dt><dd>${escapeHtml(expires)}</dd></div>`,
+        packageLabel !== ''
+            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoPackage ?? 'Package')}</dt><dd${packageStatusAttr !== '' ? ` data-status="${packageStatusAttr}"` : ''}>${escapeHtml(packageLabel)}</dd></div>`
+            : '',
+        message !== ''
+            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoMessage ?? 'Note')}</dt><dd>${escapeHtml(message)}</dd></div>`
+            : '',
+    ].filter(Boolean).join('');
+
+    host.innerHTML = `
+        <dl class="voodbuilder-editor-topbar__edition-list">${rows}</dl>
+        ${docsUrl !== '' ? `
+            <a
+                class="voodbuilder-editor-topbar__edition-docs"
+                href="${escapeHtml(docsUrl)}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >${lucideIcon('external-link', 13)}<span>${escapeHtml(labels.editionInfoDocs ?? 'Documentation')}</span></a>
+        ` : ''}
+    `;
+}
+
+/**
+ * @param {HTMLElement|null|undefined} shellRoot
+ * @param {Record<string, unknown>|null|undefined} summary
+ * @param {Record<string, string>} labels
+ */
+export function wireEditionInfoChrome(shellRoot, summary, labels = {}) {
+    const chrome = shellRoot?.querySelector?.('[data-voodbuilder-edition-chrome]');
+    const button = chrome?.querySelector?.('[data-voodbuilder-edition-info]');
+    const popover = chrome?.querySelector?.('[data-voodbuilder-edition-popover]');
+
+    if (! chrome || ! button || ! popover || ! summary) {
+        return;
+    }
+
+    fillEditionPopover(popover, summary, labels);
+
+    const close = () => {
+        popover.hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+        chrome.classList.remove('is-edition-open');
+    };
+
+    const open = () => {
+        popover.hidden = false;
+        button.setAttribute('aria-expanded', 'true');
+        chrome.classList.add('is-edition-open');
+    };
+
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (popover.hidden) {
+            open();
+        } else {
+            close();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (! chrome.contains(event.target)) {
+            close();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            close();
+        }
+    });
 }
 
 /**
@@ -136,6 +310,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         ?? (meta.editingBadgeTitle
             ? { kind: meta.editingBadgeTitle, name: '' }
             : null);
+    const editionSummary = meta.editionSummary && typeof meta.editionSummary === 'object'
+        ? meta.editionSummary
+        : null;
 
     container.classList.add('voodbuilder-editor-root');
     container.innerHTML = `
@@ -143,10 +320,13 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             <header class="voodbuilder-editor-topbar">
                 <div class="voodbuilder-editor-topbar__brand-wrap">
                     <div class="voodbuilder-editor-topbar__brand" aria-label="${escapeHtml(brand)}">
-                        <span class="voodbuilder-editor-topbar__brand-mark">${animatedMarkMarkup(28)}</span>
+                        <span class="voodbuilder-editor-topbar__brand-mark">${animatedMarkMarkup(32)}</span>
                         <span class="voodbuilder-editor-topbar__brand-sr">${escapeHtml(brand)}</span>
                     </div>
-                    ${editingContextMarkup(editingContext)}
+                    <div class="voodbuilder-editor-topbar__brand-meta">
+                        ${editingContextMarkup(editingContext)}
+                        ${editionChromeMarkup(editionSummary, labels)}
+                    </div>
                 </div>
                 <div class="voodbuilder-editor-topbar__tools"></div>
                 <div class="voodbuilder-editor-topbar__actions">

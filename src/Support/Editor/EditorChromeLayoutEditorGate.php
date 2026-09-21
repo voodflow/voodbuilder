@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Illuminate\Support\Facades\Route;
+use Voodflow\Voodbuilder\Licensing\EditorEditionSummary;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
@@ -94,6 +95,8 @@ final class EditorChromeLayoutEditorGate
             'hideTemplates' => true,
             'templateCategories' => [],
             'packageVersion' => VoodbuilderPackageVersion::current(),
+            'editionSummary' => ($editionSummary = EditorEditionSummary::make()),
+            'editionLabel' => $editionSummary['label'],
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.editor.plugins', []),
             'canvasStyles' => EditorCanvas::styleUrls(),

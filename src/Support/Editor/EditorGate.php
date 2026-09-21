@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Licensing\AuthorScriptPolicy;
+use Voodflow\Voodbuilder\Licensing\EditorEditionSummary;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
@@ -234,6 +235,8 @@ final class EditorGate
                 ? self::optionalEditorRoute('voodbuilder.editor.popups.page-paths')
                 : null,
             'packageVersion' => VoodbuilderPackageVersion::current(),
+            'editionSummary' => ($editionSummary = EditorEditionSummary::make()),
+            'editionLabel' => $editionSummary['label'],
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
             'templateCategories' => PageTemplateCategories::all(),
             'conditionOptions' => ConditionsModule::isEnabled()
@@ -639,6 +642,16 @@ final class EditorGate
             'bootPhaseContent' => __('voodbuilder::pro.editor_ui.boot_phase_content'),
             'bootPhaseReady' => __('voodbuilder::pro.editor_ui.boot_phase_ready'),
             'bootSlow' => __('voodbuilder::pro.editor_ui.boot_slow'),
+            'editionInfo' => __('voodbuilder::pro.editor_ui.edition_info'),
+            'editionInfoStatus' => __('voodbuilder::pro.editor_ui.edition_info_status'),
+            'editionInfoStatusActive' => __('voodbuilder::pro.editor_ui.edition_info_status_active'),
+            'editionInfoStatusInactive' => __('voodbuilder::pro.editor_ui.edition_info_status_inactive'),
+            'editionInfoStatusUnconfigured' => __('voodbuilder::pro.editor_ui.edition_info_status_unconfigured'),
+            'editionInfoExpires' => __('voodbuilder::pro.editor_ui.edition_info_expires'),
+            'editionInfoExpiresNever' => __('voodbuilder::pro.editor_ui.edition_info_expires_never'),
+            'editionInfoPackage' => __('voodbuilder::pro.editor_ui.edition_info_package'),
+            'editionInfoDocs' => __('voodbuilder::pro.editor_ui.edition_info_docs'),
+            'editionInfoMessage' => __('voodbuilder::pro.editor_ui.edition_info_message'),
             'autosaveRecoverTitle' => __('voodbuilder::pro.autosave.recover_title'),
             'autosaveRecoverMessage' => __('voodbuilder::pro.autosave.recover_message'),
             'autosaveRecoverConfirm' => __('voodbuilder::pro.autosave.recover_confirm'),

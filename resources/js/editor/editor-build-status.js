@@ -1,6 +1,6 @@
 /**
  * Build / boot loading indicators for the visual editor.
- * Boot splash: brand mark + name + version (animated VoodBuilder logo).
+ * Boot splash: brand mark + name + version + edition (animated VoodBuilder logo).
  */
 
 const BUILD_SCOPES = new Map();
@@ -105,9 +105,10 @@ const BOOT_PHASE_FALLBACK_LABELS = {
 const BOOT_PHASE_SLOW_MS = 4_000;
 
 /** Full-screen boot splash (editor cold start). */
-function bootSplashMarkup({ label, brand, version }) {
+function bootSplashMarkup({ label, brand, version, edition }) {
     const name = wordmark(brand);
     const ver = String(version ?? '').trim();
+    const editionLabel = String(edition ?? '').trim();
 
     return `
         <div class="voodbuilder-editor-boot-splash" role="status" aria-live="polite" aria-label="${escapeHtml(label)}">
@@ -118,6 +119,7 @@ function bootSplashMarkup({ label, brand, version }) {
                 <span class="voodbuilder-editor-boot-splash__name">${escapeHtml(name)}</span>
                 ${ver !== '' ? `<span class="voodbuilder-editor-boot-splash__version">${escapeHtml(ver)}</span>` : ''}
             </div>
+            ${editionLabel !== '' ? `<p class="voodbuilder-editor-boot-splash__edition">${escapeHtml(editionLabel)}</p>` : ''}
             <p class="voodbuilder-editor-boot-splash__hint" data-voodbuilder-boot-phase-label>${escapeHtml(label)}</p>
             <div
                 class="voodbuilder-editor-boot-splash__progress"
@@ -376,6 +378,9 @@ export function registerEditorBuildStatus(editor, shell, labels = {}, meta = {})
     const loadingLabel = labels.loadingEditor ?? 'Loading editor…';
     const brand = meta.brand ?? labels.builderBrand ?? 'VoodBuilder';
     const version = meta.version ?? labels.packageVersion ?? '';
+    const edition = meta.edition
+        ?? labels.editionLabel
+        ?? '';
 
     if (selectorsMount && ! selectorsMount.querySelector('[data-voodbuilder-classes-build-overlay]')) {
         selectorsMount.classList.add('voodbuilder-editor-selectors-mount--overlay-host');
@@ -424,6 +429,7 @@ export function registerEditorBuildStatus(editor, shell, labels = {}, meta = {})
             label: loadingLabel,
             brand,
             version,
+            edition,
         });
         bootHost.appendChild(overlay);
         editor.__voodbuilderBootOverlay = overlay;

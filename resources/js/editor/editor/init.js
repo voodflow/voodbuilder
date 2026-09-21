@@ -99,6 +99,7 @@ import {
     editorLayoutInitOptions,
     refreshBlocksLibraryUi,
     resolveEditingContext,
+    wireEditionInfoChrome,
 } from '../editor-layout.js';
 import { ensureReadingInspectorTab, registerReadingTypographyUi } from '../reading-typography-ui.js';
 import {
@@ -777,7 +778,12 @@ export function initVoodbuilderEditor(container, options = {}) {
         brand: options.builderBrand ?? 'VoodBuilder',
         hideTemplates,
         editingContext: resolveEditingContext(options, labels),
+        editionSummary: options.editionSummary ?? null,
     }) : null;
+
+    if (shell?.shell) {
+        wireEditionInfoChrome(shell.shell, options.editionSummary ?? null, labels);
+    }
 
     if (shell?.mounts) {
         for (const key of ['blocks', 'layers', 'traits', 'selectors', 'styles', 'dynamic']) {
@@ -1039,6 +1045,9 @@ export function initVoodbuilderEditor(container, options = {}) {
         registerEditorBuildStatus(editor, shell, labels, {
             brand: options.builderBrand ?? 'VoodBuilder',
             version: options.packageVersion ?? '',
+            edition: options.editionLabel
+                ?? options.editionSummary?.label
+                ?? '',
         });
         registerCanvasBootGate(editor, shellRoot, shell, {
             pageContentWidth: options.pageContentWidth,
@@ -2263,6 +2272,8 @@ function mountFrontendEditor() {
         globalTextTags: config.globalTextTags ?? {},
         builderBrand: config.builderBrand ?? 'VoodBuilder',
         packageVersion: config.packageVersion ?? '',
+        editionLabel: config.editionLabel ?? config.editionSummary?.label ?? '',
+        editionSummary: config.editionSummary ?? null,
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
         blocksUrl: config.blocksUrl ?? null,

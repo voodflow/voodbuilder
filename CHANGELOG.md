@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.71] - 2026-09-21
+
+### Added
+
+- Editor edition chrome: splash + topbar badge (Community / Developer / Agency) from the same AnyStack entitlements snapshot
+- Edition info popover (licence status, expiry, docs) and package update status vs Anystack (`Current` / update available)
+- Portal client for `GET /v1/packages/voodbuilder/latest` on api.voodflow.com
+
+### Changed
+
+- Topbar brand layout: icon | page name | edition (wider brand column)
+
 ## [0.1.70] - 2026-09-18
 
 ### Fixed

@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Tests\Licensing;
 use Voodflow\Voodbuilder\Licensing\CapabilitySet;
 use Voodflow\Voodbuilder\Licensing\CommunityEntitlementProvider;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
+use Voodflow\Voodbuilder\Licensing\EditorEditionSummary;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
 use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
@@ -64,6 +65,33 @@ class EntitlementManagerTest extends TestCase
             EditionCapabilityMatrix::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
         );
         $this->assertSame('professional', Voodbuilder::entitlements()->edition());
+        $this->assertSame(
+            'Developer edition',
+            EditionCapabilityMatrix::marketingLabel(EditionCapabilityMatrix::EDITION_DEVELOPER),
+        );
+        $this->assertSame(
+            'developer',
+            EditionCapabilityMatrix::marketingSlug(EditionCapabilityMatrix::EDITION_DEVELOPER),
+        );
+        $this->assertSame(
+            'Developer edition',
+            EditionCapabilityMatrix::marketingLabel('professional'),
+        );
+        $this->assertSame(
+            'Agency edition',
+            EditionCapabilityMatrix::marketingLabel(EditionCapabilityMatrix::EDITION_AGENCY),
+        );
+        $this->assertSame(
+            'Community edition',
+            EditionCapabilityMatrix::marketingLabel(EditionCapabilityMatrix::EDITION_COMMUNITY),
+        );
+        $summary = EditorEditionSummary::make();
+        $this->assertSame('developer', $summary['slug']);
+        $this->assertSame('Developer edition', $summary['label']);
+        $this->assertNotSame('', $summary['package_version']);
+        $this->assertArrayHasKey('package_status', $summary);
+        $this->assertArrayHasKey('package_status_label', $summary);
+        $this->assertSame('https://docs.voodflow.com', $summary['docs_url']);
         $this->assertTrue(Voodbuilder::can('dynamic-data.collections'));
         $this->assertTrue(Voodbuilder::cannot('dynamic-api.sources'));
     }

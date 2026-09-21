@@ -47,6 +47,30 @@ final class EditionCapabilityMatrix
     }
 
     /**
+     * Marketing label for splash / UI (Developer, not the runtime token `professional`).
+     */
+    public static function marketingLabel(string $edition): string
+    {
+        return match (self::normalizeEdition($edition)) {
+            self::EDITION_AGENCY => (string) __('voodbuilder::pro.editor_ui.edition_agency'),
+            self::EDITION_PROFESSIONAL => (string) __('voodbuilder::pro.editor_ui.edition_developer'),
+            default => (string) __('voodbuilder::pro.editor_ui.edition_community'),
+        };
+    }
+
+    /**
+     * Public marketing slug (developer, not professional).
+     */
+    public static function marketingSlug(string $edition): string
+    {
+        return match (self::normalizeEdition($edition)) {
+            self::EDITION_AGENCY => self::EDITION_AGENCY,
+            self::EDITION_PROFESSIONAL => self::EDITION_DEVELOPER,
+            default => self::EDITION_COMMUNITY,
+        };
+    }
+
+    /**
      * @return list<string>
      */
     public static function community(): array

@@ -14,6 +14,19 @@ return [
     'marketing_url' => env('VOODBUILDER_MARKETING_URL', 'https://voodflow.com/voodbuilder'),
 
     /*
+    | Public docs site (edition info popover, upsells, help links).
+    */
+    'docs_url' => env('VOODBUILDER_DOCS_URL', 'https://docs.voodflow.com'),
+
+    /*
+    | Portal (api.voodflow.com) — latest published tag for the edition popover.
+    */
+    'portal' => [
+        'http_timeout' => (int) env('VOODBUILDER_PORTAL_HTTP_TIMEOUT', 10),
+        'version_cache_ttl_hours' => (int) env('VOODBUILDER_PORTAL_VERSION_CACHE_TTL_HOURS', 24),
+    ],
+
+    /*
     | Admin Filament resource authorization (Pages, Menus, Chrome layouts).
     |
     | auto         — Shield / Spatie Permission present → named abilities
