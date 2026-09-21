@@ -1059,6 +1059,18 @@ export function initVoodbuilderEditor(container, options = {}) {
         });
         configureEditorLayout(editor, shell, labels);
 
+        if (options.popupMode) {
+            registerPopupCanvasSettings(editor, {
+                popupsUrl: options.popupsUrl,
+                popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
+                csrf: options.csrf,
+                labels,
+                popupId: options.popupId ?? null,
+                popupInitial: options.popupInitial ?? null,
+                mount: shell?.mounts?.popupSettings ?? null,
+            });
+        }
+
         const readingPreviews = options.readingPreviews && typeof options.readingPreviews === 'object'
             ? options.readingPreviews
             : {};
@@ -1420,17 +1432,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             });
         }
 
-        if (options.popupMode) {
-            registerPopupCanvasSettings(editor, {
-                popupsUrl: options.popupsUrl,
-                popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
-                csrf: options.csrf,
-                labels,
-                popupId: options.popupId ?? null,
-                popupInitial: options.popupInitial ?? null,
-                mount: shell?.mounts?.popupSettings ?? null,
-            });
-        } else {
+        if (! options.popupMode) {
             if (pageTemplatesUrl && ! chromeLayoutMode) {
                 registerPageTemplatesSidebar(editor, {
                     pageTemplatesUrl,

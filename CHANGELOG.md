@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.76] - 2026-09-21
+
+### Fixed
+
+- Mount popup canvas settings as soon as the editor shell boots (not only on Grapes `load`)
+- Aurora mesh `z-index` so catalog shade layers stay above section backgrounds
+
 ## [0.1.75] - 2026-09-21
 
 ### Added
