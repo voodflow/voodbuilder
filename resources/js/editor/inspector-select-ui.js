@@ -942,6 +942,7 @@ export function registerInspectorSelectUi(editor, mounts = {}) {
         mounts.conditions,
         mounts.dynamic,
         mounts.siteChromeSettings,
+        mounts.popupSettings,
     ].filter(Boolean);
 
     let enhancing = false;

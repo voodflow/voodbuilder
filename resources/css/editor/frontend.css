@@ -3659,6 +3659,86 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     flex: 1 1 auto;
 }
 
+.voodbuilder-editor-popup-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+}
+
+.voodbuilder-editor-popup-settings__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.voodbuilder-editor-popup-settings__intro-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.voodbuilder-editor-popup-settings__intro strong {
+    font-size: 0.8125rem;
+    font-weight: 650;
+    color: var(--color-vp-text-1, #1e293b);
+}
+
+.voodbuilder-editor-popup-settings__intro p {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-popup-settings__error {
+    margin: 0;
+    padding: 0 0.15rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-vp-danger, #dc2626);
+}
+
+.voodbuilder-editor-popup-form-shell--inspector {
+    border-radius: 0.75rem;
+    background: var(--color-vp-bg-elv, #fff);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    overflow: hidden;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-form-shell__body {
+    padding: 0.85rem 0.85rem 1rem;
+    max-height: none;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-form-shell__footer {
+    padding: 0.7rem 0.85rem;
+    flex-wrap: wrap;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-tabs {
+    gap: 0.25rem;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-tabs__btn {
+    flex: 1 1 calc(33.333% - 0.25rem);
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.625rem;
+    white-space: normal;
+    text-align: center;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-tabs__btn span {
+    display: inline;
+}
+
+.voodbuilder-editor-shell[data-voodbuilder-popup-mode] .voodbuilder-editor-traits-mount > .voodbuilder-editor-inspector-empty-state {
+    display: none;
+}
+
 .voodbuilder-editor-popup-form-shell__body {
     overflow: auto;
     min-height: 0;

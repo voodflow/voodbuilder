@@ -305,6 +305,7 @@ export function mountTopbarAction(actionsMount, control) {
 
 export function buildEditorShell(container, labels = {}, meta = {}) {
     const hideTemplates = Boolean(meta.hideTemplates);
+    const popupMode = Boolean(meta.popupMode);
     const brand = String(meta.brand ?? 'VoodBuilder').trim() || 'VoodBuilder';
     const editingContext = meta.editingContext
         ?? (meta.editingBadgeTitle
@@ -313,10 +314,13 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
     const editionSummary = meta.editionSummary && typeof meta.editionSummary === 'object'
         ? meta.editionSummary
         : null;
+    const inspectorTabs = popupMode
+        ? INSPECTOR_TABS.filter((tabId) => tabId !== 'conditions')
+        : INSPECTOR_TABS;
 
     container.classList.add('voodbuilder-editor-root');
     container.innerHTML = `
-        <div class="voodbuilder-editor-shell" data-voodbuilder-device="desktop">
+        <div class="voodbuilder-editor-shell" data-voodbuilder-device="desktop"${popupMode ? ' data-voodbuilder-popup-mode="true"' : ''}>
             <header class="voodbuilder-editor-topbar">
                 <div class="voodbuilder-editor-topbar__brand-wrap">
                     <div class="voodbuilder-editor-topbar__brand" aria-label="${escapeHtml(brand)}">
@@ -396,6 +400,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                     <div class="voodbuilder-editor-inspector-tabs" role="tablist"></div>
                     <div class="voodbuilder-editor-inspector-panels">
                         <div class="voodbuilder-editor-inspector-panel voodbuilder-editor-inspector-panel--active" data-voodbuilder-inspector="content">
+                            ${popupMode ? '<div class="voodbuilder-editor-popup-settings-mount"></div>' : ''}
                             <div class="voodbuilder-editor-traits-mount"></div>
                             <div class="voodbuilder-editor-site-chrome-settings-mount" hidden></div>
                             <div class="voodbuilder-editor-component-props-mount"></div>
@@ -407,9 +412,11 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="dynamic">
                             <div class="voodbuilder-editor-dynamic-mount"></div>
                         </div>
+                        ${popupMode ? '' : `
                         <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="conditions">
                             <div class="voodbuilder-editor-conditions-mount"></div>
                         </div>
+                        `}
                         <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="layers">
                             <div class="voodbuilder-editor-layers-mount"></div>
                         </div>
@@ -429,7 +436,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
 
     const tablist = container.querySelector('.voodbuilder-editor-inspector-tabs');
 
-    for (const tabId of INSPECTOR_TABS) {
+    for (const tabId of inspectorTabs) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'voodbuilder-editor-inspector-tab';
@@ -459,6 +466,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
             libraryPanels: container.querySelector('.voodbuilder-editor-library-panels'),
             layers: container.querySelector('.voodbuilder-editor-layers-mount'),
             traits: container.querySelector('.voodbuilder-editor-traits-mount'),
+            popupSettings: container.querySelector('.voodbuilder-editor-popup-settings-mount'),
             siteChromeSettings: container.querySelector('.voodbuilder-editor-site-chrome-settings-mount'),
             selectors: container.querySelector('.voodbuilder-editor-selectors-mount'),
             styles: container.querySelector('.voodbuilder-editor-styles-mount'),
@@ -744,7 +752,10 @@ function setupInspectorTabs(mounts, editor) {
                     activateTab('dynamic');
                 }
 
-                if (component.getAttributes?.()['data-voodbuilder-conditions']) {
+                if (
+                    ! editor.__voodbuilderPopupMode
+                    && component.getAttributes?.()['data-voodbuilder-conditions']
+                ) {
                     activateTab('conditions');
                 }
             }

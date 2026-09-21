@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.75] - 2026-09-21
+
+### Added
+
+- Popup edit mode: Content inspector mount for companion popup settings; omit Conditions tab
+
+### Changed
+
+- Wire `registerPopupCanvasSettings` when `popupMode` is active
+
 ## [0.1.74] - 2026-09-21
 
 ### Changed

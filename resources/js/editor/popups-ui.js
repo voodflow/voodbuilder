@@ -23,3 +23,11 @@ const popupUiModule = Object.values(popupUiModules)[0];
 export function registerPopupsUi(editor, options) {
     popupUiModule?.registerPopupsUi?.(editor, options);
 }
+
+/**
+ * @param {object} editor
+ * @param {object} [options]
+ */
+export function registerPopupCanvasSettings(editor, options) {
+    popupUiModule?.registerPopupCanvasSettings?.(editor, options);
+}

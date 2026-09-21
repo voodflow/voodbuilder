@@ -75,7 +75,8 @@
 .voodbuilder-editor-site-chrome-settings-mount,
 .voodbuilder-editor-component-props-mount,
 .voodbuilder-editor-dynamic-mount,
-.voodbuilder-editor-conditions-mount {
+.voodbuilder-editor-conditions-mount,
+.voodbuilder-editor-popup-settings-mount {
     padding: 0.625rem 0.75rem 1rem;
 }
 

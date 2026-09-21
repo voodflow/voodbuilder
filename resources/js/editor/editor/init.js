@@ -86,7 +86,7 @@ import { registerComponentTailwindAutobuild } from '../component-tailwind-autobu
 import { registerPageTailwindAutobuild } from '../page-tailwind-autobuild.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
-import { registerPopupsUi } from '../popups-ui.js';
+import { registerPopupCanvasSettings, registerPopupsUi } from '../popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents, promotePrivateStyleClassesToIdRules, hydrateAuthorStylesFromIdRules } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { registerPopupPreviewThemeSelect } from '../popup-preview-theme.js';
@@ -777,6 +777,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         exitUrl: options.exitUrl,
         brand: options.builderBrand ?? 'VoodBuilder',
         hideTemplates,
+        popupMode: Boolean(options.popupMode),
         editingContext: resolveEditingContext(options, labels),
         editionSummary: options.editionSummary ?? null,
     }) : null;
@@ -1419,7 +1420,17 @@ export function initVoodbuilderEditor(container, options = {}) {
             });
         }
 
-        if (! options.popupMode) {
+        if (options.popupMode) {
+            registerPopupCanvasSettings(editor, {
+                popupsUrl: options.popupsUrl,
+                popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
+                csrf: options.csrf,
+                labels,
+                popupId: options.popupId ?? null,
+                popupInitial: options.popupInitial ?? null,
+                mount: shell?.mounts?.popupSettings ?? null,
+            });
+        } else {
             if (pageTemplatesUrl && ! chromeLayoutMode) {
                 registerPageTemplatesSidebar(editor, {
                     pageTemplatesUrl,
@@ -1445,7 +1456,7 @@ export function initVoodbuilderEditor(container, options = {}) {
                 popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
                 csrf: options.csrf,
                 labels,
-                popupMode: options.popupMode ?? false,
+                popupMode: false,
                 toolbarMount: shell?.shell?.querySelector('.voodbuilder-editor-topbar__actions') ?? null,
             });
         }
@@ -2249,7 +2260,9 @@ function mountFrontendEditor() {
         dynamicDataCollections: config.dynamicDataCollections === true,
         entitlements: config.entitlements ?? {},
         popupMode: config.popupMode ?? false,
+        popupId: config.popupId ?? null,
         popupName: config.popupName ?? null,
+        popupInitial: config.popupInitial ?? null,
         popupDisplayWidth: config.popupDisplayWidth ?? null,
         previewThemeArea: config.previewThemeArea ?? null,
         previewThemeOptions: config.previewThemeOptions ?? [],
