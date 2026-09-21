@@ -3202,13 +3202,25 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-edition-modal__meta {
     display: grid;
-    gap: 0.65rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1.25rem;
     margin: 0 0 1rem;
+}
+
+@media (min-width: 640px) {
+    .voodbuilder-editor-edition-modal__meta {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
 }
 
 .voodbuilder-editor-edition-modal__row {
     display: grid;
     gap: 0.15rem;
+    min-width: 0;
+}
+
+.voodbuilder-editor-edition-modal__row--full {
+    grid-column: 1 / -1;
 }
 
 .voodbuilder-editor-edition-modal__row dt {
@@ -3238,7 +3250,6 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     color: #b45309;
 }
 
-.voodbuilder-editor-edition-modal__packages-title,
 .voodbuilder-editor-edition-modal__group-title {
     margin: 0 0 0.55rem;
     color: var(--color-vp-text-1, #0f172a);
@@ -3250,6 +3261,10 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-edition-modal__group {
     margin-top: 0.85rem;
+}
+
+.voodbuilder-editor-edition-modal__group:first-child {
+    margin-top: 0;
 }
 
 .voodbuilder-editor-edition-modal__table-wrap {
@@ -3291,7 +3306,8 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     display: block;
 }
 
-.voodbuilder-editor-edition-modal__pkg-composer {
+.voodbuilder-editor-edition-modal__pkg-composer,
+.voodbuilder-editor-edition-modal__pkg-affiliation {
     display: block;
     margin-top: 0.15rem;
     color: var(--color-vp-text-3, #94a3b8);

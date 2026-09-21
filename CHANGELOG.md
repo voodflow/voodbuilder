@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.87] - 2026-09-21
+
+### Changed
+
+- Edition modal groups packages as Core / Edition / Companions / Other Voodflow plugins; meta summary in columns; affiliation label instead of Source
+- Core `voodflow/voodbuilder` version checks Packagist; Agency/Developer listed under Edition (Community when neither is installed)
+
+### Fixed
+
+- Site footer layout in the editor canvas when `lg:*` utilities were missing from chrome-block-utilities
+
 ## [0.1.86] - 2026-09-21
 
 ### Changed

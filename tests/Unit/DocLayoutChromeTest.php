@@ -114,6 +114,26 @@ class DocLayoutChromeTest extends TestCase
         );
     }
 
+    public function test_chrome_block_utilities_include_lg_footer_layout_rules(): void
+    {
+        $contents = (string) file_get_contents(
+            VoodbuilderPaths::packagePath().'/resources/css/editor/chrome-block-utilities.css',
+        );
+
+        $this->assertStringContainsString('.lg\\:flex-row', $contents);
+        $this->assertStringContainsString('.lg\\:grid-cols-4', $contents);
+        $this->assertStringContainsString('.lg\\:col-start-1', $contents);
+        $this->assertStringContainsString('.lg\\:col-start-4', $contents);
+        $this->assertStringContainsString(
+            "body[data-voodbuilder-editor-device='desktop']",
+            $contents,
+        );
+        $this->assertStringContainsString(
+            'body[data-voodbuilder-editor-device=\'desktop\'] [data-voodbuilder-footer-menu-cols].lg\\:grid-cols-4',
+            $contents,
+        );
+    }
+
     public function test_chrome_block_utilities_container_default_yields_to_author_utilities(): void
     {
         $contents = (string) file_get_contents(

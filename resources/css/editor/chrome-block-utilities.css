@@ -352,11 +352,199 @@
     }
 }
 
+/*
+ * Footer blades use lg:* (1024px). Without these always-on rules the canvas can apply
+ * lg:col-start-* from partial JIT while lg:grid-cols-4 is missing → uneven columns.
+ * Also force the same layout when Grapes reports desktop (iframe may be < 1024px).
+ */
 @media (min-width: 1024px) {
+    .voodbuilder-editor-footer .lg\:flex-row,
+    [data-voodbuilder-block^='site_footer_'] .lg\:flex-row {
+        flex-direction: row;
+    }
+
+    .voodbuilder-editor-footer .lg\:flex-nowrap,
+    [data-voodbuilder-block^='site_footer_'] .lg\:flex-nowrap,
+    [data-voodbuilder-footer-menu-cols].lg\:flex-nowrap {
+        flex-wrap: nowrap;
+    }
+
     .voodbuilder-editor-footer .lg\:items-start,
     [data-voodbuilder-block^='site_footer_'] .lg\:items-start {
         align-items: flex-start;
     }
+
+    .voodbuilder-editor-footer .lg\:justify-end,
+    [data-voodbuilder-footer-menu-cols].lg\:justify-end {
+        justify-content: flex-end;
+    }
+
+    .voodbuilder-editor-footer .lg\:flex-1,
+    [data-voodbuilder-block^='site_footer_'] .lg\:flex-1,
+    [data-voodbuilder-footer-col].lg\:flex-1 {
+        flex: 1 1 0%;
+    }
+
+    .voodbuilder-editor-footer .lg\:basis-0,
+    [data-voodbuilder-footer-col].lg\:basis-0 {
+        flex-basis: 0%;
+    }
+
+    .voodbuilder-editor-footer .lg\:mb-0,
+    [data-voodbuilder-footer-col].lg\:mb-0 {
+        margin-bottom: 0;
+    }
+
+    .voodbuilder-editor-footer .lg\:mt-0,
+    [data-voodbuilder-footer-menu-cols].lg\:mt-0 {
+        margin-top: 0;
+    }
+
+    .voodbuilder-editor-footer .lg\:pl-12,
+    [data-voodbuilder-footer-menu-cols].lg\:pl-12 {
+        padding-left: 3rem;
+    }
+
+    .voodbuilder-editor-footer .lg\:text-left,
+    [data-voodbuilder-block^='site_footer_'] .lg\:text-left,
+    [data-voodbuilder-footer-menu-cols].lg\:text-left {
+        text-align: left;
+    }
+
+    .voodbuilder-editor-footer .lg\:mx-0,
+    [data-voodbuilder-block^='site_footer_'] .lg\:mx-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .voodbuilder-editor-footer .lg\:w-64,
+    [data-voodbuilder-block^='site_footer_'] .lg\:w-64 {
+        width: 16rem;
+    }
+
+    .voodbuilder-editor-footer .lg\:max-w-none,
+    [data-voodbuilder-block^='site_footer_'] .lg\:max-w-none {
+        max-width: none;
+    }
+
+    .voodbuilder-editor-footer .lg\:grid-cols-4,
+    [data-voodbuilder-footer-menu-cols].lg\:grid-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .voodbuilder-editor-footer .lg\:col-start-1,
+    [data-voodbuilder-footer-col].lg\:col-start-1 {
+        grid-column-start: 1;
+    }
+
+    .voodbuilder-editor-footer .lg\:col-start-2,
+    [data-voodbuilder-footer-col].lg\:col-start-2 {
+        grid-column-start: 2;
+    }
+
+    .voodbuilder-editor-footer .lg\:col-start-3,
+    [data-voodbuilder-footer-col].lg\:col-start-3 {
+        grid-column-start: 3;
+    }
+
+    .voodbuilder-editor-footer .lg\:col-start-4,
+    [data-voodbuilder-footer-col].lg\:col-start-4 {
+        grid-column-start: 4;
+    }
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:flex-row,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:flex-row {
+    flex-direction: row;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:flex-nowrap,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:flex-nowrap,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:flex-nowrap {
+    flex-wrap: nowrap;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:items-start,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:items-start {
+    align-items: flex-start;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:justify-end,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:justify-end {
+    justify-content: flex-end;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:flex-1,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:flex-1,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:flex-1 {
+    flex: 1 1 0%;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:basis-0,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:basis-0 {
+    flex-basis: 0%;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:mb-0,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:mb-0 {
+    margin-bottom: 0;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:mt-0,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:mt-0 {
+    margin-top: 0;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:pl-12,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:pl-12 {
+    padding-left: 3rem;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:text-left,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:text-left,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:text-left {
+    text-align: left;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:mx-0,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:mx-0 {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:w-64,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:w-64 {
+    width: 16rem;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:max-w-none,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:max-w-none {
+    max-width: none;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:grid-cols-4,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols].lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:col-start-1,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:col-start-1 {
+    grid-column-start: 1;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:col-start-2,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:col-start-2 {
+    grid-column-start: 2;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:col-start-3,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:col-start-3 {
+    grid-column-start: 3;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:col-start-4,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\:col-start-4 {
+    grid-column-start: 4;
 }
 
 /* Rich Text: restore list markers (Tailwind preflight sets list-style: none). */

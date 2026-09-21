@@ -24,17 +24,25 @@ final class EditorEditionPackageStatusTest extends TestCase
 
         Cache::forget(VoodbuilderPortalClient::LATEST_CACHE_KEY);
         app(RemotePackageVersionClient::class)->forget('portal', 'voodbuilder');
+        app(RemotePackageVersionClient::class)->forget('packagist', 'voodflow/voodbuilder');
         Voodbuilder::entitlements()->useProvider(
             TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
         );
     }
 
-    public function test_package_status_is_current_when_installed_matches_portal(): void
+    public function test_package_status_is_current_when_installed_matches_packagist(): void
     {
         $installed = VoodbuilderPackageVersion::current();
 
         Http::fake([
-            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => $installed], 200),
+            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
+            'https://repo.packagist.org/p2/voodflow/voodbuilder.json' => Http::response([
+                'packages' => [
+                    'voodflow/voodbuilder' => [
+                        ['version' => $installed],
+                    ],
+                ],
+            ], 200),
             'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
         ]);
 
@@ -46,12 +54,21 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertIsArray($summary['packages']);
         $this->assertNotEmpty($summary['packages']);
         $this->assertSame('voodbuilder', $summary['packages'][0]['id']);
+        $this->assertSame('packagist', $summary['packages'][0]['channel']);
+        $this->assertSame('core', $summary['packages'][0]['group']);
     }
 
-    public function test_package_status_flags_anystack_update_when_behind(): void
+    public function test_package_status_flags_update_when_behind_packagist(): void
     {
         Http::fake([
-            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '99.0.0'], 200),
+            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
+            'https://repo.packagist.org/p2/voodflow/voodbuilder.json' => Http::response([
+                'packages' => [
+                    'voodflow/voodbuilder' => [
+                        ['version' => '99.0.0'],
+                    ],
+                ],
+            ], 200),
             'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
         ]);
 
@@ -59,11 +76,10 @@ final class EditorEditionPackageStatusTest extends TestCase
 
         $this->assertSame('update', $summary['package_status']);
         $this->assertSame('99.0.0', $summary['package_latest']);
-        $this->assertStringContainsString('Anystack', $summary['package_status_label']);
         $this->assertStringContainsString('99.0.0', $summary['package_status_label']);
     }
 
-    public function test_package_status_falls_back_to_version_when_portal_offline(): void
+    public function test_package_status_falls_back_to_version_when_packagist_offline(): void
     {
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response('error', 503),
@@ -77,7 +93,7 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertSame(VoodbuilderPackageVersion::current(), $summary['package_status_label']);
     }
 
-    public function test_summary_includes_core_package_row(): void
+    public function test_summary_groups_packages_and_includes_edition_row(): void
     {
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
@@ -86,10 +102,15 @@ final class EditorEditionPackageStatusTest extends TestCase
 
         $summary = EditorEditionSummary::make();
         $core = collect($summary['packages'])->firstWhere('id', 'voodbuilder');
+        $edition = collect($summary['packages'])->firstWhere('group', 'edition');
 
         $this->assertIsArray($core);
         $this->assertTrue($core['installed']);
-        $this->assertSame('portal', $core['channel']);
+        $this->assertSame('packagist', $core['channel']);
+        $this->assertSame('Community', $core['affiliation_label']);
         $this->assertSame(VoodbuilderPackageVersion::current(), $core['version']);
+
+        $this->assertIsArray($edition);
+        $this->assertSame('edition', $edition['group']);
     }
 }

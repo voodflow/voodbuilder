@@ -177,12 +177,12 @@ function editionPackageGroupLabel(group, labels = {}) {
     switch (group) {
         case 'core':
             return labels.editionInfoGroupCore ?? 'Core';
-        case 'packagist':
-            return labels.editionInfoGroupPackagist ?? 'Packagist';
-        case 'anystack_bundle':
-            return labels.editionInfoGroupAnystackBundle ?? 'Anystack edition';
-        case 'anystack_companion':
-            return labels.editionInfoGroupAnystackCompanion ?? 'Companions';
+        case 'edition':
+            return labels.editionInfoGroupEdition ?? 'Edition';
+        case 'companion':
+            return labels.editionInfoGroupCompanion ?? 'Companions';
+        case 'other':
+            return labels.editionInfoGroupOther ?? 'Other Voodflow plugins';
         default:
             return group;
     }
@@ -237,7 +237,7 @@ function buildEditionModalBody(summary, labels = {}) {
 
     const metaRows = [
         edition !== ''
-            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfo ?? 'Edition')}</dt><dd>${escapeHtml(edition)}</dd></div>`
+            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoEdition ?? 'Edition')}</dt><dd>${escapeHtml(edition)}</dd></div>`
             : '',
         `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoStatus ?? 'Licence status')}</dt><dd data-status="${configured && active ? 'active' : 'warn'}">${escapeHtml(status)}</dd></div>`,
         `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoExpires ?? 'Expires')}</dt><dd>${escapeHtml(expires)}</dd></div>`,
@@ -245,7 +245,7 @@ function buildEditionModalBody(summary, labels = {}) {
             ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoPackage ?? 'Core package')}</dt><dd${packageStatusAttr !== '' ? ` data-status="${packageStatusAttr}"` : ''}>${escapeHtml(String(summary.package_version ?? ''))}${packageLabel !== String(summary.package_version ?? '') ? ` · ${escapeHtml(packageLabel)}` : ''}</dd></div>`
             : '',
         message !== ''
-            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoMessage ?? 'Note')}</dt><dd>${escapeHtml(message)}</dd></div>`
+            ? `<div class="voodbuilder-editor-edition-modal__row voodbuilder-editor-edition-modal__row--full"><dt>${escapeHtml(labels.editionInfoMessage ?? 'Note')}</dt><dd>${escapeHtml(message)}</dd></div>`
             : '',
     ].filter(Boolean).join('');
 
@@ -257,7 +257,7 @@ function buildEditionModalBody(summary, labels = {}) {
             return;
         }
 
-        const group = String(pkg.group ?? 'anystack_companion');
+        const group = String(pkg.group ?? 'companion');
 
         if (! byGroup.has(group)) {
             byGroup.set(group, []);
@@ -266,7 +266,7 @@ function buildEditionModalBody(summary, labels = {}) {
         byGroup.get(group).push(pkg);
     });
 
-    const groupOrder = ['core', 'packagist', 'anystack_bundle', 'anystack_companion'];
+    const groupOrder = ['core', 'edition', 'companion', 'other'];
     const packageSections = groupOrder
         .filter((group) => byGroup.has(group) && byGroup.get(group).length > 0)
         .map((group) => {
@@ -277,17 +277,20 @@ function buildEditionModalBody(summary, labels = {}) {
                 const activeAttr = pkg.active === true
                     ? 'active'
                     : (pkg.active === false ? 'warn' : '');
+                const affiliation = String(pkg.affiliation_label ?? '').trim();
+                const secondary = affiliation !== ''
+                    ? `<span class="voodbuilder-editor-edition-modal__pkg-affiliation">${escapeHtml(affiliation)}</span>`
+                    : `<span class="voodbuilder-editor-edition-modal__pkg-composer">${escapeHtml(pkg.composer ?? '')}</span>`;
 
                 return `
                     <tr>
                         <th scope="row">
                             <span class="voodbuilder-editor-edition-modal__pkg-name">${escapeHtml(pkg.name ?? pkg.id ?? '')}</span>
-                            <span class="voodbuilder-editor-edition-modal__pkg-composer">${escapeHtml(pkg.composer ?? '')}</span>
+                            ${secondary}
                         </th>
                         <td data-status="${activeAttr}">${escapeHtml(editionPackageActiveLabel(pkg, labels))}</td>
                         <td>${escapeHtml(pkg.version ?? labels.editionInfoPkgNa ?? '—')}</td>
                         <td>${escapeHtml(pkg.latest ?? labels.editionInfoPkgNa ?? '—')}</td>
-                        <td>${escapeHtml(pkg.channel_label ?? labels.editionInfoPkgNa ?? '—')}</td>
                         <td${statusAttr !== '' ? ` data-status="${statusAttr}"` : ''}>${escapeHtml(pkg.status_label ?? '')}</td>
                     </tr>
                 `;
@@ -300,12 +303,11 @@ function buildEditionModalBody(summary, labels = {}) {
                         <table class="voodbuilder-editor-edition-modal__table">
                             <thead>
                                 <tr>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPackages ?? 'Package')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgName ?? 'Package')}</th>
                                     <th scope="col">${escapeHtml(labels.editionInfoPkgActive ?? 'Active')}</th>
                                     <th scope="col">${escapeHtml(labels.editionInfoPkgVersion ?? 'Installed')}</th>
                                     <th scope="col">${escapeHtml(labels.editionInfoPkgLatest ?? 'Latest')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoPkgChannel ?? 'Source')}</th>
-                                    <th scope="col">${escapeHtml(labels.editionInfoStatus ?? 'Status')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgStatus ?? 'Status')}</th>
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
@@ -319,7 +321,6 @@ function buildEditionModalBody(summary, labels = {}) {
         <dl class="voodbuilder-editor-edition-modal__meta">${metaRows}</dl>
         ${packageSections !== '' ? `
             <div class="voodbuilder-editor-edition-modal__packages">
-                <h3 class="voodbuilder-editor-edition-modal__packages-title">${escapeHtml(labels.editionInfoPackages ?? 'Installed packages')}</h3>
                 ${packageSections}
             </div>
         ` : ''}

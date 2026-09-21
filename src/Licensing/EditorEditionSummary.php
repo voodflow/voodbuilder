@@ -68,7 +68,8 @@ final class EditorEditionSummary
         $latest = null;
 
         try {
-            $latest = app(RemotePackageVersionClient::class)->latest('portal', 'voodbuilder');
+            // Community core ships on Packagist; Agency/Developer bundles use Anystack.
+            $latest = app(RemotePackageVersionClient::class)->latest('packagist', 'voodflow/voodbuilder');
         } catch (\Throwable) {
             $latest = null;
         }
