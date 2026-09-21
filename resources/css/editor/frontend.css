@@ -3188,7 +3188,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-edition-modal__panel {
     width: min(52rem, calc(100vw - 2rem));
-    max-height: min(82vh, 44rem);
+    max-height: min(88vh, 48rem);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -3197,15 +3197,15 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 .voodbuilder-editor-edition-modal__body {
     flex: 1 1 auto;
     overflow: auto;
-    padding: 1rem 1.15rem 1.15rem;
+    padding: 0.85rem 1.05rem 1rem;
 }
 
 .voodbuilder-editor-edition-modal__meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem 1.25rem;
-    margin: 0 0 1.15rem;
-    padding-bottom: 1rem;
+    gap: 0.55rem 1.1rem;
+    margin: 0 0 0.85rem;
+    padding-bottom: 0.75rem;
     box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
 }
 
@@ -3217,7 +3217,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-edition-modal__row {
     display: grid;
-    gap: 0.15rem;
+    gap: 0.1rem;
     min-width: 0;
 }
 
@@ -3239,7 +3239,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     color: var(--color-vp-text-1, #0f172a);
     font-size: 0.8125rem;
     font-weight: 560;
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
 .voodbuilder-editor-edition-modal__row dd[data-status="active"],
@@ -3252,42 +3252,69 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     color: #b45309;
 }
 
+.voodbuilder-editor-edition-modal__packages {
+    display: grid;
+    gap: 0.7rem;
+}
+
 .voodbuilder-editor-edition-modal__group-title {
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.4rem;
     color: var(--color-vp-text-1, #0f172a);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
 }
 
 .voodbuilder-editor-edition-modal__group {
-    margin-top: 0.85rem;
-}
-
-.voodbuilder-editor-edition-modal__group:first-child {
-    margin-top: 0;
+    margin: 0;
 }
 
 .voodbuilder-editor-edition-modal__table-wrap {
     overflow-x: auto;
-    border-radius: 0.65rem;
+    border-radius: 0.55rem;
     background: var(--color-vp-bg, #fff);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
 }
 
+/*
+ * Shared fixed columns so Core / Edition / Extra tables stay visually aligned.
+ * Package | Active | Registered | Version
+ */
 .voodbuilder-editor-edition-modal__table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 0.75rem;
 }
 
+.voodbuilder-editor-edition-modal__table col.voodbuilder-editor-edition-modal__col-pkg {
+    width: 46%;
+}
+
+.voodbuilder-editor-edition-modal__table col.voodbuilder-editor-edition-modal__col-active {
+    width: 14%;
+}
+
+.voodbuilder-editor-edition-modal__table col.voodbuilder-editor-edition-modal__col-registered {
+    width: 16%;
+}
+
+.voodbuilder-editor-edition-modal__table col.voodbuilder-editor-edition-modal__col-version {
+    width: 24%;
+}
+
 .voodbuilder-editor-edition-modal__table th,
 .voodbuilder-editor-edition-modal__table td {
-    padding: 0.55rem 0.65rem;
+    padding: 0.4rem 0.55rem;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
     border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
+}
+
+.voodbuilder-editor-edition-modal__table tbody tr:last-child th,
+.voodbuilder-editor-edition-modal__table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .voodbuilder-editor-edition-modal__table thead th {
@@ -3304,24 +3331,34 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     color: var(--color-vp-text-1, #0f172a);
 }
 
+.voodbuilder-editor-edition-modal__table td {
+    white-space: nowrap;
+}
+
 .voodbuilder-editor-edition-modal__pkg-name {
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .voodbuilder-editor-edition-modal__pkg-composer,
 .voodbuilder-editor-edition-modal__pkg-affiliation {
     display: block;
-    margin-top: 0.15rem;
+    margin-top: 0.1rem;
     color: var(--color-vp-text-3, #94a3b8);
     font-size: 0.625rem;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .voodbuilder-editor-edition-modal__docs {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     color: var(--color-vp-brand-1, #7c3aed);
     font-size: 0.75rem;
     font-weight: 600;

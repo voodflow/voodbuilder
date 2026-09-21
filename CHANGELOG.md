@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.89] - 2026-09-21
+
+### Changed
+
+- Edition modal tables share fixed column widths (Package / Active / Registered / Version) and tighter spacing; taller panel to reduce scroll
+
 ## [0.1.88] - 2026-09-21
 
 ### Changed

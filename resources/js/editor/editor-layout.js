@@ -305,6 +305,12 @@ function buildEditionModalBody(summary, labels = {}) {
                     <h3 class="voodbuilder-editor-edition-modal__group-title">${escapeHtml(editionPackageGroupLabel(group, labels, summary))}</h3>
                     <div class="voodbuilder-editor-edition-modal__table-wrap">
                         <table class="voodbuilder-editor-edition-modal__table">
+                            <colgroup>
+                                <col class="voodbuilder-editor-edition-modal__col-pkg">
+                                <col class="voodbuilder-editor-edition-modal__col-active">
+                                <col class="voodbuilder-editor-edition-modal__col-registered">
+                                <col class="voodbuilder-editor-edition-modal__col-version">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th scope="col">${escapeHtml(labels.editionInfoPkgName ?? 'Package')}</th>
