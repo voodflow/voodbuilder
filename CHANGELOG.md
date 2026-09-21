@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.81] - 2026-09-21
+
+### Changed
+
+- Popup Settings accordion matches Style sectors (grey header, caret, white body card)
+
 ## [0.1.80] - 2026-09-21
 
 ### Fixed

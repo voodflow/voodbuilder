@@ -1483,7 +1483,7 @@
 
 /*
  * Popup Settings tab — MUST live here (after global .voodbuilder-editor-form-field
- * row/center rules). Match Reading typography: flat, airy, uppercase labels, no cards.
+ * row/center rules). Sections match Style sectors (grey header + caret + white body).
  */
 .voodbuilder-editor-popup-settings-mount {
     padding: 0.75rem;
@@ -1571,21 +1571,20 @@
 .voodbuilder-editor-popup-accordion {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 0.5rem;
 }
 
+/* Match Style sectors: grey header + caret + white body card */
 .voodbuilder-editor-popup-accordion__item {
-    margin: 0 0 0.35rem;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    overflow: visible;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent) !important;
+    margin: 0 !important;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent) !important;
+    border-radius: 0.625rem !important;
+    background: var(--color-vp-bg-elv, #fff) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+    overflow: hidden;
 }
 
 .voodbuilder-editor-popup-accordion__item:last-child {
-    border-bottom: 0 !important;
     margin-bottom: 0;
 }
 
@@ -1593,44 +1592,71 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.55rem 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.75rem !important;
     cursor: pointer;
     list-style: none;
-    font-size: 0.6875rem;
-    font-weight: 700;
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--color-vp-text-2, #64748b);
+    color: var(--color-vp-text-2, #64748b) !important;
     user-select: none;
-    background: transparent !important;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff)) !important;
     border: 0 !important;
+    border-bottom: 1px solid transparent !important;
 }
 
 .voodbuilder-editor-popup-accordion__summary::-webkit-details-marker {
     display: none;
 }
 
-.voodbuilder-editor-popup-accordion__summary .voodbuilder-editor-icon {
+.voodbuilder-editor-popup-accordion__summary:hover {
+    color: var(--color-vp-text-1, #0f172a) !important;
+}
+
+.voodbuilder-editor-popup-accordion__caret {
+    display: inline-flex;
     flex-shrink: 0;
-    width: 0.875rem;
-    height: 0.875rem;
-    color: var(--color-vp-text-3, #94a3b8);
+    width: 0.5rem;
+    height: 0.5rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.voodbuilder-editor-popup-accordion__caret::before {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-top: 0.2rem solid transparent;
+    border-bottom: 0.2rem solid transparent;
+    border-left: 0.3rem solid currentColor;
+    transition: transform 0.15s ease;
 }
 
 .voodbuilder-editor-popup-accordion__item[open] > .voodbuilder-editor-popup-accordion__summary {
-    color: var(--color-vp-text-1, #0f172a);
-    background: transparent !important;
+    color: var(--color-vp-text-2, #64748b) !important;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 65%, var(--color-vp-bg-elv, #fff)) !important;
+    border-bottom-color: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent) !important;
 }
 
-.voodbuilder-editor-popup-accordion__item[open] > .voodbuilder-editor-popup-accordion__summary .voodbuilder-editor-icon {
-    color: var(--color-vp-brand-1, #2563eb);
+.voodbuilder-editor-popup-accordion__item[open] > .voodbuilder-editor-popup-accordion__summary .voodbuilder-editor-popup-accordion__caret::before {
+    transform: rotate(90deg);
+}
+
+.voodbuilder-editor-popup-accordion__label {
+    min-width: 0;
 }
 
 .voodbuilder-editor-popup-accordion__body {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.15rem 0 0.9rem;
+    gap: 0.85rem;
+    padding: 0.75rem !important;
+    background: var(--color-vp-bg-elv, #fff);
+    box-sizing: border-box;
 }
 
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-stack {
@@ -1804,7 +1830,7 @@
 
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-stack,
 .voodbuilder-editor-popup-accordion__body {
-    gap: 0.95rem;
+    gap: 0.85rem;
 }
 
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field,
