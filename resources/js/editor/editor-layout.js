@@ -131,12 +131,11 @@ function editionChromeMarkup(summary, labels = {}) {
                 type="button"
                 class="voodbuilder-editor-topbar__edition-info"
                 data-voodbuilder-edition-info
-                aria-expanded="false"
                 aria-haspopup="dialog"
+                aria-expanded="false"
                 title="${escapeHtml(infoLabel)}"
                 aria-label="${escapeHtml(infoLabel)}"
             >${lucideIcon('info', 14)}</button>
-            <div class="voodbuilder-editor-topbar__edition-popover" data-voodbuilder-edition-popover hidden role="dialog" aria-label="${escapeHtml(infoLabel)}"></div>
         </div>
     `;
 }
@@ -170,11 +169,48 @@ function formatEditionExpiry(iso) {
 }
 
 /**
- * @param {HTMLElement} host
+ * @param {string} group
+ * @param {Record<string, string>} labels
+ * @returns {string}
+ */
+function editionPackageGroupLabel(group, labels = {}) {
+    switch (group) {
+        case 'core':
+            return labels.editionInfoGroupCore ?? 'Core';
+        case 'packagist':
+            return labels.editionInfoGroupPackagist ?? 'Packagist';
+        case 'anystack_bundle':
+            return labels.editionInfoGroupAnystackBundle ?? 'Anystack edition';
+        case 'anystack_companion':
+            return labels.editionInfoGroupAnystackCompanion ?? 'Companions';
+        default:
+            return group;
+    }
+}
+
+/**
+ * @param {Record<string, unknown>} pkg
+ * @param {Record<string, string>} labels
+ * @returns {string}
+ */
+function editionPackageActiveLabel(pkg, labels = {}) {
+    if (pkg.active === true) {
+        return labels.editionInfoPkgActive ?? 'Active';
+    }
+
+    if (pkg.active === false) {
+        return labels.editionInfoPkgInactive ?? 'Installed (inactive)';
+    }
+
+    return labels.editionInfoPkgNa ?? '—';
+}
+
+/**
  * @param {Record<string, unknown>} summary
  * @param {Record<string, string>} labels
+ * @returns {string}
  */
-function fillEditionPopover(host, summary, labels = {}) {
+function buildEditionModalBody(summary, labels = {}) {
     const configured = summary.licence_configured === true;
     const active = summary.active === true;
     let status = labels.editionInfoStatusUnconfigured ?? 'No licence key';
@@ -193,30 +229,103 @@ function fillEditionPopover(host, summary, labels = {}) {
     const packageStatus = String(summary.package_status ?? 'unknown').trim();
     const packageStatusAttr = packageStatus === 'current'
         ? 'active'
-        : (packageStatus === 'update' ? 'warn' : '');
+        : (packageStatus === 'update' || packageStatus === 'ahead' ? 'warn' : '');
     const docsUrl = String(summary.docs_url ?? 'https://docs.voodflow.com').trim();
     const message = String(summary.message ?? '').trim();
     const edition = String(summary.label ?? summary.badge ?? '').trim();
+    const packages = Array.isArray(summary.packages) ? summary.packages : [];
 
-    const rows = [
+    const metaRows = [
         edition !== ''
-            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfo ?? 'Edition')}</dt><dd>${escapeHtml(edition)}</dd></div>`
+            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfo ?? 'Edition')}</dt><dd>${escapeHtml(edition)}</dd></div>`
             : '',
-        `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoStatus ?? 'Licence status')}</dt><dd data-status="${configured && active ? 'active' : 'warn'}">${escapeHtml(status)}</dd></div>`,
-        `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoExpires ?? 'Expires')}</dt><dd>${escapeHtml(expires)}</dd></div>`,
+        `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoStatus ?? 'Licence status')}</dt><dd data-status="${configured && active ? 'active' : 'warn'}">${escapeHtml(status)}</dd></div>`,
+        `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoExpires ?? 'Expires')}</dt><dd>${escapeHtml(expires)}</dd></div>`,
         packageLabel !== ''
-            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoPackage ?? 'Package')}</dt><dd${packageStatusAttr !== '' ? ` data-status="${packageStatusAttr}"` : ''}>${escapeHtml(packageLabel)}</dd></div>`
+            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoPackage ?? 'Core package')}</dt><dd${packageStatusAttr !== '' ? ` data-status="${packageStatusAttr}"` : ''}>${escapeHtml(String(summary.package_version ?? ''))}${packageLabel !== String(summary.package_version ?? '') ? ` · ${escapeHtml(packageLabel)}` : ''}</dd></div>`
             : '',
         message !== ''
-            ? `<div class="voodbuilder-editor-topbar__edition-row"><dt>${escapeHtml(labels.editionInfoMessage ?? 'Note')}</dt><dd>${escapeHtml(message)}</dd></div>`
+            ? `<div class="voodbuilder-editor-edition-modal__row"><dt>${escapeHtml(labels.editionInfoMessage ?? 'Note')}</dt><dd>${escapeHtml(message)}</dd></div>`
             : '',
     ].filter(Boolean).join('');
 
-    host.innerHTML = `
-        <dl class="voodbuilder-editor-topbar__edition-list">${rows}</dl>
+    /** @type {Map<string, Array<Record<string, unknown>>>} */
+    const byGroup = new Map();
+
+    packages.forEach((pkg) => {
+        if (! pkg || typeof pkg !== 'object') {
+            return;
+        }
+
+        const group = String(pkg.group ?? 'anystack_companion');
+
+        if (! byGroup.has(group)) {
+            byGroup.set(group, []);
+        }
+
+        byGroup.get(group).push(pkg);
+    });
+
+    const groupOrder = ['core', 'packagist', 'anystack_bundle', 'anystack_companion'];
+    const packageSections = groupOrder
+        .filter((group) => byGroup.has(group) && byGroup.get(group).length > 0)
+        .map((group) => {
+            const rows = byGroup.get(group).map((pkg) => {
+                const statusAttr = pkg.status === 'current'
+                    ? 'active'
+                    : (pkg.status === 'update' || pkg.status === 'ahead' ? 'warn' : '');
+                const activeAttr = pkg.active === true
+                    ? 'active'
+                    : (pkg.active === false ? 'warn' : '');
+
+                return `
+                    <tr>
+                        <th scope="row">
+                            <span class="voodbuilder-editor-edition-modal__pkg-name">${escapeHtml(pkg.name ?? pkg.id ?? '')}</span>
+                            <span class="voodbuilder-editor-edition-modal__pkg-composer">${escapeHtml(pkg.composer ?? '')}</span>
+                        </th>
+                        <td data-status="${activeAttr}">${escapeHtml(editionPackageActiveLabel(pkg, labels))}</td>
+                        <td>${escapeHtml(pkg.version ?? labels.editionInfoPkgNa ?? '—')}</td>
+                        <td>${escapeHtml(pkg.latest ?? labels.editionInfoPkgNa ?? '—')}</td>
+                        <td>${escapeHtml(pkg.channel_label ?? labels.editionInfoPkgNa ?? '—')}</td>
+                        <td${statusAttr !== '' ? ` data-status="${statusAttr}"` : ''}>${escapeHtml(pkg.status_label ?? '')}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <section class="voodbuilder-editor-edition-modal__group">
+                    <h3 class="voodbuilder-editor-edition-modal__group-title">${escapeHtml(editionPackageGroupLabel(group, labels))}</h3>
+                    <div class="voodbuilder-editor-edition-modal__table-wrap">
+                        <table class="voodbuilder-editor-edition-modal__table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPackages ?? 'Package')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgActive ?? 'Active')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgVersion ?? 'Installed')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgLatest ?? 'Latest')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoPkgChannel ?? 'Source')}</th>
+                                    <th scope="col">${escapeHtml(labels.editionInfoStatus ?? 'Status')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </section>
+            `;
+        }).join('');
+
+    return `
+        <dl class="voodbuilder-editor-edition-modal__meta">${metaRows}</dl>
+        ${packageSections !== '' ? `
+            <div class="voodbuilder-editor-edition-modal__packages">
+                <h3 class="voodbuilder-editor-edition-modal__packages-title">${escapeHtml(labels.editionInfoPackages ?? 'Installed packages')}</h3>
+                ${packageSections}
+            </div>
+        ` : ''}
         ${docsUrl !== '' ? `
             <a
-                class="voodbuilder-editor-topbar__edition-docs"
+                class="voodbuilder-editor-edition-modal__docs"
                 href="${escapeHtml(docsUrl)}"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -233,46 +342,88 @@ function fillEditionPopover(host, summary, labels = {}) {
 export function wireEditionInfoChrome(shellRoot, summary, labels = {}) {
     const chrome = shellRoot?.querySelector?.('[data-voodbuilder-edition-chrome]');
     const button = chrome?.querySelector?.('[data-voodbuilder-edition-info]');
-    const popover = chrome?.querySelector?.('[data-voodbuilder-edition-popover]');
 
-    if (! chrome || ! button || ! popover || ! summary) {
+    if (! chrome || ! button || ! summary) {
         return;
     }
 
-    fillEditionPopover(popover, summary, labels);
+    /** @type {HTMLElement|null} */
+    let modal = null;
 
     const close = () => {
-        popover.hidden = true;
+        if (! modal) {
+            return;
+        }
+
+        modal.hidden = true;
+        modal.remove();
+        modal = null;
         button.setAttribute('aria-expanded', 'false');
         chrome.classList.remove('is-edition-open');
+        document.removeEventListener('keydown', onKeyDown, true);
+    };
+
+    const onKeyDown = (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        }
     };
 
     const open = () => {
-        popover.hidden = false;
+        if (modal) {
+            close();
+        }
+
+        const title = labels.editionInfo ?? 'Edition details';
+        const closeLabel = labels.editionInfoClose ?? labels.dialogCancel ?? 'Close';
+
+        modal = document.createElement('div');
+        modal.className = 'voodbuilder-editor-modal voodbuilder-editor-edition-modal';
+        modal.setAttribute('role', 'presentation');
+        modal.innerHTML = `
+            <div class="voodbuilder-editor-modal__backdrop" data-voodbuilder-edition-close></div>
+            <div
+                class="voodbuilder-editor-modal__panel voodbuilder-editor-edition-modal__panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="voodbuilder-edition-modal-title"
+            >
+                <header class="voodbuilder-editor-modal__head">
+                    <h2 class="voodbuilder-editor-modal__title" id="voodbuilder-edition-modal-title">${escapeHtml(title)}</h2>
+                    <button type="button" class="voodbuilder-editor-modal__close" data-voodbuilder-edition-close aria-label="${escapeHtml(closeLabel)}">×</button>
+                </header>
+                <div class="voodbuilder-editor-modal__body voodbuilder-editor-edition-modal__body">
+                    ${buildEditionModalBody(summary, labels)}
+                </div>
+                <footer class="voodbuilder-editor-edition-modal__foot">
+                    <button type="button" class="voodbuilder-editor-btn" data-voodbuilder-edition-close>${escapeHtml(closeLabel)}</button>
+                </footer>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.hidden = false;
         button.setAttribute('aria-expanded', 'true');
         chrome.classList.add('is-edition-open');
+        document.addEventListener('keydown', onKeyDown, true);
+
+        modal.querySelectorAll('[data-voodbuilder-edition-close]').forEach((el) => {
+            el.addEventListener('click', (event) => {
+                event.preventDefault();
+                close();
+            });
+        });
     };
 
     button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
 
-        if (popover.hidden) {
-            open();
+        if (modal) {
+            close();
         } else {
-            close();
-        }
-    });
-
-    document.addEventListener('click', (event) => {
-        if (! chrome.contains(event.target)) {
-            close();
-        }
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            close();
+            open();
         }
     });
 }

@@ -326,75 +326,6 @@ body.voodbuilder-editor-editing .voodbuilder-editor-frontend__canvas .gjs-blocks
     background: color-mix(in srgb, var(--color-vp-bg-elv, #f8fafc) 88%, transparent);
 }
 
-.voodbuilder-editor-topbar__edition-popover {
-    position: absolute;
-    top: calc(100% + 0.4rem);
-    left: 0;
-    z-index: 40;
-    width: min(18rem, calc(100vw - 2rem));
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background: var(--color-vp-bg-elv, #fff);
-    color: var(--color-vp-text-1, #0f172a);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
-    outline: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
-}
-
-.voodbuilder-editor-topbar__edition-popover[hidden] {
-    display: none !important;
-}
-
-.voodbuilder-editor-topbar__edition-list {
-    display: grid;
-    gap: 0.55rem;
-    margin: 0;
-}
-
-.voodbuilder-editor-topbar__edition-row {
-    display: grid;
-    gap: 0.1rem;
-}
-
-.voodbuilder-editor-topbar__edition-row dt {
-    margin: 0;
-    color: var(--color-vp-text-3, #94a3b8);
-    font-size: 0.625rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.voodbuilder-editor-topbar__edition-row dd {
-    margin: 0;
-    color: var(--color-vp-text-1, #0f172a);
-    font-size: 0.8125rem;
-    font-weight: 560;
-    line-height: 1.35;
-}
-
-.voodbuilder-editor-topbar__edition-row dd[data-status="active"] {
-    color: #059669;
-}
-
-.voodbuilder-editor-topbar__edition-row dd[data-status="warn"] {
-    color: #b45309;
-}
-
-.voodbuilder-editor-topbar__edition-docs {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.75rem;
-    color: var(--color-vp-brand-1, #7c3aed);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.voodbuilder-editor-topbar__edition-docs:hover {
-    text-decoration: underline;
-}
-
 .voodbuilder-editor-topbar__editing-context {
     display: block;
     min-width: 0;
@@ -3238,7 +3169,9 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 .voodbuilder-editor-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgb(15 23 42 / 45%);
+    background: rgb(15 23 42 / 52%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .voodbuilder-editor-modal__panel {
@@ -3251,6 +3184,143 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     background: var(--color-vp-bg-elv, #fff);
     border: 1px solid var(--color-vp-divider, #e2e8f0);
     box-shadow: 0 20px 45px rgb(15 23 42 / 18%);
+}
+
+.voodbuilder-editor-edition-modal__panel {
+    width: min(52rem, calc(100vw - 2rem));
+    max-height: min(82vh, 44rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.voodbuilder-editor-edition-modal__body {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 1rem 1.15rem 1.15rem;
+}
+
+.voodbuilder-editor-edition-modal__meta {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0 0 1rem;
+}
+
+.voodbuilder-editor-edition-modal__row {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.voodbuilder-editor-edition-modal__row dt {
+    margin: 0;
+    color: var(--color-vp-text-3, #94a3b8);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.voodbuilder-editor-edition-modal__row dd {
+    margin: 0;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.8125rem;
+    font-weight: 560;
+    line-height: 1.35;
+}
+
+.voodbuilder-editor-edition-modal__row dd[data-status="active"],
+.voodbuilder-editor-edition-modal__table td[data-status="active"] {
+    color: #059669;
+}
+
+.voodbuilder-editor-edition-modal__row dd[data-status="warn"],
+.voodbuilder-editor-edition-modal__table td[data-status="warn"] {
+    color: #b45309;
+}
+
+.voodbuilder-editor-edition-modal__packages-title,
+.voodbuilder-editor-edition-modal__group-title {
+    margin: 0 0 0.55rem;
+    color: var(--color-vp-text-1, #0f172a);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.voodbuilder-editor-edition-modal__group {
+    margin-top: 0.85rem;
+}
+
+.voodbuilder-editor-edition-modal__table-wrap {
+    overflow-x: auto;
+    border-radius: 0.65rem;
+    background: var(--color-vp-bg, #fff);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+}
+
+.voodbuilder-editor-edition-modal__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.voodbuilder-editor-edition-modal__table th,
+.voodbuilder-editor-edition-modal__table td {
+    padding: 0.55rem 0.65rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 80%, transparent);
+}
+
+.voodbuilder-editor-edition-modal__table thead th {
+    color: var(--color-vp-text-3, #94a3b8);
+    font-size: 0.625rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 92%, transparent);
+}
+
+.voodbuilder-editor-edition-modal__table tbody th {
+    font-weight: 600;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-edition-modal__pkg-name {
+    display: block;
+}
+
+.voodbuilder-editor-edition-modal__pkg-composer {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--color-vp-text-3, #94a3b8);
+    font-size: 0.625rem;
+    font-weight: 500;
+}
+
+.voodbuilder-editor-edition-modal__docs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    color: var(--color-vp-brand-1, #7c3aed);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.voodbuilder-editor-edition-modal__docs:hover {
+    text-decoration: underline;
+}
+
+.voodbuilder-editor-edition-modal__foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-vp-divider, #e2e8f0);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 70%, transparent);
 }
 
 .voodbuilder-editor-modal__head {

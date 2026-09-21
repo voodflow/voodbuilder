@@ -91,6 +91,8 @@ class EntitlementManagerTest extends TestCase
         $this->assertNotSame('', $summary['package_version']);
         $this->assertArrayHasKey('package_status', $summary);
         $this->assertArrayHasKey('package_status_label', $summary);
+        $this->assertArrayHasKey('packages', $summary);
+        $this->assertIsArray($summary['packages']);
         $this->assertSame('https://docs.voodflow.com', $summary['docs_url']);
         $this->assertTrue(Voodbuilder::can('dynamic-data.collections'));
         $this->assertTrue(Voodbuilder::cannot('dynamic-api.sources'));

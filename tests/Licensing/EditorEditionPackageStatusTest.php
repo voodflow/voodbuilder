@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
 use Voodflow\Voodbuilder\Licensing\EditorEditionSummary;
 use Voodflow\Voodbuilder\Licensing\TestingEntitlementProvider;
+use Voodflow\Voodbuilder\Services\RemotePackageVersionClient;
 use Voodflow\Voodbuilder\Services\VoodbuilderPortalClient;
 use Voodflow\Voodbuilder\Support\VoodbuilderApiEndpoints;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
@@ -22,6 +23,7 @@ final class EditorEditionPackageStatusTest extends TestCase
         parent::setUp();
 
         Cache::forget(VoodbuilderPortalClient::LATEST_CACHE_KEY);
+        app(RemotePackageVersionClient::class)->forget('portal', 'voodbuilder');
         Voodbuilder::entitlements()->useProvider(
             TestingEntitlementProvider::forEdition(EditionCapabilityMatrix::EDITION_DEVELOPER),
         );
@@ -33,6 +35,7 @@ final class EditorEditionPackageStatusTest extends TestCase
 
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => $installed], 200),
+            'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
         ]);
 
         $summary = EditorEditionSummary::make();
@@ -40,12 +43,16 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertSame('current', $summary['package_status']);
         $this->assertSame($installed, $summary['package_latest']);
         $this->assertSame('Current', $summary['package_status_label']);
+        $this->assertIsArray($summary['packages']);
+        $this->assertNotEmpty($summary['packages']);
+        $this->assertSame('voodbuilder', $summary['packages'][0]['id']);
     }
 
     public function test_package_status_flags_anystack_update_when_behind(): void
     {
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '99.0.0'], 200),
+            'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
         ]);
 
         $summary = EditorEditionSummary::make();
@@ -60,6 +67,7 @@ final class EditorEditionPackageStatusTest extends TestCase
     {
         Http::fake([
             VoodbuilderApiEndpoints::latestVersionUrl() => Http::response('error', 503),
+            'https://repo.packagist.org/p2/*' => Http::response('error', 503),
         ]);
 
         $summary = EditorEditionSummary::make();
@@ -67,5 +75,21 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertSame('unknown', $summary['package_status']);
         $this->assertNull($summary['package_latest']);
         $this->assertSame(VoodbuilderPackageVersion::current(), $summary['package_status_label']);
+    }
+
+    public function test_summary_includes_core_package_row(): void
+    {
+        Http::fake([
+            VoodbuilderApiEndpoints::latestVersionUrl() => Http::response(['tag' => '0.0.1'], 200),
+            'https://repo.packagist.org/p2/*' => Http::response(['packages' => []], 200),
+        ]);
+
+        $summary = EditorEditionSummary::make();
+        $core = collect($summary['packages'])->firstWhere('id', 'voodbuilder');
+
+        $this->assertIsArray($core);
+        $this->assertTrue($core['installed']);
+        $this->assertSame('portal', $core['channel']);
+        $this->assertSame(VoodbuilderPackageVersion::current(), $core['version']);
     }
 }

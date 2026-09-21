@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.86] - 2026-09-21
+
+### Changed
+
+- Edition info opens as a centered modal (blurred dark backdrop) with installed package inventory: local/remote versions, Packagist vs Anystack source, and companion active state
+
+### Fixed
+
+- Core package status still reports ahead/update/current against api.voodflow.com; companions without a remote feed show local-only
+
 ## [0.1.85] - 2026-09-21
 
 ### Fixed

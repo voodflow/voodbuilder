@@ -16,6 +16,17 @@ final class VoodbuilderApiEndpoints
 
     public static function latestVersionUrl(): string
     {
-        return rtrim(self::BASE_URL, '/').self::PATH_LATEST_VERSION;
+        return self::latestVersionUrlFor('voodbuilder');
+    }
+
+    public static function latestVersionUrlFor(string $packageSlug): string
+    {
+        $slug = trim($packageSlug, '/');
+
+        if ($slug === '') {
+            $slug = 'voodbuilder';
+        }
+
+        return rtrim(self::BASE_URL, '/').'/v1/packages/'.$slug.'/latest';
     }
 }

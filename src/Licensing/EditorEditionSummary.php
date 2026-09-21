@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Licensing;
 
-use Voodflow\Voodbuilder\Services\VoodbuilderPortalClient;
+use Voodflow\Voodbuilder\Services\RemotePackageVersionClient;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -26,6 +26,7 @@ use Voodflow\Voodbuilder\Voodbuilder;
  *     package_status_label: string,
  *     licence_configured: bool,
  *     docs_url: string,
+ *     packages: list<array<string, mixed>>,
  * }
  */
 final class EditorEditionSummary
@@ -40,6 +41,7 @@ final class EditorEditionSummary
         $slug = EditionCapabilityMatrix::marketingSlug($status->edition);
         $installed = VoodbuilderPackageVersion::current();
         $package = self::resolvePackageStatus($installed);
+        $packages = EditorPackageInventory::make($manager);
 
         return [
             'slug' => $slug,
@@ -54,6 +56,7 @@ final class EditorEditionSummary
             'package_status_label' => $package['label'],
             'licence_configured' => LicenceKeyResolver::resolve() !== '',
             'docs_url' => (string) config('voodbuilder.docs_url', 'https://docs.voodflow.com'),
+            'packages' => $packages,
         ];
     }
 
@@ -65,7 +68,7 @@ final class EditorEditionSummary
         $latest = null;
 
         try {
-            $latest = app(VoodbuilderPortalClient::class)->getLatestPublishedTag();
+            $latest = app(RemotePackageVersionClient::class)->latest('portal', 'voodbuilder');
         } catch (\Throwable) {
             $latest = null;
         }
