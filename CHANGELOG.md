@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.74] - 2026-09-21
+
+### Changed
+
+- Treat `voodflow/vcookiebar` as a hard companion in install docs, settings copy, and Testbench providers (matches Composer `require`)
+
 ## [0.1.73] - 2026-09-21
 
 ### Fixed

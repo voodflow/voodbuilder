@@ -346,7 +346,7 @@ class VoodbuilderSettingsPage extends Page
                             ->icon('heroicon-o-chart-bar')
                             ->schema([
                                 Section::make(__('Analytics & monitoring'))
-                                    ->description(__('Tracking scripts load on the public site only after analytics cookie consent is accepted (via Vcookiebar when installed).'))
+                                    ->description(__('Tracking scripts load on the public site only after analytics cookie consent is accepted (via Vcookiebar).'))
                                     ->schema([
                                         TextInput::make('facebook_pixel_id')
                                             ->label(__('Facebook Pixel ID'))
