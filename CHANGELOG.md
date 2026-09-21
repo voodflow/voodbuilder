@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.82] - 2026-09-21
+
+### Changed
+
+- Popup Settings typography/spacing aligned with Style sectors (lighter field labels, denser gaps, matching title scale)
+
 ## [0.1.81] - 2026-09-21
 
 ### Changed
