@@ -1,12 +1,15 @@
 # VoodBuilder (`voodflow/voodbuilder`)
 
-<img class="filament-hidden" src="https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/promo.png" alt="VoodBuilder — Filament Visual Page Builder by VoodFlow" />
+<img class="filament-hidden" src="https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/promo.png" alt="VoodBuilder — Filament Visual Site Platform by VoodFlow" />
 
-Visual **page builder** and public site shell for **Laravel + Filament 5** — themes, pages, navigation, and a GrapesJS editor.
+**More than a CMS. More than a page builder.** The Filament-native platform to design, run, and grow your public site.
+
+Built for **Laravel developers** and **agencies** shipping real client sites — not demos. VoodBuilder is the visual site layer of the **[VoodFlow](https://voodflow.com)** ecosystem (media, consent, popups, forms, content verticals, and more on the same Filament stack).
 
 ![VoodBuilder editor overview](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-overview.png)
 
-> **Docs:** [voodflow.com](https://voodflow.com)
+> **Docs:** [voodflow.com](https://voodflow.com) · **Live demo:** [demo.voodflow.com](https://demo.voodflow.com)
+
 ---
 
 ## Features
@@ -22,34 +25,35 @@ Visual **page builder** and public site shell for **Laravel + Filament 5** — t
 | **Page access** | Public, registered-only, profile-based gates, optional password unlock |
 | **Menu-driven URLs** | Pages get public routes from Navigation (e.g. `/about` or `/company/about`) |
 | **Reserved paths** | Companions declare URL prefixes so site-page catch-alls never shadow docs / tutorials / APIs |
-| **Media** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) is required by Composer; register its Filament plugin for the admin media UI |
-| **Cookie bar** | [`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar) is required by Composer; register its Filament plugin for consent UI and script gating |
+| **Media (included)** | [`voodflow/vmedia`](https://github.com/voodflow/vmedia) — media library & admin UI, pulled in with Community |
+| **Cookie consent (included)** | [`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar) — consent bar & script gating, pulled in with Community |
 
 ![Style inspector](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-styles.png)
 
 ![Layers panel](https://raw.githubusercontent.com/voodflow/voodflow-public-docs/main/voodbuilder/images/editor-layers.png)
 
-Optional packages (Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. See **Editions** below and **[voodflow.com](https://voodflow.com)**.
+Paid companions (Elements, Dynamic Data, Dynamic API, Templates, Components, Popups, content verticals) extend the same editor. See **Editions** below, try the product on **[demo.voodflow.com](https://demo.voodflow.com)**, or read more on **[voodflow.com](https://voodflow.com)**.
 
 ---
 
 ## Editions
 
-VoodBuilder ships as **Community** (this package). Paid editions unlock companion plugins and capabilities via the same licence key / Anystack checkout.
+VoodBuilder ships as **Community** (this package) so you can **evaluate the full visual site workflow** with no licence key. Paid **Developer** and **Agency** editions unlock companion plugins via Anystack — same product family, same Filament panel.
 
 ### Community
 
-What you get with `voodflow/voodbuilder` alone:
+What you get with `voodflow/voodbuilder` alone — enough to judge fit before you buy:
 
 - Visual page editor (GrapesJS), core blocks, Theme Studio, Chrome layouts
 - Site pages, menus, SEO, page access gates, site search shell
 - History / revisions, autosave, style inspector
+- **[`voodflow/vmedia`](https://github.com/voodflow/vmedia)** and **[`voodflow/vcookiebar`](https://github.com/voodflow/vcookiebar)** included (Composer dependencies — register their Filament plugins for the admin UI)
 
-Install from Packagist / Composer — no licence key required for Community surfaces.
+Install from Packagist / Composer — **no licence key** for Community surfaces. Prefer a guided tour? Open **[demo.voodflow.com](https://demo.voodflow.com)**.
 
 ### Developer
 
-Adds the day-to-day authoring companions for dynamic sites:
+For solo developers and small teams building dynamic Filament sites. Adds the day-to-day authoring companions:
 
 - **Elements** — remote Elements library and ready-made blocks
 - **Dynamic Data** — bind Eloquent models to drive page content
@@ -61,7 +65,7 @@ Adds the day-to-day authoring companions for dynamic sites:
 
 ### Agency
 
-Everything in Developer, plus agency / multi-site tooling:
+For agencies and multi-person teams. Everything in Developer, plus agency tooling:
 
 - **Popups** — build, publish, and track popups in the same editor
 - **Components** — reusable components, UIKit import, custom code import
@@ -74,6 +78,7 @@ Everything in Developer, plus agency / multi-site tooling:
 | | Community | Developer | Agency |
 |--|:---------:|:---------:|:------:|
 | Core editor & Theme Studio | ✓ | ✓ | ✓ |
+| vmedia + vcookiebar | ✓ | ✓ | ✓ |
 | Elements library | | ✓ | ✓ |
 | Dynamic Data | | ✓ | ✓ |
 | Templates | | ✓ | ✓ |
@@ -83,7 +88,7 @@ Everything in Developer, plus agency / multi-site tooling:
 | Seats | — | 1 | 5 |
 | Sites | — | Unlimited | Unlimited |
 
-Companion packages still need to be required with Composer and registered on the Filament panel (see Installation). The licence unlocks their capabilities; Community can install some companions for soft-gated UI, but paid surfaces need a Developer or Agency key.
+Companion packages still need to be required with Composer (Developer / Agency bundles) and registered on the Filament panel (see Installation). The licence unlocks their capabilities; Community can install some companions for soft-gated UI, but paid surfaces need a Developer or Agency key.
 
 ---
 
@@ -230,7 +235,8 @@ Per page you can combine:
 
 | Where | What |
 |-------|------|
-| **[voodflow.com](https://voodflow.com)** | Guides and demos |
+| **[demo.voodflow.com](https://demo.voodflow.com)** | Live demo — try VoodBuilder in the browser |
+| **[voodflow.com](https://voodflow.com)** | Product site, guides, and ecosystem |
 | Package `CHANGELOG.md` | Release notes |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 
@@ -238,5 +244,6 @@ Per page you can combine:
 
 ## Support
 
-- Docs: [voodflow.com](https://voodflow.com)  
+- Demo: [demo.voodflow.com](https://demo.voodflow.com)  
+- Docs / product: [voodflow.com](https://voodflow.com)  
 - Security: [SECURITY.md](SECURITY.md) (not via public issues)
