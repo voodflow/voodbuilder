@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.85] - 2026-09-21
+
+### Fixed
+
+- Layout editor boot crash (`tablerIcon is not defined`) when vdocs/vtuts register Reading/Integration previews — import missing from the reset control
+
 ## [0.1.84] - 2026-09-21
 
 ### Fixed

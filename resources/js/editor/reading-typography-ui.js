@@ -4,7 +4,7 @@
  * Visible only when chromeLayoutMode && readingPreviews from companions.
  */
 
-import { lucideIcon } from './editor-icons.js';
+import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
 
