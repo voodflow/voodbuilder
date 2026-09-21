@@ -24,11 +24,23 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
 {
     public const SNAPSHOT_CACHE_KEY = 'voodbuilder.entitlements.anystack.snapshot';
 
+    /** @var array<string, mixed>|null */
+    private ?array $resolved = null;
+
     public function __construct(
         private readonly LicenceClient $client,
         private readonly string $licenceKey,
         private readonly int $graceSeconds = 604800,
     ) {}
+
+    public static function hasCachedSnapshot(): bool
+    {
+        /** @var array<string, mixed>|null $cached */
+        $cached = Cache::get(self::SNAPSHOT_CACHE_KEY);
+
+        return is_array($cached)
+            && isset($cached['fetched_at'], $cached['capabilities'], $cached['edition']);
+    }
 
     public function capabilities(): CapabilitySet
     {
@@ -62,14 +74,19 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
      */
     private function resolveSnapshot(): array
     {
+        if ($this->resolved !== null) {
+            return $this->resolved;
+        }
+
         try {
             $fresh = $this->client->fetchEntitlements($this->licenceKey);
             $snapshot = $this->normalizeFreshSnapshot($fresh);
+            $snapshot = $this->protectPaidSnapshotFromFlakyCommunity($snapshot);
             Cache::forever(self::SNAPSHOT_CACHE_KEY, $snapshot);
 
-            return $snapshot;
+            return $this->resolved = $snapshot;
         } catch (LicenceClientException) {
-            return $this->outageSnapshot();
+            return $this->resolved = $this->outageSnapshot();
         }
     }
 
@@ -120,6 +137,78 @@ final class AnyStackEntitlementProvider implements EntitlementProvider
                 ? $fresh['catalog_credentials']
                 : null,
             'fetched_at' => time(),
+        ];
+    }
+
+    /**
+     * Keep the last paid snapshot when a live reply unexpectedly reports Community
+     * while still "active" (flaky/partial API payloads). Explicit inactive replies
+     * still downgrade via {@see normalizeFreshSnapshot()}.
+     *
+     * @param  array{
+     *     edition: string,
+     *     active: bool,
+     *     capabilities: list<string>,
+     *     identifier: ?string,
+     *     expires_at: ?string,
+     *     message: ?string,
+     *     catalog_credentials: ?array<string, string>,
+     *     fetched_at: int,
+     * }  $fresh
+     * @return array{
+     *     edition: string,
+     *     active: bool,
+     *     capabilities: list<string>,
+     *     identifier: ?string,
+     *     expires_at: ?string,
+     *     message: ?string,
+     *     catalog_credentials: ?array<string, string>,
+     *     fetched_at: int,
+     * }
+     */
+    private function protectPaidSnapshotFromFlakyCommunity(array $fresh): array
+    {
+        if (! $fresh['active']) {
+            return $fresh;
+        }
+
+        $freshEdition = EditionCapabilityMatrix::normalizeEdition($fresh['edition']);
+
+        if ($freshEdition !== EditionCapabilityMatrix::EDITION_COMMUNITY) {
+            return $fresh;
+        }
+
+        /** @var array<string, mixed>|null $cached */
+        $cached = Cache::get(self::SNAPSHOT_CACHE_KEY);
+
+        if (! is_array($cached) || ! isset($cached['edition'], $cached['capabilities'], $cached['fetched_at'])) {
+            return $fresh;
+        }
+
+        $cachedEdition = EditionCapabilityMatrix::normalizeEdition((string) $cached['edition']);
+
+        if (! in_array($cachedEdition, [
+            EditionCapabilityMatrix::EDITION_AGENCY,
+            EditionCapabilityMatrix::EDITION_PROFESSIONAL,
+        ], true)) {
+            return $fresh;
+        }
+
+        if (! (bool) ($cached['active'] ?? true)) {
+            return $fresh;
+        }
+
+        return [
+            'edition' => (string) $cached['edition'],
+            'active' => true,
+            'capabilities' => array_values(array_map('strval', (array) $cached['capabilities'])),
+            'identifier' => isset($cached['identifier']) ? (string) $cached['identifier'] : $fresh['identifier'],
+            'expires_at' => isset($cached['expires_at']) ? (string) $cached['expires_at'] : $fresh['expires_at'],
+            'message' => (string) __('voodbuilder::license.flaky_community_ignored'),
+            'catalog_credentials' => is_array($cached['catalog_credentials'] ?? null)
+                ? array_map('strval', $cached['catalog_credentials'])
+                : $fresh['catalog_credentials'],
+            'fetched_at' => (int) $cached['fetched_at'],
         ];
     }
 

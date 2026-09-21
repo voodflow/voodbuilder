@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.91] - 2026-09-21
+
+### Fixed
+
+- Licence fail-open: keep last Agency/Developer snapshot when the API is down, when the licence key is temporarily unreadable, or when a flaky live reply reports Community while still active; memoize snapshot per request
+
 ## [0.1.90] - 2026-09-21
 
 ### Fixed

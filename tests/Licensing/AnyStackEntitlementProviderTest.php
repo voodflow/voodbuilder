@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Licensing\AnyStack\AnyStackLicenceClient;
 use Voodflow\Voodbuilder\Licensing\Contracts\LicenceClient;
 use Voodflow\Voodbuilder\Licensing\Contracts\LicenceClientException;
 use Voodflow\Voodbuilder\Licensing\EditionCapabilityMatrix;
+use Voodflow\Voodbuilder\Licensing\EntitlementProviderFactory;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -169,5 +170,66 @@ class AnyStackEntitlementProviderTest extends TestCase
 
         $this->assertSame('community', Voodbuilder::entitlements()->edition());
         $this->assertTrue(Voodbuilder::cannot('components.library'));
+    }
+
+    public function test_active_community_reply_does_not_clobber_cached_agency(): void
+    {
+        Cache::forever(AnyStackEntitlementProvider::SNAPSHOT_CACHE_KEY, [
+            'edition' => 'agency',
+            'active' => true,
+            'capabilities' => EditionCapabilityMatrix::agency(),
+            'identifier' => 'seat-agency',
+            'expires_at' => null,
+            'message' => null,
+            'fetched_at' => time() - 30,
+        ]);
+
+        Http::fake([
+            'https://license.test/entitlements' => Http::response([
+                'edition' => 'community',
+                'active' => true,
+                'capabilities' => EditionCapabilityMatrix::community(),
+                'identifier' => 'weird',
+            ], 200),
+        ]);
+
+        $provider = new AnyStackEntitlementProvider(
+            new AnyStackLicenceClient('https://license.test', 2),
+            'vb_test_key_123456789012',
+        );
+        Voodbuilder::entitlements()->useProvider($provider);
+
+        $this->assertSame('agency', Voodbuilder::entitlements()->edition());
+        $this->assertTrue(Voodbuilder::can('components.library'));
+        $this->assertStringContainsString('cached', strtolower((string) Voodbuilder::entitlements()->licenceStatus()->message));
+    }
+
+    public function test_missing_licence_key_fail_opens_on_cached_snapshot(): void
+    {
+        Cache::forever(AnyStackEntitlementProvider::SNAPSHOT_CACHE_KEY, [
+            'edition' => 'agency',
+            'active' => true,
+            'capabilities' => EditionCapabilityMatrix::agency(),
+            'identifier' => 'seat-agency',
+            'expires_at' => null,
+            'message' => null,
+            'fetched_at' => time() - 30,
+        ]);
+
+        config([
+            'voodbuilder.license.driver' => 'anystack',
+            'voodbuilder.license.key' => '',
+            'voodbuilder.license.cache' => false,
+        ]);
+
+        // Force factory path: empty key + snapshot present.
+        $this->assertTrue(AnyStackEntitlementProvider::hasCachedSnapshot());
+
+        $provider = EntitlementProviderFactory::make();
+        Voodbuilder::entitlements()->useProvider($provider);
+
+        $this->assertInstanceOf(AnyStackEntitlementProvider::class, $provider);
+        $this->assertSame('agency', Voodbuilder::entitlements()->edition());
+        $this->assertTrue(Voodbuilder::can('components.library'));
     }
 }
