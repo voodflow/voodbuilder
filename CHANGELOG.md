@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.79] - 2026-09-21
+
+### Fixed
+
+- Popup Settings inspector: flat Reading-typography layout (no nested cards, airy padding, uppercase labels; beats global form-field row styles)
+
 ## [0.1.78] - 2026-09-21
 
 ### Fixed

@@ -1480,3 +1480,293 @@
     gap: 0.45rem;
     padding: 0 0.6rem 0.6rem;
 }
+
+/*
+ * Popup Settings tab — MUST live here (after global .voodbuilder-editor-form-field
+ * row/center rules). Match Reading typography: flat, airy, uppercase labels, no cards.
+ */
+.voodbuilder-editor-popup-settings-mount {
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-popup-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-popup-settings__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+}
+
+.voodbuilder-editor-popup-settings__intro-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.voodbuilder-editor-popup-settings__intro strong {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-popup-settings__intro p {
+    display: none;
+}
+
+.voodbuilder-editor-popup-settings__error {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-vp-danger, #dc2626);
+}
+
+.voodbuilder-editor-popup-form--inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-form-shell__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-form-shell__footer {
+    flex-shrink: 0;
+    padding: 0.75rem 0 0;
+    margin-top: 0.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 70%, transparent);
+    background: transparent;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.voodbuilder-editor-popup-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.voodbuilder-editor-popup-accordion__item {
+    margin: 0 0 0.35rem;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 55%, transparent) !important;
+}
+
+.voodbuilder-editor-popup-accordion__item:last-child {
+    border-bottom: 0 !important;
+    margin-bottom: 0;
+}
+
+.voodbuilder-editor-popup-accordion__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+    user-select: none;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.voodbuilder-editor-popup-accordion__summary::-webkit-details-marker {
+    display: none;
+}
+
+.voodbuilder-editor-popup-accordion__summary .voodbuilder-editor-icon {
+    flex-shrink: 0;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-popup-accordion__item[open] > .voodbuilder-editor-popup-accordion__summary {
+    color: var(--color-vp-text-1, #0f172a);
+    background: transparent !important;
+}
+
+.voodbuilder-editor-popup-accordion__item[open] > .voodbuilder-editor-popup-accordion__summary .voodbuilder-editor-icon {
+    color: var(--color-vp-brand-1, #2563eb);
+}
+
+.voodbuilder-editor-popup-accordion__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.15rem 0 0.9rem;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-panel,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-panel__fields,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0 !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--general,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--2,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--3 {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+    grid-template-columns: none !important;
+}
+
+/* Beat global inspector .voodbuilder-editor-form-field row + border-bottom + center */
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-field {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 0.3rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-bottom: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field--checkbox,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-field--toggle {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-label {
+    display: block !important;
+    flex: none !important;
+    width: auto !important;
+    max-width: none !important;
+    text-align: left !important;
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.35;
+    color: var(--color-vp-text-2, #64748b) !important;
+    white-space: normal !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-label--checkbox {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    color: var(--color-vp-text-1, #0f172a) !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field .voodbuilder-editor-input,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field .voodbuilder-editor-select-wrap {
+    flex: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-input,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-select-wrap,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-select {
+    min-height: 2rem;
+    border-radius: 0.5rem !important;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent) !important;
+    background: var(--color-vp-bg-elv, #fff) !important;
+    box-shadow: none !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-input {
+    padding: 0.35rem 0.55rem !important;
+    font-size: 0.8125rem !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-input--textarea {
+    min-height: 4rem;
+    resize: vertical;
+    font-family: inherit !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.45;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-status-box,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-dismiss-box {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-hint {
+    display: none !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-weekly {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-day-chip {
+    border-radius: 0.375rem;
+}
