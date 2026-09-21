@@ -1040,6 +1040,8 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     registerEditorVideoSafety(editor);
 
+    editor.__voodbuilderPopupMode = Boolean(options.popupMode);
+
     if (shell) {
         const shellRoot = shell.shell?.closest('.voodbuilder-editor-root') ?? container;
         shellRoot.classList.add('voodbuilder-editor-root--booting');

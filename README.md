@@ -55,6 +55,8 @@ Adds the day-to-day authoring companions for dynamic sites:
 - **Dynamic Data** — bind Eloquent models to drive page content
 - **Templates** — save, reuse, and share page templates
 
+**Licence:** **1 seat** (one concurrent activation). **Unlimited sites** on that licence.
+
 **Purchase:** [checkout.anystack.sh/voodbuilder-developer](https://checkout.anystack.sh/voodbuilder-developer)
 
 ### Agency
@@ -64,6 +66,8 @@ Everything in Developer, plus agency / multi-site tooling:
 - **Popups** — build, publish, and track popups in the same editor
 - **Components** — reusable components, UIKit import, custom code import
 - **Dynamic API** — HTTP, Eloquent, static, and callback data sources on pages
+
+**Licence:** **5 seats** (five concurrent activations). **Unlimited sites** on that licence.
 
 **Purchase:** [checkout.anystack.sh/voodbuilder-agency](https://checkout.anystack.sh/voodbuilder-agency)
 
@@ -76,6 +80,8 @@ Everything in Developer, plus agency / multi-site tooling:
 | Popups | | | ✓ |
 | Components | | | ✓ |
 | Dynamic API | | | ✓ |
+| Seats | — | 1 | 5 |
+| Sites | — | Unlimited | Unlimited |
 
 Companion packages still need to be required with Composer and registered on the Filament panel (see Installation). The licence unlocks their capabilities; Community can install some companions for soft-gated UI, but paid surfaces need a Developer or Agency key.
 

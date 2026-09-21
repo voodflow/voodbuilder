@@ -21,6 +21,7 @@ import {
 import { canEntitlement } from './editor/entitlements.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
+const POPUP_INSPECTOR_TABS = ['content', 'style', 'dynamic', 'layers', 'popup'];
 
 const LIBRARY_TAB_ICONS = {
     blocks: 'wall',
@@ -34,6 +35,7 @@ const INSPECTOR_TAB_ICONS = {
     dynamic: 'database',
     conditions: 'directions',
     layers: 'layers',
+    popup: 'settings',
 };
 
 function escapeHtml(value) {
@@ -315,8 +317,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         ? meta.editionSummary
         : null;
     const inspectorTabs = popupMode
-        ? INSPECTOR_TABS.filter((tabId) => tabId !== 'conditions')
+        ? POPUP_INSPECTOR_TABS
         : INSPECTOR_TABS;
+    const defaultInspectorTab = popupMode ? 'popup' : 'content';
 
     container.classList.add('voodbuilder-editor-root');
     container.innerHTML = `
@@ -399,27 +402,31 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                 <aside class="voodbuilder-editor-shell__right" aria-label="${escapeHtml(labels.panelInspector ?? 'Inspector')}">
                     <div class="voodbuilder-editor-inspector-tabs" role="tablist"></div>
                     <div class="voodbuilder-editor-inspector-panels">
-                        <div class="voodbuilder-editor-inspector-panel voodbuilder-editor-inspector-panel--active" data-voodbuilder-inspector="content">
-                            ${popupMode ? '<div class="voodbuilder-editor-popup-settings-mount"></div>' : ''}
+                        <div class="voodbuilder-editor-inspector-panel${defaultInspectorTab === 'content' ? ' voodbuilder-editor-inspector-panel--active' : ''}" data-voodbuilder-inspector="content"${defaultInspectorTab === 'content' ? '' : ' hidden'}>
                             <div class="voodbuilder-editor-traits-mount"></div>
                             <div class="voodbuilder-editor-site-chrome-settings-mount" hidden></div>
                             <div class="voodbuilder-editor-component-props-mount"></div>
                         </div>
-                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="style">
+                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="style" hidden>
                             <div class="voodbuilder-editor-selectors-mount"></div>
                             <div class="voodbuilder-editor-styles-mount"></div>
                         </div>
-                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="dynamic">
+                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="dynamic" hidden>
                             <div class="voodbuilder-editor-dynamic-mount"></div>
                         </div>
                         ${popupMode ? '' : `
-                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="conditions">
+                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="conditions" hidden>
                             <div class="voodbuilder-editor-conditions-mount"></div>
                         </div>
                         `}
-                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="layers">
+                        <div class="voodbuilder-editor-inspector-panel" data-voodbuilder-inspector="layers" hidden>
                             <div class="voodbuilder-editor-layers-mount"></div>
                         </div>
+                        ${popupMode ? `
+                        <div class="voodbuilder-editor-inspector-panel${defaultInspectorTab === 'popup' ? ' voodbuilder-editor-inspector-panel--active' : ''}" data-voodbuilder-inspector="popup"${defaultInspectorTab === 'popup' ? '' : ' hidden'}>
+                            <div class="voodbuilder-editor-popup-settings-mount"></div>
+                        </div>
+                        ` : ''}
                     </div>
                 </aside>
             </div>
@@ -432,6 +439,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         dynamic: labels.tabDynamic ?? 'Dynamic',
         conditions: labels.tabConditions ?? 'Conditions',
         layers: labels.tabLayers ?? 'Layers',
+        popup: labels.tabPopup ?? labels.popupsConfiguratorTitle ?? 'Settings',
     };
 
     const tablist = container.querySelector('.voodbuilder-editor-inspector-tabs');
@@ -442,9 +450,12 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
         button.className = 'voodbuilder-editor-inspector-tab';
         button.dataset.voodbuilderTab = tabId;
         button.setAttribute('role', 'tab');
-        button.setAttribute('aria-selected', tabId === 'content' ? 'true' : 'false');
+        button.setAttribute('aria-selected', tabId === defaultInspectorTab ? 'true' : 'false');
         button.setAttribute('aria-label', tabLabels[tabId]);
         button.title = tabLabels[tabId];
+        if (tabId === defaultInspectorTab) {
+            button.classList.add('voodbuilder-editor-inspector-tab--active');
+        }
         button.innerHTML = tabId === 'style' || tabId === 'conditions'
             ? tablerIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17)
             : lucideIcon(INSPECTOR_TAB_ICONS[tabId] ?? 'box-select', 17);
@@ -668,7 +679,8 @@ function setInspectorSidebarWidth(inspectorAside, tabId) {
 function setupInspectorTabs(mounts, editor) {
     const { tablist, panels } = mounts;
     const inspectorAside = panels?.closest('.voodbuilder-editor-shell__right') ?? null;
-    let activeTab = 'content';
+    const defaultTab = editor.__voodbuilderPopupMode ? 'popup' : 'content';
+    let activeTab = defaultTab;
 
     if (! tablist || ! panels) {
         return;
@@ -780,7 +792,7 @@ function setupInspectorTabs(mounts, editor) {
         syncInspectorManagers(editor, activeTab);
     });
 
-    activateTab('content');
+    activateTab(defaultTab);
 }
 
 function mountSelectorManagerPanel(editor, mount) {

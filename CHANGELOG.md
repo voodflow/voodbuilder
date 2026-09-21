@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.77] - 2026-09-21
+
+### Added
+
+- Popup edit mode: dedicated Settings inspector tab (cogs, last, preselected) for popup rules
+- Compact accordion UI styles for the narrow popup settings sidebar
+
+### Changed
+
+- Content tab is block/traits only again (hero image settings stay reachable on select)
+- README Editions: seat and unlimited-sites licence notes
+
 ## [0.1.76] - 2026-09-21
 
 ### Fixed
