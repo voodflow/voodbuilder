@@ -16,7 +16,11 @@ final class RemotePackageVersionClient
 {
     public const CACHE_PREFIX = 'voodbuilder_remote_package_latest.';
 
-    public function latest(string $channel, string $identifier): ?string
+    /**
+     * @param  string|null  $comparedToInstalled  When local is ahead of a cached remote tag, refresh once
+     *                                            (avoids stale "Ahead of Packagist" after a new release).
+     */
+    public function latest(string $channel, string $identifier, ?string $comparedToInstalled = null): ?string
     {
         $channel = strtolower(trim($channel));
         $identifier = trim($identifier);
@@ -27,6 +31,17 @@ final class RemotePackageVersionClient
 
         $hours = max(1, (int) config('voodbuilder.portal.version_cache_ttl_hours', 24));
         $cacheKey = self::CACHE_PREFIX.$channel.'.'.str_replace('/', '.', $identifier);
+
+        $cached = Cache::get($cacheKey);
+
+        if (is_string($cached) && $cached !== '' && $comparedToInstalled !== null && trim($comparedToInstalled) !== '') {
+            $local = VoodbuilderPackageVersion::normalize($comparedToInstalled);
+            $remote = VoodbuilderPackageVersion::normalize($cached);
+
+            if ($local !== '0.0.0' && $remote !== '0.0.0' && version_compare($local, $remote, '>')) {
+                Cache::forget($cacheKey);
+            }
+        }
 
         return Cache::remember($cacheKey, now()->addHours($hours), function () use ($channel, $identifier): ?string {
             return $channel === 'packagist'
@@ -111,16 +126,36 @@ final class RemotePackageVersionClient
                 return null;
             }
 
-            $first = $packages[0] ?? null;
-            $version = is_array($first) ? ($first['version'] ?? null) : null;
+            $highest = null;
 
-            if (! is_string($version) || $version === '') {
-                return null;
+            foreach ($packages as $release) {
+                if (! is_array($release)) {
+                    continue;
+                }
+
+                $raw = $release['version'] ?? null;
+
+                if (! is_string($raw) || $raw === '') {
+                    continue;
+                }
+
+                // Skip Composer branch aliases / dev builds.
+                if (str_starts_with($raw, 'dev-') || str_ends_with($raw, '-dev')) {
+                    continue;
+                }
+
+                $normalized = VoodbuilderPackageVersion::normalize($raw);
+
+                if ($normalized === '0.0.0') {
+                    continue;
+                }
+
+                if ($highest === null || version_compare($normalized, $highest, '>')) {
+                    $highest = $normalized;
+                }
             }
 
-            $normalized = VoodbuilderPackageVersion::normalize($version);
-
-            return $normalized !== '0.0.0' ? $normalized : ltrim(trim($version), 'vV');
+            return $highest;
         } catch (\Throwable) {
             return null;
         }

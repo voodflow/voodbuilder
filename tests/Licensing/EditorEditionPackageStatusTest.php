@@ -149,4 +149,33 @@ final class EditorEditionPackageStatusTest extends TestCase
         $this->assertNull($summary['edition_packages_title']);
         $this->assertSame(['core', 'extra'], $groups);
     }
+
+    public function test_packagist_client_picks_highest_stable_and_refreshes_stale_ahead_cache(): void
+    {
+        $client = app(RemotePackageVersionClient::class);
+        $client->forget('packagist', 'voodflow/voodbuilder');
+
+        Cache::put(
+            RemotePackageVersionClient::CACHE_PREFIX.'packagist.voodflow.voodbuilder',
+            '0.1.87',
+            now()->addDay(),
+        );
+
+        Http::fake([
+            'https://repo.packagist.org/p2/voodflow/voodbuilder.json' => Http::response([
+                'packages' => [
+                    'voodflow/voodbuilder' => [
+                        ['version' => '0.1.87'],
+                        ['version' => '0.1.89'],
+                        ['version' => 'dev-main'],
+                        ['version' => '0.1.88'],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $latest = $client->latest('packagist', 'voodflow/voodbuilder', '0.1.89');
+
+        $this->assertSame('0.1.89', $latest);
+    }
 }

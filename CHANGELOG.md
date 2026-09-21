@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.90] - 2026-09-21
+
+### Fixed
+
+- Packagist latest version: pick highest stable tag and refresh stale cache when local is ahead (no false “Ahead of Packagist” after a new release)
+
 ## [0.1.89] - 2026-09-21
 
 ### Changed

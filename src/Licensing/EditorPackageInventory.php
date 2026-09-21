@@ -222,9 +222,13 @@ final class EditorPackageInventory
         $latest = null;
 
         if ($installed && $channel === 'portal') {
-            $latest = $remote->latest('portal', (string) ($definition['portal_slug'] ?? $definition['id']));
+            $latest = $remote->latest(
+                'portal',
+                (string) ($definition['portal_slug'] ?? $definition['id']),
+                $version,
+            );
         } elseif ($installed && $channel === 'packagist') {
-            $latest = $remote->latest('packagist', $composer);
+            $latest = $remote->latest('packagist', $composer, $version);
         }
 
         $registered = null;
