@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.73] - 2026-09-21
+
+### Fixed
+
+- Public popup runtime resolves when `vpopups` is nested under `voodbuilder-agency` (Agency Composer install). Previously the Vite glob only looked at `vendor/voodflow/vpopups`, so `initPopups` was a no-op and published popups never appeared on the front.
+
 ## [0.1.72] - 2026-09-21
 
 ### Added

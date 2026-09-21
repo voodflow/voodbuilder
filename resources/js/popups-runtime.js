@@ -2,9 +2,14 @@
  * Optional public popup runtime for hosts.
  *
  * `voodbuilder` must stay agnostic when the `voodflow/vpopups` plugin is not installed.
+ * Prefer the standalone package path; fall back to the Agency nested tree used by
+ * `voodflow/voodbuilder-agency` Composer installs.
  */
 const popupRuntimeModules = import.meta.glob(
-    '../../../vpopups/resources/js/popups-runtime.js',
+    [
+        '../../../vpopups/resources/js/popups-runtime.js',
+        '../../../voodbuilder-agency/voodbuilder-popups/resources/js/popups-runtime.js',
+    ],
     { eager: true },
 );
 
