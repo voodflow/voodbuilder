@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.78] - 2026-09-21
+
+### Fixed
+
+- Popup inspector settings stack vertically in the narrow sidebar (no modal 3-column General grid)
+
 ## [0.1.77] - 2026-09-21
 
 ### Added

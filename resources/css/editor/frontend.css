@@ -3806,12 +3806,25 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     gap: 0.55rem;
 }
 
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-stack,
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--general,
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--2,
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-grid--3 {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     gap: 0.55rem;
+    grid-template-columns: none !important;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-status-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    min-height: 0;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-hint {
+    padding: 0.55rem 0.65rem;
 }
 
 .voodbuilder-editor-popup-form-shell--inspector .voodbuilder-editor-popup-form-shell__body {
