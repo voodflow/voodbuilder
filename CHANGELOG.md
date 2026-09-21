@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.80] - 2026-09-21
+
+### Fixed
+
+- Popup Settings save with the main editor Save (no separate Save & apply in the inspector)
+- Custom select lists keep optgroup headers (page path targeting matches the modal)
+- Airier popup Settings padding and reset control
+
 ## [0.1.79] - 2026-09-21
 
 ### Fixed

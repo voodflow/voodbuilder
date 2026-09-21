@@ -1770,3 +1770,60 @@
 .voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-day-chip {
     border-radius: 0.375rem;
 }
+
+.voodbuilder-editor-popup-settings-mount {
+    padding: 0.875rem 1rem 1.35rem !important;
+}
+
+.voodbuilder-editor-popup-settings__intro {
+    gap: 0.45rem;
+}
+
+.voodbuilder-editor-popup-settings__reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.15rem 0 0;
+    padding: 0.2rem 0.45rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--color-vp-text-2, #64748b);
+    font: inherit;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-popup-settings__reset:hover {
+    background: color-mix(in srgb, var(--color-vp-gray-soft, rgba(142, 150, 170, 0.14)) 80%, transparent);
+    color: var(--color-vp-text-1, #0f172a);
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-stack,
+.voodbuilder-editor-popup-accordion__body {
+    gap: 0.95rem;
+}
+
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-form-field,
+.voodbuilder-editor-popup-form--inspector .voodbuilder-editor-popup-field {
+    gap: 0.4rem !important;
+}
+
+.voodbuilder-editor-select-group {
+    margin: 0.35rem 0 0.15rem;
+    padding: 0.35rem 0.75rem 0.15rem;
+    color: var(--color-vp-text-3, #94a3b8);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    list-style: none;
+    pointer-events: none;
+}
+
+.voodbuilder-editor-select-group[hidden] {
+    display: none;
+}

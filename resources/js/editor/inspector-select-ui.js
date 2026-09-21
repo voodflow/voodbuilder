@@ -422,12 +422,13 @@ function buildOptionList(select, list, wrap) {
     const searchRow = list.querySelector('.voodbuilder-editor-select-search-item');
     const searchValue = searchRow?.querySelector('input')?.value ?? '';
 
-    list.querySelectorAll('.voodbuilder-editor-select-option').forEach((node) => node.remove());
+    list.querySelectorAll('.voodbuilder-editor-select-option, .voodbuilder-editor-select-group').forEach((node) => node.remove());
     list.querySelector('.voodbuilder-editor-select-empty')?.remove();
 
     const previewFont = wrap.classList.contains('voodbuilder-editor-select-wrap--font');
+    const children = Array.from(select.children);
 
-    for (const option of select.options) {
+    const appendOption = (option) => {
         const label = option.textContent?.trim() || option.value || '-';
         const value = option.value;
         const hex = option.getAttribute('data-hex');
@@ -471,6 +472,28 @@ function buildOptionList(select, list, wrap) {
         }
 
         list.appendChild(item);
+    };
+
+    for (const child of children) {
+        if (child instanceof HTMLOptGroupElement) {
+            const group = document.createElement('li');
+            group.className = 'voodbuilder-editor-select-group';
+            group.setAttribute('role', 'presentation');
+            group.textContent = child.label || '';
+            list.appendChild(group);
+
+            Array.from(child.children).forEach((option) => {
+                if (option instanceof HTMLOptionElement) {
+                    appendOption(option);
+                }
+            });
+
+            continue;
+        }
+
+        if (child instanceof HTMLOptionElement) {
+            appendOption(child);
+        }
     }
 
     if (searchRow) {
@@ -501,6 +524,22 @@ function applyFontSearchFilter(list, wrap, query = '') {
         if (match) {
             visible += 1;
         }
+    });
+
+    list.querySelectorAll('.voodbuilder-editor-select-group').forEach((group) => {
+        let next = group.nextElementSibling;
+        let hasVisible = false;
+
+        while (next && ! next.classList.contains('voodbuilder-editor-select-group')) {
+            if (next.classList.contains('voodbuilder-editor-select-option') && ! next.hidden) {
+                hasVisible = true;
+                break;
+            }
+
+            next = next.nextElementSibling;
+        }
+
+        group.hidden = needle !== '' && ! hasVisible;
     });
 
     let empty = list.querySelector('.voodbuilder-editor-select-empty');

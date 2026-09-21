@@ -2349,6 +2349,10 @@ function mountFrontendEditor() {
         config.labels ?? {},
     );
 
+    editor.__voodbuilderMarkPageUnsaved = () => {
+        saveStatus.unsaved();
+    };
+
     const autosave = registerEditorAutosave(editor, {
         config,
         csrf: resolveCsrfToken(config.csrf),
@@ -2471,6 +2475,14 @@ function mountFrontendEditor() {
                 }
 
                 throw new Error(detail || `Save failed (${response.status})`);
+            }
+
+            if (config.popupMode && typeof editor.__voodbuilderPersistPopupSettings === 'function') {
+                const settingsSaved = await editor.__voodbuilderPersistPopupSettings();
+
+                if (! settingsSaved) {
+                    throw new Error(config.labels?.popupsSaveError ?? 'Could not save popup settings.');
+                }
             }
 
             const saved = await response.json().catch(() => ({}));
