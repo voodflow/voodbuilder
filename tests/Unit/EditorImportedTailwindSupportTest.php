@@ -268,4 +268,61 @@ HTML;
         $this->assertSame(1, substr_count(strtolower($twice), '<section'));
         $this->assertStringContainsString('<p>Hi</p>', $twice);
     }
+
+    public function test_hero_aurora_shade_mesh_is_not_stamped_as_content_shell(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-section-block="vb-voodflow-hero-aurora" class="voodbuilder-editor-section relative isolate overflow-hidden bg-[#070b16] text-white">
+  <div aria-hidden="true" data-voodbuilder-role="shade" class="voodbuilder-editor-container pointer-events-none absolute inset-0 -z-0 vb-hero-aurora__mesh mx-auto w-full max-w-[var(--width-vp-layout)]">
+    <div class="vb-hero-aurora__blob vb-hero-aurora__blob--1"></div>
+  </div>
+  <div data-voodbuilder-role="content" data-voodbuilder-content-width="normal" class="voodbuilder-editor-container relative z-[1] w-full px-5 py-28 mx-auto max-w-[80rem]">
+    <h1>Power tools</h1>
+  </div>
+</section>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/vb-hero-aurora__mesh[^>]*data-voodbuilder-content-width="normal"|data-voodbuilder-content-width="normal"[^>]*vb-hero-aurora__mesh/',
+            $prepared,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/vb-hero-aurora__mesh[^>]*max-w-\[80rem\]|max-w-\[80rem\][^>]*vb-hero-aurora__mesh/',
+            $prepared,
+        );
+        $this->assertMatchesRegularExpression(
+            '/data-voodbuilder-role="shade"[^>]*vb-hero-aurora__mesh|vb-hero-aurora__mesh[^>]*data-voodbuilder-role="shade"/',
+            $prepared,
+        );
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $prepared);
+        $this->assertStringContainsString('Power tools', $prepared);
+    }
+
+    public function test_ensure_editor_layout_shell_heals_mesh_wrongly_stamped_as_content(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section relative w-full" data-voodbuilder-section-block="vb-voodflow-hero-aurora">
+  <div aria-hidden="true" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto;" class="voodbuilder-editor-container pointer-events-none absolute inset-0 vb-hero-aurora__mesh w-full mx-auto max-w-[80rem]"></div>
+  <div data-voodbuilder-role="content" data-voodbuilder-content-width="normal" class="voodbuilder-editor-container relative z-[1] w-full mx-auto max-w-[80rem]"><p>Hi</p></div>
+</section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/vb-hero-aurora__mesh[^>]*data-voodbuilder-content-width="normal"|data-voodbuilder-content-width="normal"[^>]*vb-hero-aurora__mesh/',
+            $healed,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/vb-hero-aurora__mesh[^>]*max-w-\[80rem\]|max-w-\[80rem\][^>]*vb-hero-aurora__mesh/',
+            $healed,
+        );
+        $this->assertMatchesRegularExpression(
+            '/data-voodbuilder-role="shade"[^>]*vb-hero-aurora__mesh|vb-hero-aurora__mesh[^>]*data-voodbuilder-role="shade"/',
+            $healed,
+        );
+        $this->assertStringContainsString('<p>Hi</p>', $healed);
+    }
 }

@@ -141,6 +141,115 @@ function simplifyFrameworkLayoutTags(html) {
 }
 
 /**
+ * Full-bleed shade / aurora mesh layers must not become content-width shells.
+ *
+ * @param {Element} element
+ * @returns {boolean}
+ */
+function isDecorativeSectionChildElement(element) {
+    if (! element?.getAttribute) {
+        return false;
+    }
+
+    const role = String(element.getAttribute('data-voodbuilder-role') ?? '').trim();
+
+    if (role === 'shade' || role === 'media') {
+        return true;
+    }
+
+    const classList = element.classList;
+
+    if (
+        classList?.contains('vb-hero-aurora__mesh')
+        || classList?.contains('voodbuilder-hero-media')
+        || classList?.contains('voodbuilder-hero-media__shade')
+    ) {
+        return true;
+    }
+
+    if (element.getAttribute('aria-hidden') === 'true'
+        && (classList?.contains('absolute') || classList?.contains('pointer-events-none'))) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @param {Element} shell
+ */
+function stampContentShellElement(shell) {
+    if (! shell || isDecorativeSectionChildElement(shell)) {
+        return;
+    }
+
+    shell.classList.add('voodbuilder-editor-container', 'mx-auto', 'w-full', 'max-w-[80rem]');
+    shell.setAttribute('data-voodbuilder-role', 'content');
+
+    if (! shell.hasAttribute('data-voodbuilder-content-width')) {
+        shell.setAttribute('data-voodbuilder-content-width', 'normal');
+    }
+
+    const style = String(shell.getAttribute('style') ?? '').trim();
+
+    if (style === '') {
+        shell.setAttribute('style', 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;');
+    } else if (! /max-width\s*:/i.test(style)) {
+        shell.setAttribute('style', `${style.replace(/;$/, '')};width:100%;max-width:80rem;margin-left:auto;margin-right:auto;`);
+    }
+}
+
+/**
+ * @param {Element} shell
+ */
+function unstampDecorativeContentShellElement(shell) {
+    if (! shell) {
+        return;
+    }
+
+    shell.classList.remove('max-w-[80rem]', 'mx-auto');
+
+    if (shell.classList.contains('absolute')
+        && (shell.classList.contains('inset-0') || shell.classList.contains('inset-x-0'))) {
+        [...shell.classList].forEach((token) => {
+            if (String(token).startsWith('max-w-')) {
+                shell.classList.remove(token);
+            }
+        });
+    }
+
+    const role = String(shell.getAttribute('data-voodbuilder-role') ?? '').trim();
+
+    if (role === '' || role === 'content') {
+        shell.setAttribute('data-voodbuilder-role', 'shade');
+    }
+
+    shell.removeAttribute('data-voodbuilder-content-width');
+
+    const style = String(shell.getAttribute('style') ?? '').trim();
+
+    if (! style) {
+        return;
+    }
+
+    const kept = style.split(';').map((part) => part.trim()).filter((part) => {
+        if (! part || ! part.includes(':')) {
+            return false;
+        }
+
+        const property = part.split(':', 1)[0].trim().toLowerCase();
+
+        return ! ['max-width', 'margin-left', 'margin-right', 'margin-inline', 'width'].includes(property);
+    });
+
+    if (kept.length === 0) {
+        shell.removeAttribute('style');
+    } else {
+        shell.setAttribute('style', `${kept.join('; ')};`);
+    }
+}
+
+/**
  * Ensure section → content shell for content-width toolbar (mirrors PHP).
  *
  * @param {string} html
@@ -153,12 +262,12 @@ export function ensureEditorLayoutShell(html) {
         return trimmed;
     }
 
-    if (/\bvoodbuilder-editor-section\b/.test(trimmed)
-        && /\bdata-voodbuilder-role=(["'])content\1/.test(trimmed)) {
-        return trimmed;
-    }
-
     if (typeof DOMParser === 'undefined') {
+        if (/\bvoodbuilder-editor-section\b/.test(trimmed)
+            && /\bdata-voodbuilder-role=(["'])content\1/.test(trimmed)) {
+            return trimmed;
+        }
+
         return [
             '<section class="voodbuilder-editor-section voodbuilder-pasted-component relative w-full">',
             '<div class="voodbuilder-editor-container mx-auto w-full max-w-[80rem]" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto;">',
@@ -175,14 +284,47 @@ export function ensureEditorLayoutShell(html) {
         return trimmed;
     }
 
+    // Compliant section: heal decorative shells, stamp only the real content wrapper.
+    if (roots.length === 1
+        && roots[0].tagName === 'SECTION'
+        && (
+            roots[0].classList.contains('voodbuilder-editor-section')
+            || roots[0].hasAttribute('data-voodbuilder-section-block')
+        )) {
+        const section = roots[0];
+        let contentShell = null;
+
+        for (const child of [...section.children]) {
+            if (isDecorativeSectionChildElement(child)
+                || child.classList.contains('vb-hero-aurora__mesh')
+                || (
+                    child.getAttribute('aria-hidden') === 'true'
+                    && child.classList.contains('absolute')
+                    && child.classList.contains('voodbuilder-editor-container')
+                )) {
+                unstampDecorativeContentShellElement(child);
+                continue;
+            }
+
+            if (child.classList.contains('voodbuilder-editor-container')
+                || child.getAttribute('data-voodbuilder-role') === 'content') {
+                contentShell = child;
+                break;
+            }
+        }
+
+        if (contentShell) {
+            stampContentShellElement(contentShell);
+        }
+
+        return section.outerHTML;
+    }
+
     const section = document.createElement('section');
     section.className = 'voodbuilder-editor-section voodbuilder-pasted-component relative w-full';
 
     const container = document.createElement('div');
-    container.className = 'voodbuilder-editor-container mx-auto w-full max-w-[80rem]';
-    container.setAttribute('data-voodbuilder-role', 'content');
-    container.setAttribute('data-voodbuilder-content-width', 'normal');
-    container.setAttribute('style', 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;');
+    stampContentShellElement(container);
 
     if (roots.length === 1) {
         const only = roots[0];
@@ -196,8 +338,11 @@ export function ensureEditorLayoutShell(html) {
         only.classList.remove('voodbuilder-pasted-component');
 
         const directShell = [...only.children].find((child) => (
-            child.classList?.contains('voodbuilder-editor-container')
-            || child.getAttribute('data-voodbuilder-role') === 'content'
+            ! isDecorativeSectionChildElement(child)
+            && (
+                child.classList?.contains('voodbuilder-editor-container')
+                || child.getAttribute('data-voodbuilder-role') === 'content'
+            )
         ));
 
         if (directShell) {
@@ -205,16 +350,22 @@ export function ensureEditorLayoutShell(html) {
                 section.appendChild(only.firstChild);
             }
 
-            const shell = section.querySelector('[data-voodbuilder-role="content"], .voodbuilder-editor-container');
-
-            if (shell) {
-                shell.classList.add('voodbuilder-editor-container', 'mx-auto', 'w-full', 'max-w-[80rem]');
-                shell.setAttribute('data-voodbuilder-role', 'content');
-
-                if (! shell.hasAttribute('data-voodbuilder-content-width')) {
-                    shell.setAttribute('data-voodbuilder-content-width', 'normal');
+            for (const child of [...section.children]) {
+                if (isDecorativeSectionChildElement(child)
+                    || child.classList.contains('vb-hero-aurora__mesh')) {
+                    unstampDecorativeContentShellElement(child);
                 }
             }
+
+            const shell = [...section.children].find((child) => (
+                ! isDecorativeSectionChildElement(child)
+                && (
+                    child.getAttribute('data-voodbuilder-role') === 'content'
+                    || child.classList.contains('voodbuilder-editor-container')
+                )
+            ));
+
+            stampContentShellElement(shell);
 
             return section.outerHTML;
         }

@@ -402,6 +402,10 @@ export function isContentWidthSection(component) {
  * @returns {boolean}
  */
 export function isContentWidthContainer(component) {
+    if (isDecorativeSectionChild(component)) {
+        return false;
+    }
+
     return isLayoutContainer(component)
         || componentClasses(component).includes(CONTAINER_CLASS)
         || String(componentAttrs(component)['data-voodbuilder-role'] ?? '') === 'content';
@@ -864,6 +868,11 @@ export function applyComponentContentWidth(component, mode, editor) {
         return;
     }
 
+    // Never stamp measure utilities onto shade / aurora mesh layers.
+    if (isDecorativeSectionChild(component)) {
+        return;
+    }
+
     const next = mode === CONTENT_WIDTH_CUSTOM && ! resolveCustomContentMax(editor)
         ? CONTENT_WIDTH_NORMAL
         : mode;
@@ -961,11 +970,55 @@ export function restoreContentWidthFromAttributes(editor) {
         return;
     }
 
+    const healDecorativeStamp = (component) => {
+        if (! isDecorativeSectionChild(component)) {
+            return;
+        }
+
+        const attrs = componentAttrs(component);
+        const classes = [...componentClasses(component)];
+        let changed = false;
+
+        if (attrs[CONTENT_WIDTH_ATTR]) {
+            const nextAttrs = { ...attrs };
+            delete nextAttrs[CONTENT_WIDTH_ATTR];
+
+            if (String(nextAttrs['data-voodbuilder-role'] ?? '') === 'content') {
+                nextAttrs['data-voodbuilder-role'] = 'shade';
+            }
+
+            component.setAttributes?.(nextAttrs);
+            changed = true;
+        }
+
+        const nextClasses = classes.filter((token) => {
+            const name = String(token);
+
+            return name !== 'max-w-[80rem]'
+                && name !== 'mx-auto'
+                && ! (classes.includes('absolute') && name.startsWith('max-w-'));
+        });
+
+        if (nextClasses.length !== classes.length) {
+            component.setClass?.(nextClasses);
+            changed = true;
+        }
+
+        if (changed) {
+            clearContentWidthInlineStyles(component);
+        }
+    };
+
     const walk = (component) => {
+        healDecorativeStamp(component);
+
         const attrs = component?.getAttributes?.() ?? {};
         const mode = String(attrs[CONTENT_WIDTH_ATTR] ?? '').trim();
 
-        if (mode === CONTENT_WIDTH_FULL || mode === CONTENT_WIDTH_NORMAL || mode === CONTENT_WIDTH_CUSTOM) {
+        if (
+            ! isDecorativeSectionChild(component)
+            && (mode === CONTENT_WIDTH_FULL || mode === CONTENT_WIDTH_NORMAL || mode === CONTENT_WIDTH_CUSTOM)
+        ) {
             applyComponentContentWidth(component, mode, editor);
         }
 

@@ -905,6 +905,10 @@ final class EditorImportedTailwindSupport
 
     protected static function stampContentShellAttributes(DOMElement $element): void
     {
+        if (self::isDecorativeSectionChild($element)) {
+            return;
+        }
+
         $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         foreach (['voodbuilder-editor-container', 'mx-auto', 'w-full', 'max-w-[80rem]'] as $token) {
@@ -930,6 +934,98 @@ final class EditorImportedTailwindSupport
         }
     }
 
+    /**
+     * Full-bleed hero layers (shade / aurora mesh) often use .voodbuilder-editor-container
+     * for stacking context — they must not be treated as the content measure shell.
+     */
+    protected static function isDecorativeSectionChild(DOMElement $element): bool
+    {
+        $role = trim($element->getAttribute('data-voodbuilder-role'));
+
+        if (in_array($role, ['shade', 'media'], true)) {
+            return true;
+        }
+
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (
+            in_array('vb-hero-aurora__mesh', $classes, true)
+            || in_array('voodbuilder-hero-media', $classes, true)
+            || in_array('voodbuilder-hero-media__shade', $classes, true)
+        ) {
+            return true;
+        }
+
+        if ($element->getAttribute('aria-hidden') === 'true'
+            && (in_array('absolute', $classes, true) || in_array('pointer-events-none', $classes, true))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Undo a mistaken content-width stamp on decorative layers (save used to re-apply max-w-[80rem]).
+     */
+    protected static function unstampDecorativeContentShell(DOMElement $element): void
+    {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $classes = array_values(array_filter(
+            $classes,
+            static fn (string $token): bool => $token !== 'max-w-[80rem]' && $token !== 'mx-auto',
+        ));
+
+        // Absolute full-bleed mesh: measure utilities fight inset-0.
+        if (in_array('absolute', $classes, true)
+            && (in_array('inset-0', $classes, true) || in_array('inset-x-0', $classes, true))) {
+            $classes = array_values(array_filter(
+                $classes,
+                static fn (string $token): bool => ! str_starts_with($token, 'max-w-'),
+            ));
+        }
+
+        $element->setAttribute('class', implode(' ', $classes));
+
+        $role = trim($element->getAttribute('data-voodbuilder-role'));
+
+        if ($role === '' || $role === 'content') {
+            $element->setAttribute('data-voodbuilder-role', 'shade');
+        }
+
+        $element->removeAttribute('data-voodbuilder-content-width');
+
+        $style = trim($element->getAttribute('style'));
+
+        if ($style === '') {
+            return;
+        }
+
+        $kept = [];
+
+        foreach (explode(';', $style) as $part) {
+            $part = trim($part);
+
+            if ($part === '' || ! str_contains($part, ':')) {
+                continue;
+            }
+
+            [$property] = array_map('trim', explode(':', $part, 2));
+            $propertyLower = strtolower($property);
+
+            if (in_array($propertyLower, ['max-width', 'margin-left', 'margin-right', 'margin-inline', 'width'], true)) {
+                continue;
+            }
+
+            $kept[] = $part;
+        }
+
+        if ($kept === []) {
+            $element->removeAttribute('style');
+        } else {
+            $element->setAttribute('style', implode('; ', $kept).';');
+        }
+    }
+
     protected static function isEditorSectionElement(DOMElement $element): bool
     {
         if (strtolower($element->tagName) !== 'section') {
@@ -945,6 +1041,10 @@ final class EditorImportedTailwindSupport
 
     protected static function isContentShellElement(DOMElement $element): bool
     {
+        if (self::isDecorativeSectionChild($element)) {
+            return false;
+        }
+
         $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         return in_array('voodbuilder-editor-container', $classes, true)
@@ -967,7 +1067,24 @@ final class EditorImportedTailwindSupport
         $existing = null;
 
         foreach ($section->childNodes as $child) {
-            if ($child instanceof DOMElement && self::isContentShellElement($child)) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            // Heal mesh/shade layers previously stamped as content shells on import/save.
+            if (self::isDecorativeSectionChild($child)
+                || (
+                    $child->getAttribute('aria-hidden') === 'true'
+                    && str_contains($child->getAttribute('class'), 'absolute')
+                    && str_contains($child->getAttribute('class'), 'voodbuilder-editor-container')
+                )
+                || str_contains($child->getAttribute('class'), 'vb-hero-aurora__mesh')) {
+                self::unstampDecorativeContentShell($child);
+
+                continue;
+            }
+
+            if (self::isContentShellElement($child)) {
                 $existing = $child;
                 break;
             }
@@ -983,9 +1100,15 @@ final class EditorImportedTailwindSupport
         $move = [];
 
         foreach ($section->childNodes as $child) {
-            if ($child instanceof DOMElement) {
-                $move[] = $child;
+            if (! $child instanceof DOMElement) {
+                continue;
             }
+
+            if (self::isDecorativeSectionChild($child)) {
+                continue;
+            }
+
+            $move[] = $child;
         }
 
         foreach ($move as $child) {
