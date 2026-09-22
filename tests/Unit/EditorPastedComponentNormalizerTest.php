@@ -340,7 +340,7 @@ CSS;
         $this->assertStringNotContainsString('bg-blue-200', $resolved);
     }
 
-    public function test_resolve_published_page_css_for_save_always_recompiles_from_html(): void
+    public function test_resolve_published_page_css_for_save_recompiles_when_utility_missing(): void
     {
         $html = '<section class="bg-red-200 p-4">Hi</section>';
         $storedCss = '.bg-blue-200 { background-color: var(--color-blue-200); } .p-4 { padding: 1rem; }';
@@ -351,6 +351,17 @@ CSS;
         $this->assertStringNotContainsString('bg-blue-200', $resolved);
         $this->assertStringContainsString('var(--color-red-200,', $resolved);
         $this->assertStringNotContainsString('.voodbuilder-pasted-component .bg-red-200', $resolved);
+    }
+
+    public function test_resolve_published_page_css_for_save_skips_recompile_when_utilities_present(): void
+    {
+        $html = '<section class="p-4">Hi</section>';
+        $storedCss = '.p-4 { padding: 1rem; } #keep { color: #fff; }';
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $storedCss);
+
+        $this->assertStringContainsString('padding', $resolved);
+        $this->assertStringContainsString('#keep', $resolved);
     }
 
     public function test_resolve_published_page_css_for_save_keeps_grapes_composer_rules(): void
@@ -373,7 +384,9 @@ CSS;
 
         $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $storedCss);
 
-        $this->assertSame('.updated {color: red;}', $resolved);
+        $this->assertStringContainsString('.updated', $resolved);
+        $this->assertStringContainsString('color', $resolved);
+        $this->assertStringContainsString('red', $resolved);
     }
 
     public function test_resolve_published_page_css_keeps_typography_tokens_for_frontend(): void

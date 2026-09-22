@@ -268,17 +268,16 @@ final class EditorPastedComponentNormalizer
     }
 
     /**
-     * Save path: always recompile Tailwind from current page HTML and keep only Editor
-     * composer / custom rules from the submitted CSS — never stale utility bundles from getCss().
+     * Save path: reuse the smart page resolve when the submitted sheet already covers
+     * utilities (editor live JIT + author rules). Always-recompile used to spawn Node
+     * Tailwind on every Save even when the canvas CSS was already up to date.
+     *
+     * Still recompiles when utilities are missing, CSS is corrupted, or animate tokens
+     * are orphan — same gates as {@see resolvePublishedPageCss()}.
      */
     public static function resolvePublishedPageCssForSave(string $html, ?string $storedCss): string
     {
-        $pageHtml = EditorComponentPageHtml::htmlForPageTailwindCompile($html);
-
-        return self::compileAndMergePublishedPageCss(
-            $pageHtml,
-            self::manualPageCssFromStoredCss($storedCss),
-        );
+        return self::resolvePublishedPageCss($html, $storedCss);
     }
 
     private static function compileAndMergePublishedPageCss(string $pageHtml, ?string $manualCss): string
@@ -762,6 +761,12 @@ final class EditorPastedComponentNormalizer
                 $className = ltrim($className, '!');
 
                 if ($className === '' || ! self::isTailwindUtilityClassName($className)) {
+                    continue;
+                }
+
+                // Theme tokens / package chrome ship outside the page sheet.
+                if (str_contains($className, '-vp-')
+                    || EditorImportCompatibilityAnalyzer::isInternalPackageClass($className)) {
                     continue;
                 }
 

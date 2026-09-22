@@ -10,7 +10,6 @@ import { shouldDeferCssRebuild } from './editor-lifecycle.js';
 import { componentHasRenderableView, safeFindComponents } from './tailwind-visual-style.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { componentClassList } from './style-tailwind-class-groups.js';
-import { STYLE_ANIMATION_BUNDLED_UTILITIES, VISIBLE_MARKER_CLASS } from './style-animation-safelist.js';
 
 const LIVE_STYLE_ID = 'voodbuilder-component-live-css';
 const DEBOUNCE_MS = 450;
@@ -89,27 +88,6 @@ function isInsidePastedComponent(component) {
     } catch {
         return false;
     }
-}
-
-/**
- * Animation-sector tokens only — Style Manager animation toggles must not flash JIT.
- * Do NOT treat general Style-panel / spacing safelist tokens as "skip compile":
- * library component drops often use those and still need scoped compile-css.
- */
-function isAnimationCatalogUtility(className) {
-    const token = String(className ?? '').trim().replace(/^!/, '');
-
-    if (token === '' || token === VISIBLE_MARKER_CLASS) {
-        return true;
-    }
-
-    const base = token.replace(/^(?:hover|active):/, '');
-
-    if (STYLE_ANIMATION_BUNDLED_UTILITIES.has(token) || STYLE_ANIMATION_BUNDLED_UTILITIES.has(base)) {
-        return true;
-    }
-
-    return /^(?:animate-(?:spin|ping|pulse|bounce|wiggle|wiggle-more|rotate-[xy]|jump(?:-in|-out)?|shake|fade(?:-(?:up|down|left|right))?|flip-(?:up|down)|infinite|once|twice|thrice|duration-\d+|delay-(?:none|\d+)|ease(?:-linear|-in|-out|-in-out)?|normal|reverse|alternate(?:-reverse)?|fill-(?:none|forwards|backwards|both))|transition(?:-all|-colors|-opacity|-shadow|-transform|-none)?|duration-\d+|ease-(?:linear|in|out|in-out)|delay-\d+)$/.test(base);
 }
 
 function classFingerprintFromHtml(html) {
@@ -286,14 +264,9 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             (token) => ! pageCssCoversClass(editor, token),
         );
 
-        // Skip JIT only when the author solely toggled Animation-sector utilities
-        // (theme.css / animated plugin already ships them). Library drops and Style
-        // utilities that need scoped compile-css must still hit the endpoint.
-        const onlyAnimationGains = newTokens.length > 0
-            && newlyUncovered.length === 0
-            && newTokens.every((token) => isAnimationCatalogUtility(token));
-
-        if (onlyAnimationGains && lastCss !== '') {
+        // No new uncovered utilities → structure / theme-catalog-only change.
+        // Do not spawn scoped compile-css (Save waits on editor build busy flags).
+        if (newlyUncovered.length === 0 && lastCss !== '') {
             lastHtml = html;
             editor.__voodbuilderComponentCssClassFingerprint = classFingerprint;
             finishInitialBuild();
@@ -364,7 +337,7 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         schedule();
     });
 
-    // Library / Elements drop: hydrate finishes after component:add — compile realtime.
+    // Library / Elements drop: hydrate finishes after component:add — compile only when needed.
     editor.on('component:add', (component) => {
         if (! isInsidePastedComponent(component)) {
             return;
@@ -373,6 +346,15 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
         if (editor.__voodbuilderCssRebuildDragLock || editor.__voodbuilderActiveBlockDrag) {
             scheduleAfterDrag();
 
+            return;
+        }
+
+        const uncovered = componentClassList(component).some(
+            (token) => ! pageCssCoversClass(editor, token),
+        );
+
+        // Nested text/nodes with only theme utilities must not flash compile-css.
+        if (! uncovered && lastCss !== '') {
             return;
         }
 

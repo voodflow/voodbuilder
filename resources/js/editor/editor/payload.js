@@ -612,24 +612,22 @@ export function buildPayload(editor, options = {}) {
     // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
     // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Chrome shell/layout: persist Style Manager paints from every reliable source:
-    // 1) CssComposer #id rules (after bake / promote)
-    // 2) component inline + #id walk (safety net if getCss omits unused rules)
-    // 3) any #id still sitting in the live JIT sheet
-    // Utilities come from the live sheet with #id stripped (strip only for that chunk).
-    // Never strip #id from the *persisted* payload — that wiped fonts/colors on reload.
+    // Persist Style Manager paints + live JIT utilities (not full Grapes utility dumps).
+    // Save can then skip Node recompile when the live sheet already covers page utilities.
     const liveCssRaw = String(editor.__voodbuilderPageLiveCss ?? '').trim();
     const liveCssUtilities = stripAuthorIdRules(liveCssRaw);
     const liveCssAuthorIds = extractGrapesComposerCss(liveCssRaw);
     const composerCss = readComposerCssForPersist(editor);
     const styleManagerCss = extractGrapesComposerCss(composerCss);
     const componentAuthorCss = collectAuthorIdCssFromComponents(editor);
-    const preferComposerSubset = Boolean(
-        editor.__voodbuilderChromeShellMode || editor.__voodbuilderChromeLayoutMode,
-    );
-    const css = preferComposerSubset
-        ? mergeAuthorCssChunks([styleManagerCss, componentAuthorCss, liveCssAuthorIds, liveCssUtilities])
-        : mergeAuthorCssChunks([composerCss, componentAuthorCss, liveCssRaw]);
+    const css = mergeAuthorCssChunks([
+        styleManagerCss,
+        componentAuthorCss,
+        liveCssAuthorIds,
+        liveCssUtilities,
+        // Boot / empty live sheet: keep composer so the first Save still has CSS to validate.
+        liveCssUtilities === '' ? composerCss : '',
+    ]);
 
     const payload = {
         html,

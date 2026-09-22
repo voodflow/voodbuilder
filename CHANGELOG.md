@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.98] - 2026-09-22
+
+### Fixed
+
+- Save no longer always spawns Node Tailwind JIT: reuses the smart page CSS resolve when the editor live sheet already covers utilities (keeps Save fast after class/structure tweaks)
+- Component live autobuild skips compile-css when new class tokens are already theme-covered (stops “Compiling styles…” storms that blocked Save)
+- Page save payload prefers live JIT utilities + Style Manager rules over full Grapes `getCss()` utility dumps
+
 ## [0.1.97] - 2026-09-22
 
 ### Fixed
