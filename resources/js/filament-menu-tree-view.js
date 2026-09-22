@@ -1,6 +1,9 @@
 /**
- * Voodbuilder menu tree: wider "nest inside" drop band + maxDepth-aware drag targets.
+ * Voodbuilder menu tree: maxDepth-aware drag targets.
  * Based on solution-forest/filament-nestable-tree tree-view.js
+ *
+ * Nest band is intentionally narrow (~30%): edges prefer same-level reorder so
+ * items are less likely to vanish under the wrong parent while dragging.
  */
 function resolveDropPosition(pct, targetDepth, maxDepth) {
     const canNestInside = maxDepth < 0 || targetDepth < maxDepth - 1
@@ -9,8 +12,8 @@ function resolveDropPosition(pct, targetDepth, maxDepth) {
         return pct < 0.5 ? 'before' : 'after'
     }
 
-    // Wider centre band (60%) so nesting does not require pixel-perfect aim.
-    return pct < 0.2 ? 'before' : pct > 0.8 ? 'after' : 'inside'
+    // Middle ~30% nests; top/bottom ~35% each reorder at the same level.
+    return pct < 0.35 ? 'before' : pct > 0.65 ? 'after' : 'inside'
 }
 
 export default function treeView(config = {}) {

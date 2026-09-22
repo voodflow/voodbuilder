@@ -78,6 +78,8 @@ return [
         'actions' => 'Azioni',
         'more' => 'Azioni',
         'add_credential' => 'Aggiungi credenziale',
+        'add_menu_sub_item' => 'Aggiungi sotto-voce',
+        'promote_menu_item' => 'Porta a primo livello',
     ],
 
     'translation' => [
@@ -162,8 +164,8 @@ return [
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_icon' => 'Nome icona Tabler (es. brand-facebook). Compatibile con daljo25/filament-tabler-icons.',
         'menu_editor_pages_only' => 'Sono elencate solo le pagine Editor. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
-        'menu_tree' => 'Trascina con l’icona grip (☰). Per creare un sottomenu, rilascia la voce al centro di una riga di primo livello — compare il badge “Sottomenu qui”. Il bordo superiore/inferiore riordina allo stesso livello. Le sotto-voci hanno una barra colorata a sinistra. Massimo 2 livelli. Usa "Gruppo dropdown" per etichette senza link.',
-        'menu_tree_drag' => 'Trascina per riordinare; rilascia al centro di una voce di primo livello per annidare',
+        'menu_tree' => 'Preferisci “+” su una riga di primo livello per creare una sotto-voce sul posto. Trascina con il grip (☰): bordo alto/basso riordina allo stesso livello; solo il centro di una voce di primo livello annida (badge “Sottomenu qui”). Le voci annidate restano espanse. Massimo 2 livelli. Le sotto-voci hanno “Porta a primo livello” se finiscono sotto il genitore sbagliato. Usa “Gruppo dropdown” per etichette senza link.',
+        'menu_tree_drag' => 'Trascina per riordinare (bordi). Annida solo al centro di una voce di primo livello',
         'menu_tree_nest_here' => 'Sottomenu qui',
         'sub_theme_site' => 'Tema visivo predefinito per le Site Page (home, landing, CMS). Configura le assegnazioni per area sotto.',
         'sub_theme_page' => 'Con “Predefinito sito” questa pagina eredita il tema dell’area Pagine del sito in Theme Studio (ora: :theme). Scegline un altro solo se questa pagina deve avere un aspetto diverso.',

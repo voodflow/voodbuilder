@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.93] - 2026-09-22
+
+### Added
+
+- Menu tree: **Add sub-item** (+) on top-level rows and **Move to top level** on nested rows (less reliance on precise drag nesting)
+
+### Changed
+
+- Menu tree drag: narrower nest band (~30% centre) so same-level reorder is the default; parents with children stay expanded after rebuild so nested items do not look “missing”
+
 ## [0.1.92] - 2026-09-22
 
 ### Fixed

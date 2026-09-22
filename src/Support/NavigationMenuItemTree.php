@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -43,6 +44,67 @@ class NavigationMenuItemTree
                 Navigation::clearCache($menu->slug, $menu->locale);
             })
             ->nodeActions([
+                CreateAction::make('create_menu_sub_item')
+                    ->label(__('voodbuilder::admin.actions.add_menu_sub_item'))
+                    ->icon('heroicon-m-plus')
+                    ->color('gray')
+                    ->iconButton()
+                    ->visible(fn (mixed $record): bool => $record instanceof NavigationMenuItem
+                        && blank($record->parent_id))
+                    ->model(NavigationMenuItem::class)
+                    ->schema(
+                        fn (Schema $schema): Schema => $schema->components(
+                            NavigationMenuResource::menuItemFormSchema(
+                                isChild: true,
+                                menuSlug: $menu->slug,
+                                menuLocale: $menu->locale,
+                            ),
+                        ),
+                    )
+                    ->mutateFormDataUsing(function (array $data, CreateAction $action) use ($menu): array {
+                        $data = MenuRouteParameterField::compressForSave($data);
+                        $parent = $action->getRecord();
+                        $data['menu_id'] = $menu->id;
+                        $data['parent_id'] = $parent instanceof NavigationMenuItem
+                            ? $parent->getKey()
+                            : null;
+                        $data['sort_order'] = (int) NavigationMenuItem::query()
+                            ->where('menu_id', $menu->id)
+                            ->where('parent_id', $data['parent_id'])
+                            ->max('sort_order') + 1;
+
+                        return $data;
+                    })
+                    ->using(fn (array $data): NavigationMenuItem => NavigationMenuItem::create($data))
+                    ->after(function () use ($livewire, $menu): void {
+                        $livewire->dispatch('tree-refresh');
+                        Navigation::clearCache($menu->slug, $menu->locale);
+                    }),
+
+                Action::make('promote_menu_item')
+                    ->label(__('voodbuilder::admin.actions.promote_menu_item'))
+                    ->icon('heroicon-m-arrow-uturn-up')
+                    ->color('gray')
+                    ->iconButton()
+                    ->visible(fn (mixed $record): bool => $record instanceof NavigationMenuItem
+                        && filled($record->parent_id))
+                    ->action(function (mixed $record) use ($menu, $livewire): void {
+                        if (! $record instanceof NavigationMenuItem) {
+                            return;
+                        }
+
+                        $record->update([
+                            'parent_id' => null,
+                            'sort_order' => (int) NavigationMenuItem::query()
+                                ->where('menu_id', $menu->id)
+                                ->whereNull('parent_id')
+                                ->max('sort_order') + 1,
+                        ]);
+
+                        $livewire->dispatch('tree-refresh');
+                        Navigation::clearCache($menu->slug, $menu->locale);
+                    }),
+
                 EditAction::make('edit_menu_item')
                     ->label(__('Edit'))
                     ->icon('heroicon-m-pencil-square')
@@ -149,10 +211,14 @@ class NavigationMenuItemTree
                 // enums with registered string types (e.g. "docs") breaks on drag-reorder
                 // when indices shift — always expose type as a plain string in tree state.
                 $data['type'] = $item->typeKey();
+                $children = static::nestItems($items, $item->id, $depth + 1);
 
                 return array_merge($data, [
                     'type_label' => static::resolveTypeLabel($item),
-                    'children' => static::nestItems($items, $item->id, $depth + 1),
+                    // Keep parents with children expanded so nested items stay visible
+                    // after drag/create (otherwise they look “missing”).
+                    'expanded' => $children !== [],
+                    'children' => $children,
                 ]);
             })
             ->all();

@@ -253,8 +253,8 @@ class NavigationMenuItemTest extends TestCase
 
         $this->assertNotFalse($js);
         $this->assertStringContainsString('resolveDropPosition', $js);
-        $this->assertStringContainsString('0.2', $js);
-        $this->assertStringContainsString('0.8', $js);
+        $this->assertStringContainsString('0.35', $js);
+        $this->assertStringContainsString('0.65', $js);
         $this->assertStringContainsString('maxDepth', $js);
     }
 }

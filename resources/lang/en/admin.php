@@ -78,6 +78,8 @@ return [
         'actions' => 'Actions',
         'more' => 'Actions',
         'add_credential' => 'Add credential',
+        'add_menu_sub_item' => 'Add sub-item',
+        'promote_menu_item' => 'Move to top level',
     ],
 
     'translation' => [
@@ -162,8 +164,8 @@ return [
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
         'menu_editor_pages_only' => 'Only Editor pages are listed. Use “Open visual editor” to edit the selected page on the site.',
-        'menu_tree' => 'Drag using the grip icon (☰). To create a submenu, drop the item on the centre of a top-level row — a “Submenu here” badge appears. Top or bottom edge reorders at the same level. Sub-items show a coloured left rail. Maximum 2 levels. Use "Dropdown group" for labels without a link.',
-        'menu_tree_drag' => 'Drag to reorder; drop on centre of a top-level item to nest',
+        'menu_tree' => 'Prefer “+” on a top-level row to add a sub-item in place. Drag with the grip (☰): top/bottom edge reorders at the same level; only the centre of a top-level row nests (badge “Submenu here”). Nested items stay expanded. Maximum 2 levels. Sub-items can use “Move to top level” if they land under the wrong parent. Use “Dropdown group” for labels without a link.',
+        'menu_tree_drag' => 'Drag to reorder (edges). Nest only on the centre of a top-level item',
         'menu_tree_nest_here' => 'Submenu here',
         'sub_theme_site' => 'Default visual theme for Site Pages (home, landing, CMS). Configure per-area bindings below.',
         'sub_theme_page' => 'With “Site default”, this page inherits the Site pages theme from Theme Studio (currently: :theme). Pick another only when this page needs a different look.',
