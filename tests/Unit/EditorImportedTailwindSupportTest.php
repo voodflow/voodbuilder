@@ -325,4 +325,52 @@ HTML;
         );
         $this->assertStringContainsString('<p>Hi</p>', $healed);
     }
+
+    public function test_plain_section_paste_is_not_nested_inside_content_shell(): void
+    {
+        $html = <<<'HTML'
+<section class="relative overflow-hidden bg-slate-950 px-8 py-20 text-slate-100 max-w-5xl mx-auto">
+  <h2>One ecosystem, one path</h2>
+  <p>Not eight isolated products</p>
+</section>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertSame(1, substr_count(strtolower($prepared), '<section'));
+        $this->assertStringContainsString('voodbuilder-editor-section', $prepared);
+        $this->assertStringContainsString('voodbuilder-pasted-component', $prepared);
+        $this->assertStringContainsString('bg-slate-950', $prepared);
+        $this->assertStringContainsString('px-8', $prepared);
+        $this->assertStringContainsString('py-20', $prepared);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $prepared);
+        $this->assertStringContainsString('One ecosystem, one path', $prepared);
+        // Measure utilities must leave the full-bleed section root.
+        $this->assertDoesNotMatchRegularExpression(
+            '/<section[^>]*\bmax-w-5xl\b|<section[^>]*\bmx-auto\b/',
+            $prepared,
+        );
+    }
+
+    public function test_div_surface_utilities_lift_onto_editor_section(): void
+    {
+        $html = <<<'HTML'
+<div class="relative overflow-hidden bg-slate-950 px-8 py-20 text-white">
+  <div class="mx-auto max-w-5xl">
+    <h2>How it fits together</h2>
+  </div>
+</div>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::prepareHtml($html);
+
+        $this->assertSame(1, substr_count(strtolower($prepared), '<section'));
+        $this->assertMatchesRegularExpression(
+            '/<section[^>]*\bbg-slate-950\b[^>]*\bpx-8\b|\bpx-8\b[^>]*\bbg-slate-950\b/',
+            $prepared,
+        );
+        $this->assertStringContainsString('voodbuilder-editor-container', $prepared);
+        $this->assertStringContainsString('How it fits together', $prepared);
+        $this->assertStringContainsString('max-w-5xl', $prepared);
+    }
 }

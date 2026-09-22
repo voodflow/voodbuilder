@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.97] - 2026-09-22
+
+### Fixed
+
+- Paste / code-import: plain `<section class="bg-… max-w-…">` snippets are promoted to the editor section (no nested section-in-shell), measure utilities (`max-w-*`, `mx-auto`) are stripped from the full-bleed root, and surface utilities on a root `div` (bg, padding, overflow, text color) lift onto the section so selection/save no longer shrink the band
+
+## [0.1.96] - 2026-09-22
+
+### Fixed
+
+- Pasted hero aurora / shade layers (`.vb-hero-aurora__mesh`, `role=shade`) are no longer stamped as Content shells with `max-w-[80rem]` / `mx-auto`; Save no longer re-applies that measure on decorative layers
+
 ## [0.1.95] - 2026-09-22
 
 ### Fixed

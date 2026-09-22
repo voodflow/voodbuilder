@@ -809,9 +809,14 @@ final class EditorImportedTailwindSupport
             return $html;
         }
 
-        if (count($roots) === 1 && self::isEditorSectionElement($roots[0])) {
-            self::ensureContentWrapperOnSection($document, $roots[0]);
-            self::promotePastedComponentClassToSection($roots[0]);
+        // Any single <section> becomes the editor section — never nest section-in-section.
+        // Plain Tailwind pastes often use <section class="bg-… max-w-…">; nesting that
+        // inside a content shell makes the band shrink on select/save.
+        if (count($roots) === 1 && strtolower($roots[0]->tagName) === 'section') {
+            $section = $roots[0];
+            self::promotePastedComponentClassToSection($section);
+            self::stripMeasureUtilitiesFromSection($section);
+            self::ensureContentWrapperOnSection($document, $section);
 
             return self::extractBodyHtml($document) ?? $html;
         }
@@ -837,6 +842,7 @@ final class EditorImportedTailwindSupport
             if ($directContentShell !== null) {
                 // e.g. #blog > .voodbuilder-editor-container — promote shell, keep outer as body.
                 self::stripPastedComponentClass($only);
+                self::liftSurfaceUtilitiesOntoSection($section, $only);
                 $id = trim($only->getAttribute('id'));
 
                 if ($id !== '' && ! $section->hasAttribute('id')) {
@@ -848,6 +854,7 @@ final class EditorImportedTailwindSupport
                     $section->appendChild($only->firstChild);
                 }
 
+                self::stripMeasureUtilitiesFromSection($section);
                 self::ensureContentWrapperOnSection($document, $section);
                 self::replaceBodyChildren($body, [$section]);
 
@@ -868,8 +875,10 @@ final class EditorImportedTailwindSupport
                     $root->removeAttribute('id');
                 }
 
-                // Unwrap a trivial outer div (only id/class leftovers).
-                if (self::isTrivialWrapper($root)) {
+                self::liftSurfaceUtilitiesOntoSection($section, $root);
+
+                // Unwrap a trivial outer div (only id/class leftovers after surface lift).
+                if (self::isTrivialWrapper($root) || self::isEmptyAfterSurfaceLift($root)) {
                     while ($root->firstChild !== null) {
                         $container->appendChild($root->firstChild);
                     }
@@ -882,9 +891,182 @@ final class EditorImportedTailwindSupport
         }
 
         $section->appendChild($container);
+        self::stripMeasureUtilitiesFromSection($section);
         self::replaceBodyChildren($body, [$section]);
 
         return self::extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * Full-bleed section bands must not carry measure utilities (max-w / mx-auto).
+     * Those belong on the content shell so selection/save keep the band edge-to-edge.
+     */
+    protected static function stripMeasureUtilitiesFromSection(DOMElement $section): void
+    {
+        if (! $section->hasAttribute('class')) {
+            return;
+        }
+
+        $classes = preg_split('/\s+/', trim($section->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $kept = [];
+
+        foreach ($classes as $token) {
+            if (self::isSectionMeasureUtility($token)) {
+                continue;
+            }
+
+            $kept[] = $token;
+        }
+
+        $section->setAttribute('class', implode(' ', $kept));
+    }
+
+    /**
+     * Move full-bleed surface utilities (bg, padding, overflow, text color, …) from a
+     * pasted root onto the editor section so the content shell stays measure-only.
+     */
+    protected static function liftSurfaceUtilitiesOntoSection(DOMElement $section, DOMElement $from): void
+    {
+        if (! $from->hasAttribute('class')) {
+            return;
+        }
+
+        $fromClasses = preg_split('/\s+/', trim($from->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $sectionClasses = preg_split('/\s+/', trim($section->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $remaining = [];
+
+        foreach ($fromClasses as $token) {
+            if (self::isSectionSurfaceUtility($token)) {
+                if (! in_array($token, $sectionClasses, true)) {
+                    $sectionClasses[] = $token;
+                }
+
+                continue;
+            }
+
+            $remaining[] = $token;
+        }
+
+        $section->setAttribute('class', implode(' ', $sectionClasses));
+
+        if ($remaining === []) {
+            $from->removeAttribute('class');
+        } else {
+            $from->setAttribute('class', implode(' ', $remaining));
+        }
+    }
+
+    /**
+     * @return bool True when the element has no meaningful classes left after a surface lift.
+     */
+    protected static function isEmptyAfterSurfaceLift(DOMElement $element): bool
+    {
+        if (strtolower($element->tagName) !== 'div') {
+            return false;
+        }
+
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $meaningful = array_values(array_filter(
+            $classes,
+            static fn (string $token): bool => ! in_array($token, ['relative', 'w-full'], true),
+        ));
+
+        if ($meaningful !== []) {
+            return false;
+        }
+
+        foreach ($element->attributes as $attribute) {
+            if (! in_array($attribute->name, ['id', 'class'], true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected static function isSectionMeasureUtility(string $token): bool
+    {
+        $bare = self::stripUtilityVariants($token);
+
+        if ($bare === 'mx-auto' || $bare === 'ml-auto' || $bare === 'mr-auto' || $bare === 'container') {
+            return true;
+        }
+
+        if (str_starts_with($bare, 'max-w-')) {
+            return true;
+        }
+
+        // Keep w-full on the section; other widths belong on the measure shell / children.
+        if (str_starts_with($bare, 'w-') && $bare !== 'w-full') {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected static function isSectionSurfaceUtility(string $token): bool
+    {
+        if (self::isSectionMeasureUtility($token)) {
+            return false;
+        }
+
+        // Never lift builder chrome classes off the pasted root incorrectly.
+        if (str_starts_with($token, 'voodbuilder-')) {
+            return false;
+        }
+
+        $bare = self::stripUtilityVariants($token);
+
+        if (in_array($bare, ['relative', 'isolate', 'overflow-hidden', 'overflow-x-hidden', 'overflow-y-hidden', 'overflow-clip'], true)) {
+            return true;
+        }
+
+        if (preg_match('/^overflow-/', $bare) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^bg-(?!opacity$)/', $bare) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^(from|via|to)-/', $bare) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^(p|px|py|pt|pb|pl|pr|ps|pe)-/', $bare) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^(border|ring|shadow|outline)(-|$)/', $bare) === 1 || in_array($bare, ['border', 'ring', 'shadow', 'outline'], true)) {
+            return true;
+        }
+
+        if (preg_match('/^text-/', $bare) === 1) {
+            return self::isTextColorUtility($bare);
+        }
+
+        return false;
+    }
+
+    protected static function isTextColorUtility(string $bare): bool
+    {
+        if (preg_match('/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/', $bare) === 1) {
+            return false;
+        }
+
+        if (preg_match('/^text-(left|center|right|justify|start|end|balance|pretty|wrap|nowrap|ellipsis|clip)$/', $bare) === 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected static function stripUtilityVariants(string $token): string
+    {
+        // dark:sm:hover:bg-red-500 → bg-red-500
+        $bare = preg_replace('/^(?:[a-z0-9_-]+:)+/i', '', $token);
+
+        return is_string($bare) && $bare !== '' ? $bare : $token;
     }
 
     protected static function createEditorSection(DOMDocument $document): DOMElement

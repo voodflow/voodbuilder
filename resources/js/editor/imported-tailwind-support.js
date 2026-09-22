@@ -250,6 +250,216 @@ function unstampDecorativeContentShellElement(shell) {
 }
 
 /**
+ * @param {string} token
+ * @returns {string}
+ */
+function stripUtilityVariants(token) {
+    return String(token ?? '').replace(/^(?:[a-z0-9_-]+:)+/i, '') || String(token ?? '');
+}
+
+/**
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isSectionMeasureUtility(token) {
+    const bare = stripUtilityVariants(token);
+
+    if (bare === 'mx-auto' || bare === 'ml-auto' || bare === 'mr-auto' || bare === 'container') {
+        return true;
+    }
+
+    if (bare.startsWith('max-w-')) {
+        return true;
+    }
+
+    if (bare.startsWith('w-') && bare !== 'w-full') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @param {string} bare
+ * @returns {boolean}
+ */
+function isTextColorUtility(bare) {
+    if (/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/.test(bare)) {
+        return false;
+    }
+
+    if (/^text-(left|center|right|justify|start|end|balance|pretty|wrap|nowrap|ellipsis|clip)$/.test(bare)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isSectionSurfaceUtility(token) {
+    if (isSectionMeasureUtility(token)) {
+        return false;
+    }
+
+    if (String(token).startsWith('voodbuilder-')) {
+        return false;
+    }
+
+    const bare = stripUtilityVariants(token);
+
+    if (['relative', 'isolate', 'overflow-hidden', 'overflow-x-hidden', 'overflow-y-hidden', 'overflow-clip'].includes(bare)) {
+        return true;
+    }
+
+    if (/^overflow-/.test(bare)) {
+        return true;
+    }
+
+    if (/^bg-(?!opacity$)/.test(bare)) {
+        return true;
+    }
+
+    if (/^(from|via|to)-/.test(bare)) {
+        return true;
+    }
+
+    if (/^(p|px|py|pt|pb|pl|pr|ps|pe)-/.test(bare)) {
+        return true;
+    }
+
+    if (/^(border|ring|shadow|outline)(-|$)/.test(bare) || ['border', 'ring', 'shadow', 'outline'].includes(bare)) {
+        return true;
+    }
+
+    if (/^text-/.test(bare)) {
+        return isTextColorUtility(bare);
+    }
+
+    return false;
+}
+
+/**
+ * @param {Element} section
+ */
+function stripMeasureUtilitiesFromSectionElement(section) {
+    if (! section?.classList) {
+        return;
+    }
+
+    [...section.classList].forEach((token) => {
+        if (isSectionMeasureUtility(token)) {
+            section.classList.remove(token);
+        }
+    });
+}
+
+/**
+ * @param {Element} section
+ * @param {Element} from
+ */
+function liftSurfaceUtilitiesOntoSectionElement(section, from) {
+    if (! section || ! from?.classList) {
+        return;
+    }
+
+    [...from.classList].forEach((token) => {
+        if (! isSectionSurfaceUtility(token)) {
+            return;
+        }
+
+        section.classList.add(token);
+        from.classList.remove(token);
+    });
+}
+
+/**
+ * @param {Element} element
+ * @returns {boolean}
+ */
+function isEmptyAfterSurfaceLiftElement(element) {
+    if (! element || element.tagName !== 'DIV') {
+        return false;
+    }
+
+    const meaningful = [...(element.classList ?? [])].filter(
+        (token) => ! ['relative', 'w-full'].includes(token),
+    );
+
+    if (meaningful.length > 0) {
+        return false;
+    }
+
+    return [...(element.attributes ?? [])].every((attr) => ['id', 'class'].includes(attr.name));
+}
+
+/**
+ * @param {Element} section
+ */
+function promotePastedComponentClassToSectionElement(section) {
+    if (! section) {
+        return;
+    }
+
+    section.classList.add('voodbuilder-editor-section', 'voodbuilder-pasted-component', 'relative', 'w-full');
+
+    for (const child of [...section.children]) {
+        child.classList?.remove?.('voodbuilder-pasted-component');
+    }
+}
+
+/**
+ * @param {Element} section
+ */
+function ensureContentWrapperOnSectionElement(section) {
+    if (! section) {
+        return;
+    }
+
+    let contentShell = null;
+
+    for (const child of [...section.children]) {
+        if (isDecorativeSectionChildElement(child)
+            || child.classList.contains('vb-hero-aurora__mesh')
+            || (
+                child.getAttribute('aria-hidden') === 'true'
+                && child.classList.contains('absolute')
+                && child.classList.contains('voodbuilder-editor-container')
+            )) {
+            unstampDecorativeContentShellElement(child);
+            continue;
+        }
+
+        if (child.classList.contains('voodbuilder-editor-container')
+            || child.getAttribute('data-voodbuilder-role') === 'content') {
+            contentShell = child;
+            break;
+        }
+    }
+
+    if (contentShell) {
+        stampContentShellElement(contentShell);
+
+        return;
+    }
+
+    const container = section.ownerDocument.createElement('div');
+    stampContentShellElement(container);
+
+    for (const child of [...section.children]) {
+        if (isDecorativeSectionChildElement(child)) {
+            continue;
+        }
+
+        container.appendChild(child);
+    }
+
+    section.appendChild(container);
+}
+
+/**
  * Ensure section → content shell for content-width toolbar (mirrors PHP).
  *
  * @param {string} html
@@ -284,38 +494,12 @@ export function ensureEditorLayoutShell(html) {
         return trimmed;
     }
 
-    // Compliant section: heal decorative shells, stamp only the real content wrapper.
-    if (roots.length === 1
-        && roots[0].tagName === 'SECTION'
-        && (
-            roots[0].classList.contains('voodbuilder-editor-section')
-            || roots[0].hasAttribute('data-voodbuilder-section-block')
-        )) {
+    // Any single <section> becomes the editor section (never nest section-in-section).
+    if (roots.length === 1 && roots[0].tagName === 'SECTION') {
         const section = roots[0];
-        let contentShell = null;
-
-        for (const child of [...section.children]) {
-            if (isDecorativeSectionChildElement(child)
-                || child.classList.contains('vb-hero-aurora__mesh')
-                || (
-                    child.getAttribute('aria-hidden') === 'true'
-                    && child.classList.contains('absolute')
-                    && child.classList.contains('voodbuilder-editor-container')
-                )) {
-                unstampDecorativeContentShellElement(child);
-                continue;
-            }
-
-            if (child.classList.contains('voodbuilder-editor-container')
-                || child.getAttribute('data-voodbuilder-role') === 'content') {
-                contentShell = child;
-                break;
-            }
-        }
-
-        if (contentShell) {
-            stampContentShellElement(contentShell);
-        }
+        promotePastedComponentClassToSectionElement(section);
+        stripMeasureUtilitiesFromSectionElement(section);
+        ensureContentWrapperOnSectionElement(section);
 
         return section.outerHTML;
     }
@@ -336,6 +520,7 @@ export function ensureEditorLayoutShell(html) {
         }
 
         only.classList.remove('voodbuilder-pasted-component');
+        liftSurfaceUtilitiesOntoSectionElement(section, only);
 
         const directShell = [...only.children].find((child) => (
             ! isDecorativeSectionChildElement(child)
@@ -357,23 +542,16 @@ export function ensureEditorLayoutShell(html) {
                 }
             }
 
-            const shell = [...section.children].find((child) => (
-                ! isDecorativeSectionChildElement(child)
-                && (
-                    child.getAttribute('data-voodbuilder-role') === 'content'
-                    || child.classList.contains('voodbuilder-editor-container')
-                )
-            ));
-
-            stampContentShellElement(shell);
+            stripMeasureUtilitiesFromSectionElement(section);
+            ensureContentWrapperOnSectionElement(section);
 
             return section.outerHTML;
         }
 
         const isTrivial = only.tagName === 'DIV'
-            && [...only.classList].every((token) => ['relative', 'voodbuilder-pasted-component'].includes(token));
+            && [...only.classList].every((token) => ['relative', 'voodbuilder-pasted-component', 'w-full'].includes(token));
 
-        if (isTrivial) {
+        if (isTrivial || isEmptyAfterSurfaceLiftElement(only)) {
             while (only.firstChild) {
                 container.appendChild(only.firstChild);
             }
@@ -388,6 +566,7 @@ export function ensureEditorLayoutShell(html) {
     }
 
     section.appendChild(container);
+    stripMeasureUtilitiesFromSectionElement(section);
 
     return section.outerHTML;
 }
