@@ -251,8 +251,8 @@
 
     html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg,
     html[data-voodbuilder-sub-theme] header[role='banner'].bg-vp-bg-alt,
-    html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
-    html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt {
+    html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)),
+    html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
         background-color: var(--vx-header-bg) !important;
     }
 
@@ -1364,10 +1364,10 @@ button[data-mobile-nav-toggle] svg.h-6 {
  * Sub-themes (blog/news/landing-fra/…) and tabs/forms are separate Vite entries
  * loaded only when needed — see EditorAssets::pageViteEntries().
  */
-html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg,
-html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt,
-[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg,
-[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt {
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)),
+html[data-voodbuilder-sub-theme] header[role='banner'] .bg-vp-bg-alt:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)),
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)),
+[data-voodbuilder-chrome-shell] header[role='banner'] .bg-vp-bg-alt:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     background-color: var(--vx-header-bg, var(--color-vp-bg)) !important;
 }
 
@@ -1855,4 +1855,76 @@ button[data-voodbuilder-cta='true']:empty::before {
 .dark .vb-search-option.is-active {
     background-color: color-mix(in srgb, var(--color-vp-bg-elv, #202127) 55%, #ffffff 18%);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 14%, transparent);
+}
+
+/**
+ * Search palette — isolate panel/footer from header chrome token overrides
+ * (site dark header forces .bg-vp-bg-alt → --vx-header-bg).
+ */
+[data-voodbuilder-search-dialog] {
+    color: var(--color-vp-text-1);
+}
+
+[data-voodbuilder-search-dialog] .vb-search-panel {
+    background-color: var(--color-vp-bg-elv) !important;
+    color: var(--color-vp-text-1) !important;
+    box-shadow:
+        0 20px 40px rgb(0 0 0 / 0.22),
+        0 0 0 1px var(--color-vp-divider);
+}
+
+[data-voodbuilder-search-dialog] .vb-search-footer {
+    color: var(--color-vp-text-2) !important;
+    border-color: var(--color-vp-divider) !important;
+    background-color: color-mix(in srgb, var(--color-vp-bg-alt) 88%, var(--color-vp-bg-elv) 12%) !important;
+}
+
+[data-voodbuilder-search-dialog] .vb-search-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.3rem;
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 600;
+    color: var(--color-vp-text-1) !important;
+    background-color: var(--color-vp-bg) !important;
+    box-shadow: inset 0 0 0 1px var(--color-vp-divider);
+}
+
+html.dark [data-voodbuilder-search-dialog] .vb-search-kbd {
+    background-color: color-mix(in srgb, var(--color-vp-bg-alt) 70%, #ffffff 30%) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 16%, transparent);
+}
+
+/**
+ * Full search results page — layout band (not reading measure) + theme borders.
+ * ring-black/* disappears on dark surfaces; use --color-vp-divider instead.
+ */
+.vb-search-hit {
+    border-color: var(--color-vp-divider);
+    background-color: var(--color-vp-bg-elv);
+}
+
+html.dark .vb-search-hit {
+    border-color: color-mix(in srgb, var(--color-vp-divider) 88%, #ffffff 12%);
+    background-color: color-mix(in srgb, var(--color-vp-bg-elv) 92%, #ffffff 8%);
+}
+
+html.dark .vb-search-hit:hover {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1) 45%, var(--color-vp-divider));
+    background-color: color-mix(in srgb, var(--color-vp-bg-alt) 88%, #ffffff 12%);
+}
+
+.vb-search-page__form {
+    border-color: var(--color-vp-divider);
+    background-color: var(--color-vp-bg-alt);
+}
+
+html.dark .vb-search-page__form {
+    border-color: color-mix(in srgb, var(--color-vp-divider) 88%, #ffffff 12%);
+    background-color: color-mix(in srgb, var(--color-vp-bg-alt) 90%, #ffffff 10%);
 }

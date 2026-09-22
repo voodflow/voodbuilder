@@ -37,4 +37,5 @@ return [
     'kbd_select' => 'to select',
     'kbd_navigate' => 'to navigate',
     'kbd_close' => 'to close',
+    'kbd_view_all' => 'to view all results',
 ];

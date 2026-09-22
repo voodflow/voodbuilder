@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.94] - 2026-09-22
+
+### Fixed
+
+- Layout editor refresh keeps author classes on chrome menu slots (e.g. `uppercase` on `[data-voodbuilder-desktop-nav]`) when Blade remounts site nav blocks
+- Chrome layout save/load: hoist footer and reading-progress nested inside a nav block before Blade remount so they are not wiped
+- Search palette: light-mode footer/kbd contrast inside dark site header; always show “View all results”; Enter opens the full results page
+- Search results page uses layout width (not reading measure); result cards use theme divider borders that stay visible in dark mode
+
 ## [0.1.93] - 2026-09-22
 
 ### Added

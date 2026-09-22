@@ -186,6 +186,69 @@ HTML;
         $this->assertStringContainsString('mb-8', $published);
         $this->assertStringContainsString('Fresh render', $published);
     }
+
+    public function test_nav_canvas_preview_preserves_author_menu_slot_classes(): void
+    {
+        $serverRegistry = new EditorServerBlockRegistry;
+        $serverRegistry->register('Voodbuilder', SiteNavSimpleBlock::class);
+
+        $config = [
+            'variant' => 'simple',
+            'main_nav_align' => 'center',
+            'sticky_nav' => 'inherit',
+            'show_search' => true,
+            'show_notifications' => true,
+            'show_profile_menu' => true,
+        ];
+        $encoded = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            ENT_QUOTES,
+            'UTF-8',
+        );
+
+        $saved = <<<HTML
+<header data-voodbuilder-block="site_nav_simple" data-voodbuilder-config="{$encoded}" class="voodbuilder-editor-dynamic w-full bg-vp-bg" role="banner">
+  <div class="voodbuilder-nav__row flex h-16 w-full items-center">
+    <div class="min-w-0 flex-1 items-center justify-center gap-1 text-sm font-medium hover:text-vp-brand-1 uppercase md:flex" data-voodbuilder-desktop-nav>
+      <a href="/docs">Docs</a>
+    </div>
+  </div>
+</header>
+HTML;
+
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $serverRegistry);
+        $preview = $renderer->render($saved, null, canvasPreview: true);
+        $published = $renderer->render($saved, null, canvasPreview: false);
+
+        $this->assertChromeMenuSlotHasClass($preview, 'data-voodbuilder-desktop-nav', 'uppercase');
+        $this->assertChromeMenuSlotHasClass($published, 'data-voodbuilder-desktop-nav', 'uppercase');
+    }
+
+    protected function assertChromeMenuSlotHasClass(string $html, string $attribute, string $class): void
+    {
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $found = false;
+
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if (! $element instanceof \DOMElement || ! $element->hasAttribute($attribute)) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', trim((string) $element->getAttribute('class'))) ?: [];
+
+            if (in_array($class, $classes, true)) {
+                $found = true;
+                break;
+            }
+        }
+
+        $this->assertTrue($found, "Expected [{$attribute}] to include class {$class}");
+    }
 }
 
 /**

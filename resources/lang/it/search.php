@@ -37,4 +37,5 @@ return [
     'kbd_select' => 'per selezionare',
     'kbd_navigate' => 'per navigare',
     'kbd_close' => 'per chiudere',
+    'kbd_view_all' => 'per vedere tutti i risultati',
 ];

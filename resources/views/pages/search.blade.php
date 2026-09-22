@@ -3,8 +3,8 @@
 ])
 
 @section('page')
-    <div class="mx-auto w-full max-w-[min(100%,var(--width-vp-content))]">
-    <header class="mb-12 pt-4 sm:pt-6">
+    <div class="vb-search-page w-full">
+    <header class="mb-10 pt-2 sm:mb-12 sm:pt-4">
         <h1 class="text-[2rem] font-bold leading-tight tracking-tight text-vp-text-1">
             {{ __('voodbuilder::search.title') }}
         </h1>
@@ -18,7 +18,7 @@
     <form
         action="{{ $searchUrl }}"
         method="get"
-        class="mb-8 flex flex-col gap-3 rounded-2xl bg-vp-bg-alt p-3 ring-1 ring-black/5 sm:flex-row sm:items-center sm:p-2 sm:pl-4"
+        class="vb-search-page__form mb-8 flex flex-col gap-3 rounded-2xl border border-vp-divider bg-vp-bg-alt p-3 sm:flex-row sm:items-center sm:p-2 sm:pl-4"
     >
         <label class="sr-only" for="site-search-input">{{ __('voodbuilder::search.label') }}</label>
         <input
@@ -47,9 +47,9 @@
             <a
                 href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::search(['q' => $query]) }}"
                 @class([
-                    'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-colors',
-                    'bg-vp-brand-1/15 font-medium text-vp-brand-1 ring-1 ring-vp-brand-1/30' => $type === null,
-                    'bg-vp-bg-alt text-vp-text-2 ring-1 ring-black/5 hover:text-vp-text-1' => $type !== null,
+                    'vb-search-page__filter inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors',
+                    'border-vp-brand-1/35 bg-vp-brand-1/15 font-medium text-vp-brand-1' => $type === null,
+                    'border-vp-divider bg-vp-bg-alt text-vp-text-2 hover:border-vp-text-3 hover:text-vp-text-1' => $type !== null,
                 ])
             >
                 <span>{{ __('voodbuilder::search.filters.all') }}</span>
@@ -64,9 +64,9 @@
                 <a
                     href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::search(['q' => $query, 'type' => $availableType]) }}"
                     @class([
-                        'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-colors',
-                        'bg-vp-brand-1/15 font-medium text-vp-brand-1 ring-1 ring-vp-brand-1/30' => $type === $availableType,
-                        'bg-vp-bg-alt text-vp-text-2 ring-1 ring-black/5 hover:text-vp-text-1' => $type !== $availableType,
+                        'vb-search-page__filter inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors',
+                        'border-vp-brand-1/35 bg-vp-brand-1/15 font-medium text-vp-brand-1' => $type === $availableType,
+                        'border-vp-divider bg-vp-bg-alt text-vp-text-2 hover:border-vp-text-3 hover:text-vp-text-1' => $type !== $availableType,
                     ])
                 >
                     <span>{{ $typeLabels[$availableType] ?? $availableType }}</span>
@@ -81,11 +81,11 @@
     @endif
 
     @if ($query === '')
-        <p class="rounded-2xl bg-vp-bg-alt px-5 py-8 text-center text-sm text-vp-text-2 ring-1 ring-black/5">
+        <p class="rounded-2xl border border-vp-divider bg-vp-bg-alt px-5 py-8 text-center text-sm text-vp-text-2">
             {{ __('voodbuilder::search.empty_query') }}
         </p>
     @elseif ($total === 0)
-        <p class="rounded-2xl bg-vp-bg-alt px-5 py-8 text-center text-sm text-vp-text-2 ring-1 ring-black/5">
+        <p class="rounded-2xl border border-vp-divider bg-vp-bg-alt px-5 py-8 text-center text-sm text-vp-text-2">
             {{ __('voodbuilder::search.no_results', ['query' => $query]) }}
         </p>
     @elseif ($paginator !== null)
@@ -107,7 +107,7 @@
 
                 <a
                     href="{{ $item['url'] }}"
-                    class="group block rounded-2xl bg-vp-bg-elv px-5 py-4 ring-1 ring-black/10 transition-colors hover:ring-black/15"
+                    class="vb-search-hit group block rounded-2xl border border-vp-divider bg-vp-bg-elv px-5 py-4 transition-[border-color,background-color] hover:border-vp-brand-1/45 hover:bg-vp-bg-alt"
                 >
                     @if (! empty($item['meta']))
                         <p class="mb-1.5 text-[12px] leading-snug text-vp-text-3">
@@ -145,13 +145,13 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     @if ($paginator->onFirstPage())
-                        <span class="inline-flex cursor-not-allowed rounded-lg px-3 py-1.5 text-sm text-vp-text-3 ring-1 ring-black/5">
+                        <span class="inline-flex cursor-not-allowed rounded-lg border border-vp-divider px-3 py-1.5 text-sm text-vp-text-3">
                             {{ __('voodbuilder::search.prev') }}
                         </span>
                     @else
                         <a
                             href="{{ $paginator->previousPageUrl() }}"
-                            class="inline-flex rounded-lg px-3 py-1.5 text-sm text-vp-text-1 ring-1 ring-black/5 transition-colors hover:bg-vp-bg-alt"
+                            class="inline-flex rounded-lg border border-vp-divider px-3 py-1.5 text-sm text-vp-text-1 transition-colors hover:bg-vp-bg-alt"
                         >
                             {{ __('voodbuilder::search.prev') }}
                         </a>
@@ -161,9 +161,9 @@
                         <a
                             href="{{ $url }}"
                             @class([
-                                'inline-flex min-w-9 items-center justify-center rounded-lg px-2.5 py-1.5 text-sm tabular-nums transition-colors',
-                                'bg-vp-brand-1/15 font-medium text-vp-brand-1 ring-1 ring-vp-brand-1/30' => $pageNum === $paginator->currentPage(),
-                                'text-vp-text-1 ring-1 ring-black/5 hover:bg-vp-bg-alt' => $pageNum !== $paginator->currentPage(),
+                                'inline-flex min-w-9 items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm tabular-nums transition-colors',
+                                'border-vp-brand-1/35 bg-vp-brand-1/15 font-medium text-vp-brand-1' => $pageNum === $paginator->currentPage(),
+                                'border-vp-divider text-vp-text-1 hover:bg-vp-bg-alt' => $pageNum !== $paginator->currentPage(),
                             ])
                             @if ($pageNum === $paginator->currentPage()) aria-current="page" @endif
                         >
@@ -174,12 +174,12 @@
                     @if ($paginator->hasMorePages())
                         <a
                             href="{{ $paginator->nextPageUrl() }}"
-                            class="inline-flex rounded-lg px-3 py-1.5 text-sm text-vp-text-1 ring-1 ring-black/5 transition-colors hover:bg-vp-bg-alt"
+                            class="inline-flex rounded-lg border border-vp-divider px-3 py-1.5 text-sm text-vp-text-1 transition-colors hover:bg-vp-bg-alt"
                         >
                             {{ __('voodbuilder::search.next') }}
                         </a>
                     @else
-                        <span class="inline-flex cursor-not-allowed rounded-lg px-3 py-1.5 text-sm text-vp-text-3 ring-1 ring-black/5">
+                        <span class="inline-flex cursor-not-allowed rounded-lg border border-vp-divider px-3 py-1.5 text-sm text-vp-text-3">
                             {{ __('voodbuilder::search.next') }}
                         </span>
                     @endif

@@ -578,8 +578,8 @@
 
                     renderItems(data.items || [], {
                         heading: i18n.results || 'Results',
-                        showViewAll: (data.total || 0) > (data.items || []).length,
-                        total: data.total || 0,
+                        showViewAll: Boolean(searchPageUrl && query),
+                        total: data.total || (data.items || []).length,
                         query,
                     });
                 } catch (error) {
@@ -607,6 +607,18 @@
                 debounceTimer = window.setTimeout(() => runSuggest(query), 220);
             }
 
+            function goToSearchPage() {
+                const query = (searchInput?.value || '').trim();
+
+                if (! searchPageUrl || query.length < 2) {
+                    searchForm?.requestSubmit();
+                    return;
+                }
+
+                const href = `${searchPageUrl}${searchPageUrl.includes('?') ? '&' : '?'}q=${encodeURIComponent(query)}`;
+                window.location.href = href;
+            }
+
             function goToActiveOrSearch() {
                 if (activeIndex >= 0 && currentItems[activeIndex]?.url) {
                     pushRecent(currentItems[activeIndex]);
@@ -614,7 +626,7 @@
                     return;
                 }
 
-                searchForm?.requestSubmit();
+                goToSearchPage();
             }
 
             function setSearchOpen(open) {
@@ -648,13 +660,6 @@
 
             searchInput?.addEventListener('input', scheduleSuggest);
 
-            searchForm?.addEventListener('submit', (event) => {
-                if (activeIndex >= 0 && currentItems[activeIndex]?.url && (searchInput?.value || '').trim().length >= 2) {
-                    event.preventDefault();
-                    goToActiveOrSearch();
-                }
-            });
-
             searchInput?.addEventListener('keydown', (event) => {
                 if (! searchDialog || searchDialog.hidden) {
                     return;
@@ -679,10 +684,8 @@
                 }
 
                 if (event.key === 'Enter') {
-                    if (activeIndex >= 0 && currentItems[activeIndex]?.url) {
-                        event.preventDefault();
-                        goToActiveOrSearch();
-                    }
+                    event.preventDefault();
+                    goToSearchPage();
                 }
             });
 

@@ -54,8 +54,8 @@ html.dark[data-voodbuilder-sub-theme='site'] {
     --vx-header-muted: #94a3b8;
 }
 
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg,
-html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg-alt {
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)),
+html[data-voodbuilder-sub-theme='site'] header[role='banner'] .bg-vp-bg-alt:not(:where([data-voodbuilder-search-dialog], [data-voodbuilder-search-dialog] *)) {
     background-color: var(--vx-header-bg) !important;
 }
 

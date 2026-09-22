@@ -48,6 +48,7 @@
             'select' => __('voodbuilder::search.kbd_select'),
             'navigate' => __('voodbuilder::search.kbd_navigate'),
             'close' => __('voodbuilder::search.kbd_close'),
+            'view_all_kbd' => __('voodbuilder::search.kbd_view_all'),
         ], JSON_UNESCAPED_UNICODE)) }}"
     >
         <button
@@ -74,7 +75,7 @@
             aria-label="{{ __('voodbuilder::search.button') }}"
         >
             <div class="absolute inset-0 bg-black/60" data-voodbuilder-search-close tabindex="-1"></div>
-            <div class="relative z-10 flex w-full max-w-[560px] flex-col overflow-hidden rounded-xl bg-vp-bg-elv shadow-xl ring-1 ring-black/5">
+            <div class="vb-search-panel relative z-10 flex w-full max-w-[560px] flex-col overflow-hidden rounded-xl bg-vp-bg-elv shadow-xl ring-1 ring-vp-divider">
                 <form action="{{ $searchUrl }}" method="get" class="flex items-center gap-2 border-b border-vp-divider px-4 py-3" data-voodbuilder-search-form>
                     <label class="sr-only" for="voodbuilder-search-input">{{ __('voodbuilder::search.button') }}</label>
                     <span class="text-vp-text-3" aria-hidden="true">
@@ -119,18 +120,18 @@
                     ></div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-vp-divider px-4 py-2.5 text-[11px] text-vp-text-3">
+                <div class="vb-search-footer flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-vp-divider px-4 py-2.5 text-[11px]">
                     <span class="inline-flex items-center gap-1.5">
-                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↵</kbd>
-                        {{ __('voodbuilder::search.kbd_select') }}
+                        <kbd class="vb-search-kbd">↵</kbd>
+                        {{ __('voodbuilder::search.kbd_view_all') }}
                     </span>
                     <span class="inline-flex items-center gap-1.5">
-                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↑</kbd>
-                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">↓</kbd>
+                        <kbd class="vb-search-kbd">↑</kbd>
+                        <kbd class="vb-search-kbd">↓</kbd>
                         {{ __('voodbuilder::search.kbd_navigate') }}
                     </span>
                     <span class="inline-flex items-center gap-1.5">
-                        <kbd class="rounded bg-vp-bg-alt px-1.5 py-0.5 font-sans text-[10px] text-vp-text-2 ring-1 ring-black/5">esc</kbd>
+                        <kbd class="vb-search-kbd">esc</kbd>
                         {{ __('voodbuilder::search.kbd_close') }}
                     </span>
                 </div>

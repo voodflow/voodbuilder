@@ -118,8 +118,15 @@ final class EditorDynamicBlockRenderer
             return;
         }
 
+        // Nested footer/progress inside nav are destroyed by innerHTML replace —
+        // lift them to siblings first (same idea as ChromeLayoutHtmlSanitizer).
+        if (SiteNavBlocks::isNavBlockId($blockId)) {
+            $this->hoistMisplacedChromeBlocksFromNav($document, $node);
+        }
+
         $authorStructuralClasses = $this->captureAuthorStructuralClasses($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
+        $authorChromeMenuSlots = $this->captureAuthorChromeMenuSlotClasses($node);
 
         $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
@@ -133,6 +140,7 @@ final class EditorDynamicBlockRenderer
                 $this->restoreAuthorStructuralClasses($node, $authorStructuralClasses);
             }
             $this->restoreAuthorContentWidthShells($node, $authorContentWidthShells);
+            $this->restoreAuthorChromeMenuSlotClasses($node, $authorChromeMenuSlots);
 
             return;
         }
@@ -144,8 +152,61 @@ final class EditorDynamicBlockRenderer
         }
 
         $rendered = $this->applyAuthorContentWidthShellsToHtml($rendered, $authorContentWidthShells);
+        $rendered = $this->applyAuthorChromeMenuSlotClassesToHtml($rendered, $authorChromeMenuSlots);
 
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+    }
+
+    /**
+     * Lift footer / reading-progress nodes nested under a nav block so a Blade
+     * remount cannot wipe them (layout editor save/load regression).
+     */
+    protected function hoistMisplacedChromeBlocksFromNav(DOMDocument $document, DOMElement $nav): void
+    {
+        $parent = $nav->parentNode;
+
+        if ($parent === null) {
+            return;
+        }
+
+        $toHoist = [];
+
+        foreach ($nav->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if ($this->isHoistableChromeElement($element)) {
+                $toHoist[] = $element;
+            }
+        }
+
+        foreach ($toHoist as $element) {
+            if ($element->parentNode === null || ! $nav->contains($element)) {
+                continue;
+            }
+
+            $parent->insertBefore($element, $nav->nextSibling);
+        }
+    }
+
+    protected function isHoistableChromeElement(DOMElement $element): bool
+    {
+        if ($element->hasAttribute('data-voodbuilder-block')) {
+            $blockId = (string) $element->getAttribute('data-voodbuilder-block');
+
+            return SiteFooterBlocks::isFooterBlockId($blockId)
+                || $blockId === 'voodbuilder-reading-progress'
+                || str_contains($blockId, 'reading-progress');
+        }
+
+        if ($element->hasAttribute('data-voodbuilder-progress') || $element->hasAttribute('data-reading-progress')) {
+            return true;
+        }
+
+        $class = ' '.trim((string) $element->getAttribute('class')).' ';
+
+        return str_contains($class, ' vb-reading-progress ');
     }
 
     /**
@@ -500,6 +561,165 @@ final class EditorDynamicBlockRenderer
         }
 
         return implode('; ', array_values($parsed));
+    }
+
+    /**
+     * Stable keys matching JS captureChromeMenuSlotAuthorClasses so typography
+     * utilities (e.g. uppercase) survive Blade remount of site_nav_* blocks.
+     *
+     * @return array<string, array{class: string, style: string}>
+     */
+    protected function captureAuthorChromeMenuSlotClasses(DOMElement $node): array
+    {
+        $byKey = [];
+        $desktopNavIndex = 0;
+
+        foreach ($this->chromeMenuSlotElements($node) as $element) {
+            $key = $this->chromeMenuSlotAuthorKey($element, $desktopNavIndex);
+
+            if ($element->hasAttribute('data-voodbuilder-desktop-nav')) {
+                $desktopNavIndex++;
+            }
+
+            $byKey[$key] = [
+                'class' => trim((string) $element->getAttribute('class')),
+                'style' => trim((string) $element->getAttribute('style')),
+            ];
+        }
+
+        return $byKey;
+    }
+
+    /**
+     * @param  array<string, array{class: string, style: string}>  $authorByKey
+     */
+    protected function restoreAuthorChromeMenuSlotClasses(DOMElement $node, array $authorByKey): void
+    {
+        if ($authorByKey === []) {
+            return;
+        }
+
+        $desktopNavIndex = 0;
+
+        foreach ($this->chromeMenuSlotElements($node) as $element) {
+            $key = $this->chromeMenuSlotAuthorKey($element, $desktopNavIndex);
+
+            if ($element->hasAttribute('data-voodbuilder-desktop-nav')) {
+                $desktopNavIndex++;
+            }
+
+            if (! isset($authorByKey[$key])) {
+                continue;
+            }
+
+            $this->applyChromeMenuSlotAuthorToElement($element, $authorByKey[$key]);
+        }
+    }
+
+    /**
+     * @param  array<string, array{class: string, style: string}>  $authorByKey
+     */
+    protected function applyAuthorChromeMenuSlotClassesToHtml(string $html, array $authorByKey): string
+    {
+        if ($html === '' || $authorByKey === []) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $this->restoreAuthorChromeMenuSlotClasses($child, $authorByKey);
+            }
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * @param  array{class: string, style: string}  $author
+     */
+    protected function applyChromeMenuSlotAuthorToElement(DOMElement $element, array $author): void
+    {
+        if ($author['class'] !== '') {
+            $element->setAttribute(
+                'class',
+                $this->mergeAuthorChromeMenuSlotClasses(
+                    $author['class'],
+                    trim((string) $element->getAttribute('class')),
+                ),
+            );
+        }
+
+        if ($author['style'] !== '') {
+            $element->setAttribute(
+                'style',
+                $this->mergeAuthorContentWidthStyles(
+                    $author['style'],
+                    trim((string) $element->getAttribute('style')),
+                ),
+            );
+        }
+    }
+
+    protected function mergeAuthorChromeMenuSlotClasses(string $author, string $fresh): string
+    {
+        $merged = [];
+        $seen = [];
+
+        foreach ([...preg_split('/\s+/', trim($author)) ?: [], ...preg_split('/\s+/', trim($fresh)) ?: []] as $token) {
+            if ($token === '' || isset($seen[$token])) {
+                continue;
+            }
+
+            $seen[$token] = true;
+            $merged[] = $token;
+        }
+
+        return implode(' ', $merged);
+    }
+
+    protected function chromeMenuSlotAuthorKey(DOMElement $element, int $desktopNavIndex): string
+    {
+        if ($element->hasAttribute('data-voodbuilder-menu')) {
+            return 'menu:'.trim((string) $element->getAttribute('data-voodbuilder-menu'));
+        }
+
+        if ($element->hasAttribute('data-voodbuilder-desktop-nav')) {
+            return 'desktop-nav:'.$desktopNavIndex;
+        }
+
+        return 'mobile-links';
+    }
+
+    /**
+     * @return list<DOMElement>
+     */
+    protected function chromeMenuSlotElements(DOMNode $root): array
+    {
+        $slots = [];
+        $document = $root instanceof DOMDocument ? $root : $root->ownerDocument;
+
+        if ($document === null) {
+            return [];
+        }
+
+        $xpath = new \DOMXPath($document);
+        $query = './/*[@data-voodbuilder-desktop-nav or @data-voodbuilder-menu'
+            .' or contains(concat(" ", normalize-space(@class), " "), " voodbuilder-mobile-nav__links ")]';
+
+        foreach ($xpath->query($query, $root) as $element) {
+            if ($element instanceof DOMElement) {
+                $slots[] = $element;
+            }
+        }
+
+        return $slots;
     }
 
     /**
