@@ -49,9 +49,16 @@ class NavigationMenuItemTree
                     ->color('gray')
                     ->iconButton()
                     ->fillForm(
-                        fn (mixed $record): array => $record instanceof NavigationMenuItem
-                            ? MenuRouteParameterField::expandForFill($record->toArray())
-                            : [],
+                        function (mixed $record): array {
+                            if (! $record instanceof NavigationMenuItem) {
+                                return [];
+                            }
+
+                            $data = MenuRouteParameterField::expandForFill($record->toArray());
+                            $data['type'] = $record->typeKey();
+
+                            return $data;
+                        },
                     )
                     ->schema(
                         fn (Schema $schema, mixed $record): Schema => $schema->components(
@@ -137,7 +144,13 @@ class NavigationMenuItemTree
             ->where('parent_id', $parentId)
             ->values()
             ->map(function (NavigationMenuItem $item) use ($items, $depth): array {
-                return array_merge($item->toArray(), [
+                $data = $item->toArray();
+                // Livewire EnumSynth metadata is path/index-based. Mixing MenuItemType
+                // enums with registered string types (e.g. "docs") breaks on drag-reorder
+                // when indices shift — always expose type as a plain string in tree state.
+                $data['type'] = $item->typeKey();
+
+                return array_merge($data, [
                     'type_label' => static::resolveTypeLabel($item),
                     'children' => static::nestItems($items, $item->id, $depth + 1),
                 ]);

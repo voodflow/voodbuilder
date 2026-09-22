@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.92] - 2026-09-22
+
+### Fixed
+
+- Navigation menu tree drag-reorder no longer crashes when a registered type (e.g. vdocs `docs`) sits next to built-in enum types — Livewire EnumSynth metadata was index-bound; tree/form state now always exposes `type` as a string
+
 ## [0.1.91] - 2026-09-21
 
 ### Fixed

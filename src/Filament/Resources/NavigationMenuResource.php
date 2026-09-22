@@ -251,6 +251,18 @@ class NavigationMenuResource extends Resource
                 ->options(static::menuItemTypeOptions($isChild))
                 ->required()
                 ->live()
+                ->afterStateHydrated(function (Select $component, mixed $state): void {
+                    if ($state instanceof MenuItemType) {
+                        $component->state($state->value);
+                    }
+                })
+                ->dehydrateStateUsing(function (mixed $state): ?string {
+                    if ($state instanceof MenuItemType) {
+                        return $state->value;
+                    }
+
+                    return is_string($state) && $state !== '' ? $state : null;
+                })
                 ->afterStateUpdated(function (callable $set, mixed $state, mixed $old): void {
                     if ($state !== $old) {
                         $set('link', null);

@@ -8,6 +8,7 @@ use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -111,5 +112,41 @@ class MenuItemTypeRegistryTest extends TestCase
         $this->assertSame(MenuItemType::Url, $item->type);
         $this->assertSame('url', $item->typeKey());
         $this->assertSame('https://example.test', $item->resolveUrl());
+    }
+
+    public function test_tree_build_exposes_type_as_string_for_enum_and_registered_types(): void
+    {
+        Voodbuilder::menuItemType('docs', [
+            'label' => 'Documentation',
+        ]);
+
+        $menu = NavigationMenu::query()->create([
+            'name' => 'Main',
+            'slug' => 'main',
+        ]);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'Home',
+            'type' => MenuItemType::Page,
+            'link' => 'home',
+            'sort_order' => 0,
+        ]);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'Docs',
+            'type' => 'docs',
+            'sort_order' => 1,
+        ]);
+
+        $tree = NavigationMenuItemTree::build($menu);
+
+        $this->assertCount(2, $tree);
+        $this->assertSame('page', $tree[0]['type']);
+        $this->assertIsString($tree[0]['type']);
+        $this->assertSame('docs', $tree[1]['type']);
+        $this->assertIsString($tree[1]['type']);
+        $this->assertSame('Documentation', $tree[1]['type_label']);
     }
 }
