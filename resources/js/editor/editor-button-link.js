@@ -514,6 +514,18 @@ function syncLinkableButtonTraits(component, editor, { forceSelect = false } = {
         return;
     }
 
+    // Content panel owns CTA/link settings. Hiding its mount + TraitManager.select
+    // blanked the right column for ~1–2s on linkType changes (and fought every select).
+    if (editor.__voodbuilderSettingsChange) {
+        return;
+    }
+
+    const activeTab = editor.__voodbuilderInspectorActiveTab ?? 'content';
+
+    if (activeTab === 'content') {
+        return;
+    }
+
     const traitsMount = editor.getContainer?.()
         ?.closest?.('.voodbuilder-editor-shell')
         ?.querySelector?.('.voodbuilder-editor-traits-mount')
@@ -974,12 +986,26 @@ function registerLinkableButtonType(editor) {
                 // getHtml/toHTML during page CSS compile.
 
                 this.on('change:href change:target change:linkRef', () => {
+                    // Content panel already applied attrs — skip a second morph pass.
+                    if (editor.__voodbuilderSettingsChange) {
+                        return;
+                    }
+
                     this.__vbLinkMorphApplied = true;
                     applyCtaButtonLink(this, editor);
                 });
 
                 this.on('change:linkType', () => {
                     this.__vbLinkMorphApplied = true;
+
+                    // Content panel commit already wrote linkType/linkRef/href and keeps
+                    // the form mounted. Clearing linkRef + forceSelect blanked the panel.
+                    if (editor.__voodbuilderSettingsChange) {
+                        syncLinkableButtonTraits(this, editor);
+
+                        return;
+                    }
+
                     this.set('linkRef', '', { silent: true });
                     syncLinkableButtonTraits(this, editor, { forceSelect: true });
                     applyCtaButtonLink(this, editor);

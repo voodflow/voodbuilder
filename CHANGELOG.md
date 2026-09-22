@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.95] - 2026-09-22
+
+### Fixed
+
+- Button/link Content settings: switching Link type URL → Site page no longer blanks the right panel (~2s TraitManager remount); page selection confirms without a redundant CTA morph
+
 ## [0.1.94] - 2026-09-22
 
 ### Fixed

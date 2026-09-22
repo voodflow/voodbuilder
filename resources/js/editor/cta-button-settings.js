@@ -251,6 +251,7 @@ export function renderCtaButtonSettings({ mount, traitsMount = null, component, 
     urlInput.addEventListener('change', commit);
 
     syncVisibility();
+    editor.__voodbuilderEnhanceInspectorSelects?.(mount);
 
     return true;
 }
