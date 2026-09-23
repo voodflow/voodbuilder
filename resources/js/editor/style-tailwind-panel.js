@@ -33,6 +33,7 @@ import {
 } from './style-background-image.js';
 import {
     BACKGROUND_OPTIONS,
+    BG_COLOR_OPACITY_OPTIONS,
     BG_POSITION_OPTIONS,
     BG_REPEAT_OPTIONS,
     BG_SIZE_OPTIONS,
@@ -94,8 +95,12 @@ import {
     WIDTH_OPTIONS,
     classSetFromOptions,
     componentClassList,
+    applyBackgroundColorWithOpacity,
+    clearBackgroundColorUtilities,
+    composeBackgroundColorClass,
     hasTextGradientClasses,
     replaceClassGroup,
+    resolveBackgroundColorAndOpacity,
     resolveGroupValue,
     resolveSolidTextColor,
     utilityConflictGroupIds,
@@ -519,6 +524,9 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                 el.value = hasTextGradientClasses(classes)
                     ? TEXT_COLOR_GRADIENT_VALUE
                     : resolveSolidTextColor(classes);
+            } else if (group.id === 'background' || group.id === 'background-opacity') {
+                const bg = resolveBackgroundColorAndOpacity(classes);
+                el.value = group.id === 'background' ? bg.color : bg.opacity;
             } else {
                 el.value = resolveGroupValue(classes, group.options);
             }
@@ -575,6 +583,45 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     syncDecorationBlocks(root, component, options, editor);
     syncBackgroundImageField(root, component, editor);
     syncTypographySegments(root, component);
+
+    // Legacy bg-opacity-* is ineffective under Tailwind v4 — migrate to bg-black/50 on sync
+    // so component-imported classes become editable and actually translucent.
+    try {
+        const bg = resolveBackgroundColorAndOpacity(componentClassList(component));
+
+        if (bg.legacyOpacity && bg.color && ! editor?.__voodbuilderTwStyleApplying) {
+            const wasApplying = Boolean(editor?.__voodbuilderTwStyleApplying);
+
+            if (editor) {
+                editor.__voodbuilderTwStyleApplying = true;
+            }
+
+            try {
+                applyBackgroundColorWithOpacity(component, bg.color, bg.opacity);
+                component.view?.updateClasses?.();
+                scheduleClassCompile(editor);
+
+                const colorEl = root.querySelector?.('[data-voodbuilder-tw-group="background"]');
+                const opacityEl = root.querySelector?.('[data-voodbuilder-tw-group="background-opacity"]');
+
+                if (colorEl) {
+                    colorEl.value = bg.color;
+                    colorEl.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
+                }
+
+                if (opacityEl) {
+                    opacityEl.value = bg.opacity;
+                    opacityEl.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
+                }
+            } finally {
+                if (editor && ! wasApplying) {
+                    editor.__voodbuilderTwStyleApplying = false;
+                }
+            }
+        }
+    } catch {
+        // Optional migrate.
+    }
 }
 
 /**
@@ -611,6 +658,55 @@ function applyGroup(editor, component, groupId, value) {
     const groupSet = GROUP_SETS[groupId];
 
     if (! component) {
+        return;
+    }
+
+    if (groupId === 'background' || groupId === 'background-opacity') {
+        editor.__voodbuilderTwStyleApplying = true;
+
+        try {
+            const current = resolveBackgroundColorAndOpacity(componentClassList(component));
+            const nextColor = groupId === 'background' ? (value || '') : current.color;
+            const nextOpacity = groupId === 'background-opacity' ? (value || '') : current.opacity;
+
+            if (nextColor === '') {
+                clearBackgroundColorUtilities(component);
+            } else {
+                applyBackgroundColorWithOpacity(component, nextColor, nextOpacity);
+            }
+
+            clearInlineProps(editor, component, GROUP_INLINE.background ?? []);
+
+            // Color clears gradient (exclusive); keep decoration photo.
+            if (groupId === 'background' && nextColor !== '') {
+                const alsoClear = ['gradient-direction', 'gradient-from', 'gradient-via', 'gradient-to']
+                    .map((id) => GROUP_SETS[id])
+                    .filter(Boolean);
+
+                for (const set of alsoClear) {
+                    replaceClassGroup(component, set, null);
+                }
+            }
+
+            const preservedBgUrl = readBackgroundImageUrl(component, editor);
+
+            if (preservedBgUrl !== '') {
+                reapplyDecorationBackgroundPaint(editor, component, preservedBgUrl);
+            }
+
+            try {
+                component.view?.updateClasses?.();
+            } catch {
+                // View may be unavailable during bulk updates.
+            }
+
+            scheduleClassCompile(editor);
+            editor?.trigger?.('update');
+            editor?.trigger?.('component:update', component);
+        } finally {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+
         return;
     }
 
@@ -923,6 +1019,11 @@ function buildDecorationsSector(labels) {
                         groupId: 'background',
                         options: BACKGROUND_OPTIONS,
                         searchPlaceholder: searchPh,
+                    })}
+                    ${decoLiveFieldHtml({
+                        label: labels.classStyleBackgroundColorOpacity ?? 'Opacity',
+                        groupId: 'background-opacity',
+                        options: BG_COLOR_OPACITY_OPTIONS,
                     })}
                     <details class="voodbuilder-editor-deco-fold" data-voodbuilder-deco-fold="image">
                         <summary class="voodbuilder-editor-deco-fold__summary">
@@ -1911,7 +2012,8 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
         return;
     }
 
-    const bg = resolveGroupValue(classes, BACKGROUND_OPTIONS);
+    const bgParsed = resolveBackgroundColorAndOpacity(classes);
+    const bg = bgParsed.color;
     const gradDir = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
     const gradFrom = resolveGroupValue(classes, GRADIENT_FROM_OPTIONS);
     const gradVia = resolveGroupValue(classes, GRADIENT_VIA_OPTIONS);

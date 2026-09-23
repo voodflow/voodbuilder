@@ -530,6 +530,7 @@ final class EditorGate
             'classStyleFieldSearch' => __('voodbuilder::pro.editor_ui.class_style_field_search'),
             'classStyleBackground' => __('voodbuilder::pro.editor_ui.class_style_background'),
             'classStyleBackgroundColor' => __('voodbuilder::pro.editor_ui.class_style_background_color'),
+            'classStyleBackgroundColorOpacity' => __('voodbuilder::pro.editor_ui.class_style_background_color_opacity'),
             'classStyleBackgroundImage' => __('voodbuilder::pro.editor_ui.class_style_background_image'),
             'classStyleBackgroundImageSrc' => __('voodbuilder::pro.editor_ui.class_style_background_image_src'),
             'classStyleBackgroundImageOpacity' => __('voodbuilder::pro.editor_ui.class_style_background_image_opacity'),

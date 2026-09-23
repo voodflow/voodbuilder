@@ -179,6 +179,7 @@ return [
         'class_style_field_search' => 'Cerca…',
         'class_style_background' => 'Sfondo',
         'class_style_background_color' => 'Colore',
+        'class_style_background_color_opacity' => 'Opacità',
         'class_style_background_image' => 'Immagine',
         'class_style_background_image_src' => 'Immagine di sfondo',
         'class_style_background_image_opacity' => 'Visibilità foto',

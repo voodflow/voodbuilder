@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.123] - 2026-09-23
+
+### Added
+
+- Background **Color opacity** (Tailwind v4 `bg-black/50`) so solid colors can reveal a parent background image
+- Sync / migrate legacy `bg-opacity-*` from imported components into slash opacity and Style panel fields
+
 ## [0.1.122] - 2026-09-23
 
 ### Fixed
