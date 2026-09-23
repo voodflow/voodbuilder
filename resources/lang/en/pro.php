@@ -195,7 +195,7 @@ return [
         'class_style_gradient_stop_from' => 'Start',
         'class_style_gradient_stop_via' => 'Middle',
         'class_style_gradient_stop_to' => 'End',
-        'class_style_gradient_stop_hint' => 'Soft fade: From ~0–20%, To ~100%, Via empty. High From (e.g. 90%) squeezes the fade into a thin band. Clear solid Color so transparent shows through.',
+        'class_style_gradient_stop_hint' => 'Soft fade: drag Start to ~0% (not 90%), End ~100%, Via empty. Otherwise the color becomes a hard thin band.',
         'class_style_border' => 'Border',
         'class_style_border_width' => 'Width',
         'class_style_border_style' => 'Style',

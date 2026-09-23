@@ -305,6 +305,49 @@ export function cssColorFromGradientStopUtility(utility) {
  * }} opts
  * @returns {string}
  */
+/**
+ * Soft transparent↔opaque ramp: linear CSS looks banded because alpha jumps
+ * too fast perceptually. Extra mid stops ease the fade across the span.
+ *
+ * @param {{ paint: string, pct: number, color: string }} a
+ * @param {{ paint: string, pct: number, color: string }} b
+ * @returns {Array<{ paint: string, pct: number }>}
+ */
+function softTransparentOpaqueStops(a, b) {
+    const clear = a.color === 'transparent' ? a : b;
+    const solid = a.color === 'transparent' ? b : a;
+    const solidRgba = toRgbaWithAlpha(solid.color, 1);
+
+    if (! solidRgba || clear.color !== 'transparent') {
+        return [a, b];
+    }
+
+    const start = Math.min(clear.pct, solid.pct);
+    const end = Math.max(clear.pct, solid.pct);
+    const span = end - start;
+    const goingToSolid = clear.pct <= solid.pct;
+
+    if (span < 5) {
+        return goingToSolid
+            ? [{ paint: 'transparent', pct: start }, { paint: solidRgba, pct: end }]
+            : [{ paint: solidRgba, pct: start }, { paint: 'transparent', pct: end }];
+    }
+
+    const at = (t) => Math.round(start + span * t);
+    // Ease-in alphas so color gathers later in the span (less “hard purple line”).
+    const alphas = goingToSolid
+        ? [0, 0.12, 0.32, 0.62, 1]
+        : [1, 0.62, 0.32, 0.12, 0];
+    const ts = [0, 0.28, 0.52, 0.76, 1];
+
+    return ts.map((t, i) => ({
+        paint: alphas[i] <= 0
+            ? 'transparent'
+            : (toRgbaWithAlpha(solid.color, alphas[i]) ?? solidRgba),
+        pct: at(t),
+    }));
+}
+
 export function composePhotoAwareGradientLayer(opts = {}) {
     const direction = GRADIENT_DIRECTION_CSS[String(opts.directionUtility ?? '').trim()];
 
@@ -327,10 +370,10 @@ export function composePhotoAwareGradientLayer(opts = {}) {
             : fallbackPos;
         const pct = Math.min(100, Math.max(0, Math.round(rawPos)));
 
-        return { paint, pct };
+        return { paint, pct, color };
     };
 
-    const entries = [
+    let entries = [
         stop(opts.fromUtility, opts.fromPos, 0),
         stop(opts.viaUtility, opts.viaPos, 50),
         stop(opts.toUtility, opts.toPos, 100),
@@ -342,6 +385,17 @@ export function composePhotoAwareGradientLayer(opts = {}) {
 
     // Sort by % so From 75% + Via 45% does not create a hard CSS band.
     entries.sort((a, b) => a.pct - b.pct);
+
+    // Two-stop transparent↔color: insert eased mid-stops (Via empty).
+    if (
+        entries.length === 2
+        && (
+            (entries[0].color === 'transparent' && entries[1].color !== 'transparent')
+            || (entries[1].color === 'transparent' && entries[0].color !== 'transparent')
+        )
+    ) {
+        entries = softTransparentOpaqueStops(entries[0], entries[1]);
+    }
 
     const parts = entries.map((entry) => `${entry.paint} ${entry.pct}%`);
 

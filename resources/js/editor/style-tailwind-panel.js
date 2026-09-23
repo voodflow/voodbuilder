@@ -1273,6 +1273,26 @@ function applyGroup(editor, component, groupId, value) {
         } else {
             replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
         }
+
+        // Transparent as From with a high Start % → thin hard band. Reset to 0%.
+        if (
+            (groupId === 'gradient-from' || groupId === 'text-gradient-from')
+            && String(value ?? '').trim().endsWith('-transparent')
+        ) {
+            const posId = groupId === 'gradient-from' ? 'gradient-from-pos' : 'text-gradient-from-pos';
+            const posSet = GROUP_SETS[posId];
+            const currentPos = gradientStopPositionFromUtility(
+                resolveGroupValueAtBreakpoint(
+                    componentClassList(component),
+                    GRADIENT_FROM_POS_OPTIONS,
+                    'lg:',
+                ),
+            );
+
+            if (posSet && (currentPos == null || currentPos > 20)) {
+                replaceGradientStyleGroup(component, posSet, 'from-0%');
+            }
+        }
         clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
         // DOM first (realtime), compile only if the utility is missing from canvas CSS.
         try {
@@ -1486,7 +1506,7 @@ function gradientStopRowHtml(opts) {
 
 function gradientStopsBlockHtml(prefix, labels, searchPh) {
     const hint = labels.classStyleGradientStopHint
-        ?? 'Soft fade: From ~0–20%, To ~100%, Via empty. High From (e.g. 90%) squeezes the fade into a thin band.';
+        ?? 'Soft fade: drag Start to ~0% (not 90%), End ~100%, Via empty. Otherwise the color becomes a hard thin band.';
 
     return `
         <div class="voodbuilder-editor-deco-stops">
@@ -2174,6 +2194,8 @@ function paintDecorationGradientPreview(editor, component) {
         return;
     }
 
+    repairCompressedTransparentFromStop(component);
+
     const src = readBackgroundImageUrl(component, editor);
 
     if (src !== '') {
@@ -2222,6 +2244,40 @@ function paintDecorationGradientPreview(editor, component) {
         target.view?.updateStyles?.();
     } catch {
         // Frame may be unavailable.
+    }
+}
+
+/**
+ * from-transparent + Start ≥ 50% squeezes the fade into a thin band (looks like
+ * a hard purple line). Almost always a mistake — park Start back at 0%.
+ *
+ * @param {object} component
+ */
+function repairCompressedTransparentFromStop(component) {
+    const classes = componentClassList(component);
+    const fromUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:');
+    const viaUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:');
+    const fromPos = gradientStopPositionFromUtility(
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, 'lg:'),
+    );
+    const toPos = gradientStopPositionFromUtility(
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
+    ) ?? 100;
+
+    if (
+        fromUtility !== 'from-transparent'
+        || (viaUtility && viaUtility !== '')
+        || fromPos == null
+        || fromPos < 50
+        || (toPos - fromPos) > 25
+    ) {
+        return;
+    }
+
+    const posSet = GROUP_SETS['gradient-from-pos'];
+
+    if (posSet) {
+        replaceGradientStyleGroup(component, posSet, 'from-0%');
     }
 }
 

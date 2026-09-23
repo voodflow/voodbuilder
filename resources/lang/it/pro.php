@@ -195,7 +195,7 @@ return [
         'class_style_gradient_stop_from' => 'Inizio',
         'class_style_gradient_stop_via' => 'Mezzo',
         'class_style_gradient_stop_to' => 'Fine',
-        'class_style_gradient_stop_hint' => 'Sfumatura morbida: Da ~0–20%, A ~100%, Via vuoto. Se Da è alto (es. 90%) la sfumatura è una striscia sottile. Togli il colore solido così il transparent si vede.',
+        'class_style_gradient_stop_hint' => 'Sfumatura morbida: porta Inizio a ~0% (non 90%), Fine ~100%, Via vuoto. Altrimenti il viola è una striscia netta.',
         'class_style_border' => 'Bordo',
         'class_style_border_width' => 'Spessore',
         'class_style_border_style' => 'Stile',

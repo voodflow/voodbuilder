@@ -101,7 +101,9 @@ describe('style-background-image', () => {
             photoVisibility: 1,
         });
 
-        expect(gradient).toBe('linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 1) 100%)');
+        expect(gradient).toBe(
+            'linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.12) 28%, rgba(0, 0, 0, 0.32) 52%, rgba(0, 0, 0, 0.62) 76%, rgba(0, 0, 0, 1) 100%)',
+        );
         expect(composeDecorationBackgroundImageCss('/hero.jpg', 1, '', { gradientLayer: gradient }))
             .toBe(`${gradient}, url('/hero.jpg')`);
     });
@@ -116,7 +118,9 @@ describe('style-background-image', () => {
             photoVisibility: 1,
         });
 
-        expect(gradient).toBe('linear-gradient(to bottom, transparent 25%, rgba(88, 28, 135, 1) 85%)');
+        expect(gradient).toBe(
+            'linear-gradient(to bottom, transparent 25%, rgba(88, 28, 135, 0.12) 42%, rgba(88, 28, 135, 0.32) 56%, rgba(88, 28, 135, 0.62) 71%, rgba(88, 28, 135, 1) 85%)',
+        );
     });
 
     it('sorts out-of-order stop positions for a smooth ramp', () => {
