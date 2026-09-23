@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.102] - 2026-09-23
+
+### Added
+
+- Utilities **Anchor** block (Community foundation): invisible scroll target with configurable HTML `id`; link buttons/menus to `#id` — site theme already uses `scroll-behavior: smooth`
+
 ## [0.1.101] - 2026-09-23
 
 ### Fixed

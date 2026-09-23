@@ -88,6 +88,10 @@ export const UTILITY_BLOCK_WIREFRAMES = {
         // ti-share
         '<path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8.7 10.7l6.6 -3.4"/><path d="M8.7 13.3l6.6 3.4"/>',
     ),
+    'voodbuilder-anchor': tablerThumb(
+        // ti-anchor
+        '<path d="M12 9v12"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M12 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M8 12h8"/>',
+    ),
     'voodbuilder-image-gallery': wireframe(
         '<rect x="8" y="12" width="13" height="13" rx="1.5"/>'
         + '<rect x="23" y="12" width="13" height="13" rx="1.5"/>'
@@ -324,6 +328,100 @@ function registerImageGalleryType(editor) {
             },
             init() {
                 this.on('change:data-vb-item-count', () => syncImageGalleryCount(this));
+            },
+        },
+    });
+}
+
+/**
+ * HTML id safe for hash links and CSS (#foo). Letter start; [a-z0-9_-] after.
+ *
+ * @param {unknown} raw
+ * @param {string} [fallback='section']
+ * @returns {string}
+ */
+export function sanitizeAnchorId(raw, fallback = 'section') {
+    let value = String(raw ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\-_]/g, '')
+        .replace(/^-+/, '')
+        .slice(0, 64);
+
+    if (! value || ! /^[a-z]/.test(value)) {
+        value = `${fallback}${value ? `-${value}` : ''}`.replace(/-+/g, '-').slice(0, 64);
+    }
+
+    if (! /^[a-z]/.test(value)) {
+        return fallback;
+    }
+
+    return value;
+}
+
+function syncAnchorId(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const fromTrait = component.get('data-vb-anchor-id');
+    const next = sanitizeAnchorId(
+        fromTrait ?? attrs['data-vb-anchor-id'] ?? attrs.id,
+        'section',
+    );
+
+    component.set('data-vb-anchor-id', next, { silent: true });
+    component.addAttributes({
+        id: next,
+        'data-vb-anchor-id': next,
+    });
+
+    if (typeof component.set === 'function') {
+        component.set('name', `Anchor · #${next}`);
+    }
+}
+
+function registerAnchorType(editor) {
+    if (editor.DomComponents.getType('voodbuilder-anchor')) {
+        return;
+    }
+
+    editor.DomComponents.addType('voodbuilder-anchor', {
+        isComponent: (element) => element?.hasAttribute?.('data-voodbuilder-anchor') === true,
+        model: {
+            defaults: {
+                tagName: 'div',
+                name: 'Anchor · #section',
+                droppable: false,
+                editable: false,
+                void: false,
+                attributes: {
+                    'data-voodbuilder-anchor': '',
+                    'data-vb-anchor-id': 'section',
+                    id: 'section',
+                    class: 'vb-anchor',
+                    'aria-hidden': 'true',
+                },
+                traits: [
+                    {
+                        type: 'text',
+                        name: 'data-vb-anchor-id',
+                        label: 'Anchor ID',
+                        placeholder: 'section',
+                        changeProp: true,
+                    },
+                ],
+                'data-vb-anchor-id': 'section',
+            },
+            init() {
+                syncAnchorId(this);
+                this.on('change:data-vb-anchor-id', () => syncAnchorId(this));
+                this.on('change:attributes:id', () => {
+                    const attrs = this.getAttributes?.() ?? {};
+                    const id = sanitizeAnchorId(attrs.id, 'section');
+
+                    if (id !== attrs.id || id !== this.get('data-vb-anchor-id')) {
+                        this.set('data-vb-anchor-id', id);
+                    }
+                });
             },
         },
     });
@@ -633,6 +731,21 @@ const BLOCKS = [
         },
     },
     {
+        id: 'voodbuilder-anchor',
+        label: 'Anchor',
+        category: SINGLE_BLOCK_CATEGORY,
+        content: {
+            type: 'voodbuilder-anchor',
+            attributes: {
+                'data-voodbuilder-anchor': '',
+                'data-vb-anchor-id': 'section',
+                id: 'section',
+                class: 'vb-anchor',
+                'aria-hidden': 'true',
+            },
+        },
+    },
+    {
         id: 'image',
         label: 'Image',
         category: MEDIA_BLOCK_CATEGORY,
@@ -805,6 +918,7 @@ export function registerUtilityBlockComponentTypes(editor) {
     registerReadingTimeType(editor);
     registerReadingProgressType(editor);
     registerSocialShareType(editor);
+    registerAnchorType(editor);
     registerImageGalleryType(editor);
 }
 
@@ -914,9 +1028,11 @@ export function configureUtilityBlocksCanvas(editor) {
         const isUtilityPreview = type === 'voodbuilder-reading-time'
             || type === 'voodbuilder-reading-progress'
             || type === 'voodbuilder-social-share'
+            || type === 'voodbuilder-anchor'
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-reading-time')
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-progress')
             || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-social-share')
+            || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-anchor')
             || Object.prototype.hasOwnProperty.call(attrs, 'data-reading-progress');
 
         if (! isUtilityPreview) {

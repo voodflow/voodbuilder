@@ -17,6 +17,7 @@ const FOUNDATION_ROOT_ATTRS = [
     'data-voodbuilder-reading-time',
     'data-voodbuilder-progress',
     'data-voodbuilder-social-share',
+    'data-voodbuilder-anchor',
     'data-voodbuilder-text',
     'data-voodbuilder-rich-text',
     'data-voodbuilder-icon',
@@ -39,6 +40,7 @@ const FOUNDATION_ROOT_TYPES = new Set([
     'voodbuilder-reading-time',
     'voodbuilder-reading-progress',
     'voodbuilder-social-share',
+    'voodbuilder-anchor',
     'voodbuilder-text',
     'voodbuilder-rich-text',
     'voodbuilder-icon',
@@ -177,6 +179,7 @@ export function isAllowedPageContentRoot(component) {
             String(attrs.class ?? '').includes('vb-social-share')
             || String(attrs.class ?? '').includes('vb-reading-progress')
             || String(attrs.class ?? '').includes('vb-reading-time')
+            || String(attrs.class ?? '').includes('vb-anchor')
             || String(attrs.class ?? '').includes('vp-social-links')
         )
     ) {

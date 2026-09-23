@@ -217,6 +217,7 @@ export const SECTION_BLOCK_LABELS = {
     'voodbuilder-reading-time': 'Reading time',
     'voodbuilder-reading-progress': 'Reading progress',
     'voodbuilder-social-share': 'Social sharing',
+    'voodbuilder-anchor': 'Anchor',
     'voodbuilder-image-gallery': 'Image gallery',
     'voodbuilder-audio': 'Audio',
     'voodbuilder-carousel': 'Carousel',

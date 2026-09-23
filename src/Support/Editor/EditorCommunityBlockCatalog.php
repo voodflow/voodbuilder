@@ -51,6 +51,7 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-reading-time',
         'voodbuilder-reading-progress',
         'voodbuilder-social-share',
+        'voodbuilder-anchor',
         // Site (no chrome_content_slot — chrome layout editor only)
         'site_nav_simple',
         'site_footer_columns_simple',

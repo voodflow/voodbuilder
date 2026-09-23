@@ -110,6 +110,7 @@ class CompanionSecurityAndSoftGateTest extends TestCase
             ['id' => 'vb-team-2', 'label' => 'Team 2'],
             ['id' => 'voodbuilder-heading', 'label' => 'Heading'],
             ['id' => 'voodbuilder-reading-time', 'label' => 'Reading'],
+            ['id' => 'voodbuilder-anchor', 'label' => 'Anchor'],
         ], chromeLayoutEditor: false);
 
         $ids = array_column($filtered, 'id');
@@ -117,6 +118,7 @@ class CompanionSecurityAndSoftGateTest extends TestCase
         $this->assertContains('vb-hero-2', $ids);
         $this->assertContains('voodbuilder-heading', $ids);
         $this->assertContains('voodbuilder-reading-time', $ids);
+        $this->assertContains('voodbuilder-anchor', $ids);
         $this->assertNotContains('vb-blog-1', $ids);
         $this->assertNotContains('vb-team-2', $ids);
         $this->assertLessThanOrEqual(

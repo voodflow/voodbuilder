@@ -57,6 +57,7 @@ class EditorCommunityBlockCatalogTest extends TestCase
             ['id' => 'voodbuilder-layout-section', 'label' => 'Section'],
             ['id' => 'image', 'label' => 'Image'],
             ['id' => 'voodbuilder-reading-time', 'label' => 'Reading'],
+            ['id' => 'voodbuilder-anchor', 'label' => 'Anchor'],
         ], chromeLayoutEditor: true);
 
         $ids = array_column($filtered, 'id');
@@ -70,6 +71,7 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertContains('voodbuilder-layout-section', $ids);
         $this->assertContains('image', $ids);
         $this->assertContains('voodbuilder-reading-time', $ids);
+        $this->assertContains('voodbuilder-anchor', $ids);
         $this->assertNotContains('chrome_content_slot', $ids);
         $this->assertNotContains('vb-hero-2', $ids);
         $this->assertNotContains('vb-gallery-1', $ids);
