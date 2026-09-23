@@ -181,7 +181,7 @@ return [
         'class_style_background_color' => 'Colore',
         'class_style_background_image' => 'Immagine',
         'class_style_background_image_src' => 'Immagine di sfondo',
-        'class_style_background_image_opacity' => 'Opacità immagine',
+        'class_style_background_image_opacity' => 'Visibilità foto',
         'class_style_background_size' => 'Dimensione',
         'class_style_background_position' => 'Posizione',
         'class_style_background_repeat' => 'Ripeti',

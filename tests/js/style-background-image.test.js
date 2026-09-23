@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+    composeColorOverlayLayer,
     composeDecorationBackgroundImageCss,
     composeTailwindGradientLayer,
+    cssColorFromBackgroundUtility,
     extractUrlFromBackgroundImage,
     normalizeBackgroundImageOpacity,
+    overlayAlphaFromPhotoVisibility,
     toRgbaWithAlpha,
 } from '../../resources/js/editor/style-background-image.js';
 
@@ -16,6 +19,12 @@ describe('style-background-image', () => {
         expect(normalizeBackgroundImageOpacity('-1')).toBe(0);
     });
 
+    it('maps photo visibility to overlay alpha', () => {
+        expect(overlayAlphaFromPhotoVisibility(1)).toBe(0);
+        expect(overlayAlphaFromPhotoVisibility(0.65)).toBe(0.35);
+        expect(overlayAlphaFromPhotoVisibility(0)).toBe(1);
+    });
+
     it('extracts url from layered opacity overlays', () => {
         expect(extractUrlFromBackgroundImage('none')).toBe('');
         expect(extractUrlFromBackgroundImage("url('/a.jpg')")).toBe('/a.jpg');
@@ -25,18 +34,21 @@ describe('style-background-image', () => {
         expect(extractUrlFromBackgroundImage('linear-gradient(red, blue)')).toBe('');
     });
 
-    it('composes fade overlay toward solid color', () => {
+    it('composes color overlay above a full-opacity photo (no faded url)', () => {
         expect(composeDecorationBackgroundImageCss('/a.jpg', 1, '#0f172a'))
             .toBe("url('/a.jpg')");
 
         expect(composeDecorationBackgroundImageCss('/a.jpg', 0.55, '#0f172a'))
             .toBe('linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45)), url(\'/a.jpg\')');
 
+        expect(composeColorOverlayLayer('#0f172a', 0.45))
+            .toBe('linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45))');
+
         expect(toRgbaWithAlpha('rgb(10, 20, 30)', 0.4)).toBe('rgba(10, 20, 30, 0.4)');
         expect(toRgbaWithAlpha('var(--color-vp-bg)', 0.4)).toBeNull();
     });
 
-    it('infers opacity from layered overlay CSS', async () => {
+    it('infers photo visibility from overlay CSS', async () => {
         const { inferBackgroundImageOpacityFromCss } = await import(
             '../../resources/js/editor/style-background-image.js'
         );
@@ -47,7 +59,7 @@ describe('style-background-image', () => {
         expect(inferBackgroundImageOpacityFromCss("url('/a.jpg')")).toBeNull();
     });
 
-    it('stacks gradient above image without color fade', () => {
+    it('stacks gradient above image without fading the url', () => {
         const gradient = composeTailwindGradientLayer('bg-gradient-to-r');
 
         expect(gradient).toContain('linear-gradient(to right,');
@@ -55,5 +67,11 @@ describe('style-background-image', () => {
             .toBe(`${gradient}, url('/a.jpg')`);
         expect(composeDecorationBackgroundImageCss('', 1, '', { gradientLayer: gradient }))
             .toBe(gradient);
+    });
+
+    it('resolves bg-* utilities to hex for overlays', () => {
+        expect(cssColorFromBackgroundUtility('bg-red-700')).toBe('#b91c1c');
+        expect(cssColorFromBackgroundUtility('bg-black')).toBe('#000000');
+        expect(cssColorFromBackgroundUtility('bg-transparent')).toBe('');
     });
 });

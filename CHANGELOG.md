@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.119] - 2026-09-23
+
+### Changed
+
+- Background Image paints at **100%**; Color/Gradient sit **above** as overlays (Photo visibility = how much photo shows through the tint)
+- With a photo active, solid `background-color` is forced transparent so the frontend no longer flashes full Color before the image loads
+
 ## [0.1.118] - 2026-09-23
 
 ### Fixed

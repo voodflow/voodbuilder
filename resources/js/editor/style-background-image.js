@@ -1,9 +1,16 @@
 /**
  * Style panel decoration background-image helpers.
- * Opacity fades the image toward the solid background-color underneath
- * via a color overlay layered above the url().
- * Gradient + image stack as: gradient, [color fade], url(...).
+ *
+ * Model: photo always paints at 100% as the bottom layer. Color and gradient
+ * sit ABOVE it as overlays with their own alpha — never fade the url() itself.
+ * That avoids a solid `background-color` flash on the frontend while the image
+ * is still loading (tint comes only from overlay layers in background-image).
+ *
+ * Attr `data-vb-style-bg-opacity` stores *photo visibility* (1 = pure photo,
+ * 0.65 = 35% color overlay). Overlay alpha = 1 − visibility.
  */
+
+import { hexForUtility } from './tailwind-color-palette.js';
 
 export const STYLE_BG_OPACITY_ATTR = 'data-vb-style-bg-opacity';
 export const STYLE_BG_SRC_ATTR = 'data-vb-style-bg-src';
@@ -54,6 +61,16 @@ export function normalizeBackgroundImageOpacity(value) {
 }
 
 /**
+ * Photo visibility (attr) → overlay alpha for color/gradient layers.
+ *
+ * @param {unknown} photoVisibility
+ * @returns {number} 0–1
+ */
+export function overlayAlphaFromPhotoVisibility(photoVisibility) {
+    return Math.round((1 - normalizeBackgroundImageOpacity(photoVisibility)) * 1000) / 1000;
+}
+
+/**
  * Extract url(...) from a background-image value that may include opacity overlays.
  *
  * @param {unknown} raw
@@ -72,8 +89,8 @@ export function extractUrlFromBackgroundImage(raw) {
 }
 
 /**
- * When Style panel opacity was saved as a color overlay gradient, recover the
- * image opacity (1 − overlay alpha) from the composed background-image CSS.
+ * Recover photo visibility from a composed overlay + url() background-image.
+ * Overlay alpha A ⇒ visibility = 1 − A.
  *
  * @param {unknown} raw
  * @returns {number|null}
@@ -170,6 +187,32 @@ export function toRgbaWithAlpha(color, alpha) {
 }
 
 /**
+ * Solid overlay layer (color at alpha) painted above the photo.
+ *
+ * @param {string} color
+ * @param {number} alpha 0–1
+ * @returns {string}
+ */
+export function composeColorOverlayLayer(color, alpha) {
+    const a = Math.min(1, Math.max(0, Number(alpha) || 0));
+
+    if (a < 0.001) {
+        return '';
+    }
+
+    const tint = String(color ?? '').trim() || 'var(--color-vp-bg, #0f172a)';
+    const rgba = toRgbaWithAlpha(tint, a);
+
+    if (rgba) {
+        return `linear-gradient(${rgba}, ${rgba})`;
+    }
+
+    const pct = Math.round(a * 1000) / 10;
+
+    return `linear-gradient(color-mix(in srgb, ${tint} ${pct}%, transparent), color-mix(in srgb, ${tint} ${pct}%, transparent))`;
+}
+
+/**
  * Build a Tailwind-compatible gradient layer that reads --tw-gradient-* from classes.
  *
  * @param {string} directionUtility e.g. bg-gradient-to-r
@@ -186,48 +229,90 @@ export function composeTailwindGradientLayer(directionUtility) {
 }
 
 /**
- * Build background-image CSS layers: optional gradient, optional color fade, url().
+ * Gradient overlay layers above the photo. Stop opacity stays author-controlled
+ * via from-*\50 utilities; the photo url() is never faded.
  *
- * @param {string} url
- * @param {number|string} [opacity=1]
- * @param {string} [fadeColor='']
- * @param {{ gradientLayer?: string }} [options]
+ * @param {string} gradientLayer
+ * @returns {string[]}
+ */
+export function composeGradientOverlayLayers(gradientLayer) {
+    const layer = String(gradientLayer ?? '').trim();
+
+    return layer === '' ? [] : [layer];
+}
+
+/**
+ * Resolve a Tailwind `bg-*` utility to a CSS color for overlays.
+ *
+ * @param {string} utility e.g. bg-red-700
  * @returns {string}
  */
-export function composeDecorationBackgroundImageCss(url, opacity = 1, fadeColor = '', options = {}) {
-    const image = cssBackgroundImageUrlValue(url);
-    const gradientLayer = String(options?.gradientLayer ?? '').trim();
-    const layers = [];
+export function cssColorFromBackgroundUtility(utility) {
+    const token = String(utility ?? '').trim();
 
-    if (gradientLayer) {
-        layers.push(gradientLayer);
-    }
-
-    if (image === '' && layers.length === 0) {
+    if (token === '' || token === 'bg-transparent' || token === 'bg-none') {
         return '';
     }
 
-    const op = normalizeBackgroundImageOpacity(opacity);
+    if (token === 'bg-black') {
+        return '#000000';
+    }
 
-    // Solid-color fade toward bg color (same as Color + Image). Skip when a
-    // gradient already paints the overlay — gradient sits above the photo.
-    if (image !== '' && op < 0.999 && ! gradientLayer) {
-        const fade = 1 - op;
-        const color = String(fadeColor ?? '').trim() || 'var(--color-vp-bg, #0f172a)';
-        const rgba = toRgbaWithAlpha(color, fade);
+    if (token === 'bg-white') {
+        return '#ffffff';
+    }
 
-        if (rgba) {
-            layers.push(`linear-gradient(${rgba}, ${rgba})`);
-        } else {
-            const pct = Math.round(fade * 1000) / 10;
-            layers.push(
-                `linear-gradient(color-mix(in srgb, ${color} ${pct}%, transparent), color-mix(in srgb, ${color} ${pct}%, transparent))`,
-            );
+    const hex = hexForUtility(token);
+
+    if (hex) {
+        return hex;
+    }
+
+    // Theme tokens e.g. bg-[var(--color-vp-brand-1)] — keep as-is when possible.
+    const arbitrary = token.match(/^bg-\[(.+)\]$/);
+
+    if (arbitrary) {
+        return arbitrary[1].replace(/^['"]|['"]$/g, '');
+    }
+
+    return '';
+}
+
+/**
+ * Build background-image CSS layers: overlays first, photo url() last at 100%.
+ *
+ * @param {string} url
+ * @param {number|string} [photoVisibility=1] How much photo shows (1 = no overlay)
+ * @param {string} [fadeColor=''] Solid tint color for the overlay
+ * @param {{ gradientLayer?: string }} [options]
+ * @returns {string}
+ */
+export function composeDecorationBackgroundImageCss(url, photoVisibility = 1, fadeColor = '', options = {}) {
+    const image = cssBackgroundImageUrlValue(url);
+    const gradientLayer = String(options?.gradientLayer ?? '').trim();
+    const overlayAlpha = overlayAlphaFromPhotoVisibility(photoVisibility);
+    const layers = [];
+
+    if (gradientLayer) {
+        layers.push(...composeGradientOverlayLayers(gradientLayer));
+    } else if (image !== '' && overlayAlpha > 0.001) {
+        // Color tint above the photo (not a faded url, not a solid bg-color underneath).
+        const overlay = composeColorOverlayLayer(
+            String(fadeColor ?? '').trim() || 'var(--color-vp-bg, #0f172a)',
+            overlayAlpha,
+        );
+
+        if (overlay) {
+            layers.push(overlay);
         }
     }
 
     if (image !== '') {
         layers.push(image);
+    }
+
+    if (layers.length === 0) {
+        return '';
     }
 
     return layers.join(', ');

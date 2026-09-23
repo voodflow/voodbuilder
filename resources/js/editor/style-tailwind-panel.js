@@ -25,6 +25,7 @@ import {
     STYLE_BG_SRC_ATTR,
     composeDecorationBackgroundImageCss,
     composeTailwindGradientLayer,
+    cssColorFromBackgroundUtility,
     extractUrlFromBackgroundImage,
     inferBackgroundImageOpacityFromCss,
     normalizeBackgroundImageOpacity,
@@ -1497,6 +1498,8 @@ function clearDecorationBackgroundImage(editor, component) {
         } catch {
             // CssComposer may be unavailable during boot.
         }
+    } else {
+        restoreSolidBackgroundColorAfterImageClear(editor, component);
     }
 
     try {
@@ -1535,6 +1538,14 @@ function resolveDecorationGradientLayer(component) {
 }
 
 function resolveBackgroundFadeColor(editor, component) {
+    // Prefer the authored bg-* utility (survives transparent override used to avoid flash).
+    const bgUtility = resolveGroupValue(componentClassList(component), BACKGROUND_OPTIONS);
+    const fromUtility = cssColorFromBackgroundUtility(bgUtility);
+
+    if (fromUtility !== '') {
+        return fromUtility;
+    }
+
     const authored = readComponentCssProperty(editor, component, 'background-color');
 
     if (
@@ -1565,11 +1576,25 @@ function resolveBackgroundFadeColor(editor, component) {
         // Canvas frame may be unavailable during boot.
     }
 
-    if (authored !== '') {
+    if (authored !== '' && authored.toLowerCase() !== 'transparent') {
         return authored;
     }
 
     return 'var(--color-vp-bg, #0f172a)';
+}
+
+/**
+ * After Clear photo, drop the transparent background-color override so
+ * solid Color utilities (bg-red-700) paint again.
+ */
+function restoreSolidBackgroundColorAfterImageClear(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+
+    clearStyleProperty(editor, target, 'background-color', { family: false });
 }
 
 /**
@@ -1610,7 +1635,11 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     clearStyleProperty(editor, target, 'background-image', { family: false });
 
     target.addStyle?.(
-        { 'background-image': cssValue },
+        {
+            'background-image': cssValue,
+            // Kill solid Color flash: tint is only in overlay layers above the photo.
+            'background-color': 'transparent',
+        },
         { inline: true },
     );
 
@@ -1622,6 +1651,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
             editor.Css.setIdRule(id, {
                 ...existing,
                 'background-image': cssValue,
+                'background-color': 'transparent',
             });
         } catch {
             // CssComposer may be unavailable during boot.
@@ -1728,7 +1758,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         const field = createSelectField({
             label: labels.classStyleBackgroundImageOpacity
                 ?? labels.imageSettingsOpacity
-                ?? 'Image opacity',
+                ?? 'Photo visibility',
             name: 'styleBgImageOpacity',
             value: current,
             options: STYLE_BG_OPACITY_OPTIONS,
