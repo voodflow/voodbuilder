@@ -447,8 +447,86 @@ function watchFontFamilyChanges(editor) {
     });
 
     editor.on('canvas:frame:load', () => {
-        void syncAllLoadedCanvasFonts(editor).then(() => prefetchFontsFromCss(editor));
+        void syncAllLoadedCanvasFonts(editor).then(() => hydrateCanvasFonts(editor));
     });
+}
+
+/**
+ * After reload / frame mount: load webfont faces and paint every component that
+ * already has data-vb-font / #id font-family — without waiting for selection.
+ *
+ * @param {object} editor
+ * @param {string} [css]
+ * @returns {Promise<void>}
+ */
+export async function hydrateCanvasFonts(editor, css = '') {
+    if (! editor || editor.__voodbuilderFontsHydrating) {
+        return;
+    }
+
+    editor.__voodbuilderFontsHydrating = true;
+
+    try {
+        await prefetchFontsFromCss(editor, css);
+
+        const wrapper = editor.getWrapper?.();
+
+        if (typeof wrapper?.onAll !== 'function') {
+            return;
+        }
+
+        const jobs = [];
+
+        wrapper.onAll((component) => {
+            if (! component) {
+                return;
+            }
+
+            const fromAttr = String(component.getAttributes?.()?.['data-vb-font'] ?? '').trim();
+            const id = String(component.getId?.() ?? '').trim();
+            const fromId = id && editor.Css?.getIdRule
+                ? String(editor.Css.getIdRule(id)?.getStyle?.()?.['font-family'] ?? '').trim()
+                : '';
+            const fromStyle = String(
+                component.getStyle?.({ inline: true })?.['font-family']
+                ?? component.getStyle?.()?.['font-family']
+                ?? '',
+            ).trim();
+            const raw = (fromAttr || fromStyle || fromId).replace(/\s*!important\s*$/i, '').trim();
+
+            if (raw === '') {
+                return;
+            }
+
+            const stack = resolveCanonicalFontStack(raw);
+
+            if (stack === '') {
+                return;
+            }
+
+            ensureCssSafeFontFamilyStyle(editor, component, stack);
+
+            if (fromAttr === '') {
+                component.addAttributes?.({ 'data-vb-font': stack });
+            }
+
+            const font = findFontByStack(stack);
+
+            if (! font) {
+                return;
+            }
+
+            jobs.push(
+                ensureFontLoaded(editor, font, { reassert: false }).then(() => {
+                    reassertComponentFontFamily(editor, component, font, { quiet: true, force: true });
+                }),
+            );
+        });
+
+        await Promise.allSettled(jobs);
+    } finally {
+        editor.__voodbuilderFontsHydrating = false;
+    }
 }
 
 /**
@@ -468,15 +546,19 @@ export function registerFontsUi(editor, options = {}) {
 
     editor.__voodbuilderGetFontCatalog = getFontCatalog;
     editor.__voodbuilderEnsureFontLoaded = (font) => ensureFontLoaded(editor, font, { reassert: false });
+    editor.__voodbuilderHydrateCanvasFonts = (css) => hydrateCanvasFonts(editor, css);
 
     const initialCss = String(options.initialCss ?? editor.getCss?.() ?? '');
 
     window.requestAnimationFrame(() => {
-        void prefetchFontsFromCss(editor, initialCss);
+        void hydrateCanvasFonts(editor, initialCss);
     });
 
     editor.on('load', () => {
         applyFontFamilyOptions(editor);
-        void prefetchFontsFromCss(editor, editor.getCss?.() ?? '');
+        // Content may land after the first rAF — hydrate again once the tree is ready.
+        window.setTimeout(() => {
+            void hydrateCanvasFonts(editor, editor.getCss?.() ?? initialCss);
+        }, 120);
     });
 }

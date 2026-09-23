@@ -255,6 +255,7 @@ function applyInitialContent(editor, initial, options = {}) {
         hydrateAuthorStylesFromIdRules(editor);
         hydrateDecorationBackgroundImages(editor);
         restoreLayerVisibilityFromAttributes(editor);
+        editor.__voodbuilderHydrateCanvasFonts?.(initial.css ?? editor.getCss?.() ?? '');
     } catch {
         // Ignore hydrate errors during early boot.
     }
@@ -1359,11 +1360,13 @@ export function initVoodbuilderEditor(container, options = {}) {
             // re-apply marker + inline so eyes/canvas stay in sync after reload.
             restoreLayerVisibilityFromAttributes(editor);
             hydrateDecorationBackgroundImages(editor);
+            void editor.__voodbuilderHydrateCanvasFonts?.(editor.getCss?.() ?? '');
             window.requestAnimationFrame(() => {
                 try {
                     hydrateAuthorStylesFromIdRules(editor);
                     restoreLayerVisibilityFromAttributes(editor);
                     hydrateDecorationBackgroundImages(editor);
+                    void editor.__voodbuilderHydrateCanvasFonts?.(editor.getCss?.() ?? '');
                 } catch {
                     // Ignore hydrate race during boot.
                 }

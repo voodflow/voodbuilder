@@ -140,8 +140,10 @@ async function applyFontAssetsToDocuments(editor, font, cssText) {
  * @param {object|null|undefined} component
  * @param {object} font
  */
-export function reassertComponentFontFamily(editor, component, font) {
+export function reassertComponentFontFamily(editor, component, font, options = {}) {
     const target = component ?? editor?.getSelected?.();
+    const quiet = options.quiet === true;
+    const force = options.force === true;
 
     if (! target || ! font?.stack) {
         return;
@@ -156,7 +158,8 @@ export function reassertComponentFontFamily(editor, component, font) {
     const mentionsFamily = current.includes(font.family)
         || current.replace(/['"]/g, '').includes(font.family);
 
-    if (! mentionsFamily && current !== '') {
+    // Without force: do not overwrite an unrelated authored stack.
+    if (! force && ! mentionsFamily && current !== '') {
         return;
     }
 
@@ -178,6 +181,16 @@ export function reassertComponentFontFamily(editor, component, font) {
 
     if (el?.style) {
         el.style.setProperty('font-family', font.stack, 'important');
+    }
+
+    if (quiet) {
+        try {
+            target.view?.updateStyle?.();
+        } catch {
+            // Optional.
+        }
+
+        return;
     }
 
     target.view?.render?.();
@@ -302,30 +315,77 @@ export async function ensureFontLoaded(editor, fontOrId, options = {}) {
 }
 
 /**
+ * Collect font-family hints from CSS + every component (inline, #id, data-vb-font).
+ * data-vb-font is the durable Style-panel signal after reload when model style is empty.
+ *
  * @param {object} editor
  * @param {string} [css]
+ * @returns {string}
  */
-export async function prefetchFontsFromCss(editor, css = '') {
-    const catalog = getFontCatalog();
+export function collectEditorFontHints(editor, css = '') {
     const chunks = [String(css ?? ''), String(editor?.getCss?.() ?? '')];
     const wrapper = editor?.getWrapper?.();
 
-    if (wrapper?.find) {
-        try {
-            wrapper.find('*').forEach((component) => {
-                const family = component?.getStyle?.()?.['font-family']
-                    ?? component?.getStyle?.()?.fontFamily;
+    const visit = (component) => {
+        if (! component) {
+            return;
+        }
 
-                if (family) {
-                    chunks.push(String(family));
-                }
-            });
+        const fromAttr = String(component.getAttributes?.()?.['data-vb-font'] ?? '').trim();
+
+        if (fromAttr !== '') {
+            chunks.push(fromAttr);
+        }
+
+        const fromInline = String(
+            component.getStyle?.({ inline: true })?.['font-family']
+            ?? component.getStyle?.()?.['font-family']
+            ?? component.getStyle?.()?.fontFamily
+            ?? '',
+        ).trim();
+
+        if (fromInline !== '') {
+            chunks.push(fromInline);
+        }
+
+        const id = String(component.getId?.() ?? '').trim();
+
+        if (id && editor?.Css?.getIdRule) {
+            const fromId = String(
+                editor.Css.getIdRule(id)?.getStyle?.()?.['font-family']
+                ?? '',
+            ).trim();
+
+            if (fromId !== '') {
+                chunks.push(fromId);
+            }
+        }
+    };
+
+    if (typeof wrapper?.onAll === 'function') {
+        try {
+            wrapper.onAll(visit);
+        } catch {
+            // Tree may be mid-replace during boot.
+        }
+    } else if (typeof wrapper?.find === 'function') {
+        try {
+            wrapper.find('*').forEach(visit);
         } catch {
             // ignore
         }
     }
 
-    const hay = chunks.join('\n');
+    return chunks.join('\n');
+}
+
+/**
+ * @param {object} editor
+ * @param {string} [css]
+ */
+export async function prefetchFontsFromCss(editor, css = '') {
+    const catalog = getFontCatalog();
+    const hay = collectEditorFontHints(editor, css);
 
     await Promise.all(catalog
         .filter((font) => hay.includes(font.family) || hay.includes(font.stack) || hay.includes(font.id))
