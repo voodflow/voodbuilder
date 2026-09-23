@@ -110,12 +110,14 @@ import {
     STYLE_BREAKPOINT_PREFIXES,
     currentStyleBreakpointPrefix,
     deviceIdToBreakpointPrefix,
+    prefixedUtility,
     replaceClassGroupAllBreakpoints,
     replaceClassGroupAtBreakpoint,
     resolveGroupValueAtBreakpoint,
     resolveGroupValueExact,
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
+import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { hexForUtility } from './tailwind-color-palette.js';
 
 /**
@@ -495,12 +497,41 @@ function spacingBoxHtml(labels) {
     `;
 }
 
-function scheduleClassCompile(editor) {
-    // Soft schedule only: Style panel catalogs ship in section-utilities.css, so
-    // pageCssCoversClass usually no-ops — no compile overlay, realtime canvas.
-    // Force rebuild would always show "Compiling styles…" and is reserved for
-    // save / template / invalidate paths.
-    editor.__voodbuilderSchedulePageCssRebuild?.(0);
+/**
+ * @param {object|null|undefined} editor
+ * @param {string|null|undefined} value bare utility
+ * @returns {string}
+ */
+function styleWrittenToken(editor, value) {
+    const bare = String(value ?? '').trim();
+
+    if (bare === '' || bare === TEXT_COLOR_GRADIENT_VALUE) {
+        return '';
+    }
+
+    return prefixedUtility(bare, currentStyleBreakpointPrefix(editor));
+}
+
+function scheduleClassCompile(editor, writtenClass = '') {
+    // Soft schedule only when the utility already ships in section-utilities.css.
+    // Responsive (md:/lg:) and other uncovered tokens need a forced JIT rebuild —
+    // soft schedule can no-op if Grapes has not yet reflected addClass in the page
+    // class set, so the canvas stays stale until Save.
+    const token = String(writtenClass ?? '').trim();
+    const needsForce = token !== ''
+        && typeof editor?.__voodbuilderForcePageCssRebuild === 'function'
+        && (
+            /^(?:sm|md|lg|xl|2xl):/.test(token)
+            || ! pageCssCoversClass(editor, token)
+        );
+
+    if (needsForce) {
+        editor.__voodbuilderForcePageCssRebuild(60);
+
+        return;
+    }
+
+    editor?.__voodbuilderSchedulePageCssRebuild?.(0);
 }
 
 function ensureSectorsRoot(stylesMount) {
@@ -1048,7 +1079,7 @@ function applyGroup(editor, component, groupId, value) {
                 // View may be unavailable during bulk updates.
             }
 
-            scheduleClassCompile(editor);
+            scheduleClassCompile(editor, styleWrittenToken(editor, value));
             editor?.trigger?.('update');
             editor?.trigger?.('component:update', component);
         } finally {
@@ -1091,7 +1122,7 @@ function applyGroup(editor, component, groupId, value) {
                 // View may be unavailable during bulk updates.
             }
 
-            scheduleClassCompile(editor);
+            scheduleClassCompile(editor, styleWrittenToken(editor, value));
             editor?.trigger?.('update');
             editor?.trigger?.('component:update', component);
         } finally {
@@ -1181,7 +1212,7 @@ function applyGroup(editor, component, groupId, value) {
             releaseAuthorBackgroundImageForUtilities(editor, component);
         }
 
-        scheduleClassCompile(editor);
+        scheduleClassCompile(editor, styleWrittenToken(editor, value));
         // Same dirty signal as CLASSES "+" / other editor mutations.
         editor?.trigger?.('update');
         // Class chips listen to component:update (not plain "update").
