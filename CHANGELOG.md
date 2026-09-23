@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.100] - 2026-09-23
+
+### Fixed
+
+- Templates library dark mode: card labels and chrome used undefined `--color-vp-c-text-*` (hard dark fallback) instead of editor `--color-vp-text-*`, so names were unreadable on dark cards
+
 ## [0.1.99] - 2026-09-23
 
 ### Changed

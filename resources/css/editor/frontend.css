@@ -2684,6 +2684,7 @@ body.voodbuilder-canvas-ready .voodbuilder-editor-component-instance:has(.voodbu
     font-weight: 500;
     line-height: 1.25;
     letter-spacing: 0.01em;
+    color: var(--color-vp-text-1, #0f172a);
 }
 
 .voodbuilder-editor-canvas-mount {
@@ -4604,7 +4605,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-vp-c-text-3, #64748b);
+    color: var(--color-vp-text-3, #64748b);
 }
 
 .voodbuilder-editor-templates-select-grid__cards {
@@ -4678,7 +4679,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     border: 0;
     border-radius: 0.3rem;
     background: transparent;
-    color: var(--color-vp-c-text-3, #64748b);
+    color: var(--color-vp-text-3, #64748b);
     opacity: 0;
     box-shadow: none;
     cursor: pointer;
@@ -4721,7 +4722,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     font-size: 0.75rem;
     font-weight: 600;
     line-height: 1.2;
-    color: var(--color-vp-c-text-1, #0f172a);
+    color: var(--color-vp-text-1, #0f172a);
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -4788,7 +4789,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     font-size: 0.8125rem;
     font-weight: 600;
     line-height: 1.25;
-    color: var(--color-vp-c-text-1, #0f172a);
+    color: var(--color-vp-text-1, #0f172a);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -4797,7 +4798,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     overflow: hidden;
     font-size: 0.6875rem;
     line-height: 1.2;
-    color: var(--color-vp-c-text-3, #64748b);
+    color: var(--color-vp-text-3, #64748b);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -4814,7 +4815,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     border: 0;
     border-radius: 0.4rem;
     background: transparent;
-    color: var(--color-vp-c-text-2, #334155);
+    color: var(--color-vp-text-2, #334155);
     cursor: pointer;
 }
 
@@ -4897,7 +4898,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     border: 0;
     border-radius: 0.35rem;
     background: color-mix(in srgb, var(--color-vp-bg-elv, #fff) 92%, transparent);
-    color: var(--color-vp-c-text-1, #0f172a);
+    color: var(--color-vp-text-1, #0f172a);
     box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
     cursor: pointer;
 }
@@ -5798,7 +5799,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 .voodbuilder-editor-hint {
     margin: 0 0 0.75rem;
     font-size: 0.8125rem;
-    color: var(--color-vp-text-3, #94a3b8);
+    color: var(--color-vp-text-2, #64748b);
 }
 
 
