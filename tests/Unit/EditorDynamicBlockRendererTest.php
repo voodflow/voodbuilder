@@ -249,6 +249,53 @@ HTML;
 
         $this->assertTrue($found, "Expected [{$attribute}] to include class {$class}");
     }
+    public function test_preserves_author_hidden_layer_cards_after_dynamic_remount(): void
+    {
+        $serverRegistry = new EditorServerBlockRegistry;
+        $serverRegistry->register('Voodbuilder', StubLayeredDynamicBlock::class);
+
+        $config = [];
+        $wrapped = <<<HTML
+<section data-voodbuilder-block="stub_layered" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic">
+  <div data-voodbuilder-layer-name="Keep" class="card">Keep</div>
+  <div data-voodbuilder-layer-name="Hidden" data-vb-layer-hidden="1" style="display:none" class="card">Hidden</div>
+</section>
+HTML;
+
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $serverRegistry);
+        $html = $renderer->render($wrapped, null);
+
+        $this->assertStringContainsString('Keep', $html);
+        $this->assertStringContainsString('data-voodbuilder-layer-name="Hidden"', $html);
+        $this->assertStringContainsString('data-vb-layer-hidden="1"', $html);
+        $this->assertMatchesRegularExpression('/data-voodbuilder-layer-name="Hidden"[^>]*style="[^"]*display:\s*none/', $html);
+    }
+}
+
+/**
+ * @internal
+ */
+final class StubLayeredDynamicBlock extends RichContentCustomBlock
+{
+    public static function getId(): string
+    {
+        return 'stub_layered';
+    }
+
+    public static function getLabel(): string
+    {
+        return 'Stub layered';
+    }
+
+    public static function toHtml(array $config, array $data): string
+    {
+        return <<<'HTML'
+<section class="voodbuilder-editor-section w-full">
+  <div data-voodbuilder-layer-name="Keep" class="card">Keep</div>
+  <div data-voodbuilder-layer-name="Hidden" class="card">Hidden</div>
+</section>
+HTML;
+    }
 }
 
 /**

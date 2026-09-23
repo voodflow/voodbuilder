@@ -10,6 +10,7 @@ import { isFooterBlock, isNavBlock, isHeaderBlock } from './chrome/ids.js';
 import { tablerIcon } from './editor-icons.js';
 import { isLayoutContainer, isLayoutSection } from './layout-blocks.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
+import { applyPageLiveCss } from './page-tailwind-autobuild.js';
 
 export const CONTENT_WIDTH_ATTR = 'data-voodbuilder-content-width';
 export const CMD_CYCLE_CONTENT_WIDTH = 'voodbuilder-cycle-content-width';
@@ -1052,6 +1053,14 @@ export function cycleSelectedContentWidth(editor, labels = {}) {
 
     applyComponentContentWidth(component, next, editor);
     ensureCanvasContentWidthToolbarState(editor, selected, labels);
+
+    // Re-inject live CSS through stripCanvasBundledUtilitiesFromCss so a prior
+    // incomplete JIT sheet cannot keep overriding section-utilities md:/xl: widths.
+    try {
+        applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
+    } catch {
+        // Optional when autobuild is not registered.
+    }
 
     const toast = contentWidthModeLabel(next, labels, editor);
     if (toast) {

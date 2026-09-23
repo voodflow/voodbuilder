@@ -127,12 +127,25 @@ final class EditorDynamicBlockRenderer
         $authorStructuralClasses = $this->captureAuthorStructuralClasses($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
         $authorChromeMenuSlots = $this->captureAuthorChromeMenuSlotClasses($node);
+        $hiddenLayerNames = $this->captureHiddenLayerNames($node);
+
+        // Core nodes: Layers eye-hide on "Custom Nodes" must flip Blade config so
+        // remount does not resurrect the card on the published page.
+        if ($blockId === 'voodflow_core_nodes_grid' && $this->layerNamesIncludeCustomNodes($hiddenLayerNames, $config)) {
+            $config['show_custom_nodes_card'] = false;
+            $node->setAttribute(
+                'data-voodbuilder-config',
+                EditorDynamicBlockAttributeNormalizer::encodeConfig($config),
+            );
+        }
 
         $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
 
         if ($rendered === null) {
             return;
         }
+
+        $rendered = $this->applyHiddenLayerNamesToHtml($rendered, $hiddenLayerNames);
 
         if ($canvasPreview) {
             $this->replaceNodeInnerHtmlForEditor($document, $node, $rendered);
@@ -720,6 +733,114 @@ final class EditorDynamicBlockRenderer
         }
 
         return $slots;
+    }
+
+    /**
+     * Layer names eye-hidden by the author (data-vb-layer-hidden or display:none).
+     *
+     * @return list<string>
+     */
+    protected function captureHiddenLayerNames(DOMElement $node): array
+    {
+        $names = [];
+
+        foreach ($node->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            $name = trim((string) $element->getAttribute('data-voodbuilder-layer-name'));
+
+            if ($name === '') {
+                continue;
+            }
+
+            if ($element->getAttribute('data-vb-layer-hidden') === '1') {
+                $names[] = $name;
+
+                continue;
+            }
+
+            $style = strtolower(trim((string) $element->getAttribute('style')));
+
+            if ($style !== '' && preg_match('/(^|;)\s*display\s*:\s*none\b/', $style) === 1) {
+                $names[] = $name;
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * @param  list<string>  $names
+     * @param  array<string, mixed>  $config
+     */
+    protected function layerNamesIncludeCustomNodes(array $names, array $config): bool
+    {
+        $customTitle = strtolower(trim((string) ($config['custom_nodes_title'] ?? 'Custom Nodes')));
+
+        foreach ($names as $name) {
+            $normalized = strtolower(trim((string) $name));
+
+            if ($normalized === 'custom nodes' || ($customTitle !== '' && $normalized === $customTitle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Re-apply Layers eye-hide after Blade remount (match by data-voodbuilder-layer-name).
+     *
+     * @param  list<string>  $names
+     */
+    protected function applyHiddenLayerNamesToHtml(string $html, array $names): string
+    {
+        if ($html === '' || $names === []) {
+            return $html;
+        }
+
+        $wanted = [];
+
+        foreach ($names as $name) {
+            $trimmed = trim((string) $name);
+
+            if ($trimmed !== '') {
+                $wanted[strtolower($trimmed)] = true;
+            }
+        }
+
+        if ($wanted === []) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        foreach ($body->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            $name = trim((string) $element->getAttribute('data-voodbuilder-layer-name'));
+
+            if ($name === '' || ! isset($wanted[strtolower($name)])) {
+                continue;
+            }
+
+            $element->setAttribute('data-vb-layer-hidden', '1');
+            $style = trim((string) $element->getAttribute('style'));
+            $style = preg_replace('/(^|;)\s*display\s*:\s*[^;]+/i', '', $style) ?? $style;
+            $style = trim($style, " \t\n\r\0\x0B;");
+            $element->setAttribute('style', $style === '' ? 'display:none' : $style.';display:none');
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
     }
 
     /**

@@ -128,7 +128,7 @@ import { bootCanvasSiteChrome, registerCanvasSiteChrome } from '../canvas-site-c
 import { registerLayersContextMenu } from '../layers-context-menu.js';
 import { registerLayersDrag } from '../layers-drag.js';
 import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
-import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttributes } from '../layer-visibility.js';
+import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttributes, captureHiddenLayerNames, restoreHiddenLayerNames } from '../layer-visibility.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
 import { registerStyleTailwindPanel } from '../style-tailwind-panel.js';
@@ -1793,6 +1793,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         if (isSiteNavBlock(blockId)) {
             const authorContainerClasses = captureContainerAuthorClasses(component);
             const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
+            const hiddenLayerNames = captureHiddenLayerNames(component, editor);
             component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -1802,6 +1803,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             component.components(fresh.innerHTML);
             restoreContainerAuthorClasses(component, authorContainerClasses);
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
+            restoreHiddenLayerNames(component, hiddenLayerNames);
             component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
             component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
             const preserveSelection = editor.getSelected?.();
@@ -1844,6 +1846,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         const footerBlock = isSiteFooterBlock(blockId);
         const authorContainerClasses = captureContainerAuthorClasses(component);
         const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
+        const hiddenLayerNames = captureHiddenLayerNames(component, editor);
 
         if (footerBlock && fresh.tagName === 'FOOTER') {
             applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
@@ -1856,11 +1859,21 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             }
 
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
+            restoreHiddenLayerNames(component, hiddenLayerNames);
         } else {
+            // If author hid Core nodes "Custom Nodes", flip Blade config before stamp
+            // so a subsequent refresh omits the card entirely.
+            if (
+                blockId === 'voodflow_core_nodes_grid'
+                && hiddenLayerNames.some((name) => String(name).trim().toLowerCase() === 'custom nodes')
+            ) {
+                freshConfig.show_custom_nodes_card = false;
+            }
+
             component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
-                'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeBlockConfig(freshConfig),
+                'data-voodbuilder-config': encodeBlockConfig(freshConfig),
                 class: fresh.getAttribute('class') ?? 'voodbuilder-editor-dynamic',
                 ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
                     ? { 'data-voodbuilder-hydrate-slots': '1' }
@@ -1878,6 +1891,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             }
 
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
+            restoreHiddenLayerNames(component, hiddenLayerNames);
         }
 
         component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
@@ -1905,6 +1919,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
                     if (! editor.__voodbuilderChromeShellMode) {
                         editor.trigger('voodbuilder:site-chrome-updated');
                     }
+                } else {
+                    // Core nodes / demos / other dynamic sections: notify so CSS JIT
+                    // recompiles utilities from the remounted Blade HTML.
+                    editor.trigger('voodbuilder:dynamic-blocks-refreshed');
                 }
             } catch (lockError) {
                 console.error('Voodbuilder Editor: could not lock dynamic block.', blockId, lockError);

@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
     LAYER_HIDDEN_ATTR,
+    captureHiddenLayerNames,
     componentHasLayerHiddenMarker,
     isLayerHidden,
     persistLayerHiddenMarker,
+    restoreHiddenLayerNames,
     syncLayerVisibilityForExport,
 } from '../../resources/js/editor/layer-visibility.js';
 
 function makeComponent(initial = {}) {
     const attrs = { ...(initial.attrs ?? {}) };
     let style = { ...(initial.style ?? {}) };
+    const children = initial.children ?? [];
     const em = initial.em ?? {
         Css: {
             rules: {},
@@ -24,6 +27,7 @@ function makeComponent(initial = {}) {
 
     return {
         em,
+        parent: () => initial.parent ?? null,
         getId: () => initial.id ?? 'cmp1',
         getAttributes: () => ({ ...attrs }),
         addAttributes: (next) => Object.assign(attrs, next),
@@ -34,7 +38,7 @@ function makeComponent(initial = {}) {
         removeAttributes: (key) => {
             delete attrs[key];
         },
-        getStyle: (opts = {}) => ({ ...style }),
+        getStyle: () => ({ ...style }),
         addStyle: (next) => {
             Object.assign(style, next);
         },
@@ -47,8 +51,8 @@ function makeComponent(initial = {}) {
                 delete initial.props[key];
             }
         },
-        _attrs: attrs,
-        _style: () => style,
+        set: () => {},
+        components: () => children,
     };
 }
 
@@ -93,5 +97,31 @@ describe('layer visibility persistence', () => {
 
         expect(component.getAttributes()[LAYER_HIDDEN_ATTR]).toBe('1');
         expect(component.getStyle().display).toBe('none');
+    });
+
+    it('capture/restore hidden layer names across remount', () => {
+        const hiddenCard = makeComponent({
+            attrs: {
+                'data-voodbuilder-layer-name': 'Custom Nodes',
+                [LAYER_HIDDEN_ATTR]: '1',
+            },
+            style: { display: 'none' },
+        });
+        const root = makeComponent({ children: [hiddenCard] });
+
+        const names = captureHiddenLayerNames(root, null);
+
+        expect(names).toContain('Custom Nodes');
+
+        const remounted = makeComponent({
+            attrs: { 'data-voodbuilder-layer-name': 'Custom Nodes' },
+            style: {},
+        });
+        const freshRoot = makeComponent({ children: [remounted] });
+
+        restoreHiddenLayerNames(freshRoot, names);
+
+        expect(remounted.getAttributes()[LAYER_HIDDEN_ATTR]).toBe('1');
+        expect(remounted.getStyle().display).toBe('none');
     });
 });

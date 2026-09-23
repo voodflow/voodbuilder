@@ -12,8 +12,10 @@
  */
 
 export const LAYER_HIDDEN_ATTR = 'data-vb-layer-hidden';
+export const LAYER_NAME_ATTR = 'data-voodbuilder-layer-name';
 
 const SILENT_HIDE_STYLE = { inline: true, noEvent: true };
+const CORE_NODES_BLOCK_ID = 'voodflow_core_nodes_grid';
 
 /**
  * @param {object} component
@@ -80,6 +82,137 @@ export function isLayerHidden(editor, component) {
 
 /**
  * @param {object} component
+ * @returns {string}
+ */
+export function readLayerName(component) {
+    return String(component?.getAttributes?.()?.[LAYER_NAME_ATTR] ?? '').trim();
+}
+
+/**
+ * Collect layer-names that are currently hidden under a root (dynamic remount).
+ *
+ * @param {object} root
+ * @param {object} [editor]
+ * @returns {string[]}
+ */
+export function captureHiddenLayerNames(root, editor = null) {
+    const names = new Set();
+
+    const visit = (component) => {
+        if (! component) {
+            return;
+        }
+
+        const name = readLayerName(component);
+
+        if (name !== '' && isLayerHidden(editor, component)) {
+            names.add(name);
+        }
+
+        const children = component.components?.() ?? [];
+
+        for (const child of children) {
+            visit(child);
+        }
+    };
+
+    visit(root);
+
+    return [...names];
+}
+
+/**
+ * Re-apply hide after a dynamic block remount wiped inline styles.
+ *
+ * @param {object} root
+ * @param {string[]} names
+ */
+export function restoreHiddenLayerNames(root, names) {
+    const wanted = new Set((names ?? []).map((name) => String(name).trim()).filter(Boolean));
+
+    if (wanted.size === 0 || ! root) {
+        return;
+    }
+
+    const visit = (component) => {
+        if (! component) {
+            return;
+        }
+
+        const name = readLayerName(component);
+
+        if (name !== '' && wanted.has(name)) {
+            persistLayerHiddenMarker(component, true);
+        }
+
+        const children = component.components?.() ?? [];
+
+        for (const child of children) {
+            visit(child);
+        }
+    };
+
+    visit(root);
+}
+
+/**
+ * Keep Core nodes Blade config in sync when the Custom Nodes card is eye-hidden
+ * so front remount does not resurrect it.
+ *
+ * @param {object} component
+ * @param {boolean} hidden
+ */
+export function syncCoreNodesCustomCardConfig(component, hidden) {
+    const name = readLayerName(component).toLowerCase();
+
+    // Default marketing card title from CoreNodesGridBlock::defaultConfig().
+    if (name !== 'custom nodes') {
+        return;
+    }
+
+    let current = component;
+    let blockRoot = null;
+
+    while (current) {
+        const blockId = String(current.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
+
+        if (blockId === CORE_NODES_BLOCK_ID) {
+            blockRoot = current;
+            break;
+        }
+
+        current = current.parent?.();
+    }
+
+    if (! blockRoot) {
+        return;
+    }
+
+    let config = {};
+
+    try {
+        const raw = blockRoot.getAttributes?.()?.['data-voodbuilder-config'] ?? '{}';
+        config = typeof raw === 'string' ? JSON.parse(raw.replace(/&quot;/g, '"')) : { ...raw };
+    } catch {
+        config = {};
+    }
+
+    const next = {
+        ...config,
+        show_custom_nodes_card: ! hidden,
+    };
+
+    blockRoot.addAttributes({
+        'data-voodbuilder-config': JSON.stringify(next),
+    });
+    blockRoot.set?.('voodbuilderConfig', next, { silent: true });
+    // Force a fresh Blade render next time (config change must remount).
+    delete blockRoot.__voodbuilderLastDynamicRenderFingerprint;
+    delete blockRoot.__voodbuilderLastDynamicRenderHtml;
+}
+
+/**
+ * @param {object} component
  * @param {boolean} hidden
  */
 export function persistLayerHiddenMarker(component, hidden) {
@@ -100,6 +233,8 @@ export function persistLayerHiddenMarker(component, hidden) {
                 display: 'none',
             });
         }
+
+        syncCoreNodesCustomCardConfig(component, true);
 
         return;
     }
@@ -124,6 +259,8 @@ export function persistLayerHiddenMarker(component, hidden) {
             component.unset?.('__prev-display');
         }
     }
+
+    syncCoreNodesCustomCardConfig(component, false);
 }
 
 /**
@@ -144,6 +281,7 @@ export function syncLayerVisibilityForExport(editor) {
         }
 
         persistLayerHiddenMarker(component, true);
+        syncCoreNodesCustomCardConfig(component, true);
     });
 }
 

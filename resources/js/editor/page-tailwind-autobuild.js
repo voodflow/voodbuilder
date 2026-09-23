@@ -340,12 +340,75 @@ function isAnimationCatalogUtility(className) {
     return /^(?:animate-(?:spin|ping|pulse|bounce|wiggle|wiggle-more|rotate-[xy]|jump(?:-in|-out)?|shake|fade(?:-(?:up|down|left|right))?|flip-(?:up|down)|infinite|once|twice|thrice|duration-\d+|delay-(?:none|\d+)|ease(?:-linear|-in|-out|-in-out)?|normal|reverse|alternate(?:-reverse)?|fill-(?:none|forwards|backwards|both))|transition(?:-all|-colors|-opacity|-shadow|-transform|-none)?|duration-\d+|ease-(?:linear|in|out|in-out)|delay-\d+)$/.test(base);
 }
 
+/**
+ * Escape a Tailwind class name so a RegExp matches Tailwind's stylesheet form
+ * (`.` + token with `:` / `/` backslash-escaped).
+ *
+ * @param {string} className
+ * @returns {string}
+ */
+function escapeCssUtilitySelector(className) {
+    // 1) Mirror Tailwind output escapes, 2) escape those backslashes for RegExp.
+    const cssForm = String(className ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/:/g, '\\:')
+        .replace(/\//g, '\\/')
+        .replace(/!/g, '\\!')
+        .replace(/\[/g, '\\[')
+        .replace(/\]/g, '\\]')
+        .replace(/%/g, '\\%')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)');
+
+    return cssForm.replace(/\\/g, '\\\\').replace(/[.*+?^${}|]/g, '\\$&');
+}
+
+/**
+ * Remove canvas-bundled utility rules from a JIT sheet before iframe inject.
+ *
+ * Live compile re-emits base utilities (`.w-full`, `.flex`, …) that already ship in
+ * `section-utilities.css`. When that sheet is injected *after* section-utilities,
+ * a late `.w-full { width: 100% }` overrides earlier responsive rules such as
+ * `@media (width>=48rem) { .md\:w-1\/2 { width: 50% } }` — Pricing cards stack
+ * until Save replaces the cascade with a complete ordered page sheet.
+ *
+ * Keep the full CSS on `editor.__voodbuilderPageLiveCss` for Save/publish (no
+ * section-utilities on the public site). Only the canvas inject is stripped.
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function stripCanvasBundledUtilitiesFromCss(css) {
+    let result = String(css ?? '');
+
+    if (result.trim() === '' || CANVAS_BUNDLED_UTILITIES.size === 0) {
+        return result;
+    }
+
+    for (const token of CANVAS_BUNDLED_UTILITIES) {
+        if (! token || token.includes('[') || token.includes(':')) {
+            // Keep arbitrary values and variant utilities (md:w-1/2, hover:…).
+            // Only base bundled tokens (.w-full, .flex) cause the cascade override.
+            continue;
+        }
+
+        const escaped = escapeCssUtilitySelector(token);
+        result = result.replace(new RegExp(`\\.${escaped}\\s*\\{[^}]*\\}`, 'g'), '');
+    }
+
+    // Drop empty @media / @supports wrappers left after rule removal.
+    result = result.replace(/@(?:media|supports)[^{]*\{\s*\}/g, '');
+
+    return result.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export function applyPageLiveCss(editor, css) {
     const normalized = String(css ?? '').trim();
 
     resetCssUtilityClassIndex();
+    // Full sheet for Save / coverage checks; stripped copy for canvas cascade.
     editor.__voodbuilderPageLiveCss = normalized;
-    injectLivePageCss(editor, normalized);
+    injectLivePageCss(editor, stripCanvasBundledUtilitiesFromCss(normalized));
 }
 
 /**
@@ -1125,6 +1188,13 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
     // Explicit rebuilds (save, code import, templates) — not routine canvas deletes.
     editor.on('voodbuilder:chrome-layout-ready', invalidate);
     editor.on('voodbuilder:page-css-invalidate', invalidate);
+    // Dynamic Blade remount (core nodes, demos, …) lands AFTER block:drag:stop
+    // compiled the empty shell — force a second JIT so utilities match the fresh HTML.
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        editor.__voodbuilderPageCssSeededFromServer = false;
+        pendingInvalidate = true;
+        schedule(DEBOUNCE_MS);
+    });
 
     editor.on('load', () => {
         editorLoaded = true;
