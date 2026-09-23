@@ -1155,3 +1155,41 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         schedulePostBootCssCheck();
     }
 }
+
+/**
+ * After Library modal / BlockManager HTML insert: force JIT at several delays so
+ * Grapes can finish parsing nested markup before collectPageLevelHtml runs.
+ * A single early compile used to leave Pricing (and similar) unstyled until Save.
+ *
+ * @param {object} editor
+ */
+export function schedulePageCssAfterInsert(editor) {
+    if (! editor) {
+        return;
+    }
+
+    const run = () => {
+        try {
+            editor.__voodbuilderForcePageCssRebuild?.(0);
+        } catch {
+            try {
+                editor.__voodbuilderInvalidatePageCss?.();
+            } catch {
+                // ignore
+            }
+        }
+
+        try {
+            editor.trigger?.('voodbuilder:page-css-invalidate');
+        } catch {
+            // ignore
+        }
+    };
+
+    window.requestAnimationFrame(() => {
+        // Early pass + late passes after nested components settle.
+        for (const delay of [0, 280, 800, 1600]) {
+            window.setTimeout(run, delay);
+        }
+    });
+}

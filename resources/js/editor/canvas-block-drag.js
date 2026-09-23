@@ -4,6 +4,8 @@
 
 import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
 import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
+import { hydrateCtasAfterHtmlInsert } from './editor-button-link.js';
+import { schedulePageCssAfterInsert } from './page-tailwind-autobuild.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import { withoutUndo } from './editor-undo.js';
 
@@ -383,8 +385,11 @@ function insertBlockAtTop(editor, block) {
                 markTopDropHandled(editor);
                 editor.select?.(component);
                 // Defer: drag session may still hold CssRebuildDragLock / ActiveBlockDrag.
-                // Force invalidate — soft "missing utilities" checks can no-op after animation safelist.
-                window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
+                // Multi-pass JIT — early single compile left Pricing unstyled until Save.
+                window.setTimeout(() => {
+                    schedulePageCssAfterInsert(editor);
+                    hydrateCtasAfterHtmlInsert(editor, component);
+                }, 160);
             }
 
             return component ?? null;
@@ -401,7 +406,10 @@ function insertBlockAtTop(editor, block) {
             if (component) {
                 markTopDropHandled(editor);
                 editor.select?.(component);
-                window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
+                window.setTimeout(() => {
+                    schedulePageCssAfterInsert(editor);
+                    hydrateCtasAfterHtmlInsert(editor, component);
+                }, 160);
             }
 
             return component ?? null;
@@ -418,7 +426,10 @@ function insertBlockAtTop(editor, block) {
     if (component) {
         markTopDropHandled(editor);
         editor.select?.(component);
-        window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
+        window.setTimeout(() => {
+            schedulePageCssAfterInsert(editor);
+            hydrateCtasAfterHtmlInsert(editor, component);
+        }, 160);
     }
 
     return component ?? null;
@@ -454,7 +465,10 @@ function insertBlockIntoPageContent(editor, block) {
     if (component) {
         markTopDropHandled(editor);
         editor.select?.(component);
-        window.setTimeout(() => editor.__voodbuilderForcePageCssRebuild?.(450), 160);
+        window.setTimeout(() => {
+            schedulePageCssAfterInsert(editor);
+            hydrateCtasAfterHtmlInsert(editor, component);
+        }, 160);
     }
 
     return component ?? null;

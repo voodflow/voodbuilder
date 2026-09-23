@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.107] - 2026-09-23
+
+### Fixed
+
+- Library / BlockManager inserts now multi-pass JIT-compile page CSS and hydrate CTA buttons immediately (Pricing no longer stays unstyled / non-linkable until Save)
+
 ## [0.1.106] - 2026-09-23
 
 ### Fixed

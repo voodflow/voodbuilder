@@ -1339,20 +1339,19 @@ export function configureLinkableButtons(editor) {
 
     const flushLinkableScan = () => {
         linkableScanFrame = null;
+        const roots = [...pendingLinkableRoots];
+        pendingLinkableRoots.clear();
 
-        const visit = (node) => {
-            if (isLinkableCtaComponent(node) || node.get?.('type') === 'voodbuilder-cta-button') {
-                upgradeLinkableButton(node, editor);
+        // Full promote+upgrade (not upgrade-only): Tailblocks <button> CTAs and
+        // annotated <a data-voodbuilder-cta> must become smart buttons on insert,
+        // not only after Save → ensureCtaButtonsForExport.
+        for (const root of roots) {
+            if (! root || root.isRemoved?.()) {
+                continue;
             }
 
-            node.components?.().forEach((child) => visit(child));
-        };
-
-        for (const root of pendingLinkableRoots) {
-            visit(root);
+            scanLinkableButtons(editor, root);
         }
-
-        pendingLinkableRoots.clear();
     };
 
     editor.on('component:add', (component) => {
@@ -1370,6 +1369,15 @@ export function configureLinkableButtons(editor) {
         if (linkableScanFrame == null) {
             linkableScanFrame = window.requestAnimationFrame(flushLinkableScan);
         }
+
+        // Grapes finishes nested parse a frame later — second pass catches Submit+svg.
+        window.setTimeout(() => {
+            if (! component || component.isRemoved?.()) {
+                return;
+            }
+
+            scanLinkableButtons(editor, component);
+        }, 120);
 
         // New Basic Button drops often keep the label only as a Grapes default prop.
         // Persist into attr + textnode (and heal DOM after placement settles).
@@ -1418,4 +1426,35 @@ export function configureLinkableButtons(editor) {
     // hits) and CTA remorph/re-render loops froze the canvas.
 
     scanLinkableButtons(editor);
+}
+
+/**
+ * After Library / BlockManager HTML insert: promote CTAs once the tree has views.
+ * Call alongside schedulePageCssAfterInsert so authors do not need Save first.
+ *
+ * @param {object} editor
+ * @param {object|null} [root]
+ */
+export function hydrateCtasAfterHtmlInsert(editor, root = null) {
+    if (! editor) {
+        return;
+    }
+
+    const run = () => {
+        try {
+            if (root && ! root.isRemoved?.()) {
+                scanLinkableButtons(editor, root);
+            } else {
+                ensureCtaButtonsForExport(editor);
+            }
+        } catch {
+            // ignore
+        }
+    };
+
+    window.requestAnimationFrame(() => {
+        run();
+        window.setTimeout(run, 200);
+        window.setTimeout(run, 700);
+    });
 }
