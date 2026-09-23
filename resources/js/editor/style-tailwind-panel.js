@@ -1485,9 +1485,8 @@ function gradientStopRowHtml(opts) {
 }
 
 function gradientStopsBlockHtml(prefix, labels, searchPh) {
-    const posLabel = labels.classStyleGradientStop ?? 'Stop';
     const hint = labels.classStyleGradientStopHint
-        ?? 'Stops must increase From → Via → To. Leave Via empty for a simple fade. Clear solid Color (e.g. bg-black) so transparent can show through.';
+        ?? 'Soft fade: From ~0–20%, To ~100%, Via empty. High From (e.g. 90%) squeezes the fade into a thin band.';
 
     return `
         <div class="voodbuilder-editor-deco-stops">
@@ -1500,7 +1499,7 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 kind: 'from',
                 defaultPos: GRADIENT_POS_DEFAULTS.from,
                 searchPlaceholder: searchPh,
-                posLabel,
+                posLabel: labels.classStyleGradientStopFrom ?? 'Start',
             })}
             ${gradientStopRowHtml({
                 colorLabel: labels.classStyleGradientVia ?? 'Via',
@@ -1510,7 +1509,7 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 kind: 'via',
                 defaultPos: GRADIENT_POS_DEFAULTS.via,
                 searchPlaceholder: searchPh,
-                posLabel,
+                posLabel: labels.classStyleGradientStopVia ?? 'Middle',
             })}
             ${gradientStopRowHtml({
                 colorLabel: labels.classStyleGradientTo ?? 'To',
@@ -1520,7 +1519,7 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 kind: 'to',
                 defaultPos: GRADIENT_POS_DEFAULTS.to,
                 searchPlaceholder: searchPh,
-                posLabel,
+                posLabel: labels.classStyleGradientStopTo ?? 'End',
             })}
         </div>
     `;
