@@ -75,8 +75,9 @@ describe('style-background-image', () => {
         });
 
         // Stops stay opaque; photo visibility is a separate scrim under the fade.
+        // Default positions 0% / 50% / 100% are always baked for stable CSS.
         expect(gradient).toBe(
-            'linear-gradient(to top right, rgba(239, 68, 68, 1), rgba(29, 78, 216, 1), rgba(134, 239, 172, 1))',
+            'linear-gradient(to top right, rgba(239, 68, 68, 1) 0%, rgba(29, 78, 216, 1) 50%, rgba(134, 239, 172, 1) 100%)',
         );
         expect(composeDecorationBackgroundImageCss('/a.jpg', 0.35, '#0f172a', { gradientLayer: gradient }))
             .toBe(
@@ -89,7 +90,7 @@ describe('style-background-image', () => {
             fromUtility: 'from-red-500',
             toUtility: 'to-blue-700',
             photoVisibility: 1,
-        })).toBe('linear-gradient(to top, rgba(239, 68, 68, 1), rgba(29, 78, 216, 1))');
+        })).toBe('linear-gradient(to top, rgba(239, 68, 68, 1) 0%, rgba(29, 78, 216, 1) 100%)');
     });
 
     it('supports transparent→black fade over a photo (section blend)', () => {
@@ -100,7 +101,7 @@ describe('style-background-image', () => {
             photoVisibility: 1,
         });
 
-        expect(gradient).toBe('linear-gradient(to bottom, transparent, rgba(0, 0, 0, 1))');
+        expect(gradient).toBe('linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 1) 100%)');
         expect(composeDecorationBackgroundImageCss('/hero.jpg', 1, '', { gradientLayer: gradient }))
             .toBe(`${gradient}, url('/hero.jpg')`);
     });
@@ -118,12 +119,28 @@ describe('style-background-image', () => {
         expect(gradient).toBe('linear-gradient(to bottom, transparent 25%, rgba(88, 28, 135, 1) 85%)');
     });
 
+    it('sorts out-of-order stop positions for a smooth ramp', () => {
+        const gradient = composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-b',
+            fromUtility: 'from-transparent',
+            viaUtility: 'via-black',
+            toUtility: 'to-purple-900',
+            fromPos: 75,
+            viaPos: 45,
+            toPos: 100,
+        });
+
+        expect(gradient).toBe(
+            'linear-gradient(to bottom, rgba(0, 0, 0, 1) 45%, transparent 75%, rgba(88, 28, 135, 1) 100%)',
+        );
+    });
+
     it('resolves white/black/transparent gradient stops', () => {
         expect(composePhotoAwareGradientLayer({
             directionUtility: 'bg-gradient-to-b',
             fromUtility: 'from-white',
             toUtility: 'to-black',
-        })).toBe('linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(0, 0, 0, 1))');
+        })).toBe('linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(0, 0, 0, 1) 100%)');
     });
 
     it('resolves bg-* utilities to hex for overlays', () => {

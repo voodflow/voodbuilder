@@ -3065,6 +3065,13 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     gap: 0;
 }
 
+.voodbuilder-editor-deco-stops__hint {
+    margin: 0 0 0.45rem;
+    font-size: 0.625rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
 .voodbuilder-editor-deco-stops .gjs-sm-property,
 .voodbuilder-editor-deco-stops .voodbuilder-editor-anim-property {
     display: grid;

@@ -543,6 +543,7 @@ final class EditorGate
             'classStyleGradientVia' => __('voodbuilder::pro.editor_ui.class_style_gradient_via'),
             'classStyleGradientTo' => __('voodbuilder::pro.editor_ui.class_style_gradient_to'),
             'classStyleGradientStop' => __('voodbuilder::pro.editor_ui.class_style_gradient_stop'),
+            'classStyleGradientStopHint' => __('voodbuilder::pro.editor_ui.class_style_gradient_stop_hint'),
             'classStyleBorder' => __('voodbuilder::pro.editor_ui.class_style_border'),
             'classStyleBorderWidth' => __('voodbuilder::pro.editor_ui.class_style_border_width'),
             'classStyleBorderStyle' => __('voodbuilder::pro.editor_ui.class_style_border_style'),

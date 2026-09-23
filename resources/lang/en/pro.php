@@ -192,6 +192,7 @@ return [
         'class_style_gradient_via' => 'Via',
         'class_style_gradient_to' => 'To',
         'class_style_gradient_stop' => 'Stop',
+        'class_style_gradient_stop_hint' => 'Stops must increase From → Via → To. Leave Via empty for a simple fade. Clear solid Color (e.g. bg-black) so transparent shows through.',
         'class_style_border' => 'Border',
         'class_style_border_width' => 'Width',
         'class_style_border_style' => 'Style',

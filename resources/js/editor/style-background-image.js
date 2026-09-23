@@ -312,50 +312,38 @@ export function composePhotoAwareGradientLayer(opts = {}) {
         return '';
     }
 
-    const stop = (utility, pos) => {
+    const stop = (utility, pos, fallbackPos) => {
         const color = cssColorFromGradientStopUtility(utility);
 
         if (color === '') {
-            return '';
+            return null;
         }
 
-        let paint = color === 'transparent'
+        const paint = color === 'transparent'
             ? 'transparent'
             : (toRgbaWithAlpha(color, 1) ?? color);
+        const rawPos = pos != null && Number.isFinite(Number(pos))
+            ? Number(pos)
+            : fallbackPos;
+        const pct = Math.min(100, Math.max(0, Math.round(rawPos)));
 
-        if (pos != null && Number.isFinite(Number(pos))) {
-            const pct = Math.min(100, Math.max(0, Math.round(Number(pos))));
-            paint = `${paint} ${pct}%`;
-        }
-
-        return paint;
+        return { paint, pct };
     };
 
-    const from = stop(opts.fromUtility, opts.fromPos);
-    const via = stop(opts.viaUtility, opts.viaPos);
-    const to = stop(opts.toUtility, opts.toPos);
+    const entries = [
+        stop(opts.fromUtility, opts.fromPos, 0),
+        stop(opts.viaUtility, opts.viaPos, 50),
+        stop(opts.toUtility, opts.toPos, 100),
+    ].filter(Boolean);
 
-    if (! from && ! via && ! to) {
+    if (entries.length === 0) {
         return '';
     }
 
-    const parts = [];
+    // Sort by % so From 75% + Via 45% does not create a hard CSS band.
+    entries.sort((a, b) => a.pct - b.pct);
 
-    if (from) {
-        parts.push(from);
-    } else {
-        parts.push(opts.fromPos != null ? `transparent ${Math.round(Number(opts.fromPos))}%` : 'transparent');
-    }
-
-    if (via) {
-        parts.push(via);
-    }
-
-    if (to) {
-        parts.push(to);
-    } else {
-        parts.push(opts.toPos != null ? `transparent ${Math.round(Number(opts.toPos))}%` : 'transparent');
-    }
+    const parts = entries.map((entry) => `${entry.paint} ${entry.pct}%`);
 
     return `linear-gradient(${direction}, ${parts.join(', ')})`;
 }

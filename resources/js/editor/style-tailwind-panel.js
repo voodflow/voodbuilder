@@ -1236,7 +1236,14 @@ function applyGroup(editor, component, groupId, value) {
         }
 
         // Gradient clears solid color (exclusive); keep image — do not wipe background-image.
-        if (groupId === 'gradient-direction' && value && value !== 'bg-none') {
+        if (
+            (groupId === 'gradient-direction' && value && value !== 'bg-none')
+            || (
+                (groupId === 'gradient-from' || groupId === 'gradient-via' || groupId === 'gradient-to'
+                    || groupId === 'gradient-from-pos' || groupId === 'gradient-via-pos' || groupId === 'gradient-to-pos')
+                && value
+            )
+        ) {
             if (! textGradientActive) {
                 alsoClearIds.push('background');
             }
@@ -1479,9 +1486,12 @@ function gradientStopRowHtml(opts) {
 
 function gradientStopsBlockHtml(prefix, labels, searchPh) {
     const posLabel = labels.classStyleGradientStop ?? 'Stop';
+    const hint = labels.classStyleGradientStopHint
+        ?? 'Stops must increase From → Via → To. Leave Via empty for a simple fade. Clear solid Color (e.g. bg-black) so transparent can show through.';
 
     return `
         <div class="voodbuilder-editor-deco-stops">
+            <p class="voodbuilder-editor-deco-stops__hint">${escapeHtml(hint)}</p>
             ${gradientStopRowHtml({
                 colorLabel: labels.classStyleGradientFrom ?? 'From',
                 colorGroupId: `${prefix}-from`,
@@ -3427,16 +3437,53 @@ function wireGradientPosSliders(editor, sector) {
     for (const input of sector.querySelectorAll('[data-voodbuilder-tw-group-range]')) {
         let liveTimer = null;
 
+        const readStopPct = (block, kind) => {
+            const el = block?.querySelector?.(
+                `[data-voodbuilder-tw-group-range][data-voodbuilder-gradient-pos-kind="${kind}"]`,
+            );
+
+            if (! el || el.disabled) {
+                return null;
+            }
+
+            const n = Number.parseInt(el.value, 10);
+
+            return Number.isFinite(n) ? n : null;
+        };
+
+        const clampPct = (kind, raw, block) => {
+            let pct = Number.isFinite(raw) ? raw : 0;
+            const fromPct = readStopPct(block, 'from');
+            const viaPct = readStopPct(block, 'via');
+            const toPct = readStopPct(block, 'to');
+
+            if (kind === 'from') {
+                const max = viaPct != null ? viaPct : (toPct != null ? toPct : 100);
+                pct = Math.min(pct, max);
+            } else if (kind === 'via') {
+                const min = fromPct != null ? fromPct : 0;
+                const max = toPct != null ? toPct : 100;
+                pct = Math.min(Math.max(pct, min), max);
+            } else if (kind === 'to') {
+                const min = viaPct != null ? viaPct : (fromPct != null ? fromPct : 0);
+                pct = Math.max(pct, min);
+            }
+
+            return Math.min(100, Math.max(0, Math.round(pct / 5) * 5));
+        };
+
         const commit = () => {
             const component = editor.getSelected();
             const groupId = input.getAttribute('data-voodbuilder-tw-group-range') || '';
             const kind = input.getAttribute('data-voodbuilder-gradient-pos-kind') || 'from';
+            const block = input.closest('.voodbuilder-editor-deco-stops');
 
             if (! component || ! groupId) {
                 return;
             }
 
-            const pct = Number.parseInt(input.value, 10);
+            const pct = clampPct(kind, Number.parseInt(input.value, 10), block);
+            input.value = String(pct);
             const utility = gradientStopPositionUtility(kind, pct);
 
             applyGroup(editor, component, groupId, utility);
@@ -3446,19 +3493,23 @@ function wireGradientPosSliders(editor, sector) {
                 ?.querySelector('[data-voodbuilder-gradient-pos-readout]');
 
             if (readout) {
-                readout.textContent = `${Number.isFinite(pct) ? pct : 0}%`;
+                readout.textContent = `${pct}%`;
             }
 
             syncSelectsFromComponent(sector.closest('.gjs-sm-sectors') ?? sector, component, editor);
         };
 
         input.addEventListener('input', () => {
-            const pct = Number.parseInt(input.value, 10);
+            const block = input.closest('.voodbuilder-editor-deco-stops');
+            const kind = input.getAttribute('data-voodbuilder-gradient-pos-kind') || 'from';
+            const pct = clampPct(kind, Number.parseInt(input.value, 10), block);
+            input.value = String(pct);
+
             const readout = input.closest('.voodbuilder-editor-deco-stop__pos')
                 ?.querySelector('[data-voodbuilder-gradient-pos-readout]');
 
             if (readout) {
-                readout.textContent = `${Number.isFinite(pct) ? pct : 0}%`;
+                readout.textContent = `${pct}%`;
             }
 
             window.clearTimeout(liveTimer);

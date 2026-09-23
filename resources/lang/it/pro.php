@@ -192,6 +192,7 @@ return [
         'class_style_gradient_via' => 'Via',
         'class_style_gradient_to' => 'A',
         'class_style_gradient_stop' => 'Stop',
+        'class_style_gradient_stop_hint' => 'Gli stop devono crescere Da → Via → A. Lascia Via vuoto per una sfumatura semplice. Togli il colore solido (es. bg-black) così il transparent si vede.',
         'class_style_border' => 'Bordo',
         'class_style_border_width' => 'Spessore',
         'class_style_border_style' => 'Stile',
