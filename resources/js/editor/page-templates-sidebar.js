@@ -9,7 +9,7 @@ import { buildPayload } from './editor.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import { refreshComponentBlocksLibrary } from './components-ui.js';
-import { applyPageTemplateWithPrompt, forceTemplatePageCssRebuild } from './page-template-apply.js';
+import { applyPageTemplateWithPrompt, forceTemplatePageCssRebuild, shouldForceCssRebuildAfterTemplate } from './page-template-apply.js';
 import {
     PAGE_TEMPLATE_BLOCK_PREFIX,
     PAGE_TEMPLATE_CATEGORY_PREFIX,
@@ -956,11 +956,14 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             await applyPageTemplateWithPrompt(editor, template, labels, { alreadySuspended: true });
         } finally {
             applyingTemplate = false;
-            editor.__voodbuilderFlushCssRebuildOnResume = true;
+            const needsCssRebuild = Boolean(template && shouldForceCssRebuildAfterTemplate(template));
+            editor.__voodbuilderFlushCssRebuildOnResume = needsCssRebuild;
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
-            // applyPageTemplateWithPrompt already force-rebuilds; keep an extra
-            // invalidate after the outer suspend unlock for drop races.
-            forceTemplatePageCssRebuild(editor, 320);
+            // applyPageTemplateWithPrompt already seeds CSS or force-rebuilds.
+            // Only schedule a second JIT for empty-css starters after outer unlock.
+            if (needsCssRebuild) {
+                forceTemplatePageCssRebuild(editor, 320);
+            }
         }
     });
 

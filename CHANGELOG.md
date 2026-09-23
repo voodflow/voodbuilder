@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.101] - 2026-09-23
+
+### Fixed
+
+- Applying a page template that already includes compiled CSS no longer re-runs Node `compile-css` (removes the multi-second “Compiling styles…” wait); empty-css starters still JIT as before
+
 ## [0.1.100] - 2026-09-23
 
 ### Fixed

@@ -190,7 +190,10 @@ function settleTemplateCanvas(editor) {
 /**
  * Force page Tailwind JIT after template HTML lands.
  * Soft schedule-if-missing can no-op when fingerprints match a partial live sheet;
- * Save always recompiles — apply must be equally reliable.
+ * Save always recompiles — apply must be equally reliable when the template ships
+ * no stylesheet (starters with `css: null`).
+ *
+ * Prefer {@see shouldForceCssRebuildAfterTemplate()} so stored full sheets skip Node.
  *
  * @param {object} editor
  * @param {number} [delayMs]
@@ -222,6 +225,48 @@ export function forceTemplatePageCssRebuild(editor, delayMs = 250) {
     schedule(() => {
         globalThis.setTimeout(run, delayMs);
     });
+}
+
+/**
+ * Templates persisted via Save current page / import already include a compiled
+ * utility sheet. Re-running compile-css after apply only adds multi-second wait.
+ *
+ * @param {object} template
+ * @param {'replace'|'keep'} [mode]
+ */
+export function shouldForceCssRebuildAfterTemplate(template, mode = 'replace') {
+    const css = String(templatePayload(template).css ?? '').trim();
+
+    if (css === '') {
+        return true;
+    }
+
+    // Append with a stylesheet still needs a pass when the template CSS is only
+    // author rules — rare for saved templates; keep the fast path when any CSS ships.
+    return false;
+}
+
+/**
+ * Resolve the apply overlay without spawning Node when the live sheet is ready.
+ *
+ * @param {object} editor
+ * @param {string} [css]
+ */
+export function notifyPageCssReadyFromTemplate(editor, css = '') {
+    try {
+        editor.__voodbuilderSyncPageCssBootTracking?.();
+    } catch {
+        // Optional boot sync.
+    }
+
+    try {
+        editor.trigger?.('voodbuilder:page-css-compiled', {
+            css: String(css ?? ''),
+            html: '',
+        });
+    } catch {
+        // Optional compile bus.
+    }
 }
 
 /**
@@ -454,16 +499,25 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
 
         return true;
     } finally {
+        const needsCssRebuild = applied && shouldForceCssRebuildAfterTemplate(template, mode);
+
         if (manageSuspend) {
-            editor.__voodbuilderFlushCssRebuildOnResume = true;
+            // Avoid a surprise compile-css on unlock when the template CSS was already applied.
+            editor.__voodbuilderFlushCssRebuildOnResume = needsCssRebuild;
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
         }
 
-        // Always force JIT after replace/append (and after suspend unlock), matching
-        // Elements Library import — not only when this call owns the suspend lock.
+        // Skip Node JIT when the template already shipped a compiled sheet (Save /
+        // import persist full CSS). Starters with empty css still force a rebuild.
         if (applied) {
-            forceTemplatePageCssRebuild(editor);
-            await waitForPageCssCompiled(editor);
+            const css = String(templatePayload(template).css ?? '').trim();
+
+            if (needsCssRebuild) {
+                forceTemplatePageCssRebuild(editor);
+                await waitForPageCssCompiled(editor);
+            } else {
+                notifyPageCssReadyFromTemplate(editor, css);
+            }
         }
 
         if (buildStarted) {
