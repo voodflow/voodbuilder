@@ -1410,6 +1410,39 @@ describe('theme-tokens background clear', () => {
         expect(merged).toContain('.text-lg');
         expect(merged).toContain('#section-bg');
         expect(merged).toContain('background-color: #daa0a0');
+        // Previous utilities must survive a thin recompile (Anchor drop regression).
+        expect(merged).toContain('.flex');
+    });
+
+    it('mergeCompiledPageCssWithAuthorIdRules keeps prior utilities when compile is empty', async () => {
+        const { mergeCompiledPageCssWithAuthorIdRules } = await import(
+            '../../resources/js/editor/page-tailwind-autobuild.js'
+        );
+
+        const editor = {
+            __voodbuilderPageLiveCss: '.bg-\\[\\#070b16\\]{background-color:#070b16}',
+            getCss: () => '',
+        };
+
+        const merged = mergeCompiledPageCssWithAuthorIdRules(editor, '');
+
+        expect(merged).toContain('070b16');
+    });
+
+    it('isLightFoundationUtilityDrop detects Anchor', async () => {
+        const { isLightFoundationUtilityDrop } = await import(
+            '../../resources/js/editor/page-tailwind-autobuild.js'
+        );
+
+        expect(isLightFoundationUtilityDrop({
+            get: () => 'voodbuilder-anchor',
+            getAttributes: () => ({ 'data-voodbuilder-anchor': '' }),
+        })).toBe(true);
+
+        expect(isLightFoundationUtilityDrop({
+            get: () => 'voodbuilder-dynamic',
+            getAttributes: () => ({ 'data-voodbuilder-block': 'voodflow_core_nodes_grid' }),
+        })).toBe(false);
     });
 });
 

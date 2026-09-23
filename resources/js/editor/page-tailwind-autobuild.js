@@ -412,9 +412,62 @@ export function applyPageLiveCss(editor, css) {
 }
 
 /**
+ * Drop Style Manager `#id` paint rules from a live sheet, keep Tailwind utilities
+ * and `@media` / `@supports` wrappers. Used so a later JIT cannot wipe section
+ * utilities already painted on the canvas.
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function extractLiveUtilityCss(css) {
+    const source = String(css ?? '').trim();
+
+    if (source === '') {
+        return '';
+    }
+
+    // Top-level `#id { … }` only (author paints). Nested # inside @media are rare
+    // for Style Manager and are regenerated on Save anyway.
+    return source
+        .replace(/(^|})\s*#[^{}|\s][^{}]*\{[^{}]*\}/g, '$1')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+/**
+ * True for tiny Foundation utility drops (Anchor, reading time, …) that almost
+ * never introduce uncovered Tailwind utilities. Forcing a full page recompile
+ * on these used to replace the live sheet and strip Core nodes / section styles
+ * when the new compile raced or returned a thin sheet.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isLightFoundationUtilityDrop(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    const type = String(component.get('type') ?? '');
+    const attrs = component.getAttributes?.() ?? {};
+
+    return type === 'voodbuilder-anchor'
+        || type === 'voodbuilder-reading-time'
+        || type === 'voodbuilder-reading-progress'
+        || type === 'voodbuilder-social-share'
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-anchor')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-reading-time')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-progress')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-social-share');
+}
+
+/**
  * JIT compile returns utilities only. Keep author `#id` Style Manager paints and
  * custom class / @keyframes rules from CssComposer (Library embeds) so motion
  * and paints survive rebuilds.
+ *
+ * Also unions previous live *utilities* so a partial recompile (e.g. after an
+ * Anchor drop) cannot erase Core nodes / section Tailwind already on canvas.
  *
  * @param {object} editor
  * @param {string} compiledCss
@@ -422,7 +475,9 @@ export function applyPageLiveCss(editor, css) {
  */
 export function mergeCompiledPageCssWithAuthorIdRules(editor, compiledCss) {
     const compiled = String(compiledCss ?? '').trim();
-    const previousAuthor = extractGrapesComposerCss(editor?.__voodbuilderPageLiveCss ?? '');
+    const previousLive = String(editor?.__voodbuilderPageLiveCss ?? '').trim();
+    const previousAuthor = extractGrapesComposerCss(previousLive);
+    const previousUtilities = extractLiveUtilityCss(previousLive);
     let composerAuthor = '';
 
     try {
@@ -435,7 +490,15 @@ export function mergeCompiledPageCssWithAuthorIdRules(editor, compiledCss) {
         composerAuthor = '';
     }
 
-    return mergeAuthorCssChunks([compiled, previousAuthor, composerAuthor]);
+    // Empty compile must not wipe a healthy live sheet (failed/aborted JIT).
+    const compiledOrPrevious = compiled !== '' ? compiled : previousUtilities;
+
+    return mergeAuthorCssChunks([
+        compiledOrPrevious,
+        previousUtilities,
+        previousAuthor,
+        composerAuthor,
+    ]);
 }
 
 export function registerPageTailwindAutobuild(editor, options = {}) {
@@ -1142,9 +1205,17 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
         beginDragLock();
     });
     editor.on('block:drag:stop', (component) => {
-        // Always invalidate after a library drop so section HTML (hero gradients,
-        // etc.) compiles even when coverage heuristics no-op.
-        pendingInvalidate = true;
+        // Catalog sections / dynamic grids: always invalidate — coverage heuristics
+        // can no-op on hero gradients and leave blocks unstyled until Save.
+        // Light foundation utilities (Anchor, …): only invalidate when they bring
+        // uncovered classes; forcing a full sheet replace wiped Core nodes styles.
+        if (
+            ! isLightFoundationUtilityDrop(component)
+            || componentNeedsLiveCss(component)
+        ) {
+            pendingInvalidate = true;
+        }
+
         endDragLock({
             flush: true,
             component: component ?? null,
