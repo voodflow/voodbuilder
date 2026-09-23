@@ -21,6 +21,7 @@ import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
 import { extractGrapesComposerCss, mergeAuthorCssChunks, stripAuthorIdRules } from './editor/payload.js';
 import { STYLE_SPACING_SAFELIST } from './style-spacing-safelist.js';
 import { STYLE_COLOR_SAFELIST } from './style-color-safelist.js';
+import { STYLE_GRADIENT_POS_SAFELIST } from './style-gradient-pos-safelist.js';
 import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
 import { STYLE_ANIMATION_BUNDLED_UTILITIES } from './style-animation-safelist.js';
 import {
@@ -45,7 +46,7 @@ const NAMED_COLOR_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:black|
 
 const CANVAS_BUNDLED_UTILITIES = (() => {
     const set = new Set(
-        `${STYLE_SPACING_SAFELIST ?? ''}\n${STYLE_COLOR_SAFELIST ?? ''}\n${STYLE_RESPONSIVE_FONT_SIZE_SAFELIST ?? ''}\n${STYLE_RESPONSIVE_SPACING_SAFELIST ?? ''}`
+        `${STYLE_SPACING_SAFELIST ?? ''}\n${STYLE_COLOR_SAFELIST ?? ''}\n${STYLE_RESPONSIVE_FONT_SIZE_SAFELIST ?? ''}\n${STYLE_RESPONSIVE_SPACING_SAFELIST ?? ''}\n${STYLE_GRADIENT_POS_SAFELIST ?? ''}`
             .split(/\s+/)
             .map((token) => token.trim())
             .filter(Boolean),

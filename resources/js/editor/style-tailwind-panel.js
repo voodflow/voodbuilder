@@ -1294,8 +1294,8 @@ function applyGroup(editor, component, groupId, value) {
             || groupId === 'gradient-via-pos'
             || groupId === 'gradient-to-pos'
         ) {
-            // No photo: strip leftover author background-image so TW gradient utilities paint.
-            releaseAuthorBackgroundImageForUtilities(editor, component);
+            // Bake gradient + stop positions for instant canvas feedback.
+            paintDecorationGradientPreview(editor, component);
         }
 
         scheduleClassCompile(
@@ -2125,6 +2125,9 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
         return '';
     }
 
+    const fromUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:');
+    const viaUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:');
+    const toUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, 'lg:');
     const fromPos = gradientStopPositionFromUtility(
         resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, 'lg:'),
     );
@@ -2135,21 +2138,82 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
         resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
     );
 
-    // Over a photo: bake stop alpha from Photo visibility (opaque TW stops would hide the url).
-    if (photoVisibility != null) {
+    // Bake stops + positions for live canvas (TW from-25% was missing from
+    // section-utilities when options were template-built). Same path with/without photo.
+    if (fromUtility || viaUtility || toUtility) {
         return composePhotoAwareGradientLayer({
             directionUtility: direction,
-            fromUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:'),
-            viaUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:'),
-            toUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, 'lg:'),
+            fromUtility,
+            viaUtility,
+            toUtility,
             fromPos,
             viaPos,
             toPos,
-            photoVisibility,
+            photoVisibility: photoVisibility == null ? 1 : photoVisibility,
         });
     }
 
     return composeTailwindGradientLayer(direction);
+}
+
+/**
+ * Live-paint decoration gradient (with stop positions) when there is no photo.
+ * Photo path uses {@link reapplyDecorationBackgroundPaint} instead.
+ */
+function paintDecorationGradientPreview(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const src = readBackgroundImageUrl(component, editor);
+
+    if (src !== '') {
+        reapplyDecorationBackgroundPaint(editor, component, src);
+
+        return;
+    }
+
+    const layer = resolveDecorationGradientLayer(component, 1);
+
+    if (! layer) {
+        releaseAuthorBackgroundImageForUtilities(editor, component);
+
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+
+    target.addStyle?.(
+        { 'background-image': layer },
+        { inline: true },
+    );
+
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(id, {
+                ...existing,
+                'background-image': layer,
+            });
+        } catch {
+            // CssComposer may be unavailable.
+        }
+    }
+
+    try {
+        const el = target?.getEl?.() ?? target?.view?.el;
+
+        if (el?.style) {
+            el.style.backgroundImage = layer;
+        }
+
+        component.view?.updateStyle?.();
+        target.view?.updateStyles?.();
+    } catch {
+        // Frame may be unavailable.
+    }
 }
 
 function resolveBackgroundFadeColor(editor, component) {

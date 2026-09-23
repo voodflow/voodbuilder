@@ -109,13 +109,13 @@ describe('style-background-image', () => {
         const gradient = composePhotoAwareGradientLayer({
             directionUtility: 'bg-gradient-to-b',
             fromUtility: 'from-transparent',
-            toUtility: 'to-black',
-            fromPos: 40,
-            toPos: 100,
+            toUtility: 'to-purple-900',
+            fromPos: 25,
+            toPos: 85,
             photoVisibility: 1,
         });
 
-        expect(gradient).toBe('linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 1) 100%)');
+        expect(gradient).toBe('linear-gradient(to bottom, transparent 25%, rgba(88, 28, 135, 1) 85%)');
     });
 
     it('resolves white/black/transparent gradient stops', () => {
