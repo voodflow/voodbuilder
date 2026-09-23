@@ -2194,8 +2194,6 @@ function paintDecorationGradientPreview(editor, component) {
         return;
     }
 
-    repairCompressedTransparentFromStop(component);
-
     const src = readBackgroundImageUrl(component, editor);
 
     if (src !== '') {
@@ -2244,40 +2242,6 @@ function paintDecorationGradientPreview(editor, component) {
         target.view?.updateStyles?.();
     } catch {
         // Frame may be unavailable.
-    }
-}
-
-/**
- * from-transparent + Start ≥ 50% squeezes the fade into a thin band (looks like
- * a hard purple line). Almost always a mistake — park Start back at 0%.
- *
- * @param {object} component
- */
-function repairCompressedTransparentFromStop(component) {
-    const classes = componentClassList(component);
-    const fromUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:');
-    const viaUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:');
-    const fromPos = gradientStopPositionFromUtility(
-        resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, 'lg:'),
-    );
-    const toPos = gradientStopPositionFromUtility(
-        resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
-    ) ?? 100;
-
-    if (
-        fromUtility !== 'from-transparent'
-        || (viaUtility && viaUtility !== '')
-        || fromPos == null
-        || fromPos < 50
-        || (toPos - fromPos) > 25
-    ) {
-        return;
-    }
-
-    const posSet = GROUP_SETS['gradient-from-pos'];
-
-    if (posSet) {
-        replaceGradientStyleGroup(component, posSet, 'from-0%');
     }
 }
 
@@ -3497,7 +3461,9 @@ function wireGradientPosSliders(editor, sector) {
                 `[data-voodbuilder-tw-group-range][data-voodbuilder-gradient-pos-kind="${kind}"]`,
             );
 
-            if (! el || el.disabled) {
+            // Ignore disabled / default-only stops (e.g. Via at 50% with no Via color)
+            // so they do not clamp From/To.
+            if (! el || el.disabled || el.dataset.authored !== '1') {
                 return null;
             }
 
