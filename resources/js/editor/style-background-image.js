@@ -213,19 +213,25 @@ export function composeColorOverlayLayer(color, alpha) {
 }
 
 /**
- * Build a Tailwind-compatible gradient layer that reads --tw-gradient-* from classes.
+ * Build a Tailwind v4-compatible gradient layer that reads --tw-gradient-stops
+ * from from-/via-/to-* classes (same formula as compiled `.bg-gradient-to-*`).
+ *
+ * Important: do NOT prefix direction (`to top`, …) — in TW4
+ * `--tw-gradient-stops` already starts with `--tw-gradient-position`
+ * (e.g. `to top in oklab, …`). Doubling the direction makes the gradient invalid
+ * and invisible on the canvas.
  *
  * @param {string} directionUtility e.g. bg-gradient-to-r
  * @returns {string}
  */
 export function composeTailwindGradientLayer(directionUtility) {
-    const direction = GRADIENT_DIRECTION_CSS[String(directionUtility ?? '').trim()];
+    const token = String(directionUtility ?? '').trim();
 
-    if (! direction) {
+    if (! GRADIENT_DIRECTION_CSS[token]) {
         return '';
     }
 
-    return `linear-gradient(${direction}, var(--tw-gradient-stops, var(--tw-gradient-from, transparent), var(--tw-gradient-to, transparent)))`;
+    return 'linear-gradient(var(--tw-gradient-stops))';
 }
 
 /**

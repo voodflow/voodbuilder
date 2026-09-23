@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.121] - 2026-09-23
+
+### Fixed
+
+- Background **Gradient** visible again with Tailwind v4 (`linear-gradient(var(--tw-gradient-stops))` — do not prefix direction)
+- After clearing a photo, author `background-image` is fully released so gradient utilities can paint (no leftover inline/#id block)
+
 ## [0.1.120] - 2026-09-23
 
 ### Fixed

@@ -62,7 +62,7 @@ describe('style-background-image', () => {
     it('stacks gradient above image without fading the url', () => {
         const gradient = composeTailwindGradientLayer('bg-gradient-to-r');
 
-        expect(gradient).toContain('linear-gradient(to right,');
+        expect(gradient).toBe('linear-gradient(var(--tw-gradient-stops))');
         expect(composeDecorationBackgroundImageCss('/a.jpg', 0.25, '#ff0000', { gradientLayer: gradient }))
             .toBe(`${gradient}, url('/a.jpg')`);
         expect(composeDecorationBackgroundImageCss('', 1, '', { gradientLayer: gradient }))

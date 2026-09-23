@@ -762,6 +762,14 @@ function applyGroup(editor, component, groupId, value) {
                 component.addAttributes?.({ [STYLE_BG_SRC_ATTR]: preservedBgUrl });
             }
             reapplyDecorationBackgroundPaint(editor, component);
+        } else if (
+            groupId === 'gradient-direction'
+            || groupId === 'gradient-from'
+            || groupId === 'gradient-via'
+            || groupId === 'gradient-to'
+        ) {
+            // No photo: strip leftover author background-image so TW gradient utilities paint.
+            releaseAuthorBackgroundImageForUtilities(editor, component);
         }
 
         scheduleClassCompile(editor);
@@ -1481,31 +1489,16 @@ function clearDecorationBackgroundImage(editor, component) {
         // Frame may be unavailable.
     }
 
-    // Gradient utilities need an empty author background-image so TW can paint again.
-    const gradientLayer = resolveDecorationGradientLayer(component);
-
-    if (gradientLayer) {
-        try {
-            target.addStyle?.({ 'background-image': gradientLayer }, { inline: true });
-
-            if (id && editor.Css?.setIdRule) {
-                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-                editor.Css.setIdRule(id, {
-                    ...existing,
-                    'background-image': gradientLayer,
-                });
-            }
-        } catch {
-            // CssComposer may be unavailable during boot.
-        }
-    } else {
-        restoreSolidBackgroundColorAfterImageClear(editor, component);
-    }
+    // Never re-write background-image for gradient-only: TW `.bg-gradient-to-*`
+    // must own that property. An author inline/#id paint (even a gradient layer)
+    // after Clear left utilities dead on the canvas.
+    restoreSolidBackgroundColorAfterImageClear(editor, component);
 
     try {
         component.view?.updateStyle?.();
         component.view?.updateAttributes?.();
         target.view?.updateStyles?.();
+        component.view?.updateClasses?.();
     } catch {
         // View may be unavailable.
     }
@@ -1595,6 +1588,57 @@ function restoreSolidBackgroundColorAfterImageClear(editor, component) {
     const target = resolveVisualStyleTarget(component) ?? component;
 
     clearStyleProperty(editor, target, 'background-color', { family: false });
+}
+
+/**
+ * Drop author `background-image` (inline + #id) so Tailwind gradient utilities
+ * can paint again after a decoration photo was removed or never applied.
+ */
+function releaseAuthorBackgroundImageForUtilities(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    clearStyleProperty(editor, target, 'background-image', { family: false });
+
+    if (id && editor.Css?.getIdRule) {
+        const rule = editor.Css.getIdRule(id);
+
+        if (rule) {
+            const style = { ...(rule.getStyle?.() ?? {}) };
+
+            if (style['background-image'] != null || style.background != null) {
+                delete style['background-image'];
+                delete style.background;
+
+                if (Object.keys(style).length === 0) {
+                    try {
+                        editor.Css.remove?.(rule);
+                    } catch {
+                        rule.setStyle?.({});
+                    }
+                } else {
+                    rule.setStyle?.(style);
+                }
+            }
+        }
+    }
+
+    try {
+        const el = target?.getEl?.() ?? target?.view?.el;
+
+        if (el?.style) {
+            el.style.removeProperty?.('background-image');
+            el.style.backgroundImage = '';
+        }
+    } catch {
+        // Frame may be unavailable.
+    }
+
+    restoreSolidBackgroundColorAfterImageClear(editor, component);
 }
 
 /**
