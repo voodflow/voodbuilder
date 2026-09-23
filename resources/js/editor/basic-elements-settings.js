@@ -29,6 +29,17 @@ import {
     tablerIconSvg,
     TABLER_CATEGORY_LABELS,
 } from './tabler-icons-catalog.js';
+import {
+    MAIL_SUBJECT_ATTR,
+    ROUTE_PARAMS_ATTR,
+    buildMailtoHref,
+    linkTypeSelectOptions,
+    parseMailtoHref,
+    readRouteParamsFromAttrs,
+    resolveAppRouteHref,
+    resolveEditorLinkHref,
+    serializeRouteParams,
+} from './editor-link-resolve.js';
 
 function runWithSettingsChangeGuard(editor, callback) {
     if (typeof callback !== 'function') {
@@ -713,7 +724,7 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
         editor = editorOrOptions ?? null;
     }
 
-    const { name, sizeClass, href, linkType, linkRef, target, style, stroke, color, forceGlyph } = options;
+    const { name, sizeClass, href, linkType, linkRef, target, style, stroke, color, forceGlyph, mailSubject = '', routeParams = {} } = options;
     const iconName = resolveTablerIconName(name);
     const iconStyle = resolveTablerIconStyle(style);
     const iconStroke = resolveTablerIconStroke(stroke);
@@ -723,7 +734,7 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
     const type = linkType || 'none';
     const resolvedHref = type === 'none'
         ? null
-        : resolveHref(editor, type, linkRef, href);
+        : resolveHref(editor, type, linkRef, href, { mailSubject, routeParams });
     const attrs = component.getAttributes?.() ?? {};
     const prevColor = String(attrs['data-vb-icon-color'] ?? '');
     const paintedGlyph = readPaintedIconGlyph(component);
@@ -741,7 +752,9 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
 
     const linkMatches = String(attrs['data-vb-link-type'] ?? 'none') === String(type)
         && String(attrs['data-vb-link'] ?? '') === String(type === 'url' || type === 'none' ? '' : (linkRef || ''))
-        && String(attrs.target ?? '') === String(target || '');
+        && String(attrs.target ?? '') === String(type === 'mail' ? '' : (target || ''))
+        && String(attrs[MAIL_SUBJECT_ATTR] ?? '') === String(type === 'mail' ? (mailSubject || '') : '')
+        && String(attrs[ROUTE_PARAMS_ATTR] ?? '') === String(type === 'route' ? (serializeRouteParams(routeParams) || '') : '');
 
     if (
         sameGlyph
@@ -817,7 +830,8 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
             linkType: type,
             linkRef: type === 'url' || type === 'none' ? '' : (linkRef || ''),
             href: resolvedHref || '#',
-            target: target || '',
+            target: type === 'mail' ? '' : (target || ''),
+            mailSubject: type === 'mail' ? (mailSubject || '') : '',
         });
         component.addAttributes({
             'data-voodbuilder-icon': '',
@@ -829,9 +843,24 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
             'data-vb-link-type': type,
             'data-vb-link': type === 'url' || type === 'none' ? null : (linkRef || null),
             href: type === 'none' ? null : (resolvedHref || '#'),
-            target: type === 'none' || ! target ? null : target,
-            rel: type !== 'none' && target === '_blank' ? 'noopener noreferrer' : null,
+            target: type === 'none' || type === 'mail' || ! target ? null : target,
+            rel: type !== 'none' && type !== 'mail' && target === '_blank' ? 'noopener noreferrer' : null,
+            [MAIL_SUBJECT_ATTR]: type === 'mail' && mailSubject ? mailSubject : null,
+            [ROUTE_PARAMS_ATTR]: type === 'route' ? serializeRouteParams(routeParams) : null,
         });
+
+        if (type === 'route' && linkRef) {
+            void resolveAppRouteHref(editor, linkRef, routeParams).then((url) => {
+                if (! url || url === '#' || component.isRemoved?.()) {
+                    return;
+                }
+
+                runWithSettingsChangeGuard(editor, () => {
+                    component.set({ href: url });
+                    component.addAttributes({ href: url });
+                });
+            });
+        }
 
         if (needsGlyphRebuild) {
             replaceIconGlyph(component, tablerIconSvg(iconName, {
@@ -869,18 +898,8 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
     });
 }
 
-function resolveHref(editor, linkType, linkRef, href) {
-    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
-
-    if (linkType === 'page') {
-        return (targets.pages ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
-    }
-
-    if (linkType === 'menu') {
-        return (targets.menuItems ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
-    }
-
-    return String(href ?? '#').trim() || '#';
+function resolveHref(editor, linkType, linkRef, href, extra = {}) {
+    return resolveEditorLinkHref(editor, linkType, linkRef, href, extra);
 }
 
 function createSegmentedControl({ label, name, value, options, onChange }) {
@@ -1306,7 +1325,7 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         return true;
     }
 
-    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
     const attrs = host.getAttributes?.() ?? {};
     let iconName = resolveTablerIconName(attrs['data-vb-icon'] ?? DEFAULT_TABLER_ICON);
     let sizeClass = attrs['data-vb-icon-size'] || readIconSize(host);
@@ -1317,6 +1336,21 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
     let linkRef = String(host.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(host.get('href') ?? attrs.href ?? '');
     let target = String(host.get('target') ?? attrs.target ?? '');
+    let mailSubject = String(host.get('mailSubject') ?? attrs[MAIL_SUBJECT_ATTR] ?? '');
+    let routeParams = readRouteParamsFromAttrs(attrs);
+
+    if (linkType === 'mail' || String(href).toLowerCase().startsWith('mailto:')) {
+        linkType = 'mail';
+        const parsed = parseMailtoHref(href);
+
+        if (! linkRef) {
+            linkRef = parsed.email;
+        }
+
+        if (! mailSubject) {
+            mailSubject = parsed.subject;
+        }
+    }
 
     traitsMount?.classList.add('hidden');
     traitsMount?.replaceChildren?.();
@@ -1358,12 +1392,7 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         label: labels.iconLinkType ?? 'Link',
         name: 'iconLinkType',
         value: linkType,
-        options: [
-            { value: 'none', label: labels.iconLinkNone ?? 'No link' },
-            { value: 'url', label: labels.buttonLinkTypeUrl ?? 'URL' },
-            { value: 'page', label: labels.buttonLinkTypePage ?? 'Site page' },
-            { value: 'menu', label: labels.buttonLinkTypeMenu ?? 'Menu item' },
-        ],
+        options: linkTypeSelectOptions(labels, { includeNone: true }),
         onChange: (value) => {
             linkType = value;
             syncVisibility();
@@ -1412,6 +1441,42 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         },
     });
 
+    const { field: mailField, input: mailInput } = createTextField({
+        label: labels.buttonLinkMail ?? 'Email address',
+        name: 'iconLinkMail',
+        value: linkType === 'mail' ? linkRef : '',
+        placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
+    });
+
+    const { field: subjectField, input: subjectInput } = createTextField({
+        label: labels.buttonLinkMailSubject ?? 'Subject',
+        name: 'iconLinkMailSubject',
+        value: mailSubject,
+        placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
+    });
+
+    const routeField = createSelectField({
+        label: labels.buttonLinkRoute ?? 'App route',
+        name: 'iconLinkRefRoute',
+        value: linkType === 'route' ? linkRef : '',
+        options: [
+            { value: '', label: '—' },
+            ...(targets.routes ?? []).map((item) => ({
+                value: String(item.id),
+                label: item.label,
+            })),
+        ],
+        onChange: (value) => {
+            linkRef = value;
+            routeParams = {};
+            rebuildRouteParamFields();
+            commit();
+        },
+    });
+
+    const routeParamsMount = document.createElement('div');
+    routeParamsMount.className = 'voodbuilder-editor-form-route-params';
+
     const targetField = createSelectField({
         label: labels.buttonLinkTarget ?? 'Open in',
         name: 'iconLinkTarget',
@@ -1428,26 +1493,92 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
 
     const strokeField = picker.field.querySelector('[name="iconStroke"]')?.closest('.voodbuilder-editor-form-field');
 
+    fields.append(
+        picker.field,
+        sizeField,
+        typeField,
+        urlField,
+        pageField,
+        menuField,
+        mailField,
+        subjectField,
+        routeField,
+        routeParamsMount,
+        targetField,
+    );
+
+    const rebuildRouteParamFields = () => {
+        routeParamsMount.replaceChildren();
+
+        if (linkType !== 'route' || ! linkRef) {
+            return;
+        }
+
+        const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
+
+        for (const paramName of entry?.requiredParams ?? []) {
+            const { field, input } = createTextField({
+                label: paramName,
+                name: `iconRouteParam_${paramName}`,
+                value: String(routeParams[paramName] ?? ''),
+                placeholder: paramName,
+            });
+
+            input.addEventListener('input', () => {
+                routeParams = { ...routeParams, [paramName]: input.value };
+                commit();
+            });
+            input.addEventListener('change', () => {
+                routeParams = { ...routeParams, [paramName]: input.value };
+                commit();
+            });
+
+            routeParamsMount.appendChild(field);
+        }
+
+        editor.__voodbuilderEnhanceInspectorSelects?.(routeParamsMount);
+    };
+
     const syncVisibility = () => {
         const linked = linkType !== 'none';
         urlField.hidden = linkType !== 'url';
         pageField.hidden = linkType !== 'page';
         menuField.hidden = linkType !== 'menu';
-        targetField.hidden = ! linked;
+        mailField.hidden = linkType !== 'mail';
+        subjectField.hidden = linkType !== 'mail';
+        routeField.hidden = linkType !== 'route';
+        routeParamsMount.hidden = linkType !== 'route';
+        targetField.hidden = ! linked || linkType === 'mail';
 
         if (strokeField) {
             strokeField.hidden = iconStyle === 'filled';
         }
+
+        rebuildRouteParamFields();
     };
 
     const commit = () => {
         href = String(urlInput.value || '#').trim() || '#';
-        linkRef = linkType === 'page'
-            ? String(pageField.querySelector('select')?.value || '')
-            : linkType === 'menu'
-                ? String(menuField.querySelector('select')?.value || '')
-                : '';
-        target = linkType === 'none'
+        mailSubject = String(subjectInput.value || '').trim();
+
+        if (linkType === 'page') {
+            linkRef = String(pageField.querySelector('select')?.value || '');
+        } else if (linkType === 'menu') {
+            linkRef = String(menuField.querySelector('select')?.value || '');
+        } else if (linkType === 'mail') {
+            linkRef = String(mailInput.value || '').trim();
+            href = buildMailtoHref(linkRef, mailSubject);
+        } else if (linkType === 'route') {
+            linkRef = String(routeField.querySelector('select')?.value || '');
+        } else if (linkType === 'none' || linkType === 'url') {
+            if (linkType !== 'url') {
+                linkRef = '';
+            } else {
+                linkRef = '';
+            }
+        }
+
+        target = linkType === 'none' || linkType === 'mail'
             ? ''
             : String(targetField.querySelector('select')?.value || '');
 
@@ -1471,21 +1602,18 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
             linkType,
             linkRef,
             target,
+            mailSubject,
+            routeParams,
         });
     };
 
     urlInput.addEventListener('change', commit);
     urlInput.addEventListener('blur', commit);
+    mailInput.addEventListener('change', commit);
+    mailInput.addEventListener('blur', commit);
+    subjectInput.addEventListener('change', commit);
+    subjectInput.addEventListener('blur', commit);
 
-    fields.append(
-        picker.field,
-        sizeField,
-        typeField,
-        urlField,
-        pageField,
-        menuField,
-        targetField,
-    );
     mount.appendChild(section);
     syncVisibility();
     editor.__voodbuilderEnhanceInspectorSelects?.(mount);
@@ -1504,6 +1632,8 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         linkType,
         linkRef,
         target,
+        mailSubject,
+        routeParams,
     });
 
     // Prefetch catalog so apply uses full paths after first open.
@@ -1535,25 +1665,36 @@ function readTextLinkLabel(component) {
         || 'Text link';
 }
 
-function applyTextLinkToComponent(component, editor, { label, linkType, linkRef, href, target }) {
-    const resolvedHref = resolveHref(editor, linkType, linkRef, href);
+function applyTextLinkToComponent(component, editor, {
+    label,
+    linkType,
+    linkRef,
+    href,
+    target,
+    mailSubject = '',
+    routeParams = {},
+}) {
+    const resolvedHref = resolveHref(editor, linkType, linkRef, href, { mailSubject, routeParams });
     const nextLabel = String(label ?? '').trim() || 'Text link';
 
     runWithSettingsChangeGuard(editor, () => {
         component.set({
             href: resolvedHref,
-            target: target || '',
+            target: linkType === 'mail' ? '' : (target || ''),
             'data-vb-link-type': linkType,
             linkType,
             linkRef: linkType === 'url' ? '' : linkRef,
+            mailSubject: linkType === 'mail' ? mailSubject : '',
         });
 
         component.addAttributes({
             href: resolvedHref,
-            target: target || null,
-            rel: target === '_blank' ? 'noopener noreferrer' : null,
+            target: linkType === 'mail' || ! target ? null : target,
+            rel: linkType !== 'mail' && target === '_blank' ? 'noopener noreferrer' : null,
             'data-vb-link-type': linkType,
             'data-vb-link': linkType === 'url' ? null : (linkRef || null),
+            [MAIL_SUBJECT_ATTR]: linkType === 'mail' && mailSubject ? mailSubject : null,
+            [ROUTE_PARAMS_ATTR]: linkType === 'route' ? serializeRouteParams(routeParams) : null,
         });
 
         const children = [...(component.components?.() ?? [])];
@@ -1565,6 +1706,19 @@ function applyTextLinkToComponent(component, editor, { label, linkType, linkRef,
             component.components(nextLabel);
         }
     });
+
+    if (linkType === 'route' && linkRef) {
+        void resolveAppRouteHref(editor, linkRef, routeParams).then((url) => {
+            if (! url || url === '#' || component.isRemoved?.()) {
+                return;
+            }
+
+            runWithSettingsChangeGuard(editor, () => {
+                component.set({ href: url });
+                component.addAttributes({ href: url });
+            });
+        });
+    }
 }
 
 /**
@@ -1587,16 +1741,31 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         return true;
     }
 
-    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
     const attrs = component.getAttributes?.() ?? {};
     let linkType = String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url';
     let linkRef = String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(component.get('href') ?? attrs.href ?? '#');
     let target = String(component.get('target') ?? attrs.target ?? '');
     let label = readTextLinkLabel(component);
+    let mailSubject = String(component.get('mailSubject') ?? attrs[MAIL_SUBJECT_ATTR] ?? '');
+    let routeParams = readRouteParamsFromAttrs(attrs);
 
     if (linkType === 'none') {
         linkType = 'url';
+    }
+
+    if (linkType === 'mail' || String(href).toLowerCase().startsWith('mailto:')) {
+        linkType = 'mail';
+        const parsed = parseMailtoHref(href);
+
+        if (! linkRef) {
+            linkRef = parsed.email;
+        }
+
+        if (! mailSubject) {
+            mailSubject = parsed.subject;
+        }
     }
 
     traitsMount?.classList.add('hidden');
@@ -1618,11 +1787,7 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         label: labels.buttonLinkType ?? 'Link type',
         name: 'textLinkType',
         value: linkType,
-        options: [
-            { value: 'url', label: labels.buttonLinkTypeUrl ?? 'URL' },
-            { value: 'page', label: labels.buttonLinkTypePage ?? 'Site page' },
-            { value: 'menu', label: labels.buttonLinkTypeMenu ?? 'Menu item' },
-        ],
+        options: linkTypeSelectOptions(labels),
         onChange: (value) => {
             linkType = value;
             syncVisibility();
@@ -1671,6 +1836,42 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         },
     });
 
+    const { field: mailField, input: mailInput } = createTextField({
+        label: labels.buttonLinkMail ?? 'Email address',
+        name: 'textLinkMail',
+        value: linkType === 'mail' ? linkRef : '',
+        placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
+    });
+
+    const { field: subjectField, input: subjectInput } = createTextField({
+        label: labels.buttonLinkMailSubject ?? 'Subject',
+        name: 'textLinkMailSubject',
+        value: mailSubject,
+        placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
+    });
+
+    const routeField = createSelectField({
+        label: labels.buttonLinkRoute ?? 'App route',
+        name: 'textLinkRefRoute',
+        value: linkType === 'route' ? linkRef : '',
+        options: [
+            { value: '', label: '—' },
+            ...(targets.routes ?? []).map((item) => ({
+                value: String(item.id),
+                label: item.label,
+            })),
+        ],
+        onChange: (value) => {
+            linkRef = value;
+            routeParams = {};
+            rebuildRouteParamFields();
+            commit();
+        },
+    });
+
+    const routeParamsMount = document.createElement('div');
+    routeParamsMount.className = 'voodbuilder-editor-form-route-params';
+
     const targetField = createSelectField({
         label: labels.buttonLinkTarget ?? 'Open in',
         name: 'textLinkTarget',
@@ -1685,24 +1886,85 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         },
     });
 
-    fields.append(labelField, typeField, urlField, pageField, menuField, targetField);
+    fields.append(
+        labelField,
+        typeField,
+        urlField,
+        pageField,
+        menuField,
+        mailField,
+        subjectField,
+        routeField,
+        routeParamsMount,
+        targetField,
+    );
     mount.appendChild(section);
+
+    const rebuildRouteParamFields = () => {
+        routeParamsMount.replaceChildren();
+
+        if (linkType !== 'route' || ! linkRef) {
+            return;
+        }
+
+        const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
+
+        for (const paramName of entry?.requiredParams ?? []) {
+            const { field, input } = createTextField({
+                label: paramName,
+                name: `textLinkRouteParam_${paramName}`,
+                value: String(routeParams[paramName] ?? ''),
+                placeholder: paramName,
+            });
+
+            input.addEventListener('input', () => {
+                routeParams = { ...routeParams, [paramName]: input.value };
+                commit();
+            });
+            input.addEventListener('change', () => {
+                routeParams = { ...routeParams, [paramName]: input.value };
+                commit();
+            });
+
+            routeParamsMount.appendChild(field);
+        }
+
+        editor.__voodbuilderEnhanceInspectorSelects?.(routeParamsMount);
+    };
 
     const syncVisibility = () => {
         urlField.hidden = linkType !== 'url';
         pageField.hidden = linkType !== 'page';
         menuField.hidden = linkType !== 'menu';
+        mailField.hidden = linkType !== 'mail';
+        subjectField.hidden = linkType !== 'mail';
+        routeField.hidden = linkType !== 'route';
+        routeParamsMount.hidden = linkType !== 'route';
+        targetField.hidden = linkType === 'mail';
+        rebuildRouteParamFields();
     };
 
     const commit = () => {
         label = String(labelInput.value || 'Text link').trim() || 'Text link';
         href = String(urlInput.value || '#').trim() || '#';
-        linkRef = linkType === 'page'
-            ? String(pageField.querySelector('select')?.value || '')
-            : linkType === 'menu'
-                ? String(menuField.querySelector('select')?.value || '')
-                : '';
-        target = String(targetField.querySelector('select')?.value || '');
+        mailSubject = String(subjectInput.value || '').trim();
+
+        if (linkType === 'page') {
+            linkRef = String(pageField.querySelector('select')?.value || '');
+        } else if (linkType === 'menu') {
+            linkRef = String(menuField.querySelector('select')?.value || '');
+        } else if (linkType === 'mail') {
+            linkRef = String(mailInput.value || '').trim();
+            href = buildMailtoHref(linkRef, mailSubject);
+        } else if (linkType === 'route') {
+            linkRef = String(routeField.querySelector('select')?.value || '');
+        } else {
+            linkRef = '';
+        }
+
+        target = linkType === 'mail'
+            ? ''
+            : String(targetField.querySelector('select')?.value || '');
 
         applyTextLinkToComponent(component, editor, {
             label,
@@ -1710,6 +1972,8 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
             linkRef,
             href,
             target,
+            mailSubject,
+            routeParams,
         });
     };
 
@@ -1717,6 +1981,10 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
     labelInput.addEventListener('blur', commit);
     urlInput.addEventListener('change', commit);
     urlInput.addEventListener('blur', commit);
+    mailInput.addEventListener('change', commit);
+    mailInput.addEventListener('blur', commit);
+    subjectInput.addEventListener('change', commit);
+    subjectInput.addEventListener('blur', commit);
 
     syncVisibility();
     editor.__voodbuilderEnhanceInspectorSelects?.(mount);

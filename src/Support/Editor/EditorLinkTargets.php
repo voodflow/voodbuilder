@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
 /**
@@ -17,7 +19,8 @@ final class EditorLinkTargets
     /**
      * @return array{
      *     pages: list<array{id: string, label: string, url: string}>,
-     *     menuItems: list<array{id: string, label: string, url: string}>
+     *     menuItems: list<array{id: string, label: string, url: string}>,
+     *     routes: list<array{id: string, label: string, url: string, requiredParams: list<string>}>
      * }
      */
     public static function catalog(): array
@@ -25,6 +28,7 @@ final class EditorLinkTargets
         return [
             'pages' => self::pages(),
             'menuItems' => self::menuItems(),
+            'routes' => self::routes(),
         ];
     }
 
@@ -84,5 +88,54 @@ final class EditorLinkTargets
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<array{id: string, label: string, url: string, requiredParams: list<string>}>
+     */
+    public static function routes(): array
+    {
+        $out = [];
+
+        foreach (MenuRouteCatalog::options() as $name => $label) {
+            $required = MenuRouteCatalog::requiredParameterNames($name);
+            $url = '#';
+
+            if ($required === []) {
+                $url = self::resolveRoute($name);
+            }
+
+            $out[] = [
+                'id' => $name,
+                'label' => $label,
+                'url' => $url,
+                'requiredParams' => $required,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    public static function resolveRoute(string $routeName, array $parameters = []): string
+    {
+        $name = trim($routeName);
+
+        if ($name === '' || ! Route::has($name)) {
+            return '#';
+        }
+
+        try {
+            $url = route($name, array_filter(
+                $parameters,
+                static fn (mixed $value): bool => filled($value),
+            ));
+
+            return is_string($url) && $url !== '' ? $url : '#';
+        } catch (\Throwable) {
+            return '#';
+        }
     }
 }

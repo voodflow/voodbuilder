@@ -1,9 +1,20 @@
 /**
- * Link picker dialog matching CTA / Icon link settings (URL · page · menu + target).
+ * Link picker dialog matching CTA / Icon link settings
+ * (URL · page · menu · mail · route + target).
  */
 
 import { createSelectField, createTextField } from './editor-form-ui.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
+import {
+    MAIL_SUBJECT_ATTR,
+    ROUTE_PARAMS_ATTR,
+    buildMailtoHref,
+    linkTypeSelectOptions,
+    parseMailtoHref,
+    resolveAppRouteHref,
+    resolveEditorLinkHref,
+    serializeRouteParams,
+} from './editor-link-resolve.js';
 
 let activeDialog = null;
 
@@ -46,31 +57,12 @@ export function ensureRichTextLinkClasses(anchor) {
     }
 }
 
-/**
- * @param {object|null|undefined} editor
- * @param {string} linkType
- * @param {string} linkRef
- * @param {string} href
- * @returns {string}
- */
-export function resolveEditorLinkHref(editor, linkType, linkRef, href) {
-    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
-
-    if (linkType === 'page') {
-        return (targets.pages ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
-    }
-
-    if (linkType === 'menu') {
-        return (targets.menuItems ?? []).find((item) => String(item.id) === String(linkRef))?.url || '#';
-    }
-
-    return String(href ?? '#').trim() || '#';
-}
+export { resolveEditorLinkHref };
 
 /**
  * Build an HTML anchor opening tag from link picker result.
  *
- * @param {{ href: string, target?: string, linkType?: string, linkRef?: string }} link
+ * @param {{ href: string, target?: string, linkType?: string, linkRef?: string, mailSubject?: string, routeParams?: Record<string, string> }} link
  * @param {string} [extraAttrs]
  * @returns {string}
  */
@@ -79,6 +71,8 @@ export function buildAnchorOpenTag(link, extraAttrs = '') {
     const target = String(link.target ?? '').trim();
     const linkType = String(link.linkType ?? 'url').trim() || 'url';
     const linkRef = String(link.linkRef ?? '').trim();
+    const mailSubject = String(link.mailSubject ?? '').trim();
+    const routeParamsJson = serializeRouteParams(link.routeParams ?? {});
     const classAttr = `class="${escapeAttr(RICH_TEXT_LINK_CLASSES.join(' '))}"`;
     const parts = [
         `href="${escapeAttr(href)}"`,
@@ -90,11 +84,19 @@ export function buildAnchorOpenTag(link, extraAttrs = '') {
         parts.push(`data-vb-link="${escapeAttr(linkRef)}"`);
     }
 
-    if (target) {
+    if (linkType === 'mail' && mailSubject) {
+        parts.push(`${MAIL_SUBJECT_ATTR}="${escapeAttr(mailSubject)}"`);
+    }
+
+    if (linkType === 'route' && routeParamsJson) {
+        parts.push(`${ROUTE_PARAMS_ATTR}="${escapeAttr(routeParamsJson)}"`);
+    }
+
+    if (target && linkType !== 'mail') {
         parts.push(`target="${escapeAttr(target)}"`);
     }
 
-    if (target === '_blank') {
+    if (target === '_blank' && linkType !== 'mail') {
         parts.push('rel="noopener noreferrer"');
     }
 
@@ -109,29 +111,45 @@ export function buildAnchorOpenTag(link, extraAttrs = '') {
  * Apply href/target/type + standard visual classes on an existing <a>.
  *
  * @param {Element|null|undefined} anchor
- * @param {{ href: string, target?: string, linkType?: string, linkRef?: string }} link
+ * @param {{ href: string, target?: string, linkType?: string, linkRef?: string, mailSubject?: string, routeParams?: Record<string, string> }} link
  */
 export function applyRichTextLinkAttrs(anchor, link) {
     if (! anchor) {
         return;
     }
 
-    anchor.setAttribute('href', link.href || '#');
-    anchor.setAttribute('data-vb-link-type', link.linkType || 'url');
+    const linkType = link.linkType || 'url';
 
-    if (link.linkType !== 'url' && link.linkRef) {
+    anchor.setAttribute('href', link.href || '#');
+    anchor.setAttribute('data-vb-link-type', linkType);
+
+    if (linkType !== 'url' && link.linkRef) {
         anchor.setAttribute('data-vb-link', link.linkRef);
     } else {
         anchor.removeAttribute('data-vb-link');
     }
 
-    if (link.target) {
+    if (linkType === 'mail' && link.mailSubject) {
+        anchor.setAttribute(MAIL_SUBJECT_ATTR, link.mailSubject);
+    } else {
+        anchor.removeAttribute(MAIL_SUBJECT_ATTR);
+    }
+
+    const routeParamsJson = serializeRouteParams(link.routeParams ?? {});
+
+    if (linkType === 'route' && routeParamsJson) {
+        anchor.setAttribute(ROUTE_PARAMS_ATTR, routeParamsJson);
+    } else {
+        anchor.removeAttribute(ROUTE_PARAMS_ATTR);
+    }
+
+    if (link.target && linkType !== 'mail') {
         anchor.setAttribute('target', link.target);
     } else {
         anchor.removeAttribute('target');
     }
 
-    if (link.target === '_blank') {
+    if (link.target === '_blank' && linkType !== 'mail') {
         anchor.setAttribute('rel', 'noopener noreferrer');
     } else {
         anchor.removeAttribute('rel');
@@ -151,7 +169,7 @@ function escapeAttr(value) {
  * Read link fields from an existing <a> (or null).
  *
  * @param {Element|null|undefined} anchor
- * @returns {{ linkType: string, href: string, linkRef: string, target: string, isLink: boolean }}
+ * @returns {{ linkType: string, href: string, linkRef: string, target: string, mailSubject: string, isLink: boolean }}
  */
 export function readAnchorLinkState(anchor) {
     if (! anchor) {
@@ -160,15 +178,35 @@ export function readAnchorLinkState(anchor) {
             href: '',
             linkRef: '',
             target: '',
+            mailSubject: '',
             isLink: false,
         };
     }
 
+    const href = String(anchor.getAttribute('href') ?? '').trim();
+    let linkType = String(anchor.getAttribute('data-vb-link-type') ?? 'url').trim() || 'url';
+    let linkRef = String(anchor.getAttribute('data-vb-link') ?? '').trim();
+    let mailSubject = String(anchor.getAttribute(MAIL_SUBJECT_ATTR) ?? '').trim();
+
+    if (linkType === 'mail' || href.toLowerCase().startsWith('mailto:')) {
+        linkType = 'mail';
+        const parsed = parseMailtoHref(href);
+
+        if (! linkRef) {
+            linkRef = parsed.email;
+        }
+
+        if (! mailSubject) {
+            mailSubject = parsed.subject;
+        }
+    }
+
     return {
-        linkType: String(anchor.getAttribute('data-vb-link-type') ?? 'url').trim() || 'url',
-        href: String(anchor.getAttribute('href') ?? '').trim(),
-        linkRef: String(anchor.getAttribute('data-vb-link') ?? '').trim(),
+        linkType,
+        href,
+        linkRef,
         target: String(anchor.getAttribute('target') ?? '').trim(),
+        mailSubject,
         isLink: true,
     };
 }
@@ -183,9 +221,10 @@ export function readAnchorLinkState(anchor) {
  *   defaultHref?: string,
  *   defaultLinkRef?: string,
  *   defaultTarget?: string,
+ *   defaultMailSubject?: string,
  *   allowRemove?: boolean,
  * }} [options]
- * @returns {Promise<null|{ remove: true }|{ linkType: string, href: string, linkRef: string, target: string }>}
+ * @returns {Promise<null|{ remove: true }|{ linkType: string, href: string, linkRef: string, target: string, mailSubject?: string, routeParams?: Record<string, string> }>}
  */
 export function linkPickerDialog(options = {}) {
     if (activeDialog) {
@@ -194,7 +233,7 @@ export function linkPickerDialog(options = {}) {
 
     const labels = options.labels ?? {};
     const editor = options.editor ?? null;
-    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
     const dismissLabel = labels.dialogCancel ?? 'Cancel';
     const okLabel = labels.dialogConfirm ?? 'Confirm';
     const dialogTitle = options.title ?? labels.rteLinkPromptTitle ?? labels.buttonLinkType ?? 'Link';
@@ -204,9 +243,20 @@ export function linkPickerDialog(options = {}) {
     let href = String(options.defaultHref ?? '').trim();
     let linkRef = String(options.defaultLinkRef ?? '').trim();
     let target = String(options.defaultTarget ?? '').trim();
+    let mailSubject = String(options.defaultMailSubject ?? '').trim();
+    let routeParams = {};
 
-    if (linkType !== 'url' && linkType !== 'page' && linkType !== 'menu') {
-        linkType = 'url';
+    const allowed = new Set(['url', 'page', 'menu', 'mail', 'route']);
+
+    if (! allowed.has(linkType)) {
+        if (href.toLowerCase().startsWith('mailto:')) {
+            linkType = 'mail';
+            const parsed = parseMailtoHref(href);
+            linkRef = parsed.email;
+            mailSubject = mailSubject || parsed.subject;
+        } else {
+            linkType = 'url';
+        }
     }
 
     return new Promise((resolve) => {
@@ -247,11 +297,7 @@ export function linkPickerDialog(options = {}) {
             label: labels.buttonLinkType ?? 'Link type',
             name: 'linkPickerType',
             value: linkType,
-            options: [
-                { value: 'url', label: labels.buttonLinkTypeUrl ?? 'URL' },
-                { value: 'page', label: labels.buttonLinkTypePage ?? 'Site page' },
-                { value: 'menu', label: labels.buttonLinkTypeMenu ?? 'Menu item' },
-            ],
+            options: linkTypeSelectOptions(labels),
             onChange: (value) => {
                 linkType = value;
                 syncVisibility();
@@ -297,6 +343,41 @@ export function linkPickerDialog(options = {}) {
             },
         });
 
+        const { field: mailField, input: mailInput } = createTextField({
+            label: labels.buttonLinkMail ?? 'Email address',
+            name: 'linkPickerMail',
+            value: linkType === 'mail' ? linkRef : '',
+            placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
+        });
+
+        const { field: subjectField, input: subjectInput } = createTextField({
+            label: labels.buttonLinkMailSubject ?? 'Subject',
+            name: 'linkPickerMailSubject',
+            value: mailSubject,
+            placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
+        });
+
+        const routeField = createSelectField({
+            label: labels.buttonLinkRoute ?? 'App route',
+            name: 'linkPickerRoute',
+            value: linkType === 'route' ? linkRef : '',
+            options: [
+                { value: '', label: '—' },
+                ...(targets.routes ?? []).map((item) => ({
+                    value: String(item.id),
+                    label: item.label,
+                })),
+            ],
+            onChange: (value) => {
+                linkRef = value;
+                routeParams = {};
+                rebuildRouteParamFields();
+            },
+        });
+
+        const routeParamsMount = document.createElement('div');
+        routeParamsMount.className = 'voodbuilder-editor-form-route-params';
+
         const targetField = createSelectField({
             label: labels.buttonLinkTarget ?? 'Open in',
             name: 'linkPickerTarget',
@@ -310,13 +391,56 @@ export function linkPickerDialog(options = {}) {
             },
         });
 
+        const rebuildRouteParamFields = () => {
+            routeParamsMount.replaceChildren();
+
+            if (linkType !== 'route' || ! linkRef) {
+                return;
+            }
+
+            const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
+
+            for (const paramName of entry?.requiredParams ?? []) {
+                const { field, input } = createTextField({
+                    label: paramName,
+                    name: `linkPickerRouteParam_${paramName}`,
+                    value: String(routeParams[paramName] ?? ''),
+                    placeholder: paramName,
+                });
+
+                input.addEventListener('input', () => {
+                    routeParams = { ...routeParams, [paramName]: input.value };
+                });
+
+                routeParamsMount.appendChild(field);
+            }
+
+            enhanceInspectorSelects(routeParamsMount);
+        };
+
         const syncVisibility = () => {
             urlField.hidden = linkType !== 'url';
             pageField.hidden = linkType !== 'page';
             menuField.hidden = linkType !== 'menu';
+            mailField.hidden = linkType !== 'mail';
+            subjectField.hidden = linkType !== 'mail';
+            routeField.hidden = linkType !== 'route';
+            routeParamsMount.hidden = linkType !== 'route';
+            targetField.hidden = linkType === 'mail';
+            rebuildRouteParamFields();
         };
 
-        fields.append(typeField, urlField, pageField, menuField, targetField);
+        fields.append(
+            typeField,
+            urlField,
+            pageField,
+            menuField,
+            mailField,
+            subjectField,
+            routeField,
+            routeParamsMount,
+            targetField,
+        );
         body.appendChild(fields);
         syncVisibility();
 
@@ -359,14 +483,26 @@ export function linkPickerDialog(options = {}) {
             dismissActiveDialog(result);
         };
 
-        const submit = () => {
+        const submit = async () => {
             href = String(urlInput.value || '').trim();
-            linkRef = linkType === 'page'
-                ? String(pageField.querySelector('select')?.value || '')
-                : linkType === 'menu'
-                    ? String(menuField.querySelector('select')?.value || '')
-                    : '';
-            target = String(targetField.querySelector('select')?.value || '');
+            mailSubject = String(subjectInput.value || '').trim();
+
+            if (linkType === 'page') {
+                linkRef = String(pageField.querySelector('select')?.value || '');
+            } else if (linkType === 'menu') {
+                linkRef = String(menuField.querySelector('select')?.value || '');
+            } else if (linkType === 'mail') {
+                linkRef = String(mailInput.value || '').trim();
+                href = buildMailtoHref(linkRef, mailSubject);
+            } else if (linkType === 'route') {
+                linkRef = String(routeField.querySelector('select')?.value || '');
+            } else {
+                linkRef = '';
+            }
+
+            target = linkType === 'mail'
+                ? ''
+                : String(targetField.querySelector('select')?.value || '');
 
             if (linkType === 'url' && href === '') {
                 urlInput.focus();
@@ -374,20 +510,37 @@ export function linkPickerDialog(options = {}) {
                 return;
             }
 
-            if ((linkType === 'page' || linkType === 'menu') && linkRef === '') {
-                const select = (linkType === 'page' ? pageField : menuField).querySelector('select');
+            if ((linkType === 'page' || linkType === 'menu' || linkType === 'route') && linkRef === '') {
+                const select = (
+                    linkType === 'page' ? pageField : linkType === 'menu' ? menuField : routeField
+                ).querySelector('select');
                 select?.focus();
 
                 return;
             }
 
-            const resolved = resolveEditorLinkHref(editor, linkType, linkRef, href);
+            if (linkType === 'mail' && linkRef === '') {
+                mailInput.focus();
+
+                return;
+            }
+
+            let resolved = resolveEditorLinkHref(editor, linkType, linkRef, href, {
+                mailSubject,
+                routeParams,
+            });
+
+            if (linkType === 'route' && linkRef) {
+                resolved = await resolveAppRouteHref(editor, linkRef, routeParams) || resolved;
+            }
 
             finish({
                 linkType,
                 href: resolved,
                 linkRef: linkType === 'url' ? '' : linkRef,
                 target,
+                mailSubject: linkType === 'mail' ? mailSubject : '',
+                routeParams: linkType === 'route' ? routeParams : {},
             });
         };
 
@@ -397,9 +550,9 @@ export function linkPickerDialog(options = {}) {
                 finish(null);
             }
 
-            if (event.key === 'Enter' && event.target === urlInput) {
+            if (event.key === 'Enter' && (event.target === urlInput || event.target === mailInput)) {
                 event.preventDefault();
-                submit();
+                void submit();
             }
         };
 
@@ -413,13 +566,17 @@ export function linkPickerDialog(options = {}) {
             finish({ remove: true });
         });
 
-        confirmBtn.addEventListener('click', submit);
+        confirmBtn.addEventListener('click', () => {
+            void submit();
+        });
         window.addEventListener('keydown', onKeyDown, true);
 
         window.requestAnimationFrame(() => {
             if (linkType === 'url') {
                 urlInput.focus();
                 urlInput.select();
+            } else if (linkType === 'mail') {
+                mailInput.focus();
             } else {
                 confirmBtn.focus();
             }

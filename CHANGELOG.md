@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.108] - 2026-09-23
+
+### Added
+
+- Button / text link / icon / RTE link types: **Email** (address + subject) and **App route** (select from MenuRouteCatalog, with required params)
+
 ## [0.1.107] - 2026-09-23
 
 ### Fixed

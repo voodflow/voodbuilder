@@ -957,8 +957,9 @@ export function initVoodbuilderEditor(container, options = {}) {
     editor.__voodbuilderVevents = options.vevents ?? null;
 
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
-    editor.__voodbuilderLinkTargets = { pages: [], menuItems: [] };
+    editor.__voodbuilderLinkTargets = { pages: [], menuItems: [], routes: [] };
     editor.__voodbuilderLinkTargetsUrl = options.linkTargetsUrl ?? null;
+    editor.__voodbuilderResolvedRoutes = {};
     editor.__voodbuilderPageContentWidth = normalizePageContentWidth(options);
     editor.__voodbuilderChromeWidth = normalizeChromeWidth(options);
     editor.__voodbuilderFullWidthPage = editor.__voodbuilderPageContentWidth.mode === 'full'
@@ -2019,6 +2020,7 @@ async function loadLinkTargets(editor, linkTargetsUrl) {
         editor.__voodbuilderLinkTargets = {
             pages: Array.isArray(payload.pages) ? payload.pages : [],
             menuItems: Array.isArray(payload.menuItems) ? payload.menuItems : [],
+            routes: Array.isArray(payload.routes) ? payload.routes : [],
         };
     } catch (error) {
         console.error('Voodbuilder Editor: could not load link targets.', error);

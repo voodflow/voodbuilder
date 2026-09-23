@@ -10,6 +10,7 @@
  */
 
 import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js';
+import { resolveEditorLinkHref as resolveSharedLinkHref } from './editor-link-resolve.js';
 
 export const CTA_LABEL_ATTR = 'data-voodbuilder-cta-label';
 
@@ -415,6 +416,8 @@ function buttonLinkTraitSchema(labels = {}, editor = null) {
                 { id: 'url', name: labels.buttonLinkTypeUrl ?? 'URL' },
                 { id: 'page', name: labels.buttonLinkTypePage ?? 'Site page' },
                 { id: 'menu', name: labels.buttonLinkTypeMenu ?? 'Menu item' },
+                { id: 'mail', name: labels.buttonLinkTypeMail ?? 'Email' },
+                { id: 'route', name: labels.buttonLinkTypeRoute ?? 'App route' },
             ],
             changeProp: true,
         },
@@ -450,7 +453,7 @@ function buttonLinkTraitSchema(labels = {}, editor = null) {
 
 function linkTraitsFor(editor, component = null) {
     const labels = editor?.__voodbuilderLabels ?? {};
-    const linkTargets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
+    const linkTargets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
     const linkType = String(component?.get?.('linkType') ?? component?.getAttributes?.()?.['data-vb-link-type'] ?? 'url');
     const traits = [
         {
@@ -467,6 +470,8 @@ function linkTraitsFor(editor, component = null) {
                 { id: 'url', name: labels.buttonLinkTypeUrl ?? 'URL' },
                 { id: 'page', name: labels.buttonLinkTypePage ?? 'Site page' },
                 { id: 'menu', name: labels.buttonLinkTypeMenu ?? 'Menu item' },
+                { id: 'mail', name: labels.buttonLinkTypeMail ?? 'Email' },
+                { id: 'route', name: labels.buttonLinkTypeRoute ?? 'App route' },
             ],
             changeProp: true,
         },
@@ -494,6 +499,34 @@ function linkTraitsFor(editor, component = null) {
             ],
             changeProp: true,
         });
+    } else if (linkType === 'route') {
+        traits.push({
+            type: 'select',
+            name: 'linkRef',
+            label: labels.buttonLinkRoute ?? 'App route',
+            options: [
+                { id: '', name: '—' },
+                ...(linkTargets.routes ?? []).map((item) => ({ id: String(item.id), name: item.label })),
+            ],
+            changeProp: true,
+        });
+    } else if (linkType === 'mail') {
+        traits.push(
+            {
+                type: 'text',
+                name: 'linkRef',
+                label: labels.buttonLinkMail ?? 'Email address',
+                placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
+                changeProp: true,
+            },
+            {
+                type: 'text',
+                name: 'mailSubject',
+                label: labels.buttonLinkMailSubject ?? 'Subject',
+                placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
+                changeProp: true,
+            },
+        );
     } else {
         traits.push({
             type: 'text',
@@ -504,36 +537,24 @@ function linkTraitsFor(editor, component = null) {
         });
     }
 
-    traits.push({
-        type: 'select',
-        name: 'target',
-        label: labels.buttonLinkTarget ?? 'Open in',
-        options: [
-            { id: '', name: labels.buttonLinkSameTab ?? 'Same tab' },
-            { id: '_blank', name: labels.buttonLinkNewTab ?? 'New tab' },
-        ],
-        changeProp: true,
-    });
+    if (linkType !== 'mail') {
+        traits.push({
+            type: 'select',
+            name: 'target',
+            label: labels.buttonLinkTarget ?? 'Open in',
+            options: [
+                { id: '', name: labels.buttonLinkSameTab ?? 'Same tab' },
+                { id: '_blank', name: labels.buttonLinkNewTab ?? 'New tab' },
+            ],
+            changeProp: true,
+        });
+    }
 
     return traits;
 }
 
 function resolveLinkHref(editor, linkType, linkRef, href) {
-    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [] };
-
-    if (linkType === 'page') {
-        const page = (targets.pages ?? []).find((item) => String(item.id) === String(linkRef));
-
-        return page?.url || '#';
-    }
-
-    if (linkType === 'menu') {
-        const item = (targets.menuItems ?? []).find((entry) => String(entry.id) === String(linkRef));
-
-        return item?.url || '#';
-    }
-
-    return String(href ?? '#').trim() || '#';
+    return resolveSharedLinkHref(editor, linkType, linkRef, href);
 }
 
 function syncLinkableButtonTraits(component, editor, { forceSelect = false } = {}) {
