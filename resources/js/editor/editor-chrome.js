@@ -39,12 +39,10 @@ export function editorChromeInitOptions() {
             default: 'desktop',
             devices: [
                 {
-                    id: 'desktop',
-                    name: 'Desktop',
-                    // Always fill the editor workspace. Page “content width” is a
-                    // layout concern inside the iframe — never shrink this frame.
-                    width: '',
-                    widthMedia: '1280px',
+                    id: 'mobilePortrait',
+                    name: 'Mobile',
+                    width: '390px',
+                    widthMedia: '480px',
                 },
                 {
                     id: 'tablet',
@@ -53,10 +51,12 @@ export function editorChromeInitOptions() {
                     widthMedia: '1024px',
                 },
                 {
-                    id: 'mobilePortrait',
-                    name: 'Mobile',
-                    width: '390px',
-                    widthMedia: '480px',
+                    id: 'desktop',
+                    name: 'Desktop',
+                    // Always fill the editor workspace. Page “content width” is a
+                    // layout concern inside the iframe — never shrink this frame.
+                    width: '',
+                    widthMedia: '1280px',
                 },
             ],
         },
@@ -401,11 +401,10 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
 
     const deviceButtons = [
         {
-            id: 'desktop',
-            command: CMD_DEVICE_DESKTOP,
-            icon: 'monitor',
-            title: labels.deviceDesktop ?? 'Desktop',
-            active: true,
+            id: 'mobile',
+            command: CMD_DEVICE_MOBILE,
+            icon: 'smartphone',
+            title: labels.deviceMobile ?? 'Mobile',
         },
         {
             id: 'tablet',
@@ -414,10 +413,11 @@ function mountEditorTopbar(editor, mount, labels = {}, shellRoot = null) {
             title: labels.deviceTablet ?? 'Tablet',
         },
         {
-            id: 'mobile',
-            command: CMD_DEVICE_MOBILE,
-            icon: 'smartphone',
-            title: labels.deviceMobile ?? 'Mobile',
+            id: 'desktop',
+            command: CMD_DEVICE_DESKTOP,
+            icon: 'monitor',
+            title: labels.deviceDesktop ?? 'Desktop',
+            active: true,
         },
     ];
 
