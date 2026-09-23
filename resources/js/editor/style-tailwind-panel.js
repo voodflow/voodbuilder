@@ -106,7 +106,44 @@ import {
     resolveSolidTextColor,
     utilityConflictGroupIds,
 } from './style-tailwind-class-groups.js';
+import {
+    STYLE_BREAKPOINT_PREFIXES,
+    currentStyleBreakpointPrefix,
+    deviceIdToBreakpointPrefix,
+    replaceClassGroupAllBreakpoints,
+    replaceClassGroupAtBreakpoint,
+    resolveGroupValueAtBreakpoint,
+    resolveGroupValueExact,
+    stripResponsivePrefix,
+} from './style-tailwind-breakpoints.js';
 import { hexForUtility } from './tailwind-color-palette.js';
+
+/**
+ * @param {Iterable<string>|string[]} classes
+ * @param {Array<{value: string, label?: string}>} options
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+function resolveStyleGroup(classes, options, editor = null) {
+    return resolveGroupValueAtBreakpoint(classes, options, currentStyleBreakpointPrefix(editor));
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @param {Set<string>} groupSet
+ * @param {string|null|undefined} nextClass
+ * @param {object|null|undefined} editor
+ * @param {{ alsoClear?: Iterable<Set<string>> }} [options]
+ */
+function replaceStyleGroup(component, groupSet, nextClass, editor = null, options = {}) {
+    replaceClassGroupAtBreakpoint(
+        component,
+        groupSet,
+        nextClass,
+        currentStyleBreakpointPrefix(editor),
+        options,
+    );
+}
 const GROUP_SETS = Object.fromEntries(
     STYLE_UTILITY_GROUPS.map((group) => [group.id, classSetFromOptions(group.options)]),
 );
@@ -146,7 +183,7 @@ function clearTextGradientUtilities(component, { includeGradientStops = true } =
         const groupSet = GROUP_SETS[id];
 
         if (groupSet) {
-            replaceClassGroup(component, groupSet, null);
+            replaceClassGroupAllBreakpoints(component, groupSet, null);
         }
     }
 }
@@ -224,7 +261,9 @@ function clearSolidTextColorUtilities(component) {
             continue;
         }
 
-        component.removeClass?.(value);
+        for (const bp of STYLE_BREAKPOINT_PREFIXES) {
+            component.removeClass?.(`${bp}${value}`);
+        }
     }
 }
 
@@ -382,7 +421,7 @@ function spacingTokenFromClass(value) {
         return '';
     }
 
-    return String(value).replace(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|mx|my|px|py)-/, '') || '';
+    return stripResponsivePrefix(value).replace(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|mx|my|px|py)-/, '') || '';
 }
 
 function spacingSideCellHtml(kind, side, title, scaleLabel) {
@@ -478,6 +517,149 @@ function ensureSectorsRoot(stylesMount) {
     return root;
 }
 
+/**
+ * Compact device strip at the top of Style — mirrors the topbar canvas device.
+ *
+ * @param {Record<string, string>} labels
+ * @returns {HTMLElement}
+ */
+function buildViewportStrip(labels) {
+    const strip = document.createElement('div');
+    strip.className = 'voodbuilder-editor-style-viewport';
+    strip.dataset.voodbuilderStyleViewportStrip = '';
+
+    const hint = labels.classStyleViewportHint ?? 'Styles for';
+    const mobile = labels.deviceMobile ?? 'Mobile';
+    const tablet = labels.deviceTablet ?? 'Tablet';
+    const desktop = labels.deviceDesktop ?? 'Desktop';
+    const aria = labels.classStyleViewportAria ?? 'Style viewport';
+
+    strip.innerHTML = `
+        <div class="voodbuilder-editor-style-viewport__meta">
+            <span class="voodbuilder-editor-style-viewport__hint" data-voodbuilder-style-viewport-hint>${escapeHtml(hint)}</span>
+            <code class="voodbuilder-editor-style-viewport__prefix" data-voodbuilder-style-viewport-prefix></code>
+        </div>
+        <div class="voodbuilder-editor-style-viewport__group" role="group" aria-label="${escapeAttr(aria)}">
+            <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="mobilePortrait" title="${escapeAttr(mobile)}">${escapeHtml(mobile)}</button>
+            <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="tablet" title="${escapeAttr(tablet)}">${escapeHtml(tablet)}</button>
+            <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="desktop" title="${escapeAttr(desktop)}">${escapeHtml(desktop)}</button>
+        </div>
+    `;
+
+    return strip;
+}
+
+/**
+ * @param {HTMLElement|null|undefined} root
+ * @param {object|null|undefined} editor
+ * @param {Record<string, string>} [labels]
+ */
+function syncViewportStrip(root, editor, labels = {}) {
+    if (! root) {
+        return;
+    }
+
+    const strip = root.querySelector?.('[data-voodbuilder-style-viewport-strip]')
+        ?? root.closest?.('.gjs-sm-sectors')?.querySelector?.('[data-voodbuilder-style-viewport-strip]');
+
+    if (! strip) {
+        return;
+    }
+
+    let deviceId = 'desktop';
+
+    try {
+        deviceId = String(
+            editor?.Devices?.getSelected?.()?.get?.('id')
+            ?? editor?.getDevice?.()
+            ?? 'desktop',
+        ).trim() || 'desktop';
+    } catch {
+        deviceId = 'desktop';
+    }
+
+    const prefix = deviceIdToBreakpointPrefix(deviceId);
+    const prefixEl = strip.querySelector('[data-voodbuilder-style-viewport-prefix]');
+    const hintEl = strip.querySelector('[data-voodbuilder-style-viewport-hint]');
+
+    if (prefixEl) {
+        prefixEl.textContent = prefix === ''
+            ? (labels.classStyleViewportBase ?? 'base')
+            : prefix.replace(/:$/, '');
+    }
+
+    if (hintEl) {
+        const deviceLabel = deviceId === 'tablet'
+            ? (labels.deviceTablet ?? 'Tablet')
+            : (deviceId === 'mobilePortrait' || deviceId === 'mobile')
+                ? (labels.deviceMobile ?? 'Mobile')
+                : (labels.deviceDesktop ?? 'Desktop');
+        const template = labels.classStyleViewportEditing
+            ?? 'Styles for {device}';
+        hintEl.textContent = String(template).replace('{device}', deviceLabel);
+    }
+
+    strip.querySelectorAll('button[data-voodbuilder-style-viewport]').forEach((button) => {
+        const id = button.getAttribute('data-voodbuilder-style-viewport') || '';
+        const active = id === deviceId
+            || (deviceId === 'mobile' && id === 'mobilePortrait');
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+}
+
+/**
+ * @param {object} editor
+ * @param {HTMLElement} strip
+ */
+function wireViewportStrip(editor, strip) {
+    if (! editor || ! strip || strip.dataset.voodbuilderStyleViewportWired === '1') {
+        return;
+    }
+
+    strip.dataset.voodbuilderStyleViewportWired = '1';
+
+    strip.querySelectorAll('button[data-voodbuilder-style-viewport]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const id = button.getAttribute('data-voodbuilder-style-viewport') || '';
+
+            if (! id) {
+                return;
+            }
+
+            try {
+                editor.setDevice?.(id);
+            } catch {
+                // Device manager may be unavailable during boot.
+            }
+        });
+    });
+}
+
+/**
+ * @param {HTMLElement} stylesMount
+ * @param {Record<string, string>} labels
+ * @param {object} editor
+ * @returns {HTMLElement}
+ */
+function ensureViewportStrip(stylesMount, labels, editor) {
+    const root = ensureSectorsRoot(stylesMount);
+    let strip = root.querySelector('[data-voodbuilder-style-viewport-strip]');
+
+    if (! strip) {
+        strip = buildViewportStrip(labels);
+        root.insertBefore(strip, root.firstChild);
+    }
+
+    wireViewportStrip(editor, strip);
+    syncViewportStrip(root, editor, labels);
+
+    return strip;
+}
+
 function hideNativeStyleManagerSectors(stylesMount) {
     stylesMount.classList.add('voodbuilder-editor-styles--tailwind-only');
 
@@ -565,6 +747,7 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     }
 
     const classes = componentClassList(component);
+    const bp = currentStyleBreakpointPrefix(editor);
 
     for (const group of STYLE_UTILITY_GROUPS) {
         const el = root.querySelector(`[data-voodbuilder-tw-group="${group.id}"]`);
@@ -573,12 +756,19 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
             if (group.id === 'text-color') {
                 el.value = hasTextGradientClasses(classes)
                     ? TEXT_COLOR_GRADIENT_VALUE
-                    : resolveSolidTextColor(classes);
+                    : (
+                        resolveGroupValueAtBreakpoint(
+                            classes,
+                            TEXT_COLOR_OPTIONS.filter((opt) => opt.value !== TEXT_COLOR_GRADIENT_VALUE),
+                            bp,
+                        )
+                        || resolveSolidTextColor(classes)
+                    );
             } else if (group.id === 'background' || group.id === 'background-opacity') {
                 const bg = resolveBackgroundColorAndOpacity(classes, component);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
             } else {
-                el.value = resolveGroupValue(classes, group.options);
+                el.value = resolveGroupValueAtBreakpoint(classes, group.options, bp);
             }
 
             el.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
@@ -629,10 +819,10 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
         fontSelect.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
     }
 
-    syncSpacingBox(root, component, options);
+    syncSpacingBox(root, component, options, editor);
     syncDecorationBlocks(root, component, options, editor);
     syncBackgroundImageField(root, component, editor);
-    syncTypographySegments(root, component);
+    syncTypographySegments(root, component, editor);
 
     // Migrate legacy bg-opacity-* / slash classes (Grapes-unsafe) → attr + inline paint.
     try {
@@ -803,7 +993,7 @@ function applyGroup(editor, component, groupId, value) {
                     .filter(Boolean);
 
                 for (const set of alsoClear) {
-                    replaceClassGroup(component, set, null);
+                    replaceClassGroupAllBreakpoints(component, set, null);
                 }
             }
 
@@ -842,13 +1032,13 @@ function applyGroup(editor, component, groupId, value) {
                 ensureTextGradientPaint(editor, component);
             } else if (value) {
                 clearTextGradientUtilities(component);
-                replaceClassGroup(component, groupSet, value, { alsoClear: [] });
+                replaceStyleGroup(component, groupSet, value, editor, { alsoClear: [] });
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             } else if (hasTextGradientClasses(componentClassList(component))) {
                 clearTextGradientUtilities(component);
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             } else {
-                replaceClassGroup(component, groupSet, null, { alsoClear: [] });
+                replaceStyleGroup(component, groupSet, null, editor, { alsoClear: [] });
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             }
 
@@ -891,7 +1081,7 @@ function applyGroup(editor, component, groupId, value) {
                 clearStyleProperty(editor, component, 'background-image');
             }
 
-            replaceClassGroup(component, groupSet, value || null);
+            replaceStyleGroup(component, groupSet, value || null, editor);
             clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             ensureTextGradientPaint(editor, component);
 
@@ -961,7 +1151,7 @@ function applyGroup(editor, component, groupId, value) {
             .map((id) => GROUP_SETS[id])
             .filter(Boolean);
 
-        replaceClassGroup(component, groupSet, value || null, { alsoClear });
+        replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
         clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
         // DOM first (realtime), compile only if the utility is missing from canvas CSS.
         try {
@@ -1388,10 +1578,10 @@ function syncTypographyTextGradient(root, component, editor = null) {
         }
     }
 
-    const gradDir = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
-    const gradFrom = resolveGroupValue(classes, GRADIENT_FROM_OPTIONS);
-    const gradVia = resolveGroupValue(classes, GRADIENT_VIA_OPTIONS);
-    const gradTo = resolveGroupValue(classes, GRADIENT_TO_OPTIONS);
+    const gradDir = resolveStyleGroup(classes, GRADIENT_DIRECTION_OPTIONS, editor);
+    const gradFrom = resolveStyleGroup(classes, GRADIENT_FROM_OPTIONS, editor);
+    const gradVia = resolveStyleGroup(classes, GRADIENT_VIA_OPTIONS, editor);
+    const gradTo = resolveStyleGroup(classes, GRADIENT_TO_OPTIONS, editor);
     const hasStops = Boolean(
         (gradDir && gradDir !== 'bg-none')
         || gradFrom
@@ -1419,11 +1609,11 @@ function syncTypographyTextGradient(root, component, editor = null) {
     }
 }
 
-function syncTypographySegments(root, component) {
+function syncTypographySegments(root, component, editor = null) {
     const classes = componentClassList(component);
 
     for (const [groupId, options] of Object.entries(PANEL_SEGMENT_GROUPS)) {
-        const value = resolveGroupValue(classes, options);
+        const value = resolveStyleGroup(classes, options, editor);
         const wrap = root.querySelector(`[data-voodbuilder-typo-seg="${groupId}"]`);
 
         if (! wrap) {
@@ -1466,7 +1656,7 @@ function wireTypographySegments(editor, sector) {
                 return;
             }
 
-            const current = resolveGroupValue(componentClassList(component), PANEL_SEGMENT_GROUPS[groupId] ?? []);
+            const current = resolveStyleGroup(componentClassList(component), PANEL_SEGMENT_GROUPS[groupId] ?? [], editor);
 
             // Toggle off when re-clicking the active utility.
             if (value !== '' && value === current) {
@@ -2149,10 +2339,10 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
 
     const bgParsed = resolveBackgroundColorAndOpacity(classes, component);
     const bg = bgParsed.color;
-    const gradDir = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
-    const gradFrom = resolveGroupValue(classes, GRADIENT_FROM_OPTIONS);
-    const gradVia = resolveGroupValue(classes, GRADIENT_VIA_OPTIONS);
-    const gradTo = resolveGroupValue(classes, GRADIENT_TO_OPTIONS);
+    const gradDir = resolveStyleGroup(classes, GRADIENT_DIRECTION_OPTIONS, editor);
+    const gradFrom = resolveStyleGroup(classes, GRADIENT_FROM_OPTIONS, editor);
+    const gradVia = resolveStyleGroup(classes, GRADIENT_VIA_OPTIONS, editor);
+    const gradTo = resolveStyleGroup(classes, GRADIENT_TO_OPTIONS, editor);
     const hasGradient = Boolean(
         (gradDir && gradDir !== 'bg-none')
         || gradFrom
@@ -2160,31 +2350,31 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
         || gradTo,
     );
 
-    const borderAll = resolveGroupValue(classes, BORDER_WIDTH_OPTIONS);
-    const borderT = resolveGroupValue(classes, BORDER_T_WIDTH_OPTIONS);
-    const borderR = resolveGroupValue(classes, BORDER_R_WIDTH_OPTIONS);
-    const borderB = resolveGroupValue(classes, BORDER_B_WIDTH_OPTIONS);
-    const borderL = resolveGroupValue(classes, BORDER_L_WIDTH_OPTIONS);
-    const borderStyle = resolveGroupValue(classes, BORDER_STYLE_OPTIONS);
-    const borderColor = resolveGroupValue(classes, BORDER_COLOR_OPTIONS);
+    const borderAll = resolveStyleGroup(classes, BORDER_WIDTH_OPTIONS, editor);
+    const borderT = resolveStyleGroup(classes, BORDER_T_WIDTH_OPTIONS, editor);
+    const borderR = resolveStyleGroup(classes, BORDER_R_WIDTH_OPTIONS, editor);
+    const borderB = resolveStyleGroup(classes, BORDER_B_WIDTH_OPTIONS, editor);
+    const borderL = resolveStyleGroup(classes, BORDER_L_WIDTH_OPTIONS, editor);
+    const borderStyle = resolveStyleGroup(classes, BORDER_STYLE_OPTIONS, editor);
+    const borderColor = resolveStyleGroup(classes, BORDER_COLOR_OPTIONS, editor);
     const hasBorderSides = Boolean(borderT || borderR || borderB || borderL);
     const hasBorder = Boolean(borderAll || hasBorderSides || borderStyle || borderColor);
 
-    const roundedAll = resolveGroupValue(classes, ROUNDED_OPTIONS);
-    const roundedTl = resolveGroupValue(classes, ROUNDED_TL_OPTIONS);
-    const roundedTr = resolveGroupValue(classes, ROUNDED_TR_OPTIONS);
-    const roundedBr = resolveGroupValue(classes, ROUNDED_BR_OPTIONS);
-    const roundedBl = resolveGroupValue(classes, ROUNDED_BL_OPTIONS);
+    const roundedAll = resolveStyleGroup(classes, ROUNDED_OPTIONS, editor);
+    const roundedTl = resolveStyleGroup(classes, ROUNDED_TL_OPTIONS, editor);
+    const roundedTr = resolveStyleGroup(classes, ROUNDED_TR_OPTIONS, editor);
+    const roundedBr = resolveStyleGroup(classes, ROUNDED_BR_OPTIONS, editor);
+    const roundedBl = resolveStyleGroup(classes, ROUNDED_BL_OPTIONS, editor);
     const hasRoundedCorners = Boolean(roundedTl || roundedTr || roundedBr || roundedBl);
     const hasRounded = Boolean(roundedAll || hasRoundedCorners
-        || resolveGroupValue(classes, ROUNDED_T_OPTIONS)
-        || resolveGroupValue(classes, ROUNDED_R_OPTIONS)
-        || resolveGroupValue(classes, ROUNDED_B_OPTIONS)
-        || resolveGroupValue(classes, ROUNDED_L_OPTIONS));
+        || resolveStyleGroup(classes, ROUNDED_T_OPTIONS, editor)
+        || resolveStyleGroup(classes, ROUNDED_R_OPTIONS, editor)
+        || resolveStyleGroup(classes, ROUNDED_B_OPTIONS, editor)
+        || resolveStyleGroup(classes, ROUNDED_L_OPTIONS, editor));
 
-    const shadow = resolveGroupValue(classes, SHADOW_OPTIONS);
-    const shadowColor = resolveGroupValue(classes, SHADOW_COLOR_OPTIONS);
-    const dropShadow = resolveGroupValue(classes, DROP_SHADOW_OPTIONS);
+    const shadow = resolveStyleGroup(classes, SHADOW_OPTIONS, editor);
+    const shadowColor = resolveStyleGroup(classes, SHADOW_COLOR_OPTIONS, editor);
+    const dropShadow = resolveStyleGroup(classes, DROP_SHADOW_OPTIONS, editor);
     const hasBgImage = Boolean(readBackgroundImageUrl(component, editor));
 
     const setDot = (key, on) => {
@@ -2285,16 +2475,16 @@ function wireDecorationBlocks(editor, sector) {
 
                 if (kind === 'border') {
                     if (nextLink === 'all') {
-                        const token = resolveGroupValue(classes, BORDER_T_WIDTH_OPTIONS)
-                            || resolveGroupValue(classes, BORDER_R_WIDTH_OPTIONS)
-                            || resolveGroupValue(classes, BORDER_B_WIDTH_OPTIONS)
-                            || resolveGroupValue(classes, BORDER_L_WIDTH_OPTIONS)
-                            || resolveGroupValue(classes, BORDER_WIDTH_OPTIONS)
+                        const token = resolveStyleGroup(classes, BORDER_T_WIDTH_OPTIONS, editor)
+                            || resolveStyleGroup(classes, BORDER_R_WIDTH_OPTIONS, editor)
+                            || resolveStyleGroup(classes, BORDER_B_WIDTH_OPTIONS, editor)
+                            || resolveStyleGroup(classes, BORDER_L_WIDTH_OPTIONS, editor)
+                            || resolveStyleGroup(classes, BORDER_WIDTH_OPTIONS, editor)
                             || '';
                         const shorthand = String(token).replace(/^border-[trbl]/, 'border');
                         applyGroup(editor, component, 'border-width', shorthand);
                     } else {
-                        const all = resolveGroupValue(classes, BORDER_WIDTH_OPTIONS) || '';
+                        const all = resolveStyleGroup(classes, BORDER_WIDTH_OPTIONS, editor) || '';
 
                         for (const side of ['t', 'r', 'b', 'l']) {
                             let next = '';
@@ -2312,17 +2502,17 @@ function wireDecorationBlocks(editor, sector) {
 
                 if (kind === 'radius') {
                     if (nextLink === 'all') {
-                        const token = resolveGroupValue(classes, ROUNDED_TL_OPTIONS)
-                            || resolveGroupValue(classes, ROUNDED_TR_OPTIONS)
-                            || resolveGroupValue(classes, ROUNDED_BR_OPTIONS)
-                            || resolveGroupValue(classes, ROUNDED_BL_OPTIONS)
-                            || resolveGroupValue(classes, ROUNDED_OPTIONS)
+                        const token = resolveStyleGroup(classes, ROUNDED_TL_OPTIONS, editor)
+                            || resolveStyleGroup(classes, ROUNDED_TR_OPTIONS, editor)
+                            || resolveStyleGroup(classes, ROUNDED_BR_OPTIONS, editor)
+                            || resolveStyleGroup(classes, ROUNDED_BL_OPTIONS, editor)
+                            || resolveStyleGroup(classes, ROUNDED_OPTIONS, editor)
                             || '';
                         const shorthand = String(token)
                             .replace(/^rounded-(tl|tr|br|bl|t|r|b|l)/, 'rounded');
                         applyGroup(editor, component, 'rounded', shorthand);
                     } else {
-                        const all = resolveGroupValue(classes, ROUNDED_OPTIONS) || '';
+                        const all = resolveStyleGroup(classes, ROUNDED_OPTIONS, editor) || '';
                         const corners = ['rounded-tl', 'rounded-tr', 'rounded-br', 'rounded-bl'];
 
                         for (const corner of corners) {
@@ -2398,14 +2588,26 @@ function spacingClass(prefix, token) {
     return `${prefix}-${token}`;
 }
 
-function resolveSpacingState(kind, classes) {
+function resolveSpacingState(kind, classes, prefix = '') {
     const cfg = SPACING_KIND[kind];
 
     if (! cfg) {
         return { link: 'independent', sides: { t: '', r: '', b: '', l: '' }, hasValue: false };
     }
 
-    const all = resolveGroupValue(classes, cfg.all);
+    // Prefer exact utilities at this breakpoint so base `p-4` does not hide `md:py-12`.
+    const allExact = resolveGroupValueExact(classes, cfg.all, prefix);
+    const xExact = resolveGroupValueExact(classes, cfg.x, prefix);
+    const yExact = resolveGroupValueExact(classes, cfg.y, prefix);
+    const tExact = resolveGroupValueExact(classes, cfg.t, prefix);
+    const rExact = resolveGroupValueExact(classes, cfg.r, prefix);
+    const bExact = resolveGroupValueExact(classes, cfg.b, prefix);
+    const lExact = resolveGroupValueExact(classes, cfg.l, prefix);
+    const hasExact = Boolean(allExact || xExact || yExact || tExact || rExact || bExact || lExact);
+
+    const all = hasExact
+        ? allExact
+        : resolveGroupValueAtBreakpoint(classes, cfg.all, prefix);
 
     if (all) {
         const token = spacingTokenFromClass(all);
@@ -2417,12 +2619,12 @@ function resolveSpacingState(kind, classes) {
         };
     }
 
-    const x = resolveGroupValue(classes, cfg.x);
-    const y = resolveGroupValue(classes, cfg.y);
-    const tSide = resolveGroupValue(classes, cfg.t);
-    const rSide = resolveGroupValue(classes, cfg.r);
-    const bSide = resolveGroupValue(classes, cfg.b);
-    const lSide = resolveGroupValue(classes, cfg.l);
+    const x = hasExact ? xExact : resolveGroupValueAtBreakpoint(classes, cfg.x, prefix);
+    const y = hasExact ? yExact : resolveGroupValueAtBreakpoint(classes, cfg.y, prefix);
+    const tSide = hasExact ? tExact : resolveGroupValueAtBreakpoint(classes, cfg.t, prefix);
+    const rSide = hasExact ? rExact : resolveGroupValueAtBreakpoint(classes, cfg.r, prefix);
+    const bSide = hasExact ? bExact : resolveGroupValueAtBreakpoint(classes, cfg.b, prefix);
+    const lSide = hasExact ? lExact : resolveGroupValueAtBreakpoint(classes, cfg.l, prefix);
 
     const sides = {
         t: spacingTokenFromClass(tSide) || spacingTokenFromClass(y),
@@ -2479,7 +2681,7 @@ function expandSpacingShorthandToAxes(editor, component, kind) {
         return false;
     }
 
-    const all = resolveGroupValue(componentClassList(component), cfg.all);
+    const all = resolveStyleGroup(componentClassList(component), cfg.all, editor);
 
     if (! all) {
         return false;
@@ -2601,8 +2803,9 @@ function mirrorLinkedSpacingInputs(block, side, value, linkMode) {
     }
 }
 
-function syncSpacingBox(root, component, options = {}) {
+function syncSpacingBox(root, component, options = {}, editor = null) {
     const resetLinkPref = options.resetLinkPref === true;
+    const bp = currentStyleBreakpointPrefix(editor);
 
     for (const kind of ['margin', 'padding']) {
         const block = root.querySelector(`[data-voodbuilder-spacing-box="${kind}"]`);
@@ -2611,7 +2814,7 @@ function syncSpacingBox(root, component, options = {}) {
             continue;
         }
 
-        const state = resolveSpacingState(kind, componentClassList(component));
+        const state = resolveSpacingState(kind, componentClassList(component), bp);
 
         if (resetLinkPref || ! block.dataset.linkPref) {
             block.dataset.linkPref = state.link;
@@ -2698,7 +2901,7 @@ function openSpacingScalePopover(editor, sector, anchor, kind, side, labels = {}
 
     const selected = editor.getSelected();
     const currentToken = spacingTokenFromClass(
-        resolveGroupValue(componentClassList(selected), target.options),
+        resolveStyleGroup(componentClassList(selected), target.options, editor),
     );
 
     const pop = document.createElement('div');
@@ -3069,6 +3272,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             hideNativeStyleManagerSectors(stylesMount);
 
             if (sectorsReady()) {
+                ensureViewportStrip(stylesMount, labels, editor);
+
                 return;
             }
 
@@ -3087,6 +3292,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             }
 
             placeSectors(stylesMount, [dimension, spacing, decorations, typography]);
+            ensureViewportStrip(stylesMount, labels, editor);
 
             // Marker for MutationObserver idempotency when sectors move
             if (! stylesMount.querySelector('[data-voodbuilder-tw-root]')) {
@@ -3097,6 +3303,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             }
 
             syncSelectsFromComponent(stylesMount, editor.getSelected(), editor);
+            syncViewportStrip(stylesMount, editor, labels);
         } finally {
             ensuring = false;
             twObserver?.observe(stylesMount, { childList: true, subtree: true });
@@ -3245,6 +3452,23 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     editor.on('component:update:classes', (component) => {
         hydrateFromClasses(component);
     });
+
+    const onDeviceChange = () => {
+        syncViewportStrip(stylesMount, editor, labels);
+
+        if (editor.__voodbuilderTwStyleApplying) {
+            return;
+        }
+
+        const selected = editor.getSelected?.();
+
+        if (selected && sectorsReady()) {
+            syncSelectsFromComponent(stylesMount, selected, editor);
+        }
+    };
+
+    editor.on('device:select', onDeviceChange);
+    editor.on('change:device', onDeviceChange);
 
     // Chip rename updates the Selector model; collection `change` usually covers it,
     // but selector:update is a cheap extra signal when the selected component owns it.

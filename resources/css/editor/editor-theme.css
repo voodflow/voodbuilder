@@ -1736,6 +1736,79 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     margin: 0 0 0.35rem;
 }
 
+/* Style panel viewport strip — mirrors topbar device, scopes utility writes. */
+.voodbuilder-editor-style-viewport {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.55rem 0.65rem 0.65rem;
+    margin: 0 0 0.35rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-vp-border, #e2e8f0) 85%, transparent);
+}
+
+.voodbuilder-editor-style-viewport__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.voodbuilder-editor-style-viewport__hint {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-2, #64748b);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voodbuilder-editor-style-viewport__prefix {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.25rem;
+    color: var(--color-vp-brand-1, #6366f1);
+    background: color-mix(in oklab, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
+.voodbuilder-editor-style-viewport__group {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+}
+
+.voodbuilder-editor-style-viewport__btn {
+    appearance: none;
+    margin: 0;
+    padding: 0.35rem 0.4rem;
+    border: 1px solid color-mix(in oklab, var(--color-vp-border, #e2e8f0) 90%, transparent);
+    border-radius: 0.35rem;
+    background: color-mix(in oklab, var(--color-vp-surface, #fff) 92%, transparent);
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.voodbuilder-editor-style-viewport__btn:hover {
+    color: var(--color-vp-text-1, #0f172a);
+    border-color: color-mix(in oklab, var(--color-vp-brand-1, #6366f1) 35%, transparent);
+}
+
+.voodbuilder-editor-style-viewport__btn.is-active {
+    color: var(--color-vp-brand-1, #6366f1);
+    border-color: color-mix(in oklab, var(--color-vp-brand-1, #6366f1) 55%, transparent);
+    background: color-mix(in oklab, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
 .voodbuilder-editor-typo-seg__head {
     display: flex;
     align-items: center;

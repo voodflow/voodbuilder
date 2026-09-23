@@ -28,6 +28,14 @@ import {
     resolveSolidTextColor,
 } from '../../resources/js/editor/style-tailwind-class-groups.js';
 import {
+    cascadePrefixesFor,
+    currentStyleBreakpointPrefix,
+    deviceIdToBreakpointPrefix,
+    replaceClassGroupAtBreakpoint,
+    resolveGroupValueAtBreakpoint,
+    stripResponsivePrefix,
+} from '../../resources/js/editor/style-tailwind-breakpoints.js';
+import {
     syncSelectsFromComponent,
     watchComponentClassList,
     resolveSpacingState,
@@ -487,6 +495,10 @@ describe('spacing link modes (opposites vs all)', () => {
         return {
             __voodbuilderTwStyleApplying: false,
             trigger: () => {},
+            getDevice: () => 'mobilePortrait',
+            Devices: {
+                getSelected: () => ({ get: (key) => (key === 'id' ? 'mobilePortrait' : null) }),
+            },
         };
     }
 
@@ -572,5 +584,88 @@ describe('spacing link modes (opposites vs all)', () => {
         expect(classes).toContain('py-4');
         expect(classes).toContain('px-8');
         expect(classes).not.toContain('p-8');
+    });
+});
+
+describe('style viewport breakpoints', () => {
+    it('maps grapes devices to Tailwind prefixes', () => {
+        expect(deviceIdToBreakpointPrefix('mobilePortrait')).toBe('');
+        expect(deviceIdToBreakpointPrefix('tablet')).toBe('md:');
+        expect(deviceIdToBreakpointPrefix('desktop')).toBe('lg:');
+        expect(cascadePrefixesFor('lg:')).toEqual(['lg:', 'md:', '']);
+        expect(cascadePrefixesFor('md:')).toEqual(['md:', '']);
+        expect(cascadePrefixesFor('')).toEqual(['']);
+        expect(stripResponsivePrefix('md:text-6xl')).toBe('text-6xl');
+    });
+
+    it('reads current device from editor', () => {
+        const editor = {
+            getDevice: () => 'tablet',
+            Devices: { getSelected: () => ({ get: () => 'tablet' }) },
+        };
+
+        expect(currentStyleBreakpointPrefix(editor)).toBe('md:');
+    });
+
+    it('resolves cascade: exact breakpoint then smaller then base', () => {
+        const classes = ['text-4xl', 'md:text-6xl', 'lg:text-7xl'];
+
+        expect(resolveGroupValueAtBreakpoint(classes, FONT_SIZE_OPTIONS, '')).toBe('text-4xl');
+        expect(resolveGroupValueAtBreakpoint(classes, FONT_SIZE_OPTIONS, 'md:')).toBe('text-6xl');
+        expect(resolveGroupValueAtBreakpoint(classes, FONT_SIZE_OPTIONS, 'lg:')).toBe('text-7xl');
+        expect(resolveGroupValueAtBreakpoint(['text-4xl'], FONT_SIZE_OPTIONS, 'md:')).toBe('text-4xl');
+        expect(resolveGroupValueAtBreakpoint(['text-4xl', 'md:text-6xl'], FONT_SIZE_OPTIONS, 'lg:')).toBe('text-6xl');
+    });
+
+    it('writes prefixed utilities without removing other breakpoints', () => {
+        let classes = ['text-4xl', 'md:text-5xl'];
+        const component = {
+            getClasses: () => [...classes],
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
+        };
+
+        const fontSet = classSetFromOptions(FONT_SIZE_OPTIONS);
+        replaceClassGroupAtBreakpoint(component, fontSet, 'text-6xl', 'md:');
+
+        expect(classes).toContain('text-4xl');
+        expect(classes).toContain('md:text-6xl');
+        expect(classes).not.toContain('md:text-5xl');
+    });
+
+    it('clear at breakpoint only removes that prefix', () => {
+        let classes = ['text-4xl', 'md:text-6xl', 'lg:text-7xl'];
+        const component = {
+            getClasses: () => [...classes],
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
+        };
+
+        const fontSet = classSetFromOptions(FONT_SIZE_OPTIONS);
+        replaceClassGroupAtBreakpoint(component, fontSet, null, 'md:');
+
+        expect(classes).toContain('text-4xl');
+        expect(classes).toContain('lg:text-7xl');
+        expect(classes).not.toContain('md:text-6xl');
+    });
+
+    it('spacing state resolves md: padding at tablet prefix', () => {
+        const state = resolveSpacingState('padding', ['p-4', 'md:py-12'], 'md:');
+
+        expect(state.link).toBe('opposites');
+        expect(state.sides.t).toBe('12');
+        expect(state.sides.b).toBe('12');
     });
 });
