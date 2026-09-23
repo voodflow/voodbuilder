@@ -469,12 +469,19 @@ const SILENT_LAYOUT_STYLE = { noEvent: true };
  */
 function stripLayoutMechanicInlineStyles(container, options = {}) {
     const resetMeasure = options.resetMeasure === true;
+    // Never strip Layers eye-hide (display:none) — that resurrected product cards on save.
+    const layerHidden = String(container.getAttributes?.()?.['data-vb-layer-hidden'] ?? '') === '1';
     const style = {
         ...(container.getStyle?.() ?? {}),
         ...(container.getStyle?.({ inline: true }) ?? {}),
     };
+    const preservedDisplay = layerHidden || String(style.display ?? '').trim().toLowerCase().indexOf('none') === 0
+        ? style.display
+        : undefined;
 
-    delete style.display;
+    if (! layerHidden && preservedDisplay === undefined) {
+        delete style.display;
+    }
     delete style['grid-template-columns'];
     delete style['grid-template-rows'];
     delete style['--vb-layout-tracks'];
@@ -492,7 +499,13 @@ function stripLayoutMechanicInlineStyles(container, options = {}) {
     }
 
     container.setStyle(style, SILENT_LAYOUT_STYLE);
-    container.removeStyle?.('display');
+
+    if (preservedDisplay === undefined) {
+        container.removeStyle?.('display');
+    } else {
+        container.addStyle?.({ display: preservedDisplay }, SILENT_LAYOUT_STYLE);
+    }
+
     container.removeStyle?.('grid-template-columns');
     container.removeStyle?.('grid-template-rows');
     container.removeStyle?.('--vb-layout-tracks');
@@ -516,6 +529,11 @@ function stripLayoutMechanicInlineStyles(container, options = {}) {
         .filter(Boolean)
         .filter((part) => {
             if (LAYOUT_MECHANIC_STYLE_RE.test(part)) {
+                // Keep Layers eye-hide; strip only layout mechanic display values.
+                if (/^display\s*:/i.test(part) && preservedDisplay !== undefined) {
+                    return true;
+                }
+
                 return false;
             }
 
@@ -540,7 +558,12 @@ function stripLayoutMechanicInlineStyles(container, options = {}) {
         ?? container.view?.el;
 
     if (el?.style) {
-        el.style.removeProperty('display');
+        if (preservedDisplay === undefined) {
+            el.style.removeProperty('display');
+        } else {
+            el.style.display = String(preservedDisplay);
+        }
+
         el.style.removeProperty('grid-template-columns');
         el.style.removeProperty('grid-template-rows');
         el.style.removeProperty('--vb-layout-tracks');

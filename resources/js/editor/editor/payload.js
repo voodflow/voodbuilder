@@ -19,6 +19,7 @@ import { ensureCtaButtonsForExport } from '../editor-button-link.js';
 import { ensureIconsForExport } from '../editor-utility-blocks.js';
 import { ensureLayoutContainersForExport } from '../layout-blocks.js';
 import { restoreContentWidthFromAttributes } from '../content-width-toolbar.js';
+import { syncLayerVisibilityForExport } from '../layer-visibility.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { applyVideoFacadesToExportedHtml, syncVideoComponentsForExport } from '../editor-video.js';
 import {
@@ -554,6 +555,9 @@ export function buildPayload(editor, options = {}) {
         runExportStep('restoreContentWidthFromAttributes', () => restoreContentWidthFromAttributes(editor));
         // Final bake after other syncs may have touched styles.
         runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));
+        // After bake/layout sync: force Layers hide onto inline + data-vb-layer-hidden
+        // so getHtml does not depend on fragile CssComposer #id {display:none} alone.
+        runExportStep('syncLayerVisibilityForExport', () => syncLayerVisibilityForExport(editor));
     }
 
     let html;

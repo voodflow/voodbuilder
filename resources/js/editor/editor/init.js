@@ -128,6 +128,7 @@ import { bootCanvasSiteChrome, registerCanvasSiteChrome } from '../canvas-site-c
 import { registerLayersContextMenu } from '../layers-context-menu.js';
 import { registerLayersDrag } from '../layers-drag.js';
 import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
+import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttributes } from '../layer-visibility.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
 import { registerStyleTailwindPanel } from '../style-tailwind-panel.js';
@@ -252,6 +253,7 @@ function applyInitialContent(editor, initial, options = {}) {
     try {
         bakeAuthorStylesToComposerForExport(editor);
         hydrateAuthorStylesFromIdRules(editor);
+        restoreLayerVisibilityFromAttributes(editor);
     } catch {
         // Ignore hydrate errors during early boot.
     }
@@ -1095,6 +1097,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         if (shell?.mounts?.layers) {
             guardEditorLayersRender(editor);
             registerLayersChromeFilter(editor);
+            registerLayerVisibilityPersistence(editor);
         }
     }
 
@@ -1351,9 +1354,13 @@ export function initVoodbuilderEditor(container, options = {}) {
             // After CSS load, mirror #id paints into inline so Style Manager fields
             // (font family, color, …) are not empty/"-" on first select.
             hydrateAuthorStylesFromIdRules(editor);
+            // Layers hide may exist only as #id {display:none} from older saves —
+            // re-apply marker + inline so eyes/canvas stay in sync after reload.
+            restoreLayerVisibilityFromAttributes(editor);
             window.requestAnimationFrame(() => {
                 try {
                     hydrateAuthorStylesFromIdRules(editor);
+                    restoreLayerVisibilityFromAttributes(editor);
                 } catch {
                     // Ignore hydrate race during boot.
                 }
