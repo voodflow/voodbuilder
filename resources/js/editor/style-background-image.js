@@ -1,6 +1,4 @@
 /**
- * Style panel decoration background-image helpers.
- *
  * Model: photo always paints at 100% as the bottom layer. Color and gradient
  * sit ABOVE it as overlays with their own alpha — never fade the url() itself.
  * That avoids a solid `background-color` flash on the frontend while the image
@@ -8,6 +6,10 @@
  *
  * Attr `data-vb-style-bg-opacity` stores *photo visibility* (1 = pure photo,
  * 0.65 = 35% color overlay). Overlay alpha = 1 − visibility.
+ *
+ * Directional gradients keep true stop alphas (`from-transparent` → transparent,
+ * `to-black` → opaque) so fades into the next section work. Photo visibility is
+ * a separate uniform scrim under that gradient.
  */
 
 import { hexForUtility } from './tailwind-color-palette.js';
@@ -238,11 +240,56 @@ export function composeTailwindGradientLayer(directionUtility) {
 }
 
 /**
- * Gradient overlay above a photo: same direction/stops as the Style panel, but
- * stop alpha = (1 − photoVisibility) so the url() remains visible.
+ * Resolve a from-/via-/to-* (or bg-/text-) utility to a CSS color.
  *
- * Opaque Tailwind `from-*` / `to-*` would otherwise fully hide the image —
- * that is CSS layering, not a Tailwind bug. Photo visibility is the control.
+ * @param {string} utility
+ * @returns {string} hex, `transparent`, or ''
+ */
+export function cssColorFromGradientStopUtility(utility) {
+    const token = String(utility ?? '').trim();
+
+    if (token === '' || token.endsWith('-none') || token === 'none') {
+        return '';
+    }
+
+    if (
+        token === 'from-transparent'
+        || token === 'via-transparent'
+        || token === 'to-transparent'
+        || token === 'bg-transparent'
+        || token.endsWith('-transparent')
+    ) {
+        return 'transparent';
+    }
+
+    if (
+        token === 'from-black'
+        || token === 'via-black'
+        || token === 'to-black'
+        || token === 'bg-black'
+        || token === 'text-black'
+    ) {
+        return '#000000';
+    }
+
+    if (
+        token === 'from-white'
+        || token === 'via-white'
+        || token === 'to-white'
+        || token === 'bg-white'
+        || token === 'text-white'
+    ) {
+        return '#ffffff';
+    }
+
+    return hexForUtility(token) ?? '';
+}
+
+/**
+ * Gradient overlay above a photo: directional stops keep their own alpha
+ * (`from-transparent` → transparent, `to-black` → opaque black) so fades into
+ * the next section work. Photo visibility is a separate uniform scrim (see
+ * {@link composeDecorationBackgroundImageCss}), not applied to every stop.
  *
  * @param {{
  *   directionUtility?: string,
@@ -260,40 +307,48 @@ export function composePhotoAwareGradientLayer(opts = {}) {
         return '';
     }
 
-    const alpha = overlayAlphaFromPhotoVisibility(opts.photoVisibility);
-
-    if (alpha < 0.001) {
-        return '';
-    }
-
     const stop = (utility) => {
-        const token = String(utility ?? '').trim();
+        const color = cssColorFromGradientStopUtility(utility);
 
-        if (token === '' || token.endsWith('-none') || token === 'none') {
+        if (color === '') {
             return '';
         }
 
-        const hex = hexForUtility(token);
-
-        if (! hex) {
-            return '';
+        if (color === 'transparent') {
+            return 'transparent';
         }
 
-        return toRgbaWithAlpha(hex, alpha) ?? '';
+        // Opaque stop — directional fade controls coverage over the photo.
+        return toRgbaWithAlpha(color, 1) ?? color;
     };
 
     const from = stop(opts.fromUtility);
     const via = stop(opts.viaUtility);
     const to = stop(opts.toUtility);
-    const parts = [from, via, to].filter(Boolean);
 
-    if (parts.length === 0) {
-        // Direction without stops — soft dark scrim so photo still reads.
-        return composeColorOverlayLayer('#0f172a', alpha);
+    if (! from && ! via && ! to) {
+        // Direction without stops: no directional overlay (photo visibility scrim
+        // still applies in composeDecorationBackgroundImageCss).
+        return '';
     }
 
-    if (parts.length === 1) {
-        parts.push(toRgbaWithAlpha('#000000', 0) ?? 'transparent');
+    const parts = [];
+
+    if (from) {
+        parts.push(from);
+    } else {
+        // Only via/to set — start transparent so the fade still reads.
+        parts.push('transparent');
+    }
+
+    if (via) {
+        parts.push(via);
+    }
+
+    if (to) {
+        parts.push(to);
+    } else {
+        parts.push('transparent');
     }
 
     return `linear-gradient(${direction}, ${parts.join(', ')})`;
@@ -364,9 +419,12 @@ export function composeDecorationBackgroundImageCss(url, photoVisibility = 1, fa
     const layers = [];
 
     if (gradientLayer) {
+        // Directional fade on top (e.g. transparent → black into the next section).
         layers.push(...composeGradientOverlayLayers(gradientLayer));
-    } else if (image !== '' && overlayAlpha > 0.001) {
-        // Color tint above the photo (not a faded url, not a solid bg-color underneath).
+    }
+
+    if (image !== '' && overlayAlpha > 0.001) {
+        // Uniform photo-visibility scrim under the directional gradient.
         const overlay = composeColorOverlayLayer(
             String(fadeColor ?? '').trim() || 'var(--color-vp-bg, #0f172a)',
             overlayAlpha,

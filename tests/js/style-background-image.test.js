@@ -74,20 +74,43 @@ describe('style-background-image', () => {
             photoVisibility: 0.35,
         });
 
-        // overlay alpha = 0.65
+        // Stops stay opaque; photo visibility is a separate scrim under the fade.
         expect(gradient).toBe(
-            'linear-gradient(to top right, rgba(239, 68, 68, 0.65), rgba(29, 78, 216, 0.65), rgba(134, 239, 172, 0.65))',
+            'linear-gradient(to top right, rgba(239, 68, 68, 1), rgba(29, 78, 216, 1), rgba(134, 239, 172, 1))',
         );
-        expect(composeDecorationBackgroundImageCss('/a.jpg', 0.35, '', { gradientLayer: gradient }))
-            .toBe(`${gradient}, url('/a.jpg')`);
+        expect(composeDecorationBackgroundImageCss('/a.jpg', 0.35, '#0f172a', { gradientLayer: gradient }))
+            .toBe(
+                `${gradient}, linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.65)), url('/a.jpg')`,
+            );
 
-        // 100% photo visibility → no gradient overlay (pure photo)
+        // 100% photo visibility → directional gradient still paints (no uniform scrim).
         expect(composePhotoAwareGradientLayer({
             directionUtility: 'bg-gradient-to-t',
             fromUtility: 'from-red-500',
             toUtility: 'to-blue-700',
             photoVisibility: 1,
-        })).toBe('');
+        })).toBe('linear-gradient(to top, rgba(239, 68, 68, 1), rgba(29, 78, 216, 1))');
+    });
+
+    it('supports transparent→black fade over a photo (section blend)', () => {
+        const gradient = composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-b',
+            fromUtility: 'from-transparent',
+            toUtility: 'to-black',
+            photoVisibility: 1,
+        });
+
+        expect(gradient).toBe('linear-gradient(to bottom, transparent, rgba(0, 0, 0, 1))');
+        expect(composeDecorationBackgroundImageCss('/hero.jpg', 1, '', { gradientLayer: gradient }))
+            .toBe(`${gradient}, url('/hero.jpg')`);
+    });
+
+    it('resolves white/black/transparent gradient stops', () => {
+        expect(composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-b',
+            fromUtility: 'from-white',
+            toUtility: 'to-black',
+        })).toBe('linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(0, 0, 0, 1))');
     });
 
     it('resolves bg-* utilities to hex for overlays', () => {
