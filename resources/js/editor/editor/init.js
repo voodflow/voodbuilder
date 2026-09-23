@@ -131,7 +131,7 @@ import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
 import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttributes, captureHiddenLayerNames, restoreHiddenLayerNames } from '../layer-visibility.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
-import { registerStyleTailwindPanel } from '../style-tailwind-panel.js';
+import { registerStyleTailwindPanel, hydrateDecorationBackgroundImages } from '../style-tailwind-panel.js';
 import { registerCanvasClassHoverPopover } from '../canvas-class-hover-popover.js';
 import { syncAllLayerDisplayNames, registerLayerDisplayNamePersistence } from '../layer-display-name.js';
 import { registerBlocksContextMenu } from '../blocks-context-menu.js';
@@ -253,6 +253,7 @@ function applyInitialContent(editor, initial, options = {}) {
     try {
         bakeAuthorStylesToComposerForExport(editor);
         hydrateAuthorStylesFromIdRules(editor);
+        hydrateDecorationBackgroundImages(editor);
         restoreLayerVisibilityFromAttributes(editor);
     } catch {
         // Ignore hydrate errors during early boot.
@@ -1357,10 +1358,12 @@ export function initVoodbuilderEditor(container, options = {}) {
             // Layers hide may exist only as #id {display:none} from older saves —
             // re-apply marker + inline so eyes/canvas stay in sync after reload.
             restoreLayerVisibilityFromAttributes(editor);
+            hydrateDecorationBackgroundImages(editor);
             window.requestAnimationFrame(() => {
                 try {
                     hydrateAuthorStylesFromIdRules(editor);
                     restoreLayerVisibilityFromAttributes(editor);
+                    hydrateDecorationBackgroundImages(editor);
                 } catch {
                     // Ignore hydrate race during boot.
                 }
@@ -1601,6 +1604,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             hydrateSvgPaintFromAttributes(editor);
             purgeDesyncedPaintCssRules(editor);
             hydrateAuthorStylesFromIdRules(editor);
+            hydrateDecorationBackgroundImages(editor);
         } catch {
             // Ignore paint sync errors during early frame mount.
         }

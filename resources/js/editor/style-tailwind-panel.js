@@ -1658,7 +1658,8 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
         }
     }
 
-    scrubBackgroundImageFromPageLiveCss(editor, id);
+    // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
+    // recovery source. Scrub only happens on Clear.
 }
 
 function applyDecorationBackgroundImage(editor, component, url, opacity = null) {
@@ -2887,6 +2888,16 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     };
 
     editor.on('load', () => window.setTimeout(ensure, 60));
+    editor.on('load', () => {
+        window.setTimeout(() => {
+            try {
+                hydrateAuthorStylesFromIdRules(editor);
+                hydrateDecorationBackgroundImages(editor);
+            } catch {
+                // Optional hydrate after frame mount.
+            }
+        }, 120);
+    });
     editor.on('component:selected', (component) => {
         window.setTimeout(() => {
             if (! sectorsReady()) {
@@ -2896,6 +2907,15 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             // After refresh / dynamic remount, paints often live only on #id rules.
             try {
                 hydrateAuthorStylesFromIdRules(editor, component);
+                // Prefer durable src attr when CssComposer lost the photo.
+                const src = String(component?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+                const painted = extractUrlFromBackgroundImage(
+                    readComponentCssProperty(editor, component, 'background-image'),
+                );
+
+                if (src !== '' && painted === '') {
+                    reapplyDecorationBackgroundPaint(editor, component, src);
+                }
             } catch {
                 // Optional hydrate — still sync from CssComposer below.
             }
@@ -2909,6 +2929,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         window.setTimeout(() => {
             try {
                 hydrateAuthorStylesFromIdRules(editor);
+                hydrateDecorationBackgroundImages(editor);
             } catch {
                 // Ignore hydrate race after remount.
             }
@@ -2999,6 +3020,100 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     }, 0);
 
     ensure();
+}
+
+/**
+ * After load / remount: rebuild decoration photos from durable
+ * `data-vb-style-bg-src` (and CSS fallback) so refresh cannot leave empty
+ * Image fields while Size/Position chips remain.
+ *
+ * @param {object} editor
+ * @returns {number}
+ */
+export function hydrateDecorationBackgroundImages(editor) {
+    if (! editor) {
+        return 0;
+    }
+
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper?.onAll) {
+        return 0;
+    }
+
+    // Last-resort map from live/saved CSS: #id { background-image: url(...) }
+    const liveCss = String(editor.__voodbuilderPageLiveCss ?? '');
+    const cssUrlById = new Map();
+
+    if (liveCss.includes('url(')) {
+        const ruleRe = /#([A-Za-z][\w-]*)\s*\{([^}]*)\}/g;
+        let match;
+
+        while ((match = ruleRe.exec(liveCss)) !== null) {
+            const url = extractUrlFromBackgroundImage(match[2]);
+
+            if (url !== '') {
+                cssUrlById.set(match[1], url);
+            }
+        }
+    }
+
+    const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
+    editor.__voodbuilderTwStyleApplying = true;
+    let updated = 0;
+
+    try {
+        wrapper.onAll((component) => {
+            if (! component) {
+                return;
+            }
+
+            const id = String(component.getId?.() ?? '').trim();
+            let src = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+            if (src === '') {
+                const target = resolveVisualStyleTarget(component) ?? component;
+                src = extractUrlFromBackgroundImage(
+                    readComponentCssProperty(editor, target, 'background-image'),
+                );
+
+                if (src === '') {
+                    src = extractUrlFromBackgroundImage(
+                        readComponentCssProperty(editor, target, 'background'),
+                    );
+                }
+
+                if (src === '') {
+                    src = String(target.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+                }
+
+                if (src === '' && id !== '' && cssUrlById.has(id)) {
+                    src = cssUrlById.get(id);
+                }
+            }
+
+            if (src === '') {
+                return;
+            }
+
+            reapplyDecorationBackgroundPaint(editor, component, src);
+            updated += 1;
+        });
+    } finally {
+        if (! wasApplying) {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+    }
+
+    if (updated > 0) {
+        try {
+            editor.trigger?.('update');
+        } catch {
+            // Optional.
+        }
+    }
+
+    return updated;
 }
 
 export {

@@ -3465,11 +3465,15 @@ export function registerVisualStyleInspector(editor) {
         const explicitClear = opts.__clear === true;
 
         if (explicitClear) {
+            // Color clear must not family-wipe decoration photos.
+            const familyWipe = propertyName === 'background'
+                || propertyName === 'background-image';
+
             clearStyleProperty(editor, selected, propertyName, {
-                family: isBackgroundPaintProperty(propertyName),
+                family: familyWipe,
             });
 
-            if (isBackgroundPaintProperty(propertyName)) {
+            if (propertyName === 'background') {
                 clearBackgroundCssRules(editor, selected);
             }
 
@@ -3610,7 +3614,10 @@ export function styleUpdatePropertyNames(propertyOrPros) {
 function clearForwardedStyle(target, property) {
     target.removeStyle(property);
 
-    if (isBackgroundPaintProperty(property)) {
+    // Only the shorthand `background` clears the whole paint family.
+    // Transparent background-color under a decoration photo must NOT wipe
+    // background-image (that regression deleted every photo on refresh).
+    if (property === 'background') {
         for (const backgroundProperty of BACKGROUND_STYLE_PROPERTIES) {
             target.removeStyle(backgroundProperty);
         }
@@ -3619,7 +3626,13 @@ function clearForwardedStyle(target, property) {
 
 export function registerVisualStyleTarget(editor) {
     editor.on('component:styleUpdate', (component, propertyOrPros) => {
-        if (isPurgingBackground(editor) || ! component || editor.__voodbuilderApplyingSvgPaint) {
+        if (
+            isPurgingBackground(editor)
+            || ! component
+            || editor.__voodbuilderApplyingSvgPaint
+            || editor.__voodbuilderTwStyleApplying
+            || editor.__voodbuilderLayoutStyleSilent
+        ) {
             return;
         }
 
@@ -3659,10 +3672,13 @@ export function registerVisualStyleTarget(editor) {
                 component.removeStyle(property);
                 clearForwardedStyle(target, property);
 
-                if (isBackgroundPaint) {
+                // Family wipe only for shorthand `background`. Clearing
+                // background-color to transparent (anti-flash under photo) or
+                // clearing background-image alone must not erase the other.
+                if (property === 'background') {
                     clearBackgroundCssRules(editor, component);
                 } else {
-                    clearStyleProperty(editor, component, property);
+                    clearStyleProperty(editor, component, property, { family: false });
                 }
 
                 target.view?.updateStyles?.();

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.120] - 2026-09-23
+
+### Fixed
+
+- **Critical:** setting `background-color: transparent` (anti-flash under photo) no longer family-wipes `background-image` — photos survive refresh
+- Hydrate decoration photos from `data-vb-style-bg-src` / CssComposer / live CSS on editor load and dynamic remount
+
 ## [0.1.119] - 2026-09-23
 
 ### Changed
