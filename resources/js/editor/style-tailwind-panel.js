@@ -118,6 +118,10 @@ import {
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+import {
+    injectEditorBreakpointFontSizeCss,
+    registerEditorBreakpointFontSizeCss,
+} from './style-responsive-canvas.js';
 import { hexForUtility } from './tailwind-color-palette.js';
 
 /**
@@ -527,6 +531,12 @@ function scheduleClassCompile(editor, writtenClass = '') {
 
     if (needsForce) {
         editor.__voodbuilderForcePageCssRebuild(60);
+        // Device-scoped font-size CSS paints immediately (does not wait for JIT).
+        try {
+            injectEditorBreakpointFontSizeCss(editor);
+        } catch {
+            // Frame may be unavailable.
+        }
 
         return;
     }
@@ -3279,6 +3289,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
     editor.__voodbuilderTailwindStylePanelRegistered = true;
     editor.__voodbuilderTailwindStyleOnly = true;
+
+    registerEditorBreakpointFontSizeCss(editor);
 
     const addLabel = labels.classAnimationAdd ?? labels.classStyleAdd ?? 'Add';
 

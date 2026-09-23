@@ -1736,14 +1736,19 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     margin: 0 0 0.35rem;
 }
 
-/* Style panel viewport strip — mirrors topbar device, scopes utility writes. */
+/* Style panel viewport strip — full-width card matching Style sectors. */
 .voodbuilder-editor-style-viewport {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.55rem 0.65rem 0.65rem;
-    margin: 0 0 0.35rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+    gap: 0.45rem;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 0.75rem;
+    padding: 0.55rem 0.75rem 0.65rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+    border-radius: 0.625rem;
+    background: var(--color-vp-bg-elv, #fff);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .voodbuilder-editor-style-viewport__meta {
@@ -1757,7 +1762,7 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
 .voodbuilder-editor-style-viewport__hint {
     font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-vp-text-2, #64748b);
     min-width: 0;
@@ -1773,71 +1778,80 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     padding: 0.1rem 0.35rem;
     border-radius: 0.25rem;
-    color: var(--color-vp-brand-1, #6366f1);
-    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+    color: var(--color-vp-text-2, #64748b);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
 }
 
-/* Segmented tab bar (not separate white pills). */
+/* Full-width segmented tabs; label color matches accordion titles (vp-text-2). */
 .voodbuilder-editor-style-viewport__group {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
     gap: 0;
     padding: 0.15rem;
     border-radius: 0.45rem;
     border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f6f6f7) 88%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f6f6f7) 70%, var(--color-vp-bg-elv, #fff));
 }
 
 .voodbuilder-editor-style-viewport__btn {
     appearance: none;
     margin: 0;
-    padding: 0.4rem 0.35rem;
+    width: 100%;
+    padding: 0.45rem 0.35rem;
     border: 0;
     border-radius: 0.35rem;
     background: transparent;
-    color: var(--color-vp-text-2, #67676c);
+    color: var(--color-vp-text-2, #64748b);
     font-size: 0.6875rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     line-height: 1.2;
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
 }
 
 .voodbuilder-editor-style-viewport__btn:hover {
-    color: var(--color-vp-text-1, #3c3c43);
-    background: color-mix(in srgb, var(--color-vp-text-1, #3c3c43) 5%, transparent);
+    color: var(--color-vp-text-2, #64748b);
+    background: color-mix(in srgb, var(--color-vp-text-2, #64748b) 10%, transparent);
 }
 
 .voodbuilder-editor-style-viewport__btn.is-active {
-    color: var(--color-vp-brand-1, #3451b2);
+    color: var(--color-vp-text-2, #64748b);
     background: var(--color-vp-bg-elv, #ffffff);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #3451b2) 22%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport {
+    border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 85%, transparent);
+    background: var(--color-vp-bg-elv, #202127);
+    box-shadow: none;
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__hint,
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__prefix,
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn,
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn:hover,
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn.is-active {
+    color: var(--color-vp-text-2, #98989f);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__prefix {
+    background: color-mix(in srgb, #fff 6%, transparent);
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__group {
     border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 90%, transparent);
-    background: color-mix(in srgb, #000 28%, var(--color-vp-bg-alt, #161618));
-}
-
-.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn {
-    color: var(--color-vp-text-2, #98989f);
-    background: transparent;
+    background: color-mix(in srgb, #000 22%, var(--color-vp-bg-alt, #161618));
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn:hover {
-    color: var(--color-vp-text-1, #dfdfd6);
     background: color-mix(in srgb, #fff 6%, transparent);
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn.is-active {
-    color: var(--color-vp-brand-1, #a8b1ff);
-    background: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 14%, var(--color-vp-bg-elv, #202127));
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 35%, transparent);
-}
-
-.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__prefix {
-    color: var(--color-vp-brand-1, #a8b1ff);
-    background: color-mix(in srgb, var(--color-vp-brand-1, #a8b1ff) 16%, transparent);
+    background: color-mix(in srgb, var(--color-vp-bg-elv, #202127) 88%, #fff 6%);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #2e2e32) 95%, transparent);
 }
 
 .voodbuilder-editor-typo-seg__head {

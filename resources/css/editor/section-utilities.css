@@ -18,6 +18,7 @@
 @source '../js/editor/style-color-safelist.js';
 @source '../js/editor/style-spacing-safelist.js';
 @source '../js/editor/style-animation-safelist.js';
+@source '../js/editor/style-responsive-canvas.js';
 @source '../js/editor/tailwind-color-palette.js';
 @source '../js/editor/editor-utility-blocks.js';
 /* Form utilities: injected by vforms (VoodbuilderThemeBridge), not scanned here. */
