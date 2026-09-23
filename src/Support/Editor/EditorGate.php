@@ -625,6 +625,7 @@ final class EditorGate
             'classStyleViewportBase' => __('voodbuilder::pro.editor_ui.class_style_viewport_base'),
             'classStyleViewportBaseTab' => __('voodbuilder::pro.editor_ui.class_style_viewport_base_tab'),
             'classStyleViewportCascade' => __('voodbuilder::pro.editor_ui.class_style_viewport_cascade'),
+            'classStyleViewportInherited' => __('voodbuilder::pro.editor_ui.class_style_viewport_inherited'),
             'classStyleViewportAria' => __('voodbuilder::pro.editor_ui.class_style_viewport_aria'),
             'undo' => __('voodbuilder::pro.editor_ui.undo'),
             'redo' => __('voodbuilder::pro.editor_ui.redo'),

@@ -119,7 +119,7 @@ import {
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import {
-    injectEditorBreakpointFontSizeCss,
+    injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
 } from './style-responsive-canvas.js';
 import { hexForUtility } from './tailwind-color-palette.js';
@@ -531,9 +531,9 @@ function scheduleClassCompile(editor, writtenClass = '') {
 
     if (needsForce) {
         editor.__voodbuilderForcePageCssRebuild(60);
-        // Device-scoped font-size CSS paints immediately (does not wait for JIT).
+        // Device-scoped Style CSS paints immediately (does not wait for JIT).
         try {
-            injectEditorBreakpointFontSizeCss(editor);
+            injectEditorBreakpointStyleCss(editor);
         } catch {
             // Frame may be unavailable.
         }
@@ -575,7 +575,7 @@ function buildViewportStrip(labels) {
     const desktop = labels.deviceDesktop ?? 'Desktop';
     const aria = labels.classStyleViewportAria ?? 'Style viewport';
     const cascade = labels.classStyleViewportCascade
-        ?? 'Mobile (base): all viewports. Tablet/Desktop: from this breakpoint up.';
+        ?? 'Edits apply to the selected viewport (Mobile = base for all; Tablet = md:; Desktop = lg:).';
 
     strip.innerHTML = `
         <div class="voodbuilder-editor-style-viewport__meta">
@@ -812,7 +812,16 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                 const bg = resolveBackgroundColorAndOpacity(classes, component);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
             } else {
-                el.value = resolveGroupValueAtBreakpoint(classes, group.options, bp);
+                const exact = resolveGroupValueExact(classes, group.options, bp);
+                const cascaded = resolveGroupValueAtBreakpoint(classes, group.options, bp);
+                el.value = cascaded;
+                const inherited = Boolean(cascaded) && exact !== cascaded;
+                el.classList?.toggle?.('is-inherited', inherited);
+                if (inherited && options.inheritedHint) {
+                    el.title = options.inheritedHint;
+                } else if (! inherited && el.removeAttribute) {
+                    el.removeAttribute('title');
+                }
             }
 
             el.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
@@ -863,7 +872,11 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
         fontSelect.dispatchEvent(new Event('vb:options-changed', { bubbles: true }));
     }
 
-    syncSpacingBox(root, component, options, editor);
+    syncSpacingBox(root, component, {
+        ...options,
+        inheritedHint: options.inheritedHint
+            ?? 'Inherited from a smaller viewport — change to override here',
+    }, editor);
     syncDecorationBlocks(root, component, options, editor);
     syncBackgroundImageField(root, component, editor);
     syncTypographySegments(root, component, editor);
@@ -2761,7 +2774,8 @@ function applySpacingToken(editor, component, kind, side, rawToken, linkMode) {
 }
 
 function setSpacingLinkMode(editor, component, kind, nextLink) {
-    const state = resolveSpacingState(kind, componentClassList(component));
+    const bp = currentStyleBreakpointPrefix(editor);
+    const state = resolveSpacingState(kind, componentClassList(component), bp);
     const { sides } = state;
     const token = sides.t || sides.r || sides.b || sides.l || '';
 
@@ -2850,6 +2864,8 @@ function mirrorLinkedSpacingInputs(block, side, value, linkMode) {
 function syncSpacingBox(root, component, options = {}, editor = null) {
     const resetLinkPref = options.resetLinkPref === true;
     const bp = currentStyleBreakpointPrefix(editor);
+    const inheritedHint = options.inheritedHint
+        ?? 'Inherited from a smaller viewport — change to override here';
 
     for (const kind of ['margin', 'padding']) {
         const block = root.querySelector(`[data-voodbuilder-spacing-box="${kind}"]`);
@@ -2858,7 +2874,9 @@ function syncSpacingBox(root, component, options = {}, editor = null) {
             continue;
         }
 
-        const state = resolveSpacingState(kind, componentClassList(component), bp);
+        const classes = componentClassList(component);
+        const state = resolveSpacingState(kind, classes, bp);
+        const cfg = SPACING_KIND[kind];
 
         if (resetLinkPref || ! block.dataset.linkPref) {
             block.dataset.linkPref = state.link;
@@ -2878,7 +2896,17 @@ function syncSpacingBox(root, component, options = {}, editor = null) {
         const dot = block.querySelector('[data-voodbuilder-spacing-dot]');
 
         if (dot) {
-            dot.hidden = ! state.hasValue;
+            // Dot = authored at this breakpoint (not merely cascaded).
+            const exactHere = Boolean(
+                resolveGroupValueExact(classes, cfg.all, bp)
+                || resolveGroupValueExact(classes, cfg.x, bp)
+                || resolveGroupValueExact(classes, cfg.y, bp)
+                || resolveGroupValueExact(classes, cfg.t, bp)
+                || resolveGroupValueExact(classes, cfg.r, bp)
+                || resolveGroupValueExact(classes, cfg.b, bp)
+                || resolveGroupValueExact(classes, cfg.l, bp),
+            );
+            dot.hidden = ! exactHere;
         }
 
         for (const side of ['t', 'r', 'b', 'l']) {
@@ -2891,8 +2919,17 @@ function syncSpacingBox(root, component, options = {}, editor = null) {
             }
 
             const value = state.sides[side] || '';
+            const target = spacingGroupFor(kind, side, link);
+            const exactClass = target
+                ? resolveGroupValueExact(classes, target.options, bp)
+                : '';
+            const exactToken = spacingTokenFromClass(exactClass);
+            const inherited = Boolean(value) && exactToken !== value;
+
             input.value = value;
-            input.classList.toggle('is-set', Boolean(value));
+            input.classList.toggle('is-set', Boolean(value) && ! inherited);
+            input.classList.toggle('is-inherited', inherited);
+            input.title = inherited ? inheritedHint : (input.getAttribute('aria-label') || '');
         }
     }
 }
@@ -3079,7 +3116,7 @@ function wireSpacingBoxes(editor, sector, labels = {}) {
                 const ok = applySpacingToken(editor, component, kind, side, input.value, linkMode);
 
                 if (! ok) {
-                    syncSpacingBox(sector.closest('.gjs-sm-sectors') ?? sector, component);
+                    syncSpacingBox(sector.closest('.gjs-sm-sectors') ?? sector, component, {}, editor);
                     input.classList.add('is-invalid');
 
                     return;
@@ -3118,7 +3155,7 @@ function wireSpacingBoxes(editor, sector, labels = {}) {
                     event.preventDefault();
                     window.clearTimeout(liveTimer);
                     const component = editor.getSelected();
-                    syncSpacingBox(sector.closest('.gjs-sm-sectors') ?? sector, component);
+                    syncSpacingBox(sector.closest('.gjs-sm-sectors') ?? sector, component, {}, editor);
                     input.blur();
                 }
             });
@@ -3285,6 +3322,11 @@ function placeSectors(stylesMount, sectors) {
 export function registerStyleTailwindPanel(editor, options = {}) {
     const stylesMount = options.mount;
     const labels = options.labels ?? {};
+    const syncOpts = (extra = {}) => ({
+        inheritedHint: labels.classStyleViewportInherited
+            ?? 'Inherited from a smaller viewport — change to override here',
+        ...extra,
+    });
 
     if (! editor || ! stylesMount || editor.__voodbuilderTailwindStylePanelRegistered) {
         return;
@@ -3348,7 +3390,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 stylesMount.appendChild(marker);
             }
 
-            syncSelectsFromComponent(stylesMount, editor.getSelected(), editor);
+            syncSelectsFromComponent(stylesMount, editor.getSelected(), editor, syncOpts());
             syncViewportStrip(stylesMount, editor, labels);
         } finally {
             ensuring = false;
@@ -3418,7 +3460,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             return;
         }
 
-        syncSelectsFromComponent(stylesMount, selected ?? target, editor);
+        syncSelectsFromComponent(stylesMount, selected ?? target, editor, syncOpts());
     };
 
     const attachClassWatch = (component) => {
@@ -3468,7 +3510,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             }
 
             sanitizeInventedStyles(editor, component);
-            syncSelectsFromComponent(stylesMount, component, editor, { resetLinkPref: true });
+            syncSelectsFromComponent(stylesMount, component, editor, syncOpts({ resetLinkPref: true }));
             attachClassWatch(component);
         }, 0);
     });
@@ -3484,7 +3526,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             const selected = editor.getSelected?.();
 
             if (selected && sectorsReady()) {
-                syncSelectsFromComponent(stylesMount, selected, editor);
+                syncSelectsFromComponent(stylesMount, selected, editor, syncOpts());
             }
         }, 0);
     });
@@ -3509,7 +3551,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         const selected = editor.getSelected?.();
 
         if (selected && sectorsReady()) {
-            syncSelectsFromComponent(stylesMount, selected, editor);
+            syncSelectsFromComponent(stylesMount, selected, editor, syncOpts());
         }
     };
 

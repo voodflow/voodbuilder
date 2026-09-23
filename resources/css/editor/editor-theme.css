@@ -2644,6 +2644,17 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     font-weight: 600;
 }
 
+.voodbuilder-editor-spacing-cross__input.is-inherited {
+    font-weight: 400;
+    font-style: italic;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-sm-sector-tw select.is-inherited {
+    font-style: italic;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
 .voodbuilder-editor-spacing-cross__input.is-invalid {
     color: #b91c1c;
 }
