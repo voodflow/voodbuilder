@@ -369,6 +369,63 @@ export const GRADIENT_TO_OPTIONS = withNone([
     ...tailwindColorOptions('to'),
 ]);
 
+/** Tailwind gradient stop positions (from-10%, via-50%, to-90%, …). */
+export const GRADIENT_STOP_POSITION_SCALE = Object.freeze([
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,
+]);
+
+function gradientPosOptions(prefix) {
+    return withNone(
+        GRADIENT_STOP_POSITION_SCALE.map((pct) => ({
+            value: `${prefix}-${pct}%`,
+            label: `${pct}%`,
+        })),
+    );
+}
+
+export const GRADIENT_FROM_POS_OPTIONS = gradientPosOptions('from');
+export const GRADIENT_VIA_POS_OPTIONS = gradientPosOptions('via');
+export const GRADIENT_TO_POS_OPTIONS = gradientPosOptions('to');
+
+/** Default stop positions when no from-*% / via-*% / to-*% class is set. */
+export const GRADIENT_POS_DEFAULTS = Object.freeze({
+    from: 0,
+    via: 50,
+    to: 100,
+});
+
+/**
+ * @param {string|null|undefined} utility e.g. from-40%
+ * @returns {number|null}
+ */
+export function gradientStopPositionFromUtility(utility) {
+    const match = String(utility ?? '').trim().match(/^(?:from|via|to)-(\d+)%$/);
+
+    if (! match) {
+        return null;
+    }
+
+    const n = Number.parseInt(match[1], 10);
+
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
+}
+
+/**
+ * @param {'from'|'via'|'to'} kind
+ * @param {number|null|undefined} pct
+ * @returns {string} e.g. from-40% or '' when default / empty
+ */
+export function gradientStopPositionUtility(kind, pct) {
+    if (pct == null || pct === '') {
+        return '';
+    }
+
+    const n = Math.round(Number(pct) / 5) * 5;
+    const clamped = Math.min(100, Math.max(0, n));
+    const prefix = kind === 'via' ? 'via' : (kind === 'to' ? 'to' : 'from');
+
+    return `${prefix}-${clamped}%`;
+}
 function sideBorderWidth(prefix) {
     // Full string literals — Tailwind @source cannot see `${prefix}-2` templates.
     const table = {
@@ -789,6 +846,9 @@ export const STYLE_UTILITY_GROUPS = [
     },    { id: 'gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
     { id: 'gradient-via', options: GRADIENT_VIA_OPTIONS, inlineProps: [] },
     { id: 'gradient-to', options: GRADIENT_TO_OPTIONS, inlineProps: [] },
+    { id: 'gradient-from-pos', options: GRADIENT_FROM_POS_OPTIONS, inlineProps: [] },
+    { id: 'gradient-via-pos', options: GRADIENT_VIA_POS_OPTIONS, inlineProps: [] },
+    { id: 'gradient-to-pos', options: GRADIENT_TO_POS_OPTIONS, inlineProps: [] },
     {
         id: 'text-gradient-direction',
         options: GRADIENT_DIRECTION_OPTIONS,
@@ -797,7 +857,9 @@ export const STYLE_UTILITY_GROUPS = [
     { id: 'text-gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
     { id: 'text-gradient-via', options: GRADIENT_VIA_OPTIONS, inlineProps: [] },
     { id: 'text-gradient-to', options: GRADIENT_TO_OPTIONS, inlineProps: [] },
-    { id: 'border-width', options: BORDER_WIDTH_OPTIONS, inlineProps: ['border', 'border-width'] },
+    { id: 'text-gradient-from-pos', options: GRADIENT_FROM_POS_OPTIONS, inlineProps: [] },
+    { id: 'text-gradient-via-pos', options: GRADIENT_VIA_POS_OPTIONS, inlineProps: [] },
+    { id: 'text-gradient-to-pos', options: GRADIENT_TO_POS_OPTIONS, inlineProps: [] },    { id: 'border-width', options: BORDER_WIDTH_OPTIONS, inlineProps: ['border', 'border-width'] },
     { id: 'border-t-width', options: BORDER_T_WIDTH_OPTIONS, inlineProps: ['border-top-width'] },
     { id: 'border-r-width', options: BORDER_R_WIDTH_OPTIONS, inlineProps: ['border-right-width'] },
     { id: 'border-b-width', options: BORDER_B_WIDTH_OPTIONS, inlineProps: ['border-bottom-width'] },

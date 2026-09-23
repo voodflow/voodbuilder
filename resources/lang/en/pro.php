@@ -191,6 +191,7 @@ return [
         'class_style_gradient_from' => 'From',
         'class_style_gradient_via' => 'Via',
         'class_style_gradient_to' => 'To',
+        'class_style_gradient_stop' => 'Stop',
         'class_style_border' => 'Border',
         'class_style_border_width' => 'Width',
         'class_style_border_style' => 'Style',

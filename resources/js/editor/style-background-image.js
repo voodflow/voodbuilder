@@ -291,11 +291,16 @@ export function cssColorFromGradientStopUtility(utility) {
  * the next section work. Photo visibility is a separate uniform scrim (see
  * {@link composeDecorationBackgroundImageCss}), not applied to every stop.
  *
+ * Optional stop positions (0–100) map to Tailwind `from-40%` / `via-50%` / `to-90%`.
+ *
  * @param {{
  *   directionUtility?: string,
  *   fromUtility?: string,
  *   viaUtility?: string,
  *   toUtility?: string,
+ *   fromPos?: number|null,
+ *   viaPos?: number|null,
+ *   toPos?: number|null,
  *   photoVisibility?: number|string,
  * }} opts
  * @returns {string}
@@ -307,28 +312,30 @@ export function composePhotoAwareGradientLayer(opts = {}) {
         return '';
     }
 
-    const stop = (utility) => {
+    const stop = (utility, pos) => {
         const color = cssColorFromGradientStopUtility(utility);
 
         if (color === '') {
             return '';
         }
 
-        if (color === 'transparent') {
-            return 'transparent';
+        let paint = color === 'transparent'
+            ? 'transparent'
+            : (toRgbaWithAlpha(color, 1) ?? color);
+
+        if (pos != null && Number.isFinite(Number(pos))) {
+            const pct = Math.min(100, Math.max(0, Math.round(Number(pos))));
+            paint = `${paint} ${pct}%`;
         }
 
-        // Opaque stop — directional fade controls coverage over the photo.
-        return toRgbaWithAlpha(color, 1) ?? color;
+        return paint;
     };
 
-    const from = stop(opts.fromUtility);
-    const via = stop(opts.viaUtility);
-    const to = stop(opts.toUtility);
+    const from = stop(opts.fromUtility, opts.fromPos);
+    const via = stop(opts.viaUtility, opts.viaPos);
+    const to = stop(opts.toUtility, opts.toPos);
 
     if (! from && ! via && ! to) {
-        // Direction without stops: no directional overlay (photo visibility scrim
-        // still applies in composeDecorationBackgroundImageCss).
         return '';
     }
 
@@ -337,8 +344,7 @@ export function composePhotoAwareGradientLayer(opts = {}) {
     if (from) {
         parts.push(from);
     } else {
-        // Only via/to set — start transparent so the fade still reads.
-        parts.push('transparent');
+        parts.push(opts.fromPos != null ? `transparent ${Math.round(Number(opts.fromPos))}%` : 'transparent');
     }
 
     if (via) {
@@ -348,7 +354,7 @@ export function composePhotoAwareGradientLayer(opts = {}) {
     if (to) {
         parts.push(to);
     } else {
-        parts.push('transparent');
+        parts.push(opts.toPos != null ? `transparent ${Math.round(Number(opts.toPos))}%` : 'transparent');
     }
 
     return `linear-gradient(${direction}, ${parts.join(', ')})`;

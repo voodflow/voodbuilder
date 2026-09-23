@@ -52,8 +52,14 @@ import {
     FONT_WEIGHT_OPTIONS,
     GRADIENT_DIRECTION_OPTIONS,
     GRADIENT_FROM_OPTIONS,
+    GRADIENT_FROM_POS_OPTIONS,
+    GRADIENT_POS_DEFAULTS,
     GRADIENT_TO_OPTIONS,
+    GRADIENT_TO_POS_OPTIONS,
     GRADIENT_VIA_OPTIONS,
+    GRADIENT_VIA_POS_OPTIONS,
+    gradientStopPositionFromUtility,
+    gradientStopPositionUtility,
     HEIGHT_OPTIONS,
     LEADING_OPTIONS,
     MARGIN_B_OPTIONS,
@@ -176,6 +182,9 @@ const TEXT_GRADIENT_GROUP_IDS = [
     'text-gradient-from',
     'text-gradient-via',
     'text-gradient-to',
+    'text-gradient-from-pos',
+    'text-gradient-via-pos',
+    'text-gradient-to-pos',
 ];
 
 const SHARED_GRADIENT_GROUP_IDS = [
@@ -183,6 +192,9 @@ const SHARED_GRADIENT_GROUP_IDS = [
     'gradient-from',
     'gradient-via',
     'gradient-to',
+    'gradient-from-pos',
+    'gradient-via-pos',
+    'gradient-to-pos',
 ];
 
 function isGradientStyleGroupId(groupId) {
@@ -850,6 +862,7 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
         }
     }
 
+    syncGradientPosSliders(root, component);
     syncTypographyTextGradient(root, component, editor);
 
     const fontSelect = root.querySelector('[data-voodbuilder-tw-font-family]');
@@ -1198,7 +1211,10 @@ function applyGroup(editor, component, groupId, value) {
             || groupId === 'gradient-direction'
             || groupId === 'gradient-from'
             || groupId === 'gradient-via'
-            || groupId === 'gradient-to';
+            || groupId === 'gradient-to'
+            || groupId === 'gradient-from-pos'
+            || groupId === 'gradient-via-pos'
+            || groupId === 'gradient-to-pos';
         const preservedBgUrl = isBgPaintGroup
             ? readBackgroundImageUrl(component, editor)
             : '';
@@ -1208,7 +1224,15 @@ function applyGroup(editor, component, groupId, value) {
 
         // Solid color clears gradient stops (exclusive); keep image.
         if (groupId === 'background' && value && ! textGradientActive) {
-            alsoClearIds.push('gradient-direction', 'gradient-from', 'gradient-via', 'gradient-to');
+            alsoClearIds.push(
+                'gradient-direction',
+                'gradient-from',
+                'gradient-via',
+                'gradient-to',
+                'gradient-from-pos',
+                'gradient-via-pos',
+                'gradient-to-pos',
+            );
         }
 
         // Gradient clears solid color (exclusive); keep image — do not wipe background-image.
@@ -1218,8 +1242,14 @@ function applyGroup(editor, component, groupId, value) {
             }
         }
 
+        // Clearing Via color also drops its stop position.
+        if ((groupId === 'gradient-via' || groupId === 'text-gradient-via') && ! value) {
+            alsoClearIds.push(groupId === 'gradient-via' ? 'gradient-via-pos' : 'text-gradient-via-pos');
+        }
+
         if (
-            (groupId === 'gradient-direction' || groupId === 'gradient-from' || groupId === 'gradient-via' || groupId === 'gradient-to')
+            (groupId === 'gradient-direction' || groupId === 'gradient-from' || groupId === 'gradient-via' || groupId === 'gradient-to'
+                || groupId === 'gradient-from-pos' || groupId === 'gradient-via-pos' || groupId === 'gradient-to-pos')
             && textGradientActive
         ) {
             ensureTextGradientBase(component);
@@ -1260,6 +1290,9 @@ function applyGroup(editor, component, groupId, value) {
             || groupId === 'gradient-from'
             || groupId === 'gradient-via'
             || groupId === 'gradient-to'
+            || groupId === 'gradient-from-pos'
+            || groupId === 'gradient-via-pos'
+            || groupId === 'gradient-to-pos'
         ) {
             // No photo: strip leftover author background-image so TW gradient utilities paint.
             releaseAuthorBackgroundImageForUtilities(editor, component);
@@ -1397,6 +1430,92 @@ function decoSideSelectHtml(groupId, options, title) {
     `;
 }
 
+/**
+ * Color stop + position slider (Tailwind from-40% / via-50% / to-90%).
+ *
+ * @param {{
+ *   colorLabel: string,
+ *   colorGroupId: string,
+ *   colorOptions: Array<{value: string, label?: string, hex?: string}>,
+ *   posGroupId: string,
+ *   kind: 'from'|'via'|'to',
+ *   defaultPos: number,
+ *   searchPlaceholder?: string,
+ *   posLabel?: string,
+ * }} opts
+ */
+function gradientStopRowHtml(opts) {
+    const posLabel = opts.posLabel ?? 'Stop';
+    const kind = opts.kind;
+    const defaultPos = opts.defaultPos ?? GRADIENT_POS_DEFAULTS[kind] ?? 0;
+
+    return `
+        <div class="voodbuilder-editor-deco-stop" data-voodbuilder-deco-stop="${escapeAttr(kind)}" data-voodbuilder-deco-stop-scope="${escapeAttr(opts.colorGroupId)}">
+            ${decoLiveFieldHtml({
+                label: opts.colorLabel,
+                groupId: opts.colorGroupId,
+                options: opts.colorOptions,
+                searchPlaceholder: opts.searchPlaceholder ?? null,
+            })}
+            <div class="voodbuilder-editor-deco-stop__pos">
+                <span class="voodbuilder-editor-deco-stop__pos-label">${escapeHtml(posLabel)}</span>
+                <input
+                    type="range"
+                    class="voodbuilder-editor-deco-stop__range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value="${defaultPos}"
+                    data-voodbuilder-tw-group-range="${escapeAttr(opts.posGroupId)}"
+                    data-voodbuilder-gradient-pos-kind="${escapeAttr(kind)}"
+                    data-voodbuilder-gradient-pos-default="${defaultPos}"
+                    aria-label="${escapeAttr(posLabel)}"
+                />
+                <span class="voodbuilder-editor-deco-stop__pos-value" data-voodbuilder-gradient-pos-readout>${defaultPos}%</span>
+            </div>
+        </div>
+    `;
+}
+
+function gradientStopsBlockHtml(prefix, labels, searchPh) {
+    const posLabel = labels.classStyleGradientStop ?? 'Stop';
+
+    return `
+        <div class="voodbuilder-editor-deco-stops">
+            ${gradientStopRowHtml({
+                colorLabel: labels.classStyleGradientFrom ?? 'From',
+                colorGroupId: `${prefix}-from`,
+                colorOptions: GRADIENT_FROM_OPTIONS,
+                posGroupId: `${prefix}-from-pos`,
+                kind: 'from',
+                defaultPos: GRADIENT_POS_DEFAULTS.from,
+                searchPlaceholder: searchPh,
+                posLabel,
+            })}
+            ${gradientStopRowHtml({
+                colorLabel: labels.classStyleGradientVia ?? 'Via',
+                colorGroupId: `${prefix}-via`,
+                colorOptions: GRADIENT_VIA_OPTIONS,
+                posGroupId: `${prefix}-via-pos`,
+                kind: 'via',
+                defaultPos: GRADIENT_POS_DEFAULTS.via,
+                searchPlaceholder: searchPh,
+                posLabel,
+            })}
+            ${gradientStopRowHtml({
+                colorLabel: labels.classStyleGradientTo ?? 'To',
+                colorGroupId: `${prefix}-to`,
+                colorOptions: GRADIENT_TO_OPTIONS,
+                posGroupId: `${prefix}-to-pos`,
+                kind: 'to',
+                defaultPos: GRADIENT_POS_DEFAULTS.to,
+                searchPlaceholder: searchPh,
+                posLabel,
+            })}
+        </div>
+    `;
+}
+
 function buildDecorationsSector(labels) {
     const searchPh = labels.classStyleFieldSearch ?? 'Search…';
     const clearLabel = labels.classStyleClear ?? 'None';
@@ -1461,26 +1580,7 @@ function buildDecorationsSector(labels) {
                                 groupId: 'gradient-direction',
                                 options: GRADIENT_DIRECTION_OPTIONS,
                             })}
-                            <div class="voodbuilder-editor-deco-stops">
-                                ${decoLiveFieldHtml({
-                                    label: labels.classStyleGradientFrom ?? 'From',
-                                    groupId: 'gradient-from',
-                                    options: GRADIENT_FROM_OPTIONS,
-                                    searchPlaceholder: searchPh,
-                                })}
-                                ${decoLiveFieldHtml({
-                                    label: labels.classStyleGradientVia ?? 'Via',
-                                    groupId: 'gradient-via',
-                                    options: GRADIENT_VIA_OPTIONS,
-                                    searchPlaceholder: searchPh,
-                                })}
-                                ${decoLiveFieldHtml({
-                                    label: labels.classStyleGradientTo ?? 'To',
-                                    groupId: 'gradient-to',
-                                    options: GRADIENT_TO_OPTIONS,
-                                    searchPlaceholder: searchPh,
-                                })}
-                            </div>
+                            ${gradientStopsBlockHtml('gradient', labels, searchPh)}
                         </div>
                     </details>
                 </div>
@@ -1619,26 +1719,7 @@ function buildTypographySector(labels, addLabel) {
                         groupId: 'text-gradient-direction',
                         options: GRADIENT_DIRECTION_OPTIONS,
                     })}
-                    <div class="voodbuilder-editor-deco-stops">
-                        ${decoLiveFieldHtml({
-                            label: labels.classStyleGradientFrom ?? 'From',
-                            groupId: 'text-gradient-from',
-                            options: GRADIENT_FROM_OPTIONS,
-                            searchPlaceholder: searchPh,
-                        })}
-                        ${decoLiveFieldHtml({
-                            label: labels.classStyleGradientVia ?? 'Via',
-                            groupId: 'text-gradient-via',
-                            options: GRADIENT_VIA_OPTIONS,
-                            searchPlaceholder: searchPh,
-                        })}
-                        ${decoLiveFieldHtml({
-                            label: labels.classStyleGradientTo ?? 'To',
-                            groupId: 'text-gradient-to',
-                            options: GRADIENT_TO_OPTIONS,
-                            searchPlaceholder: searchPh,
-                        })}
-                    </div>
+                    ${gradientStopsBlockHtml('text-gradient', labels, searchPh)}
                 </div>
             </details>
             ${fieldHtml({ label: labels.classStyleLeading ?? 'Line height', selectAttr: 'data-voodbuilder-tw-group="leading"', addAttr: 'data-voodbuilder-tw-group-add="leading"', options: LEADING_OPTIONS, addLabel, live: true })}
@@ -2044,6 +2125,16 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
         return '';
     }
 
+    const fromPos = gradientStopPositionFromUtility(
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, 'lg:'),
+    );
+    const viaPos = gradientStopPositionFromUtility(
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_POS_OPTIONS, 'lg:'),
+    );
+    const toPos = gradientStopPositionFromUtility(
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
+    );
+
     // Over a photo: bake stop alpha from Photo visibility (opaque TW stops would hide the url).
     if (photoVisibility != null) {
         return composePhotoAwareGradientLayer({
@@ -2051,6 +2142,9 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
             fromUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:'),
             viaUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:'),
             toUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, 'lg:'),
+            fromPos,
+            viaPos,
+            toPos,
             photoVisibility,
         });
     }
@@ -3219,6 +3313,98 @@ function wireSpacingBoxes(editor, sector, labels = {}) {
     }
 }
 
+function syncGradientPosSliders(root, component) {
+    if (! root || typeof root.querySelectorAll !== 'function') {
+        return;
+    }
+
+    const classes = componentClassList(component);
+    const inputs = [...(root.querySelectorAll('[data-voodbuilder-tw-group-range]') ?? [])];
+
+    for (const input of inputs) {
+        const groupId = input.getAttribute('data-voodbuilder-tw-group-range') || '';
+        const kind = input.getAttribute('data-voodbuilder-gradient-pos-kind') || 'from';
+        const defaultPos = Number.parseInt(input.getAttribute('data-voodbuilder-gradient-pos-default') ?? '', 10);
+        const fallback = Number.isFinite(defaultPos) ? defaultPos : (GRADIENT_POS_DEFAULTS[kind] ?? 0);
+        const group = STYLE_UTILITY_GROUPS.find((g) => g.id === groupId);
+        const authored = group
+            ? resolveGroupValueAtBreakpoint(classes, group.options, '')
+            : '';
+        const pct = gradientStopPositionFromUtility(authored);
+        const value = pct == null ? fallback : pct;
+
+        input.value = String(value);
+        input.dataset.authored = pct == null ? '0' : '1';
+
+        const readout = input.closest('.voodbuilder-editor-deco-stop__pos')
+            ?.querySelector('[data-voodbuilder-gradient-pos-readout]');
+
+        if (readout) {
+            readout.textContent = `${value}%`;
+        }
+
+        // Disable Via stop when Via color is empty.
+        if (kind === 'via') {
+            const colorGroupId = groupId.replace(/-pos$/, '');
+            const colorGroup = STYLE_UTILITY_GROUPS.find((g) => g.id === colorGroupId);
+            const viaColor = colorGroup
+                ? resolveGroupValueAtBreakpoint(classes, colorGroup.options, '')
+                : '';
+            const row = input.closest('[data-voodbuilder-deco-stop="via"]');
+            const disabled = ! viaColor;
+
+            input.disabled = disabled;
+            row?.classList.toggle('is-disabled', disabled);
+        }
+    }
+}
+
+function wireGradientPosSliders(editor, sector) {
+    for (const input of sector.querySelectorAll('[data-voodbuilder-tw-group-range]')) {
+        let liveTimer = null;
+
+        const commit = () => {
+            const component = editor.getSelected();
+            const groupId = input.getAttribute('data-voodbuilder-tw-group-range') || '';
+            const kind = input.getAttribute('data-voodbuilder-gradient-pos-kind') || 'from';
+
+            if (! component || ! groupId) {
+                return;
+            }
+
+            const pct = Number.parseInt(input.value, 10);
+            const utility = gradientStopPositionUtility(kind, pct);
+
+            applyGroup(editor, component, groupId, utility);
+            input.dataset.authored = '1';
+
+            const readout = input.closest('.voodbuilder-editor-deco-stop__pos')
+                ?.querySelector('[data-voodbuilder-gradient-pos-readout]');
+
+            if (readout) {
+                readout.textContent = `${Number.isFinite(pct) ? pct : 0}%`;
+            }
+
+            syncSelectsFromComponent(sector.closest('.gjs-sm-sectors') ?? sector, component, editor);
+        };
+
+        input.addEventListener('input', () => {
+            const pct = Number.parseInt(input.value, 10);
+            const readout = input.closest('.voodbuilder-editor-deco-stop__pos')
+                ?.querySelector('[data-voodbuilder-gradient-pos-readout]');
+
+            if (readout) {
+                readout.textContent = `${Number.isFinite(pct) ? pct : 0}%`;
+            }
+
+            window.clearTimeout(liveTimer);
+            liveTimer = window.setTimeout(commit, 80);
+        });
+
+        input.addEventListener('change', commit);
+    }
+}
+
 function wireSectorFields(editor, sector, labels = {}) {
     const liveGroups = new Set([
         'font-size',
@@ -3229,6 +3415,9 @@ function wireSectorFields(editor, sector, labels = {}) {
         'text-gradient-from',
         'text-gradient-via',
         'text-gradient-to',
+        'text-gradient-from-pos',
+        'text-gradient-via-pos',
+        'text-gradient-to-pos',
         'leading',
         'tracking',
         'text-transform',
@@ -3255,6 +3444,9 @@ function wireSectorFields(editor, sector, labels = {}) {
         'gradient-from',
         'gradient-via',
         'gradient-to',
+        'gradient-from-pos',
+        'gradient-via-pos',
+        'gradient-to-pos',
         'border-width',
         'border-t-width',
         'border-r-width',
@@ -3289,6 +3481,7 @@ function wireSectorFields(editor, sector, labels = {}) {
     wireDecorationBlocks(editor, sector);
     wireBackgroundImageField(editor, sector, labels);
     wireTypographySegments(editor, sector);
+    wireGradientPosSliders(editor, sector);
 
     const fontAdd = sector.querySelector('[data-voodbuilder-tw-font-family-add]');
     const fontSelect = sector.querySelector('[data-voodbuilder-tw-font-family]');

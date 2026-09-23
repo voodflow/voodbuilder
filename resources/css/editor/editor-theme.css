@@ -3090,6 +3090,51 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     min-width: 0;
 }
 
+.voodbuilder-editor-deco-stop {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    padding-bottom: 0.35rem;
+}
+
+.voodbuilder-editor-deco-stop.is-disabled .voodbuilder-editor-deco-stop__pos {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.voodbuilder-editor-deco-stop__pos {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 2.5rem;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.1rem 0.1rem;
+    box-sizing: border-box;
+}
+
+.voodbuilder-editor-deco-stop__pos-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.voodbuilder-editor-deco-stop__range {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    accent-color: var(--color-vp-brand-1, #6366f1);
+    cursor: pointer;
+}
+
+.voodbuilder-editor-deco-stop__pos-value {
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-vp-text-2, #64748b);
+    text-align: right;
+}
+
 .dark .voodbuilder-editor-root .voodbuilder-editor-deco-block + .voodbuilder-editor-deco-block {
     border-top-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 100%, #6a6a71 18%);
 }

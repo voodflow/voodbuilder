@@ -105,6 +105,19 @@ describe('style-background-image', () => {
             .toBe(`${gradient}, url('/hero.jpg')`);
     });
 
+    it('applies stop positions for transparent→black fades', () => {
+        const gradient = composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-b',
+            fromUtility: 'from-transparent',
+            toUtility: 'to-black',
+            fromPos: 40,
+            toPos: 100,
+            photoVisibility: 1,
+        });
+
+        expect(gradient).toBe('linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 1) 100%)');
+    });
+
     it('resolves white/black/transparent gradient stops', () => {
         expect(composePhotoAwareGradientLayer({
             directionUtility: 'bg-gradient-to-b',
