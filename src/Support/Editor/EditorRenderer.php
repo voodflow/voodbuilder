@@ -58,7 +58,19 @@ final class EditorRenderer
         $payload = $page->builder_payload ?? [];
         $html = EditorLibraryLayoutNormalizer::normalize((string) ($payload['html'] ?? ''));
         $componentCss = ComponentRuntimeBridge::componentCssForHtml($html);
-        $storedPageCss = $payload['css'] ?? null;
+
+        $artifactCss = PageCssArtifactStore::resolveCss($payload);
+        $hasArtifact = PageCssArtifactStore::metaFromPayload($payload) !== null
+            && PageCssArtifactStore::publicUrl($payload) !== null;
+
+        if ($hasArtifact && $artifactCss !== '') {
+            // Full sheet lives in the linked artifact; only merge companion CSS inline.
+            $combined = trim(implode("\n", array_filter([$globalCss, $componentCss])));
+
+            return $combined !== '' ? $combined : null;
+        }
+
+        $storedPageCss = $artifactCss !== '' ? $artifactCss : ($payload['css'] ?? null);
         $pageCss = EditorPastedComponentNormalizer::resolvePublishedPageCss(
             $html,
             filled($storedPageCss) ? (string) $storedPageCss : null,
@@ -71,6 +83,14 @@ final class EditorRenderer
         $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
 
         return $combined !== '' ? $combined : null;
+    }
+
+    /**
+     * Public URL for a large page stylesheet stored beside the payload, when present.
+     */
+    public function cssStylesheetUrl(SitePage $page): ?string
+    {
+        return PageCssArtifactStore::publicUrl($page->builder_payload ?? []);
     }
 
     public function js(SitePage $page): ?string

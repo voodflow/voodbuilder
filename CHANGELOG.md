@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.99] - 2026-09-23
+
+### Changed
+
+- Save JSON ships author CSS only (Style Manager / `#id`); server always recompiles Tailwind utilities and stores large sheets as a public-disk artifact (`css_artifact`) so shared hosts do not need raised `post_max_size` / Laravel `max_css` for megabyte stylesheets
+- Published pages with a CSS artifact load it via `<link>` instead of inlining megabytes in `<style>`
+- Revisions / autosaves slim oversized inline CSS into versioned artifact files
+
 ## [0.1.98] - 2026-09-22
 
 ### Fixed

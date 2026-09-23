@@ -9,9 +9,11 @@ use Filament\FilamentServiceProvider;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Facades\Storage;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -89,12 +91,15 @@ class EditorPageSaveTest extends TestCase
         $response->assertOk()->assertJson(['saved' => true]);
 
         $page->refresh();
+        $storedCss = PageCssArtifactStore::resolveCss($page->builder_payload ?? []);
 
         $this->assertSame('<section class="voodbuilder-editor-section bg-vp-bg">Updated</section>', $page->builder_payload['html']);
-        $this->assertStringContainsString('.updated {color: red;}', $page->builder_payload['css']);
-        $this->assertStringContainsString('.bg-vp-bg', $page->builder_payload['css']);
-        $this->assertStringContainsString('var(--color-vp-bg)', $page->builder_payload['css']);
+        $this->assertStringContainsString('.updated', $storedCss);
+        $this->assertStringContainsString('color: red', $storedCss);
+        $this->assertStringContainsString('.bg-vp-bg', $storedCss);
+        $this->assertStringContainsString('var(--color-vp-bg)', $storedCss);
         $this->assertSame('', $page->builder_payload['js']);
+        $this->assertStringContainsString('.bg-vp-bg', (string) $response->json('css'));
     }
 
     public function test_admin_can_save_editor_component_scripts(): void
@@ -174,7 +179,7 @@ class EditorPageSaveTest extends TestCase
         $page->refresh();
 
         $this->assertStringContainsString('bg-indigo-500', $page->builder_payload['html']);
-        $this->assertStringContainsString('var(--color-vp-brand-', $page->builder_payload['css']);
+        $this->assertStringContainsString('var(--color-vp-brand-', PageCssArtifactStore::resolveCss($page->builder_payload ?? []));
     }
 
     public function test_admin_can_clear_page_html_on_save(): void
@@ -365,5 +370,61 @@ HTML;
         $this->putJson(route('voodbuilder.editor.pages.update', $page), [
             'html' => str_repeat('a', 20),
         ])->assertUnprocessable();
+    }
+
+    public function test_large_compiled_css_is_stored_as_artifact_not_in_json_payload(): void
+    {
+        Storage::fake('public');
+
+        config([
+            'voodbuilder.editor.payload.css_artifact_threshold_bytes' => 10,
+            'voodbuilder.editor.payload.css_artifact_disk' => 'public',
+            'voodbuilder.editor.payload.max_css_bytes' => 1_000_000,
+        ]);
+
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin-artifact@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Artifact save',
+            'slug' => 'artifact-save',
+            'builder' => PageBuilder::Visual,
+            'layout' => 'landing',
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        // Author-sized request stays well under max_css; server compile merges utilities/theme.
+        $response = $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => '<section class="flex items-center justify-between gap-4 p-8 bg-vp-bg text-vp-text-1"><h1 id="hero">Hi</h1></section>',
+            'css' => '#hero { color: red; }',
+        ]);
+
+        $response->assertOk()->assertJson(['saved' => true]);
+
+        $page->refresh();
+        $payload = $page->builder_payload ?? [];
+        $fullFromResponse = (string) $response->json('css');
+
+        $this->assertGreaterThan(10, strlen($fullFromResponse));
+        $this->assertArrayHasKey(PageCssArtifactStore::META_KEY, $payload);
+        $this->assertIsArray($payload[PageCssArtifactStore::META_KEY]);
+        $this->assertTrue(strlen((string) ($payload['css'] ?? '')) < strlen($fullFromResponse));
+        $this->assertNotNull($page->pageCssStylesheetUrl());
+        $this->assertSame($fullFromResponse, PageCssArtifactStore::resolveCss($payload));
+        $this->assertStringContainsString('#hero', (string) ($payload['css'] ?? ''));
     }
 }

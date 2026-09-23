@@ -11,6 +11,8 @@ use Voodflow\Voodbuilder\Enums\SitePageRevisionKind;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageRevision;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\Editor\EditorPastedComponentNormalizer;
+use Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore;
 use Voodflow\Voodbuilder\Support\Editor\SitePageRevisionRecorder;
 
 /**
@@ -91,16 +93,40 @@ class EditorPageRevisionsController extends Controller
         $isAutosave = SitePageRevisionKind::normalize($revision->kind) === SitePageRevisionKind::Autosave;
         $payload = $revision->builder_payload ?? [];
 
-        // Manual revisions were already published once, so they are restored verbatim.
-        // An autosave never was: it skipped the Tailwind and font passes to keep the
-        // timer cheap, so publishing it raw would put the page live without its
-        // stylesheet.
+        // Manual revisions were already published once, so they are restored verbatim
+        // (CSS may live in a revision artifact). An autosave never was: it skipped the
+        // Tailwind and font passes to keep the timer cheap, so publishing it raw would
+        // put the page live without its stylesheet.
         if ($isAutosave) {
-            $payload = EditorGate::normalizePayload($payload, recompilePageCss: true);
+            $resolvedCss = PageCssArtifactStore::resolveCss($payload);
+            $payload = EditorGate::normalizePayload([
+                'html' => $payload['html'] ?? '',
+                'css' => $resolvedCss !== '' ? $resolvedCss : (string) ($payload['css'] ?? ''),
+                'js' => $payload['js'] ?? '',
+                'project' => $payload['project'] ?? null,
+            ], recompilePageCss: true);
+        } else {
+            $payload['css'] = PageCssArtifactStore::resolveCss($payload);
+        }
+
+        $fullCss = (string) ($payload['css'] ?? '');
+        $authorCss = EditorPastedComponentNormalizer::manualPageCssFromStoredCss($fullCss);
+        $cssStorage = PageCssArtifactStore::persistForPage($sitePage, $fullCss, $authorCss);
+
+        $builderPayload = [
+            'html' => $payload['html'] ?? '',
+            'css' => $cssStorage['css'],
+            'js' => $payload['js'] ?? '',
+            'fonts' => $payload['fonts'] ?? [],
+            'project' => $payload['project'] ?? null,
+        ];
+
+        if ($cssStorage[PageCssArtifactStore::META_KEY] !== null) {
+            $builderPayload[PageCssArtifactStore::META_KEY] = $cssStorage[PageCssArtifactStore::META_KEY];
         }
 
         $sitePage->update([
-            'builder_payload' => $payload,
+            'builder_payload' => $builderPayload,
         ]);
 
         app(SitePageRevisionRecorder::class)->recordIfChanged($sitePage, $previousPayload);

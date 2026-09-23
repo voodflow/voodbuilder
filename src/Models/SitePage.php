@@ -275,6 +275,18 @@ class SitePage extends Model implements HasRichContent
         return $styles;
     }
 
+    /**
+     * Cache-busted public URL for a page CSS artifact, when the sheet is stored on disk.
+     */
+    public function pageCssStylesheetUrl(): ?string
+    {
+        if (! $this->usesEditorBuilder()) {
+            return null;
+        }
+
+        return app(EditorRenderer::class)->cssStylesheetUrl($this);
+    }
+
     public function renderedScripts(): ?string
     {
         if (! $this->usesEditorBuilder()) {

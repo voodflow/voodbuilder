@@ -29,10 +29,16 @@ final class SitePageRevisionRecorder
             return;
         }
 
+        $slimmed = PageCssArtifactStore::slimPayloadForHistory(
+            $previousPayload,
+            (int) $page->getKey(),
+            'prev-'.now()->format('YmdHis').'-'.uniqid(),
+        );
+
         SitePageRevision::query()->create([
             'site_page_id' => $page->getKey(),
             'kind' => SitePageRevisionKind::Manual,
-            'builder_payload' => $previousPayload,
+            'builder_payload' => $slimmed,
             'created_by' => auth()->id(),
             'created_at' => now(),
         ]);
@@ -54,6 +60,12 @@ final class SitePageRevisionRecorder
         if (! HistoryModule::isEnabled()) {
             return null;
         }
+
+        $payload = PageCssArtifactStore::slimPayloadForHistory(
+            $payload,
+            (int) $page->getKey(),
+            'auto-'.now()->format('YmdHis').'-'.uniqid(),
+        );
 
         $latest = $this->latestAutosave($page);
 
@@ -95,6 +107,15 @@ final class SitePageRevisionRecorder
      */
     public function discardAutosaves(SitePage $page): void
     {
+        $autosaves = SitePageRevision::query()
+            ->where('site_page_id', $page->getKey())
+            ->autosaves()
+            ->get();
+
+        foreach ($autosaves as $autosave) {
+            PageCssArtifactStore::deleteArtifactFromPayload($autosave->builder_payload ?? []);
+        }
+
         SitePageRevision::query()
             ->where('site_page_id', $page->getKey())
             ->autosaves()
@@ -107,11 +128,16 @@ final class SitePageRevisionRecorder
      */
     protected function payloadDiffers(array $previous, array $current): bool
     {
-        $normalize = static fn (array $payload): array => [
-            'html' => (string) ($payload['html'] ?? ''),
-            'css' => (string) ($payload['css'] ?? ''),
-            'js' => (string) ($payload['js'] ?? ''),
-        ];
+        $normalize = static function (array $payload): array {
+            $meta = PageCssArtifactStore::metaFromPayload($payload);
+
+            return [
+                'html' => (string) ($payload['html'] ?? ''),
+                'css' => (string) ($payload['css'] ?? ''),
+                'js' => (string) ($payload['js'] ?? ''),
+                'css_artifact' => $meta['hash'] ?? ($meta['path'] ?? ''),
+            ];
+        };
 
         return $normalize($previous) !== $normalize($current);
     }
@@ -135,6 +161,16 @@ final class SitePageRevisionRecorder
 
         if ($idsToKeep->isEmpty()) {
             return;
+        }
+
+        $toDelete = SitePageRevision::query()
+            ->where('site_page_id', $page->getKey())
+            ->where('kind', $kind)
+            ->whereNotIn('id', $idsToKeep)
+            ->get();
+
+        foreach ($toDelete as $revision) {
+            PageCssArtifactStore::deleteArtifactFromPayload($revision->builder_payload ?? []);
         }
 
         SitePageRevision::query()

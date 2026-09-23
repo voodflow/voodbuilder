@@ -612,10 +612,10 @@ export function buildPayload(editor, options = {}) {
     // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
     // reaching the front while the editor looked cleared.
     editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Persist Style Manager paints + live JIT utilities (not full Grapes utility dumps).
-    // Save can then skip Node recompile when the live sheet already covers page utilities.
+    // Persist Style Manager / #id author rules only — never ship live JIT utilities in the
+    // Save JSON (those routinely exceed Laravel max_css_bytes and shared-host body limits).
+    // The server recompiles utilities from HTML (+ author CSS) and may store a CSS artifact.
     const liveCssRaw = String(editor.__voodbuilderPageLiveCss ?? '').trim();
-    const liveCssUtilities = stripAuthorIdRules(liveCssRaw);
     const liveCssAuthorIds = extractGrapesComposerCss(liveCssRaw);
     const composerCss = readComposerCssForPersist(editor);
     const styleManagerCss = extractGrapesComposerCss(composerCss);
@@ -624,9 +624,10 @@ export function buildPayload(editor, options = {}) {
         styleManagerCss,
         componentAuthorCss,
         liveCssAuthorIds,
-        liveCssUtilities,
-        // Boot / empty live sheet: keep composer so the first Save still has CSS to validate.
-        liveCssUtilities === '' ? composerCss : '',
+        // Boot / empty live sheet: keep composer #id rules so the first Save still has author CSS.
+        styleManagerCss === '' && componentAuthorCss === '' && liveCssAuthorIds === ''
+            ? extractGrapesComposerCss(composerCss)
+            : '',
     ]);
 
     const payload = {

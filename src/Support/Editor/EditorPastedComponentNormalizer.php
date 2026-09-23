@@ -268,16 +268,21 @@ final class EditorPastedComponentNormalizer
     }
 
     /**
-     * Save path: reuse the smart page resolve when the submitted sheet already covers
-     * utilities (editor live JIT + author rules). Always-recompile used to spawn Node
-     * Tailwind on every Save even when the canvas CSS was already up to date.
+     * Save path: always compile utilities from HTML and merge with author/manual rules.
      *
-     * Still recompiles when utilities are missing, CSS is corrupted, or animate tokens
-     * are orphan — same gates as {@see resolvePublishedPageCss()}.
+     * The editor Save JSON ships author CSS only (Style Manager / #id) so shared hosts
+     * stay under body-size limits. Theme-covered classes (e.g. `bg-vp-*`) are skipped by
+     * {@see htmlHasTailwindUtilitiesMissingFromCss()}, so the smart publish resolve would
+     * incorrectly keep an author-only sheet. Compiling here is the durable fix.
      */
     public static function resolvePublishedPageCssForSave(string $html, ?string $storedCss): string
     {
-        return self::resolvePublishedPageCss($html, $storedCss);
+        $pageHtml = EditorComponentPageHtml::htmlForPageTailwindCompile($html);
+
+        return self::compileAndMergePublishedPageCss(
+            $pageHtml,
+            self::manualPageCssFromStoredCss($storedCss),
+        );
     }
 
     private static function compileAndMergePublishedPageCss(string $pageHtml, ?string $manualCss): string

@@ -1054,7 +1054,8 @@ final class EditorGate
     {
         $payload = $page->builder_payload ?? [];
         $html = (string) ($payload['html'] ?? '');
-        $css = (string) ($payload['css'] ?? '');
+        // Prefer the on-disk artifact (full sheet) when present; otherwise author/inline CSS.
+        $css = PageCssArtifactStore::resolveCss($payload);
 
         if (ChromeLayoutManagedContent::sitePageUsesChromeShell($page)) {
             $html = ChromeLayoutManagedContent::stripSiteChromeFromPageHtml($html);

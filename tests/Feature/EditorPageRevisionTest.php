@@ -340,7 +340,10 @@ class EditorPageRevisionTest extends TestCase
 
         $page->refresh();
 
-        $this->assertStringContainsString('--color-vp-bg', $page->builder_payload['css']);
+        $this->assertStringContainsString(
+            '--color-vp-bg',
+            \Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore::resolveCss($page->builder_payload ?? []),
+        );
     }
 
     public function test_autosave_refuses_to_park_markup_a_save_would_have_stripped(): void

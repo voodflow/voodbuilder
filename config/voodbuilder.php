@@ -455,12 +455,16 @@ return [
             'excluded_models' => [],
         ],
         'payload' => [
-            // Character limits (Laravel `max:` on strings). Pages with Forms / SVGs /
-            // Style Manager #id rules routinely exceed the old 100–500KB caps.
+            // Character limits (Laravel `max:` on strings). Save JSON should carry
+            // author CSS only; compiled Tailwind utilities are rebuilt server-side
+            // and may be stored as a public-disk artifact above the threshold.
             'max_html_bytes' => 2_000_000,
             'max_css_bytes' => 1_000_000,
             'max_js_bytes' => 500_000,
             'max_project_bytes' => 5_000_000,
+            'css_artifact_threshold_bytes' => (int) env('VOODBUILDER_CSS_ARTIFACT_THRESHOLD', 250_000),
+            'css_artifact_disk' => env('VOODBUILDER_CSS_ARTIFACT_DISK', 'public'),
+            'css_artifact_directory' => env('VOODBUILDER_CSS_ARTIFACT_DIR', 'voodbuilder/page-css'),
         ],
         'plugins' => [
             'forms' => env('VOODBUILDER_EDITOR_FORMS', false),

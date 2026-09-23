@@ -1,5 +1,6 @@
 @php
     use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
+    use Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore;
     use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
     use Voodflow\Voodbuilder\Voodbuilder;
 
@@ -10,7 +11,8 @@
 
     if (! is_array($pageFontIds) || $pageFontIds === []) {
         $pageFontIds = Voodbuilder::fonts()->detectUsedIds(
-            (string) ($page->builder_payload['css'] ?? '')."\n".(string) ($page->builder_payload['html'] ?? ''),
+            PageCssArtifactStore::resolveCss($page->builder_payload ?? []).
+            "\n".(string) ($page->builder_payload['html'] ?? ''),
         );
     }
 
@@ -37,10 +39,18 @@
 @endif
 
 @php
+    $pageCssStylesheetUrl = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
+        ? $page->pageCssStylesheetUrl()
+        : null;
     $editorStyles = ! ($editorEditor ?? false) && $page->usesEditorBuilder()
         ? $page->renderedStyles()
         : null;
 @endphp
+@if (filled($pageCssStylesheetUrl))
+    @push('head')
+        <link rel="stylesheet" id="voodbuilder-page-css-link" href="{{ $pageCssStylesheetUrl }}">
+    @endpush
+@endif
 @if (filled($editorStyles))
     @push('head')
         <style id="voodbuilder-page-css">{!! $editorStyles !!}</style>
