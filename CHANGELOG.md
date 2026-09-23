@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.106] - 2026-09-23
+
+### Fixed
+
+- Dynamic blocks (e.g. Voodflow · Core nodes) no longer vanish right after drop: cascade-delete on `component:remove` skipped during live refresh remount and when the block still has children
+
 ## [0.1.105] - 2026-09-23
 
 ### Fixed

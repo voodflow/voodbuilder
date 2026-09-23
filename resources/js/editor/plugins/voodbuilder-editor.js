@@ -1223,6 +1223,38 @@ function registerDynamicBlockGuards(editor) {
             return;
         }
 
+        // Live refresh / remount clears children before inserting fresh HTML.
+        // Without this guard the first child:remove cascade-deletes the whole block
+        // (Voodflow Core nodes grid appeared for ~1s then vanished on drop).
+        if ((editor.__voodbuilderDynamicBlockRefreshing ?? 0) > 0) {
+            return;
+        }
+
+        const refreshingAncestor = (() => {
+            let current = removed;
+
+            while (current) {
+                if (current.__voodbuilderRefreshing) {
+                    return true;
+                }
+
+                current = current.parent?.();
+            }
+
+            return false;
+        })();
+
+        if (refreshingAncestor) {
+            return;
+        }
+
+        const tag = String(removed.get?.('tagName') ?? '').toLowerCase();
+
+        // Grapes discards <style>/<script> from canvas HTML — not an author delete.
+        if (tag === 'style' || tag === 'script') {
+            return;
+        }
+
         const dynamic = findDynamicBlockAncestor(removed);
 
         if (! dynamic?.parent()) {
@@ -1241,9 +1273,16 @@ function registerDynamicBlockGuards(editor) {
         }
 
         window.queueMicrotask(() => {
-            if (dynamic.parent()) {
-                dynamic.remove();
+            if (! dynamic.parent?.()) {
+                return;
             }
+
+            // Still has content — author removed a leaf; keep the block shell.
+            if ((dynamic.components?.()?.length ?? 0) > 0) {
+                return;
+            }
+
+            dynamic.remove();
         });
     });
 }
