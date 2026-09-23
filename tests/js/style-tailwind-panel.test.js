@@ -31,6 +31,7 @@ import {
     cascadePrefixesFor,
     currentStyleBreakpointPrefix,
     deviceIdToBreakpointPrefix,
+    replaceClassGroupAllBreakpoints,
     replaceClassGroupAtBreakpoint,
     resolveGroupValueAtBreakpoint,
     stripResponsivePrefix,
@@ -659,6 +660,31 @@ describe('style viewport breakpoints', () => {
         expect(classes).toContain('text-4xl');
         expect(classes).toContain('lg:text-7xl');
         expect(classes).not.toContain('md:text-6xl');
+    });
+
+    it('gradient utilities write at base and clear leftover md:/lg: stops', () => {
+        let classes = ['lg:from-red-500', 'md:to-green-500', 'bg-gradient-to-r'];
+        const fromSet = classSetFromOptions(
+            STYLE_UTILITY_GROUPS.find((g) => g.id === 'gradient-from').options,
+        );
+        const component = {
+            getClasses: () => [...classes],
+            removeClass: (name) => {
+                classes = classes.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! classes.includes(name)) {
+                    classes = [...classes, name];
+                }
+            },
+        };
+
+        replaceClassGroupAllBreakpoints(component, fromSet, 'from-purple-500');
+
+        expect(classes).toContain('from-purple-500');
+        expect(classes).toContain('bg-gradient-to-r');
+        expect(classes).toContain('md:to-green-500');
+        expect(classes).not.toContain('lg:from-red-500');
     });
 
     it('spacing state resolves md: padding at tablet prefix', () => {

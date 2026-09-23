@@ -150,6 +150,19 @@ function replaceStyleGroup(component, groupSet, nextClass, editor = null, option
         options,
     );
 }
+
+/**
+ * Gradients (bg + text) always author at base — md:/lg: from-/to- force JIT
+ * rebuilds and drop --tw-gradient-stops until Save.
+ *
+ * @param {object|null|undefined} component
+ * @param {Set<string>} groupSet
+ * @param {string|null|undefined} nextClass
+ * @param {{ alsoClear?: Iterable<Set<string>> }} [options]
+ */
+function replaceGradientStyleGroup(component, groupSet, nextClass, options = {}) {
+    replaceClassGroupAllBreakpoints(component, groupSet, nextClass, options);
+}
 const GROUP_SETS = Object.fromEntries(
     STYLE_UTILITY_GROUPS.map((group) => [group.id, classSetFromOptions(group.options)]),
 );
@@ -172,6 +185,10 @@ const SHARED_GRADIENT_GROUP_IDS = [
     'gradient-to',
 ];
 
+function isGradientStyleGroupId(groupId) {
+    return SHARED_GRADIENT_GROUP_IDS.includes(groupId)
+        || TEXT_GRADIENT_GROUP_IDS.includes(groupId);
+}
 function clearTextGradientUtilities(component, { includeGradientStops = true } = {}) {
     if (! component) {
         return;
@@ -811,6 +828,11 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
             } else if (group.id === 'background' || group.id === 'background-opacity') {
                 const bg = resolveBackgroundColorAndOpacity(classes, component);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
+            } else if (isGradientStyleGroupId(group.id)) {
+                // Gradients always live at base — do not mark cascade as inherited.
+                el.value = resolveGroupValueAtBreakpoint(classes, group.options, '');
+                el.classList?.toggle?.('is-inherited', false);
+                el.removeAttribute?.('title');
             } else {
                 const exact = resolveGroupValueExact(classes, group.options, bp);
                 const cascaded = resolveGroupValueAtBreakpoint(classes, group.options, bp);
@@ -1138,7 +1160,7 @@ function applyGroup(editor, component, groupId, value) {
                 clearStyleProperty(editor, component, 'background-image');
             }
 
-            replaceStyleGroup(component, groupSet, value || null, editor);
+            replaceGradientStyleGroup(component, groupSet, value || null);
             clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             ensureTextGradientPaint(editor, component);
 
@@ -1148,7 +1170,8 @@ function applyGroup(editor, component, groupId, value) {
                 // View may be unavailable during bulk updates.
             }
 
-            scheduleClassCompile(editor, styleWrittenToken(editor, value));
+            // Bare token — gradients stay at base (bundled in section-utilities).
+            scheduleClassCompile(editor, String(value ?? '').trim());
             editor?.trigger?.('update');
             editor?.trigger?.('component:update', component);
         } finally {
@@ -1208,7 +1231,11 @@ function applyGroup(editor, component, groupId, value) {
             .map((id) => GROUP_SETS[id])
             .filter(Boolean);
 
-        replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
+        if (isGradientStyleGroupId(groupId)) {
+            replaceGradientStyleGroup(component, groupSet, value || null, { alsoClear });
+        } else {
+            replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
+        }
         clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
         // DOM first (realtime), compile only if the utility is missing from canvas CSS.
         try {
@@ -1238,7 +1265,12 @@ function applyGroup(editor, component, groupId, value) {
             releaseAuthorBackgroundImageForUtilities(editor, component);
         }
 
-        scheduleClassCompile(editor, styleWrittenToken(editor, value));
+        scheduleClassCompile(
+            editor,
+            isGradientStyleGroupId(groupId)
+                ? String(value ?? '').trim()
+                : styleWrittenToken(editor, value),
+        );
         // Same dirty signal as CLASSES "+" / other editor mutations.
         editor?.trigger?.('update');
         // Class chips listen to component:update (not plain "update").
@@ -2005,7 +2037,8 @@ function readBackgroundImageOpacity(component, editor = null) {
 
 function resolveDecorationGradientLayer(component, photoVisibility = null) {
     const classes = componentClassList(component);
-    const direction = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
+    // Cascade lg→md→base so leftover responsive stops (pre-fix) still resolve.
+    const direction = resolveGroupValueAtBreakpoint(classes, GRADIENT_DIRECTION_OPTIONS, 'lg:');
 
     if (! direction || direction === 'bg-none') {
         return '';
@@ -2015,9 +2048,9 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
     if (photoVisibility != null) {
         return composePhotoAwareGradientLayer({
             directionUtility: direction,
-            fromUtility: resolveGroupValue(classes, GRADIENT_FROM_OPTIONS),
-            viaUtility: resolveGroupValue(classes, GRADIENT_VIA_OPTIONS),
-            toUtility: resolveGroupValue(classes, GRADIENT_TO_OPTIONS),
+            fromUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:'),
+            viaUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:'),
+            toUtility: resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, 'lg:'),
             photoVisibility,
         });
     }
