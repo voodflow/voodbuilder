@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.122] - 2026-09-23
+
+### Fixed
+
+- Gradient + Image: Photo visibility now softens gradient stop alpha so the photo stays visible (opaque TW `from-*`/`to-*` would fully cover the url)
+
 ## [0.1.121] - 2026-09-23
 
 ### Fixed

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     composeColorOverlayLayer,
     composeDecorationBackgroundImageCss,
+    composePhotoAwareGradientLayer,
     composeTailwindGradientLayer,
     cssColorFromBackgroundUtility,
     extractUrlFromBackgroundImage,
@@ -59,14 +60,34 @@ describe('style-background-image', () => {
         expect(inferBackgroundImageOpacityFromCss("url('/a.jpg')")).toBeNull();
     });
 
-    it('stacks gradient above image without fading the url', () => {
-        const gradient = composeTailwindGradientLayer('bg-gradient-to-r');
+    it('TW utility gradient layer matches v4 formula', () => {
+        expect(composeTailwindGradientLayer('bg-gradient-to-r'))
+            .toBe('linear-gradient(var(--tw-gradient-stops))');
+    });
 
-        expect(gradient).toBe('linear-gradient(var(--tw-gradient-stops))');
-        expect(composeDecorationBackgroundImageCss('/a.jpg', 0.25, '#ff0000', { gradientLayer: gradient }))
+    it('stacks translucent gradient above image from photo visibility', () => {
+        const gradient = composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-tr',
+            fromUtility: 'from-red-500',
+            viaUtility: 'via-blue-700',
+            toUtility: 'to-green-300',
+            photoVisibility: 0.35,
+        });
+
+        // overlay alpha = 0.65
+        expect(gradient).toBe(
+            'linear-gradient(to top right, rgba(239, 68, 68, 0.65), rgba(29, 78, 216, 0.65), rgba(134, 239, 172, 0.65))',
+        );
+        expect(composeDecorationBackgroundImageCss('/a.jpg', 0.35, '', { gradientLayer: gradient }))
             .toBe(`${gradient}, url('/a.jpg')`);
-        expect(composeDecorationBackgroundImageCss('', 1, '', { gradientLayer: gradient }))
-            .toBe(gradient);
+
+        // 100% photo visibility → no gradient overlay (pure photo)
+        expect(composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-t',
+            fromUtility: 'from-red-500',
+            toUtility: 'to-blue-700',
+            photoVisibility: 1,
+        })).toBe('');
     });
 
     it('resolves bg-* utilities to hex for overlays', () => {

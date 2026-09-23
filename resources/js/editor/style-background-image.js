@@ -221,6 +221,9 @@ export function composeColorOverlayLayer(color, alpha) {
  * (e.g. `to top in oklab, …`). Doubling the direction makes the gradient invalid
  * and invisible on the canvas.
  *
+ * Opaque stops fully cover a photo underneath — use
+ * {@link composePhotoAwareGradientLayer} when stacking over an image.
+ *
  * @param {string} directionUtility e.g. bg-gradient-to-r
  * @returns {string}
  */
@@ -235,8 +238,69 @@ export function composeTailwindGradientLayer(directionUtility) {
 }
 
 /**
- * Gradient overlay layers above the photo. Stop opacity stays author-controlled
- * via from-*\50 utilities; the photo url() is never faded.
+ * Gradient overlay above a photo: same direction/stops as the Style panel, but
+ * stop alpha = (1 − photoVisibility) so the url() remains visible.
+ *
+ * Opaque Tailwind `from-*` / `to-*` would otherwise fully hide the image —
+ * that is CSS layering, not a Tailwind bug. Photo visibility is the control.
+ *
+ * @param {{
+ *   directionUtility?: string,
+ *   fromUtility?: string,
+ *   viaUtility?: string,
+ *   toUtility?: string,
+ *   photoVisibility?: number|string,
+ * }} opts
+ * @returns {string}
+ */
+export function composePhotoAwareGradientLayer(opts = {}) {
+    const direction = GRADIENT_DIRECTION_CSS[String(opts.directionUtility ?? '').trim()];
+
+    if (! direction) {
+        return '';
+    }
+
+    const alpha = overlayAlphaFromPhotoVisibility(opts.photoVisibility);
+
+    if (alpha < 0.001) {
+        return '';
+    }
+
+    const stop = (utility) => {
+        const token = String(utility ?? '').trim();
+
+        if (token === '' || token.endsWith('-none') || token === 'none') {
+            return '';
+        }
+
+        const hex = hexForUtility(token);
+
+        if (! hex) {
+            return '';
+        }
+
+        return toRgbaWithAlpha(hex, alpha) ?? '';
+    };
+
+    const from = stop(opts.fromUtility);
+    const via = stop(opts.viaUtility);
+    const to = stop(opts.toUtility);
+    const parts = [from, via, to].filter(Boolean);
+
+    if (parts.length === 0) {
+        // Direction without stops — soft dark scrim so photo still reads.
+        return composeColorOverlayLayer('#0f172a', alpha);
+    }
+
+    if (parts.length === 1) {
+        parts.push(toRgbaWithAlpha('#000000', 0) ?? 'transparent');
+    }
+
+    return `linear-gradient(${direction}, ${parts.join(', ')})`;
+}
+
+/**
+ * Gradient overlay layers above the photo.
  *
  * @param {string} gradientLayer
  * @returns {string[]}

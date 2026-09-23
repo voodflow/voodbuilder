@@ -24,6 +24,7 @@ import {
     STYLE_BG_OPACITY_OPTIONS,
     STYLE_BG_SRC_ATTR,
     composeDecorationBackgroundImageCss,
+    composePhotoAwareGradientLayer,
     composeTailwindGradientLayer,
     cssColorFromBackgroundUtility,
     extractUrlFromBackgroundImage,
@@ -1519,12 +1520,23 @@ function readBackgroundImageOpacity(component, editor = null) {
     return inferred == null ? 1 : inferred;
 }
 
-function resolveDecorationGradientLayer(component) {
+function resolveDecorationGradientLayer(component, photoVisibility = null) {
     const classes = componentClassList(component);
     const direction = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
 
     if (! direction || direction === 'bg-none') {
         return '';
+    }
+
+    // Over a photo: bake stop alpha from Photo visibility (opaque TW stops would hide the url).
+    if (photoVisibility != null) {
+        return composePhotoAwareGradientLayer({
+            directionUtility: direction,
+            fromUtility: resolveGroupValue(classes, GRADIENT_FROM_OPTIONS),
+            viaUtility: resolveGroupValue(classes, GRADIENT_VIA_OPTIONS),
+            toUtility: resolveGroupValue(classes, GRADIENT_TO_OPTIONS),
+            photoVisibility,
+        });
     }
 
     return composeTailwindGradientLayer(direction);
@@ -1660,7 +1672,8 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
 
     const target = resolveVisualStyleTarget(component) ?? component;
     const opacity = readBackgroundImageOpacity(component, editor);
-    const gradientLayer = resolveDecorationGradientLayer(component);
+    // Pass photo visibility so gradient stops get alpha — opaque TW stops hide the url.
+    const gradientLayer = resolveDecorationGradientLayer(component, opacity);
     const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, target);
     const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
 
