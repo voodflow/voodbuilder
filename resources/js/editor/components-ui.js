@@ -694,7 +694,8 @@ export function registerComponentsUi(editor, options = {}) {
         upsertCatalogEntry(updated);
         focusComponentsLibrary();
         syncCatalog();
-        reapplyComponentInstancesOnCanvas(editor, updated);
+        // Page instances are snapshots: editing the library must NOT replace canvas HTML.
+        // Authors hide/edit cards per page; pushing catalog HTML resurrected defaults (e.g. Explore labels).
     };
 
     const openComponentMenu = (item, x, y) => {
@@ -1596,39 +1597,23 @@ function hydrateComponentInstances(editor, catalog) {
     });
 }
 
+/**
+ * @deprecated Page instances are independent snapshots — never replace their HTML from the catalog.
+ * Kept as a no-op so any external callers stay safe.
+ */
 function reapplyComponentInstancesOnCanvas(editor, item) {
-    if (! item?.id || ! item?.html) {
+    if (! item?.id || ! editor?.getWrapper) {
         return;
     }
 
+    // Presentation only (layer name) — do not call component.components(item.html).
     const componentId = String(item.id);
     const matches = editor.getWrapper().find(`[${COMPONENT_ATTR}="${componentId}"]`);
 
     matches.forEach((component) => {
-        component.set(COMPONENT_HYDRATED_KEY, false, { silent: true });
-        component.set({
-            type: COMPONENT_TYPE,
-            name: formatComponentInstanceName(item.name),
-            draggable: true,
-            droppable: true,
-            removable: true,
-            copyable: true,
-            layerable: true,
-            selectable: true,
-            highlightable: true,
-            editable: false,
-        });
-        component.components(item.html);
-        component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
-        component.addAttributes({
-            [COMPONENT_ATTR]: componentId,
-            class: 'voodbuilder-editor-component-instance',
-        });
+        applyComponentInstancePresentation(component, item);
+        ensureComponentScopeAttribute(component);
     });
-
-    if (matches.length > 0) {
-        editor.trigger('update');
-    }
 }
 
 function hasMeaningfulComponentBody(component) {
@@ -1671,7 +1656,7 @@ function hydrateComponentInstance(component, catalog, editor = null) {
 
     // Never inject catalog HTML here. Empty wrappers must stay empty so author deletions
     // survive save/reload; new drops already embed HTML via buildComponentContent().
-    // Library updates push via reapplyComponentInstancesOnCanvas().
+    // Library edits must not push onto page instances (snapshots stay local).
     component.set(COMPONENT_HYDRATED_KEY, true, { silent: true });
     ensureComponentScopeAttribute(component);
     applyComponentInstancePresentation(component, item);
@@ -1696,9 +1681,8 @@ function formatComponentInstanceName(name) {
 }
 
 function applyComponentInstancePresentation(component, item) {
-    component.set({
-        type: COMPONENT_TYPE,
-        name: formatComponentInstanceName(item?.name),
+    const nextName = formatComponentInstanceName(item?.name);
+    const updates = {
         draggable: true,
         droppable: true,
         removable: true,
@@ -1707,7 +1691,18 @@ function applyComponentInstancePresentation(component, item) {
         selectable: true,
         highlightable: true,
         editable: false,
-    });
+    };
+
+    // Avoid set({ type }) when already correct — Grapes can remount and wipe children.
+    if (component.get?.('type') !== COMPONENT_TYPE) {
+        updates.type = COMPONENT_TYPE;
+    }
+
+    if (component.get?.('name') !== nextName) {
+        updates.name = nextName;
+    }
+
+    component.set(updates);
 }
 
 function buildComponentContent(item) {

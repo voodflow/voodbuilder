@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.104] - 2026-09-23
+
+### Fixed
+
+- Component instances already on a page are snapshots: editing a library component no longer replaces canvas HTML (hides / per-page Explore labels stayed until catalog re-push restored defaults)
+
 ## [0.1.103] - 2026-09-23
 
 ### Fixed
