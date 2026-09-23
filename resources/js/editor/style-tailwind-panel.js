@@ -24,6 +24,7 @@ import {
     STYLE_BG_OPACITY_OPTIONS,
     STYLE_BG_SRC_ATTR,
     composeDecorationBackgroundImageCss,
+    composeTailwindGradientLayer,
     extractUrlFromBackgroundImage,
     inferBackgroundImageOpacityFromCss,
     normalizeBackgroundImageOpacity,
@@ -702,33 +703,29 @@ function applyGroup(editor, component, groupId, value) {
         const classes = componentClassList(component);
         const textGradientActive = hasTextGradientClasses(classes);
 
-        // Capture decoration photo before any color clears — Color utilities must not
-        // drop background-image (and rebuild needs the src even if CSS rules were wiped).
-        const preservedBgUrl = groupId === 'background'
+        // Capture decoration photo before color/gradient writes.
+        const isBgPaintGroup = groupId === 'background'
+            || groupId === 'gradient-direction'
+            || groupId === 'gradient-from'
+            || groupId === 'gradient-via'
+            || groupId === 'gradient-to';
+        const preservedBgUrl = isBgPaintGroup
             ? readBackgroundImageUrl(component, editor)
             : '';
-        const preservedBgOpacity = groupId === 'background'
+        const preservedBgOpacity = isBgPaintGroup
             ? readBackgroundImageOpacity(component, editor)
             : 1;
 
-        // Solid color clears gradient stops; gradient direction clears solid color + image.
+        // Solid color clears gradient stops (exclusive); keep image.
         if (groupId === 'background' && value && ! textGradientActive) {
             alsoClearIds.push('gradient-direction', 'gradient-from', 'gradient-via', 'gradient-to');
         }
 
+        // Gradient clears solid color (exclusive); keep image — do not wipe background-image.
         if (groupId === 'gradient-direction' && value && value !== 'bg-none') {
             if (! textGradientActive) {
                 alsoClearIds.push('background');
             }
-
-            clearStyleProperty(editor, component, 'background-image');
-        }
-
-        if (
-            (groupId === 'gradient-from' || groupId === 'gradient-via' || groupId === 'gradient-to')
-            && value
-        ) {
-            clearStyleProperty(editor, component, 'background-image');
         }
 
         if (
@@ -753,22 +750,17 @@ function applyGroup(editor, component, groupId, value) {
             // View may be unavailable during bulk updates.
         }
 
-        // Solid bg color changed: keep / rebuild image fade over the new color.
-        if (groupId === 'background' && preservedBgUrl !== '') {
-            const fadeColor = resolveBackgroundFadeColor(editor, component);
-            const cssValue = composeDecorationBackgroundImageCss(
-                preservedBgUrl,
-                preservedBgOpacity,
-                fadeColor,
-            );
+        // Color / gradient changed: keep photo and recompose layers (gradient + fade + url).
+        if (isBgPaintGroup && preservedBgUrl !== '') {
             component.addAttributes?.({
                 [STYLE_BG_OPACITY_ATTR]: String(preservedBgOpacity),
                 [STYLE_BG_SRC_ATTR]: preservedBgUrl,
             });
-            component.addStyle?.(
-                { 'background-image': cssValue },
-                { inline: true },
-            );
+            // Ensure src is readable even if CSS was touched.
+            if (String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '') !== preservedBgUrl) {
+                component.addAttributes?.({ [STYLE_BG_SRC_ATTR]: preservedBgUrl });
+            }
+            reapplyDecorationBackgroundPaint(editor, component);
         }
 
         scheduleClassCompile(editor);
@@ -1300,6 +1292,46 @@ function readBackgroundImageOpacity(component, editor = null) {
     return inferred == null ? 1 : inferred;
 }
 
+function resolveDecorationGradientLayer(component) {
+    const classes = componentClassList(component);
+    const direction = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
+
+    if (! direction || direction === 'bg-none') {
+        return '';
+    }
+
+    return composeTailwindGradientLayer(direction);
+}
+
+/**
+ * Re-paint decoration background-image from durable src + opacity + optional gradient.
+ */
+function reapplyDecorationBackgroundPaint(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const src = readBackgroundImageUrl(component, editor);
+
+    if (src === '') {
+        return;
+    }
+
+    const opacity = readBackgroundImageOpacity(component, editor);
+    const gradientLayer = resolveDecorationGradientLayer(component);
+    const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, component);
+    const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
+
+    component.addAttributes?.({
+        [STYLE_BG_OPACITY_ATTR]: String(opacity),
+        [STYLE_BG_SRC_ATTR]: src,
+    });
+    component.addStyle?.(
+        { 'background-image': cssValue },
+        { inline: true },
+    );
+}
+
 function resolveBackgroundFadeColor(editor, component) {
     const authored = readComponentCssProperty(editor, component, 'background-color');
 
@@ -1373,15 +1405,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
         if (src === '') {
             clearDecorationBackgroundImage(editor, component);
         } else {
-            // Image wins over gradient utilities.
-            replaceClassGroup(component, GROUP_SETS['gradient-direction'], null, {
-                alsoClear: [
-                    GROUP_SETS['gradient-from'],
-                    GROUP_SETS['gradient-via'],
-                    GROUP_SETS['gradient-to'],
-                ].filter(Boolean),
-            });
-
+            // Keep gradient utilities — image + gradient compose as layered background-image.
             const nextOpacity = opacity == null
                 ? readBackgroundImageOpacity(component, editor)
                 : normalizeBackgroundImageOpacity(opacity);
@@ -1391,10 +1415,13 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
                 [STYLE_BG_SRC_ATTR]: src,
             });
 
-            const fadeColor = resolveBackgroundFadeColor(editor, component);
-            const cssValue = composeDecorationBackgroundImageCss(src, nextOpacity, fadeColor);
+            const gradientLayer = resolveDecorationGradientLayer(component);
+            const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, component);
+            const cssValue = composeDecorationBackgroundImageCss(src, nextOpacity, fadeColor, {
+                gradientLayer,
+            });
 
-            // Only strip the image paint — keep solid bg-* color as fallback.
+            // Only strip the previous image paint — keep solid bg-* / gradient classes.
             clearStyleProperty(editor, component, 'background-image');
             component.addStyle?.(
                 { 'background-image': cssValue },

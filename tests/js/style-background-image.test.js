@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     composeDecorationBackgroundImageCss,
+    composeTailwindGradientLayer,
     extractUrlFromBackgroundImage,
     normalizeBackgroundImageOpacity,
     toRgbaWithAlpha,
@@ -44,5 +45,15 @@ describe('style-background-image', () => {
             'linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45)), url(/a.jpg)',
         )).toBe(0.55);
         expect(inferBackgroundImageOpacityFromCss("url('/a.jpg')")).toBeNull();
+    });
+
+    it('stacks gradient above image without color fade', () => {
+        const gradient = composeTailwindGradientLayer('bg-gradient-to-r');
+
+        expect(gradient).toContain('linear-gradient(to right,');
+        expect(composeDecorationBackgroundImageCss('/a.jpg', 0.25, '#ff0000', { gradientLayer: gradient }))
+            .toBe(`${gradient}, url('/a.jpg')`);
+        expect(composeDecorationBackgroundImageCss('', 1, '', { gradientLayer: gradient }))
+            .toBe(gradient);
     });
 });

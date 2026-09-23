@@ -2,6 +2,7 @@
  * Style panel decoration background-image helpers.
  * Opacity fades the image toward the solid background-color underneath
  * via a color overlay layered above the url().
+ * Gradient + image stack as: gradient, [color fade], url(...).
  */
 
 export const STYLE_BG_OPACITY_ATTR = 'data-vb-style-bg-opacity';
@@ -17,6 +18,18 @@ export const STYLE_BG_OPACITY_OPTIONS = [
     { value: '0.9', label: '90%' },
     { value: '1', label: '100%' },
 ];
+
+/** Tailwind bg-gradient-to-* → CSS linear-gradient direction. */
+export const GRADIENT_DIRECTION_CSS = {
+    'bg-gradient-to-t': 'to top',
+    'bg-gradient-to-tr': 'to top right',
+    'bg-gradient-to-r': 'to right',
+    'bg-gradient-to-br': 'to bottom right',
+    'bg-gradient-to-b': 'to bottom',
+    'bg-gradient-to-bl': 'to bottom left',
+    'bg-gradient-to-l': 'to left',
+    'bg-gradient-to-tl': 'to top left',
+};
 
 /**
  * @param {unknown} value
@@ -157,36 +170,65 @@ export function toRgbaWithAlpha(color, alpha) {
 }
 
 /**
- * Build background-image CSS: optional fade overlay + url().
- * Overlay alpha = 1 − imageOpacity so the solid color behind shows through.
+ * Build a Tailwind-compatible gradient layer that reads --tw-gradient-* from classes.
+ *
+ * @param {string} directionUtility e.g. bg-gradient-to-r
+ * @returns {string}
+ */
+export function composeTailwindGradientLayer(directionUtility) {
+    const direction = GRADIENT_DIRECTION_CSS[String(directionUtility ?? '').trim()];
+
+    if (! direction) {
+        return '';
+    }
+
+    return `linear-gradient(${direction}, var(--tw-gradient-stops, var(--tw-gradient-from, transparent), var(--tw-gradient-to, transparent)))`;
+}
+
+/**
+ * Build background-image CSS layers: optional gradient, optional color fade, url().
  *
  * @param {string} url
  * @param {number|string} [opacity=1]
  * @param {string} [fadeColor='']
+ * @param {{ gradientLayer?: string }} [options]
  * @returns {string}
  */
-export function composeDecorationBackgroundImageCss(url, opacity = 1, fadeColor = '') {
+export function composeDecorationBackgroundImageCss(url, opacity = 1, fadeColor = '', options = {}) {
     const image = cssBackgroundImageUrlValue(url);
+    const gradientLayer = String(options?.gradientLayer ?? '').trim();
+    const layers = [];
 
-    if (image === '') {
+    if (gradientLayer) {
+        layers.push(gradientLayer);
+    }
+
+    if (image === '' && layers.length === 0) {
         return '';
     }
 
     const op = normalizeBackgroundImageOpacity(opacity);
 
-    if (op >= 0.999) {
-        return image;
+    // Solid-color fade toward bg color (same as Color + Image). Skip when a
+    // gradient already paints the overlay — gradient sits above the photo.
+    if (image !== '' && op < 0.999 && ! gradientLayer) {
+        const fade = 1 - op;
+        const color = String(fadeColor ?? '').trim() || 'var(--color-vp-bg, #0f172a)';
+        const rgba = toRgbaWithAlpha(color, fade);
+
+        if (rgba) {
+            layers.push(`linear-gradient(${rgba}, ${rgba})`);
+        } else {
+            const pct = Math.round(fade * 1000) / 10;
+            layers.push(
+                `linear-gradient(color-mix(in srgb, ${color} ${pct}%, transparent), color-mix(in srgb, ${color} ${pct}%, transparent))`,
+            );
+        }
     }
 
-    const fade = 1 - op;
-    const color = String(fadeColor ?? '').trim() || 'var(--color-vp-bg, #0f172a)';
-    const rgba = toRgbaWithAlpha(color, fade);
-
-    if (rgba) {
-        return `linear-gradient(${rgba}, ${rgba}), ${image}`;
+    if (image !== '') {
+        layers.push(image);
     }
 
-    const pct = Math.round(fade * 1000) / 10;
-
-    return `linear-gradient(color-mix(in srgb, ${color} ${pct}%, transparent), color-mix(in srgb, ${color} ${pct}%, transparent)), ${image}`;
+    return layers.join(', ');
 }

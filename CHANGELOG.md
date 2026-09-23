@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.117] - 2026-09-23
+
+### Changed
+
+- Background **Gradient** and **Image** can be used together (stacked layers); Color and Gradient remain mutually exclusive. Changing gradient no longer wipes the photo.
+
 ## [0.1.116] - 2026-09-23
 
 ### Fixed
