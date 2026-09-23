@@ -68,6 +68,9 @@ class ThemesWorkspace extends Component
 
     public bool $showGenerateModal = false;
 
+    /** Which mode the generate modal will write into (`light` or `dark`). */
+    public string $generateMode = 'light';
+
     public string $seedPrimary = '#3451b2';
 
     public string $seedSecondary = '';
@@ -614,11 +617,18 @@ class ThemesWorkspace extends Component
         $this->hydrateEditorFor($id);
     }
 
-    public function openGenerateModal(): void
+    public function openGenerateModal(?string $mode = null): void
     {
-        $this->seedPrimary = $this->light['primary'] ?? '#3451b2';
-        $this->seedSecondary = $this->light['secondary'] ?? '';
-        $this->seedHeaderBg = $this->light['header_bg'] ?? '';
+        $mode = in_array($mode, ['light', 'dark'], true)
+            ? $mode
+            : ($this->studioDesk ? $this->previewMode : 'light');
+
+        $this->generateMode = $mode;
+        $palette = $mode === 'dark' ? $this->dark : $this->light;
+
+        $this->seedPrimary = $palette['primary'] ?? '#3451b2';
+        $this->seedSecondary = $palette['secondary'] ?? '';
+        $this->seedHeaderBg = $palette['header_bg'] ?? '';
         $this->showGenerateModal = true;
     }
 
@@ -628,8 +638,11 @@ class ThemesWorkspace extends Component
             return;
         }
 
+        $mode = $this->generateMode === 'dark' ? 'dark' : 'light';
+
         try {
-            $palette = ThemePaletteGenerator::fromSeeds(
+            $generated = ThemePaletteGenerator::fromSeedsForMode(
+                $mode,
                 $this->seedPrimary,
                 filled($this->seedSecondary) ? $this->seedSecondary : null,
                 filled($this->seedHeaderBg) ? $this->seedHeaderBg : null,
@@ -640,8 +653,12 @@ class ThemesWorkspace extends Component
             return;
         }
 
-        $this->light = array_merge($this->light, $palette['light']);
-        $this->dark = array_merge($this->dark, $palette['dark']);
+        if ($mode === 'dark') {
+            $this->dark = array_merge($this->dark, $generated);
+        } else {
+            $this->light = array_merge($this->light, $generated);
+        }
+
         $this->showGenerateModal = false;
         $this->persistColors();
 
@@ -672,6 +689,32 @@ class ThemesWorkspace extends Component
         $this->persistColors();
 
         Notification::make()->title(__('voodbuilder::settings.sync_dark_theme_colors_success'))->success()->send();
+    }
+
+    public function syncLightFromDark(): void
+    {
+        if ($this->selectedId === null || ! $this->canEditColors) {
+            return;
+        }
+
+        if (! filled($this->dark['primary'] ?? null)) {
+            Notification::make()
+                ->title(__('voodbuilder::settings.sync_light_theme_colors_failed'))
+                ->body(__('voodbuilder::settings.sync_light_theme_colors_missing_dark'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->light = ThemePaletteGenerator::lightFromDark(array_filter(
+            $this->dark,
+            static fn (?string $value): bool => filled($value),
+        ));
+
+        $this->persistColors();
+
+        Notification::make()->title(__('voodbuilder::settings.sync_light_theme_colors_success'))->success()->send();
     }
 
     public function resetColors(): void

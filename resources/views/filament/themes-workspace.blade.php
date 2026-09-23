@@ -1323,12 +1323,20 @@
                             wire:click="setPreviewMode('dark')"
                         >{{ __('voodbuilder::settings.theme_dark_mode') }}</button>
                         <div class="voodbuilder-themes-ws__palette-actions" style="margin-left:auto;">
-                            <button type="button" class="voodbuilder-themes-ws__link" wire:click="openGenerateModal">
-                                {{ __('voodbuilder::settings.theme_workspace_generate') }}
+                            <button type="button" class="voodbuilder-themes-ws__link" wire:click="openGenerateModal('{{ $previewMode }}')">
+                                {{ $previewMode === 'dark'
+                                    ? __('voodbuilder::settings.theme_workspace_generate_dark')
+                                    : __('voodbuilder::settings.theme_workspace_generate_light') }}
                             </button>
-                            <button type="button" class="voodbuilder-themes-ws__link" wire:click="syncDarkFromLight">
-                                {{ __('voodbuilder::settings.sync_dark_theme_colors') }}
-                            </button>
+                            @if ($previewMode === 'light')
+                                <button type="button" class="voodbuilder-themes-ws__link" wire:click="syncDarkFromLight">
+                                    {{ __('voodbuilder::settings.sync_dark_theme_colors') }}
+                                </button>
+                            @else
+                                <button type="button" class="voodbuilder-themes-ws__link" wire:click="syncLightFromDark">
+                                    {{ __('voodbuilder::settings.sync_light_theme_colors') }}
+                                </button>
+                            @endif
                             <button type="button" class="voodbuilder-themes-ws__link" wire:click="resetColors">
                                 {{ __('voodbuilder::settings.reset_theme_colors') }}
                             </button>
@@ -1417,9 +1425,14 @@
                         @endforeach
                     </div>
                     <div class="voodbuilder-themes-ws__palette-actions">
+                        <button type="button" class="voodbuilder-themes-ws__link" wire:click="openGenerateModal('{{ $mode }}')">
+                            {{ $mode === 'dark'
+                                ? __('voodbuilder::settings.theme_workspace_generate_dark')
+                                : __('voodbuilder::settings.theme_workspace_generate_light') }}
+                        </button>
                         @if ($mode === 'light')
-                            <button type="button" class="voodbuilder-themes-ws__link" wire:click="openGenerateModal">
-                                {{ __('voodbuilder::settings.theme_workspace_generate') }}
+                            <button type="button" class="voodbuilder-themes-ws__link" wire:click="syncLightFromDark">
+                                {{ __('voodbuilder::settings.sync_light_theme_colors') }}
                             </button>
                         @else
                             <button type="button" class="voodbuilder-themes-ws__link" wire:click="syncDarkFromLight">
@@ -1531,8 +1544,12 @@
         <template x-teleport="body">
             <div class="voodbuilder-themes-ws__modal-backdrop" wire:click.self="$set('showGenerateModal', false)" x-data>
                 <div class="voodbuilder-themes-ws__modal" wire:click.stop @click.stop style="max-width: 24rem;">
-                    <h3>{{ __('voodbuilder::settings.generate_theme_palette') }}</h3>
-                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ __('voodbuilder::settings.generate_theme_palette_help') }}</p>
+                    <h3>{{ $generateMode === 'dark'
+                        ? __('voodbuilder::settings.generate_theme_palette_dark')
+                        : __('voodbuilder::settings.generate_theme_palette_light') }}</h3>
+                    <p class="voodbuilder-themes-ws__modal-subtitle">{{ $generateMode === 'dark'
+                        ? __('voodbuilder::settings.generate_theme_palette_help_dark')
+                        : __('voodbuilder::settings.generate_theme_palette_help_light') }}</p>
                     @foreach (['seedPrimary' => 'palette_seed_primary', 'seedSecondary' => 'palette_seed_secondary', 'seedHeaderBg' => 'palette_seed_header_bg'] as $prop => $langKey)
                         <div class="voodbuilder-themes-ws__field mb-3">
                             <label>{{ __('voodbuilder::settings.'.$langKey) }}</label>
@@ -1544,7 +1561,11 @@
                     @endforeach
                     <div class="flex gap-2 justify-end">
                         <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--ghost" wire:click="$set('showGenerateModal', false)">{{ __('Cancel') }}</button>
-                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="generatePalette">{{ __('voodbuilder::settings.generate_theme_palette') }}</button>
+                        <button type="button" class="voodbuilder-themes-ws__btn voodbuilder-themes-ws__btn--primary" wire:click="generatePalette">
+                            {{ $generateMode === 'dark'
+                                ? __('voodbuilder::settings.generate_theme_palette_dark')
+                                : __('voodbuilder::settings.generate_theme_palette_light') }}
+                        </button>
                     </div>
                 </div>
             </div>

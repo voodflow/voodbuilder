@@ -52,4 +52,37 @@ class ThemePaletteGeneratorTest extends TestCase
         $this->assertSame('#ffffff', $dark['header_text']);
         $this->assertNotSame('#3451b2', $dark['primary']);
     }
+
+    #[Test]
+    public function it_builds_light_palette_from_existing_dark_values(): void
+    {
+        $light = ThemePaletteGenerator::lightFromDark([
+            'primary' => '#a8b1ff',
+            'secondary' => '#c4caff',
+            'header_bg' => '#020617',
+            'header_text' => '#ffffff',
+            'body_bg' => '#151034',
+            'footer_bg' => '#2b3343',
+            'text' => '#f8fafc',
+        ]);
+
+        $this->assertSame('#111827', $light['text']);
+        $this->assertSame('#ffffff', $light['body_bg']);
+        $this->assertSame('#f8fafc', $light['footer_bg']);
+        $this->assertNotSame('#a8b1ff', $light['primary']);
+        $this->assertArrayHasKey('header_text', $light);
+    }
+
+    #[Test]
+    public function it_generates_a_single_mode_without_returning_the_other(): void
+    {
+        $lightOnly = ThemePaletteGenerator::fromSeedsForMode('light', '#c8102e');
+        $darkOnly = ThemePaletteGenerator::fromSeedsForMode('dark', '#c8102e');
+
+        $this->assertSame('#c8102e', $lightOnly['primary']);
+        $this->assertSame('#ffffff', $lightOnly['body_bg']);
+        $this->assertSame('#f8fafc', $darkOnly['text']);
+        $this->assertArrayNotHasKey('light', $lightOnly);
+        $this->assertArrayNotHasKey('dark', $darkOnly);
+    }
 }

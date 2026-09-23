@@ -29,6 +29,41 @@ final class ThemePaletteGenerator
      */
     public static function fromSeeds(string $primary, ?string $secondary = null, ?string $headerBg = null): array
     {
+        $light = self::lightFromSeeds($primary, $secondary, $headerBg);
+
+        return [
+            'light' => $light,
+            'dark' => self::darkFromLight($light),
+        ];
+    }
+
+    /**
+     * Build a single-mode palette from accent seeds without touching the other mode.
+     *
+     * @return array<string, string>
+     */
+    public static function fromSeedsForMode(
+        string $mode,
+        string $primary,
+        ?string $secondary = null,
+        ?string $headerBg = null,
+    ): array {
+        $mode = $mode === 'dark' ? 'dark' : 'light';
+
+        if ($mode === 'light') {
+            return self::lightFromSeeds($primary, $secondary, $headerBg);
+        }
+
+        $light = self::lightFromSeeds($primary, $secondary, $headerBg);
+
+        return self::darkFromLight($light);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function lightFromSeeds(string $primary, ?string $secondary = null, ?string $headerBg = null): array
+    {
         $primary = ThemePalette::sanitizeColor($primary);
 
         if ($primary === null) {
@@ -38,7 +73,7 @@ final class ThemePaletteGenerator
         $secondary = ThemePalette::sanitizeColor($secondary) ?? self::darken($primary, 0.14);
         $headerBg = ThemePalette::sanitizeColor($headerBg) ?? '#0f172a';
 
-        $light = [
+        return [
             'primary' => $primary,
             'secondary' => $secondary,
             'header_bg' => $headerBg,
@@ -46,11 +81,6 @@ final class ThemePaletteGenerator
             'footer_bg' => '#f8fafc',
             'body_bg' => '#ffffff',
             'text' => '#111827',
-        ];
-
-        return [
-            'light' => $light,
-            'dark' => self::darkFromLight($light),
         ];
     }
 
@@ -82,6 +112,46 @@ final class ThemePaletteGenerator
             'footer_bg' => $darkFooterBg,
             'body_bg' => $darkBodyBg,
             'text' => '#f8fafc',
+        ];
+    }
+
+    /**
+     * Derive a light palette from an existing dark mode (inverse of darkFromLight).
+     *
+     * @param  array<string, ?string>  $dark
+     * @return array<string, string>
+     */
+    public static function lightFromDark(array $dark): array
+    {
+        $primary = ThemePalette::sanitizeColor($dark['primary'] ?? null) ?? '#3451b2';
+        $secondary = ThemePalette::sanitizeColor($dark['secondary'] ?? null) ?? self::darken($primary, 0.14);
+        $headerBg = ThemePalette::sanitizeColor($dark['header_bg'] ?? null) ?? '#0f172a';
+        $bodyBg = ThemePalette::sanitizeColor($dark['body_bg'] ?? null) ?? '#0f172a';
+        $footerBg = ThemePalette::sanitizeColor($dark['footer_bg'] ?? null) ?? $bodyBg;
+
+        // Dark accents are usually lightened — pull them back toward brand strength.
+        $lightPrimary = self::relativeLuminance($primary) > 0.45
+            ? self::darken($primary, 0.32)
+            : $primary;
+        $lightSecondary = self::relativeLuminance($secondary) > 0.5
+            ? self::darken($secondary, 0.24)
+            : $secondary;
+
+        $lightHeaderBg = self::isLightSurface($headerBg)
+            ? $headerBg
+            : self::mix($headerBg, '#0f172a', 0.55);
+
+        $lightBodyBg = self::isLightSurface($bodyBg) ? $bodyBg : '#ffffff';
+        $lightFooterBg = self::isLightSurface($footerBg) ? $footerBg : '#f8fafc';
+
+        return [
+            'primary' => $lightPrimary,
+            'secondary' => $lightSecondary,
+            'header_bg' => $lightHeaderBg,
+            'header_text' => self::contrastingText($lightHeaderBg),
+            'footer_bg' => $lightFooterBg,
+            'body_bg' => $lightBodyBg,
+            'text' => '#111827',
         ];
     }
 

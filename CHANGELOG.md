@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.127] - 2026-09-23
+
+### Added
+
+- Theme Studio: generate palette for **light or dark only** (no longer overwrites both)
+- Theme Studio: **Sync light from dark** (alongside existing sync dark from light)
+
 ## [0.1.125] - 2026-09-23
 
 ### Fixed
