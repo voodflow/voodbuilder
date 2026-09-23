@@ -58,6 +58,47 @@ export function extractUrlFromBackgroundImage(raw) {
 }
 
 /**
+ * When Style panel opacity was saved as a color overlay gradient, recover the
+ * image opacity (1 − overlay alpha) from the composed background-image CSS.
+ *
+ * @param {unknown} raw
+ * @returns {number|null}
+ */
+export function inferBackgroundImageOpacityFromCss(raw) {
+    const value = String(raw ?? '').trim();
+
+    if (value === '' || ! /url\s*\(/i.test(value)) {
+        return null;
+    }
+
+    const rgba = value.match(
+        /linear-gradient\(\s*rgba?\(\s*[\d.]+\s*[, ]\s*[\d.]+\s*[, ]\s*[\d.]+\s*[,/]\s*([\d.]+)/i,
+    );
+
+    if (rgba) {
+        const fade = Number.parseFloat(rgba[1]);
+
+        if (Number.isFinite(fade)) {
+            return normalizeBackgroundImageOpacity(1 - fade);
+        }
+    }
+
+    const colorMix = value.match(
+        /linear-gradient\(\s*color-mix\(\s*in\s+srgb\s*,\s*[^,]+?\s+([\d.]+)%\s*,\s*transparent/i,
+    );
+
+    if (colorMix) {
+        const fadePct = Number.parseFloat(colorMix[1]);
+
+        if (Number.isFinite(fadePct)) {
+            return normalizeBackgroundImageOpacity(1 - (fadePct / 100));
+        }
+    }
+
+    return null;
+}
+
+/**
  * @param {unknown} url
  * @returns {string}
  */

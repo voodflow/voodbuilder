@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.115] - 2026-09-23
+
+### Fixed
+
+- Style inspector re-reads effective paints after refresh: Background Image (and other #id CSS) rehydrate into the right column on select / after dynamic remount
+
 ## [0.1.114] - 2026-09-23
 
 ### Fixed

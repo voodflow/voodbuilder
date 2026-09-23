@@ -1794,6 +1794,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             const authorContainerClasses = captureContainerAuthorClasses(component);
             const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
             const hiddenLayerNames = captureHiddenLayerNames(component, editor);
+            const authorRootChrome = captureDynamicRootAuthorChrome(component);
             component.set('voodbuilderConfig', freshConfig, { silent: true });
             component.setAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -1804,12 +1805,14 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             restoreContainerAuthorClasses(component, authorContainerClasses);
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
             restoreHiddenLayerNames(component, hiddenLayerNames);
+            restoreDynamicRootAuthorChrome(component, authorRootChrome, fresh);
             component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
             component.__voodbuilderLastDynamicRenderHtml = fresh.innerHTML;
             const preserveSelection = editor.getSelected?.();
 
             window.requestAnimationFrame(() => {
                 lockDynamicPreviewContent(component, editor);
+                hydrateAuthorStylesFromIdRules(editor, component);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
@@ -1847,6 +1850,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         const authorContainerClasses = captureContainerAuthorClasses(component);
         const authorMenuSlotClasses = captureChromeMenuSlotAuthorClasses(component);
         const hiddenLayerNames = captureHiddenLayerNames(component, editor);
+        const authorRootChrome = captureDynamicRootAuthorChrome(component);
 
         if (footerBlock && fresh.tagName === 'FOOTER') {
             applyFreshFooterAttributes(component, fresh, blockId, freshConfig);
@@ -1860,6 +1864,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
             restoreHiddenLayerNames(component, hiddenLayerNames);
+            restoreDynamicRootAuthorChrome(component, authorRootChrome, fresh);
         } else {
             // If author hid Core nodes "Custom Nodes", flip Blade config before stamp
             // so a subsequent refresh omits the card entirely.
@@ -1892,6 +1897,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
 
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
             restoreHiddenLayerNames(component, hiddenLayerNames);
+            restoreDynamicRootAuthorChrome(component, authorRootChrome, fresh);
         }
 
         component.__voodbuilderLastDynamicRenderFingerprint = freshFingerprint;
@@ -1900,6 +1906,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         window.requestAnimationFrame(() => {
             try {
                 lockDynamicPreviewContent(component, editor);
+                hydrateAuthorStylesFromIdRules(editor, component);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
@@ -1940,6 +1947,64 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         if (editor.__voodbuilderChromeLayoutMode) {
             rebuildLayoutChromeBlockRegistry(editor);
         }
+    }
+}
+
+/**
+ * Author root utilities / Style paints / opacity attr wiped by Blade remount.
+ *
+ * @param {object} component
+ * @returns {{ classes: string[], style: Record<string, string>, bgOpacity: string }}
+ */
+function captureDynamicRootAuthorChrome(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+
+    return {
+        classes: typeof component?.getClasses === 'function'
+            ? [...component.getClasses()]
+            : String(attrs.class ?? '').split(/\s+/).filter(Boolean),
+        style: { ...(component?.getStyle?.({ inline: true }) ?? {}) },
+        bgOpacity: String(attrs['data-vb-style-bg-opacity'] ?? '').trim(),
+    };
+}
+
+/**
+ * @param {object} component
+ * @param {{ classes: string[], style: Record<string, string>, bgOpacity: string }} chrome
+ * @param {Element|null} fresh
+ */
+function restoreDynamicRootAuthorChrome(component, chrome, fresh = null) {
+    if (! component || ! chrome) {
+        return;
+    }
+
+    const freshClasses = fresh
+        ? String(fresh.getAttribute('class') ?? '').split(/\s+/).filter(Boolean)
+        : [];
+    const merged = [];
+    const seen = new Set();
+
+    for (const token of [...(chrome.classes ?? []), ...freshClasses]) {
+        const name = String(token ?? '').trim();
+
+        if (name === '' || seen.has(name)) {
+            continue;
+        }
+
+        seen.add(name);
+        merged.push(name);
+    }
+
+    if (merged.length > 0) {
+        component.setClass?.(merged);
+    }
+
+    if (chrome.style && Object.keys(chrome.style).length > 0) {
+        component.addStyle?.(chrome.style, { inline: true });
+    }
+
+    if (chrome.bgOpacity) {
+        component.addAttributes?.({ 'data-vb-style-bg-opacity': chrome.bgOpacity });
     }
 }
 

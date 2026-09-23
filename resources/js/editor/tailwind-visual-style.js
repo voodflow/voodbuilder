@@ -1078,29 +1078,27 @@ export function bakeAuthorStylesToComposerForExport(editor) {
  * inline (without !important) so the right-column inspector matches the canvas.
  *
  * @param {object} editor
+ * @param {object|null} [onlyComponent] When set, hydrate only this component (e.g. on select).
  * @returns {number}
  */
-export function hydrateAuthorStylesFromIdRules(editor) {
-    const wrapper = editor?.getWrapper?.();
+export function hydrateAuthorStylesFromIdRules(editor, onlyComponent = null) {
     const css = editor?.Css;
 
-    if (! wrapper?.onAll || ! css) {
+    if (! css) {
         return 0;
     }
 
-    let updated = 0;
-
-    wrapper.onAll((component) => {
-        const id = component.getId?.();
+    const apply = (component) => {
+        const id = component?.getId?.();
 
         if (! id) {
-            return;
+            return 0;
         }
 
         const fromId = { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) };
 
         if (Object.keys(fromId).length === 0) {
-            return;
+            return 0;
         }
 
         const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
@@ -1139,11 +1137,28 @@ export function hydrateAuthorStylesFromIdRules(editor) {
         }
 
         if (Object.keys(next).length === 0) {
-            return;
+            return 0;
         }
 
         component.addStyle?.(next, SILENT_INLINE_STYLE);
-        updated += 1;
+
+        return 1;
+    };
+
+    if (onlyComponent) {
+        return apply(onlyComponent);
+    }
+
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper?.onAll) {
+        return 0;
+    }
+
+    let updated = 0;
+
+    wrapper.onAll((component) => {
+        updated += apply(component);
     });
 
     return updated;

@@ -34,4 +34,15 @@ describe('style-background-image', () => {
         expect(toRgbaWithAlpha('rgb(10, 20, 30)', 0.4)).toBe('rgba(10, 20, 30, 0.4)');
         expect(toRgbaWithAlpha('var(--color-vp-bg)', 0.4)).toBeNull();
     });
+
+    it('infers opacity from layered overlay CSS', async () => {
+        const { inferBackgroundImageOpacityFromCss } = await import(
+            '../../resources/js/editor/style-background-image.js'
+        );
+
+        expect(inferBackgroundImageOpacityFromCss(
+            'linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45)), url(/a.jpg)',
+        )).toBe(0.55);
+        expect(inferBackgroundImageOpacityFromCss("url('/a.jpg')")).toBeNull();
+    });
 });

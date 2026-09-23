@@ -6,6 +6,7 @@
 import {
     clearBackgroundCssRules,
     clearStyleProperty,
+    hydrateAuthorStylesFromIdRules,
     isCorruptedStackStyleValue,
     resolveVisualStyleTarget,
 } from './tailwind-visual-style.js';
@@ -23,6 +24,7 @@ import {
     STYLE_BG_OPACITY_OPTIONS,
     composeDecorationBackgroundImageCss,
     extractUrlFromBackgroundImage,
+    inferBackgroundImageOpacityFromCss,
     normalizeBackgroundImageOpacity,
 } from './style-background-image.js';
 import {
@@ -564,8 +566,8 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     }
 
     syncSpacingBox(root, component, options);
-    syncDecorationBlocks(root, component, options);
-    syncBackgroundImageField(root, component);
+    syncDecorationBlocks(root, component, options, editor);
+    syncBackgroundImageField(root, component, editor);
     syncTypographySegments(root, component);
 }
 
@@ -741,8 +743,8 @@ function applyGroup(editor, component, groupId, value) {
 
         // Solid bg color changed: rebuild image fade overlay so it matches the new color.
         if (groupId === 'background') {
-            const bgUrl = readBackgroundImageUrl(component);
-            const bgOpacity = readBackgroundImageOpacity(component);
+            const bgUrl = readBackgroundImageUrl(component, editor);
+            const bgOpacity = readBackgroundImageOpacity(component, editor);
 
             if (bgUrl !== '' && bgOpacity < 0.999) {
                 const fadeColor = resolveBackgroundFadeColor(editor, component);
@@ -1239,24 +1241,46 @@ function setDecoLinkButtons(block, link) {
     }
 }
 
-function readBackgroundImageUrl(component) {
+function readComponentCssProperty(editor, component, property) {
     const inline = component?.getStyle?.({ inline: true }) ?? {};
     const live = component?.getStyle?.() ?? {};
-    const raw = String(inline['background-image'] ?? live['background-image'] ?? '').trim();
+    const id = component?.getId?.();
+    const fromId = id && editor?.Css?.getIdRule
+        ? (editor.Css.getIdRule(id)?.getStyle?.() ?? {})
+        : {};
+    const raw = String(
+        inline[property]
+        ?? live[property]
+        ?? fromId[property]
+        ?? '',
+    ).replace(/\s*!important\s*$/i, '').trim();
 
-    return extractUrlFromBackgroundImage(raw);
+    return raw;
 }
 
-function readBackgroundImageOpacity(component) {
-    const attrs = component?.getAttributes?.() ?? {};
+function readBackgroundImageUrl(component, editor = null) {
+    return extractUrlFromBackgroundImage(
+        readComponentCssProperty(editor, component, 'background-image'),
+    );
+}
 
-    return normalizeBackgroundImageOpacity(attrs[STYLE_BG_OPACITY_ATTR]);
+function readBackgroundImageOpacity(component, editor = null) {
+    const attrs = component?.getAttributes?.() ?? {};
+    const fromAttr = attrs[STYLE_BG_OPACITY_ATTR];
+
+    if (fromAttr != null && String(fromAttr).trim() !== '') {
+        return normalizeBackgroundImageOpacity(fromAttr);
+    }
+
+    const inferred = inferBackgroundImageOpacityFromCss(
+        readComponentCssProperty(editor, component, 'background-image'),
+    );
+
+    return inferred == null ? 1 : inferred;
 }
 
 function resolveBackgroundFadeColor(editor, component) {
-    const inline = component?.getStyle?.({ inline: true }) ?? {};
-    const live = component?.getStyle?.() ?? {};
-    const authored = String(inline['background-color'] ?? live['background-color'] ?? '').trim();
+    const authored = readComponentCssProperty(editor, component, 'background-color');
 
     if (
         authored !== ''
@@ -1335,7 +1359,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             });
 
             const nextOpacity = opacity == null
-                ? readBackgroundImageOpacity(component)
+                ? readBackgroundImageOpacity(component, editor)
                 : normalizeBackgroundImageOpacity(opacity);
 
             component.addAttributes?.({
@@ -1393,7 +1417,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         const field = createImageUrlField({
             label: labels.classStyleBackgroundImageSrc ?? labels.imageSettingsHeroSrc ?? 'Background image',
             name: 'styleBgImage',
-            value: readBackgroundImageUrl(selected),
+            value: readBackgroundImageUrl(selected, editor),
             editor,
             chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
             clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
@@ -1418,7 +1442,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         opacityMount.replaceChildren();
 
         const selected = editor.getSelected?.();
-        const current = String(readBackgroundImageOpacity(selected));
+        const current = String(readBackgroundImageOpacity(selected, editor));
         const field = createSelectField({
             label: labels.classStyleBackgroundImageOpacity
                 ?? labels.imageSettingsOpacity
@@ -1428,7 +1452,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
             options: STYLE_BG_OPACITY_OPTIONS,
             onChange: (value) => {
                 const component = editor.getSelected?.();
-                const url = readBackgroundImageUrl(component);
+                const url = readBackgroundImageUrl(component, editor);
 
                 if (! component || url === '') {
                     return;
@@ -1444,10 +1468,10 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
     }
 }
 
-function syncBackgroundImageField(root, component) {
+function syncBackgroundImageField(root, component, editor = null) {
     const mount = root.querySelector?.('[data-voodbuilder-deco-bg-image]');
     const input = mount?.__vbBgImageInput ?? mount?.querySelector?.('input');
-    const url = readBackgroundImageUrl(component);
+    const url = readBackgroundImageUrl(component, editor);
     const fold = root.querySelector?.('[data-voodbuilder-deco-fold="image"]');
     const opacityMount = root.querySelector?.('[data-voodbuilder-deco-bg-opacity]');
     const opacitySelect = opacityMount?.__vbBgOpacitySelect
@@ -1480,7 +1504,7 @@ function syncBackgroundImageField(root, component) {
     }
 
     if (opacitySelect) {
-        const opacity = String(readBackgroundImageOpacity(component));
+        const opacity = String(readBackgroundImageOpacity(component, editor));
         const hasOption = [...opacitySelect.options].some((option) => option.value === opacity);
 
         if (! hasOption && opacity !== '1') {
@@ -1503,7 +1527,7 @@ function syncBackgroundImageField(root, component) {
     }
 }
 
-function syncDecorationBlocks(root, component, options = {}) {
+function syncDecorationBlocks(root, component, options = {}, editor = null) {
     const resetLinkPref = options.resetLinkPref === true;
     const classes = componentClassList(component);
     const decoRoot = root.querySelector('[data-voodbuilder-decorations]');
@@ -1549,7 +1573,7 @@ function syncDecorationBlocks(root, component, options = {}) {
     const shadow = resolveGroupValue(classes, SHADOW_OPTIONS);
     const shadowColor = resolveGroupValue(classes, SHADOW_COLOR_OPTIONS);
     const dropShadow = resolveGroupValue(classes, DROP_SHADOW_OPTIONS);
-    const hasBgImage = Boolean(readBackgroundImageUrl(component));
+    const hasBgImage = Boolean(readBackgroundImageUrl(component, editor));
 
     const setDot = (key, on) => {
         const dot = decoRoot.querySelector(`[data-voodbuilder-deco-dot="${key}"]`);
@@ -2552,9 +2576,31 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 ensure();
             }
 
+            // After refresh / dynamic remount, paints often live only on #id rules.
+            try {
+                hydrateAuthorStylesFromIdRules(editor, component);
+            } catch {
+                // Optional hydrate — still sync from CssComposer below.
+            }
+
             sanitizeInventedStyles(editor, component);
             syncSelectsFromComponent(stylesMount, component, editor, { resetLinkPref: true });
             attachClassWatch(component);
+        }, 0);
+    });
+    editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
+        window.setTimeout(() => {
+            try {
+                hydrateAuthorStylesFromIdRules(editor);
+            } catch {
+                // Ignore hydrate race after remount.
+            }
+
+            const selected = editor.getSelected?.();
+
+            if (selected && sectorsReady()) {
+                syncSelectsFromComponent(stylesMount, selected, editor);
+            }
         }, 0);
     });
 
