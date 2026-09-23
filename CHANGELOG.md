@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.111] - 2026-09-23
+
+### Fixed
+
+- Button / link **Menu item** picker now lists nested items and dynamic children (e.g. Docs → VoodBuilder from the vdocs menu type), with labels like `Main navigation · Docs · VoodBuilder`
+
 ## [0.1.108] - 2026-09-23
 
 ### Added

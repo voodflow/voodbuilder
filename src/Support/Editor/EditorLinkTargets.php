@@ -70,24 +70,79 @@ final class EditorLinkTargets
      */
     public static function menuItems(): array
     {
-        return NavigationMenuItem::query()
-            ->with('menu')
+        $items = NavigationMenuItem::query()
+            ->with(['menu', 'parent'])
             ->orderBy('menu_id')
             ->orderBy('sort_order')
-            ->get()
-            ->filter(fn (NavigationMenuItem $item): bool => $item->type !== MenuItemType::Group)
-            ->map(function (NavigationMenuItem $item): array {
-                $menuName = $item->menu?->name ?? __('Menu');
-                $label = trim($menuName.' · '.(string) $item->label);
+            ->get();
 
-                return [
+        $out = [];
+
+        foreach ($items as $item) {
+            if ($item->type !== MenuItemType::Group) {
+                $out[] = [
                     'id' => (string) $item->getKey(),
-                    'label' => $label,
+                    'label' => self::menuItemLabel($item),
                     'url' => $item->resolveUrl(),
                 ];
-            })
-            ->values()
-            ->all();
+            }
+
+            // Plugin types (e.g. vdocs "docs") expose dropdown children only at
+            // render time — they are not rows in voodbuilder_menu_items. Include
+            // them so button/link "Menu item" can target Docs → VoodBuilder, etc.
+            foreach ($item->navigationChildren() as $child) {
+                if ($child->exists) {
+                    // Persisted children are already in $items.
+                    continue;
+                }
+
+                $url = $child->resolveUrl();
+
+                if ($url === '' || $url === '#') {
+                    continue;
+                }
+
+                $out[] = [
+                    'id' => self::dynamicMenuChildId($item, $url),
+                    'label' => self::menuItemLabel($item, $child),
+                    'url' => $url,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Stable synthetic id for ephemeral menu children (not stored in DB).
+     */
+    public static function dynamicMenuChildId(NavigationMenuItem $parent, string $url): string
+    {
+        return 'dyn:'.$parent->getKey().':'.substr(hash('sha256', $url), 0, 16);
+    }
+
+    /**
+     * Human label: "Main navigation · Docs · VoodBuilder".
+     */
+    public static function menuItemLabel(NavigationMenuItem $item, ?NavigationMenuItem $child = null): string
+    {
+        $parts = [trim((string) ($item->menu?->name ?? __('Menu')))];
+
+        if ($child !== null) {
+            $parts[] = trim((string) $item->label);
+            $parts[] = trim((string) $child->label);
+        } else {
+            if ($item->parent) {
+                $parts[] = trim((string) $item->parent->label);
+            }
+
+            $parts[] = trim((string) $item->label);
+        }
+
+        return implode(' · ', array_values(array_filter(
+            $parts,
+            static fn (string $part): bool => $part !== '',
+        )));
     }
 
     /**
