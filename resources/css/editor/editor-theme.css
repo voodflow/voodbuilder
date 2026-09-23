@@ -1782,16 +1782,16 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
 }
 
-/* Full-width segmented tabs; label color matches accordion titles (vp-text-2). */
+/* Full-width tabs with gap between buttons (no joined hover slab). */
 .voodbuilder-editor-style-viewport__group {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    gap: 0;
-    padding: 0.15rem;
-    border-radius: 0.45rem;
-    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
-    background: color-mix(in srgb, var(--color-vp-bg-alt, #f6f6f7) 70%, var(--color-vp-bg-elv, #fff));
+    gap: 0.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .voodbuilder-editor-style-viewport__btn {
@@ -1799,27 +1799,29 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     margin: 0;
     width: 100%;
     padding: 0.45rem 0.35rem;
-    border: 0;
-    border-radius: 0.35rem;
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #f6f6f7) 70%, var(--color-vp-bg-elv, #fff));
     color: var(--color-vp-text-2, #64748b);
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     line-height: 1.2;
     cursor: pointer;
-    transition: background 0.12s ease, color 0.12s ease;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
 .voodbuilder-editor-style-viewport__btn:hover {
     color: var(--color-vp-text-2, #64748b);
-    background: color-mix(in srgb, var(--color-vp-text-2, #64748b) 10%, transparent);
+    background: color-mix(in srgb, var(--color-vp-text-2, #64748b) 8%, var(--color-vp-bg-elv, #fff));
+    border-color: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 100%, transparent);
 }
 
 .voodbuilder-editor-style-viewport__btn.is-active {
     color: var(--color-vp-text-2, #64748b);
     background: var(--color-vp-bg-elv, #ffffff);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-vp-text-2, #64748b) 35%, transparent);
+    box-shadow: none;
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport {
@@ -1841,17 +1843,24 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__group {
+    border: 0;
+    background: transparent;
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn {
     border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 90%, transparent);
     background: color-mix(in srgb, #000 22%, var(--color-vp-bg-alt, #161618));
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn:hover {
     background: color-mix(in srgb, #fff 6%, transparent);
+    border-color: color-mix(in srgb, var(--color-vp-divider, #2e2e32) 100%, transparent);
 }
 
 .dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__btn.is-active {
     background: color-mix(in srgb, var(--color-vp-bg-elv, #202127) 88%, #fff 6%);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #2e2e32) 95%, transparent);
+    border-color: color-mix(in srgb, var(--color-vp-text-2, #98989f) 40%, transparent);
+    box-shadow: none;
 }
 
 .voodbuilder-editor-style-viewport__cascade {

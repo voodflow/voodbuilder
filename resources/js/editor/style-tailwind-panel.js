@@ -559,7 +559,7 @@ function ensureSectorsRoot(stylesMount) {
 }
 
 /**
- * Style viewport strip — Base / Tablet / Desktop (mobile-first prefixes).
+ * Style viewport strip — Mobile / Tablet / Desktop (mobile-first prefixes).
  * Mirrors canvas device; does not gate Animation or other sectors.
  *
  * @param {Record<string, string>} labels
@@ -570,12 +570,12 @@ function buildViewportStrip(labels) {
     strip.className = 'voodbuilder-editor-style-viewport';
     strip.dataset.voodbuilderStyleViewportStrip = '';
 
-    const base = labels.classStyleViewportBaseTab ?? 'Base';
+    const base = labels.classStyleViewportBaseTab ?? labels.deviceMobile ?? 'Mobile';
     const tablet = labels.deviceTablet ?? 'Tablet';
     const desktop = labels.deviceDesktop ?? 'Desktop';
     const aria = labels.classStyleViewportAria ?? 'Style viewport';
     const cascade = labels.classStyleViewportCascade
-        ?? 'Base: all viewports. Tablet/Desktop: from this breakpoint up.';
+        ?? 'Mobile (base): all viewports. Tablet/Desktop: from this breakpoint up.';
 
     strip.innerHTML = `
         <div class="voodbuilder-editor-style-viewport__meta">
@@ -636,7 +636,7 @@ function syncViewportStrip(root, editor, labels = {}) {
         const deviceLabel = deviceId === 'tablet'
             ? (labels.deviceTablet ?? 'Tablet')
             : (deviceId === 'mobilePortrait' || deviceId === 'mobile')
-                ? (labels.classStyleViewportBaseTab ?? 'Base')
+                ? (labels.classStyleViewportBaseTab ?? labels.deviceMobile ?? 'Mobile')
                 : (labels.deviceDesktop ?? 'Desktop');
         const template = labels.classStyleViewportEditing
             ?? 'Editing: {device}';
