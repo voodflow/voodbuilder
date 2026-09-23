@@ -850,7 +850,7 @@ final class EditorDynamicBlockRenderer
      * Grapes Style rules (e.g. `#ifmoo4{background-image:…}`) and anchors need the
      * author root `id` to survive Blade remount. Also keep inline style / fade attrs.
      *
-     * @return array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string}
+     * @return array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string, data_vb_bg_color_opacity: string}
      */
     protected function captureAuthorRootChrome(DOMElement $node): array
     {
@@ -859,11 +859,12 @@ final class EditorDynamicBlockRenderer
             'style' => trim((string) $node->getAttribute('style')),
             'data_vb_style_bg_opacity' => trim((string) $node->getAttribute('data-vb-style-bg-opacity')),
             'data_vb_style_bg_src' => trim((string) $node->getAttribute('data-vb-style-bg-src')),
+            'data_vb_bg_color_opacity' => trim((string) $node->getAttribute('data-vb-bg-color-opacity')),
         ];
     }
 
     /**
-     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string}  $chrome
+     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string, data_vb_bg_color_opacity: string}  $chrome
      */
     protected function restoreAuthorRootChrome(DOMElement $node, array $chrome): void
     {
@@ -877,6 +878,10 @@ final class EditorDynamicBlockRenderer
 
         if (($chrome['data_vb_style_bg_src'] ?? '') !== '') {
             $node->setAttribute('data-vb-style-bg-src', $chrome['data_vb_style_bg_src']);
+        }
+
+        if (($chrome['data_vb_bg_color_opacity'] ?? '') !== '') {
+            $node->setAttribute('data-vb-bg-color-opacity', $chrome['data_vb_bg_color_opacity']);
         }
 
         $authorStyle = trim((string) ($chrome['style'] ?? ''));

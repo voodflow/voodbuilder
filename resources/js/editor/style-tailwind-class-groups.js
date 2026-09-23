@@ -120,9 +120,13 @@ export const BACKGROUND_OPTIONS = withNone([
 ]);
 
 /**
- * Color opacity for solid Background (TW4 slash: bg-black/50).
- * Value '' = 100% (plain bg-* without /N).
+ * Color opacity for solid Background.
+ * GrapesJS cannot reliably store Tailwind slash classes (`bg-black/60`) as
+ * selectors — we keep plain `bg-*` and paint alpha via inline + data attr.
+ * Value '' = 100%.
  */
+export const BG_COLOR_OPACITY_ATTR = 'data-vb-bg-color-opacity';
+
 export const BG_COLOR_OPACITY_OPTIONS = [
     { value: '', label: '100%' },
     { value: '10', label: '10%' },
@@ -183,46 +187,70 @@ export function isSolidBackgroundColorUtility(name) {
 }
 
 /**
- * Read solid bg color + opacity from classes (supports bg-black/50 and legacy bg-opacity-50).
+ * Normalize opacity percent string ('' = 100%).
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizeBgColorOpacityPercent(value) {
+    if (value == null || value === '') {
+        return '';
+    }
+
+    const n = Number.parseInt(String(value).trim(), 10);
+
+    if (! Number.isFinite(n) || n >= 100) {
+        return '';
+    }
+
+    if (n < 1) {
+        return '1';
+    }
+
+    return String(n);
+}
+
+/**
+ * Read solid bg color + opacity from classes / data attr / legacy forms.
  *
  * @param {Iterable<string>|string[]} classes
+ * @param {object|null} [component]
  * @returns {{ color: string, opacity: string, legacyOpacity: boolean }}
  */
-export function resolveBackgroundColorAndOpacity(classes) {
+export function resolveBackgroundColorAndOpacity(classes, component = null) {
     const names = [...(classes ?? [])].map((name) => String(name ?? '').trim()).filter(Boolean);
     let color = '';
     let opacity = '';
     let legacyOpacity = false;
+
+    const fromAttr = normalizeBgColorOpacityPercent(
+        component?.getAttributes?.()?.[BG_COLOR_OPACITY_ATTR],
+    );
 
     for (const name of names) {
         const slash = name.match(/^(bg-.+)\/(\d{1,3})$/);
 
         if (slash && isSolidBackgroundColorUtility(slash[1])) {
             color = slash[1];
-            opacity = String(Number.parseInt(slash[2], 10));
+            opacity = normalizeBgColorOpacityPercent(slash[2]);
+            legacyOpacity = true; // migrate slash → attr + plain class (Grapes-safe)
 
-            if (opacity === '100') {
-                opacity = '';
-            }
-
-            return { color, opacity, legacyOpacity: false };
+            return { color, opacity, legacyOpacity };
         }
     }
 
     color = resolveGroupValue(names, BACKGROUND_OPTIONS);
 
+    if (fromAttr !== '') {
+        return { color, opacity: fromAttr, legacyOpacity: false };
+    }
+
     for (const name of names) {
         const legacy = name.match(/^bg-opacity-(\d{1,3})$/);
 
         if (legacy) {
-            opacity = String(Number.parseInt(legacy[1], 10));
+            opacity = normalizeBgColorOpacityPercent(legacy[1]);
             legacyOpacity = true;
-
-            if (opacity === '100') {
-                opacity = '';
-                legacyOpacity = false;
-            }
-
             break;
         }
     }
@@ -231,32 +259,15 @@ export function resolveBackgroundColorAndOpacity(classes) {
 }
 
 /**
- * Build the class to store: bg-black or bg-black/50.
+ * Plain color class only (no slash — Grapes-safe).
  *
  * @param {string} color
- * @param {string|number} opacity
  * @returns {string}
  */
-export function composeBackgroundColorClass(color, opacity = '') {
+export function composeBackgroundColorClass(color) {
     const base = String(color ?? '').trim();
 
-    if (base === '' || ! isSolidBackgroundColorUtility(base)) {
-        return '';
-    }
-
-    const pct = String(opacity ?? '').trim();
-
-    if (pct === '' || pct === '100') {
-        return base;
-    }
-
-    const n = Number.parseInt(pct, 10);
-
-    if (! Number.isFinite(n) || n < 1 || n > 100) {
-        return base;
-    }
-
-    return `${base}/${n}`;
+    return isSolidBackgroundColorUtility(base) ? base : '';
 }
 
 /**
@@ -286,11 +297,19 @@ export function clearBackgroundColorUtilities(component) {
             component.removeClass?.(name);
         }
     }
+
+    try {
+        component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+    } catch {
+        const attrs = { ...(component.getAttributes?.() ?? {}) };
+        delete attrs[BG_COLOR_OPACITY_ATTR];
+        component.setAttributes?.(attrs);
+    }
 }
 
 /**
- * Apply solid background color with optional opacity (TW4 slash form).
- * Migrates legacy bg-opacity-* away.
+ * Apply solid background color class (plain) + durable opacity attr.
+ * Does not paint CSS — caller applies inline rgba via the Style panel.
  *
  * @param {object} component
  * @param {string} color
@@ -302,13 +321,17 @@ export function applyBackgroundColorWithOpacity(component, color, opacity = '') 
     }
 
     clearBackgroundColorUtilities(component);
-    const next = composeBackgroundColorClass(color, opacity);
+    const next = composeBackgroundColorClass(color);
+    const pct = normalizeBgColorOpacityPercent(opacity);
 
     if (next !== '') {
         component.addClass?.(next);
     }
-}
 
+    if (pct !== '') {
+        component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: pct });
+    }
+}
 export const GRADIENT_DIRECTION_OPTIONS = withNone([
     { value: 'bg-none', label: 'none' },
     { value: 'bg-gradient-to-t', label: 'to top' },

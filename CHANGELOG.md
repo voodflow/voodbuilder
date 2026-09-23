@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.124] - 2026-09-23
+
+### Fixed
+
+- Background Color **opacity** actually paints: Grapes cannot store `bg-black/60`, so opacity uses `data-vb-bg-color-opacity` + inline `rgba`/`#id` while keeping plain `bg-*`
+
 ## [0.1.123] - 2026-09-23
 
 ### Added

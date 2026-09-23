@@ -30,9 +30,11 @@ import {
     extractUrlFromBackgroundImage,
     inferBackgroundImageOpacityFromCss,
     normalizeBackgroundImageOpacity,
+    toRgbaWithAlpha,
 } from './style-background-image.js';
 import {
     BACKGROUND_OPTIONS,
+    BG_COLOR_OPACITY_ATTR,
     BG_COLOR_OPACITY_OPTIONS,
     BG_POSITION_OPTIONS,
     BG_REPEAT_OPTIONS,
@@ -93,11 +95,10 @@ import {
     TEXT_TRANSFORM_SEGMENTS,
     TRACKING_OPTIONS,
     WIDTH_OPTIONS,
-    classSetFromOptions,
-    componentClassList,
     applyBackgroundColorWithOpacity,
+    classSetFromOptions,
     clearBackgroundColorUtilities,
-    composeBackgroundColorClass,
+    componentClassList,
     hasTextGradientClasses,
     replaceClassGroup,
     resolveBackgroundColorAndOpacity,
@@ -105,7 +106,7 @@ import {
     resolveSolidTextColor,
     utilityConflictGroupIds,
 } from './style-tailwind-class-groups.js';
-
+import { hexForUtility } from './tailwind-color-palette.js';
 const GROUP_SETS = Object.fromEntries(
     STYLE_UTILITY_GROUPS.map((group) => [group.id, classSetFromOptions(group.options)]),
 );
@@ -525,7 +526,7 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                     ? TEXT_COLOR_GRADIENT_VALUE
                     : resolveSolidTextColor(classes);
             } else if (group.id === 'background' || group.id === 'background-opacity') {
-                const bg = resolveBackgroundColorAndOpacity(classes);
+                const bg = resolveBackgroundColorAndOpacity(classes, component);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
             } else {
                 el.value = resolveGroupValue(classes, group.options);
@@ -584,12 +585,13 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     syncBackgroundImageField(root, component, editor);
     syncTypographySegments(root, component);
 
-    // Legacy bg-opacity-* is ineffective under Tailwind v4 — migrate to bg-black/50 on sync
-    // so component-imported classes become editable and actually translucent.
+    // Migrate legacy bg-opacity-* / slash classes (Grapes-unsafe) → attr + inline paint.
     try {
-        const bg = resolveBackgroundColorAndOpacity(componentClassList(component));
+        const bg = resolveBackgroundColorAndOpacity(componentClassList(component), component);
+        const needsPaint = Boolean(bg.color && bg.opacity);
+        const needsMigrate = bg.legacyOpacity && bg.color;
 
-        if (bg.legacyOpacity && bg.color && ! editor?.__voodbuilderTwStyleApplying) {
+        if ((needsMigrate || needsPaint) && ! editor?.__voodbuilderTwStyleApplying) {
             const wasApplying = Boolean(editor?.__voodbuilderTwStyleApplying);
 
             if (editor) {
@@ -597,9 +599,13 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
             }
 
             try {
-                applyBackgroundColorWithOpacity(component, bg.color, bg.opacity);
-                component.view?.updateClasses?.();
-                scheduleClassCompile(editor);
+                if (needsMigrate || needsPaint) {
+                    applyBackgroundColorWithOpacity(component, bg.color, bg.opacity);
+                    paintBackgroundColorOpacity(editor, component, bg.color, bg.opacity);
+                    component.view?.updateClasses?.();
+                    component.view?.updateStyle?.();
+                    scheduleClassCompile(editor);
+                }
 
                 const colorEl = root.querySelector?.('[data-voodbuilder-tw-group="background"]');
                 const opacityEl = root.querySelector?.('[data-voodbuilder-tw-group="background-opacity"]');
@@ -654,6 +660,70 @@ export function watchComponentClassList(component, onChange) {
     };
 }
 
+function resolveSolidBackgroundColorCss(utility) {
+    const token = String(utility ?? '').trim();
+
+    if (token === 'bg-black') {
+        return '#000000';
+    }
+
+    if (token === 'bg-white') {
+        return '#ffffff';
+    }
+
+    if (token === '' || token === 'bg-transparent') {
+        return '';
+    }
+
+    return hexForUtility(token) || cssColorFromBackgroundUtility(token) || '';
+}
+
+/**
+ * Paint solid Color opacity via inline/#id (Grapes cannot store `bg-black/60`).
+ * Plain `bg-*` stays for the Color field; alpha lives in data-vb-bg-color-opacity.
+ */
+function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const pct = String(opacityPercent ?? '').trim();
+    const base = String(color ?? '').trim();
+
+    if (base === '' || pct === '' || pct === '100') {
+        clearStyleProperty(editor, target, 'background-color', { family: false });
+
+        return;
+    }
+
+    const hex = resolveSolidBackgroundColorCss(base);
+    const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
+    const painted = hex
+        ? (toRgbaWithAlpha(hex, alpha) ?? `color-mix(in oklab, ${hex} ${pct}%, transparent)`)
+        : `color-mix(in oklab, currentColor ${pct}%, transparent)`;
+
+    // Neutralize opaque utility paint — inline alpha must win on canvas + frontend.
+    target.addStyle?.(
+        { 'background-color': painted },
+        { inline: true },
+    );
+
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(id, {
+                ...existing,
+                'background-color': painted,
+            });
+        } catch {
+            // CssComposer may be unavailable.
+        }
+    }
+}
+
 function applyGroup(editor, component, groupId, value) {
     const groupSet = GROUP_SETS[groupId];
 
@@ -665,17 +735,17 @@ function applyGroup(editor, component, groupId, value) {
         editor.__voodbuilderTwStyleApplying = true;
 
         try {
-            const current = resolveBackgroundColorAndOpacity(componentClassList(component));
+            const current = resolveBackgroundColorAndOpacity(componentClassList(component), component);
             const nextColor = groupId === 'background' ? (value || '') : current.color;
             const nextOpacity = groupId === 'background-opacity' ? (value || '') : current.opacity;
 
             if (nextColor === '') {
                 clearBackgroundColorUtilities(component);
+                paintBackgroundColorOpacity(editor, component, '', '');
             } else {
                 applyBackgroundColorWithOpacity(component, nextColor, nextOpacity);
+                paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
             }
-
-            clearInlineProps(editor, component, GROUP_INLINE.background ?? []);
 
             // Color clears gradient (exclusive); keep decoration photo.
             if (groupId === 'background' && nextColor !== '') {
@@ -696,6 +766,7 @@ function applyGroup(editor, component, groupId, value) {
 
             try {
                 component.view?.updateClasses?.();
+                component.view?.updateStyle?.();
             } catch {
                 // View may be unavailable during bulk updates.
             }
@@ -2012,7 +2083,7 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
         return;
     }
 
-    const bgParsed = resolveBackgroundColorAndOpacity(classes);
+    const bgParsed = resolveBackgroundColorAndOpacity(classes, component);
     const bg = bgParsed.color;
     const gradDir = resolveGroupValue(classes, GRADIENT_DIRECTION_OPTIONS);
     const gradFrom = resolveGroupValue(classes, GRADIENT_FROM_OPTIONS);

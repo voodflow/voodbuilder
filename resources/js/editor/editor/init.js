@@ -1970,6 +1970,7 @@ function captureDynamicRootAuthorChrome(component) {
         style: { ...(component?.getStyle?.({ inline: true }) ?? {}) },
         bgOpacity: String(attrs['data-vb-style-bg-opacity'] ?? '').trim(),
         bgSrc: String(attrs['data-vb-style-bg-src'] ?? '').trim(),
+        bgColorOpacity: String(attrs['data-vb-bg-color-opacity'] ?? '').trim(),
     };
 }
 
@@ -2016,6 +2017,10 @@ function restoreDynamicRootAuthorChrome(component, chrome, fresh = null) {
 
     if (chrome.bgSrc) {
         attrs['data-vb-style-bg-src'] = chrome.bgSrc;
+    }
+
+    if (chrome.bgColorOpacity) {
+        attrs['data-vb-bg-color-opacity'] = chrome.bgColorOpacity;
     }
 
     if (Object.keys(attrs).length > 0) {
