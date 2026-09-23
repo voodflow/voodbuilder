@@ -40,7 +40,7 @@ final class EditorSmartButtonAnnotator
                 continue;
             }
 
-            if (self::shouldSkipButton($button) || self::isIconOrEmptyButton($button)) {
+            if (self::shouldSkipButton($button) || self::isIconOrEmptyButton($button) || self::isNonCtaControlButton($button)) {
                 continue;
             }
 
@@ -116,6 +116,8 @@ final class EditorSmartButtonAnnotator
     /**
      * Empty color swatches and icon-only controls must stay native <button>s —
      * never invent a "Button" CTA label for them.
+     *
+     * Text + decorative SVG (e.g. pricing "Submit" + arrow) still promotes.
      */
     private static function isIconOrEmptyButton(\DOMElement $button): bool
     {
@@ -134,6 +136,26 @@ final class EditorSmartButtonAnnotator
 
         // Empty markup, or only structural children (svg/img) with no author text.
         return $label === '';
+    }
+
+    /**
+     * Billing toggles and single-glyph slider controls stay native buttons.
+     */
+    private static function isNonCtaControlButton(\DOMElement $button): bool
+    {
+        $label = trim(preg_replace('/\s+/u', ' ', $button->textContent ?? '') ?? '');
+
+        if ($label === '') {
+            return false;
+        }
+
+        $normalized = mb_strtolower($label);
+
+        if (in_array($normalized, ['monthly', 'annually', 'yearly'], true)) {
+            return true;
+        }
+
+        return preg_match('/^[‹›«»←→<>]$/u', $label) === 1;
     }
 
     private static function shouldSkipTextLink(\DOMElement $anchor): bool

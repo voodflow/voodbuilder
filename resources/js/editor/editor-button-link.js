@@ -43,12 +43,9 @@ function readAuthorTextNodes(component) {
 
 /**
  * True for empty color swatches / icon-only controls that must not become CTAs.
+ * Text + decorative SVG (pricing "Submit" + arrow) must still promote.
  */
 function isIconOrEmptyButton(component) {
-    if (buttonHasStructuralChildren(component)) {
-        return true;
-    }
-
     const attrs = component?.getAttributes?.() ?? {};
     const classes = `${attrs.class ?? ''} ${(component?.getClasses?.() ?? []).join(' ')}`.toLowerCase();
 
@@ -64,11 +61,30 @@ function isIconOrEmptyButton(component) {
 
     const authorText = readAuthorTextNodes(component);
 
-    if (authorText === '' && componentChildModels(component).length === 0) {
+    // Prefer live DOM text when Grapes nests label + svg (textnode may be missing).
+    const domText = String(component?.getView?.()?.el?.textContent ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const label = authorText || domText;
+
+    // Empty markup, or only structural children (svg/img) with no author text.
+    return label === '';
+}
+
+/** Billing toggles / slider chevrons — keep native <button>, not link CTAs. */
+function isNonCtaControlLabel(label) {
+    const normalized = String(label ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+    if (normalized === '') {
+        return false;
+    }
+
+    if (['monthly', 'annually', 'yearly'].includes(normalized)) {
         return true;
     }
 
-    return false;
+    // Single-glyph slider / carousel controls.
+    return /^[‹›«»←→<>]$/u.test(normalized);
 }
 
 function shouldPromoteNativeButtonToCta(component) {
@@ -78,11 +94,25 @@ function shouldPromoteNativeButtonToCta(component) {
         return true;
     }
 
+    if (attrs['data-voodbuilder-skip-cta'] === 'true') {
+        return false;
+    }
+
     if (isIconOrEmptyButton(component)) {
         return false;
     }
 
-    return readAuthorTextNodes(component) !== '';
+    const authorText = readAuthorTextNodes(component);
+    const domText = String(component?.getView?.()?.el?.textContent ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const label = authorText || domText;
+
+    if (label === '' || isNonCtaControlLabel(label)) {
+        return false;
+    }
+
+    return true;
 }
 
 /**

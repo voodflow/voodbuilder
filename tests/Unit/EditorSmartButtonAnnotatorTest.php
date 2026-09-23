@@ -125,13 +125,40 @@ HTML;
     }
 
     #[Test]
-    public function it_promotes_text_button_including_literal_button_label(): void
+    public function it_promotes_text_buttons_that_include_decorative_svg(): void
     {
-        $html = '<button class="flex ml-auto text-white bg-indigo-500 border-0 py-2 px-6 rounded">Button</button>';
+        $html = '<button class="flex items-center mt-auto text-white bg-gray-400 border-0 py-2 px-4 w-full rounded">Submit<svg fill="none" viewBox="0 0 24 24"><path d="M5 12h14"></path></svg></button>';
         $out = EditorSmartButtonAnnotator::annotate($html);
 
         $this->assertStringContainsString('data-voodbuilder-cta="true"', $out);
-        $this->assertStringContainsString('data-voodbuilder-cta-label="Button"', $out);
-        $this->assertStringContainsString('>Button</a>', $out);
+        $this->assertStringContainsString('data-voodbuilder-cta-label="Submit"', $out);
+        $this->assertStringContainsString('<a ', $out);
+        $this->assertStringContainsString('<svg', $out);
+        $this->assertStringNotContainsString('<button', $out);
+    }
+
+    #[Test]
+    public function it_keeps_billing_toggle_buttons_native(): void
+    {
+        $html = '<div class="flex mx-auto border-2 border-indigo-500 rounded overflow-hidden mt-6">'
+            .'<button class="py-1 px-4 bg-indigo-500 text-white focus:outline-none">Monthly</button>'
+            .'<button class="py-1 px-4 focus:outline-none">Annually</button>'
+            .'</div>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('<button class="py-1 px-4 bg-indigo-500', $out);
+        $this->assertStringContainsString('>Monthly</button>', $out);
+        $this->assertStringContainsString('>Annually</button>', $out);
+    }
+
+    #[Test]
+    public function it_keeps_slider_chevron_buttons_native(): void
+    {
+        $html = '<button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-lg">‹</button>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('<button', $out);
     }
 }

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.105] - 2026-09-23
+
+### Fixed
+
+- Pricing / Tailblocks CTAs with decorative SVG (e.g. "Submit" + arrow) now promote to smart link buttons with URL settings
+- Billing toggles (Monthly/Annually) and slider chevrons stay native buttons
+
 ## [0.1.104] - 2026-09-23
 
 ### Fixed
