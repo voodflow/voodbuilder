@@ -2997,12 +2997,19 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     box-sizing: border-box;
 }
 
-.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-field {
+.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-field,
+.voodbuilder-editor-deco-bg-opacity .voodbuilder-editor-form-field {
     margin: 0;
     padding: 0.35rem 0;
     border: none;
 }
 
-.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-label {
+.voodbuilder-editor-deco-bg-image .voodbuilder-editor-form-label,
+.voodbuilder-editor-deco-bg-opacity .voodbuilder-editor-form-label {
     font-size: 0.6875rem;
+}
+
+.voodbuilder-editor-deco-bg-opacity.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
 }

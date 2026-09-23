@@ -125,6 +125,7 @@ final class EditorDynamicBlockRenderer
         }
 
         $authorStructuralClasses = $this->captureAuthorStructuralClasses($node);
+        $authorRootChrome = $this->captureAuthorRootChrome($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
         $authorChromeMenuSlots = $this->captureAuthorChromeMenuSlotClasses($node);
         $hiddenLayerNames = $this->captureHiddenLayerNames($node);
@@ -152,6 +153,7 @@ final class EditorDynamicBlockRenderer
             if ($authorStructuralClasses !== null) {
                 $this->restoreAuthorStructuralClasses($node, $authorStructuralClasses);
             }
+            $this->restoreAuthorRootChrome($node, $authorRootChrome);
             $this->restoreAuthorContentWidthShells($node, $authorContentWidthShells);
             $this->restoreAuthorChromeMenuSlotClasses($node, $authorChromeMenuSlots);
 
@@ -164,6 +166,7 @@ final class EditorDynamicBlockRenderer
             $rendered = $this->applyAuthorStructuralClassesToHtml($rendered, $authorStructuralClasses);
         }
 
+        $rendered = $this->applyAuthorRootChromeToHtml($rendered, $authorRootChrome);
         $rendered = $this->applyAuthorContentWidthShellsToHtml($rendered, $authorContentWidthShells);
         $rendered = $this->applyAuthorChromeMenuSlotClassesToHtml($rendered, $authorChromeMenuSlots);
 
@@ -838,6 +841,106 @@ final class EditorDynamicBlockRenderer
             $style = preg_replace('/(^|;)\s*display\s*:\s*[^;]+/i', '', $style) ?? $style;
             $style = trim($style, " \t\n\r\0\x0B;");
             $element->setAttribute('style', $style === '' ? 'display:none' : $style.';display:none');
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * Grapes Style rules (e.g. `#ifmoo4{background-image:…}`) and anchors need the
+     * author root `id` to survive Blade remount. Also keep inline style / fade attrs.
+     *
+     * @return array{id: string, style: string, data_vb_style_bg_opacity: string}
+     */
+    protected function captureAuthorRootChrome(DOMElement $node): array
+    {
+        return [
+            'id' => trim((string) $node->getAttribute('id')),
+            'style' => trim((string) $node->getAttribute('style')),
+            'data_vb_style_bg_opacity' => trim((string) $node->getAttribute('data-vb-style-bg-opacity')),
+        ];
+    }
+
+    /**
+     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string}  $chrome
+     */
+    protected function restoreAuthorRootChrome(DOMElement $node, array $chrome): void
+    {
+        if (($chrome['id'] ?? '') !== '') {
+            $node->setAttribute('id', $chrome['id']);
+        }
+
+        if (($chrome['data_vb_style_bg_opacity'] ?? '') !== '') {
+            $node->setAttribute('data-vb-style-bg-opacity', $chrome['data_vb_style_bg_opacity']);
+        }
+
+        $authorStyle = trim((string) ($chrome['style'] ?? ''));
+
+        if ($authorStyle === '') {
+            return;
+        }
+
+        $freshStyle = trim((string) $node->getAttribute('style'));
+        $node->setAttribute('style', $this->mergeAuthorRootStyles($authorStyle, $freshStyle));
+    }
+
+    /**
+     * Author background paint / positioning wins; other fresh declarations fill gaps.
+     */
+    protected function mergeAuthorRootStyles(string $author, string $fresh): string
+    {
+        $merged = [];
+
+        foreach ([$fresh, $author] as $style) {
+            foreach (preg_split('/\s*;\s*/', trim($style, " \t\n\r\0\x0B;")) ?: [] as $declaration) {
+                if ($declaration === '' || ! str_contains($declaration, ':')) {
+                    continue;
+                }
+
+                [$property, $value] = array_map('trim', explode(':', $declaration, 2));
+                $key = strtolower($property);
+
+                if ($property === '' || $value === '') {
+                    continue;
+                }
+
+                // Later pass (author) overwrites earlier (fresh) for the same property.
+                $merged[$key] = $property.': '.$value;
+            }
+        }
+
+        return implode('; ', array_values($merged));
+    }
+
+    /**
+     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string}  $chrome
+     */
+    protected function applyAuthorRootChromeToHtml(string $html, array $chrome): string
+    {
+        if (
+            $html === ''
+            || (
+                ($chrome['id'] ?? '') === ''
+                && ($chrome['style'] ?? '') === ''
+                && ($chrome['data_vb_style_bg_opacity'] ?? '') === ''
+            )
+        ) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            $this->restoreAuthorRootChrome($child, $chrome);
         }
 
         return $this->extractBodyHtml($document) ?? $html;

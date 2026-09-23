@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.114] - 2026-09-23
+
+### Fixed
+
+- Published dynamic blocks keep the Grapes root `id` (and author background style), so Style panel `background-image` rules like `#id{…}` render on the frontend
+
+### Added
+
+- Style → Background → Image **opacity** control: fades the background image toward the solid background color underneath
+
 ## [0.1.112] - 2026-09-23
 
 ### Fixed

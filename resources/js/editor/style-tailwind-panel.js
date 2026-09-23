@@ -16,8 +16,15 @@ import {
 import { applyEditorFontFamily, previewEditorFontFamily } from './fonts/fonts-ui.js';
 import { findFontByStack, styleManagerFontOptions, cssSafeFontStack } from './fonts/catalog.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
-import { createImageUrlField } from './editor-form-ui.js';
+import { createImageUrlField, createSelectField } from './editor-form-ui.js';
 import { isEditorBooting } from './editor-lifecycle.js';
+import {
+    STYLE_BG_OPACITY_ATTR,
+    STYLE_BG_OPACITY_OPTIONS,
+    composeDecorationBackgroundImageCss,
+    extractUrlFromBackgroundImage,
+    normalizeBackgroundImageOpacity,
+} from './style-background-image.js';
 import {
     BACKGROUND_OPTIONS,
     BG_POSITION_OPTIONS,
@@ -731,6 +738,23 @@ function applyGroup(editor, component, groupId, value) {
         } catch {
             // View may be unavailable during bulk updates.
         }
+
+        // Solid bg color changed: rebuild image fade overlay so it matches the new color.
+        if (groupId === 'background') {
+            const bgUrl = readBackgroundImageUrl(component);
+            const bgOpacity = readBackgroundImageOpacity(component);
+
+            if (bgUrl !== '' && bgOpacity < 0.999) {
+                const fadeColor = resolveBackgroundFadeColor(editor, component);
+                const cssValue = composeDecorationBackgroundImageCss(bgUrl, bgOpacity, fadeColor);
+                clearStyleProperty(editor, component, 'background-image');
+                component.addStyle?.(
+                    { 'background-image': cssValue },
+                    { inline: true },
+                );
+            }
+        }
+
         scheduleClassCompile(editor);
         // Same dirty signal as CLASSES "+" / other editor mutations.
         editor?.trigger?.('update');
@@ -888,6 +912,7 @@ function buildDecorationsSector(labels) {
                         </summary>
                         <div class="voodbuilder-editor-deco-fold__body">
                             <div class="voodbuilder-editor-deco-bg-image" data-voodbuilder-deco-bg-image></div>
+                            <div class="voodbuilder-editor-deco-bg-opacity" data-voodbuilder-deco-bg-opacity></div>
                             ${decoLiveFieldHtml({
                                 label: labels.classStyleBackgroundSize ?? 'Size',
                                 groupId: 'bg-size',
@@ -1219,31 +1244,53 @@ function readBackgroundImageUrl(component) {
     const live = component?.getStyle?.() ?? {};
     const raw = String(inline['background-image'] ?? live['background-image'] ?? '').trim();
 
-    if (
-        raw === ''
-        || raw === 'none'
-        || /^linear-gradient\(/i.test(raw)
-        || /^radial-gradient\(/i.test(raw)
-        || /^conic-gradient\(/i.test(raw)
-    ) {
-        return '';
-    }
-
-    const match = raw.match(/url\(\s*(['"]?)([^'")]+)\1\s*\)/i);
-
-    return String(match?.[2] ?? '').trim();
+    return extractUrlFromBackgroundImage(raw);
 }
 
-function cssBackgroundImageValue(url) {
-    const src = String(url ?? '').trim();
+function readBackgroundImageOpacity(component) {
+    const attrs = component?.getAttributes?.() ?? {};
 
-    if (src === '') {
-        return '';
+    return normalizeBackgroundImageOpacity(attrs[STYLE_BG_OPACITY_ATTR]);
+}
+
+function resolveBackgroundFadeColor(editor, component) {
+    const inline = component?.getStyle?.({ inline: true }) ?? {};
+    const live = component?.getStyle?.() ?? {};
+    const authored = String(inline['background-color'] ?? live['background-color'] ?? '').trim();
+
+    if (
+        authored !== ''
+        && authored.toLowerCase() !== 'transparent'
+        && authored.toLowerCase() !== 'rgba(0, 0, 0, 0)'
+        && ! /^var\(/i.test(authored)
+    ) {
+        return authored;
     }
 
-    const escaped = src.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    try {
+        const el = component?.getEl?.() ?? component?.view?.el;
+        const view = el?.ownerDocument?.defaultView;
 
-    return `url('${escaped}')`;
+        if (el && view) {
+            const computed = String(view.getComputedStyle(el).backgroundColor ?? '').trim();
+
+            if (
+                computed !== ''
+                && computed !== 'transparent'
+                && computed !== 'rgba(0, 0, 0, 0)'
+            ) {
+                return computed;
+            }
+        }
+    } catch {
+        // Canvas frame may be unavailable during boot.
+    }
+
+    if (authored !== '') {
+        return authored;
+    }
+
+    return 'var(--color-vp-bg, #0f172a)';
 }
 
 function clearDecorationBackgroundImage(editor, component) {
@@ -1255,9 +1302,17 @@ function clearDecorationBackgroundImage(editor, component) {
     replaceClassGroup(component, GROUP_SETS['bg-size'], null);
     replaceClassGroup(component, GROUP_SETS['bg-position'], null);
     replaceClassGroup(component, GROUP_SETS['bg-repeat'], null);
+
+    try {
+        component.removeAttributes?.(STYLE_BG_OPACITY_ATTR);
+    } catch {
+        const attrs = { ...(component.getAttributes?.() ?? {}) };
+        delete attrs[STYLE_BG_OPACITY_ATTR];
+        component.setAttributes?.(attrs);
+    }
 }
 
-function applyDecorationBackgroundImage(editor, component, url) {
+function applyDecorationBackgroundImage(editor, component, url, opacity = null) {
     if (! editor || ! component) {
         return;
     }
@@ -1278,10 +1333,22 @@ function applyDecorationBackgroundImage(editor, component, url) {
                     GROUP_SETS['gradient-to'],
                 ].filter(Boolean),
             });
+
+            const nextOpacity = opacity == null
+                ? readBackgroundImageOpacity(component)
+                : normalizeBackgroundImageOpacity(opacity);
+
+            component.addAttributes?.({
+                [STYLE_BG_OPACITY_ATTR]: String(nextOpacity),
+            });
+
+            const fadeColor = resolveBackgroundFadeColor(editor, component);
+            const cssValue = composeDecorationBackgroundImageCss(src, nextOpacity, fadeColor);
+
             // Only strip the image paint — keep solid bg-* color as fallback.
             clearStyleProperty(editor, component, 'background-image');
             component.addStyle?.(
-                { 'background-image': cssBackgroundImageValue(src) },
+                { 'background-image': cssValue },
                 { inline: true },
             );
 
@@ -1316,36 +1383,65 @@ function applyDecorationBackgroundImage(editor, component, url) {
 
 function wireBackgroundImageField(editor, sector, labels = {}) {
     const mount = sector.querySelector('[data-voodbuilder-deco-bg-image]');
+    const opacityMount = sector.querySelector('[data-voodbuilder-deco-bg-opacity]');
 
-    if (! mount || mount.dataset.vbWired === '1') {
-        return;
+    if (mount && mount.dataset.vbWired !== '1') {
+        mount.dataset.vbWired = '1';
+        mount.replaceChildren();
+
+        const selected = editor.getSelected?.();
+        const field = createImageUrlField({
+            label: labels.classStyleBackgroundImageSrc ?? labels.imageSettingsHeroSrc ?? 'Background image',
+            name: 'styleBgImage',
+            value: readBackgroundImageUrl(selected),
+            editor,
+            chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
+            clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
+            onChange: (url) => {
+                const component = editor.getSelected?.();
+
+                if (! component) {
+                    return;
+                }
+
+                applyDecorationBackgroundImage(editor, component, url);
+                syncSelectsFromComponent(sector.closest('.gjs-sm-sectors') ?? sector, component, editor);
+            },
+        });
+
+        mount.appendChild(field);
+        mount.__vbBgImageInput = field.querySelector('input');
     }
 
-    mount.dataset.vbWired = '1';
-    mount.replaceChildren();
+    if (opacityMount && opacityMount.dataset.vbWired !== '1') {
+        opacityMount.dataset.vbWired = '1';
+        opacityMount.replaceChildren();
 
-    const selected = editor.getSelected?.();
-    const field = createImageUrlField({
-        label: labels.classStyleBackgroundImageSrc ?? labels.imageSettingsHeroSrc ?? 'Background image',
-        name: 'styleBgImage',
-        value: readBackgroundImageUrl(selected),
-        editor,
-        chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
-        clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
-        onChange: (url) => {
-            const component = editor.getSelected?.();
+        const selected = editor.getSelected?.();
+        const current = String(readBackgroundImageOpacity(selected));
+        const field = createSelectField({
+            label: labels.classStyleBackgroundImageOpacity
+                ?? labels.imageSettingsOpacity
+                ?? 'Image opacity',
+            name: 'styleBgImageOpacity',
+            value: current,
+            options: STYLE_BG_OPACITY_OPTIONS,
+            onChange: (value) => {
+                const component = editor.getSelected?.();
+                const url = readBackgroundImageUrl(component);
 
-            if (! component) {
-                return;
-            }
+                if (! component || url === '') {
+                    return;
+                }
 
-            applyDecorationBackgroundImage(editor, component, url);
-            syncSelectsFromComponent(sector.closest('.gjs-sm-sectors') ?? sector, component, editor);
-        },
-    });
+                applyDecorationBackgroundImage(editor, component, url, value);
+                syncSelectsFromComponent(sector.closest('.gjs-sm-sectors') ?? sector, component, editor);
+            },
+        });
 
-    mount.appendChild(field);
-    mount.__vbBgImageInput = field.querySelector('input');
+        opacityMount.appendChild(field);
+        opacityMount.__vbBgOpacitySelect = field.querySelector('select');
+    }
 }
 
 function syncBackgroundImageField(root, component) {
@@ -1353,6 +1449,9 @@ function syncBackgroundImageField(root, component) {
     const input = mount?.__vbBgImageInput ?? mount?.querySelector?.('input');
     const url = readBackgroundImageUrl(component);
     const fold = root.querySelector?.('[data-voodbuilder-deco-fold="image"]');
+    const opacityMount = root.querySelector?.('[data-voodbuilder-deco-bg-opacity]');
+    const opacitySelect = opacityMount?.__vbBgOpacitySelect
+        ?? opacityMount?.querySelector?.('select');
 
     if (input && String(input.value ?? '') !== url) {
         input.value = url;
@@ -1378,6 +1477,25 @@ function syncBackgroundImageField(root, component) {
                 img.src = url;
             }
         }
+    }
+
+    if (opacitySelect) {
+        const opacity = String(readBackgroundImageOpacity(component));
+        const hasOption = [...opacitySelect.options].some((option) => option.value === opacity);
+
+        if (! hasOption && opacity !== '1') {
+            const option = document.createElement('option');
+            option.value = opacity;
+            option.textContent = `${Math.round(Number.parseFloat(opacity) * 100)}%`;
+            opacitySelect.appendChild(option);
+        }
+
+        if (String(opacitySelect.value) !== opacity) {
+            opacitySelect.value = opacity;
+        }
+
+        opacitySelect.disabled = url === '';
+        opacityMount?.classList.toggle('is-disabled', url === '');
     }
 
     if (fold && String(fold.tagName ?? '').toUpperCase() === 'DETAILS' && url) {

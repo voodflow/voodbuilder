@@ -159,6 +159,35 @@ HTML;
         $this->assertStringNotContainsString('data-voodbuilder-block', $published);
     }
 
+    public function test_published_render_preserves_author_root_id_and_background_style(): void
+    {
+        $registry = new EditorDynamicBlockRegistry;
+        $registry->register('Test', StubContentWidthDynamicBlock::class);
+
+        $config = ['heading' => 'Gallery'];
+        $encoded = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            ENT_QUOTES,
+            'UTF-8',
+        );
+
+        $saved = <<<HTML
+<section id="ifmoo4" data-voodbuilder-block="stub_content_width" data-voodbuilder-config="{$encoded}" data-vb-style-bg-opacity="0.55" class="voodbuilder-editor-dynamic mt-12" style="background-image: url('/storage/demo.jpg'); background-size: cover;">
+  <div class="voodbuilder-editor-container mx-auto px-6" data-voodbuilder-role="content">
+    <h2>Saved</h2>
+  </div>
+</section>
+HTML;
+
+        $renderer = new EditorDynamicBlockRenderer($registry, new EditorServerBlockRegistry);
+        $published = $renderer->render($saved, null, canvasPreview: false);
+
+        $this->assertStringContainsString('id="ifmoo4"', $published);
+        $this->assertStringContainsString("background-image: url('/storage/demo.jpg')", $published);
+        $this->assertStringContainsString('data-vb-style-bg-opacity="0.55"', $published);
+        $this->assertStringContainsString('Fresh render', $published);
+    }
+
     public function test_published_render_preserves_author_root_spacing_classes_on_dynamic_blocks(): void
     {
         $registry = new EditorDynamicBlockRegistry;
