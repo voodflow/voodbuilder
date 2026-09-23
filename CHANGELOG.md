@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep page styles after Anchor drop (union previous live utilities on JIT rebuild)
+
+## [0.1.113] - 2026-09-23
+
+### Fixed
+
 - Hash / Anchor links no longer stop far above the target: site `scroll-padding-top` clears only the sticky nav, and `.vb-anchor` no longer doubles the docs offset
 
 ## [0.1.111] - 2026-09-23
