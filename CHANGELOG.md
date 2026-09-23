@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.118] - 2026-09-23
+
+### Fixed
+
+- Background Image field keeps a durable reference (`data-vb-style-bg-src` preferred over composed CSS) so the thumbnail survives refresh
+- **Clear** removes the photo from CssComposer `#id`, live page CSS, and the canvas DOM (no ghost image under a new Choose)
+- Canvas live CSS no longer injects author `#id` paints (fixes Gradient hidden under stale `#id{background-image}`)
+- After Clear, gradient utilities can paint again without the old photo underneath
+
 ## [0.1.117] - 2026-09-23
 
 ### Changed

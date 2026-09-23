@@ -18,7 +18,7 @@ import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './edit
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { shouldDeferCssRebuild } from './editor-lifecycle.js';
 import { extractChromeShellPageHtml } from './editor-chrome-shell.js';
-import { extractGrapesComposerCss, mergeAuthorCssChunks } from './editor/payload.js';
+import { extractGrapesComposerCss, mergeAuthorCssChunks, stripAuthorIdRules } from './editor/payload.js';
 import { STYLE_SPACING_SAFELIST } from './style-spacing-safelist.js';
 import { STYLE_COLOR_SAFELIST } from './style-color-safelist.js';
 import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
@@ -406,9 +406,15 @@ export function applyPageLiveCss(editor, css) {
     const normalized = String(css ?? '').trim();
 
     resetCssUtilityClassIndex();
-    // Full sheet for Save / coverage checks; stripped copy for canvas cascade.
+    // Full sheet for Save / coverage checks (may still include author #id paints).
     editor.__voodbuilderPageLiveCss = normalized;
-    injectLivePageCss(editor, stripCanvasBundledUtilitiesFromCss(normalized));
+    // Canvas inject: utilities only. Style Manager `#id` paints belong in CssComposer
+    // (setStyle / setIdRule). Injecting #id here made Clear leave a ghost photo and
+    // blocked Gradient utilities (lower specificity than #id).
+    injectLivePageCss(
+        editor,
+        stripCanvasBundledUtilitiesFromCss(stripAuthorIdRules(normalized)),
+    );
 }
 
 /**

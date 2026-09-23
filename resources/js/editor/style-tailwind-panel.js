@@ -1265,16 +1265,247 @@ function readComponentCssProperty(editor, component, property) {
 }
 
 function readBackgroundImageUrl(component, editor = null) {
-    const fromCss = extractUrlFromBackgroundImage(
-        readComponentCssProperty(editor, component, 'background-image'),
-    );
-
-    if (fromCss !== '') {
-        return fromCss;
+    if (! component) {
+        return '';
     }
 
-    // Durable attr survives reload / remount when CssComposer paints lag behind.
-    return String(component?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const nodes = target === component ? [component] : [component, target];
+
+    // Durable UI reference — must win over stale composed CSS (old photo under Clear / reselect).
+    for (const node of nodes) {
+        const fromAttr = String(node?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+        if (fromAttr !== '') {
+            return fromAttr;
+        }
+    }
+
+    for (const node of nodes) {
+        const fromImage = extractUrlFromBackgroundImage(
+            readComponentCssProperty(editor, node, 'background-image'),
+        );
+
+        if (fromImage !== '') {
+            return fromImage;
+        }
+
+        // Shorthand `background: url(...) …` (legacy SM / imported CSS).
+        const fromShorthand = extractUrlFromBackgroundImage(
+            readComponentCssProperty(editor, node, 'background'),
+        );
+
+        if (fromShorthand !== '') {
+            return fromShorthand;
+        }
+
+        // Raw style="" attribute Grapes may not mirror into getStyle().
+        const rawStyle = String(node?.getAttributes?.()?.style ?? '');
+
+        if (rawStyle !== '') {
+            const fromRaw = extractUrlFromBackgroundImage(rawStyle);
+
+            if (fromRaw !== '') {
+                return fromRaw;
+            }
+        }
+    }
+
+    // Last resort: what the canvas actually paints (live #id / computed).
+    for (const node of nodes) {
+        try {
+            const el = node?.getEl?.() ?? node?.view?.el;
+            const view = el?.ownerDocument?.defaultView;
+
+            if (el && view?.getComputedStyle) {
+                const found = extractUrlFromBackgroundImage(
+                    view.getComputedStyle(el).backgroundImage ?? '',
+                );
+
+                if (found !== '') {
+                    return found;
+                }
+            }
+        } catch {
+            // Frame may be unavailable.
+        }
+    }
+
+    return '';
+}
+
+function persistBackgroundImageSrcAttr(component, url) {
+    if (! component) {
+        return;
+    }
+
+    const src = String(url ?? '').trim();
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const nodes = target === component ? [component] : [component, target];
+
+    for (const node of nodes) {
+        if (src === '') {
+            try {
+                node.removeAttributes?.(STYLE_BG_SRC_ATTR);
+            } catch {
+                const attrs = { ...(node.getAttributes?.() ?? {}) };
+                delete attrs[STYLE_BG_SRC_ATTR];
+                node.setAttributes?.(attrs);
+            }
+
+            continue;
+        }
+
+        const current = String(node.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+        if (current !== src) {
+            node.addAttributes?.({ [STYLE_BG_SRC_ATTR]: src });
+        }
+    }
+}
+
+/**
+ * Remove background-image for #id from the stored live page CSS string so Save
+ * cannot resurrect a cleared photo.
+ */
+function scrubBackgroundImageFromPageLiveCss(editor, componentId) {
+    const id = String(componentId ?? '').trim();
+    const live = String(editor?.__voodbuilderPageLiveCss ?? '');
+
+    if (! editor || id === '' || live === '' || ! live.includes(`#${id}`)) {
+        return;
+    }
+
+    const safeId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const next = live
+        .replace(new RegExp(`#${safeId}\\s*\\{([^}]*)\\}`, 'gi'), (match, body) => {
+            let cleaned = String(body)
+                .replace(/\bbackground-image\s*:\s*[^;]+;?/gi, '')
+                .replace(/\bbackground\s*:\s*[^;]*url\s*\([^)]*\)[^;]*;?/gi, '')
+                .replace(/;\s*;/g, ';')
+                .trim()
+                .replace(/^;|;$/g, '')
+                .trim();
+
+            if (cleaned === '') {
+                return ' ';
+            }
+
+            return `#${id}{${cleaned}}`;
+        })
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+    if (next !== live.trim()) {
+        editor.__voodbuilderApplyPageLiveCss?.(next);
+    }
+}
+
+function clearDecorationBackgroundImage(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const id = String(component.getId?.() ?? '').trim();
+    const target = resolveVisualStyleTarget(component) ?? component;
+
+    // Drop durable reference first so reapply / sync cannot resurrect the photo.
+    persistBackgroundImageSrcAttr(component, '');
+
+    try {
+        component.removeAttributes?.(STYLE_BG_OPACITY_ATTR);
+    } catch {
+        const attrs = { ...(component.getAttributes?.() ?? {}) };
+        delete attrs[STYLE_BG_OPACITY_ATTR];
+        component.setAttributes?.(attrs);
+    }
+
+    // Wipe image paint from inline + CssComposer #id / private rules.
+    clearStyleProperty(editor, target, 'background-image', { family: false });
+
+    const shorthand = readComponentCssProperty(editor, target, 'background');
+
+    if (/url\s*\(/i.test(shorthand)) {
+        clearStyleProperty(editor, target, 'background', { family: false });
+    }
+
+    if (id && editor.Css?.getIdRule) {
+        const rule = editor.Css.getIdRule(id);
+
+        if (rule) {
+            const style = { ...(rule.getStyle?.() ?? {}) };
+            let changed = false;
+
+            for (const key of Object.keys(style)) {
+                if (key === 'background-image' || key === 'background') {
+                    delete style[key];
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                if (Object.keys(style).length === 0) {
+                    try {
+                        editor.Css.remove?.(rule);
+                    } catch {
+                        rule.setStyle?.({});
+                    }
+                } else {
+                    rule.setStyle?.(style);
+                }
+            }
+        }
+    }
+
+    scrubBackgroundImageFromPageLiveCss(editor, id);
+
+    replaceClassGroup(component, GROUP_SETS['bg-size'], null);
+    replaceClassGroup(component, GROUP_SETS['bg-position'], null);
+    replaceClassGroup(component, GROUP_SETS['bg-repeat'], null);
+
+    // Force canvas DOM — Grapes model clear can lag behind painted el.style.
+    try {
+        const el = target?.getEl?.() ?? target?.view?.el ?? component?.getEl?.() ?? component?.view?.el;
+
+        if (el?.style) {
+            el.style.removeProperty?.('background-image');
+            el.style.backgroundImage = '';
+
+            if (/url\s*\(/i.test(String(el.style.background ?? ''))) {
+                el.style.removeProperty?.('background');
+                el.style.background = '';
+            }
+        }
+    } catch {
+        // Frame may be unavailable.
+    }
+
+    // Gradient utilities need an empty author background-image so TW can paint again.
+    const gradientLayer = resolveDecorationGradientLayer(component);
+
+    if (gradientLayer) {
+        try {
+            target.addStyle?.({ 'background-image': gradientLayer }, { inline: true });
+
+            if (id && editor.Css?.setIdRule) {
+                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+                editor.Css.setIdRule(id, {
+                    ...existing,
+                    'background-image': gradientLayer,
+                });
+            }
+        } catch {
+            // CssComposer may be unavailable during boot.
+        }
+    }
+
+    try {
+        component.view?.updateStyle?.();
+        component.view?.updateAttributes?.();
+        target.view?.updateStyles?.();
+    } catch {
+        // View may be unavailable.
+    }
 }
 
 function readBackgroundImageOpacity(component, editor = null) {
@@ -1301,35 +1532,6 @@ function resolveDecorationGradientLayer(component) {
     }
 
     return composeTailwindGradientLayer(direction);
-}
-
-/**
- * Re-paint decoration background-image from durable src + opacity + optional gradient.
- */
-function reapplyDecorationBackgroundPaint(editor, component) {
-    if (! editor || ! component) {
-        return;
-    }
-
-    const src = readBackgroundImageUrl(component, editor);
-
-    if (src === '') {
-        return;
-    }
-
-    const opacity = readBackgroundImageOpacity(component, editor);
-    const gradientLayer = resolveDecorationGradientLayer(component);
-    const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, component);
-    const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
-
-    component.addAttributes?.({
-        [STYLE_BG_OPACITY_ATTR]: String(opacity),
-        [STYLE_BG_SRC_ATTR]: src,
-    });
-    component.addStyle?.(
-        { 'background-image': cssValue },
-        { inline: true },
-    );
 }
 
 function resolveBackgroundFadeColor(editor, component) {
@@ -1370,25 +1572,63 @@ function resolveBackgroundFadeColor(editor, component) {
     return 'var(--color-vp-bg, #0f172a)';
 }
 
-function clearDecorationBackgroundImage(editor, component) {
+/**
+ * Re-paint decoration background-image from durable src + opacity + optional gradient.
+ *
+ * @param {string|null} [forcedSrc] When set (e.g. Choose), wins over stale composed CSS.
+ */
+function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     if (! editor || ! component) {
         return;
     }
 
-    clearStyleProperty(editor, component, 'background-image');
-    replaceClassGroup(component, GROUP_SETS['bg-size'], null);
-    replaceClassGroup(component, GROUP_SETS['bg-position'], null);
-    replaceClassGroup(component, GROUP_SETS['bg-repeat'], null);
+    const forced = forcedSrc == null ? '' : String(forcedSrc).trim();
+    const src = forced !== '' ? forced : readBackgroundImageUrl(component, editor);
 
-    try {
-        component.removeAttributes?.(STYLE_BG_OPACITY_ATTR);
-        component.removeAttributes?.(STYLE_BG_SRC_ATTR);
-    } catch {
-        const attrs = { ...(component.getAttributes?.() ?? {}) };
-        delete attrs[STYLE_BG_OPACITY_ATTR];
-        delete attrs[STYLE_BG_SRC_ATTR];
-        component.setAttributes?.(attrs);
+    if (src === '') {
+        return;
     }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const opacity = readBackgroundImageOpacity(component, editor);
+    const gradientLayer = resolveDecorationGradientLayer(component);
+    const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, target);
+    const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
+
+    persistBackgroundImageSrcAttr(component, src);
+    component.addAttributes?.({
+        [STYLE_BG_OPACITY_ATTR]: String(opacity),
+    });
+
+    if (target !== component) {
+        target.addAttributes?.({
+            [STYLE_BG_OPACITY_ATTR]: String(opacity),
+        });
+    }
+
+    // Drop previous image paint before rewrite (keeps solid color classes).
+    clearStyleProperty(editor, target, 'background-image', { family: false });
+
+    target.addStyle?.(
+        { 'background-image': cssValue },
+        { inline: true },
+    );
+
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(id, {
+                ...existing,
+                'background-image': cssValue,
+            });
+        } catch {
+            // CssComposer may be unavailable during boot.
+        }
+    }
+
+    scrubBackgroundImageFromPageLiveCss(editor, id);
 }
 
 function applyDecorationBackgroundImage(editor, component, url, opacity = null) {
@@ -1405,7 +1645,6 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
         if (src === '') {
             clearDecorationBackgroundImage(editor, component);
         } else {
-            // Keep gradient utilities — image + gradient compose as layered background-image.
             const nextOpacity = opacity == null
                 ? readBackgroundImageOpacity(component, editor)
                 : normalizeBackgroundImageOpacity(opacity);
@@ -1414,19 +1653,6 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
                 [STYLE_BG_OPACITY_ATTR]: String(nextOpacity),
                 [STYLE_BG_SRC_ATTR]: src,
             });
-
-            const gradientLayer = resolveDecorationGradientLayer(component);
-            const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, component);
-            const cssValue = composeDecorationBackgroundImageCss(src, nextOpacity, fadeColor, {
-                gradientLayer,
-            });
-
-            // Only strip the previous image paint — keep solid bg-* / gradient classes.
-            clearStyleProperty(editor, component, 'background-image');
-            component.addStyle?.(
-                { 'background-image': cssValue },
-                { inline: true },
-            );
 
             const classes = componentClassList(component);
 
@@ -1441,6 +1667,8 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             if (! resolveGroupValue(classes, BG_REPEAT_OPTIONS)) {
                 replaceClassGroup(component, GROUP_SETS['bg-repeat'], 'bg-no-repeat');
             }
+
+            reapplyDecorationBackgroundPaint(editor, component, src);
         }
 
         try {
@@ -1533,11 +1761,7 @@ function syncBackgroundImageField(root, component, editor = null) {
 
     // Persist src attr so Color changes / reload can find the photo without CssComposer.
     if (component && url !== '') {
-        const current = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
-
-        if (current !== url) {
-            component.addAttributes?.({ [STYLE_BG_SRC_ATTR]: url });
-        }
+        persistBackgroundImageSrcAttr(component, url);
     }
 
     if (input && String(input.value ?? '') !== url) {
