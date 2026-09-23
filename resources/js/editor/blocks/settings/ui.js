@@ -48,6 +48,10 @@ import {
     renderTextLinkSettings,
 } from '../../basic-elements-settings.js';
 import {
+    isAnchorComponent,
+    renderAnchorSettings,
+} from '../../editor-utility-blocks.js';
+import {
     findSocialShareHost,
     renderSocialShareSettings,
 } from '../../social-share-settings.js';
@@ -342,10 +346,21 @@ function guardTraitManagerForBlockSettings(editor) {
             return;
         }
 
-        // Smart CTA buttons and animated counters own Content traits — never steal selection.
+        // Smart CTA buttons, animated counters, and anchors own Content settings — never steal selection.
         const componentType = component?.get?.('type');
 
-        if (componentType === 'voodbuilder-cta-button' || componentType === 'voodbuilder-animated-counter') {
+        if (
+            componentType === 'voodbuilder-cta-button'
+            || componentType === 'voodbuilder-animated-counter'
+            || componentType === 'voodbuilder-anchor'
+            || isAnchorComponent(component)
+        ) {
+            if (componentType === 'voodbuilder-anchor' || isAnchorComponent(component)) {
+                editor.__voodbuilderBlockSettingsRender?.();
+
+                return;
+            }
+
             return originalSelect(component, ...args);
         }
 
@@ -711,7 +726,29 @@ export function registerSettingsUi(editor, mount) {
 
             if (isReadingProgressComponent(rawSelected)) {
                 closeAllInspectorSelects();
+                if (! isContentInspectorTabActive(editor)) {
+                    editor.__voodbuilderActivateInspectorTab?.('content');
+                }
                 renderReadingProgressSettings({
+                    mount,
+                    traitsMount,
+                    component: rawSelected,
+                    editor,
+                    labels,
+                });
+                renderedRoot = null;
+                renderedRootBlockId = '';
+                renderedDescriptorId = null;
+
+                return;
+            }
+
+            if (isAnchorComponent(rawSelected)) {
+                closeAllInspectorSelects();
+                if (! isContentInspectorTabActive(editor)) {
+                    editor.__voodbuilderActivateInspectorTab?.('content');
+                }
+                renderAnchorSettings({
                     mount,
                     traitsMount,
                     component: rawSelected,

@@ -14,6 +14,7 @@ import {
 } from './social-share-settings.js';
 import { registerTextElementTypes, lockRichTextChildren } from './text-elements.js';
 import { settleEditorCanvasPreview } from './vb-runtime.js';
+import { createFormSection, createTextField } from './editor-form-ui.js';
 
 export const BASIC_BLOCK_CATEGORY = 'Basic';
 export const MEDIA_BLOCK_CATEGORY = 'Media';
@@ -377,6 +378,103 @@ function syncAnchorId(component) {
     if (typeof component.set === 'function') {
         component.set('name', `Anchor · #${next}`);
     }
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isAnchorComponent(component) {
+    if (! component?.get) {
+        return false;
+    }
+
+    const type = String(component.get('type') ?? '');
+    const attrs = component.getAttributes?.() ?? {};
+
+    return type === 'voodbuilder-anchor'
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-anchor')
+        || (component.getClasses?.() ?? []).includes('vb-anchor');
+}
+
+/**
+ * Content-panel settings for the Utilities → Anchor block.
+ *
+ * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
+ * @returns {boolean}
+ */
+export function renderAnchorSettings({ mount, traitsMount = null, component, editor, labels = {} }) {
+    if (! mount || ! component || ! isAnchorComponent(component)) {
+        return false;
+    }
+
+    const key = String(component?.cid ?? component?.getId?.() ?? component?.get?.('id') ?? '');
+    const existing = mount.querySelector('[data-voodbuilder-anchor-settings]');
+
+    if (existing && existing.getAttribute('data-component-key') === key) {
+        traitsMount?.classList.add('hidden');
+        mount.hidden = false;
+
+        return true;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+    let anchorId = sanitizeAnchorId(
+        component.get?.('data-vb-anchor-id') ?? attrs['data-vb-anchor-id'] ?? attrs.id,
+        'section',
+    );
+
+    traitsMount?.classList.add('hidden');
+    traitsMount?.replaceChildren?.();
+    mount.hidden = false;
+    mount.replaceChildren();
+
+    const { section, fields } = createFormSection(labels.anchorSettingsTitle ?? 'Anchor');
+    section.setAttribute('data-voodbuilder-anchor-settings', '');
+    section.setAttribute('data-component-key', key);
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-editor-form-hint';
+    hint.textContent = labels.anchorSettingsHint
+        ?? 'Invisible scroll target. Link buttons or menu items to #id (smooth scroll is already enabled on the site theme).';
+
+    const { field, input } = createTextField({
+        label: labels.anchorId ?? 'Anchor ID',
+        name: 'anchorId',
+        value: anchorId,
+        placeholder: 'features',
+    });
+
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+
+    const preview = document.createElement('p');
+    preview.className = 'voodbuilder-editor-form-hint';
+    preview.setAttribute('data-voodbuilder-anchor-preview', '');
+    preview.textContent = `Link target: #${anchorId}`;
+
+    const commit = () => {
+        anchorId = sanitizeAnchorId(input.value, 'section');
+        input.value = anchorId;
+        preview.textContent = `Link target: #${anchorId}`;
+        component.set('data-vb-anchor-id', anchorId);
+        syncAnchorId(component);
+    };
+
+    input.addEventListener('change', commit);
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            commit();
+            input.blur();
+        }
+    });
+
+    fields.append(hint, field, preview);
+    mount.appendChild(section);
+
+    return true;
 }
 
 function registerAnchorType(editor) {

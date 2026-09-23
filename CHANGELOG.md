@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.103] - 2026-09-23
+
+### Fixed
+
+- Utilities **Anchor**: Content inspector now shows an **Anchor ID** field (and opens the Content tab on select) instead of relying on hidden Grapes traits
+
 ## [0.1.102] - 2026-09-23
 
 ### Added
