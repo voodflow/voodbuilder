@@ -6192,7 +6192,7 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
     padding: 0;
     overflow: visible;
     pointer-events: none;
-    scroll-margin-top: var(--spacing-vp-doc-offset, 5rem);
+    scroll-margin-top: 0;
 }
 
 .gjs-dashed .vb-anchor,

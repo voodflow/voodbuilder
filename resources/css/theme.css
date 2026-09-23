@@ -162,7 +162,10 @@
     html {
         --vp-scrollbar-width: 0px;
         scroll-behavior: smooth;
-        scroll-padding-top: var(--spacing-vp-doc-offset);
+        /* Sticky nav/progress only — do not use --spacing-vp-doc-offset here:
+           that value adds +3rem for docs headings, and combining it with
+           .vb-anchor scroll-margin used to leave anchors far below the viewport top. */
+        scroll-padding-top: var(--spacing-vp-nav-total);
         scrollbar-gutter: auto;
         scrollbar-width: thin;
         scrollbar-color: color-mix(in srgb, var(--color-vp-brand-1) 45%, transparent) transparent;
@@ -340,7 +343,10 @@
         color: var(--color-vp-text-3, #64748b);
     }
 
-    /* Invisible scroll target; editor dashed mode shows a #id chip. */
+    /* Invisible scroll target; editor dashed mode shows a #id chip.
+       Clearance for the sticky chrome comes from html scroll-padding-top
+       (--spacing-vp-nav-total). Do not also set scroll-margin to
+       --spacing-vp-doc-offset or hash links undershoot by ~nav+3rem. */
     .vb-anchor {
         display: block;
         position: relative;
@@ -350,7 +356,7 @@
         padding: 0;
         overflow: visible;
         pointer-events: none;
-        scroll-margin-top: var(--spacing-vp-doc-offset, 5rem);
+        scroll-margin-top: 0;
     }
 
     .gjs-dashed .vb-anchor,
