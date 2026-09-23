@@ -1,10 +1,10 @@
 /**
  * Style panel ↔ canvas device: mobile-first Tailwind breakpoint prefixes.
  *
- * Device mapping (Grapes widthMedia ≈ Tailwind):
- *   mobilePortrait → base (no prefix)
- *   tablet         → md:
- *   desktop        → lg:
+ * UI labels (Base / Tablet / Desktop) — CSS stays mobile-first:
+ *   Base   (mobilePortrait canvas) → no prefix (applies everywhere)
+ *   Tablet                         → md:  (from md up)
+ *   Desktop                        → lg:  (from lg up)
  */
 
 /** Prefixes the Style panel can author (v1). */

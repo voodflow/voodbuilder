@@ -1854,6 +1854,17 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vp-divider, #2e2e32) 95%, transparent);
 }
 
+.voodbuilder-editor-style-viewport__cascade {
+    margin: 0;
+    font-size: 0.625rem;
+    line-height: 1.35;
+    color: var(--color-vp-text-3, #94a3b8);
+}
+
+.dark .voodbuilder-editor-root .voodbuilder-editor-style-viewport__cascade {
+    color: var(--color-vp-text-3, #6a6a71);
+}
+
 .voodbuilder-editor-typo-seg__head {
     display: flex;
     align-items: center;

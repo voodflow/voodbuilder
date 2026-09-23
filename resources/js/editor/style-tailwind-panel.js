@@ -559,7 +559,8 @@ function ensureSectorsRoot(stylesMount) {
 }
 
 /**
- * Compact device strip at the top of Style — mirrors the topbar canvas device.
+ * Style viewport strip — Base / Tablet / Desktop (mobile-first prefixes).
+ * Mirrors canvas device; does not gate Animation or other sectors.
  *
  * @param {Record<string, string>} labels
  * @returns {HTMLElement}
@@ -569,22 +570,24 @@ function buildViewportStrip(labels) {
     strip.className = 'voodbuilder-editor-style-viewport';
     strip.dataset.voodbuilderStyleViewportStrip = '';
 
-    const hint = labels.classStyleViewportHint ?? 'Styles for';
-    const mobile = labels.deviceMobile ?? 'Mobile';
+    const base = labels.classStyleViewportBaseTab ?? 'Base';
     const tablet = labels.deviceTablet ?? 'Tablet';
     const desktop = labels.deviceDesktop ?? 'Desktop';
     const aria = labels.classStyleViewportAria ?? 'Style viewport';
+    const cascade = labels.classStyleViewportCascade
+        ?? 'Base: all viewports. Tablet/Desktop: from this breakpoint up.';
 
     strip.innerHTML = `
         <div class="voodbuilder-editor-style-viewport__meta">
-            <span class="voodbuilder-editor-style-viewport__hint" data-voodbuilder-style-viewport-hint>${escapeHtml(hint)}</span>
+            <span class="voodbuilder-editor-style-viewport__hint" data-voodbuilder-style-viewport-hint></span>
             <code class="voodbuilder-editor-style-viewport__prefix" data-voodbuilder-style-viewport-prefix></code>
         </div>
         <div class="voodbuilder-editor-style-viewport__group" role="group" aria-label="${escapeAttr(aria)}">
-            <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="mobilePortrait" title="${escapeAttr(mobile)}">${escapeHtml(mobile)}</button>
+            <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="mobilePortrait" title="${escapeAttr(base)}">${escapeHtml(base)}</button>
             <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="tablet" title="${escapeAttr(tablet)}">${escapeHtml(tablet)}</button>
             <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="desktop" title="${escapeAttr(desktop)}">${escapeHtml(desktop)}</button>
         </div>
+        <p class="voodbuilder-editor-style-viewport__cascade" data-voodbuilder-style-viewport-cascade>${escapeHtml(cascade)}</p>
     `;
 
     return strip;
@@ -633,10 +636,10 @@ function syncViewportStrip(root, editor, labels = {}) {
         const deviceLabel = deviceId === 'tablet'
             ? (labels.deviceTablet ?? 'Tablet')
             : (deviceId === 'mobilePortrait' || deviceId === 'mobile')
-                ? (labels.deviceMobile ?? 'Mobile')
+                ? (labels.classStyleViewportBaseTab ?? 'Base')
                 : (labels.deviceDesktop ?? 'Desktop');
         const template = labels.classStyleViewportEditing
-            ?? 'Styles for {device}';
+            ?? 'Editing: {device}';
         hintEl.textContent = String(template).replace('{device}', deviceLabel);
     }
 
