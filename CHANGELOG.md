@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.125] - 2026-09-23
+
+### Fixed
+
+- Typography **text gradient** (`bg-clip-text` + `text-transparent`): force transparent fill / `-webkit-text-fill-color` and clear author `color`/`background-image` overrides so from-*/to-* show on the canvas and frontend
+
 ## [0.1.124] - 2026-09-23
 
 ### Fixed

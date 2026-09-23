@@ -163,6 +163,55 @@ function ensureTextGradientBase(component) {
     }
 }
 
+/**
+ * Text gradient needs utility `background-image` + transparent fill.
+ * Author #id/inline `color` / `background-image` / webkit fill often leave solid text.
+ */
+function ensureTextGradientPaint(editor, component) {
+    if (! editor || ! component || ! hasTextGradientClasses(componentClassList(component))) {
+        return;
+    }
+
+    ensureTextGradientBase(component);
+    clearSolidTextColorUtilities(component);
+    clearStyleProperty(editor, component, 'color');
+    clearStyleProperty(editor, component, 'background-image');
+    clearStyleProperty(editor, component, '-webkit-text-fill-color');
+
+    // Reinforce clip (beats inherited text-* and Grapes RTE fills).
+    component.addStyle?.(
+        {
+            color: 'transparent',
+            '-webkit-text-fill-color': 'transparent',
+        },
+        { inline: true },
+    );
+
+    const id = String(component.getId?.() ?? '').trim();
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            delete existing['background-image'];
+            delete existing.background;
+            editor.Css.setIdRule(id, {
+                ...existing,
+                color: 'transparent',
+                '-webkit-text-fill-color': 'transparent',
+            });
+        } catch {
+            // Optional.
+        }
+    }
+
+    try {
+        component.view?.updateClasses?.();
+        component.view?.updateStyle?.();
+    } catch {
+        // View may be unavailable.
+    }
+}
+
 function clearSolidTextColorUtilities(component) {
     if (! component) {
         return;
@@ -536,7 +585,7 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
         }
     }
 
-    syncTypographyTextGradient(root, component);
+    syncTypographyTextGradient(root, component, editor);
 
     const fontSelect = root.querySelector('[data-voodbuilder-tw-font-family]');
 
@@ -790,6 +839,7 @@ function applyGroup(editor, component, groupId, value) {
                 clearSolidTextColorUtilities(component);
                 clearStyleProperty(editor, component, 'color');
                 defaultTextGradientDirection(component);
+                ensureTextGradientPaint(editor, component);
             } else if (value) {
                 clearTextGradientUtilities(component);
                 replaceClassGroup(component, groupSet, value, { alsoClear: [] });
@@ -843,6 +893,7 @@ function applyGroup(editor, component, groupId, value) {
 
             replaceClassGroup(component, groupSet, value || null);
             clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
+            ensureTextGradientPaint(editor, component);
 
             try {
                 component.view?.updateClasses?.();
@@ -1324,7 +1375,7 @@ const PANEL_SEGMENT_GROUPS = {
     'border-style': BORDER_STYLE_OPTIONS,
 };
 
-function syncTypographyTextGradient(root, component) {
+function syncTypographyTextGradient(root, component, editor = null) {
     const classes = componentClassList(component);
     const isGradient = hasTextGradientClasses(classes);
     const fold = root.querySelector('[data-voodbuilder-typo-fold="text-gradient"]');
@@ -1352,6 +1403,10 @@ function syncTypographyTextGradient(root, component) {
 
     if (dot) {
         dot.hidden = ! hasStops;
+    }
+
+    if (isGradient && editor) {
+        ensureTextGradientPaint(editor, component);
     }
 }
 
