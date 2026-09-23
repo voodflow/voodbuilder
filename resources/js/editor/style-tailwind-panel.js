@@ -1405,8 +1405,17 @@ function syncTypographyTextGradient(root, component, editor = null) {
         dot.hidden = ! hasStops;
     }
 
-    if (isGradient && editor) {
-        ensureTextGradientPaint(editor, component);
+    if (isGradient && editor && ! editor.__voodbuilderTwStyleApplying) {
+        const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
+        editor.__voodbuilderTwStyleApplying = true;
+
+        try {
+            ensureTextGradientPaint(editor, component);
+        } finally {
+            if (! wasApplying) {
+                editor.__voodbuilderTwStyleApplying = false;
+            }
+        }
     }
 }
 

@@ -6485,7 +6485,7 @@ body.voodbuilder-canvas-ready .vb-animated-cta [data-vb-anim-child] {
 }
 
 /* Text gradient (bg-clip-text): Grapes / inherited text-* often keep a solid fill.
-   Force transparent fill so from-*/to-* background shows through the glyphs. */
+   Force transparent fill so gradient stops show through the glyphs. */
 .bg-clip-text.text-transparent {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;

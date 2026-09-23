@@ -1976,7 +1976,7 @@ html.dark .vb-search-page__form {
     background-color: color-mix(in srgb, var(--color-vp-bg-alt) 90%, #ffffff 10%);
 }
 
-/* Text gradient: keep fill transparent so from-*/to-* show through glyphs. */
+/* Text gradient: keep fill transparent so gradient stops show through glyphs. */
 .bg-clip-text.text-transparent {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
