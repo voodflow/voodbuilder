@@ -5,6 +5,7 @@
  */
 
 export const STYLE_BG_OPACITY_ATTR = 'data-vb-style-bg-opacity';
+export const STYLE_BG_SRC_ATTR = 'data-vb-style-bg-src';
 
 export const STYLE_BG_OPACITY_OPTIONS = [
     { value: '0.25', label: '25%' },

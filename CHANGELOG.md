@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.116] - 2026-09-23
+
+### Fixed
+
+- Changing Background Color no longer wipes the decoration photo (clearing `background-color` no longer family-clears `background-image`); color changes rebuild the opacity fade over the new swatch
+- Persist `data-vb-style-bg-src` so Image field / fade survive reload and remount
+
 ## [0.1.115] - 2026-09-23
 
 ### Fixed

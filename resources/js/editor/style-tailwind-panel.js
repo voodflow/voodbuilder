@@ -22,6 +22,7 @@ import { isEditorBooting } from './editor-lifecycle.js';
 import {
     STYLE_BG_OPACITY_ATTR,
     STYLE_BG_OPACITY_OPTIONS,
+    STYLE_BG_SRC_ATTR,
     composeDecorationBackgroundImageCss,
     extractUrlFromBackgroundImage,
     inferBackgroundImageOpacityFromCss,
@@ -448,17 +449,19 @@ function clearInlineProps(editor, component, properties) {
 
     try {
         for (const property of properties) {
+            // background-color alone must NOT wipe background-image (Style color + photo).
+            // Family wipe is only for shorthand `background` or clearing the image itself.
             clearStyleProperty(editor, target, property, {
-                family: property === 'background' || property === 'background-color' || property === 'background-image',
+                family: property === 'background' || property === 'background-image',
             });
         }
 
-        // Only wipe the full background family for paint (color/image/shorthand).
-        // background-size / position / repeat must NOT clear background-image —
-        // that made Size/Position/Repeat deletes the chosen photo.
-        const paintProps = new Set(['background', 'background-color', 'background-image']);
+        // Full background CSS rule wipe only when clearing paint-that-includes-image.
+        // Changing Color utilities previously called clearBackgroundCssRules via
+        // background-color and deleted the author's photo on every swatch click.
+        const wipeRulesProps = new Set(['background', 'background-image']);
 
-        if (properties.some((property) => paintProps.has(String(property)))) {
+        if (properties.some((property) => wipeRulesProps.has(String(property)))) {
             clearBackgroundCssRules(editor, target);
         }
     } finally {
@@ -699,6 +702,15 @@ function applyGroup(editor, component, groupId, value) {
         const classes = componentClassList(component);
         const textGradientActive = hasTextGradientClasses(classes);
 
+        // Capture decoration photo before any color clears — Color utilities must not
+        // drop background-image (and rebuild needs the src even if CSS rules were wiped).
+        const preservedBgUrl = groupId === 'background'
+            ? readBackgroundImageUrl(component, editor)
+            : '';
+        const preservedBgOpacity = groupId === 'background'
+            ? readBackgroundImageOpacity(component, editor)
+            : 1;
+
         // Solid color clears gradient stops; gradient direction clears solid color + image.
         if (groupId === 'background' && value && ! textGradientActive) {
             alsoClearIds.push('gradient-direction', 'gradient-from', 'gradient-via', 'gradient-to');
@@ -741,20 +753,22 @@ function applyGroup(editor, component, groupId, value) {
             // View may be unavailable during bulk updates.
         }
 
-        // Solid bg color changed: rebuild image fade overlay so it matches the new color.
-        if (groupId === 'background') {
-            const bgUrl = readBackgroundImageUrl(component, editor);
-            const bgOpacity = readBackgroundImageOpacity(component, editor);
-
-            if (bgUrl !== '' && bgOpacity < 0.999) {
-                const fadeColor = resolveBackgroundFadeColor(editor, component);
-                const cssValue = composeDecorationBackgroundImageCss(bgUrl, bgOpacity, fadeColor);
-                clearStyleProperty(editor, component, 'background-image');
-                component.addStyle?.(
-                    { 'background-image': cssValue },
-                    { inline: true },
-                );
-            }
+        // Solid bg color changed: keep / rebuild image fade over the new color.
+        if (groupId === 'background' && preservedBgUrl !== '') {
+            const fadeColor = resolveBackgroundFadeColor(editor, component);
+            const cssValue = composeDecorationBackgroundImageCss(
+                preservedBgUrl,
+                preservedBgOpacity,
+                fadeColor,
+            );
+            component.addAttributes?.({
+                [STYLE_BG_OPACITY_ATTR]: String(preservedBgOpacity),
+                [STYLE_BG_SRC_ATTR]: preservedBgUrl,
+            });
+            component.addStyle?.(
+                { 'background-image': cssValue },
+                { inline: true },
+            );
         }
 
         scheduleClassCompile(editor);
@@ -1259,9 +1273,16 @@ function readComponentCssProperty(editor, component, property) {
 }
 
 function readBackgroundImageUrl(component, editor = null) {
-    return extractUrlFromBackgroundImage(
+    const fromCss = extractUrlFromBackgroundImage(
         readComponentCssProperty(editor, component, 'background-image'),
     );
+
+    if (fromCss !== '') {
+        return fromCss;
+    }
+
+    // Durable attr survives reload / remount when CssComposer paints lag behind.
+    return String(component?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
 }
 
 function readBackgroundImageOpacity(component, editor = null) {
@@ -1329,9 +1350,11 @@ function clearDecorationBackgroundImage(editor, component) {
 
     try {
         component.removeAttributes?.(STYLE_BG_OPACITY_ATTR);
+        component.removeAttributes?.(STYLE_BG_SRC_ATTR);
     } catch {
         const attrs = { ...(component.getAttributes?.() ?? {}) };
         delete attrs[STYLE_BG_OPACITY_ATTR];
+        delete attrs[STYLE_BG_SRC_ATTR];
         component.setAttributes?.(attrs);
     }
 }
@@ -1341,6 +1364,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
         return;
     }
 
+    const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
     editor.__voodbuilderTwStyleApplying = true;
 
     try {
@@ -1364,6 +1388,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
 
             component.addAttributes?.({
                 [STYLE_BG_OPACITY_ATTR]: String(nextOpacity),
+                [STYLE_BG_SRC_ATTR]: src,
             });
 
             const fadeColor = resolveBackgroundFadeColor(editor, component);
@@ -1401,7 +1426,9 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
         scheduleClassCompile(editor);
         editor?.trigger?.('update');
     } finally {
-        editor.__voodbuilderTwStyleApplying = false;
+        if (! wasApplying) {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
     }
 }
 
@@ -1476,6 +1503,15 @@ function syncBackgroundImageField(root, component, editor = null) {
     const opacityMount = root.querySelector?.('[data-voodbuilder-deco-bg-opacity]');
     const opacitySelect = opacityMount?.__vbBgOpacitySelect
         ?? opacityMount?.querySelector?.('select');
+
+    // Persist src attr so Color changes / reload can find the photo without CssComposer.
+    if (component && url !== '') {
+        const current = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+        if (current !== url) {
+            component.addAttributes?.({ [STYLE_BG_SRC_ATTR]: url });
+        }
+    }
 
     if (input && String(input.value ?? '') !== url) {
         input.value = url;

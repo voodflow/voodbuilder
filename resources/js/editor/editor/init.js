@@ -1965,12 +1965,13 @@ function captureDynamicRootAuthorChrome(component) {
             : String(attrs.class ?? '').split(/\s+/).filter(Boolean),
         style: { ...(component?.getStyle?.({ inline: true }) ?? {}) },
         bgOpacity: String(attrs['data-vb-style-bg-opacity'] ?? '').trim(),
+        bgSrc: String(attrs['data-vb-style-bg-src'] ?? '').trim(),
     };
 }
 
 /**
  * @param {object} component
- * @param {{ classes: string[], style: Record<string, string>, bgOpacity: string }} chrome
+ * @param {{ classes: string[], style: Record<string, string>, bgOpacity: string, bgSrc: string }} chrome
  * @param {Element|null} fresh
  */
 function restoreDynamicRootAuthorChrome(component, chrome, fresh = null) {
@@ -2003,8 +2004,18 @@ function restoreDynamicRootAuthorChrome(component, chrome, fresh = null) {
         component.addStyle?.(chrome.style, { inline: true });
     }
 
+    const attrs = {};
+
     if (chrome.bgOpacity) {
-        component.addAttributes?.({ 'data-vb-style-bg-opacity': chrome.bgOpacity });
+        attrs['data-vb-style-bg-opacity'] = chrome.bgOpacity;
+    }
+
+    if (chrome.bgSrc) {
+        attrs['data-vb-style-bg-src'] = chrome.bgSrc;
+    }
+
+    if (Object.keys(attrs).length > 0) {
+        component.addAttributes?.(attrs);
     }
 }
 
