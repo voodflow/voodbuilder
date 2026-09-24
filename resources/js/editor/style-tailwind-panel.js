@@ -124,7 +124,7 @@ import {
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
-import { resolveStyleTarget } from './page-surface-styles.js';
+import { PAGE_SURFACE_FOCUS_EVENT, resolveStyleTarget } from './page-surface-styles.js';
 import {
     injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
@@ -3903,6 +3903,17 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
             if (pageTarget && sectorsReady()) {
                 syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts());
+                attachClassWatch(pageTarget);
+            }
+        });
+    });
+
+    editor.on(PAGE_SURFACE_FOCUS_EVENT, () => {
+        window.requestAnimationFrame(() => {
+            const pageTarget = resolveStyleTarget(editor);
+
+            if (pageTarget && sectorsReady()) {
+                syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts({ resetLinkPref: true }));
                 attachClassWatch(pageTarget);
             }
         });

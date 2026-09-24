@@ -10,6 +10,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Voodflow\Voodbuilder\Models\PageTemplate;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -114,6 +115,24 @@ class EditorPageTemplatesControllerTest extends TestCase
     public function test_catalog_returns_empty_when_not_configured(): void
     {
         config(['voodbuilder.page_templates.catalog_url' => null]);
+
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->getJson(route('voodbuilder.editor.page-templates.catalog'))
+            ->assertOk()
+            ->assertJsonPath('templates', []);
+    }
+
+    public function test_catalog_soft_fails_when_remote_is_unauthorized(): void
+    {
+        config([
+            'voodbuilder.page_templates.catalog_url' => 'https://api.voodflow.com/voodbuilder/templates/page-catalog.json',
+        ]);
+
+        Http::fake([
+            'api.voodflow.com/*' => Http::response('Forbidden', 403),
+        ]);
 
         $user = $this->adminUser();
 

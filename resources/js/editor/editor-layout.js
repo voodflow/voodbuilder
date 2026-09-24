@@ -20,9 +20,8 @@ import {
 } from './inspector-empty-state.js';
 import {
     ensurePageSurfaceAction,
-    isPageSurfaceComponent,
-    isPageSurfaceMode,
-    selectPageSurface,
+    ensurePageSurfaceWrapper,
+    isTargetingPageSurface,
 } from './page-surface-styles.js';
 import { canEntitlement } from './editor/entitlements.js';
 import { findRichTextHost, isRichTextComponent } from './text-elements.js';
@@ -1096,22 +1095,13 @@ function syncChromeLayoutStylePanel(editor, mounts) {
     }
 
     const labels = editor.__voodbuilderLabels ?? {};
-    ensurePageSurfaceAction(editor, panel, labels);
+    ensurePageSurfaceWrapper(editor);
 
-    let selected = editor.getSelected?.();
-
-    // Full canvases rarely leave an empty click target — when nothing is selected,
-    // Style targets the page surface so Background still works.
-    if (
-        isPageSurfaceMode(editor)
-        && (! selected || selected.isRemoved?.())
-    ) {
-        selected = selectPageSurface(editor) ?? selected;
-    }
-
-    // Locked chrome (nav/footer) selection: keep the layout notice, but Page button
-    // above still lets authors style the full-page background without hunting gaps.
-    const noticeText = isPageSurfaceComponent(selected, editor)
+    const selected = editor.getSelected?.();
+    // Empty canvas / Cmd+click deselect → Style edits the page (no empty-state).
+    // Locked chrome keeps its notice; compact “Page styles” switch is the escape hatch.
+    const targetingPage = isTargetingPageSurface(editor);
+    const noticeText = targetingPage
         ? null
         : inspectorSelectionNotice(selected, editor, labels);
     const hideControls = noticeText !== null;
@@ -1135,25 +1125,33 @@ function syncChromeLayoutStylePanel(editor, mounts) {
 
         ensurePageSurfaceAction(editor, panel, labels);
 
+        if (targetingPage) {
+            try {
+                editor.trigger?.('voodbuilder:page-surface-focus');
+            } catch {
+                // Style panel may not be mounted yet.
+            }
+        }
+
         return;
     }
 
     if (! notice) {
         notice = createInspectorEmptyState({ labels });
         notice.dataset.voodbuilderChromeLayoutNotice = '1';
-        // Keep the Page action bar first when present.
-        const pageAction = panel.querySelector('[data-voodbuilder-page-surface-action]');
-        if (pageAction?.nextSibling) {
-            panel.insertBefore(notice, pageAction.nextSibling);
-        } else {
-            panel.insertBefore(notice, panel.firstChild);
-        }
+        panel.insertBefore(notice, panel.firstChild);
     }
 
     notice.hidden = false;
     notice.className = 'voodbuilder-editor-inspector-empty-state voodbuilder-editor-chrome-layout-notice';
     notice.textContent = noticeText;
+    // Compact switch after the notice (not a persistent full-width card).
     ensurePageSurfaceAction(editor, panel, labels);
+    const pageAction = panel.querySelector('[data-voodbuilder-page-surface-action]');
+
+    if (pageAction && notice.nextSibling !== pageAction) {
+        notice.after(pageAction);
+    }
 }
 
 function setupStyleInspector(editor, mounts) {

@@ -541,6 +541,7 @@ final class EditorGate
             'classStyleFieldSearch' => __('voodbuilder::pro.editor_ui.class_style_field_search'),
             'classStyleBackground' => __('voodbuilder::pro.editor_ui.class_style_background'),
             'pageSurfaceLabel' => __('voodbuilder::pro.editor_ui.page_surface_label'),
+            'pageSurfaceSwitch' => __('voodbuilder::pro.editor_ui.page_surface_switch'),
             'pageSurfaceHint' => __('voodbuilder::pro.editor_ui.page_surface_hint'),
             'classStyleBackgroundColor' => __('voodbuilder::pro.editor_ui.class_style_background_color'),
             'classStyleBackgroundColorOpacity' => __('voodbuilder::pro.editor_ui.class_style_background_color_opacity'),

@@ -3,12 +3,13 @@
  * GrapesJS wrapper. Publish remaps wrapper #id CSS to `body` so the background
  * covers the full page (including chrome).
  *
- * UX: a persistent “Page” control in the Style inspector — full canvases almost
- * never have an empty click target, so deselect-to-edit is not enough.
+ * UX: when nothing is selected, Style targets the page automatically. A compact
+ * “Page” switch appears only while editing another element (or locked chrome).
  */
 
 export const PAGE_SURFACE_CLASS = 'voodbuilder-page-surface';
 export const PAGE_SURFACE_ACTION_ATTR = 'data-voodbuilder-page-surface-action';
+export const PAGE_SURFACE_FOCUS_EVENT = 'voodbuilder:page-surface-focus';
 
 /**
  * @param {import('grapesjs').Editor | null | undefined} editor
@@ -18,24 +19,6 @@ export function isPageSurfaceMode(editor) {
     return ! editor?.__voodbuilderChromeLayoutMode
         && ! editor?.__voodbuilderChromeShellMode
         && ! editor?.__voodbuilderPopupMode;
-}
-
-/**
- * @param {import('grapesjs').Editor | null | undefined} editor
- * @returns {import('grapesjs').Component | null}
- */
-export function resolveStyleTarget(editor) {
-    const selected = editor?.getSelected?.() ?? null;
-
-    if (selected && ! selected.isRemoved?.()) {
-        return selected;
-    }
-
-    if (! isPageSurfaceMode(editor)) {
-        return null;
-    }
-
-    return editor?.getWrapper?.() ?? null;
 }
 
 /**
@@ -55,6 +38,56 @@ export function isPageSurfaceComponent(component, editor = null) {
     const wrapper = editor?.getWrapper?.();
 
     return Boolean(wrapper && component === wrapper);
+}
+
+/**
+ * Style is editing the page surface (wrapper selected, nothing selected, or force).
+ *
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @returns {boolean}
+ */
+export function isTargetingPageSurface(editor) {
+    if (! isPageSurfaceMode(editor)) {
+        return false;
+    }
+
+    const selected = editor?.getSelected?.() ?? null;
+
+    if (selected && ! selected.isRemoved?.() && ! isPageSurfaceComponent(selected, editor)) {
+        if (editor.__voodbuilderForcePageSurfaceStyle) {
+            editor.__voodbuilderForcePageSurfaceStyle = false;
+        }
+
+        return false;
+    }
+
+    if (editor?.__voodbuilderForcePageSurfaceStyle) {
+        return true;
+    }
+
+    if (! selected || selected.isRemoved?.()) {
+        return true;
+    }
+
+    return isPageSurfaceComponent(selected, editor);
+}
+
+/**
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @returns {import('grapesjs').Component | null}
+ */
+export function resolveStyleTarget(editor) {
+    if (isTargetingPageSurface(editor)) {
+        return editor?.getWrapper?.() ?? null;
+    }
+
+    const selected = editor?.getSelected?.() ?? null;
+
+    if (selected && ! selected.isRemoved?.()) {
+        return selected;
+    }
+
+    return null;
 }
 
 /**
@@ -81,13 +114,15 @@ export function ensurePageSurfaceWrapper(editor) {
         selectable: true,
         highlightable: true,
         hoverable: false,
+        locked: false,
     });
 
     return wrapper;
 }
 
 /**
- * Select the page root so Style → Background edits the full page.
+ * Focus Style on the page surface. Prefers selecting the wrapper; if Grapes
+ * rejects that, falls back to a forced page-style target with no selection.
  *
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @returns {import('grapesjs').Component | null}
@@ -103,14 +138,27 @@ export function selectPageSurface(editor) {
         return null;
     }
 
-    if (editor.getSelected?.() === wrapper) {
-        return wrapper;
+    try {
+        editor.select?.(wrapper, { scroll: false });
+    } catch {
+        // Grapes may reject selection mid-destroy.
+    }
+
+    if (isPageSurfaceComponent(editor.getSelected?.(), editor)) {
+        editor.__voodbuilderForcePageSurfaceStyle = false;
+    } else {
+        try {
+            editor.select?.();
+        } catch {
+            // Clear selection so resolveStyleTarget falls back to wrapper.
+        }
+        editor.__voodbuilderForcePageSurfaceStyle = true;
     }
 
     try {
-        editor.select?.(wrapper);
+        editor.trigger?.(PAGE_SURFACE_FOCUS_EVENT);
     } catch {
-        // Grapes may reject selection mid-destroy.
+        // Optional sync hook for the Style panel.
     }
 
     return wrapper;
@@ -146,18 +194,28 @@ export function remapPageSurfaceCssForPublish(editor, css) {
 }
 
 /**
- * Persistent control in the Style inspector (survives empty-state / chrome notices).
+ * Compact Style affordance: switch to page styles while another target is active.
  *
  * @param {import('grapesjs').Editor} editor
  * @param {HTMLElement|null|undefined} stylePanel
- * @param {{ pageLabel?: string, pageSurfaceHint?: string }} [labels]
+ * @param {{ pageSurfaceLabel?: string, pageSurfaceHint?: string, pageSurfaceSwitch?: string }} [labels]
  */
 export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
     if (! editor || ! stylePanel || ! isPageSurfaceMode(editor)) {
+        stylePanel?.querySelector(`[${PAGE_SURFACE_ACTION_ATTR}]`)?.remove();
+
         return null;
     }
 
+    const targetingPage = isTargetingPageSurface(editor);
     let bar = stylePanel.querySelector(`[${PAGE_SURFACE_ACTION_ATTR}]`);
+
+    // While Style already targets the page, keep the panel clean — badge only.
+    if (targetingPage) {
+        bar?.remove();
+
+        return null;
+    }
 
     if (! bar) {
         bar = document.createElement('div');
@@ -166,7 +224,6 @@ export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
         bar.innerHTML = `
             <button type="button" class="voodbuilder-editor-page-surface-action__btn" data-voodbuilder-page-surface-select>
             </button>
-            <p class="voodbuilder-editor-page-surface-action__hint" data-voodbuilder-page-surface-hint></p>
         `;
         stylePanel.insertBefore(bar, stylePanel.firstChild);
 
@@ -178,23 +235,19 @@ export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
         });
     }
 
-    const pageLabel = labels.pageSurfaceLabel ?? labels.classStylePage ?? 'Page';
+    const pageLabel = labels.pageSurfaceSwitch
+        ?? labels.pageSurfaceLabel
+        ?? labels.classStylePage
+        ?? 'Page styles';
     const hint = labels.pageSurfaceHint
         ?? 'Background and base styles for the whole page (not a single block).';
     const btn = bar.querySelector('[data-voodbuilder-page-surface-select]');
-    const hintEl = bar.querySelector('[data-voodbuilder-page-surface-hint]');
 
     if (btn) {
         btn.textContent = pageLabel;
-        const active = isPageSurfaceComponent(editor.getSelected?.(), editor);
-        btn.classList.toggle('is-active', active);
-        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.classList.remove('is-active');
+        btn.setAttribute('aria-pressed', 'false');
         btn.title = hint;
-    }
-
-    if (hintEl) {
-        hintEl.textContent = hint;
-        hintEl.hidden = isPageSurfaceComponent(editor.getSelected?.(), editor);
     }
 
     bar.hidden = false;
@@ -204,7 +257,7 @@ export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
 
 /**
  * @param {import('grapesjs').Editor} editor
- * @param {{ pageLabel?: string, pageSurfaceHint?: string }} [labels]
+ * @param {{ pageSurfaceLabel?: string, pageSurfaceHint?: string, pageSurfaceSwitch?: string }} [labels]
  */
 export function registerPageSurfaceStyles(editor, labels = {}) {
     if (! editor || editor.__voodbuilderPageSurfaceRegistered) {
@@ -221,14 +274,15 @@ export function registerPageSurfaceStyles(editor, labels = {}) {
         const stylePanel = document.querySelector('[data-voodbuilder-inspector="style"]');
         ensurePageSurfaceAction(editor, stylePanel, labels);
 
-        const mount = document.querySelector('.gjs-sm-sectors');
+        const mount = document.querySelector('.gjs-sm-sectors')
+            ?? document.querySelector('[data-voodbuilder-inspector="style"] .voodbuilder-editor-styles-mount');
 
         if (! mount) {
             return;
         }
 
         let badge = mount.querySelector('[data-voodbuilder-page-surface-badge]');
-        const targetingPage = isPageSurfaceComponent(editor.getSelected?.(), editor);
+        const targetingPage = isTargetingPageSurface(editor);
 
         if (targetingPage) {
             if (! badge) {
@@ -254,10 +308,21 @@ export function registerPageSurfaceStyles(editor, labels = {}) {
     };
 
     editor.on('load', boot);
-    editor.on('component:selected', syncUi);
+    editor.on('component:selected', () => {
+        if (editor.__voodbuilderForcePageSurfaceStyle) {
+            const selected = editor.getSelected?.();
+
+            if (selected && ! isPageSurfaceComponent(selected, editor)) {
+                editor.__voodbuilderForcePageSurfaceStyle = false;
+            }
+        }
+
+        syncUi();
+    });
     editor.on('component:deselected', () => {
         window.requestAnimationFrame(syncUi);
     });
+    editor.on(PAGE_SURFACE_FOCUS_EVENT, syncUi);
     editor.on('canvas:frame:load', () => {
         window.requestAnimationFrame(boot);
     });

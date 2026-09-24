@@ -140,9 +140,15 @@ class EditorPageTemplatesController extends Controller
             return response()->json(['templates' => []]);
         }
 
-        return response()->json([
-            'templates' => EditorPageTemplateRemoteImporter::fetchCatalog($catalogUrl),
-        ]);
+        try {
+            return response()->json([
+                'templates' => EditorPageTemplateRemoteImporter::fetchCatalog($catalogUrl),
+            ]);
+        } catch (ValidationException) {
+            // Marketplace CDN may be unreachable / unauthorized (missing catalog token).
+            // Soft-fail so editor boot does not surface a noisy 422 in the console.
+            return response()->json(['templates' => []]);
+        }
     }
 
     public function installCatalogEntry(Request $request): JsonResponse
