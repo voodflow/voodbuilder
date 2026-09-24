@@ -4,14 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.151] - 2026-09-24
+
+### Fixed
+
+- Context **Convert to…** Rich Text path works in Node tests (sanitize without `document`) and mock parent removal
+
 ## [0.1.150] - 2026-09-24
 
 ### Added
 
 - **App typography** (Settings → Appearance): site-wide default heading/body fonts (Montserrat / Lato) and type scale; editor element styles still win
 - **Page surface styling**: full-page background via Style panel when the canvas wrapper / empty page is selected; published CSS remaps to `body`
-- Context menu **Convert to…** for headings, paragraph, Basic Text, and Rich Text
-- Rich Text opens the Content inspector tab on select for inline formatting
+- Context menu **Convert to…** for `p` / `h1–h6` / Basic Text / Rich Text (keeps classes + copy; Rich Text ↔ simple text supported)
+- Rich Text opens the Content inspector tab on select for Bold/Italic formatting
 
 ### Changed
 

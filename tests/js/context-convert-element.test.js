@@ -63,7 +63,8 @@ function mockComponent(state = {}) {
         toHTML: () => state.html ?? `<${state.tagName ?? 'div'}>${state.content ?? ''}</${state.tagName ?? 'div'}>`,
         remove: () => {
             removed = true;
-            state.parent?._removeChild?.(component);
+            const parent = component.parent?.();
+            parent?._removeChild?.(component);
         },
         _isRemoved: () => removed,
     };

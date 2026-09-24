@@ -171,13 +171,23 @@ export function readConvertiblePlainText(component) {
     return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+function safeRichHtml(html) {
+    if (typeof document === 'undefined') {
+        return String(html ?? '').trim() || '<p></p>';
+    }
+
+    return sanitizeRichTextHtml(html);
+}
+
 /**
  * @param {object} component
  * @returns {string}
  */
 function htmlForRichText(component) {
     if (isRichTextComponent(component)) {
-        return readComponentHtml(component);
+        return typeof document === 'undefined'
+            ? (component.getEl?.()?.innerHTML || `<p>${escapeHtml(readConvertiblePlainText(component) || 'Text')}</p>`)
+            : readComponentHtml(component);
     }
 
     const el = component.getEl?.();
@@ -187,19 +197,19 @@ function htmlForRichText(component) {
         const inner = String(el.innerHTML).trim();
 
         if (SEMANTIC_TEXT_TAGS.has(tag)) {
-            return sanitizeRichTextHtml(`<${tag}>${inner}</${tag}>`);
+            return safeRichHtml(`<${tag}>${inner}</${tag}>`);
         }
 
-        return sanitizeRichTextHtml(inner.includes('<') ? inner : `<p>${inner}</p>`);
+        return safeRichHtml(inner.includes('<') ? inner : `<p>${inner}</p>`);
     }
 
     const text = readConvertiblePlainText(component) || 'Text';
 
     if (SEMANTIC_TEXT_TAGS.has(tag) && tag !== 'p') {
-        return sanitizeRichTextHtml(`<${tag}>${escapeHtml(text)}</${tag}>`);
+        return safeRichHtml(`<${tag}>${escapeHtml(text)}</${tag}>`);
     }
 
-    return sanitizeRichTextHtml(`<p>${escapeHtml(text)}</p>`);
+    return safeRichHtml(`<p>${escapeHtml(text)}</p>`);
 }
 
 /**
