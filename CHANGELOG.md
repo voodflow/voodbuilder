@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.164] - 2026-09-25
+
+### Fixed
+
+- Page Style Size/Position/Repeat no longer reset on editor reload: Save keeps wallpaper on the wrapper `#id` (editor round-trip); public pages remap orphan wallpaper rules to `html`/`body` in PHP; legacy body-remapped CSS is hydrated back onto the wrapper `#id` so selects stay filled
+
 ## [0.1.163] - 2026-09-25
 
 ### Fixed

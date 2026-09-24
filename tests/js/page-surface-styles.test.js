@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     PAGE_SURFACE_CLASS,
+    extractPageSurfaceWallpaperStylesFromCss,
+    hydratePageSurfaceWallpaperFromCss,
     isPageSurfaceMode,
     isTargetingPageSurface,
     remapPageSurfaceCssForPublish,
@@ -128,5 +130,35 @@ describe('page-surface-styles', () => {
         expect(remapped).toContain('background-position: top');
         expect(remapped).toContain('background-attachment: fixed');
         expect(remapped).not.toMatch(/background-size:\s*cover/);
+    });
+
+    it('extractPageSurfaceWallpaperStylesFromCss reads body wallpaper layout', () => {
+        const css = `html, body, body.${PAGE_SURFACE_CLASS} { background-image: url(/w.jpg); background-size: cover; background-position: top; background-repeat: no-repeat; }`;
+        const styles = extractPageSurfaceWallpaperStylesFromCss(css);
+
+        expect(styles['background-image']).toContain('/w.jpg');
+        expect(styles['background-size']).toBe('cover');
+        expect(styles['background-position']).toBe('top');
+        expect(styles['background-repeat']).toBe('no-repeat');
+    });
+
+    it('hydratePageSurfaceWallpaperFromCss restores wrapper #id from body rules', () => {
+        const setIdRule = vi.fn();
+        const editor = {
+            getWrapper: () => ({ getId: () => 'iwrap1' }),
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: `html, body { background-image: url(/w.jpg); background-size: cover; background-position: top; background-repeat: no-repeat; }`,
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('iwrap1', expect.objectContaining({
+            'background-image': expect.stringContaining('/w.jpg'),
+            'background-size': 'cover',
+            'background-position': 'top',
+            'background-repeat': 'no-repeat',
+        }));
     });
 });

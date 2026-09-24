@@ -204,6 +204,10 @@ export function selectPageSurface(editor) {
  * Remap wrapper #id author rules to body/html so published pages keep full-bleed
  * fixed wallpapers (not a scroll-away strip behind the nav).
  *
+ * Prefer PHP {@see PageSurfaceCssPublish} at publish time so Save keeps #id rules
+ * for editor Size/Position/Repeat hydration. This helper remains for tests and
+ * any client-side preview that needs the public selectors.
+ *
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @param {string} css
  * @returns {string}
@@ -231,6 +235,112 @@ export function remapPageSurfaceCssForPublish(editor, css) {
         .replace(new RegExp(`\\[data-gjs-type=["']wrapper["']\\]`, 'g'), bodyTarget);
 
     return ensurePageSurfaceWallpaperLayout(remapped);
+}
+
+/**
+ * Parse wallpaper layout props from body/html/page-surface rules in a stylesheet.
+ * Used to restore wrapper #id CssComposer state after legacy saves that remapped
+ * page wallpaper to body (image visible, Size/Position selects empty).
+ *
+ * @param {string} css
+ * @returns {Record<string, string>}
+ */
+export function extractPageSurfaceWallpaperStylesFromCss(css) {
+    const source = String(css ?? '');
+    const styles = {};
+
+    if (source === '' || ! /background-image\s*:/i.test(source)) {
+        return styles;
+    }
+
+    const ruleRe = /([^{}@]+)\{([^{}]*)\}/g;
+    let match;
+
+    while ((match = ruleRe.exec(source)) !== null) {
+        const selectors = String(match[1] ?? '').trim().toLowerCase();
+        const body = String(match[2] ?? '');
+
+        if (! /background-image\s*:/i.test(body) || ! /url\s*\(/i.test(body)) {
+            continue;
+        }
+
+        const targetsPageSurface = /(^|[,\\s])(html|body)([,\\s.#:]|$)/.test(selectors)
+            || selectors.includes(PAGE_SURFACE_CLASS);
+
+        if (! targetsPageSurface) {
+            continue;
+        }
+
+        const declRe = /([a-z-]+)\s*:\s*([^;]+)/gi;
+        let decl;
+
+        while ((decl = declRe.exec(body)) !== null) {
+            const prop = String(decl[1] ?? '').trim().toLowerCase();
+            const value = String(decl[2] ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+            if (! prop.startsWith('background') || value === '') {
+                continue;
+            }
+
+            if (! styles[prop]) {
+                styles[prop] = value;
+            }
+        }
+    }
+
+    return styles;
+}
+
+/**
+ * Copy legacy body/html wallpaper CSS onto the Grapes wrapper #id rule so Style
+ * Size/Position/Repeat can hydrate after reload.
+ *
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @param {string} [css]
+ * @returns {boolean}
+ */
+export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
+    if (! editor || ! isPageSurfaceMode(editor)) {
+        return false;
+    }
+
+    const wrapper = editor.getWrapper?.();
+    const id = String(wrapper?.getId?.() ?? '').trim();
+
+    if (id === '' || ! editor.Css?.setIdRule) {
+        return false;
+    }
+
+    const sheet = String(css || editor.__voodbuilderPageLiveCss || editor.getCss?.() || '');
+    const fromBody = extractPageSurfaceWallpaperStylesFromCss(sheet);
+
+    if (! fromBody['background-image']) {
+        return false;
+    }
+
+    try {
+        const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+        const next = { ...fromBody, ...existing };
+
+        // Prefer durable layout already on #id; fill gaps from body wallpaper.
+        for (const prop of [
+            'background-image',
+            'background-size',
+            'background-position',
+            'background-repeat',
+            'background-attachment',
+        ]) {
+            if (! String(existing[prop] ?? '').trim() && fromBody[prop]) {
+                next[prop] = fromBody[prop];
+            }
+        }
+
+        editor.Css.setIdRule(id, next);
+
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 /**

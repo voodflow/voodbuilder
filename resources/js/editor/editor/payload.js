@@ -22,7 +22,6 @@ import { restoreContentWidthFromAttributes } from '../content-width-toolbar.js';
 import { syncLayerVisibilityForExport } from '../layer-visibility.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
 import { applyVideoFacadesToExportedHtml, syncVideoComponentsForExport } from '../editor-video.js';
-import { remapPageSurfaceCssForPublish } from '../page-surface-styles.js';
 import {
     pruneEmptyDynamicBlocks,
     syncDynamicBlockAttributes,
@@ -787,7 +786,8 @@ export function buildPayload(editor, options = {}) {
         css = '';
     }
 
-    css = remapPageSurfaceCssForPublish(editor, css);
+    // Keep page-surface wallpaper on the wrapper #id for editor round-trip
+    // (Size/Position/Repeat hydrate). Public remap happens in PHP EditorRenderer.
 
     const payload = {
         html,

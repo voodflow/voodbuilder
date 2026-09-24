@@ -69,8 +69,11 @@ final class EditorRenderer
             && PageCssArtifactStore::publicUrl($payload) !== null;
 
         if ($hasArtifact && $artifactCss !== '') {
-            // Full sheet lives in the linked artifact; only merge companion CSS inline.
-            $combined = trim(implode("\n", array_filter([$globalCss, $componentCss])));
+            // Full sheet lives in the linked artifact (may still have editor #id
+            // wallpaper rules). Inject a remapped body overlay so the photo paints
+            // on public pages where the Grapes wrapper id does not exist.
+            $wallpaper = PageSurfaceCssPublish::publicWallpaperOverlay($artifactCss, $html);
+            $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $wallpaper])));
 
             return $combined !== '' ? $combined : null;
         }
@@ -84,6 +87,7 @@ final class EditorRenderer
         // Stale page CSS may bake --vx-header-bg from an old palette save; strip so
         // ThemePalette / admin colors (e.g. header blue) win on the frontend.
         $pageCss = ThemePalette::stripEmbeddedPaletteOverrides((string) ($pageCss ?? ''));
+        $pageCss = PageSurfaceCssPublish::remapForPublic((string) ($pageCss ?? ''), $html);
 
         $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
 

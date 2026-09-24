@@ -124,7 +124,13 @@ import {
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
-import { PAGE_SURFACE_FOCUS_EVENT, isPageSurfaceComponent, resolveStyleTarget } from './page-surface-styles.js';
+import {
+    PAGE_SURFACE_FOCUS_EVENT,
+    extractPageSurfaceWallpaperStylesFromCss,
+    hydratePageSurfaceWallpaperFromCss,
+    isPageSurfaceComponent,
+    resolveStyleTarget,
+} from './page-surface-styles.js';
 import {
     injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
@@ -4294,6 +4300,10 @@ export function hydrateDecorationBackgroundImages(editor) {
         return 0;
     }
 
+    // Legacy saves remapped page wallpaper to body/html — restore wrapper #id so
+    // Size/Position/Repeat selects hydrate (image was already visible via body CSS).
+    hydratePageSurfaceWallpaperFromCss(editor);
+
     // Last-resort map from live/saved CSS: #id { background-image: url(...) }
     const liveCss = String(editor.__voodbuilderPageLiveCss ?? '');
     const cssUrlById = new Map();
@@ -4307,6 +4317,18 @@ export function hydrateDecorationBackgroundImages(editor) {
 
             if (url !== '') {
                 cssUrlById.set(match[1], url);
+            }
+        }
+
+        // Body/html wallpaper → wrapper id (covers remapped legacy sheets).
+        const wrapperId = String(wrapper.getId?.() ?? '').trim();
+        const bodyWallpaper = extractPageSurfaceWallpaperStylesFromCss(liveCss);
+
+        if (wrapperId !== '' && ! cssUrlById.has(wrapperId)) {
+            const bodyUrl = extractUrlFromBackgroundImage(bodyWallpaper['background-image'] ?? '');
+
+            if (bodyUrl !== '') {
+                cssUrlById.set(wrapperId, bodyUrl);
             }
         }
     }
