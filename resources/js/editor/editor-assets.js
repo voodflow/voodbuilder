@@ -6,6 +6,8 @@
  * recognizeType() classifies .mp4 URLs correctly, and seed uploads from disk.
  */
 
+import { applyResponsiveImageAttrs, resolveResponsiveImageUrls } from './responsive-image.js';
+
 const VIDEO_EXT_RE = /\.(mp4|webm|ogg|ogv|mov|m4v)(?:\?|#|$)/i;
 
 /**
@@ -535,9 +537,11 @@ function applyMediaSrcToComponent(component, src, meta) {
         return;
     }
 
-    const next = String(src ?? '').trim();
+    const resolved = resolveResponsiveImageUrls(meta, src);
+    const next = String(src ?? '').trim() || resolved.src;
     const tag = String(component.get?.('tagName') ?? '').toLowerCase();
     const type = String(component.get?.('type') ?? '');
+    const isImage = tag === 'img' || type === 'image';
     const attrs = {
         src: next || null,
     };
@@ -558,12 +562,14 @@ function applyMediaSrcToComponent(component, src, meta) {
 
         if (libraryAlt !== '') {
             attrs.alt = libraryAlt;
-        } else if (libraryName !== '' && (tag === 'img' || type === 'image')) {
+        } else if (libraryName !== '' && isImage) {
             attrs.alt = libraryName;
         }
     }
 
-    if (typeof component.set === 'function' && (tag === 'img' || type === 'image')) {
+    if (isImage) {
+        applyResponsiveImageAttrs(component, meta, { url: next });
+    } else if (typeof component.set === 'function') {
         component.set('src', next);
     }
 

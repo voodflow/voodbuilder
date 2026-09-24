@@ -37,7 +37,7 @@ final class EditorHtmlSecuritySanitizer
     /** Attributes whose value is a URL and therefore a scheme-injection vector. */
     private const URL_ATTRIBUTES = [
         'href', 'src', 'action', 'formaction', 'poster', 'data', 'background',
-        'xlink:href', 'ping', 'cite', 'longdesc', 'dynsrc', 'lowsrc', 'srcset',
+        'xlink:href', 'ping', 'cite', 'longdesc', 'dynsrc', 'lowsrc',
     ];
 
     /** Attributes that embed a whole document and cannot be made safe. */
@@ -120,6 +120,12 @@ final class EditorHtmlSecuritySanitizer
                 continue;
             }
 
+            if ($name === 'srcset') {
+                self::sanitizeSrcsetAttribute($element, $attribute);
+
+                continue;
+            }
+
             if (in_array($name, self::URL_ATTRIBUTES, true)) {
                 self::sanitizeUrlAttribute($element, $attribute, $name);
 
@@ -146,6 +152,41 @@ final class EditorHtmlSecuritySanitizer
         }
 
         $element->removeAttribute($attribute->name);
+    }
+
+    /**
+     * Validate each candidate in a responsive `srcset` (url + optional descriptor).
+     */
+    private static function sanitizeSrcsetAttribute(DOMElement $element, DOMAttr $attribute): void
+    {
+        $parts = preg_split('/\s*,\s*/', $attribute->value) ?: [];
+        $safe = [];
+
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+
+            if ($part === '') {
+                continue;
+            }
+
+            if (preg_match('/^(\S+)(\s+.+)?$/', $part, $matches) !== 1) {
+                continue;
+            }
+
+            if (! self::isSafeUrl($matches[1], 'src')) {
+                continue;
+            }
+
+            $safe[] = $part;
+        }
+
+        if ($safe === []) {
+            $element->removeAttribute($attribute->name);
+
+            return;
+        }
+
+        $element->setAttribute($attribute->name, implode(', ', $safe));
     }
 
     private static function isSafeUrl(string $value, string $attribute): bool

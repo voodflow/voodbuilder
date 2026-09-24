@@ -91,6 +91,20 @@ final class EditorHtmlSecuritySanitizerTest extends TestCase
         );
     }
 
+    public function test_preserves_safe_srcset_and_strips_javascript_candidates(): void
+    {
+        $html = '<img src="/storage/hero-lg.webp" '
+            .'srcset="/storage/hero-sm.webp 512w, /storage/hero-lg.webp 2048w, javascript:alert(1) 1x" '
+            .'sizes="100vw" alt="Hero">';
+
+        $sanitized = EditorHtmlSecuritySanitizer::sanitize($html);
+
+        $this->assertStringContainsString('/storage/hero-sm.webp 512w', $sanitized);
+        $this->assertStringContainsString('/storage/hero-lg.webp 2048w', $sanitized);
+        $this->assertStringContainsString('sizes="100vw"', $sanitized);
+        $this->assertStringNotContainsStringIgnoringCase('javascript:', $sanitized);
+    }
+
     public function test_preserves_legitimate_links_and_media(): void
     {
         $html = '<a href="/pages/about">About</a>'

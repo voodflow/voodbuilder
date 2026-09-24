@@ -12,6 +12,7 @@ import {
 } from './editor-form-ui.js';
 import { CMD_EDIT_IMAGE, isDynamicallyBoundImage, isRasterEditableSrc } from './jodit-image-editor.js';
 import { isBackgroundImageHeroId } from './media-hero.js';
+import { applyResponsiveImageAttrs, resolveResponsiveImageUrls } from './responsive-image.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const CAPTION_DISPLAY_NONE = 'none';
@@ -501,10 +502,11 @@ function syncImageCaption(image, values) {
  * @param {import('grapesjs').Component} image
  * @param {import('grapesjs').Component | null} section
  * @param {string} url
- * @param {{ caption?: string|null, alt?: string|null, credits?: string|null, name?: string|null, file_name?: string|null, id?: number|string|null, uuid?: string|null } | null} [meta]
+ * @param {{ caption?: string|null, alt?: string|null, credits?: string|null, name?: string|null, file_name?: string|null, id?: number|string|null, uuid?: string|null, display?: string|null, srcset?: string|null, sizes?: string|null, src?: string|null, variants?: unknown } | null} [meta]
  */
 export function applyImageSrc(image, section, url, meta = null) {
-    const next = String(url ?? '').trim();
+    const resolved = resolveResponsiveImageUrls(meta, url);
+    const next = String(url ?? resolved.src ?? '').trim() || resolved.src;
     const attrs = {
         src: next || null,
     };
@@ -547,7 +549,8 @@ export function applyImageSrc(image, section, url, meta = null) {
         });
     }
 
-    image.set('src', next);
+    const isHero = Boolean(section);
+    applyResponsiveImageAttrs(image, meta, { url: next, hero: isHero });
     image.addAttributes(attrs);
 
     if (section) {

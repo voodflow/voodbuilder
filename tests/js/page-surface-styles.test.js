@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     PAGE_SURFACE_CLASS,
+    isPageSurfaceMode,
     remapPageSurfaceCssForPublish,
     resolveStyleTarget,
+    selectPageSurface,
 } from '../../resources/js/editor/page-surface-styles.js';
 
 describe('page-surface-styles', () => {
@@ -24,6 +26,25 @@ describe('page-surface-styles', () => {
         };
 
         expect(resolveStyleTarget(editor)).toBe(selected);
+    });
+
+    it('selectPageSurface selects the wrapper', () => {
+        const wrapper = {
+            getClasses: () => [],
+            addClass: vi.fn(),
+            set: vi.fn(),
+        };
+        const select = vi.fn();
+        const editor = {
+            getSelected: () => null,
+            getWrapper: () => wrapper,
+            select,
+        };
+
+        expect(isPageSurfaceMode(editor)).toBe(true);
+        expect(selectPageSurface(editor)).toBe(wrapper);
+        expect(select).toHaveBeenCalledWith(wrapper);
+        expect(wrapper.addClass).toHaveBeenCalledWith(PAGE_SURFACE_CLASS);
     });
 
     it('remapPageSurfaceCssForPublish rewrites wrapper id rules to body', () => {

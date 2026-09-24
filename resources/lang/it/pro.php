@@ -179,6 +179,7 @@ return [
         'class_style_field_search' => 'Cerca…',
         'class_style_background' => 'Sfondo',
         'page_surface_label' => 'Pagina',
+        'page_surface_hint' => 'Sfondo e stili di base per tutta la pagina (non un singolo blocco).',
         'class_style_background_color' => 'Colore',
         'class_style_background_color_opacity' => 'Opacità',
         'class_style_background_image' => 'Immagine',

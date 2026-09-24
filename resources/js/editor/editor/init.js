@@ -1016,6 +1016,8 @@ export function initVoodbuilderEditor(container, options = {}) {
     });
     registerPageSurfaceStyles(editor, {
         pageSurfaceLabel: labels.pageSurfaceLabel ?? labels.classStylePage ?? 'Page',
+        pageSurfaceHint: labels.pageSurfaceHint
+            ?? 'Background and base styles for the whole page (not a single block).',
     });
     registerJoditImageEditor(editor, {
         enabled: options.imageEditor !== false,

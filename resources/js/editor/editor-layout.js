@@ -18,6 +18,12 @@ import {
 import {
     createInspectorEmptyState,
 } from './inspector-empty-state.js';
+import {
+    ensurePageSurfaceAction,
+    isPageSurfaceComponent,
+    isPageSurfaceMode,
+    selectPageSurface,
+} from './page-surface-styles.js';
 import { canEntitlement } from './editor/entitlements.js';
 import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
@@ -1081,8 +1087,24 @@ function syncChromeLayoutStylePanel(editor, mounts) {
     }
 
     const labels = editor.__voodbuilderLabels ?? {};
-    const selected = editor.getSelected?.();
-    const noticeText = inspectorSelectionNotice(selected, editor, labels);
+    ensurePageSurfaceAction(editor, panel, labels);
+
+    let selected = editor.getSelected?.();
+
+    // Full canvases rarely leave an empty click target — when nothing is selected,
+    // Style targets the page surface so Background still works.
+    if (
+        isPageSurfaceMode(editor)
+        && (! selected || selected.isRemoved?.())
+    ) {
+        selected = selectPageSurface(editor) ?? selected;
+    }
+
+    // Locked chrome (nav/footer) selection: keep the layout notice, but Page button
+    // above still lets authors style the full-page background without hunting gaps.
+    const noticeText = isPageSurfaceComponent(selected, editor)
+        ? null
+        : inspectorSelectionNotice(selected, editor, labels);
     const hideControls = noticeText !== null;
     const styleMounts = [mounts.selectors, mounts.styles].filter(Boolean);
 
@@ -1102,18 +1124,27 @@ function syncChromeLayoutStylePanel(editor, mounts) {
             notice.hidden = true;
         }
 
+        ensurePageSurfaceAction(editor, panel, labels);
+
         return;
     }
 
     if (! notice) {
         notice = createInspectorEmptyState({ labels });
         notice.dataset.voodbuilderChromeLayoutNotice = '1';
-        panel.insertBefore(notice, panel.firstChild);
+        // Keep the Page action bar first when present.
+        const pageAction = panel.querySelector('[data-voodbuilder-page-surface-action]');
+        if (pageAction?.nextSibling) {
+            panel.insertBefore(notice, pageAction.nextSibling);
+        } else {
+            panel.insertBefore(notice, panel.firstChild);
+        }
     }
 
     notice.hidden = false;
     notice.className = 'voodbuilder-editor-inspector-empty-state voodbuilder-editor-chrome-layout-notice';
     notice.textContent = noticeText;
+    ensurePageSurfaceAction(editor, panel, labels);
 }
 
 function setupStyleInspector(editor, mounts) {
@@ -1136,6 +1167,11 @@ function setupStyleInspector(editor, mounts) {
     });
     editor.on('component:deselected', () => {
         syncChromeLayoutStylePanel(editor, mounts);
+    });
+    editor.on('voodbuilder:inspector-tab', (tabId) => {
+        if (tabId === 'style') {
+            syncChromeLayoutStylePanel(editor, mounts);
+        }
     });
     editor.on('component:remove', () => {
         window.requestAnimationFrame(() => {

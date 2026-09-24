@@ -3,6 +3,8 @@
  * Paginated API · gallery nav · photo/video filter · lazy thumbs · compact upload.
  */
 
+import { resolveBackgroundImageUrl } from './responsive-image.js';
+
 const VIDEO_EXT_RE = /\.(mp4|webm|ogg|ogv|mov|m4v)(?:\?|#|$)/i;
 
 function isVideoAssetSrc(src) {
@@ -101,6 +103,7 @@ export async function openMediaBrowser(args) {
         search: '',
         page: 1,
         items: [],
+        itemByKey: new Map(),
         hasMore: false,
         total: 0,
         loading: false,
@@ -377,18 +380,24 @@ export async function openMediaBrowser(args) {
     const renderGrid = ({ append = false } = {}) => {
         if (! append) {
             els.grid.innerHTML = '';
+            state.itemByKey.clear();
         }
 
         const html = state.items.map((item) => {
             const isVideo = item.type === 'video' || isVideoAssetSrc(item.src);
             const name = escapeHtml(item.name || 'Media');
-            const thumb = item.thumb || (! isVideo ? item.src : null);
+            const thumb = item.thumb || (! isVideo ? (item.display || item.src) : null);
             const caption = escapeHtml(String(item.caption ?? ''));
             const alt = escapeHtml(String(item.alt ?? ''));
             const credits = escapeHtml(String(item.credits ?? ''));
             const fileName = escapeHtml(String(item.file_name ?? item.name ?? ''));
             const id = item.id != null ? escapeHtml(String(item.id)) : '';
             const uuid = escapeHtml(String(item.uuid ?? ''));
+            const key = String(item.uuid || item.id || item.src || '');
+
+            if (key !== '') {
+                state.itemByKey.set(key, item);
+            }
 
             const preview = isVideo
                 ? `<div class="voodbuilder-media-browser__tile-video" aria-hidden="true">
@@ -396,7 +405,7 @@ export async function openMediaBrowser(args) {
                    </div>`
                 : `<img alt="${alt}" decoding="async" data-mb-lazy="${escapeHtml(thumb)}" />`;
 
-            return `<button type="button" class="voodbuilder-media-browser__tile" role="option" data-mb-src="${escapeHtml(item.src)}" data-mb-caption="${caption}" data-mb-alt="${alt}" data-mb-credits="${credits}" data-mb-name="${name}" data-mb-file-name="${fileName}" data-mb-id="${id}" data-mb-uuid="${uuid}" title="${name}">
+            return `<button type="button" class="voodbuilder-media-browser__tile" role="option" data-mb-key="${escapeHtml(key)}" data-mb-src="${escapeHtml(item.src)}" data-mb-caption="${caption}" data-mb-alt="${alt}" data-mb-credits="${credits}" data-mb-name="${name}" data-mb-file-name="${fileName}" data-mb-id="${id}" data-mb-uuid="${uuid}" title="${name}">
                 <span class="voodbuilder-media-browser__tile-preview">${preview}</span>
                 <span class="voodbuilder-media-browser__tile-meta">
                     <span class="voodbuilder-media-browser__tile-name">${name}</span>
@@ -635,6 +644,8 @@ export async function openMediaBrowser(args) {
         const tile = target.closest('[data-mb-src]');
 
         if (tile) {
+            const key = tile.getAttribute('data-mb-key') || '';
+            const stored = key !== '' ? state.itemByKey.get(key) : null;
             const caption = tile.getAttribute('data-mb-caption');
             const alt = tile.getAttribute('data-mb-alt');
             const credits = tile.getAttribute('data-mb-credits');
@@ -642,15 +653,30 @@ export async function openMediaBrowser(args) {
             const fileName = tile.getAttribute('data-mb-file-name');
             const idRaw = tile.getAttribute('data-mb-id');
             const uuid = tile.getAttribute('data-mb-uuid');
-            selectSrc(tile.getAttribute('data-mb-src'), {
-                caption: caption || null,
-                alt: alt || null,
-                credits: credits || null,
-                name: name || null,
-                file_name: fileName || null,
-                id: idRaw ? Number(idRaw) : undefined,
-                uuid: uuid || null,
-            });
+            const originalSrc = tile.getAttribute('data-mb-src');
+            const meta = stored != null
+                ? { ...stored }
+                : {
+                    caption: caption || null,
+                    alt: alt || null,
+                    credits: credits || null,
+                    name: name || null,
+                    file_name: fileName || null,
+                    id: idRaw ? Number(idRaw) : undefined,
+                    uuid: uuid || null,
+                    src: originalSrc,
+                };
+
+            if (meta.caption == null && caption) {
+                meta.caption = caption;
+            }
+
+            if (meta.alt == null && alt) {
+                meta.alt = alt;
+            }
+
+            const pickUrl = resolveBackgroundImageUrl(meta, originalSrc);
+            selectSrc(pickUrl, meta);
         }
     });
 

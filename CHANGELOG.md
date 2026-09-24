@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.152] - 2026-09-24
+
+### Added
+
+- Style inspector **Page** control to edit full-page background without finding empty canvas space (auto-selects page when Style has no selection)
+- Responsive images from VoodMedia: image block applies `srcset` / `sizes` and prefers optimized `display` URL over the raw original
+- Safe `srcset` handling in `EditorHtmlSecuritySanitizer` (validates each candidate URL)
+
 ## [0.1.151] - 2026-09-24
 
 ### Fixed

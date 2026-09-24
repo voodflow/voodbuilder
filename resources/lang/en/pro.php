@@ -179,6 +179,7 @@ return [
         'class_style_field_search' => 'Search…',
         'class_style_background' => 'Background',
         'page_surface_label' => 'Page',
+        'page_surface_hint' => 'Background and base styles for the whole page (not a single block).',
         'class_style_background_color' => 'Color',
         'class_style_background_color_opacity' => 'Opacity',
         'class_style_background_image' => 'Image',

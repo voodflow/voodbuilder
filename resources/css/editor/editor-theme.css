@@ -276,6 +276,51 @@
     text-transform: uppercase;
 }
 
+.voodbuilder-editor-page-surface-action {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0 0 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, transparent);
+    border-radius: 0.625rem;
+    background: var(--color-vp-bg-elv, #fff);
+}
+
+.voodbuilder-editor-page-surface-action__btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 35%, var(--color-vp-divider, #e2e8f0));
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, var(--color-vp-bg-elv, #fff));
+    color: var(--color-vp-text-1, #3c3c43);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-page-surface-action__btn:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 16%, var(--color-vp-bg-elv, #fff));
+}
+
+.voodbuilder-editor-page-surface-action__btn.is-active {
+    border-color: var(--color-vp-brand-1, #6366f1);
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 18%, var(--color-vp-bg-elv, #fff));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, transparent);
+}
+
+.voodbuilder-editor-page-surface-action__hint {
+    margin: 0;
+    color: var(--color-vp-text-2, #64748b);
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
 .voodbuilder-editor-styles-mount .gjs-sm-sector:last-child,
 .voodbuilder-editor-root .gjs-sm-sector:last-child {
     margin-bottom: 0;
