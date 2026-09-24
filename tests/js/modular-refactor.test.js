@@ -579,6 +579,26 @@ describe('theme-tokens background clear', () => {
         expect(splitClassTokens('a, b\nc')).toEqual(['a', 'b', 'c']);
     });
 
+    it('extractGrapesComposerCss drops Tailwind arbitrary color utilities with escaped \\#', async () => {
+        const { extractGrapesComposerCss } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const css = `
+.bg-\\[\\#0f172a\\] { background-color: #0f172a; }
+.text-\\[\\#fff\\] { color: #fff; }
+#hero-title { color: #ff0000 !important; }
+.flex { display: flex }
+`;
+
+        const extracted = extractGrapesComposerCss(css);
+
+        expect(extracted).toContain('#hero-title');
+        expect(extracted).not.toContain('bg-\\[#0f172a\\]');
+        expect(extracted).not.toContain('0f172a');
+        expect(extracted).not.toContain('.flex');
+    });
+
     it('extractGrapesComposerCss keeps #id Style Manager rules but drops private classes', async () => {
         const { extractGrapesComposerCss } = await import(
             '../../resources/js/editor/editor/payload.js'
@@ -1410,8 +1430,28 @@ describe('theme-tokens background clear', () => {
         expect(merged).toContain('.text-lg');
         expect(merged).toContain('#section-bg');
         expect(merged).toContain('background-color: #daa0a0');
-        // Previous utilities must survive a thin recompile (Anchor drop regression).
-        expect(merged).toContain('.flex');
+        // Full page compile replaces prior utilities (avoids unbounded live-sheet growth).
+        expect(merged).not.toContain('.flex { display: flex }');
+    });
+
+    it('mergeCompiledPageCssWithAuthorIdRules does not accumulate successive compiles', async () => {
+        const { mergeCompiledPageCssWithAuthorIdRules } = await import(
+            '../../resources/js/editor/page-tailwind-autobuild.js'
+        );
+
+        const editor = {
+            __voodbuilderPageLiveCss: '.flex{display:flex}.p-4{padding:1rem}',
+            getCss: () => '',
+        };
+
+        const first = mergeCompiledPageCssWithAuthorIdRules(editor, '.text-lg{font-size:1.125rem}');
+        editor.__voodbuilderPageLiveCss = first;
+        const second = mergeCompiledPageCssWithAuthorIdRules(editor, '.text-xl{font-size:1.25rem}');
+
+        expect(second).toContain('.text-xl');
+        expect(second).not.toContain('.text-lg');
+        expect(second).not.toContain('.flex');
+        expect(second.length).toBeLessThan(200);
     });
 
     it('mergeCompiledPageCssWithAuthorIdRules keeps prior utilities when compile is empty', async () => {

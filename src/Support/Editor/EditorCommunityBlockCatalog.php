@@ -40,6 +40,7 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-button',
         'voodbuilder-icon',
         'voodbuilder-divider',
+        'voodbuilder-code-block',
         // Media
         'image',
         'video',
@@ -169,10 +170,9 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-logo-scroll',
         'voodbuilder-logo-grid',
         'voodbuilder-logo-split',
-        // Tabs / Code / Forms (JS categories → companion; pills stays in Community)
+        // Tabs / Forms (JS categories → companion; pills + code-block stay in Community)
         'voodbuilder-tabs-underline',
         'voodbuilder-tabs-segmented',
-        'voodbuilder-code-block',
         'voodbuilder-form',
         'newsletter-form',
         // Unregistered Site nav variants (classes exist; companion may expose them)

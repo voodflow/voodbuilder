@@ -3,7 +3,7 @@
  * Also: Copy all classes, multi-class paste, and animation helpers (Shuffle-style).
  */
 
-import { componentClassString, copyTextToClipboard, splitClassTokens } from './clipboard.js';
+import { componentClassString, copyTextToClipboard, peekEditorClipboardText, splitClassTokens } from './clipboard.js';
 import { choiceDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { isEditorBooting, shouldSuppressInspectorDomScan } from './editor-lifecycle.js';
@@ -752,7 +752,13 @@ function wireClassInput(editor, input, hintEl, labels = {}) {
     });
 
     input.addEventListener('paste', async (event) => {
-        const text = event.clipboardData?.getData('text') ?? '';
+        let text = event.clipboardData?.getData('text') ?? '';
+
+        // HTTP / blocked Clipboard API: paste may arrive empty; use last in-editor copy.
+        if (String(text).trim() === '') {
+            text = peekEditorClipboardText();
+        }
+
         const tokens = splitClassTokens(text);
 
         if (tokens.length <= 1) {

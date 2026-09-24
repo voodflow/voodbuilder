@@ -135,6 +135,8 @@ class EditorCommunityBlockCatalogTest extends TestCase
         $this->assertContains('voodbuilder-animated-cta', $allowlist);
         $this->assertContains('voodbuilder-tabs-pills', $allowlist);
         $this->assertContains('voodbuilder-animated-stats', $allowlist);
+        $this->assertContains('voodbuilder-code-block', $allowlist);
+        $this->assertFalse(EditorCommunityBlockCatalog::isCompanionBlockId('voodbuilder-code-block'));
     }
 
     public function test_vforms_managed_form_blocks_pass_sidebar_filter(): void

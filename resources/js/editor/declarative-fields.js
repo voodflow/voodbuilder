@@ -130,7 +130,7 @@ function collectFields(scope, { stopAtNestedItems = false } = {}) {
  * @param {object} component
  * @returns {object|null}
  */
-function findClosestItem(component) {
+export function findClosestItem(component) {
     let current = component;
 
     while (current) {
@@ -142,6 +142,52 @@ function findClosestItem(component) {
     }
 
     return null;
+}
+
+/**
+ * Resolve which repeating item the current canvas selection belongs to.
+ *
+ * @param {object[]} items
+ * @param {object|null|undefined} selected
+ * @returns {{ item: object, index: number }|null}
+ */
+export function resolveFocusedItem(items, selected) {
+    if (! Array.isArray(items) || items.length === 0 || ! selected) {
+        return null;
+    }
+
+    const focused = findClosestItem(selected);
+
+    if (! focused) {
+        return null;
+    }
+
+    const index = items.findIndex((item) => item === focused
+        || (item?.cid != null && item.cid === focused.cid));
+
+    if (index < 0) {
+        return null;
+    }
+
+    return { item: items[index], index };
+}
+
+/**
+ * Hint when the section is selected but no repeating item is focused.
+ *
+ * @param {HTMLElement} mount
+ * @param {string} [message]
+ */
+export function appendSelectItemHint(mount, message = 'Select an item on the canvas to edit its content.') {
+    if (! mount) {
+        return;
+    }
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-editor-form-hint';
+    hint.setAttribute('data-vb-select-item-hint', '');
+    hint.textContent = message;
+    mount.appendChild(hint);
 }
 
 /**
@@ -225,43 +271,212 @@ export function readFieldText(component) {
 }
 
 /**
+ * True when `node` is `root` or nested under it.
+ *
+ * @param {object|null|undefined} node
+ * @param {object|null|undefined} root
+ * @returns {boolean}
+ */
+function isUnderComponent(node, root) {
+    if (! node || ! root) {
+        return false;
+    }
+
+    let current = node;
+
+    while (current) {
+        if (current === root) {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+/**
+ * Update a text leaf without `components(html)` when possible.
+ *
+ * GrapesJS `component.components(string)` remounts the DOM and resets the caret
+ * to the start — typing then appears RTL / backwards, and canvas RTE can stick
+ * until Save remounts the frame (see GrapesJS discussion #4417).
+ *
+ * @param {object} component
+ * @param {string} text
+ * @returns {boolean}
+ */
+function writeTextLeafInPlace(component, text) {
+    if (! component) {
+        return false;
+    }
+
+    const type = String(component.get?.('type') ?? '');
+
+    if (type === 'textnode') {
+        component.set?.('content', text);
+
+        return true;
+    }
+
+    if (typeof component.set === 'function' && typeof component.get?.('content') === 'string') {
+        component.set('content', text);
+    }
+
+    const el = component.getEl?.() ?? component.getView?.()?.el ?? component.view?.el;
+
+    if (el && el.childElementCount === 0) {
+        el.textContent = text;
+
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Exit canvas RTE if the field being rewritten is currently being edited inline.
+ *
+ * @param {object|null|undefined} editor
+ * @param {object} component
+ */
+function releaseCanvasRteIfEditing(editor, component) {
+    const editing = editor?.getEditing?.();
+
+    if (! editing || ! component) {
+        return;
+    }
+
+    if (editing !== component && ! isUnderComponent(editing, component) && ! isUnderComponent(component, editing)) {
+        return;
+    }
+
+    try {
+        editing.view?.disableEditing?.();
+    } catch {
+        // Best-effort — avoid blocking Content-panel writes.
+    }
+}
+
+/**
  * @param {object} component
  * @param {string} value
+ * @param {object|null} [editor]
  */
-export function writeFieldText(component, value) {
+export function writeFieldText(component, value, editor = null) {
     const text = String(value ?? '');
-    const children = [...(component.components?.() ?? [])];
-    const onlyTextish = children.length === 0
-        || children.every((child) => {
-            const type = String(child.get?.('type') ?? '');
 
-            return type === 'textnode' || type === 'text' || (! child.components?.()?.length && typeof child.get?.('content') === 'string');
+    const apply = () => {
+        releaseCanvasRteIfEditing(editor, component);
+
+        const children = [...(component.components?.() ?? [])];
+        const textNodes = children.filter((child) => String(child.get?.('type') ?? '') === 'textnode');
+
+        // Single textnode child: update in place — never remount via components().
+        if (textNodes.length === 1 && children.length === 1) {
+            textNodes[0].set?.('content', text);
+
+            const el = component.getEl?.() ?? component.getView?.()?.el ?? component.view?.el;
+
+            if (el) {
+                // 3 === Node.TEXT_NODE (avoid Node global — Vitest node env).
+                if (el.firstChild?.nodeType === 3 && el.childNodes.length === 1) {
+                    el.firstChild.textContent = text;
+                } else if (el.childElementCount === 0) {
+                    el.textContent = text;
+                }
+            }
+
+            return;
+        }
+
+        const onlyTextish = children.length === 0
+            || children.every((child) => {
+                const type = String(child.get?.('type') ?? '');
+
+                return type === 'textnode' || type === 'text'
+                    || (! child.components?.()?.length && typeof child.get?.('content') === 'string');
+            });
+
+        if (onlyTextish && children.length === 0) {
+            if (writeTextLeafInPlace(component, text)) {
+                return;
+            }
+
+            component.components?.(text);
+
+            return;
+        }
+
+        if (onlyTextish && textNodes.length >= 1) {
+            writeTextLeafInPlace(textNodes[0], text);
+
+            // Drop extra text nodes left from prior remounts without rewriting the host.
+            for (let index = 1; index < textNodes.length; index += 1) {
+                textNodes[index].remove?.();
+            }
+
+            const el = component.getEl?.();
+
+            if (el && el.childElementCount === 0) {
+                el.textContent = text;
+            }
+
+            return;
+        }
+
+        // Prefer updating the first text leaf so wrappers/icons stay intact.
+        let updated = false;
+
+        walkComponents(component, (node) => {
+            if (updated || node === component || hasFieldAttr(node) || isIconComponent(node)) {
+                return;
+            }
+
+            const type = String(node.get?.('type') ?? '');
+
+            if (type === 'textnode' || type === 'text' || typeof node.get?.('content') === 'string') {
+                if (! writeTextLeafInPlace(node, text)) {
+                    node.components?.(text);
+                }
+
+                updated = true;
+            }
         });
 
-    if (onlyTextish) {
-        component.components?.(text);
+        if (! updated) {
+            component.components?.(text);
+        }
+    };
+
+    if (! editor) {
+        apply();
 
         return;
     }
 
-    // Prefer updating the first text leaf so wrappers/icons stay intact.
-    let updated = false;
+    // Mirror writeComponentHtml / settings guards so Content writes do not
+    // remount the inspector (which also resets caret / selection).
+    const depth = Number(editor.__voodbuilderSettingsChangeDepth ?? 0);
+    editor.__voodbuilderSettingsChangeDepth = depth + 1;
+    editor.__voodbuilderSettingsChange = true;
 
-    walkComponents(component, (node) => {
-        if (updated || node === component || hasFieldAttr(node) || isIconComponent(node)) {
-            return;
-        }
+    try {
+        apply();
+    } finally {
+        // Keep the flag through pending component:update rAFs so the Content
+        // form is not remounted mid-keystroke (caret → start / stuck RTE).
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
+                editor.__voodbuilderSettingsChangeDepth = next;
 
-        const type = String(node.get?.('type') ?? '');
-
-        if (type === 'textnode' || type === 'text' || typeof node.get?.('content') === 'string') {
-            node.components?.(text);
-            updated = true;
-        }
-    });
-
-    if (! updated) {
-        component.components?.(text);
+                if (next <= 0) {
+                    editor.__voodbuilderSettingsChange = false;
+                    delete editor.__voodbuilderSettingsChangeDepth;
+                }
+            });
+        });
     }
 }
 
@@ -303,7 +518,7 @@ function renderFieldControl(field, editor) {
             rows: 3,
         });
 
-        input.addEventListener('input', () => writeFieldText(field.component, input.value));
+        input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
 
         return wrap;
     }
@@ -315,7 +530,7 @@ function renderFieldControl(field, editor) {
         type: field.type === 'number' ? 'number' : 'text',
     });
 
-    input.addEventListener('input', () => writeFieldText(field.component, input.value));
+    input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
 
     return wrap;
 }
@@ -360,9 +575,34 @@ function renderIconField(field, editor) {
  * @param {HTMLElement} mount
  * @param {object[]} items
  * @param {object} editor
+ * @param {{ selected?: object|null, focusOnly?: boolean, selectHint?: string }} [options]
  */
-export function appendDeclarativeItemEditors(mount, items, editor) {
+export function appendDeclarativeItemEditors(mount, items, editor, options = {}) {
     if (! mount || items.length === 0) {
+        return;
+    }
+
+    const focusOnly = options.focusOnly !== false;
+    const selected = options.selected ?? editor?.getSelected?.() ?? null;
+    const focused = focusOnly ? resolveFocusedItem(items, selected) : null;
+
+    if (focusOnly) {
+        if (! focused) {
+            appendSelectItemHint(mount, options.selectHint);
+
+            return;
+        }
+
+        const fields = findItemDeclarativeFields(focused.item);
+
+        if (fields.length === 0) {
+            return;
+        }
+
+        appendDeclarativeFields(mount, fields, editor, {
+            heading: `Item ${focused.index + 1}`,
+        });
+
         return;
     }
 
@@ -420,7 +660,21 @@ export function registerDeclarativeFieldSettings(editor) {
         matchBlockId: () => false,
         findRoot: (component) => findDeclarativeSettingsRoot(component),
         matchesRoot: (root) => Boolean(root) && scopeHasDeclarativeFields(root),
-        render: ({ mount, root, editor: ed }) => {
+        render: ({ mount, root, editor: ed, selected }) => {
+            const itemsRoot = root.find?.('[data-vb-items-root]')?.[0] ?? null;
+            const items = itemsRoot
+                ? [...(itemsRoot.components?.() ?? [])].filter((child) => hasItemAttr(child))
+                : (hasItemAttr(root) ? [root] : []);
+            const selection = selected ?? ed?.getSelected?.() ?? null;
+            const focused = resolveFocusedItem(items, selection);
+
+            // Selecting a repeating item: show only that item's fields.
+            if (focused) {
+                appendDeclarativeItemEditors(mount, items, ed, { selected: selection });
+
+                return;
+            }
+
             const sectionFields = findDeclarativeFields(root).filter((field) => {
                 const owner = findClosestItem(field.component);
 
@@ -428,13 +682,7 @@ export function registerDeclarativeFieldSettings(editor) {
             });
 
             appendDeclarativeFields(mount, sectionFields, ed, { heading: 'Content' });
-
-            const itemsRoot = root.find?.('[data-vb-items-root]')?.[0] ?? null;
-            const items = itemsRoot
-                ? [...(itemsRoot.components?.() ?? [])].filter((child) => hasItemAttr(child))
-                : (hasItemAttr(root) ? [root] : []);
-
-            appendDeclarativeItemEditors(mount, items, ed);
+            appendDeclarativeItemEditors(mount, items, ed, { selected: selection });
         },
     });
 }

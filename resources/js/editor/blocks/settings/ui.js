@@ -403,6 +403,7 @@ export function registerSettingsUi(editor, mount) {
     let renderedRoot = null;
     let renderedRootBlockId = '';
     let renderedDescriptorId = null;
+    let renderedSelectedKey = '';
     let layoutInspectorLoadingSince = 0;
 
     const traitsMount = mount.closest('[data-voodbuilder-inspector="content"]')
@@ -412,6 +413,7 @@ export function registerSettingsUi(editor, mount) {
         renderedRoot = null;
         renderedRootBlockId = '';
         renderedDescriptorId = null;
+        renderedSelectedKey = '';
         layoutInspectorLoadingSince = 0;
         mount.hidden = true;
         mount.replaceChildren();
@@ -582,7 +584,23 @@ export function registerSettingsUi(editor, mount) {
                 return;
             }
 
-            {
+            // Repeating declarative items (pills/cards): keep Content on the item
+            // form instead of the generic Icon / Text / Rich-text panels.
+            const insideDeclarativeItem = (() => {
+                let current = rawSelected;
+
+                while (current && current.get?.('type') !== 'wrapper') {
+                    if (Object.prototype.hasOwnProperty.call(current.getAttributes?.() ?? {}, 'data-vb-item')) {
+                        return true;
+                    }
+
+                    current = current.parent?.();
+                }
+
+                return false;
+            })();
+
+            if (! insideDeclarativeItem) {
                 const iconHost = findIconHost(rawSelected);
 
                 if (iconHost) {
@@ -606,9 +624,7 @@ export function registerSettingsUi(editor, mount) {
 
                     return;
                 }
-            }
 
-            {
                 const richHost = findRichTextHost(rawSelected);
 
                 if (richHost) {
@@ -632,9 +648,7 @@ export function registerSettingsUi(editor, mount) {
 
                     return;
                 }
-            }
 
-            {
                 const textLinkHost = findTextLinkHost(rawSelected);
 
                 if (textLinkHost) {
@@ -658,22 +672,22 @@ export function registerSettingsUi(editor, mount) {
 
                     return;
                 }
-            }
 
-            if (isBasicTextComponent(rawSelected)) {
-                closeAllInspectorSelects();
-                renderBasicTextSettings({
-                    mount,
-                    traitsMount,
-                    component: rawSelected,
-                    editor,
-                    labels,
-                });
-                renderedRoot = null;
-                renderedRootBlockId = '';
-                renderedDescriptorId = null;
+                if (isBasicTextComponent(rawSelected)) {
+                    closeAllInspectorSelects();
+                    renderBasicTextSettings({
+                        mount,
+                        traitsMount,
+                        component: rawSelected,
+                        editor,
+                        labels,
+                    });
+                    renderedRoot = null;
+                    renderedRootBlockId = '';
+                    renderedDescriptorId = null;
 
-                return;
+                    return;
+                }
             }
 
             if (isLayoutStructureComponent(rawSelected)) {
@@ -994,6 +1008,7 @@ export function registerSettingsUi(editor, mount) {
             maybePromoteSelectionForHighlight(rawSelected, root);
 
             const existingForm = mount.querySelector('.voodbuilder-editor-form');
+            const selectedKey = String(rawSelected?.cid ?? rawSelected?.getId?.() ?? '');
             const canReuseForm = Boolean(
                 existingForm
                 && ! mount.hidden
@@ -1001,6 +1016,7 @@ export function registerSettingsUi(editor, mount) {
                 && renderedRootBlockId === rootBlockId
                 && renderedDescriptorId === descriptor.id
                 && renderedRoot === root
+                && renderedSelectedKey === selectedKey
                 && isValidGrapesComponent(root)
             );
 
@@ -1019,11 +1035,12 @@ export function registerSettingsUi(editor, mount) {
             traitsMount?.replaceChildren?.();
             mount.replaceChildren();
 
-            descriptor.render({ mount, root, editor, traitsMount });
+            descriptor.render({ mount, root, editor, traitsMount, selected: rawSelected });
 
             renderedRoot = root;
             renderedRootBlockId = rootBlockId;
             renderedDescriptorId = descriptor.id;
+            renderedSelectedKey = selectedKey;
         } finally {
             editor.__voodbuilderBlockSettingsRendering = false;
         }

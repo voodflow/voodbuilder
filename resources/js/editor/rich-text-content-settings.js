@@ -218,17 +218,20 @@ export function writeComponentHtml(component, html, editor = null) {
     try {
         run();
     } finally {
-        const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
-        editor.__voodbuilderSettingsChangeDepth = next;
-
-        if (next <= 0) {
-            editor.__voodbuilderSettingsChange = false;
-            delete editor.__voodbuilderSettingsChangeDepth;
-        }
-
-        // Keep bulk/writing flags through pending chrome component:add rAFs.
+        // Keep SettingsChange + bulk/writing flags through pending chrome
+        // component:add rAFs. Clearing SettingsChange synchronously let a late
+        // component:update remount the Content RTE mid-keystroke (caret → start
+        // → apparent RTL typing; selection locked until Save).
         window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => {
+                const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
+                editor.__voodbuilderSettingsChangeDepth = next;
+
+                if (next <= 0) {
+                    editor.__voodbuilderSettingsChange = false;
+                    delete editor.__voodbuilderSettingsChangeDepth;
+                }
+
                 editor.__voodbuilderRichTextWriting = false;
                 editor.__voodbuilderBulkStructureUpdate = false;
             });
@@ -756,7 +759,8 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
         traitsMount?.classList.add('hidden');
         mount.hidden = false;
         lockRichTextChildren(component);
-        keepRichTextSelection(editor, component);
+        // Do not keepRichTextSelection here — re-selecting on every inspector
+        // refresh steals focus from the light RTE mid-keystroke (caret → start).
 
         return true;
     }
@@ -770,15 +774,39 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
     section.setAttribute('data-voodbuilder-rich-text-settings', '');
     section.setAttribute('data-component-key', key);
 
+    let writeTimer = 0;
+    const flushHtml = (html) => {
+        if (writeTimer) {
+            window.clearTimeout(writeTimer);
+            writeTimer = 0;
+        }
+
+        writeComponentHtml(component, html, editor);
+    };
+
     const editorUi = createLightRichTextEditor({
         value: readComponentHtml(component),
         labels,
         editor,
         component,
         onChange: (html) => {
-            writeComponentHtml(component, html, editor);
+            // Debounce canvas remounts so each keystroke does not rebuild children
+            // (caret reset → apparent RTL; stuck contenteditable until Save).
+            if (writeTimer) {
+                window.clearTimeout(writeTimer);
+            }
+
+            writeTimer = window.setTimeout(() => {
+                writeTimer = 0;
+                writeComponentHtml(component, html, editor);
+            }, 120);
         },
     });
+
+    editorUi.root.querySelector('.voodbuilder-editor-rte__visual')
+        ?.addEventListener('blur', () => flushHtml(editorUi.getHtml()), true);
+    editorUi.root.querySelector('.voodbuilder-editor-rte__code')
+        ?.addEventListener('blur', () => flushHtml(editorUi.getHtml()), true);
 
     fields.appendChild(editorUi.root);
     mount.appendChild(section);

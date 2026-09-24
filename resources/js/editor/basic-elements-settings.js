@@ -8,6 +8,10 @@ import {
     createTextField,
 } from './editor-form-ui.js';
 import {
+    TEXT_COLOR_GRADIENT_VALUE,
+    TEXT_COLOR_OPTIONS,
+} from './style-tailwind-class-groups.js';
+import {
     applyReadingProgressCssVars,
     readingProgressColorOptions,
     READING_PROGRESS_THICKNESS,
@@ -282,6 +286,11 @@ const ICON_STROKES = [
     { value: '2.5', label: '2.5' },
 ];
 
+/** Theme + Tailwind text colors only (no free hex / rgb / gradient text). */
+const ICON_COLOR_OPTIONS = TEXT_COLOR_OPTIONS.filter(
+    (option) => option.value !== TEXT_COLOR_GRADIENT_VALUE,
+);
+
 const ICON_PICKER_PAGE = 80;
 
 /**
@@ -315,6 +324,28 @@ function parseIconColor(raw) {
 
     // Fallback: treat as CSS (e.g. "rebeccapurple", CSS variables).
     return { mode: 'css', value, className: '' };
+}
+
+/**
+ * Map a stored icon color to a select option value (theme / Tailwind text-* only).
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+function resolveIconColorSelectValue(raw) {
+    const parsed = parseIconColor(raw);
+
+    if (parsed.mode === 'class' && ICON_COLOR_OPTIONS.some((option) => option.value === parsed.className)) {
+        return parsed.className;
+    }
+
+    const direct = String(raw ?? '').trim();
+
+    if (direct !== '' && ICON_COLOR_OPTIONS.some((option) => option.value === direct)) {
+        return direct;
+    }
+
+    return '';
 }
 
 function isManagedIconTextClass(token) {
@@ -993,7 +1024,7 @@ export function createIconPicker({
     let current = resolveTablerIconName(value);
     let iconStyle = resolveTablerIconStyle(style);
     let iconStroke = resolveTablerIconStroke(stroke);
-    let iconColor = String(color ?? '').trim();
+    let iconColor = resolveIconColorSelectValue(color);
     let offset = 0;
     let total = 0;
     let catalogReady = false;
@@ -1031,22 +1062,16 @@ export function createIconPicker({
         },
     });
 
-    const { field: colorField, input: colorText } = createTextField({
+    const colorField = createSelectField({
         label: labels.iconColor ?? 'Color',
         name: 'iconColor',
         value: iconColor,
-        placeholder: labels.iconColorPlaceholder ?? '#hex · rgb() · text-red-500 · text-vp-brand-1',
+        options: ICON_COLOR_OPTIONS,
+        onChange: (next) => {
+            iconColor = resolveIconColorSelectValue(next);
+            emitChange();
+        },
     });
-
-    const colorSwatch = document.createElement('input');
-    colorSwatch.type = 'color';
-    colorSwatch.className = 'voodbuilder-editor-icon-picker__swatch';
-    colorSwatch.value = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(iconColor) ? iconColor : '#64748b';
-    // The text field next to it owns the visible label, so the swatch needs its own name.
-    colorSwatch.title = labels.iconColor ?? 'Color';
-    colorSwatch.setAttribute('aria-label', labels.iconColorPicker ?? labels.iconColor ?? 'Color');
-    colorText.insertAdjacentElement('afterend', colorSwatch);
-    colorField.classList.add('voodbuilder-editor-icon-picker__color');
 
     const categoryField = createSelectField({
         label: labels.iconCategory ?? 'Category',
@@ -1235,44 +1260,6 @@ export function createIconPicker({
             : `Load more (${Math.max(0, total - shown)})`;
     };
 
-    let colorCommitTimer = 0;
-
-    const commitColor = (next, { rebuildGrid = false } = {}) => {
-        iconColor = String(next ?? '').trim();
-        colorText.value = iconColor;
-
-        if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(iconColor)) {
-            colorSwatch.value = iconColor;
-        }
-
-        emitChange();
-
-        if (rebuildGrid) {
-            renderGrid();
-        }
-    };
-
-    colorText.addEventListener('change', () => commitColor(colorText.value));
-    colorText.addEventListener('blur', () => commitColor(colorText.value));
-    colorText.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            commitColor(colorText.value);
-        }
-    });
-    // Swatch: debounce — continuous input was rebuilding the canvas on every pointer move.
-    colorSwatch.addEventListener('input', () => {
-        colorText.value = colorSwatch.value;
-        window.clearTimeout(colorCommitTimer);
-        colorCommitTimer = window.setTimeout(() => {
-            commitColor(colorSwatch.value);
-        }, 120);
-    });
-    colorSwatch.addEventListener('change', () => {
-        window.clearTimeout(colorCommitTimer);
-        commitColor(colorSwatch.value);
-    });
-
     searchInput.addEventListener('input', () => {
         query = String(searchInput.value || '');
         offset = 0;
@@ -1345,7 +1332,7 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
     let sizeClass = attrs['data-vb-icon-size'] || readIconSize(host);
     let iconStyle = resolveTablerIconStyle(attrs['data-vb-icon-style'] ?? DEFAULT_TABLER_ICON_STYLE);
     let iconStroke = resolveTablerIconStroke(attrs['data-vb-icon-stroke'] ?? DEFAULT_TABLER_ICON_STROKE);
-    let iconColor = readIconColor(host);
+    let iconColor = resolveIconColorSelectValue(readIconColor(host));
     let linkType = String(host.get('linkType') ?? attrs['data-vb-link-type'] ?? 'none') || 'none';
     let linkRef = String(host.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(host.get('href') ?? attrs.href ?? '');

@@ -502,11 +502,13 @@ export function mergeCompiledPageCssWithAuthorIdRules(editor, compiledCss) {
     }
 
     // Empty compile must not wipe a healthy live sheet (failed/aborted JIT).
-    const compiledOrPrevious = compiled !== '' ? compiled : previousUtilities;
+    // When compile succeeds, REPLACE previous utilities — unioning every slightly
+    // different JIT response used to grow __voodbuilderPageLiveCss past max_css_bytes
+    // after enough Style/Library edits on a landing page.
+    const utilities = compiled !== '' ? compiled : previousUtilities;
 
     return mergeAuthorCssChunks([
-        compiledOrPrevious,
-        previousUtilities,
+        utilities,
         previousAuthor,
         composerAuthor,
     ]);

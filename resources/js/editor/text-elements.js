@@ -94,7 +94,17 @@ export function keepRichTextSelection(editor, component) {
     }
 
     const selectHost = () => {
-        if (editor.getSelected?.() === component) {
+        const selected = editor.getSelected?.();
+
+        if (selected === component) {
+            return;
+        }
+
+        // Promote inner markup (p/span/a) up to the Rich Text host — but never
+        // steal selection when the author already clicked a different block.
+        // Re-selecting across frames left canvas RTE stuck (caret at start →
+        // "RTL" typing, other text nodes unselectable until Save).
+        if (selected && findRichTextHost(selected) !== component) {
             return;
         }
 
@@ -311,6 +321,13 @@ export function configurePlainTextRte(editor) {
 
     editor.on('rte:enable', (view) => {
         const model = view?.model ?? editor.getSelected?.() ?? null;
+        const el = view?.el ?? model?.getEl?.();
+
+        // Grapes/contenteditable can inherit a stale dir=rtl (or dir=auto that
+        // flips after caret reset). Force LTR for Latin authoring sessions.
+        if (el?.setAttribute) {
+            el.setAttribute('dir', 'ltr');
+        }
 
         if (! shouldHideCanvasRteToolbar(model)) {
             showToolbar();
@@ -326,11 +343,37 @@ export function configurePlainTextRte(editor) {
         window.setTimeout(hideToolbar, 50);
     });
 
-    editor.on('rte:disable', () => {
+    editor.on('rte:disable', (view) => {
         showToolbar();
+
+        const el = view?.el ?? view?.model?.getEl?.();
+
+        if (el?.getAttribute?.('dir') === 'ltr') {
+            el.removeAttribute('dir');
+        }
+
+        if (el?.getAttribute?.('contenteditable') === 'true') {
+            el.removeAttribute('contenteditable');
+        }
     });
 
     editor.on('component:deselected', () => {
         showToolbar();
+    });
+
+    // If selection moves while a text view still thinks it is editing, force
+    // disable so contenteditable cannot trap clicks / caret on the previous node.
+    editor.on('component:selected', (component) => {
+        const editing = editor.getEditing?.();
+
+        if (! editing || editing === component) {
+            return;
+        }
+
+        try {
+            editing.view?.disableEditing?.();
+        } catch {
+            // Ignore races during remount.
+        }
     });
 }

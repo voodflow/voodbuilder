@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.148] - 2026-09-24
+
+### Added
+
+- **Code block** is a foundation Basic tile (Community + chrome layout): same `vp-code-block` shell as vtuts/vdocs, editable via double-click / Content trait
+
+### Changed
+
+- Code block no longer requires the Elements companion or Library modal — removed from companion-only / Library-only lists
+
+## [0.1.147] - 2026-09-24
+
+### Fixed
+
+- Save 422 `css must not be greater than 1000000`: Tailwind arbitrary colors (`.bg-\[#…\]`) were treated as Style Manager `#id` rules and live JIT sheets accumulated on every compile — Save now drops escaped `\#` utilities, replaces (not unions) compiled utilities, and hard-caps author CSS
+
+### Changed
+
+- Icon color picker: theme (`text-vp-*`) + Tailwind palette select only — no free hex/rgb input
+
+## [0.1.146] - 2026-09-24
+
+### Fixed
+
+- Text editing no longer locks selection until Save, and typing no longer appears RTL/backwards: Content-panel writes update text nodes in place (no Grapes `components()` remount), canvas RTE is released when selection changes, and Rich Text inspector writes are debounced so the caret is not reset mid-keystroke
+
+### Changed
+
+- Content panel for repeating items (pills/cards): selecting the section shows layout + section texts; selecting one item shows only that item’s fields
+
+### Fixed
+
+- Copy classes: restore execCommand fallback + in-editor clipboard memory so copy works on HTTP hosts (e.g. non-localhost LAN URLs) where `navigator.clipboard` is blocked
+
+
 ## [0.1.145] - 2026-09-24
 
 ### Fixed

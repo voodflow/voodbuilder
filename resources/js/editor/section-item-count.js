@@ -7,6 +7,7 @@ import {
     appendDeclarativeFields,
     appendDeclarativeItemEditors,
     findDeclarativeFields,
+    resolveFocusedItem,
     scopeHasDeclarativeFields,
 } from './declarative-fields.js';
 import {
@@ -376,10 +377,22 @@ export function registerSectionItemCountSettings(editor) {
 
             return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count') && items.length > 0;
         },
-        render: ({ mount, root, editor }) => {
+        render: ({ mount, root, editor, selected }) => {
             const attrs = root.getAttributes?.() ?? {};
             const { items, min, max, columns } = findSectionItems(root);
             const preserveLayout = shouldPreserveItemsLayout(root);
+            const selection = selected ?? editor?.getSelected?.() ?? null;
+            const focused = scopeHasDeclarativeFields(root)
+                ? resolveFocusedItem(items, selection)
+                : null;
+
+            // Selecting a repeating card/pill: only that item's Content fields.
+            if (focused) {
+                appendDeclarativeItemEditors(mount, items, editor, { selected: selection });
+
+                return;
+            }
+
             const current = Math.max(
                 min,
                 Math.min(max, Number.parseInt(attrs['data-vb-item-count'] ?? String(items.length), 10) || items.length),
@@ -437,7 +450,7 @@ export function registerSectionItemCountSettings(editor) {
             if (scopeHasDeclarativeFields(root)) {
                 const sectionFields = findDeclarativeFields(root);
                 appendDeclarativeFields(mount, sectionFields, editor, { heading: 'Content' });
-                appendDeclarativeItemEditors(mount, items, editor);
+                appendDeclarativeItemEditors(mount, items, editor, { selected: selection });
             }
 
             if (! isAnimatedStatsRoot(root)) {

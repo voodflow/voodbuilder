@@ -81,6 +81,21 @@ function isTailwindUtilityClassName(className) {
 }
 
 /**
+ * True when the selector list includes a real Style Manager `#id` token.
+ * Tailwind arbitrary colors use escaped `\#` inside class names (`.bg-\[\#fff\]`)
+ * — those must NOT count as author id paints or Save ships the whole JIT sheet.
+ *
+ * @param {string} selectors
+ * @returns {boolean}
+ */
+function hasUnescapedIdSelector(selectors) {
+    const value = String(selectors ?? '');
+
+    // `(^|[^\\])#` — hash not preceded by a backslash (CSS-escaped arbitrary value).
+    return /(?:^|[^\\])#[A-Za-z_]/.test(value);
+}
+
+/**
  * Keep Style Manager author paints (#id) and custom class rules from Library
  * / pasted embeds (e.g. .vb-hero-plasma__orb). Drop Tailwind utilities and
  * Grapes private classes — regenerated or harmful on reload.
@@ -95,7 +110,7 @@ function isAuthorStyleSelector(selectors) {
         return false;
     }
 
-    if (value.includes('#')) {
+    if (hasUnescapedIdSelector(value)) {
         return true;
     }
 
@@ -233,6 +248,51 @@ export function extractGrapesComposerCss(css) {
         }
 
         if (! isAuthorStyleSelector(selectors)) {
+            continue;
+        }
+
+        const cleanedBody = sanitizeClearedPaintRuleBody(body);
+
+        if (cleanedBody === '') {
+            continue;
+        }
+
+        kept.push(`${selectors} {${cleanedBody}}`);
+    }
+
+    return kept.join('\n');
+}
+
+/**
+ * Last-resort Save trim: keep only bare `#id { … }` Style Manager paints.
+ * Drops custom BEM / Library class rules when the author CSS still exceeds max_css.
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function extractBareIdAuthorCss(css) {
+    const source = String(css ?? '').trim();
+
+    if (source === '') {
+        return '';
+    }
+
+    const kept = [];
+
+    for (const match of source.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+        const selectors = match[1].trim();
+        const body = match[2].trim();
+
+        if (selectors === '' || body === '') {
+            continue;
+        }
+
+        // Single #id (optional pseudo) — no classes / descendants.
+        if (! /^(?:#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)(?:\s*,\s*#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)*$/.test(selectors)) {
+            continue;
+        }
+
+        if (! hasUnescapedIdSelector(selectors)) {
             continue;
         }
 
@@ -624,7 +684,7 @@ export function buildPayload(editor, options = {}) {
     const composerCss = readComposerCssForPersist(editor);
     const styleManagerCss = extractGrapesComposerCss(composerCss);
     const componentAuthorCss = collectAuthorIdCssFromComponents(editor);
-    const css = mergeAuthorCssChunks([
+    let css = mergeAuthorCssChunks([
         styleManagerCss,
         componentAuthorCss,
         liveCssAuthorIds,
@@ -633,6 +693,22 @@ export function buildPayload(editor, options = {}) {
             ? extractGrapesComposerCss(composerCss)
             : '',
     ]);
+
+    // Hard safety: if author extract still ballooned (legacy live sheet / escaped \# false
+    // positives), keep bare Style Manager #id paints only so Save never 422s on max_css.
+    const maxCssBytes = Number(editor.__voodbuilderMaxCssBytes ?? 1_000_000);
+
+    if (css.length > maxCssBytes) {
+        css = mergeAuthorCssChunks([
+            extractBareIdAuthorCss(styleManagerCss),
+            extractBareIdAuthorCss(componentAuthorCss),
+            extractBareIdAuthorCss(liveCssAuthorIds),
+        ]);
+    }
+
+    if (css.length > maxCssBytes) {
+        css = '';
+    }
 
     const payload = {
         html,

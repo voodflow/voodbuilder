@@ -3,11 +3,13 @@
  */
 
 import {
-    CODE_BLOCK_CATEGORY,
     resolveBlockLabel,
     resolveBlockWireframe,
 } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
+
+/** Same category as other always-on foundation tiles (heading, button, …). */
+const CODE_BLOCK_SIDEBAR_CATEGORY = 'Basic';
 
 const CODE_PROP = 'voodbuilderCodeContent';
 const LANG_PROP = 'voodbuilderCodeLang';
@@ -319,7 +321,7 @@ export function configureEditorCodeBlock(editor, options = {}) {
     const render = (component) => renderCodeBlockComponent(component, renderOptions);
     render.options = renderOptions;
 
-    const { DomComponents, BlockManager } = editor;
+    const { DomComponents } = editor;
 
     editor.Commands.add('voodbuilder:edit-code', {
         run(ed) {
@@ -395,10 +397,8 @@ export function configureEditorCodeBlock(editor, options = {}) {
         },
     });
 
-    // BlockManager tile lives in Elements companion; Core keeps the component type.
-    if (BlockManager.get('voodbuilder-code-block')) {
-        BlockManager.remove('voodbuilder-code-block');
-    }
+    // Foundation Basic tile — always available in Community (same vp-code-block as vtuts).
+    registerCodeBlockTile(editor);
 
     editor.on('load', () => {
         migrateLegacyCustomCode(editor, render);
@@ -427,11 +427,11 @@ export function configureEditorCodeBlock(editor, options = {}) {
 }
 
 /**
- * Elements companion — Code BlockManager tile (component type registered by Core).
+ * Register / refresh the Code block BlockManager tile under Basic.
  *
  * @param {import('grapesjs').Editor} editor
  */
-export function registerCompanionCodeBlock(editor) {
+export function registerCodeBlockTile(editor) {
     const { BlockManager } = editor;
 
     if (! isEditorBlockAllowed(editor, 'voodbuilder-code-block')) {
@@ -442,17 +442,27 @@ export function registerCompanionCodeBlock(editor) {
         return;
     }
 
-    if (! BlockManager.get('voodbuilder-code-block')) {
-        BlockManager.add('voodbuilder-code-block', {
-            label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
-            category: CODE_BLOCK_CATEGORY,
-            media: resolveBlockWireframe('voodbuilder-code-block'),
-            content: {
-                type: 'voodbuilder-code-block',
-                [LANG_PROP]: 'php',
-                [CODE_PROP]: "<?php echo 'Hello';",
-            },
-        });
+    if (BlockManager.get('voodbuilder-code-block')) {
+        BlockManager.remove('voodbuilder-code-block');
     }
+
+    BlockManager.add('voodbuilder-code-block', {
+        label: resolveBlockLabel('voodbuilder-code-block', 'Code block'),
+        category: CODE_BLOCK_SIDEBAR_CATEGORY,
+        media: resolveBlockWireframe('voodbuilder-code-block'),
+        content: {
+            type: 'voodbuilder-code-block',
+            [LANG_PROP]: 'bash',
+            [CODE_PROP]: "composer require vendor/package\nphp artisan vendor:publish --tag=package",
+        },
+    });
+}
+
+/**
+ * @deprecated Prefer {@link registerCodeBlockTile}; Core registers the tile itself.
+ * @param {import('grapesjs').Editor} editor
+ */
+export function registerCompanionCodeBlock(editor) {
+    registerCodeBlockTile(editor);
 }
 

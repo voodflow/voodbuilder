@@ -205,7 +205,7 @@ export const SECTION_BLOCK_LABELS = {
     'site_footer_centered': 'Footer · centered',
     'site_footer_social': 'Footer · social bar',
     'event_landing_footer': 'Footer · event',
-    'voodbuilder-code-block': 'Code · editable block',
+    'voodbuilder-code-block': 'Code block',
     'voodbuilder-form': 'Forms · contact',
     'newsletter-form': 'Forms · newsletter',
     'voodbuilder-tabs-pills': 'Tabs · pills',
