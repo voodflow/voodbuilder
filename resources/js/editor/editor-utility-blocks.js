@@ -1156,6 +1156,13 @@ export function configureUtilityBlocksCanvas(editor) {
             return;
         }
 
+        // Skip when the glyph is already painted — re-applying on every select
+        // (including selection thrash during multi-icon HTML insert) is expensive
+        // and can nest into replaceIconGlyph + bindings catalog refetch.
+        if (host.__vbIconPainted && host.__vbIconSynced) {
+            return;
+        }
+
         host.__vbIconPainted = false;
         applyIconToComponent(host, editor, {
             name: host.getAttributes?.()?.['data-vb-icon'] || DEFAULT_TABLER_ICON,

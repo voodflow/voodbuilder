@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.145] - 2026-09-24
+
+### Fixed
+
+- Library import of sections with multiple Tabler icons (e.g. Features · toolkit pills) no longer freezes the editor: icon sync no longer steals canvas selection during HTML append
+- Bindings catalog fetch backs off on HTTP 429 so selection churn cannot starve the editor throttle
+
 ## [0.1.144] - 2026-09-24
 
 ### Added

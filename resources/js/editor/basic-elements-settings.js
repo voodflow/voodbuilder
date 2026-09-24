@@ -652,6 +652,20 @@ function keepIconSelection(editor, component) {
         return;
     }
 
+    // Only re-assert selection when the author already had this icon (or a glyph
+    // child) selected. Calling editor.select() during Library import / HTML
+    // append for every icon steals focus, re-enters applyIconToComponent via
+    // component:selected, and can freeze the editor (selection + bindings storm).
+    const selected = editor.getSelected?.();
+
+    if (! selected) {
+        return;
+    }
+
+    if (selected !== component && findIconHost(selected) !== component) {
+        return;
+    }
+
     const selectHost = () => {
         if (editor.getSelected?.() === component) {
             return;

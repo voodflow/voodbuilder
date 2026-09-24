@@ -3073,18 +3073,28 @@ function isBindingPanelComponentAlive(component) {
  * integration, and refetching is one small request.
  */
 const BINDINGS_CATALOG_TTL_MS = 30000;
+const BINDINGS_CATALOG_429_BACKOFF_MS = 60_000;
 
 let bindingsCatalogFetchedAt = 0;
+let bindingsCatalogCooldownUntil = 0;
 
 async function loadBindingsCatalog(bindingsUrl, force = false) {
     if (! bindingsUrl) {
         return { groups: [], sources: [] };
     }
 
-    const isFresh = Date.now() - bindingsCatalogFetchedAt < BINDINGS_CATALOG_TTL_MS;
+    const now = Date.now();
+    const isFresh = now - bindingsCatalogFetchedAt < BINDINGS_CATALOG_TTL_MS;
+    const inCooldown = now < bindingsCatalogCooldownUntil;
 
-    if (bindingsCatalog && isFresh && ! force) {
+    if (! force && bindingsCatalog && (isFresh || inCooldown)) {
         return bindingsCatalog;
+    }
+
+    // After a hard failure (esp. 429) with an empty catalog, still cool down so
+    // adoptFreshCatalog / selection churn cannot hammer the editor throttle.
+    if (! force && inCooldown) {
+        return bindingsCatalog ?? { groups: [], sources: [], repeatSources: [] };
     }
 
     const response = await fetch(bindingsUrl, {
@@ -3093,6 +3103,13 @@ async function loadBindingsCatalog(bindingsUrl, force = false) {
     });
 
     if (! response.ok) {
+        bindingsCatalogFetchedAt = now;
+        bindingsCatalogCooldownUntil = now + (
+            response.status === 429
+                ? BINDINGS_CATALOG_429_BACKOFF_MS
+                : BINDINGS_CATALOG_TTL_MS
+        );
+
         // Keep serving the previous catalog rather than blanking every picker on one
         // failed request.
         if (bindingsCatalog) {
@@ -3104,6 +3121,7 @@ async function loadBindingsCatalog(bindingsUrl, force = false) {
 
     bindingsCatalog = await response.json();
     bindingsCatalogFetchedAt = Date.now();
+    bindingsCatalogCooldownUntil = 0;
 
     return bindingsCatalog;
 }
