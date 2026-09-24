@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
     "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
-    "version": "0.1.153",
+    "version": "0.1.154",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -24,7 +24,7 @@
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
         "spatie/laravel-sluggable": "^3.8",
-        "voodflow/vmedia": "^0.2",
+        "voodflow/vmedia": "^0.2|^0.3",
         "voodflow/vcookiebar": "^0.2"
     },
     "autoload": {

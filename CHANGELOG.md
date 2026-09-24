@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.154] - 2026-09-24
+
+### Changed
+
+- Allow VoodMedia 0.3 for the configurable image ladder.
+
 ## [0.1.153] - 2026-09-24
 
 ### Fixed
