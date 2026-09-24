@@ -142,6 +142,126 @@ function styleWriteTarget(editor) {
     return resolveStyleTarget(editor) ?? editor?.getSelected?.() ?? null;
 }
 
+/** Map Style panel bg-* utilities → CSS background-* values. */
+const BG_LAYOUT_CSS_VALUES = {
+    'bg-size': {
+        'bg-auto': 'auto',
+        'bg-cover': 'cover',
+        'bg-contain': 'contain',
+    },
+    'bg-position': {
+        'bg-center': 'center',
+        'bg-top': 'top',
+        'bg-bottom': 'bottom',
+        'bg-left': 'left',
+        'bg-right': 'right',
+        'bg-left-top': 'left top',
+        'bg-left-bottom': 'left bottom',
+        'bg-right-top': 'right top',
+        'bg-right-bottom': 'right bottom',
+    },
+    'bg-repeat': {
+        'bg-no-repeat': 'no-repeat',
+        'bg-repeat': 'repeat',
+        'bg-repeat-x': 'repeat-x',
+        'bg-repeat-y': 'repeat-y',
+        'bg-repeat-round': 'round',
+        'bg-repeat-space': 'space',
+    },
+};
+
+const BG_LAYOUT_CSS_PROP = {
+    'bg-size': 'background-size',
+    'bg-position': 'background-position',
+    'bg-repeat': 'background-repeat',
+};
+
+/**
+ * Persist Size/Position/Repeat on the #id rule so page-surface (wrapper) keeps
+ * the photo when TW classes are not JIT-compiled for the chrome-shell wrapper.
+ *
+ * @param {object} editor
+ * @param {object} component
+ * @param {'bg-size'|'bg-position'|'bg-repeat'} groupId
+ * @param {string} utilityValue
+ */
+function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
+    const prop = BG_LAYOUT_CSS_PROP[groupId];
+
+    if (! editor || ! component || ! prop) {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const map = BG_LAYOUT_CSS_VALUES[groupId] ?? {};
+    const token = String(utilityValue ?? '').trim();
+    const cssValue = token === '' ? '' : String(map[token] ?? '').trim();
+    const id = String(target.getId?.() ?? '').trim();
+
+    if (cssValue === '') {
+        clearStyleProperty(editor, target, prop, { family: false });
+
+        return;
+    }
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(id, {
+                ...existing,
+                [prop]: cssValue,
+            });
+        } catch {
+            // CssComposer may be unavailable during boot.
+        }
+    }
+
+    if (target.get?.('type') !== 'wrapper') {
+        target.addStyle?.({ [prop]: cssValue }, { inline: true, noEvent: true });
+    }
+}
+
+/**
+ * Resolve Size/Position/Repeat from TW classes, falling back to #id/inline CSS
+ * (page-surface paints layout without utility classes).
+ *
+ * @param {string[]} classes
+ * @param {object} group
+ * @param {object|null|undefined} component
+ * @param {object|null|undefined} editor
+ * @param {string} bp
+ * @returns {string}
+ */
+function resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp) {
+    const fromClass = resolveGroupValueAtBreakpoint(classes, group.options, bp);
+
+    if (fromClass) {
+        return fromClass;
+    }
+
+    const prop = BG_LAYOUT_CSS_PROP[group.id];
+
+    if (! prop || ! component) {
+        return '';
+    }
+
+    const cssValue = readComponentCssProperty(editor, component, prop).toLowerCase();
+
+    if (cssValue === '') {
+        return '';
+    }
+
+    const map = BG_LAYOUT_CSS_VALUES[group.id] ?? {};
+
+    for (const [utility, value] of Object.entries(map)) {
+        if (String(value).toLowerCase() === cssValue) {
+            return utility;
+        }
+    }
+
+    return '';
+}
+
 /**
  * @param {Iterable<string>|string[]} classes
  * @param {Array<{value: string, label?: string}>} options
@@ -857,6 +977,10 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                 el.value = resolveGroupValueAtBreakpoint(classes, group.options, '');
                 el.classList?.toggle?.('is-inherited', false);
                 el.removeAttribute?.('title');
+            } else if (group.id === 'bg-size' || group.id === 'bg-position' || group.id === 'bg-repeat') {
+                el.value = resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp);
+                el.classList?.toggle?.('is-inherited', false);
+                el.removeAttribute?.('title');
             } else {
                 const exact = resolveGroupValueExact(classes, group.options, bp);
                 const cascaded = resolveGroupValueAtBreakpoint(classes, group.options, bp);
@@ -1311,6 +1435,18 @@ function applyGroup(editor, component, groupId, value) {
             component.view?.updateClasses?.();
         } catch {
             // View may be unavailable during bulk updates.
+        }
+
+        // Size / position / repeat: also write #id CSS and re-paint the photo.
+        // Page-surface wrapper classes are outside chrome-shell JIT; without this
+        // the image vanishes when Size changes.
+        if (groupId === 'bg-size' || groupId === 'bg-position' || groupId === 'bg-repeat') {
+            applyBackgroundLayoutCss(editor, component, groupId, value);
+            const layoutBgUrl = readBackgroundImageUrl(component, editor);
+
+            if (layoutBgUrl !== '') {
+                reapplyDecorationBackgroundPaint(editor, component, layoutBgUrl);
+            }
         }
 
         // Color / gradient changed: keep photo and recompose layers (gradient + fade + url).
@@ -2464,17 +2600,26 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             });
 
             const classes = componentClassList(component);
+            const pageSurface = isPageSurfaceComponent(component, editor);
 
-            if (! resolveGroupValue(classes, BG_SIZE_OPTIONS)) {
-                replaceClassGroup(component, GROUP_SETS['bg-size'], 'bg-cover');
-            }
+            // Page surface: prefer #id CSS layout (wrapper is outside chrome-shell JIT).
+            // Other nodes keep TW utility classes as usual.
+            if (pageSurface) {
+                applyBackgroundLayoutCss(editor, component, 'bg-size', 'bg-cover');
+                applyBackgroundLayoutCss(editor, component, 'bg-position', 'bg-center');
+                applyBackgroundLayoutCss(editor, component, 'bg-repeat', 'bg-no-repeat');
+            } else {
+                if (! resolveGroupValue(classes, BG_SIZE_OPTIONS)) {
+                    replaceClassGroup(component, GROUP_SETS['bg-size'], 'bg-cover');
+                }
 
-            if (! resolveGroupValue(classes, BG_POSITION_OPTIONS)) {
-                replaceClassGroup(component, GROUP_SETS['bg-position'], 'bg-center');
-            }
+                if (! resolveGroupValue(classes, BG_POSITION_OPTIONS)) {
+                    replaceClassGroup(component, GROUP_SETS['bg-position'], 'bg-center');
+                }
 
-            if (! resolveGroupValue(classes, BG_REPEAT_OPTIONS)) {
-                replaceClassGroup(component, GROUP_SETS['bg-repeat'], 'bg-no-repeat');
+                if (! resolveGroupValue(classes, BG_REPEAT_OPTIONS)) {
+                    replaceClassGroup(component, GROUP_SETS['bg-repeat'], 'bg-no-repeat');
+                }
             }
 
             reapplyDecorationBackgroundPaint(editor, component, src);
