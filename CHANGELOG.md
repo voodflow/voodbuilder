@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.149] - 2026-09-24
+
+### Added
+
+- Canvas context **Insert** submenu lists all Basic and Media foundation tiles (including Rich Text and Code block), split into Basic / Media flyouts
+
+### Fixed
+
+- Code block **Copy** no longer fails on HTTP (execCommand fallback) and is not morphed into a CTA link
+
 ## [0.1.148] - 2026-09-24
 
 ### Added

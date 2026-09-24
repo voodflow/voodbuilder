@@ -7,6 +7,7 @@ import {
     resolveBlockWireframe,
 } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
+import { copyTextToClipboard } from './clipboard.js';
 
 /** Same category as other always-on foundation tiles (heading, button, …). */
 const CODE_BLOCK_SIDEBAR_CATEGORY = 'Basic';
@@ -76,7 +77,7 @@ function buildCodeBlockHtml(language, code) {
 
     return `<div class="vp-code-block__header">
         <span class="vp-code-block__lang">${label}</span>
-        <button type="button" class="vp-code-block__copy" data-code-copy${isEmpty ? ' disabled' : ''}>Copy</button>
+        <button type="button" class="vp-code-block__copy" data-code-copy data-voodbuilder-skip-cta="true"${isEmpty ? ' disabled' : ''}>Copy</button>
     </div>
     <div class="vp-code-block__body${isEmpty ? ' vp-code-block__body--empty' : ''}">
         <pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-${lang}">${escaped}</code></pre>
@@ -142,19 +143,13 @@ function wireCodeCopyButtons(documentRoot) {
                 return;
             }
 
-            try {
-                await navigator.clipboard.writeText(code);
-                const original = button.textContent;
-                button.textContent = 'Copied';
-                window.setTimeout(() => {
-                    button.textContent = original;
-                }, 1600);
-            } catch {
-                button.textContent = 'Failed';
-                window.setTimeout(() => {
-                    button.textContent = 'Copy';
-                }, 1600);
-            }
+            const original = button.textContent;
+            const ok = await copyTextToClipboard(code);
+
+            button.textContent = ok ? 'Copied' : 'Failed';
+            window.setTimeout(() => {
+                button.textContent = original || 'Copy';
+            }, 1600);
         });
     });
 }
@@ -177,6 +172,48 @@ function renderCodeBlockComponent(component, options = {}) {
     component._voodbuilderCodeRenderToken = token;
 
     component.components(buildCodeBlockHtml(language, code));
+
+    // Keep chrome (header/copy/pre) out of layers and CTA morph.
+    const lockShell = (node) => {
+        if (! node?.set) {
+            return;
+        }
+
+        node.set({
+            selectable: false,
+            hoverable: false,
+            highlightable: false,
+            layerable: false,
+            droppable: false,
+            draggable: false,
+            editable: false,
+        }, { silent: true });
+
+        const attrs = node.getAttributes?.() ?? {};
+        const isCopy = Object.prototype.hasOwnProperty.call(attrs, 'data-code-copy')
+            || String(attrs.class ?? '').includes('vp-code-block__copy');
+
+        if (isCopy) {
+            const next = { ...attrs };
+            delete next['data-voodbuilder-cta'];
+            delete next['data-voodbuilder-cta-label'];
+            delete next['data-vb-link-type'];
+            delete next.href;
+            delete next.role;
+            next['data-code-copy'] = '';
+            next['data-voodbuilder-skip-cta'] = 'true';
+            next.type = 'button';
+            node.setAttributes(next, { silent: true });
+
+            if (String(node.get('tagName') ?? '').toLowerCase() !== 'button') {
+                node.set({ tagName: 'button' }, { silent: true });
+            }
+        }
+
+        node.components?.()?.forEach?.((child) => lockShell(child));
+    };
+
+    component.components?.()?.forEach?.((child) => lockShell(child));
 
     const viewEl = component.getView()?.el;
 

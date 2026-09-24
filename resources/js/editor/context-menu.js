@@ -1,6 +1,6 @@
 /**
  * Reusable contextual menu for the VoodBuilder editor shell.
- * Supports flat items, separators, and one-level flyout submenus.
+ * Supports flat items, separators, and nested flyout submenus.
  */
 
 let activeMenu = null;
@@ -161,23 +161,35 @@ function createSubmenu(item, context) {
             continue;
         }
 
+        if (Array.isArray(child.children) && child.children.length > 0) {
+            submenu.appendChild(createSubmenu(child, context));
+            continue;
+        }
+
         submenu.appendChild(createMenuItemButton(child, context));
     }
 
     const open = () => {
         const root = wrap.closest('[data-voodbuilder-context-menu]');
 
+        // Close sibling/cousin flyouts, but keep ancestor submenus open for nesting.
         root?.querySelectorAll?.('.voodbuilder-editor-context-menu--submenu').forEach((node) => {
-            if (node !== submenu) {
-                node.hidden = true;
-                node.previousElementSibling?.setAttribute?.('aria-expanded', 'false');
+            if (node === submenu || node.contains(submenu)) {
+                return;
             }
+
+            node.hidden = true;
+            node.previousElementSibling?.setAttribute?.('aria-expanded', 'false');
         });
         positionSubmenu(wrap, submenu);
         trigger.setAttribute('aria-expanded', 'true');
     };
 
     const close = () => {
+        submenu.querySelectorAll('.voodbuilder-editor-context-menu--submenu').forEach((node) => {
+            node.hidden = true;
+            node.previousElementSibling?.setAttribute?.('aria-expanded', 'false');
+        });
         submenu.hidden = true;
         trigger.setAttribute('aria-expanded', 'false');
     };

@@ -935,7 +935,10 @@
         });
 
         document.querySelectorAll('[data-code-copy]').forEach((button) => {
-            button.addEventListener('click', async () => {
+            button.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
                 const block = button.closest('[data-code-block]');
 
                 if (! block) {
@@ -948,19 +951,39 @@
                     return;
                 }
 
+                const original = button.textContent;
+                let ok = false;
+
                 try {
-                    await navigator.clipboard.writeText(code);
-                    const original = button.textContent;
-                    button.textContent = 'Copied';
-                    window.setTimeout(() => {
-                        button.textContent = original;
-                    }, 1600);
+                    if (navigator?.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(code);
+                        ok = true;
+                    }
                 } catch {
-                    button.textContent = 'Failed';
-                    window.setTimeout(() => {
-                        button.textContent = 'Copy';
-                    }, 1600);
+                    // Fall through — common on http://non-localhost.
                 }
+
+                if (! ok) {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = code;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+
+                    try {
+                        ok = document.execCommand('copy');
+                    } catch {
+                        ok = false;
+                    }
+
+                    document.body.removeChild(textarea);
+                }
+
+                button.textContent = ok ? 'Copied' : 'Failed';
+                window.setTimeout(() => {
+                    button.textContent = original || 'Copy';
+                }, 1600);
             });
         });
 

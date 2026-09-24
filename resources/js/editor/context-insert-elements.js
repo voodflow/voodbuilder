@@ -1,6 +1,6 @@
 /**
  * Curated atomic inserts for the canvas context menu.
- * Keep this short — full section library stays in the left Blocks panel.
+ * Mirrors foundation Basic + Media BlockManager tiles (not full section library).
  */
 
 import { isCtaLikeComponent } from './dropzone-types.js';
@@ -9,36 +9,45 @@ import {
     isChromeEditorProtectedComponent,
 } from './chrome-editor-guards.js';
 
-/** @type {Array<{id: string, labelKey: string, fallback: string, content?: object|string}>} */
-export const CONTEXT_INSERT_ELEMENT_IDS = [
-    { id: 'voodbuilder-button', labelKey: 'contextInsertButton', fallback: 'Button' },
-    { id: 'voodbuilder-text-link', labelKey: 'contextInsertTextLink', fallback: 'Text link' },
-    { id: 'voodbuilder-icon', labelKey: 'contextInsertIcon', fallback: 'Icon' },
-    { id: 'voodbuilder-divider', labelKey: 'contextInsertDivider', fallback: 'Divider' },
+/**
+ * @typedef {{id: string, labelKey: string, fallback: string, content?: object|string}} ContextInsertElement
+ * @typedef {{id: string, labelKey: string, fallback: string, elements: ContextInsertElement[]}} ContextInsertGroup
+ */
+
+/** @type {ContextInsertGroup[]} */
+export const CONTEXT_INSERT_GROUPS = [
     {
-        id: 'text',
-        labelKey: 'contextInsertText',
-        fallback: 'Text',
-        content: {
-            type: 'text',
-            tagName: 'p',
-            classes: ['text-vp-text-2'],
-            content: 'Text',
-        },
+        id: 'basic',
+        labelKey: 'contextInsertBasic',
+        fallback: 'Basic',
+        elements: [
+            { id: 'voodbuilder-heading', labelKey: 'contextInsertHeading', fallback: 'Heading' },
+            { id: 'voodbuilder-text', labelKey: 'contextInsertBasicText', fallback: 'Basic Text' },
+            { id: 'voodbuilder-rich-text', labelKey: 'contextInsertRichText', fallback: 'Rich Text' },
+            { id: 'voodbuilder-text-link', labelKey: 'contextInsertTextLink', fallback: 'Text link' },
+            { id: 'voodbuilder-button', labelKey: 'contextInsertButton', fallback: 'Button' },
+            { id: 'voodbuilder-icon', labelKey: 'contextInsertIcon', fallback: 'Icon' },
+            { id: 'voodbuilder-divider', labelKey: 'contextInsertDivider', fallback: 'Divider' },
+            { id: 'voodbuilder-code-block', labelKey: 'contextInsertCodeBlock', fallback: 'Code block' },
+        ],
     },
-    { id: 'image', labelKey: 'contextInsertImage', fallback: 'Image' },
     {
-        id: 'link',
-        labelKey: 'contextInsertLink',
-        fallback: 'Link',
-        content: {
-            type: 'link',
-            classes: ['text-vp-brand-1', 'underline', 'underline-offset-2'],
-            attributes: { href: '#' },
-            content: 'Link',
-        },
+        id: 'media',
+        labelKey: 'contextInsertMedia',
+        fallback: 'Media',
+        elements: [
+            { id: 'image', labelKey: 'contextInsertImage', fallback: 'Image' },
+            { id: 'video', labelKey: 'contextInsertVideo', fallback: 'Video' },
+            { id: 'voodbuilder-image-gallery', labelKey: 'contextInsertImageGallery', fallback: 'Image gallery' },
+            { id: 'voodbuilder-audio', labelKey: 'contextInsertAudio', fallback: 'Audio' },
+            { id: 'voodbuilder-carousel', labelKey: 'contextInsertCarousel', fallback: 'Carousel' },
+            { id: 'voodbuilder-slider', labelKey: 'contextInsertSlider', fallback: 'Slider' },
+        ],
     },
 ];
+
+/** Flat list of every insertable element (Basic + Media). */
+export const CONTEXT_INSERT_ELEMENT_IDS = CONTEXT_INSERT_GROUPS.flatMap((group) => group.elements);
 
 function componentTag(component) {
     return String(component?.get?.('tagName') ?? '').toLowerCase();
@@ -70,33 +79,80 @@ function isDroppableHost(component) {
 
 /**
  * @param {import('grapesjs').Editor} editor
+ * @param {ContextInsertElement} entry
+ * @param {object} labels
+ * @returns {{id: string, label: string, content: object|string}|null}
+ */
+function resolveInsertEntry(editor, entry, labels = {}) {
+    const manager = editor?.BlockManager;
+    const block = manager?.get?.(entry.id) ?? null;
+    const content = block
+        ? (typeof block.get === 'function' ? block.get('content') : block.content)
+        : entry.content;
+
+    if (content == null || content === '') {
+        return null;
+    }
+
+    return {
+        id: entry.id,
+        label: labels[entry.labelKey]
+            ?? (typeof block?.get === 'function' ? block.get('label') : null)
+            ?? entry.fallback,
+        content,
+    };
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
  * @param {object} labels
  * @returns {Array<{id: string, label: string, content: object|string}>}
  */
 export function resolveContextInsertElements(editor, labels = {}) {
-    const manager = editor?.BlockManager;
     const items = [];
 
     for (const entry of CONTEXT_INSERT_ELEMENT_IDS) {
-        const block = manager?.get?.(entry.id) ?? null;
-        const content = block
-            ? (typeof block.get === 'function' ? block.get('content') : block.content)
-            : entry.content;
+        const resolved = resolveInsertEntry(editor, entry, labels);
 
-        if (content == null || content === '') {
-            continue;
+        if (resolved) {
+            items.push(resolved);
         }
-
-        items.push({
-            id: entry.id,
-            label: labels[entry.labelKey]
-                ?? (typeof block?.get === 'function' ? block.get('label') : null)
-                ?? entry.fallback,
-            content,
-        });
     }
 
     return items;
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {object} labels
+ * @returns {Array<{id: string, label: string, elements: Array<{id: string, label: string, content: object|string}>}>}
+ */
+export function resolveContextInsertGroups(editor, labels = {}) {
+    const groups = [];
+
+    for (const group of CONTEXT_INSERT_GROUPS) {
+        const elements = [];
+
+        for (const entry of group.elements) {
+            const resolved = resolveInsertEntry(editor, entry, labels);
+
+            if (resolved) {
+                elements.push(resolved);
+            }
+        }
+
+        if (elements.length === 0) {
+            continue;
+        }
+
+        groups.push({
+            id: group.id,
+            label: labels[group.labelKey] ?? group.fallback,
+            elements,
+        });
+    }
+
+    return groups;
 }
 
 /**
@@ -144,21 +200,25 @@ export function insertContentNearComponent(editor, target, content) {
  * @returns {{id: string, label: string, children: Array<object>}|null}
  */
 export function buildContextInsertSubmenu(editor, component, labels = {}) {
-    const elements = resolveContextInsertElements(editor, labels);
+    const groups = resolveContextInsertGroups(editor, labels);
 
-    if (elements.length === 0) {
+    if (groups.length === 0) {
         return null;
     }
 
     return {
         id: 'insert-element',
         label: labels.contextInsert ?? 'Insert',
-        children: elements.map((entry) => ({
-            id: `insert-${entry.id}`,
-            label: entry.label,
-            onSelect: () => {
-                insertContentNearComponent(editor, component, entry.content);
-            },
+        children: groups.map((group) => ({
+            id: `insert-group-${group.id}`,
+            label: group.label,
+            children: group.elements.map((entry) => ({
+                id: `insert-${entry.id}`,
+                label: entry.label,
+                onSelect: () => {
+                    insertContentNearComponent(editor, component, entry.content);
+                },
+            })),
         })),
     };
 }

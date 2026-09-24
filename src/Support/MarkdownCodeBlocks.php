@@ -188,7 +188,7 @@ final class MarkdownCodeBlocks
 <div class="vp-code-block" data-code-block data-line-numbers>
     <div class="vp-code-block__header">
         <span class="vp-code-block__lang">{$label}</span>
-        <button type="button" class="vp-code-block__copy" data-code-copy>Copy</button>
+        <button type="button" class="vp-code-block__copy" data-code-copy data-voodbuilder-skip-cta="true">Copy</button>
     </div>
     <div class="vp-code-block__body">
         {$content}

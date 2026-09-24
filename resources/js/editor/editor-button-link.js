@@ -95,7 +95,15 @@ function shouldPromoteNativeButtonToCta(component) {
         return true;
     }
 
-    if (attrs['data-voodbuilder-skip-cta'] === 'true') {
+    if (
+        attrs['data-voodbuilder-skip-cta'] === 'true'
+        || attrs['data-code-copy'] != null
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-code-copy')
+    ) {
+        return false;
+    }
+
+    if (component?.closest?.('[data-code-block]') || component?.closest?.('.vp-code-block')) {
         return false;
     }
 
@@ -701,6 +709,16 @@ function isExcludedLinkableButton(component) {
         return true;
     }
 
+    if (
+        attrs['data-code-copy'] != null
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-code-copy')
+        || classes.includes('vp-code-block__copy')
+        || component.closest?.('[data-code-block]')
+        || component.closest?.('.vp-code-block')
+    ) {
+        return true;
+    }
+
     if (attrs['data-voodbuilder-bind']) {
         return true;
     }
@@ -1255,6 +1273,8 @@ function promoteButtonLikeAnchor(component) {
 
     if (
         attrs['data-voodbuilder-skip-cta'] === 'true'
+        || attrs['data-code-copy'] != null
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-code-copy')
         || attrs['data-vb-share-item'] === 'true'
         || attrs['data-vx-gallery-index'] != null
         || attrs['data-vx-gallery-close'] != null
@@ -1262,6 +1282,8 @@ function promoteButtonLikeAnchor(component) {
         || attrs['data-vx-gallery-next'] != null
         || component.closest?.('[data-vx-gallery]')
         || component.closest?.('[data-voodbuilder-social-share]')
+        || component.closest?.('[data-code-block]')
+        || component.closest?.('.vp-code-block')
     ) {
         return;
     }
