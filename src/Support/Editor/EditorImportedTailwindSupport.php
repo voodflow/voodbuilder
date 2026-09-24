@@ -351,6 +351,10 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
+            if (! str_starts_with($property, '--') && preg_match('/[A-Z]/', $property) === 1) {
+                $property = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $property) ?? $property);
+            }
+
             $chunks[] = "{$property}: {$value}";
         }
 

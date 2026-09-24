@@ -72,7 +72,9 @@ final class EditorRenderer
             // Full sheet lives in the linked artifact (may still have editor #id
             // wallpaper rules). Inject a remapped body overlay so the photo paints
             // on public pages where the Grapes wrapper id does not exist.
-            $wallpaper = PageSurfaceCssPublish::publicWallpaperOverlay($artifactCss, $html);
+            $wallpaper = EditorCssSanitizer::sanitize(
+                PageSurfaceCssPublish::publicWallpaperOverlay($artifactCss, $html),
+            );
             $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $wallpaper])));
 
             return $combined !== '' ? $combined : null;
@@ -88,6 +90,7 @@ final class EditorRenderer
         // ThemePalette / admin colors (e.g. header blue) win on the frontend.
         $pageCss = ThemePalette::stripEmbeddedPaletteOverrides((string) ($pageCss ?? ''));
         $pageCss = PageSurfaceCssPublish::remapForPublic((string) ($pageCss ?? ''), $html);
+        $pageCss = EditorCssSanitizer::sanitize($pageCss);
 
         $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
 

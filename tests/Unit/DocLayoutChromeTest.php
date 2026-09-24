@@ -27,7 +27,7 @@ class DocLayoutChromeTest extends TestCase
         $this->assertStringContainsString('vp:ml-[80px]', $contents);
         $this->assertStringContainsString('voodbuilder-doc-sidebar-scroll', $contents);
         $this->assertStringContainsString('max-w-[var(--width-vp-content)]', $contents);
-        $this->assertStringContainsString("data-voodbuilder-reading-column=\"content\"", $contents);
+        $this->assertStringContainsString('data-voodbuilder-reading-column="content"', $contents);
         $this->assertStringContainsString('w-[var(--spacing-vp-aside)]', $contents);
         $this->assertStringNotContainsString('justify-center', $contents);
         $this->assertStringNotContainsString('style="', $contents);
@@ -180,7 +180,8 @@ class DocLayoutChromeTest extends TestCase
             'min-h-[calc(100vh-4rem)] bg-vp-bg',
             $landing,
         );
-        $this->assertStringContainsString('@apply min-h-0 bg-vp-bg', $siteTheme);
+        $this->assertStringContainsString('@apply min-h-0', $siteTheme);
+        $this->assertStringNotContainsString('@apply min-h-0 bg-vp-bg', $siteTheme);
         $this->assertStringContainsString(
             'body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme=\'site\'] .voodbuilder-site-shell',
             $siteTheme,

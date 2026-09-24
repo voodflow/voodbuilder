@@ -24,6 +24,8 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertStringContainsString('background-attachment: fixed', $remapped);
         $this->assertStringNotContainsString('#iabc123', $remapped);
         $this->assertStringContainsString('.keep { color: red; }', $remapped);
+        $this->assertStringContainsString('background-color: transparent !important', $remapped);
+        $this->assertStringContainsString('.voodbuilder-site-shell', $remapped);
     }
 
     public function test_remap_for_public_keeps_ids_present_in_html(): void
@@ -66,5 +68,17 @@ CSS;
         $this->assertStringContainsString('background-position: top', $overlay);
         $this->assertStringNotContainsString('url(/h.jpg)', $overlay);
         $this->assertStringNotContainsString('.keep', $overlay);
+        $this->assertStringContainsString('background-color: transparent !important', $overlay);
+        $this->assertStringContainsString('.voodbuilder-site-shell', $overlay);
+    }
+
+    public function test_public_wallpaper_overlay_transparent_shells_for_legacy_body_rules(): void
+    {
+        $css = 'html, body { background-image: url(/legacy.jpg); background-size: cover; }';
+
+        $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');
+
+        $this->assertStringContainsString('background-color: transparent !important', $overlay);
+        $this->assertStringContainsString('.voodbuilder-events-shell', $overlay);
     }
 }

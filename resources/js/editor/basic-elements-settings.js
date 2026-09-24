@@ -433,15 +433,25 @@ function applyIconHostBoxSize(component, sizeClass) {
 
     style.width = `${px}px`;
     style.height = `${px}px`;
-    style.maxWidth = `${px}px`;
-    style.maxHeight = `${px}px`;
-    style.minWidth = `${px}px`;
-    style.minHeight = `${px}px`;
-    style.flexShrink = '0';
+    style['max-width'] = `${px}px`;
+    style['max-height'] = `${px}px`;
+    style['min-width'] = `${px}px`;
+    style['min-height'] = `${px}px`;
+    style['flex-shrink'] = '0';
     style.display = 'inline-flex';
-    style.alignItems = 'center';
-    style.justifyContent = 'center';
-    style.lineHeight = '0';
+    style['align-items'] = 'center';
+    style['justify-content'] = 'center';
+    style['line-height'] = '0';
+
+    // Drop legacy camelCase keys Grapes may have baked into style="" / #id CSS.
+    delete style.maxWidth;
+    delete style.maxHeight;
+    delete style.minWidth;
+    delete style.minHeight;
+    delete style.flexShrink;
+    delete style.alignItems;
+    delete style.justifyContent;
+    delete style.lineHeight;
 
     component.setStyle(style);
 }

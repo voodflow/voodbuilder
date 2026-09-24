@@ -104,9 +104,11 @@ html[data-voodbuilder-sub-theme='site'] header[role='banner'] [role='menu'] butt
     background-color: var(--color-vp-gray-soft);
 }
 
-/* Content-driven height (matches editor). Opt-in viewport fill: body.voodbuilder-sticky-footer */
+/* Content-driven height (matches editor). Opt-in viewport fill: body.voodbuilder-sticky-footer.
+ * No bg-vp-bg here — body already paints the page surface; an opaque shell hid
+ * page wallpaper (visible only behind the semi-transparent nav). */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {
-    @apply min-h-0 bg-vp-bg;
+    @apply min-h-0;
 }
 
 body.voodbuilder-sticky-footer html[data-voodbuilder-sub-theme='site'] .voodbuilder-site-shell {

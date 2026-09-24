@@ -55,7 +55,32 @@ final class PageSurfaceCssPublish
             $remapped,
         ) ?? $remapped;
 
-        return self::ensureWallpaperLayout($remapped);
+        return self::ensureWallpaperLayout($remapped).self::transparentShellOverlay($remapped);
+    }
+
+    /**
+     * When a page wallpaper is present, keep chrome content shells transparent so
+     * the body image shows through (parity with the editor canvas).
+     */
+    private static function transparentShellOverlay(string $css): string
+    {
+        if (! self::cssHasWallpaper($css)) {
+            return '';
+        }
+
+        return "\n"
+            ."body.voodbuilder-page-surface .voodbuilder-site-shell,\n"
+            ."body.voodbuilder-page-surface .voodbuilder-site-content,\n"
+            ."body.voodbuilder-page-surface .voodbuilder-home-shell,\n"
+            ."body.voodbuilder-page-surface .voodbuilder-landing-shell,\n"
+            ."body.voodbuilder-page-surface .voodbuilder-events-shell {\n"
+            ."  background-color: transparent !important;\n"
+            ."}\n";
+    }
+
+    private static function cssHasWallpaper(string $css): bool
+    {
+        return (bool) preg_match('/background-image\s*:[^;]*url\s*\(/i', $css);
     }
 
     /**
@@ -99,7 +124,18 @@ final class PageSurfaceCssPublish
             }
         }
 
-        return trim(implode("\n", array_unique($blocks)));
+        $overlay = trim(implode("\n", array_unique($blocks)));
+
+        if ($overlay === '') {
+            // Legacy sheets already remapped to body — still need transparent shells.
+            if (self::cssHasWallpaper($source)) {
+                return trim(self::transparentShellOverlay($source));
+            }
+
+            return '';
+        }
+
+        return trim($overlay.self::transparentShellOverlay($overlay));
     }
 
     public static function bodyTarget(): string

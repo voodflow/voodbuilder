@@ -587,7 +587,8 @@ header[role='banner'] a[data-voodbuilder-brand-logo-full='1'] img.vb-brand-logo,
  * the fold on short pages. Opt-in sticky footer: body.voodbuilder-sticky-footer.
  */
 html[data-voodbuilder-sub-theme='site'] .voodbuilder-events-shell:has(.VPRichPage--landing) {
-    @apply bg-vp-bg;
+    /* Transparent so body page wallpaper shows through (parity with editor canvas). */
+    background-color: transparent;
 }
 
 body.voodbuilder-sticky-footer > main {

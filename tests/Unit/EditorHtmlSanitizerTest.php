@@ -146,6 +146,33 @@ class EditorHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('>CTA</button>', $cleaned);
     }
 
+    public function test_strips_hidden_layer_elements_from_published_html(): void
+    {
+        $html = '<section id="keep"><h2>Visible</h2></section>'
+            .'<section id="pricing" data-vb-layer-hidden="1"><div class="pricing">Hidden pricing</div></section>';
+
+        $cleaned = EditorHtmlSanitizer::stripEditorOnlyElements($html);
+
+        $this->assertStringContainsString('id="keep"', $cleaned);
+        $this->assertStringContainsString('>Visible</h2>', $cleaned);
+        $this->assertStringNotContainsString('data-vb-layer-hidden', $cleaned);
+        $this->assertStringNotContainsString('Hidden pricing', $cleaned);
+        $this->assertStringNotContainsString('id="pricing"', $cleaned);
+    }
+
+    public function test_normalizes_inline_camel_case_styles(): void
+    {
+        $html = '<span style="maxWidth:40px; flexShrink:0; alignItems:center">icon</span>';
+
+        $sanitized = EditorHtmlSanitizer::sanitize($html);
+
+        $this->assertStringContainsString('max-width:40px', $sanitized);
+        $this->assertStringContainsString('flex-shrink:0', $sanitized);
+        $this->assertStringContainsString('align-items:center', $sanitized);
+        $this->assertStringNotContainsString('maxWidth', $sanitized);
+        $this->assertStringNotContainsString('flexShrink', $sanitized);
+    }
+
     public function test_repairs_corrupted_animated_counters_and_stats_layout(): void
     {
         $html = '<section data-voodbuilder-animated-stats="" data-vb-item-count="5" class="vb-animated-stats">'

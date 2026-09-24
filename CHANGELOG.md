@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.165] - 2026-09-25
+
+### Fixed
+
+- Page wallpaper shows full-bleed under content (parity with editor): opaque `.voodbuilder-site-shell` / events shells no longer cover `body` background; publish injects transparent shell overlay when a wallpaper `url()` is present
+- Published CSS weight: strip Tailwind `@layer properties` / duplicate `@property --tw-*` from pasted compiles; kebab-case camelCase icon/style props; drop Layers eye-hidden (`data-vb-layer-hidden`) nodes from public HTML
+
 ## [0.1.164] - 2026-09-25
 
 ### Fixed

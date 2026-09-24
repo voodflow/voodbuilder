@@ -47,7 +47,9 @@ final class EditorHtmlSanitizer
         return FontStylesheets::sanitizeInlineFontFamilies(
             self::repairAnimatedBlocks(
                 self::normalizeSameOriginUrls(
-                    self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+                    self::normalizeInlineStyleCamelCase(
+                        self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+                    ),
                 ),
             ),
         );
@@ -935,7 +937,103 @@ final class EditorHtmlSanitizer
             $html = is_string($stripped) ? $stripped : $html;
         }
 
+        $html = self::stripHiddenLayerElements($html);
+
         return self::stripEditorOnlyAttributes($html);
+    }
+
+    /**
+     * Remove Layers eye-hidden nodes from published HTML (display:none still shipped
+     * full markup + CSS weight). Editor keeps them in the stored payload.
+     */
+    public static function stripHiddenLayerElements(string $html): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-vb-layer-hidden')) {
+            return $html;
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $loaded = $document->loadHTML(
+            '<?xml encoding="utf-8"?><div id="vb-hidden-strip-root">'.$html.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($loaded !== true) {
+            return $html;
+        }
+
+        $root = $document->getElementById('vb-hidden-strip-root');
+
+        if (! $root instanceof \DOMElement) {
+            return $html;
+        }
+
+        $xpath = new \DOMXPath($document);
+        $nodes = $xpath->query('.//*[@data-vb-layer-hidden="1"]', $root);
+
+        if (! $nodes instanceof \DOMNodeList || $nodes->length === 0) {
+            return $html;
+        }
+
+        // Remove deepest first so parent removals do not invalidate the list.
+        $toRemove = [];
+
+        foreach ($nodes as $node) {
+            if ($node instanceof \DOMElement) {
+                $toRemove[] = $node;
+            }
+        }
+
+        usort($toRemove, static fn (\DOMElement $a, \DOMElement $b): int => self::domDepth($b) <=> self::domDepth($a));
+
+        foreach ($toRemove as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        $clean = '';
+
+        foreach ($root->childNodes as $child) {
+            $clean .= $document->saveHTML($child);
+        }
+
+        return trim($clean);
+    }
+
+    /**
+     * Fix invalid camelCase CSS in style="" (icon host boxes, legacy Grapes).
+     */
+    public static function normalizeInlineStyleCamelCase(string $html): string
+    {
+        if ($html === '' || ! preg_match('/style\s*=\s*["\'][^"\']*[a-z][A-Z]/', $html)) {
+            return $html;
+        }
+
+        return preg_replace_callback(
+            '/\bstyle\s*=\s*(["\'])(.*?)\1/is',
+            static function (array $matches): string {
+                $quote = $matches[1];
+                $style = EditorCssSanitizer::kebabCaseCamelCssProperties($matches[2]);
+
+                return 'style='.$quote.$style.$quote;
+            },
+            $html,
+        ) ?? $html;
+    }
+
+    private static function domDepth(\DOMNode $node): int
+    {
+        $depth = 0;
+        $current = $node->parentNode;
+
+        while ($current !== null) {
+            $depth++;
+            $current = $current->parentNode;
+        }
+
+        return $depth;
     }
 
     /**

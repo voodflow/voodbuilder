@@ -32,4 +32,38 @@ class EditorCssSanitizerTest extends TestCase
             EditorCssSanitizer::sanitize($reset.$reset.$reset),
         );
     }
+
+    public function test_kebab_cases_camel_css_properties(): void
+    {
+        $css = '#icon {maxWidth:40px; flexShrink:0; alignItems:center}';
+
+        $this->assertSame(
+            '#icon {max-width:40px; flex-shrink:0; align-items:center}',
+            EditorCssSanitizer::kebabCaseCamelCssProperties($css),
+        );
+    }
+
+    public function test_strips_tailwind_property_layer_blocks(): void
+    {
+        $css = <<<'CSS'
+.keep { color: red; }
+@layer properties {
+  @supports ((-webkit-hyphens: none)) {
+    * { --tw-border-style: solid; }
+  }
+}
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+}
+.also { color: blue; }
+CSS;
+
+        $out = EditorCssSanitizer::stripRedundantTailwindPropertyLayers($css);
+
+        $this->assertStringContainsString('.keep { color: red; }', $out);
+        $this->assertStringContainsString('.also { color: blue; }', $out);
+        $this->assertStringNotContainsString('@layer properties', $out);
+        $this->assertStringNotContainsString('@property --tw-shadow', $out);
+    }
 }
