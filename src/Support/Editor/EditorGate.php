@@ -13,6 +13,7 @@ use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Pages\PagesModule;
 use Voodflow\Voodbuilder\Modules\Templates\TemplatesModule;
+use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutEditorPreview;
 use Voodflow\Voodbuilder\Support\ChromeLayoutManagedContent;
@@ -130,6 +131,8 @@ final class EditorGate
             $chromeLayoutCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
         }
 
+        $appTypography = AppTypography::resolve();
+
         // Keep save/auth fields before large HTML payloads so a truncated config
         // script still exposes the persistence endpoint when possible.
         return [
@@ -244,8 +247,16 @@ final class EditorGate
                 : [],
             'conditionsEnabled' => ConditionsModule::isEnabled(),
             'plugins' => config('voodbuilder.editor.plugins', []),
-            'canvasStyles' => EditorCanvas::styleUrls(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme),
+            'canvasStyles' => array_values(array_unique(array_filter([
+                ...EditorCanvas::styleUrls(),
+                ...$appTypography['stylesheetUrls'],
+            ]))),
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['canvasCss'],
+            'appTypography' => [
+                'bodyFont' => $appTypography['bodyFont'],
+                'headingFont' => $appTypography['headingFont'],
+                'stylesheetUrls' => $appTypography['stylesheetUrls'],
+            ],
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => ChromeLayoutContentWidth::isFull($contentWidth) || $subTheme === 'site',
@@ -529,6 +540,7 @@ final class EditorGate
             'classStyleFontSearch' => __('voodbuilder::pro.editor_ui.class_style_font_search'),
             'classStyleFieldSearch' => __('voodbuilder::pro.editor_ui.class_style_field_search'),
             'classStyleBackground' => __('voodbuilder::pro.editor_ui.class_style_background'),
+            'pageSurfaceLabel' => __('voodbuilder::pro.editor_ui.page_surface_label'),
             'classStyleBackgroundColor' => __('voodbuilder::pro.editor_ui.class_style_background_color'),
             'classStyleBackgroundColorOpacity' => __('voodbuilder::pro.editor_ui.class_style_background_color_opacity'),
             'classStyleBackgroundImage' => __('voodbuilder::pro.editor_ui.class_style_background_image'),
@@ -800,6 +812,16 @@ final class EditorGate
             'contextInsertAudio' => __('voodbuilder::pro.editor.context_insert_audio'),
             'contextInsertCarousel' => __('voodbuilder::pro.editor.context_insert_carousel'),
             'contextInsertSlider' => __('voodbuilder::pro.editor.context_insert_slider'),
+            'contextConvert' => __('voodbuilder::pro.editor.context_convert'),
+            'contextConvertH1' => __('voodbuilder::pro.editor.context_convert_h1'),
+            'contextConvertH2' => __('voodbuilder::pro.editor.context_convert_h2'),
+            'contextConvertH3' => __('voodbuilder::pro.editor.context_convert_h3'),
+            'contextConvertH4' => __('voodbuilder::pro.editor.context_convert_h4'),
+            'contextConvertH5' => __('voodbuilder::pro.editor.context_convert_h5'),
+            'contextConvertH6' => __('voodbuilder::pro.editor.context_convert_h6'),
+            'contextConvertParagraph' => __('voodbuilder::pro.editor.context_convert_paragraph'),
+            'contextConvertBasicText' => __('voodbuilder::pro.editor.context_convert_basic_text'),
+            'contextConvertRichText' => __('voodbuilder::pro.editor.context_convert_rich_text'),
             'componentsImport' => __('voodbuilder::pro.components.import'),
             'componentsExport' => __('voodbuilder::pro.components.export'),
             'componentsExportAll' => __('voodbuilder::pro.components.export_all'),
@@ -1053,6 +1075,7 @@ final class EditorGate
             'basicTextSettingsTitle' => __('voodbuilder::pro.editor.basic.basic_text_settings_title'),
             'basicTextHint' => __('voodbuilder::pro.editor.basic.basic_text_hint'),
             'richTextSettingsTitle' => __('voodbuilder::pro.editor.basic.rich_text_settings_title'),
+            'editRichText' => __('voodbuilder::pro.editor.basic.edit_rich_text'),
             'richTextModeVisual' => __('voodbuilder::pro.editor.basic.rich_text_mode_visual'),
             'richTextModeCode' => __('voodbuilder::pro.editor.basic.rich_text_mode_code'),
             'richTextBold' => __('voodbuilder::pro.editor.basic.rich_text_bold'),

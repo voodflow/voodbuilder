@@ -124,6 +124,7 @@ import {
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
+import { resolveStyleTarget } from './page-surface-styles.js';
 import {
     injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
@@ -1383,7 +1384,7 @@ function bindGroupField(editor, root, groupId, { applyOnChange = false } = {}) {
     const add = root.querySelector(`[data-voodbuilder-tw-group-add="${groupId}"]`);
 
     const apply = () => {
-        const selected = editor.getSelected();
+        const selected = resolveStyleTarget(editor);
 
         if (! selected) {
             return;
@@ -3752,7 +3753,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 stylesMount.appendChild(marker);
             }
 
-            syncSelectsFromComponent(stylesMount, editor.getSelected(), editor, syncOpts());
+            syncSelectsFromComponent(stylesMount, resolveStyleTarget(editor) ?? editor.getSelected(), editor, syncOpts());
             syncViewportStrip(stylesMount, editor, labels);
         } finally {
             ensuring = false;
@@ -3896,6 +3897,15 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     editor.on('component:deselected', () => {
         stopClassWatch?.();
         stopClassWatch = null;
+
+        window.requestAnimationFrame(() => {
+            const pageTarget = resolveStyleTarget(editor);
+
+            if (pageTarget && sectorsReady()) {
+                syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts());
+                attachClassWatch(pageTarget);
+            }
+        });
     });
 
     // Kept as a fallback when Grapes does emit it (rare for chip edits).

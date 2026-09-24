@@ -264,6 +264,18 @@
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
+.voodbuilder-editor-page-surface-badge {
+    margin: 0 0 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+    color: var(--color-vp-text-1, #3c3c43);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
 .voodbuilder-editor-styles-mount .gjs-sm-sector:last-child,
 .voodbuilder-editor-root .gjs-sm-sector:last-child {
     margin-bottom: 0;

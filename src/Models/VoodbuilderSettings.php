@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelThemes;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
@@ -73,6 +74,9 @@ class VoodbuilderSettings extends Model
             'search_per_page' => (int) config('voodbuilder.search.per_page', 10),
             'search_per_type' => (int) config('voodbuilder.search.per_type', 20),
             'search_snippet_length' => (int) config('voodbuilder.search.snippet_length', 160),
+            'typography_body_font' => AppTypography::DEFAULT_BODY_FONT,
+            'typography_heading_font' => AppTypography::DEFAULT_HEADING_FONT,
+            'typography_type_scale' => AppTypography::defaultTypeScale(),
         ];
     }
 
@@ -129,6 +133,15 @@ class VoodbuilderSettings extends Model
         $data['search_per_page'] = self::clampSearchInt($data['search_per_page'] ?? null, 5, 50, 10);
         $data['search_per_type'] = self::clampSearchInt($data['search_per_type'] ?? null, 5, 100, 20);
         $data['search_snippet_length'] = self::clampSearchInt($data['search_snippet_length'] ?? null, 80, 300, 160);
+
+        $typography = AppTypography::normalizeSavePayload([
+            'typography_body_font' => $data['typography_body_font'] ?? null,
+            'typography_heading_font' => $data['typography_heading_font'] ?? null,
+            'typography_type_scale' => $data['typography_type_scale'] ?? null,
+        ]);
+        $data['typography_body_font'] = $typography['typography_body_font'];
+        $data['typography_heading_font'] = $typography['typography_heading_font'];
+        $data['typography_type_scale'] = $typography['typography_type_scale'];
 
         return $data;
     }

@@ -178,7 +178,8 @@ export function registerTextElementTypes(editor) {
 
 /**
  * Canvas RTE formatting toolbar is for headings only (and legacy).
- * Basic Text / plain text → no bar (use Style + Tailwind). RichText → Content panel.
+ * Basic Text / plain text → no bar (use Style + Tailwind).
+ * Rich Text → Content panel light RTE (never the canvas Grapes toolbar).
  *
  * @param {object|null|undefined} component
  * @returns {boolean}
@@ -189,7 +190,7 @@ export function shouldHideCanvasRteToolbar(component) {
     }
 
     if (isRichTextComponent(component) || findRichTextHost(component)) {
-        return false;
+        return true;
     }
 
     let current = component;
@@ -202,10 +203,6 @@ export function shouldHideCanvasRteToolbar(component) {
         const type = String(current.get?.('type') ?? '');
 
         if (type === 'voodbuilder-heading' || type === 'heading') {
-            return false;
-        }
-
-        if (isRichTextComponent(current)) {
             return false;
         }
 

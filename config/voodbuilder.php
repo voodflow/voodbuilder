@@ -279,7 +279,8 @@ return [
     |   npm install -D @fontsource-variable/inter @fontsource/jetbrains-mono
     */
     'fonts' => [
-        'sans' => 'Inter Variable',
+        'sans' => 'Lato',
+        'heading' => 'Montserrat',
         'mono' => 'JetBrains Mono',
     ],
 

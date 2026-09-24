@@ -53,7 +53,9 @@
 @theme {
     --breakpoint-vp: 60rem;
 
-    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* Overridden at runtime by AppTypography (--font-sans / --font-heading on :root). */
+    --font-sans: 'Lato', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
 
     --color-vp-bg: #ffffff;
@@ -767,11 +769,13 @@
     }
 
     .body-font {
-        @apply font-sans text-vp-text-2 antialiased;
+        font-family: var(--vp-font-family-body, var(--font-sans));
+        @apply text-vp-text-2 antialiased;
     }
 
     .title-font {
-        @apply font-sans tracking-tight;
+        font-family: var(--vp-font-family-heading, var(--font-heading, var(--font-sans)));
+        @apply tracking-tight;
     }
 
     /* Soft footer gutters — :where so author px-* / max-w-* / mx-* win. */

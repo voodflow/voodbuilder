@@ -5,6 +5,7 @@
 import { canEditBlockCode, CMD_EDIT_BLOCK_CODE, extractBlockCodeHtml } from './canvas-block-code-editor.js';
 import { openContextMenu } from './context-menu.js';
 import { buildContextInsertSubmenu } from './context-insert-elements.js';
+import { buildContextConvertSubmenu } from './context-convert-element.js';
 import { promptDialog } from './editor-dialog.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import {
@@ -179,6 +180,16 @@ export function buildComponentContextMenuItems(editor, component, labels = {}) {
     if (insertSubmenu) {
         pushSeparator(items);
         items.push(insertSubmenu);
+    }
+
+    const convertSubmenu = buildContextConvertSubmenu(editor, component, labels);
+
+    if (convertSubmenu) {
+        if (! insertSubmenu) {
+            pushSeparator(items);
+        }
+
+        items.push(convertSubmenu);
     }
 
     pushSeparator(items);

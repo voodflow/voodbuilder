@@ -37,6 +37,15 @@ return [
         'language_switcher_help' => 'Hidden automatically when only one content locale is configured.',
     ],
 
+    'typography' => [
+        'section' => 'Site typography',
+        'section_description' => 'Default fonts and type scale for the whole site. The editor wins when it sets a font or size on an element.',
+        'heading_font' => 'Heading font (H1–H6)',
+        'heading_font_help' => 'Applied to headings unless the editor sets a different font. Default: Montserrat.',
+        'body_font' => 'Body font',
+        'body_font_help' => 'Applied to body and generic text unless the editor sets a different font. Default: Lato.',
+    ],
+
     'tabs' => [
         'site' => 'Site',
         'appearance' => 'Appearance',

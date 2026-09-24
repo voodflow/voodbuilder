@@ -10,16 +10,16 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ChromeLayoutReadingTypographyTest extends TestCase
 {
-    public function test_resolve_defaults_to_inter_and_base(): void
+    public function test_resolve_defaults_inherit_app_typography(): void
     {
         $resolved = ChromeLayoutReadingTypography::resolve(null);
 
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_FONT, $resolved['font']);
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_FONT, $resolved['sidebarFont']);
+        $this->assertSame('lato', $resolved['font']);
+        $this->assertSame('lato', $resolved['sidebarFont']);
         $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_SIZE, $resolved['size']);
         $this->assertSame('var(--text-base)', $resolved['cssSize']);
-        $this->assertStringContainsString('Inter Variable', $resolved['stack']);
-        $this->assertSame([], $resolved['stylesheetUrls']);
+        $this->assertStringContainsString('Lato', $resolved['stack']);
+        $this->assertIsArray($resolved['stylesheetUrls']);
         $this->assertSame(ChromeLayoutReadingTypography::defaultTypeScale(), $resolved['typeScale']);
         $this->assertSame('var(--text-3xl)', $resolved['cssVariables']['--vp-doc-h1-size']);
         $this->assertArrayHasKey('--vp-font-family-sidebar', $resolved['cssVariables']);

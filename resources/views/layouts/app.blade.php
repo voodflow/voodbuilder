@@ -1,4 +1,5 @@
 @php
+    use Voodflow\Voodbuilder\Support\AppTypography;
     use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
     use Voodflow\Voodbuilder\Support\SubThemeResolver;
 
@@ -15,13 +16,20 @@
     $voodbuilderHostViteReady = \Voodflow\Voodbuilder\Support\Editor\EditorAssets::hostViteReady()
         && $voodbuilderViteEntries !== [];
     $voodbuilderEditorAssetsReady = ! ($editorEditor ?? false) || \Voodflow\Voodbuilder\Support\Editor\EditorAssets::isBuilt();
+    $appTypography = AppTypography::resolve();
+    $appTypographyStyle = AppTypography::cssVariablesStyle($appTypography['cssVariables']);
 @endphp
 <!doctype html>
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     data-voodbuilder-sub-theme="{{ $voodbuilderSubTheme }}"
+    data-vp-app-body-font="{{ $appTypography['bodyFont'] }}"
+    data-vp-app-heading-font="{{ $appTypography['headingFont'] }}"
     @if (filled($voodbuilderContentChannel))
         data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
+    @endif
+    @if (filled($appTypographyStyle))
+        style="{{ $appTypographyStyle }}"
     @endif
     @class(['dark' => \Voodflow\Voodbuilder\Support\VoodbuilderTheme::serverInitialDark()])
 >
@@ -31,6 +39,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @foreach ($appTypography['stylesheetUrls'] as $appFontHref)
+        <link rel="stylesheet" href="{{ $appFontHref }}">
+    @endforeach
     {{-- Title + meta come from ralphjsmit/laravel-seo (seo()->for(...) in controllers). --}}
     {!! seo() !!}
 
@@ -49,9 +60,10 @@
     @elseif ($editorEditor ?? false)
         <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
+    <style id="voodbuilder-app-typography">{!! $appTypography['canvasCss'] !!}</style>
     @stack('head')
 </head>
-<body class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
+<body class="voodbuilder-page-surface flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}">
     @unless ($voodbuilderHostViteReady)
         <div class="voodbuilder-vite-missing" role="status">
             Frontend assets are not built yet. From the Laravel app root run

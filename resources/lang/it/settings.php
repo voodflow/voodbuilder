@@ -37,6 +37,15 @@ return [
         'language_switcher_help' => 'Nascosto automaticamente se è configurata una sola lingua di contenuto.',
     ],
 
+    'typography' => [
+        'section' => 'Tipografia del sito',
+        'section_description' => 'Font e scala predefiniti per tutto il sito. L’editor vince quando imposta font o dimensioni su un elemento.',
+        'heading_font' => 'Font titoli (H1–H6)',
+        'heading_font_help' => 'Applicato agli heading se l’editor non ne imposta uno diverso. Default: Montserrat.',
+        'body_font' => 'Font testo',
+        'body_font_help' => 'Applicato a body e testo generico se l’editor non ne imposta uno diverso. Default: Lato.',
+    ],
+
     'tabs' => [
         'site' => 'Sito',
         'appearance' => 'Aspetto',

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Licensing\EditorEditionSummary;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
+use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 use Voodflow\Voodbuilder\Support\ChromeLayoutDefaults;
 use Voodflow\Voodbuilder\Support\ChromeLayoutHtmlSanitizer;
@@ -49,6 +50,7 @@ final class EditorChromeLayoutEditorGate
         $chromeWidth = ChromeLayoutContentWidth::resolveChromeWidth($layout);
         $readingTypography = ChromeLayoutReadingTypography::resolve($layout);
         $readingPreviews = app(ReadingPreviewRegistry::class)->all();
+        $appTypography = AppTypography::resolve();
 
         return [
             'chromeLayoutMode' => true,
@@ -99,8 +101,14 @@ final class EditorChromeLayoutEditorGate
             'editionLabel' => $editionSummary['label'],
             'componentCategories' => EditorComponentCategoryNormalizer::categories(),
             'plugins' => config('voodbuilder.editor.plugins', []),
-            'canvasStyles' => EditorCanvas::styleUrls(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme).self::readingTypographyCanvasCss($readingTypography),
+            'canvasStyles' => array_values(array_unique(array_filter([
+                ...EditorCanvas::styleUrls(),
+                ...$appTypography['stylesheetUrls'],
+                ...$readingTypography['stylesheetUrls'],
+            ]))),
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)
+                ."\n".$appTypography['canvasCss']
+                .self::readingTypographyCanvasCss($readingTypography),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => true,

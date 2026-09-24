@@ -30,6 +30,7 @@ export const CMD_CLEAR_DYNAMIC = 'voodbuilder-clear-dynamic';
 export const CMD_COPY_COMPONENT_CLASSES = 'voodbuilder:copy-component-classes';
 export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
 export const CMD_CLONE_COMPONENT = 'voodbuilder:clone-component';
+export const CMD_EDIT_RICH_TEXT = 'voodbuilder:edit-rich-text';
 export { CMD_EDIT_IMAGE };
 
 /**
@@ -323,6 +324,19 @@ function buildComponentToolbar(editor, component, labels = {}) {
     // Edit/Copy code are Components-plugin features (not on free).
     const richText = isRichTextCanvasTarget(component);
 
+    if (richText) {
+        toolbar.push({
+            attributes: {
+                class: 'voodbuilder-editor-toolbar-item--edit-rich-text',
+                [TOOLBAR_FLAG]: 'edit-rich-text',
+                title: labels.editRichText ?? labels.richTextSettingsTitle ?? 'Format text',
+                'aria-label': labels.editRichText ?? labels.richTextSettingsTitle ?? 'Format text',
+            },
+            label: lucideIcon('pencil', 16),
+            command: CMD_EDIT_RICH_TEXT,
+        });
+    }
+
     if (! richText && canUseBlockCodeTools(editor) && canEditBlockCode(component, editor)) {
         toolbar.push({
             attributes: {
@@ -539,6 +553,33 @@ function ensureCopyComponentCommands(editor, labels = {}) {
             },
         });
     }
+
+    if (! hasCommand(CMD_EDIT_RICH_TEXT)) {
+        commands.add(CMD_EDIT_RICH_TEXT, {
+            run: (ed) => {
+                const selected = ed.getSelected?.();
+                const host = findRichTextHost(selected) ?? (isRichTextComponent(selected) ? selected : null);
+
+                if (! host) {
+                    return;
+                }
+
+                if (ed.getSelected?.() !== host) {
+                    ed.select(host, { scroll: false });
+                }
+
+                ed.__voodbuilderActivateInspectorTab?.('content');
+                ed.__voodbuilderBlockSettingsRender?.();
+
+                window.requestAnimationFrame(() => {
+                    const root = ed.getContainer?.()?.closest?.('.voodbuilder-editor-root')
+                        ?? document.querySelector('.voodbuilder-editor-root');
+                    root?.querySelector?.('[data-voodbuilder-rich-text-settings] .voodbuilder-editor-rte__visual')
+                        ?.focus?.();
+                });
+            },
+        });
+    }
 }
 
 /**
@@ -553,6 +594,13 @@ export function voodbuilderCopyCommandsPlugin(editor, opts = {}) {
 
 export function ensureCanvasComponentToolbarButtons(editor, component, labels = {}) {
     if (! component) {
+        return;
+    }
+
+    // Page wrapper uses Style panel only — no floating component toolbar.
+    if (component.get?.('type') === 'wrapper') {
+        component.set('toolbar', []);
+
         return;
     }
 
@@ -596,10 +644,12 @@ export function registerCanvasDropAffordance(editor) {
             return;
         }
 
+        // Page surface: wrapper is the Style target for full-page background when
+        // the canvas is empty / deselected.
         wrapper.set({
             droppable: true,
-            highlightable: false,
-            selectable: false,
+            highlightable: true,
+            selectable: true,
             hoverable: false,
         });
     };

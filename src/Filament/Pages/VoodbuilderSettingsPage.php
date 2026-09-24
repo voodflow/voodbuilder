@@ -26,6 +26,7 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
 use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
@@ -229,6 +230,25 @@ class VoodbuilderSettingsPage extends Page
                                                         && class_exists(LocaleSwitcher::class)
                                                         && LocaleSwitcher::enabled()),
                                             ]),
+                                    ]),
+                                Section::make(__('voodbuilder::settings.typography.section'))
+                                    ->description(__('voodbuilder::settings.typography.section_description'))
+                                    ->contained(false)
+                                    ->schema([
+                                        Select::make('typography_heading_font')
+                                            ->label(__('voodbuilder::settings.typography.heading_font'))
+                                            ->helperText(__('voodbuilder::settings.typography.heading_font_help'))
+                                            ->options(fn (): array => AppTypography::fontOptions())
+                                            ->searchable()
+                                            ->default(AppTypography::DEFAULT_HEADING_FONT)
+                                            ->required(),
+                                        Select::make('typography_body_font')
+                                            ->label(__('voodbuilder::settings.typography.body_font'))
+                                            ->helperText(__('voodbuilder::settings.typography.body_font_help'))
+                                            ->options(fn (): array => AppTypography::fontOptions())
+                                            ->searchable()
+                                            ->default(AppTypography::DEFAULT_BODY_FONT)
+                                            ->required(),
                                     ]),
                             ]),
                         Tab::make(__('voodbuilder::settings.tabs.search'))

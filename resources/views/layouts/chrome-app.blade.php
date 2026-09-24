@@ -1,5 +1,6 @@
 @php
     use Voodflow\Voodbuilder\Models\SitePage;
+    use Voodflow\Voodbuilder\Support\AppTypography;
     use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
     use Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography;
     use Voodflow\Voodbuilder\Support\ChromeLayoutRenderer;
@@ -82,6 +83,10 @@
     ) {
         $pageWidthStyleParts[] = '--voodbuilder-chrome-layout-max: '.($elementContentMaxWidth ?: ChromeLayoutContentWidth::STANDARD_MAX_WIDTH);
     }
+    $appTypography = AppTypography::resolve();
+    foreach ($appTypography['cssVariables'] as $cssVar => $cssValue) {
+        $pageWidthStyleParts[] = $cssVar.': '.$cssValue;
+    }
     $readingTypography = ChromeLayoutReadingTypography::resolve(
         $chromeLayout instanceof \Voodflow\Voodbuilder\Models\ChromeLayout ? $chromeLayout : null,
     );
@@ -97,6 +102,8 @@
     data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
     data-voodbuilder-chrome-width="{{ $chromeWidth }}"
     data-vp-reading-size="{{ $readingTypography['size'] }}"
+    data-vp-app-body-font="{{ $appTypography['bodyFont'] }}"
+    data-vp-app-heading-font="{{ $appTypography['headingFont'] }}"
     @if ($readingTypography['font'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
         data-vp-reading-font="{{ $readingTypography['font'] }}"
     @endif
@@ -117,6 +124,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @foreach ($appTypography['stylesheetUrls'] as $appFontHref)
+        <link rel="stylesheet" href="{{ $appFontHref }}">
+    @endforeach
     @foreach ($readingTypography['stylesheetUrls'] as $readingFontHref)
         <link rel="stylesheet" href="{{ $readingFontHref }}">
     @endforeach
@@ -133,6 +143,7 @@
     @elseif ($editorEditor ?? false)
         <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
+    <style id="voodbuilder-app-typography">{!! $appTypography['canvasCss'] !!}</style>
     @if ($suppressHostChrome)
         <style id="voodbuilder-editor-host-chrome-critical">{!! EditorHostChrome::criticalHideCss() !!}</style>
     @endif
@@ -149,7 +160,7 @@
     @endif
 </head>
 <body
-    class="flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}"
+    class="voodbuilder-page-surface flex min-h-screen flex-col {{ trim(implode(' ', array_filter([trim((string) $__env->yieldContent('body_class')), trim((string) $__env->yieldContent('body_class_extra'))]))) }}"
     data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
     data-voodbuilder-chrome-width="{{ $chromeWidth }}"
     @if (filled($pageWidthStyle))

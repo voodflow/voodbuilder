@@ -720,7 +720,7 @@ const BLOCKS = [
             attributes: {
                 'data-voodbuilder-rich-text': '',
             },
-            components: '<p>Write longer copy here. Use Content → Visual to format.</p>',
+            components: '<p>Write longer copy here. Format with Bold / Italic in the Content panel.</p>',
             editable: false,
         },
     },
@@ -1065,7 +1065,10 @@ export function registerUtilityBlocks(editor) {
             attributes: {
                 title: block.label,
             },
-            activate: block.id === 'image' || block.id === 'voodbuilder-text' || block.id === 'voodbuilder-heading',
+            activate: block.id === 'image'
+                || block.id === 'voodbuilder-text'
+                || block.id === 'voodbuilder-heading'
+                || block.id === 'voodbuilder-rich-text',
         });
     }
 }

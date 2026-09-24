@@ -19,6 +19,7 @@ import {
     createInspectorEmptyState,
 } from './inspector-empty-state.js';
 import { canEntitlement } from './editor/entitlements.js';
+import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
 const INSPECTOR_TABS = ['content', 'style', 'dynamic', 'conditions', 'layers'];
 const POPUP_INSPECTOR_TABS = ['content', 'style', 'dynamic', 'layers', 'popup'];
@@ -896,6 +897,7 @@ function setupInspectorTabs(mounts, editor) {
     editor.on('component:selected', (component) => {
         if (component) {
             const { descriptor, root } = resolveBlockSettingsTarget(component, editor);
+            const richHost = findRichTextHost(component) ?? (isRichTextComponent(component) ? component : null);
 
             if (descriptor && root) {
                 // Prefer block id over object identity so a post-refresh re-select
@@ -910,6 +912,18 @@ function setupInspectorTabs(mounts, editor) {
                     editor.__voodbuilderInspectorTabUserChoice = false;
                     activateTab('content');
                 }
+            } else if (richHost) {
+                // Rich Text formats in the Content light RTE — open that tab on first select.
+                const richKey = `rich:${richHost.cid ?? richHost.getId?.() ?? ''}`;
+                const lastKey = editor.__voodbuilderLayoutSettingsAutoTabKey ?? null;
+
+                editor.__voodbuilderLayoutSettingsAutoTabRoot = richHost;
+
+                if (lastKey !== richKey) {
+                    editor.__voodbuilderLayoutSettingsAutoTabKey = richKey;
+                    editor.__voodbuilderInspectorTabUserChoice = false;
+                    activateTab('content');
+                }
             } else {
                 editor.__voodbuilderLayoutSettingsAutoTabRoot = null;
                 editor.__voodbuilderLayoutSettingsAutoTabKey = null;
@@ -918,7 +932,7 @@ function setupInspectorTabs(mounts, editor) {
             syncInspectorManagers(editor, activeTab);
 
             // Prefer block settings over bind/conditions tabs when a descriptor matches.
-            if (! descriptor) {
+            if (! descriptor && ! richHost) {
                 const hasBindingSources = (editor.__voodbuilderBindingsCatalog?.groups ?? []).length > 0;
 
                 if (hasBindingSources && component.getAttributes?.()['data-voodbuilder-bind']) {

@@ -263,20 +263,49 @@ final class ChromeLayoutReadingTypography
      */
     public static function resolve(?ChromeLayout $layout): array
     {
-        $fontId = self::normalizeFont($layout?->reading_font);
-        $sidebarFontId = self::normalizeFont($layout?->reading_sidebar_font ?: $fontId);
+        $appTypography = AppTypography::resolve();
+        $storedBodyFont = trim((string) ($layout?->reading_font ?? ''));
+        $storedSidebarFont = trim((string) ($layout?->reading_sidebar_font ?? ''));
+
+        // Empty layout reading font inherits application body typography.
+        $fontId = $storedBodyFont === ''
+            ? $appTypography['bodyFont']
+            : self::normalizeFont($storedBodyFont);
+        $sidebarFontId = $storedSidebarFont === ''
+            ? $fontId
+            : self::normalizeFont($storedSidebarFont);
         $size = self::normalizeSize($layout?->reading_font_size);
         $typeScale = self::normalizeTypeScale($layout?->reading_type_scale);
         $sidebarTypeScale = self::normalizeSidebarTypeScale($layout?->reading_sidebar_type_scale);
-        $stack = self::stackFor($fontId);
-        $sidebarStack = self::stackFor($sidebarFontId);
+        $stack = $storedBodyFont === ''
+            ? $appTypography['bodyStack']
+            : self::stackFor($fontId);
+        $sidebarStack = $storedSidebarFont === ''
+            ? $stack
+            : self::stackFor($sidebarFontId);
         $cssSize = self::cssSizeFor($size);
         $sidebarCssSize = self::cssSizeFor($sidebarTypeScale['p']['size']);
 
-        $fontIds = array_values(array_unique(array_filter([
-            $fontId === self::DEFAULT_FONT ? null : $fontId,
-            $sidebarFontId === self::DEFAULT_FONT ? null : $sidebarFontId,
-        ])));
+        $fontIds = [];
+
+        if ($storedBodyFont === '') {
+            $fontIds[] = $appTypography['bodyFont'];
+        } elseif ($fontId !== self::DEFAULT_FONT) {
+            $fontIds[] = $fontId;
+        }
+
+        if ($storedSidebarFont === '') {
+            if ($storedBodyFont !== '') {
+                $fontIds[] = $fontId;
+            }
+        } elseif ($sidebarFontId !== self::DEFAULT_FONT) {
+            $fontIds[] = $sidebarFontId;
+        }
+
+        $fontIds = array_values(array_unique(array_filter(
+            $fontIds,
+            static fn (string $id): bool => $id !== self::DEFAULT_FONT,
+        )));
 
         $cssVariables = [
             '--vp-font-family-doc' => $stack,

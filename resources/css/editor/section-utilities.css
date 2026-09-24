@@ -31,11 +31,13 @@
 
 @layer components {
     .body-font {
-        @apply font-sans text-vp-text-2 antialiased;
+        font-family: var(--vp-font-family-body, var(--font-sans));
+        @apply text-vp-text-2 antialiased;
     }
 
     .title-font {
-        @apply font-sans tracking-tight;
+        font-family: var(--vp-font-family-heading, var(--font-heading, var(--font-sans)));
+        @apply tracking-tight;
     }
 
     .voodbuilder-brand-mark__glyph {

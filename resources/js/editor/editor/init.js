@@ -84,6 +84,7 @@ import {
 } from '../components-ui.js';
 import { registerComponentTailwindAutobuild } from '../component-tailwind-autobuild.js';
 import { registerPageTailwindAutobuild } from '../page-tailwind-autobuild.js';
+import { registerPageSurfaceStyles } from '../page-surface-styles.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
 import { registerPopupCanvasSettings, registerPopupsUi } from '../popups-ui.js';
@@ -1012,6 +1013,9 @@ export function initVoodbuilderEditor(container, options = {}) {
         imageEditorPlaceholderHint: labels.imageEditorPlaceholderHint,
         dialogCancel: labels.dialogCancel,
         modalCancel: labels.modalCancel,
+    });
+    registerPageSurfaceStyles(editor, {
+        pageSurfaceLabel: labels.pageSurfaceLabel ?? labels.classStylePage ?? 'Page',
     });
     registerJoditImageEditor(editor, {
         enabled: options.imageEditor !== false,
