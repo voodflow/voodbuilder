@@ -37,8 +37,8 @@ class EditorAssetsTest extends TestCase
         $editor = EditorAssets::pageViteEntries(true);
 
         $this->assertContains(VoodbuilderPaths::themeCssRelativePath(), $public);
-        $this->assertContains(VoodbuilderPaths::editorTabsCssEntry(), $public);
-        $this->assertContains(VoodbuilderPaths::editorFormsCssEntry(), $public);
+        $this->assertNotContains(VoodbuilderPaths::editorTabsCssEntry(), $public);
+        $this->assertNotContains(VoodbuilderPaths::editorFormsCssEntry(), $public);
         $this->assertTrue(collect($public)->contains(
             fn (string $entry): bool => str_ends_with($entry, 'site-runtime.js'),
         ));

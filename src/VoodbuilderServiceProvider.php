@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Vite;
 use Livewire\Livewire;
 use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use RalphJSmit\Laravel\SEO\TagManager;
@@ -213,6 +214,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         BrandMarkAssets::ensurePublished();
         FilamentAdminAssets::register();
+        $this->configureViteAssetPreloads();
 
         if (config('voodbuilder.editor.enabled', true)) {
             VoodbuilderEditorBlockConfigs::register();
@@ -459,5 +461,39 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         // Popups live in voodflow/vpopups (Filament plugin) and
         // register via Voodbuilder::registerModule() during Application::booting.
+    }
+
+    /**
+     * Chromium double-fetches CSS when Laravel emits both rel=preload as=style and
+     * rel=stylesheet for the same file (~700KB theme.css ×2 on every public page).
+     * Shared Vite chunks (_site-chrome-*) are already pulled by the entry module graph,
+     * so modulepreload of those imports is redundant noise in Network.
+     */
+    protected function configureViteAssetPreloads(): void
+    {
+        if (! class_exists(Vite::class)) {
+            return;
+        }
+
+        Vite::usePreloadTagAttributes(static function (?string $src, string $url, ?array $chunk, ?array $manifest) {
+            $path = parse_url($url, PHP_URL_PATH);
+            $path = is_string($path) ? strtolower($path) : strtolower($url);
+
+            if (str_ends_with($path, '.css')) {
+                return false;
+            }
+
+            if (is_string($src) && str_starts_with($src, '_')) {
+                return false;
+            }
+
+            $file = is_array($chunk) ? (string) ($chunk['file'] ?? '') : '';
+
+            if ($file !== '' && str_starts_with(basename($file), '_')) {
+                return false;
+            }
+
+            return [];
+        });
     }
 }

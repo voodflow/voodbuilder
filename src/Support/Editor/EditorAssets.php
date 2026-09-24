@@ -91,9 +91,11 @@ final class EditorAssets
 
         $configured = config('voodbuilder.assets.vite');
 
+        // Public pages: theme + site-runtime only. tabs/forms CSS is editor chrome —
+        // shipping it doubles stylesheet preloads and adds unused weight on every view.
         $entries = is_array($configured) && $configured !== []
-            ? self::withOptionalPublicCss(array_values($configured), $subTheme)
-            : self::withOptionalPublicCss(VoodbuilderPaths::defaultViteEntries(), $subTheme);
+            ? self::withOptionalPublicCss(array_values($configured), $subTheme, includeTabsAndForms: false)
+            : self::withOptionalPublicCss(VoodbuilderPaths::defaultViteEntries(), $subTheme, includeTabsAndForms: false);
 
         return self::onlyResolvableViteEntries($entries);
     }

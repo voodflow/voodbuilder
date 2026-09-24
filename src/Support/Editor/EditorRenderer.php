@@ -34,7 +34,7 @@ final class EditorRenderer
 
         $html = EditorHtmlSanitizer::stripEditorOnlyElements($html);
 
-        return EditorPlaceholderNormalizer::normalizeHtml(
+        $html = EditorPlaceholderNormalizer::normalizeHtml(
             EditorFormNormalizer::normalizeForPage(
                 EditorStepTabsNormalizer::normalize(
                     EditorCodeBlockNormalizer::normalize(
@@ -49,6 +49,11 @@ final class EditorRenderer
                 ),
                 $page,
             ),
+        );
+
+        return EditorBackgroundPublishNormalizer::preferCssBackgrounds(
+            $html,
+            PageCssArtifactStore::resolveCss($payload),
         );
     }
 

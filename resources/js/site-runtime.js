@@ -3,24 +3,46 @@ import { initHeroBackgroundVideos } from './editor/hero-video-runtime.js';
 import { initVbRuntime } from './editor/vb-runtime.js';
 import { initSiteChrome } from './editor/site-chrome-runtime.js';
 
+/** Shared promise so DOMContentLoaded + livewire:navigated cannot double-fetch the chunk. */
+let popupsRuntimeImport = null;
+
 function bootPopupsIfConfigured() {
     if (! document.querySelector('[data-voodbuilder-popups-config], [data-vpopups-config]')) {
         return;
     }
 
     // Dynamic import: skip the popup chunk entirely when no popups are published.
-    void import('./popups-runtime.js').then(({ initPopups }) => {
+    if (! popupsRuntimeImport) {
+        popupsRuntimeImport = import('./popups-runtime.js');
+    }
+
+    void popupsRuntimeImport.then(({ initPopups }) => {
         initPopups();
     }).catch(() => {
         // Optional on public pages.
+        popupsRuntimeImport = null;
     });
 }
 
+let siteRuntimeCoreBooted = false;
+
 function bootSiteRuntime() {
-    initVideoFacades();
-    initHeroBackgroundVideos();
-    initVbRuntime();
-    initSiteChrome();
+    // Core inits are idempotent / element-bound; still skip the heavy first pass twice
+    // when Livewire fires `livewire:navigated` on the initial paint.
+    if (! siteRuntimeCoreBooted) {
+        initVideoFacades();
+        initHeroBackgroundVideos();
+        initVbRuntime();
+        initSiteChrome();
+        siteRuntimeCoreBooted = true;
+    } else {
+        // Soft re-bind after Livewire navigations (new header/drawer nodes).
+        initSiteChrome();
+        initVideoFacades();
+        initHeroBackgroundVideos();
+        initVbRuntime();
+    }
+
     bootPopupsIfConfigured();
 }
 

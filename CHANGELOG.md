@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.160] - 2026-09-24
+
+### Fixed
+- Public pages no longer double-fetch `theme.css` (Vite `preload` + `stylesheet`) or shared chunks like `site-chrome-runtime`
+- Public Vite entries omit editor-only `tabs.css` / `forms.css`
+- `site-runtime` shares one dynamic import promise so `DOMContentLoaded` + `livewire:navigated` cannot download `popups-runtime` twice
+- Published HTML drops redundant inline `background-image: url(...)` when the same asset is already in page CSS (stops `-lg` photo ×2–4 in Network)
+
 ## [0.1.154] - 2026-09-24
 
 ### Changed
