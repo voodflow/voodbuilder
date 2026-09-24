@@ -124,12 +124,23 @@ import {
     stripResponsivePrefix,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
-import { PAGE_SURFACE_FOCUS_EVENT, resolveStyleTarget } from './page-surface-styles.js';
+import { PAGE_SURFACE_FOCUS_EVENT, isPageSurfaceComponent, resolveStyleTarget } from './page-surface-styles.js';
 import {
     injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
 } from './style-responsive-canvas.js';
 import { hexForUtility } from './tailwind-color-palette.js';
+
+/**
+ * Style panel writes must follow page-surface targeting (wrapper when nothing
+ * is selected / force page mode), not only Grapes getSelected().
+ *
+ * @param {object|null|undefined} editor
+ * @returns {object|null}
+ */
+function styleWriteTarget(editor) {
+    return resolveStyleTarget(editor) ?? editor?.getSelected?.() ?? null;
+}
 
 /**
  * @param {Iterable<string>|string[]} classes
@@ -1384,7 +1395,7 @@ function bindGroupField(editor, root, groupId, { applyOnChange = false } = {}) {
     const add = root.querySelector(`[data-voodbuilder-tw-group-add="${groupId}"]`);
 
     const apply = () => {
-        const selected = resolveStyleTarget(editor);
+        const selected = styleWriteTarget(editor);
 
         if (! selected) {
             return;
@@ -2395,13 +2406,19 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     // Drop previous image paint before rewrite (keeps solid color classes).
     clearStyleProperty(editor, target, 'background-image', { family: false });
 
+    // Page wrapper: silent write — style events on body/wrapper re-enter chrome
+    // shell refresh + Style Manager clears and can freeze Save.
+    const styleOpts = isPageSurfaceComponent(target, editor)
+        ? { inline: true, noEvent: true }
+        : { inline: true };
+
     target.addStyle?.(
         {
             'background-image': cssValue,
             // Kill solid Color flash: tint is only in overlay layers above the photo.
             'background-color': 'transparent',
         },
-        { inline: true },
+        styleOpts,
     );
 
     const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
@@ -2487,7 +2504,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         mount.dataset.vbWired = '1';
         mount.replaceChildren();
 
-        const selected = editor.getSelected?.();
+        const selected = styleWriteTarget(editor);
         const field = createImageUrlField({
             label: labels.classStyleBackgroundImageSrc ?? labels.imageSettingsHeroSrc ?? 'Background image',
             name: 'styleBgImage',
@@ -2496,7 +2513,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
             chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
             clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
             onChange: (url) => {
-                const component = editor.getSelected?.();
+                const component = styleWriteTarget(editor);
 
                 if (! component) {
                     return;
@@ -2515,7 +2532,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         opacityMount.dataset.vbWired = '1';
         opacityMount.replaceChildren();
 
-        const selected = editor.getSelected?.();
+        const selected = styleWriteTarget(editor);
         const current = String(readBackgroundImageOpacity(selected, editor));
         const field = createSelectField({
             label: labels.classStyleBackgroundImageOpacity
@@ -2525,7 +2542,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
             value: current,
             options: STYLE_BG_OPACITY_OPTIONS,
             onChange: (value) => {
-                const component = editor.getSelected?.();
+                const component = styleWriteTarget(editor);
                 const url = readBackgroundImageUrl(component, editor);
 
                 if (! component || url === '') {
@@ -3851,7 +3868,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         stopClassWatch?.();
         stopClassWatch = null;
 
-        if (! component) {
+        if (! component || isPageSurfaceComponent(component, editor)) {
             return;
         }
 

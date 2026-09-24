@@ -102,14 +102,25 @@ export function ensurePageSurfaceWrapper(editor) {
         return wrapper ?? null;
     }
 
-    const classes = wrapper.getClasses?.() ?? [];
-    const classList = Array.isArray(classes) ? classes : [...(classes.models ?? classes)].map((c) => (
-        typeof c === 'string' ? c : String(c?.get?.('name') ?? c?.id ?? '')
-    ));
+    // Host layouts already expose `.voodbuilder-page-surface` on <body>. Avoid
+    // repeatedly mutating the Grapes wrapper classes — that storms chrome-shell
+    // refresh / Tailwind rebuild and can freeze Save.
+    if (editor.__voodbuilderPageSurfaceClassApplied) {
+        return wrapper;
+    }
 
-    if (! classList.includes(PAGE_SURFACE_CLASS)) {
+    const classes = wrapper.getClasses?.() ?? [];
+    const classList = Array.isArray(classes)
+        ? classes.map((c) => (typeof c === 'string' ? c : String(c?.get?.('name') ?? c?.id ?? '')))
+        : [...(classes.models ?? [])].map((c) => (
+            typeof c === 'string' ? c : String(c?.get?.('name') ?? c?.id ?? '')
+        ));
+
+    if (! classList.includes(PAGE_SURFACE_CLASS) && ! editor.__voodbuilderChromeShellMode) {
         wrapper.addClass?.(PAGE_SURFACE_CLASS);
     }
+
+    editor.__voodbuilderPageSurfaceClassApplied = true;
 
     // Chrome shell keeps the wrapper non-selectable (nav/footer chrome). Page
     // styles still target the wrapper via resolveStyleTarget / force flag.

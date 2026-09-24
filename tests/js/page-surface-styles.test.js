@@ -94,6 +94,7 @@ describe('page-surface-styles', () => {
         expect(selectPageSurface(editor)).toBe(wrapper);
         expect(select).toHaveBeenCalledWith();
         expect(wrapper.set).not.toHaveBeenCalled();
+        expect(wrapper.addClass).not.toHaveBeenCalled();
         expect(editor.__voodbuilderForcePageSurfaceStyle).toBe(true);
         expect(isTargetingPageSurface(editor)).toBe(true);
         expect(trigger).toHaveBeenCalled();

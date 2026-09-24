@@ -1043,6 +1043,13 @@ export function bakeAuthorStylesToComposerForExport(editor) {
 
         editor.Css.setIdRule(id, merged);
 
+        // Never bake inline styles onto the page wrapper (body): chrome-shell
+        // refresh + Save bake would re-enter style handlers and freeze the UI.
+        // #id CssComposer rules (remapped to body on publish) are enough.
+        if (component.get?.('type') === 'wrapper') {
+            return;
+        }
+
         // Inline must be SM-friendly: no !important (breaks select matching),
         // single-quoted font stacks. Keep !important only on the #id rule above.
         const inlineStyles = {};
