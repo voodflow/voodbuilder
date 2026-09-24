@@ -12,12 +12,14 @@ export const PAGE_SURFACE_ACTION_ATTR = 'data-voodbuilder-page-surface-action';
 export const PAGE_SURFACE_FOCUS_EVENT = 'voodbuilder:page-surface-focus';
 
 /**
+ * Page-level surface styling is available on normal site pages (including chrome
+ * shell). Disabled only while editing a chrome layout or a popup.
+ *
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @returns {boolean}
  */
 export function isPageSurfaceMode(editor) {
     return ! editor?.__voodbuilderChromeLayoutMode
-        && ! editor?.__voodbuilderChromeShellMode
         && ! editor?.__voodbuilderPopupMode;
 }
 
@@ -109,20 +111,25 @@ export function ensurePageSurfaceWrapper(editor) {
         wrapper.addClass?.(PAGE_SURFACE_CLASS);
     }
 
-    wrapper.set?.({
-        droppable: true,
-        selectable: true,
-        highlightable: true,
-        hoverable: false,
-        locked: false,
-    });
+    // Chrome shell keeps the wrapper non-selectable (nav/footer chrome). Page
+    // styles still target the wrapper via resolveStyleTarget / force flag.
+    if (! editor.__voodbuilderChromeShellMode) {
+        wrapper.set?.({
+            droppable: true,
+            selectable: true,
+            highlightable: true,
+            hoverable: false,
+            locked: false,
+        });
+    }
 
     return wrapper;
 }
 
 /**
  * Focus Style on the page surface. Prefers selecting the wrapper; if Grapes
- * rejects that, falls back to a forced page-style target with no selection.
+ * rejects that (or chrome shell locks the wrapper), falls back to a forced
+ * page-style target with no selection.
  *
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @returns {import('grapesjs').Component | null}
@@ -136,6 +143,24 @@ export function selectPageSurface(editor) {
 
     if (! wrapper) {
         return null;
+    }
+
+    // Shell pages: wrapper is intentionally not selectable — clear selection and
+    // force Style onto the page surface instead.
+    if (editor.__voodbuilderChromeShellMode) {
+        try {
+            editor.select?.();
+        } catch {
+            // Ignore clear-selection failures.
+        }
+        editor.__voodbuilderForcePageSurfaceStyle = true;
+        try {
+            editor.trigger?.(PAGE_SURFACE_FOCUS_EVENT);
+        } catch {
+            // Optional sync hook for the Style panel.
+        }
+
+        return wrapper;
     }
 
     try {

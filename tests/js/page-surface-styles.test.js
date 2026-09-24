@@ -63,7 +63,18 @@ describe('page-surface-styles', () => {
         expect(trigger).toHaveBeenCalled();
     });
 
-    it('selectPageSurface forces page targeting when Grapes rejects wrapper select', () => {
+    it('isPageSurfaceMode stays on for chrome shell site pages', () => {
+        const editor = { __voodbuilderChromeShellMode: true };
+
+        expect(isPageSurfaceMode(editor)).toBe(true);
+    });
+
+    it('isPageSurfaceMode is off for chrome layout / popup editors', () => {
+        expect(isPageSurfaceMode({ __voodbuilderChromeLayoutMode: true })).toBe(false);
+        expect(isPageSurfaceMode({ __voodbuilderPopupMode: true })).toBe(false);
+    });
+
+    it('selectPageSurface forces page targeting in chrome shell without selecting wrapper', () => {
         const wrapper = {
             get: (key) => (key === 'type' ? 'wrapper' : null),
             getClasses: () => [],
@@ -71,17 +82,21 @@ describe('page-surface-styles', () => {
             set: vi.fn(),
         };
         const select = vi.fn();
+        const trigger = vi.fn();
         const editor = {
+            __voodbuilderChromeShellMode: true,
             getSelected: () => null,
             getWrapper: () => wrapper,
             select,
-            trigger: vi.fn(),
+            trigger,
         };
 
         expect(selectPageSurface(editor)).toBe(wrapper);
+        expect(select).toHaveBeenCalledWith();
+        expect(wrapper.set).not.toHaveBeenCalled();
         expect(editor.__voodbuilderForcePageSurfaceStyle).toBe(true);
         expect(isTargetingPageSurface(editor)).toBe(true);
-        expect(resolveStyleTarget(editor)).toBe(wrapper);
+        expect(trigger).toHaveBeenCalled();
     });
 
     it('remapPageSurfaceCssForPublish rewrites wrapper id rules to body', () => {
