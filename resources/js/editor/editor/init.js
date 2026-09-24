@@ -105,7 +105,6 @@ import {
 import { ensureReadingInspectorTab, registerReadingTypographyUi } from '../reading-typography-ui.js';
 import {
     finishEditorBoot,
-    isEditorBuildBusy,
     registerEditorBuildStatus,
     setEditorBootPhase,
     startEditorBoot,
@@ -2543,28 +2542,12 @@ function mountFrontendEditor() {
 
         saveButton.disabled = true;
 
-        const compilingLabel = config.labels?.compilingStyles ?? 'Compiling styles…';
         const savingLabel = config.labels?.saving ?? 'Saving…';
 
         try {
-            const cssBusy = Boolean(
-                editor.__voodbuilderPageCssBuilding
-                || editor.__voodbuilderPageCssPending
-                || isEditorBuildBusy(),
-            );
-
-            if (cssBusy) {
-                setSaveLabel(compilingLabel);
-                saveStatus.compiling();
-                await yieldToBrowser();
-
-                await editor.__voodbuilderWaitForPageCssIdle?.(20_000);
-            } else {
-                setSaveLabel(savingLabel);
-                saveStatus.saving();
-                await yieldToBrowser();
-            }
-
+            // Do NOT wait for canvas Tailwind JIT here. Save only ships author #id CSS;
+            // the server recompiles utilities. Waiting used to park Save on
+            // "Compiling styles…" for up to 20s whenever a rebuild was queued.
             setSaveLabel(savingLabel);
             saveStatus.saving();
             await yieldToBrowser();
@@ -2577,6 +2560,8 @@ function mountFrontendEditor() {
                 console.error('VoodBuilder buildPayload failed', buildError);
                 throw buildError;
             }
+
+            await yieldToBrowser();
 
             const saveUrl = resolveSaveUrl(config);
             const response = await persistPagePayload(

@@ -439,7 +439,51 @@ export function collectAuthorIdCssFromComponents(editor) {
  * @param {object} editor
  * @returns {string}
  */
+/**
+ * Read Grapes CssComposer author CSS for Save.
+ *
+ * Prefer enumerating CssRule models over `getCss({ keepUnusedStyles: true })`:
+ * on chrome-shell pages the latter can serialize the live utility bundle and
+ * freeze Save for tens of seconds.
+ *
+ * @param {object} editor
+ * @returns {string}
+ */
 export function readComposerCssForPersist(editor) {
+    const cssApi = editor?.Css;
+
+    if (cssApi?.getAll) {
+        try {
+            const rules = [];
+
+            for (const rule of cssApi.getAll()) {
+                const sel = cssRuleSelectorText(rule);
+                const style = rule?.getStyle?.() ?? {};
+                const decls = [];
+
+                for (const [property, value] of Object.entries(style)) {
+                    if (value == null || String(value).trim() === '') {
+                        continue;
+                    }
+
+                    decls.push(`${property}:${value}`);
+                }
+
+                if (sel === '' || decls.length === 0 || ! isAuthorStyleSelector(sel)) {
+                    continue;
+                }
+
+                rules.push(`${sel} {${decls.join(';')}}`);
+            }
+
+            if (rules.length > 0) {
+                return rules.join('\n');
+            }
+        } catch {
+            // Fall through to getCss().
+        }
+    }
+
     if (typeof editor?.getCss !== 'function') {
         return '';
     }
@@ -455,6 +499,42 @@ export function readComposerCssForPersist(editor) {
     }
 
     return String(editor.getCss() ?? '').trim();
+}
+
+/**
+ * @param {object} rule
+ * @returns {string}
+ */
+function cssRuleSelectorText(rule) {
+    if (! rule) {
+        return '';
+    }
+
+    if (typeof rule.selectorsToString === 'function') {
+        const text = String(rule.selectorsToString() ?? '').trim();
+
+        if (text !== '') {
+            return text;
+        }
+    }
+
+    const selectors = rule.get?.('selectors');
+
+    if (selectors && typeof selectors.map === 'function') {
+        return selectors
+            .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? item?.id ?? '')))
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    if (Array.isArray(selectors)) {
+        return selectors
+            .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? '')))
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    return String(rule.get?.('selectorsAdd') ?? '').trim();
 }
 
 /**
@@ -591,8 +671,6 @@ export function buildPayload(editor, options = {}) {
         runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
         runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor));
         runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor));
-        // Persist Style Manager paints into #id CssComposer rules (and keep inline).
-        runExportStep('bakeAuthorStylesToComposerForExport', () => bakeAuthorStylesToComposerForExport(editor));
         runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
         runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
         runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
@@ -614,8 +692,8 @@ export function buildPayload(editor, options = {}) {
         runExportStep('ensureIconsForExport', () => ensureIconsForExport(editor));
         runExportStep('ensureLayoutContainersForExport', () => ensureLayoutContainersForExport(editor));
         runExportStep('restoreContentWidthFromAttributes', () => restoreContentWidthFromAttributes(editor));
-        // Final bake after other syncs may have touched styles.
-        runExportStep('bakeAuthorStylesToComposerForExport:final', () => bakeAuthorStylesToComposerForExport(editor));
+        // One bake after syncs — a second full-tree bake doubled Save cost on large pages.
+        runExportStep('bakeAuthorStylesToComposerForExport', () => bakeAuthorStylesToComposerForExport(editor));
         // After bake/layout sync: force Layers hide onto inline + data-vb-layer-hidden
         // so getHtml does not depend on fragile CssComposer #id {display:none} alone.
         runExportStep('syncLayerVisibilityForExport', () => syncLayerVisibilityForExport(editor));
@@ -680,17 +758,16 @@ export function buildPayload(editor, options = {}) {
     // Persist Style Manager / #id author rules only — never ship live JIT utilities in the
     // Save JSON (those routinely exceed Laravel max_css_bytes and shared-host body limits).
     // The server recompiles utilities from HTML (+ author CSS) and may store a CSS artifact.
-    const liveCssRaw = String(editor.__voodbuilderPageLiveCss ?? '').trim();
-    const liveCssAuthorIds = extractGrapesComposerCss(liveCssRaw);
+    // Skip extracting #id rules from the live JIT sheet: on large pages that regex pass
+    // blocked the main thread for tens of seconds. CssComposer + component walk cover paints.
     const composerCss = readComposerCssForPersist(editor);
     const styleManagerCss = extractGrapesComposerCss(composerCss);
     const componentAuthorCss = collectAuthorIdCssFromComponents(editor);
     let css = mergeAuthorCssChunks([
         styleManagerCss,
         componentAuthorCss,
-        liveCssAuthorIds,
-        // Boot / empty live sheet: keep composer #id rules so the first Save still has author CSS.
-        styleManagerCss === '' && componentAuthorCss === '' && liveCssAuthorIds === ''
+        // Boot / empty composer: keep a second pass so the first Save still has author CSS.
+        styleManagerCss === '' && componentAuthorCss === ''
             ? extractGrapesComposerCss(composerCss)
             : '',
     ]);
@@ -703,7 +780,6 @@ export function buildPayload(editor, options = {}) {
         css = mergeAuthorCssChunks([
             extractBareIdAuthorCss(styleManagerCss),
             extractBareIdAuthorCss(componentAuthorCss),
-            extractBareIdAuthorCss(liveCssAuthorIds),
         ]);
     }
 

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.163] - 2026-09-25
+
+### Fixed
+
+- **Save speed:** no longer waits up to 20s for canvas Tailwind JIT (server already recompiles utilities); single style bake; skip live-sheet CSS extract / prefer CssComposer rule enum so large pages save in seconds instead of ~1 minute
+
 ## [0.1.162] - 2026-09-25
 
 ### Fixed
