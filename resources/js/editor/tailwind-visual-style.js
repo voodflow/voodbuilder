@@ -850,13 +850,15 @@ function wipePropertyFromTarget(target, property) {
     const inline = rewrite(target.getStyle?.({ inline: true }));
 
     if (inline) {
-        target.setStyle?.(inline, { inline: true });
+        // Silent: clearing a paint must not re-enter component:styleUpdate /
+        // chrome-shell refresh (page-surface Save freeze).
+        target.setStyle?.(inline, { inline: true, noEvent: true });
     }
 
     const merged = rewrite(target.getStyle?.());
 
     if (merged) {
-        target.setStyle?.(merged);
+        target.setStyle?.(merged, { noEvent: true });
     }
 
     const attrs = target.getAttributes?.() ?? {};

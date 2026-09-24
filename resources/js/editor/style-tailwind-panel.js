@@ -142,6 +142,59 @@ function styleWriteTarget(editor) {
     return resolveStyleTarget(editor) ?? editor?.getSelected?.() ?? null;
 }
 
+/**
+ * Persist paint on a component without Grapes style events when targeting the
+ * page wrapper — inline/styleUpdate on body re-enters chrome-shell refresh and
+ * freezes Save. CssComposer #id (+ direct DOM) is enough for canvas + publish.
+ *
+ * @param {object} editor
+ * @param {object} component
+ * @param {Record<string, string>} styles
+ */
+function persistSurfacePaint(editor, component, styles) {
+    if (! editor || ! component || ! styles || typeof styles !== 'object') {
+        return;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+    const pageSurface = isPageSurfaceComponent(target, editor);
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    if (id && editor.Css?.setIdRule) {
+        try {
+            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            editor.Css.setIdRule(id, {
+                ...existing,
+                ...styles,
+            });
+        } catch {
+            // CssComposer may be unavailable during boot.
+        }
+    }
+
+    if (pageSurface) {
+        try {
+            const el = target?.getEl?.() ?? target?.view?.el;
+
+            if (el?.style) {
+                for (const [property, value] of Object.entries(styles)) {
+                    if (value == null || value === '') {
+                        el.style.removeProperty?.(property);
+                    } else {
+                        el.style.setProperty?.(property, String(value));
+                    }
+                }
+            }
+        } catch {
+            // Frame may be unavailable.
+        }
+
+        return;
+    }
+
+    target.addStyle?.(styles, { inline: true, noEvent: true });
+}
+
 /** Map Style panel bg-* utilities → CSS background-* values. */
 const BG_LAYOUT_CSS_VALUES = {
     'bg-size': {
@@ -1171,24 +1224,8 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
         : `color-mix(in oklab, currentColor ${pct}%, transparent)`;
 
     // Neutralize opaque utility paint — inline alpha must win on canvas + frontend.
-    target.addStyle?.(
-        { 'background-color': painted },
-        { inline: true },
-    );
-
-    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
-
-    if (id && editor.Css?.setIdRule) {
-        try {
-            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(id, {
-                ...existing,
-                'background-color': painted,
-            });
-        } catch {
-            // CssComposer may be unavailable.
-        }
-    }
+    // Page wrapper: CssComposer + DOM only (no Grapes style events → Save freeze).
+    persistSurfacePaint(editor, component, { 'background-color': painted });
 }
 
 function applyGroup(editor, component, groupId, value) {
@@ -1238,7 +1275,12 @@ function applyGroup(editor, component, groupId, value) {
                 // View may be unavailable during bulk updates.
             }
 
-            scheduleClassCompile(editor);
+            // Page-surface paints are CssComposer-only — JIT on the content slot
+            // cannot cover wrapper utilities and only keeps Save in "Compiling…".
+            if (! isPageSurfaceComponent(component, editor)) {
+                scheduleClassCompile(editor);
+            }
+
             editor?.trigger?.('update');
             editor?.trigger?.('component:update', component);
         } finally {
@@ -1473,12 +1515,14 @@ function applyGroup(editor, component, groupId, value) {
             paintDecorationGradientPreview(editor, component);
         }
 
-        scheduleClassCompile(
-            editor,
-            isGradientStyleGroupId(groupId)
-                ? String(value ?? '').trim()
-                : styleWrittenToken(editor, value),
-        );
+        if (! isPageSurfaceComponent(component, editor)) {
+            scheduleClassCompile(
+                editor,
+                isGradientStyleGroupId(groupId)
+                    ? String(value ?? '').trim()
+                    : styleWrittenToken(editor, value),
+            );
+        }
         // Same dirty signal as CLASSES "+" / other editor mutations.
         editor?.trigger?.('update');
         // Class chips listen to component:update (not plain "update").
@@ -2360,30 +2404,15 @@ function paintDecorationGradientPreview(editor, component) {
 
     const target = resolveVisualStyleTarget(component) ?? component;
 
-    target.addStyle?.(
-        { 'background-image': layer },
-        { inline: true },
-    );
-
-    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
-
-    if (id && editor.Css?.setIdRule) {
-        try {
-            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(id, {
-                ...existing,
-                'background-image': layer,
-            });
-        } catch {
-            // CssComposer may be unavailable.
-        }
-    }
+    persistSurfacePaint(editor, component, { 'background-image': layer });
 
     try {
-        const el = target?.getEl?.() ?? target?.view?.el;
+        if (! isPageSurfaceComponent(target, editor)) {
+            const el = target?.getEl?.() ?? target?.view?.el;
 
-        if (el?.style) {
-            el.style.backgroundImage = layer;
+            if (el?.style) {
+                el.style.backgroundImage = layer;
+            }
         }
 
         component.view?.updateStyle?.();
@@ -2542,35 +2571,13 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     // Drop previous image paint before rewrite (keeps solid color classes).
     clearStyleProperty(editor, target, 'background-image', { family: false });
 
-    // Page wrapper: silent write — style events on body/wrapper re-enter chrome
-    // shell refresh + Style Manager clears and can freeze Save.
-    const styleOpts = isPageSurfaceComponent(target, editor)
-        ? { inline: true, noEvent: true }
-        : { inline: true };
-
-    target.addStyle?.(
-        {
-            'background-image': cssValue,
-            // Kill solid Color flash: tint is only in overlay layers above the photo.
-            'background-color': 'transparent',
-        },
-        styleOpts,
-    );
-
-    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
-
-    if (id && editor.Css?.setIdRule) {
-        try {
-            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(id, {
-                ...existing,
-                'background-image': cssValue,
-                'background-color': 'transparent',
-            });
-        } catch {
-            // CssComposer may be unavailable during boot.
-        }
-    }
+    // Page wrapper: CssComposer + DOM only — Grapes addStyle on body/wrapper
+    // re-enters chrome-shell refresh and freezes Save.
+    persistSurfacePaint(editor, component, {
+        'background-image': cssValue,
+        // Kill solid Color flash: tint is only in overlay layers above the photo.
+        'background-color': 'transparent',
+    });
 
     // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
     // recovery source. Scrub only happens on Clear.
@@ -2632,7 +2639,10 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             // View may be unavailable.
         }
 
-        scheduleClassCompile(editor);
+        if (! isPageSurfaceComponent(component, editor)) {
+            scheduleClassCompile(editor);
+        }
+
         editor?.trigger?.('update');
     } finally {
         if (! wasApplying) {

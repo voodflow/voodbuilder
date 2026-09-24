@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.161] - 2026-09-25
+
+### Fixed
+
+- **Critical:** page Style Color/Opacity/Gradient/Background no longer addStyle on the Grapes wrapper — CssComposer + DOM only, so chrome-shell Save does not freeze after editing page styles
+- Style property clears use silent setStyle (noEvent) to avoid styleUpdate re-entry storms
+- Skip page Tailwind JIT after page-surface-only paints (wrapper utilities are outside the content-slot compile)
+
 ## [0.1.160] - 2026-09-24
 
 ### Fixed
