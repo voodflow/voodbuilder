@@ -854,7 +854,10 @@ function setupInspectorTabs(mounts, editor) {
         return;
     }
 
-    const activateTab = (tabId, { userInitiated = false } = {}) => {
+    const activateTab = (tabId, { userInitiated = false, force = false } = {}) => {
+        const alreadyActive = activeTab === tabId
+            && editor.__voodbuilderInspectorActiveTab === tabId;
+
         activeTab = tabId;
         editor.__voodbuilderInspectorActiveTab = tabId;
 
@@ -878,6 +881,12 @@ function setupInspectorTabs(mounts, editor) {
 
         if (inspectorAside) {
             setInspectorSidebarWidth(inspectorAside, tabId);
+        }
+
+        // Re-activating the same tab from Content renderers used to re-enter
+        // syncInspectorManagers → settings render → activateTab forever (UI freeze).
+        if (alreadyActive && ! force && ! userInitiated) {
+            return;
         }
 
         editor.trigger?.('voodbuilder:inspector-tab', tabId);

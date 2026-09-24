@@ -752,8 +752,10 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
         return false;
     }
 
-    // Formatting lives in Content → Visual; make sure that tab is visible.
-    editor?.__voodbuilderActivateInspectorTab?.('content');
+    // Open Content once when needed — never on every refresh (activateTab → sync → render loop).
+    if ((editor?.__voodbuilderInspectorActiveTab ?? 'content') !== 'content') {
+        editor?.__voodbuilderActivateInspectorTab?.('content');
+    }
 
     const key = String(component.cid ?? component.getId?.() ?? '');
     const existing = mount.querySelector('[data-voodbuilder-rich-text-settings]');
@@ -761,12 +763,8 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
     if (existing && existing.getAttribute('data-component-key') === key) {
         traitsMount?.classList.add('hidden');
         mount.hidden = false;
-        lockRichTextChildren(component);
-        // Do not keepRichTextSelection here — re-selecting on every inspector
-        // refresh steals focus from the light RTE mid-keystroke (caret → start).
-        window.requestAnimationFrame(() => {
-            existing.querySelector?.('.voodbuilder-editor-rte__visual')?.focus?.();
-        });
+        // Do not lock / re-select / re-focus on refresh — that freezes the editor
+        // after Convert to Rich Text (selection + tab sync thrash).
 
         return true;
     }
@@ -817,7 +815,10 @@ export function renderRichTextSettings({ mount, traitsMount = null, component, e
     fields.appendChild(editorUi.root);
     mount.appendChild(section);
     lockRichTextChildren(component);
-    keepRichTextSelection(editor, component);
+
+    if (editor.getSelected?.() !== component) {
+        keepRichTextSelection(editor, component);
+    }
 
     // Focus after keepRichTextSelection's rAF so the light RTE receives the caret
     // (canvas re-select otherwise steals focus and the format toolbar looks inert).
